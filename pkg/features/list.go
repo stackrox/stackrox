@@ -30,4 +30,7 @@ var (
 
 	// AwsSecurityHubIntegration enables the AWS Security Hub Integration UI.
 	AwsSecurityHubIntegration = registerFeature("Show AWS Security Hub Integration in UI", "ROX_AWS_SECURITY_HUB_INTEGRATION", false)
+
+	// NetworkGraphPorts enables port-related features in the network graph.
+	NetworkGraphPorts = registerFeature("Enable port-related features in network graph", "ROX_NETWORK_GRAPH_PORTS", false)
 )

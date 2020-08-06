@@ -6,6 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/networkflow"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
@@ -13,6 +14,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -59,6 +61,10 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.NetworkGraphRequest) (*v1.NetworkGraph, error) {
+	return s.getNetworkGraph(ctx, request, features.NetworkGraphPorts.Enabled())
+}
+
+func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGraphRequest, withListenPorts bool) (*v1.NetworkGraph, error) {
 	if request.GetClusterId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "cluster ID must be specified")
 	}
@@ -169,6 +175,19 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.NetworkGr
 
 	builder.AddDeployments(maskedDeployments)
 	builder.AddFlows(filteredFlows)
+
+	if withListenPorts {
+		unmaskedDeploymentIDs := make([]string, 0, len(deployments))
+		for _, d := range deployments {
+			unmaskedDeploymentIDs = append(unmaskedDeploymentIDs, d.GetId())
+		}
+		fullDeployments, err := s.deployments.GetDeployments(ctx, unmaskedDeploymentIDs)
+		if err != nil {
+			return nil, errors.Wrap(err, "loading deployments from store")
+		}
+		// TODO(ROX-5301): Replace this with listen port info from collector.
+		builder.AddListenPortsFromDeployments(fullDeployments)
+	}
 
 	return builder.Build(), nil
 }

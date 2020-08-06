@@ -31,9 +31,16 @@ message NetworkEntityInfo {
     }
 
     message Deployment {
+        message ListenPort {
+            uint32 port           = 1;
+            L4Protocol l4protocol = 2;
+        }
+
         string name      = 1;
         string namespace = 2;
         string cluster   = 3 [deprecated = true];
+
+        repeated ListenPort listen_ports = 4;
     }
 
     Type type = 1;

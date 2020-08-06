@@ -652,8 +652,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("NetworkEntityInfo_Deployment", []string{
 		"cluster: String!",
+		"listenPorts: [NetworkEntityInfo_Deployment_ListenPort]!",
 		"name: String!",
 		"namespace: String!",
+	}))
+	utils.Must(builder.AddType("NetworkEntityInfo_Deployment_ListenPort", []string{
+		"l4Protocol: L4Protocol!",
+		"port: Int!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NetworkEntityInfo_Type(0)))
 	utils.Must(builder.AddType("NetworkFlow", []string{
@@ -6126,6 +6131,11 @@ func (resolver *networkEntityInfo_DeploymentResolver) Cluster(ctx context.Contex
 	return value
 }
 
+func (resolver *networkEntityInfo_DeploymentResolver) ListenPorts(ctx context.Context) ([]*networkEntityInfo_Deployment_ListenPortResolver, error) {
+	value := resolver.data.GetListenPorts()
+	return resolver.root.wrapNetworkEntityInfo_Deployment_ListenPorts(value, nil)
+}
+
 func (resolver *networkEntityInfo_DeploymentResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
@@ -6134,6 +6144,40 @@ func (resolver *networkEntityInfo_DeploymentResolver) Name(ctx context.Context) 
 func (resolver *networkEntityInfo_DeploymentResolver) Namespace(ctx context.Context) string {
 	value := resolver.data.GetNamespace()
 	return value
+}
+
+type networkEntityInfo_Deployment_ListenPortResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NetworkEntityInfo_Deployment_ListenPort
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_Deployment_ListenPort(value *storage.NetworkEntityInfo_Deployment_ListenPort, ok bool, err error) (*networkEntityInfo_Deployment_ListenPortResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &networkEntityInfo_Deployment_ListenPortResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_Deployment_ListenPorts(values []*storage.NetworkEntityInfo_Deployment_ListenPort, err error) ([]*networkEntityInfo_Deployment_ListenPortResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*networkEntityInfo_Deployment_ListenPortResolver, len(values))
+	for i, v := range values {
+		output[i] = &networkEntityInfo_Deployment_ListenPortResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *networkEntityInfo_Deployment_ListenPortResolver) L4Protocol(ctx context.Context) string {
+	value := resolver.data.GetL4Protocol()
+	return value.String()
+}
+
+func (resolver *networkEntityInfo_Deployment_ListenPortResolver) Port(ctx context.Context) int32 {
+	value := resolver.data.GetPort()
+	return int32(value)
 }
 
 func toNetworkEntityInfo_Type(value *string) storage.NetworkEntityInfo_Type {

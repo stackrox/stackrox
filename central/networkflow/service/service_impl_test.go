@@ -15,9 +15,12 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/objects"
 	"github.com/stackrox/rox/pkg/sac"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -30,7 +33,7 @@ type NetworkGraphServiceTestSuite struct {
 	deployments *dDSMocks.MockDataStore
 	flows       *nfDSMocks.MockClusterDataStore
 	evaluator   *npDSMocks.MockEvaluator
-	tested      Service
+	tested      *serviceImpl
 
 	mockCtrl *gomock.Controller
 }
@@ -43,7 +46,7 @@ func (s *NetworkGraphServiceTestSuite) SetupTest() {
 
 	s.evaluator = npDSMocks.NewMockEvaluator(s.mockCtrl)
 
-	s.tested = New(s.flows, s.deployments, s.evaluator)
+	s.tested = newService(s.flows, s.deployments)
 }
 
 func (s *NetworkGraphServiceTestSuite) TearDownTest() {
@@ -72,136 +75,11 @@ func depFlow(toID, fromID string) *storage.NetworkFlow {
 }
 
 func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithAllAccess() {
-	// Test setup:
-	// Query selects namespace foo and bar (visible)
-	// Third namespace baz is visible but not selected
-	// User has no network flow access in namespace bar
-	// Namespace foo has deployments:
-	// - depA has incoming flows from depB, depD, depE, deployment depX and depZ in a secret namespace,
-	//   and deployment depY that was recently deleted
-	// - depB has incoming flows from depA and deployment depX in a secret namespace, and depW in another secret namespace
-	// - depC has incoming flows from depA and depW
-	// Namespace bar:
-	// - depD has incoming flows from depA and depE
-	// - depE has incoming flows from depD and depB
-	// Namespace baz:
-	// - depF has incoming flows from depB
-	// EXPECT:
-	//   - all flows within namespace foo
-	//   - flows between depD and depA, and depE and depB
-	//   - incoming flow for depB from a masked deployment
+	s.testGenerateNetworkGraphAllAccess(false)
+}
 
-	ctx := sac.WithAllAccess(context.Background())
-
-	ts := types.TimestampNow()
-	req := &v1.NetworkGraphRequest{
-		ClusterId: "mycluster",
-		Query:     "Namespace: foo,bar",
-		Since:     ts,
-	}
-
-	ctxHasAllDeploymentsAccessMatcher := sacTestutils.ContextWithAccess(sac.ScopeSuffix{
-		sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
-		sac.ResourceScopeKey(resources.Deployment.Resource),
-		sac.ClusterScopeKey("mycluster"),
-	})
-
-	s.deployments.EXPECT().SearchListDeployments(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(
-		[]*storage.ListDeployment{
-			{
-				Id:        "depA",
-				Name:      "depA",
-				Namespace: "foo",
-			},
-			{
-				Id:        "depB",
-				Name:      "depB",
-				Namespace: "foo",
-			},
-			{
-				Id:        "depC",
-				Name:      "depC",
-				Namespace: "foo",
-			},
-			{
-				Id:        "depD",
-				Name:      "depD",
-				Namespace: "bar",
-			},
-			{
-				Id:        "depE",
-				Name:      "depE",
-				Namespace: "bar",
-			},
-		}, nil)
-
-	mockFlowStore := nfDSMocks.NewMockFlowDataStore(s.mockCtrl)
-
-	ctxHasClusterWideNetworkFlowAccessMatcher := sacTestutils.ContextWithAccess(
-		sac.ScopeSuffix{
-			sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKey(resources.NetworkGraph.Resource),
-			sac.ClusterScopeKey("mycluster"),
-		})
-
-	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(ts)).DoAndReturn(
-		func(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, _ *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
-			return networkflow.FilterFlowsByPredicate([]*storage.NetworkFlow{
-				depFlow("depA", "depB"),
-				depFlow("depA", "depD"),
-				depFlow("depA", "depE"),
-				depFlow("depA", "depX"),
-				depFlow("depA", "depY"),
-				depFlow("depA", "depZ"),
-				depFlow("depB", "depA"),
-				depFlow("depB", "depX"),
-				depFlow("depB", "depW"),
-				depFlow("depC", "depA"),
-				depFlow("depC", "depW"),
-				depFlow("depD", "depA"),
-				depFlow("depD", "depE"),
-				depFlow("depD", "depZ"),
-				depFlow("depE", "depD"),
-				depFlow("depE", "depX"),
-				depFlow("depE", "depB"),
-				depFlow("depF", "depB"),
-			}, pred), *types.TimestampNow(), nil
-		})
-
-	s.flows.EXPECT().GetFlowStore(ctxHasClusterWideNetworkFlowAccessMatcher, "mycluster").Return(mockFlowStore)
-
-	s.deployments.EXPECT().SearchListDeployments(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(
-		[]*storage.ListDeployment{
-			// depY was deleted
-		}, nil)
-
-	graph, err := s.tested.GetNetworkGraph(ctx, req)
-	s.Require().NotNil(graph)
-	s.Require().NoError(err)
-
-	var flowStrings []string
-	for _, node := range graph.GetNodes() {
-		for succIdx := range node.GetOutEdges() {
-			succ := graph.GetNodes()[succIdx]
-			srcDeploy, dstDeploy := node.GetEntity().GetDeployment(), succ.GetEntity().GetDeployment()
-			flowStrings = append(flowStrings, fmt.Sprintf("%s/%s <- %s/%s", dstDeploy.GetNamespace(), dstDeploy.GetName(), srcDeploy.GetNamespace(), srcDeploy.GetName()))
-		}
-	}
-
-	expected := []string{
-		"foo/depA <- foo/depB",
-		"foo/depA <- bar/depD",
-		"foo/depA <- bar/depE",
-		"foo/depB <- foo/depA",
-		"foo/depC <- foo/depA",
-		"bar/depD <- foo/depA",
-		"bar/depD <- bar/depE",
-		"bar/depE <- foo/depB",
-		"bar/depE <- bar/depD",
-	}
-	sort.Strings(expected)
-	sort.Strings(flowStrings)
-	s.Equal(expected, flowStrings)
+func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithAllAccessAndListenPorts() {
+	s.testGenerateNetworkGraphAllAccess(true)
 }
 
 func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
@@ -370,6 +248,183 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 		"foo/depC <- masked namespace #2/masked deployment #3",
 		"bar/depD <- foo/depA",
 		"bar/depE <- foo/depB",
+	}
+	sort.Strings(expected)
+	sort.Strings(flowStrings)
+	s.Equal(expected, flowStrings)
+}
+
+func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withListenPorts bool) {
+	// Test setup:
+	// Query selects namespace foo and bar (visible)
+	// Third namespace baz is visible but not selected
+	// User has no network flow access in namespace bar
+	// Namespace foo has deployments:
+	// - depA has incoming flows from depB, depD, depE, deployment depX and depZ in a secret namespace,
+	//   and deployment depY that was recently deleted
+	// - depB has incoming flows from depA and deployment depX in a secret namespace, and depW in another secret namespace
+	// - depC has incoming flows from depA and depW
+	// Namespace bar:
+	// - depD has incoming flows from depA and depE
+	// - depE has incoming flows from depD and depB
+	// Namespace baz:
+	// - depF has incoming flows from depB
+	// EXPECT:
+	//   - all flows within namespace foo
+	//   - flows between depD and depA, and depE and depB
+	//   - incoming flow for depB from a masked deployment
+
+	ctx := sac.WithAllAccess(context.Background())
+
+	ts := types.TimestampNow()
+	req := &v1.NetworkGraphRequest{
+		ClusterId: "mycluster",
+		Query:     "Namespace: foo,bar",
+		Since:     ts,
+	}
+
+	ctxHasAllDeploymentsAccessMatcher := sacTestutils.ContextWithAccess(sac.ScopeSuffix{
+		sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKey(resources.Deployment.Resource),
+		sac.ClusterScopeKey("mycluster"),
+	})
+
+	relevantDeployments := []*storage.Deployment{
+		{
+			Id:        "depA",
+			Name:      "depA",
+			Namespace: "foo",
+			Ports: []*storage.PortConfig{
+				{
+					ContainerPort: 8443,
+					Protocol:      "TCP",
+				},
+			},
+		},
+		{
+			Id:        "depB",
+			Name:      "depB",
+			Namespace: "foo",
+		},
+		{
+			Id:        "depC",
+			Name:      "depC",
+			Namespace: "foo",
+		},
+		{
+			Id:        "depD",
+			Name:      "depD",
+			Namespace: "bar",
+			Ports: []*storage.PortConfig{
+				{
+					ContainerPort: 53,
+					Protocol:      "tcp",
+				},
+				{
+					ContainerPort: 53,
+					Protocol:      "udp",
+				},
+			},
+		},
+		{
+			Id:        "depE",
+			Name:      "depE",
+			Namespace: "bar",
+		},
+	}
+
+	relevantListDeployments := make([]*storage.ListDeployment, 0, len(relevantDeployments))
+	for _, d := range relevantDeployments {
+		relevantListDeployments = append(relevantListDeployments, objects.ToListDeployment(d))
+	}
+
+	s.deployments.EXPECT().SearchListDeployments(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(relevantListDeployments, nil)
+
+	mockFlowStore := nfDSMocks.NewMockFlowDataStore(s.mockCtrl)
+
+	ctxHasClusterWideNetworkFlowAccessMatcher := sacTestutils.ContextWithAccess(
+		sac.ScopeSuffix{
+			sac.AccessModeScopeKey(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKey(resources.NetworkGraph.Resource),
+			sac.ClusterScopeKey("mycluster"),
+		})
+
+	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(ts)).DoAndReturn(
+		func(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, _ *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+			return networkflow.FilterFlowsByPredicate([]*storage.NetworkFlow{
+				depFlow("depA", "depB"),
+				depFlow("depA", "depD"),
+				depFlow("depA", "depE"),
+				depFlow("depA", "depX"),
+				depFlow("depA", "depY"),
+				depFlow("depA", "depZ"),
+				depFlow("depB", "depA"),
+				depFlow("depB", "depX"),
+				depFlow("depB", "depW"),
+				depFlow("depC", "depA"),
+				depFlow("depC", "depW"),
+				depFlow("depD", "depA"),
+				depFlow("depD", "depE"),
+				depFlow("depD", "depZ"),
+				depFlow("depE", "depD"),
+				depFlow("depE", "depX"),
+				depFlow("depE", "depB"),
+				depFlow("depF", "depB"),
+			}, pred), *types.TimestampNow(), nil
+		})
+
+	s.flows.EXPECT().GetFlowStore(ctxHasClusterWideNetworkFlowAccessMatcher, "mycluster").Return(mockFlowStore)
+
+	s.deployments.EXPECT().SearchListDeployments(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(
+		[]*storage.ListDeployment{
+			// depY was deleted
+		}, nil)
+
+	var expectedListenPorts map[string][]*storage.NetworkEntityInfo_Deployment_ListenPort
+	if withListenPorts {
+		s.deployments.EXPECT().GetDeployments(
+			ctxHasAllDeploymentsAccessMatcher,
+			testutils.AssertionMatcher(assert.ElementsMatch, []string{"depA", "depB", "depC", "depD", "depE"})).Return(
+			relevantDeployments, nil)
+
+		expectedListenPorts = map[string][]*storage.NetworkEntityInfo_Deployment_ListenPort{
+			"depA": {
+				{Port: 8443, L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP},
+			},
+			"depD": {
+				{Port: 53, L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP},
+				{Port: 53, L4Protocol: storage.L4Protocol_L4_PROTOCOL_UDP},
+			},
+		}
+	}
+
+	graph, err := s.tested.getNetworkGraph(ctx, req, withListenPorts)
+	s.Require().NotNil(graph)
+	s.Require().NoError(err)
+
+	var flowStrings []string
+	for _, node := range graph.GetNodes() {
+		srcDeploy := node.GetEntity().GetDeployment()
+		s.NotNil(srcDeploy)
+		for succIdx := range node.GetOutEdges() {
+			succ := graph.GetNodes()[succIdx]
+			dstDeploy := succ.GetEntity().GetDeployment()
+			flowStrings = append(flowStrings, fmt.Sprintf("%s/%s <- %s/%s", dstDeploy.GetNamespace(), dstDeploy.GetName(), srcDeploy.GetNamespace(), srcDeploy.GetName()))
+		}
+
+		s.ElementsMatch(srcDeploy.GetListenPorts(), expectedListenPorts[node.GetEntity().GetId()])
+	}
+
+	expected := []string{
+		"foo/depA <- foo/depB",
+		"foo/depA <- bar/depD",
+		"foo/depA <- bar/depE",
+		"foo/depB <- foo/depA",
+		"foo/depC <- foo/depA",
+		"bar/depD <- foo/depA",
+		"bar/depD <- bar/depE",
+		"bar/depE <- foo/depB",
+		"bar/depE <- bar/depD",
 	}
 	sort.Strings(expected)
 	sort.Strings(flowStrings)
