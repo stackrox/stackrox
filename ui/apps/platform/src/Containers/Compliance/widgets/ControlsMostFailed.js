@@ -13,13 +13,10 @@ import queryService from 'utils/queryService';
 const ControlsMostFailed = ({ match, location, entityType, query, limit, showEmpty }) => {
     const whereClauseValues = { ...query };
     const groupBy = [entityTypes.CONTROL, entityTypes.STANDARD];
-    if (entityType !== entityTypes.CONTROL) {
-        groupBy.push(entityType);
-    }
-
+    const entity = entityType === entityTypes.CONTROL ? entityTypes.CHECK : entityType;
     const variables = {
         groupBy,
-        unit: entityTypes.CONTROL,
+        unit: entity,
         where: queryService.objectToWhereClause(whereClauseValues),
     };
 
@@ -34,7 +31,7 @@ const ControlsMostFailed = ({ match, location, entityType, query, limit, showEmp
             const standardControls = standard.controls.map((control) => ({
                 id: control.id,
                 label:
-                    entityType !== entityTypes.CONTROL
+                    entity !== entityTypes.CHECK
                         ? `${standardName} - ${control.name}: ${control.description}`
                         : `${control.name}: ${control.description}`,
             }));
@@ -82,9 +79,7 @@ const ControlsMostFailed = ({ match, location, entityType, query, limit, showEmp
 
     function getHeadline() {
         const titleEntity =
-            entityType !== entityTypes.CONTROL
-                ? `across ${pluralize(resourceLabels[entityType])}`
-                : '';
+            entity !== entityTypes.CONTROL ? `across ${pluralize(resourceLabels[entity])}` : '';
         return `Controls most failed ${titleEntity}`;
     }
 
