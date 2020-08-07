@@ -4,7 +4,6 @@ import (
 	"sort"
 	"strings"
 
-	bolt "github.com/etcd-io/bbolt"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (

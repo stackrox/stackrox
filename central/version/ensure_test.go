@@ -3,7 +3,6 @@ package version
 import (
 	"testing"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/version/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
+	bolt "go.etcd.io/bbolt"
 )
 
 func TestEnsurer(t *testing.T) {

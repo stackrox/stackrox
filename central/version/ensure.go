@@ -3,7 +3,6 @@ package version
 import (
 	"fmt"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/version/store"
@@ -11,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (

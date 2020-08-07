@@ -1,9 +1,9 @@
 package datastore
 
 import (
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/notifier/datastore/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	bolt "go.etcd.io/bbolt"
 )
 
 // Scrub scrubs sensitive notifier information from a DB.

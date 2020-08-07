@@ -1,8 +1,8 @@
 package bolthelper
 
 import (
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	bolt "go.etcd.io/bbolt"
 )
 
 // PutAll inserts the given key/value pairs into the DB. Its main use case is to reduce the time the write lock is held

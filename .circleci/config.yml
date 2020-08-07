@@ -481,7 +481,7 @@ version: 2.1
 executors:
   custom:
     docker:
-      - image: docker.io/stackrox/apollo-ci:0.2.12-2-g593e963d0b
+      - image: docker.io/stackrox/apollo-ci:0.2.13
         auth:
           username: $DOCKER_IO_PULL_USERNAME
           password: $DOCKER_IO_PULL_PASSWORD

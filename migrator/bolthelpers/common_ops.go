@@ -1,7 +1,7 @@
 package bolthelpers
 
 import (
-	bolt "github.com/etcd-io/bbolt"
+	bolt "go.etcd.io/bbolt"
 )
 
 // RetrieveElementAtKey retrieves the element at the given key from the given BucketRef.

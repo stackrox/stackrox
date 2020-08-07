@@ -1,10 +1,10 @@
 package store
 
 import (
-	"github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
+	"go.etcd.io/bbolt"
 )
 
 var rolesBucket = []byte("roles")

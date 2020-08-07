@@ -9,7 +9,6 @@ import (
 	"path"
 	"path/filepath"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/badgerutils"
 	"github.com/stackrox/rox/pkg/badgerhelper"
@@ -19,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/odirect"
 	"github.com/stackrox/rox/pkg/utils"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (

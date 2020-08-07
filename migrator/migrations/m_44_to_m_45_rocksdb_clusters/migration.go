@@ -1,7 +1,6 @@
 package m44tom45
 
 import (
-	"github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	pTypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
@@ -10,6 +9,7 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/tecbot/gorocksdb"
+	"go.etcd.io/bbolt"
 )
 
 var (

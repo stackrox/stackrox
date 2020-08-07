@@ -4,12 +4,12 @@ import (
 	"errors"
 	"testing"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	bolt "go.etcd.io/bbolt"
 )
 
 func TestMigration(t *testing.T) {

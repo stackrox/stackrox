@@ -5,13 +5,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tecbot/gorocksdb"
+	"go.etcd.io/bbolt"
 )
 
 func TestMigrateBolt(t *testing.T) {

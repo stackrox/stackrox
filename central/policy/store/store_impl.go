@@ -5,7 +5,6 @@ import (
 	"sort"
 	"time"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/secondarykey"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	bolt "go.etcd.io/bbolt"
 )
 
 type storeImpl struct {

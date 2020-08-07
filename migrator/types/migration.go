@@ -2,9 +2,9 @@ package types
 
 import (
 	"github.com/dgraph-io/badger"
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/tecbot/gorocksdb"
+	bolt "go.etcd.io/bbolt"
 )
 
 // Databases encapsulates all the different databases we are using

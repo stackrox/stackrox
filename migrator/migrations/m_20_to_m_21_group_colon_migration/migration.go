@@ -3,10 +3,10 @@ package m20to21
 import (
 	"bytes"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	bolt "go.etcd.io/bbolt"
 )
 
 var groupsBucket = []byte("groups")

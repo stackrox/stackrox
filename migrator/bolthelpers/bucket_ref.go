@@ -3,8 +3,8 @@ package bolthelpers
 import (
 	"fmt"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
+	bolt "go.etcd.io/bbolt"
 )
 
 // BucketRef is a reference to a bucket. The user does not need to care whether this is a top-level bucket, or a nested

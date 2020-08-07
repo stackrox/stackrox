@@ -1,10 +1,10 @@
 package undostore
 
 import (
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/logging"
+	bolt "go.etcd.io/bbolt"
 )
 
 var undoBucket = []byte("networkpolicies-undo")

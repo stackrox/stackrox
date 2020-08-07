@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"testing"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stretchr/testify/suite"
 	"github.com/tecbot/gorocksdb"
+	bolt "go.etcd.io/bbolt"
 )
 
 func TestVersionStore(t *testing.T) {

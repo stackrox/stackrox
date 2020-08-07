@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	bolt "go.etcd.io/bbolt"
 )
 
 type crudImpl struct {

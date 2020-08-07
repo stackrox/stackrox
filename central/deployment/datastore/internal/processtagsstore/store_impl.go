@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"sort"
 
-	"github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
+	"go.etcd.io/bbolt"
 )
 
 type storeImpl struct {

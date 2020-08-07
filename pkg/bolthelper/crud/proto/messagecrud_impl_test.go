@@ -4,11 +4,11 @@ import (
 	"os"
 	"testing"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/suite"
+	bolt "go.etcd.io/bbolt"
 )
 
 func TestMessageCrud(t *testing.T) {

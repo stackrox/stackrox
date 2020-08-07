@@ -1,13 +1,13 @@
 package m38tom39
 
 import (
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (

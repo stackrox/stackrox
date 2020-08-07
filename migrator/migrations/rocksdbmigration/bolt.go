@@ -1,10 +1,10 @@
 package rocksdbmigration
 
 import (
-	"github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/tecbot/gorocksdb"
+	"go.etcd.io/bbolt"
 )
 
 var (

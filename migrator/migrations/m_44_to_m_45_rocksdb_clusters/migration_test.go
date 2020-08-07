@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 	"github.com/tecbot/gorocksdb"
+	bolt "go.etcd.io/bbolt"
 )
 
 func TestMigration(t *testing.T) {

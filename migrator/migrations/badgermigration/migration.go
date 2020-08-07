@@ -2,9 +2,9 @@ package badgermigration
 
 import (
 	"github.com/dgraph-io/badger"
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/log"
+	bolt "go.etcd.io/bbolt"
 )
 
 const (

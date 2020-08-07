@@ -3,13 +3,13 @@ package store
 import (
 	"fmt"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/tecbot/gorocksdb"
+	bolt "go.etcd.io/bbolt"
 )
 
 var key = []byte("\x00")

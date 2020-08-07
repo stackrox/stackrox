@@ -3,13 +3,13 @@ package store
 import (
 	"time"
 
-	"github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
+	"go.etcd.io/bbolt"
 )
 
 const (

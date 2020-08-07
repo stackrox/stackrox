@@ -6,10 +6,10 @@ import (
 	"io/ioutil"
 	"os"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/odirect"
 	"github.com/stackrox/rox/pkg/utils"
+	bolt "go.etcd.io/bbolt"
 )
 
 // NewBoltBackup returns a backup generator for BoltDB backups.

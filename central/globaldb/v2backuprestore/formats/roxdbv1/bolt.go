@@ -4,12 +4,12 @@ import (
 	"io"
 	"os"
 
-	"github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/odirect"
 	"github.com/stackrox/rox/pkg/utils"
+	"go.etcd.io/bbolt"
 )
 
 func restoreBoltDB(ctx common.RestoreFileContext, fileReader io.Reader, size int64) error {

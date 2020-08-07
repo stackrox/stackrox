@@ -1,11 +1,11 @@
 package proto
 
 import (
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/bolthelper/crud/generic"
 	"github.com/stackrox/rox/pkg/storecache"
+	bolt "go.etcd.io/bbolt"
 )
 
 // MessageCrud provides a simple crud layer on top of bolt DB for protobuf messages with a string Id field.
