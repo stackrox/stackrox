@@ -120,6 +120,7 @@ func normalizeObject(obj *unstructured.Unstructured) {
 	obj.SetGeneration(0)
 	k8sutil.DeleteAnnotation(obj, common.LastUpgradeIDAnnotationKey)
 	unstructured.RemoveNestedField(obj.Object, "status")
+	unstructured.RemoveNestedField(obj.Object, "metadata", "managedFields")
 
 	if clearDynamicFieldsFn := clearDynamicFieldsByGVK[obj.GetObjectKind().GroupVersionKind()]; clearDynamicFieldsFn != nil {
 		clearDynamicFieldsFn(obj)

@@ -49,6 +49,35 @@ metadata:
     auto-upgrade.stackrox.io/component: sensor
   annotations:
     sensor-upgrader.stackrox.io/last-upgrade-id: abcd
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .: {}
+          f:kubectl.kubernetes.io/last-applied-configuration: {}
+        f:labels:
+          .: {}
+          f:app.kubernetes.io/name: {}
+          f:auto-upgrade.stackrox.io/component: {}
+      f:spec:
+        f:ports:
+          .: {}
+          k:{"port":443,"protocol":"TCP"}:
+            .: {}
+            f:name: {}
+            f:port: {}
+            f:protocol: {}
+            f:targetPort: {}
+        f:selector:
+          .: {}
+          f:app: {}
+        f:sessionAffinity: {}
+        f:type: {}
+    manager: kubectl
+    operation: Update
+    time: "2020-08-07T20:45:25Z"
   name: sensor
   namespace: stackrox
   resourceVersion: "444536"
