@@ -97,6 +97,7 @@ message Cluster {
     TolerationsConfig         tolerations_config               = 19;
     int64                     priority                         = 20;
     ClusterHealthStatus       health_status                    = 22;
+    bool                      slim_collector                   = 23;
 }
 
 message ClusterCertExpiryStatus {

@@ -1,7 +1,6 @@
 package clusters
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -22,6 +21,7 @@ var (
 // RenderOptions are options that control the rendering.
 type RenderOptions struct {
 	CreateUpgraderSA bool
+	SlimCollector    bool
 }
 
 func generateCollectorImageNameFromString(collectorImage, tag string) (*storage.ImageName, error) {
@@ -34,7 +34,7 @@ func generateCollectorImageNameFromString(collectorImage, tag string) (*storage.
 }
 
 func generateCollectorImageName(mainImageName *storage.ImageName, collectorImage string) (*storage.ImageName, error) {
-	collectorTag := fmt.Sprintf("%s-latest", version.GetCollectorVersion())
+	collectorTag := version.GetCollectorVersion()
 	var collectorImageName *storage.ImageName
 	if collectorImage != "" {
 		var err error
@@ -97,6 +97,8 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		"K8sCommand": command,
 
 		"OfflineMode": env.OfflineModeEnv.BooleanSetting(),
+
+		"SlimCollector": opts.SlimCollector,
 	}
 
 	if features.AdmissionControlService.Enabled() && c.AdmissionController {

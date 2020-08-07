@@ -32,11 +32,21 @@ import {
     newClusterDefault,
     parseUpgradeStatus,
     wizardSteps,
+    centralEnvDefault,
 } from './cluster.helpers';
 import CollapsibleCard from '../../Components/CollapsibleCard';
 import Button from '../../Components/Button';
 import { generateSecuredClusterCertSecret } from '../../services/CertGenerationService';
 import Dialog from '../../Components/Dialog';
+
+function fetchCentralEnv() {
+    return fetchKernelSupportAvailable().then((kernelSupportAvailable) => {
+        return {
+            kernelSupportAvailable,
+            successfullyFetched: true,
+        };
+    });
+}
 
 function ClustersSidePanel({
     metadata,
@@ -55,8 +65,9 @@ function ClustersSidePanel({
     };
 
     const [selectedCluster, setSelectedCluster] = useState(envAwareClusterDefault);
+    const [centralEnv, setCentralEnv] = useState(centralEnvDefault);
     const [wizardStep, setWizardStep] = useState(wizardSteps.FORM);
-    const [isLoading, setIsLoading] = useState(false);
+    const [loadingCounter, setLoadingCounter] = useState(0);
     const [messageState, setMessageState] = useState(null);
     const [pollingCount, setPollingCount] = useState(0);
     const [pollingDelay, setPollingDelay] = useState(null);
@@ -80,9 +91,26 @@ function ClustersSidePanel({
     useEffect(
         () => {
             const clusterIdToRetrieve = selectedClusterId;
+
+            setLoadingCounter((prev) => prev + 1);
+            fetchCentralEnv()
+                .then((freshCentralEnv) => {
+                    setCentralEnv(freshCentralEnv);
+                    if (clusterIdToRetrieve === 'new') {
+                        const updatedCluster = {
+                            ...selectedCluster,
+                            slimCollector: freshCentralEnv.kernelSupportAvailable,
+                        };
+                        setSelectedCluster(updatedCluster);
+                    }
+                })
+                .finally(() => {
+                    setLoadingCounter((prev) => prev - 1);
+                });
+
             if (clusterIdToRetrieve && clusterIdToRetrieve !== 'new') {
+                setLoadingCounter((prev) => prev + 1);
                 setMessageState(null);
-                setIsLoading(true);
                 // don't want to cache or memoize, because we always want the latest real-time data
                 getClusterById(clusterIdToRetrieve)
                     .then((cluster) => {
@@ -106,20 +134,7 @@ function ClustersSidePanel({
                         });
                     })
                     .finally(() => {
-                        setIsLoading(false);
-                    });
-            } else if (clusterIdToRetrieve) {
-                setIsLoading(true);
-                fetchKernelSupportAvailable()
-                    .then((kernelSupportAvailable) => {
-                        const updatedCluster = {
-                            ...selectedCluster,
-                            slimCollectorMode: kernelSupportAvailable,
-                        };
-                        setSelectedCluster(updatedCluster);
-                    })
-                    .finally(() => {
-                        setIsLoading(false);
+                        setLoadingCounter((prev) => prev - 1);
                     });
                 // TODO: When rolling out this feature the user should be informed somehow
                 // in case this property could not be retrieved.
@@ -406,9 +421,10 @@ function ClustersSidePanel({
             )}
             {showFormStyles && (
                 <ClusterEditForm
+                    centralEnv={centralEnv}
                     selectedCluster={selectedCluster}
                     handleChange={onChange}
-                    isLoading={isLoading}
+                    isLoading={loadingCounter > 0}
                 />
             )}
             {showDeploymentStyles && (

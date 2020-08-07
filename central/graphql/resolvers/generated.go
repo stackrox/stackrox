@@ -172,6 +172,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 		"priority: Int!",
 		"runtimeSupport: Boolean!",
+		"slimCollector: Boolean!",
 		"status: ClusterStatus",
 		"tolerationsConfig: TolerationsConfig",
 		"type: ClusterType!",
@@ -2388,6 +2389,11 @@ func (resolver *clusterResolver) Priority(ctx context.Context) int32 {
 
 func (resolver *clusterResolver) RuntimeSupport(ctx context.Context) bool {
 	value := resolver.data.GetRuntimeSupport()
+	return value
+}
+
+func (resolver *clusterResolver) SlimCollector(ctx context.Context) bool {
+	value := resolver.data.GetSlimCollector()
 	return value
 }
 

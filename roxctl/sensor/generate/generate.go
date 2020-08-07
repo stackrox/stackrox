@@ -11,10 +11,13 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/pflag/autobool"
 	"github.com/stackrox/rox/roxctl/sensor/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -37,6 +40,8 @@ Remove it from your invocations of roxctl to avoid future breakages.`
 
 	warningDefaultForCreateUpgraderSaWillChange = `WARNING: The default for the --create-upgrader-sa flag will change to true in future versions of roxctl.
 If you want to preserve the old behavior, please change your invocations to explicitly specify --create-upgrader-sa=false.`
+	infoDefaultingToSlimCollector          = `Defaulting to slim collector image since kernel probes seem to be available for central.`
+	infoDefaultingToComprehensiveCollector = `Defaulting to comprehensive collector image since kernel probes seem to be unavailable for central.`
 )
 
 var (
@@ -53,6 +58,8 @@ var (
 	createUpgraderSA bool
 
 	outputDir string
+
+	slimCollectorP *bool
 )
 
 func fullClusterCreation(timeout time.Duration) error {
@@ -62,7 +69,28 @@ func fullClusterCreation(timeout time.Duration) error {
 	}
 	service := v1.NewClustersServiceClient(conn)
 
-	id, err := createCluster(service, timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	env := util.RetrieveCentralEnvOrDefault(ctx, service)
+	// Here we only set the cluster property, which will be persisted by central.
+	// This is not directly related to fetching the bundle.
+	// It should only be used when the request to download a bundle does not contain a `slimCollector` setting.
+	if slimCollectorP != nil {
+		cluster.SlimCollector = *slimCollectorP
+		if cluster.SlimCollector && !env.KernelSupportAvailable {
+			fmt.Fprintf(os.Stderr, "%s\n\n", util.WarningSlimCollectorModeWithoutKernelSupport)
+		}
+	} else {
+		cluster.SlimCollector = env.KernelSupportAvailable
+		if cluster.GetSlimCollector() {
+			fmt.Fprintln(os.Stderr, infoDefaultingToSlimCollector)
+		} else {
+			fmt.Fprintln(os.Stderr, infoDefaultingToComprehensiveCollector)
+		}
+	}
+
+	id, err := createCluster(ctx, service)
 	// If the error is not explicitly AlreadyExists or it is AlreadyExists AND continueIfExists isn't set
 	// then return an error
 
@@ -88,7 +116,7 @@ func fullClusterCreation(timeout time.Duration) error {
 		}
 	}
 
-	if err := util.GetBundle(id, outputDir, createUpgraderSA, timeout); err != nil {
+	if err := util.GetBundle(id, outputDir, createUpgraderSA, timeout, cluster.GetSlimCollector()); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
 	return nil
@@ -164,19 +192,23 @@ func Command() *cobra.Command {
 
 	c.PersistentFlags().BoolVar(&cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes")
 
+	if features.SupportSlimCollectorMode.Enabled() {
+		autobool.NewFlag(c.PersistentFlags(), &slimCollectorP, "slim-collector", "Use slim collector in deployment bundle")
+	} else {
+		slimCollectorP = pointers.Bool(false)
+	}
+
 	c.AddCommand(k8s())
 	c.AddCommand(openshift())
 
 	return c
 }
 
-func createCluster(svc v1.ClustersServiceClient, timeout time.Duration) (string, error) {
+func createCluster(ctx context.Context, svc v1.ClustersServiceClient) (string, error) {
 	if !cluster.GetAdmissionController() && cluster.GetDynamicConfig().GetAdmissionControllerConfig() != nil {
 		cluster.DynamicConfig.AdmissionControllerConfig = nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
 	// Call detection and return the returned alerts.
 	response, err := svc.PostCluster(ctx, &cluster)
 	if err != nil {

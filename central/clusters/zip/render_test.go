@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/sensor"
 	"github.com/stackrox/rox/pkg/env"
@@ -22,7 +23,7 @@ func TestRenderOpenshiftEnv(t *testing.T) {
 		Type:      storage.ClusterType_OPENSHIFT_CLUSTER,
 	}
 
-	baseFiles, err := renderBaseFiles(cluster, false, sensor.Certs{})
+	baseFiles, err := renderBaseFiles(cluster, clusters.RenderOptions{}, sensor.Certs{})
 	require.NoError(t, err)
 
 	for _, f := range baseFiles {
@@ -59,7 +60,7 @@ func TestRenderWithNoCollection(t *testing.T) {
 		CollectionMethod: storage.CollectionMethod_NO_COLLECTION,
 	}
 
-	baseFiles, err := renderBaseFiles(cluster, false, sensor.Certs{})
+	baseFiles, err := renderBaseFiles(cluster, clusters.RenderOptions{}, sensor.Certs{})
 	require.NoError(t, err)
 
 	var found bool

@@ -4,4 +4,5 @@ package apiparams
 type ClusterZip struct {
 	ID               string `json:"id"`
 	CreateUpgraderSA *bool  `json:"createUpgraderSA"`
+	SlimCollector    *bool  `json:"slimCollector"`
 }

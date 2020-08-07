@@ -49,7 +49,7 @@ func mainCmd(args []string) error {
 
 	version := VersionInfo{
 		ImageTag:          args[0],
-		CollectorImageTag: fmt.Sprintf("%s-latest", args[1]),
+		CollectorImageTag: args[1],
 	}
 
 	tmpDir := fmt.Sprintf("/tmp/%s", version.ImageTag)

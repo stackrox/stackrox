@@ -4,6 +4,7 @@ import CollapsibleCard from 'Components/CollapsibleCard';
 import Loader from 'Components/Loader';
 import Select from 'Components/Select';
 import ToggleSwitch from 'Components/ToggleSwitch';
+import Message from 'Components/Message';
 import { clusterTypeOptions, runtimeOptions } from './cluster.helpers';
 import FeatureEnabled from '../FeatureEnabled';
 import { knownBackendFlags } from '../../utils/featureFlags';
@@ -27,7 +28,7 @@ function getSelectComparison(options, key, selectedCluster, handleChange) {
     };
 }
 
-function ClusterEditForm({ selectedCluster, handleChange, isLoading }) {
+function ClusterEditForm({ centralEnv, selectedCluster, handleChange, isLoading }) {
     // curry the change handlers for the select inputs
     const onCollectionMethodChange = getSelectComparison(
         runtimeOptions,
@@ -41,6 +42,42 @@ function ClusterEditForm({ selectedCluster, handleChange, isLoading }) {
         selectedCluster,
         handleChange
     );
+
+    const renderSlimCollectorWarning = () => {
+        if (!centralEnv?.successfullyFetched) {
+            return (
+                <Message
+                    message="Failed to check if Central has kernel support packages available"
+                    type="warn"
+                />
+            );
+        }
+
+        if (selectedCluster.slimCollector && !centralEnv.kernelSupportAvailable) {
+            return (
+                <Message
+                    message={
+                        <span>
+                            Central doesn&apos;t have the required Kernel support package. Retrieve
+                            it from{' '}
+                            <a
+                                href="https://install.stackrox.io/collector/support-packages/index.html"
+                                className="underline text-primary-900"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                stackrox.io
+                            </a>{' '}
+                            and upload it to Central using roxctl.
+                        </span>
+                    }
+                    type="warn"
+                />
+            );
+        }
+
+        return null;
+    };
 
     if (isLoading) return <Loader />;
 
@@ -264,21 +301,23 @@ function ClusterEditForm({ selectedCluster, handleChange, isLoading }) {
                                     <div className="mb-4 flex flex-col bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 justify-between">
                                         <div className="flex items-center justify-between">
                                             <label
-                                                htmlFor="slimCollectorMode"
+                                                htmlFor="slimCollector"
                                                 className="block py-2 text-base-600 font-700"
                                             >
                                                 Enable Slim Collector Mode
                                             </label>
                                             <ToggleSwitch
-                                                id="slimCollectorMode"
-                                                name="slimCollectorMode"
+                                                id="slimCollector"
+                                                name="slimCollector"
                                                 toggleHandler={handleChange}
-                                                enabled={selectedCluster.slimCollectorMode}
-                                                disabled
+                                                enabled={selectedCluster.slimCollector}
                                             />
                                         </div>
                                         <div className="flex py-1 italic">
                                             New cluster will be set up using a slim collector image
+                                        </div>
+                                        <div className="flex py-1">
+                                            {renderSlimCollectorWarning()}
                                         </div>
                                     </div>
                                 )
@@ -426,6 +465,9 @@ function ClusterEditForm({ selectedCluster, handleChange, isLoading }) {
 }
 
 ClusterEditForm.propTypes = {
+    centralEnv: PropTypes.shape({
+        kernelSupportAvailable: PropTypes.bool,
+    }).isRequired,
     selectedCluster: PropTypes.shape({
         id: PropTypes.string,
         name: PropTypes.string,
@@ -449,7 +491,7 @@ ClusterEditForm.propTypes = {
                 disableBypass: PropTypes.bool,
             }),
         }),
-        slimCollectorMode: PropTypes.bool,
+        slimCollector: PropTypes.bool,
     }).isRequired,
     handleChange: PropTypes.func.isRequired,
     isLoading: PropTypes.bool.isRequired,

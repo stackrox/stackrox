@@ -67,7 +67,11 @@ export const newClusterDefault = {
             disableBypass: false,
         },
     },
-    slimCollectorMode: false,
+    slimCollector: false,
+};
+
+export const centralEnvDefault = {
+    kernelSupportAvailable: false,
 };
 
 // @TODO: add optional button text and func

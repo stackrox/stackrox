@@ -29,6 +29,7 @@ config:
   createUpgraderServiceAccount: !! default false .CreateUpgraderSA !!
   createSecrets: true
   offlineMode: !! default false .OfflineMode !!
+  slimCollector: !! default false .SlimCollector !!
 
 envVars: !! if empty .EnvVars !! []
   !! else !!

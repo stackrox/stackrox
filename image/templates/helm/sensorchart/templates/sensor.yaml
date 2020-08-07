@@ -223,7 +223,11 @@ spec:
       containers:
 {{ if ne .Values.config.collectionMethod "NO_COLLECTION"}}
       - name: collector
-        image: {{ printf "%s/%s:!!.CollectorImageTag!!" .Values.image.registry.collector .Values.image.repository.collector }}
+{{ if .Values.config.slimCollector }}
+        image: {{ printf "%s/%s:!!.CollectorImageTag!!-slim" .Values.image.registry.collector .Values.image.repository.collector }}
+{{ else }}
+        image: {{ printf "%s/%s:!!.CollectorImageTag!!-latest" .Values.image.registry.collector .Values.image.repository.collector }}
+{{ end }}
         imagePullPolicy: Always
         env:
         - name: COLLECTOR_CONFIG

@@ -41,8 +41,8 @@ type zipHandler struct {
 	identityStore siDataStore.DataStore
 }
 
-func renderBaseFiles(cluster *storage.Cluster, createUpgraderSA bool, certs sensor.Certs) ([]*zip.File, error) {
-	fields, err := clusters.FieldsFromClusterAndRenderOpts(cluster, clusters.RenderOptions{CreateUpgraderSA: createUpgraderSA})
+func renderBaseFiles(cluster *storage.Cluster, renderOpts clusters.RenderOptions, certs sensor.Certs) ([]*zip.File, error) {
+	fields, err := clusters.FieldsFromClusterAndRenderOpts(cluster, renderOpts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get required cluster information")
 	}
@@ -109,7 +109,16 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		createUpgraderSA = *params.CreateUpgraderSA
 	}
 
-	baseFiles, err := renderBaseFiles(cluster, createUpgraderSA, certs)
+	var slimCollector bool
+	if params.SlimCollector == nil {
+		// In case it is not provided in the request we use the value as persisted for the cluster.
+		slimCollector = cluster.GetSlimCollector()
+	} else {
+		slimCollector = *params.SlimCollector
+	}
+
+	renderOpts := clusters.RenderOptions{CreateUpgraderSA: createUpgraderSA, SlimCollector: slimCollector}
+	baseFiles, err := renderBaseFiles(cluster, renderOpts, certs)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return

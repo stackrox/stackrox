@@ -2444,6 +2444,8 @@ jobs:
       - ROX_ADMISSION_CONTROL_SERVICE_ENFORCE_ON_UPDATE: true
       - ROX_POLICY_IMPORT_EXPORT: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
+      - ROX_AUTH_TEST_MODE_UI: true
+      - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
       - checkout
@@ -2524,6 +2526,11 @@ jobs:
           name: Test roxctl semantics of --token-file parameter
           command: |
             API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/token-file.sh
+
+      - run:
+          name: Test slim collector mode with roxctl
+          command: |
+            API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/slim-collector.sh
 
       - run:
           name: API tests
@@ -2681,6 +2688,9 @@ jobs:
       - ROX_ADMISSION_CONTROL_SERVICE_ENFORCE_ON_UPDATE: true
       - ROX_POLICY_IMPORT_EXPORT: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
+      - ROX_CURRENT_USER_INFO: true
+      - ROX_AUTH_TEST_MODE_UI: true
+      - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
       - checkout
@@ -2747,6 +2757,8 @@ jobs:
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
+      - ROX_AUTH_TEST_MODE_UI: true
+      - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
       - run-qa-tests:
@@ -2765,6 +2777,9 @@ jobs:
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
+      - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
+      - ROX_SENSOR_DETECTION: true
+      - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
@@ -2796,6 +2811,8 @@ jobs:
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
+      - ROX_AUTH_TEST_MODE_UI: true
+      - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
       - run-qa-tests:
@@ -2822,6 +2839,9 @@ jobs:
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
+      - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
+      - ROX_AUTH_TEST_MODE_UI: true
+      - ROX_ROCKSDB: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
@@ -3470,6 +3490,9 @@ jobs:
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
+      - ROX_SENSOR_DETECTION: true
+      - ROX_AUTH_TEST_MODE_UI: true
+      - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
       - run-openshift-tests:
@@ -3485,6 +3508,9 @@ jobs:
       - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
+      - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
+      - ROX_SENSOR_DETECTION: true
+      - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
@@ -3812,10 +3838,13 @@ jobs:
 
             docker pull    docker.io/stackrox/collector:$COLLECTOR_TAG | cat
             docker pull    "docker.io/stackrox/collector:${COLLECTOR_TAG}-latest" | cat
+            docker pull    "docker.io/stackrox/collector:${COLLECTOR_TAG}-base" | cat
             docker tag     docker.io/stackrox/collector:$COLLECTOR_TAG collector.stackrox.io/collector:$COLLECTOR_TAG
             docker tag     "docker.io/stackrox/collector:${COLLECTOR_TAG}-latest" "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest"
+            docker tag     "docker.io/stackrox/collector:${COLLECTOR_TAG}-base" "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim"
             docker push collector.stackrox.io/collector:$COLLECTOR_TAG | cat
             docker push "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest" | cat
+            docker push "collector.stackrox.io/collector:${COLLECTOR_TAG}-slim" | cat
 
             # RHEL images
             docker pull docker.io/stackrox/main-rhel:$MAIN_TAG | cat
@@ -3824,10 +3853,13 @@ jobs:
 
             docker pull    docker.io/stackrox/collector-rhel:$COLLECTOR_TAG | cat
             docker pull    "docker.io/stackrox/collector-rhel:${COLLECTOR_TAG}-latest" | cat
+            docker pull    "docker.io/stackrox/collector-rhel:${COLLECTOR_TAG}-base" | cat
             docker tag     docker.io/stackrox/collector-rhel:$COLLECTOR_TAG collector.stackrox.io/collector-rhel:$COLLECTOR_TAG
             docker tag     "docker.io/stackrox/collector-rhel:${COLLECTOR_TAG}-latest" "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest"
+            docker tag     "docker.io/stackrox/collector-rhel:${COLLECTOR_TAG}-base" "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-slim"
             docker push collector.stackrox.io/collector-rhel:$COLLECTOR_TAG | cat
             docker push "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest" | cat
+            docker push "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-slim" | cat
 
       - run:
           name: Push roxctl to stackrox-hub
