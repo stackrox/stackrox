@@ -75,6 +75,7 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap) => {
 
                 link.isActive = isActive(key);
                 link.isBetweenNonIsolated = isBetweenNonIsolated(srcDeploymentId, tgtDeploymentId);
+                link.isAllowed = isAllowed(key, link);
                 link.isDisallowed = isDisallowed(key, link);
 
                 // Do not draw implicit links between fully non-isolated nodes unless the connection is active.
@@ -104,6 +105,7 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap) => {
 
             link.isActive = isActive(key);
             link.isBetweenNonIsolated = isBetweenNonIsolated(srcDeploymentId, tgtDeploymentId);
+            link.isAllowed = isAllowed(key, link);
             link.isDisallowed = isDisallowed(key, link);
 
             filteredLinks.push(link);
@@ -196,44 +198,77 @@ export const getNamespaceEdges = (
         });
     });
 
-    filteredLinks.forEach(({ source, target, sourceNS, targetNS, isActive, isDisallowed }) => {
-        const namespaceLinkKey = [sourceNS, targetNS].sort().join(delimiter);
-        const nodeLinkKey = [source, target].sort().join(delimiter);
+    filteredLinks.forEach(
+        ({ source, target, sourceNS, targetNS, isActive, isAllowed, isDisallowed }) => {
+            const namespaceLinkKey = [sourceNS, targetNS].sort().join(delimiter);
+            const nodeLinkKey = [source, target].sort().join(delimiter);
 
-        // keep track of which namespace links are active
-        if (isActive) activeNamespaceLinks[namespaceLinkKey] = true;
-        // keep track of which namespace links are disallowed
-        if (isDisallowed) disallowedNamespaceLinks[namespaceLinkKey] = true;
+            // keep track of which namespace links are active
+            if (isActive) activeNamespaceLinks[namespaceLinkKey] = true;
+            // keep track of which namespace links are disallowed
+            if (isDisallowed) disallowedNamespaceLinks[namespaceLinkKey] = true;
 
-        const portsAndProtocols = linkPortsAndProtocols[nodeLinkKey] || [];
-        const isLinkPreviouslyVisited = visitedNodeLinks[nodeLinkKey];
+            const portsAndProtocols = linkPortsAndProtocols[nodeLinkKey] || [];
+            const isLinkPreviouslyVisited = visitedNodeLinks[nodeLinkKey];
 
-        const namespaceLink = namespaceLinks[namespaceLinkKey] || {
-            portsAndProtocols: [],
-            numBidirectionalLinks: 0,
-            numUnidirectionalLinks: 0,
-        };
+            const namespaceLink = namespaceLinks[namespaceLinkKey] || {
+                portsAndProtocols: [],
+                numBidirectionalLinks: 0,
+                numUnidirectionalLinks: 0,
+                numActiveBidirectionalLinks: 0,
+                numActiveUnidirectionalLinks: 0,
+                numAllowedBidirectionalLinks: 0,
+                numAllowedUnidirectionalLinks: 0,
+            };
 
-        namespaceLink.portsAndProtocols = [
-            ...namespaceLink.portsAndProtocols,
-            ...portsAndProtocols,
-        ];
+            namespaceLink.portsAndProtocols = [
+                ...namespaceLink.portsAndProtocols,
+                ...portsAndProtocols,
+            ];
 
-        if (isLinkPreviouslyVisited) {
-            namespaceLink.numBidirectionalLinks += 1;
-            namespaceLink.numUnidirectionalLinks -= 1;
-        } else {
-            namespaceLink.numUnidirectionalLinks += 1;
+            if (isLinkPreviouslyVisited) {
+                namespaceLink.numBidirectionalLinks += 1;
+                namespaceLink.numUnidirectionalLinks = namespaceLink.numUnidirectionalLinks
+                    ? namespaceLink.numUnidirectionalLinks - 1
+                    : 0;
+                if (isActive) {
+                    namespaceLink.numActiveBidirectionalLinks += 1;
+                    namespaceLink.numActiveUnidirectionalLinks = namespaceLink.numActiveUnidirectionalLinks
+                        ? namespaceLink.numActiveUnidirectionalLinks - 1
+                        : 0;
+                }
+                if (isAllowed) {
+                    namespaceLink.numAllowedBidirectionalLinks += 1;
+                    namespaceLink.numAllowedUnidirectionalLinks = namespaceLink.numAllowedUnidirectionalLinks
+                        ? namespaceLink.numAllowedUnidirectionalLinks - 1
+                        : 0;
+                }
+            } else {
+                namespaceLink.numUnidirectionalLinks += 1;
+                if (isActive) {
+                    namespaceLink.numActiveUnidirectionalLinks += 1;
+                }
+                if (isAllowed) {
+                    namespaceLink.numAllowedUnidirectionalLinks += 1;
+                }
+                visitedNodeLinks[nodeLinkKey] = true;
+            }
+
+            namespaceLinks[namespaceLinkKey] = namespaceLink;
         }
-
-        namespaceLinks[namespaceLinkKey] = namespaceLink;
-    });
+    );
 
     return Object.keys(namespaceLinks).map((namespaceLinkKey) => {
         const [sourceNS, targetNS] = namespaceLinkKey.split(delimiter);
-        const { portsAndProtocols, numBidirectionalLinks, numUnidirectionalLinks } = namespaceLinks[
-            namespaceLinkKey
-        ];
+        const {
+            portsAndProtocols,
+            numBidirectionalLinks,
+            numUnidirectionalLinks,
+            numActiveBidirectionalLinks,
+            numActiveUnidirectionalLinks,
+            numAllowedBidirectionalLinks,
+            numAllowedUnidirectionalLinks,
+        } = namespaceLinks[namespaceLinkKey];
 
         const isNamespaceActive = activeNamespaceLinks[namespaceLinkKey];
         const isNamespaceEdgeActive = filterState !== filterModes.allowed && isNamespaceActive;
@@ -256,6 +291,10 @@ export const getNamespaceEdges = (
                 target,
                 numBidirectionalLinks,
                 numUnidirectionalLinks,
+                numActiveBidirectionalLinks,
+                numActiveUnidirectionalLinks,
+                numAllowedBidirectionalLinks,
+                numAllowedUnidirectionalLinks,
                 count: numBidirectionalLinks + numUnidirectionalLinks,
                 portsAndProtocols,
                 type: edgeTypes.NAMESPACE_EDGE,

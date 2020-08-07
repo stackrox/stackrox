@@ -562,6 +562,10 @@ export const namespaceEdges = [
             target: 'stackrox_left',
             numBidirectionalLinks: 0,
             numUnidirectionalLinks: 2,
+            numActiveBidirectionalLinks: 0,
+            numActiveUnidirectionalLinks: 2,
+            numAllowedBidirectionalLinks: 0,
+            numAllowedUnidirectionalLinks: 0,
             portsAndProtocols: [
                 {
                     lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',

@@ -141,14 +141,28 @@ const NetworkGraph = ({
         const edge = ev.target.data();
         if (!isNamespaceEdge(edge)) return;
 
-        const { id, numBidirectionalLinks, numUnidirectionalLinks, portsAndProtocols } = edge;
+        const {
+            id,
+            numBidirectionalLinks,
+            numUnidirectionalLinks,
+            numActiveBidirectionalLinks,
+            numActiveUnidirectionalLinks,
+            numAllowedBidirectionalLinks,
+            numAllowedUnidirectionalLinks,
+            portsAndProtocols,
+        } = edge;
         const edgeElm = cyRef.current.getElementById(id);
 
         const component = (
             <NamespaceEdgeTooltipOverlay
                 numBidirectionalLinks={numBidirectionalLinks}
                 numUnidirectionalLinks={numUnidirectionalLinks}
+                numActiveBidirectionalLinks={numActiveBidirectionalLinks}
+                numActiveUnidirectionalLinks={numActiveUnidirectionalLinks}
+                numAllowedBidirectionalLinks={numAllowedBidirectionalLinks}
+                numAllowedUnidirectionalLinks={numAllowedUnidirectionalLinks}
                 portsAndProtocols={portsAndProtocols}
+                filterState={filterState}
             />
         );
 
