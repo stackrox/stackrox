@@ -12,7 +12,7 @@ import Loader from 'Components/Loader';
 import VerticalBarChart from 'Components/visuals/VerticalClusterBar';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { standardLabels } from 'messages/standards';
-import { AGGREGATED_RESULTS as QUERY } from 'queries/controls';
+import { AGGREGATED_RESULTS_STANDARDS_BY_ENTITY as QUERY } from 'queries/controls';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import searchContext from 'Containers/searchContext';

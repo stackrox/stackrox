@@ -94,6 +94,68 @@ export const AGGREGATED_RESULTS = gql`
     }
 `;
 
+export const AGGREGATED_RESULTS_ACROSS_ENTITIES = gql`
+    query getAggregatedResults($groupBy: [ComplianceAggregation_Scope!], $where: String) {
+        controls: aggregatedResults(groupBy: $groupBy, unit: CONTROL, where: $where) {
+            results {
+                aggregationKeys {
+                    id
+                    scope
+                }
+                numFailing
+                numPassing
+                numSkipped
+                unit
+            }
+        }
+        complianceStandards: complianceStandards {
+            id
+            name
+        }
+    }
+`;
+
+export const AGGREGATED_RESULTS_STANDARDS_BY_ENTITY = gql`
+    query getAggregatedResults(
+        $groupBy: [ComplianceAggregation_Scope!]
+        $unit: ComplianceAggregation_Scope!
+        $where: String
+    ) {
+        results: aggregatedResults(groupBy: $groupBy, unit: $unit, where: $where) {
+            results {
+                aggregationKeys {
+                    id
+                    scope
+                }
+                numFailing
+                numPassing
+                numSkipped
+                unit
+            }
+        }
+        controls: aggregatedResults(groupBy: $groupBy, unit: CONTROL, where: $where) {
+            results {
+                aggregationKeys {
+                    id
+                    scope
+                }
+                numFailing
+                numPassing
+                numSkipped
+                unit
+            }
+        }
+        complianceStandards: complianceStandards {
+            id
+            name
+        }
+        clusters {
+            id
+            name
+        }
+    }
+`;
+
 export const AGGREGATED_RESULTS_WITH_CONTROLS = gql`
     query getAggregatedResults(
         $groupBy: [ComplianceAggregation_Scope!]

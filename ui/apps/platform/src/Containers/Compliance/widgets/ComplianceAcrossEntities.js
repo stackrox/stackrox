@@ -8,7 +8,7 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
 import { standardShortLabels, standardLabels } from 'messages/standards';
 import { resourceLabels } from 'messages/common';
-import { AGGREGATED_RESULTS } from 'queries/controls';
+import { AGGREGATED_RESULTS_ACROSS_ENTITIES } from 'queries/controls';
 import URLService from 'utils/URLService';
 import { CLIENT_SIDE_SEARCH_OPTIONS } from 'constants/searchOptions';
 import queryService from 'utils/queryService';
@@ -131,7 +131,7 @@ const ComplianceAcrossEntities = ({ match, location, entityType, groupBy, query 
     const variables = getQueryVariables(entityType, groupBy, query);
     const searchParam = useContext(searchContext);
     return (
-        <Query query={AGGREGATED_RESULTS} variables={variables}>
+        <Query query={AGGREGATED_RESULTS_ACROSS_ENTITIES} variables={variables}>
             {({ loading, data }) => {
                 let contents = <Loader />;
                 const headerText = `${
