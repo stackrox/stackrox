@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
 import ReactRouterPropTypes from 'react-router-prop-types';
+import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import Cytoscape from 'cytoscape';
 import CytoscapeComponent from 'react-cytoscapejs';
@@ -37,6 +37,7 @@ import { NS_FONT_SIZE, MAX_ZOOM, MIN_ZOOM, ZOOM_STEP, GRAPH_PADDING } from 'cons
 import { defaultTippyTooltipProps } from 'Components/Tooltip';
 import NodeTooltipOverlay from './NodeTooltipOverlay';
 import NamespaceEdgeTooltipOverlay from './NamespaceEdgeTooltipOverlay';
+import EdgeTooltipOverlay from './EdgeTooltipOverlay';
 
 Cytoscape.use(popper);
 Cytoscape('layout', 'edgeGridLayout', edgeGridLayout);
@@ -79,23 +80,27 @@ const NetworkGraph = ({
 
     function showTooltip(elm, component) {
         if (!elm) return;
-        const popperRef = elm.popperRef();
         if (tippyRef.current) tippyRef.current.destroy();
 
-        const content = document.createElement('div');
-        ReactDOM.render(component, content);
+        try {
+            const popperRef = elm.popperRef();
+            const content = document.createElement('div');
+            ReactDOM.render(component, content);
 
-        tippyRef.current = tippy(document.createElement('div'), {
-            content,
-            ...defaultTippyTooltipProps,
-            lazy: false,
-            onCreate(instance) {
-                // eslint-disable-next-line no-param-reassign
-                instance.popperInstance.reference = popperRef;
-            },
-        });
+            tippyRef.current = tippy(document.createElement('div'), {
+                content,
+                ...defaultTippyTooltipProps,
+                lazy: false,
+                onCreate(instance) {
+                    // eslint-disable-next-line no-param-reassign
+                    instance.popperInstance.reference = popperRef;
+                },
+            });
 
-        tippyRef.current.show();
+            tippyRef.current.show();
+        } catch (err) {
+            hideTooltip();
+        }
     }
 
     function hideTooltip() {
@@ -139,32 +144,42 @@ const NetworkGraph = ({
 
     function edgeHoverHandler(ev) {
         const edge = ev.target.data();
-        if (!isNamespaceEdge(edge)) return;
-
-        const {
-            id,
-            numBidirectionalLinks,
-            numUnidirectionalLinks,
-            numActiveBidirectionalLinks,
-            numActiveUnidirectionalLinks,
-            numAllowedBidirectionalLinks,
-            numAllowedUnidirectionalLinks,
-            portsAndProtocols,
-        } = edge;
+        const { id, portsAndProtocols } = edge;
         const edgeElm = cyRef.current.getElementById(id);
+        let component;
 
-        const component = (
-            <NamespaceEdgeTooltipOverlay
-                numBidirectionalLinks={numBidirectionalLinks}
-                numUnidirectionalLinks={numUnidirectionalLinks}
-                numActiveBidirectionalLinks={numActiveBidirectionalLinks}
-                numActiveUnidirectionalLinks={numActiveUnidirectionalLinks}
-                numAllowedBidirectionalLinks={numAllowedBidirectionalLinks}
-                numAllowedUnidirectionalLinks={numAllowedUnidirectionalLinks}
-                portsAndProtocols={portsAndProtocols}
-                filterState={filterState}
-            />
-        );
+        if (isNamespaceEdge(edge)) {
+            const {
+                numBidirectionalLinks,
+                numUnidirectionalLinks,
+                numActiveBidirectionalLinks,
+                numActiveUnidirectionalLinks,
+                numAllowedBidirectionalLinks,
+                numAllowedUnidirectionalLinks,
+            } = edge;
+            component = (
+                <NamespaceEdgeTooltipOverlay
+                    numBidirectionalLinks={numBidirectionalLinks}
+                    numUnidirectionalLinks={numUnidirectionalLinks}
+                    numActiveBidirectionalLinks={numActiveBidirectionalLinks}
+                    numActiveUnidirectionalLinks={numActiveUnidirectionalLinks}
+                    numAllowedBidirectionalLinks={numAllowedBidirectionalLinks}
+                    numAllowedUnidirectionalLinks={numAllowedUnidirectionalLinks}
+                    portsAndProtocols={portsAndProtocols}
+                    filterState={filterState}
+                />
+            );
+        } else {
+            const { sourceNodeName, targetNodeName, isBidirectional } = edge;
+            component = (
+                <EdgeTooltipOverlay
+                    source={sourceNodeName}
+                    target={targetNodeName}
+                    isBidirectional={isBidirectional}
+                    portsAndProtocols={portsAndProtocols}
+                />
+            );
+        }
 
         showTooltip(edgeElm, component);
     }

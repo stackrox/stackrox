@@ -24,7 +24,13 @@ const NetworkTooltipOverlay = ({ node, ingressPortsAndProtocols, egressPortsAndP
                                 </div>
                             }
                         >
-                            <PortsAndProtocolsFields portsAndProtocols={ingressPortsAndProtocols} />
+                            {ingressPortsAndProtocols.length !== 0 ? (
+                                <PortsAndProtocolsFields
+                                    portsAndProtocols={ingressPortsAndProtocols}
+                                />
+                            ) : (
+                                <div>No ports & protocols</div>
+                            )}
                         </TooltipCardSection>
                     </div>
                     <div>
@@ -38,7 +44,13 @@ const NetworkTooltipOverlay = ({ node, ingressPortsAndProtocols, egressPortsAndP
                                 </div>
                             }
                         >
-                            <PortsAndProtocolsFields portsAndProtocols={egressPortsAndProtocols} />
+                            {egressPortsAndProtocols.length !== 0 ? (
+                                <PortsAndProtocolsFields
+                                    portsAndProtocols={egressPortsAndProtocols}
+                                />
+                            ) : (
+                                <div>No ports & protocols</div>
+                            )}
                         </TooltipCardSection>
                     </div>
                 </>

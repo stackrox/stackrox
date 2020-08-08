@@ -61,7 +61,11 @@ const NamespaceEdgeTooltipOverlay = ({
             )}
             <div>
                 <TooltipCardSection header="Ports & Protocols">
-                    <PortsAndProtocolsFields portsAndProtocols={portsAndProtocols} />
+                    {portsAndProtocols.length !== 0 ? (
+                        <PortsAndProtocolsFields portsAndProtocols={portsAndProtocols} />
+                    ) : (
+                        <div>Unavailable</div>
+                    )}
                 </TooltipCardSection>
             </div>
         </>
@@ -77,7 +81,7 @@ NamespaceEdgeTooltipOverlay.propTypes = {
     numAllowedBidirectionalLinks: PropTypes.number,
     numAllowedUnidirectionalLinks: PropTypes.number,
     portsAndProtocols: PropTypes.arrayOf(PropTypes.shape),
-    filterState: PropTypes.oneOf(Object.keys(filterModes)).isRequired,
+    filterState: PropTypes.oneOf(Object.values(filterModes)).isRequired,
 };
 
 NamespaceEdgeTooltipOverlay.defaultProps = {

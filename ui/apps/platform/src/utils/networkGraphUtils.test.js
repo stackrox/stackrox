@@ -36,7 +36,7 @@ describe('networkGraphUtils', () => {
 
     describe('getNamespaceEdges', () => {
         it('should return bundled edges between namespaces', () => {
-            const bundledEdges = getNamespaceEdges(null, configObj);
+            const bundledEdges = getNamespaceEdges(configObj);
             expect(bundledEdges).toEqual(namespaceEdges);
         });
     });

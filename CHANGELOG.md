@@ -4,6 +4,7 @@ All notable changes to this project that require documentation updates will be d
 ## [NEXT RELEASE]
 - UI: Hovering over a namespace edge in the Network Graph will show the ports and protocols for it's connections (ROX-5228).
 - UI: Hovering over a namespace edge in the Network Graph will show a summary of the directionality of it's connections (ROX-5215)
+- UI: Hovering over a node edge in the Network Graph will show the ports and protocols for it's connection (ROX-5227)
 
 ## [47.0]
 - Configuration Management tables (except for Controls and Policies) are now paginated through the API, rather than loading all rows into the browser, for better performance in large environments (ROX-5067).
