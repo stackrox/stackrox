@@ -302,7 +302,9 @@ function launch_sensor {
        if [[ "${HOTRELOAD}" == "true" ]]; then
          hotload_binary kubernetes-sensor kubernetes sensor
        fi
-       kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
+       if [[ -z "${IS_RACE_BUILD}" ]]; then
+           kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
+       fi
     fi
 
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then

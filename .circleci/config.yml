@@ -1476,6 +1476,7 @@ commands:
             # If we're running a race check, then set CGO_CHECK=true so the central script will deploy it with strict checks
             if .circleci/is-nightly-tag.sh || .circleci/pr_has_label.sh ci-race-tests; then
                 cci-export CGO_CHECKS "true"
+                cci-export IS_RACE_BUILD "true"
             fi
 
             # Use stackrox.io if helm-from-repo is true
