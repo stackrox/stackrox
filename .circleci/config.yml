@@ -770,6 +770,13 @@ commands:
 
   cleanup-clusters-on-fail:
     steps:
+      # This only runs if the build has passed, thus short-circuiting the steps below.
+      # The reason "when: on_fail" is not sufficient is that attach_workspace seems to always
+      # run, and unnecessarily takes up space.
+      - run:
+          name: Halt if the build has passed
+          command: circleci step halt
+
       - run:
           name: Ensure GCloud is configured
           command: |
@@ -824,7 +831,6 @@ commands:
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
-          when: on_fail
 
       - run:
           name: Destroy EKS cluster
