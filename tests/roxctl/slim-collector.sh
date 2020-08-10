@@ -20,11 +20,16 @@ die() {
     exit 1
 }
 
+curl_central() {
+  url="$1"
+  shift
+  [[ -n "${url}" ]] || die "No URL specified"
+  curl -Sskf -u "admin:${ROX_PASSWORD}" "https://${API_ENDPOINT}/${url}" "$@"
+}
+
 # Retrieve API token
-API_TOKEN_JSON="$(curl -Sskf \
-  -u "admin:$ROX_PASSWORD" \
-  -d '{"name": "test", "role": "Admin"}' \
-  "https://$API_ENDPOINT/v1/apitokens/generate")" \
+API_TOKEN_JSON="$(curl_central v1/apitokens/generate \
+  -d '{"name": "test", "role": "Admin"}')" \
   || die "Failed to retrieve Rox API token"
 ROX_API_TOKEN="$(echo "$API_TOKEN_JSON" | jq -er .token)" \
   || die "Failed to retrieve token from JSON"
@@ -45,7 +50,18 @@ test_collector_image_references_in_deployment_bundles() {
         eecho "[FAIL] Failed to generate cluster"
         eecho "Captured output was:"
         eecho "$OUTPUT"
+        printf "\n\n" >&2
         FAILURES=$((FAILURES + 1))
+        return
+    fi
+
+    cluster_id="$(curl_central v1/clusters | jq --arg name "${CLUSTER_NAME}" '.clusters | .[] | select(.name==$name).id' -r)"
+    if [[ -n "${cluster_id}" ]]; then
+        echo "[OK] Got cluster id ${cluster_id}"
+    else
+        eecho "[FAIL] Failed to retrieve cluster id"
+        FAILURES=$((FAILURES + 1))
+        return
     fi
 
     # Verify that generated bundle references the expected collector image.
@@ -57,7 +73,10 @@ test_collector_image_references_in_deployment_bundles() {
     else
         eecho "[FAIL] Newly generated bundle does not reference $EXPECTED_IMAGE_TAG collector image (referenced collector image tag is $COLLECTOR_IMAGE_TAG)"
         FAILURES=$((FAILURES + 1))
+        return
     fi
+
+    rm -r "sensor-${CLUSTER_NAME}"
 
     # Verify that refetching deployment bundle for newly created cluster works as expected (i.e. that the bundle references the expected collector image).
     OUTPUT="$(roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
@@ -72,6 +91,18 @@ test_collector_image_references_in_deployment_bundles() {
         eecho "Captured output was:"
         eecho "$OUTPUT"
         FAILURES=$((FAILURES + 1))
+        return
+    fi
+
+    rm -r "sensor-${CLUSTER_NAME}-refetched"
+
+    curl_central "v1/clusters/${cluster_id}" -X DELETE
+    if [[ $? -eq 0 ]]; then
+        echo "[OK] Successfully cleaned up cluster"
+    else
+        eecho "[FAIL] Failed to delete cluster"
+        FAILURES=$((FAILURES + 1))
+        return
     fi
 }
 
@@ -79,10 +110,9 @@ test_collector_image_references_in_deployment_bundles "--slim-collector" "slim"
 test_collector_image_references_in_deployment_bundles "--slim-collector=auto" "slim" # Central is deployed in online mode in CI
 test_collector_image_references_in_deployment_bundles "--slim-collector=false" "latest"
 
-
 if [ $FAILURES -eq 0 ]; then
   echo "Passed"
 else
-  echo "$FAILURES test failed"
+  echo "$FAILURES tests failed"
   exit 1
 fi
