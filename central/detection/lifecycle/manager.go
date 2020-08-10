@@ -14,10 +14,10 @@ import (
 	"github.com/stackrox/rox/central/reprocessor"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/pkg/set"
 	"golang.org/x/time/rate"
 )
 
@@ -27,8 +27,7 @@ const (
 )
 
 var (
-	log                = logging.LoggerForModule()
-	alertsLockPoolSize = uint32(64) // Arbitrary choice.  Larger numbers decrease the likelihood unrelated things will try for the same lock.
+	log = logging.LoggerForModule()
 )
 
 // A Manager manages deployment/policy lifecycle updates.
@@ -65,7 +64,7 @@ func newManager(enricher enrichment.Enricher, deploytimeDetector deploytime.Dete
 		indicatorRateLimiter: rate.NewLimiter(rate.Every(rateLimitDuration), 5),
 		indicatorFlushTicker: time.NewTicker(indicatorFlushTickerDuration),
 
-		policyAlertsLock: concurrency.NewKeyedMutex(alertsLockPoolSize),
+		removedPolicies: set.NewStringSet(),
 	}
 
 	go m.flushQueuePeriodically()

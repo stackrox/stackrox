@@ -69,7 +69,8 @@ type managerImpl struct {
 	indicatorRateLimiter *rate.Limiter
 	indicatorFlushTicker *time.Ticker
 
-	policyAlertsLock *concurrency.KeyedMutex
+	policyAlertsLock sync.RWMutex
+	removedPolicies  set.StringSet
 }
 
 func (m *managerImpl) copyAndResetIndicatorQueue() map[string]*storage.ProcessIndicator {
@@ -256,9 +257,30 @@ func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator) error 
 	return nil
 }
 
+func (m *managerImpl) filterOutDisabledPolicies(alerts *[]*storage.Alert) {
+	if alerts == nil {
+		return
+	}
+	filteredAlerts := (*alerts)[:0]
+
+	m.policyAlertsLock.RLock()
+	defer m.policyAlertsLock.RUnlock()
+	for _, a := range *alerts {
+		if m.removedPolicies.Contains(a.GetPolicy().GetId()) {
+			continue
+		}
+		filteredAlerts = append(filteredAlerts, a)
+	}
+	*alerts = filteredAlerts
+}
+
 func (m *managerImpl) HandleAlerts(deploymentID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
 	defer m.reprocessor.ReprocessRiskForDeployments(deploymentID)
 
+	m.filterOutDisabledPolicies(&alerts)
+	if len(alerts) == 0 && stage == storage.LifecycleStage_RUNTIME {
+		return nil
+	}
 	if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, alerts,
 		alertmanager.WithLifecycleStage(stage), alertmanager.WithDeploymentIDs(deploymentID)); err != nil {
 		return err
@@ -270,8 +292,8 @@ func (m *managerImpl) HandleAlerts(deploymentID string, alerts []*storage.Alert,
 func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 	var presentAlerts []*storage.Alert
 
-	m.policyAlertsLock.Lock(policy.GetId())
-	defer m.policyAlertsLock.Unlock(policy.GetId())
+	m.policyAlertsLock.Lock()
+	defer m.policyAlertsLock.Unlock()
 	// Add policy to set.
 	if policies.AppliesAtDeployTime(policy) {
 		if err := m.deploytimeDetector.PolicySet().UpsertPolicy(policy); err != nil {
@@ -312,14 +334,17 @@ func (m *managerImpl) DeploymentRemoved(deployment *storage.Deployment) error {
 }
 
 func (m *managerImpl) RemovePolicy(policyID string) error {
-	m.policyAlertsLock.Lock(policyID)
-	defer m.policyAlertsLock.Unlock(policyID)
+	m.policyAlertsLock.Lock()
+	defer m.policyAlertsLock.Unlock()
 	if err := m.deploytimeDetector.PolicySet().RemovePolicy(policyID); err != nil {
 		return err
 	}
 	if err := m.runtimeDetector.PolicySet().RemovePolicy(policyID); err != nil {
 		return err
 	}
+
+	m.removedPolicies.Add(policyID)
+
 	modifiedDeployments, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithPolicyID(policyID))
 	if err != nil {
 		return err

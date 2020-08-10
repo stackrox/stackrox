@@ -13,8 +13,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -127,4 +129,52 @@ func (suite *ManagerTestSuite) TestWhitelistShouldPass() {
 	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(whitelist, true, nil)
 	_, err := suite.manager.checkAndUpdateWhitelist(indicatorToWhitelistKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.NoError(err)
+}
+
+func TestFilterOutDisabledPolicies(t *testing.T) {
+	alert1 := fixtures.GetAlertWithID("1")
+	alert1.Policy.Id = "1"
+	alert2 := fixtures.GetAlertWithID("2")
+	alert2.Policy.Id = "2"
+	cases := []struct {
+		name            string
+		initialAlerts   []*storage.Alert
+		expectedAlerts  []*storage.Alert
+		removedPolicies set.StringSet
+	}{
+		{
+			initialAlerts:   nil,
+			expectedAlerts:  nil,
+			removedPolicies: set.NewStringSet(),
+		},
+		{
+			initialAlerts:   nil,
+			expectedAlerts:  nil,
+			removedPolicies: set.NewStringSet("1", "2"),
+		},
+		{
+			initialAlerts:   []*storage.Alert{alert1, alert2},
+			expectedAlerts:  []*storage.Alert{alert1, alert2},
+			removedPolicies: set.NewStringSet(),
+		},
+		{
+			initialAlerts:   []*storage.Alert{alert1, alert2},
+			expectedAlerts:  []*storage.Alert{alert1},
+			removedPolicies: set.NewStringSet("2"),
+		},
+		{
+			initialAlerts:   []*storage.Alert{alert1, alert2},
+			expectedAlerts:  []*storage.Alert{},
+			removedPolicies: set.NewStringSet("1", "2"),
+		},
+	}
+
+	for _, c := range cases {
+		var testAlerts []*storage.Alert
+		testAlerts = append(testAlerts, c.initialAlerts...)
+
+		manager := &managerImpl{removedPolicies: c.removedPolicies}
+		manager.filterOutDisabledPolicies(&testAlerts)
+		assert.Equal(t, c.expectedAlerts, testAlerts)
+	}
 }
