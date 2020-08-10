@@ -1,6 +1,5 @@
 import dateFns from 'date-fns';
 import get from 'lodash/get';
-import cloneDeep from 'lodash/cloneDeep';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 
@@ -77,7 +76,7 @@ export const centralEnvDefault = {
 // @TODO: add optional button text and func
 const upgradeStates = {
     UP_TO_DATE: {
-        displayValue: 'Up to date with Central version',
+        displayValue: 'Up to date with Central',
         type: 'current',
     },
     MANUAL_UPGRADE_REQUIRED: {
@@ -86,9 +85,7 @@ const upgradeStates = {
     },
     UPGRADE_AVAILABLE: {
         type: 'download',
-        action: {
-            actionText: 'Upgrade available',
-        },
+        actionText: 'Upgrade available',
     },
     UPGRADE_INITIALIZING: {
         displayValue: 'Upgrade initializing',
@@ -117,16 +114,12 @@ const upgradeStates = {
     UPGRADE_INITIALIZATION_ERROR: {
         displayValue: 'Upgrade initialization error',
         type: 'failure',
-        action: {
-            actionText: 'Retry upgrade',
-        },
+        actionText: 'Retry upgrade',
     },
     PRE_FLIGHT_CHECKS_FAILED: {
         displayValue: 'Pre-flight checks failed',
         type: 'failure',
-        action: {
-            actionText: 'Retry upgrade',
-        },
+        actionText: 'Retry upgrade',
     },
     UPGRADE_ERROR_ROLLING_BACK: {
         displayValue: 'Upgrade failed. Rolling back…',
@@ -135,30 +128,22 @@ const upgradeStates = {
     UPGRADE_ERROR_ROLLED_BACK: {
         displayValue: 'Upgrade failed. Rolled back.',
         type: 'failure',
-        action: {
-            actionText: 'Retry upgrade',
-        },
+        actionText: 'Retry upgrade',
     },
     UPGRADE_ERROR_ROLLBACK_FAILED: {
         displayValue: 'Upgrade failed. Rollback failed.',
         type: 'failure',
-        action: {
-            actionText: 'Retry upgrade',
-        },
+        actionText: 'Retry upgrade',
     },
     UPGRADE_TIMED_OUT: {
         displayValue: 'Upgrade timed out.',
         type: 'failure',
-        action: {
-            actionText: 'Retry upgrade',
-        },
+        actionText: 'Retry upgrade',
     },
     UPGRADE_ERROR_UNKNOWN: {
         displayValue: 'Upgrade error unknown',
         type: 'failure',
-        action: {
-            actionText: 'Retry upgrade',
-        },
+        actionText: 'Retry upgrade',
     },
     unknown: {
         displayValue: 'Unknown upgrade state. Contact Support.',
@@ -185,6 +170,27 @@ export function formatCollectionMethod(value) {
 export function formatConfiguredField(value) {
     return value ? 'Configured' : 'Not configured';
 }
+
+export function formatCloudProvider(providerMetadata) {
+    if (providerMetadata) {
+        const { region } = providerMetadata;
+
+        if (providerMetadata.aws) {
+            return `AWS ${region}`;
+        }
+
+        if (providerMetadata.azure) {
+            return `Azure ${region}`;
+        }
+
+        if (providerMetadata.google) {
+            return `GCP ${region}`;
+        }
+    }
+
+    return '-';
+}
+
 export function formatLastCheckIn(status) {
     if (status && status.lastContact) {
         return dateFns.format(status.lastContact, dateTimeFormat);
@@ -215,23 +221,21 @@ export function getCredentialExpirationProps(certExpiryStatus) {
     return null;
 }
 
-export function formatSensorVersion(status) {
-    return (status && status.sensorVersion) || 'Not Running';
+export function formatSensorVersion(sensorVersion) {
+    return sensorVersion || 'Not Running';
 }
 
-export function formatUpgradeMessage(upgradeStatus, detail) {
-    if (upgradeStatus.type === 'current') {
+export function formatUpgradeMessage(upgradeStateObject, detail) {
+    if (upgradeStateObject.type === 'current') {
         return null;
     }
     const message = {
         message:
-            upgradeStatus.displayValue ||
-            (upgradeStatus.action && upgradeStatus.action.actionText) ||
-            'Unknown status',
+            upgradeStateObject.displayValue || upgradeStateObject.actionText || 'Unknown status',
         type: '',
         detail,
     };
-    switch (upgradeStatus.type) {
+    switch (upgradeStateObject.type) {
         case 'failure': {
             message.type = 'error';
             break;
@@ -275,21 +279,6 @@ export function getUpgradeStatusDetail(upgradeStatus) {
 }
 
 /**
- * wrapper for original parseUpgradeStatus functionality
- *   - to avoid bug where upgrade status handler for one cluster
- *     was being used for another cluster in table when triggering upgrade action
- *     because of JS shallow copy
- *
- * @param   {object}  upgradeStatus  structure from API with upgradability properties
- *
- * @return  {object}                 deee-copy of the appropriate upgrade state from FE map of states
- */
-export function parseUpgradeStatus(upgradeStatus) {
-    const state = findUpgradeState(upgradeStatus);
-    return cloneDeep(state);
-}
-
-/**
  * If the most recent upgrade was a cert rotation, return the initiation time.
  * Else, return null.
  */
@@ -304,7 +293,7 @@ export function initiationOfCertRotationIfApplicable(upgradeStatus) {
     return mostRecentProcess.initiatedAt;
 }
 
-function findUpgradeState(upgradeStatus) {
+export function findUpgradeState(upgradeStatus) {
     const upgradability = get(upgradeStatus, 'upgradability', null);
     if (!upgradability || upgradability === 'UNSET') {
         return null;
@@ -350,12 +339,16 @@ function findUpgradeState(upgradeStatus) {
     }
 }
 
+export function isUpToDateStateObject(upgradeStateObject) {
+    return upgradeStateObject.type === 'current';
+}
+
 export function getUpgradeableClusters(clusters = []) {
     return clusters.filter((cluster) => {
         const upgradeStatus = get(cluster, 'status.upgradeStatus', null);
-        const statusObj = parseUpgradeStatus(upgradeStatus);
+        const upgradeStateObject = findUpgradeState(upgradeStatus);
 
-        return statusObj && statusObj.action; // if action property exists, you can try or retry an upgrade
+        return upgradeStateObject?.actionText; // if property exists, you can try or retry an upgrade
     });
 }
 
@@ -370,10 +363,11 @@ export default {
     clusterTablePollingInterval,
     clusterDetailPollingInterval,
     newClusterDefault,
+    findUpgradeState,
     formatClusterType,
     formatCollectionMethod,
     formatConfiguredField,
     formatLastCheckIn,
-    parseUpgradeStatus,
+    isUpToDateStateObject,
     wizardSteps,
 };

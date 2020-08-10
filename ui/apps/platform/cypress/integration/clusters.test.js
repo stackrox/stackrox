@@ -20,6 +20,22 @@ describe('Clusters page', () => {
         it('should have a toggle control for the auto-upgrade setting', () => {
             cy.get(selectors.autoUpgradeInput);
         });
+
+        it('should display all the columns expected in clusters list page', () => {
+            cy.visit(clustersUrl);
+            [
+                'Name',
+                'Orchestrator',
+                'Runtime Collection',
+                'Admission Controller',
+                'Cloud Provider',
+                'Last check-in',
+                'Sensor Upgrade',
+                'Credential Expiration',
+            ].forEach((col) => {
+                cy.get(`${selectors.clusters.tableColumn}:contains('${col}')`);
+            });
+        });
     });
 });
 

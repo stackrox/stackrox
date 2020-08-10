@@ -25,12 +25,13 @@ import ClusterEditForm from './ClusterEditForm';
 import ClusterDeployment from './ClusterDeployment';
 import {
     clusterDetailPollingInterval,
+    findUpgradeState,
     formatUpgradeMessage,
     getCredentialExpirationProps,
     getUpgradeStatusDetail,
     initiationOfCertRotationIfApplicable,
+    isUpToDateStateObject,
     newClusterDefault,
-    parseUpgradeStatus,
     wizardSteps,
     centralEnvDefault,
 } from './cluster.helpers';
@@ -292,10 +293,10 @@ function ClustersSidePanel({
 
     const showPanelButtons = !messageState || !messageState.blocking;
 
-    const parsedUpgradeStatus = parseUpgradeStatus(upgradeStatus);
+    const upgradeStateObject = findUpgradeState(upgradeStatus);
     const upgradeStatusDetail = upgradeStatus && getUpgradeStatusDetail(upgradeStatus);
     const upgradeMessage =
-        upgradeStatus && formatUpgradeMessage(parsedUpgradeStatus, upgradeStatusDetail);
+        upgradeStatus && formatUpgradeMessage(upgradeStateObject, upgradeStatusDetail);
     const credentialExpirationProps = getCredentialExpirationProps(certExpiryStatus);
     const initiationOfCertRotation = initiationOfCertRotationIfApplicable(upgradeStatus);
 
@@ -358,7 +359,7 @@ function ClustersSidePanel({
                                         onClick={generateCertSecret}
                                     />{' '}
                                     and apply it to your cluster
-                                    {parsedUpgradeStatus.type === 'current' ? (
+                                    {isUpToDateStateObject(upgradeStateObject) ? (
                                         <>
                                             , or{' '}
                                             <Button

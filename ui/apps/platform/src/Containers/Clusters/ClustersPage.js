@@ -14,7 +14,6 @@ import PageHeader from 'Components/PageHeader';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import SearchInput from 'Components/SearchInput';
-import StatusField from 'Components/StatusField';
 import ToggleSwitch from 'Components/ToggleSwitch';
 import CheckboxTable from 'Components/CheckboxTable';
 import {
@@ -46,16 +45,16 @@ import ClustersSidePanel from './ClustersSidePanel';
 //        when retiring clusters in Integrations section
 import {
     clusterTablePollingInterval,
+    formatCloudProvider,
     formatClusterType,
     formatCollectionMethod,
     formatConfiguredField,
     formatLastCheckIn,
-    formatSensorVersion,
-    parseUpgradeStatus,
     getUpgradeableClusters,
     getCredentialExpirationProps,
 } from './cluster.helpers';
-import CredentialExpiration from './CredentialExpiration';
+import CredentialExpiration from './Components/CredentialExpiration';
+import SensorUpgrade from './Components/SensorUpgrade';
 
 const ClustersPage = ({
     history,
@@ -63,6 +62,7 @@ const ClustersPage = ({
     match: {
         params: { clusterId },
     },
+    metadata,
     searchOptions,
     searchModifiers,
     searchSuggestions,
@@ -262,28 +262,6 @@ const ClustersPage = ({
         });
     }
 
-    function getUpgradeStatusField(original) {
-        const status = parseUpgradeStatus(get(original, 'status.upgradeStatus', null));
-        if (!status) {
-            return '-';
-        }
-
-        if (status.action) {
-            status.action.actionHandler = (e) => {
-                e.stopPropagation();
-                upgradeSingleCluster(original.id);
-            };
-        }
-
-        return (
-            <StatusField
-                displayValue={status.displayValue}
-                type={status.type}
-                action={status.action}
-            />
-        );
-    }
-
     const headerActions = (
         <>
             <PanelButton
@@ -336,7 +314,7 @@ const ClustersPage = ({
             className: `w-1/9 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
-            Header: 'Runtime collection',
+            Header: 'Runtime Collection',
             Cell: ({ original }) => formatCollectionMethod(original.collectionMethod),
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
@@ -348,23 +326,33 @@ const ClustersPage = ({
             className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
+            Header: 'Cloud Provider',
+            Cell: ({ original }) => formatCloudProvider(original.status?.providerMetadata),
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
+        },
+        {
             Header: 'Last check-in',
             Cell: ({ original }) => formatLastCheckIn(original.status),
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
-            Header: 'Upgrade status',
-            Cell: ({ original }) => getUpgradeStatusField(original),
+            Header: 'Sensor Upgrade',
+            Cell: ({ original }) => (
+                <SensorUpgrade
+                    upgradeStatus={original.status?.upgradeStatus}
+                    centralVersion={metadata.version}
+                    sensorVersion={original.status?.sensorVersion}
+                    isList
+                    actionProps={{
+                        clusterId: original.id,
+                        upgradeSingleCluster,
+                    }}
+                />
+            ),
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Current Sensor version',
-            Cell: ({ original }) => formatSensorVersion(original.status),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName} word-break`,
-            sortMethod: sortVersion,
         },
         {
             Header: 'Credential Expiration',
@@ -523,6 +511,8 @@ ClustersPage.propTypes = {
     location: ReactRouterPropTypes.location.isRequired,
     match: ReactRouterPropTypes.match.isRequired,
 
+    metadata: PropTypes.shape({ version: PropTypes.string }).isRequired,
+
     // Search specific input.
     searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
     searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -533,6 +523,7 @@ ClustersPage.propTypes = {
 };
 
 const mapStateToProps = createStructuredSelector({
+    metadata: selectors.getMetadata,
     searchOptions: selectors.getClustersSearchOptions,
     searchModifiers: selectors.getClustersSearchModifiers,
     searchSuggestions: selectors.getClustersSearchSuggestions,

@@ -2,12 +2,12 @@ import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 
 import {
+    findUpgradeState,
     formatClusterType,
     formatConfiguredField,
     formatCollectionMethod,
     formatLastCheckIn,
     formatSensorVersion,
-    parseUpgradeStatus,
     getUpgradeableClusters,
     getCredentialExpirationProps,
 } from './cluster.helpers';
@@ -131,15 +131,16 @@ describe('cluster helpers', () => {
 
     describe('formatSensorVersion', () => {
         it('should return sensor version string if passed a status object with a sensorVersion field', () => {
+            const sensorVersion = 'sensorVersion';
             const testCluster = {
                 status: {
-                    sensorVersion: 'sensorVersion',
+                    sensorVersion,
                 },
             };
 
-            const displayValue = formatSensorVersion(testCluster.status);
+            const displayValue = formatSensorVersion(testCluster.status?.sensorVersion);
 
-            expect(displayValue).toEqual(testCluster.status.sensorVersion);
+            expect(displayValue).toEqual(sensorVersion);
         });
 
         it('should return a "Not Running" if passed a status object with null sensorVersion field', () => {
@@ -149,7 +150,7 @@ describe('cluster helpers', () => {
                 },
             };
 
-            const displayValue = formatSensorVersion(testCluster.status);
+            const displayValue = formatSensorVersion(testCluster.status?.sensorVersion);
 
             expect(displayValue).toEqual('Not Running');
         });
@@ -159,7 +160,7 @@ describe('cluster helpers', () => {
                 status: null,
             };
 
-            const displayValue = formatSensorVersion(testCluster.status);
+            const displayValue = formatSensorVersion(testCluster.status?.sensorVersion);
 
             expect(displayValue).toEqual('Not Running');
         });
@@ -245,24 +246,24 @@ describe('cluster helpers', () => {
         });
     });
 
-    describe('parseUpgradeStatus', () => {
+    describe('findUpgradeState', () => {
         it('should return null if upgradeStatus is null', () => {
             const testUpgradeStatus = null;
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
-            expect(displayValue).toEqual(null);
+            expect(received).toEqual(null);
         });
 
-        it('should return "Up to date with Central version" if upgradeStatus -> upgradability is UP_TO_DATE', () => {
+        it('should return "Up to date with Central" if upgradeStatus -> upgradability is UP_TO_DATE', () => {
             const testUpgradeStatus = {
                 upgradability: 'UP_TO_DATE',
             };
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
-            const expected = { displayValue: 'Up to date with Central version', type: 'current' };
-            expect(displayValue).toEqual(expected);
+            const expected = { displayValue: 'Up to date with Central', type: 'current' };
+            expect(received).toEqual(expected);
         });
 
         it('should return "Manual upgrade required" if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED', () => {
@@ -270,10 +271,10 @@ describe('cluster helpers', () => {
                 upgradability: 'MANUAL_UPGRADE_REQUIRED',
             };
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
             const expected = { displayValue: 'Manual upgrade required', type: 'intervention' };
-            expect(displayValue).toEqual(expected);
+            expect(received).toEqual(expected);
         });
 
         it('should return "Upgrade available" if there is no mostRecentProcess ', () => {
@@ -281,15 +282,13 @@ describe('cluster helpers', () => {
                 upgradability: 'AUTO_UPGRADE_POSSIBLE',
             };
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
-                action: {
-                    actionText: 'Upgrade available',
-                },
                 type: 'download',
+                actionText: 'Upgrade available',
             };
-            expect(displayValue).toEqual(expected);
+            expect(received).toEqual(expected);
         });
 
         it('should return "Upgrade available" if upgradeStatus -> upgradability is AUTO_UPGRADE_POSSIBLE but mostRecentProgress is not active and is COMPLETE', () => {
@@ -303,15 +302,13 @@ describe('cluster helpers', () => {
                 },
             };
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
-                action: {
-                    actionText: 'Upgrade available',
-                },
                 type: 'download',
+                actionText: 'Upgrade available',
             };
-            expect(displayValue).toEqual(expected);
+            expect(received).toEqual(expected);
         });
 
         it('should print the error (and "Retry Upgrade") if upgradeStatus -> upgradability is AUTO_UPGRADE_POSSIBLE but mostRecentProgress is not active and failed', () => {
@@ -325,16 +322,14 @@ describe('cluster helpers', () => {
                 },
             };
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
                 displayValue: 'Pre-flight checks failed',
                 type: 'failure',
-                action: {
-                    actionText: 'Retry upgrade',
-                },
+                actionText: 'Retry upgrade',
             };
-            expect(displayValue).toEqual(expected);
+            expect(received).toEqual(expected);
         });
 
         it('should return "Upgrade initializing" if upgradeStatus -> upgradability is AUTO_UPGRADE_POSSIBLE and upgradeState is UPGRADE_INITIALIZING', () => {
@@ -348,13 +343,13 @@ describe('cluster helpers', () => {
                 },
             };
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
                 displayValue: 'Upgrade initializing',
                 type: 'progress',
             };
-            expect(displayValue).toEqual(expected);
+            expect(received).toEqual(expected);
         });
 
         it('should return "Upgrader launching" if upgradeState is UPGRADER_LAUNCHING', () => {
@@ -368,10 +363,10 @@ describe('cluster helpers', () => {
                 },
             };
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
             const expected = { displayValue: 'Upgrader launching', type: 'progress' };
-            expect(displayValue).toEqual(expected);
+            expect(received).toEqual(expected);
         });
 
         it('should return "Upgrader launched" if upgradeState is UPGRADER_LAUNCHED', () => {
@@ -385,10 +380,10 @@ describe('cluster helpers', () => {
                 },
             };
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
             const expected = { displayValue: 'Upgrader launched', type: 'progress' };
-            expect(displayValue).toEqual(expected);
+            expect(received).toEqual(expected);
         });
 
         it('should return "Pre-flight checks complete" if upgradeState is PRE_FLIGHT_CHECKS_COMPLETE', () => {
@@ -402,10 +397,10 @@ describe('cluster helpers', () => {
                 },
             };
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
             const expected = { displayValue: 'Pre-flight checks complete', type: 'progress' };
-            expect(displayValue).toEqual(expected);
+            expect(received).toEqual(expected);
         });
 
         it('should return "Pre-flight checks failed." if upgradeState is PRE_FLIGHT_CHECKS_FAILED', () => {
@@ -419,16 +414,14 @@ describe('cluster helpers', () => {
                 },
             };
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
-                action: {
-                    actionText: 'Retry upgrade',
-                },
                 displayValue: 'Pre-flight checks failed',
                 type: 'failure',
+                actionText: 'Retry upgrade',
             };
-            expect(displayValue).toEqual(expected);
+            expect(received).toEqual(expected);
         });
 
         it('should return "Upgrade Operations Done" if upgradeState is UPGRADE_OPERATIONS_DONE', () => {
@@ -442,10 +435,10 @@ describe('cluster helpers', () => {
                 },
             };
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
             const expected = { displayValue: 'Upgrade operations done', type: 'progress' };
-            expect(displayValue).toEqual(expected);
+            expect(received).toEqual(expected);
         });
 
         it('should return "Upgrade Operations Complete" if upgradeState is UPGRADE_COMPLETE', () => {
@@ -459,10 +452,10 @@ describe('cluster helpers', () => {
                 },
             };
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
             const expected = { displayValue: 'Upgrade complete', type: 'current' };
-            expect(displayValue).toEqual(expected);
+            expect(received).toEqual(expected);
         });
 
         it('should return "Upgrade failed. Rolled back." if upgradeState is UPGRADE_ERROR_ROLLED_BACK', () => {
@@ -476,16 +469,14 @@ describe('cluster helpers', () => {
                 },
             };
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
-                action: {
-                    actionText: 'Retry upgrade',
-                },
                 displayValue: 'Upgrade failed. Rolled back.',
                 type: 'failure',
+                actionText: 'Retry upgrade',
             };
-            expect(displayValue).toEqual(expected);
+            expect(received).toEqual(expected);
         });
 
         it('should return "Upgrade failed. Rollback failed." if upgradeState is UPGRADE_ERROR_ROLLBACK_FAILED', () => {
@@ -499,16 +490,14 @@ describe('cluster helpers', () => {
                 },
             };
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
-                action: {
-                    actionText: 'Retry upgrade',
-                },
                 displayValue: 'Upgrade failed. Rollback failed.',
                 type: 'failure',
+                actionText: 'Retry upgrade',
             };
-            expect(displayValue).toEqual(expected);
+            expect(received).toEqual(expected);
         });
 
         it('should return "Upgrade timed out." if upgradeState is UPGRADE_TIMED_OUT', () => {
@@ -522,19 +511,17 @@ describe('cluster helpers', () => {
                 },
             };
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
-                action: {
-                    actionText: 'Retry upgrade',
-                },
                 displayValue: 'Upgrade timed out.',
                 type: 'failure',
+                actionText: 'Retry upgrade',
             };
-            expect(displayValue).toEqual(expected);
+            expect(received).toEqual(expected);
         });
 
-        it('should return "Upgrade timed out." if upgradeState is UPGRADE_ERROR_UNKNOWN', () => {
+        it('should return "Upgrade error unknown." if upgradeState is UPGRADE_ERROR_UNKNOWN', () => {
             const testUpgradeStatus = {
                 upgradability: 'AUTO_UPGRADE_POSSIBLE',
                 mostRecentProcess: {
@@ -545,16 +532,14 @@ describe('cluster helpers', () => {
                 },
             };
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
-                action: {
-                    actionText: 'Retry upgrade',
-                },
                 displayValue: 'Upgrade error unknown',
                 type: 'failure',
+                actionText: 'Retry upgrade',
             };
-            expect(displayValue).toEqual(expected);
+            expect(received).toEqual(expected);
         });
 
         it('should return "Unknown upgrade state. Contact Support." if upgradeState does not match known progress', () => {
@@ -568,13 +553,13 @@ describe('cluster helpers', () => {
                 },
             };
 
-            const displayValue = parseUpgradeStatus(testUpgradeStatus);
+            const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
                 displayValue: 'Unknown upgrade state. Contact Support.',
                 type: 'intervention',
             };
-            expect(displayValue).toEqual(expected);
+            expect(received).toEqual(expected);
         });
     });
 

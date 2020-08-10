@@ -6,6 +6,7 @@ export const selectors = {
     header: '[data-testid="header-text"]',
     autoUpgradeInput: '[id="enableAutoUpgrade"]',
     clusters: {
+        tableColumn: '.rt-th:not(first-child) > div', // ignore the checkbox column
         k8sCluster0: 'div.rt-td:contains("Kubernetes Cluster 0")',
     },
     buttons: {

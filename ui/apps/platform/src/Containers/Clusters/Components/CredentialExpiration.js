@@ -2,8 +2,8 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { AlertCircle, AlertTriangle } from 'react-feather';
 import dateFns from 'date-fns';
-import Tooltip from '../../Components/Tooltip';
-import TooltipOverlay from '../../Components/TooltipOverlay';
+import Tooltip from 'Components/Tooltip';
+import TooltipOverlay from 'Components/TooltipOverlay';
 
 const statusTypes = {
     info: {

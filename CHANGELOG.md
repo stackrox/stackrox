@@ -5,6 +5,11 @@ All notable changes to this project that require documentation updates will be d
 - UI: Hovering over a namespace edge in the Network Graph will show the ports and protocols for it's connections (ROX-5228).
 - UI: Hovering over a namespace edge in the Network Graph will show a summary of the directionality of it's connections (ROX-5215)
 - UI: Hovering over a node edge in the Network Graph will show the ports and protocols for it's connection (ROX-5227)
+- UI: Platform Configuration > Clusters  (ROX-5317)
+  - add 'Cloud Provider' column
+  - remove 'Current Sensor version' column
+  - replace 'Upgrade status' column with 'Sensor Upgrade' and add tooltip which displays 'Sensor version' and 'Central version'
+  - display cells in 'Sensor Upgrade' columns with same style as adjacent new Cluster Health columns
 
 ## [47.0]
 - Configuration Management tables (except for Controls and Policies) are now paginated through the API, rather than loading all rows into the browser, for better performance in large environments (ROX-5067).
