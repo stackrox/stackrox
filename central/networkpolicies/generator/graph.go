@@ -52,7 +52,9 @@ func (s *portDesc) toNetPolPorts() []*storage.NetworkPolicyPort {
 
 	return []*storage.NetworkPolicyPort{
 		{
-			Port:     int32(s.port),
+			PortRef: &storage.NetworkPolicyPort_Port{
+				Port: int32(s.port),
+			},
 			Protocol: netPolL4Proto,
 		},
 	}

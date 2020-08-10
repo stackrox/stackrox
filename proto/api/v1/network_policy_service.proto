@@ -33,6 +33,9 @@ message SendNetworkPolicyYamlRequest {
 message GetNetworkGraphRequest {
     string cluster_id = 1;
     string query      = 2;
+
+    // If set to true, include port-level information in the network policy graph.
+    bool include_ports = 3;
 }
 
 message SimulateNetworkGraphRequest {

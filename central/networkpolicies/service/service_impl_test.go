@@ -162,7 +162,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, pols).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, pols, false).
 		Return(expectedGraph)
 	expectedResp := &v1.SimulateNetworkGraphResponse{
 		SimulatedGraph: expectedGraph,
@@ -198,9 +198,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("first-policy")).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("first-policy"), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("first-policy")).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("first-policy"), false).
 		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
@@ -235,9 +235,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("first-policy", "second-policy")).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("first-policy", "second-policy"), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("second-policy")).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("second-policy"), false).
 		Return(expectedGraph)
 
 	request := &v1.SimulateNetworkGraphRequest{
@@ -273,9 +273,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("first-policy", "second-policy")).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("first-policy", "second-policy"), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("first-policy")).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("first-policy"), false).
 		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
@@ -313,9 +313,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies()).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies(), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("first-policy")).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("first-policy"), false).
 		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
@@ -356,9 +356,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame(
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("first-policy", "second-policy")).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("first-policy", "second-policy"), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("second-policy")).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("second-policy"), false).
 		Return(expectedGraph)
 
 	request := &v1.SimulateNetworkGraphRequest{
@@ -399,9 +399,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("first-policy", "second-policy")).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies("first-policy", "second-policy"), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies()).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, checkHasPolicies(), false).
 		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.

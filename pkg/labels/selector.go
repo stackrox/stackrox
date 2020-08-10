@@ -57,6 +57,18 @@ func (s CompiledSelector) Matches(labels map[string]string) bool {
 	return true
 }
 
+// MatchesNone checks if this selector cannot match anything. Note that only a `true` return
+// value is 100% reliable; it is possible that a CompiledSelector for which this method returns
+// `false` will never match anything as well.
+func (s CompiledSelector) MatchesNone() bool {
+	return s == nil
+}
+
+// MatchesAll checks if this selector matches every set of labels (including an empty one).
+func (s CompiledSelector) MatchesAll() bool {
+	return s != nil && len(s) == 0
+}
+
 // MatchLabels checks if the given label selector matches the given label map. If the label selector proto is invalid,
 // false will be returned.
 func MatchLabels(sel *storage.LabelSelector, labels map[string]string) bool {

@@ -36,17 +36,17 @@ func (m *MockEvaluator) EXPECT() *MockEvaluatorMockRecorder {
 }
 
 // GetGraph mocks base method
-func (m *MockEvaluator) GetGraph(clusterID string, deployments []*storage.Deployment, networkPolicies []*storage.NetworkPolicy) *v1.NetworkGraph {
+func (m *MockEvaluator) GetGraph(clusterID string, deployments []*storage.Deployment, networkPolicies []*storage.NetworkPolicy, includePorts bool) *v1.NetworkGraph {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetGraph", clusterID, deployments, networkPolicies)
+	ret := m.ctrl.Call(m, "GetGraph", clusterID, deployments, networkPolicies, includePorts)
 	ret0, _ := ret[0].(*v1.NetworkGraph)
 	return ret0
 }
 
 // GetGraph indicates an expected call of GetGraph
-func (mr *MockEvaluatorMockRecorder) GetGraph(clusterID, deployments, networkPolicies interface{}) *gomock.Call {
+func (mr *MockEvaluatorMockRecorder) GetGraph(clusterID, deployments, networkPolicies, includePorts interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGraph", reflect.TypeOf((*MockEvaluator)(nil).GetGraph), clusterID, deployments, networkPolicies)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGraph", reflect.TypeOf((*MockEvaluator)(nil).GetGraph), clusterID, deployments, networkPolicies, includePorts)
 }
 
 // GetAppliedPolicies mocks base method

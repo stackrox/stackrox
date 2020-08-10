@@ -8,8 +8,10 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/labels"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	k8sV1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -24,6 +26,9 @@ func init() {
 		}
 		np := networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: &k8sNp}.ToRoxNetworkPolicy()
 		np.Id = k8sNp.GetName()
+		if np.GetNamespace() == "" {
+			np.Namespace = "default"
+		}
 		networkPolicyFixtures[np.GetName()] = np
 	}
 }
@@ -230,32 +235,188 @@ spec:
       app: web
 
 `,
+
+	`
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: api-allow-5000
+spec:
+  podSelector:
+    matchLabels:
+      app: apiserver
+  ingress:
+  - ports:
+    - port: 5000
+    from:
+    - podSelector:
+        matchLabels:
+          role: monitoring
+`,
+
+	// Custom network policies to test port-aware behavior
+	`
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-dns-egress-only
+spec:
+  podSelector:
+    matchLabels:
+      app: apiserver
+  egress:
+  - ports:
+    - port: 53
+      protocol: TCP
+    - port: 53
+      protocol: UDP
+  policyTypes:
+  - Egress
+`,
+	`
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: api-allow-named-api-port
+spec:
+  podSelector:
+    matchLabels:
+      app: apiserver
+  ingress:
+  - ports:
+    - port: api
+    from:
+    - podSelector:
+        matchLabels:
+          role: monitoring
+`,
+
+	`
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: api-allow-all-udp-from-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app: apiserver
+  ingress:
+  - ports:
+    - protocol: UDP
+    from:
+    - podSelector:
+        matchLabels:
+          role: monitoring
+`,
+
+	`
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: fully-isolate
+spec:
+  podSelector: {}
+  ingress: []
+  egress: []
+  podSelector:
+    matchExpressions: []
+    matchLabels: {}
+  policyTypes:
+  - Ingress
+  - Egress
+`,
+
+	`
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: a-ingress-tcp-8080
+spec:
+  podSelector:
+    matchLabels:
+      app: a
+  ingress:
+  - ports:
+    - port: 8080
+      protocol: TCP
+  policyTypes:
+  - Ingress
+`,
+
+	`
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: b-egress-a-tcp-ports-and-dns
+spec:
+  podSelector:
+    matchLabels:
+      app: b
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: a
+    ports:
+    - protocol: TCP
+    - port: 53
+      protocol: UDP
+  policyTypes:
+  - Egress
+`,
+	`
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: c-egress-a-tcp-8443-and-udp
+spec:
+  podSelector:
+    matchLabels:
+      app: c
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: a
+    ports:
+    - protocol: TCP
+      port: 8443
+    - protocol: UDP
+  policyTypes:
+  - Egress
+`,
 }
 
-var namespaces = []*storage.NamespaceMetadata{
-	{
-		Name: "default",
-		Id:   "default",
-		Labels: map[string]string{
-			"name": "default",
+var (
+	namespaces = []*storage.NamespaceMetadata{
+		{
+			Name: "default",
+			Id:   "default",
+			Labels: map[string]string{
+				"name": "default",
+			},
 		},
-	},
-	{
-		Name: "stackrox",
-		Id:   "stackrox",
-		Labels: map[string]string{
-			"name": "stackrox",
+		{
+			Name: "stackrox",
+			Id:   "stackrox",
+			Labels: map[string]string{
+				"name": "stackrox",
+			},
 		},
-	},
-	{
-		Name: "other",
-	},
-}
+		{
+			Name: "other",
+			Id:   "other",
+		},
+	}
 
-var namespacesByID = map[string]*storage.NamespaceMetadata{
-	namespaces[0].GetId(): namespaces[0],
-	namespaces[1].GetId(): namespaces[1],
-}
+	namespacesByID = func() map[string]*storage.NamespaceMetadata {
+		m := make(map[string]*storage.NamespaceMetadata)
+		for _, ns := range namespaces {
+			m[ns.GetId()] = ns
+		}
+		return m
+	}()
+)
 
 type namespaceGetter struct{}
 
@@ -318,7 +479,9 @@ func TestDoesNamespaceMatchLabel(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expected, doesNamespaceMatchLabel(c.namespace, c.selector))
+			cs, err := labels.CompileSelector(c.selector)
+			require.NoError(t, err)
+			assert.Equal(t, c.expected, cs.Matches(c.namespace.GetLabels()))
 		})
 	}
 }
@@ -374,390 +537,9 @@ func TestDoesPodLabelsMatchLabel(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expected, doesPodLabelsMatchLabel(c.deployment, c.selector))
-		})
-	}
-}
-
-func TestHasEgress(t *testing.T) {
-	cases := []struct {
-		name        string
-		policyTypes []storage.NetworkPolicyType
-		expected    bool
-	}{
-		{
-			name:        "no values",
-			policyTypes: []storage.NetworkPolicyType{},
-			expected:    false,
-		},
-		{
-			name:        "ingress only",
-			policyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
-			expected:    false,
-		},
-		{
-			name:        "egress only",
-			policyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
-			expected:    true,
-		},
-		{
-			name:        "ingress + egress only",
-			policyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE, storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
-			expected:    true,
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expected, hasEgress(c.policyTypes))
-		})
-	}
-}
-
-func TestHasIngress(t *testing.T) {
-	cases := []struct {
-		name        string
-		policyTypes []storage.NetworkPolicyType
-		expected    bool
-	}{
-		{
-			name:        "no values",
-			policyTypes: []storage.NetworkPolicyType{},
-			expected:    true,
-		},
-		{
-			name:        "ingress only",
-			policyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
-			expected:    true,
-		},
-		{
-			name:        "egress only",
-			policyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
-			expected:    false,
-		},
-		{
-			name:        "ingress + egress only",
-			policyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE, storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
-			expected:    true,
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expected, hasIngress(c.policyTypes))
-		})
-	}
-}
-
-func TestMatchPolicyPeer(t *testing.T) {
-	cases := []struct {
-		name            string
-		deployment      *storage.Deployment
-		peer            *storage.NetworkPolicyPeer
-		policyNamespace string
-		expected        bool
-	}{
-		{
-			name:       "ip block",
-			deployment: &storage.Deployment{},
-			peer:       &storage.NetworkPolicyPeer{IpBlock: &storage.IPBlock{}},
-			expected:   false,
-		},
-		{
-			name: "non match pod selector",
-			deployment: &storage.Deployment{
-				PodLabels: map[string]string{
-					"key": "value1",
-				},
-			},
-			peer: &storage.NetworkPolicyPeer{
-				PodSelector: &storage.LabelSelector{
-					MatchLabels: map[string]string{
-						"key": "value",
-					},
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "match pod selector",
-			deployment: &storage.Deployment{
-				PodLabels: map[string]string{
-					"key": "value",
-				},
-			},
-			peer: &storage.NetworkPolicyPeer{
-				PodSelector: &storage.LabelSelector{
-					MatchLabels: map[string]string{
-						"key": "value",
-					},
-				},
-			},
-			expected: true,
-		},
-		{
-			name: "match namespace selector",
-			deployment: &storage.Deployment{
-				Namespace:   "default",
-				NamespaceId: "default",
-			},
-			peer: &storage.NetworkPolicyPeer{
-				NamespaceSelector: &storage.LabelSelector{
-					MatchLabels: map[string]string{
-						"name": "default",
-					},
-				},
-			},
-			policyNamespace: "default",
-			expected:        true,
-		},
-		{
-			name: "non match namespace selector",
-			deployment: &storage.Deployment{
-				Namespace:   "default",
-				NamespaceId: "default",
-			},
-			peer: &storage.NetworkPolicyPeer{
-				NamespaceSelector: &storage.LabelSelector{
-					MatchLabels: map[string]string{
-						"key": "value1",
-					},
-				},
-			},
-			policyNamespace: "default",
-			expected:        false,
-		},
-		{
-			name: "different namespaces",
-			deployment: &storage.Deployment{
-				Namespace:   "default",
-				NamespaceId: "default",
-			},
-			peer: &storage.NetworkPolicyPeer{
-				NamespaceSelector: &storage.LabelSelector{
-					MatchLabels: map[string]string{
-						"key": "value1",
-					},
-				},
-			},
-			policyNamespace: "stackrox",
-			expected:        false,
-		},
-		// Todo(cgorman) pod selector and namespace selector combo
-	}
-
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-
-			assert.Equal(t, c.expected, matchPolicyPeer(namespacesByID[c.deployment.GetNamespaceId()], c.deployment, c.policyNamespace, c.peer))
-		})
-	}
-}
-
-func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
-	cases := []struct {
-		name     string
-		d        *storage.Deployment
-		np       *storage.NetworkPolicy
-		expected bool
-	}{
-		{
-			name: "namespace doesn't match source",
-			d: &storage.Deployment{
-				Namespace: "default",
-			},
-			np: &storage.NetworkPolicy{
-				Namespace: "stackrox",
-			},
-			expected: false,
-		},
-		{
-			name: "pod selector doesn't match",
-			d: &storage.Deployment{
-				PodLabels: map[string]string{
-					"key1": "value1",
-				},
-				Namespace: "default",
-			},
-			np: &storage.NetworkPolicy{
-				Namespace: "default",
-				Spec: &storage.NetworkPolicySpec{
-					PodSelector: &storage.LabelSelector{
-						MatchLabels: map[string]string{
-							"key1": "value2",
-						},
-					},
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "all matches - has ingress",
-			d: &storage.Deployment{
-				PodLabels: map[string]string{
-					"key1": "value1",
-				},
-				Namespace: "default",
-			},
-			np: &storage.NetworkPolicy{
-				Namespace: "default",
-				Spec: &storage.NetworkPolicySpec{
-					PodSelector: &storage.LabelSelector{
-						MatchLabels: map[string]string{
-							"key1": "value1",
-						},
-					},
-				},
-			},
-			expected: true,
-		},
-		{
-			name: "all matches - doesn't have ingress",
-			d: &storage.Deployment{
-				PodLabels: map[string]string{
-					"key1": "value1",
-				},
-				Namespace: "default",
-			},
-			np: &storage.NetworkPolicy{
-				Namespace: "default",
-				Spec: &storage.NetworkPolicySpec{
-					PodSelector: &storage.LabelSelector{
-						MatchLabels: map[string]string{
-							"key1": "value1",
-						},
-					},
-					PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
-				},
-			},
-			expected: false,
-		},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expected, ingressNetworkPolicySelectorAppliesToDeployment(c.d, c.np))
-		})
-	}
-}
-
-func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
-	cases := []struct {
-		name           string
-		d              *storage.Deployment
-		np             *storage.NetworkPolicy
-		expected       bool
-		internetAccess bool
-	}{
-		{
-			name: "namespace doesn't match source",
-			d: &storage.Deployment{
-				Namespace: "default",
-			},
-			np: &storage.NetworkPolicy{
-				Namespace: "stackrox",
-			},
-			expected: false,
-		},
-		{
-			name: "pod selector doesn't match",
-			d: &storage.Deployment{
-				PodLabels: map[string]string{
-					"key1": "value1",
-				},
-				Namespace: "default",
-			},
-			np: &storage.NetworkPolicy{
-				Namespace: "default",
-				Spec: &storage.NetworkPolicySpec{
-					PodSelector: &storage.LabelSelector{
-						MatchLabels: map[string]string{
-							"key1": "value2",
-						},
-					},
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "all matches - doesn't have egress",
-			d: &storage.Deployment{
-				PodLabels: map[string]string{
-					"key1": "value1",
-				},
-				Namespace: "default",
-			},
-			np: &storage.NetworkPolicy{
-				Namespace: "default",
-				Spec: &storage.NetworkPolicySpec{
-					PodSelector: &storage.LabelSelector{
-						MatchLabels: map[string]string{
-							"key1": "value1",
-						},
-					},
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "all matches - has egress",
-			d: &storage.Deployment{
-				PodLabels: map[string]string{
-					"key1": "value1",
-				},
-				Namespace: "default",
-			},
-			np: &storage.NetworkPolicy{
-				Namespace: "default",
-				Spec: &storage.NetworkPolicySpec{
-					PodSelector: &storage.LabelSelector{
-						MatchLabels: map[string]string{
-							"key1": "value1",
-						},
-					},
-					PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
-				},
-			},
-			expected: true,
-		},
-		{
-			name: "all matches - has egress and ip block",
-			d: &storage.Deployment{
-				PodLabels: map[string]string{
-					"key1": "value1",
-				},
-				Namespace: "default",
-			},
-			np: &storage.NetworkPolicy{
-				Namespace: "default",
-				Spec: &storage.NetworkPolicySpec{
-					PodSelector: &storage.LabelSelector{
-						MatchLabels: map[string]string{
-							"key1": "value1",
-						},
-					},
-					Egress: []*storage.NetworkPolicyEgressRule{
-						{
-							To: []*storage.NetworkPolicyPeer{
-								{
-									IpBlock: &storage.IPBlock{
-										Cidr: "127.0.0.1/32",
-									},
-								},
-							},
-						},
-					},
-					PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
-				},
-			},
-			expected:       true,
-			internetAccess: true,
-		},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			matches, internetAccess := egressNetworkPolicySelectorAppliesToDeployment(c.d, c.np)
-			assert.Equal(t, c.expected, matches)
-			assert.Equal(t, c.internetAccess, internetAccess)
+			cs, err := labels.CompileSelector(c.selector)
+			require.NoError(t, err)
+			assert.Equal(t, c.expected, cs.Matches(c.deployment.GetPodLabels()))
 		})
 	}
 }
@@ -770,41 +552,58 @@ func getExamplePolicy(name string) *storage.NetworkPolicy {
 	return np
 }
 
-type edge struct {
+type testEdge struct {
 	Source, Target string
+	Ports          portDescs
 }
 
-func egressEdges(src string, dsts ...string) []edge {
-	var edges []edge
+func egressEdges(src string, dsts ...string) []testEdge {
+	var edges []testEdge
 	for _, d := range dsts {
-		edges = append(edges, edge{Source: src, Target: d})
+		edges = append(edges, testEdge{Source: src, Target: d})
 	}
 	return edges
 }
 
-func ingressEdges(dst string, srcs ...string) []edge {
-	var edges []edge
+func egressEdgesWithPorts(src string, pds portDescs, dsts ...string) []testEdge {
+	var edges []testEdge
+	for _, d := range dsts {
+		edges = append(edges, testEdge{Source: src, Target: d, Ports: pds})
+	}
+	return edges
+}
+
+func ingressEdges(dst string, srcs ...string) []testEdge {
+	var edges []testEdge
 	for _, s := range srcs {
-		edges = append(edges, edge{Source: s, Target: dst})
+		edges = append(edges, testEdge{Source: s, Target: dst})
 	}
 	return edges
 }
 
-func fullyConnectedEdges(values ...string) []edge {
-	var edges []edge
+func ingressEdgesWithPort(dst string, pds portDescs, srcs ...string) []testEdge {
+	var edges []testEdge
+	for _, s := range srcs {
+		edges = append(edges, testEdge{Source: s, Target: dst, Ports: pds})
+	}
+	return edges
+}
+
+func fullyConnectedEdges(values ...string) []testEdge {
+	var edges []testEdge
 	for i, value1 := range values {
 		for j, value2 := range values {
 			if i == j {
 				continue
 			}
-			edges = append(edges, edge{Source: value1, Target: value2})
+			edges = append(edges, testEdge{Source: value1, Target: value2})
 		}
 	}
 	return edges
 }
 
-func flattenEdges(edges ...[]edge) []edge {
-	var finalEdges []edge
+func flattenEdges(edges ...[]testEdge) []testEdge {
+	var finalEdges []testEdge
 	for _, e := range edges {
 		finalEdges = append(finalEdges, e...)
 	}
@@ -851,7 +650,7 @@ func TestEvaluateClusters(t *testing.T) {
 		name        string
 		deployments []*storage.Deployment
 		nps         []*storage.NetworkPolicy
-		edges       []edge
+		edges       []testEdge
 		nodes       []*v1.NetworkNode
 	}{
 		{
@@ -873,17 +672,20 @@ func TestEvaluateClusters(t *testing.T) {
 			name: "deny all to app=web",
 			deployments: []*storage.Deployment{
 				{
-					Id:        "d1",
-					Namespace: "default",
-					PodLabels: deploymentLabels("app", "web"),
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web"),
 				},
 				{
-					Id:        "d2",
-					Namespace: "default",
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
 				},
 				{
-					Id:        "d3",
-					Namespace: "default",
+					Id:          "d3",
+					Namespace:   "default",
+					NamespaceId: "default",
 				},
 			},
 			nps: []*storage.NetworkPolicy{
@@ -899,19 +701,22 @@ func TestEvaluateClusters(t *testing.T) {
 			name: "limit traffic to application",
 			deployments: []*storage.Deployment{
 				{
-					Id:        "d1",
-					Namespace: "default",
-					PodLabels: deploymentLabels("app", "bookstore", "role", "api"),
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "bookstore", "role", "api"),
 				},
 				{
-					Id:        "d2",
-					Namespace: "default",
-					PodLabels: deploymentLabels("app", "bookstore", "role", "frontend"),
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "bookstore", "role", "frontend"),
 				},
 				{
-					Id:        "d3",
-					Namespace: "default",
-					PodLabels: deploymentLabels("app", "coffeeshop", "role", "api"),
+					Id:          "d3",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "coffeeshop", "role", "api"),
 				},
 			},
 			edges: flattenEdges(
@@ -930,17 +735,20 @@ func TestEvaluateClusters(t *testing.T) {
 			name: "allow all ingress even if deny all",
 			deployments: []*storage.Deployment{
 				{
-					Id:        "d1",
-					Namespace: "default",
-					PodLabels: deploymentLabels("app", "web"),
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web"),
 				},
 				{
-					Id:        "d2",
-					Namespace: "default",
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
 				},
 				{
-					Id:        "d3",
-					Namespace: "default",
+					Id:          "d3",
+					Namespace:   "default",
+					NamespaceId: "default",
 				},
 			},
 			edges: flattenEdges(
@@ -960,17 +768,20 @@ func TestEvaluateClusters(t *testing.T) {
 			name: "DENY all non-whitelisted traffic to a namespace",
 			deployments: []*storage.Deployment{
 				{
-					Id:        "d1",
-					Namespace: "default",
-					PodLabels: deploymentLabels("app", "web"),
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web"),
 				},
 				{
-					Id:        "d2",
-					Namespace: "default",
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
 				},
 				{
-					Id:        "d3",
-					Namespace: "stackrox",
+					Id:          "d3",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
 				},
 			},
 			nps: []*storage.NetworkPolicy{
@@ -986,16 +797,19 @@ func TestEvaluateClusters(t *testing.T) {
 			name: "DENY all traffic from other namespaces",
 			deployments: []*storage.Deployment{
 				{
-					Id:        "d1",
-					Namespace: "default",
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
 				},
 				{
-					Id:        "d2",
-					Namespace: "default",
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
 				},
 				{
-					Id:        "d3",
-					Namespace: "stackrox",
+					Id:          "d3",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
 				},
 			},
 			edges: flattenEdges(
@@ -1014,17 +828,20 @@ func TestEvaluateClusters(t *testing.T) {
 			name: "Web allow all traffic from other namespaces",
 			deployments: []*storage.Deployment{
 				{
-					Id:        "d1",
-					Namespace: "default",
-					PodLabels: deploymentLabels("app", "web"),
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web"),
 				},
 				{
-					Id:        "d2",
-					Namespace: "default",
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
 				},
 				{
-					Id:        "d3",
-					Namespace: "stackrox",
+					Id:          "d3",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
 				},
 			},
 			edges: flattenEdges(
@@ -1077,23 +894,27 @@ func TestEvaluateClusters(t *testing.T) {
 			name: "Allow traffic from apps using multiple selectors",
 			deployments: []*storage.Deployment{
 				{
-					Id:        "d1",
-					Namespace: "default",
-					PodLabels: deploymentLabels("app", "web", "role", "db"),
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web", "role", "db"),
 				},
 				{
-					Id:        "d2",
-					Namespace: "default",
-					PodLabels: deploymentLabels("app", "bookstore", "role", "search"),
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "bookstore", "role", "search"),
 				},
 				{
-					Id:        "d3",
-					Namespace: "default",
-					PodLabels: deploymentLabels("app", "bookstore", "role", "api"),
+					Id:          "d3",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "bookstore", "role", "api"),
 				},
 				{
-					Id:        "d4",
-					Namespace: "default",
+					Id:          "d4",
+					Namespace:   "default",
+					NamespaceId: "default",
 				},
 			},
 			edges: flattenEdges(
@@ -1114,13 +935,15 @@ func TestEvaluateClusters(t *testing.T) {
 			name: "web deny egress",
 			deployments: []*storage.Deployment{
 				{
-					Id:        "d1",
-					Namespace: "default",
-					PodLabels: deploymentLabels("app", "web"),
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web"),
 				},
 				{
-					Id:        "d2",
-					Namespace: "default",
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
 				},
 			},
 			nps: []*storage.NetworkPolicy{
@@ -1135,17 +958,20 @@ func TestEvaluateClusters(t *testing.T) {
 			name: "deny egress from namespace",
 			deployments: []*storage.Deployment{
 				{
-					Id:        "d1",
-					Namespace: "default",
-					PodLabels: deploymentLabels("app", "web"),
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web"),
 				},
 				{
-					Id:        "d2",
-					Namespace: "default",
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
 				},
 				{
-					Id:        "d3",
-					Namespace: "stackrox",
+					Id:          "d3",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
 				},
 			},
 			nps: []*storage.NetworkPolicy{
@@ -1161,17 +987,20 @@ func TestEvaluateClusters(t *testing.T) {
 			name: "deny internetAccess egress from cluster",
 			deployments: []*storage.Deployment{
 				{
-					Id:        "d1",
-					Namespace: "default",
-					PodLabels: deploymentLabels("app", "web"),
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web"),
 				},
 				{
-					Id:        "d2",
-					Namespace: "default",
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
 				},
 				{
-					Id:        "d3",
-					Namespace: "stackrox",
+					Id:          "d3",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
 				},
 			},
 			edges: flattenEdges(
@@ -1190,22 +1019,26 @@ func TestEvaluateClusters(t *testing.T) {
 			name: "deny all ingress except for app = web",
 			deployments: []*storage.Deployment{
 				{
-					Id:        "d1",
-					Namespace: "qa",
-					PodLabels: deploymentLabels("app", "web"),
+					Id:          "d1",
+					Namespace:   "qa",
+					NamespaceId: "qa",
+					PodLabels:   deploymentLabels("app", "web"),
 				},
 				{
-					Id:        "d2",
-					Namespace: "qa",
-					PodLabels: deploymentLabels("app", "client"),
+					Id:          "d2",
+					Namespace:   "qa",
+					NamespaceId: "qa",
+					PodLabels:   deploymentLabels("app", "client"),
 				},
 				{
-					Id:        "d3",
-					Namespace: "stackrox",
+					Id:          "d3",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
 				},
 				{
-					Id:        "d4",
-					Namespace: "default",
+					Id:          "d4",
+					Namespace:   "default",
+					NamespaceId: "default",
 				},
 			},
 			edges: flattenEdges(
@@ -1222,13 +1055,71 @@ func TestEvaluateClusters(t *testing.T) {
 				mockNode("d4", "default", true, true, true),
 			},
 		},
+		{
+			name: "fully isolate all pods",
+			deployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+				{
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+			},
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("fully-isolate"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "default", false, false, false, "fully-isolate"),
+				mockNode("d2", "default", false, false, false, "fully-isolate"),
+			},
+		},
+		{
+			name: "ingress and egress combination",
+			deployments: []*storage.Deployment{
+				{
+					Id:          "a",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "a"),
+				},
+				{
+					Id:          "b",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "b"),
+				},
+				{
+					Id:          "c",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "c"),
+				},
+			},
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("a-ingress-tcp-8080"),
+				getExamplePolicy("b-egress-a-tcp-ports-and-dns"),
+				getExamplePolicy("c-egress-a-tcp-8443-and-udp"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("a", "default", true, false, true, "a-ingress-tcp-8080"),
+				mockNode("b", "default", false, true, false, "b-egress-a-tcp-ports-and-dns"),
+				mockNode("c", "default", false, true, false, "c-egress-a-tcp-8443-and-udp"),
+			},
+			edges: flattenEdges(
+				ingressEdges("a", "b"),
+			),
+		},
 	}
 	for _, c := range cases {
 		testCase := c
 		populateOutEdges(testCase.nodes, testCase.edges)
 		t.Run(c.name, func(t *testing.T) {
-			nodes := g.evaluate(testCase.deployments, testCase.nps)
-			assert.ElementsMatch(t, testCase.nodes, nodes)
+			nodes := g.GetGraph("", testCase.deployments, testCase.nps, false)
+			assert.ElementsMatch(t, testCase.nodes, nodes.GetNodes())
 		})
 	}
 }
@@ -1335,7 +1226,7 @@ func TestGetApplicable(t *testing.T) {
 	}
 }
 
-func populateOutEdges(nodes []*v1.NetworkNode, edges []edge) {
+func populateOutEdges(nodes []*v1.NetworkNode, edges []testEdge) {
 	indexMap := make(map[string]int)
 	for i, node := range nodes {
 		indexMap[node.Entity.Id] = i
@@ -1348,6 +1239,176 @@ func populateOutEdges(nodes []*v1.NetworkNode, edges []edge) {
 		srcIndex := indexMap[e.Source]
 		srcNode := nodes[srcIndex]
 		tgtIndex := indexMap[e.Target]
-		srcNode.OutEdges[int32(tgtIndex)] = &v1.NetworkEdgePropertiesBundle{}
+		bundle := &v1.NetworkEdgePropertiesBundle{}
+		pds := e.Ports.Clone()
+		pds.normalizeInPlace()
+		bundle.Properties = pds.ToProto()
+		srcNode.OutEdges[int32(tgtIndex)] = bundle
+	}
+}
+
+func TestEvaluateClustersWithPorts(t *testing.T) {
+	g := newMockGraphEvaluator()
+
+	cases := []struct {
+		name        string
+		deployments []*storage.Deployment
+		nps         []*storage.NetworkPolicy
+		edges       []testEdge
+		nodes       []*v1.NetworkNode
+	}{
+		{
+			name: "only allow port 5000 on API server",
+			deployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "apiserver"),
+				},
+				{
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("role", "monitoring"),
+				},
+				{
+					Id:          "d3",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("role", "other"),
+				},
+			},
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("api-allow-5000"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "default", true, false, true, "api-allow-5000"),
+				mockNode("d2", "default", true, true, true),
+				mockNode("d3", "default", true, true, true),
+			},
+			edges: flattenEdges(
+				ingressEdgesWithPort("d1", portDescs{{l4proto: storage.Protocol_TCP_PROTOCOL, port: 5000}}, "d2"),
+			),
+		},
+		{
+			name: "only allow DNS egress",
+			deployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "apiserver"),
+				},
+				{
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("role", "app"),
+				},
+				{
+					Id:          "d3",
+					Namespace:   "kube-system",
+					NamespaceId: "kube-system",
+					PodLabels:   deploymentLabels("role", "kube-dns"),
+				},
+			},
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("allow-dns-egress-only"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "default", true, true, false, "allow-dns-egress-only"),
+				mockNode("d2", "default", true, true, true),
+				mockNode("d3", "kube-system", true, true, true),
+			},
+			edges: flattenEdges(
+				egressEdgesWithPorts("d1", portDescs{{l4proto: storage.Protocol_TCP_PROTOCOL, port: 53}, {l4proto: storage.Protocol_UDP_PROTOCOL, port: 53}}, "d2", "d3"),
+			),
+		},
+		{
+			name: "allow traffic on named API port",
+			deployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "apiserver"),
+					Ports: []*storage.PortConfig{
+						{
+							Name:          "api",
+							ContainerPort: 8443,
+							Protocol:      "TCP",
+						},
+					},
+				},
+				{
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "apiserver"),
+				},
+				{
+					Id:          "d3",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("role", "monitoring"),
+				},
+			},
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("api-allow-named-api-port"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "default", true, false, true, "api-allow-named-api-port"),
+				mockNode("d2", "default", true, false, true, "api-allow-named-api-port"),
+				mockNode("d3", "default", true, true, true),
+			},
+			edges: flattenEdges(
+				ingressEdgesWithPort("d1", portDescs{{l4proto: storage.Protocol_TCP_PROTOCOL, port: 8443}}, "d3"),
+			),
+		},
+		{
+			name: "ingress and egress combination",
+			deployments: []*storage.Deployment{
+				{
+					Id:          "a",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "a"),
+				},
+				{
+					Id:          "b",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "b"),
+				},
+				{
+					Id:          "c",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "c"),
+				},
+			},
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("a-ingress-tcp-8080"),
+				getExamplePolicy("b-egress-a-tcp-ports-and-dns"),
+				getExamplePolicy("c-egress-a-tcp-8443-and-udp"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("a", "default", true, false, true, "a-ingress-tcp-8080"),
+				mockNode("b", "default", false, true, false, "b-egress-a-tcp-ports-and-dns"),
+				mockNode("c", "default", false, true, false, "c-egress-a-tcp-8443-and-udp"),
+			},
+			edges: flattenEdges(
+				ingressEdgesWithPort("a", portDescs{{l4proto: storage.Protocol_TCP_PROTOCOL, port: 8080}}, "b"),
+			),
+		},
+	}
+	for _, c := range cases {
+		testCase := c
+		populateOutEdges(testCase.nodes, testCase.edges)
+		t.Run(c.name, func(t *testing.T) {
+			nodes := g.GetGraph("", testCase.deployments, testCase.nps, true)
+			assert.ElementsMatch(t, testCase.nodes, nodes.GetNodes())
+		})
 	}
 }

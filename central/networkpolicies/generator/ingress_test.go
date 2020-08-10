@@ -23,6 +23,12 @@ var (
 	}
 )
 
+func makeNumPort(numPort int32) *storage.NetworkPolicyPort_Port {
+	return &storage.NetworkPolicyPort_Port{
+		Port: numPort,
+	}
+}
+
 func createDeploymentNode(id, name, namespace string, selectorLabels map[string]string) *node {
 	return &node{
 		entity: networkgraph.Entity{
@@ -112,7 +118,7 @@ func TestGenerateIngressRule_WithInternetIngress_WithPorts(t *testing.T) {
 			Ports: []*storage.NetworkPolicyPort{
 				{
 					Protocol: storage.Protocol_TCP_PROTOCOL,
-					Port:     443,
+					PortRef:  makeNumPort(443),
 				},
 			},
 			From: allowAllIngress.GetFrom(),
@@ -121,7 +127,7 @@ func TestGenerateIngressRule_WithInternetIngress_WithPorts(t *testing.T) {
 			Ports: []*storage.NetworkPolicyPort{
 				{
 					Protocol: storage.Protocol_UDP_PROTOCOL,
-					Port:     53,
+					PortRef:  makeNumPort(53),
 				},
 			},
 			From: []*storage.NetworkPolicyPeer{
@@ -218,7 +224,7 @@ func TestGenerateIngressRule_WithInternetExposure_WithPorts(t *testing.T) {
 			Ports: []*storage.NetworkPolicyPort{
 				{
 					Protocol: storage.Protocol_TCP_PROTOCOL,
-					Port:     443,
+					PortRef:  makeNumPort(443),
 				},
 			},
 			From: allowAllIngress.GetFrom(),
@@ -227,7 +233,7 @@ func TestGenerateIngressRule_WithInternetExposure_WithPorts(t *testing.T) {
 			Ports: []*storage.NetworkPolicyPort{
 				{
 					Protocol: storage.Protocol_TCP_PROTOCOL,
-					Port:     80,
+					PortRef:  makeNumPort(80),
 				},
 			},
 			From: allowAllIngress.GetFrom(),
@@ -236,7 +242,7 @@ func TestGenerateIngressRule_WithInternetExposure_WithPorts(t *testing.T) {
 			Ports: []*storage.NetworkPolicyPort{
 				{
 					Protocol: storage.Protocol_UDP_PROTOCOL,
-					Port:     53,
+					PortRef:  makeNumPort(53),
 				},
 			},
 			From: []*storage.NetworkPolicyPeer{
@@ -347,7 +353,7 @@ func TestGenerateIngressRule_WithoutInternet_WithPorts(t *testing.T) {
 			Ports: []*storage.NetworkPolicyPort{
 				{
 					Protocol: storage.Protocol_TCP_PROTOCOL,
-					Port:     443,
+					PortRef:  makeNumPort(443),
 				},
 			},
 			From: []*storage.NetworkPolicyPeer{
@@ -370,7 +376,7 @@ func TestGenerateIngressRule_WithoutInternet_WithPorts(t *testing.T) {
 			Ports: []*storage.NetworkPolicyPort{
 				{
 					Protocol: storage.Protocol_UDP_PROTOCOL,
-					Port:     53,
+					PortRef:  makeNumPort(53),
 				},
 			},
 			From: []*storage.NetworkPolicyPeer{

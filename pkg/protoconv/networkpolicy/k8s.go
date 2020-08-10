@@ -3,13 +3,16 @@ package networkpolicy
 import (
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
+	"github.com/stackrox/rox/pkg/utils"
 	k8sCoreV1 "k8s.io/api/core/v1"
 	networkingV1 "k8s.io/api/networking/v1"
 	k8sMetaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // KubernetesNetworkPolicyWrap wraps a k8s network policy so you can convert it to a proto network policy
@@ -75,14 +78,25 @@ func (np KubernetesNetworkPolicyWrap) convertProtocol(p *k8sCoreV1.Protocol) sto
 func (np KubernetesNetworkPolicyWrap) convertPorts(k8sPorts []networkingV1.NetworkPolicyPort) []*storage.NetworkPolicyPort {
 	ports := make([]*storage.NetworkPolicyPort, 0, len(k8sPorts))
 	for _, p := range k8sPorts {
-		var portVal int32
-		if p.Port != nil {
-			portVal = p.Port.IntVal
-		}
-		ports = append(ports, &storage.NetworkPolicyPort{
-			Port:     portVal,
+		netPolPort := &storage.NetworkPolicyPort{
 			Protocol: np.convertProtocol(p.Protocol),
-		})
+		}
+		if p.Port != nil {
+			switch p.Port.Type {
+			case intstr.Int:
+				netPolPort.PortRef = &storage.NetworkPolicyPort_Port{
+					Port: p.Port.IntVal,
+				}
+			case intstr.String:
+				netPolPort.PortRef = &storage.NetworkPolicyPort_PortName{
+					PortName: p.Port.StrVal,
+				}
+			default:
+				utils.Should(errors.Errorf(
+					"UNEXPECTED: port IntOrStr %+v is neither int nor string, treating as no port spec", p.Port))
+			}
+		}
+		ports = append(ports, netPolPort)
 	}
 	return ports
 }

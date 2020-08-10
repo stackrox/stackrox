@@ -57,4 +57,7 @@ enum L4Protocol {
 	L4_PROTOCOL_UDP     = 2;
 	L4_PROTOCOL_ICMP    = 3;
 	L4_PROTOCOL_RAW     = 4;
+	L4_PROTOCOL_SCTP    = 5;
+
+	L4_PROTOCOL_ANY     = -1;
 }

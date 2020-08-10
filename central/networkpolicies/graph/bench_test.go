@@ -10,10 +10,11 @@ import (
 
 func getMockDeployment(id string) *storage.Deployment {
 	return &storage.Deployment{
-		Id:        id,
-		Namespace: "default",
-		Labels:    deploymentLabels("app", "web"),
-		PodLabels: map[string]string{},
+		Id:          id,
+		Namespace:   "default",
+		NamespaceId: "default",
+		Labels:      deploymentLabels("app", "web"),
+		PodLabels:   map[string]string{},
 	}
 }
 
@@ -102,7 +103,7 @@ func benchmarkEvaluateCluster(b *testing.B, numDeployments, numNetworkPolicies, 
 	matchEgressRules(networkPolicies, deployments, egressMatches)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		m.evaluate(deployments, networkPolicies)
+		m.GetGraph("", deployments, networkPolicies, false)
 	}
 }
 

@@ -180,7 +180,7 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetwor
 	}
 
 	// Generate the graph.
-	return s.graphEvaluator.GetGraph(request.GetClusterId(), deployments, networkPolicies), nil
+	return s.graphEvaluator.GetGraph(request.GetClusterId(), deployments, networkPolicies, request.GetIncludePorts()), nil
 }
 
 func (s *serviceImpl) GetNetworkGraphEpoch(_ context.Context, req *v1.GetNetworkGraphEpochRequest) (*v1.NetworkGraphEpoch, error) {
@@ -282,7 +282,7 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 			return nil, status.Errorf(codes.Internal, "unhandled policy status %v", policyInSim.GetStatus())
 		}
 	}
-	newGraph := s.graphEvaluator.GetGraph(request.GetClusterId(), deployments, newPolicies)
+	newGraph := s.graphEvaluator.GetGraph(request.GetClusterId(), deployments, newPolicies, false)
 	result := &v1.SimulateNetworkGraphResponse{
 		SimulatedGraph: newGraph,
 		Policies:       networkPoliciesInSimulation,
@@ -292,7 +292,7 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 		return result, nil
 	}
 
-	oldGraph := s.graphEvaluator.GetGraph(request.GetClusterId(), deployments, oldPolicies)
+	oldGraph := s.graphEvaluator.GetGraph(request.GetClusterId(), deployments, oldPolicies, false)
 	removedEdges, addedEdges, err := graph.ComputeDiff(oldGraph, newGraph)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not compute a network graph diff")

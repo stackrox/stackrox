@@ -49,13 +49,18 @@ message IPBlock {
 
 message NetworkPolicyPort {
     Protocol protocol = 1;
-    int32    port     = 2;
+
+    oneof port_ref {
+        int32  port      = 2;
+        string port_name = 3;
+    }
 }
 
 enum Protocol {
     UNSET_PROTOCOL = 0;
     TCP_PROTOCOL   = 1;
     UDP_PROTOCOL   = 2;
+    SCTP_PROTOCOL  = 3;
 }
 
 enum NetworkPolicyType {
