@@ -624,7 +624,7 @@ export const deploymentList = [
                 {
                     data: {
                         destNodeId: '892424ba-b70d-11ea-a716-025000000001',
-                        destNodeNS: 'stackrox',
+                        destNodeNamespace: 'stackrox',
                         destNodeName: 'sensor',
                         source: '8930c942-b70d-11ea-a716-025000000001',
                         target: '892424ba-b70d-11ea-a716-025000000001',
@@ -735,7 +735,7 @@ export const deploymentList = [
                 {
                     data: {
                         destNodeId: '8930c942-b70d-11ea-a716-025000000001',
-                        destNodeNS: 'stackrox',
+                        destNodeNamespace: 'stackrox',
                         destNodeName: 'collector',
                         source: '8930c942-b70d-11ea-a716-025000000001',
                         target: '892424ba-b70d-11ea-a716-025000000001',
@@ -752,7 +752,7 @@ export const deploymentList = [
                 {
                     data: {
                         destNodeId: 'e2f0275b-b70c-11ea-a716-025000000001',
-                        destNodeNS: 'stackrox',
+                        destNodeNamespace: 'stackrox',
                         destNodeName: 'central',
                         source: '892424ba-b70d-11ea-a716-025000000001',
                         target: 'e2f0275b-b70c-11ea-a716-025000000001',
@@ -788,7 +788,7 @@ export const deploymentList = [
                 {
                     data: {
                         destNodeId: 'e349f5d4-b70c-11ea-a716-025000000001',
-                        destNodeNS: 'stackrox',
+                        destNodeNamespace: 'stackrox',
                         destNodeName: 'scanner',
                         source: 'e349f5d4-b70c-11ea-a716-025000000001',
                         target: 'e34b1fe2-b70c-11ea-a716-025000000001',
@@ -866,7 +866,7 @@ export const deploymentList = [
                 {
                     data: {
                         destNodeId: 'e34b1fe2-b70c-11ea-a716-025000000001',
-                        destNodeNS: 'stackrox',
+                        destNodeNamespace: 'stackrox',
                         destNodeName: 'scanner-db',
                         source: 'e349f5d4-b70c-11ea-a716-025000000001',
                         target: 'e34b1fe2-b70c-11ea-a716-025000000001',
@@ -894,7 +894,7 @@ export const deploymentList = [
                         target: 'kube-system_right',
                         destNodeId: '6fc26030-b70a-11ea-a716-025000000001',
                         destNodeName: 'coredns',
-                        destNodeNS: 'kube-system',
+                        destNodeNamespace: 'kube-system',
                         isActive: true,
                         isDisallowed: false,
                     },
@@ -903,7 +903,7 @@ export const deploymentList = [
                 {
                     data: {
                         destNodeId: 'e2f0275b-b70c-11ea-a716-025000000001',
-                        destNodeNS: 'stackrox',
+                        destNodeNamespace: 'stackrox',
                         destNodeName: 'central',
                         source: 'e349f5d4-b70c-11ea-a716-025000000001',
                         target: 'e2f0275b-b70c-11ea-a716-025000000001',
@@ -970,7 +970,7 @@ export const deploymentList = [
                         target: 'kube-system_right',
                         destNodeId: 'e349f5d4-b70c-11ea-a716-025000000001',
                         destNodeName: 'scanner',
-                        destNodeNS: 'stackrox',
+                        destNodeNamespace: 'stackrox',
                         isActive: true,
                         isDisallowed: false,
                     },
@@ -990,7 +990,7 @@ export const deploymentList = [
                         target: 'kube-system_right',
                         destNodeId: 'e2f0275b-b70c-11ea-a716-025000000001',
                         destNodeName: 'central',
-                        destNodeNS: 'stackrox',
+                        destNodeNamespace: 'stackrox',
                         isActive: true,
                         isDisallowed: false,
                     },
@@ -1042,7 +1042,7 @@ export const deploymentList = [
                 {
                     data: {
                         destNodeId: '892424ba-b70d-11ea-a716-025000000001',
-                        destNodeNS: 'stackrox',
+                        destNodeNamespace: 'stackrox',
                         destNodeName: 'sensor',
                         source: '892424ba-b70d-11ea-a716-025000000001',
                         target: 'e2f0275b-b70c-11ea-a716-025000000001',
@@ -1059,7 +1059,7 @@ export const deploymentList = [
                 {
                     data: {
                         destNodeId: 'e349f5d4-b70c-11ea-a716-025000000001',
-                        destNodeNS: 'stackrox',
+                        destNodeNamespace: 'stackrox',
                         destNodeName: 'scanner',
                         source: 'e349f5d4-b70c-11ea-a716-025000000001',
                         target: 'e2f0275b-b70c-11ea-a716-025000000001',
@@ -1087,7 +1087,7 @@ export const deploymentList = [
                         target: 'kube-system_right',
                         destNodeId: '6fc26030-b70a-11ea-a716-025000000001',
                         destNodeName: 'coredns',
-                        destNodeNS: 'kube-system',
+                        destNodeNamespace: 'kube-system',
                         isActive: true,
                         isDisallowed: false,
                     },

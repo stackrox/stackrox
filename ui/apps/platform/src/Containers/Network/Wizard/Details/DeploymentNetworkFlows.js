@@ -74,7 +74,7 @@ const DeploymentNetworkFlows = ({
             },
             {
                 Header: 'Namespace',
-                accessor: 'data.destNodeNS',
+                accessor: 'data.destNodeNamespace',
                 // eslint-disable-next-line react/prop-types
                 Cell: ({ value }) => <span>{value}</span>,
             },

@@ -597,7 +597,7 @@ export const getDeploymentList = (filteredData, configObj = {}) => {
         const { deployment, ...entityProps } = entity;
         const { namespace, ...deploymentProps } = deployment;
 
-        const edges = getEdgesFromNode(entityProps.id, configObj);
+        const edges = getEdgesFromNode(configObj);
 
         const isSelected = !!(selectedNode?.id === entity.id);
         const isHovered = !!(hoveredNode?.id === entity.id);

@@ -40,7 +40,7 @@ function Details(props) {
         { text: 'Network Flows' },
     ];
     const deploymentEdges = selectedNode.edges.filter(
-        ({ data }) => data.destNodeNS && data.destNodeName && data.source !== data.target
+        ({ data }) => data.destNodeNamespace && data.destNodeName && data.source !== data.target
     );
 
     function onDeploymentClick(id) {
