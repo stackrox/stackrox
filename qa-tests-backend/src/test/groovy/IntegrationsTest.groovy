@@ -1,5 +1,7 @@
 import groups.Notifiers
 import io.fabric8.kubernetes.client.LocalPortForward
+import io.grpc.StatusRuntimeException
+import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.NotifierOuterClass
 import groups.BAT
@@ -433,5 +435,65 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
                 "ecr.${Env.mustGetAWSECRRegistryRegion()}.amazonaws.com"
         "ECR without endpoint" | Env.mustGetAWSECRRegistryID() | Env.mustGetAWSECRRegistryRegion() |
                 ""
+    }
+
+    static final private BASE_ANCHORE_INTEGRATION = ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+            .setName("anchore")
+            .setType("anchore")
+            .addAllCategories([ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER])
+
+    static final private BASE_ANCHORE_CONFIG = ImageIntegrationOuterClass.AnchoreConfig.newBuilder()
+            .setPassword(Env.get("ANCHORE_PASSWORD", ""))
+            .setUsername(Env.get("ANCHORE_USERNAME", ""))
+            .setEndpoint(Env.get("ANCHORE_ENDPOINT", ""))
+
+    @Unroll
+    @Category(Integration)
+    def "Verify Anchore integration"() {
+        Assume.assumeTrue(ImageIntegrationService.hasAnchoreDeployment())
+
+        when:
+        "the integration is tested"
+
+        def integration = BASE_ANCHORE_INTEGRATION.setAnchore(config())
+        def outcome = ImageIntegrationService.getImageIntegrationClient().testImageIntegration(integration.build())
+
+        then:
+        "verify test integration outcome"
+        assert outcome
+
+        where:
+        "tests are:"
+
+        config  | _
+        { -> BASE_ANCHORE_CONFIG.clone() }       | _
+    }
+
+    @Unroll
+    @Category(Integration)
+    def "Verify improper Anchore integration - #testAspect"() {
+        Assume.assumeTrue(ImageIntegrationService.hasAnchoreDeployment())
+
+        when:
+        "the integration is tested"
+
+        def integration = BASE_ANCHORE_INTEGRATION.setAnchore(config())
+        ImageIntegrationService.getImageIntegrationClient().testImageIntegration(integration.build())
+
+        then:
+        "verify test integration outcome"
+        def error = thrown(expectedError)
+        error.message =~ expectedMessage
+
+        where:
+        "tests are:"
+
+        config  | expectedError          | expectedMessage    | testAspect
+        { -> BASE_ANCHORE_CONFIG.clone().setUsername(Env.mustGet("ANCHORE_USERNAME") + "WRONG")
+        }       | StatusRuntimeException | /401 UNAUTHORIZED/ | "incorrect user"
+        { -> BASE_ANCHORE_CONFIG.clone().setPassword(Env.mustGet("ANCHORE_PASSWORD") + "WRONG")
+        }       | StatusRuntimeException | /401 UNAUTHORIZED/ | "incorrect password"
+        { -> BASE_ANCHORE_CONFIG.clone().setEndpoint("http://127.0.0.1/nowhere")
+        }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
     }
 }

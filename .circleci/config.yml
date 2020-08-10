@@ -481,7 +481,7 @@ version: 2.1
 executors:
   custom:
     docker:
-      - image: docker.io/stackrox/apollo-ci:0.2.13
+      - image: docker.io/stackrox/apollo-ci:0.2.14
         auth:
           username: $DOCKER_IO_PULL_USERNAME
           password: $DOCKER_IO_PULL_PASSWORD
@@ -1023,6 +1023,35 @@ commands:
           command: |
             ./scripts/ci/create-scopedaccessserver.sh
 
+  deploy-anchore:
+    parameters:
+      cluster-id:
+        type: string
+    steps:
+      - when:
+          condition:
+            equal: ["api-e2e-tests", << parameters.cluster-id >>]
+          steps:
+            - run:
+                name: Deploy Anchore Scanner
+                command: |
+                  ./scripts/ci/anchore/deploy.sh qa-anchore qa
+                  cci-export ANCHORE_ENDPOINT "http://qa-anchore-engine-api.qa-anchore.svc.cluster.local:8228"
+
+  teardown-anchore:
+    parameters:
+      cluster-id:
+        type: string
+    steps:
+      - when:
+          condition:
+            equal: ["api-e2e-tests", << parameters.cluster-id >>]
+          steps:
+            - run:
+                name: Teardown Anchore Scanner
+                command: |
+                  ./scripts/ci/anchore/teardown.sh qa-anchore
+                
   run-qa-tests:
     parameters:
       cluster-id:
@@ -1074,6 +1103,8 @@ commands:
             - *setupClientTLSCerts
             - setup-egress-proxies
 
+      - deploy-anchore:
+          cluster-id: << parameters.cluster-id >>
       - deploy-default-psp
       - deploy-webhook-server
       - deploy-authz-plugin
@@ -1136,6 +1167,9 @@ commands:
       - *collectMonitoringImages
       - *storeMonitoringImages
       - *storeMonitoringMetrics
+
+      - teardown-anchore:
+          cluster-id: << parameters.cluster-id >>
 
       - teardown-gke
 

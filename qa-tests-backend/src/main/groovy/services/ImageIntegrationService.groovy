@@ -173,6 +173,25 @@ class ImageIntegrationService extends BaseService {
         return createImageIntegration(integration)
     }
 
+    static Boolean hasAnchoreDeployment() {
+        return Env.get("ANCHORE_ENDPOINT") != null
+    }
+
+    static String addAnchoreScannerIntegration() {
+        ImageIntegrationOuterClass.ImageIntegration integration =
+                ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+                        .setName("anchore")
+                        .setType("anchore")
+                        .addAllCategories([ImageIntegrationCategory.SCANNER])
+                        .setAnchore(ImageIntegrationOuterClass.AnchoreConfig.newBuilder()
+                            .setUsername(Env.mustGet("ANCHORE_USERNAME"))
+                            .setPassword(Env.mustGet("ANCHORE_PASSWORD"))
+                            .setEndpoint(Env.mustGet("ANCHORE_ENDPOINT")))
+                        .build()
+
+        return createImageIntegration(integration)
+    }
+
     static String addDockerTrustedRegistry(boolean includeScanner = true) {
         ImageIntegrationOuterClass.ImageIntegration integration =
                 ImageIntegrationOuterClass.ImageIntegration.newBuilder()
