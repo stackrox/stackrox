@@ -2,7 +2,6 @@ package aggregation
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
@@ -23,18 +22,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
 	log = logging.LoggerForModule()
-
-	passFailCountsByState = map[storage.ComplianceState]passFailCounts{
-		storage.ComplianceState_COMPLIANCE_STATE_SUCCESS: {pass: 1},
-		storage.ComplianceState_COMPLIANCE_STATE_FAILURE: {fail: 1},
-		storage.ComplianceState_COMPLIANCE_STATE_ERROR:   {fail: 1},
-		storage.ComplianceState_COMPLIANCE_STATE_SKIP:    {skipped: 1},
-		storage.ComplianceState_COMPLIANCE_STATE_NOTE:    {skipped: 1},
-	}
 )
 
 const (
@@ -46,6 +38,9 @@ const (
 type flatCheckValues [numScopes]string
 
 func (f *flatCheckValues) get(scope v1.ComplianceAggregation_Scope) string {
+	if scope == v1.ComplianceAggregation_CHECK {
+		return uuid.NewV4().String()
+	}
 	return f[scope-minScope]
 }
 
@@ -69,7 +64,6 @@ func (m *mask) matchesValue(scope v1.ComplianceAggregation_Scope, v string) bool
 	if m == nil {
 		return true
 	}
-
 	if valueSet := m.get(scope); valueSet != nil {
 		return valueSet.Contains(v)
 	}
@@ -162,7 +156,7 @@ func (k groupByKey) Get(scope v1.ComplianceAggregation_Scope) string {
 		log.Errorf("Unknown scope: %v", scope)
 		return ""
 	}
-	return k[int(scope-minScope)]
+	return k[scope-minScope]
 }
 
 func (k *groupByKey) Set(scope v1.ComplianceAggregation_Scope, value string) {
@@ -170,17 +164,25 @@ func (k *groupByKey) Set(scope v1.ComplianceAggregation_Scope, value string) {
 		log.Errorf("Unknown scope: %v", scope)
 		return
 	}
-	(*k)[int(scope-minScope)] = value
+	(*k)[scope-minScope] = value
+}
+
+type groupByValue struct {
+	unitMap map[string]*passFailCounts
+	domain  *storage.ComplianceDomain
+}
+
+func newGroupByValue(domain *storage.ComplianceDomain) *groupByValue {
+	return &groupByValue{
+		unitMap: make(map[string]*passFailCounts),
+		domain:  domain,
+	}
 }
 
 // flatCheck is basically all of the check result data flattened into a single object
 type flatCheck struct {
 	values *flatCheckValues
 	state  storage.ComplianceState
-}
-
-func (c flatCheck) passFailCounts() passFailCounts {
-	return passFailCountsByState[c.state]
 }
 
 func getSpecifiedFieldsFromQuery(q *v1.Query) []string {
@@ -286,7 +288,6 @@ func (a *aggregatorImpl) Aggregate(ctx context.Context, queryString string, grou
 	}
 
 	results, domainMap := a.getAggregatedResults(groupBy, unit, validResults, mask)
-
 	return results, sources, domainMap, nil
 }
 
@@ -351,59 +352,102 @@ func (a *aggregatorImpl) getCategoryID(controlID string) string {
 	return category.QualifiedID()
 }
 
-func (a *aggregatorImpl) flatChecksFromCluster(runResults *storage.ComplianceRunResults, mask *mask, clusterID, standardID string) []flatCheck {
+// DomainFunc will return a valid storage domain for a given key, if it exists. If multiple domains match, only one will be returned.
+type DomainFunc func(i int) *storage.ComplianceDomain
+
+func isValidUnit(unit v1.ComplianceAggregation_Scope, fc flatCheck) bool {
+	return unit == v1.ComplianceAggregation_CHECK || fc.values.get(unit) != ""
+}
+
+func getGroupByKey(groupBy []v1.ComplianceAggregation_Scope, fc flatCheck) (groupByKey, bool) {
+	var key groupByKey
+	valid := true
+	for _, s := range groupBy {
+		val := fc.values.get(s)
+		if val == "" {
+			valid = false
+			break
+		}
+		key.Set(s, val)
+	}
+	return key, valid
+}
+
+func handleResult(groups map[groupByKey]*groupByValue, key groupByKey, unitKey string, domain *storage.ComplianceDomain, r *storage.ComplianceResultValue) {
+	groupByValue := groups[key]
+	if groupByValue == nil {
+		groupByValue = newGroupByValue(domain)
+		groups[key] = groupByValue
+	}
+	pfCounts := groupByValue.unitMap[unitKey]
+	if pfCounts == nil {
+		pfCounts = new(passFailCounts)
+		groupByValue.unitMap[unitKey] = pfCounts
+	}
+	switch r.OverallState {
+	case storage.ComplianceState_COMPLIANCE_STATE_SUCCESS:
+		pfCounts.pass++
+	case storage.ComplianceState_COMPLIANCE_STATE_FAILURE, storage.ComplianceState_COMPLIANCE_STATE_ERROR, storage.ComplianceState_COMPLIANCE_STATE_UNKNOWN:
+		pfCounts.fail++
+	case storage.ComplianceState_COMPLIANCE_STATE_SKIP, storage.ComplianceState_COMPLIANCE_STATE_NOTE:
+		pfCounts.skipped++
+	}
+}
+
+func processFlatCheck(groups map[groupByKey]*groupByValue, fc flatCheck, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope,
+	mask *mask, runResults *storage.ComplianceRunResults, r *storage.ComplianceResultValue) {
+	if !isValidUnit(unit, fc) || !isValidCheck(mask, fc) {
+		return
+	}
+	groupKey, valid := getGroupByKey(groupBy, fc)
+	if !valid {
+		return
+	}
+	handleResult(groups, groupKey, fc.values.get(unit), runResults.GetDomain(), r)
+}
+
+func (a *aggregatorImpl) aggregateFromCluster(runResults *storage.ComplianceRunResults, mask *mask, clusterID, standardID string,
+	groups map[groupByKey]*groupByValue, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) {
 	if controlSet := mask.get(v1.ComplianceAggregation_CONTROL); controlSet != nil {
-		flatChecks := make([]flatCheck, 0, len(controlSet))
 		for control := range controlSet {
 			r := runResults.GetClusterResults().GetControlResults()[control]
 			if r == nil {
 				continue
 			}
 			fc := newFlatCheck(clusterID, "", standardID, a.getCategoryID(control), control, "", "", r.GetOverallState())
-			if isValidCheck(mask, fc) {
-				flatChecks = append(flatChecks, fc)
-			}
+			processFlatCheck(groups, fc, groupBy, unit, mask, runResults, r)
 		}
-		return flatChecks
+		return
 	}
-	flatChecks := make([]flatCheck, 0, len(runResults.GetClusterResults().GetControlResults()))
 	for control, r := range runResults.GetClusterResults().GetControlResults() {
 		fc := newFlatCheck(clusterID, "", standardID, a.getCategoryID(control), control, "", "", r.GetOverallState())
-		if isValidCheck(mask, fc) {
-			flatChecks = append(flatChecks, fc)
-		}
+		processFlatCheck(groups, fc, groupBy, unit, mask, runResults, r)
 	}
-	return flatChecks
 }
 
-func (a *aggregatorImpl) flatChecksFromNodes(runResults *storage.ComplianceRunResults, mask *mask, clusterID, standardID string) []flatCheck {
-	var flatChecks []flatCheck
+func (a *aggregatorImpl) aggregateFromNodes(runResults *storage.ComplianceRunResults, mask *mask, clusterID, standardID string, groups map[groupByKey]*groupByValue,
+	groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) {
 	if nodeSet := mask.get(v1.ComplianceAggregation_NODE); nodeSet != nil {
 		for node := range nodeSet {
 			controlResults := runResults.GetNodeResults()[node]
 			for control, r := range controlResults.GetControlResults() {
 				fc := newFlatCheck(clusterID, "", standardID, a.getCategoryID(control), control, node, "", r.GetOverallState())
-				if isValidCheck(mask, fc) {
-					flatChecks = append(flatChecks, fc)
-				}
+				processFlatCheck(groups, fc, groupBy, unit, mask, runResults, r)
 			}
 		}
-		return flatChecks
+		return
 	}
-	for n, controlResults := range runResults.GetNodeResults() {
+	for node, controlResults := range runResults.GetNodeResults() {
 		for control, r := range controlResults.GetControlResults() {
-			fc := newFlatCheck(clusterID, "", standardID, a.getCategoryID(control), control, n, "", r.GetOverallState())
-			if isValidCheck(mask, fc) {
-				flatChecks = append(flatChecks, fc)
-			}
+			fc := newFlatCheck(clusterID, "", standardID, a.getCategoryID(control), control, node, "", r.GetOverallState())
+			processFlatCheck(groups, fc, groupBy, unit, mask, runResults, r)
 		}
 	}
-	return flatChecks
 }
 
-func (a *aggregatorImpl) getFlatChecksFromDeployments(runResults *storage.ComplianceRunResults, mask *mask, clusterID, standardID string) []flatCheck {
+func (a *aggregatorImpl) aggregateFromDeployments(runResults *storage.ComplianceRunResults, mask *mask, clusterID, standardID string,
+	groups map[groupByKey]*groupByValue, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) {
 	domain := runResults.GetDomain()
-	var flatChecks []flatCheck
 	if deploymentSet := mask.get(v1.ComplianceAggregation_DEPLOYMENT); deploymentSet != nil {
 		for deploymentID := range deploymentSet {
 			deployment := domain.Deployments[deploymentID]
@@ -415,12 +459,10 @@ func (a *aggregatorImpl) getFlatChecksFromDeployments(runResults *storage.Compli
 			}
 			for control, r := range runResults.GetDeploymentResults()[deploymentID].GetControlResults() {
 				fc := newFlatCheck(clusterID, deployment.GetNamespaceId(), standardID, a.getCategoryID(control), control, "", deployment.GetId(), r.GetOverallState())
-				if isValidCheck(mask, fc) {
-					flatChecks = append(flatChecks, fc)
-				}
+				processFlatCheck(groups, fc, groupBy, unit, mask, runResults, r)
 			}
 		}
-		return flatChecks
+		return
 	}
 
 	for d, controlResults := range runResults.GetDeploymentResults() {
@@ -434,84 +476,27 @@ func (a *aggregatorImpl) getFlatChecksFromDeployments(runResults *storage.Compli
 		}
 		for control, r := range controlResults.GetControlResults() {
 			fc := newFlatCheck(clusterID, deployment.GetNamespaceId(), standardID, a.getCategoryID(control), control, "", deployment.GetId(), r.GetOverallState())
-			if isValidCheck(mask, fc) {
-				flatChecks = append(flatChecks, fc)
-			}
+			processFlatCheck(groups, fc, groupBy, unit, mask, runResults, r)
 		}
 	}
-	return flatChecks
 }
 
-func (a *aggregatorImpl) getFlatChecksFromRunResult(runResults *storage.ComplianceRunResults, mask *mask) []flatCheck {
-	clusterID := runResults.GetDomain().GetCluster().GetId()
-	standardID := runResults.GetRunMetadata().GetStandardId()
-
-	flatChecks := a.flatChecksFromCluster(runResults, mask, clusterID, standardID)
-	flatChecks = append(flatChecks, a.flatChecksFromNodes(runResults, mask, clusterID, standardID)...)
-	flatChecks = append(flatChecks, a.getFlatChecksFromDeployments(runResults, mask, clusterID, standardID)...)
-	return flatChecks
-}
-
-// DomainFunc will return a valid storage domain for a given key, if it exists. If multiple domains match, only one will be returned.
-type DomainFunc func(i int) *storage.ComplianceDomain
-
-type domainOffsetPair struct {
-	offset int
-	domain *storage.ComplianceDomain
-}
-
-// getAggregatedResults aggregates the passed results by groupBy and unit
 func (a *aggregatorImpl) getAggregatedResults(groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope, runResults []*storage.ComplianceRunResults, mask *mask) ([]*v1.ComplianceAggregation_Result, map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain) {
-	var flatChecks []flatCheck
-	var domainIndices []domainOffsetPair
+	groups := make(map[groupByKey]*groupByValue)
 	for _, r := range runResults {
-		flatChecks = append(flatChecks, a.getFlatChecksFromRunResult(r, mask)...)
-		domainIndices = append(domainIndices, domainOffsetPair{offset: len(flatChecks), domain: r.GetDomain()})
-	}
+		clusterID := r.GetDomain().GetCluster().GetId()
+		standardID := r.GetRunMetadata().GetStandardId()
 
-	// Iterate over all of the checks and create a map[groupBy][]flatCheck. Ignore keys where one of the groupBy values
-	// would be empty.
-	groups := make(map[groupByKey][]flatCheck)
-	// Store a valid domain for every groupByKey
-	domains := make(map[groupByKey]*storage.ComplianceDomain)
-	for i, fc := range flatChecks {
-		if i >= domainIndices[0].offset {
-			domainIndices = domainIndices[1:]
-		}
-		var key groupByKey
-		valid := true
-		for _, s := range groupBy {
-			val := fc.values.get(s)
-			if val == "" {
-				valid = false
-				break
-			}
-			key.Set(s, val)
-		}
-		if valid {
-			groups[key] = append(groups[key], fc)
-			domains[key] = domainIndices[0].domain
-		}
+		a.aggregateFromCluster(r, mask, clusterID, standardID, groups, groupBy, unit)
+		a.aggregateFromNodes(r, mask, clusterID, standardID, groups, groupBy, unit)
+		a.aggregateFromDeployments(r, mask, clusterID, standardID, groups, groupBy, unit)
 	}
 
 	results := make([]*v1.ComplianceAggregation_Result, 0, len(groups))
 	domainMap := make(map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain)
-	for key, checks := range groups {
-		unitMap := make(map[string]passFailCounts)
-		for i, c := range checks {
-			unitKey := c.values.get(unit)
-			// If there is no unit key, then the check doesn't apply in this unit scope
-			if unit == v1.ComplianceAggregation_CHECK {
-				unitKey = strconv.Itoa(i)
-			} else if unitKey == "" {
-				continue
-			}
-			unitMap[unitKey] = unitMap[unitKey].Add(c.passFailCounts())
-		}
-
-		// Aggregate over all units for this key
+	for key, groupByValue := range groups {
 		var counts passFailCounts
-		for _, u := range unitMap {
+		for _, u := range groupByValue.unitMap {
 			counts = counts.Add(u.Reduce())
 		}
 
@@ -522,8 +507,8 @@ func (a *aggregatorImpl) getAggregatedResults(groupBy []v1.ComplianceAggregation
 			NumFailing:      int32(counts.fail),
 			NumSkipped:      int32(counts.skipped),
 		}
-		domainMap[result] = domains[key]
 		results = append(results, result)
+		domainMap[result] = groupByValue.domain
 	}
 	sortAggregations(results)
 	return results, domainMap

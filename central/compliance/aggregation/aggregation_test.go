@@ -9,7 +9,9 @@ import (
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -157,36 +159,6 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 			},
 		},
 	}
-}
-
-func mockFlatChecks(clusterID, standardID string) []flatCheck {
-	category := fmt.Sprintf("%s:%s", standardID, "")
-	return []flatCheck{
-		newFlatCheck(clusterID, "", standardID, category, "control1", "", "", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
-		newFlatCheck(clusterID, "", standardID, category, "control2", "", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, "", standardID, category, "control7", "", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, "", standardID, category, "control3", clusterID+"node1", "", storage.ComplianceState_COMPLIANCE_STATE_ERROR),
-		newFlatCheck(clusterID, "", standardID, category, "control4", clusterID+"node1", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, "", standardID, category, "control3", clusterID+"node2", "", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
-		newFlatCheck(clusterID, "", standardID, category, "control4", clusterID+"node2", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace1"), standardID, category, "control5", "", clusterID+"deployment1", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace1"), standardID, category, "control6", "", clusterID+"deployment1", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace1"), standardID, category, "control7", "", clusterID+"deployment1", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace2"), standardID, category, "control5", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace2"), standardID, category, "control6", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace2"), standardID, category, "control7", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace2"), standardID, category, "control8", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_NOTE),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace3"), standardID, category, "control5", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace3"), standardID, category, "control6", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace3"), standardID, category, "control7", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
-	}
-}
-
-func TestGetFlatChecksFromRunResult(t *testing.T) {
-	ag := &aggregatorImpl{
-		standards: mockStandardsRepo{},
-	}
-	assert.ElementsMatch(t, mockFlatChecks("cluster1", "standard1"), ag.getFlatChecksFromRunResult(mockRunResult("cluster1", "standard1"), &mask{}))
 }
 
 func testName(groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) string {
@@ -414,7 +386,6 @@ func TestDomainAttribution(t *testing.T) {
 		complianceRunResults,
 		&mask{},
 	)
-
 	for i, r := range results {
 		nodeID := r.AggregationKeys[1].GetId()
 		mappedDomain := domainMap[results[i]].GetNodes()
@@ -542,5 +513,49 @@ func TestIsValidCheck(t *testing.T) {
 				assert.Equal(t, c.result, isValidCheck(testMask, c.fc))
 			})
 		}
+	}
+}
+
+func mockBenchmarkRunResult() *storage.ComplianceRunResults {
+	deploymentResults := make(map[string]*storage.ComplianceRunResults_EntityResults)
+	deployments := make(map[string]*storage.Deployment)
+	for i := 0; i < 10000; i++ {
+		deployment := fixtures.GetDeployment()
+		deployment.Id = uuid.NewV4().String()
+		results := &storage.ComplianceRunResults_EntityResults{
+			ControlResults: make(map[string]*storage.ComplianceResultValue),
+		}
+		for i := 0; i < 50; i++ {
+			results.ControlResults[fmt.Sprintf("%d", i)] = &storage.ComplianceResultValue{
+				OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
+			}
+		}
+		deploymentResults[deployment.GetId()] = results
+		deployments[deployment.GetId()] = deployment
+	}
+
+	return &storage.ComplianceRunResults{
+		Domain: &storage.ComplianceDomain{
+			Cluster: &storage.Cluster{
+				Id: "cluster",
+			},
+			Deployments: deployments,
+		},
+		RunMetadata: &storage.ComplianceRunMetadata{
+			StandardId: "standard",
+		},
+		DeploymentResults: deploymentResults,
+	}
+}
+
+func BenchmarkAggregatedResults(b *testing.B) {
+	result := mockBenchmarkRunResult()
+
+	b.ResetTimer()
+	a := &aggregatorImpl{
+		standards: mockStandardsRepo{},
+	}
+	for i := 0; i < b.N; i++ {
+		a.getAggregatedResults(nil, v1.ComplianceAggregation_CHECK, []*storage.ComplianceRunResults{result}, &mask{})
 	}
 }
