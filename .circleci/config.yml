@@ -2799,7 +2799,7 @@ jobs:
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
       - ROX_AUTH_TEST_MODE_UI: true
-      - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
+      - ROX_CLUSTER_HEALTH_MONITORING: true
 
     steps:
       - run-qa-tests:

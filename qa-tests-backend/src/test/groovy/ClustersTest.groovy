@@ -1,6 +1,7 @@
 import groups.BAT
 import org.junit.experimental.categories.Category
 import services.ClusterService
+import io.stackrox.proto.storage.ClusterOuterClass
 import spock.lang.Stepwise
 import util.Cert
 
@@ -25,5 +26,19 @@ class ClustersTest extends BaseSpecification {
         def expiryFromCert = sensorCert.notAfter
         assert expiryFromCert
         assert expiryFromCert == expiryFromCluster
+    }
+
+    def "Test cluster health status is healthy"() {
+        if (FeatureFlagService.isFeatureFlagEnabled("ROX_CLUSTER_HEALTH_MONITORING")) {
+            when:
+            "Get the cluster, and the cluster health status"
+            def cluster = ClusterService.getCluster()
+            assert cluster
+            def overallClusterHealthStatus = cluster.overallClusterHealthStatus
+
+            then:
+            "Verify the cluster's overall health status is healthy"
+            assert overallClusterHealthStatus == ClusterOuterClass.HealthStatusLabel.HEALTHY
+        }
     }
 }
