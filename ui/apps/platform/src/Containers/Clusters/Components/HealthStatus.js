@@ -12,9 +12,9 @@ import React from 'react';
  */
 const HealthStatus = ({ children, Icon, iconColor }) => (
     <div className="flex flex-row items-start leading-normal">
-        <div className={`flex-shrink-0 ${iconColor}`}>
-            <Icon className="h-4 mr-2 w-4" />
-        </div>
+        <span className={`flex-shrink-0 mr-2 ${iconColor}`}>
+            <Icon className="h-4 w-4" />
+        </span>
         {children}
     </div>
 );

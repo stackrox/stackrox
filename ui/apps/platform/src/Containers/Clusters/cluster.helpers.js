@@ -1,5 +1,6 @@
 import dateFns from 'date-fns';
 import get from 'lodash/get';
+import { AlertCircle, AlertTriangle, Check, Circle, X } from 'react-feather';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 
@@ -71,6 +72,36 @@ export const newClusterDefault = {
 
 export const centralEnvDefault = {
     kernelSupportAvailable: false,
+};
+
+// Styles for ClusterStatus, SensorStatus, CollectorStatus.
+// Colors are similar to LabelChip, but fgColor is slightly lighter 700 instead of 800.
+export const healthStatusStyles = {
+    UNINITIALIZED: {
+        Icon: Circle,
+        bgColor: 'bg-base-200',
+        fgColor: 'text-base-700',
+    },
+    UNAVAILABLE: {
+        Icon: AlertCircle,
+        bgColor: 'bg-secondary-200',
+        fgColor: 'text-secondary-700',
+    },
+    UNHEALTHY: {
+        Icon: X,
+        bgColor: 'bg-alert-200',
+        fgColor: 'text-alert-700',
+    },
+    DEGRADED: {
+        Icon: AlertTriangle,
+        bgColor: 'bg-warning-200',
+        fgColor: 'text-warning-700',
+    },
+    HEALTHY: {
+        Icon: Check,
+        bgColor: 'bg-success-200',
+        fgColor: 'text-success-700',
+    },
 };
 
 // @TODO: add optional button text and func
@@ -224,6 +255,9 @@ export function getCredentialExpirationProps(certExpiryStatus) {
 export function formatSensorVersion(sensorVersion) {
     return sensorVersion || 'Not Running';
 }
+
+export const isDelayedSensorHealthStatus = (sensorHealthStatus) =>
+    sensorHealthStatus === 'UNHEALTHY' || sensorHealthStatus === 'DEGRADED';
 
 export function formatUpgradeMessage(upgradeStateObject, detail) {
     if (upgradeStateObject.type === 'current') {

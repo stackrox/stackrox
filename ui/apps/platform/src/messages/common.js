@@ -15,6 +15,13 @@ const common = Object.freeze({
         SWARM_CLUSTER: 'Swarm Version',
         OPENSHIFT_CLUSTER: 'OpenShift Version',
     },
+    healthStatusLabels: {
+        UNINITIALIZED: 'Uninitialized',
+        UNAVAILABLE: 'Unavailable',
+        UNHEALTHY: 'Unhealthy',
+        DEGRADED: 'Degraded',
+        HEALTHY: 'Healthy',
+    },
     lifecycleStageLabels: {
         BUILD: 'Build',
         DEPLOY: 'Deploy',

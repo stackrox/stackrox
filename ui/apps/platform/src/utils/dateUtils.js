@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { distanceInWordsStrict, format } from 'date-fns';
 
 import dateTimeFormat, { dateFormat } from 'constants/dateTimeFormat';
 
@@ -35,6 +35,24 @@ export function getLatestDatedItemByKey(key, list = []) {
 export function addBrandedTimestampToString(str) {
     return `StackRox:${str}-${format(new Date(), dateFormat)}`;
 }
+
+const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/**
+ * Given an ISO 8601 string, return the day of the week.
+ *
+ * date-fns@2: replace new Date(timestamp).getDay() with getDay(parseISO(timestamp))
+ */
+export const getDayOfWeek = (timestamp) => daysOfWeek[new Date(timestamp).getDay()];
+
+/*
+ * Given an ISO 8601 string and Date instance, return the time difference.
+ *
+ * Specify rounding method explicitly because default changes to 'round' in date-fns@2.
+ * formatDistanceStrict(now, parseISO(lastContact), { roundingMethod: 'floor' });
+ */
+export const getDistanceStrict = (lastContact, now) =>
+    distanceInWordsStrict(lastContact, now, { partialMethod: 'floor' });
 
 export default {
     getLatestDatedItemByKey,
