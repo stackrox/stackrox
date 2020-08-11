@@ -181,6 +181,18 @@ function get_authority {
     echo
 }
 
+# get_central_feature_flag_enabled
+# arguments:
+#   - central API server endpoint reachable from this host
+#   - envVar of feature flag to get
+function get_central_feature_flag_enabled {
+    local local_api_endpoint="$1"
+    local env_var="$2"
+
+    curl_central -s "https://${local_api_endpoint}/v1/featureflags" | \
+        jq ".featureFlags[] | select(.envVar==\"${env_var}\") | .enabled"
+}
+
 function setup_license() {
     local local_api_endpoint="$1"
     local license_file="$2"

@@ -274,7 +274,8 @@ function launch_sensor {
     fi
 
     # For now the CI setup requires non-slim collectors.
-    if [[ "$ROX_SUPPORT_SLIM_COLLECTOR_MODE" == "true" ]]; then
+    IS_CENTRAL_ENABLED="$(get_central_feature_flag_enabled "$API_ENDPOINT" ROX_SUPPORT_SLIM_COLLECTOR_MODE)"
+    if [[ "${IS_CENTRAL_ENABLED}" == "true" ]]; then
         extra_config+=("--slim-collector=false")
         extra_json_config+=', "slimCollector": false'
     fi

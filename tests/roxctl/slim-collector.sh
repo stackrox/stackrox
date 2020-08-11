@@ -35,6 +35,12 @@ ROX_API_TOKEN="$(echo "$API_TOKEN_JSON" | jq -er .token)" \
   || die "Failed to retrieve token from JSON"
 export ROX_API_TOKEN
 
+ENABLED="$(curl_central v1/featureflags | jq ".featureFlags[] | select(.envVar==\"ROX_SUPPORT_SLIM_COLLECTOR_MODE\") | .enabled")"
+if [[ "${ENABLED}" != "true" ]]; then
+    echo "Slim collector is not enabled in central. Skipping test."
+    exit 0
+fi
+
 test_collector_image_references_in_deployment_bundles() {
     SLIM_COLLECTOR_FLAG="$1"
     EXPECTED_IMAGE_TAG="$2"
