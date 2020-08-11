@@ -1,0 +1,32 @@
+{
+    "name": "@stackrox/tailwind-config",
+    "version": "0.1.0",
+    "description": "StackRox base Tailwind config and CSS themes",
+    "main": "tailwind.config.js",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/stackrox/rox.git",
+        "directory": "ui/packages/tailwind-config"
+    },
+    "license": "UNLICENSED",
+    "files": [
+        "plugins",
+        "tailwind.config.js",
+        "light.theme.css",
+        "dark.theme.css",
+        "tailwind.css"
+    ],
+    "scripts": {
+        "clean": "rm -f tailwind.css",
+        "build": "postcss ./index.tw.css -o ./tailwind.css",
+        "start": "yarn build",
+        "prepublishOnly": "yarn clean && yarn build"
+    },
+    "dependencies": {
+        "@tailwindcss/custom-forms": "^0.2.1"
+    },
+    "devDependencies": {
+        "postcss-cli": "^6.1.3",
+        "tailwindcss": "^1.4.6"
+    }
+}

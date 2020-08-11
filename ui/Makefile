@@ -63,6 +63,10 @@ clean:
 	rm -rf build
 	rm -rf node_modules
 
+.PHONY: publish-packages
+publish-packages:
+	yarn lerna:publish
+
 ######################
 ## Dev Dependencies ##
 ######################

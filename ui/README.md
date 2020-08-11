@@ -24,6 +24,8 @@ can be consumed by other StackRox projects.
 While working on a particular package, treat it as an independent NPM package,
 e.g. it shouldn't assume that any of the dependencies will be provided by the
 monorepo root package.
+[Inner source](https://en.wikipedia.org/wiki/Inner_Source) model describes the
+intent well.
 
 #### Adding a New Package
 
@@ -46,18 +48,56 @@ their `package.json` files:
     defined, package should place JUnit reports into
     `${TEST_RESULTS_OUTPUT_DIR}/reports` dir, and any artifacts to be stored by
     CI into `${TEST_RESULTS_OUTPUT_DIR}/artifacts`.
+-   `prepublishOnly` - recommended for preparing the package before publishing,
+    e.g. it can in turn run the `build` step.
 
 Note that not having a particular script defined will simply mean that this
-package will be skipped. E.g. if the package doesn't have `test` script, then
-when CI runs unit tests step for this monorepo, no tests will be executed for
-that package.
+package will be skipped when the corresponding script is run on the monorepo
+root level. E.g. if the package doesn't have `test` script, then when CI runs
+unit tests step for this monorepo, no tests will be executed for that package.
 
-_TBD (additional scripts will be added for publishing etc. when least one
-package is there)_
+Ensure the following fields are correctly set in `package.json`:
+
+```json
+"name": "@stackrox/{package-name}",
+"repository": {
+    "type": "git",
+    "url": "https://github.com/stackrox/rox.git",
+    "directory": "ui/packages/{package-dir-name}"
+},
+"license": "UNLICENSED"
+```
+
+Note that the package should be scoped to `@stackrox` and no `"publishConfig"`
+defined in `package.json` as publishing configuration is defined on the monorepo
+root level.
 
 #### Adding a Dependency to Another Package
 
-_TBD (will be filled once at least one package is there)_
+If you need to add a dependency on `@stackrox/package-a` to
+`@stackrox/package-b`, on the monorepo root level run the command
+
+```
+yarn lerna add @stackrox/package-a --scope @stackrox/package-b
+```
+
+(add `--dev` to add `@stackrox/package-a` as a dev dependency).
+
+#### Publishing a New Package Version
+
+The overall flow:
+
+-   Create a branch you'll use to create a PR with new versions defined in
+    `package.json` files.
+-   Run `yarn lerna:version` that will ask you to pick / define new versions for
+    the packages.
+-   Commit the changes to the `package.json` files and create a PR.
+-   Once the PR is merged, CI will automatically publish new versions to GitHub
+    Packages NPM registry.
+
+As we're not using [conventional commits](https://www.conventionalcommits.org/),
+use your best judgement for the version increase, considering
+[semantic versioning](https://semver.org/) best practices.
 
 ### Applications
 
@@ -75,7 +115,7 @@ offerings with one being a functional slimmed down version of the main one.
 
 In this case ensure the following fields are correctly set in `package.json`:
 
-```
+```json
 "name": "@stackrox/{app-name}",
 "version": "0.0.0",
 "private": true,
@@ -89,8 +129,29 @@ In this case ensure the following fields are correctly set in `package.json`:
 
 #### Adding a Dependency to a Package
 
-The same considerations are applied as with a package (see
-[above](#adding-a-dependency-to-another-package)).
+If you need to add a dependency on `@stackrox/package-a` to `@stackrox/my-app`,
+on the monorepo root level run the command
+
+```
+yarn lerna add @stackrox/package-a --scope @stackrox/my-app
+```
+
+(add `--dev` to add `@stackrox/package-a` as a dev dependency).
+
+Once the command succeeds, find `@stackrox/package-a` dependency in the
+`package.json` file of `@stackrox/my-app` and change the version to `"*"` so
+it's
+
+```json
+"@stackrox/package-a": "*"
+```
+
+The reason is that the app is never published therefore it should always depend
+on the version of the package in the same monorepo. Yet when
+[updating package versions](#publishing-a-new-package-version) the
+`lerna:version` script will not touch any `package.json` files with
+`"private": true`, potentially leaving the application to depend on an older
+version of a package.
 
 ## Development
 
@@ -101,7 +162,8 @@ the instructions below.
 ### Build Tooling
 
 -   [Docker](https://www.docker.com/)
--   [Node.js](https://nodejs.org/en/) `12.18.3 LTS` or higher (it's highly
+-   [Node.js](https://nodejs.org/en/) version compatible with the `"engine"`
+    requirements in the [package.json](./package.json) file (it's highly
     recommended to use an LTS version, if you're managing multiple versions of
     Node.js on your machine, consider using
     [nvm](https://github.com/creationix/nvm))
@@ -143,7 +205,9 @@ repo, and repeat the steps above._
 
 #### Using a Remote StackRox Deployment
 
-To develop the front-end platform locally, but use a remote Central, please refer to the detailed instructions in the how-to article [Use remote Central for local front-end dev](https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/1405911069/Use+remote+Central+for+local+front-end+dev)
+To develop the front-end platform locally, but use a remote Central, please
+refer to the detailed instructions in the how-to article
+[Use remote Central for local front-end dev](https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/1405911069/Use+remote+Central+for+local+front-end+dev)
 
 ### IDEs
 
@@ -159,7 +223,7 @@ Examples of configuration for some IDEs:
     [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode),
     then add configuration to `settings.json`:
 
-```
+```json
 "eslint.alwaysShowStatus": true,
 "eslint.codeAction.showDocumentation": {
     "enable": true

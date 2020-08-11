@@ -50,7 +50,7 @@ export const navLinks = [
 
 export const apidocsLink = {
     text: 'API Reference',
-    to: '/main/apidocs', // overrides dark mode: see .redoc-wrap rule in app.css
+    to: '/main/apidocs',
     Icon: Icon.Server,
 };
 

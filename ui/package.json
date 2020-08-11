@@ -13,7 +13,14 @@
             "**/mocha-multi-reporters/**"
         ]
     },
+    "engines": {
+        "node": ">=10.22.0"
+    },
     "scripts": {
+        "lerna:version": "lerna version --no-git-tag-version --no-push --yes",
+        "postlerna:version": "chalk bold red 'Please commit the changes and create a PR!'",
+        "prelerna:publish": "if [ ! \"$CI\" = true ]; then chalk bold red 'Not expected to be used outside of CI context.'; exit 1; fi",
+        "lerna:publish": "lerna publish from-package --yes",
         "clean": "rm -rf build test-results; lerna run clean --stream",
         "prestart": "chalk italic yellowBright 'Why CI=true? See https://github.com/facebook/create-react-app/issues/8685'",
         "start": "CI=true lerna run start --parallel --stream",

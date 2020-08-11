@@ -650,3 +650,7 @@ clean-offline-bundle:
 .PHONY: offline-bundle
 offline-bundle: clean-offline-bundle
 	@./scripts/offline-bundle/create.sh
+
+.PHONY: ui-publish-packages
+ui-publish-packages:
+	make -C ui publish-packages

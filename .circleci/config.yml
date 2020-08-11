@@ -2057,6 +2057,16 @@ jobs:
             docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
             docker push "docker.io/stackrox/main:$(make --quiet tag)" | cat
 
+      - run:
+          name: Publish new versions of NPM packages if any
+          command: |
+            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
+              echo "//npm.pkg.github.com/:_authToken=\"$GITHUB_PACKAGES_PUBLISH_TOKEN\"" > ~/.npmrc
+              make ui-publish-packages
+            else
+              echo "Not on master, skipping publishing NPM packages."
+            fi
+
       - *saveGoModCache
 
       - store_artifacts:

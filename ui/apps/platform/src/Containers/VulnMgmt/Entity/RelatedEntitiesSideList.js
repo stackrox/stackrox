@@ -46,7 +46,7 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
                 !isDarkMode ? 'bg-primary-300' : 'bg-base-100'
             }`}
         >
-            {/* TODO: decide if this should be added as custom tailwind class, or a "component" CSS class in app.css */}
+            {/* TODO: decide if this should be added as custom tailwind class, or a "component" CSS class in app.tw.css */}
             <div className="sticky top-0 py-4">
                 <h2
                     style={{
