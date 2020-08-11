@@ -18,6 +18,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("AWSProviderMetadata", []string{
 		"accountId: String!",
 	}))
+	utils.Must(builder.AddType("AWSSecurityHub", []string{
+		"credentials: AWSSecurityHub_Credentials",
+		"region: String!",
+	}))
+	utils.Must(builder.AddType("AWSSecurityHub_Credentials", []string{
+		"accessKeyId: String!",
+		"secretAccessKey: String!",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Access(0)))
 	utils.Must(builder.AddType("AdmissionControllerConfig", []string{
 		"disableBypass: Boolean!",
@@ -707,6 +715,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"PagerDuty",
 		"Generic",
 		"SumoLogic",
+		"AWSSecurityHub",
 	}))
 	utils.Must(builder.AddType("NumericalPolicy", []string{
 		"op: Comparator!",
@@ -1142,6 +1151,74 @@ func (resolver *Resolver) wrapAWSProviderMetadatas(values []*storage.AWSProvider
 
 func (resolver *aWSProviderMetadataResolver) AccountId(ctx context.Context) string {
 	value := resolver.data.GetAccountId()
+	return value
+}
+
+type aWSSecurityHubResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.AWSSecurityHub
+}
+
+func (resolver *Resolver) wrapAWSSecurityHub(value *storage.AWSSecurityHub, ok bool, err error) (*aWSSecurityHubResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &aWSSecurityHubResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAWSSecurityHubs(values []*storage.AWSSecurityHub, err error) ([]*aWSSecurityHubResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*aWSSecurityHubResolver, len(values))
+	for i, v := range values {
+		output[i] = &aWSSecurityHubResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *aWSSecurityHubResolver) Credentials(ctx context.Context) (*aWSSecurityHub_CredentialsResolver, error) {
+	value := resolver.data.GetCredentials()
+	return resolver.root.wrapAWSSecurityHub_Credentials(value, true, nil)
+}
+
+func (resolver *aWSSecurityHubResolver) Region(ctx context.Context) string {
+	value := resolver.data.GetRegion()
+	return value
+}
+
+type aWSSecurityHub_CredentialsResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.AWSSecurityHub_Credentials
+}
+
+func (resolver *Resolver) wrapAWSSecurityHub_Credentials(value *storage.AWSSecurityHub_Credentials, ok bool, err error) (*aWSSecurityHub_CredentialsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &aWSSecurityHub_CredentialsResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAWSSecurityHub_Credentialses(values []*storage.AWSSecurityHub_Credentials, err error) ([]*aWSSecurityHub_CredentialsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*aWSSecurityHub_CredentialsResolver, len(values))
+	for i, v := range values {
+		output[i] = &aWSSecurityHub_CredentialsResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *aWSSecurityHub_CredentialsResolver) AccessKeyId(ctx context.Context) string {
+	value := resolver.data.GetAccessKeyId()
+	return value
+}
+
+func (resolver *aWSSecurityHub_CredentialsResolver) SecretAccessKey(ctx context.Context) string {
+	value := resolver.data.GetSecretAccessKey()
 	return value
 }
 
@@ -6480,6 +6557,11 @@ func (resolver *notifierResolver) Config() *notifierConfigResolver {
 			resolver: &sumoLogicResolver{root: resolver.root, data: val},
 		}
 	}
+	if val := resolver.data.GetAwsSecurityHub(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &aWSSecurityHubResolver{root: resolver.root, data: val},
+		}
+	}
 	return nil
 }
 
@@ -6515,6 +6597,11 @@ func (resolver *notifierConfigResolver) ToGeneric() (*genericResolver, bool) {
 
 func (resolver *notifierConfigResolver) ToSumoLogic() (*sumoLogicResolver, bool) {
 	res, ok := resolver.resolver.(*sumoLogicResolver)
+	return res, ok
+}
+
+func (resolver *notifierConfigResolver) ToAWSSecurityHub() (*aWSSecurityHubResolver, bool) {
+	res, ok := resolver.resolver.(*aWSSecurityHubResolver)
 	return res, ok
 }
 

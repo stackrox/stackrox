@@ -2,6 +2,7 @@ package processor
 
 import (
 	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -75,6 +76,11 @@ func (p *notifierSetImpl) UpsertNotifier(notifier notifiers.Notifier) {
 	if _, exists := p.failures[notifierID]; !exists {
 		p.failures[notifierID] = NewAlertSet()
 	}
+	if knownNotifier := p.notifiers[notifierID]; knownNotifier != nil && knownNotifier != notifier {
+		if err := knownNotifier.Close(); err != nil {
+			log.Error("failed to close notifier instance", logging.Err(err))
+		}
+	}
 	p.notifiers[notifierID] = notifier
 }
 
@@ -82,6 +88,12 @@ func (p *notifierSetImpl) UpsertNotifier(notifier notifiers.Notifier) {
 func (p *notifierSetImpl) RemoveNotifier(id string) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
+
+	if notifier := p.notifiers[id]; notifier != nil {
+		if err := notifier.Close(); err != nil {
+			log.Error("failed to close notifier instance", logging.Err(err))
+		}
+	}
 
 	delete(p.notifiers, id)
 	delete(p.failures, id)

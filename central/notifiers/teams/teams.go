@@ -216,6 +216,10 @@ func valueListToString(values []*storage.PolicyValue, opString string) string {
 	return strings.Join(valueList, joinWithWhitespace)
 }
 
+func (*teams) Close() error {
+	return nil
+}
+
 // AlertNotify takes in an alert and generates the Teams message
 func (t *teams) AlertNotify(alert *storage.Alert) error {
 	var sections []section

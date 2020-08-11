@@ -209,6 +209,10 @@ func (e *email) plainTextAlert(alert *storage.Alert) (string, error) {
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 
+func (*email) Close() error {
+	return nil
+}
+
 // AlertNotify takes in an alert and generates the email
 func (e *email) AlertNotify(alert *storage.Alert) error {
 	subject := fmt.Sprintf("Deployment %v (%v) violates '%v' Policy", alert.GetDeployment().GetName(),

@@ -18,14 +18,25 @@ message Notifier {
     string label_key           = 8;
     string label_default       = 9;
     oneof config {
-        Jira  jira             = 10;
-        Email email            = 11;
-        CSCC  cscc             = 12;
-        Splunk splunk          = 13;
-        PagerDuty pagerduty    = 14;
-        Generic   generic      = 15;
-        SumoLogic sumologic    = 16;
+        Jira  jira                       = 10;
+        Email email                      = 11;
+        CSCC  cscc                       = 12;
+        Splunk splunk                    = 13;
+        PagerDuty pagerduty              = 14;
+        Generic   generic                = 15;
+        SumoLogic sumologic              = 16;
+        AWSSecurityHub aws_security_hub  = 17;
     }
+}
+
+message AWSSecurityHub {
+    message Credentials {
+        string access_key_id     = 1 [(gogoproto.moretags) = "scrub:\"always\""];
+        string secret_access_key = 2 [(gogoproto.moretags) = "scrub:\"always\""];
+    }
+    string region           = 1;
+    // If empty, default to AWS's chained client credentials resolver.
+    Credentials credentials = 2;
 }
 
 message CSCC {

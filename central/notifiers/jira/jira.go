@@ -130,6 +130,10 @@ func (j *jira) getAlertDescription(alert *storage.Alert) (string, error) {
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 
+func (j *jira) Close() error {
+	return nil
+}
+
 // AlertNotify takes in an alert and generates the notification
 func (j *jira) AlertNotify(alert *storage.Alert) error {
 	description, err := j.getAlertDescription(alert)

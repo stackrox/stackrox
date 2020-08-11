@@ -48,6 +48,20 @@ func (mr *MockAuditNotifierMockRecorder) AuditLoggingEnabled() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuditLoggingEnabled", reflect.TypeOf((*MockAuditNotifier)(nil).AuditLoggingEnabled))
 }
 
+// Close mocks base method
+func (m *MockAuditNotifier) Close() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Close")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Close indicates an expected call of Close
+func (mr *MockAuditNotifierMockRecorder) Close() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockAuditNotifier)(nil).Close))
+}
+
 // ProtoNotifier mocks base method
 func (m *MockAuditNotifier) ProtoNotifier() *storage.Notifier {
 	m.ctrl.T.Helper()

@@ -103,6 +103,10 @@ func getSplunkEvent(msg proto.Message) (*wrapper.SplunkEvent, error) {
 	}, nil
 }
 
+func (*splunk) Close() error {
+	return nil
+}
+
 func (s *splunk) SendAuditMessage(msg *v1.Audit_Message) error {
 	if !s.AuditLoggingEnabled() {
 		return nil

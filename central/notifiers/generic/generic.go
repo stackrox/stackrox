@@ -45,6 +45,10 @@ type generic struct {
 	extraFieldsJSONPrefix  string
 }
 
+func (*generic) Close() error {
+	return nil
+}
+
 // AlertNotify takes in an alert and generates the Slack message
 func (g *generic) AlertNotify(alert *storage.Alert) error {
 	return g.postMessageWithRetry(alert, alertMessageKey)

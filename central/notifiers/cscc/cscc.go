@@ -146,6 +146,10 @@ func (c *cscc) getCluster(id string) (*storage.Cluster, error) {
 	return cluster, nil
 }
 
+func (c *cscc) Close() error {
+	return nil
+}
+
 //AlertNotify takes in an alert and generates the notification
 func (c *cscc) AlertNotify(alert *storage.Alert) error {
 	alertLink := notifiers.AlertLink(c.Notifier.UiEndpoint, alert.GetId())

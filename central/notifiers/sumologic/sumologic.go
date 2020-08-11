@@ -36,6 +36,10 @@ type sumologic struct {
 	fullyQualifiedEndpoint string
 }
 
+func (*sumologic) Close() error {
+	return nil
+}
+
 // AlertNotify takes in an alert and generates the Slack message
 func (s *sumologic) AlertNotify(alert *storage.Alert) error {
 	clonedAlert := alert.Clone()

@@ -78,6 +78,10 @@ func validate(conf *storage.PagerDuty) error {
 	return nil
 }
 
+func (*pagerDuty) Close() error {
+	return nil
+}
+
 func (p *pagerDuty) AlertNotify(alert *storage.Alert) error {
 	return p.postAlert(alert, newAlert)
 }

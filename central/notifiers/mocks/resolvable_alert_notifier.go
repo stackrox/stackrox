@@ -61,6 +61,20 @@ func (mr *MockResolvableAlertNotifierMockRecorder) AlertNotify(arg0 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AlertNotify", reflect.TypeOf((*MockResolvableAlertNotifier)(nil).AlertNotify), arg0)
 }
 
+// Close mocks base method
+func (m *MockResolvableAlertNotifier) Close() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Close")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Close indicates an expected call of Close
+func (mr *MockResolvableAlertNotifierMockRecorder) Close() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockResolvableAlertNotifier)(nil).Close))
+}
+
 // ProtoNotifier mocks base method
 func (m *MockResolvableAlertNotifier) ProtoNotifier() *storage.Notifier {
 	m.ctrl.T.Helper()

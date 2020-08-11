@@ -110,6 +110,10 @@ func (s *slack) getDescription(alert *storage.Alert) (string, error) {
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 
+func (*slack) Close() error {
+	return nil
+}
+
 // AlertNotify takes in an alert and generates the Slack message
 func (s *slack) AlertNotify(alert *storage.Alert) error {
 	tagLine := fmt.Sprintf("*Deployment %v (%v) violates '%v' Policy*", alert.Deployment.Name, alert.Deployment.Id, alert.Policy.Name)
