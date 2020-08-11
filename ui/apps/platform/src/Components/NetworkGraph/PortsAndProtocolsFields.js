@@ -25,7 +25,8 @@ export function getPortsAndProtocolsMap(portsAndProtocols) {
 }
 
 /**
- * Goes through a list of ports and returns a comma separated list of ports
+ * Goes through a list of ports and returns a comma separated list of ports.
+ * As a special case, a list containing 0 will be translated to "any".
  *
  * Example: [1, 2, 3, 4] -> "1, 2, 3, 4"
  *          [1, 2, 3, 4, 5, 6, 7, 8] -> "1, 2, 3, 4, 5, +3 more"
@@ -34,6 +35,9 @@ export function getPortsAndProtocolsMap(portsAndProtocols) {
  * @returns {!String}
  */
 export function getPortsText(ports) {
+    if (ports.some((p) => p === 0)) {
+        return 'any port';
+    }
     const numVisiblePorts = 5;
     if (ports.length <= numVisiblePorts) return ports.join(', ');
     const subsetOfPorts = ports.slice(0, numVisiblePorts);

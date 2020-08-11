@@ -34,6 +34,8 @@ message NetworkGraphRequest {
     string cluster_id               = 1;
     string query                    = 2;
     google.protobuf.Timestamp since = 3;
+
+    bool include_ports = 4;
 }
 
 message NetworkGraph {

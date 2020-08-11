@@ -14,8 +14,12 @@ const NETWORK_GRAPH_REQUESTS_TIMEOUT = 0;
  *
  * @returns {Promise<Object, Error>}
  */
-export function fetchNetworkPolicyGraph(clusterId, query, modification) {
-    const params = queryString.stringify({ query }, { arrayFormat: 'repeat' });
+export function fetchNetworkPolicyGraph(clusterId, query, modification, includePorts) {
+    const urlParams = { query };
+    if (includePorts) {
+        urlParams.includePorts = true;
+    }
+    const params = queryString.stringify(urlParams, { arrayFormat: 'repeat' });
     let options;
     let getGraph = (data) => data;
     if (modification) {
@@ -46,14 +50,16 @@ export function fetchNetworkPolicyGraph(clusterId, query, modification) {
  *
  * @returns {Promise<Object, Error>}
  */
-export function fetchNetworkFlowGraph(clusterId, query, date) {
-    let params;
+export function fetchNetworkFlowGraph(clusterId, query, date, includePorts) {
+    const urlParams = { query };
     if (date) {
-        const since = date.toISOString();
-        params = queryString.stringify({ query, since }, { arrayFormat: 'repeat' });
-    } else {
-        params = queryString.stringify({ query }, { arrayFormat: 'repeat' });
+        urlParams.since = date.toISOString();
     }
+    if (includePorts) {
+        urlParams.includePorts = true;
+    }
+
+    const params = queryString.stringify(urlParams, { arrayFormat: 'repeat' });
     const options = {
         method: 'GET',
         url: `${networkFlowBaseUrl}/cluster/${clusterId}?${params}`,

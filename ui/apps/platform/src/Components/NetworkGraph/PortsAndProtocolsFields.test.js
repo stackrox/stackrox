@@ -36,4 +36,20 @@ describe('getPortsText', () => {
         const result = getPortsText(data);
         expect(result).toEqual(expectedResult);
     });
+
+    it('should return "any port" if there only is a 0 entry', () => {
+        const data = [0];
+        const expectedResult = 'any port';
+
+        const result = getPortsText(data);
+        expect(result).toEqual(expectedResult);
+    });
+
+    it('should return "any" if there is a 0 entry among others', () => {
+        const data = [20, 21, 0, 23, 25];
+        const expectedResult = 'any port';
+
+        const result = getPortsText(data);
+        expect(result).toEqual(expectedResult);
+    });
 });

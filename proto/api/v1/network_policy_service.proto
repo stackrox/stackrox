@@ -42,6 +42,9 @@ message SimulateNetworkGraphRequest {
     string cluster_id                      = 1;
     string query                           = 2;
     storage.NetworkPolicyModification modification = 3;
+
+    // If set to true, include port-level information in the network policy graph.
+    bool include_ports = 4;
 }
 
 message ApplyNetworkPolicyYamlRequest {

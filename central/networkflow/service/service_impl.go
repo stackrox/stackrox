@@ -61,7 +61,10 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.NetworkGraphRequest) (*v1.NetworkGraph, error) {
-	return s.getNetworkGraph(ctx, request, features.NetworkGraphPorts.Enabled())
+	if !features.NetworkGraphPorts.Enabled() && request.GetIncludePorts() {
+		return nil, status.Error(codes.Unimplemented, "support for ports in network flow graph is not enabled")
+	}
+	return s.getNetworkGraph(ctx, request, request.GetIncludePorts())
 }
 
 func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGraphRequest, withListenPorts bool) (*v1.NetworkGraph, error) {

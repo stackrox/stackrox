@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -154,6 +155,10 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 }
 
 func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetworkGraphRequest) (*v1.NetworkGraph, error) {
+	if !features.NetworkGraphPorts.Enabled() && request.GetIncludePorts() {
+		return nil, status.Error(codes.Unimplemented, "support for ports in network policy graph is not enabled")
+	}
+
 	if request.GetClusterId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "cluster ID must be specified")
 	}
@@ -228,6 +233,10 @@ func (s *serviceImpl) ApplyNetworkPolicy(ctx context.Context, request *v1.ApplyN
 }
 
 func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.SimulateNetworkGraphRequest) (*v1.SimulateNetworkGraphResponse, error) {
+	if !features.NetworkGraphPorts.Enabled() && request.GetIncludePorts() {
+		return nil, status.Error(codes.Unimplemented, "support for ports in network policy simulation is not enabled")
+	}
+
 	if request.GetClusterId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Cluster ID must be specified")
 	}
@@ -282,7 +291,7 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 			return nil, status.Errorf(codes.Internal, "unhandled policy status %v", policyInSim.GetStatus())
 		}
 	}
-	newGraph := s.graphEvaluator.GetGraph(request.GetClusterId(), deployments, newPolicies, false)
+	newGraph := s.graphEvaluator.GetGraph(request.GetClusterId(), deployments, newPolicies, request.GetIncludePorts())
 	result := &v1.SimulateNetworkGraphResponse{
 		SimulatedGraph: newGraph,
 		Policies:       networkPoliciesInSimulation,
@@ -292,7 +301,7 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 		return result, nil
 	}
 
-	oldGraph := s.graphEvaluator.GetGraph(request.GetClusterId(), deployments, oldPolicies, false)
+	oldGraph := s.graphEvaluator.GetGraph(request.GetClusterId(), deployments, oldPolicies, request.GetIncludePorts())
 	removedEdges, addedEdges, err := graph.ComputeDiff(oldGraph, newGraph)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not compute a network graph diff")
