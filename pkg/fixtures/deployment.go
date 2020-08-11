@@ -123,3 +123,20 @@ func GetDeployment() *storage.Deployment {
 	dep.Containers = append(dep.Containers, &storage.Container{Name: "supervulnerable", Image: types2.ToContainerImage(GetImage())})
 	return dep
 }
+
+// GetComplianceDeployment returns a mock ComplianceDeployment
+func GetComplianceDeployment() *storage.ComplianceDeployment {
+	dep := LightweightDeployment()
+	return &storage.ComplianceDeployment{
+		Id:          dep.Id,
+		Name:        dep.Name,
+		Hash:        dep.Hash,
+		Type:        dep.Type,
+		Namespace:   dep.Namespace,
+		NamespaceId: dep.NamespaceId,
+		Labels:      dep.Labels,
+		PodLabels:   dep.PodLabels,
+		ClusterId:   dep.ClusterId,
+		ClusterName: dep.ClusterName,
+	}
+}

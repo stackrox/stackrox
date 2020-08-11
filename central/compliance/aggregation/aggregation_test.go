@@ -518,9 +518,9 @@ func TestIsValidCheck(t *testing.T) {
 
 func mockBenchmarkRunResult() *storage.ComplianceRunResults {
 	deploymentResults := make(map[string]*storage.ComplianceRunResults_EntityResults)
-	deployments := make(map[string]*storage.Deployment)
+	deployments := make(map[string]*storage.ComplianceDeployment)
 	for i := 0; i < 10000; i++ {
-		deployment := fixtures.GetDeployment()
+		deployment := fixtures.GetComplianceDeployment()
 		deployment.Id = uuid.NewV4().String()
 		results := &storage.ComplianceRunResults_EntityResults{
 			ControlResults: make(map[string]*storage.ComplianceResultValue),
