@@ -27,15 +27,30 @@ func getDomainProto(domain framework.ComplianceDomain) *storage.ComplianceDomain
 	}
 
 	deployments := framework.Deployments(domain)
-	deploymentMap := make(map[string]*storage.Deployment, len(deployments))
+	deploymentMap := make(map[string]*storage.ComplianceDeployment, len(deployments))
 	for _, deployment := range deployments {
-		deploymentMap[deployment.GetId()] = deployment
+		deploymentMap[deployment.GetId()] = makeComplianceDeployment(deployment)
 	}
 
 	return &storage.ComplianceDomain{
 		Cluster:     domain.Cluster().Cluster(),
 		Nodes:       nodeMap,
 		Deployments: deploymentMap,
+	}
+}
+
+func makeComplianceDeployment(deployment *storage.Deployment) *storage.ComplianceDeployment {
+	return &storage.ComplianceDeployment{
+		Id:          deployment.GetId(),
+		Name:        deployment.GetName(),
+		Hash:        deployment.GetHash(),
+		Type:        deployment.GetType(),
+		Namespace:   deployment.GetNamespace(),
+		NamespaceId: deployment.GetNamespaceId(),
+		Labels:      deployment.GetLabels(),
+		PodLabels:   deployment.GetPodLabels(),
+		ClusterId:   deployment.GetClusterId(),
+		ClusterName: deployment.GetClusterName(),
 	}
 }
 

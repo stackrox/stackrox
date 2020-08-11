@@ -49,9 +49,9 @@ func InitCompliance() {
 			schema.AddQuery("executedControlCount(query: String): Int!"),
 			schema.AddExtraResolver("ComplianceStandardMetadata", "controls: [ComplianceControl!]!"),
 			schema.AddExtraResolver("ComplianceStandardMetadata", "groups: [ComplianceControlGroup!]!"),
-			schema.AddUnionType("ComplianceDomainKey", []string{"ComplianceStandardMetadata", "ComplianceControlGroup", "ComplianceControl", "Cluster", "Deployment", "Node", "Namespace"}),
+			schema.AddUnionType("ComplianceDomainKey", []string{"ComplianceStandardMetadata", "ComplianceControlGroup", "ComplianceControl", "Cluster", "ComplianceDeployment", "Node", "Namespace"}),
 			schema.AddExtraResolver("ComplianceAggregation_Result", "keys: [ComplianceDomainKey!]!"),
-			schema.AddUnionType("Resource", []string{"Deployment", "Cluster", "Node"}),
+			schema.AddUnionType("Resource", []string{"ComplianceDeployment", "Cluster", "Node"}),
 			schema.AddType("ControlResult", []string{"resource: Resource", "control: ComplianceControl", "value: ComplianceResultValue"}),
 			schema.AddExtraResolver("ComplianceStandardMetadata", "complianceResults(query: String): [ControlResult!]!"),
 			schema.AddExtraResolver("ComplianceControl", "complianceResults(query: String): [ControlResult!]!"),
@@ -279,7 +279,7 @@ func newComplianceDomainKeyResolverWrapped(ctx context.Context, root *Resolver, 
 	case v1.ComplianceAggregation_DEPLOYMENT:
 		deployment, found := domain.GetDeployments()[key.GetId()]
 		if found {
-			return &deploymentResolver{ctx, root, deployment, nil}
+			return &complianceDeploymentResolver{ctx, root, deployment}
 		}
 	case v1.ComplianceAggregation_NAMESPACE:
 		receivedNS, found, err := namespace.ResolveByID(ctx, key.GetId(), root.NamespaceDataStore,
@@ -324,8 +324,8 @@ func (resolver *complianceDomainKeyResolver) ToCluster() (cluster *clusterResolv
 	return r, ok
 }
 
-func (resolver *complianceDomainKeyResolver) ToDeployment() (deployment *deploymentResolver, found bool) {
-	r, ok := resolver.wrapped.(*deploymentResolver)
+func (resolver *complianceDomainKeyResolver) ToComplianceDeployment() (deployment *complianceDeploymentResolver, found bool) {
+	r, ok := resolver.wrapped.(*complianceDeploymentResolver)
 	return r, ok
 }
 
@@ -405,7 +405,7 @@ type controlResultResolver struct {
 	root       *Resolver
 	controlID  string
 	value      *storage.ComplianceResultValue
-	deployment *storage.Deployment
+	deployment *storage.ComplianceDeployment
 	cluster    *storage.Cluster
 	node       *storage.Node
 }
@@ -417,7 +417,7 @@ func newBulkControlResults() *bulkControlResults {
 	return &output
 }
 
-func (container *bulkControlResults) addDeploymentData(root *Resolver, results []*storage.ComplianceRunResults, filter func(*storage.Deployment, *v1.ComplianceControl) bool) {
+func (container *bulkControlResults) addComplianceDeploymentData(root *Resolver, results []*storage.ComplianceRunResults, filter func(*storage.ComplianceDeployment, *v1.ComplianceControl) bool) {
 	for _, runResult := range results {
 		for did, res := range runResult.GetDeploymentResults() {
 			deployment := runResult.GetDomain().GetDeployments()[did]
@@ -480,11 +480,11 @@ func (resolver *controlResultResolver) Control(ctx context.Context) (*compliance
 	return resolver.root.ComplianceControl(ctx, struct{ graphql.ID }{graphql.ID(resolver.controlID)})
 }
 
-func (resolver *controlResultResolver) ToDeployment() (*deploymentResolver, bool) {
+func (resolver *controlResultResolver) ToComplianceDeployment() (*complianceDeploymentResolver, bool) {
 	if resolver.deployment == nil {
 		return nil, false
 	}
-	return &deploymentResolver{nil, resolver.root, resolver.deployment, nil}, true
+	return &complianceDeploymentResolver{nil, resolver.root, resolver.deployment}, true
 }
 
 func (resolver *controlResultResolver) ToCluster() (*clusterResolver, bool) {
@@ -521,7 +521,7 @@ func (resolver *complianceStandardMetadataResolver) ComplianceResults(ctx contex
 	}
 	output := newBulkControlResults()
 	output.addClusterData(resolver.root, runResults, nil)
-	output.addDeploymentData(resolver.root, runResults, nil)
+	output.addComplianceDeploymentData(resolver.root, runResults, nil)
 	output.addNodeData(resolver.root, runResults, nil)
 
 	return *output, nil
@@ -539,7 +539,7 @@ func (resolver *complianceControlResolver) ComplianceResults(ctx context.Context
 	output.addClusterData(resolver.root, runResults, func(control *v1.ComplianceControl) bool {
 		return control.GetId() == resolver.data.GetId()
 	})
-	output.addDeploymentData(resolver.root, runResults, func(deployment *storage.Deployment, control *v1.ComplianceControl) bool {
+	output.addComplianceDeploymentData(resolver.root, runResults, func(deployment *storage.ComplianceDeployment, control *v1.ComplianceControl) bool {
 		return control.GetId() == resolver.data.GetId()
 	})
 	output.addNodeData(resolver.root, runResults, func(node *storage.Node, control *v1.ComplianceControl) bool {

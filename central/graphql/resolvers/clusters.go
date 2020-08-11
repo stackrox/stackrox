@@ -300,7 +300,7 @@ func (resolver *clusterResolver) ComplianceResults(ctx context.Context, args Raw
 	}
 	output := newBulkControlResults()
 	output.addClusterData(resolver.root, runResults, nil)
-	output.addDeploymentData(resolver.root, runResults, nil)
+	output.addComplianceDeploymentData(resolver.root, runResults, nil)
 	output.addNodeData(resolver.root, runResults, nil)
 	return *output, nil
 }

@@ -287,6 +287,17 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"resource: ComplianceResource",
 		"value: ComplianceResultValue",
 	}))
+	utils.Must(builder.AddType("ComplianceDeployment", []string{
+		"clusterId: String!",
+		"clusterName: String!",
+		"id: ID!",
+		"labels: [Label!]!",
+		"name: String!",
+		"namespace: String!",
+		"namespaceId: String!",
+		"podLabels: [Label!]!",
+		"type: String!",
+	}))
 	utils.Must(builder.AddType("ComplianceResource", []string{
 		"resource: ComplianceResourceResource",
 	}))
@@ -3298,6 +3309,75 @@ func (resolver *complianceControlResultResolver) Resource(ctx context.Context) (
 func (resolver *complianceControlResultResolver) Value(ctx context.Context) (*complianceResultValueResolver, error) {
 	value := resolver.data.GetValue()
 	return resolver.root.wrapComplianceResultValue(value, true, nil)
+}
+
+type complianceDeploymentResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ComplianceDeployment
+}
+
+func (resolver *Resolver) wrapComplianceDeployment(value *storage.ComplianceDeployment, ok bool, err error) (*complianceDeploymentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceDeploymentResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceDeployments(values []*storage.ComplianceDeployment, err error) ([]*complianceDeploymentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceDeploymentResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceDeploymentResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceDeploymentResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *complianceDeploymentResolver) ClusterName(ctx context.Context) string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *complianceDeploymentResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *complianceDeploymentResolver) Labels(ctx context.Context) labels {
+	value := resolver.data.GetLabels()
+	return labelsResolver(value)
+}
+
+func (resolver *complianceDeploymentResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *complianceDeploymentResolver) Namespace(ctx context.Context) string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *complianceDeploymentResolver) NamespaceId(ctx context.Context) string {
+	value := resolver.data.GetNamespaceId()
+	return value
+}
+
+func (resolver *complianceDeploymentResolver) PodLabels(ctx context.Context) labels {
+	value := resolver.data.GetPodLabels()
+	return labelsResolver(value)
+}
+
+func (resolver *complianceDeploymentResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value
 }
 
 type complianceResourceResolver struct {

@@ -28,34 +28,34 @@
               {
                 "id": 1,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sensorhash:\\\"ignore\\"
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "policy",
-                "type": "Policy",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search_index:\\\"Policy ID,Policy,Category,Severity\\"
-                  }
-                ]
+                "type": "Policy"
               },
               {
                 "id": 3,
                 "name": "lifecycle_stage",
-                "type": "LifecycleStage",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Lifecycle Stage,store\\"
-                  }
-                ]
+                "type": "LifecycleStage"
               },
               {
                 "id": 4,
                 "name": "deployment",
-                "type": "Deployment"
+                "type": "Deployment",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sensorhash:\\\"ignore\\"
+                  }
+                ]
               },
               {
                 "id": 5,
@@ -80,30 +80,36 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Violation Time\\"
+                    "value": "sensorhash:\\\"ignore\\"
                   }
                 ]
               },
               {
                 "id": 10,
                 "name": "first_occurred",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sensorhash:\\\"ignore\\"
+                  }
+                ]
               },
               {
                 "id": 11,
                 "name": "state",
-                "type": "ViolationState",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Violation State,store\\"
-                  }
-                ]
+                "type": "ViolationState"
               },
               {
                 "id": 12,
                 "name": "snooze_till",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 14,
+                "name": "tags",
+                "type": "string",
+                "is_repeated": true
               }
             ],
             "messages": [
@@ -113,24 +119,12 @@
                   {
                     "id": 1,
                     "name": "id",
-                    "type": "string",
-                    "options": [
-                      {
-                        "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"Deployment ID,store,hidden\\"
-                      }
-                    ]
+                    "type": "string"
                   },
                   {
                     "id": 2,
                     "name": "name",
-                    "type": "string",
-                    "options": [
-                      {
-                        "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"Deployment,store\\"
-                      }
-                    ]
+                    "type": "string"
                   },
                   {
                     "id": 4,
@@ -140,35 +134,22 @@
                   {
                     "id": 5,
                     "name": "namespace",
-                    "type": "string",
-                    "options": [
-                      {
-                        "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"Namespace,store\\"
-                      }
-                    ]
+                    "type": "string"
+                  },
+                  {
+                    "id": 16,
+                    "name": "namespace_id",
+                    "type": "string"
                   },
                   {
                     "id": 9,
                     "name": "cluster_id",
-                    "type": "string",
-                    "options": [
-                      {
-                        "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"Cluster ID,store\\"
-                      }
-                    ]
+                    "type": "string"
                   },
                   {
                     "id": 10,
                     "name": "cluster_name",
-                    "type": "string",
-                    "options": [
-                      {
-                        "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"Cluster,store\\"
-                      }
-                    ]
+                    "type": "string"
                   },
                   {
                     "id": 11,
@@ -179,13 +160,7 @@
                   {
                     "id": 15,
                     "name": "inactive",
-                    "type": "bool",
-                    "options": [
-                      {
-                        "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"Inactive Deployment,store\\"
-                      }
-                    ]
+                    "type": "bool"
                   }
                 ],
                 "maps": [
@@ -213,32 +188,14 @@
                       {
                         "id": 3,
                         "name": "image",
-                        "type": "ContainerImage",
-                        "options": [
-                          {
-                            "name": "(gogoproto.moretags)",
-                            "value": "search:\\\"-\\"
-                          }
-                        ]
+                        "type": "ContainerImage"
                       },
                       {
                         "id": 10,
                         "name": "name",
                         "type": "string"
                       }
-                    ],
-                    "options": [
-                      {
-                        "name": "(gogoproto.goproto_unrecognized)",
-                        "value": "false"
-                      }
                     ]
-                  }
-                ],
-                "options": [
-                  {
-                    "name": "(gogoproto.goproto_unrecognized)",
-                    "value": "false"
                   }
                 ]
               },
@@ -254,13 +211,7 @@
                     "id": 3,
                     "name": "DEPRECATED_processes",
                     "type": "ProcessIndicator",
-                    "is_repeated": true,
-                    "options": [
-                      {
-                        "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"-\\"
-                      }
-                    ]
+                    "is_repeated": true
                   }
                 ],
                 "reserved_ids": [
@@ -279,13 +230,7 @@
                     "id": 2,
                     "name": "processes",
                     "type": "ProcessIndicator",
-                    "is_repeated": true,
-                    "options": [
-                      {
-                        "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"-\\"
-                      }
-                    ]
+                    "is_repeated": true
                   }
                 ]
               },
@@ -361,6 +306,18 @@
                 "id": 7,
                 "name": "enforcement_count",
                 "type": "int32"
+              },
+              {
+                "id": 8,
+                "name": "tags",
+                "type": "string",
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Tag,store\\"
+                  }
+                ]
               }
             ]
           },
@@ -484,7 +441,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Inactive Deployment,store\\"
+                    "value": "search:\\\"Inactive Deployment\\"
                   }
                 ]
               }
@@ -534,9 +491,10 @@
                 "type": "string"
               },
               {
-                "id": 3,
-                "name": "role",
-                "type": "string"
+                "id": 7,
+                "name": "roles",
+                "type": "string",
+                "is_repeated": true
               },
               {
                 "id": 4,
@@ -552,6 +510,17 @@
                 "id": 6,
                 "name": "revoked",
                 "type": "bool"
+              },
+              {
+                "id": 3,
+                "name": "role",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               }
             ]
           }
@@ -752,6 +721,18 @@
             ]
           },
           {
+            "name": "UpgradeProcessStatus.UpgradeProcessType",
+            "enum_fields": [
+              {
+                "name": "UPGRADE"
+              },
+              {
+                "name": "CERT_ROTATION",
+                "integer": 1
+              }
+            ]
+          },
+          {
             "name": "UpgradeProgress.UpgradeState",
             "enum_fields": [
               {
@@ -804,6 +785,30 @@
               {
                 "name": "UPGRADE_TIMED_OUT",
                 "integer": 17
+              }
+            ]
+          },
+          {
+            "name": "ClusterHealthStatus.HealthStatusLabel",
+            "enum_fields": [
+              {
+                "name": "UNINITIALIZED"
+              },
+              {
+                "name": "UNAVAILABLE",
+                "integer": 1
+              },
+              {
+                "name": "UNHEALTHY",
+                "integer": 2
+              },
+              {
+                "name": "DEGRADED",
+                "integer": 3
+              },
+              {
+                "name": "HEALTHY",
+                "integer": 4
               }
             ]
           }
@@ -922,6 +927,11 @@
                 "id": 4,
                 "name": "disable_bypass",
                 "type": "bool"
+              },
+              {
+                "id": 5,
+                "name": "enforce_on_updates",
+                "type": "bool"
               }
             ]
           },
@@ -1007,11 +1017,6 @@
                 ]
               },
               {
-                "id": 8,
-                "name": "monitoring_endpoint",
-                "type": "string"
-              },
-              {
                 "id": 17,
                 "name": "collection_method",
                 "type": "CollectionMethod"
@@ -1024,6 +1029,11 @@
               {
                 "id": 13,
                 "name": "admission_controller",
+                "type": "bool"
+              },
+              {
+                "id": 21,
+                "name": "admission_controller_updates",
                 "type": "bool"
               },
               {
@@ -1050,13 +1060,29 @@
                 "id": 20,
                 "name": "priority",
                 "type": "int64"
+              },
+              {
+                "id": 22,
+                "name": "health_status",
+                "type": "ClusterHealthStatus"
               }
             ],
             "reserved_ids": [
               6,
+              8,
               9,
               10,
               11
+            ]
+          },
+          {
+            "name": "ClusterCertExpiryStatus",
+            "fields": [
+              {
+                "id": 1,
+                "name": "sensor_cert_expiry",
+                "type": "google.protobuf.Timestamp"
+              }
             ]
           },
           {
@@ -1086,6 +1112,11 @@
                 "id": 5,
                 "name": "upgrade_status",
                 "type": "ClusterUpgradeStatus"
+              },
+              {
+                "id": 6,
+                "name": "cert_expiry_status",
+                "type": "ClusterCertExpiryStatus"
               }
             ]
           },
@@ -1141,6 +1172,11 @@
                     "id": 6,
                     "name": "progress",
                     "type": "UpgradeProgress"
+                  },
+                  {
+                    "id": 7,
+                    "name": "type",
+                    "type": "UpgradeProcessType"
                   }
                 ]
               }
@@ -1193,6 +1229,182 @@
                   {
                     "name": "(gogoproto.moretags)",
                     "value": "search:\\\"Cluster CVE Fixed By,store,hidden\\"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ClusterHealthStatus",
+            "fields": [
+              {
+                "id": 1,
+                "name": "collector_health_info",
+                "type": "CollectorHealthInfo"
+              },
+              {
+                "id": 2,
+                "name": "sensor_health_status",
+                "type": "HealthStatusLabel",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Sensor Status\\"
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "collector_health_status",
+                "type": "HealthStatusLabel",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Collector Status\\"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "overall_health_status",
+                "type": "HealthStatusLabel",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster Status\\"
+                  }
+                ]
+              },
+              {
+                "id": 5,
+                "name": "last_updated",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 6,
+                "name": "health_info_complete",
+                "type": "bool"
+              }
+            ]
+          },
+          {
+            "name": "CollectorHealthInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "version",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "total_desired_pods",
+                "type": "int32"
+              },
+              {
+                "id": 3,
+                "name": "total_ready_pods",
+                "type": "int32"
+              },
+              {
+                "id": 4,
+                "name": "total_registered_nodes",
+                "type": "int32"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "comments.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "ResourceType",
+            "enum_fields": [
+              {
+                "name": "UNSET_RESOURCE_TYPE"
+              },
+              {
+                "name": "ALERT",
+                "integer": 1
+              },
+              {
+                "name": "PROCESS",
+                "integer": 2
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "Comment",
+            "fields": [
+              {
+                "id": 1,
+                "name": "resource_type",
+                "type": "ResourceType"
+              },
+              {
+                "id": 2,
+                "name": "resource_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "comment_id",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "comment_message",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "user",
+                "type": "User"
+              },
+              {
+                "id": 6,
+                "name": "created_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 7,
+                "name": "last_modified",
+                "type": "google.protobuf.Timestamp"
+              }
+            ],
+            "messages": [
+              {
+                "name": "User",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "email",
+                    "type": "string"
                   }
                 ]
               }
@@ -1444,7 +1656,7 @@
                 "field": {
                   "id": 3,
                   "name": "deployments",
-                  "type": "Deployment"
+                  "type": "ComplianceDeployment"
                 }
               }
             ]
@@ -1552,6 +1764,69 @@
                 "is_repeated": true
               }
             ]
+          },
+          {
+            "name": "ComplianceDeployment",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 26,
+                "name": "hash",
+                "type": "uint64"
+              },
+              {
+                "id": 4,
+                "name": "type",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "namespace",
+                "type": "string"
+              },
+              {
+                "id": 23,
+                "name": "namespace_id",
+                "type": "string"
+              },
+              {
+                "id": 9,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 10,
+                "name": "cluster_name",
+                "type": "string"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 7,
+                  "name": "labels",
+                  "type": "string"
+                }
+              },
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 19,
+                  "name": "pod_labels",
+                  "type": "string"
+                }
+              }
+            ]
           }
         ],
         "imports": [
@@ -1560,9 +1835,6 @@
           },
           {
             "path": "storage/cluster.proto"
-          },
-          {
-            "path": "storage/deployment.proto"
           },
           {
             "path": "storage/image.proto"
@@ -1801,9 +2073,20 @@
               {
                 "id": 2,
                 "name": "version",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Container Runtime,store\\"
+                  }
+                ]
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -2165,7 +2448,23 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"CVE Suppressed,store\\"
+                    "value": "search:\\\"CVE Snoozed,store\\"
+                  }
+                ]
+              },
+              {
+                "id": 16,
+                "name": "suppress_activation",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 17,
+                "name": "suppress_expiry",
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"CVE Snooze Expiry,store,hidden\\"
                   }
                 ]
               }
@@ -2577,7 +2876,13 @@
                 "id": 22,
                 "name": "tolerations",
                 "type": "Toleration",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"-\\"
+                  }
+                ]
               },
               {
                 "id": 24,
@@ -2603,7 +2908,19 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Risk Score,hidden\\"
+                    "value": "search:\\\"Risk Score,hidden\\\" policy:\\\",ignore\\"
+                  }
+                ]
+              },
+              {
+                "id": 30,
+                "name": "process_tags",
+                "type": "string",
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Process Tag,store\\"
                   }
                 ]
               }
@@ -2728,7 +3045,13 @@
                 "id": 6,
                 "name": "ports",
                 "type": "PortConfig",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "policy:\\\",ignore\\"
+                  }
+                ]
               },
               {
                 "id": 7,
@@ -2756,7 +3079,13 @@
               {
                 "id": 10,
                 "name": "name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "policy:\\\"Container Name\\"
+                  }
+                ]
               }
             ]
           },
@@ -2870,6 +3199,102 @@
             ]
           },
           {
+            "name": "Pod",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Pod ID,hidden\\"
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Pod Name,hidden\\"
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "deployment_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Deployment ID,hidden\\"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "namespace",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Namespace,store\\"
+                  }
+                ]
+              },
+              {
+                "id": 5,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster ID,store,hidden\\"
+                  }
+                ]
+              },
+              {
+                "id": 6,
+                "name": "live_instances",
+                "type": "ContainerInstance",
+                "is_repeated": true
+              },
+              {
+                "id": 7,
+                "name": "terminated_instances",
+                "type": "ContainerInstanceList",
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"-\\"
+                  }
+                ]
+              },
+              {
+                "id": 8,
+                "name": "started",
+                "type": "google.protobuf.Timestamp"
+              }
+            ],
+            "messages": [
+              {
+                "name": "ContainerInstanceList",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "instances",
+                    "type": "ContainerInstance",
+                    "is_repeated": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
             "name": "ContainerInstance",
             "fields": [
               {
@@ -2880,6 +3305,11 @@
               {
                 "id": 2,
                 "name": "containing_pod_id",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "container_name",
                 "type": "string"
               },
               {
@@ -2903,6 +3333,21 @@
                     "value": "search:\\\"Container Image Digest,hidden\\"
                   }
                 ]
+              },
+              {
+                "id": 7,
+                "name": "finished",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 8,
+                "name": "exit_code",
+                "type": "int32"
+              },
+              {
+                "id": 9,
+                "name": "termination_reason",
+                "type": "string"
               }
             ]
           },
@@ -3369,6 +3814,11 @@
                 "id": 6,
                 "name": "s3",
                 "type": "S3Config"
+              },
+              {
+                "id": 7,
+                "name": "gcs",
+                "type": "GCSConfig"
               }
             ]
           },
@@ -3388,7 +3838,13 @@
               {
                 "id": 3,
                 "name": "access_key_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"always\\"
+                  }
+                ]
               },
               {
                 "id": 4,
@@ -3408,6 +3864,43 @@
               },
               {
                 "id": 6,
+                "name": "object_prefix",
+                "type": "string"
+              },
+              {
+                "id": 7,
+                "name": "endpoint",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "GCSConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "bucket",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "service_account",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"always\\"
+                  }
+                ]
+              },
+              {
+                "id": 3,
                 "name": "object_prefix",
                 "type": "string"
               }
@@ -3473,6 +3966,31 @@
       }
     },
     {
+      "protopath": "helm_cluster.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "HelmCluster",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cluster",
+                "type": "Cluster"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "storage/cluster.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
       "protopath": "http_endpoint.proto",
       "def": {
         "messages": [
@@ -3482,7 +4000,13 @@
               {
                 "id": 1,
                 "name": "endpoint",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -3497,7 +4021,13 @@
               {
                 "id": 4,
                 "name": "username",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 5,
@@ -3637,7 +4167,13 @@
               {
                 "id": 3,
                 "name": "scan",
-                "type": "ImageScan"
+                "type": "ImageScan",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "policy:\\\"Image Scan\\"
+                  }
+                ]
               },
               {
                 "id": 7,
@@ -3646,7 +4182,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Component Count,store\\"
+                    "value": "search:\\\"Component Count,store,hidden\\"
                   }
                 ]
               },
@@ -3657,7 +4193,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"CVE Count,store\\"
+                    "value": "search:\\\"CVE Count,store,hidden\\"
                   }
                 ]
               },
@@ -3668,7 +4204,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Fixable CVE Count,store\\"
+                    "value": "search:\\\"Fixable CVE Count,store,hidden\\"
                   }
                 ]
               },
@@ -3703,10 +4239,36 @@
                     "value": "search:\\\"Risk Score,hidden\\"
                   }
                 ]
+              },
+              {
+                "id": 13,
+                "name": "top_cvss",
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Image Top CVSS,store\\"
+                  }
+                ]
               }
             ],
             "reserved_ids": [
               6
+            ]
+          },
+          {
+            "name": "DataSource",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              }
             ]
           },
           {
@@ -3728,6 +4290,22 @@
                 "name": "components",
                 "type": "EmbeddedImageScanComponent",
                 "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "operating_system",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Image OS,store\\"
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "data_source",
+                "type": "DataSource"
               }
             ]
           },
@@ -3786,6 +4364,16 @@
                 "id": 8,
                 "name": "location",
                 "type": "string"
+              },
+              {
+                "id": 9,
+                "name": "top_cvss",
+                "type": "float"
+              },
+              {
+                "id": 10,
+                "name": "risk_score",
+                "type": "float"
               }
             ]
           },
@@ -3851,7 +4439,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Fixed By,store\\"
+                    "value": "search:\\\"Fixed By,store,hidden\\"
                   }
                 ]
               },
@@ -3887,6 +4475,11 @@
                 "type": "google.protobuf.Timestamp"
               },
               {
+                "id": 15,
+                "name": "discovered_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
                 "id": 11,
                 "name": "vulnerability_type",
                 "type": "VulnerabilityType"
@@ -3898,9 +4491,19 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"CVE Suppressed,store\\"
+                    "value": "search:\\\"CVE Snoozed,store\\"
                   }
                 ]
+              },
+              {
+                "id": 13,
+                "name": "suppress_activation",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 14,
+                "name": "suppress_expiry",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           },
@@ -3922,6 +4525,11 @@
                 "name": "layer_shas",
                 "type": "string",
                 "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "data_source",
+                "type": "DataSource"
               }
             ]
           },
@@ -4012,6 +4620,22 @@
                   }
                 ]
               }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 9,
+                  "name": "labels",
+                  "type": "string",
+                  "options": [
+                    {
+                      "name": "(gogoproto.moretags)",
+                      "value": "search:\\\"Image Label,store\\"
+                    }
+                  ]
+                }
+              }
             ]
           },
           {
@@ -4050,16 +4674,13 @@
                 "type": "string"
               },
               {
-                "id": 5,
-                "name": "DEPRECATED_components",
-                "type": "EmbeddedImageScanComponent",
-                "is_repeated": true
-              },
-              {
                 "id": 6,
                 "name": "empty",
                 "type": "bool"
               }
+            ],
+            "reserved_ids": [
+              5
             ]
           },
           {
@@ -4179,7 +4800,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Component Location,store\\"
+                    "value": "search:\\\"Component Location,store,hidden\\"
                   }
                 ]
               }
@@ -4230,7 +4851,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Component Name,store\\"
+                    "value": "search:\\\"Component,store\\"
                   }
                 ]
               },
@@ -4276,6 +4897,17 @@
                     "value": "search:\\\"Risk Score,hidden\\"
                   }
                 ]
+              },
+              {
+                "id": 8,
+                "name": "top_cvss",
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Component Top CVSS,store\\"
+                  }
+                ]
               }
             ]
           },
@@ -4305,7 +4937,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Fixed By,store\\"
+                    "value": "search:\\\"Fixed By,store,hidden\\"
                   }
                 ]
               }
@@ -4449,7 +5081,13 @@
               {
                 "id": 1,
                 "name": "endpoint",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -4470,7 +5108,13 @@
               {
                 "id": 1,
                 "name": "endpoint",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -4482,6 +5126,11 @@
                     "value": "scrub:\\\"always\\"
                   }
                 ]
+              },
+              {
+                "id": 3,
+                "name": "insecure",
+                "type": "bool"
               }
             ]
           },
@@ -4492,6 +5141,11 @@
                 "id": 1,
                 "name": "endpoint",
                 "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "insecure",
+                "type": "bool"
               }
             ]
           },
@@ -4511,12 +5165,24 @@
               {
                 "id": 1,
                 "name": "endpoint",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "username",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -4547,7 +5213,13 @@
               {
                 "id": 2,
                 "name": "access_key_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"always\\"
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -4569,6 +5241,17 @@
                 "id": 5,
                 "name": "use_iam",
                 "type": "bool"
+              },
+              {
+                "id": 6,
+                "name": "endpoint",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               }
             ]
           },
@@ -4578,7 +5261,13 @@
               {
                 "id": 1,
                 "name": "username",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -4594,7 +5283,13 @@
               {
                 "id": 3,
                 "name": "endpoint",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 4,
@@ -4609,7 +5304,13 @@
               {
                 "id": 1,
                 "name": "endpoint",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -4662,22 +5363,78 @@
               {
                 "id": 1,
                 "name": "endpoint",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "username",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 3,
                 "name": "password",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"always\\"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "insecure",
+                "type": "bool"
               }
             ]
           }
         ],
         "imports": [
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "installation.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "InstallationInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
           {
             "path": "protobuf/gogoproto/gogo.proto"
           }
@@ -5422,12 +6179,24 @@
               {
                 "id": 12,
                 "name": "os_image",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Operating System,store\\"
+                  }
+                ]
               },
               {
                 "id": 13,
                 "name": "joined_at",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Node Join Time,store\\"
+                  }
+                ]
               },
               {
                 "id": 15,
@@ -5614,12 +6383,24 @@
               {
                 "id": 1,
                 "name": "url",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "username",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -5673,7 +6454,13 @@
               {
                 "id": 1,
                 "name": "server",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -5683,7 +6470,13 @@
               {
                 "id": 3,
                 "name": "username",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 4,
@@ -5735,7 +6528,13 @@
               {
                 "id": 2,
                 "name": "http_endpoint",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -5776,7 +6575,13 @@
               {
                 "id": 1,
                 "name": "endpoint",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -5791,7 +6596,13 @@
               {
                 "id": 4,
                 "name": "username",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\\\"dependent\\"
+                  }
+                ]
               },
               {
                 "id": 5,
@@ -5859,6 +6670,18 @@
       "protopath": "policy.proto",
       "def": {
         "enums": [
+          {
+            "name": "BooleanOperator",
+            "enum_fields": [
+              {
+                "name": "OR"
+              },
+              {
+                "name": "AND",
+                "integer": 1
+              }
+            ]
+          },
           {
             "name": "EnforcementAction",
             "enum_fields": [
@@ -6119,6 +6942,80 @@
                     "value": "search:\\\"SORT_Enforcement,hidden\\"
                   }
                 ]
+              },
+              {
+                "id": 19,
+                "name": "policy_version",
+                "type": "string"
+              },
+              {
+                "id": 20,
+                "name": "policy_sections",
+                "type": "PolicySection",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "PolicySection",
+            "fields": [
+              {
+                "id": 1,
+                "name": "section_name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "policy_groups",
+                "type": "PolicyGroup",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "PolicyGroup",
+            "fields": [
+              {
+                "id": 1,
+                "name": "field_name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "boolean_operator",
+                "type": "BooleanOperator"
+              },
+              {
+                "id": 3,
+                "name": "negate",
+                "type": "bool"
+              },
+              {
+                "id": 4,
+                "name": "values",
+                "type": "PolicyValue",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "PolicyValue",
+            "fields": [
+              {
+                "id": 1,
+                "name": "value",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "PolicyList",
+            "fields": [
+              {
+                "id": 1,
+                "name": "policies",
+                "type": "Policy",
+                "is_repeated": true
               }
             ]
           },
@@ -6318,6 +7215,16 @@
                 "id": 30,
                 "name": "whitelist_enabled",
                 "type": "bool"
+              },
+              {
+                "id": 31,
+                "name": "required_image_label",
+                "type": "KeyValuePolicy"
+              },
+              {
+                "id": 32,
+                "name": "disallowed_image_label",
+                "type": "KeyValuePolicy"
               }
             ],
             "reserved_ids": [
@@ -6605,6 +7512,17 @@
                 ]
               }
             ]
+          },
+          {
+            "name": "ExportPoliciesResponse",
+            "fields": [
+              {
+                "id": 1,
+                "name": "policies",
+                "type": "storage.Policy",
+                "is_repeated": true
+              }
+            ]
           }
         ],
         "imports": [
@@ -6657,30 +7575,42 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Deployment ID,store,hidden\\"
-                  }
-                ]
-              },
-              {
-                "id": 10,
-                "name": "deployment_state_ts",
-                "type": "int64",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Deployment State TS,hidden\\"
+                    "value": "search:\\\"Deployment ID,store,hidden\\\" policy:\\\",prefer-parent\\"
                   }
                 ]
               },
               {
                 "id": 3,
                 "name": "container_name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Container Name,hidden\\\" policy:\\\",prefer-parent\\"
+                  }
+                ]
               },
               {
                 "id": 4,
                 "name": "pod_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Pod ID,hidden\\"
+                  }
+                ]
+              },
+              {
+                "id": 11,
+                "name": "pod_uid",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Pod UID,hidden\\"
+                  }
+                ]
               },
               {
                 "id": 6,
@@ -6694,7 +7624,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster ID,store,hidden\\"
+                    "value": "search:\\\"Cluster ID,store,hidden\\\" policy:\\\",prefer-parent\\"
                   }
                 ]
               },
@@ -6705,7 +7635,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Namespace,store,hidden\\"
+                    "value": "search:\\\"Namespace,store,hidden\\\" policy:\\\",prefer-parent\\"
                   }
                 ]
               },
@@ -6716,6 +7646,7 @@
               }
             ],
             "reserved_ids": [
+              10,
               5
             ]
           },
@@ -6834,8 +7765,42 @@
                 "is_repeated": true,
                 "options": [
                   {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Process Ancestor\\"
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
+              },
+              {
+                "id": 11,
+                "name": "scraped",
+                "type": "bool"
+              },
+              {
+                "id": 12,
+                "name": "lineage_info",
+                "type": "LineageInfo",
+                "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "LineageInfo",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "parent_uid",
+                    "type": "uint32"
+                  },
+                  {
+                    "id": 2,
+                    "name": "parent_exec_file_path",
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"Process Ancestor\\"
+                      }
+                    ]
                   }
                 ]
               }
@@ -6998,13 +7963,7 @@
               {
                 "id": 1,
                 "name": "process_name",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Process Name\\"
-                  }
-                ]
+                "type": "string"
               }
             ]
           },
@@ -7396,6 +8355,11 @@
             "name": "Subject",
             "fields": [
               {
+                "id": 4,
+                "name": "id",
+                "type": "string"
+              },
+              {
                 "id": 1,
                 "name": "kind",
                 "type": "SubjectKind",
@@ -7420,6 +8384,16 @@
               {
                 "id": 3,
                 "name": "namespace",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "cluster_name",
                 "type": "string"
               }
             ]
@@ -8389,6 +9363,10 @@
               {
                 "name": "SCANNER_DB_SERVICE",
                 "integer": 10
+              },
+              {
+                "name": "ADMISSION_CONTROL_SERVICE",
+                "integer": 11
               }
             ]
           }
@@ -8643,9 +9621,26 @@
                 "type": "string"
               },
               {
+                "id": 4,
+                "name": "permissions",
+                "type": "storage.Role"
+              },
+              {
+                "id": 5,
+                "name": "roles",
+                "type": "storage.Role",
+                "is_repeated": true
+              },
+              {
                 "id": 3,
                 "name": "role",
-                "type": "storage.Role"
+                "type": "storage.Role",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               }
             ]
           }

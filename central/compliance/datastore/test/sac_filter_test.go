@@ -40,7 +40,7 @@ func (s *sacFilterTestSuite) TestRunNotFiltered() {
 			Cluster: &storage.Cluster{
 				Id: clusterID,
 			},
-			Deployments: map[string]*storage.Deployment{
+			Deployments: map[string]*storage.ComplianceDeployment{
 				"dep1": {
 					Id: "dep1",
 				},
@@ -95,7 +95,7 @@ func (s *sacFilterTestSuite) TestFilterCluster() {
 			Cluster: &storage.Cluster{
 				Id: clusterID,
 			},
-			Deployments: map[string]*storage.Deployment{
+			Deployments: map[string]*storage.ComplianceDeployment{
 				"dep1": {
 					Id: "dep1",
 				},
@@ -136,7 +136,7 @@ func (s *sacFilterTestSuite) TestFilterCluster() {
 
 	expectedResults := &storage.ComplianceRunResults{
 		Domain: &storage.ComplianceDomain{
-			Deployments: map[string]*storage.Deployment{
+			Deployments: map[string]*storage.ComplianceDeployment{
 				"dep1": {
 					Id: "dep1",
 				},
@@ -186,7 +186,7 @@ func (s *sacFilterTestSuite) TestFiltersAllDeployments() {
 			Cluster: &storage.Cluster{
 				Id: clusterID,
 			},
-			Deployments: map[string]*storage.Deployment{
+			Deployments: map[string]*storage.ComplianceDeployment{
 				"dep1": {
 					Id: "dep1",
 				},
@@ -241,7 +241,7 @@ func (s *sacFilterTestSuite) TestFiltersAllDeployments() {
 					Id: "node3",
 				},
 			},
-			Deployments: map[string]*storage.Deployment{},
+			Deployments: map[string]*storage.ComplianceDeployment{},
 		},
 		ClusterResults: &storage.ComplianceRunResults_EntityResults{
 			ControlResults: make(map[string]*storage.ComplianceResultValue),
@@ -278,7 +278,7 @@ func (s *sacFilterTestSuite) TestFiltersSomeDeployments() {
 			Cluster: &storage.Cluster{
 				Id: clusterID,
 			},
-			Deployments: map[string]*storage.Deployment{
+			Deployments: map[string]*storage.ComplianceDeployment{
 				"dep1": {
 					Id:        "dep1",
 					ClusterId: clusterID,
@@ -328,7 +328,7 @@ func (s *sacFilterTestSuite) TestFiltersSomeDeployments() {
 			Cluster: &storage.Cluster{
 				Id: clusterID,
 			},
-			Deployments: map[string]*storage.Deployment{
+			Deployments: map[string]*storage.ComplianceDeployment{
 				"dep1": {
 					Id:        "dep1",
 					ClusterId: clusterID,
@@ -381,7 +381,7 @@ func (s *sacFilterTestSuite) TestFilterNodes() {
 			Cluster: &storage.Cluster{
 				Id: clusterID,
 			},
-			Deployments: map[string]*storage.Deployment{
+			Deployments: map[string]*storage.ComplianceDeployment{
 				"dep1": {
 					Id: "dep1",
 				},
@@ -425,7 +425,7 @@ func (s *sacFilterTestSuite) TestFilterNodes() {
 			Cluster: &storage.Cluster{
 				Id: clusterID,
 			},
-			Deployments: map[string]*storage.Deployment{
+			Deployments: map[string]*storage.ComplianceDeployment{
 				"dep1": {
 					Id: "dep1",
 				},

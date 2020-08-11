@@ -47,7 +47,7 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 			Cluster: &storage.Cluster{
 				Id: cluster,
 			},
-			Deployments: map[string]*storage.Deployment{
+			Deployments: map[string]*storage.ComplianceDeployment{
 				cluster + "deployment1": {
 					Id:          cluster + "deployment1",
 					Namespace:   qualifiedNamespace(cluster, "namespace1"),
