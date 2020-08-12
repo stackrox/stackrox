@@ -18,6 +18,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
 	"google.golang.org/grpc/codes"
@@ -69,6 +70,14 @@ type RequestInfo struct {
 	// the `X-Forwarded-Proto` header (if present), or the TLS connection state.
 	ClientUsedTLS bool
 	// VerifiedSubjectChains are the subjects of the verified certificate chains presented by the client.
+	// This is populated by the tlsState.VerifiedChains returned by the Go TLS library.
+	// We will have multiple VerifiedChains only if we have multiple valid paths from the leaf cert, to any valid root cert,
+	// through zero or more non-leaf certs presented by the client. Since a cert can only have one parent cert,
+	// the only scenario where this can happen in practice is if one of the non-leaf certs presented in the chain is also
+	// a valid root cert.
+	// Importantly, chain[0] should be the same, and equal to the leaf cert presented by the client, for all VerifiedChains.
+	// (If clients present multiple certs, the first one that matches the basic server constraints are picked, and the others
+	// are all ignored.)
 	VerifiedChains [][]CertInfo
 	// Metadata is the request metadata. For *pure* HTTP/1.1 requests, these are the actual HTTP headers. Otherwise,
 	// these are only the headers that make it to the GRPC handler.
@@ -92,6 +101,14 @@ func ExtractCertInfo(fullCert *x509.Certificate) CertInfo {
 func extractCertInfoChains(fullCertChains [][]*x509.Certificate) [][]CertInfo {
 	result := make([][]CertInfo, 0, len(fullCertChains))
 	for _, chain := range fullCertChains {
+		// This should never happen in practice based on the Go standard library's documented guarantees,
+		// but we're being extra defensive here.
+		if len(chain) == 0 {
+			if devbuild.IsEnabled() {
+				log.Errorf("UNEXPECTED: got empty cert chain in list %+v", fullCertChains)
+			}
+			continue
+		}
 		subjectChain := make([]CertInfo, 0, len(chain))
 		for _, cert := range chain {
 			subjectChain = append(subjectChain, ExtractCertInfo(cert))

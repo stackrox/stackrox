@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -16,11 +15,12 @@ type extractor struct {
 
 func (e extractor) IdentityForRequest(_ context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
 	l := len(ri.VerifiedChains)
-	if l == 0 {
-		return nil, nil
-	}
+	// For all mTLS communication, there will be exactly one verified chain.
+	// If there are multiple verified chains, no need to send an error -- it just
+	// likely means this is an end user authenticating with client certificates,
+	// not an mTLS user.
 	if l != 1 {
-		return nil, errors.New("client presented multiple certificates; this is unsupported")
+		return nil, nil
 	}
 
 	requestCA := ri.VerifiedChains[0][len(ri.VerifiedChains[0])-1]

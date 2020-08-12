@@ -40,6 +40,7 @@ require (
 	github.com/golang/protobuf v1.3.5
 	github.com/golangci/golangci-lint v1.27.1-0.20200616100528-38d298c2c859
 	github.com/google/certificate-transparency-go v1.0.21
+	github.com/google/go-cmp v0.4.0
 	github.com/googleapis/gnostic v0.2.0
 	github.com/gorilla/schema v1.1.0
 	github.com/graph-gophers/graphql-go v0.0.0-20190513003547-158e7b876106

@@ -43,7 +43,7 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 		return nil, nil
 	}
 
-	if len(ri.VerifiedChains) != 1 {
+	if len(ri.VerifiedChains) == 0 {
 		return nil, nil
 	}
 
@@ -54,32 +54,35 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 	// identity.
 	ctx = sac.WithAllAccess(ctx)
 
-	log.Debugf("Looking up TLS trust for user cert chain: %+v", ri.VerifiedChains[0])
-	for _, info := range ri.VerifiedChains[0] {
-		provider := i.manager.GetProviderForFingerprint(info.CertFingerprint)
-		if provider == nil {
-			continue
-		}
-		userCert := ri.VerifiedChains[0][0]
-		attributes := ExtractAttributes(userCert)
-		identity := &identity{
-			info:       userCert,
-			provider:   provider,
-			attributes: attributes,
-		}
-		ud := &permissions.UserDescriptor{
-			UserID:     identity.UID(),
-			Attributes: attributes,
-		}
+	for _, chain := range ri.VerifiedChains {
+		log.Debugf("Looking up TLS trust for user cert chain: %+v", chain)
+		for _, info := range chain {
+			provider := i.manager.GetProviderForFingerprint(info.CertFingerprint)
+			if provider == nil {
+				continue
+			}
+			userCert := chain[0]
+			attributes := ExtractAttributes(userCert)
+			identity := &identity{
+				info:       userCert,
+				provider:   provider,
+				attributes: attributes,
+			}
+			ud := &permissions.UserDescriptor{
+				UserID:     identity.UID(),
+				Attributes: attributes,
+			}
 
-		roles, err := provider.RoleMapper().FromUserDescriptor(ctx, ud)
-		if err != nil {
-			return nil, err
+			roles, err := provider.RoleMapper().FromUserDescriptor(ctx, ud)
+			if err != nil {
+				return nil, err
+			}
+			identity.roles = roles
+			identity.perms = permissions.NewUnionRole(roles)
+			return identity, nil
 		}
-		identity.roles = roles
-		identity.perms = permissions.NewUnionRole(roles)
-		return identity, nil
 	}
+
 	return nil, nil
 }
 

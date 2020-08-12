@@ -137,7 +137,7 @@ func (p *backendImpl) ExchangeToken(ctx context.Context, externalToken, state st
 
 func (p *backendImpl) Validate(ctx context.Context, claims *tokens.Claims) error {
 	ri := requestinfo.FromContext(ctx)
-	if len(ri.VerifiedChains) != 1 || len(ri.VerifiedChains[0]) == 0 {
+	if len(ri.VerifiedChains) == 0 || len(ri.VerifiedChains[0]) == 0 {
 		return errors.New("No client chains present")
 	}
 	if userID(ri.VerifiedChains[0][0]) != claims.ExternalUser.UserID {
