@@ -102,7 +102,9 @@ describe('Authentication', () => {
     describe('Logout', () => {
         withAuth();
 
-        it('should logout user by request', () => {
+        // turning off for now, because of an issue with Cypress
+        // see https://srox.slack.com/archives/C7ERNFL0M/p1596839383218700
+        it.skip('should logout user by request', () => {
             cy.server();
             cy.route('POST', api.auth.logout, {}).as('logout');
 
