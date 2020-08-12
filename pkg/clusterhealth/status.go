@@ -73,17 +73,20 @@ func PopulateOverallClusterStatus(clusterHealth *storage.ClusterHealthStatus) st
 	sensorStatus := clusterHealth.GetSensorHealthStatus()
 	collectorStatus := clusterHealth.GetCollectorHealthStatus()
 
-	if sensorStatus != storage.ClusterHealthStatus_HEALTHY {
+	// Collector having states other than default state when sensor is in default state is unlikely, but still check it first.
+	if sensorStatus == storage.ClusterHealthStatus_UNINITIALIZED {
 		return sensorStatus
 	}
 
 	switch collectorStatus {
-	case storage.ClusterHealthStatus_UNINITIALIZED:
-		fallthrough
-	case storage.ClusterHealthStatus_UNAVAILABLE:
-		fallthrough
-	case storage.ClusterHealthStatus_HEALTHY:
-		return sensorStatus
+	case storage.ClusterHealthStatus_UNHEALTHY:
+		return collectorStatus
+	case storage.ClusterHealthStatus_DEGRADED:
+		if sensorStatus == storage.ClusterHealthStatus_UNHEALTHY {
+			return sensorStatus
+		}
+		return collectorStatus
 	}
-	return storage.ClusterHealthStatus_DEGRADED
+	// If we are here it means collector is not unhealthy or degraded. Overall cluster health is determined by sensor status.
+	return sensorStatus
 }

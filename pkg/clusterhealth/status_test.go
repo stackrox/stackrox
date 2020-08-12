@@ -128,3 +128,74 @@ func TestCollectorStatus(t *testing.T) {
 		})
 	}
 }
+
+func TestOverallHealth(t *testing.T) {
+	cases := []struct {
+		name     string
+		health   *storage.ClusterHealthStatus
+		expected storage.ClusterHealthStatus_HealthStatusLabel
+	}{
+		{
+			name: "sensor degraded, collector unhealthy",
+			health: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_DEGRADED,
+				CollectorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
+			},
+			expected: storage.ClusterHealthStatus_UNHEALTHY,
+		},
+		{
+			name: "sensor unhealthy, collector degraded",
+			health: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_UNHEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
+			},
+			expected: storage.ClusterHealthStatus_UNHEALTHY,
+		},
+		{
+			name: "sensor degraded, collector healthy",
+			health: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_DEGRADED,
+				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+			},
+			expected: storage.ClusterHealthStatus_DEGRADED,
+		},
+		{
+			name: "sensor healthy, collector degraded",
+			health: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
+			},
+			expected: storage.ClusterHealthStatus_DEGRADED,
+		},
+		{
+			name: "sensor healthy, collector unavailable",
+			health: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
+			},
+			expected: storage.ClusterHealthStatus_HEALTHY,
+		},
+		{
+			name: "sensor healthy, collector healthy",
+			health: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+			},
+			expected: storage.ClusterHealthStatus_HEALTHY,
+		},
+		{
+			name: "sensor unintialized, collector unhealthy: unexpected states",
+			health: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_UNINITIALIZED,
+				CollectorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
+			},
+			expected: storage.ClusterHealthStatus_UNINITIALIZED,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, PopulateOverallClusterStatus(c.health))
+		})
+	}
+
+}
