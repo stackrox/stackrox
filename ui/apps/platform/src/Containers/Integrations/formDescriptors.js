@@ -227,16 +227,34 @@ const formDescriptors = {
         ],
         awssh: [
             {
+                label: 'Integration Active',
+                jsonpath: 'enabled',
+                type: 'toggle',
+            },
+            {
                 label: 'Integration Name',
                 jsonpath: 'name',
                 type: 'text',
-                placeholder: 'AWS Security Hub Integration',
+                default: 'AWS Security Hub',
+                immutable: true,
             },
             {
                 label: 'AWS Region',
-                jsonpath: 'labelDefault',
+                jsonpath: 'awssh.region',
                 type: 'text',
-                placeholder: 'for example, us-east-1',
+                placeholder: 'some-region-1',
+            },
+            {
+                label: 'Access Key ID',
+                jsonpath: 'awssh.credentials.accessKeyId',
+                type: 'text',
+                placeholder: 'EXAMPLE7AKIAIOSFODNN',
+            },
+            {
+                label: 'Secret Access Key',
+                jsonpath: 'awssh.credentials.secretAccessKey',
+                type: 'text',
+                placeholder: 'EXAMPLEKEYwJalrXUtnFEMI/K7MDENG/bPxRfiCY',
             },
         ],
         jira: [

@@ -72,4 +72,20 @@ describe('Notifiers Test', () => {
             'Leave this empty to use the currently stored credentials'
         );
     });
+
+    describe('AWS Security Hub notifier', () => {
+        it('should allow you to configure a new AWS Security Hub integration when none exists', () => {
+            cy.get(selectors.awsSecurityHubTile).click();
+
+            cy.get(`${selectors.resultsSection}:contains('No AWS Security Hub integrations')`);
+
+            cy.get(selectors.buttons.new).click();
+
+            cy.get(selectors.awsSecurityHubForm.nameInput);
+            cy.get(selectors.awsSecurityHubForm.active);
+            cy.get(selectors.awsSecurityHubForm.awsRegion);
+            cy.get(selectors.awsSecurityHubForm.awsAccessKeyId);
+            cy.get(selectors.awsSecurityHubForm.awsSecretAccessKey);
+        });
+    });
 });
