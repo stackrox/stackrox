@@ -9,6 +9,7 @@ import objects.K8sServiceAccount
 import objects.Secret
 import orchestratormanager.OrchestratorMain
 import orchestratormanager.OrchestratorType
+import orchestratormanager.OrchestratorTypes
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
@@ -143,7 +144,10 @@ class BaseSpecification extends Specification {
     }
 
     @Rule
-    Timeout globalTimeout = new Timeout(500000, TimeUnit.MILLISECONDS)
+    Timeout globalTimeout = new Timeout(
+            Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT ? 1000 : 500,
+            TimeUnit.SECONDS
+    )
     @Rule
     TestName name = new TestName()
     @Shared
