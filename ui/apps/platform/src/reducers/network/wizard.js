@@ -12,6 +12,7 @@ export const types = {
     SET_POLICY_MODIFICATION_NAME: 'network/SET_POLICY_MODIFICATION_NAME',
     SET_POLICY_MODIFICATION_SOURCE: 'network/SET_POLICY_MODIFICATION_SOURCE',
     SET_POLICY_MODIFICATION_STATE: 'network/SET_POLICY_MODIFICATION_STATE',
+    SET_POLICY_EXCLUDE_PORTS_PROTOCOLS_STATE: 'network/SET_POLICY_EXCLUDE_PORTS_PROTOCOLS_STATE',
     GENERATE_NETWORK_POLICY_MODIFICATION: 'network/GENERATE_NETWORK_POLICY_MODIFICATION',
     LOAD_ACTIVE_NETWORK_POLICY_MODIFICATION: 'network/LOAD_ACTIVE_NETWORK_POLICY_MODIFICATION',
     LOAD_UNDO_NETWORK_POLICY_MODIFICATION: 'network/LOAD_UNDO_NETWORK_POLICY_MODIFICATION',
@@ -38,7 +39,13 @@ export const actions = {
         type: types.SET_POLICY_MODIFICATION_STATE,
         state,
     }),
-    generateNetworkPolicyModification: () => ({ type: types.GENERATE_NETWORK_POLICY_MODIFICATION }),
+    setNetworkPolicyExcludePortsProtocolsState: (state) => ({
+        type: types.SET_POLICY_EXCLUDE_PORTS_PROTOCOLS_STATE,
+        state,
+    }),
+    generateNetworkPolicyModification: () => ({
+        type: types.GENERATE_NETWORK_POLICY_MODIFICATION,
+    }),
     loadActiveNetworkPolicyModification: () => ({
         type: types.LOAD_ACTIVE_NETWORK_POLICY_MODIFICATION,
     }),
@@ -86,6 +93,13 @@ const networkPolicyModificationState = (state = 'SUCCESS', action) => {
     return state;
 };
 
+const networkPolicyExcludePortsProtocolsState = (state = null, action) => {
+    if (action.type === types.SET_POLICY_EXCLUDE_PORTS_PROTOCOLS_STATE) {
+        return action.state;
+    }
+    return state;
+};
+
 const selectedNodeDeployment = (state = {}, action) => {
     if (action.response && action.response.entities) {
         const { entities, result } = action.response;
@@ -105,6 +119,7 @@ const reducer = combineReducers({
     networkPolicyModificationName,
     networkPolicyModificationSource,
     networkPolicyModificationState,
+    networkPolicyExcludePortsProtocolsState,
     selectedNodeDeployment,
 });
 
@@ -119,6 +134,8 @@ const getNetworkPolicyModification = (state) => state.networkPolicyModification;
 const getNetworkPolicyModificationName = (state) => state.networkPolicyModificationName;
 const getNetworkPolicyModificationSource = (state) => state.networkPolicyModificationSource;
 const getNetworkPolicyModificationState = (state) => state.networkPolicyModificationState;
+const getNetworkPolicyExcludePortsProtocolsState = (state) =>
+    state.networkPolicyExcludePortsProtocolsState;
 const getNodeDeployment = (state) => state.selectedNodeDeployment;
 
 export const selectors = {
@@ -127,5 +144,6 @@ export const selectors = {
     getNetworkPolicyModificationName,
     getNetworkPolicyModificationSource,
     getNetworkPolicyModificationState,
+    getNetworkPolicyExcludePortsProtocolsState,
     getNodeDeployment,
 };

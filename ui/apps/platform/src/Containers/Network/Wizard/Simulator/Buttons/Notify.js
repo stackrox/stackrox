@@ -7,6 +7,7 @@ import { selectors } from 'reducers';
 import { actions as dialogueActions } from 'reducers/network/dialogue';
 
 import dialogueStages from 'Containers/Network/Dialogue/dialogueStages';
+import Button from './Button';
 
 class Notify extends Component {
     static propTypes = {
@@ -39,15 +40,12 @@ class Notify extends Component {
         const noModification = applyYaml === '' && (!toDelete || toDelete.length === 0);
         return (
             <div className="ml-3">
-                <button
-                    type="button"
-                    className="inline-block flex my-3 px-3 text-center bg-primary-600 font-700 rounded-sm text-base-100 h-9 hover:bg-primary-700"
+                <Button
                     onClick={this.onClick}
                     disabled={noNotifiers || noModification}
-                >
-                    <Icon.Share2 className="h-4 w-4 mr-2" />
-                    Share YAML
-                </button>
+                    icon={<Icon.Share2 className="h-4 w-4 mr-2" />}
+                    text="Share YAML"
+                />
             </div>
         );
     }

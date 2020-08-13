@@ -7,6 +7,7 @@ import { selectors } from 'reducers';
 import { actions as dialogueActions } from 'reducers/network/dialogue';
 
 import dialogueStages from 'Containers/Network/Dialogue/dialogueStages';
+import Button from './Button';
 
 class Apply extends Component {
     static propTypes = {
@@ -34,15 +35,12 @@ class Apply extends Component {
         const noModification = applyYaml === '' && (!toDelete || toDelete.length === 0);
         return (
             <div>
-                <button
-                    type="button"
-                    className="inline-block flex my-3 px-3 text-center bg-primary-600 font-700 rounded-sm text-base-100 h-9 hover:bg-primary-700"
+                <Button
                     onClick={this.onClick}
                     disabled={inRequest || noModification}
-                >
-                    <Icon.Save className="h-4 w-4 mr-2" />
-                    Apply Network Policies
-                </button>
+                    icon={<Icon.Save className="h-4 w-4 mr-2" />}
+                    text="Apply Network Policies"
+                />
             </div>
         );
     }

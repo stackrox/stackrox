@@ -188,11 +188,15 @@ function* generateNetworkModification() {
         const clusterId = yield select(selectors.getSelectedNetworkClusterId);
         const searchOptions = yield select(selectors.getNetworkSearchOptions);
         const timeWindow = yield select(selectors.getNetworkActivityTimeWindow);
+        const excludePortsProtocols = yield select(
+            selectors.getNetworkPolicyExcludePortsProtocolsState
+        );
         const modification = yield call(
             service.generateNetworkModification,
             clusterId,
             searchOptionsToQuery(searchOptions),
-            timeWindowToDate(timeWindow)
+            timeWindowToDate(timeWindow),
+            excludePortsProtocols
         );
         yield put(wizardNetworkActions.setNetworkPolicyModificationSource('GENERATED'));
         yield put(wizardNetworkActions.setNetworkPolicyModification(modification));

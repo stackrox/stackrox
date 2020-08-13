@@ -145,17 +145,21 @@ export function getUndoNetworkModification(clusterId) {
  *
  * @param {!String} clusterId
  * @param {!Object} query
- * @param {!String} since
+ * @param {!String} date
+ * @param {Boolean} excludePortsProtocols
  * @returns {Promise<Object, Error>}
  */
-export function generateNetworkModification(clusterId, query, date) {
-    let params;
+export function generateNetworkModification(clusterId, query, date, excludePortsProtocols = null) {
+    const urlParams = { query };
     if (date) {
-        const networkDataSince = date.toISOString();
-        params = queryString.stringify({ query, networkDataSince }, { arrayFormat: 'repeat' });
-    } else {
-        params = queryString.stringify({ query }, { arrayFormat: 'repeat' });
+        urlParams.networkDataSince = date.toISOString();
     }
+
+    if (excludePortsProtocols !== null) {
+        urlParams.includePorts = !excludePortsProtocols;
+    }
+
+    const params = queryString.stringify(urlParams, { arrayFormat: 'repeat' });
     const options = {
         method: 'GET',
         url: `${networkPoliciesBaseUrl}/generate/${clusterId}?deleteExisting=NONE&${params}`,

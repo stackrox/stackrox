@@ -10,6 +10,7 @@ All notable changes to this project that require documentation updates will be d
   - remove 'Current Sensor version' column
   - replace 'Upgrade status' column with 'Sensor Upgrade' and add tooltip which displays 'Sensor version' and 'Central version'
   - display cells in 'Sensor Upgrade' columns with same style as adjacent new Cluster Health columns
+- UI: Added a toggle in the Network Policy Simulator in Network Graph to exclude ports and protocols (ROX-5248).
 
 ## [47.0]
 - Configuration Management tables (except for Controls and Policies) are now paginated through the API, rather than loading all rows into the browser, for better performance in large environments (ROX-5067).
