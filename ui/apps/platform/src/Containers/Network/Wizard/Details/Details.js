@@ -35,9 +35,9 @@ function Details(props) {
     const { deployment, selectedNode } = props;
     const { deployment: curDeployment } = deployment;
     const envGraphPanelTabs = [
+        { text: 'Network Flows' },
         { text: 'Details' },
         { text: 'Network Policies' },
-        { text: 'Network Flows' },
     ];
     const deploymentEdges = selectedNode.edges.filter(
         ({ data }) => data.destNodeNamespace && data.destNodeName && data.source !== data.target
@@ -53,20 +53,20 @@ function Details(props) {
         <Tabs headers={envGraphPanelTabs}>
             <TabContent>
                 <div className="flex flex-1 flex-col h-full">
+                    <DeploymentNetworkFlows
+                        deploymentEdges={deploymentEdges}
+                        onDeploymentClick={onDeploymentClick}
+                    />
+                </div>
+            </TabContent>
+            <TabContent>
+                <div className="flex flex-1 flex-col h-full">
                     {curDeployment.id && <DeploymentDetails deployment={curDeployment} />}
                 </div>
             </TabContent>
             <TabContent>
                 <div className="flex flex-1 flex-col h-full">
                     <NetworkPoliciesDetails />
-                </div>
-            </TabContent>
-            <TabContent>
-                <div className="flex flex-1 flex-col h-full">
-                    <DeploymentNetworkFlows
-                        deploymentEdges={deploymentEdges}
-                        onDeploymentClick={onDeploymentClick}
-                    />
                 </div>
             </TabContent>
         </Tabs>
@@ -77,29 +77,27 @@ function Details(props) {
         onClose();
         props.history.push('/main/network');
         if (networkGraphRef) {
-            props.networkGraphRef.setSelectedNode();
+            networkGraphRef.setSelectedNode();
         }
     }
 
     function onBackButtonClick() {
-        const { setWizardStage, networkGraphRef } = props;
+        const { setWizardStage, networkGraphRef, setSelectedNode } = props;
         setWizardStage(wizardStages.namespaceDetails);
         props.history.push('/main/network');
         if (networkGraphRef) {
-            props.networkGraphRef.setSelectedNode();
-            props.setSelectedNode(null);
+            networkGraphRef.setSelectedNode();
+            setSelectedNode(null);
         }
     }
 
     const leftButtons = props.selectedNamespace ? (
-        <>
-            <PanelButton
-                icon={<Icon.ArrowLeft className="h-5 w-5" />}
-                className="flex pl-3 text-center text-sm items-center"
-                onClick={onBackButtonClick}
-                tooltip="Back"
-            />
-        </>
+        <PanelButton
+            icon={<Icon.ArrowLeft className="h-5 w-5" />}
+            className="flex pl-3 text-center text-sm items-center"
+            onClick={onBackButtonClick}
+            tooltip="Back"
+        />
     ) : null;
 
     return (
