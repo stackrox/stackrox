@@ -3,7 +3,7 @@ import React from 'react';
 
 import ClusterStatus from './ClusterStatus';
 import CollectorStatus from './CollectorStatus';
-// import CredentialExpiration from './CredentialExpiration';
+import CredentialExpiration from './CredentialExpiration';
 import SensorStatus from './SensorStatus';
 import SensorUpgrade from './SensorUpgrade';
 
@@ -16,7 +16,7 @@ const tdClass = 'px-0 py-1';
  *
  * The child elements assume that this component is responsible for optional chaining.
  */
-const ClusterHealth = ({ healthStatus, status, centralVersion, now }) => {
+const ClusterHealth = ({ healthStatus, status, centralVersion, currentDatetime }) => {
     return (
         <table>
             <tbody>
@@ -36,7 +36,7 @@ const ClusterHealth = ({ healthStatus, status, centralVersion, now }) => {
                         <SensorStatus
                             sensorHealthStatus={healthStatus?.sensorHealthStatus}
                             lastContact={status?.lastContact}
-                            now={now}
+                            currentDatetime={currentDatetime}
                         />
                     </td>
                 </tr>
@@ -48,9 +48,10 @@ const ClusterHealth = ({ healthStatus, status, centralVersion, now }) => {
                         <CollectorStatus
                             collectorHealthStatus={healthStatus?.collectorHealthStatus}
                             collectorHealthInfo={healthStatus?.collectorHealthInfo}
+                            healthInfoComplete={healthStatus?.healthInfoComplete}
                             sensorHealthStatus={healthStatus?.sensorHealthStatus}
                             lastContact={status?.lastContact}
-                            now={now}
+                            currentDatetime={currentDatetime}
                             isList={false}
                         />
                     </td>
@@ -69,16 +70,17 @@ const ClusterHealth = ({ healthStatus, status, centralVersion, now }) => {
                         />
                     </td>
                 </tr>
-                {/*
                 <tr className={trClass} key="Credential Expiration">
                     <th className={thClass} scope="row">
                         Credential Expiration
                     </th>
                     <td className={tdClass}>
-                        <CredentialExpiration certExpiryStatus={status?.certExpiryStatus} now={now} />
+                        <CredentialExpiration
+                            certExpiryStatus={status?.certExpiryStatus}
+                            currentDatetime={currentDatetime}
+                        />
                     </td>
                 </tr>
-                */}
             </tbody>
         </table>
     );
@@ -88,18 +90,17 @@ ClusterHealth.propTypes = {
     healthStatus: PropTypes.shape({
         collectorHealthStatus: PropTypes.string,
         collectorHealthInfo: PropTypes.object,
-        // lastContact: PropTypes.string, // ISO 8601
         overallHealthStatus: PropTypes.string,
         sensorHealthStatus: PropTypes.string,
     }),
     status: PropTypes.shape({
-        // certExpiryStatus: PropTypes.object,
+        certExpiryStatus: PropTypes.object,
         lastContact: PropTypes.string, // ISO 8601
         sensorVersion: PropTypes.string,
         upgradeStatus: PropTypes.object,
     }),
     centralVersion: PropTypes.string.isRequired,
-    now: PropTypes.instanceOf(Date).isRequired,
+    currentDatetime: PropTypes.instanceOf(Date).isRequired,
 };
 
 ClusterHealth.defaultProps = {

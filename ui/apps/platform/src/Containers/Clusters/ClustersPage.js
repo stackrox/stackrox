@@ -51,7 +51,6 @@ import {
     formatConfiguredField,
     formatLastCheckIn,
     getUpgradeableClusters,
-    getCredentialExpirationProps,
 } from './cluster.helpers';
 import CredentialExpiration from './Components/CredentialExpiration';
 import SensorUpgrade from './Components/SensorUpgrade';
@@ -356,20 +355,12 @@ const ClustersPage = ({
         },
         {
             Header: 'Credential Expiration',
-            Cell: ({ original }) => {
-                const props = getCredentialExpirationProps(original.status?.certExpiryStatus);
-                if (!props) {
-                    return 'N/A';
-                }
-                return (
-                    <CredentialExpiration
-                        expiration={props.sensorCertExpiry}
-                        showExpiringSoon={props.showExpiringSoon}
-                        type={props.messageType}
-                        diffInWords={props.diffInWords}
-                    />
-                );
-            },
+            Cell: ({ original }) => (
+                <CredentialExpiration
+                    certExpiryStatus={original.status?.certExpiryStatus}
+                    currentDatetime={new Date()}
+                />
+            ),
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${wrapClassName} ${defaultColumnClassName} word-break`,
             sortMethod: sortVersion,

@@ -52,7 +52,7 @@ export const isUninitializedInList = () => (
         <SensorStatus
             sensorHealthStatus="UNINITIALIZED"
             lastContact={null}
-            now={new Date('2020-07-29T00:00:00Z')}
+            currentDatetime={new Date('2020-07-29T00:00:00Z')}
         />
     </InList>
 );
@@ -63,7 +63,7 @@ export const isUnhealthyAtSide = () => (
         <SensorStatus
             sensorHealthStatus="UNHEALTHY"
             lastContact="2020-07-28T23:56:59Z"
-            now={new Date('2020-07-29T00:00:00Z')}
+            currentDatetime={new Date('2020-07-29T00:00:00Z')}
         />
     </AtSide>
 );
@@ -74,7 +74,7 @@ export const isDegradedInList = () => (
         <SensorStatus
             sensorHealthStatus="DEGRADED"
             lastContact="2020-07-28T23:57:01Z"
-            now={new Date('2020-07-29T00:00:00Z')}
+            currentDatetime={new Date('2020-07-29T00:00:00Z')}
         />
     </InList>
 );
@@ -85,7 +85,7 @@ export const isHealthyAtSide = () => (
         <SensorStatus
             sensorHealthStatus="HEALTHY"
             lastContact="2020-07-28T23:59:01Z"
-            now={new Date('2020-07-29T00:00:00Z')}
+            currentDatetime={new Date('2020-07-29T00:00:00Z')}
         />
     </AtSide>
 );

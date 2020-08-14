@@ -102,6 +102,8 @@ const SensorUpgrade = ({ upgradeStatus, centralVersion, sensorVersion, isList, a
                 </div>
             );
 
+            const { Icon, bgColor, fgColor } = typeStyles[type];
+
             // Use table instead of TooltipFieldValue to align version numbers.
             const versionNumbers = (
                 <table>
@@ -110,19 +112,31 @@ const SensorUpgrade = ({ upgradeStatus, centralVersion, sensorVersion, isList, a
                             <th className={thClassName} scope="row">
                                 Sensor version:
                             </th>
-                            <td className={tdClassName}>{formatSensorVersion(sensorVersion)}</td>
+                            <td className={tdClassName}>
+                                {sensorVersion && type === 'current' ? (
+                                    <span className={`${bgColor} ${fgColor}`}>{sensorVersion}</span>
+                                ) : (
+                                    formatSensorVersion(sensorVersion)
+                                )}
+                            </td>
                         </tr>
                         <tr className={trClassName} key="centralVersion">
                             <th className={thClassName} scope="row">
                                 Central version:
                             </th>
-                            <td className={tdClassName}>{centralVersion}</td>
+                            <td className={tdClassName}>
+                                {type === 'download' ? (
+                                    <span className={`${bgColor} ${fgColor}`}>
+                                        {centralVersion}
+                                    </span>
+                                ) : (
+                                    centralVersion
+                                )}
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             );
-
-            const { Icon, fgColor } = typeStyles[type];
 
             // Tooltip requires an HTML element instead of a React element as its child :(
             return isList ? (

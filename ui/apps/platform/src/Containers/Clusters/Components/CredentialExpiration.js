@@ -1,55 +1,84 @@
-import PropTypes from 'prop-types';
 import React from 'react';
-import { AlertCircle, AlertTriangle } from 'react-feather';
-import dateFns from 'date-fns';
+import PropTypes from 'prop-types';
+import { differenceInDays } from 'date-fns';
+
 import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
+import { getDate, getDayOfWeek, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
-const statusTypes = {
-    info: {
-        color: 'text-base-600',
-        icon: null,
-    },
-    warn: {
-        color: 'text-warning-700',
-        icon: AlertCircle,
-    },
-    error: {
-        color: 'text-alert-700',
-        icon: AlertTriangle,
-    },
+import HealthStatus from './HealthStatus';
+import { healthStatusStyles } from '../cluster.helpers';
+
+const diffDegradedMin = 7; // if less, display a day of the week for Unhealthy
+const diffHealthyMin = 30; // if less, display a date for Degraded
+
+const CredentialExpiration = ({ certExpiryStatus, currentDatetime }) => {
+    if (certExpiryStatus?.sensorCertExpiry) {
+        const { sensorCertExpiry } = certExpiryStatus;
+
+        // date-fns@2: differenceInDays(parseISO(sensorCertExpiry, currentDatetime))
+        const diffInDays = differenceInDays(sensorCertExpiry, currentDatetime);
+
+        // Adapt health status categories that seem relevant to certificate expiration.
+        let healthStatus = 'HEALTHY';
+        if (diffInDays < diffDegradedMin) {
+            healthStatus = 'UNHEALTHY';
+        } else if (diffInDays < diffHealthyMin) {
+            healthStatus = 'DEGRADED';
+        }
+
+        const { Icon, bgColor, fgColor } = healthStatusStyles[healthStatus];
+
+        // Order arguments according to date-fns@2 convention:
+        // If sensorCertExpiry > currentDateTime: in X units
+        // If sensorCertExpiry <= currentDateTime: X units ago
+        const distanceElement = (
+            <span className={`${bgColor} ${fgColor} whitespace-no-wrap`}>
+                {getDistanceStrictAsPhrase(sensorCertExpiry, currentDatetime)}
+            </span>
+        );
+
+        // Display day or date unless expiration is today or more than 1 month in the future.
+        const expirationElement =
+            diffInDays !== 0 && diffInDays < 60 ? (
+                <div>
+                    {distanceElement}{' '}
+                    <span className="whitespace-no-wrap">{`on ${
+                        diffInDays > 0 && diffInDays < 7
+                            ? getDayOfWeek(sensorCertExpiry)
+                            : getDate(sensorCertExpiry)
+                    }`}</span>
+                </div>
+            ) : (
+                <div>{distanceElement}</div>
+            );
+
+        // Tooltip has the absolute date (in ISO 8601 format).
+        return (
+            <Tooltip
+                content={<TooltipOverlay>{`Expiration date: ${sensorCertExpiry}`}</TooltipOverlay>}
+            >
+                <div>
+                    <HealthStatus Icon={Icon} iconColor={fgColor}>
+                        {expirationElement}
+                    </HealthStatus>
+                </div>
+            </Tooltip>
+        );
+    }
+
+    return null;
 };
 
-function CredentialExpiration({ showExpiringSoon, type, expiration, diffInWords }) {
-    const chosenType = statusTypes[type] || statusTypes.info;
-
-    // make icon element a Dynamic Component Name, so we can inject it into the JSX template
-    // see: https://medium.com/@Carmichaelize/dynamic-tag-names-in-react-and-jsx-17e366a684e9
-    const IconElement = chosenType.icon || null;
-
-    return (
-        <Tooltip content={<TooltipOverlay>{dateFns.format(expiration)}</TooltipOverlay>}>
-            <div className={`flex items-center content-center ${chosenType.color}`}>
-                {IconElement && <IconElement />}
-                <div className="flex flex-col justify-center ml-2">
-                    {showExpiringSoon && 'Expiring soon: '}
-                    {diffInWords} remaining
-                </div>
-            </div>
-        </Tooltip>
-    );
-}
-
 CredentialExpiration.propTypes = {
-    showExpiringSoon: PropTypes.bool,
-    type: PropTypes.string,
-    expiration: PropTypes.string.isRequired,
-    diffInWords: PropTypes.string.isRequired,
+    certExpiryStatus: PropTypes.shape({
+        sensorCertExpiry: PropTypes.string, // ISO 8601
+    }),
+    currentDatetime: PropTypes.instanceOf(Date).isRequired,
 };
 
 CredentialExpiration.defaultProps = {
-    showExpiringSoon: false,
-    type: 'info',
+    certExpiryStatus: null,
 };
 
 export default CredentialExpiration;

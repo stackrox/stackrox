@@ -53,10 +53,25 @@ export const getDayOfWeek = (timestamp) => daysOfWeek[new Date(timestamp).getDay
  * Given an ISO 8601 string and Date instance, return the time difference.
  *
  * Specify rounding method explicitly because default changes to 'round' in date-fns@2.
- * formatDistanceStrict(now, parseISO(lastContact), { roundingMethod: 'floor' });
+ * formatDistanceStrict(currentDatetime, parseISO(dataDatetime), { roundingMethod: 'floor' });
  */
-export const getDistanceStrict = (lastContact, now) =>
-    distanceInWordsStrict(lastContact, now, { partialMethod: 'floor' });
+export const getDistanceStrict = (dataDatetime, currentDatetime) =>
+    distanceInWordsStrict(dataDatetime, currentDatetime, { partialMethod: 'floor' });
+//
+/*
+ * Given an ISO 8601 string and Date instance, return the time difference:
+ * if currentDatetime is in X units
+ * if currentDatetime is X units ago
+ *
+ * Specify rounding method explicitly because default changes to 'round' in date-fns@2.
+ * Also the order of the arguments is reversed in date-fns@2
+ * formatDistanceStrict(parseISO(dataDatetime), currentDatetime, { roundingMethod: 'floor', addSuffix: true });
+ */
+export const getDistanceStrictAsPhrase = (dataDatetime, currentDatetime) =>
+    distanceInWordsStrict(currentDatetime, dataDatetime, {
+        addSuffix: true,
+        partialMethod: 'floor',
+    });
 
 export default {
     getLatestDatedItemByKey,

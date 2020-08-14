@@ -15,7 +15,7 @@ import { healthStatusStyles, isDelayedSensorHealthStatus } from '../cluster.help
  *
  * Caller is responsible for optional chaining in case healthStatus is null.
  */
-const SensorStatus = ({ sensorHealthStatus, lastContact, now }) => {
+const SensorStatus = ({ sensorHealthStatus, lastContact, currentDatetime }) => {
     if (sensorHealthStatus) {
         const { Icon, bgColor, fgColor } = healthStatusStyles[sensorHealthStatus];
         const labelElement = (
@@ -33,7 +33,7 @@ const SensorStatus = ({ sensorHealthStatus, lastContact, now }) => {
                 {labelElement}{' '}
                 <span className="whitespace-no-wrap">{`for ${getDistanceStrict(
                     lastContact,
-                    now
+                    currentDatetime
                 )}`}</span>
             </div>
         ) : (
@@ -66,7 +66,7 @@ const SensorStatus = ({ sensorHealthStatus, lastContact, now }) => {
 SensorStatus.propTypes = {
     sensorHealthStatus: PropTypes.oneOf(['UNINITIALIZED', 'UNHEALTHY', 'DEGRADED', 'HEALTHY']),
     lastContact: PropTypes.string, // ISO 8601
-    now: PropTypes.instanceOf(Date).isRequired,
+    currentDatetime: PropTypes.instanceOf(Date).isRequired,
 };
 
 SensorStatus.defaultProps = {

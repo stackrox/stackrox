@@ -11,6 +11,10 @@ All notable changes to this project that require documentation updates will be d
   - replace 'Upgrade status' column with 'Sensor Upgrade' and add tooltip which displays 'Sensor version' and 'Central version'
   - display cells in 'Sensor Upgrade' columns with same style as adjacent new Cluster Health columns
 - UI: Added a toggle in the Network Policy Simulator in Network Graph to exclude ports and protocols (ROX-5248).
+- UI: Platform Configuration > Clusters: Make CertificateExpiration look similar to recently improved Sensor Upgrade style and future cluster health style (ROX-5398)
+  - Red X icon at left of phrase for less than 7 days (for example, in 59 minutes, in 7 hours, in 6 days on Friday)
+  - Yellow triangle icon at left of phrase for less than 30 days (for example, in 29 days on 7/31/2020)
+  - Green check icon at left of other phrases (for example, in 1 month on 7/31/2020, in 2 months)
 
 ## [47.0]
 - Configuration Management tables (except for Controls and Policies) are now paginated through the API, rather than loading all rows into the browser, for better performance in large environments (ROX-5067).
