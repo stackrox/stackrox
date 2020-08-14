@@ -1,58 +1,54 @@
 {
-  "id": "a9b9ecf7-9707-4e32-8b62-d03018ed454f",
-  "name": "Mounting Sensitive Host Directories",
-  "description": "Alert on deployments mounting sensitive host directories",
-  "severity": "MEDIUM_SEVERITY",
-  "lifecycle_stages": [
-    "DEPLOY"
-  ],
-  "categories": [
-    "Security Best Practices"
-  ],
-  "fields": {
-    "volume_policy": {
-      "source": "(/etc/.*|/sys/.*|/dev/.*|/proc/.*|/var/.*)"
-    }
-  },
-  "rationale": "Mounting system directories from host implies container access to sensitive files on the host. This expands the attack surface of the container and gives an intruder an opportunity to break containment if the host is not properly secured.",
-  "remediation": "Ensure that deployments do not mount sensitive host directories, or whitelist this deployment if host mount is required.",
-  "whitelists": [
-    {
-      "name": "Don't alert on StackRox collector",
-      "deployment": {
-        "name": "collector",
-        "scope": {
-          "namespace": "stackrox"
+    "id": "a9b9ecf7-9707-4e32-8b62-d03018ed454f",
+    "name": "Mounting Sensitive Host Directories",
+    "description": "Alert on deployments mounting sensitive host directories",
+    "severity": "MEDIUM_SEVERITY",
+    "lifecycle_stages": ["DEPLOY"],
+    "categories": ["Security Best Practices"],
+    "fields": {
+        "volume_policy": {
+            "source": "(/etc/.*|/sys/.*|/dev/.*|/proc/.*|/var/.*)"
         }
-      }
     },
-    {
-      "name": "Don't alert on StackRox compliance",
-      "deployment": {
-        "scope": {
-          "namespace": "stackrox",
-          "label": {
-            "key": "app",
-            "value": "stackrox-compliance"
-          }
+    "rationale": "Mounting system directories from host implies container access to sensitive files on the host. This expands the attack surface of the container and gives an intruder an opportunity to break containment if the host is not properly secured.",
+    "remediation": "Ensure that deployments do not mount sensitive host directories, or exclude this deployment if host mount is required.",
+    "whitelists": [
+        {
+            "name": "Don't alert on StackRox collector",
+            "deployment": {
+                "name": "collector",
+                "scope": {
+                    "namespace": "stackrox"
+                }
+            }
+        },
+        {
+            "name": "Don't alert on StackRox compliance",
+            "deployment": {
+                "scope": {
+                    "namespace": "stackrox",
+                    "label": {
+                        "key": "app",
+                        "value": "stackrox-compliance"
+                    }
+                }
+            }
+        },
+        {
+            "name": "Don't alert on kube-system namespace",
+            "deployment": {
+                "scope": {
+                    "namespace": "kube-system"
+                }
+            }
+        },
+        {
+            "name": "Don't alert on istio-system namespace",
+            "deployment": {
+                "scope": {
+                    "namespace": "istio-system"
+                }
+            }
         }
-      }
-    },
-    {
-      "name": "Don't alert on kube-system namespace",
-      "deployment": {
-        "scope": {
-          "namespace": "kube-system"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on istio-system namespace",
-      "deployment": {
-        "scope": {
-          "namespace": "istio-system"
-        }
-      }
-    }
-  ]
+    ]
 }

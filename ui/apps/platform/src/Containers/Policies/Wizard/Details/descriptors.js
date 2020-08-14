@@ -82,7 +82,7 @@ const fieldsMap = {
         formatValue: (d) => d.join(', '),
     },
     whitelists: {
-        label: 'Whitelists',
+        label: 'Exclusions',
         formatValue: (d, props) => {
             const whitelistObj = {};
             const deploymentWhitelistScopes = d
@@ -90,7 +90,7 @@ const fieldsMap = {
                 .map((obj) => obj.deployment);
             if (deploymentWhitelistScopes.length > 0) {
                 whitelistObj[
-                    'Deployment Whitelists'
+                    'Excluded Deployments'
                 ] = deploymentWhitelistScopes.map((deploymentWhitelistScope) =>
                     formatDeploymentWhitelistScope(deploymentWhitelistScope, props)
                 );
@@ -99,7 +99,7 @@ const fieldsMap = {
                 .filter((obj) => obj.image && obj.image.name !== '')
                 .map((obj) => obj.image.name);
             if (images.length !== 0) {
-                whitelistObj['Image Whitelists'] = images;
+                whitelistObj['Excluded Images'] = images;
             }
             return whitelistObj;
         },
@@ -257,7 +257,7 @@ const fieldsMap = {
         formatValue: (d) => (d.readOnly ? 'Not Enabled' : 'Writable: Yes'),
     },
     whitelistEnabled: {
-        label: 'Whitelists Enabled',
+        label: 'Excluded Scopes Enabled',
         formatValue: (d) => (d ? 'Yes' : 'No'),
     },
     permissionPolicy: {

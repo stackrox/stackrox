@@ -85,7 +85,7 @@ export const clusteredProcessActivityEvent = () => {
     );
 };
 
-export const clusteredWhitelistedProcessActivityEvent = () => {
+export const clusteredProcessInBaselineActivityEvent = () => {
     const events = [...Array(10).keys()].map((index) => {
         return {
             name: `event-${index}`,

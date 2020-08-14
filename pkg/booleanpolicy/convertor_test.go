@@ -625,7 +625,7 @@ func TestConvertPolicyFieldsToSections(t *testing.T) {
 		},
 
 		{
-			desc: "whitelist enabled",
+			desc: "scope exclusion enabled",
 			policyFields: &storage.PolicyFields{
 				SetWhitelist: &storage.PolicyFields_WhitelistEnabled{WhitelistEnabled: true},
 			},

@@ -20,7 +20,7 @@ function ProcessesDiscoveryCardHeader({
 }) {
     const { name, containerName, suspicious } = process;
 
-    function addWhitelist(evt) {
+    function addBaseline(evt) {
         evt.stopPropagation();
         const { clusterId, namespace } = getDeploymentAndProcessIdFromProcessGroup(process);
         const addProcessesQuery = {
@@ -51,10 +51,10 @@ function ProcessesDiscoveryCardHeader({
             <div className="flex content-center">
                 {suspicious && (
                     <div className="border-l border-r flex items-center justify-center w-16 border-alert-300">
-                        <Tooltip content={<TooltipOverlay>Add to whitelist</TooltipOverlay>}>
+                        <Tooltip content={<TooltipOverlay>Add to baseline</TooltipOverlay>}>
                             <button
                                 type="button"
-                                onClick={addWhitelist}
+                                onClick={addBaseline}
                                 className="border rounded p-px mr-3 ml-3 border-alert-800 flex items-center hover:bg-alert-300"
                             >
                                 <Icon.Plus className="h-4 w-4 text-alert-800" />

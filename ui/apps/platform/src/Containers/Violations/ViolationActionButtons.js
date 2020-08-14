@@ -2,24 +2,24 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import { resolveAlert } from 'services/AlertsService';
-import { whitelistDeployments } from 'services/PoliciesService';
+import { excludeDeployments } from 'services/PoliciesService';
 
 import * as Icon from 'react-feather';
 import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
 
 function ViolationActionButtons({ violation, setSelectedAlertId }) {
-    function resolveAlertAction(whitelist) {
+    function resolveAlertAction(shouldExclude) {
         const unselectAlert = () => setSelectedAlertId(null);
         return (e) => {
             e.stopPropagation();
-            resolveAlert(violation.id, whitelist).then(unselectAlert, unselectAlert);
+            resolveAlert(violation.id, shouldExclude).then(unselectAlert, unselectAlert);
         };
     }
 
-    function whitelistDeploymentAction(e) {
+    function excludeDeploymentAction(e) {
         e.stopPropagation();
-        whitelistDeployments(violation.policy.id, [violation.deployment.name]);
+        excludeDeployments(violation.policy.id, [violation.deployment.name]);
     }
 
     const isRuntimeAlert = violation && violation.lifecycleStage === 'RUNTIME';
@@ -33,7 +33,7 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
                     <Tooltip
                         content={
                             <TooltipOverlay>
-                                Resolve violation and add affected processes to whitelist
+                                Resolve violation and add affected processes to excluded scope
                             </TooltipOverlay>
                         }
                     >
@@ -58,14 +58,14 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
                     </Tooltip>
                 </div>
             )}
-            <Tooltip content={<TooltipOverlay>Whitelist deployment</TooltipOverlay>}>
+            <Tooltip content={<TooltipOverlay>Exclude deployment</TooltipOverlay>}>
                 <button
-                    data-testid="whitelist-deployment-button"
+                    data-testid="exclude-deployment-button"
                     type="button"
                     className={`p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700 ${
                         isRuntimeAlert ? 'border-l-2 border-base-400' : ''
                     }`}
-                    onClick={whitelistDeploymentAction}
+                    onClick={excludeDeploymentAction}
                 >
                     <Icon.BellOff className="my-1 h-4 w-4" />
                 </button>

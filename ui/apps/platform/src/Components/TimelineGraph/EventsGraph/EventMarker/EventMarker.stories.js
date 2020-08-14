@@ -48,7 +48,7 @@ export const processActivityEvent = () => {
     );
 };
 
-export const whitelistedProcessActivityEvent = () => {
+export const processInBaselineActivityEvent = () => {
     return (
         <svg data-testid="timeline-main-view" width={50} height={50}>
             <EventMarker

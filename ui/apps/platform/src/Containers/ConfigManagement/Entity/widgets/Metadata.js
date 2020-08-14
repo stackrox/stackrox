@@ -91,7 +91,7 @@ const Metadata = ({ keyValuePairs, labels, annotations, whitelists, secrets, ...
                             <ResourceCountPopper
                                 data={whitelists}
                                 reactOutsideClassName="ignore-whitelist-onclickoutside"
-                                label="Whitelist"
+                                label="Excluded Scopes"
                                 renderContent={renderName}
                             />
                         </li>

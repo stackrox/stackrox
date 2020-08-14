@@ -5,19 +5,19 @@ import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
 import { lockUnlockProcesses } from 'services/ProcessesService';
 
-import ProcessWhitelistElementList from './WhitelistElementList';
+import ProcessBaselineElementList from './ProcessBaselineElementList';
 
 const lockTooltipText =
-    'Locking a container specification whitelist will trigger a violation if an abnormal process is found';
+    'Locking a container specification process baseline will trigger a violation if an abnormal process is found';
 const unlockTooltipText =
-    'Unlocking a container specification whitelist will NOT trigger a violation if an abnormal process is found';
+    'Unlocking a container specification process baseline will NOT trigger a violation if an abnormal process is found';
 const buttonClassName = 'p-1 border rounded';
 const disabledButtonClassName =
     'text-primary-400 border-primary-400 bg-base-300 pointer-events-none';
 const lockedClassName = `${disabledButtonClassName} rounded-r-none border-base-500`;
 const unlockedClassName = `${disabledButtonClassName} rounded-l-none border-base-500`;
 
-const Whitelist = ({ process, processEpoch, setProcessEpoch }) => {
+const ProcessBaselineList = ({ process, processEpoch, setProcessEpoch }) => {
     const isLocked = !!process.userLockedTimestamp;
     const { key, elements, containerName } = process;
     function toggleCurrentProcessLock() {
@@ -84,8 +84,8 @@ const Whitelist = ({ process, processEpoch, setProcessEpoch }) => {
                     </div>
                 </Tooltip>
             </div>
-            <ProcessWhitelistElementList
-                whitelistKey={key}
+            <ProcessBaselineElementList
+                baselineKey={key}
                 elements={sortedElements}
                 processEpoch={processEpoch}
                 setProcessEpoch={setProcessEpoch}
@@ -94,7 +94,7 @@ const Whitelist = ({ process, processEpoch, setProcessEpoch }) => {
     );
 };
 
-Whitelist.propTypes = {
+ProcessBaselineList.propTypes = {
     process: PropTypes.shape({
         key: PropTypes.shape({
             containerName: PropTypes.string,
@@ -107,4 +107,4 @@ Whitelist.propTypes = {
     setProcessEpoch: PropTypes.func.isRequired,
 };
 
-export default Whitelist;
+export default ProcessBaselineList;

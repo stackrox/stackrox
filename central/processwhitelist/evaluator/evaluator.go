@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// An Evaluator evaluates process whitelists, and stores their cached results.
+// An Evaluator evaluates process baselines, and stores their cached results.
 //go:generate mockgen-wrapper
 type Evaluator interface {
 	EvaluateWhitelistsAndPersistResult(deployment *storage.Deployment) (violatingProcesses []*storage.ProcessIndicator, err error)

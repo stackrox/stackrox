@@ -194,13 +194,12 @@ func (s *policyValidator) validateWhitelists(policy *storage.Policy) error {
 }
 
 func (s *policyValidator) validateWhitelist(policy *storage.Policy, whitelist *storage.Whitelist) error {
-	// TODO(cgorman) once we have real whitelist support in UI, add validation for whitelist name
 	if whitelist.GetDeployment() == nil && whitelist.GetImage() == nil {
-		return errors.New("all whitelists must have some criteria to match on")
+		return errors.New("all excluded scopes must have some criteria to match on")
 	}
 	if whitelist.GetDeployment() != nil {
 		if !policies.AppliesAtDeployTime(policy) && !policies.AppliesAtRunTime(policy) {
-			return errors.New("whitelisting a deployment is only valid during the DEPLOY and RUNTIME lifecycles")
+			return errors.New("excluding a deployment is only valid during the DEPLOY and RUNTIME lifecycles")
 		}
 		if err := s.validateDeploymentWhitelist(whitelist); err != nil {
 			return err
@@ -208,10 +207,10 @@ func (s *policyValidator) validateWhitelist(policy *storage.Policy, whitelist *s
 	}
 	if whitelist.GetImage() != nil {
 		if !policies.AppliesAtBuildTime(policy) {
-			return errors.New("whitelisting an image is only valid during the BUILD lifecycle")
+			return errors.New("excluding an image is only valid during the BUILD lifecycle")
 		}
 		if whitelist.GetImage().GetName() == "" {
-			return errors.New("image whitelist must have nonempty name")
+			return errors.New("image excluded scope must have nonempty name")
 		}
 	}
 	return nil
@@ -220,7 +219,7 @@ func (s *policyValidator) validateWhitelist(policy *storage.Policy, whitelist *s
 func (s *policyValidator) validateDeploymentWhitelist(whitelist *storage.Whitelist) error {
 	deployment := whitelist.GetDeployment()
 	if deployment.GetScope() == nil && deployment.GetName() == "" {
-		return errors.New("at least one field of deployment whitelist must be defined")
+		return errors.New("at least one field of deployment excluded scope must be defined")
 	}
 	if deployment.GetScope() != nil {
 		if err := s.validateScope(deployment.GetScope()); err != nil {

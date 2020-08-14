@@ -1,7 +1,7 @@
 import axios from './instance';
 
 const baseUrl = '/v1/processes';
-const baseProcessesWhiteListUrl = '/v1/processwhitelists';
+const processesInBaselineUrl = '/v1/processwhitelists';
 
 /**
  * Fetches Processes for a given deployment ID.
@@ -19,33 +19,33 @@ export function fetchProcesses(deploymentId) {
 }
 
 /**
- * Fetches container specific whitelists by deployment id and container id.
+ * Fetches container specific excluded scopes by deployment id and container id.
  *
  * @param {!string} query
  * @returns {Promise<Object, Error>} fulfilled
  */
-export function fetchProcessesWhiteList(query) {
-    return axios.get(`${baseProcessesWhiteListUrl}/key?${query}`).then((response) => ({
+export function fetchProcessesInBaseline(query) {
+    return axios.get(`${processesInBaselineUrl}/key?${query}`).then((response) => ({
         data: response.data,
     }));
 }
 
 /**
- * Lock/Unlock container specific process whitelist by deployment id and container id.
+ * Lock/Unlock container specific process excluded scope by deployment id and container id.
  *
  * @param {!array} processes
  * @returns {Promise<Object, Error>} fulfilled
  */
 export function lockUnlockProcesses(processes) {
-    return axios.put(`${baseProcessesWhiteListUrl}/lock`, processes);
+    return axios.put(`${processesInBaselineUrl}/lock`, processes);
 }
 
 /**
- * Add/Delete container specific processes whitelist by deployment id and container id.
+ * Add/Delete container specific processes excluded scope by deployment id and container id.
  *
  * @param {!array} processes
  * @returns {Promise<Object, Error>} fulfilled
  */
 export function addDeleteProcesses(processes) {
-    return axios.put(`${baseProcessesWhiteListUrl}`, processes);
+    return axios.put(`${processesInBaselineUrl}`, processes);
 }

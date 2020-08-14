@@ -143,7 +143,6 @@ describe('Policies page', () => {
 
             cy.get('.warn-message').should('exist');
             cy.get('.alert-preview').should('exist');
-            cy.get('.whitelist-exclusions').should('exist');
         });
 
         it('should open the panel to create a new policy', () => {

@@ -134,13 +134,13 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 
 	msg, err = stream.Recv()
 	if err != nil {
-		s.stopC.SignalWithError(errors.Wrap(err, "receiving initial whitelists"))
+		s.stopC.SignalWithError(errors.Wrap(err, "receiving initial baselines"))
 		return
 	}
 
 	// Policy Sync
 	if err := detector.ProcessMessage(msg); err != nil {
-		s.stopC.SignalWithError(errors.Wrap(err, "process whitelists could not be successfully processed"))
+		s.stopC.SignalWithError(errors.Wrap(err, "process baselines could not be successfully processed"))
 		return
 	}
 

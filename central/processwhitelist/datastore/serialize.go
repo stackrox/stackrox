@@ -21,7 +21,7 @@ func keyToID(key *storage.ProcessWhitelistKey) (string, error) {
 	return "", fmt.Errorf("invalid key %+v: doesn't match any of our known patterns", key)
 }
 
-// IDToKey converts a string process whitelist key to its proto object.
+// IDToKey converts a string process baseline key to its proto object.
 func IDToKey(id string) (*storage.ProcessWhitelistKey, error) {
 	if strings.HasPrefix(id, string(deploymentContainerKeyPrefix)) {
 		keys := strings.Split(id, ":")

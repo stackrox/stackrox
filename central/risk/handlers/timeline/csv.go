@@ -49,7 +49,7 @@ var (
 			getter: func(r *eventRow) string { return r.processParentName },
 		},
 		{
-			header: "Process Whitelisted",
+			header: "Process Baselined",
 			getter: func(r *eventRow) string { return r.processWhitelisted },
 		},
 		{

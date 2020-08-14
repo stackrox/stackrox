@@ -133,7 +133,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
     /* TODO(ROX-3108)
     @Unroll
     @Category(BAT)
-    def "Verify  whitelist processes for the given key before and after locking "() {
+    def "Verify baseline processes for the given key before and after locking "() {
         when:
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
@@ -141,19 +141,19 @@ class ProcessWhiteListsTest extends BaseSpecification {
         // Currently, we always create a deployment where the container name is the same
         // as the deployment name
         String containerName = deployment.getName()
-        "get process whitelists is called for a key"
+        "get process baselines is called for a key"
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
                 getProcessWhitelist(clusterId, deployment, containerName)
 
         assert (whitelist != null)
 
         then:
-        "Verify  whitelisted processes for a given key before and after calling lock whitelists"
+        "Verify  baseline processes for a given key before and after calling lock baselines"
         assert ((whitelist.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
                     (whitelist.key.containerName.equalsIgnoreCase(containerName)))
         assert  whitelist.getElements(0).element.processName.contains(processName)
 
-        //lock the whitelist with the key of the container just deployed
+        // lock the baseline with the key of the container just deployed
         List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists = ProcessWhitelistService.
                 lockProcessWhitelists(clusterId, deployment, containerName, true)
         assert  lockProcessWhitelists.size() == 1
@@ -170,19 +170,19 @@ class ProcessWhiteListsTest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
-    def "Verify whitelist process violation after resolve whitelist on #deploymentName"() {
+    def "Verify baseline process violation after resolve baseline on #deploymentName"() {
                /*
-                    a)Lock the whitelists for the key
+                    a)Lock the processes in the baseline for the key
                     b)exec into the container and run a process
                     c)verify violation alert for Unauthorized Process Execution
                     d)
                         test case :choose to only resolve violation
                             exec into the container and run the  process again and verify violation alert
-                        test case : choose to both resolve and whitelist
+                        test case : choose to both resolve and add to the baseline
                             exec into the container and run the  process again and verify no violation alert
                */
         when:
-        "exec into the container after locking whitelists and create a whitelist violation"
+        "exec into the container after locking baseline and create a baseline violation"
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
         orchestrator.createDeployment(deployment)
@@ -204,7 +204,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
         sleep 5000
         orchestrator.execInContainer(deployment, "pwd")
 
-        //check for whitelist  violation
+        // check for process baseline violation
         assert waitForViolation(containerName, "Unauthorized Process Execution", 15)
         List<AlertOuterClass.ListAlert> alertList = AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest
                  .newBuilder().build())
@@ -214,7 +214,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
                      alert.deployment.id.equalsIgnoreCase(deploymentId)) {
                 alertId = alert.id
                 AlertService.resolveAlert(alertId, resolveWhitelist)
-                // again, allow the new whitelist that contains pwd to propagate
+                // again, allow the new baseline that contains pwd to propagate
                 sleep 5000
             }
          }
@@ -226,7 +226,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
             assert waitForViolation(containerName, "Unauthorized Process Execution", 15)
         }
         then:
-        "Verify for violation or no violation after resolve/resolve and whitelist"
+        "Verify for violation or no violation after resolve/resolve and baseline"
         List<AlertOuterClass.ListAlert> alertListAnother = AlertService
                  .getViolations(AlertServiceOuterClass.ListAlertsRequest
                  .newBuilder().build())
@@ -257,17 +257,17 @@ class ProcessWhiteListsTest extends BaseSpecification {
      }
 
     @Category(BAT)
-    def "Verify whitelists are deleted when their deployment is deleted"() {
+    def "Verify baselines are deleted when their deployment is deleted"() {
         /*
-                a)get all whitelists
-                b)verify whitelists exist for a deployment
+                a)get all baselines
+                b)verify baselines exist for a deployment
                 c)delete the deployment
-                d)get all whitelists
-                e)verify all whitelists for the deployment have been deleted
+                d)get all baselines
+                e)verify all baselines for the deployment have been deleted
         */
         when:
         "a deployment is deleted"
-        //Get all whitelists for our deployment and assert they exist
+        // Get all baselines for our deployment and assert they exist
         def deployment = DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_DELETE }
         assert deployment != null
         orchestrator.createDeployment(deployment)
@@ -276,12 +276,12 @@ class ProcessWhiteListsTest extends BaseSpecification {
                 waitForDeploymentWhitelistsCreated(clusterId, deployment, containerName)
         assert(whitelistsCreated)
 
-        //Delete the deployment
+        // Delete the deployment
         orchestrator.deleteDeployment(deployment)
         Services.waitForSRDeletion(deployment)
 
         then:
-        "Verify that all whitelists with that deployment ID have been deleted"
+        "Verify that all baselines with that deployment ID have been deleted"
         def whitelistsDeleted = ProcessWhitelistService.
                 waitForDeploymentWhitelistsDeleted(clusterId, deployment, containerName)
         assert(whitelistsDeleted)
@@ -293,14 +293,14 @@ class ProcessWhiteListsTest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
-    def "Verify removed whitelist process not getting added back to whitelist after rerun on #deploymentName"() {
+    def "Verify removed baseline process not getting added back to baseline after rerun on #deploymentName"() {
         /*
-                1.run a process and verify if it exists in the whitelist
+                1.run a process and verify if it exists in the baseline
                 2.remove the process
-                3.rerun the process to verify it it does not get added to the whitelist
+                3.rerun the process to verify it it does not get added to the baseline
          */
         when:
-        "an added process is removed and whitelist is locked and the process is run"
+        "an added process is removed and baseline is locked and the process is run"
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
         assert deployment != null
         orchestrator.createDeployment(deployment)
@@ -310,12 +310,12 @@ class ProcessWhiteListsTest extends BaseSpecification {
         def containerName = deploymentName
         def namespace = deployment.getNamespace()
 
-        //Wait for whitelist to be created
+        // Wait for baseline to be created
         def initialWhitelist = ProcessWhitelistService.
                 getProcessWhitelist(clusterId, deployment, containerName)
         assert (initialWhitelist != null)
 
-        //Add the process to the whitelist
+        // Add the process to the baseline
         ProcessWhitelistOuterClass.ProcessWhitelistKey [] keys = [
                 new ProcessWhitelistOuterClass
                 .ProcessWhitelistKey().newBuilderForType().setContainerName(containerName)
@@ -333,7 +333,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
             it.element.processName.contains("/bin/pwd") }
         assert ( element != null)
 
-        //Remove the process from the whitelist
+        // Remove the process from the baseline
         toBeAddedProcesses = []
         toBeRemovedProcesses = ["/bin/pwd"]
         List<ProcessWhitelistOuterClass.ProcessWhitelist> updatedListAfterRemoveProcess = ProcessWhitelistService
@@ -342,7 +342,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
 
         orchestrator.execInContainer(deployment, "pwd")
         then:
-        "verify process is not added to the whitelist"
+        "verify process is not added to the baseline"
         ProcessWhitelistOuterClass.ProcessWhitelist whitelistAfterReRun = ProcessWhitelistService.
                 getProcessWhitelist(clusterId, deployment, containerName)
         assert  ( whitelistAfterReRun.elementsList.find { it.element.processName.contains("pwd") } == null)

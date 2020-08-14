@@ -13,7 +13,7 @@ type CompiledPolicy interface {
 	Policy() *storage.Policy
 
 	// The Match* functions return violations for the policy against the passed in objects.
-	// Note that the Match* functions DO NOT care about whitelists/the policy being disabled.
+	// Note that the Match* functions DO NOT care about excludes scopes, or the policy being disabled.
 	// Callers are responsible for doing those checks separately.
 	// For MatchAgainstDeployment* functions, images _must_ correspond one-to-one with the container specs in the deployment.
 	MatchAgainstDeploymentAndProcess(cacheReceptacle *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (booleanpolicy.Violations, error)

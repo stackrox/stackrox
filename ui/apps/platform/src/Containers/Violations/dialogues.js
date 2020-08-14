@@ -1,6 +1,6 @@
 const dialogues = {
     resolve: 'resolveDialogue',
-    whitelist: 'whitelistDialogue',
+    excludeScopes: 'excludeScopesDialogue',
     tag: 'tagDialogue',
 };
 

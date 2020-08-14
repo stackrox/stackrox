@@ -74,7 +74,7 @@ func (s *serviceImpl) GetProcessWhitelist(ctx context.Context, request *v1.GetPr
 		return nil, err
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "No process whitelist with key %+v found", request.GetKey())
+		return nil, status.Errorf(codes.NotFound, "No process baseline with key %+v found", request.GetKey())
 	}
 	return whitelist, nil
 }
@@ -106,7 +106,7 @@ func (s *serviceImpl) sendWhitelistToSensor(pw *storage.ProcessWhitelist) {
 			}},
 	})
 	if err != nil {
-		log.Errorf("Error sending process whitelist to cluster %q: %v", pw.GetKey().GetClusterId(), err)
+		log.Errorf("Error sending process baseline to cluster %q: %v", pw.GetKey().GetClusterId(), err)
 	}
 }
 

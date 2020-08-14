@@ -58,7 +58,7 @@ func ConstructProcess(process *storage.ProcessIndicator, processOutsideWhitelist
 		pathutil.FieldStep(whitelistResultAugmentKey),
 	)
 	if err != nil {
-		return nil, errors.Wrap(err, "adding whitelist result to process")
+		return nil, errors.Wrap(err, "adding process baseline result to process")
 	}
 	return augmentedProcess, nil
 }

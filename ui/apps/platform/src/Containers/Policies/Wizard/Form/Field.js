@@ -12,7 +12,7 @@ import ReduxNumericInputField from 'Components/forms/ReduxNumericInputField';
 import ReduxToggleField from 'Components/forms/ReduxToggleField';
 import ReduxRadioButtonGroupField from 'Components/forms/ReduxRadioButtonGroupField';
 import RestrictToScope from './RestrictToScope';
-import WhitelistScope from './WhitelistScope';
+import ExcludedScope from './ExcludedScope';
 
 export default function Field({ field, name, readOnly, BPLenabled }) {
     if (field === undefined) {
@@ -124,7 +124,7 @@ export default function Field({ field, name, readOnly, BPLenabled }) {
         case 'scope':
             return <FieldArray key={path} name={path} component={RestrictToScope} />;
         case 'whitelistScope':
-            return <FieldArray key={path} name={path} component={WhitelistScope} />;
+            return <FieldArray key={path} name={path} component={ExcludedScope} />;
         default:
             throw new Error(`Unknown field type: ${field.type}`);
     }

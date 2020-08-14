@@ -230,7 +230,7 @@ func (c *sensorConnection) getWhitelistSyncMsg(ctx context.Context) (*central.Ms
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "could not list process whitelists for Sensor connection")
+		return nil, errors.Wrap(err, "could not list process baselines for Sensor connection")
 	}
 	return &central.MsgToSensor{
 		Msg: &central.MsgToSensor_WhitelistSync{
@@ -284,10 +284,10 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 
 		msg, err = c.getWhitelistSyncMsg(ctx)
 		if err != nil {
-			return errors.Wrapf(err, "unable to get whitelist sync msg for %q", c.clusterID)
+			return errors.Wrapf(err, "unable to get process baseline sync msg for %q", c.clusterID)
 		}
 		if err := server.Send(msg); err != nil {
-			return errors.Wrapf(err, "unable to sync initial whitelists to cluster %q", c.clusterID)
+			return errors.Wrapf(err, "unable to sync initial process baselines to cluster %q", c.clusterID)
 		}
 	}
 

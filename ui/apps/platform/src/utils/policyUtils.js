@@ -140,3 +140,40 @@ export function transformPolicyCriteriaValuesToStrings(policy) {
 
     return transformedPolicy;
 }
+
+/**
+ * extract the names of excluded scopes from the bespoken exclusion list
+ * returned by the single policy GraphQL resolver
+ *
+ * @param   {array}  scopes          (see below for object shape)
+ * @param   {string}  exclusionType  'deployment' or 'image'
+ *
+ * @return  {string}                 comma-separated list of scope names
+ *
+ * example data:
+ * [
+ *     {
+ *          deployment: {
+ *              name: 'central',
+ *              scope: null,
+ *          },
+ *          image: null,
+ *      },
+ *      {
+ *          deployment: null,
+ *          image: {
+ *              name: 'docker.io/library/mysql:5',
+ *          },
+ *      },
+ * ]
+ */
+export function getExcludedNamesByType(scopes, exclusionType) {
+    // first, does the exclusion have an object of the specified type?
+    const filteredScopes = scopes.filter((scope) => Boolean(scope[exclusionType]));
+
+    const names = filteredScopes.reduce((list, scope) => {
+        return list.concat(scope[exclusionType].name);
+    }, []);
+
+    return names.join(', ');
+}

@@ -227,7 +227,7 @@ const policyDetailsFormDescriptor = [
         default: true,
     },
     {
-        label: 'Whitelist by Scope',
+        label: 'Exclude by Scope',
         jsonpath: clientOnlyWhitelistFieldNames.WHITELISTED_DEPLOYMENT_SCOPES,
         type: 'whitelistScope',
         options: [],
@@ -235,7 +235,7 @@ const policyDetailsFormDescriptor = [
         default: true,
     },
     {
-        label: 'Images Whitelist (Build Lifecycle only)',
+        label: 'Excluded Images (Build Lifecycle only)',
         jsonpath: clientOnlyWhitelistFieldNames.WHITELISTED_IMAGE_NAMES,
         type: 'multiselect-creatable',
         options: [],
@@ -838,9 +838,9 @@ const policyConfigurationDescriptor = [
         canBooleanLogic: false,
     },
     {
-        label: 'Whitelists Enabled',
+        label: 'Process Baselining Enabled',
         name: 'Unexpected Process Executed',
-        longName: 'Process Whitelist Status',
+        longName: 'Process Baselining Status',
         jsonpath: 'fields.whitelistEnabled',
         category: policyCriteriaCategories.PROCESS_ACTIVITY,
         type: 'radioGroup',

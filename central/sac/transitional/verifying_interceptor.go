@@ -86,7 +86,7 @@ func VerifySACScopeChecksInterceptor(ctx context.Context, req interface{}, serve
 		serviceMethodPermSet.Add(resourceAccess.Resource, resourceAccess.Access)
 	}
 
-	// Apply whitelist rules.
+	// Apply process baseline rules.
 	for _, wlResource := range staticWhitelist[serverInfo.FullMethod] {
 		delete(serviceMethodPermSet, wlResource.GetResource())
 	}

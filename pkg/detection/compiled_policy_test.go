@@ -51,7 +51,7 @@ func TestCompiledPolicyScopesAndWhitelists(t *testing.T) {
 		shouldApplyTo []*storage.Deployment
 	}{
 		{
-			desc:          "no scopes or whitelists",
+			desc:          "no scopes or excluded scopes",
 			shouldApplyTo: []*storage.Deployment{stackRoxNSDep, defaultNSDep, appStackRoxDep},
 		},
 		{
@@ -60,7 +60,7 @@ func TestCompiledPolicyScopesAndWhitelists(t *testing.T) {
 			shouldApplyTo: []*storage.Deployment{stackRoxNSDep, appStackRoxDep},
 		},
 		{
-			desc:          "only stackrox ns, but app=stackrox whitelisted",
+			desc:          "only stackrox ns, but app=stackrox excluded",
 			scopes:        []*storage.Scope{stackRoxNSScope},
 			whitelists:    []*storage.Whitelist{{Deployment: &storage.Whitelist_Deployment{Scope: appStackRoxScope}}},
 			shouldApplyTo: []*storage.Deployment{stackRoxNSDep},

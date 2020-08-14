@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-// The EvaluationMode specifies when to treat a whitelist as being locked.
+// The EvaluationMode specifies when to treat a process baseline as being locked.
 type EvaluationMode int
 
 // This block enumerates all valid evaluation modes.
@@ -29,22 +29,22 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// locked checks whether a timestamp represents a locked whitelist true = locked, false = unlocked
+// locked checks whether a timestamp represents a locked process baseline true = locked, false = unlocked
 func locked(lockTime *types.Timestamp) bool {
 	return lockTime != nil && types.TimestampNow().Compare(lockTime) >= 0
 }
 
-// IsRoxLocked checks whether a whitelist is StackRox locked.
+// IsRoxLocked checks whether a process baseline is StackRox locked.
 func IsRoxLocked(whitelist *storage.ProcessWhitelist) bool {
 	return locked(whitelist.GetStackRoxLockedTimestamp())
 }
 
-// IsUserLocked checks whether a whitelist is user locked.
+// IsUserLocked checks whether a process baseline is user locked.
 func IsUserLocked(whitelist *storage.ProcessWhitelist) bool {
 	return locked(whitelist.GetUserLockedTimestamp())
 }
 
-// LockedUnderMode checks whether a whitelist is locked under the given evaluation mode.
+// LockedUnderMode checks whether a process baseline is locked under the given evaluation mode.
 func LockedUnderMode(whitelist *storage.ProcessWhitelist, mode EvaluationMode) bool {
 	switch mode {
 	case RoxLocked:
@@ -60,9 +60,9 @@ func LockedUnderMode(whitelist *storage.ProcessWhitelist, mode EvaluationMode) b
 	return false
 }
 
-// Processes returns the set of whitelisted processes from the whitelist.
-// It returns nil if the whitelist is not locked under the passed EvaluationMode --
-// if it returns nil, it means that all processes are whitelisted under the given mode.
+// Processes returns the set of processes that are in the baseline.
+// It returns nil if the process baseline is not locked under the passed EvaluationMode --
+// if it returns nil, it means that all processes are baselined under the given mode.
 func Processes(whitelist *storage.ProcessWhitelist, mode EvaluationMode) *set.StringSet {
 	if !LockedUnderMode(whitelist, mode) {
 		return nil

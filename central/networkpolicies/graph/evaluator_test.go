@@ -765,7 +765,7 @@ func TestEvaluateClusters(t *testing.T) {
 			},
 		},
 		{
-			name: "DENY all non-whitelisted traffic to a namespace",
+			name: "DENY all non-whitelisted traffic to a namespace", // TODO: update to inclusive language when updating actual code
 			deployments: []*storage.Deployment{
 				{
 					Id:          "d1",

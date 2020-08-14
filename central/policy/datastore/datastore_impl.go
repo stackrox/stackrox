@@ -219,7 +219,7 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 		}
 		if changedIndices.Contains(i) {
 			response.Errors = append(response.Errors, &v1.ImportPolicyError{
-				Message: "Cluster scopes, cluster whitelists, and notification options have been removed from this policy.",
+				Message: "Cluster scopes, cluster exclusions, and notification options have been removed from this policy.",
 				Type:    policiesPkg.ErrImportClustersOrNotifiersRemoved,
 			})
 		}

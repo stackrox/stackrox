@@ -53,7 +53,7 @@ const Metadata = ({
                             <li className="m-4">
                                 <ResourceCountPopper
                                     data={labels}
-                                    reactOutsideClassName="ignore-label-onclickoutside"
+                                    reactOutsideClassName="ignore-react-onclickoutside"
                                     label="Label"
                                 />
                             </li>
@@ -62,7 +62,7 @@ const Metadata = ({
                             <li className="m-4">
                                 <ResourceCountPopper
                                     data={annotations}
-                                    reactOutsideClassName="ignore-annotation-onclickoutside"
+                                    reactOutsideClassName="ignore-react-onclickoutside"
                                     label="Annotation"
                                 />
                             </li>
@@ -71,8 +71,8 @@ const Metadata = ({
                             <li className="m-4">
                                 <ResourceCountPopper
                                     data={whitelists}
-                                    reactOutsideClassName="ignore-whitelist-onclickoutside"
-                                    label="Whitelist"
+                                    reactOutsideClassName="ignore-react-onclickoutside"
+                                    label="Excluded Scopes"
                                     renderContent={renderName}
                                 />
                             </li>
@@ -81,7 +81,7 @@ const Metadata = ({
                             <li className="m-4">
                                 <ResourceCountPopper
                                     data={secrets}
-                                    reactOutsideClassName="ignore-secret-onclickoutside"
+                                    reactOutsideClassName="ignore-react-onclickoutside"
                                     label="Image Pull Secret"
                                     renderContent={renderName}
                                 />

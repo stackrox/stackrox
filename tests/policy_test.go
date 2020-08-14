@@ -451,8 +451,8 @@ func verifyWhitelistsRemoved(t *testing.T) {
 
 	// Policy 1 should be valid
 	policy := validPolicy.Clone()
-	policy.Id = "verifyWhitelistsRemoved policy ID"
-	policy.Name = "verifyWhitelistsRemoved is a valid policy"
+	policy.Id = "verifyExcludedScopesRemoved policy ID"
+	policy.Name = "verifyExcludedScopesRemoved is a valid policy"
 	policy.Whitelists = []*storage.Whitelist{
 		{
 			Deployment: &storage.Whitelist_Deployment{
@@ -470,7 +470,7 @@ func verifyWhitelistsRemoved(t *testing.T) {
 	cancel()
 	require.NoError(t, err)
 
-	// Whitelist should have been scraped out
+	// Exclude scopes should have been scraped out
 	policy.Whitelists = nil
 	validateWhitelistOrScopeOrNotiferRemoved(t, importResp, policy)
 }

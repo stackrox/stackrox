@@ -1,13 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-
 import * as Icon from 'react-feather';
 import find from 'lodash/find';
+import dateFns from 'date-fns';
+
 import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
-import { sortValue, sortDate } from 'sorters/sorters';
-import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
+import { sortValue, sortDate } from 'sorters/sorters';
 
 function DeploymentNameColumn({ original }) {
     const isSuspicious = find(original.whitelistStatuses, {
@@ -39,7 +39,7 @@ DeploymentNameColumn.propTypes = {
     }).isRequired,
 };
 
-const columns = [
+const riskTableColumnDescriptors = [
     {
         Header: 'Name',
         accessor: 'deployment.name',
@@ -77,4 +77,4 @@ const columns = [
     },
 ];
 
-export default columns;
+export default riskTableColumnDescriptors;

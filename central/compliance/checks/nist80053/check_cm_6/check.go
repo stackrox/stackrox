@@ -13,7 +13,7 @@ const (
 
 For this control, ` + common.CheckNoViolationsForDeployPhasePoliciesInterpretation + `
 
-To approve a deviation, resolve the policy violation or adjust the scope or whitelist for the policy.`
+To approve a deviation, resolve the policy violation or adjust the scope or exclusions for the policy.`
 )
 
 func init() {

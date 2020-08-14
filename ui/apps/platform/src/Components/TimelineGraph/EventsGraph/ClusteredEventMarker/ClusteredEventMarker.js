@@ -23,7 +23,7 @@ import ClusteredTerminationEvent from './ClusteredTerminationEvent';
 function getClusterEventType(events) {
     const types = uniqBy(
         events.map((event) =>
-            // if the event is a whitelisted process actvity, we should use a new type specific
+            // if the event is a baselined process actvity, we should use a new type specific
             // to just clustered events
             event.whitelisted ? clusteredEventTypes.WHITELISTED_PROCESS_ACTIVITY : event.type
         )

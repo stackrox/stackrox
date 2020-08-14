@@ -20,13 +20,13 @@ func TestMatchesDeploymentWhitelist(t *testing.T) {
 		shouldMatch bool
 	}{
 		{
-			name:        "No whitelist",
+			name:        "No excluded scope",
 			deployment:  fixtures.GetDeployment(),
 			policy:      &storage.Policy{},
 			shouldMatch: false,
 		},
 		{
-			name:       "Named whitelist",
+			name:       "Named excluded scope",
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
 				Whitelists: []*storage.Whitelist{
@@ -38,7 +38,7 @@ func TestMatchesDeploymentWhitelist(t *testing.T) {
 			shouldMatch: true,
 		},
 		{
-			name:       "Named whitelist, and another with a different name",
+			name:       "Named excluded scope, and another with a different name",
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
 				Whitelists: []*storage.Whitelist{
@@ -53,7 +53,7 @@ func TestMatchesDeploymentWhitelist(t *testing.T) {
 			shouldMatch: true,
 		},
 		{
-			name:       "Named whitelist with different name",
+			name:       "Named excluded scope with different name",
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
 				Whitelists: []*storage.Whitelist{
@@ -65,7 +65,7 @@ func TestMatchesDeploymentWhitelist(t *testing.T) {
 			shouldMatch: false,
 		},
 		{
-			name:       "Scoped whitelist",
+			name:       "Scoped excluded scope",
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
 				Whitelists: []*storage.Whitelist{
@@ -77,7 +77,7 @@ func TestMatchesDeploymentWhitelist(t *testing.T) {
 			shouldMatch: true,
 		},
 		{
-			name:       "Scoped whitelist with wrong name",
+			name:       "Scoped excluded scope with wrong name",
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
 				Whitelists: []*storage.Whitelist{
@@ -89,7 +89,7 @@ func TestMatchesDeploymentWhitelist(t *testing.T) {
 			shouldMatch: false,
 		},
 		{
-			name:       "Scoped whitelist, but different name",
+			name:       "Scoped excluded scope, but different name",
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
 				Whitelists: []*storage.Whitelist{
@@ -139,7 +139,7 @@ func TestMatchesImageWhitelist(t *testing.T) {
 		shouldMatch bool
 	}{
 		{
-			name:  "no whitelists",
+			name:  "no excluded scopes",
 			image: "docker.io/stackrox/main",
 			policy: &storage.Policy{
 				Whitelists: []*storage.Whitelist{},
@@ -194,7 +194,7 @@ func TestMatchesImageWhitelist(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			got := matchesImageWhitelist(c.image, c.policy)
 			assert.Equal(t, c.shouldMatch, got)
-			// If it should match, make sure it doesn't match if the whitelists are all expired.
+			// If it should match, make sure it doesn't match if the excluded scopes are all expired.
 			if c.shouldMatch {
 				for _, whitelist := range c.policy.GetWhitelists() {
 					whitelist.Expiration = protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour))

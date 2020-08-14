@@ -378,7 +378,7 @@ func (s *serviceImpl) CancelDryRunJob(ctx context.Context, jobid *v1.JobId) (*v1
 func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx concurrency.ErrorWaitable, request *storage.Policy) (*v1.DryRunResponse, error) {
 	var resp v1.DryRunResponse
 
-	// Dry runs do not apply to policies with whitelists or runtime lifecycle stage because they are evaluated
+	// Dry runs do not apply to policies with excluded scopes or runtime lifecycle stage because they are evaluated
 	// through the process indicator pipeline
 	if policies.AppliesAtRunTime(request) {
 		return &resp, nil

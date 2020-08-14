@@ -65,7 +65,7 @@ func (e *evaluator) EvaluateWhitelistsAndPersistResult(deployment *storage.Deplo
 			Namespace:     deployment.GetNamespace(),
 		})
 		if err != nil {
-			return nil, errors.Wrapf(err, "fetching process whitelist for deployment %s/%s/%s", deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName())
+			return nil, errors.Wrapf(err, "fetching process baseline for deployment %s/%s/%s", deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName())
 		}
 		containerNameToWhitelistResults[container.GetName()] = &storage.ContainerNameAndWhitelistStatus{
 			ContainerName:   container.GetName(),
@@ -88,7 +88,7 @@ func (e *evaluator) EvaluateWhitelistsAndPersistResult(deployment *storage.Deplo
 
 	for _, process := range processes {
 		processSet, exists := containerNameToWhitelistedProcesses[process.GetContainerName()]
-		// If no explicit whitelist, then all processes are valid.
+		// If no explicit baseline, then all processes are valid.
 		if !exists {
 			continue
 		}
@@ -107,7 +107,7 @@ func (e *evaluator) EvaluateWhitelistsAndPersistResult(deployment *storage.Deplo
 
 	whitelistResults, err := e.whitelistResults.GetWhitelistResults(evaluatorCtx, deployment.GetId())
 	if err != nil {
-		return nil, errors.Wrap(err, "error fetching whitelist results")
+		return nil, errors.Wrap(err, "error fetching process baseline results")
 	}
 
 	var persistenceRequired bool
@@ -129,7 +129,7 @@ func (e *evaluator) EvaluateWhitelistsAndPersistResult(deployment *storage.Deplo
 	}
 	if persistenceRequired {
 		if err := e.persistResults(evaluatorCtx, deployment, containerNameToWhitelistResults); err != nil {
-			return nil, errors.Wrap(err, "failed to persist whitelist results")
+			return nil, errors.Wrap(err, "failed to persist process baseline results")
 		}
 	}
 	return violatingProcesses, nil

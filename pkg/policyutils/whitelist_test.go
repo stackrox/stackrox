@@ -21,7 +21,7 @@ func TestDeploymentWhitelistToQuery_NoWhitelists(t *testing.T) {
 func TestDeploymentWhitelistToQuery_NoDeploymentWhitelists(t *testing.T) {
 	q := DeploymentWhitelistToQuery([]*storage.Whitelist{
 		{
-			Name: "myWhitelist",
+			Name: "myExcludedScope",
 			Image: &storage.Whitelist_Image{
 				Name: "blessed-image",
 			},
@@ -33,7 +33,7 @@ func TestDeploymentWhitelistToQuery_NoDeploymentWhitelists(t *testing.T) {
 func TestDeploymentWhitelistToQuery_MalformedDeploymentWhitelist(t *testing.T) {
 	q := DeploymentWhitelistToQuery([]*storage.Whitelist{
 		{
-			Name:       "myWhitelist",
+			Name:       "myExcludedScope",
 			Deployment: &storage.Whitelist_Deployment{},
 		},
 	})
@@ -43,7 +43,7 @@ func TestDeploymentWhitelistToQuery_MalformedDeploymentWhitelist(t *testing.T) {
 func TestDeploymentWhitelistToQuery_NamedDeploymentWhitelist(t *testing.T) {
 	q := DeploymentWhitelistToQuery([]*storage.Whitelist{
 		{
-			Name: "myWhitelist",
+			Name: "myExcludedScope",
 			Deployment: &storage.Whitelist_Deployment{
 				Name: "blessed-deployment",
 			},
@@ -55,7 +55,7 @@ func TestDeploymentWhitelistToQuery_NamedDeploymentWhitelist(t *testing.T) {
 func TestDeploymentWhitelistToQuery_ScopedDeploymentWhitelist(t *testing.T) {
 	q := DeploymentWhitelistToQuery([]*storage.Whitelist{
 		{
-			Name: "myWhitelist",
+			Name: "myExcludedScope",
 			Deployment: &storage.Whitelist_Deployment{
 				Scope: &storage.Scope{
 					Cluster: "blessed-cluster-id",

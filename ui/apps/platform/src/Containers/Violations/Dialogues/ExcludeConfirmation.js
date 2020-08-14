@@ -1,12 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { whitelistDeployments } from 'services/PoliciesService';
+import { excludeDeployments } from 'services/PoliciesService';
 import pluralize from 'pluralize';
 import Dialog from 'Components/Dialog';
 
 // Filter the alerts displayed down to the ones checked, and group them into a map from policy ID to a list of
-// deployment names, then whitelist every policy ID, deployment name pair in the map.
-function whitelistAlerts(checkedAlertIds, alerts) {
+// deployment names, then exclude every policy ID, deployment name pair in the map.
+function excludeAlerts(checkedAlertIds, alerts) {
     const checkedAlertsSet = new Set(checkedAlertIds);
 
     const policyToDeployments = {};
@@ -22,19 +22,19 @@ function whitelistAlerts(checkedAlertIds, alerts) {
 
     return Promise.all(
         Object.keys(policyToDeployments).map((policyId) => {
-            return whitelistDeployments(policyId, policyToDeployments[policyId]);
+            return excludeDeployments(policyId, policyToDeployments[policyId]);
         })
     );
 }
 
-function WhitelistConfirmation({ setDialogue, alerts, checkedAlertIds, setCheckedAlertIds }) {
+function ExcludeConfirmation({ setDialogue, alerts, checkedAlertIds, setCheckedAlertIds }) {
     function closeAndClear() {
         setDialogue(null);
         setCheckedAlertIds([]);
     }
 
-    function whitelistDeploymentsAction() {
-        whitelistAlerts(checkedAlertIds, alerts).then(closeAndClear, closeAndClear);
+    function excludeDeploymentsAction() {
+        excludeAlerts(checkedAlertIds, alerts).then(closeAndClear, closeAndClear);
     }
 
     function close() {
@@ -45,17 +45,17 @@ function WhitelistConfirmation({ setDialogue, alerts, checkedAlertIds, setChecke
     return (
         <Dialog
             isOpen
-            text={`Are you sure you want to whitelist ${numSelectedRows} ${pluralize(
+            text={`Are you sure you want to exclude ${numSelectedRows} ${pluralize(
                 'violation',
                 numSelectedRows
             )}?`}
-            onConfirm={whitelistDeploymentsAction}
+            onConfirm={excludeDeploymentsAction}
             onCancel={close}
         />
     );
 }
 
-WhitelistConfirmation.propTypes = {
+ExcludeConfirmation.propTypes = {
     setDialogue: PropTypes.func.isRequired,
     alerts: PropTypes.arrayOf(
         PropTypes.shape({
@@ -71,4 +71,4 @@ WhitelistConfirmation.propTypes = {
     setCheckedAlertIds: PropTypes.func.isRequired,
 };
 
-export default WhitelistConfirmation;
+export default ExcludeConfirmation;

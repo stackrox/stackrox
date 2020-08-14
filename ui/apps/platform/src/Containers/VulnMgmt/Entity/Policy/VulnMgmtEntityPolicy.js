@@ -64,20 +64,10 @@ const VulmMgmtEntityPolicy = ({
                 whitelists {
                     deployment {
                         name
-                        scope {
-                            cluster
-                            label {
-                                key
-                                value
-                            }
-                            namespace
-                        }
                     }
-                    expiration
                     image {
                         name
                     }
-                    name
                 }
                 deploymentCount${queryVarParam}
                 deployments${queryVarParam} {

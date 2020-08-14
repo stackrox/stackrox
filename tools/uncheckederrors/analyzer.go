@@ -26,7 +26,7 @@ var Analyzer = &analysis.Analyzer{
 var (
 	errType = types.Universe.Lookup("error").Type()
 
-	// whitelist contains functions from the standard library where we're okay with not
+	// exclusion list contains functions from the standard library where we're okay with not
 	// checking returned errors.
 	whitelist = map[string]set.FrozenStringSet{
 		"fmt": set.NewFrozenStringSet(

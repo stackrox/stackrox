@@ -162,13 +162,13 @@ export function cancelDryRun(jobId) {
 }
 
 /**
- * Updates policy with a given ID to add deployment into the whitelisted entries.
+ * Updates policy with a given ID to add deployment into the excluded scopes entries.
  *
  * @param {!string} policyId
  * @param {!string[]} deploymentNames
  * @returns {Promise<AxiosResponse, Error>} fulfilled in case of success or rejected with an error
  */
-export async function whitelistDeployments(policyId, deploymentNames) {
+export async function excludeDeployments(policyId, deploymentNames) {
     const { response } = await fetchPolicy(policyId);
     const policy = response.entities.policy[policyId];
 

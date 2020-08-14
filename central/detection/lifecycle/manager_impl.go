@@ -195,7 +195,7 @@ func (m *managerImpl) checkAndUpdateWhitelist(whitelistKey processWhitelistKey, 
 		Namespace:     whitelistKey.namespace,
 	}
 
-	// TODO joseph what to do if whitelist doesn't exist?  Always create for now?
+	// TODO joseph what to do if exclusions ("whitelist" in the old non-inclusive language) doesn't exist?  Always create for now?
 	whitelist, exists, err := m.whitelists.GetProcessWhitelist(lifecycleMgrCtx, key)
 	if err != nil {
 		return false, err

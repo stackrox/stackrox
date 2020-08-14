@@ -52,7 +52,7 @@ func (m *clusterMatcher) anyWhitelistMatches(whitelists []*storage.Whitelist) bo
 func (m *clusterMatcher) whitelistMatches(whitelist *storage.Whitelist) bool {
 	cs, err := scopecomp.CompileScope(whitelist.GetDeployment().GetScope())
 	if err != nil {
-		utils.Should(errors.Wrap(err, "could not compile whitelist scope"))
+		utils.Should(errors.Wrap(err, "could not compile excluded scopes"))
 		return false
 	}
 

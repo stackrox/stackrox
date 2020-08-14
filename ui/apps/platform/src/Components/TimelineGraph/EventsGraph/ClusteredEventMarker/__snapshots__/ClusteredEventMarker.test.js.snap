@@ -1,5 +1,81 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`should show a clustered baselined process activity event marker 1`] = `
+<DocumentFragment>
+  <svg
+    data-testid="timeline-main-view"
+    height="100"
+    width="100"
+  >
+    <g
+      data-testid="timeline-clustered-event-marker"
+      transform="translate(NaN, 12.5)"
+    >
+      <g
+        aria-expanded="false"
+      >
+        <svg
+          class="cursor-pointer"
+          data-testid="clustered-process-in-baseline-activity-event"
+          height="25"
+          viewBox="0 0 23 22"
+          width="25"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <g
+            fill="none"
+            fill-rule="evenodd"
+          >
+            <g
+              transform="translate(0 6)"
+            >
+              <rect
+                fill="#56DDB2"
+                height="14.58"
+                rx="2.43"
+                width="14.58"
+              />
+              <path
+                d="M4.459 6.768a.807.807 0 00-1.18-.072.91.91 0 00-.067 1.24l2.685 3.17a.81.81 0 001.281-.043l4.645-6.244a.909.909 0 00-.144-1.233.808.808 0 00-1.172.151L6.48 9.153l-2.02-2.385z"
+                fill="#FFF"
+                fill-rule="nonzero"
+              />
+            </g>
+            <g
+              transform="translate(9)"
+            >
+              <rect
+                fill="#EBFFF9"
+                height="12"
+                rx="2"
+                stroke="#8DD4BD"
+                width="13"
+                x=".5"
+                y=".5"
+              />
+              <text
+                fill="#2E9D7A"
+                font-family="OpenSans-Bold, Open Sans"
+                font-size="9"
+                font-weight="bold"
+                letter-spacing="-.18"
+              >
+                <tspan
+                  x="2.043"
+                  y="10"
+                >
+                  9+
+                </tspan>
+              </text>
+            </g>
+          </g>
+        </svg>
+      </g>
+    </g>
+  </svg>
+</DocumentFragment>
+`;
+
 exports[`should show a clustered container restart event marker 1`] = `
 <DocumentFragment>
   <svg
@@ -254,82 +330,6 @@ exports[`should show a clustered process activity event marker 1`] = `
               />
               <text
                 fill="#2E4A9D"
-                font-family="OpenSans-Bold, Open Sans"
-                font-size="9"
-                font-weight="bold"
-                letter-spacing="-.18"
-              >
-                <tspan
-                  x="2.043"
-                  y="10"
-                >
-                  9+
-                </tspan>
-              </text>
-            </g>
-          </g>
-        </svg>
-      </g>
-    </g>
-  </svg>
-</DocumentFragment>
-`;
-
-exports[`should show a clustered whitelisted process activity event marker 1`] = `
-<DocumentFragment>
-  <svg
-    data-testid="timeline-main-view"
-    height="100"
-    width="100"
-  >
-    <g
-      data-testid="timeline-clustered-event-marker"
-      transform="translate(NaN, 12.5)"
-    >
-      <g
-        aria-expanded="false"
-      >
-        <svg
-          class="cursor-pointer"
-          data-testid="clustered-whitelisted-process-activity-event"
-          height="25"
-          viewBox="0 0 23 22"
-          width="25"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <g
-            fill="none"
-            fill-rule="evenodd"
-          >
-            <g
-              transform="translate(0 6)"
-            >
-              <rect
-                fill="#56DDB2"
-                height="14.58"
-                rx="2.43"
-                width="14.58"
-              />
-              <path
-                d="M4.459 6.768a.807.807 0 00-1.18-.072.91.91 0 00-.067 1.24l2.685 3.17a.81.81 0 001.281-.043l4.645-6.244a.909.909 0 00-.144-1.233.808.808 0 00-1.172.151L6.48 9.153l-2.02-2.385z"
-                fill="#FFF"
-                fill-rule="nonzero"
-              />
-            </g>
-            <g
-              transform="translate(9)"
-            >
-              <rect
-                fill="#EBFFF9"
-                height="12"
-                rx="2"
-                stroke="#8DD4BD"
-                width="13"
-                x=".5"
-                y=".5"
-              />
-              <text
-                fill="#2E9D7A"
                 font-family="OpenSans-Bold, Open Sans"
                 font-size="9"
                 font-weight="bold"

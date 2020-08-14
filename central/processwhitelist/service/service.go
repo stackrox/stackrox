@@ -15,7 +15,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Service is the interface to the gRPC service for managing process whitelists
+// Service is the interface to the gRPC service for managing process baselines
 type Service interface {
 	grpc.APIService
 

@@ -92,20 +92,20 @@ export function fetchAlert(id) {
  * Resolves an alert given an alert ID and returns results through input functions.
  *
  * @param {!string} alertId
- * @param {bool} whitelist
+ * @param {bool} shouldExclude
  * @returns {Promise<AxiosResponse, Error>}
  */
-export function resolveAlert(alertId, whitelist = false) {
-    return axios.patch(`${baseUrl}/${alertId}/resolve`, { whitelist });
+export function resolveAlert(alertId, shouldExclude = false) {
+    return axios.patch(`${baseUrl}/${alertId}/resolve`, { whitelist: shouldExclude });
 }
 
 /**
  * Resolves a list of alerts by alert ID and returns results through input functions.
  *
  * @param {string[]} alertIds
- * @param {bool} whitelist
+ * @param {bool} shouldExclude
  * @returns {Promise<AxiosResponse, Error>}
  */
-export function resolveAlerts(alertIds = [], whitelist = false) {
-    return Promise.all(alertIds.map((id) => resolveAlert(id, whitelist)));
+export function resolveAlerts(alertIds = [], shouldExclude = false) {
+    return Promise.all(alertIds.map((id) => resolveAlert(id, shouldExclude)));
 }

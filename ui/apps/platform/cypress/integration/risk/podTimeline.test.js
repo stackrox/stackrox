@@ -162,7 +162,7 @@ describe('Risk Page Pod Event Timeline', () => {
             // the process activity + whitelisted process activity event should be visible
             cy.get(selectors.eventTimeline.select.value).should('contain', 'Show All');
             cy.get(selectors.eventTimeline.timeline.mainView.event.processActivity);
-            cy.get(selectors.eventTimeline.timeline.mainView.event.whitelistedProcessActivity);
+            cy.get(selectors.eventTimeline.timeline.mainView.event.processInBaselineActivity);
 
             // filter by something else
             cy.get(selectors.eventTimeline.select.input).click();
@@ -175,7 +175,7 @@ describe('Risk Page Pod Event Timeline', () => {
                 'not.exist'
             );
             cy.get(
-                selectors.eventTimeline.timeline.mainView.event.whitelistedProcessActivity
+                selectors.eventTimeline.timeline.mainView.event.processInBaselineActivity
             ).should('not.exist');
         });
 
@@ -369,7 +369,7 @@ describe('Risk Page Pod Event Timeline', () => {
 
             // trigger the tooltip
             cy.get(
-                selectors.eventTimeline.timeline.mainView.event.whitelistedProcessActivity
+                selectors.eventTimeline.timeline.mainView.event.processInBaselineActivity
             ).trigger('mouseenter');
 
             // the header should include the event name
@@ -490,10 +490,10 @@ describe('Risk Page Pod Event Timeline', () => {
 
             // make sure the whitelisted process activity icon and text shows up
             cy.get(
-                `${selectors.tooltip.legendContents}:eq(2):contains("Whitelisted Process Activity")`
+                `${selectors.tooltip.legendContents}:eq(2):contains("Baseline Process Activity")`
             );
             cy.get(
-                `${selectors.tooltip.legendContents}:eq(2) ${selectors.tooltip.legendContent.event.whitelistedProcessActivity}`
+                `${selectors.tooltip.legendContents}:eq(2) ${selectors.tooltip.legendContent.event.processInBaselineActivity}`
             );
 
             // make sure the container restart icon and text shows up

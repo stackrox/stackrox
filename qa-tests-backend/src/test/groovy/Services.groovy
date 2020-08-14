@@ -261,7 +261,7 @@ class Services extends BaseService {
         } catch (Exception e) {
             println e.toString()
         }
-        println "Updated ${policyName} to whitelist ${deployment.getName()}"
+        println "Updated ${policyName} to excluded scope ${deployment.getName()}"
         return policyMeta
     }
 

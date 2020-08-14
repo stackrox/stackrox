@@ -108,11 +108,11 @@ class ImageManagementTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT, Integration])
-    def "Verify CI/CD Integration Endpoint Whitelists - #policy - #whitelists"() {
+    def "Verify CI/CD Integration Endpoint excluded scopes - #policy - #excludedscopes"() {
         when:
-        "Update Policy to build time and mark policy whitelist"
+        "Update Policy to build time and mark policy excluded scope"
         def startStages = Services.updatePolicyLifecycleStage(policy, [LifecycleStage.BUILD, LifecycleStage.DEPLOY])
-        Services.updatePolicyImageWhitelist(policy, whitelists)
+        Services.updatePolicyImageWhitelist(policy, excludedscopes)
 
         and:
         "Request Image Scan"
@@ -130,7 +130,7 @@ class ImageManagementTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        policy       | imageRegistry | imageRemote       | imageTag | whitelists | expectedViolation
+        policy       | imageRegistry | imageRemote       | imageTag | excludedscopes | expectedViolation
         "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["docker.io"]                         | false
         "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["docker.io/library"]                 | false
         "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["docker.io/library/busybox"]         | false

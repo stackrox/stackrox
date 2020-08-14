@@ -352,7 +352,7 @@ func (s *PolicyDatastoreTestSuite) TestRemoveScopesAndNotifiers() {
 	s.Require().Len(resp.GetErrors(), 1)
 	importError := resp.GetErrors()[0]
 	s.Equal(importError.GetType(), policies.ErrImportClustersOrNotifiersRemoved)
-	s.Equal(importError.GetMessage(), "Cluster scopes, cluster whitelists, and notification options have been removed from this policy.")
+	s.Equal(importError.GetMessage(), "Cluster scopes, cluster exclusions, and notification options have been removed from this policy.")
 }
 
 func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {

@@ -23,7 +23,7 @@ const TimelineLegend = () => {
             </div>
             <div className="flex items-center mb-2">
                 <ProcessActivityEvent size={ICON_SIZE} whitelisted />
-                <span className="ml-2">Whitelisted Process Activity</span>
+                <span className="ml-2">Baseline Process Activity</span>
             </div>
             <div className="flex items-center mb-2">
                 <RestartEvent size={ICON_SIZE} />

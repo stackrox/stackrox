@@ -33,8 +33,8 @@ function ViolationsTablePanelButtons({ setDialogue, checkedAlertIds, runtimeAler
     function showResolveConfirmationDialog() {
         setDialogue(dialogues.resolve);
     }
-    function showWhitelistConfirmationDialog() {
-        setDialogue(dialogues.whitelist);
+    function showExcludeConfirmationDialog() {
+        setDialogue(dialogues.excludeScopes);
     }
     function showTagConfirmationDialog() {
         setDialogue(dialogues.tag);
@@ -47,7 +47,7 @@ function ViolationsTablePanelButtons({ setDialogue, checkedAlertIds, runtimeAler
         }
     });
     const numCheckedAlertIds = checkedAlertIds.length;
-    const whitelistCount = numCheckedAlertIds;
+    const scopesToExcludeCount = numCheckedAlertIds;
     return (
         <>
             {numCheckedAlertIds !== 0 && (
@@ -77,14 +77,14 @@ function ViolationsTablePanelButtons({ setDialogue, checkedAlertIds, runtimeAler
                     {`Mark as Resolved (${checkedRuntimeAlerts})`}
                 </PanelButton>
             )}
-            {whitelistCount !== 0 && (
+            {scopesToExcludeCount !== 0 && (
                 <PanelButton
                     icon={<BellOff className="h-4 ml-1" />}
                     className="btn btn-base ml-2"
-                    onClick={showWhitelistConfirmationDialog}
-                    tooltip={`Whitelist (${whitelistCount})`}
+                    onClick={showExcludeConfirmationDialog}
+                    tooltip={`Exclude (${scopesToExcludeCount})`}
                 >
-                    {`Whitelist (${whitelistCount})`}
+                    {`Exclude (${scopesToExcludeCount})`}
                 </PanelButton>
             )}
         </>

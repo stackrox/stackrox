@@ -35,7 +35,7 @@ func (d *detectorImpl) DeploymentWhitelistedForPolicy(deploymentID, policyID str
 			return err
 		}
 		if !exists {
-			// Assume it's not whitelisted if it doesn't exist, otherwise runtime alerts for deleted deployments
+			// Assume it's not excluded if it doesn't exist, otherwise runtime alerts for deleted deployments
 			// will always get removed every time we update a policy.
 			result = false
 			return nil
@@ -44,7 +44,7 @@ func (d *detectorImpl) DeploymentWhitelistedForPolicy(deploymentID, policyID str
 		return nil
 	})
 	if err != nil {
-		log.Errorf("Couldn't evaluate whitelist for deployment %s, policy %s: %s", deploymentID, policyID, err)
+		log.Errorf("Couldn't evaluate exclusion for deployment %s, policy %s: %s", deploymentID, policyID, err)
 	}
 	return result
 }

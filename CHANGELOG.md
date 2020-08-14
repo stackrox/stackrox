@@ -15,6 +15,7 @@ All notable changes to this project that require documentation updates will be d
   - Red X icon at left of phrase for less than 7 days (for example, in 59 minutes, in 7 hours, in 6 days on Friday)
   - Yellow triangle icon at left of phrase for less than 30 days (for example, in 29 days on 7/31/2020)
   - Green check icon at left of other phrases (for example, in 1 month on 7/31/2020, in 2 months)
+- UI and strings from API: Replace term 'whitelist' with 'excluded scope' in policy context, and 'baseline' in process context (ROX-5315, ROX-5316)
 
 ## [47.0]
 - Configuration Management tables (except for Controls and Policies) are now paginated through the API, rather than loading all rows into the browser, for better performance in large environments (ROX-5067).
@@ -63,10 +64,10 @@ All notable changes to this project that require documentation updates will be d
   Garden Linux nodes.
 
 ## [45.0]
-- Default policies that have been whitelisted for the kube-system namespace, have now been additionally whitelisted for the istio-system namespace.
+- Default policies that have been excluded for the kube-system namespace, have now been additionally excluded for the istio-system namespace.
 - Default integration added for public Microsoft Container Registry
 - Heads up advisory on `roxctl sensor generate k8s` command option changes slated for release in 47.0:
-  1. `admission-controller` option will be renamed to `create-admission-controller` 
+  1. `admission-controller` option will be renamed to `create-admission-controller`
   2. The default for `create-upgrader-sa` will change to `true`
   3. The default for `collection-method` will change to `KERNEL_MODULE`
   4. Deprecated option `runtime` will be removed
@@ -113,10 +114,10 @@ All notable changes to this project that require documentation updates will be d
   - Audit logs: the singular `user.role` field in the audit message payload is deprecated; please use the singular
     `user.permissions` field for the effective permissions of the user, and the array field `user.roles` for all the
     the individual roles associated with a user.
-- The Compliance container within the Collector daemonset now has a hostpath of '/', which is needed to be able to read 
+- The Compliance container within the Collector daemonset now has a hostpath of '/', which is needed to be able to read
   configuration files anywhere on the host. This requires the allowedHostVolumes within the stackrox-collector PSP to allow '/' to be mounted.
   For added security, the PSP has set '/' as readonly and the Collector container's docker socket mount has also been set to readonly.
-  
+
 ## [42.0]
 - All `/v1/` API endpoints now support pretty-printing.  Make requests with the `?pretty` path parameter to receive pretty-printed json responses.
 - UI: added "Deployment Name" property in side panel for Deployment Details on Violations and Risk pages.
@@ -213,8 +214,8 @@ Existing data will be preserved and available on upgrade.
 
 ## [34.0]
 ### Added
-- Policy whitelists are now shown in the UI. Previously, we only showed whitelisted deployment names, and not the entire structure that was
-  actually in the policy object. This means that users can now whitelist by cluster, namespace and labels using the UI.
+- Policy excluded scopes are now shown in the UI. Previously, we only showed excluded deployment names, and not the entire structure that was
+  actually in the policy object. This means that users can now exclude by cluster, namespace and labels using the UI.
 - There now exists a `roxctl collector support-packages upload <file>` command, which can be used to upload files from
   a Collector runtime support package to Central (e.g., kernel modules, eBPF probes). Assuming that Collectors can talk
   to Sensor, and Sensor can talk to Central, Collectors can then download these files they require at runtime from
@@ -231,7 +232,7 @@ Existing data will be preserved and available on upgrade.
   to your existing deployment, pod security policy and OpenShift scc objects.
 - CVEs with a CVSS score of 0 will now be displayed as "Pending" in the UI because it indicates that a CVE
   is still being analyzed or the CVE has been disputed. The API will continue to return a CVSS score of 0.
-- Scopes now include support for Regex on the namespace and label fields including both Policy Scope and Whitelist Scope.
+- Scopes now include support for Regex on the namespace and label fields including both Policy Scope and Exclusion Scope.
   The supported Regex syntax can be found here: https://github.com/google/re2/wiki/Syntax.
 - The `validated` field in an auth provider is deprecated and will be removed in 3 releases. Please use the `active` field instead.
 - RHSA vulnerabilities will now be displayed with the highest CVSS score from the CVEs it references. The referenced CVEs will

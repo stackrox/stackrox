@@ -8,7 +8,7 @@ import ViolationsPageHeader from './ViolationsPageHeader';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import ViolationsSidePanel from './SidePanel/ViolationsSidePanel';
 import ResolveConfirmation from './Dialogues/ResolveConfirmation';
-import WhitelistConfirmation from './Dialogues/WhitelistConfirmation';
+import ExcludeConfirmation from './Dialogues/ExcludeConfirmation';
 import TagConfirmation from './Dialogues/TagConfirmation';
 
 function ViolationsPage({
@@ -89,8 +89,8 @@ function ViolationsPage({
                     />
                 </div>
             </div>
-            {dialogue === dialogues.whitelist && (
-                <WhitelistConfirmation
+            {dialogue === dialogues.excludeScopes && (
+                <ExcludeConfirmation
                     setDialogue={setDialogue}
                     alerts={currentPageAlerts}
                     checkedAlertIds={checkedAlertIds}

@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
-// Test fixtures for tests involving whitelists
+// Test fixtures for tests involving excluded scopes
 
 // GetProcessWhitelist returns an empty process whitelist with a random container name and deployment ID
 func GetProcessWhitelist() *storage.ProcessWhitelist {
@@ -28,7 +28,7 @@ func GetProcessWhitelist() *storage.ProcessWhitelist {
 	}
 }
 
-// GetProcessWhitelistWithID returns a whitelist with the ID filled out
+// GetProcessWhitelistWithID returns an excluded scope with the ID filled out
 func GetProcessWhitelistWithID() *storage.ProcessWhitelist {
 	whitelist := GetProcessWhitelistWithKey()
 	whitelist.Id = uuid.NewV4().String()
@@ -45,7 +45,7 @@ func GetWhitelistKey() *storage.ProcessWhitelistKey {
 	}
 }
 
-// GetProcessWhitelistWithKey returns a whitelist and its key.
+// GetProcessWhitelistWithKey returns an excluded scope and its key.
 func GetProcessWhitelistWithKey() *storage.ProcessWhitelist {
 	key := GetWhitelistKey()
 	whitelist := GetProcessWhitelist()

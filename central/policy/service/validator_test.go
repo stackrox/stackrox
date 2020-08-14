@@ -158,7 +158,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateDescription() {
 
 	policy = &storage.Policy{
 		Description: `This policy is the stop when an image is terrible and will cause us to lose lots-o-dough. Why? Cause Money!
-			Oh, and I almost forgot that this is also to help the good people of nowhere-ville get back on their 
+			Oh, and I almost forgot that this is also to help the good people of nowhere-ville get back on their
 			feet after that tornado ripped their town to shreds and left them nothing but pineapple and gum.`,
 	}
 	err = suite.validator.validateDescription(policy)
@@ -432,7 +432,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
 func (suite *PolicyValidatorTestSuite) TestValidateWhitelists() {
 	policy := &storage.Policy{}
 	err := suite.validator.validateWhitelists(policy)
-	suite.NoError(err, "whitelists should not be required")
+	suite.NoError(err, "excluded scopes should not be required")
 
 	deployment := &storage.Whitelist_Deployment{
 		Name: "that phat cluster",
@@ -449,7 +449,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateWhitelists() {
 		},
 	}
 	err = suite.validator.validateWhitelists(policy)
-	suite.NoError(err, "valid to whitelist by deployment name")
+	suite.NoError(err, "valid to excluded scope by deployment name")
 
 	imageWhitelist := &storage.Whitelist{
 		Image: &storage.Whitelist_Image{
@@ -465,7 +465,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateWhitelists() {
 		},
 	}
 	err = suite.validator.validateWhitelists(policy)
-	suite.NoError(err, "valid to whitelist by image registry")
+	suite.NoError(err, "valid to excluded scope by image registry")
 
 	policy = &storage.Policy{
 		Whitelists: []*storage.Whitelist{
@@ -473,7 +473,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateWhitelists() {
 		},
 	}
 	err = suite.validator.validateWhitelists(policy)
-	suite.Error(err, "not valid to whitelist by image registry since build time lifecycle isn't present")
+	suite.Error(err, "not valid to excluded scope by image registry since build time lifecycle isn't present")
 
 	emptyWhitelist := &storage.Whitelist{}
 	policy = &storage.Policy{
@@ -482,5 +482,5 @@ func (suite *PolicyValidatorTestSuite) TestValidateWhitelists() {
 		},
 	}
 	err = suite.validator.validateWhitelists(policy)
-	suite.Error(err, "whitelist requires either container or deployment configuration")
+	suite.Error(err, "excluded scope requires either container or deployment configuration")
 }

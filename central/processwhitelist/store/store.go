@@ -4,7 +4,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 )
 
-// Store provides storage functionality for process whitelists.
+// Store provides storage functionality for process baselines.
 //go:generate mockgen-wrapper
 type Store interface {
 	Get(id string) (*storage.ProcessWhitelist, bool, error)

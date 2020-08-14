@@ -29,15 +29,15 @@ class ProcessWhitelistService extends BaseService {
         while (t.IsValid()) {
             def whitelist = getWhitelistProcesses(request)
             if (whitelist) {
-                println "SR found whitelisted process for the key - " +
+                println "SR found baselined process for the key - " +
                         "${clusterId}, ${namespace}, ${deploymentId}, ${containerName} " +
                             " within ${t.SecondsSince()}s"
                 return whitelist
                 }
-            println "SR has not found whitelisted  process for the key - " +
+            println "SR has not found baselined  process for the key - " +
                     "${clusterId}, ${namespace}, ${deploymentId}, ${containerName} yet"
         }
-        println "SR has not found whitelisted  process for the key in - " +
+        println "SR has not found baselined  process for the key in - " +
                 "${clusterId}, ${namespace}, ${deploymentId}, ${containerName} " +
                 "${t.SecondsSince()} seconds"
         return null
@@ -58,7 +58,7 @@ class ProcessWhitelistService extends BaseService {
                              .setLocked(lock).build()
             return getProcessWhitelistService().lockProcessWhitelists(lockRequest).whitelistsList
         } catch (Exception e) {
-            println "Error locking process whitelists : ${e}"
+            println "Error locking process baselines : ${e}"
         }
     }
 
@@ -89,7 +89,7 @@ class ProcessWhitelistService extends BaseService {
                 .updateProcessWhitelists(requestBuilder.build()).whitelistsList
             return updatedLst
     } catch (Exception e) {
-            println "Error updating process whitelists: ${e}"
+            println "Error updating process baselines: ${e}"
     }
     }
     static ProcessWhitelistOuterClass.ProcessWhitelist getWhitelistProcesses(
@@ -98,7 +98,7 @@ class ProcessWhitelistService extends BaseService {
             return getProcessWhitelistService().getProcessWhitelist(request)
         }
         catch (Exception e) {
-            println "Error getting  process whitelists: ${e}"
+            println "Error getting  process baselines: ${e}"
         }
         return null
     }
@@ -113,10 +113,10 @@ class ProcessWhitelistService extends BaseService {
                     return true
                 }
             }
-            println("Did not find whitelists for deployment ${deployment.getDeploymentUid()}")
+            println("Did not find baselines for deployment ${deployment.getDeploymentUid()}")
         }
         catch (Exception e) {
-            println "Error waiting for deployment whitelists to be created ${e}"
+            println "Error waiting for deployment baselines to be created ${e}"
         }
         return false
     }
@@ -134,7 +134,7 @@ class ProcessWhitelistService extends BaseService {
             println("Whitelists still exist for deployment ${deployment.getDeploymentUid()}")
         }
         catch (Exception e) {
-            println "Error waiting for deployment whitelists to be deleted ${e}"
+            println "Error waiting for deployment baselines to be deleted ${e}"
         }
         return false
     }

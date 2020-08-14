@@ -12,7 +12,7 @@ non_whitelisted_files=($({ echo "${large_files}"; cat "${whitelist_file}"; cat "
 
 [[ "${#non_whitelisted_files[@]}" == 0 ]] || {
   echo "Found large files in the working tree. Please remove them!"
-  echo "If you must add them, you need to explicitly add them to the whitelist in tools/large-git-files/whitelist."
+  echo "If you must add them, you need to explicitly add them to the exclusion list in tools/large-git-files/whitelist."
   echo "Files were: "
   printf "  %s\n" ${non_whitelisted_files[@]}
   exit 1

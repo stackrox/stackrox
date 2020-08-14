@@ -54,14 +54,14 @@ func pruneOrphanedProcessWhitelists(databases *types.Databases) error {
 	err = boltDB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(whitelistBucket)
 		if b == nil {
-			log.WriteToStderrf("Process whitelists bucket: %s does not exist", whitelistBucket)
+			log.WriteToStderrf("Process baselines bucket: %s does not exist", whitelistBucket)
 			return nil
 		}
 
 		err := b.ForEach(func(k, v []byte) error {
 			var whitelist storage.ProcessWhitelist
 			if err := proto.Unmarshal(v, &whitelist); err != nil {
-				log.WriteToStderr(fmt.Sprintf("Unmarshal error for whitelist: %s, %s\nerr: %s", k, v, err))
+				log.WriteToStderr(fmt.Sprintf("Unmarshal error for process baseline: %s, %s\nerr: %s", k, v, err))
 				return nil
 			}
 
@@ -90,13 +90,13 @@ func pruneOrphanedProcessWhitelists(databases *types.Databases) error {
 	err = boltDB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(whitelistBucket)
 		if b == nil {
-			log.WriteToStderrf("Process whitelists bucket: %s does not exist", whitelistBucket)
+			log.WriteToStderrf("Process baselines bucket: %s does not exist", whitelistBucket)
 			return nil
 		}
 
 		for _, id := range whitelistKeysToRemove {
 			if err := b.Delete([]byte(id)); err != nil {
-				log.WriteToStderr(fmt.Sprintf("Unable to delete process whitelist id: %s, err: %s", id, err))
+				log.WriteToStderr(fmt.Sprintf("Unable to delete process baseline id: %s, err: %s", id, err))
 			}
 		}
 

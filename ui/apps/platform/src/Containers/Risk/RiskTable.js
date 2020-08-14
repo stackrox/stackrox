@@ -4,12 +4,14 @@ import PropTypes from 'prop-types';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Table from 'Components/TableV2';
 
-import columns from './tableColumnDescriptor';
+import riskTableColumnDescriptors from './riskTableColumnDescriptors';
 
 function sortOptionFromTableState(state) {
     let sortOption = null;
     if (state.sorted.length && state.sorted[0].id) {
-        const column = columns.find((col) => col.accessor === state.sorted[0].id);
+        const column = riskTableColumnDescriptors.find(
+            (col) => col.accessor === state.sorted[0].id
+        );
         sortOption = {
             field: column.searchField,
             reversed: state.sorted[0].desc,
@@ -43,7 +45,7 @@ function RiskTable({
         <Table
             idAttribute="deployment.id"
             rows={currentDeployments}
-            columns={columns}
+            columns={riskTableColumnDescriptors}
             onRowClick={updateSelectedDeployment}
             selectedRowId={selectedDeploymentId}
             onFetchData={onFetchData}

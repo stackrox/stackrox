@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import uniqBy from 'lodash/uniqBy';
 import { getDeploymentAndProcessIdFromGroupedProcesses } from 'utils/processUtils';
-import { fetchProcessesWhiteList } from 'services/ProcessesService';
-import Whitelist from './Whitelist';
+import { fetchProcessesInBaseline } from 'services/ProcessesService';
+import ProcessBaselineList from './ProcessBaselineList';
 
-function loadWhitelists(deploymentId, processGroup, setProcessWhitelist) {
+function loadBaseline(deploymentId, processGroup, setProcessBaseline) {
     const uniqueContainerNames = uniqBy(processGroup.groups, 'containerName').map(
         (x) => x.containerName
     );
@@ -16,27 +16,27 @@ function loadWhitelists(deploymentId, processGroup, setProcessWhitelist) {
     if (clusterId && namespace && uniqueContainerNames && uniqueContainerNames.length) {
         const promises = uniqueContainerNames.map((containerName) => {
             const queryStr = `key.clusterId=${clusterId}&key.namespace=${namespace}&key.deploymentId=${deploymentId}&key.containerName=${containerName}`;
-            return fetchProcessesWhiteList(queryStr);
+            return fetchProcessesInBaseline(queryStr);
         });
-        Promise.all(promises).then(setProcessWhitelist);
+        Promise.all(promises).then(setProcessBaseline);
     }
 }
 
-function SpecificationWhitelists({ deploymentId, processGroup, processEpoch, setProcessEpoch }) {
-    const [processWhitelist, setProcessWhitelist] = useState(undefined);
+function SpecificationBaselineList({ deploymentId, processGroup, processEpoch, setProcessEpoch }) {
+    const [processBaseline, setProcessBaseline] = useState(undefined);
 
     useEffect(() => {
-        loadWhitelists(deploymentId, processGroup, setProcessWhitelist);
+        loadBaseline(deploymentId, processGroup, setProcessBaseline);
     }, [deploymentId, processGroup, processEpoch]);
 
-    if (!processWhitelist) {
+    if (!processBaseline) {
         return null;
     }
     return (
         <div className="pl-3 pr-3">
             <ul className="border-b border-base-300 leading-normal hover:bg-primary-100">
-                {processWhitelist.map(({ data }) => (
-                    <Whitelist
+                {processBaseline.map(({ data }) => (
+                    <ProcessBaselineList
                         process={data}
                         key={data.key.containerName}
                         processEpoch={processEpoch}
@@ -48,7 +48,7 @@ function SpecificationWhitelists({ deploymentId, processGroup, processEpoch, set
     );
 }
 
-SpecificationWhitelists.propTypes = {
+SpecificationBaselineList.propTypes = {
     deploymentId: PropTypes.string.isRequired,
     processGroup: PropTypes.shape({
         groups: PropTypes.arrayOf(PropTypes.object),
@@ -57,4 +57,4 @@ SpecificationWhitelists.propTypes = {
     setProcessEpoch: PropTypes.func.isRequired,
 };
 
-export default SpecificationWhitelists;
+export default SpecificationBaselineList;

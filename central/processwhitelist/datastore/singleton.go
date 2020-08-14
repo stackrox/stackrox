@@ -28,7 +28,7 @@ func initialize() {
 
 	searcher, err := search.New(storage, indexer)
 	if err != nil {
-		panic("unable to load search index for process whitelist")
+		panic("unable to load search index for process baseline")
 	}
 
 	ad = New(storage, indexer, searcher, datastore.Singleton())

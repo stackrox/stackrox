@@ -45,14 +45,14 @@ func TestWhitelist(t *testing.T) {
 	}
 
 	evaluator := NewWhitelistEvaluator()
-	// No whitelist added, nothing is outside a locked whitelist
+	// No baseline added, nothing is outside a locked baseline
 	assert.False(t, evaluator.IsOutsideLockedWhitelist(process))
 
-	// Add whitelist that does not contain the value
+	// Add baseline that does not contain the value
 	evaluator.AddWhitelist(notInWhitelist)
 	assert.True(t, evaluator.IsOutsideLockedWhitelist(process))
 
-	// Verify that different whitelists produce expected outcomes.
+	// Verify that different baselines produce expected outcomes.
 	evaluator.AddWhitelist(inWhitelist)
 	assert.False(t, evaluator.IsOutsideLockedWhitelist(process))
 	evaluator.AddWhitelist(notInWhitelist)
@@ -60,7 +60,7 @@ func TestWhitelist(t *testing.T) {
 	evaluator.AddWhitelist(notInUnlockedWhitelist)
 	assert.False(t, evaluator.IsOutsideLockedWhitelist(process))
 
-	// Add locked whitelist then remove deployment
+	// Add locked baseline then remove deployment
 	evaluator.AddWhitelist(notInWhitelist)
 	assert.True(t, evaluator.IsOutsideLockedWhitelist(process))
 	evaluator.RemoveDeployment(process.GetDeploymentId())

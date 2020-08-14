@@ -82,13 +82,13 @@ func (ds *datastoreImpl) addProcessWhitelistUnlocked(id string, whitelist *stora
 		whitelist.StackRoxLockedTimestamp = lockTimestamp
 	}
 	if err := ds.storage.Upsert(whitelist); err != nil {
-		return id, errors.Wrapf(err, "inserting whitelist %q into store", whitelist.GetId())
+		return id, errors.Wrapf(err, "inserting process baseline %q into store", whitelist.GetId())
 	}
 	if err := ds.indexer.AddWhitelist(whitelist); err != nil {
-		err = errors.Wrapf(err, "inserting whitelist %q into index", whitelist.GetId())
+		err = errors.Wrapf(err, "inserting process baseline %q into index", whitelist.GetId())
 		subErr := ds.storage.Delete(id)
 		if subErr != nil {
-			err = errors.Wrap(err, "error rolling back process whitelist addition")
+			err = errors.Wrap(err, "error rolling back process process baseline addition")
 		}
 		return id, err
 	}
@@ -99,17 +99,17 @@ func (ds *datastoreImpl) removeProcessWhitelistByID(id string) error {
 	ds.whitelistLock.Lock(id)
 	defer ds.whitelistLock.Unlock(id)
 	if err := ds.indexer.DeleteWhitelist(id); err != nil {
-		return errors.Wrap(err, "error removing whitelist from index")
+		return errors.Wrap(err, "error removing process baseline from index")
 	}
 	if err := ds.storage.Delete(id); err != nil {
-		return errors.Wrap(err, "error removing whitelist from store")
+		return errors.Wrap(err, "error removing process baseline from store")
 	}
 	return nil
 }
 
 func (ds *datastoreImpl) removeProcessWhitelistResults(ctx context.Context, deploymentID string) error {
 	if err := ds.processWhitelistResults.DeleteWhitelistResults(ctx, deploymentID); err != nil {
-		return errors.Wrap(err, "removing whitelist results")
+		return errors.Wrap(err, "removing process baseline results")
 	}
 	return nil
 }
@@ -128,12 +128,12 @@ func (ds *datastoreImpl) RemoveProcessWhitelist(ctx context.Context, key *storag
 	if err := ds.removeProcessWhitelistByID(id); err != nil {
 		return err
 	}
-	// Delete whitelist results if this is the last whitelist with the given deploymentID
+	// Delete process baseline results if this is the last process baseline with the given deploymentID
 	deploymentID := key.GetDeploymentId()
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery()
 	results, err := ds.indexer.Search(q)
 	if err != nil {
-		return errors.Wrapf(err, "failed to query for deployment %s during process whitelist deletion", deploymentID)
+		return errors.Wrapf(err, "failed to query for deployment %s during process baseline deletion", deploymentID)
 	}
 	if len(results) == 0 {
 		return ds.removeProcessWhitelistResults(ctx, deploymentID)
@@ -167,7 +167,7 @@ func (ds *datastoreImpl) RemoveProcessWhitelistsByDeployment(ctx context.Context
 	}
 
 	if len(errList) > 0 {
-		return errorhelpers.NewErrorListWithErrors("errors cleaning up process whitelists", errList).ToError()
+		return errorhelpers.NewErrorListWithErrors("errors cleaning up process baselines", errList).ToError()
 	}
 
 	return nil
@@ -179,7 +179,7 @@ func (ds *datastoreImpl) getWhitelistForUpdate(id string) (*storage.ProcessWhite
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Errorf("no process whitelist with id %q", id)
+		return nil, errors.Errorf("no process baseline with id %q", id)
 	}
 	return whitelist, nil
 }
@@ -243,7 +243,7 @@ func (ds *datastoreImpl) updateProcessWhitelistElementsUnlocked(whitelist *stora
 		return nil, err
 	}
 
-	// no need to index the whitelist here because the only indexed things are
+	// no need to index the process baseline here because the only indexed things are
 	// top level fields that are immutable
 	return whitelist, nil
 }

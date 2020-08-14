@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import { fetchProcesses } from 'services/ProcessesService';
 import EventTimelineOverview from '../EventTimeline/EventTimelineOverview';
-import ProcessSpecificationWhitelists from './SpecificationWhitelists';
+import SpecificationBaselineList from './SpecificationBaselineList';
 import DiscoveryCards from './DiscoveryCards';
 
 function Details({ deploymentId, processGroup }) {
@@ -30,8 +30,8 @@ function Details({ deploymentId, processGroup }) {
                 processEpoch={processEpoch}
                 setProcessEpoch={setProcessEpoch}
             />
-            <h3 className="border-b border-base-500 pb-2 mx-3 my-5">Spec Container Whitelists</h3>
-            <ProcessSpecificationWhitelists
+            <h3 className="border-b border-base-500 pb-2 mx-3 my-5">Spec Container Baselines</h3>
+            <SpecificationBaselineList
                 deploymentId={deploymentId}
                 processGroup={processes}
                 processEpoch={processEpoch}

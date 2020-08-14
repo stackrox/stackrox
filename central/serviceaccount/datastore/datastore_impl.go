@@ -25,7 +25,7 @@ type datastoreImpl struct {
 }
 
 func (d *datastoreImpl) buildIndex() error {
-	log.Info("[STARTUP] Indexing process whitelists")
+	log.Info("[STARTUP] Indexing process baselines")
 	var serviceAccounts []*storage.ServiceAccount
 	err := d.storage.Walk(func(sa *storage.ServiceAccount) error {
 		serviceAccounts = append(serviceAccounts, sa)

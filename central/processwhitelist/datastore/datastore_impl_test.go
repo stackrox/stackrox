@@ -258,19 +258,19 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestGraveyard() {
 	suite.NotEmpty(itemList)
 	suite.Empty(whitelist.GetElementGraveyard())
 	updatedWhitelist, err := suite.datastore.UpdateProcessWhitelistElements(suite.requestContext, whitelist.GetKey(), nil, itemList, true)
-	// The elements should have been removed from the whitelist and put in the graveyard
+	// The elements should have been removed from the process baseline and put in the graveyard
 	suite.NoError(err)
 	suite.ElementsMatch(whitelist.GetElements(), updatedWhitelist.GetElementGraveyard())
 
 	updatedWhitelist, err = suite.datastore.UpdateProcessWhitelistElements(suite.requestContext, whitelist.GetKey(), itemList, nil, true)
 	suite.NoError(err)
-	// The elements should NOT be added back on to the whitelist because they are in the graveyard and auto = true
+	// The elements should NOT be added back on to the process baseline because they are in the graveyard and auto = true
 	suite.Empty(updatedWhitelist.GetElements())
 	suite.ElementsMatch(whitelist.GetElements(), updatedWhitelist.GetElementGraveyard())
 
 	updatedWhitelist, err = suite.datastore.UpdateProcessWhitelistElements(suite.requestContext, whitelist.GetKey(), itemList, nil, false)
 	suite.NoError(err)
-	// The elements SHOULD be added back on to the whitelist because auto = false
+	// The elements SHOULD be added back on to the process baseline because auto = false
 	suite.Empty(updatedWhitelist.GetElementGraveyard())
 	updatedItems := makeItemList(updatedWhitelist.GetElements())
 	suite.ElementsMatch(itemList, updatedItems)

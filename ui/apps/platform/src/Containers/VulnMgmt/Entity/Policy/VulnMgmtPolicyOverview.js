@@ -19,6 +19,7 @@ import { getDeploymentTableColumns } from 'Containers/VulnMgmt/List/Deployments/
 import { updatePolicyDisabledState } from 'services/PoliciesService';
 import { entityGridContainerBaseClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import BooleanPolicySection from 'Containers/Policies/Wizard/Form/BooleanPolicySection';
+import { getExcludedNamesByType } from 'utils/policyUtils';
 import { pluralizeHas } from 'utils/textUtils';
 import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
@@ -184,14 +185,14 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
         },
     ];
 
-    const whitelistDetails = [
+    const excludedScopesDetails = [
         {
             key: 'Image(s)',
-            value: (whitelists && whitelists.image && whitelists.image.name) || 'N/A',
+            value: getExcludedNamesByType(whitelists, 'image') || 'N/A',
         },
         {
             key: 'Deployment(s)',
-            value: (whitelists && whitelists.image && whitelists.image.name) || 'N/A',
+            value: getExcludedNamesByType(whitelists, 'deployment') || 'N/A',
         },
     ];
 
@@ -211,7 +212,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
         );
     } else {
         policyFindingsContent = (
-            <div className="pdf-page pdf-stretch pdf-new flex shadow rounded relative rounded bg-base-100 mb-4 mx-4">
+            <div className="pdf-page pdf-stretch pdf-new flex shadow rounded relativebg-base-100 mb-4 mx-4">
                 <TableWidget
                     header={`${failingDeployments.length} ${pluralize(
                         entityTypes.DEPLOYMENT,
@@ -272,7 +273,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                                                 } border-base-300 px-4 py-2 leading-normal`}
                                                 key={key}
                                             >
-                                                <span className="text-base-700 font-600 mr-2 font-700">
+                                                <span className="text-base-700 mr-2 font-700">
                                                     {key}:
                                                 </span>
                                                 {value}
@@ -298,7 +299,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                         )}
                         <div className="sx-1">
                             <Metadata
-                                className="h-full w-full min-w-48 bg-base-100 pdf-page h-full"
+                                className="h-full w-full min-w-48 bg-base-100 pdf-page"
                                 keyValuePairs={details}
                                 title="Details"
                             />
@@ -319,8 +320,8 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                         <div className="s-1">
                             <Metadata
                                 className="flex-1 min-w-48 bg-base-100 min-h-48 pdf-page h-full"
-                                keyValuePairs={whitelistDetails}
-                                title="Whitelist"
+                                keyValuePairs={excludedScopesDetails}
+                                title="Excluded Scopes"
                             />
                         </div>
                     </div>

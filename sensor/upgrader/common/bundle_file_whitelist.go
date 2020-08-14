@@ -26,7 +26,7 @@ var (
 	)
 )
 
-// IsWhitelistedBundleFile checks if the given file is a whitelisted file, i.e., does not need to be considered by
+// IsWhitelistedBundleFile checks if the given file is a baselined file, i.e., does not need to be considered by
 // the upgrader.
 func IsWhitelistedBundleFile(file string) bool {
 	if bundleFileWhitelist.Contains(file) {

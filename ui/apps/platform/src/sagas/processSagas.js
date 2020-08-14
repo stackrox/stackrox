@@ -2,7 +2,7 @@ import { all, call, fork, put, takeLatest } from 'redux-saga/effects';
 import { riskPath } from 'routePaths';
 import {
     fetchProcesses,
-    fetchProcessesWhiteList,
+    fetchProcessesInBaseline,
     addDeleteProcesses,
     lockUnlockProcesses,
 } from 'services/ProcessesService';
@@ -28,7 +28,7 @@ export function* getProcesses(id) {
         if (clusterId && namespace && uniqueContainerNames && uniqueContainerNames.length) {
             uniqueContainerNames.forEach((containerName) => {
                 const queryStr = `key.clusterId=${clusterId}&key.namespace=${namespace}&key.deploymentId=${id}&key.containerName=${containerName}`;
-                promises.push(call(fetchProcessesWhiteList, queryStr));
+                promises.push(call(fetchProcessesInBaseline, queryStr));
             });
         }
 

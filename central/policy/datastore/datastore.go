@@ -31,6 +31,7 @@ type DataStore interface {
 	RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) error
 	DeletePolicyCategory(ctx context.Context, request *v1.DeletePolicyCategoryRequest) error
 	// This method is allowed to return a v1 proto because it is in the whitelist in tools/storedprotos/storeinterface/storeinterface.go
+	//   (TODO: update "whitelist" to inclusive language when updating actual code)
 	ImportPolicies(ctx context.Context, policies []*storage.Policy, overwrite bool) (responses []*v1.ImportPolicyResponse, allSucceeded bool, err error)
 }
 

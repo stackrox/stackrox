@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import Table from 'Components/Table';
 import CollapsibleCard from 'Components/CollapsibleCard';
 
-class Whitelisted extends Component {
+class ExcludedScopes extends Component {
     static propTypes = {
         dryrun: PropTypes.shape({
             excluded: PropTypes.arrayOf(
@@ -19,7 +19,8 @@ class Whitelisted extends Component {
         if (!this.props.dryrun || !this.props.dryrun.excluded) {
             return '';
         }
-        const title = 'Whitelisted Deployments';
+
+        const title = 'Excluded Deployments';
         const columns = [
             {
                 key: 'deployment',
@@ -36,9 +37,7 @@ class Whitelisted extends Component {
                         {rows.length ? (
                             <Table columns={columns} rows={rows} />
                         ) : (
-                            <div className="p-3">
-                                No deployments will be whitelisted at this time.
-                            </div>
+                            <div className="p-3">No deployments will be excluded at this time.</div>
                         )}
                     </CollapsibleCard>
                 </div>
@@ -47,4 +46,4 @@ class Whitelisted extends Component {
     }
 }
 
-export default Whitelisted;
+export default ExcludedScopes;

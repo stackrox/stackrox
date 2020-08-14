@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 const ProcessActivityEvent = forwardRef(({ whitelisted, size }, ref) => {
     return whitelisted ? (
         <svg
-            data-testid="whitelisted-process-activity-event"
+            data-testid="process-in-baseline-activity-event"
             width={size}
             height={size}
             viewBox="0 0 16 16"

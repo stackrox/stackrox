@@ -241,7 +241,7 @@ func (d *alertManagerImpl) shouldMarkAlertStale(alert *storage.Alert, presentAle
 		return false
 	}
 
-	// If the deployment is whitelisted for the policy now, we should mark the alert stale, otherwise we will keep it around.
+	// If the deployment is excluded from the scope of the policy now, we should mark the alert stale, otherwise we will keep it around.
 	return d.runtimeDetector.DeploymentWhitelistedForPolicy(alert.GetDeployment().GetId(), alert.GetPolicy().GetId())
 }
 

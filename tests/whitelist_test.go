@@ -112,7 +112,7 @@ func verifyAlertForWhitelistRemoval(t *testing.T) {
 	alertService := v1.NewAlertServiceClient(conn)
 
 	qb = search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, latestPolicy.GetName()).AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
-	// Wait for alert to be removed now that it is whitelisted
+	// Wait for alert to be removed now that it is excluded
 	waitForAlert(t, alertService, &v1.ListAlertsRequest{
 		Query: qb.Query(),
 	}, 1)

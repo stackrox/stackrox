@@ -272,7 +272,7 @@ func TestWhitelistCheck(t *testing.T) {
 		expectedSuspicious bool
 	}{
 		{
-			name: "On the whitelist",
+			name: "In the baseline",
 			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
 				Name:          "Name One",
 				ContainerName: "Container One",
@@ -283,7 +283,7 @@ func TestWhitelistCheck(t *testing.T) {
 			expectedSuspicious: false,
 		},
 		{
-			name: "Not on the whitelist",
+			name: "Not in the baseline",
 			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
 				Name:          "Name Two",
 				ContainerName: "Container One",
@@ -294,7 +294,7 @@ func TestWhitelistCheck(t *testing.T) {
 			expectedSuspicious: true,
 		},
 		{
-			name: "No whitelist",
+			name: "No baseline",
 			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
 				Name:          "Name One",
 				ContainerName: "Container One",
@@ -303,7 +303,7 @@ func TestWhitelistCheck(t *testing.T) {
 			expectedSuspicious: false,
 		},
 		{
-			name: "Unlocked whitelist",
+			name: "Unlocked baseline",
 			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
 				Name:          "Name Two",
 				ContainerName: "Container One",
@@ -314,7 +314,7 @@ func TestWhitelistCheck(t *testing.T) {
 			expectedSuspicious: false,
 		},
 		{
-			name: "Empty locked whitelist",
+			name: "Empty locked baseline",
 			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
 				Name:          "Name One",
 				ContainerName: "Container One",
@@ -325,7 +325,7 @@ func TestWhitelistCheck(t *testing.T) {
 			expectedSuspicious: true,
 		},
 		{
-			name: "Empty unlocked whitelist",
+			name: "Empty unlocked baseline",
 			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
 				Name:          "Name One",
 				ContainerName: "Container One",

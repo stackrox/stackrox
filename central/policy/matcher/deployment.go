@@ -48,12 +48,12 @@ func (m *deploymentMatcher) anyWhitelistMatches(whitelists []*storage.Whitelist)
 }
 
 func (m *deploymentMatcher) whitelistMatches(whitelist *storage.Whitelist) bool {
-	// If whitelist scope does not match the deployment then no need to check for deployment name
+	// If excluded scope does not match the deployment then no need to check for deployment name
 	if !m.scopeMatches(whitelist.GetDeployment().GetScope()) {
 		return false
 	}
 
-	// If scope of whitelist matches, the deployment is whitelisted if,
+	// If scope of exclusions matches, the deployment is excluded if,
 	// - Deployment name is not set, or
 	// - Deployment name matches,
 	return whitelist.GetDeployment().GetName() == "" ||

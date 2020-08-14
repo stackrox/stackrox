@@ -5,20 +5,15 @@ import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
 import { addDeleteProcesses } from 'services/ProcessesService';
 
-const ProcessWhitelistElementsList = ({
-    whitelistKey,
-    elements,
-    processEpoch,
-    setProcessEpoch,
-}) => {
+const ProcessBaselineElementList = ({ baselineKey, elements, processEpoch, setProcessEpoch }) => {
     if (!elements || !elements.length) {
-        return <span className="p-3 block"> No elements in this whitelist </span>;
+        return <span className="p-3 block"> No elements in this baseline </span>;
     }
 
     function deleteCurrentProcess(element) {
         return () => {
             const query = {
-                keys: [{ ...whitelistKey }],
+                keys: [{ ...baselineKey }],
                 removeElements: [element],
             };
             addDeleteProcesses(query).then(() => {
@@ -36,7 +31,7 @@ const ProcessWhitelistElementsList = ({
                 >
                     <span>{element.processName}</span>
                     <Tooltip
-                        content={<TooltipOverlay>Remove process from whitelist</TooltipOverlay>}
+                        content={<TooltipOverlay>Remove process from baseline</TooltipOverlay>}
                     >
                         <button
                             className="flex p-1 rounded border content-center hover:bg-base-300"
@@ -52,20 +47,20 @@ const ProcessWhitelistElementsList = ({
     );
 };
 
-ProcessWhitelistElementsList.propTypes = {
+ProcessBaselineElementList.propTypes = {
     elements: PropTypes.arrayOf(
         PropTypes.shape({
             processName: PropTypes.string,
         })
     ),
-    whitelistKey: PropTypes.shape({}),
+    baselineKey: PropTypes.shape({}),
     processEpoch: PropTypes.number.isRequired,
     setProcessEpoch: PropTypes.func.isRequired,
 };
 
-ProcessWhitelistElementsList.defaultProps = {
+ProcessBaselineElementList.defaultProps = {
     elements: [],
-    whitelistKey: {},
+    baselineKey: {},
 };
 
-export default ProcessWhitelistElementsList;
+export default ProcessBaselineElementList;

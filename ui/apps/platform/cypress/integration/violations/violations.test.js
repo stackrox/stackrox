@@ -151,7 +151,7 @@ describe('Violations page', () => {
     it('should contain correct action buttons for the lifecycle stage', () => {
         // Lifecycle: Runtime
         cy.get(ViolationsPageSelectors.firstTableRow)
-            .get(ViolationsPageSelectors.whitelistDeploymentButton)
+            .get(ViolationsPageSelectors.excludeDeploymentButton)
             .should('exist')
             .get(ViolationsPageSelectors.resolveButton)
             .should('exist');
@@ -160,7 +160,7 @@ describe('Violations page', () => {
         cy.get(ViolationsPageSelectors.lastTableRow)
             .get(ViolationsPageSelectors.resolveButton)
             .should('be.hidden')
-            .get(ViolationsPageSelectors.whitelistDeploymentButton)
+            .get(ViolationsPageSelectors.excludeDeploymentButton)
             .should('exist');
     });
 
@@ -176,7 +176,7 @@ describe('Violations page', () => {
         cy.wait('@getPolicy');
         cy.visit('/main/violations');
         cy.wait('@alertsWithWhitelistedDeployments');
-        cy.get(ViolationsPageSelectors.whitelistDeploymentRow).should('not.exist');
+        cy.get(ViolationsPageSelectors.excludedDeploymentRow).should('not.exist');
     });
 
     it('should have enforcement information in the Enforcement tab', () => {

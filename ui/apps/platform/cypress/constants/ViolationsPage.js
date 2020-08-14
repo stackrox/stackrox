@@ -42,9 +42,9 @@ export const selectors = {
     securityBestPractices: '[data-testid="deployment-security-practices"]',
     runtimeProcessCards: '[data-testid="runtime-processes"]',
     lifeCycleColumn: '.rt-thead.-header:contains("Lifecycle")',
-    whitelistDeploymentButton: '[data-testid="whitelist-deployment-button"]',
+    excludeDeploymentButton: '[data-testid="exclude-deployment-button"]',
     resolveButton: '[data-testid="resolve-button"]',
-    whitelistDeploymentRow: '.rt-tr:contains("metadata-proxy-v0.1")',
+    excludedDeploymentRow: '.rt-tr:contains("metadata-proxy-v0.1")',
     bulkAddTagsButton: '[data-testid="bulk-add-tags-button"]',
     addTagsDialog: scopeSelectors('.ReactModal__Content', {
         ...selectSelectors.multiSelect,

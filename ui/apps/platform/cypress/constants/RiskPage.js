@@ -31,7 +31,7 @@ const sidePanelSelectors = scopeSelectors('[data-testid="panel"]:eq(1)', {
 const eventSelectors = {
     policyViolation: '[data-testid="policy-violation-event"]',
     processActivity: '[data-testid="process-activity-event"]',
-    whitelistedProcessActivity: '[data-testid="whitelisted-process-activity-event"]',
+    processInBaselineActivity: '[data-testid="process-in-baseline-activity-event"]',
     restart: '[data-testid="restart-event"]',
     termination: '[data-testid="termination-event"]',
 };
@@ -40,7 +40,7 @@ const clusteredEventSelectors = {
     generic: '[data-testid="clustered-generic-event"]',
     policyViolation: '[data-testid="clustered-policy-violation-event"]',
     processActivity: '[data-testid="clustered-process-activity-event"]',
-    whitelistedProcessActivity: '[data-testid="clustered-whitelisted-process-activity-event"]',
+    processInBaselineActivity: '[data-testid="clustered-process-in-baseline-activity-event"]',
     restart: '[data-testid="clustered-restart-event"]',
     termination: '[data-testid="clustered-termination-event"]',
 };

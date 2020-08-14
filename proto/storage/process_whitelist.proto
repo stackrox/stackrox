@@ -56,7 +56,7 @@ message ContainerNameAndWhitelistStatus {
 }
 
 
-// ProcessWhitelistResults represent cached results of process whitelist evaluation.
+// ProcessWhitelistResults represent cached results of process baseline evaluation.
 message ProcessWhitelistResults {
     string                                   deployment_id      = 1;
     string cluster_id = 3;

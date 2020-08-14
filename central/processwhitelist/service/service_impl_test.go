@@ -112,13 +112,13 @@ func (suite *ProcessWhitelistServiceTestSuite) TestGetProcessWhitelist() {
 			shouldFail: true,
 		},
 		{
-			name:           "One whitelist",
+			name:           "One process baseline",
 			whitelists:     []*storage.ProcessWhitelist{knownWhitelist},
 			expectedResult: knownWhitelist,
 			shouldFail:     false,
 		},
 		{
-			name: "Many Whitelists",
+			name: "Many process baselines",
 			whitelists: []*storage.ProcessWhitelist{
 				knownWhitelist,
 				fixtures.GetProcessWhitelistWithKey(),

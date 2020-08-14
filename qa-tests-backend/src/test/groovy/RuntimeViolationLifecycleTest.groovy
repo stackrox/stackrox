@@ -109,7 +109,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 */
 
     @Category(BAT)
-    def "Verify runtime whitelist lifecycle"() {
+    def "Verify runtime excluded scope lifecycle"() {
         setup:
         "Create the deployment, verify that policy exists"
 
@@ -157,7 +157,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         }
 
         when:
-        "Whitelist the deployment, get the alert again"
+        "Exclude the deployment, get the alert again"
         originalAptGetPolicy = updatePolicyToWhitelistDeployment(APTGETPOLICY, DEPLOYMENT)
         sleep(1000)
         def updatedAptGetAlert = AlertService.getViolation(originalAptGetViolation.getId())

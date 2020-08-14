@@ -44,14 +44,14 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 		shouldBePersisted       bool
 	}{
 		{
-			name:                       "No Whitelist",
+			name:                       "No Process Baseline",
 			whitelistStatuses:          makeWhitelistStatuses(t, "NOT_GENERATED", "NOT_GENERATED"),
 			anomalousProcessesExecuted: []bool{false, false},
 			currentWhitelistResults:    nil,
 			shouldBePersisted:          true,
 		},
 		{
-			name:      "Whitelist exists, but not locked",
+			name:      "Process Baseline exists, but not locked",
 			whitelist: &storage.ProcessWhitelist{},
 			indicators: []*storage.ProcessIndicator{
 				{
@@ -68,7 +68,7 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 			shouldBePersisted:          true,
 		},
 		{
-			name: "Locked whitelist, but all whitelisted",
+			name: "Locked process baseline, but all processes in baseline",
 			whitelist: &storage.ProcessWhitelist{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 				Elements:                fixtures.MakeWhitelistElements("/bin/apt-get", "/unrelated"),
@@ -88,7 +88,7 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 			shouldBePersisted:          true,
 		},
 		{
-			name: "Locked whitelist, one non-whitelisted process",
+			name: "Locked process baseline, one non-baselined process",
 			whitelist: &storage.ProcessWhitelist{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 			},
@@ -108,7 +108,7 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 			shouldBePersisted:          true,
 		},
 		{
-			name: "Locked whitelist, two non-whitelisted processes",
+			name: "Locked process baseline, two non-baselined processes",
 			whitelist: &storage.ProcessWhitelist{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 			},
@@ -135,7 +135,7 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 			shouldBePersisted:          true,
 		},
 		{
-			name: "Locked whitelist, two non-whitelisted processes from different containers",
+			name: "Locked process baseline, two non-baselined processes from different containers",
 			whitelist: &storage.ProcessWhitelist{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 				Elements:                fixtures.MakeWhitelistElements("/bin/apt-get"),
@@ -170,7 +170,7 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 			shouldBePersisted:          true,
 		},
 		{
-			name: "Locked whitelist, two non-whitelisted processes from different containers. result already exists",
+			name: "Locked process baseline, two non-baselined processes from different containers. result already exists",
 			whitelist: &storage.ProcessWhitelist{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 				Elements:                fixtures.MakeWhitelistElements("/bin/apt-get"),
@@ -218,7 +218,7 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 			shouldBePersisted: false,
 		},
 		{
-			name: "Locked whitelist, two non-whitelisted processes from different containers. result already exists, but needs an update",
+			name: "Locked process baseline, two non-baselined processes from different containers. result already exists, but needs an update",
 			whitelist: &storage.ProcessWhitelist{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 				Elements:                fixtures.MakeWhitelistElements("/bin/apt-get"),

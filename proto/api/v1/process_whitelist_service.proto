@@ -37,7 +37,7 @@ message LockProcessWhitelistsRequest {
     bool                                 locked = 2;
 }
 
-// ProcessWhitelistService APIs can be used to manage process whitelists.
+// ProcessWhitelistService APIs can be used to manage process baselines.
 service ProcessWhitelistService {
     // GetProcessWhitelistById returns the single process whitelist referenced by the given ID.
     rpc GetProcessWhitelist (GetProcessWhitelistRequest) returns (storage.ProcessWhitelist) {
@@ -46,7 +46,7 @@ service ProcessWhitelistService {
             };
     }
 
-    // AddToProcessWhitelists adds a list of process names to each of a list of process whitelists
+    // AddToProcessWhitelists adds a list of process names to each of a list of process baselines
     rpc UpdateProcessWhitelists (UpdateProcessWhitelistsRequest) returns (UpdateProcessWhitelistsResponse) {
         option (google.api.http) = {
                 put: "/v1/processwhitelists"
@@ -54,7 +54,7 @@ service ProcessWhitelistService {
             };
     }
 
-    // LockProcessWhitelists accepts a list of whitelist IDs, locks those whitelists, and returns the updated whitelist objects
+    // LockProcessWhitelists accepts a list of baseline IDs, locks those baselines, and returns the updated baseline objects
     rpc LockProcessWhitelists (LockProcessWhitelistsRequest) returns (UpdateProcessWhitelistsResponse) {
         option (google.api.http) = {
                 put: "/v1/processwhitelists/lock"

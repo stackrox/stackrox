@@ -7,7 +7,7 @@ import { selectors } from 'reducers';
 import Panel from 'Components/Panel';
 import Message from 'Components/Message';
 import Violations from './Violations';
-import Whitelisted from './Whitelisted';
+import ExcludedScopes from './ExcludedScopes';
 import PreviewButtons from './PreviewButtons';
 
 const DryRunInProgressMessage = () => (
@@ -40,7 +40,7 @@ function PreviewPanel({ header, dryRun, policyDisabled, onClose }) {
             <WarningMessage policyDisabled={policyDisabled} />
             <div className="py-4">
                 <Violations dryrun={dryRun} />
-                <Whitelisted dryrun={dryRun} />
+                {dryRun?.excluded?.length > 0 && <ExcludedScopes dryrun={dryRun} />}
             </div>
         </>
     ) : (

@@ -29,7 +29,7 @@ export const eventTypes = {
  */
 export const clusteredEventTypes = {
     ...eventTypes,
-    WHITELISTED_PROCESS_ACTIVITY: 'WhitelistedProcessActivityEvent',
+    WHITELISTED_PROCESS_ACTIVITY: 'processInBaselineActivityEvent',
     GENERIC: 'Generic',
 };
 

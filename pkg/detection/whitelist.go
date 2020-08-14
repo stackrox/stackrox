@@ -38,7 +38,7 @@ func matchesImageWhitelist(image string, policy *storage.Policy) bool {
 			continue
 		}
 		// The rationale for using a prefix is that it is the easiest way in the current format
-		// to support whitelisting registries, registry/remote, etc
+		// to support excluding registries, registry/remote, etc
 		if strings.HasPrefix(image, w.GetImage().GetName()) {
 			return true
 		}
@@ -47,7 +47,7 @@ func matchesImageWhitelist(image string, policy *storage.Policy) bool {
 }
 
 func whitelistIsExpired(whitelist *storage.Whitelist) bool {
-	// If they don't set an expiration time, the whitelist never expires.
+	// If they don't set an expiration time, the excluded scope never expires.
 	if whitelist.GetExpiration() == nil {
 		return false
 	}

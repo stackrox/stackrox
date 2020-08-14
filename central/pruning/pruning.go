@@ -178,7 +178,7 @@ func (g *garbageCollectorImpl) removeOrphanedProcessWhitelists(deployments set.F
 
 		res, err := g.processwhitelist.Search(pruningCtx, allQuery)
 		if err != nil {
-			log.Error(errors.Wrap(err, "error searching process whitelists"))
+			log.Error(errors.Wrap(err, "error searching process baselines"))
 			return
 		}
 
@@ -200,7 +200,7 @@ func (g *garbageCollectorImpl) removeOrphanedProcessWhitelists(deployments set.F
 		for _, whitelistKey := range whitelistKeysToPrune {
 			whitelist, exists, err := g.processwhitelist.GetProcessWhitelist(pruningCtx, whitelistKey)
 			if err != nil {
-				log.Error(errors.Wrapf(err, "unable to fetch whitelist for key %v", whitelistKey))
+				log.Error(errors.Wrapf(err, "unable to fetch process baseline for key %v", whitelistKey))
 				continue
 			}
 
@@ -209,7 +209,7 @@ func (g *garbageCollectorImpl) removeOrphanedProcessWhitelists(deployments set.F
 			}
 
 			if err = g.processwhitelist.RemoveProcessWhitelist(pruningCtx, whitelistKey); err != nil {
-				log.Error(errors.Wrapf(err, "unable to remove process whitelist: %v", whitelistKey))
+				log.Error(errors.Wrapf(err, "unable to remove process baseline: %v", whitelistKey))
 				continue
 			}
 
@@ -221,7 +221,7 @@ func (g *garbageCollectorImpl) removeOrphanedProcessWhitelists(deployments set.F
 		}
 	}
 
-	log.Infof("[Process whitelist pruning] Removed %d process whitelists", prunedProcessWhitelists)
+	log.Infof("[Process baseline pruning] Removed %d process baselines", prunedProcessWhitelists)
 }
 
 func (g *garbageCollectorImpl) markOrphanedAlertsAsResolved(deployments set.FrozenStringSet) {
