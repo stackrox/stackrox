@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -262,6 +263,44 @@ func (n *notifier) Test() error {
 			},
 		},
 		MaxResults: aws.Int64(1),
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = n.SecurityHub.BatchImportFindings(&securityhub.BatchImportFindingsInput{
+		Findings: []*securityhub.AwsSecurityFinding{
+			mapAlertToFinding(&storage.Alert{
+				Id: uuid.NewV4().String(),
+				Policy: &storage.Policy{
+					Id:       uuid.NewV4().String(),
+					Name:     "example policy",
+					Severity: storage.Severity_HIGH_SEVERITY,
+				},
+				Deployment: &storage.Alert_Deployment{
+					Id:          uuid.NewV4().String(),
+					Name:        "example deployment",
+					Namespace:   "example namespace",
+					ClusterId:   uuid.NewV4().String(),
+					ClusterName: "example cluster",
+					Containers: []*storage.Alert_Deployment_Container{
+						{
+							Name: "example container",
+							Image: &storage.ContainerImage{
+								Id: uuid.NewV4().String(),
+								Name: &storage.ImageName{
+									FullName: "registry/path/to/image:tag",
+								},
+							},
+						},
+					},
+				},
+				FirstOccurred: types.TimestampNow(),
+				Time:          types.TimestampNow(),
+				// Mark the state as resolved, thus indicating to security hub that all is good and avoiding raising a false alert.
+				State: storage.ViolationState_RESOLVED,
+			}),
+		},
 	})
 
 	return err
