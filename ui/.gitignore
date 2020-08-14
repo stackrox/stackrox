@@ -1,6 +1,7 @@
 # dependencies
 node_modules/
-/yarn.lock.sha256
+/monorepo.lock
+/monorepo.lock.sha256
 
 # build
 lint

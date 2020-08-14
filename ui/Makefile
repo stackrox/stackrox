@@ -3,12 +3,16 @@ UI_BASE_URL ?= https://localhost:8000
 .PHONY: all
 all: deps lint test build
 
-deps: yarn.lock
-	yarn install --frozen-lockfile
-	@touch deps
-
 SOURCES := $(shell find packages -type d \( -name node_modules \) -prune -o -print)
 SOURCES += $(shell find apps -type d \( -name node_modules \) -prune -o -print)
+
+# in monorepo yarn.lock might remain unchanged when new NPM packages are created,
+# tracking package.json files of monorepo packages is the easiest way to discover such situations
+PACKAGE_JSON_FILES := $(shell find . -type d \( -name node_modules \) -prune -false -o -name package.json)
+
+deps: yarn.lock $(PACKAGE_JSON_FILES)
+	yarn install --frozen-lockfile
+	@touch deps
 
 .PHONY: printsrcs
 printsrcs:

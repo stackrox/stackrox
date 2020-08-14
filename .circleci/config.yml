@@ -78,13 +78,6 @@ restoreGradle: &restoreGradle
       - *gradleCacheKey
       - v1-rox-gradle
 
-uiCacheKey: &uiCacheKey 'v5-rox-ui-deps-{{ checksum "ui/yarn.lock" }}'
-restoreUI: &restoreUI
-  restore_cache:
-    keys:
-      - *uiCacheKey
-      - v5-rox-ui-deps-
-
 setupHelm: &setupHelm
   run:
     name: Setup tiller by default in GKE Cluster
@@ -1697,6 +1690,52 @@ commands:
             # ignore failure exit from comparison
             exit 0
 
+  create-concatenated-ui-monorepo-lock:
+    description: "For UI monorepo concatenate all package.json files and yarn.lock to a single file"
+    parameters:
+      output-filename:
+        type: string
+    steps:
+      - run:
+          name: Concatenate package.json files and yarn.lock
+          command: |
+            find ui/ -type d \( -name node_modules \) -prune -false -o -name package.json -print0 | sort -z | xargs -r0 cat > << parameters.output-filename >>
+            cat ui/yarn.lock >> << parameters.output-filename >>
+
+  save-npm-deps-cache:
+    description: "Prepare and save NPM dependencies cache"
+    steps:
+      - create-concatenated-ui-monorepo-lock:
+          output-filename: ui/monorepo.lock      
+
+      - run:
+          name: Calculate lock file digest
+          command: |
+            openssl dgst -r -sha256 ui/monorepo.lock >ui/monorepo.lock.sha256
+
+      - save_cache:
+          name: Save NPM dependencies cache
+          key: v6-rox-npm-deps-{{ checksum "ui/monorepo.lock" }}
+          paths:
+            - ui/monorepo.lock.sha256
+            - ui/deps
+            - ~/.cache/Cypress # Cypress binary will be put there, see https://docs.cypress.io/guides/guides/continuous-integration.html#Example-circle-yml-v2-config-file-with-yarn
+            - ui/node_modules # CircleCI doesn't support globbing here https://circleci.com/docs/2.0/caching/#basic-example-of-dependency-caching so all `node_nodules` need to be listed
+            - ui/apps/platform/node_modules
+            - ui/packages/tailwind-config/node_modules
+
+  restore-npm-deps-cache:
+    description: "Restore NPM dependencies cache"
+    steps:
+      - create-concatenated-ui-monorepo-lock:
+          output-filename: ui/monorepo.lock      
+
+      - restore_cache:
+          name: Restore NPM dependencies cache
+          keys:
+            - v6-rox-npm-deps-{{ checksum "ui/monorepo.lock" }}
+            - v6-rox-npm-deps-
+
 jobs:
   ###
   # Jobs independent from build / compilation (like style checks, static code analysis, unit tests)
@@ -1733,7 +1772,7 @@ jobs:
       - *restoreGoModCache
       - setup-go-build-env
       - *restoreGradle
-      - *restoreUI
+      - restore-npm-deps-cache
 
       - *restoreGoBuildCache
 
@@ -1782,7 +1821,7 @@ jobs:
       - *restoreGoModCache
       - setup-go-build-env
       - *restoreGradle
-      - *restoreUI
+      - restore-npm-deps-cache
 
       - run:
           name: Run style checks
@@ -1868,11 +1907,11 @@ jobs:
       - EKS_AUTOMATION_VERSION: 0.0.1
     steps:
       - checkout
-      - *restoreUI
+      - restore-npm-deps-cache
       - run:
           name: Fetch dependencies
           command: |
-            if [[ -d ui/node_modules && -f ui/yarn.lock.sha256 && "$(cat ui/yarn.lock.sha256)" == "$(openssl dgst -r -sha256 ui/yarn.lock)" ]]; then
+            if [[ -d ui/node_modules && -f ui/monorepo.lock.sha256 && "$(cat ui/monorepo.lock.sha256)" == "$(openssl dgst -r -sha256 ui/monorepo.lock)" ]]; then
               exit 0  # cache is complete if the above condition matches
             fi
             make -C ui deps
@@ -1903,19 +1942,7 @@ jobs:
           paths:
             - ui/build
 
-      - run:
-          name: Preparing UI cache
-          command: |
-            openssl dgst -r -sha256 ui/yarn.lock >ui/yarn.lock.sha256
-
-      - save_cache:
-          key: *uiCacheKey
-          paths:
-            - ui/yarn.lock.sha256
-            - ui/deps
-            - ~/.cache/Cypress # Cypress binary will be put there, see https://docs.cypress.io/guides/guides/continuous-integration.html#Example-circle-yml-v2-config-file-with-yarn
-            - ui/node_modules # CircleCI doesn't support globbing here https://circleci.com/docs/2.0/caching/#basic-example-of-dependency-caching so all `node_nodules` need to be listed
-            - ui/apps/platform/node_modules
+      - save-npm-deps-cache
 
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
@@ -2780,7 +2807,7 @@ jobs:
             - *setupClientTLSCerts
             - setup-egress-proxies
 
-      - *restoreUI
+      - restore-npm-deps-cache
       - *determineWhetherToRunUIDevServer
       - *runUIDevServer
       - *waitForUIDevServer

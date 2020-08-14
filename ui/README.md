@@ -72,6 +72,13 @@ Note that the package should be scoped to `@stackrox` and no `"publishConfig"`
 defined in `package.json` as publishing configuration is defined on the monorepo
 root level.
 
+Finally, make build modifications:
+
+-   update [.ossls.yml](../.ossls.yml) to include package's `node_modules` dir;
+-   update [CircleCI config.yml](../.circleci/config.yml) to include package's
+    `node_modules` into the `save_cache` paths of the `save-npm-deps-cache`
+    command.
+
 #### Adding a Dependency to Another Package
 
 If you need to add a dependency on `@stackrox/package-a` to
