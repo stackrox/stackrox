@@ -4,6 +4,8 @@ package tests
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -11,6 +13,7 @@ import (
 	googleStorage "cloud.google.com/go/storage"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,7 +25,7 @@ const (
 	testGCSBucket = "stackrox-ci-gcs-db-upload-test"
 )
 
-func verifyNumBackups(t *testing.T, client *googleStorage.Client, prefix string, numExpected int) {
+func countNumBackups(t *testing.T, client *googleStorage.Client, prefix string) int {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -35,6 +38,11 @@ func verifyNumBackups(t *testing.T, client *googleStorage.Client, prefix string,
 		numBackups++
 	}
 	require.Equal(t, iterator.Done, err)
+
+	return numBackups
+}
+
+func verifyNumBackups(t *testing.T, numBackups int, numExpected int) {
 	assert.Equal(t, numExpected, numBackups)
 }
 
@@ -78,21 +86,21 @@ func TestGCSExternalBackup(t *testing.T) {
 	assert.NoError(t, err)
 	cancel()
 
-	verifyNumBackups(t, client, prefix, 0)
+	verifyNumBackups(t, countNumBackups(t, client, prefix), 0)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Minute)
 	_, err = service.TriggerExternalBackup(ctx, &v1.ResourceByID{Id: backup.GetId()})
 	assert.NoError(t, err)
 	cancel()
 
-	verifyNumBackups(t, client, prefix, 1)
+	verifyNumBackups(t, countNumBackups(t, client, prefix), 1)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Minute)
 	_, err = service.TriggerExternalBackup(ctx, &v1.ResourceByID{Id: backup.GetId()})
 	assert.NoError(t, err)
 	cancel()
 
-	verifyNumBackups(t, client, prefix, 2)
+	verifyNumBackups(t, countNumBackups(t, client, prefix), 2)
 
 	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Minute)
 	_, err = service.TriggerExternalBackup(ctx, &v1.ResourceByID{Id: backup.GetId()})
@@ -100,5 +108,20 @@ func TestGCSExternalBackup(t *testing.T) {
 	cancel()
 
 	// Should have pruned the first one
-	verifyNumBackups(t, client, prefix, 2)
+	err = retry.WithRetry(func() error {
+		numBackups := countNumBackups(t, client, prefix)
+		if numBackups != 2 {
+			return errors.New(fmt.Sprintf("Backup is not pruned: got %d", numBackups))
+		}
+		return nil
+	},
+		retry.Tries(10),
+		retry.BetweenAttempts(func(_ int) {
+			time.Sleep(1 * time.Second)
+		}),
+		retry.OnFailedAttempts(func(err error) {
+			log.Error(err.Error())
+		}),
+	)
+	require.NoError(t, err)
 }

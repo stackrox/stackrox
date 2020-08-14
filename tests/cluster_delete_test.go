@@ -70,9 +70,9 @@ func TestClusterDeletion(t *testing.T) {
 			return nil
 		}
 		return retry.MakeRetryable(fmt.Errorf("resp still has non zero values: %+v", resp))
-	}, retry.Tries(10),
+	}, retry.Tries(60),
 		retry.BetweenAttempts(func(_ int) {
-			time.Sleep(time.Second)
+			time.Sleep(5 * time.Second)
 		}),
 		retry.OnFailedAttempts(func(err error) {
 			log.Error(err.Error())

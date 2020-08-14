@@ -2724,6 +2724,16 @@ jobs:
           command: |
             make -C tests destructive-tests
 
+      - run:
+          name: Collect final stackrox logs
+          command: |
+            ./scripts/ci/collect-service-logs.sh stackrox /tmp/final-stackrox-logs
+          when: always
+
+      - store_artifacts:
+          path: /tmp/final-stackrox-logs
+          destination: final-stackrox-logs
+
       - *storeK8sLogs
       - teardown-gke
 
