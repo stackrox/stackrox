@@ -13,8 +13,11 @@ export function toggleRow(id, selection) {
     const modifiedSelection = [...selection];
     const keyIndex = modifiedSelection.indexOf(id);
     // check to see if the key exists
-    if (keyIndex >= 0) modifiedSelection.splice(keyIndex, 1);
-    else modifiedSelection.push(id);
+    if (keyIndex >= 0) {
+        modifiedSelection.splice(keyIndex, 1);
+    } else {
+        modifiedSelection.push(id);
+    }
     return modifiedSelection;
 }
 
@@ -41,12 +44,17 @@ export function toggleSelectAll(rowsLength, selection, tableRef) {
         let previouslySelected = 0;
         // we just push all the IDs onto the selection array of the currently selected page
         for (let i = startIndex; i < nextPageIndex; i += 1) {
-            if (!sortedData[i]) break;
+            if (!sortedData[i]) {
+                break;
+            }
             const { id } = sortedData[i].checkbox;
             const keyIndex = modifiedSelection.indexOf(id);
             // if already selected, don't add again, else add to the selection
-            if (keyIndex >= 0) previouslySelected += 1;
-            else modifiedSelection.push(id);
+            if (keyIndex >= 0) {
+                previouslySelected += 1;
+            } else {
+                modifiedSelection.push(id);
+            }
         }
         // if all were previously selected on the current page, unselect all on page
         if (
@@ -54,7 +62,9 @@ export function toggleSelectAll(rowsLength, selection, tableRef) {
             (previouslySelected === pageSize || previouslySelected === sortedData.length % pageSize)
         ) {
             for (let i = startIndex; i < nextPageIndex; i += 1) {
-                if (!sortedData[i]) break;
+                if (!sortedData[i]) {
+                    break;
+                }
                 const { id } = sortedData[i].checkbox;
                 const keyIndex = modifiedSelection.indexOf(id);
                 modifiedSelection.splice(keyIndex, 1);

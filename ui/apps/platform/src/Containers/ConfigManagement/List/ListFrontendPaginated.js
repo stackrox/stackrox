@@ -114,8 +114,12 @@ const ListFrontendPaginated = ({
         <section className="h-full w-full" id="capture-list">
             <Query query={query} variables={variables}>
                 {({ loading, data: queryData }) => {
-                    if (isGQLLoading(loading, data)) return <Loader />;
-                    if (!queryData) return <PageNotFound resourceType={entityType} />;
+                    if (isGQLLoading(loading, data)) {
+                        return <Loader />;
+                    }
+                    if (!queryData) {
+                        return <PageNotFound resourceType={entityType} />;
+                    }
                     const tableRows = createTableRows(queryData) || [];
                     const headerComponents = getHeaderComponents(tableRows.length);
 

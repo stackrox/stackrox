@@ -26,7 +26,9 @@ function RiskTable({
 }) {
     function onFetchData(state) {
         const newSortOption = sortOptionFromTableState(state);
-        if (!newSortOption) return;
+        if (!newSortOption) {
+            return;
+        }
         setSortOption(newSortOption);
     }
 
@@ -34,8 +36,9 @@ function RiskTable({
         setSelectedDeploymentId(deployment.id);
     }
 
-    if (!currentDeployments.length)
+    if (!currentDeployments.length) {
         return <NoResultsMessage message="No results found. Please refine your search." />;
+    }
     return (
         <Table
             idAttribute="deployment.id"

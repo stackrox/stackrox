@@ -21,8 +21,9 @@ class NetworkPoliciesDetails extends Component {
 
     renderOverview() {
         const { networkPolicies } = this.props;
-        if (!networkPolicies.length)
+        if (!networkPolicies.length) {
             return <NoResultsMessage message="No network policies have been applied" />;
+        }
         return (
             <div>
                 {networkPolicies.map((networkPolicy) => {

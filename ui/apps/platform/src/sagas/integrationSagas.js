@@ -95,12 +95,17 @@ function* saveIntegration(action) {
     try {
         if (source === 'authProviders') {
             yield call(AuthService.saveAuthProvider, integration);
-            if (sourceType === 'apitoken') yield put(fetchIntegrationsActionMap[sourceType]);
-            else yield put(fetchIntegrationsActionMap[source]);
+            if (sourceType === 'apitoken') {
+                yield put(fetchIntegrationsActionMap[sourceType]);
+            } else {
+                yield put(fetchIntegrationsActionMap[source]);
+            }
         } else {
             if (integration.id) {
                 yield call(service.saveIntegration, source, integration, options);
-            } else yield call(service.createIntegration, source, integration);
+            } else {
+                yield call(service.createIntegration, source, integration);
+            }
             yield put(fetchIntegrationsActionMap[source]);
         }
         yield put(
@@ -122,8 +127,11 @@ function* deleteIntegrations({ source, sourceType, ids }) {
     try {
         if (source === 'authProviders') {
             yield call(AuthService.deleteAuthProviders, ids);
-            if (sourceType === 'apitoken') yield put(fetchIntegrationsActionMap[sourceType]);
-            else yield put(fetchIntegrationsActionMap[source]);
+            if (sourceType === 'apitoken') {
+                yield put(fetchIntegrationsActionMap[sourceType]);
+            } else {
+                yield put(fetchIntegrationsActionMap[source]);
+            }
         } else {
             yield call(service.deleteIntegrations, source, ids);
             yield put(fetchIntegrationsActionMap[source]);

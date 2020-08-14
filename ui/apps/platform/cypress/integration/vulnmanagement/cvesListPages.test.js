@@ -21,12 +21,15 @@ describe('CVEs list Page and its entity detail page,sub list  validations ', () 
         ]);
         cy.get(selectors.tableBodyColumn).each(($el) => {
             const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no deployments' && columnValue.includes('deployment'))
+            if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
                 allChecksForEntities(url.list.cves, 'Deployment');
-            if (columnValue !== 'no images' && columnValue.includes('image'))
+            }
+            if (columnValue !== 'no images' && columnValue.includes('image')) {
                 allChecksForEntities(url.list.cves, 'image');
-            if (columnValue !== 'no components' && columnValue.includes('component'))
+            }
+            if (columnValue !== 'no components' && columnValue.includes('component')) {
                 allChecksForEntities(url.list.cves, 'component');
+            }
         });
 
         // special check for CVE list only, for description in 2nd line of row

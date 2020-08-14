@@ -20,8 +20,12 @@ import BarGradient from './BarGradient';
 const minimalMargin = { top: -15, bottom: 0, left: 0, right: 0 };
 
 const sortByYValue = (a, b) => {
-    if (a.y < b.y) return -1;
-    if (a.y > b.y) return 1;
+    if (a.y < b.y) {
+        return -1;
+    }
+    if (a.y > b.y) {
+        return 1;
+    }
     return 0;
 };
 
@@ -88,7 +92,9 @@ class HorizontalBarChart extends Component {
     };
 
     onValueClickHandler = (datum) => {
-        if (datum.link) this.props.history.push(datum.link);
+        if (datum.link) {
+            this.props.history.push(datum.link);
+        }
     };
 
     getContainerProps = () => {
@@ -142,7 +148,9 @@ class HorizontalBarChart extends Component {
 
         // Generate y axis links
         const axisLinks = sortedData.reduce((acc, curr) => {
-            if (curr.link) acc[curr.y] = curr.link;
+            if (curr.link) {
+                acc[curr.y] = curr.link;
+            }
             return acc;
         }, {});
 
@@ -152,7 +160,7 @@ class HorizontalBarChart extends Component {
 
         function tickFormat(value) {
             let inner = value;
-            if (axisLinks[value])
+            if (axisLinks[value]) {
                 inner = (
                     <Link
                         style={{ fill: 'currentColor' }}
@@ -162,6 +170,7 @@ class HorizontalBarChart extends Component {
                         {value}
                     </Link>
                 );
+            }
 
             return <tspan>{inner}</tspan>;
         }

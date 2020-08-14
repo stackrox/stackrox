@@ -41,25 +41,31 @@ function generateURL(workflowState) {
     const stateStack = [...originalStateStack];
     const pageStack = workflowState.getPageStack();
     const qsStack = stateStack.slice(pageStack.length);
-    if (!useCase) throw new Error('Cannot generate a url from workflowState without a use case');
+    if (!useCase) {
+        throw new Error('Cannot generate a url from workflowState without a use case');
+    }
 
     // Find the path map for the use case
     const pathMap = legacyPathMap[useCase] || defaultPathMap;
-    if (!pathMap) throw new Error(`Can't generate a URL. No paths found for context ${useCase}`);
+    if (!pathMap) {
+        throw new Error(`Can't generate a URL. No paths found for context ${useCase}`);
+    }
 
     const pageParams = workflowState.getPageStack();
 
     // determine the page type
     let pageType = pageTypes.DASHBOARD;
-    if (pageParams.length > 0)
+    if (pageParams.length > 0) {
         pageType = pageParams[0].entityId ? pageTypes.ENTITY : pageTypes.LIST;
+    }
 
     // determine the path
     const path = pathMap[pageType];
-    if (!path)
+    if (!path) {
         throw new Error(
             `Can't generate a URL. No path found for context ${useCase} and page type ${pageType}`
         );
+    }
 
     // create url params
     const params = { useCase, context: useCase }; // using legacy context url param. remove after paths are updated
@@ -67,8 +73,9 @@ function generateURL(workflowState) {
         params.pageEntityId = pageParams[0].entityId;
         params.pageEntityType = urlEntityTypes[pageParams[0].entityType];
         params.pageEntityListType = urlEntityListTypes[pageParams[0].entityType];
-        if (pageType === pageTypes.ENTITY && pageParams[1])
+        if (pageType === pageTypes.ENTITY && pageParams[1]) {
             params.entityType1 = urlEntityListTypes[pageParams[1].entityType];
+        }
     }
 
     // Add url params for legacy contexts
@@ -90,16 +97,28 @@ function generateURL(workflowState) {
     };
 
     // Don't write URLs with p=0 or p2=0, since that's the default value anyway
-    if (queryParams[pagingParams.page] === 0) delete queryParams[pagingParams.page];
-    if (queryParams[pagingParams.sidePanel] === 0) delete queryParams[pagingParams.sidePanel];
+    if (queryParams[pagingParams.page] === 0) {
+        delete queryParams[pagingParams.page];
+    }
+    if (queryParams[pagingParams.sidePanel] === 0) {
+        delete queryParams[pagingParams.sidePanel];
+    }
 
     // Don't write URLs with s1 or s2 empty, since that's superfluous
-    if (!queryParams[searchParams.page]) delete queryParams[searchParams.page];
-    if (!queryParams[searchParams.sidePanel]) delete queryParams[searchParams.sidePanel];
+    if (!queryParams[searchParams.page]) {
+        delete queryParams[searchParams.page];
+    }
+    if (!queryParams[searchParams.sidePanel]) {
+        delete queryParams[searchParams.sidePanel];
+    }
 
     // Don't write URLs with sort or sort2 empty, since that's superfluous
-    if (!queryParams[sortParams.page]) delete queryParams[sortParams.page];
-    if (!queryParams[sortParams.sidePanel]) delete queryParams[sortParams.sidePanel];
+    if (!queryParams[sortParams.page]) {
+        delete queryParams[sortParams.page];
+    }
+    if (!queryParams[sortParams.sidePanel]) {
+        delete queryParams[sortParams.sidePanel];
+    }
 
     // hybrid approach to using page params in Config Mgmt, but keeping entities in URL params
     if (useCase === useCases.CONFIG_MANAGEMENT) {

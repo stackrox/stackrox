@@ -89,7 +89,9 @@ const Deployment = ({ id, entityContext, entityListType, query, pagination }) =>
     `;
 
     function getQuery() {
-        if (!entityListType) return defaultQuery;
+        if (!entityListType) {
+            return defaultQuery;
+        }
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
             entityTypes.DEPLOYMENT,
             entityListType,
@@ -112,9 +114,12 @@ const Deployment = ({ id, entityContext, entityListType, query, pagination }) =>
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader />;
-                if (!data || !data.deployment)
+                if (isGQLLoading(loading, data)) {
+                    return <Loader />;
+                }
+                if (!data || !data.deployment) {
                     return <PageNotFound resourceType={entityTypes.DEPLOYMENT} />;
+                }
                 const { deployment: entity } = data;
 
                 if (entityListType) {

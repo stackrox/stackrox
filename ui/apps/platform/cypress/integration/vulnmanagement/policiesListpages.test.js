@@ -24,8 +24,9 @@ describe('Policies list Page and its entity detail page , related entities sub l
             if (
                 columnValue !== 'no failing deployments' &&
                 columnValue.includes('failing deployments')
-            )
+            ) {
                 allChecksForEntities(url.list.policies, 'deployment');
+            }
         });
     });
 

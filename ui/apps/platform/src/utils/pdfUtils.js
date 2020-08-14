@@ -146,7 +146,9 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
         tbl.appendChild(tbdy);
         tbl.id = 'pdf-table';
         tbl.className = 'hidden';
-        if (parent) parent.appendChild(tbl);
+        if (parent) {
+            parent.appendChild(tbl);
+        }
     }
 };
 

@@ -6,7 +6,9 @@ import { selectors } from 'reducers';
 
 const LoginNotice = ({ publicConfig }) => {
     const { loginNotice } = publicConfig;
-    if (!loginNotice || !loginNotice.text || !loginNotice.enabled) return null;
+    if (!loginNotice || !loginNotice.text || !loginNotice.enabled) {
+        return null;
+    }
     return (
         <div
             className="flex w-full justify-center border-t border-base-300 bg-base-200 h-43 overflow-auto"

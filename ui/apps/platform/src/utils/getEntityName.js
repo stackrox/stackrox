@@ -11,16 +11,22 @@ const entityNameKeyMap = {
     [entityTypes.DEPLOYMENT]: (data) => resolvePath(data, 'deployment.name'),
     [entityTypes.NAMESPACE]: (data) => resolvePath(data, 'namespace.metadata.name'),
     [entityTypes.ROLE]: (data) => {
-        if (!data || !data.clusters || !data.clusters.length) return null;
+        if (!data || !data.clusters || !data.clusters.length) {
+            return null;
+        }
         const result = data.clusters.reduce((acc, curr) => {
-            if (!curr.k8sRole) return acc;
+            if (!curr.k8sRole) {
+                return acc;
+            }
             return curr.k8sRole.name;
         }, null);
         return result;
     },
     [entityTypes.NODE]: (data) => resolvePath(data, 'node.name'),
     [entityTypes.CONTROL]: (data) => {
-        if (!data.control) return null;
+        if (!data.control) {
+            return null;
+        }
         return `${data.control.name} - ${data.control.description}`;
     },
     [entityTypes.IMAGE]: (data) => resolvePath(data, 'image.name.fullName'),
@@ -29,10 +35,14 @@ const entityNameKeyMap = {
 };
 
 function extractEntityName(entityType, data) {
-    if (!data || isEmpty(data)) return null;
+    if (!data || isEmpty(data)) {
+        return null;
+    }
 
     const fn = entityNameKeyMap[entityType];
-    if (fn) return fn(data);
+    if (fn) {
+        return fn(data);
+    }
 
     // No name extraction method defined. Make an educated guess.
     const firstKey = Object.keys(data)[0];
@@ -40,7 +50,9 @@ function extractEntityName(entityType, data) {
 }
 
 const getEntityName = (entityType, data) => {
-    if (isEmpty(data)) return null;
+    if (isEmpty(data)) {
+        return null;
+    }
     try {
         return extractEntityName(entityType, data);
     } catch (error) {

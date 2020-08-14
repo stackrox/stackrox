@@ -18,7 +18,9 @@ const SUMMARY_COUNTS = gql`
 
 const SummaryCounts = () => {
     const { loading, error, data } = useQuery(SUMMARY_COUNTS, { pollInterval: 30000 });
-    if (error) Raven.captureException(error);
+    if (error) {
+        Raven.captureException(error);
+    }
     const { clusterCount, nodeCount, violationCount, deploymentCount, imageCount, secretCount } =
         data || {};
     return (

@@ -82,7 +82,9 @@ const getResources = (state) => state.resources;
 const getSelectedRole = (state) => state.selectedRole;
 
 const getAccessForPermission = (state, permission) => {
-    if (!state.userRolePermissions) return true;
+    if (!state.userRolePermissions) {
+        return true;
+    }
     const { globalAccess, resourceToAccess } = state.userRolePermissions;
     const access = !resourceToAccess ? globalAccess : resourceToAccess[permission];
     return access;

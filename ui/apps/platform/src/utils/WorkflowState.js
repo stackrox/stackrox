@@ -97,11 +97,15 @@ function baseStateStack(entityType, entityId) {
 
 // Returns skimmed stack for stack to navigate away to
 function skimStack(stack) {
-    if (stack.length < 2) return stack;
+    if (stack.length < 2) {
+        return stack;
+    }
 
     const currentItem = stack.slice(-1)[0];
     // if the last item on the stack is an entity, return the entity
-    if (currentItem.entityId) return [currentItem];
+    if (currentItem.entityId) {
+        return [currentItem];
+    }
     // else the last item on the stack is a list, return the previous entity + related list
     return stack.slice(-2);
 }
@@ -144,7 +148,9 @@ export class WorkflowState {
 
     // Returns current entity (top of stack)
     getCurrentEntity() {
-        if (!this.stateStack.length) return null;
+        if (!this.stateStack.length) {
+            return null;
+        }
         return this.stateStack.slice(-1)[0];
     }
 
@@ -152,7 +158,9 @@ export class WorkflowState {
     getCurrentEntityType() {
         const currentEntity = this.getCurrentEntity();
 
-        if (!currentEntity) return null;
+        if (!currentEntity) {
+            return null;
+        }
 
         return currentEntity.t;
     }
@@ -165,18 +173,23 @@ export class WorkflowState {
 
     // Returns base (first) entity of stack
     getBaseEntity() {
-        if (!this.stateStack.length) return null;
+        if (!this.stateStack.length) {
+            return null;
+        }
         return this.stateStack[0];
     }
 
     // Returns workflow entities related to page level
     getPageStack() {
         const { stateStack } = this;
-        if (stateStack.length < 2) return stateStack;
+        if (stateStack.length < 2) {
+            return stateStack;
+        }
 
         // list page or entity page with entity sidepanel
-        if (!stateStack[0].entityId || (stateStack.length > 1 && stateStack[1].entityId))
+        if (!stateStack[0].entityId || (stateStack.length > 1 && stateStack[1].entityId)) {
             return stateStack.slice(0, 1);
+        }
 
         // entity page with tab
         return stateStack.slice(0, 2);
@@ -184,7 +197,9 @@ export class WorkflowState {
 
     // Gets selected table row (first side panel entity)
     getSelectedTableRow() {
-        if (this.stateStack.length < 2 || !this.sidePanelActive) return null;
+        if (this.stateStack.length < 2 || !this.sidePanelActive) {
+            return null;
+        }
         return this.stateStack.slice(1, 2)[0];
     }
 
@@ -291,7 +306,9 @@ export class WorkflowState {
         const { useCase, stateStack, search, sort, paging } = this;
         const currentItem = stateStack.slice(-1)[0];
 
-        if (currentItem && !currentItem.entityId) return this;
+        if (currentItem && !currentItem.entityId) {
+            return this;
+        }
 
         const newStateStack = trimStack([...stateStack, new WorkflowEntity(type, id)]);
 
@@ -300,9 +317,10 @@ export class WorkflowState {
 
     // Goes back one level to the nearest valid state
     pop() {
-        if (this.stateStack.length === 1)
+        if (this.stateStack.length === 1) {
             // A state stack has to have at least one item in it
             return this;
+        }
 
         const { useCase, stateStack, search, sort, paging } = this;
 

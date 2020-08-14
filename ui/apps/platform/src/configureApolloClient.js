@@ -39,7 +39,9 @@ export default function () {
         cache: new InMemoryCache({
             possibleTypes,
             dataIdFromObject: (object) => {
-                if (object.id && object.clusterID) return `${object.clusterID}/${object.id}`;
+                if (object.id && object.clusterID) {
+                    return `${object.clusterID}/${object.id}`;
+                }
                 return defaultDataIdFromObject(object);
             },
         }),

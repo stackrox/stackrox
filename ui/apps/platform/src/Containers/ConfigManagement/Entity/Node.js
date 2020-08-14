@@ -28,7 +28,9 @@ const Node = ({ id, entityListType, entityId1, query, entityContext, pagination 
     const searchParam = useContext(searchContext);
 
     const queryObject = { ...query[searchParam] };
-    if (!queryObject.Standard) queryObject.Standard = 'CIS';
+    if (!queryObject.Standard) {
+        queryObject.Standard = 'CIS';
+    }
 
     const variables = {
         cacheBuster: new Date().getUTCMilliseconds(),
@@ -70,8 +72,12 @@ const Node = ({ id, entityListType, entityId1, query, entityContext, pagination 
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader />;
-                if (!data || !data.node) return <PageNotFound resourceType={entityTypes.NODE} />;
+                if (isGQLLoading(loading, data)) {
+                    return <Loader />;
+                }
+                if (!data || !data.node) {
+                    return <PageNotFound resourceType={entityTypes.NODE} />;
+                }
                 const { node } = data;
 
                 const {

@@ -18,11 +18,15 @@ class ConfigurationFields extends Component {
     };
 
     render() {
-        if (!this.props.policy.fields) return '';
+        if (!this.props.policy.fields) {
+            return '';
+        }
 
         const fields = removeEmptyFields(this.props.policy.fields);
         const fieldKeys = Object.keys(fields);
-        if (!fieldKeys.length) return '';
+        if (!fieldKeys.length) {
+            return '';
+        }
 
         return (
             <div className="px-3 pt-5">
@@ -32,7 +36,9 @@ class ConfigurationFields extends Component {
                     </div>
                     <div className="h-full p-3 pb-0">
                         {fieldKeys.map((key) => {
-                            if (!fieldsMap[key]) return '';
+                            if (!fieldsMap[key]) {
+                                return '';
+                            }
                             const { label } = fieldsMap[key];
                             const value = fieldsMap[key].formatValue(this.props.policy.fields[key]);
                             return (

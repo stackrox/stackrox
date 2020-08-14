@@ -45,15 +45,19 @@ function validateTileLinksInSidePanel(colSelector, col, parentUrl) {
             cy.get(colSelector).eq(0).click({ force: true });
             let entitySelector;
             const col1 = col.toLowerCase();
-            if (col1.includes('image')) entitySelector = vulnManagementSelectors.imageTileLink;
-            else if (col1.includes('deployment'))
+            if (col1.includes('image')) {
+                entitySelector = vulnManagementSelectors.imageTileLink;
+            } else if (col1.includes('deployment')) {
                 entitySelector = vulnManagementSelectors.deploymentTileLink;
-            else if (col1.includes('namespace'))
+            } else if (col1.includes('namespace')) {
                 entitySelector = vulnManagementSelectors.namespaceTileLink;
-            else if (col1.includes('component'))
+            } else if (col1.includes('component')) {
                 entitySelector = vulnManagementSelectors.componentTileLink;
-            else if (col1.includes('cve')) entitySelector = vulnManagementSelectors.cveTileLink;
-            else entitySelector = vulnManagementSelectors.getTileLink(col.toUpperCase());
+            } else if (col1.includes('cve')) {
+                entitySelector = vulnManagementSelectors.cveTileLink;
+            } else {
+                entitySelector = vulnManagementSelectors.getTileLink(col.toUpperCase());
+            }
             cy.get(entitySelector)
                 .find(vulnManagementSelectors.tileLinkText)
                 .contains(parseInt(value, 10));
@@ -82,7 +86,9 @@ function validateCVETileLinksInSidePanel(parentUrl) {
     cy.get(vulnManagementSelectors.tableBodyColumn).each(($el) => {
         const value = $el.text();
         let cveCount = 0;
-        if (value.toLowerCase().includes('cve')) cveCount = parseInt(value.split(' ')[0], 10);
+        if (value.toLowerCase().includes('cve')) {
+            cveCount = parseInt(value.split(' ')[0], 10);
+        }
         if (cveCount > 0) {
             cy.get(vulnManagementSelectors.tableBodyColumn).eq(0).click({ force: true });
             // not reusing a predefined selector below, because we had made this function so DRY,
@@ -112,10 +118,12 @@ function validateFixableCVELinks(urlBack) {
         .invoke('text')
         .then((value) => {
             cy.get(`${vulnManagementSelectors.fixableCVELink}`).eq(0).click({ force: true });
-            if (parseInt(value, 10) === 1)
+            if (parseInt(value, 10) === 1) {
                 validateDataInEntityListPage(`${parseInt(value, 10)} CVE`, urlBack);
-            if (parseInt(value, 10) > 1)
+            }
+            if (parseInt(value, 10) > 1) {
                 validateDataInEntityListPage(`${parseInt(value, 10)} CVES`, urlBack);
+            }
         });
 }
 
@@ -123,7 +131,9 @@ function validateCVETabsInSidePanel(parentUrl, colSelector, col) {
     cy.get(vulnManagementSelectors.tableBodyColumn).each(($el) => {
         const value = $el.text();
         let cveCount = 0;
-        if (value.toLowerCase().includes('cve')) cveCount = parseInt(value.split(' ')[0], 10);
+        if (value.toLowerCase().includes('cve')) {
+            cveCount = parseInt(value.split(' ')[0], 10);
+        }
         if (cveCount > 0) {
             cy.get(vulnManagementSelectors.tableBodyColumn).eq(0).click({ force: true });
             cy.get(vulnManagementSelectors.sidePanelExpandButton).click({

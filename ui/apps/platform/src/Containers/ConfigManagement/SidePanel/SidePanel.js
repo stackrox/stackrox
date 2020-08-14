@@ -49,7 +49,9 @@ const SidePanel = ({
     }
 
     function getListType() {
-        if (!isList) return null;
+        if (!isList) {
+            return null;
+        }
         return entityListType2;
     }
 
@@ -89,8 +91,12 @@ const SidePanel = ({
     );
 
     const entityContext = {};
-    if (contextEntityType) entityContext[contextEntityType] = contextEntityId;
-    if (entityId2) entityContext[entityType1 || entityListType1] = entityId1;
+    if (contextEntityType) {
+        entityContext[contextEntityType] = contextEntityId;
+    }
+    if (entityId2) {
+        entityContext[entityType1 || entityListType1] = entityId1;
+    }
     return (
         <workflowStateContext.Provider value={workflowState}>
             <div className={`rounded-tl-lg ${className}`}>

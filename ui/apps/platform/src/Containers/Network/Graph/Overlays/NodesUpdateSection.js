@@ -9,7 +9,9 @@ import * as Icon from 'react-feather';
 import { actions as graphActions } from 'reducers/network/graph';
 
 const NodesUpdateButton = ({ nodeUpdatesCount, networkNodesUpdate }) => {
-    if (Number.isNaN(nodeUpdatesCount) || nodeUpdatesCount <= 0) return null;
+    if (Number.isNaN(nodeUpdatesCount) || nodeUpdatesCount <= 0) {
+        return null;
+    }
     return (
         <button
             type="button"
@@ -30,7 +32,9 @@ NodesUpdateButton.propTypes = {
 };
 
 const NodesUpdateSection = ({ networkNodesUpdate, nodeUpdatesCount, lastUpdatedTimestamp }) => {
-    if (!lastUpdatedTimestamp) return null;
+    if (!lastUpdatedTimestamp) {
+        return null;
+    }
     return (
         <div className="theme-light absolute top-0 pin-network-update-label-left mt-2 mr-2 p-2 bg-base-100 rounded-sm border-2 border-base-400 text-base-500 text-xs font-700">
             <div className="uppercase">{`Last Updated: ${dateFns.format(

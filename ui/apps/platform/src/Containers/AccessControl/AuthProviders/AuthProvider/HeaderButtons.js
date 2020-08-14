@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import SaveButton from 'Components/SaveButton';
 
 function HeaderButtons({ editText, isEditing, onEdit, onCancel, onTest, editDisabled }) {
-    if (!isEditing)
+    if (!isEditing) {
         return (
             <div className="flex">
                 {!!onTest && (
@@ -27,6 +27,7 @@ function HeaderButtons({ editText, isEditing, onEdit, onCancel, onTest, editDisa
                 </button>
             </div>
         );
+    }
     return (
         <div className="flex">
             <button className="btn btn-base mr-2" type="button" onClick={onCancel}>

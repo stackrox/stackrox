@@ -2,7 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 const Development = (props) => {
-    if (process.env.NODE_ENV !== 'development') return null;
+    if (process.env.NODE_ENV !== 'development') {
+        return null;
+    }
 
     const { children, ...restOfProps } = props;
 

@@ -9,7 +9,9 @@ import ViolationComments from 'Containers/AnalystNotes/ViolationComments';
 import ViolationTags from 'Containers/AnalystNotes/ViolationTags';
 
 const processData = (data) => {
-    if (!data.violations || !data.violations.length) return null;
+    if (!data.violations || !data.violations.length) {
+        return null;
+    }
     return data.violations[0];
 };
 

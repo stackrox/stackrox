@@ -56,10 +56,14 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
             }}
         >
             {({ loading, data }) => {
-                if (loading) return <Loader />;
-                if (!data) return null;
+                if (loading) {
+                    return <Loader />;
+                }
+                if (!data) {
+                    return null;
+                }
                 const rows = createTableRows(data);
-                if (rows.length === 0)
+                if (rows.length === 0) {
                     return (
                         <NoResultsMessage
                             message="No policies failed across this deployment"
@@ -67,6 +71,7 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
                             icon="info"
                         />
                     );
+                }
                 const header = `${rows.length} policies failed across this deployment`;
                 const columns = [
                     {

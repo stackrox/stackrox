@@ -32,7 +32,9 @@ class FieldGroupCards extends Component {
 
         this.props.fieldGroups.forEach((fieldGroup) => {
             const field = fieldGroup.descriptor.find((obj) => obj.jsonpath === option);
-            if (field) fieldToAdd = field;
+            if (field) {
+                fieldToAdd = field;
+            }
         });
         this.setState((prevState) => ({ fields: prevState.fields.concat(fieldToAdd.jsonpath) }));
         if (fieldToAdd.defaultValue !== undefined && fieldToAdd.defaultValue !== null) {
@@ -45,7 +47,9 @@ class FieldGroupCards extends Component {
         this.props.fieldGroups.forEach((fieldGroup) => {
             const field = fieldGroup.descriptor.find((obj) => obj.jsonpath === jsonpath);
 
-            if (field) fieldToRemove = field;
+            if (field) {
+                fieldToRemove = field;
+            }
         });
 
         this.setState((prevState) => ({
@@ -69,7 +73,9 @@ class FieldGroupCards extends Component {
         });
 
         if (!filteredFields.length) {
-            if (this.isHeaderOnlyCard(formFields)) return '';
+            if (this.isHeaderOnlyCard(formFields)) {
+                return '';
+            }
 
             return <div className="p-3 text-base-500 font-500">No Fields Added</div>;
         }
@@ -104,7 +110,9 @@ class FieldGroupCards extends Component {
             )
             .map((field) => ({ label: field.label, value: field.jsonpath }));
         const placeholder = 'Add a field';
-        if (!availableFields.length) return '';
+        if (!availableFields.length) {
+            return '';
+        }
         availableFields = sortBy(availableFields, (o) => o.label);
         return (
             <div className="flex p-3 border-t border-base-200 bg-success-100">
@@ -123,7 +131,9 @@ class FieldGroupCards extends Component {
 
     renderHeaderControl = (formFields) => {
         const headerField = formFields.find((field) => field.header);
-        if (!headerField) return '';
+        if (!headerField) {
+            return '';
+        }
 
         return (
             <div className="header-control float-right">

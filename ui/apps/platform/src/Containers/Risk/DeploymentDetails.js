@@ -55,13 +55,17 @@ class DeploymentDetails extends Component {
     };
 
     getContainerConfigurations = (container) => {
-        if (!container.config) return null;
+        if (!container.config) {
+            return null;
+        }
         const { command, args, ports, volumes, secrets } = container.config;
         return { command, args, ports, volumes, secrets };
     };
 
     getSecurityContext = (container) => {
-        if (!container.securityContext) return null;
+        if (!container.securityContext) {
+            return null;
+        }
         const { privileged, add_capabilities, drop_capabilities } = container.securityContext; // eslint-disable-line
         return { privileged, add_capabilities, drop_capabilities };
     };
@@ -83,7 +87,9 @@ class DeploymentDetails extends Component {
     }
 
     renderContainerImage = (image) => {
-        if (!image || !image.name || !image.name.fullName) return null;
+        if (!image || !image.name || !image.name.fullName) {
+            return null;
+        }
         if (image.id === '') {
             return (
                 <div className="flex py-3">
@@ -111,7 +117,9 @@ class DeploymentDetails extends Component {
     };
 
     renderResources = (resources) => {
-        if (!resources) return <span className="py-3 font-600 italic">None</span>;
+        if (!resources) {
+            return <span className="py-3 font-600 italic">None</span>;
+        }
         const resourceMap = {
             cpuCoresRequest: { label: 'CPU Request (cores)' },
             cpuCoresLimit: { label: 'CPU Limit (cores)' },
@@ -123,7 +131,9 @@ class DeploymentDetails extends Component {
     };
 
     renderContainerVolumes = (volumes) => {
-        if (!volumes || !volumes.length) return <span className="py-1 font-600 italic">None</span>;
+        if (!volumes || !volumes.length) {
+            return <span className="py-1 font-600 italic">None</span>;
+        }
         return volumes.map((volume, idx) => (
             <li
                 key={idx}
@@ -145,7 +155,9 @@ class DeploymentDetails extends Component {
     };
 
     renderContainerSecrets = (secrets) => {
-        if (!secrets || !secrets.length) return <span className="py-1 font-600 italic">None</span>;
+        if (!secrets || !secrets.length) {
+            return <span className="py-1 font-600 italic">None</span>;
+        }
         return secrets.map((secret, idx) => (
             <div key={idx} className="py-2">
                 <div key={`${secret.name}-${idx}`} className="py-1 font-600">
@@ -213,7 +225,9 @@ class DeploymentDetails extends Component {
                 .filter((container) => container.securityContext)
                 .map((container, index) => {
                     const data = this.getSecurityContext(container);
-                    if (data === {}) return null;
+                    if (data === {}) {
+                        return null;
+                    }
                     return (
                         <div key={index}>
                             {data && (
@@ -225,7 +239,9 @@ class DeploymentDetails extends Component {
                         </div>
                     );
                 });
-            if (!containers.length) containers = <span className="py-3 font-600 italic">None</span>;
+            if (!containers.length) {
+                containers = <span className="py-3 font-600 italic">None</span>;
+            }
         } else {
             containers = <span className="py-3 font-600 italic">None</span>;
         }

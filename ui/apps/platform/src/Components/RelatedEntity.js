@@ -25,7 +25,9 @@ const RelatedEntity = ({
     const workflowState = useContext(workflowStateContext);
 
     function onClick() {
-        if (!entityId) return;
+        if (!entityId) {
+            return;
+        }
 
         let url;
         // this is a workaround to make this flexible for legacy URLService and new workflow state manager

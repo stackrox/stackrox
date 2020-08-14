@@ -7,7 +7,9 @@ const Link = ({ url, text, component, pdf, className, dataTestId }) => {
         e.stopPropagation();
     }
     // This field is necessary to exclude rendering the Link during PDF generation. It causes an error where the Link can't be rendered outside a Router
-    if (pdf) return text;
+    if (pdf) {
+        return text;
+    }
     return (
         <RouterLink
             to={url}

@@ -72,8 +72,12 @@ PreviewPanel.defaultProps = {
 };
 
 const isPolicyDisabled = createSelector([selectors.getWizardPolicy], (policy) => {
-    if (policy == null) return true;
-    if (policy.disabled) return true;
+    if (policy == null) {
+        return true;
+    }
+    if (policy.disabled) {
+        return true;
+    }
     return false;
 });
 

@@ -51,7 +51,9 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
 
     const { priority, policyStatus, status, istioEnabled, id } = safeData;
 
-    if (!status || !policyStatus) return null;
+    if (!status || !policyStatus) {
+        return null;
+    }
 
     const { orchestratorMetadata = null } = status;
     const { buildDate = '', version = 'N/A' } = orchestratorMetadata;

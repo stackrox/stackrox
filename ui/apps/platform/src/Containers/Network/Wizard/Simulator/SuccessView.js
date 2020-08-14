@@ -78,8 +78,13 @@ const SuccessView = ({
     timeWindow,
     modificationSource,
 }) => {
-    if (modification === null || modificationState !== 'SUCCESS' || policyGraphState !== 'SUCCESS')
+    if (
+        modification === null ||
+        modificationState !== 'SUCCESS' ||
+        policyGraphState !== 'SUCCESS'
+    ) {
         return null;
+    }
 
     const timeWindowMessage =
         timeWindow === 'All Time'

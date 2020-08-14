@@ -12,7 +12,9 @@ export function filterAllowedSearch(allowed = [], currentSearch = {}) {
 }
 
 export function convertToRestSearch(workflowSearch) {
-    if (!workflowSearch) return [];
+    if (!workflowSearch) {
+        return [];
+    }
 
     const restSearch = Object.keys(workflowSearch).reduce((acc, key) => {
         const keyWithColon = `${key}:`;

@@ -33,7 +33,9 @@ function processData(data, entityId) {
         id: entityId,
     };
 
-    if (!data || !data.results || !data.results.metadata) return defaultValue;
+    if (!data || !data.results || !data.results.metadata) {
+        return defaultValue;
+    }
 
     const { metadata, ...rest } = data.results;
 
@@ -57,8 +59,12 @@ const NamespacePage = ({
     return (
         <Query query={QUERY} variables={{ id: entityId }}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader />;
-                if (!data.results) return <PageNotFound resourceType={entityTypes.NAMESPACE} />;
+                if (isGQLLoading(loading, data)) {
+                    return <Loader />;
+                }
+                if (!data.results) {
+                    return <PageNotFound resourceType={entityTypes.NAMESPACE} />;
+                }
                 const namespace = processData(data);
                 const { name, id, clusterName, labels, numNetworkPolicies } = namespace;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';

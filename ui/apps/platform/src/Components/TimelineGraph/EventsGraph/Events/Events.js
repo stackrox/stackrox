@@ -4,7 +4,9 @@ import PropTypes from 'prop-types';
 import EventMarker from '../EventMarker';
 
 const Events = ({ events, height, translateX, minTimeRange, maxTimeRange, margin, isZooming }) => {
-    if (isZooming) return [];
+    if (isZooming) {
+        return [];
+    }
 
     const eventMarkerSize = Math.max(0, height / 3);
     const eventMarkerOffsetY = Math.max(0, height / 2);

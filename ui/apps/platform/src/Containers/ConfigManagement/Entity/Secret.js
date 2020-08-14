@@ -25,7 +25,9 @@ import queryService from 'utils/queryService';
 import EntityList from '../List/EntityList';
 
 const SecretDataMetadata = ({ metadata }) => {
-    if (!metadata) return null;
+    if (!metadata) {
+        return null;
+    }
     const { startDate, endDate, issuer = {}, sans = [], subject = {} } = metadata;
     const {
         commonName: issuerCommonName = 'N/A',
@@ -204,7 +206,9 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext, paginatio
     `;
 
     function getQuery() {
-        if (!entityListType) return defaultQuery;
+        if (!entityListType) {
+            return defaultQuery;
+        }
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
             entityTypes.SECRET,
             entityListType,
@@ -226,11 +230,16 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext, paginatio
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader />;
-                if (!data || !data.secret)
+                if (isGQLLoading(loading, data)) {
+                    return <Loader />;
+                }
+                if (!data || !data.secret) {
                     return <PageNotFound resourceType={entityTypes.SECRET} />;
+                }
                 const { secret } = data;
-                if (!secret) return <PageNotFound resourceType={entityTypes.SECRET} />;
+                if (!secret) {
+                    return <PageNotFound resourceType={entityTypes.SECRET} />;
+                }
 
                 if (entityListType) {
                     return (

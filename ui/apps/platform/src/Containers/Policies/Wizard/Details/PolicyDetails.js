@@ -6,7 +6,9 @@ import ConfigurationFields from 'Containers/Policies/Wizard/Details/Configuratio
 import BooleanPolicySection from 'Containers/Policies/Wizard/Form/BooleanPolicySection';
 
 function PolicyDetails({ policy }) {
-    if (!policy) return null;
+    if (!policy) {
+        return null;
+    }
 
     // If the policy version is not set, that means this is a legacy policy.
     // Legacy policies are only displayed when we display old alerts.

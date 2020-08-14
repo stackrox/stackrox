@@ -4,12 +4,13 @@ import PropTypes from 'prop-types';
 import SaveButton from 'Components/SaveButton';
 
 function Button(props) {
-    if (!props.isEditing)
+    if (!props.isEditing) {
         return (
             <button className="btn btn-base" type="button" onClick={props.onEdit}>
                 Edit
             </button>
         );
+    }
     return (
         <div className="flex">
             <button className="btn btn-base mr-2" type="button" onClick={props.onCancel}>

@@ -38,7 +38,9 @@ const Tags = ({
     }
 
     // if no title is present, just show the input for tags
-    if (!title) return content;
+    if (!title) {
+        return content;
+    }
 
     return (
         <CollapsibleCard

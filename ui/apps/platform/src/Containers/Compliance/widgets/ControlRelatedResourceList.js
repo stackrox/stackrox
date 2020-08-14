@@ -26,7 +26,9 @@ const ControlRelatedEntitiesList = ({
     const searchParam = useContext(searchContext);
 
     function processData(data) {
-        if (!data || !data.results) return [];
+        if (!data || !data.results) {
+            return [];
+        }
 
         const { clusters } = data;
         let options = clusters;
@@ -67,7 +69,9 @@ const ControlRelatedEntitiesList = ({
 
         const filteredIds = [];
         ids.forEach((id) => {
-            if (!filteredIds.includes(id)) filteredIds.push(id);
+            if (!filteredIds.includes(id)) {
+                filteredIds.push(id);
+            }
         });
 
         const result = filteredIds.map((id) => ({
@@ -79,7 +83,9 @@ const ControlRelatedEntitiesList = ({
     }
 
     function getHeadline(items) {
-        if (!items) return 'Loading...';
+        if (!items) {
+            return 'Loading...';
+        }
         const resourceLabel = resourceLabels[listEntityType];
         const count = typeof items.length !== 'undefined' ? items.length : 0;
         return `${count} Related ${pluralize(resourceLabel, count)}`;

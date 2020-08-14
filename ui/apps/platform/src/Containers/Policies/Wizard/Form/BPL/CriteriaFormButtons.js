@@ -45,7 +45,9 @@ function CriteriaFormButtons({
     }
 
     function checkPreDryRun() {
-        if (!wizardPolicyIsNew) return true;
+        if (!wizardPolicyIsNew) {
+            return true;
+        }
 
         const policyNames = policies.map((policy) => policy.name);
         if (policyNames.find((name) => name === formData.name)) {

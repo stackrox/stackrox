@@ -32,7 +32,9 @@ class TableGroup extends Component {
 
     renderSubTable = ({ rows }) => {
         const { tableColumns, onRowClick, selectedRowId, idAttribute } = this.props;
-        if (rows.length === 0) return null;
+        if (rows.length === 0) {
+            return null;
+        }
         return (
             <Table
                 rows={rows}

@@ -51,7 +51,9 @@ export function getNamespaceTableColumns(workflowState) {
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { vulnCounter, metadata } = original;
-                if (!vulnCounter || vulnCounter.all.total === 0) return 'No CVEs';
+                if (!vulnCounter || vulnCounter.all.total === 0) {
+                    return 'No CVEs';
+                }
 
                 const newState = workflowState.pushListItem(metadata.id).pushList(entityTypes.CVE);
                 const cvesUrl = newState.toUrl();

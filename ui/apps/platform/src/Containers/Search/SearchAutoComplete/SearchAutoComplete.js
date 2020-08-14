@@ -16,13 +16,14 @@ const SearchAutoComplete = ({ categories, query, children }) => {
 
     const { hasErrors } = captureGraphQLErrors([error]);
 
-    if (hasErrors)
+    if (hasErrors) {
         return (
             <Message
                 type="error"
                 message="There was an issue retrieving autocomplete options. Please try to view this page again."
             />
         );
+    }
 
     const options = data && data.searchAutocomplete;
 

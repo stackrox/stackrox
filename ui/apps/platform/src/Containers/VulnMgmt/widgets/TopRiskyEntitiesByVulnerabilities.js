@@ -225,7 +225,9 @@ const TopRiskyEntitiesByVulnerabilities = ({
     const query = queryMap[selectedEntityType];
 
     function getAverageSeverity(vulns) {
-        if (vulns.length === 0) return 0;
+        if (vulns.length === 0) {
+            return 0;
+        }
 
         // 1. total the CVSS scores of the top X vulns returned
         const total = vulns.reduce((acc, curr) => {
@@ -286,7 +288,9 @@ const TopRiskyEntitiesByVulnerabilities = ({
         };
     }
     function processData(data) {
-        if (!data || !data.results) return [];
+        if (!data || !data.results) {
+            return [];
+        }
         const results = data.results
             .filter((result) => !!result?.plottedVulns?.basicVulnCounter?.all?.total) // only show entities with CVEs
             .map((result) => {

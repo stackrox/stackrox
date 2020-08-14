@@ -24,13 +24,19 @@ import {
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 
 function objectToWhereClause(query, delimiter = '+') {
-    if (!query) return '';
+    if (!query) {
+        return '';
+    }
 
     return Object.entries(query)
         .reduce((acc, entry) => {
             const [key, value] = entry;
-            if (!key || !value) return acc;
-            if (typeof value === 'undefined' || value === '') return acc;
+            if (!key || !value) {
+                return acc;
+            }
+            if (typeof value === 'undefined' || value === '') {
+                return acc;
+            }
             const flatValue = Array.isArray(value) ? value.join() : value;
             const needsExactMatch =
                 key.toLowerCase().indexOf(' id') !== -1 && value.indexOf(',') === -1;
@@ -41,7 +47,9 @@ function objectToWhereClause(query, delimiter = '+') {
 }
 
 function entityContextToQueryObject(entityContext) {
-    if (!entityContext) return {};
+    if (!entityContext) {
+        return {};
+    }
 
     // TODO: waiting for backend to use COMPONENT ID instead of NAME and VERSION. workaround for now
     return Object.keys(entityContext).reduce((acc, key) => {
@@ -95,7 +103,9 @@ function getListFieldName(entityType, listType, useCase) {
         if (listType === entityTypes.ROLE) {
             return 'k8sRoles';
         }
-        if (listType === entityTypes.CONTROL) return 'complianceResults';
+        if (listType === entityTypes.CONTROL) {
+            return 'complianceResults';
+        }
     }
 
     if (entityType === entityTypes.DEPLOYMENT) {
@@ -219,7 +229,9 @@ function getFragmentInfo(entityType, listType, useCase) {
 function getPagination(sort, page, pageSize = DEFAULT_PAGE_SIZE) {
     const sortObj = Array.isArray(sort) ? sort[0] : sort; // Back end can't support multiple sort right now, so just taking first sort
 
-    if (!sortObj) return null;
+    if (!sortObj) {
+        return null;
+    }
     const offset = page * pageSize;
     const limit = pageSize;
     const paginationObj = {
@@ -227,7 +239,9 @@ function getPagination(sort, page, pageSize = DEFAULT_PAGE_SIZE) {
         limit,
     };
 
-    if (!sortObj.id) return paginationObj;
+    if (!sortObj.id) {
+        return paginationObj;
+    }
 
     paginationObj.sortOption = {
         field: sortObj.id,

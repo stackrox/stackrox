@@ -76,7 +76,9 @@ const buildTableColumns = (match, location, entityContext) => {
             // eslint-disable-next-line
             Cell: ({ original }) => {
                 const { files } = original;
-                if (!files.length) return 'No Types';
+                if (!files.length) {
+                    return 'No Types';
+                }
                 return (
                     <span>
                         {uniq(files.map((file) => secretTypeEnumMapping[file.type])).join(', ')}
@@ -112,7 +114,9 @@ const buildTableColumns = (match, location, entityContext) => {
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { deploymentCount, id } = original;
-                if (!deploymentCount) return 'No Deployments';
+                if (!deploymentCount) {
+                    return 'No Deployments';
+                }
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.DEPLOYMENT)

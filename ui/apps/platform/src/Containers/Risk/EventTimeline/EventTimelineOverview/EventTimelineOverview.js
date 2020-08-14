@@ -16,14 +16,17 @@ const EventTimelineOverview = ({ deploymentId }) => {
         variables: { deploymentId },
     });
 
-    if (error) Raven.captureException(error);
+    if (error) {
+        Raven.captureException(error);
+    }
 
-    if (loading)
+    if (loading) {
         return (
             <div className="bg-base-100 border border-primary-300 py-3">
                 <Loader message="Loading Event Timeline..." />
             </div>
         );
+    }
 
     // data fetching with "deploymentId" will happen here...
     const {

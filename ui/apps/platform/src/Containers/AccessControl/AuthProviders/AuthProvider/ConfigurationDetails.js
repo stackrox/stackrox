@@ -13,7 +13,9 @@ const OidcDetails = ({ authProvider: { name, config } }) => {
         fragment: 'Fragment',
     };
     const callbackModeValue = oidcCallbackValues[config.mode];
-    if (!callbackModeValue) throw new Error(`Unknown callback mode "${config.mode}"`);
+    if (!callbackModeValue) {
+        throw new Error(`Unknown callback mode "${config.mode}"`);
+    }
 
     return (
         <>
@@ -86,8 +88,9 @@ const detailsComponents = {
 
 const ConfigurationDetails = ({ authProvider }) => {
     const DetailsComponent = detailsComponents[authProvider.type];
-    if (!DetailsComponent)
+    if (!DetailsComponent) {
         throw new Error(`Unknown auth provider type: ${JSON.stringify(authProvider)}`);
+    }
 
     return <DetailsComponent authProvider={authProvider} />;
 };

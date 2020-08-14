@@ -42,7 +42,9 @@ const imageColumns = [
         className: 'w-1/8 pointer-events-none flex items-center justify-end',
         // eslint-disable-next-line react/prop-types
         Expander: ({ isExpanded, ...rest }) => {
-            if (!rest.original.components || rest.original.components.length === 0) return '';
+            if (!rest.original.components || rest.original.components.length === 0) {
+                return '';
+            }
             const className = 'rt-expander w-1 pt-2 pointer-events-auto';
             return <div className={`${className} ${isExpanded ? '-open' : ''}`} />;
         },

@@ -53,14 +53,17 @@ class KeyValuePairs extends Component {
         const { data } = this.props;
         const mapping = this.props.keyValueMap;
         return keys.map((key) => {
-            if (!data[key] || !mapping[key] || (isObject(data[key]) && isEmpty(data[key])))
+            if (!data[key] || !mapping[key] || (isObject(data[key]) && isEmpty(data[key]))) {
                 return '';
+            }
             const { label } = mapping[key];
             const value = mapping[key].formatValue
                 ? mapping[key].formatValue(data[key])
                 : data[key];
             const { className = '' } = mapping[key];
-            if (!value || (Array.isArray(value) && !value.length)) return '';
+            if (!value || (Array.isArray(value) && !value.length)) {
+                return '';
+            }
             return (
                 <div
                     className="py-3 pb-2 leading-normal tracking-normal border-b border-base-300"

@@ -25,10 +25,14 @@ const QUERY = gql`
 
 const UsersWithMostClusterAdminRoles = ({ match, location }) => {
     function processData(data) {
-        if (!data || !data.clusters) return [];
+        if (!data || !data.clusters) {
+            return [];
+        }
 
         const subjectCounts = data.clusters.reduce((allSubjects, cluster) => {
-            if (!cluster.subjects) return allSubjects;
+            if (!cluster.subjects) {
+                return allSubjects;
+            }
             const newSubjects = { ...allSubjects };
 
             cluster.subjects

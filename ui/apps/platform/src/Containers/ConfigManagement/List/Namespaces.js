@@ -53,7 +53,9 @@ const buildTableColumns = (match, location, entityContext) => {
                   // eslint-disable-next-line
                   Cell: ({ original, pdf }) => {
                       const { metadata } = original;
-                      if (!metadata) return '-';
+                      if (!metadata) {
+                          return '-';
+                      }
                       const { clusterName, clusterId, id } = metadata;
                       const url = URLService.getURL(match, location)
                           .push(id)
@@ -84,7 +86,9 @@ const buildTableColumns = (match, location, entityContext) => {
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { numSecrets, metadata } = original;
-                if (!metadata || numSecrets === 0) return 'No Secrets';
+                if (!metadata || numSecrets === 0) {
+                    return 'No Secrets';
+                }
                 const { id } = metadata;
                 const url = URLService.getURL(match, location)
                     .push(id)
@@ -109,7 +113,9 @@ const buildTableColumns = (match, location, entityContext) => {
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { subjectsCount, metadata } = original;
-                if (!subjectsCount || subjectsCount === 0) return 'No Users & Groups';
+                if (!subjectsCount || subjectsCount === 0) {
+                    return 'No Users & Groups';
+                }
                 const { id } = metadata;
                 const url = URLService.getURL(match, location)
                     .push(id)
@@ -133,7 +139,9 @@ const buildTableColumns = (match, location, entityContext) => {
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { serviceAccountCount, metadata } = original;
-                if (!serviceAccountCount || serviceAccountCount === 0) return 'No Service Accounts';
+                if (!serviceAccountCount || serviceAccountCount === 0) {
+                    return 'No Service Accounts';
+                }
                 const { id } = metadata;
                 const url = URLService.getURL(match, location)
                     .push(id)
@@ -160,7 +168,9 @@ const buildTableColumns = (match, location, entityContext) => {
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { k8sRoleCount, metadata } = original;
-                if (!k8sRoleCount || k8sRoleCount === 0) return 'No Roles';
+                if (!k8sRoleCount || k8sRoleCount === 0) {
+                    return 'No Roles';
+                }
                 const { id } = metadata;
                 const url = URLService.getURL(match, location)
                     .push(id)

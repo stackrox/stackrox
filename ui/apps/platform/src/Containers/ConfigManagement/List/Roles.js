@@ -55,7 +55,9 @@ const buildTableColumns = (match, location, entityContext) => {
             // eslint-disable-next-line react/prop-types
             Cell: ({ original }) => {
                 const { verbs: permissions } = original;
-                if (!permissions.length) return 'No Permissions';
+                if (!permissions.length) {
+                    return 'No Permissions';
+                }
                 return <div className="capitalize">{permissions.join(', ')}</div>;
             },
             accessor: 'verbs',
@@ -99,7 +101,9 @@ const buildTableColumns = (match, location, entityContext) => {
             // eslint-disable-next-line react/prop-types
             Cell: ({ original, pdf }) => {
                 const { roleNamespace, id } = original;
-                if (!roleNamespace) return 'Cluster-wide';
+                if (!roleNamespace) {
+                    return 'Cluster-wide';
+                }
                 const {
                     metadata: { name, id: namespaceId },
                 } = roleNamespace;
@@ -133,7 +137,7 @@ const buildTableColumns = (match, location, entityContext) => {
                     .push(original.id)
                     .push(entityTypes.SUBJECT)
                     .url();
-                if (subjectsLength > 1)
+                if (subjectsLength > 1) {
                     return (
                         <TableCellLink
                             pdf={pdf}
@@ -144,6 +148,7 @@ const buildTableColumns = (match, location, entityContext) => {
                             )}`}
                         />
                     );
+                }
                 const subject = subjects[0];
                 return <TableCellLink pdf={pdf} url={url} text={subject.name} />;
             },
@@ -174,7 +179,7 @@ const buildTableColumns = (match, location, entityContext) => {
                     .push(id)
                     .push(entityTypes.SERVICE_ACCOUNT)
                     .url();
-                if (serviceAccountsLength > 1)
+                if (serviceAccountsLength > 1) {
                     return (
                         <TableCellLink
                             pdf={pdf}
@@ -185,6 +190,7 @@ const buildTableColumns = (match, location, entityContext) => {
                             )}`}
                         />
                     );
+                }
                 const serviceAccount = serviceAccounts[0];
                 return <TableCellLink pdf={pdf} url={url} text={serviceAccount.name} />;
             },

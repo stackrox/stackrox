@@ -50,7 +50,9 @@ const Entity = ({ entityType, entityId, entityListType, ...rest }) => {
     const pagination = queryService.getPagination(tableSort, page, LIST_PAGE_SIZE);
 
     const Component = entityComponentMap[entityType];
-    if (!Component) return <PageNotFound resourceType={entityType} />;
+    if (!Component) {
+        return <PageNotFound resourceType={entityType} />;
+    }
     return (
         <div
             className={`w-full flex ${

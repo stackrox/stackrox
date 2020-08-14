@@ -5,7 +5,9 @@
  * @returns {number} width of the container
  */
 export function getNumEventsBackgroundWidth(numEvents) {
-    if (numEvents <= 9) return 9;
+    if (numEvents <= 9) {
+        return 9;
+    }
     return 13;
 }
 
@@ -16,6 +18,8 @@ export function getNumEventsBackgroundWidth(numEvents) {
  * @returns {string} the text displayed in the container
  */
 export function getNumEventsText(numEvents) {
-    if (numEvents <= 9) return String(numEvents);
+    if (numEvents <= 9) {
+        return String(numEvents);
+    }
     return '9+';
 }

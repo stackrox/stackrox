@@ -99,7 +99,9 @@ const LeftNavigation = ({ featureFlags, location, metadata }) => {
     }
 
     function renderNavigationPanel() {
-        if (!panelType) return '';
+        if (!panelType) {
+            return '';
+        }
         return <NavigationPanel panelType={panelType} onClose={closePanel} />;
     }
 

@@ -22,7 +22,9 @@ class Fields extends Component {
     render() {
         const policy = { ...this.props.policy };
         const fields = Object.keys(policy);
-        if (!fields) return '';
+        if (!fields) {
+            return '';
+        }
 
         return (
             <div className="px-3 pt-5">
@@ -32,14 +34,20 @@ class Fields extends Component {
                     </div>
                     <div className="h-full p-3 pb-1">
                         {fields.map((field) => {
-                            if (!fieldsMap[field]) return '';
-                            if (policy[field] === undefined) return '';
+                            if (!fieldsMap[field]) {
+                                return '';
+                            }
+                            if (policy[field] === undefined) {
+                                return '';
+                            }
                             const { label } = fieldsMap[field];
                             const value = fieldsMap[field].formatValue(policy[field], {
                                 clustersById: this.props.clustersById,
                                 notifiers: this.props.notifiers,
                             });
-                            if (!value) return '';
+                            if (!value) {
+                                return '';
+                            }
                             if (Array.isArray(value)) {
                                 return (
                                     <div className="mb-4" key={field}>

@@ -17,7 +17,9 @@ const Dot = ({ active, onClick }) => (
 
 export const PagerDots = ({ onPageChange, pageCount, currentPage, className }) => {
     const handleSetPage = (page) => () => {
-        if (page < 0 || page >= pageCount) return;
+        if (page < 0 || page >= pageCount) {
+            return;
+        }
 
         onPageChange(page);
     };

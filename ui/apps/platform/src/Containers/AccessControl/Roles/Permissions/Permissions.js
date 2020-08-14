@@ -29,7 +29,9 @@ const Permissions = ({
         );
         return content;
     }
-    if (!selectedRole) return null;
+    if (!selectedRole) {
+        return null;
+    }
     let headerText = 'Create New Role';
     const { name, username } = selectedRole;
     if (name || username) {

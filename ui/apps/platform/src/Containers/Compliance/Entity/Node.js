@@ -30,10 +30,11 @@ import searchContext from 'Containers/searchContext';
 import Header from './Header';
 
 function processData(data) {
-    if (!data || !data.node)
+    if (!data || !data.node) {
         return {
             name: '',
         };
+    }
 
     const result = { ...data.node };
     const [ipAddress] = result.internalIpAddresses;
@@ -59,9 +60,13 @@ const NodePage = ({
     return (
         <Query query={NODE_QUERY} variables={{ id: entityId }}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader />;
+                if (isGQLLoading(loading, data)) {
+                    return <Loader />;
+                }
 
-                if (!data.node) return <PageNotFound resourceType={entityTypes.NODE} />;
+                if (!data.node) {
+                    return <PageNotFound resourceType={entityTypes.NODE} />;
+                }
                 const node = processData(data);
                 const {
                     name,

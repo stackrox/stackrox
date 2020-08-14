@@ -142,7 +142,9 @@ class IntegrationsPage extends Component {
 
     renderIntegrationModal() {
         const { modalOpen, selectedSource, selectedType, selectedLabel } = this.state;
-        if (!modalOpen) return null;
+        if (!modalOpen) {
+            return null;
+        }
 
         if (selectedSource === 'authProviders' && selectedType === 'apitoken') {
             return this.renderAPITokensModal();

@@ -46,7 +46,9 @@ const EventTimeline = ({ deploymentId }) => {
     }
 
     function goToPreviousView() {
-        if (view.length <= 1) return;
+        if (view.length <= 1) {
+            return;
+        }
         setView(view.slice(0, -1));
         resetSelectedEventType();
     }
@@ -54,7 +56,7 @@ const EventTimeline = ({ deploymentId }) => {
     const currentView = getCurrentView();
 
     const Component = EventTimelineComponentMap[currentView.type];
-    if (!Component)
+    if (!Component) {
         return (
             <NotFoundMessage
                 message="The Event Timeline for this view was not found."
@@ -62,6 +64,7 @@ const EventTimeline = ({ deploymentId }) => {
                 onClick={goToRootView}
             />
         );
+    }
 
     return (
         <FeatureEnabled featureFlag={knownBackendFlags.ROX_EVENT_TIMELINE_CLUSTERED_EVENTS_UI}>

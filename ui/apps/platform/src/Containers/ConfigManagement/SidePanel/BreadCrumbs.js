@@ -44,7 +44,9 @@ const getBreadCrumbStates = ({
 
 const getLink = (match, location, index, length) => {
     const numPops = length - 1 - index;
-    if (!numPops || numPops < 0) return null;
+    if (!numPops || numPops < 0) {
+        return null;
+    }
     const urlBuilder = URLService.getURL(match, location);
     for (let j = 0; j < numPops; j += 1) {
         urlBuilder.pop();
@@ -55,10 +57,14 @@ const getLink = (match, location, index, length) => {
 const BreadCrumbLinks = (props) => {
     const { className, match, location, history, ...params } = props;
     const { entityType1, entityId1, entityListType2, entityId2 } = params;
-    if (!entityId1) return null;
+    if (!entityId1) {
+        return null;
+    }
     const breadCrumbStates = getBreadCrumbStates(params);
     let maxWidthClass = 'max-w-full';
-    if (breadCrumbStates.length > 1) maxWidthClass = `max-w-1/${breadCrumbStates.length}`;
+    if (breadCrumbStates.length > 1) {
+        maxWidthClass = `max-w-1/${breadCrumbStates.length}`;
+    }
     const breadCrumbLinks = breadCrumbStates.map((state, i, { length }) => {
         const icon = i !== length - 1 ? Icon : null;
         const link = getLink(match, location, i, length);
@@ -75,7 +81,9 @@ const BreadCrumbLinks = (props) => {
                 <span className="truncate uppercase">{state.name}</span>
             </span>
         );
-        if (!state) return null;
+        if (!state) {
+            return null;
+        }
         return (
             <div key={`${state.name}--${state.type}`} className={`flex ${maxWidthClass} truncate`}>
                 <span className="flex flex-col max-w-full" data-testid="breadcrumb-link-text">
@@ -124,12 +132,16 @@ const BreadCrumbs = (props) => {
         entityId2
     );
 
-    if (!entityLoading && !mainEntityName) return null;
+    if (!entityLoading && !mainEntityName) {
+        return null;
+    }
     if (!entityId2) {
         return <BreadCrumbLinks {...props} entityName={mainEntityName} />;
     }
 
-    if (!relatedEntityLoading && !childEntityName) return null;
+    if (!relatedEntityLoading && !childEntityName) {
+        return null;
+    }
     return (
         <BreadCrumbLinks
             {...props}

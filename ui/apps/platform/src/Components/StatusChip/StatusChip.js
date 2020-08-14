@@ -8,7 +8,9 @@ const successStates = ['active', 'pass'];
 const alertStates = ['inactive', 'fail'];
 
 const StatusChip = ({ status, size, asString, dataTestId }) => {
-    if (asString) return capitalize(status);
+    if (asString) {
+        return capitalize(status);
+    }
     let type = null;
     if (successStates.includes(status)) {
         type = 'success';

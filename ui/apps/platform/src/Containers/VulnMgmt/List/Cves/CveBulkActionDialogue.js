@@ -206,7 +206,9 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
     }
 
     // render section
-    if (bulkActionCveIds.length === 0) return null;
+    if (bulkActionCveIds.length === 0) {
+        return null;
+    }
 
     return (
         <CustomDialogue

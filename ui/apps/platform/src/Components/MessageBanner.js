@@ -13,7 +13,9 @@ function MessageBanner({ component, message, type, showCancel, onCancel, dataTes
     const [isBannerShowing, showBanner] = useState(true);
     function onClickHandler() {
         showBanner(false);
-        if (onCancel) onCancel();
+        if (onCancel) {
+            onCancel();
+        }
     }
     return (
         isBannerShowing && (

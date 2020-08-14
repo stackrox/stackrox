@@ -64,16 +64,21 @@ const NodesWithFailedControls = (props) => {
         },
         fetchPolicy: 'no-cache',
     });
-    if (loading)
+    if (loading) {
         return (
             <div className="flex flex-1 items-center justify-center p-6">
                 <Loader />
             </div>
         );
-    if (error) Raven.captureException(error);
-    if (!data) return null;
+    }
+    if (error) {
+        Raven.captureException(error);
+    }
+    if (!data) {
+        return null;
+    }
     const { executedControls = [] } = data;
-    if (executedControls.length === 0)
+    if (executedControls.length === 0) {
         return (
             <NoResultsMessage
                 message={`No nodes failing ${
@@ -83,12 +88,13 @@ const NodesWithFailedControls = (props) => {
                 icon="info"
             />
         );
+    }
 
     const failingNodes = getFailingNodes(executedControls);
     const passingNodes = getPassingNodes(executedControls);
     const numFailing = failingNodes.length;
     const numPassing = passingNodes.length;
-    if (numPassing && !numFailing)
+    if (numPassing && !numFailing) {
         return (
             <NoResultsMessage
                 message={`No nodes failing ${
@@ -98,6 +104,7 @@ const NodesWithFailedControls = (props) => {
                 icon="info"
             />
         );
+    }
     if (!numPassing && !numFailing) {
         return (
             <NoResultsMessage

@@ -7,9 +7,13 @@ import { isBefore, parse } from 'date-fns';
  * @returns {string}
  */
 function getEarliestTimestamp(timestamps) {
-    if (!timestamps || !timestamps.length) return null;
+    if (!timestamps || !timestamps.length) {
+        return null;
+    }
     const earliestTimestamp = timestamps.reduce((acc, curr) => {
-        if (isBefore(parse(acc), parse(curr))) return acc;
+        if (isBefore(parse(acc), parse(curr))) {
+            return acc;
+        }
         return curr;
     });
     return earliestTimestamp;

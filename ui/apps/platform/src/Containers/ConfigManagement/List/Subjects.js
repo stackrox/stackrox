@@ -71,7 +71,9 @@ const buildTableColumns = (match, location) => {
             Cell: ({ original, pdf }) => {
                 const { id, k8sRoles } = original;
                 const { length } = k8sRoles;
-                if (!length) return 'No Roles';
+                if (!length) {
+                    return 'No Roles';
+                }
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.ROLE)

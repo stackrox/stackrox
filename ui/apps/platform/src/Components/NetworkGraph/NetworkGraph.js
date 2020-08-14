@@ -79,8 +79,12 @@ const NetworkGraph = ({
     const links = getLinks(data, networkEdgeMap, networkNodeMap);
 
     function showTooltip(elm, component) {
-        if (!elm) return;
-        if (tippyRef.current) tippyRef.current.destroy();
+        if (!elm) {
+            return;
+        }
+        if (tippyRef.current) {
+            tippyRef.current.destroy();
+        }
 
         try {
             const popperRef = elm.popperRef();
@@ -104,14 +108,18 @@ const NetworkGraph = ({
     }
 
     function hideTooltip() {
-        if (tippyRef.current) tippyRef.current.destroy();
+        if (tippyRef.current) {
+            tippyRef.current.destroy();
+        }
     }
 
     function nodeHoverHandler(ev) {
         const node = ev.target.data();
         const { id, parent, side, outEdges } = node;
         const isChild = !!parent;
-        if (!cyRef || !isChild || side) return;
+        if (!cyRef || !isChild || side) {
+            return;
+        }
 
         setHoveredNode(node);
 
@@ -200,7 +208,9 @@ const NetworkGraph = ({
         }
 
         // Edge click or edge node click
-        if (isEdge || evData.side) return;
+        if (isEdge || evData.side) {
+            return;
+        }
 
         // Parent Click
         if (isParent) {
@@ -224,7 +234,9 @@ const NetworkGraph = ({
     }
 
     function zoomHandler() {
-        if (!cyRef || !cyRef.current) return;
+        if (!cyRef || !cyRef.current) {
+            return;
+        }
 
         // to dynamically set the font size of namespace labels
         const zoomConstant = 20;
@@ -240,7 +252,9 @@ const NetworkGraph = ({
     }
 
     function zoomToFit() {
-        if (!cyRef) return;
+        if (!cyRef) {
+            return;
+        }
         cyRef.current.fit(null, GRAPH_PADDING);
         const newMinZoom = Math.min(cyRef.current.zoom(), cyRef.current.minZoom());
         cyRef.current.minZoom(newMinZoom);
@@ -248,7 +262,9 @@ const NetworkGraph = ({
     }
 
     function zoomIn() {
-        if (!cyRef.current) return;
+        if (!cyRef.current) {
+            return;
+        }
 
         cyRef.current.zoom({
             level: Math.max(cyRef.current.zoom() + ZOOM_STEP, cyRef.current.minZoom()),
@@ -257,7 +273,9 @@ const NetworkGraph = ({
     }
 
     function zoomOut() {
-        if (!cyRef.current) return;
+        if (!cyRef.current) {
+            return;
+        }
 
         cyRef.current.zoom({
             level: Math.min(cyRef.current.zoom() - ZOOM_STEP, MAX_ZOOM),
@@ -280,7 +298,9 @@ const NetworkGraph = ({
     function getNodeDataFromList(id) {
         const configObj = getConfigObj();
         // for the case when you want to pull the selected node from the URL on refresh
-        if (match.params.deploymentId) configObj.selectedNode = { id: match.params.deploymentId };
+        if (match.params.deploymentId) {
+            configObj.selectedNode = { id: match.params.deploymentId };
+        }
         const filteredData = data.filter((datum) => datum?.entity?.deployment);
         const deploymentList = getDeploymentList(filteredData, configObj);
         return getNodeData(id, deploymentList);
@@ -311,7 +331,9 @@ const NetworkGraph = ({
 
     // Calculate which namespace box side combinations are shortest and store them
     function calculateNodeSideMap(changedNodeId) {
-        if (!cyRef.current) return;
+        if (!cyRef.current) {
+            return;
+        }
 
         // Get a map of all the side nodes per namespace
         const namespaces = cyRef.current.nodes(':parent');
@@ -339,7 +361,9 @@ const NetworkGraph = ({
         function getDistance(sourceSideNode, targetSideNode) {
             const key = [sourceSideNode.id, targetSideNode.id].sort().join('**__**');
             const cachedDistance = distances[key];
-            if (cachedDistance) return cachedDistance;
+            if (cachedDistance) {
+                return cachedDistance;
+            }
             const dX = Math.abs(sourceSideNode.x - targetSideNode.x);
             const dY = Math.abs(sourceSideNode.y - targetSideNode.y);
             const distance = Math.sqrt(dX * dX + dY * dY);
@@ -356,8 +380,12 @@ const NetworkGraph = ({
             namespaces.forEach((targetNS, j) => {
                 const targetName = targetNS.data().id;
 
-                if (i === j || (changedNodeId && ![sourceName, targetName].includes(changedNodeId)))
+                if (
+                    i === j ||
+                    (changedNodeId && ![sourceName, targetName].includes(changedNodeId))
+                ) {
                     return;
+                }
 
                 const targetSideNodes = sideNodesPerParent[targetName];
                 let shortest;
@@ -366,10 +394,18 @@ const NetworkGraph = ({
                     const sourceSide = sourceSideNode.side;
                     const targetSideNode = targetSideNodes.find((tgtNode) => {
                         const { side } = tgtNode;
-                        if (sourceSide === 'top') return side === 'bottom';
-                        if (sourceSide === 'bottom') return side === 'top';
-                        if (sourceSide === 'left') return side === 'right';
-                        if (sourceSide === 'right') return side === 'left';
+                        if (sourceSide === 'top') {
+                            return side === 'bottom';
+                        }
+                        if (sourceSide === 'bottom') {
+                            return side === 'top';
+                        }
+                        if (sourceSide === 'left') {
+                            return side === 'right';
+                        }
+                        if (sourceSide === 'right') {
+                            return side === 'left';
+                        }
                         return false;
                     });
 
@@ -391,7 +427,9 @@ const NetworkGraph = ({
 
     function handleDrag(ev) {
         let changedNodeId;
-        if (ev && ev.target) changedNodeId = ev.target.data().id;
+        if (ev && ev.target) {
+            changedNodeId = ev.target.data().id;
+        }
 
         calculateNodeSideMap(changedNodeId);
         const configObj = getConfigObj();
@@ -418,7 +456,9 @@ const NetworkGraph = ({
             .on('drag', throttle(handleDrag, 100))
             .on('zoom', zoomHandler)
             .ready(() => {
-                if (firstRenderFinished) return;
+                if (firstRenderFinished) {
+                    return;
+                }
                 zoomToFit();
                 setFirstRenderFinished(true);
             });
@@ -452,7 +492,9 @@ const NetworkGraph = ({
     }
 
     function runLayout() {
-        if (!cyRef.current) return;
+        if (!cyRef.current) {
+            return;
+        }
         const CY = cyRef.current;
         const NSPositions = getParentPositions(CY.nodes(), { x: 100, y: 100 }); // all nodes, padding
 
@@ -485,7 +527,9 @@ const NetworkGraph = ({
     }
 
     function grabifyNamespaces() {
-        if (!cyRef.current) return;
+        if (!cyRef.current) {
+            return;
+        }
         const CY = cyRef.current;
         CY.nodes(`[parent]`).ungrabify();
     }

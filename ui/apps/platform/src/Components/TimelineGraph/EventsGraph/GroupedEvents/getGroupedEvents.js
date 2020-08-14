@@ -26,7 +26,9 @@ import { scaleLinear } from 'd3-scale';
  * @returns {Result}
  */
 const getGroupedEvents = ({ events, minDomain, maxDomain, minRange, maxRange, partitionSize }) => {
-    if (maxRange - minRange === 0) return [];
+    if (maxRange - minRange === 0) {
+        return [];
+    }
 
     const numPartitions = Math.round((maxRange - minRange) / (partitionSize * 2));
     const scale = scaleLinear().domain([minDomain, maxDomain]).range([minRange, maxRange]);

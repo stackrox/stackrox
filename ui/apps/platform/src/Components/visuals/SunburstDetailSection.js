@@ -54,7 +54,9 @@ class SunburstDetailSection extends Component {
         let bullets = [];
 
         if (selectedDatum) {
-            if (parentDatum) bullets.push({ text: parentDatum.name, ...parentDatum });
+            if (parentDatum) {
+                bullets.push({ text: parentDatum.name, ...parentDatum });
+            }
             bullets.push({
                 text: selectedDatum.name,
                 ...selectedDatum,

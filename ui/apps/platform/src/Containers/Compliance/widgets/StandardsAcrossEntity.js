@@ -48,7 +48,9 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
     const searchParam = useContext(searchContext);
 
     function processData(data, type) {
-        if (!data || !data.results || !data.results.results.length) return [];
+        if (!data || !data.results || !data.results.results.length) {
+            return [];
+        }
         const { complianceStandards } = data;
         const standardsMapping = merge(
             {},

@@ -27,7 +27,9 @@ export const formatResources = (resource) => {
 };
 
 export const formatScope = (scope, props) => {
-    if (!scope) return '';
+    if (!scope) {
+        return '';
+    }
     const values = [];
     if (scope.cluster && scope.cluster !== '') {
         let { cluster } = scope;

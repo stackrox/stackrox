@@ -67,10 +67,13 @@ const WorkflowListPage = ({
         //    because now that we are using backend pagination
         //    it creates a weird UX lag where the table sort arrow changes,
         //    but there is no indication that we are waiting for more data from the backend
-        if (loading) return <Loader />;
+        if (loading) {
+            return <Loader />;
+        }
 
-        if (!ownQueryData || !ownQueryData.results || error)
+        if (!ownQueryData || !ownQueryData.results || error) {
             return <PageNotFound resourceType={entityListType} />;
+        }
         displayData = ownQueryData.results;
         // eslint-disable-next-line prefer-destructuring
         count = ownQueryData.count;

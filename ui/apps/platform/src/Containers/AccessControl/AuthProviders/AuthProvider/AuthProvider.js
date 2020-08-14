@@ -167,7 +167,9 @@ class AuthProvider extends Component {
         }
         // if there is no default role specified for this auth provider then use the global default role
         defaultRoleGroups = groups.filter((group) => !group.props);
-        if (defaultRoleGroups.length) return defaultRoleGroups[0].roleName;
+        if (defaultRoleGroups.length) {
+            return defaultRoleGroups[0].roleName;
+        }
         return 'Admin';
     };
 

@@ -49,9 +49,15 @@ function getQuery(entityType) {
 
 const processNumValue = (data, entityType) => {
     let value = 0;
-    if (!data || !data.results) return value;
-    if (typeof data.results === 'number') return data.results;
-    if (!Array.isArray(data.results)) return value;
+    if (!data || !data.results) {
+        return value;
+    }
+    if (typeof data.results === 'number') {
+        return data.results;
+    }
+    if (!Array.isArray(data.results)) {
+        return value;
+    }
 
     if (entityType === entityTypes.CONTROL) {
         const set = new Set();

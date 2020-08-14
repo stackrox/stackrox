@@ -27,7 +27,9 @@ import searchContext from 'Containers/searchContext';
 import Header from './Header';
 
 function processData(data) {
-    if (!data || !data.deployment) return {};
+    if (!data || !data.deployment) {
+        return {};
+    }
 
     const result = { ...data.deployment };
     return result;
@@ -50,7 +52,9 @@ const DeploymentPage = ({
     return (
         <Query query={DEPLOYMENT_QUERY} variables={{ id: entityId }}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader />;
+                if (isGQLLoading(loading, data)) {
+                    return <Loader />;
+                }
                 const deployment = processData(data);
                 const {
                     name,

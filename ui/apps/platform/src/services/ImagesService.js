@@ -72,7 +72,9 @@ export function fetchImageCount(options) {
  * @returns {Promise<?Object, Error>} fulfilled with object of image (as defined in .proto)
  */
 export function fetchImage(id) {
-    if (!id) throw new Error('Image ID must be specified');
+    if (!id) {
+        throw new Error('Image ID must be specified');
+    }
     return axios.get(`${imagesUrl}/${id}`).then((response) => {
         const image = { ...response.data };
         const { name } = response.data;

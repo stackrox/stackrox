@@ -48,7 +48,9 @@ const EntityPage = ({ match, location }) => {
     useEffect(() => setFadeIn(false), [pageEntityId]);
 
     // manually adding the styles to fade back in
-    if (!fadeIn) setTimeout(() => setFadeIn(true), 50);
+    if (!fadeIn) {
+        setTimeout(() => setFadeIn(true), 50);
+    }
 
     const style = fadeIn
         ? {

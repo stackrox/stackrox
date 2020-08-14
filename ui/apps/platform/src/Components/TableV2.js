@@ -65,7 +65,9 @@ class TableV2 extends Component {
         }
         return {
             onClick: () => {
-                if (this.props.onRowClick) this.props.onRowClick(rowInfo.original);
+                if (this.props.onRowClick) {
+                    this.props.onRowClick(rowInfo.original);
+                }
             },
             className: classes.join(' '),
         };
@@ -77,7 +79,9 @@ class TableV2 extends Component {
 
     render() {
         const { rows, columns, ...rest } = this.props;
-        if (!columns || !columns.length) return null;
+        if (!columns || !columns.length) {
+            return null;
+        }
         columns.forEach((column) =>
             Object.assign(column, {
                 className: this.getColumnClassName(column),

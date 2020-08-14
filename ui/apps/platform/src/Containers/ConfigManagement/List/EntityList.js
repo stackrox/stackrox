@@ -32,7 +32,9 @@ const entityComponentMap = {
 
 const EntityList = ({ entityListType, entityId, ...rest }) => {
     const Component = entityComponentMap[entityListType];
-    if (!Component) return <PageNotFound resourceType={entityListType} />;
+    if (!Component) {
+        return <PageNotFound resourceType={entityListType} />;
+    }
     return <Component selectedRowId={entityId} {...rest} />;
 };
 

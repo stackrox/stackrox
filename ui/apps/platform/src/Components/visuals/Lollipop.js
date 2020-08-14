@@ -47,7 +47,9 @@ const Lollipop = ({ data, history }) => {
     }
 
     function onValueClickHandler(datum) {
-        if (datum.link) history.push(datum.link);
+        if (datum.link) {
+            history.push(datum.link);
+        }
     }
 
     const labelData = getLabelData();

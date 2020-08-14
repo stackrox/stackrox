@@ -62,7 +62,9 @@ const QUERY = gql`
 `;
 
 const getPercentagePassing = (numPassing, numFailing) => {
-    if (numPassing === 0 && numFailing === 0) return 0;
+    if (numPassing === 0 && numFailing === 0) {
+        return 0;
+    }
     return Math.floor((numPassing / (numPassing + numFailing)) * 100);
 };
 
@@ -142,9 +144,13 @@ const getTotalPassingFailing = (data) => {
         (acc, curr) => {
             const { numPassing, numFailing } = curr;
             const value = getPercentagePassing(numPassing, numFailing);
-            if (value === 100) acc.controlsPassing += 1;
-            else if (!numPassing && !numFailing) acc.controlsNA += 1;
-            else acc.controlsFailing += 1;
+            if (value === 100) {
+                acc.controlsPassing += 1;
+            } else if (!numPassing && !numFailing) {
+                acc.controlsNA += 1;
+            } else {
+                acc.controlsFailing += 1;
+            }
             return acc;
         },
         { controlsPassing: 0, controlsFailing: 0, controlsNA: 0 }

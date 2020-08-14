@@ -29,7 +29,9 @@ function getClusterEventType(events) {
         )
     );
     // if all the events are the same type, use that type
-    if (types.length === 1) return types[0];
+    if (types.length === 1) {
+        return types[0];
+    }
     // if we have multiple types of events, use the generic type
     return clusteredEventTypes.GENERIC;
 }

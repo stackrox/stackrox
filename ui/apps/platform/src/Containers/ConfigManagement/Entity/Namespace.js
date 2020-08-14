@@ -62,7 +62,9 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext, pagina
     `;
 
     function getQuery() {
-        if (!entityListType) return defaultQuery;
+        if (!entityListType) {
+            return defaultQuery;
+        }
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
             entityTypes.NAMESPACE,
             entityListType,
@@ -87,9 +89,13 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext, pagina
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader />;
+                if (isGQLLoading(loading, data)) {
+                    return <Loader />;
+                }
                 const { namespace } = data;
-                if (!namespace) return <PageNotFound resourceType={entityTypes.NAMESPACE} />;
+                if (!namespace) {
+                    return <PageNotFound resourceType={entityTypes.NAMESPACE} />;
+                }
 
                 if (entityListType) {
                     return (

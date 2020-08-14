@@ -67,8 +67,9 @@ class ProtectedRoute extends Component {
             !featureFlagEnabled ||
             (devOnly && process.env.NODE_ENV !== 'development') ||
             (requiredPermission && !shouldHaveReadPermission(requiredPermission))
-        )
+        ) {
             return <Redirect to="/" />;
+        }
 
         return <Route {...rest} render={this.renderRoute} />;
     }

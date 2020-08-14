@@ -46,7 +46,9 @@ const Scatterplot = ({
     const yDomain = [lowY, highY];
 
     function onValueClickHandler(datum) {
-        if (datum.url) history.push(datum.url);
+        if (datum.url) {
+            history.push(datum.url);
+        }
     }
 
     return (

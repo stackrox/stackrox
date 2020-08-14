@@ -8,7 +8,9 @@ import LoadingSection from './Tiles/LoadingSection';
 
 function ProcessingView(props) {
     const { modificationState, policyGraphState } = props;
-    if (modificationState !== 'REQUEST' && policyGraphState !== 'REQUEST') return null;
+    if (modificationState !== 'REQUEST' && policyGraphState !== 'REQUEST') {
+        return null;
+    }
 
     return <div className="flex flex-col flex-1">{LoadingSection()}</div>;
 }

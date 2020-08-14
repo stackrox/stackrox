@@ -49,7 +49,9 @@ const Page = ({ systemConfig, saveSystemConfig, telemetryConfig, saveTelemetryCo
 
     function getContent() {
         const modifiedSystemConfig = { ...systemConfig };
-        if (!systemConfig.publicConfig) modifiedSystemConfig.publicConfig = defaultPublicConfig;
+        if (!systemConfig.publicConfig) {
+            modifiedSystemConfig.publicConfig = defaultPublicConfig;
+        }
         const modifiedTelemetryConfig = { ...telemetryConfig };
 
         if (isEditing) {

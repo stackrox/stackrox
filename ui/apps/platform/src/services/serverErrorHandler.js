@@ -3,7 +3,9 @@ import axios from './instance';
 let interceptorAdded = false;
 
 export default function registerServerErrorHandler(successCallback, errorCallback) {
-    if (interceptorAdded) return;
+    if (interceptorAdded) {
+        return;
+    }
     axios.interceptors.response.use(
         (response) => {
             successCallback();

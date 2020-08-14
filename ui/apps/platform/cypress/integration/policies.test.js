@@ -204,8 +204,9 @@ describe('Policies page', () => {
             cy.get(selectors.enableDisableIcon)
                 .first()
                 .then((icon) => {
-                    if (!icon.hasClass(selectors.enabledIconColor))
+                    if (!icon.hasClass(selectors.enabledIconColor)) {
                         cy.get(selectors.hoverActionButtons).first().click({ force: true });
+                    }
                 });
 
             // force click the first enable/disable button on the first row

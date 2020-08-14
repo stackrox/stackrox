@@ -15,7 +15,9 @@ import RestrictToScope from './RestrictToScope';
 import WhitelistScope from './WhitelistScope';
 
 export default function Field({ field, name, readOnly, BPLenabled }) {
-    if (field === undefined) return null;
+    if (field === undefined) {
+        return null;
+    }
     // this is to accomodate for recursive Fields (when type is 'group')
     const pathName = field.subpath ? name : `${name}.value`;
     // we use jsonpath for non-policy configuration fields

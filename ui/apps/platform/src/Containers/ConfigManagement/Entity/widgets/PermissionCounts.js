@@ -18,18 +18,26 @@ const createPermissionCountsMapping = (permissions) => {
 };
 
 const getPermissionKey = (key) => {
-    if (key === '*') return 'all';
+    if (key === '*') {
+        return 'all';
+    }
     return key;
 };
 
 const getPermissionValues = (values) => {
-    if (!values || !values.length) return '';
-    if (values.length > 1) return `(${values.length})`;
+    if (!values || !values.length) {
+        return '';
+    }
+    if (values.length > 1) {
+        return `(${values.length})`;
+    }
     return values[0];
 };
 
 const getPermissionCounts = (scopedPermissions) => {
-    if (!scopedPermissions.length) return 'No Permissions';
+    if (!scopedPermissions.length) {
+        return 'No Permissions';
+    }
     const permissions = flattenPermissions(scopedPermissions);
     const permissionsMap = createPermissionCountsMapping(permissions);
     const result = Object.keys(permissionsMap)

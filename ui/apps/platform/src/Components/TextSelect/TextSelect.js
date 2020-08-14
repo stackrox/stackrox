@@ -11,7 +11,9 @@ const DropdownIndicator = () => {
 
 const TextSelect = ({ ...rest }) => {
     const { options } = { ...rest };
-    if (options.length === 1) return options[0].label;
+    if (options.length === 1) {
+        return options[0].label;
+    }
     const selectStyles = {
         valueContainer: (base) => ({
             ...base,

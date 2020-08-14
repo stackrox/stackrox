@@ -76,7 +76,9 @@ class Tabs extends Component {
         return headers.map((header, i) => {
             const isActive = activeIndex === i;
             let className = isActive ? tabActiveClass : tabClass;
-            if (header.disabled) className = tabDisabledClass;
+            if (header.disabled) {
+                className = tabDisabledClass;
+            }
             return (
                 <button
                     type="button"
@@ -94,8 +96,12 @@ class Tabs extends Component {
     }
 
     tabClickHandler = (header, i) => () => {
-        if (header.disabled) return;
-        if (this.props.onTabClick) this.props.onTabClick(header);
+        if (header.disabled) {
+            return;
+        }
+        if (this.props.onTabClick) {
+            this.props.onTabClick(header);
+        }
         this.setState({ activeIndex: i });
     };
 

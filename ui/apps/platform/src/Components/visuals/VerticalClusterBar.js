@@ -91,7 +91,9 @@ class VerticalClusterBar extends Component {
                 this.setState({ hintInfo: null });
             },
             onValueClick: (datum) => {
-                if (datum.link) this.props.history.push(datum.link);
+                if (datum.link) {
+                    this.props.history.push(datum.link);
+                }
             },
         };
 
@@ -102,7 +104,7 @@ class VerticalClusterBar extends Component {
 
         function formatTicks(value) {
             let inner = value;
-            if (labelLinks[value])
+            if (labelLinks[value]) {
                 inner = (
                     <Link
                         style={{ fill: 'currentColor' }}
@@ -112,6 +114,7 @@ class VerticalClusterBar extends Component {
                         {value}
                     </Link>
                 );
+            }
 
             return <tspan>{inner}</tspan>;
         }

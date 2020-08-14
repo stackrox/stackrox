@@ -94,7 +94,9 @@ function getTableColumns() {
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { imageCount } = original;
-                if (imageCount === 0) return 'No images';
+                if (imageCount === 0) {
+                    return 'No images';
+                }
                 const url = 'https://google.com';
                 return (
                     <TableCellLink

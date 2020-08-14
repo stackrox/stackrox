@@ -18,7 +18,9 @@ import { withRouter } from 'react-router-dom';
 import searchContext from 'Containers/searchContext';
 
 function processData(match, location, data, entityType, searchParam) {
-    if (!data || !data.results.results.length || !data.entityList) return [];
+    if (!data || !data.results.results.length || !data.entityList) {
+        return [];
+    }
     const standardsGrouping = {};
     const { results, controls, entityList, complianceStandards } = data;
     results.results.forEach((result) => {
@@ -77,7 +79,9 @@ function processData(match, location, data, entityType, searchParam) {
 }
 
 function getLabelLinks(match, location, data, entityType) {
-    if (!data) return null;
+    if (!data) {
+        return null;
+    }
     const { entityList } = data;
     const labelLinks = {};
     entityList.forEach((entity) => {

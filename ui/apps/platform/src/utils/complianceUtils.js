@@ -2,7 +2,9 @@ import uniq from 'lodash/uniq';
 import entityTypes from 'constants/entityTypes';
 
 export function getIndicesFromAggregatedResults(results) {
-    if (!results || results.length === 0) return {};
+    if (!results || results.length === 0) {
+        return {};
+    }
 
     return results[0].aggregationKeys.reduce(
         (map, item, i) => ({ ...map, [item.scope]: i }),
@@ -32,11 +34,15 @@ export function getResourceCountFromAggregatedResults(type, data) {
             source = clusterResults && clusterResults.results;
     }
 
-    if (!source || source.length === 0) return 0;
+    if (!source || source.length === 0) {
+        return 0;
+    }
 
     const index = getIndicesFromAggregatedResults(source, type)[type];
 
-    if (!index && index !== 0) return 0;
+    if (!index && index !== 0) {
+        return 0;
+    }
 
     let result;
 

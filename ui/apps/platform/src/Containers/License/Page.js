@@ -11,7 +11,9 @@ import LicenseExpiration from './widgets/LicenseExpiration';
 import UpgradeSupport from './widgets/UpgradeSupport';
 
 const customerIDFromLicenseInfo = (licenseInfo) => {
-    if (!licenseInfo || !licenseInfo.license) return '';
+    if (!licenseInfo || !licenseInfo.license) {
+        return '';
+    }
     return licenseInfo.license.metadata.licensedForId;
 };
 

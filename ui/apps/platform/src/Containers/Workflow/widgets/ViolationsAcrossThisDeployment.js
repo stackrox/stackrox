@@ -34,8 +34,12 @@ const ViolationsAcrossThisDeployment = ({ deploymentID, policyID, message }) => 
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
-                if (loading) return <Loader />;
-                if (!data) return null;
+                if (loading) {
+                    return <Loader />;
+                }
+                if (!data) {
+                    return null;
+                }
                 return <ViolationFindings data={data} message={message} />;
             }}
         </Query>

@@ -14,6 +14,8 @@ const commonRules = {
         },
     ],
 
+    curly: [2, 'all'],
+
     'import/no-extraneous-dependencies': [
         'error',
         {

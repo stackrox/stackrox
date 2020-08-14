@@ -39,7 +39,9 @@ function Wizard({
         });
     }, [clearFormMessages, closeWizard, history, setWizardPolicy, selectPolicyId, setWizardStage]);
 
-    if (!wizardOpen) return null;
+    if (!wizardOpen) {
+        return null;
+    }
 
     const initialValues = wizardPolicy && preFormatPolicyFields(wizardPolicy);
 

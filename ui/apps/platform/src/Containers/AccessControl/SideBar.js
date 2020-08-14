@@ -35,7 +35,9 @@ const SideBar = ({
     }
 
     function renderRowActionButtons(row) {
-        if (!onDelete || row.noAction) return null;
+        if (!onDelete || row.noAction) {
+            return null;
+        }
         return (
             <div className="border-2 border-base-400 bg-base-100 flex">
                 <RowActionButton

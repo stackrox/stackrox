@@ -168,7 +168,9 @@ class PolicyBulkActionDialogue extends Component {
     };
 
     render() {
-        if (!this.props.policiesAction || this.props.selectedPolicyIds.length === 0) return null;
+        if (!this.props.policiesAction || this.props.selectedPolicyIds.length === 0) {
+            return null;
+        }
 
         return (
             <CustomDialogue

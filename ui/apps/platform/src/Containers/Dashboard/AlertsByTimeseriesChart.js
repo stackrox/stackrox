@@ -14,7 +14,9 @@ import cloneDeep from 'lodash/cloneDeep';
 import { format, subDays } from 'date-fns';
 
 const formatTimeseriesData = (clusterData) => {
-    if (!clusterData) return null;
+    if (!clusterData) {
+        return null;
+    }
     // set a baseline zero'd object for the past week
     const baselineData = {};
     const xAxisBuckets = [];

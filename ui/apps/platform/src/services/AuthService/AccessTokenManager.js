@@ -67,10 +67,14 @@ export default class AccessTokenManager {
      * @returns {!RefreshTokenOpPromise} Promise for just started or already being in progress operation
      */
     refreshToken = () => {
-        if (this.refreshTokenOpPromise) return this.refreshTokenOpPromise; // already refreshing
+        if (this.refreshTokenOpPromise) {
+            return this.refreshTokenOpPromise;
+        } // already refreshing
         this.refreshTimeout.clear();
 
-        if (!this.options.refreshToken) return Promise.resolve(); // nothing to do, operation not started
+        if (!this.options.refreshToken) {
+            return Promise.resolve();
+        } // nothing to do, operation not started
 
         this.refreshTokenOpPromise = this.options
             .refreshToken(this.tokenInfo)

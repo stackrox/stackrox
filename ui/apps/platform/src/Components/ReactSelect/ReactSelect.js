@@ -111,11 +111,15 @@ function withAdjustedBehavior(SelectComponent) {
 
         trimNewValueWhitespace = (newValue) => {
             // if it's not related to the creatable component creating new values, then ignore
-            if (!Array.isArray(newValue)) return newValue;
+            if (!Array.isArray(newValue)) {
+                return newValue;
+            }
             const trimmedNewValue = newValue.map((datum) => {
                 // if a new creatable value is not being added, don't make any changes
                 const { __isNew__ } = datum;
-                if (!__isNew__) return { ...datum };
+                if (!__isNew__) {
+                    return { ...datum };
+                }
                 // if a new creatable value is being added, trim the white space first
                 const { label, value, ...rest } = datum;
                 const trimmedLabel = label.trimStart().trimEnd();
@@ -167,9 +171,13 @@ function withAdjustedBehavior(SelectComponent) {
 
         // tranforms value from a single value to a format that react-select expects
         transformValue = (getOptionValue, options, value, optionValue) => {
-            if (optionValue) return optionValue;
+            if (optionValue) {
+                return optionValue;
+            }
             // We want to allow `false` and `0`, so can't just do if (!value)
-            if (value === null || value === undefined || value === '') return null;
+            if (value === null || value === undefined || value === '') {
+                return null;
+            }
 
             const allOptions = options.concat(this.state.createdOptions);
 

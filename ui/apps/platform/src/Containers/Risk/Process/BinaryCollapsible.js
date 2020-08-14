@@ -9,7 +9,9 @@ const titleClassName =
 function BinaryCollapsible({ commandLineArgs, children }) {
     function renderHeader(backgroundClass, icon) {
         let displayArgs = commandLineArgs;
-        if (commandLineArgs === '') displayArgs = 'No Arguments';
+        if (commandLineArgs === '') {
+            displayArgs = 'No Arguments';
+        }
         return (
             <div className={`${titleClassName} ${backgroundClass}`}>
                 <div className="flex items-center">

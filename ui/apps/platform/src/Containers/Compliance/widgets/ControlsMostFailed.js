@@ -21,8 +21,9 @@ const ControlsMostFailed = ({ match, location, entityType, query, limit, showEmp
     };
 
     function processData(data) {
-        if (!data || !data.results || !data.results.results || !data.results.results.length)
+        if (!data || !data.results || !data.results.results || !data.results.results.length) {
             return [];
+        }
 
         const { results } = data.results;
         const { complianceStandards } = data;
@@ -43,8 +44,11 @@ const ControlsMostFailed = ({ match, location, entityType, query, limit, showEmp
         let standardIndex;
 
         results[0].aggregationKeys.forEach((item, i) => {
-            if (item.scope === entityTypes.CONTROL) ctrlIndex = i;
-            else if (item.scope === entityTypes.STANDARD) standardIndex = i;
+            if (item.scope === entityTypes.CONTROL) {
+                ctrlIndex = i;
+            } else if (item.scope === entityTypes.STANDARD) {
+                standardIndex = i;
+            }
         });
 
         const totals = results

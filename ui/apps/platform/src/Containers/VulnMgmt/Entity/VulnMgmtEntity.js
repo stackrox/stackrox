@@ -23,7 +23,9 @@ const entityComponentMap = {
 const VulnMgmtEntity = (props) => {
     const { entityType } = props;
     const Component = entityComponentMap[entityType];
-    if (!Component) return <PageNotFound resourceType={entityType} />;
+    if (!Component) {
+        return <PageNotFound resourceType={entityType} />;
+    }
     return <Component {...props} />;
 };
 

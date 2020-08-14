@@ -71,8 +71,9 @@ class APITokensModal extends Component {
     };
 
     revokeTokens = ({ id }) => {
-        if (id) this.props.revokeAPITokens([id]);
-        else {
+        if (id) {
+            this.props.revokeAPITokens([id]);
+        } else {
             this.props.revokeAPITokens(this.state.selection);
             this.hideConfirmationDialog();
             this.clearSelection();
@@ -107,8 +108,9 @@ class APITokensModal extends Component {
     };
 
     showModalView = () => {
-        if (!this.props.tokens || !this.props.tokens.length)
+        if (!this.props.tokens || !this.props.tokens.length) {
             return <NoResultsMessage message="No API Tokens Generated" />;
+        }
 
         const columns = [
             { accessor: 'name', Header: 'Name' },

@@ -81,7 +81,9 @@ const buildTableColumns = (match, location, entityContext) => {
                           id,
                           saNamespace: { metadata },
                       } = original;
-                      if (!metadata) return 'No Matches';
+                      if (!metadata) {
+                          return 'No Matches';
+                      }
                       const { name, id: namespaceId } = metadata;
                       const url = URLService.getURL(match, location)
                           .push(id)
@@ -99,12 +101,14 @@ const buildTableColumns = (match, location, entityContext) => {
             Cell: ({ original, pdf }) => {
                 const { id, k8sRoles } = original;
                 const { length } = k8sRoles;
-                if (!length) return 'No Roles';
+                if (!length) {
+                    return 'No Roles';
+                }
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.ROLE)
                     .url();
-                if (length > 1)
+                if (length > 1) {
                     return (
                         <TableCellLink
                             pdf={pdf}
@@ -112,6 +116,7 @@ const buildTableColumns = (match, location, entityContext) => {
                             text={`${length} ${pluralize('Roles', length)}`}
                         />
                     );
+                }
                 return original.k8sRoles[0].name;
             },
             accessor: 'k8sRoles',
@@ -125,7 +130,9 @@ const buildTableColumns = (match, location, entityContext) => {
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { id, deploymentCount } = original;
-                if (!deploymentCount) return 'No Deployments';
+                if (!deploymentCount) {
+                    return 'No Deployments';
+                }
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.DEPLOYMENT)

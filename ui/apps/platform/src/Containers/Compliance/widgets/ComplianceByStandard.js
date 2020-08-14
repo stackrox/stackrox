@@ -23,9 +23,15 @@ const colors = [
     'var(--alert-400)',
 ];
 const getColor = (value) => {
-    if (value === 100) return colors[0];
-    if (value >= 70) return colors[1];
-    if (value >= 50) return colors[2];
+    if (value === 100) {
+        return colors[0];
+    }
+    if (value >= 70) {
+        return colors[1];
+    }
+    if (value >= 50) {
+        return colors[2];
+    }
     return colors[3];
 };
 
@@ -37,15 +43,20 @@ const sunburstLegendData = [
 ];
 
 const processSunburstData = (match, location, data, type) => {
-    if (!data || !data.results || !data.results.results.length)
+    if (!data || !data.results || !data.results.results.length) {
         return { sunburstData: [], totalPassing: 0 };
+    }
 
     const groupMapping = {};
     let controlKeyIndex = 0;
     let categoryKeyIndex = 0;
     data.results.results[0].aggregationKeys.forEach(({ scope }, idx) => {
-        if (scope === entityTypes.CONTROL) controlKeyIndex = idx;
-        if (scope === entityTypes.CATEGORY) categoryKeyIndex = idx;
+        if (scope === entityTypes.CONTROL) {
+            controlKeyIndex = idx;
+        }
+        if (scope === entityTypes.CATEGORY) {
+            categoryKeyIndex = idx;
+        }
     });
 
     const statsReducer = (statsMapping, { aggregationKeys, numPassing, numFailing, unit }) => {
@@ -155,14 +166,18 @@ const ComplianceByStandard = ({
     const where = {
         Standard: standardLabels[standardType],
     };
-    if (entityType && entityId) where[`${entityType} ID`] = entityId;
+    if (entityType && entityId) {
+        where[`${entityType} ID`] = entityId;
+    }
     const variables = {
         groupBy,
         where: queryService.objectToWhereClause(where),
     };
 
     function getTitleComponent() {
-        if (!standardOptions) return null;
+        if (!standardOptions) {
+            return null;
+        }
 
         const options = standardOptions
             .filter((standard) => standard !== standardType)
@@ -206,7 +221,9 @@ const ComplianceByStandard = ({
         );
     }
     function getHeaderText() {
-        if (standardOptions) return null;
+        if (standardOptions) {
+            return null;
+        }
 
         return `${standardLabels[standardType]} Compliance`;
     }
@@ -218,8 +235,9 @@ const ComplianceByStandard = ({
                 const titleComponent = getTitleComponent();
                 const headerText = getHeaderText();
                 let viewStandardLink = null;
-                if (isGQLLoading(loading, data)) contents = <Loader />;
-                else {
+                if (isGQLLoading(loading, data)) {
+                    contents = <Loader />;
+                } else {
                     const { sunburstData, totalPassing } = processSunburstData(
                         match,
                         location,

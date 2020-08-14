@@ -18,8 +18,12 @@ export default function mergeEntitiesById(existingEntitiesById, newEntitiesById,
         isArray(existingValue) && isArray(newValue) ? newValue : undefined;
 
     return Object.keys(newEntitiesById).reduce((result, id) => {
-        if (!existingEntitiesById[id]) return { ...result, [id]: newEntitiesById[id] };
-        if (isEqual(existingEntitiesById[id], newEntitiesById[id])) return result;
+        if (!existingEntitiesById[id]) {
+            return { ...result, [id]: newEntitiesById[id] };
+        }
+        if (isEqual(existingEntitiesById[id], newEntitiesById[id])) {
+            return result;
+        }
         const updateFn = shouldUpdate ? updateValue : updateArrayValue;
         return {
             ...result,

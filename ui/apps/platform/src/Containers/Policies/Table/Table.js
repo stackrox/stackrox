@@ -80,8 +80,9 @@ class Table extends Component {
     };
 
     render() {
-        if (!this.props.policies.length)
+        if (!this.props.policies.length) {
             return <NoResultsMessage message="No results found. Please refine your search." />;
+        }
 
         const headerComponents = (
             <>

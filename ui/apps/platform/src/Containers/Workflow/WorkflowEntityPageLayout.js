@@ -55,7 +55,9 @@ const WorkflowEntityPageLayout = ({ location }) => {
     useEffect(() => setFadeIn(false), []);
 
     // manually adding the styles to fade back in
-    if (!fadeIn) setTimeout(() => setFadeIn(true), 50);
+    if (!fadeIn) {
+        setTimeout(() => setFadeIn(true), 50);
+    }
     const style = fadeIn
         ? {
               opacity: 1,

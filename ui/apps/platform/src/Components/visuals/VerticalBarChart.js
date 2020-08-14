@@ -15,8 +15,12 @@ import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
 import HoverHint from './HoverHint';
 
 const sortByXValue = (a, b) => {
-    if (a.x < b.x) return -1;
-    if (a.x > b.x) return 1;
+    if (a.x < b.x) {
+        return -1;
+    }
+    if (a.x > b.x) {
+        return 1;
+    }
     return 0;
 };
 
@@ -90,7 +94,9 @@ class VerticalBarChart extends Component {
                 this.setState({ hintInfo: null });
             },
             onValueClick: (datum) => {
-                if (onValueClick) onValueClick(datum);
+                if (onValueClick) {
+                    onValueClick(datum);
+                }
             },
         };
 
@@ -108,12 +114,13 @@ class VerticalBarChart extends Component {
 
         function formatTicks(value) {
             let inner = value;
-            if (labelLinks[value])
+            if (labelLinks[value]) {
                 inner = (
                     <a className="underline" href={labelLinks[value]}>
                         {value}
                     </a>
                 );
+            }
 
             return <tspan>{inner}</tspan>;
         }

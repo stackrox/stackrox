@@ -166,7 +166,9 @@ export function getPolicyTableColumns(workflowState) {
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { lifecycleStages } = original;
-                if (!lifecycleStages || !lifecycleStages.length) return 'No lifecycle stages';
+                if (!lifecycleStages || !lifecycleStages.length) {
+                    return 'No lifecycle stages';
+                }
                 const lowercasedLifecycles = lifecycleStages
                     .map((stage) => stage.toLowerCase())
                     .join(', ');

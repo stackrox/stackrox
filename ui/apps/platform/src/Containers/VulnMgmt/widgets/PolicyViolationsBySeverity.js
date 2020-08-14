@@ -49,7 +49,9 @@ function getCategorySeverity(category, violationsByCategory) {
         (entry) => entry[1] === maxSeverityValue
     );
 
-    if (!severityEntry) return passingChartColor;
+    if (!severityEntry) {
+        return passingChartColor;
+    }
 
     return severityColorMap[severityEntry[0]];
 }
@@ -120,7 +122,9 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
     }
 
     function processData(policies) {
-        if (!policies || !policies.length) return [];
+        if (!policies || !policies.length) {
+            return [];
+        }
         return policies;
     }
 
@@ -130,7 +134,9 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
             const isPassing = policy.policyStatus.toLowerCase() === policyStatus.PASS.toLowerCase();
             const newItems = { ...categories };
             policyCategories.forEach((category, idx) => {
-                if (!newItems[category]) newItems[category] = [];
+                if (!newItems[category]) {
+                    newItems[category] = [];
+                }
                 const color = !isPassing ? severityColorMap[severity] : passingChartColor;
 
                 const fullPolicyName = idx > 0 ? `${idx}. ${policyName}` : policyName;
@@ -190,7 +196,7 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
         const links = [];
 
         const newState = workflowState.pushList(entityTypes.POLICY);
-        if (criticalCount)
+        if (criticalCount) {
             links.push({
                 text: `${criticalCount} rated as critical`,
                 color: severityTextColorMap.CRITICAL_SEVERITY,
@@ -201,8 +207,9 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
                     })
                     .toUrl(),
             });
+        }
 
-        if (highCount)
+        if (highCount) {
             links.push({
                 text: `${highCount} rated as high`,
                 color: severityTextColorMap.HIGH_SEVERITY,
@@ -213,8 +220,9 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
                     })
                     .toUrl(),
             });
+        }
 
-        if (mediumCount)
+        if (mediumCount) {
             links.push({
                 text: `${mediumCount} rated as medium`,
                 color: severityTextColorMap.MEDIUM_SEVERITY,
@@ -225,8 +233,9 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
                     })
                     .toUrl(),
             });
+        }
 
-        if (lowCount)
+        if (lowCount) {
             links.push({
                 text: `${lowCount} rated as low`,
                 color: severityTextColorMap.LOW_SEVERITY,
@@ -237,8 +246,9 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
                     })
                     .toUrl(),
             });
+        }
 
-        if (passingCount)
+        if (passingCount) {
             links.push({
                 text: `${passingCount} policies without violations`,
                 color: passingLinkColor,
@@ -248,6 +258,7 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
                     })
                     .toUrl(),
             });
+        }
 
         return links;
     }

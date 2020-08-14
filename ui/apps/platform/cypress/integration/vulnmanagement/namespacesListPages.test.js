@@ -24,16 +24,21 @@ describe('Namespaces list Page and its entity detail page , (related entities) s
         ]);
         cy.get(selectors.tableBodyColumn).each(($el) => {
             const columnValue = $el.text().toLowerCase();
-            if (!columnValue.includes('no') && columnValue.includes('polic'))
+            if (!columnValue.includes('no') && columnValue.includes('polic')) {
                 allChecksForEntities(url.list.namespaces, 'polic');
-            if (columnValue !== 'no images' && columnValue.includes('image'))
+            }
+            if (columnValue !== 'no images' && columnValue.includes('image')) {
                 allChecksForEntities(url.list.namespaces, 'image');
-            if (columnValue !== 'no deployments' && columnValue.includes('deployment'))
+            }
+            if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
                 allChecksForEntities(url.list.namespaces, 'deployment');
-            if (columnValue !== 'no cves' && columnValue.includes('fixable'))
+            }
+            if (columnValue !== 'no cves' && columnValue.includes('fixable')) {
                 allFixableCheck(url.list.namespaces);
-            if (columnValue !== 'no cves' && columnValue.includes('cve'))
+            }
+            if (columnValue !== 'no cves' && columnValue.includes('cve')) {
                 allCVECheck(url.list.namespaces);
+            }
         });
         //  TBD to be fixed after back end sorting is fixed
         //  validateSort(selectors.riskScoreCol);

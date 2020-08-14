@@ -42,7 +42,9 @@ function RiskSidePanel({ selectedDeploymentId, setSelectedDeploymentId }) {
     }
 
     // Only render if we have image data to render.
-    if (!selectedDeploymentId) return null;
+    if (!selectedDeploymentId) {
+        return null;
+    }
     return (
         <Panel
             header={!selectedDeployment ? 'Unknown Deployment' : selectedDeployment.deployment.name}

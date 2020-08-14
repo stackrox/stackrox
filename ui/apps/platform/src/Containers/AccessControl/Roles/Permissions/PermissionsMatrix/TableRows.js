@@ -6,7 +6,9 @@ import AccessField from 'Containers/AccessControl/Roles/Permissions/PermissionsM
 
 const TableRows = (props) => {
     const { resourceToAccess, name, isEditing } = props;
-    if (!resourceToAccess) return null;
+    if (!resourceToAccess) {
+        return null;
+    }
     return Object.keys(resourceToAccess)
         .sort()
         .map((resourceName) => {

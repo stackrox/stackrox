@@ -32,7 +32,9 @@ const setEdgeMapState = (graph, state, property) => {
             }
             const { id: tgtDeploymentId } = tgtNode.entity;
             const mapKey = [srcDeploymentId, tgtDeploymentId].sort().join('--');
-            if (!newState[mapKey]) newState[mapKey] = {};
+            if (!newState[mapKey]) {
+                newState[mapKey] = {};
+            }
             if (!newState[mapKey][property]) {
                 newState[mapKey][property] = [];
             }
@@ -53,8 +55,12 @@ const setNodeMapState = (graph, state, propertyConfig) => {
             return;
         }
         const { id } = node.entity;
-        if (!newState[id]) newState[id] = {};
-        if (isNonIsolatedNode(node)) newState[id].nonIsolated = true;
+        if (!newState[id]) {
+            newState[id] = {};
+        }
+        if (isNonIsolatedNode(node)) {
+            newState[id].nonIsolated = true;
+        }
         newState[id][egressKey] = [];
         Object.keys(node.outEdges).forEach((tgtIndex) => {
             const tgtNode = graph.nodes[tgtIndex];
@@ -219,8 +225,12 @@ const networkFlowGraphUpdateKey = (state = { key: 0 }, action) => {
     }
     if (type === searchTypes.SET_SEARCH_OPTIONS) {
         const { length } = options;
-        if (!length) return { key: state.key + 1 };
-        if (length && !action.options[length - 1].type) return { key: state.key };
+        if (!length) {
+            return { key: state.key + 1 };
+        }
+        if (length && !action.options[length - 1].type) {
+            return { key: state.key };
+        }
     }
     if (
         type === backendTypes.FETCH_NETWORK_POLICY_GRAPH.SUCCESS ||

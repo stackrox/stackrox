@@ -10,7 +10,9 @@ import dateFns from 'date-fns';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
 const renderMoreButton = (deployments) => {
-    if (!deployments.length) return null;
+    if (!deployments.length) {
+        return null;
+    }
     return (
         <Link to="/main/risk" className="no-underline">
             <button
@@ -49,7 +51,9 @@ const renderDeploymentsList = (deployments) => {
 };
 
 const TopRiskyDeployments = ({ deployments }) => {
-    if (!deployments) return '';
+    if (!deployments) {
+        return '';
+    }
     return (
         <div
             className="flex flex-col bg-base-100 rounded shadow h-full"

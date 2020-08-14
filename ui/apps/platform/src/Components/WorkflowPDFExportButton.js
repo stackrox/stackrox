@@ -133,7 +133,9 @@ class WorkflowPDFExportButton extends Component {
             onClick,
         } = this.props;
         setPDFRequestState();
-        if (onClick) onClick();
+        if (onClick) {
+            onClick();
+        }
         const { paperSize, mode, marginType } = options;
         const element = document.getElementById(id);
         const imgElements = element.getElementsByClassName(imagesClassName);

@@ -81,7 +81,9 @@ const selectedCluster = (state = null, action) => {
     if (state && action.type === types.FETCH_CLUSTERS.SUCCESS) {
         const clusters = action.response.entities.cluster;
         // received a new list of clusters and it doesn't contain selected cluster: unselect
-        if (!clusters[state]) return null;
+        if (!clusters[state]) {
+            return null;
+        }
     }
     if (state && action.type === types.START_WIZARD) {
         // started add / edit wizard, deselect cluster if we're adding a new one

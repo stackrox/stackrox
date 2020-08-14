@@ -110,7 +110,9 @@ class ExportButton extends Component {
                 ? 'Download CVES as CSV'
                 : 'Download Evidence as CSV';
         const { toggleWidget, csvIsDownloading } = this.state;
-        if (!toggleWidget) return null;
+        if (!toggleWidget) {
+            return null;
+        }
 
         const headerText = this.props.fileName;
 

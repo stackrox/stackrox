@@ -33,10 +33,13 @@ const ControlPage = ({
     return (
         <Query query={QUERY} variables={{ id: entityId }}>
             {({ data, loading }) => {
-                if (isGQLLoading(loading, data)) return <Loader />;
+                if (isGQLLoading(loading, data)) {
+                    return <Loader />;
+                }
 
-                if (!data || !data.results)
+                if (!data || !data.results) {
                     return <PageNotFound resourceType={entityTypes.CONTROL} />;
+                }
 
                 const { results: control, complianceStandards: standards } = data;
                 const standard = standards.find((item) => item.id === control.standardId);

@@ -181,7 +181,9 @@ const buildTableColumns = (match, location) => {
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { k8sRoleCount } = original;
-                if (!k8sRoleCount) return <LabelChip text="No Roles" type="alert" />;
+                if (!k8sRoleCount) {
+                    return <LabelChip text="No Roles" type="alert" />;
+                }
                 const url = URLService.getURL(match, location)
                     .push(original.id)
                     .push(entityTypes.ROLE)

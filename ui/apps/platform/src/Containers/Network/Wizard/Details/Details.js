@@ -76,7 +76,9 @@ function Details(props) {
         const { onClose, networkGraphRef } = props;
         onClose();
         props.history.push('/main/network');
-        if (networkGraphRef) props.networkGraphRef.setSelectedNode();
+        if (networkGraphRef) {
+            props.networkGraphRef.setSelectedNode();
+        }
     }
 
     function onBackButtonClick() {

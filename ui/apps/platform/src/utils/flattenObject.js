@@ -1,5 +1,7 @@
 const flattenObject = (ob) => {
-    if (!ob) return ob;
+    if (!ob) {
+        return ob;
+    }
 
     const toReturn = {};
 

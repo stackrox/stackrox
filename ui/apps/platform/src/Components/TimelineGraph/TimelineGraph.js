@@ -36,7 +36,9 @@ const TimelineGraph = ({
     }));
 
     function onSelectionChange(selection) {
-        if (!selection) return;
+        if (!selection) {
+            return;
+        }
         setMinTimeRange(selection.start);
         setMaxTimeRange(selection.end);
     }

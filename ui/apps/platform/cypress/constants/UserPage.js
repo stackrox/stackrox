@@ -5,7 +5,9 @@ import scopeSelectors from '../helpers/scopeSelectors';
 export const url = '/main/user';
 
 const permissionColumn = (permission, access) => {
-    if (access !== 'read' && access !== 'write') throw new Error(`Invalid access param: ${access}`); // miss TypeScript...
+    if (access !== 'read' && access !== 'write') {
+        throw new Error(`Invalid access param: ${access}`);
+    } // miss TypeScript...
     const columnNumber = access === 'read' ? 1 : 2;
     return `tr:contains("${permission}") td:eq(${columnNumber})`;
 };

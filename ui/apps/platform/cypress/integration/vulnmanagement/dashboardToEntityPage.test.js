@@ -46,13 +46,16 @@ function validateWithAParentSelector(
             // trim the first 3 chars from the front of the text, to get the image name to compare in the detail view
             //   e.g., "1. k8s.gcr.io/coredns:1.3.1" trimmed becomes "k8s.gcr.io/coredns:1.3.1"
             let rowText;
-            if (entityName === 'image') rowText = value.slice(2, value.length - 1).trimLeft();
-            if (entityName === 'cve')
+            if (entityName === 'image') {
+                rowText = value.slice(2, value.length - 1).trimLeft();
+            }
+            if (entityName === 'cve') {
                 rowText = value
                     .slice(2, value.length - 1)
                     .split('/')[0]
                     .trimLeft()
                     .trimRight();
+            }
             cy.get(topRowSelector).eq(rowIndex).click();
             cy.url().should('contain', urlToVerify);
             cy.get('[data-testid="header-text"]').should('have.text', rowText);
@@ -79,13 +82,16 @@ function validateWithActualSelector(
             // trim the first 3 chars from the front of the text, to get the image name to compare in the detail view
             //   e.g., "1. k8s.gcr.io/coredns:1.3.1" trimmed becomes "k8s.gcr.io/coredns:1.3.1"
             let rowText;
-            if (entityName === 'image') rowText = value.slice(2, value.length - 1).trimLeft();
-            if (entityName === 'cve')
+            if (entityName === 'image') {
+                rowText = value.slice(2, value.length - 1).trimLeft();
+            }
+            if (entityName === 'cve') {
                 rowText = value
                     .slice(2, value.length - 1)
                     .split('/')[0]
                     .trimLeft()
                     .trimRight();
+            }
             cy.get(topRowSelector).click();
             cy.url().should('contain', urlToVerify);
             cy.get('[data-testid="header-text"]').should('have.text', rowText);

@@ -16,7 +16,9 @@ const NUM_CIS_CONTROLS = gql`
 
 const CISControlsTile = ({ match, location }) => {
     const { loading, error, data } = useQuery(NUM_CIS_CONTROLS);
-    if (error) logError(error);
+    if (error) {
+        logError(error);
+    }
 
     const controlsURL = URLService.getURL(match, location).base(entityTypes.CONTROL).url();
 

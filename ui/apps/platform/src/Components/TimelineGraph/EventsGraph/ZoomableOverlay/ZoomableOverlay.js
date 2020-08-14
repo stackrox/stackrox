@@ -25,7 +25,9 @@ const ZoomableOverlay = ({
         .on('end', onZoomEnd);
 
     function zooming() {
-        if (event.sourceEvent && event.sourceEvent.type === 'end') return;
+        if (event.sourceEvent && event.sourceEvent.type === 'end') {
+            return;
+        }
         if (event.type === 'zoom' && event.sourceEvent && event.sourceEvent.type !== 'zoom') {
             const t = event.transform;
             const domain = t.rescaleX(xScale2).domain();

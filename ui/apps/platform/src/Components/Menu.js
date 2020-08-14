@@ -35,8 +35,11 @@ const Menu = ({
     };
     const onClickHandler = () => (e) => {
         e.stopPropagation();
-        if (!isMenuOpen) showMenu();
-        else hideMenu();
+        if (!isMenuOpen) {
+            showMenu();
+        } else {
+            hideMenu();
+        }
     };
 
     function renderOptions(formattedOptions) {

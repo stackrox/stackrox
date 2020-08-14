@@ -78,14 +78,18 @@ class Graph extends Component {
     };
 
     onNamespaceClick = (namespace) => {
-        if (this.isSimulatorOn()) return;
+        if (this.isSimulatorOn()) {
+            return;
+        }
         this.props.setSelectedNamespace(namespace);
         this.props.setWizardStage(wizardStages.namespaceDetails);
         this.props.openWizard();
     };
 
     onNodeClick = (node) => {
-        if (this.isSimulatorOn()) return;
+        if (this.isSimulatorOn()) {
+            return;
+        }
         this.props.setSelectedNode(node);
         this.props.fetchDeployment(node.deploymentId);
         this.props.fetchNetworkPolicies([...node.policyIds]);

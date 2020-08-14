@@ -17,7 +17,9 @@ const CVETable = (props) => {
                 className: 'w-1/8 flex items-center justify-end',
                 // eslint-disable-next-line react/prop-types
                 Expander: ({ isExpanded, ...rest }) => {
-                    if (rest.original.vulns.length === 0) return '';
+                    if (rest.original.vulns.length === 0) {
+                        return '';
+                    }
                     const className = 'rt-expander w-1 pt-2 pointer-events-auto';
                     return <div className={`${className} ${isExpanded ? '-open' : ''}`} />;
                 },
@@ -82,7 +84,9 @@ const CVETable = (props) => {
 
     function renderVulnsTable({ original }) {
         const { vulns, source } = original;
-        if (vulns.length === 0) return null;
+        if (vulns.length === 0) {
+            return null;
+        }
         return (
             <VulnsTable
                 vulns={vulns}
@@ -94,7 +98,9 @@ const CVETable = (props) => {
 
     const { scan, ...rest } = props;
     const columns = getColumns();
-    if (!scan) return <div className="p-3">No scanner setup for this registry</div>;
+    if (!scan) {
+        return <div className="p-3">No scanner setup for this registry</div>;
+    }
     const { components } = scan;
     if (components.length === 0) {
         return <NoComponentVulnMessage />;

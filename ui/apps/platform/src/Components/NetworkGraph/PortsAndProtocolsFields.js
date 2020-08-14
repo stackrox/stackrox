@@ -39,7 +39,9 @@ export function getPortsText(ports) {
         return 'any port';
     }
     const numVisiblePorts = 5;
-    if (ports.length <= numVisiblePorts) return ports.join(', ');
+    if (ports.length <= numVisiblePorts) {
+        return ports.join(', ');
+    }
     const subsetOfPorts = ports.slice(0, numVisiblePorts);
     const numNonVisiblePorts = ports.slice(numVisiblePorts).length;
     return `${subsetOfPorts.join(', ')}, +${numNonVisiblePorts} more`;

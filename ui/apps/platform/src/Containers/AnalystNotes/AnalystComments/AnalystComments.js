@@ -49,13 +49,14 @@ const AnalystComments = ({ type, variables, isCollapsible }) => {
         errorOnRemoveComment,
     ]);
 
-    if (hasErrors)
+    if (hasErrors) {
         return (
             <Message
                 type="error"
                 message="There was an issue retrieving and/or modifying comments. Please try to view this page again in a little while"
             />
         );
+    }
 
     // disable buttons/inputs when waiting for any sort of modification
     const isDisabled =

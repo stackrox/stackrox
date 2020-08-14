@@ -75,7 +75,9 @@ export function saveAuthProvider(authProvider) {
  * @returns {Promise} promise which is fullfilled when the request is complete
  */
 export function deleteAuthProvider(authProviderId) {
-    if (!authProviderId) throw new Error('Auth provider ID must be defined');
+    if (!authProviderId) {
+        throw new Error('Auth provider ID must be defined');
+    }
     return axios.delete(`${authProvidersUrl}/${authProviderId}`);
 }
 
@@ -179,7 +181,9 @@ function setAuthHeader(config, token) {
             ...notAuthHeaders,
         },
     };
-    if (token) newConfig.headers.Authorization = `${BEARER_TOKEN_PREFIX}${token}`;
+    if (token) {
+        newConfig.headers.Authorization = `${BEARER_TOKEN_PREFIX}${token}`;
+    }
 
     return newConfig;
 }
@@ -213,7 +217,9 @@ export const getUserName = () => {
     const tokenInfo = parseAccessToken(getAccessToken());
     // in cypress tests we don't have an external_user field, but we do have a name field
     const { name, external_user: externalUser } = tokenInfo;
-    if (name) return name;
+    if (name) {
+        return name;
+    }
     return externalUser.full_name || 'Admin';
 };
 
@@ -232,7 +238,9 @@ let interceptorsAdded = false;
  * @param {!Function} authHttpErrorHandler handler that will be invoked with AuthHttpError
  */
 export function addAuthInterceptors(authHttpErrorHandler) {
-    if (interceptorsAdded) return;
+    if (interceptorsAdded) {
+        return;
+    }
 
     addAuthHeaderRequestInterceptor();
     addTokenRefreshInterceptors(axios, accessTokenManager, {

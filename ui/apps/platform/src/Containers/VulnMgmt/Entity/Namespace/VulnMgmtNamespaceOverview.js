@@ -51,7 +51,9 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
 
     const { metadata, policyStatus } = safeData;
 
-    if (!metadata || !policyStatus) return null;
+    if (!metadata || !policyStatus) {
+        return null;
+    }
 
     const { clusterName, clusterId, priority, labels, id } = metadata;
     const { failingPolicies, status } = policyStatus;

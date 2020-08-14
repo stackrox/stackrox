@@ -115,7 +115,9 @@ class BasicSunburst extends React.Component {
             data: highlightPathData(data, path),
             selectedDatum: datum,
         });
-        if (onValueMouseOver) onValueMouseOver(path);
+        if (onValueMouseOver) {
+            onValueMouseOver(path);
+        }
     };
 
     onValueMouseOutHandler = () => {
@@ -128,7 +130,9 @@ class BasicSunburst extends React.Component {
             selectedDatum: null,
             data: highlightPathData(data, false),
         });
-        if (onValueMouseOut) onValueMouseOut();
+        if (onValueMouseOut) {
+            onValueMouseOut();
+        }
     };
 
     onValueClickHandler = (datum) => {

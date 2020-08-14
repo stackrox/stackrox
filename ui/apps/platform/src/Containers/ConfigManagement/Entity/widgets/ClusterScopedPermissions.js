@@ -12,8 +12,9 @@ const getContent = (scopedPermissions) => {
         return [...acc, ...curr.permissions];
     }, []);
     content = <ScopedPermissions permissions={permissions} />;
-    if (permissions.length === 0)
+    if (permissions.length === 0) {
         content = <NoResultsMessage message="No permissions available" className="p-3 shadow" />;
+    }
     return content;
 };
 

@@ -39,7 +39,9 @@ class ColorPickerComponent extends Component {
     };
 
     renderColorPickerPopover = () => {
-        if (!this.state.isOpen) return null;
+        if (!this.state.isOpen) {
+            return null;
+        }
         return <ChromePicker color={this.props.color} onChange={this.handleOnChange} />;
     };
 

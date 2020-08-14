@@ -23,7 +23,9 @@ export function fetchSecrets(options) {
 }
 
 export function fetchSecret(id) {
-    if (!id) throw new Error('Secret ID must be specified');
+    if (!id) {
+        throw new Error('Secret ID must be specified');
+    }
     return axios
         .get(`${secretsUrl}/${id}`)
         .then((response) => ({ response: normalize(response.data, secretSchema) }));

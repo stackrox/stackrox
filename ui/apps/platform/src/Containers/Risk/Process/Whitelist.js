@@ -36,8 +36,12 @@ const Whitelist = ({ process, processEpoch, setProcessEpoch }) => {
     }
 
     const sortedElements = elements.sort(function (a, b) {
-        if (!a.element || !a.element.processName) return -1;
-        if (!b.element || !b.element.processName) return 1;
+        if (!a.element || !a.element.processName) {
+            return -1;
+        }
+        if (!b.element || !b.element.processName) {
+            return 1;
+        }
         return a.element.processName.localeCompare(b.element.processName);
     });
     return (

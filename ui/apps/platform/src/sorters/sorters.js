@@ -56,17 +56,29 @@ const sortStatus = (a, b) => {
  * @returns {number}
  */
 const sortValue = (a, b) => {
-    if (a === undefined) return -1;
-    if (b === undefined) return 1;
+    if (a === undefined) {
+        return -1;
+    }
+    if (b === undefined) {
+        return 1;
+    }
     const numA = Number(a);
     const numB = Number(b);
     if (!Number.isNaN(numA) && !Number.isNaN(numB)) {
-        if (numA < numB) return -1;
-        if (numA > numB) return 1;
+        if (numA < numB) {
+            return -1;
+        }
+        if (numA > numB) {
+            return 1;
+        }
         return 0;
     }
-    if (a < b) return -1;
-    if (a > b) return 1;
+    if (a < b) {
+        return -1;
+    }
+    if (a > b) {
+        return 1;
+    }
     return 0;
 };
 
@@ -75,8 +87,12 @@ const sortValue = (a, b) => {
  * @returns {number}
  */
 const sortVersion = (a, b) => {
-    if (a === undefined) return -1;
-    if (b === undefined) return 1;
+    if (a === undefined) {
+        return -1;
+    }
+    if (b === undefined) {
+        return 1;
+    }
     const aSplit = a.split('.');
     const bSplit = b.split('.');
 
@@ -130,9 +146,15 @@ const sortLifecycle = (a, b) => {
 const sortDate = (a, b) => {
     const aDate = a && new Date(a);
     const bDate = b && new Date(b);
-    if (aDate === bDate) return 0;
-    if (aDate === undefined) return -1;
-    if (bDate === undefined) return 1;
+    if (aDate === bDate) {
+        return 0;
+    }
+    if (aDate === undefined) {
+        return -1;
+    }
+    if (bDate === undefined) {
+        return 1;
+    }
     return aDate - bDate;
 };
 
@@ -141,11 +163,21 @@ const sortDate = (a, b) => {
  * @returns {string}
  */
 const sortValueByLength = (a, b) => {
-    if (a === undefined) return -1;
-    if (b === undefined) return 1;
-    if (a.length > b.length) return 1;
-    if (a.length < b.length) return -1;
-    if (a.length === b.length) return 0;
+    if (a === undefined) {
+        return -1;
+    }
+    if (b === undefined) {
+        return 1;
+    }
+    if (a.length > b.length) {
+        return 1;
+    }
+    if (a.length < b.length) {
+        return -1;
+    }
+    if (a.length === b.length) {
+        return 0;
+    }
     return a.length - b.length;
 };
 
@@ -167,8 +199,12 @@ function sortAscii(a, b) {
     // because that is case-insensitive, even with that given option
     //   which merely makes each letter sort A first, then a, but does not
     //   sort A-Z before a-z
-    if (a < b) return -1;
-    if (a > b) return 1;
+    if (a < b) {
+        return -1;
+    }
+    if (a > b) {
+        return 1;
+    }
     return 0;
 }
 

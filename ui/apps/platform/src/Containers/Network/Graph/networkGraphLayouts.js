@@ -17,7 +17,9 @@ function getParentDimensions(nodeCount) {
     const width = cols * nodeWidth;
     const height = rows * nodeHeight;
     avgNSDimensions.width.push(width);
-    if (!Number.isNaN(height)) avgNSDimensions.height.push(height);
+    if (!Number.isNaN(height)) {
+        avgNSDimensions.height.push(height);
+    }
     return {
         width,
         height,
@@ -92,7 +94,9 @@ edgeGridLayout.prototype.run = function () {
     const renderNodes = nodes.not('[side]');
     const sideNodes = eles.nodes('[side]');
 
-    if (!renderNodes.length) return this;
+    if (!renderNodes.length) {
+        return this;
+    }
 
     const { width, height, cols } = getParentDimensions(renderNodes.length);
 

@@ -18,24 +18,32 @@ function Widget({
 
     function changePage(pageNum) {
         setCurrentPage(pageNum);
-        if (onPageChange) onPageChange(pageNum);
+        if (onPageChange) {
+            onPageChange(pageNum);
+        }
     }
 
     function handlePageNext() {
         const targetPage = currentPage + 1;
-        if (targetPage >= pages) return;
+        if (targetPage >= pages) {
+            return;
+        }
 
         changePage(targetPage);
     }
 
     function handlePagePrev() {
         const targetPage = currentPage - 1;
-        if (targetPage < 0) return;
+        if (targetPage < 0) {
+            return;
+        }
         changePage(targetPage);
     }
 
     function handleSetPage(page) {
-        if (page < 0 || page >= pages) return;
+        if (page < 0 || page >= pages) {
+            return;
+        }
         setCurrentPage(page);
     }
 

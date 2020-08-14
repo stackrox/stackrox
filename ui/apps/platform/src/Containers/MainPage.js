@@ -83,21 +83,29 @@ class MainPage extends Component {
 
     onSearchCloseHandler = (toURL) => {
         this.props.toggleGlobalSearchView();
-        if (toURL && typeof toURL === 'string') this.props.history.push(toURL);
+        if (toURL && typeof toURL === 'string') {
+            this.props.history.push(toURL);
+        }
     };
 
     onCLICloseHandler = (toURL) => {
         this.props.toggleCLIDownloadView();
-        if (toURL && typeof toURL === 'string') this.props.history.push(toURL);
+        if (toURL && typeof toURL === 'string') {
+            this.props.history.push(toURL);
+        }
     };
 
     renderSearchModal = () => {
-        if (!this.props.globalSearchView) return '';
+        if (!this.props.globalSearchView) {
+            return '';
+        }
         return <SearchModal className="h-full w-full" onClose={this.onSearchCloseHandler} />;
     };
 
     renderCLIDownload = () => {
-        if (!this.props.cliDownloadView) return '';
+        if (!this.props.cliDownloadView) {
+            return '';
+        }
         return <CLIModal className="h-full w-full" onClose={this.onCLICloseHandler} />;
     };
 
@@ -138,7 +146,9 @@ class MainPage extends Component {
     };
 
     renderVersionOutOfDate = () => {
-        if (!this.props.metadata.stale) return null;
+        if (!this.props.metadata.stale) {
+            return null;
+        }
         return (
             <div className="flex w-full items-center p-3 bg-warning-200 text-warning-800 border-b border-base-400 justify-center font-700">
                 <span>

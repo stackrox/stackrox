@@ -31,10 +31,11 @@ Factor.defaultProps = {
 };
 
 const RiskDetails = ({ risk }) => {
-    if (!risk)
+    if (!risk) {
         return (
             <NoResultsMessage message="Risk details are being calculated. Please check back shortly." />
         );
+    }
 
     return risk.results.map((result) => (
         <div className="px-3 pt-5" key={result.name}>

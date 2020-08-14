@@ -25,7 +25,9 @@ const BrushableOverlay = ({
         .range([0, width]);
 
     function brushEnded() {
-        if (!event.sourceEvent) return; // Only transition after input.
+        if (!event.sourceEvent) {
+            return;
+        } // Only transition after input.
 
         // reset to view everything
         if (!event.selection) {

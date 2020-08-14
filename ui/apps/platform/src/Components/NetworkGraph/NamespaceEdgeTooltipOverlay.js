@@ -9,7 +9,9 @@ import PortsAndProtocolsFields from './PortsAndProtocolsFields';
 
 const DirectionalTooltipCardSection = ({ numBidirectional, numUnidirectional, type }) => {
     const numConnections = numBidirectional + numUnidirectional;
-    if (!numConnections) return null;
+    if (!numConnections) {
+        return null;
+    }
     return (
         <div className="mb-2">
             <TooltipCardSection

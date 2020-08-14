@@ -6,7 +6,9 @@ const loading = (state = {}, action) => {
     const matches = filterRequestActionTypes(type);
 
     // not a *_REQUEST / *_SUCCESS /  *_FAILURE actions, so we ignore them
-    if (!matches) return state;
+    if (!matches) {
+        return state;
+    }
 
     const { requestName, requestState } = matches;
     return {

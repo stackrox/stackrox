@@ -8,7 +8,9 @@ import Query from 'Components/ThrowingQuery';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
 function getLI(item) {
-    if (!item) return null;
+    if (!item) {
+        return null;
+    }
 
     const content = item.link ? (
         <Link

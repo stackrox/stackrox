@@ -56,8 +56,9 @@ export function postFormatWhitelistField(policy) {
 
 export function postFormatLifecycleField(policy) {
     const serverPolicy = { ...policy };
-    if (policy.lifecycleStages && policy.lifecycleStages.length !== 0)
+    if (policy.lifecycleStages && policy.lifecycleStages.length !== 0) {
         serverPolicy.lifecycleStages = policy.lifecycleStages.map((o) => (o.value ? o.value : o));
+    }
     return serverPolicy;
 }
 
@@ -130,7 +131,9 @@ export function parseValueStr(value, fieldName) {
 }
 
 function preFormatNestedPolicyFields(policy) {
-    if (!policy.policySections) return policy;
+    if (!policy.policySections) {
+        return policy;
+    }
 
     const clientPolicy = { ...policy };
     // itreating through each value in a policy group in a policy section to parse value string
@@ -149,7 +152,9 @@ function preFormatNestedPolicyFields(policy) {
 }
 
 export function formatValueStr(valueObj, fieldName) {
-    if (!valueObj) return valueObj;
+    if (!valueObj) {
+        return valueObj;
+    }
     const { source, key, value } = valueObj;
     let valueStr = value;
 
@@ -166,7 +171,9 @@ export function formatValueStr(valueObj, fieldName) {
 }
 
 function postFormatNestedPolicyFields(policy) {
-    if (!policy.policySections) return policy;
+    if (!policy.policySections) {
+        return policy;
+    }
 
     const serverPolicy = { ...policy };
     // itereating through each value in a policy group in a policy section to format to a flat value string

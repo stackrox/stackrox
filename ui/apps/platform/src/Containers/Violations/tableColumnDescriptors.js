@@ -110,7 +110,9 @@ const getSeverityClassName = (severityValue) => {
         Critical: 'px-2 rounded-full bg-alert-200 border-2 border-alert-300 text-alert-800',
     };
     const res = severityClassMapping[severityValue];
-    if (res) return res;
+    if (res) {
+        return res;
+    }
     throw new Error(`Unknown severity: ${severityValue}`);
 };
 

@@ -63,7 +63,9 @@ const getVulnDataByType = (workflowState, clusterId, vulnType, vulns) => {
 };
 
 const processData = (data, workflowState, limit) => {
-    if (!data.results) return [];
+    if (!data.results) {
+        return [];
+    }
     const results = sortBy(data.results, ['k8sVulnCount'])
         .slice(-limit)
         .map(({ id, name, isGKECluster, k8sVulns, istioVulns }) => {

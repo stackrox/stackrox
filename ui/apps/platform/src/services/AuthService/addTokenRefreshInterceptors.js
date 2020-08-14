@@ -62,7 +62,9 @@ export const doNotStallRequestConfig = {
 
 function addRequestInterceptor(axios, refreshTokenOpPromise) {
     return axios.interceptors.request.use((config) => {
-        if (config[doNotStallRequestConfigMarker]) return config;
+        if (config[doNotStallRequestConfigMarker]) {
+            return config;
+        }
 
         // stall all other requests until token refresh operation is finished
         return refreshTokenOpPromise.then(() => ({
@@ -101,7 +103,9 @@ export default function addTokenRefreshInterceptors(axios, accessTokenManager, o
     const interceptor = axios.interceptors.response.use(
         (response) => response,
         (error) => {
-            if (!error.response || error.response.status !== 401) return Promise.reject(error);
+            if (!error.response || error.response.status !== 401) {
+                return Promise.reject(error);
+            }
             const { config } = error;
 
             // if we're in the middle of refreshing the token, retry after it's done

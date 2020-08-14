@@ -21,7 +21,9 @@ const standardsResultsMap = {
 const DashboardCompliance = ({ match, location }) => {
     const { isDarkMode } = useTheme();
     function processData(data) {
-        if (!data || !data.results || !data.results.results.length) return [];
+        if (!data || !data.results || !data.results.results.length) {
+            return [];
+        }
         const { complianceStandards } = data;
         const modifiedData = data.results.results.map((result) => {
             const standard = complianceStandards.find(
@@ -136,10 +138,14 @@ const DashboardCompliance = ({ match, location }) => {
                     }}
                 >
                     {({ loading, data }) => {
-                        if (isGQLLoading(loading, data)) return <Loader />;
+                        if (isGQLLoading(loading, data)) {
+                            return <Loader />;
+                        }
 
                         const results = processData(data);
-                        if (!results.length) return renderScanButton();
+                        if (!results.length) {
+                            return renderScanButton();
+                        }
                         return (
                             <div className="flex w-full">
                                 <div className="pr-6 flex flex-1 flex-col">

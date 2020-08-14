@@ -19,9 +19,13 @@ const addComplianceStateOption = (searchOptions) => {
 const ComplianceListSearchInput = ({ categories, shouldAddComplianceState }) => (
     <Query query={SEARCH_OPTIONS_QUERY} action="list" variables={{ categories }}>
         {({ data }) => {
-            if (!data) return null;
+            if (!data) {
+                return null;
+            }
             let { searchOptions } = data;
-            if (shouldAddComplianceState) searchOptions = addComplianceStateOption(searchOptions);
+            if (shouldAddComplianceState) {
+                searchOptions = addComplianceStateOption(searchOptions);
+            }
             return (
                 <URLSearchInput
                     className="w-full"

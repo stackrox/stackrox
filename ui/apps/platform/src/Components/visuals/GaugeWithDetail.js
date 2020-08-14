@@ -41,7 +41,9 @@ const GaugeWithDetail = ({ data, history }) => {
     const pctFailing = totalChecks ? Math.round((numFailing / totalChecks) * 100) : 0;
 
     function calculateGaugeData(inputData) {
-        if (!inputData.length) return null;
+        if (!inputData.length) {
+            return null;
+        }
         const pi = Math.PI;
         const fullAngle = 2 * pi;
         // TODO: Dynamic technique to assign  radius & font size to the gauges.
@@ -89,7 +91,9 @@ const GaugeWithDetail = ({ data, history }) => {
     }
 
     function getHint() {
-        if (!hoveredCell) return null;
+        if (!hoveredCell) {
+            return null;
+        }
         const { passing, failing, title } = hoveredCell;
         const { value: passingValue, controls: passingControls } = passing;
         const { value: failingValue, controls: failingControls } = failing;

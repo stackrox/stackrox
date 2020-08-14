@@ -31,12 +31,13 @@ const ResourceTabs = ({ entityType, entityId, resourceTabs, selectedType, match,
         if (resourceTabs.length && data) {
             resourceTabs.forEach((type) => {
                 const count = getResourceCountFromAggregatedResults(type, data);
-                if (count > 0)
+                if (count > 0) {
                     tabData.push({
                         title: `${count} ${pluralize(resourceLabels[type], count)}`,
                         link: getLinkToListType(type),
                         type,
                     });
+                }
             });
         }
 
@@ -53,7 +54,9 @@ const ResourceTabs = ({ entityType, entityId, resourceTabs, selectedType, match,
     return (
         <Query query={QUERY} variables={getVariables()}>
             {({ loading, data }) => {
-                if (loading) return null;
+                if (loading) {
+                    return null;
+                }
                 const tabData = processData(data);
                 return (
                     <ul className="border-b border-base-400 bg-base-200 pl-3">

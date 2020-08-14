@@ -106,7 +106,9 @@ const selectedAuthProvider = (state = null, action) => {
         }
     }
     if (action.type === types.SELECTED_AUTH_PROVIDER) {
-        if (!action.authProvider) return null;
+        if (!action.authProvider) {
+            return null;
+        }
         return isEqual(action.authProvider, state) ? state : action.authProvider;
     }
     if (action.type === types.DELETE_AUTH_PROVIDER && state?.id === action.id) {

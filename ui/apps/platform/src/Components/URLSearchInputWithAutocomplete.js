@@ -174,7 +174,9 @@ const URLSearchInputWithAutocomplete = ({
             // Get the full querystring to redirect to
             const url = workflowState.setSearch(newSearch).toUrl();
             const qsStart = url.indexOf('?');
-            if (qsStart === -1) return '';
+            if (qsStart === -1) {
+                return '';
+            }
             return url.substr(qsStart);
         }
 

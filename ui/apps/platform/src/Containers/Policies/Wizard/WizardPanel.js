@@ -22,7 +22,9 @@ function Panel({
     fieldGroups,
     onClose,
 }) {
-    if (isFetchingPolicy || wizardPolicy == null) return <Loader />;
+    if (isFetchingPolicy || wizardPolicy == null) {
+        return <Loader />;
+    }
     const header = wizardPolicy === null ? '' : wizardPolicy.name;
 
     switch (wizardStage) {

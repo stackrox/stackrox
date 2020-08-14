@@ -28,8 +28,9 @@ function ViolationsTable({
     setSelectedRows,
     setSortOption,
 }) {
-    if (!violations.length)
+    if (!violations.length) {
         return <NoResultsMessage message="No results found. Please refine your search." />;
+    }
 
     // Add a single row to the selected rows.
     function toggleRow(idtoToggle) {
@@ -65,7 +66,9 @@ function ViolationsTable({
     // Use the table's 'onFetchData' prop to set our sort option.
     function setSortOptionOnFetch(state) {
         const newSortOption = createSortOptionFromTableState(columns, state);
-        if (!newSortOption) return;
+        if (!newSortOption) {
+            return;
+        }
         setSortOption(newSortOption);
     }
 

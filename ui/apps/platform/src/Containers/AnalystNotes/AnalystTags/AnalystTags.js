@@ -53,13 +53,14 @@ const AnalystTags = ({
 
     const { hasErrors } = captureGraphQLErrors([error, errorOnAddTags, errorOnRemoveTags]);
 
-    if (hasErrors)
+    if (hasErrors) {
         return (
             <Message
                 type="error"
                 message="There was an issue retrieving and/or modifying tags. Please try to view this page again in a little while"
             />
         );
+    }
 
     // disable input when waiting for any sort of modification
     const isDisabled = isWaitingToAddTags || isWaitingToRemoveTags || false;
@@ -71,14 +72,16 @@ const AnalystTags = ({
     function onChange(updatedTags) {
         const removedTags = difference(tags, updatedTags);
         const addedTags = difference(updatedTags, tags);
-        if (addedTags.length)
+        if (addedTags.length) {
             addTags({
                 variables: { ...variables, tags: addedTags },
             });
-        if (removedTags.length)
+        }
+        if (removedTags.length) {
             removeTags({
                 variables: { ...variables, tags: removedTags },
             });
+        }
     }
 
     return (

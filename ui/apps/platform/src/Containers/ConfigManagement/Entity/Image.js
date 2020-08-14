@@ -87,7 +87,9 @@ const Image = ({ id, entityListType, entityId1, query, entityContext, pagination
     `;
 
     function getQuery() {
-        if (!entityListType) return defaultQuery;
+        if (!entityListType) {
+            return defaultQuery;
+        }
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
             entityTypes.IMAGE,
             entityListType,
@@ -110,9 +112,13 @@ const Image = ({ id, entityListType, entityId1, query, entityContext, pagination
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader />;
+                if (isGQLLoading(loading, data)) {
+                    return <Loader />;
+                }
                 const { image: entity } = data;
-                if (!entity) return <PageNotFound resourceType={entityTypes.IMAGE} />;
+                if (!entity) {
+                    return <PageNotFound resourceType={entityTypes.IMAGE} />;
+                }
 
                 if (entityListType) {
                     return (

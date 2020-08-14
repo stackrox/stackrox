@@ -22,7 +22,9 @@ const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
 
     WorkflowSidePanel.handleClickOutside = () => {
         const btn = document.getElementById('panel-close-button');
-        if (btn) btn.click();
+        if (btn) {
+            btn.click();
+        }
     };
 
     const url = workflowState.getSkimmedStack().toUrl();

@@ -77,7 +77,9 @@ function* checkLicenseStatus(location) {
     } else if (status === LICENSE_STATUS.VALID) {
         // if the license is valid, redirect them back to their requested route
         const storedLocation = getAndClearRequestedLocation();
-        if (!storedLocation) return;
+        if (!storedLocation) {
+            return;
+        }
         yield fork(getLicenses);
         if (storedLocation.pathname === licenseStartUpPath) {
             yield put(push('/'));

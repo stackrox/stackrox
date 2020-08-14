@@ -53,7 +53,9 @@ const BreadCrumbLinks = ({ workflowEntities }) => {
 
     let maxWidthClass = 'max-w-full';
 
-    if (workflowEntities.length > 1) maxWidthClass = `max-w-1/${workflowEntities.length}`;
+    if (workflowEntities.length > 1) {
+        maxWidthClass = `max-w-1/${workflowEntities.length}`;
+    }
 
     const breadCrumbLinks = workflowEntities.map((workflowEntity, i, { length }) => {
         const icon = i !== length - 1 ? Icon : null;

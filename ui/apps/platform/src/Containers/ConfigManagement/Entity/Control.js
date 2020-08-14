@@ -59,10 +59,13 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
     return (
         <Query query={QUERY} variables={variables} fetchPolicy="no-cache">
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader />;
+                if (isGQLLoading(loading, data)) {
+                    return <Loader />;
+                }
 
-                if (!data || !data.results)
+                if (!data || !data.results) {
                     return <PageNotFound resourceType={entityTypes.CONTROL} />;
+                }
                 const { results: entity, entities = {} } = data;
                 const { complianceControlNodes } = entities;
 

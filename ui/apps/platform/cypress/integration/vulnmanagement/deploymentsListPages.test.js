@@ -24,14 +24,17 @@ describe('Deployments list Page and its entity detail page , (related entities) 
         ]);
         cy.get(selectors.tableBodyColumn).each(($el) => {
             const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no failing policies' && columnValue.includes('polic'))
+            if (columnValue !== 'no failing policies' && columnValue.includes('polic')) {
                 allChecksForEntities(url.list.deployments, 'Polic');
-            if (columnValue !== 'no images' && columnValue.includes('image'))
+            }
+            if (columnValue !== 'no images' && columnValue.includes('image')) {
                 allChecksForEntities(url.list.deployments, 'image');
+            }
             /* TBD - remove comment after issue fixed : if (columnValue !== 'no cves' && columnValue.includes('fixable'))
                 allFixableCheck(url.list.deployments); */
-            if (columnValue !== 'no cves' && columnValue.includes('cve'))
+            if (columnValue !== 'no cves' && columnValue.includes('cve')) {
                 allCVECheck(url.list.deployments);
+            }
         });
         //  TBD to be fixed after back end sorting is fixed
         //  validateSort(selectors.riskScoreCol);

@@ -13,8 +13,9 @@ const skipTestIntegration = {
 const storedCredentialFields = {
     checkStoredCredentials: true,
     helpFunction: function storedCredentialsHelpFunction(initialValues) {
-        if (initialValues?.hasStoredCredentials)
+        if (initialValues?.hasStoredCredentials) {
             return 'Leave this empty to use the currently stored credentials';
+        }
         return '';
     },
 };

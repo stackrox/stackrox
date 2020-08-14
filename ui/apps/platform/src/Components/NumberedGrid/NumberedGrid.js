@@ -5,7 +5,9 @@ import { withRouter } from 'react-router-dom';
 
 const NumberedGrid = ({ data, history }) => {
     const onClick = (url) => () => {
-        if (!url) return null;
+        if (!url) {
+            return null;
+        }
         history.push(url);
         return 0;
     };

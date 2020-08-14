@@ -7,7 +7,9 @@
 export default function searchOptionsToQuery(searchOptions) {
     return searchOptions
         .map((obj, i, { length }) => {
-            if (obj.type) return `${i !== 0 ? '+' : ''}${obj.value}`;
+            if (obj.type) {
+                return `${i !== 0 ? '+' : ''}${obj.value}`;
+            }
             return `${obj.value}${i !== length - 1 ? ',' : ''}`;
         })
         .join('')

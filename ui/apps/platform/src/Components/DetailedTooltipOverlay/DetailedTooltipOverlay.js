@@ -2,7 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 const DetailedTooltipOverlay = ({ title, subtitle, body, footer }) => {
-    if (!title || !body) return null;
+    if (!title || !body) {
+        return null;
+    }
 
     return (
         <div className="rox-tooltip-overlay min-w-32 max-h-100 flex flex-col flex-1">

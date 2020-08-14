@@ -16,7 +16,9 @@ export const getLicenseStatusMessage = (status, message) => {
         text: '',
         type: 'info',
     };
-    if (!status && !message) return null;
+    if (!status && !message) {
+        return null;
+    }
     switch (status) {
         case LICENSE_UPLOAD_STATUS.VERIFYING:
             result.text = 'Verifying...';
@@ -48,8 +50,12 @@ export const getLicenseStatusMessage = (status, message) => {
 
 export const getExpirationMessageType = (expirationDate) => {
     const daysLeft = differenceInDays(expirationDate, new Date());
-    if (daysLeft > 14) return 'info';
-    if (daysLeft > 3) return 'warn';
+    if (daysLeft > 14) {
+        return 'info';
+    }
+    if (daysLeft > 3) {
+        return 'warn';
+    }
     return 'error';
 };
 

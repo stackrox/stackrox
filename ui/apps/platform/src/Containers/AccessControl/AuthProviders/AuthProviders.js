@@ -33,7 +33,9 @@ const AuthProviders = ({
 
     useEffect(() => {
         // select default / first auth provider when nothing is selected
-        if (!selectedAuthProvider && authProviders.length) setDefaultSelection();
+        if (!selectedAuthProvider && authProviders.length) {
+            setDefaultSelection();
+        }
     }, [authProviders.length, selectedAuthProvider, setDefaultSelection]);
 
     const [providerToDelete, setProviderToDelete] = useState(null);
@@ -61,7 +63,9 @@ const AuthProviders = ({
 
     function deleteProvider() {
         const providerId = providerToDelete && providerToDelete.id;
-        if (!providerId) return;
+        if (!providerId) {
+            return;
+        }
 
         deleteAuthProvider(providerId);
         setAuthProviderEditingState(false);

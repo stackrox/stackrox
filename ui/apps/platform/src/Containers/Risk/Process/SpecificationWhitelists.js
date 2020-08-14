@@ -29,7 +29,9 @@ function SpecificationWhitelists({ deploymentId, processGroup, processEpoch, set
         loadWhitelists(deploymentId, processGroup, setProcessWhitelist);
     }, [deploymentId, processGroup, processEpoch]);
 
-    if (!processWhitelist) return null;
+    if (!processWhitelist) {
+        return null;
+    }
     return (
         <div className="pl-3 pr-3">
             <ul className="border-b border-base-300 leading-normal hover:bg-primary-100">

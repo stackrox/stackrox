@@ -84,7 +84,9 @@ const buildTableColumns = (match, location, entityContext) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { joinedAt } = original;
-                if (!joinedAt) return null;
+                if (!joinedAt) {
+                    return null;
+                }
                 return format(joinedAt, dateTimeFormat);
             },
             accessor: 'joinedAt',

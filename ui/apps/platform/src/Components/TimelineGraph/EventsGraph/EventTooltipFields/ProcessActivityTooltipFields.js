@@ -16,13 +16,21 @@ const ProcessActivityTooltipFields = ({ name, args, uid, parentName, parentUid, 
     const eventTimeValue = getDateTime(timestamp);
 
     let uidType;
-    if (hasParent && isParentUidUnknown && hasUidChanged) uidType = 'caution';
-    if (hasParent && hasUidChanged) uidType = 'alert';
-    else uidType = null;
+    if (hasParent && isParentUidUnknown && hasUidChanged) {
+        uidType = 'caution';
+    }
+    if (hasParent && hasUidChanged) {
+        uidType = 'alert';
+    } else {
+        uidType = null;
+    }
 
     let parentUidValue;
-    if (hasParent) parentUidValue = isParentUidUnknown ? 'Unknown' : parentUid;
-    else parentUidValue = null;
+    if (hasParent) {
+        parentUidValue = isParentUidUnknown ? 'Unknown' : parentUid;
+    } else {
+        parentUidValue = null;
+    }
 
     return (
         <>

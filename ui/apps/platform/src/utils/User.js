@@ -9,7 +9,9 @@ export default class User {
 
     get attributesMap() {
         const { userAttributes } = this.userData;
-        if (!userAttributes) return {};
+        if (!userAttributes) {
+            return {};
+        }
 
         // userAttributes is an array of {key, values} objects
         return userAttributes.reduce((res, { key, values }) => ({ ...res, [key]: values[0] }), {});

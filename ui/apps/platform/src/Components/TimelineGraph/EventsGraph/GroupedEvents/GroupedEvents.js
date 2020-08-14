@@ -15,7 +15,9 @@ const GroupedEvents = ({
     margin,
     isZooming,
 }) => {
-    if (isZooming) return [];
+    if (isZooming) {
+        return [];
+    }
 
     const clusteredEventMarkerSize = Math.max(0, height / 2);
     const clusteredEventMarkerOffsetY = Math.max(0, height / 2);

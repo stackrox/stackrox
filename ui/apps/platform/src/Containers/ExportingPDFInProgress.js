@@ -7,7 +7,9 @@ import { selectors } from 'reducers';
 import Loader from 'Components/Loader';
 
 const ExportingPDFInProgress = ({ pdfLoadingStatus }) => {
-    if (!pdfLoadingStatus) return null;
+    if (!pdfLoadingStatus) {
+        return null;
+    }
     return (
         <div className="absolute left-0 top-0 bg-base-100 z-70 mt-20 w-full h-full text-tertiary-800">
             <Loader message="Exporting..." />

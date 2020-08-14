@@ -10,7 +10,7 @@ import PolicySections from './PolicySections';
 import { policyConfiguration } from './descriptors';
 
 function BooleanPolicySection({ readOnly, hasHeader }) {
-    if (readOnly)
+    if (readOnly) {
         return (
             <div className="w-full flex">
                 <FieldArray
@@ -22,6 +22,7 @@ function BooleanPolicySection({ readOnly, hasHeader }) {
                 />
             </div>
         );
+    }
     return (
         <DndProvider backend={Backend}>
             <div className="w-full h-full flex">

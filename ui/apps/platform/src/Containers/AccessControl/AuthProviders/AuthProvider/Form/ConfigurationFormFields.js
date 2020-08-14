@@ -46,7 +46,9 @@ const OidcFormFields = ({ disabled, configValues, change }) => {
     }
 
     function onDoNotUseClientSecretChange(event, newValue) {
-        if (newValue) change('config.client_secret', '');
+        if (newValue) {
+            change('config.client_secret', '');
+        }
     }
 
     const clientSecretSupported = configValues.mode === 'post';
@@ -306,8 +308,9 @@ const formFieldsComponents = {
 
 const ConfigurationFormFields = ({ providerType, disabled, configValues, change }) => {
     const FormFieldsComponent = formFieldsComponents[providerType];
-    if (!FormFieldsComponent)
+    if (!FormFieldsComponent) {
         throw new Error(`Unknown auth provider type passed to the form component: ${providerType}`);
+    }
 
     return <FormFieldsComponent disabled={disabled} configValues={configValues} change={change} />;
 };

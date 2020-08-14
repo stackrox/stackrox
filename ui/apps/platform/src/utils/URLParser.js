@@ -31,7 +31,9 @@ function paramsToStateStack(params) {
     const entityType1 = getTypeKeyFromParamValue(urlEntityType1);
     const entityType2 = getTypeKeyFromParamValue(urlEntityType2);
     const stateArray = [];
-    if (!pageEntityListType && !pageEntityType) return stateArray;
+    if (!pageEntityListType && !pageEntityType) {
+        return stateArray;
+    }
 
     // List
     if (pageEntityListType) {
@@ -42,22 +44,35 @@ function paramsToStateStack(params) {
         }
     } else {
         stateArray.push(getEntityFromURLParam(pageEntityType, pageEntityId));
-        if (entityListType1) stateArray.push(new WorkflowEntity(entityListType1));
-        if (entityType1 && entityId1) stateArray.push(new WorkflowEntity(entityType1, entityId1));
+        if (entityListType1) {
+            stateArray.push(new WorkflowEntity(entityListType1));
+        }
+        if (entityType1 && entityId1) {
+            stateArray.push(new WorkflowEntity(entityType1, entityId1));
+        }
     }
 
-    if (entityListType2) stateArray.push(new WorkflowEntity(entityListType2));
-    if (entityType2 && entityId2) stateArray.push(new WorkflowEntity(entityType2, entityId2));
+    if (entityListType2) {
+        stateArray.push(new WorkflowEntity(entityListType2));
+    }
+    if (entityType2 && entityId2) {
+        stateArray.push(new WorkflowEntity(entityType2, entityId2));
+    }
 
     return stateArray;
 }
 
 function formatSort(sort) {
-    if (!sort) return null;
+    if (!sort) {
+        return null;
+    }
 
     let sorts;
-    if (!Array.isArray(sort)) sorts = [sort];
-    else sorts = [...sort];
+    if (!Array.isArray(sort)) {
+        sorts = [sort];
+    } else {
+        sorts = [...sort];
+    }
 
     return sorts.map(({ id, desc }) => {
         return {
@@ -70,7 +85,9 @@ function formatSort(sort) {
 // Convert URL to workflow state and search objects
 // note: this will read strictly from 'location' as 'match' is relative to the closest Route component
 function parseURL(location) {
-    if (!location) return {};
+    if (!location) {
+        return {};
+    }
 
     const { pathname, search } = location;
     const listParams = matchPath(pathname, {

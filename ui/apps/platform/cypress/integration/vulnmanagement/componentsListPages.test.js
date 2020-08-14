@@ -22,14 +22,17 @@ describe('Components list Page and its entity detail page, (related entities) su
         ]);
         cy.get(selectors.tableBodyColumn).each(($el) => {
             const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no deployments' && columnValue.includes('deployment'))
+            if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
                 allChecksForEntities(url.list.components, 'Deployment');
-            if (columnValue !== 'no images' && columnValue.includes('image'))
+            }
+            if (columnValue !== 'no images' && columnValue.includes('image')) {
                 allChecksForEntities(url.list.components, 'Image');
+            }
             /* TBD - uncomment later - if (columnValue !== 'no cves' && columnValue.includes('fixable'))
                 allFixableCheck(url.list.components); */
-            if (columnValue !== 'no cves' && columnValue.includes('cve'))
+            if (columnValue !== 'no cves' && columnValue.includes('cve')) {
                 allCVECheck(url.list.components);
+            }
         });
         //  TBD to be fixed after back end sorting is fixed
         //  validateSort(selectors.componentsRiskScoreCol);

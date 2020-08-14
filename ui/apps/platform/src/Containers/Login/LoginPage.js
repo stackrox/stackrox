@@ -71,7 +71,9 @@ class LoginPage extends Component {
 
     login = (formValues) => {
         const authProvider = this.getSelectedAuthProvider(formValues);
-        if (!authProvider) return;
+        if (!authProvider) {
+            return;
+        }
         if (authProvider.type === 'basic') {
             this.setState({ loggingIn: true });
 
@@ -281,7 +283,9 @@ const Form = reduxForm({
 // component is mounted, we cannot mount a component until we have everything to populate
 // initial values (in this case the list of auth providers)
 const LoadingOrForm = ({ authProviders }) => {
-    if (!authProviders.length) return <LoadingSection message="Loading..." />;
+    if (!authProviders.length) {
+        return <LoadingSection message="Loading..." />;
+    }
 
     const options = authProvidersToSelectOptions(authProviders);
     const initialValues = { authProvider: options[0].value };

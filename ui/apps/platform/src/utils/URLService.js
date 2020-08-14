@@ -72,7 +72,9 @@ function getTabsPerEntity(entityType, context) {
     const contextRelationships = {
         [useCases.CONFIG_MANAGEMENT]: configMgmtEntityRelationship,
     };
-    if (!contextRelationships[context] || !contextRelationships[context][entityType]) return [];
+    if (!contextRelationships[context] || !contextRelationships[context][entityType]) {
+        return [];
+    }
     return contextRelationships[context][entityType];
 }
 
@@ -105,10 +107,14 @@ function getPath(urlParams) {
     };
 
     const contextData = legacyPathMap[context] || defaultPathMap;
-    if (!contextData) return null;
+    if (!contextData) {
+        return null;
+    }
 
     const path = contextData[pageType];
-    if (!path) return null;
+    if (!path) {
+        return null;
+    }
 
     const params = { ...urlParams };
 
@@ -131,12 +137,15 @@ function getPath(urlParams) {
 }
 
 function getParams(match, location) {
-    if (!match) return {};
+    if (!match) {
+        return {};
+    }
     let newParams = { ...match.params };
 
     // Mapping from url to entity types
-    if (newParams.pageEntityListType)
+    if (newParams.pageEntityListType) {
         newParams.pageEntityListType = getTypeKeyFromParamValue(newParams.pageEntityListType);
+    }
     if (newParams.entityListType2) {
         newParams.entityListType2 = getTypeKeyFromParamValue(newParams.entityListType2, true);
     } else if (newParams.entityType2) {
@@ -157,8 +166,9 @@ function getParams(match, location) {
             newParams.entityType1 = getTypeKeyFromParamValue(newParams.entityType1);
         }
     }
-    if (newParams.pageEntityType)
+    if (newParams.pageEntityType) {
         newParams.pageEntityType = getTypeKeyFromParamValue(newParams.pageEntityType);
+    }
 
     newParams = decodeEntityIds(newParams);
 
@@ -196,9 +206,13 @@ const pageTypesToParamNames = {
 
 function getLastUsedParamName(urlParams) {
     const pageType = getPageType(urlParams);
-    if (!pageType) return null;
+    if (!pageType) {
+        return null;
+    }
     const paramTypes = pageTypesToParamNames[pageType];
-    if (!paramTypes) return null;
+    if (!paramTypes) {
+        return null;
+    }
     const propNames = Object.values(paramTypes).reverse();
     if (urlParams.entityListType2) {
         propNames[propNames.indexOf('entityType2')] = 'entityListType2';
@@ -209,13 +223,17 @@ function getLastUsedParamName(urlParams) {
 
     for (let i = 0; i < propNames.length; i += 1) {
         const propName = propNames[i];
-        if (urlParams[propName]) return propName;
+        if (urlParams[propName]) {
+            return propName;
+        }
     }
     return null;
 }
 
 function isIdParamName(param) {
-    if (!param) return false;
+    if (!param) {
+        return false;
+    }
     return param.toLowerCase().includes('entityid');
 }
 
@@ -343,12 +361,18 @@ class URL {
     pop() {
         const { urlParams } = this;
         const paramName = getLastUsedParamName(urlParams);
-        if (paramName) delete urlParams[paramName];
+        if (paramName) {
+            delete urlParams[paramName];
+        }
         if (paramName === 'entityId2') {
             delete urlParams.entityType2;
         }
-        if (paramName === 'pageEntityId') delete urlParams.pageEntityType;
-        if (paramName === 'entityListType2') delete this.q.s2;
+        if (paramName === 'pageEntityId') {
+            delete urlParams.pageEntityType;
+        }
+        if (paramName === 'entityListType2') {
+            delete this.q.s2;
+        }
 
         return this;
     }
@@ -360,8 +384,11 @@ class URL {
     }
 
     query(queryChanges) {
-        if (!queryChanges) this.q = {};
-        else this.q = merge(this.q, queryChanges);
+        if (!queryChanges) {
+            this.q = {};
+        } else {
+            this.q = merge(this.q, queryChanges);
+        }
 
         return this;
     }

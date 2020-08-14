@@ -22,13 +22,16 @@ export function* getGlobalSearchResults() {
         const filters = {
             query: searchOptionsToQuery(searchOptions),
         };
-        if (category !== '') filters.categories = category;
+        if (category !== '') {
+            filters.categories = category;
+        }
         const result = yield call(fetchGlobalSearchResults, filters);
         yield put(actions.fetchGlobalSearchResults.success(result.response, { category }));
     } catch (error) {
         yield put(actions.fetchGlobalSearchResults.failure(error));
-        if (error.response && error.response.status >= 500 && error.response.data.error)
+        if (error.response && error.response.status >= 500 && error.response.data.error) {
             toast.error(error.response.data.error);
+        }
     }
 }
 

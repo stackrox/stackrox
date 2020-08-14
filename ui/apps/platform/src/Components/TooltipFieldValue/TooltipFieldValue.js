@@ -4,7 +4,9 @@ import PropTypes from 'prop-types';
 const types = ['alert', 'caution', 'warning'];
 
 const TooltipFieldValue = ({ dataTestId, field, value, type }) => {
-    if (value === null) return null;
+    if (value === null) {
+        return null;
+    }
     const textColor = types.includes(type) ? `text-${type}-600` : '';
     return (
         <div className={`leading-normal ${textColor}`} data-testid={dataTestId}>

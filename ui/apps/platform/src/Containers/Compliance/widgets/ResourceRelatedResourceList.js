@@ -46,7 +46,9 @@ const ResourceRelatedEntitiesList = ({
     const searchParam = useContext(searchContext);
 
     function processData(data) {
-        if (!data || !data.results) return [];
+        if (!data || !data.results) {
+            return [];
+        }
 
         let items = data.results;
         if (listEntityType === entityTypes.NAMESPACE) {
@@ -107,7 +109,9 @@ const ResourceRelatedEntitiesList = ({
     }
 
     function getHeadline(list) {
-        if (!list) return `Related ${pluralize(resourceLabel)}`;
+        if (!list) {
+            return `Related ${pluralize(resourceLabel)}`;
+        }
         return `${list.length} Related ${pluralize(resourceLabel)}`;
     }
 

@@ -109,7 +109,9 @@ export function enableDisableNotificationsForPolicies(policyIds, notifierIds, di
  * @returns {Promise<AxiosResponse, Error>}
  */
 export function savePolicy(policy) {
-    if (!policy.id) throw new Error('Policy entity must have an id to be saved');
+    if (!policy.id) {
+        throw new Error('Policy entity must have an id to be saved');
+    }
     const transformedPolicy = transformPolicyCriteriaValuesToStrings(policy);
 
     return axios.put(`${baseUrl}/${policy.id}`, transformedPolicy);

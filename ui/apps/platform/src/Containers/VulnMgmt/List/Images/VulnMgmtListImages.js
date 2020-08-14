@@ -77,12 +77,13 @@ export function getImageTableColumns(workflowState) {
             className: `w-1/12 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { topVuln } = original;
-                if (!topVuln)
+                if (!topVuln) {
                     return (
                         <div className="mx-auto flex flex-col">
                             <span>–</span>
                         </div>
                     );
+                }
                 const { cvss, scoreVersion } = topVuln;
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
             },
@@ -96,7 +97,9 @@ export function getImageTableColumns(workflowState) {
             className: `w-1/12 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { metadata } = original;
-                if (!metadata || !metadata.v1) return '–';
+                if (!metadata || !metadata.v1) {
+                    return '–';
+                }
                 return <DateTimeField date={metadata.v1.created} asString={pdf} />;
             },
             id: imageSortFields.CREATED_TIME,
@@ -109,7 +112,9 @@ export function getImageTableColumns(workflowState) {
             className: `w-1/12 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { scan } = original;
-                if (!scan) return '–';
+                if (!scan) {
+                    return '–';
+                }
                 return <DateTimeField date={scan.scanTime} asString={pdf} />;
             },
             id: imageSortFields.SCAN_TIME,
@@ -122,7 +127,9 @@ export function getImageTableColumns(workflowState) {
             className: `w-1/12 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { scan } = original;
-                if (!scan?.operatingSystem) return '–';
+                if (!scan?.operatingSystem) {
+                    return '–';
+                }
                 return <span>{scan.operatingSystem}</span>;
             },
             id: imageSortFields.IMAGE_OS,

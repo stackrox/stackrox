@@ -26,7 +26,9 @@ const ErrorView = ({ modification, modificationName, modificationState, policyGr
         );
     }
 
-    if (modificationState !== 'ERROR' && policyGraphState !== 'ERROR') return null;
+    if (modificationState !== 'ERROR' && policyGraphState !== 'ERROR') {
+        return null;
+    }
 
     let errorMessage = '';
     if (modificationState === 'ERROR') {

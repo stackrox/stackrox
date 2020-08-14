@@ -49,7 +49,9 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext, paginati
     `;
 
     function getQuery() {
-        if (!entityListType) return defaultQuery;
+        if (!entityListType) {
+            return defaultQuery;
+        }
         const { fragment } = queryService.getFragmentInfo(
             entityTypes.SUBJECT,
             entityListType,
@@ -85,7 +87,9 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext, paginati
     return (
         <Query query={getQuery()} variables={variables} fetchPolicy="no-cache">
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader />;
+                if (isGQLLoading(loading, data)) {
+                    return <Loader />;
+                }
 
                 const entity = data.subject;
                 const {

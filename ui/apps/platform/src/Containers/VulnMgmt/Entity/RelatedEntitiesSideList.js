@@ -13,7 +13,9 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
     const { isDarkMode } = useTheme();
     const workflowState = useContext(workflowStateContext);
     const { useCase } = workflowState;
-    if (!useCase) return null;
+    if (!useCase) {
+        return null;
+    }
 
     const countKeyMap = { ...defaultCountKeyMap, ...altCountKeyMap };
 
@@ -39,7 +41,9 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
             };
         })
         .filter((containObj) => containObj.count && !entityContext[containObj.entity]);
-    if (!matches.length && !contains.length) return null;
+    if (!matches.length && !contains.length) {
+        return null;
+    }
     return (
         <div
             className={` h-full relative border-base-100 border-l w-32 ${

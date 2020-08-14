@@ -60,7 +60,9 @@ class SearchInput extends Component {
     };
 
     componentWillUnmount() {
-        if (!this.props.isGlobal) this.props.setSearchOptions([]);
+        if (!this.props.isGlobal) {
+            this.props.setSearchOptions([]);
+        }
     }
 
     sendAutoCompleteRequest = (searchOptions, input) => {
@@ -69,7 +71,9 @@ class SearchInput extends Component {
         // Don't populate autocomplete if the text box is totally empty,
         // since we want people to see just the chips in that case.
         if (!searchOptions.length && !input.length) {
-            if (this.props.clearAutoComplete) this.props.clearAutoComplete();
+            if (this.props.clearAutoComplete) {
+                this.props.clearAutoComplete();
+            }
             return;
         }
 
@@ -90,7 +94,9 @@ class SearchInput extends Component {
 
     updateAutoCompleteState = (input) => {
         if (!this.queryIsPossiblyBeingTyped()) {
-            if (this.props.clearAutoComplete) this.props.clearAutoComplete();
+            if (this.props.clearAutoComplete) {
+                this.props.clearAutoComplete();
+            }
             return;
         }
         this.sendAutoCompleteRequest(this.props.searchOptions, input);
@@ -111,7 +117,9 @@ class SearchInput extends Component {
             actualSearchOptions.unshift(this.props.defaultOption);
         }
         this.props.setSearchOptions(actualSearchOptions);
-        if (this.props.onSearch) this.props.onSearch(actualSearchOptions);
+        if (this.props.onSearch) {
+            this.props.onSearch(actualSearchOptions);
+        }
         this.sendAutoCompleteRequest(actualSearchOptions, '');
     };
 
@@ -150,8 +158,9 @@ class SearchInput extends Component {
             suggestions = suggestions.concat(
                 this.props.autoCompleteResults.map((value) => {
                     let modifiedValue = value;
-                    if (searchOptions.length === 0)
+                    if (searchOptions.length === 0) {
                         modifiedValue = this.formatValueWithDefaultOption(modifiedValue);
+                    }
                     return { value, label: modifiedValue };
                 })
             );
@@ -182,11 +191,17 @@ class SearchInput extends Component {
                 return inputValue;
             },
             isValidNewOption: (inputValue, _, selectOptions) => {
-                if (!inputValue) return false;
-                if (!this.queryIsPossiblyBeingTyped()) return false;
+                if (!inputValue) {
+                    return false;
+                }
+                if (!this.queryIsPossiblyBeingTyped()) {
+                    return false;
+                }
 
                 // Don't show the new option if it's the same as the top suggestion.
-                if (inputMatchesTopOption(inputValue, selectOptions)) return false;
+                if (inputMatchesTopOption(inputValue, selectOptions)) {
+                    return false;
+                }
 
                 // We only allow them to add new options if none of the chips match.
                 // Otherwise it might be confusing.
@@ -196,8 +211,9 @@ class SearchInput extends Component {
                             option.type === 'categoryOption' &&
                             option.label.toLowerCase().startsWith(inputValue.toLowerCase())
                     )
-                )
+                ) {
                     return false;
+                }
                 return true;
             },
             createOptionPosition,

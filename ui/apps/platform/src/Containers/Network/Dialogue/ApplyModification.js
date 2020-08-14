@@ -30,7 +30,9 @@ class ApplyModification extends Component {
 
     render() {
         const { dialogueStage } = this.props;
-        if (dialogueStage !== dialogueStages.application) return null;
+        if (dialogueStage !== dialogueStages.application) {
+            return null;
+        }
 
         return (
             <Modal isOpen onRequestClose={this.onClose}>

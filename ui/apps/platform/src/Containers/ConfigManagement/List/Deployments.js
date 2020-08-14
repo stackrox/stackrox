@@ -100,7 +100,9 @@ const buildTableColumns = (match, location, entityContext) => {
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { imageCount, id } = original;
-                if (imageCount === 0) return 'No images';
+                if (imageCount === 0) {
+                    return 'No images';
+                }
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.IMAGE)
@@ -123,7 +125,9 @@ const buildTableColumns = (match, location, entityContext) => {
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const { secretCount, id } = original;
-                if (secretCount === 0) return 'No secrets';
+                if (secretCount === 0) {
+                    return 'No secrets';
+                }
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.SECRET)

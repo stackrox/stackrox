@@ -80,7 +80,9 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 className: `w-1/8 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
                     const { vulnCounter, id } = original;
-                    if (!vulnCounter || vulnCounter.all.total === 0) return 'No CVEs';
+                    if (!vulnCounter || vulnCounter.all.total === 0) {
+                        return 'No CVEs';
+                    }
 
                     const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
                     const url = newState.toUrl();

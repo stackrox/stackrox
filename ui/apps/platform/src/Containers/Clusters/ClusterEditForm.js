@@ -79,7 +79,9 @@ function ClusterEditForm({ centralEnv, selectedCluster, handleChange, isLoading 
         return null;
     };
 
-    if (isLoading) return <Loader />;
+    if (isLoading) {
+        return <Loader />;
+    }
 
     return (
         <form className="px-4 w-full mb-8" data-testid="cluster-form">

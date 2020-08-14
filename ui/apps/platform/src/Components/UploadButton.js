@@ -17,7 +17,9 @@ const UploadButton = ({ onChange, validExtensions, ...props }) => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 onChange(e.target.result);
-                if (inputRef && inputRef.current) inputRef.current.value = '';
+                if (inputRef && inputRef.current) {
+                    inputRef.current.value = '';
+                }
             };
             reader.onerror = (error) => {
                 toast(error);

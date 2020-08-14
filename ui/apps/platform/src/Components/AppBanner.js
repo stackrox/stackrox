@@ -9,7 +9,9 @@ const sizeClassMap = {
 };
 
 const AppBanner = ({ type, enabled, text, color, size, backgroundColor }) => {
-    if (!enabled) return null;
+    if (!enabled) {
+        return null;
+    }
     return (
         <div
             className={`${sizeClassMap[size]} px-2 py-1 whitespace-pre text-center`}

@@ -76,7 +76,9 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext, p
     `;
 
     function getQuery() {
-        if (!entityListType) return defaultQuery;
+        if (!entityListType) {
+            return defaultQuery;
+        }
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
             entityTypes.SERVICE_ACCOUNT,
             entityListType,
@@ -99,9 +101,13 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext, p
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader />;
+                if (isGQLLoading(loading, data)) {
+                    return <Loader />;
+                }
                 const { serviceAccount: entity } = data;
-                if (!entity) return <PageNotFound resourceType={entityTypes.SERVICE_ACCOUNT} />;
+                if (!entity) {
+                    return <PageNotFound resourceType={entityTypes.SERVICE_ACCOUNT} />;
+                }
 
                 if (entityListType) {
                     const listData =

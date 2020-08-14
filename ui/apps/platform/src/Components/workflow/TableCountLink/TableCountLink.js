@@ -11,10 +11,14 @@ const TableCountLink = ({ selectedRowId, entityType, textOnly, count, entityType
     const workflowState = useContext(workflowStateContext);
 
     const type = entityTypeText || entityLabels[entityType];
-    if (count === 0) return `No ${pluralize(type)}`;
+    if (count === 0) {
+        return `No ${pluralize(type)}`;
+    }
 
     const text = `${count} ${pluralize(type, count)}`;
-    if (textOnly) return <span data-testid={`${type}CountText`}>{text}</span>;
+    if (textOnly) {
+        return <span data-testid={`${type}CountText`}>{text}</span>;
+    }
 
     const newState = workflowState.pushListItem(selectedRowId).pushList(entityType);
     const urlWithSearch = newState.setSearch(search).toUrl();

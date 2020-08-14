@@ -52,7 +52,9 @@ export function createFetchingActions(types) {
 
 export function filterRequestActionTypes(type) {
     const matches = /(.*)_(REQUEST|SUCCESS|FAILURE)/.exec(type);
-    if (!matches) return null;
+    if (!matches) {
+        return null;
+    }
     const [, requestName, requestState] = matches;
     return { requestName, requestState: requestState === 'REQUEST' };
 }
@@ -60,7 +62,9 @@ export function filterRequestActionTypes(type) {
 export function getFetchingActionName(fetchingActionType) {
     const types = Object.keys(fetchingActionType);
     const matches = /(.*)_(REQUEST|SUCCESS|FAILURE)/.exec(fetchingActionType[types[0]]);
-    if (!matches) return null;
+    if (!matches) {
+        return null;
+    }
     const [, actionName] = matches;
     return actionName;
 }

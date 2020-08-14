@@ -8,7 +8,7 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import TableWidget from 'Containers/ConfigManagement/Entity/widgets/TableWidget';
 
 const DeploymentViolations = ({ className, alerts, entityContext }) => {
-    if (!alerts || !alerts.length)
+    if (!alerts || !alerts.length) {
         return (
             <NoResultsMessage
                 message="No deployments violating this policy"
@@ -16,6 +16,7 @@ const DeploymentViolations = ({ className, alerts, entityContext }) => {
                 icon="info"
             />
         );
+    }
     const rows = alerts;
     const columns = entityViolationsColumns[entityTypes.DEPLOYMENT](entityContext);
     return (

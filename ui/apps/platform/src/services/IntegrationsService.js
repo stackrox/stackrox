@@ -54,7 +54,9 @@ export function fetchIntegration(source) {
  * @returns {Promise<Object, Error>}
  */
 export function saveIntegration(source, data, options) {
-    if (!data.id) throw new Error('Integration entity must have an id to be saved');
+    if (!data.id) {
+        throw new Error('Integration entity must have an id to be saved');
+    }
     const updatePassword = options?.updatePassword;
     // if the integration is not one that could possibly have stored credentials, use the previous API
     if (updatePassword === undefined) {

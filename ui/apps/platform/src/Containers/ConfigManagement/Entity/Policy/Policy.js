@@ -88,7 +88,9 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext, paginatio
     `;
 
     function getQuery() {
-        if (!entityListType) return defaultQuery;
+        if (!entityListType) {
+            return defaultQuery;
+        }
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
             entityTypes.POLICY,
             entityListType,
@@ -111,9 +113,13 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext, paginatio
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader />;
+                if (isGQLLoading(loading, data)) {
+                    return <Loader />;
+                }
                 const { policy: entity } = data;
-                if (!entity) return <PageNotFound resourceType={entityTypes.POLICY} />;
+                if (!entity) {
+                    return <PageNotFound resourceType={entityTypes.POLICY} />;
+                }
 
                 if (entityListType) {
                     return (

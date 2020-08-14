@@ -15,7 +15,9 @@ const ClusterSelect = ({ selectClusterId, closeSidePanel, clusters, selectedClus
         closeSidePanel();
     }
 
-    if (!clusters.length) return null;
+    if (!clusters.length) {
+        return null;
+    }
     // network policies are only applicable on k8s-based clusters
     const options = clusters
         .filter((cluster) => networkGraphClusters[cluster.type])

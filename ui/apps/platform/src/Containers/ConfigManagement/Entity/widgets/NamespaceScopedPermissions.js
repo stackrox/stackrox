@@ -50,7 +50,9 @@ const getContent = (scopedPermissions) => {
         );
         return group;
     });
-    if (!namespaceGroups.length) return null;
+    if (!namespaceGroups.length) {
+        return null;
+    }
     const content = namespaceGroups;
     return content;
 };
@@ -64,7 +66,9 @@ const getGroupedContent = (scopedPermissionsByCluster) => {
         .map(({ clusterId, clusterName, scopedPermissions }) => {
             const groupHeader = clusterName;
             const scopedPermissionsContent = getContent(scopedPermissions);
-            if (!scopedPermissionsContent) return null;
+            if (!scopedPermissionsContent) {
+                return null;
+            }
             const group = (
                 <CollapsibleRow key={clusterId} header={groupHeader}>
                     <div className="pl-4">{scopedPermissionsContent}</div>
@@ -86,8 +90,9 @@ const NamespaceScopedPermissions = ({ scopedPermissionsByCluster, ...rest }) => 
         content = getContent(scopedPermissions);
     }
 
-    if (!content || !content.length)
+    if (!content || !content.length) {
         content = <NoResultsMessage message="No permissions available" className="p-3 shadow" />;
+    }
 
     const header =
         scopedPermissionsByCluster.length > 1

@@ -17,8 +17,12 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import searchContext from 'Containers/searchContext';
 
 const sortByTitle = (a, b) => {
-    if (a.title < b.title) return -1;
-    if (a.title > b.title) return 1;
+    if (a.title < b.title) {
+        return -1;
+    }
+    if (a.title > b.title) {
+        return 1;
+    }
     return 0;
 };
 
@@ -31,7 +35,7 @@ function processData(match, location, entityType, { controls, complianceStandard
     } else {
         filteredResults = controls.results;
     }
-    if (!filteredResults.length)
+    if (!filteredResults.length) {
         return [
             {
                 id: entityType,
@@ -40,6 +44,7 @@ function processData(match, location, entityType, { controls, complianceStandard
                 failing: { value: 0, link: '' },
             },
         ];
+    }
     const standardDataMapping = filteredResults.reduce((accMapping, result) => {
         const newMapping = { ...accMapping };
         const { id: standardId } = result.aggregationKeys[0];

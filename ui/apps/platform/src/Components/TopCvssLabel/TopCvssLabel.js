@@ -19,7 +19,9 @@ CVSSLabelChip.propTypes = {
 };
 
 const TopCvssLabel = ({ cvss, version, expanded }) => {
-    if (!cvss && cvss !== 0) return 'N/A';
+    if (!cvss && cvss !== 0) {
+        return 'N/A';
+    }
 
     const extendedVersionText = `Scored using CVSS ${version}`;
     const versionText = expanded ? extendedVersionText : version;

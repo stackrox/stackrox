@@ -57,21 +57,29 @@ function complianceRate(numPassing, numFailing) {
 }
 
 function formatResourceData(data, resourceType) {
-    if (!data || !data.results || data.results.results.length === 0) return null;
+    if (!data || !data.results || data.results.results.length === 0) {
+        return null;
+    }
     const formattedData = { results: [] };
     const entityMap = {};
     let standardKeyIndex = 0;
     let entityKeyIndex = 0;
     data.results.results[0].aggregationKeys.forEach(({ scope }, idx) => {
-        if (scope === 'STANDARD') standardKeyIndex = idx;
-        if (scope === resourceType) entityKeyIndex = idx;
+        if (scope === 'STANDARD') {
+            standardKeyIndex = idx;
+        }
+        if (scope === resourceType) {
+            entityKeyIndex = idx;
+        }
     });
     data.results.results.forEach(({ aggregationKeys, keys, numPassing, numFailing }) => {
         const curEntity = aggregationKeys[entityKeyIndex].id;
         const curStandard = aggregationKeys[standardKeyIndex].id;
         const entity = keys[entityKeyIndex];
         // eslint-disable-next-line no-underscore-dangle
-        if (entity.__typename === '') return;
+        if (entity.__typename === '') {
+            return;
+        }
         const entityMetaData = entity.metadata || {};
 
         entityMap[curEntity] = entityMap[curEntity] || {
@@ -86,8 +94,9 @@ function formatResourceData(data, resourceType) {
             },
         };
 
-        if (numPassing + numFailing > 0)
+        if (numPassing + numFailing > 0) {
             entityMap[curEntity][curStandard] = complianceRate(numPassing, numFailing);
+        }
         entityMap[curEntity].overall.numPassing += numPassing;
         entityMap[curEntity].overall.numFailing += numFailing;
     });
@@ -103,16 +112,24 @@ function formatResourceData(data, resourceType) {
 }
 
 function formatStandardData(data) {
-    if (!data.results || !data.results.results || data.results.results.length === 0) return null;
+    if (!data.results || !data.results.results || data.results.results.length === 0) {
+        return null;
+    }
     const formattedData = { results: [], totalRows: 0 };
     const groups = {};
     let controlKeyIndex = null;
     let categoryKeyIndex = null;
     let groupByKeyIndex = null;
     data.results.results[0].aggregationKeys.forEach(({ scope }, idx) => {
-        if (scope === 'CONTROL') controlKeyIndex = idx;
-        if (scope === 'CATEGORY') categoryKeyIndex = idx;
-        if (scope !== 'CATEGORY' && scope !== 'CONTROL') groupByKeyIndex = idx;
+        if (scope === 'CONTROL') {
+            controlKeyIndex = idx;
+        }
+        if (scope === 'CATEGORY') {
+            categoryKeyIndex = idx;
+        }
+        if (scope !== 'CATEGORY' && scope !== 'CONTROL') {
+            groupByKeyIndex = idx;
+        }
     });
     data.results.results.forEach(({ keys, numPassing, numFailing }) => {
         const groupKey = groupByKeyIndex === null ? categoryKeyIndex : groupByKeyIndex;
@@ -182,7 +199,9 @@ const ListTable = ({
     // This is a client-side implementation of filtering by the "Compliance State" Search Option
     function filterByComplianceState(data, filterQuery, isControlList) {
         const complianceStateKey = SEARCH_OPTIONS.COMPLIANCE.STATE;
-        if (!canFilterByComplianceState(filterQuery, complianceStateKey)) return data.results;
+        if (!canFilterByComplianceState(filterQuery, complianceStateKey)) {
+            return data.results;
+        }
         const val = filterQuery[complianceStateKey].toLowerCase();
         const isPassing = val === 'pass';
         const isFailing = val === 'fail';
@@ -193,7 +212,9 @@ const ListTable = ({
                     const newResult = { ...result };
                     newResult.rows = result.rows.filter((row) => {
                         const intValue = parseInt(row.compliance, 10); // strValue comes in the format "100.00%"
-                        if (Number.isNaN(intValue)) return false;
+                        if (Number.isNaN(intValue)) {
+                            return false;
+                        }
                         if (isPassing) {
                             return intValue === 100;
                         }
@@ -209,14 +230,20 @@ const ListTable = ({
 
         return results.filter((item) =>
             Object.values(standardTypes).reduce((acc, standardId) => {
-                if (!item[standardId]) return acc;
+                if (!item[standardId]) {
+                    return acc;
+                }
                 const intValue = parseInt(item[standardId], 10);
                 if (isPassing) {
-                    if (acc === false) return acc;
+                    if (acc === false) {
+                        return acc;
+                    }
                     return intValue === 100;
                 }
                 if (isFailing) {
-                    if (acc === true) return acc;
+                    if (acc === true) {
+                        return acc;
+                    }
                     return intValue !== 100;
                 }
                 return acc;

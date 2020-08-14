@@ -49,7 +49,9 @@ export const REMOVE_PROCESS_TAGS = gql`
  * @returns {string[]} - returns the tags data from the API response
  */
 export const getTagsDataByType = (type, data) => {
-    if (!data) return [];
+    if (!data) {
+        return [];
+    }
     if (type === ANALYST_NOTES_TYPES.VIOLATION) {
         return data?.violation?.tags || [];
     }

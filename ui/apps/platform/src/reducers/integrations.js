@@ -82,7 +82,9 @@ const imageIntegrations = (state = [], action) => {
 };
 
 const isCreating = (state = false, action) => {
-    if (action.type === types.SET_CREATE_STATE) return action.state;
+    if (action.type === types.SET_CREATE_STATE) {
+        return action.state;
+    }
     return state;
 };
 

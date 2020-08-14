@@ -10,7 +10,9 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 const formatDate = (date) => dateFns.format(date, dateTimeFormat);
 
 const Token = ({ token }) => {
-    if (!token) return null;
+    if (!token) {
+        return null;
+    }
     return (
         <div className="flex flex-col items-end">
             <div className="flex">

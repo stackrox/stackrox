@@ -46,7 +46,9 @@ const getCertificateStatus = (files) => {
     files.forEach((file) => {
         if (file.metadata) {
             const { startDate, endDate } = file.metadata;
-            if (!startDate && !endDate) return;
+            if (!startDate && !endDate) {
+                return;
+            }
 
             const today = new Date().toISOString();
             const isUpcoming = dateFns.isAfter(startDate, today);
@@ -67,7 +69,9 @@ const getCertificateStatus = (files) => {
 
 const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
     function processData(data) {
-        if (!data || !data.secrets) return [];
+        if (!data || !data.secrets) {
+            return [];
+        }
 
         return data.secrets
             .filter((secret) => secret.deploymentCount)

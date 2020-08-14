@@ -21,7 +21,9 @@ import isGQLLoading from 'utils/gqlLoading';
 import Header from './Header';
 
 function processData(data) {
-    if (!data || !data.results) return {};
+    if (!data || !data.results) {
+        return {};
+    }
     return data.results;
 }
 
@@ -40,7 +42,9 @@ const ClusterPage = ({
     return (
         <Query query={QUERY} variables={{ id: entityId }}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader />;
+                if (isGQLLoading(loading, data)) {
+                    return <Loader />;
+                }
                 const cluster = processData(data);
                 const { name, id } = cluster;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';

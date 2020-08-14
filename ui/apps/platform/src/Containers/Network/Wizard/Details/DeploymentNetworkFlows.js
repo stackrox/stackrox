@@ -31,7 +31,9 @@ const DeploymentNetworkFlows = ({
     function highlightNode({ data }) {
         const node = getNodeData(data);
         if (node) {
-            if (onDeploymentClick) onDeploymentClick(node.deploymentId);
+            if (onDeploymentClick) {
+                onDeploymentClick(node.deploymentId);
+            }
             networkGraphRef.setSelectedNode(node);
             setSelectedNode(node);
         }
@@ -92,8 +94,9 @@ const DeploymentNetworkFlows = ({
                 Cell: ({ original }) => renderRowActionButtons(original),
             },
         ];
-        if (!deploymentEdges.length)
+        if (!deploymentEdges.length) {
             return <NoResultsMessage message={`No ${filterStateString} deployment flows`} />;
+        }
         return (
             <Table
                 rows={deploymentEdges}
@@ -109,8 +112,9 @@ const DeploymentNetworkFlows = ({
 
     function renderOverview() {
         const filterStateString = filterState !== filterModes.all ? filterLabels[filterState] : '';
-        if (!deploymentEdges.length)
+        if (!deploymentEdges.length) {
             return <NoResultsMessage message={`No ${filterStateString} deployment flows`} />;
+        }
         const paginationComponent = (
             <TablePagination page={page} dataLength={deploymentEdges.length} setPage={setPage} />
         );

@@ -42,7 +42,9 @@ function ViolationsTablePanelButtons({ setDialogue, checkedAlertIds, runtimeAler
 
     let checkedRuntimeAlerts = 0;
     checkedAlertIds.forEach((id) => {
-        if (runtimeAlerts.has(id)) checkedRuntimeAlerts += 1;
+        if (runtimeAlerts.has(id)) {
+            checkedRuntimeAlerts += 1;
+        }
     });
     const numCheckedAlertIds = checkedAlertIds.length;
     const whitelistCount = numCheckedAlertIds;

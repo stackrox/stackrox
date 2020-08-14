@@ -8,7 +8,9 @@ const Details = (props) => {
     const { name, active } = props.authProvider;
     const { groups, defaultRole } = props;
 
-    if (!name) return null;
+    if (!name) {
+        return null;
+    }
     // Add warning about provider not being editable if active
     let warning = '';
     if (active) {

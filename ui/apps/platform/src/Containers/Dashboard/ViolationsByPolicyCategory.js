@@ -13,7 +13,9 @@ import TwoLevelPieChart from 'Components/visuals/TwoLevelPieChart';
 import severityPropType from './severityPropTypes';
 
 const ViolationsByPolicyCategory = ({ data, history }) => {
-    if (!data) return '';
+    if (!data) {
+        return '';
+    }
     return data.map((policyType) => {
         const pieData = policyType.counts.map((d) => ({
             name: severityLabels[d.severity],

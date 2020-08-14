@@ -9,8 +9,12 @@ import { selectors } from 'reducers';
 import Button from '../../Components/Button';
 
 const getExpirationMessageType = (daysLeft) => {
-    if (daysLeft > 14) return 'info';
-    if (daysLeft > 3) return 'warn';
+    if (daysLeft > 14) {
+        return 'info';
+    }
+    if (daysLeft > 3) {
+        return 'warn';
+    }
     return 'error';
 };
 

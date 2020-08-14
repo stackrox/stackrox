@@ -8,7 +8,9 @@ const processQueryPrefix = 'Process Tag';
 
 function getQuery(prefix, queryText) {
     const query = queryService.objectToWhereClause({ [prefix]: queryText });
-    if (!query) return `${prefix}:`;
+    if (!query) {
+        return `${prefix}:`;
+    }
     return query;
 }
 

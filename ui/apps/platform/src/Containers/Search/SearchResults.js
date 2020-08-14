@@ -230,7 +230,9 @@ class SearchResults extends Component {
             },
         ];
         const rows = this.props.globalSearchResults;
-        if (!rows.length) return <NoResultsMessage message="No Search Results." />;
+        if (!rows.length) {
+            return <NoResultsMessage message="No Search Results." />;
+        }
         return <Table rows={rows} columns={columns} noDataText="No Search Results" />;
     };
 
@@ -260,7 +262,9 @@ class SearchResults extends Component {
 }
 
 const getTabs = createSelector([selectors.getGlobalSearchCounts], (globalSearchCounts) => {
-    if (globalSearchCounts.length === 0) return defaultTabs;
+    if (globalSearchCounts.length === 0) {
+        return defaultTabs;
+    }
 
     const newTabs = [];
     defaultTabs.forEach((tab) => {
@@ -268,7 +272,9 @@ const getTabs = createSelector([selectors.getGlobalSearchCounts], (globalSearchC
         const currentTab = globalSearchCounts.find((obj) => obj.category === tab.category);
         if (currentTab) {
             newTab.text += ` (${currentTab.count})`;
-            if (currentTab.count === '0') newTab.disabled = true;
+            if (currentTab.count === '0') {
+                newTab.disabled = true;
+            }
         }
         newTabs.push(newTab);
     });

@@ -153,8 +153,12 @@ const List = ({
         <section className="h-full w-full" id="capture-list">
             <Query query={query} variables={varsWithPagination}>
                 {({ loading, data: queryData }) => {
-                    if (isGQLLoading(loading, data)) return <Loader />;
-                    if (!queryData) return <PageNotFound resourceType={entityType} />;
+                    if (isGQLLoading(loading, data)) {
+                        return <Loader />;
+                    }
+                    if (!queryData) {
+                        return <PageNotFound resourceType={entityType} />;
+                    }
                     const tableRows = createTableRows(queryData) || [];
                     const totalCount = queryData?.count || 0;
                     const headerComponents = getHeaderComponents(totalCount);

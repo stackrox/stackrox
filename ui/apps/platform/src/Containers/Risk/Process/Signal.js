@@ -35,8 +35,9 @@ const columns = [
 
 function Signal({ signals }) {
     const rows = signals;
-    if (!rows.length)
+    if (!rows.length) {
         return <NoResultsMessage message="No results found. Please refine your search." />;
+    }
 
     return (
         <div className="border-b border-base-300">

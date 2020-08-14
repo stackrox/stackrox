@@ -5,7 +5,9 @@ import Table from 'Components/Table';
 
 function List(props) {
     const { rows, selectRow, selectedListItem, selectedIdAttribute, columns } = props;
-    if (!rows.length) return null;
+    if (!rows.length) {
+        return null;
+    }
     return (
         <Table
             columns={columns}

@@ -6,7 +6,9 @@ import LegendTile from 'Components/LegendTile';
 import featureFlags from 'utils/featureFlags';
 
 const LegendContent = ({ isOpen, toggleLegend }) => {
-    if (!isOpen) return null;
+    if (!isOpen) {
+        return null;
+    }
     return (
         <>
             <div className="flex justify-between border-b border-base-400 p-2 uppercase items-center">
@@ -94,7 +96,9 @@ const Legend = () => {
     }
 
     function renderLegendButton() {
-        if (isOpen) return null;
+        if (isOpen) {
+            return null;
+        }
         return (
             <div
                 role="button"

@@ -112,7 +112,9 @@ const entityCountMatchesTableRows = (listEntity, context) => {
         .find(configManagementSelectors.countWidgetValue)
         .invoke('text')
         .then((count) => {
-            if (count === '0') return;
+            if (count === '0') {
+                return;
+            }
             cy.get(`${configManagementSelectors.countWidgets}:contains('${listEntity}')`)
                 .find('button')
                 .invoke('attr', 'disabled', false)

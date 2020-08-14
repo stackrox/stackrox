@@ -41,12 +41,13 @@ const PodEventTimeline = ({
 
     captureGraphQLErrors([error]);
 
-    if (loading)
+    if (loading) {
         return (
             <div className="flex flex-1 items-center justify-center py-4">
                 <Loader message="Loading Event Timeline..." />
             </div>
         );
+    }
 
     const { name, subText } = getPod(data.pod);
 

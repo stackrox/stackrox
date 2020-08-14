@@ -27,7 +27,9 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
 
     const queryObject = { ...query[searchParam] };
 
-    if (entityListType === entityTypes.POLICY) queryObject['Lifecycle Stage'] = 'DEPLOY';
+    if (entityListType === entityTypes.POLICY) {
+        queryObject['Lifecycle Stage'] = 'DEPLOY';
+    }
     if (!queryObject.Standard && entityListType === entityTypes.CONTROL) {
         queryObject.Standard = 'CIS';
     }
@@ -71,7 +73,9 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
     `;
 
     function getQuery() {
-        if (!entityListType) return defaultQuery;
+        if (!entityListType) {
+            return defaultQuery;
+        }
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
             entityTypes.CLUSTER,
             entityListType,
@@ -102,9 +106,13 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader />;
+                if (isGQLLoading(loading, data)) {
+                    return <Loader />;
+                }
                 const { cluster: entity } = data;
-                if (!entity) return <PageNotFound resourceType={entityTypes.CLUSTER} />;
+                if (!entity) {
+                    return <PageNotFound resourceType={entityTypes.CLUSTER} />;
+                }
 
                 const { complianceResults = [] } = entity;
 
@@ -132,7 +140,9 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
                         />
                     );
                 }
-                if (!entity.status) return null;
+                if (!entity.status) {
+                    return null;
+                }
 
                 const {
                     name,

@@ -37,7 +37,9 @@ const EntityTabs = ({ entityType, activeTab }) => {
         ),
     ];
 
-    if (!relationships) return null;
+    if (!relationships) {
+        return null;
+    }
     const entityTabs = relationships.map((relationship) => getTab(relationship, entityType));
     const groups = Object.values(entityGroups);
 

@@ -133,7 +133,9 @@ class NamespaceDetails extends Component {
             },
         ];
         const rows = namespace.deployments;
-        if (!rows.length) return <NoResultsMessage message="No namespace deployments" />;
+        if (!rows.length) {
+            return <NoResultsMessage message="No namespace deployments" />;
+        }
         return (
             <Table
                 rows={rows}

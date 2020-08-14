@@ -8,7 +8,9 @@ const CollapsibleRow = ({ header, isCollapsible, children, isCollapsibleOpen, ha
     const [open, setOpen] = useState(isCollapsibleOpen);
 
     function toggleOpen() {
-        if (!isCollapsible) return;
+        if (!isCollapsible) {
+            return;
+        }
         setOpen(!open);
     }
 

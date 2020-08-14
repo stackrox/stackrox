@@ -40,7 +40,9 @@ const tableColumns = [
         className: `w-1/8 ${defaultColumnClassName} capitalize`,
         // eslint-disable-next-line
         Cell: ({ original, pdf }) => {
-            if (original.status === COMPLIANCE_STATES['N/A']) return original.status;
+            if (original.status === COMPLIANCE_STATES['N/A']) {
+                return original.status;
+            }
             const status = original.status.toLowerCase();
             return <StatusChip status={status} asString={pdf} />;
         },
@@ -50,30 +52,42 @@ const tableColumns = [
 ];
 
 const filterByComplianceState = (rows, state) => {
-    if (!state || !rows) return rows;
+    if (!state || !rows) {
+        return rows;
+    }
     const complianceState = capitalize(state);
     const filteredRows = rows.filter((row) => {
-        if (complianceState === COMPLIANCE_STATES.PASS)
+        if (complianceState === COMPLIANCE_STATES.PASS) {
             return row.status === COMPLIANCE_STATES.PASS;
-        if (complianceState === COMPLIANCE_STATES.FAIL)
+        }
+        if (complianceState === COMPLIANCE_STATES.FAIL) {
             return row.status === COMPLIANCE_STATES.FAIL;
+        }
         return row.status === COMPLIANCE_STATES['N/A'];
     });
     return filteredRows;
 };
 
 const createTableRows = (data) => {
-    if (!data || !data.results || !data.results.results.length) return [];
+    if (!data || !data.results || !data.results.results.length) {
+        return [];
+    }
 
     let standardKeyIndex = 0;
     let controlKeyIndex = 0;
     data.results.results[0].aggregationKeys.forEach(({ scope }, idx) => {
-        if (scope === entityTypes.STANDARD) standardKeyIndex = idx;
-        if (scope === entityTypes.CONTROL) controlKeyIndex = idx;
+        if (scope === entityTypes.STANDARD) {
+            standardKeyIndex = idx;
+        }
+        if (scope === entityTypes.CONTROL) {
+            controlKeyIndex = idx;
+        }
     });
     const controls = {};
     data.results.results.forEach(({ keys, numFailing, numPassing }) => {
-        if (!keys[controlKeyIndex]) return;
+        if (!keys[controlKeyIndex]) {
+            return;
+        }
         const controlId = keys[controlKeyIndex].id;
         if (controls[controlId]) {
             const { status } = controls[controlId];
@@ -82,9 +96,15 @@ const createTableRows = (data) => {
             }
         } else {
             let status = '';
-            if (!numPassing) status = COMPLIANCE_STATES.FAIL;
-            if (!numFailing) status = COMPLIANCE_STATES.PASS;
-            if (!numPassing && !numFailing) status = COMPLIANCE_STATES['N/A'];
+            if (!numPassing) {
+                status = COMPLIANCE_STATES.FAIL;
+            }
+            if (!numFailing) {
+                status = COMPLIANCE_STATES.PASS;
+            }
+            if (!numPassing && !numFailing) {
+                status = COMPLIANCE_STATES['N/A'];
+            }
             controls[controlId] = {
                 id: controlId,
                 standard: standardLabels[keys[standardKeyIndex].id],
@@ -105,7 +125,9 @@ const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
         ...restQuery
     } = queryService.getQueryBasedOnSearchContext(query, searchParam);
     const queryObject = { ...restQuery };
-    if (!queryObject.Standard) queryObject.Standard = 'CIS';
+    if (!queryObject.Standard) {
+        queryObject.Standard = 'CIS';
+    }
     const queryText = queryService.objectToWhereClause(queryObject);
     const variables = {
         where: queryText,

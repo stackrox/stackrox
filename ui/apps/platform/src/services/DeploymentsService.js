@@ -51,7 +51,9 @@ export function fetchDeploymentsCount(options) {
  * @returns {Promise<Object, Error>} fulfilled with a deployment object (as defined in .proto)
  */
 export function fetchDeployment(id) {
-    if (!id) throw new Error('Deployment ID must be specified');
+    if (!id) {
+        throw new Error('Deployment ID must be specified');
+    }
     return axios.get(`${deploymentByIdUrl}/${id}`).then((response) => response.data);
 }
 
@@ -61,7 +63,9 @@ export function fetchDeployment(id) {
  * @returns {Promise<Object, Error>} fulfilled with a composite object containing deployment and risk (as defined in .proto)
  */
 export function fetchDeploymentWithRisk(id) {
-    if (!id) throw new Error('Deployment ID must be specified');
+    if (!id) {
+        throw new Error('Deployment ID must be specified');
+    }
     return axios.get(`${deploymentWithRiskUrl}/${id}`).then((response) => response.data);
 }
 
@@ -86,7 +90,9 @@ export function fetchDeploymentsLegacy(options) {
  * @returns {Promise<Object, Error>} fulfilled with a deployment object (as defined in .proto)
  */
 export function fetchDeploymentLegacy(id) {
-    if (!id) throw new Error('Deployment ID must be specified');
+    if (!id) {
+        throw new Error('Deployment ID must be specified');
+    }
     return axios.get(`${deploymentByIdUrl}/${id}`).then((response) => ({
         response: normalize({ deployment: response.data }, deploymentDetail),
     }));

@@ -49,7 +49,9 @@ function getEntityState(isSidePanelOpen) {
 
 function getListState(isSidePanelOpen) {
     const stateStack = [new WorkflowEntity(entityTypes.CLUSTER)];
-    if (isSidePanelOpen) stateStack.push(new WorkflowEntity(entityTypes.CLUSTER, entityId1));
+    if (isSidePanelOpen) {
+        stateStack.push(new WorkflowEntity(entityTypes.CLUSTER, entityId1));
+    }
 
     return new WorkflowState(
         useCases.CONFIG_MANAGEMENT,

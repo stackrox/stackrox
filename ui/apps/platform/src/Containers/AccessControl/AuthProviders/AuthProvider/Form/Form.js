@@ -44,7 +44,9 @@ class Form extends Component {
 
     renderCreateRoleModal = () => {
         const { modalOpen } = this.state;
-        if (!modalOpen) return null;
+        if (!modalOpen) {
+            return null;
+        }
         return <CreateRoleModal onClose={this.toggleModal} />;
     };
 

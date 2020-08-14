@@ -76,8 +76,10 @@ const WorkflowEntityPage = ({
     }
 
     const { loading, data, error } = useQuery(query, enhancedQueryOptions);
-    if (loading) return <Loader />;
-    if (error)
+    if (loading) {
+        return <Loader />;
+    }
+    if (error) {
         return (
             <div className="flex items-center justify-center h-full w-full">
                 <div className="m-6 w-full md:w-1/2 xl:w-3/5">
@@ -88,7 +90,10 @@ const WorkflowEntityPage = ({
                 </div>
             </div>
         );
-    if (!data || !data.result) return <PageNotFound resourceType={entityType} />;
+    }
+    if (!data || !data.result) {
+        return <PageNotFound resourceType={entityType} />;
+    }
     const { result } = data;
 
     const listData = entityListType ? result[fieldName] : null;

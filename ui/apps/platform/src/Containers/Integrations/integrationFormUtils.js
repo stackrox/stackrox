@@ -36,7 +36,9 @@ function shouldUpdateStoredCredentials(source, type, data) {
         source,
         type
     );
-    if (fieldsWithPossibleStoredCredentials.length === 0) return false;
+    if (fieldsWithPossibleStoredCredentials.length === 0) {
+        return false;
+    }
     const shouldUpdate = fieldsWithPossibleStoredCredentials.some((field) => {
         return !!resolvePath(data, field.jsonpath);
     });
@@ -57,7 +59,9 @@ function findFieldsWithStoredCredentials(source, type, data) {
         source,
         type
     );
-    if (fieldsWithPossibleStoredCredentials.length === 0) return [];
+    if (fieldsWithPossibleStoredCredentials.length === 0) {
+        return [];
+    }
     const fieldsWithStoredCredentials = fieldsWithPossibleStoredCredentials.filter((field) => {
         const value = resolvePath(data, field.jsonpath);
         return value === '******';
@@ -82,7 +86,9 @@ export function setStoredCredentialFields(source, type, initialValues) {
         initialValues
     );
     // if there isn't a field that uses the stored credentials, leave the data untouched
-    if (fieldsWithStoredCredentials.length === 0) return initialValues;
+    if (fieldsWithStoredCredentials.length === 0) {
+        return initialValues;
+    }
     const newInitialValues = { ...initialValues };
     newInitialValues.hasStoredCredentials = true;
     fieldsWithStoredCredentials.forEach((field) => {
@@ -111,7 +117,9 @@ export function setFormSubmissionOptions(source, type, data, metadata = {}) {
         const { isNewIntegration } = metadata;
         // if we're creating a new integration for something that can store credentials, we should
         // automatically update
-        if (isNewIntegration) return { updatePassword: true };
+        if (isNewIntegration) {
+            return { updatePassword: true };
+        }
         const updatePassword = shouldUpdateStoredCredentials(source, type, data);
         options = { updatePassword };
     }

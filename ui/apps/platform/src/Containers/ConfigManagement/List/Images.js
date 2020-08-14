@@ -46,7 +46,9 @@ const buildTableColumns = (match, location, entityContext) => {
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { metadata } = original;
-                if (!metadata) return '-';
+                if (!metadata) {
+                    return '-';
+                }
                 return format(metadata.v1.created, dateTimeFormat);
             },
             id: imageSortFields.CREATED_TIME,
@@ -63,7 +65,9 @@ const buildTableColumns = (match, location, entityContext) => {
                       const { deployments, id } = original;
                       const num = deployments.length;
                       const text = `${num} ${pluralize('deployment', num)}`;
-                      if (num === 0) return text;
+                      if (num === 0) {
+                          return text;
+                      }
                       const url = URLService.getURL(match, location)
                           .push(id)
                           .push(entityTypes.DEPLOYMENT)

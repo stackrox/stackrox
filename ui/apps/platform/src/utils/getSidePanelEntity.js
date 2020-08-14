@@ -1,5 +1,7 @@
 function getSidePanelEntity(workflowState) {
-    if (workflowState.stateStack.length === 0) return {};
+    if (workflowState.stateStack.length === 0) {
+        return {};
+    }
 
     const pageStack = workflowState.getPageStack();
     const sidePanelStateStack = workflowState.stateStack.slice(pageStack.length);

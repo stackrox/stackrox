@@ -46,8 +46,11 @@ const CommentThread = ({
     }
 
     function onSave(id, message) {
-        if (!id) onCreate(message);
-        else onUpdate(id, message);
+        if (!id) {
+            onCreate(message);
+        } else {
+            onUpdate(id, message);
+        }
     }
 
     let content = (

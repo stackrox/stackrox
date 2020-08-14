@@ -270,9 +270,13 @@ export const getNamespaceEdges = ({
             const nodeLinkKey = getSourceTargetKey(source, target);
 
             // keep track of which namespace links are active
-            if (isActive) activeNamespaceLinks[namespaceLinkKey] = true;
+            if (isActive) {
+                activeNamespaceLinks[namespaceLinkKey] = true;
+            }
             // keep track of which namespace links are disallowed
-            if (isDisallowed) disallowedNamespaceLinks[namespaceLinkKey] = true;
+            if (isDisallowed) {
+                disallowedNamespaceLinks[namespaceLinkKey] = true;
+            }
 
             const portsAndProtocols = linkPortsAndProtocols[nodeLinkKey] || [];
             const isLinkPreviouslyVisited = visitedNodeLinks[nodeLinkKey];
@@ -391,7 +395,9 @@ export const getEdgesFromNode = ({
     const highlightedNode = hoveredNode || selectedNode;
 
     // if a node wasn't selected or hovered over, we don't want to show it's links
-    if (!highlightedNode) return [];
+    if (!highlightedNode) {
+        return [];
+    }
 
     const linkPortsAndProtocols = getLinkPortsAndProtocols(nodes);
 
@@ -820,7 +826,9 @@ export const getFilteredNodes = (activeNodes, allowedNodes, filterState) => {
 export const getIngressPortsAndProtocols = (nodes, node = {}) => {
     const { id, ingress } = node;
 
-    if (!id || !ingress || ingress.length === 0) return [];
+    if (!id || !ingress || ingress.length === 0) {
+        return [];
+    }
 
     const targetNodeIndex = findIndex(nodes, (n) => {
         return n.id === id;
@@ -846,7 +854,9 @@ export const getIngressPortsAndProtocols = (nodes, node = {}) => {
  * @returns {!Object[]}
  */
 export const getEgressPortsAndProtocols = (outEdges) => {
-    if (!outEdges || outEdges.length === 0) return [];
+    if (!outEdges || outEdges.length === 0) {
+        return [];
+    }
     return Object.values(outEdges).reduce((acc, curr) => {
         return [...acc, ...curr.properties];
     }, []);

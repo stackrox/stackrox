@@ -21,7 +21,9 @@ import TableWidget from './TableWidget';
 
 const getDeploymentsGroupedByPolicies = (data) => {
     const { violations } = data;
-    if (!violations || !violations.length) return [];
+    if (!violations || !violations.length) {
+        return [];
+    }
     const groups = violations.reduce((acc, curr) => {
         const { deployment, time, policy } = curr;
         const deployments = acc[policy.id] ? acc[policy.id].deployments : [];
@@ -70,13 +72,18 @@ const DeploymentsWithRouter = withRouter(Deployments);
 const DeploymentsWithFailedPolicies = ({ query, message, entityContext }) => (
     <Query query={VIOLATIONS} variables={{ query }}>
         {({ loading, data }) => {
-            if (loading) return <Loader />;
-            if (!data) return null;
+            if (loading) {
+                return <Loader />;
+            }
+            if (!data) {
+                return null;
+            }
             const groups = getDeploymentsGroupedByPolicies(data);
             const numDeployments = uniq(data.violations.map((violation) => violation.deployment))
                 .length;
-            if (numDeployments === 0)
+            if (numDeployments === 0) {
                 return <NoResultsMessage message={message} className="p-3 shadow" icon="info" />;
+            }
             const header = `${numDeployments} deployments failed across ${groups.length} policies`;
             const columns = [
                 {

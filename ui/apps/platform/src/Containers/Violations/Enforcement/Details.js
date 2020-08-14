@@ -10,7 +10,9 @@ function getRuntimeEnforcementCount(processViolation) {
 }
 
 function EnforcementDetails({ alert }) {
-    if (!alert) return null;
+    if (!alert) {
+        return null;
+    }
     const { lifecycleStage, processViolation, enforcement, policy } = alert;
     let enforcementCount = 0;
     if (lifecycleStage === 'RUNTIME') {

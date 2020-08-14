@@ -178,7 +178,9 @@ class IntegrationTable extends Component {
             }
         }
 
-        if (!rows.length) return <NoResultsMessage message={`No ${label} integrations`} />;
+        if (!rows.length) {
+            return <NoResultsMessage message={`No ${label} integrations`} />;
+        }
         return (
             <CheckboxTable
                 ref={this.props.setTable}

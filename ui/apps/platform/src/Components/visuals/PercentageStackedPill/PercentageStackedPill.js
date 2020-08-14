@@ -7,7 +7,9 @@ import { colorTypes, defaultColorType } from 'constants/visuals/colors';
 
 const getBackgroundColor = (colorType) => {
     const color = colorTypes.find((datum) => datum === colorType);
-    if (!color) return defaultColorType;
+    if (!color) {
+        return defaultColorType;
+    }
     return `bg-${color}-500`;
 };
 
@@ -15,9 +17,13 @@ const PercentageStackedPill = ({ data, tooltip }) => {
     const pills = data.map(({ value, colorType }, i, arr) => {
         let className = `border-r border-base-100 ${getBackgroundColor(colorType)}`;
         // adds a rounded corner to the left-most pill
-        if (i === 0) className = `${className} rounded-l-full`;
+        if (i === 0) {
+            className = `${className} rounded-l-full`;
+        }
         // adds a rounded corner to the right-most pill
-        if (i === arr.length - 1) className = `${className} rounded-r-full`;
+        if (i === arr.length - 1) {
+            className = `${className} rounded-r-full`;
+        }
 
         return <div className={className} key={i} style={{ width: `${value}%` }} />;
     });

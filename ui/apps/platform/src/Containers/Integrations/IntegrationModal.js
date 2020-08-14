@@ -66,8 +66,11 @@ class IntegrationModal extends Component {
     onTableDelete = ({ id }) => {
         const { length } = this.state.selection;
         const { source, type } = this.props;
-        if (length) this.showConfirmationDialog();
-        else this.props.deleteIntegrations(source, type, [id]);
+        if (length) {
+            this.showConfirmationDialog();
+        } else {
+            this.props.deleteIntegrations(source, type, [id]);
+        }
     };
 
     onTableAdd = () => {
@@ -143,7 +146,9 @@ class IntegrationModal extends Component {
     renderHeader = () => {
         const { source, type } = this.props;
         let { label } = this.props;
-        if (label === undefined) label = type;
+        if (label === undefined) {
+            label = type;
+        }
         return (
             <header className="flex items-center w-full p-4 bg-primary-600 text-base-100 uppercase">
                 <span className="flex flex-1">{`Configure ${label} ${SOURCE_LABELS[source]}`}</span>
@@ -176,7 +181,9 @@ class IntegrationModal extends Component {
     renderForm = () => {
         const { source, type } = this.props;
         const { selectedIntegration } = this.state;
-        if (!this.formIsOpen()) return null;
+        if (!this.formIsOpen()) {
+            return null;
+        }
         // we want to add a new "hasStoredCredentials" field to determine whether this
         // integration can possibly use stored credentials if the password field is empty
         // on submission

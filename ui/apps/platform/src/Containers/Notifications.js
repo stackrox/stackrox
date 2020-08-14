@@ -16,7 +16,9 @@ class Notifications extends Component {
     };
 
     showLatestToast = () => {
-        if (this.props.notifications[0]) toast(this.props.notifications[0]);
+        if (this.props.notifications[0]) {
+            toast(this.props.notifications[0]);
+        }
     };
 
     render() {
