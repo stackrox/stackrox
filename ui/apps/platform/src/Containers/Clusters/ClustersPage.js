@@ -36,8 +36,8 @@ import {
     saveAutoUpgradeConfig,
 } from 'services/ClustersService';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
+import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 import { clustersPath } from 'routePaths';
-import { sortVersion } from 'sorters/sorters';
 
 import ClustersSidePanel from './ClustersSidePanel';
 
@@ -52,10 +52,14 @@ import {
     formatLastCheckIn,
     getUpgradeableClusters,
 } from './cluster.helpers';
+import ClusterStatus from './Components/ClusterStatus';
+import CollectorStatus from './Components/CollectorStatus';
 import CredentialExpiration from './Components/CredentialExpiration';
+import SensorStatus from './Components/SensorStatus';
 import SensorUpgrade from './Components/SensorUpgrade';
 
 const ClustersPage = ({
+    featureFlags,
     history,
     location: { search },
     match: {
@@ -299,7 +303,7 @@ const ClustersPage = ({
 
     // Because of fixed checkbox width, total of column ratios must be less than 100%
     // 1 * 1/9 + 7 * 1/8 = 98.6%
-    const clusterColumns = [
+    const clusterColumnsWithoutHealth = [
         {
             accessor: 'name',
             Header: 'Name',
@@ -363,7 +367,6 @@ const ClustersPage = ({
             ),
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${wrapClassName} ${defaultColumnClassName} word-break`,
-            sortMethod: sortVersion,
         },
         {
             Header: '',
@@ -373,6 +376,101 @@ const ClustersPage = ({
             Cell: ({ original }) => renderRowActionButtons(original),
         },
     ];
+
+    // Because of fixed checkbox width, total of column ratios must be less than 100%
+    // 2/6 + 2/7 + 2/8 + 1/10 = 96.90674%
+    const clusterColumnsWithHealth = [
+        {
+            accessor: 'name',
+            Header: 'Name',
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
+        },
+        {
+            Header: 'Cloud Provider',
+            Cell: ({ original }) => formatCloudProvider(original?.status.providerMetadata),
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
+        },
+        {
+            Header: 'Cluster Status',
+            Cell: ({ original }) => (
+                <ClusterStatus overallHealthStatus={original.healthStatus?.overallHealthStatus} />
+            ),
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${wrapClassName} ${defaultColumnClassName}`,
+        },
+        {
+            Header: 'Sensor Status',
+            Cell: ({ original }) => (
+                <SensorStatus
+                    sensorHealthStatus={original.healthStatus?.sensorHealthStatus}
+                    lastContact={original.status?.lastContact}
+                    currentDatetime={new Date()}
+                />
+            ),
+            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
+            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`,
+        },
+        {
+            Header: 'Collector Status',
+            Cell: ({ original }) => (
+                <CollectorStatus
+                    collectorHealthStatus={original.healthStatus?.collectorHealthStatus}
+                    collectorHealthInfo={original.healthStatus?.collectorHealthInfo}
+                    sensorHealthStatus={original.healthStatus?.sensorHealthStatus}
+                    lastContact={original.status?.lastContact}
+                    currentDatetime={new Date()}
+                    isList
+                />
+            ),
+            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
+            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`,
+        },
+        {
+            Header: 'Sensor Upgrade',
+            Cell: ({ original }) => (
+                <SensorUpgrade
+                    upgradeStatus={original.status?.upgradeStatus}
+                    centralVersion={metadata.version}
+                    sensorVersion={original.status?.sensorVersion}
+                    isList
+                    actionProps={{
+                        clusterId: original.id,
+                        upgradeSingleCluster,
+                    }}
+                />
+            ),
+            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+        },
+        {
+            Header: 'Credential Expiration',
+            Cell: ({ original }) => (
+                <CredentialExpiration
+                    certExpiryStatus={original.status?.certExpiryStatus}
+                    currentDatetime={new Date()}
+                />
+            ),
+            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+        },
+        {
+            Header: '',
+            accessor: '',
+            headerClassName: 'hidden',
+            className: rtTrActionsClassName,
+            Cell: ({ original }) => renderRowActionButtons(original),
+        },
+    ];
+
+    const clusterColumns = isBackendFeatureFlagEnabled(
+        featureFlags,
+        knownBackendFlags.ROX_CLUSTER_HEALTH_MONITORING,
+        false
+    )
+        ? clusterColumnsWithHealth
+        : clusterColumnsWithoutHealth;
 
     const headerText = 'Clusters';
     const subHeaderText = 'Resource list';
@@ -498,6 +596,8 @@ const ClustersPage = ({
 };
 
 ClustersPage.propTypes = {
+    featureFlags: PropTypes.arrayOf(PropTypes.shape({ envVar: PropTypes.string })).isRequired,
+
     history: ReactRouterPropTypes.history.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     match: ReactRouterPropTypes.match.isRequired,
@@ -514,6 +614,7 @@ ClustersPage.propTypes = {
 };
 
 const mapStateToProps = createStructuredSelector({
+    featureFlags: selectors.getFeatureFlags,
     metadata: selectors.getMetadata,
     searchOptions: selectors.getClustersSearchOptions,
     searchModifiers: selectors.getClustersSearchModifiers,

@@ -1,10 +1,13 @@
 import React from 'react';
 
 import Logo from 'Components/icons/logo';
+import ClusterStatusProblems from 'Components/ClusterStatusProblems';
 import ThemeToggleButton from 'Components/ThemeToggleButton';
 import CLIDownloadButton from 'Components/CLIDownloadButton';
 import GlobalSearchButton from 'Components/GlobalSearchButton';
 import { useTheme } from 'Containers/ThemeProvider';
+import { knownBackendFlags } from 'utils/featureFlags';
+import FeatureEnabled from 'Containers/FeatureEnabled';
 import SummaryCounts from './SummaryCounts';
 import TopNavBarMenu from './TopNavBarMenu';
 
@@ -46,6 +49,11 @@ const TopNavigation = () => {
                     topNavBtnClass={topNavBtnClass}
                 />
                 <ThemeToggleButton />
+                <FeatureEnabled featureFlag={knownBackendFlags.ROX_CLUSTER_HEALTH_MONITORING}>
+                    {({ featureEnabled }) => {
+                        return featureEnabled && <ClusterStatusProblems />;
+                    }}
+                </FeatureEnabled>
                 <TopNavBarMenu />
             </div>
         </nav>

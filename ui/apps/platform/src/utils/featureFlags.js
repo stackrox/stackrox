@@ -15,6 +15,7 @@ export const knownBackendFlags = {
     ROX_SUPPORT_SLIM_COLLECTOR_MODE: 'ROX_SUPPORT_SLIM_COLLECTOR_MODE',
     ROX_AWS_SECURITY_HUB_INTEGRATION: 'ROX_AWS_SECURITY_HUB_INTEGRATION',
     ROX_NETWORK_GRAPH_PORTS: 'ROX_NETWORK_GRAPH_PORTS',
+    ROX_CLUSTER_HEALTH_MONITORING: 'ROX_CLUSTER_HEALTH_MONITORING',
 };
 
 // isBackendFeatureFlagEnabled returns whether a feature flag retrieved from the backend is enabled.

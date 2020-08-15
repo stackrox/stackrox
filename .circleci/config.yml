@@ -2778,6 +2778,7 @@ jobs:
       - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
       - ROX_AWS_SECURITY_HUB_INTEGRATION: true
+      - ROX_CLUSTER_HEALTH_MONITORING: true
 
     steps:
       - checkout

@@ -423,6 +423,7 @@ function ClustersSidePanel({
             {showFormStyles && (
                 <ClusterEditForm
                     centralEnv={centralEnv}
+                    centralVersion={metadata.version}
                     selectedCluster={selectedCluster}
                     handleChange={onChange}
                     isLoading={loadingCounter > 0}

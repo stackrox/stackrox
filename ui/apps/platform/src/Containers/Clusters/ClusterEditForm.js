@@ -5,9 +5,11 @@ import Loader from 'Components/Loader';
 import Select from 'Components/Select';
 import ToggleSwitch from 'Components/ToggleSwitch';
 import Message from 'Components/Message';
+import FeatureEnabled from 'Containers/FeatureEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
+
 import { clusterTypeOptions, runtimeOptions } from './cluster.helpers';
-import FeatureEnabled from '../FeatureEnabled';
-import { knownBackendFlags } from '../../utils/featureFlags';
+import ClusterHealth from './Components/ClusterHealth';
 
 // factory that returns a handler to normalize our generic Select component's return value
 function getSelectComparison(options, key, selectedCluster, handleChange) {
@@ -28,7 +30,7 @@ function getSelectComparison(options, key, selectedCluster, handleChange) {
     };
 }
 
-function ClusterEditForm({ centralEnv, selectedCluster, handleChange, isLoading }) {
+function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleChange, isLoading }) {
     // curry the change handlers for the select inputs
     const onCollectionMethodChange = getSelectComparison(
         runtimeOptions,
@@ -86,6 +88,31 @@ function ClusterEditForm({ centralEnv, selectedCluster, handleChange, isLoading 
     return (
         <form className="px-4 w-full mb-8" data-testid="cluster-form">
             {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
+            <FeatureEnabled featureFlag={knownBackendFlags.ROX_CLUSTER_HEALTH_MONITORING}>
+                {({ featureEnabled }) => {
+                    return (
+                        featureEnabled && (
+                            <CollapsibleCard
+                                open
+                                title="Cluster Health"
+                                cardClassName="border border-base-400 mb-2"
+                                titleClassName="border-b border-base-300 bg-primary-200 leading-normal cursor-pointer flex justify-between items-center hover:bg-primary-300 hover:border-primary-300"
+                            >
+                                <div className="p-3">
+                                    <div className="mb-4">
+                                        <ClusterHealth
+                                            healthStatus={selectedCluster.healthStatus}
+                                            status={selectedCluster.status}
+                                            centralVersion={centralVersion}
+                                            currentDatetime={new Date()}
+                                        />
+                                    </div>
+                                </div>
+                            </CollapsibleCard>
+                        )
+                    );
+                }}
+            </FeatureEnabled>
             <CollapsibleCard
                 open
                 title="Static Configuration (requires deployment)"
@@ -470,6 +497,7 @@ ClusterEditForm.propTypes = {
     centralEnv: PropTypes.shape({
         kernelSupportAvailable: PropTypes.bool,
     }).isRequired,
+    centralVersion: PropTypes.string.isRequired,
     selectedCluster: PropTypes.shape({
         id: PropTypes.string,
         name: PropTypes.string,
@@ -483,6 +511,7 @@ ClusterEditForm.propTypes = {
         tolerationsConfig: PropTypes.shape({
             disabled: PropTypes.bool,
         }),
+        status: PropTypes.object,
         dynamicConfig: PropTypes.shape({
             registryOverride: PropTypes.string,
             admissionControllerConfig: PropTypes.shape({
@@ -494,6 +523,7 @@ ClusterEditForm.propTypes = {
             }),
         }),
         slimCollector: PropTypes.bool,
+        healthStatus: PropTypes.object,
     }).isRequired,
     handleChange: PropTypes.func.isRequired,
     isLoading: PropTypes.bool.isRequired,
