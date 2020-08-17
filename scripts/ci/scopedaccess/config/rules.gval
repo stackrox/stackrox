@@ -6,7 +6,7 @@ principal.authProvider.type == "api-token" && \
     scope.noun == "Deployment" && \
     ( \
         scope.attributes.cluster.name == "remote" && \
-        scope.attributes.namespace =~ "test-qa2" \
+        scope.attributes.namespace =~ "qa-test2" \
         || \
         scope.attributes.cluster.name == "local" \
     )
@@ -19,7 +19,7 @@ principal.authProvider.type == "api-token" && \
     scope.verb == "view" && \
     ( \
         scope.attributes.cluster.name == "remote" && \
-        scope.attributes.namespace == "test-qa1" \
+        scope.attributes.namespace == "qa-test1" \
     )
 
 principal.authProvider.type == "api-token" && \
@@ -33,7 +33,7 @@ principal.authProvider.type == "api-token" && \
     ( \
         scope.noun == "Alert" && \
         scope.attributes.cluster.name == "remote" && \
-        scope.attributes.namespace == "test-qa1" \
+        scope.attributes.namespace == "qa-test1" \
     )
 
 principal.authProvider.type == "api-token" && \
@@ -42,7 +42,7 @@ principal.authProvider.type == "api-token" && \
     ( \
         scope.noun == "Image" && \
         scope.attributes.cluster.name == "remote" && \
-        scope.attributes.namespace == "test-qa1" \
+        scope.attributes.namespace == "qa-test1" \
     )
 
 principal.authProvider.type == "api-token" && \
@@ -51,7 +51,7 @@ principal.authProvider.type == "api-token" && \
     ( \
         scope.noun == "Deployment" && \
         scope.attributes.cluster.name == "remote" && \
-        scope.attributes.namespace == "test-qa1" \
+        scope.attributes.namespace == "qa-test1" \
     )
 
 principal.authProvider.type == "api-token" && \
@@ -60,7 +60,7 @@ principal.authProvider.type == "api-token" && \
     ( \
         scope.noun == "Namespace" && \
         scope.attributes.cluster.name == "remote" && \
-        scope.attributes.namespace == "test-qa1" \
+        scope.attributes.namespace == "qa-test1" \
     )
 
 principal.authProvider.type == "api-token" && \

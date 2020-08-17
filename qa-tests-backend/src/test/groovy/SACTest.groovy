@@ -35,7 +35,7 @@ class SACTest extends BaseSpecification {
             .addPort(22, "TCP")
             .addAnnotation("test", "annotation")
             .setEnv(["CLUSTER_NAME": "main"])
-            .setNamespace("test-qa1")
+            .setNamespace("qa-test1")
             .addLabel("app", "test")
     static final private Deployment DEPLOYMENT_QA2 = new Deployment()
             .setName(DEPLOYMENTNGINX_NAMESPACE_QA2)
@@ -43,7 +43,7 @@ class SACTest extends BaseSpecification {
             .addPort(22, "TCP")
             .addAnnotation("test", "annotation")
             .setEnv(["CLUSTER_NAME": "main"])
-            .setNamespace("test-qa2")
+            .setNamespace("qa-test2")
             .addLabel("app", "test")
 
     static final private List<Deployment> DEPLOYMENTS = [DEPLOYMENT_QA1, DEPLOYMENT_QA2,]
@@ -125,7 +125,7 @@ class SACTest extends BaseSpecification {
         where:
         "Data inputs are: "
         sacResource | _
-        "test-qa2"  | _
+        "qa-test2"  | _
     }
 
     def "Verify GetSummaryCounts using a token without access receives no results"() {
@@ -462,9 +462,9 @@ class SACTest extends BaseSpecification {
         NOACCESSTOKEN            | "non_existent" | [SSOC.SearchCategory.NAMESPACES, SSOC.SearchCategory.IMAGES,
                                                      SSOC.SearchCategory.DEPLOYMENTS]
         "kubeSystemImagesToken"  | "kube-system"  | [SSOC.SearchCategory.IMAGES]
-        "searchNamespacesToken"  | "test-qa1"     | [SSOC.SearchCategory.NAMESPACES]
-        "searchDeploymentsToken" | "test-qa1"     | [SSOC.SearchCategory.DEPLOYMENTS]
-        "searchImagesToken"      | "test-qa1"     | [SSOC.SearchCategory.IMAGES]
+        "searchNamespacesToken"  | "qa-test1"     | [SSOC.SearchCategory.NAMESPACES]
+        "searchDeploymentsToken" | "qa-test1"     | [SSOC.SearchCategory.DEPLOYMENTS]
+        "searchImagesToken"      | "qa-test1"     | [SSOC.SearchCategory.IMAGES]
     }
 
     def "Verify that SAC has the same effect as query restriction for network flows"() {
