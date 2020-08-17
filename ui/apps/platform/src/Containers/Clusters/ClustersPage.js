@@ -388,7 +388,8 @@ const ClustersPage = ({
         },
         {
             Header: 'Cloud Provider',
-            Cell: ({ original }) => formatCloudProvider(original?.status.providerMetadata),
+            // eslint-disable-next-line react/prop-types
+            Cell: ({ original }) => formatCloudProvider(original.status?.providerMetadata),
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
         },
