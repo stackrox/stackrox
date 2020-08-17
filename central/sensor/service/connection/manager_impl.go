@@ -137,7 +137,7 @@ func (m *manager) updateInactiveClusterHealth(cluster *storage.Cluster) {
 	}
 	clusterHealthStatus.OverallHealthStatus = clusterhealth.PopulateOverallClusterStatus(clusterHealthStatus)
 
-	if err := m.clusters.UpdateClusterHealth(managerCtx, cluster.GetId(), &storage.ClusterHealthStatus{}); err != nil {
+	if err := m.clusters.UpdateClusterHealth(managerCtx, cluster.GetId(), clusterHealthStatus); err != nil {
 		log.Errorf("error updating health for cluster %s (id: %s): %v", cluster.GetName(), cluster.GetId(), err)
 	}
 }
