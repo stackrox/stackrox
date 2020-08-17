@@ -241,5 +241,9 @@ class Env {
     static String mustGetGCPAccessKey() {
         return mustGet("GCP_SECRET_ACCESS_KEY")
     }
+
+    static String mustGetPagerdutyToken() {
+        return mustGet("PAGERDUTY_TOKEN")
+    }
 }
 

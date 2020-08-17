@@ -1,5 +1,7 @@
 package objects
 
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
 import common.Constants
 import groovy.json.JsonSlurper
 import io.stackrox.proto.storage.NotifierOuterClass
@@ -39,6 +41,8 @@ class Notifier {
     void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) { }
 
     void validateNetpolNotification(String yaml, boolean strictIntegrationTesting) { }
+
+    void cleanup() { }
 
     String getId() {
         return notifier.id
@@ -185,8 +189,11 @@ class TeamsNotifier extends Notifier {
 }
 
 class PagerDutyNotifier extends Notifier {
-    private final pagerdutyURL = "https://api.pagerduty.com/incidents?sort_by=created_at%3Adesc&&limit=1"
-    private final pagerdutyToken = "qWT6sXfp_Lvz-pddxcCg"
+    private final pagerdutyURL =
+            "https://api.pagerduty.com/incidents?sort_by=created_at%3Adesc&&limit=1&service_ids[]=PRRAAWO"
+    private final pagerdutyResolveURL = "https://api.pagerduty.com/incidents"
+    private final pagerdutyToken = Env.mustGetPagerdutyToken()
+    private incidentID = null
     private incidentWatcherIndex = 0
 
     PagerDutyNotifier(String integrationName = "PagerDuty Test") {
@@ -198,6 +205,37 @@ class PagerDutyNotifier extends Notifier {
         def newIncidents = waitForPagerDutyUpdate(incidentWatcherIndex)
         assert newIncidents != null
         assert newIncidents.incidents[0].description.contains(policy.description)
+        incidentID = newIncidents.incidents[0].id
+        println "new pagerduty incident ID: ${incidentID}"
+    }
+
+    void cleanup() {
+        try {
+            JsonObject incident = new JsonObject()
+            incident.addProperty("id", incidentID)
+            incident.addProperty("type", "incident")
+            incident.addProperty("status", "resolved")
+            JsonArray incidents = new JsonArray()
+            incidents.add(incident)
+            JsonObject jsonBody = new JsonObject()
+            jsonBody.add("incidents", incidents)
+
+            URL url = new URL(pagerdutyResolveURL)
+            HttpURLConnection con = (HttpURLConnection) url.openConnection()
+            con.setRequestMethod("PUT")
+            con.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+            con.setRequestProperty("Accept", "application/vnd.pagerduty+json;version=2")
+            con.setRequestProperty("Authorization", "Token token=${pagerdutyToken}")
+            con.setRequestProperty("From", "pagerduty-test@stackrox.com")
+            con.doOutput = true
+            OutputStream os = con.getOutputStream()
+            byte[] input = jsonBody.toString().getBytes("utf-8")
+            os.write(input, 0, input.length)
+            con.getInputStream()
+        } catch (Exception e) {
+            println "Error resolving PagerDuty incident"
+            throw e
+        }
     }
 
     def resetIncidentWatcherIndex() {

@@ -43,7 +43,7 @@ ruleset {
     ExplicitGarbageCollection 
     ForLoopShouldBeWhileLoop 
     HardCodedWindowsFileSeparator 
-    HardCodedWindowsRootDirectory 
+    HardCodedWindowsRootDirectory
     IntegerGetInteger 
     MultipleUnaryOperators 
     RandomDoubleCoercedToZero 
@@ -382,7 +382,7 @@ ruleset {
     UnnecessaryModOne 
     UnnecessaryNullCheck 
     UnnecessaryNullCheckBeforeInstanceOf 
-    UnnecessaryObjectReferences 
+    //UnnecessaryObjectReferences
     UnnecessaryOverridingMethod 
     UnnecessaryPackageReference 
     UnnecessaryParenthesesForMethodCallWithClosure 

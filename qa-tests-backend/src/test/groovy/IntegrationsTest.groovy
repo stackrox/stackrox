@@ -357,6 +357,7 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
             CreatePolicyService.deletePolicy(policyId)
         }
         for (Notifier notifier : notifierTypes) {
+            notifier.cleanup()
             notifier.deleteNotifier()
         }
 
