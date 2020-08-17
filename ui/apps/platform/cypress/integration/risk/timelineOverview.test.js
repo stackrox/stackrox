@@ -7,7 +7,7 @@ import withAuth from '../../helpers/basicAuth';
 function setRoutes() {
     cy.server();
     cy.route('GET', api.risks.riskyDeployments).as('deployments');
-    cy.route('GET', api.risks.getDeploymentWithRisk).as('getDeployment');
+    cy.route('GET', api.risks.fetchDeploymentWithRisk).as('getDeployment');
 }
 
 function openDeployment(deploymentName) {

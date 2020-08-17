@@ -19,7 +19,7 @@ describe('Risk page', () => {
 
         const mockGetDeployment = () => {
             cy.fixture('risks/firstDeployment.json').as('firstDeploymentJson');
-            cy.route('GET', api.risks.getDeploymentWithRisk, '@firstDeploymentJson').as(
+            cy.route('GET', api.risks.fetchDeploymentWithRisk, '@firstDeploymentJson').as(
                 'firstDeployment'
             );
         };

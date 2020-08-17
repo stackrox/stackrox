@@ -11,7 +11,7 @@ const commentsSelectors = selectors.sidePanel.firstProcessCard.comments;
 function setRoutes() {
     cy.server();
     cy.route('GET', api.risks.riskyDeployments).as('deployments');
-    cy.route('GET', api.risks.getDeploymentWithRisk).as('getDeployment');
+    cy.route('GET', api.risks.fetchDeploymentWithRisk).as('getDeployment');
     cy.route('POST', api.graphql(api.risks.graphqlOps.getProcessComments)).as('getComments');
 }
 

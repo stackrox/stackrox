@@ -1,29 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { fetchAlert } from 'services/AlertsService';
 
+import { fetchAlert } from 'services/AlertsService';
 import Loader from 'Components/Loader';
 import Panel from 'Components/Panel';
 import ViolationTabs from './ViolationTabs';
 import ViolationNotFound from './ViolationNotFound';
-
-function loadSelectedAlert(selectedAlertId, setSelectedAlert, setIsFetchingSelectedAlert) {
-    if (!selectedAlertId) {
-        setSelectedAlert(null);
-        return;
-    }
-    setIsFetchingSelectedAlert(true);
-    fetchAlert(selectedAlertId).then(
-        (alert) => {
-            setSelectedAlert(alert);
-            setIsFetchingSelectedAlert(false);
-        },
-        () => {
-            setSelectedAlert(null);
-            setIsFetchingSelectedAlert(false);
-        }
-    );
-}
 
 const ViolationsSidePanel = ({ selectedAlertId, setSelectedAlertId }) => {
     // Store the alert we have fetched and whether or not we are currently fetching an alert.
@@ -32,7 +14,21 @@ const ViolationsSidePanel = ({ selectedAlertId, setSelectedAlertId }) => {
 
     // Make updates to the fetching state, and selected alert.
     useEffect(() => {
-        loadSelectedAlert(selectedAlertId, setSelectedAlert, setIsFetchingSelectedAlert);
+        if (!selectedAlertId) {
+            setSelectedAlert(null);
+            return;
+        }
+        setIsFetchingSelectedAlert(true);
+        fetchAlert(selectedAlertId).then(
+            (alert) => {
+                setSelectedAlert(alert);
+                setIsFetchingSelectedAlert(false);
+            },
+            () => {
+                setSelectedAlert(null);
+                setIsFetchingSelectedAlert(false);
+            }
+        );
     }, [selectedAlertId, setSelectedAlert, setIsFetchingSelectedAlert]);
 
     // If no alert is selected, nothing to render.
