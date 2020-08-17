@@ -11,11 +11,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/standards"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
-	"github.com/stackrox/rox/generated/storage"
-	pkgStandards "github.com/stackrox/rox/pkg/compliance/checks/standards"
-	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -89,11 +85,8 @@ func (r *runInstance) Run(dataPromise dataPromise, resultsStore complianceDS.Dat
 	})
 
 	if err == nil {
-		results := r.collectResults(run)
+		results := r.collectResults(run, nodeResults)
 
-		if features.ComplianceInNodes.Enabled() {
-			r.foldRemoteResults(results, nodeResults)
-		}
 		if storeErr := resultsStore.StoreRunResults(r.ctx, results); storeErr != nil {
 			err = errors.Wrap(storeErr, "storing results")
 		}
@@ -109,104 +102,6 @@ func (r *runInstance) Run(dataPromise dataPromise, resultsStore complianceDS.Dat
 		log.Errorf("Compliance run %s for standard %s on cluster %s failed: %v", r.id, r.standard.Name, r.domain.Cluster().ID(), err)
 	}
 	log.Infof("Completed compliance run %s", r.id)
-}
-
-func (r *runInstance) foldRemoteResults(results *storage.ComplianceRunResults, nodeResults map[string]map[string]*compliance.ComplianceStandardResult) {
-	if results.NodeResults == nil {
-		results.NodeResults = make(map[string]*storage.ComplianceRunResults_EntityResults)
-	}
-
-	mergedClusterResults := make(map[string]*storage.ComplianceResultValue)
-	for _, node := range r.domain.Nodes() {
-		standardResults := r.getStandardResults(node.Node().GetName(), nodeResults)
-		if standardResults == nil {
-			continue
-		}
-
-		// Merge the cluster-level results into a single map of check ID -> check result
-		mergeClusterResults(mergedClusterResults, standardResults.GetClusterCheckResults())
-
-		// Fold in each of the node-level results individually
-		nodeID := node.ID()
-		currentNode, ok := results.NodeResults[nodeID]
-		if !ok {
-			results.NodeResults[nodeID] = &storage.ComplianceRunResults_EntityResults{
-				ControlResults: standardResults.GetNodeCheckResults(),
-			}
-			continue
-		}
-		combineResultSets(currentNode.GetControlResults(), standardResults.GetNodeCheckResults())
-	}
-
-	// Add notes for any missing cluster-level checks
-	r.noteMissingNodeClusterChecks(mergedClusterResults)
-	// Finally, combine all the cluster-level checks into the final result data
-	combineResultSets(results.GetClusterResults().GetControlResults(), mergedClusterResults)
-}
-
-func mergeClusterResults(destination, source map[string]*storage.ComplianceResultValue) {
-	for checkName, sourceComplianceResult := range source {
-		destinationComplianceResult, ok := destination[checkName]
-		if !ok {
-			destination[checkName] = sourceComplianceResult
-			continue
-		}
-		destinationComplianceResult.Evidence = append(destinationComplianceResult.GetEvidence(), sourceComplianceResult.GetEvidence()...)
-		if sourceComplianceResult.GetOverallState() > destinationComplianceResult.GetOverallState() {
-			destinationComplianceResult.OverallState = sourceComplianceResult.GetOverallState()
-		}
-	}
-}
-
-func (r *runInstance) getStandardResults(nodeName string, nodeResults map[string]map[string]*compliance.ComplianceStandardResult) *compliance.ComplianceStandardResult {
-	perStandardNodeResults, ok := nodeResults[nodeName]
-	if !ok {
-		return nil
-	}
-
-	standardResults, ok := perStandardNodeResults[r.standard.ID]
-	if !ok {
-		log.Infof("no check results received from node %s for compliance standard %s", nodeName, r.standard.ID)
-		return nil
-	}
-	return standardResults
-}
-
-func combineResultSets(destination, source map[string]*storage.ComplianceResultValue) {
-	// Fold evidence in per-check.  We can't just override the results because some of the checks may have been run on Central
-	for checkName, remoteComplianceResult := range source {
-		destination[checkName] = remoteComplianceResult
-	}
-}
-
-func (r *runInstance) noteMissingNodeClusterChecks(clusterResults map[string]*storage.ComplianceResultValue) {
-	standard, ok := pkgStandards.NodeChecks[r.standard.ID]
-	if !ok {
-		return
-	}
-
-	for checkName, checkAndMetadata := range standard {
-		if checkAndMetadata.Metadata.TargetKind != pkgFramework.ClusterKind {
-			continue
-		}
-
-		// Only assign a value to a nil clusterResults after we know there is supposed to be evidence
-		if clusterResults == nil {
-			clusterResults = map[string]*storage.ComplianceResultValue{}
-		}
-
-		if evidence, ok := clusterResults[checkName]; !ok || len(evidence.GetEvidence()) == 0 {
-			clusterResults[checkName] = &storage.ComplianceResultValue{
-				Evidence: []*storage.ComplianceResultValue_Evidence{
-					{
-						State:   storage.ComplianceState_COMPLIANCE_STATE_NOTE,
-						Message: "No evidence was received for this check. This can occur when using a managed Kubernetes service or if the compliance pods are not running on the master nodes.",
-					},
-				},
-				OverallState: storage.ComplianceState_COMPLIANCE_STATE_NOTE,
-			}
-		}
-	}
 }
 
 func (r *runInstance) doRun(dataPromise dataPromise) (framework.ComplianceRun, map[string]map[string]*compliance.ComplianceStandardResult, error) {

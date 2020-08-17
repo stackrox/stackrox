@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 const checkID = "PCI_DSS_3_2:8_1_1"
@@ -14,14 +15,16 @@ func init() {
 			ID:                 checkID,
 			Scope:              pkgFramework.ClusterKind,
 			AdditionalScopes:   []pkgFramework.TargetKind{pkgFramework.DeploymentKind},
-			DataDependencies:   []string{"Deployments", "K8sRoles", "K8sRoleBindings"},
+			DataDependencies:   []string{"Deployments", "K8sRoles", "K8sRoleBindings", "HostScraped"},
 			InterpretationText: interpretationText,
 		},
 		clusterIsCompliant)
 }
 
 func clusterIsCompliant(ctx framework.ComplianceContext) {
-	common.IsRBACConfiguredCorrectly(ctx)
+	if !features.ComplianceInNodes.Enabled() {
+		common.IsRBACConfiguredCorrectly(ctx)
+	}
 	common.AdministratorUsersPresent(ctx)
 	common.CheckDeploymentsDoNotHaveClusterAccess(ctx, common.EffectiveAdmin)
 }

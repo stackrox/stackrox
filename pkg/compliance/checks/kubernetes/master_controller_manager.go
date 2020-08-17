@@ -18,5 +18,5 @@ func init() {
 }
 
 func masterControllerManagerCommandLine(key, target, defaultVal string, evalFunc common.CommandEvaluationFunc) *standards.CheckAndMetadata {
-	return masterNodeKubernetesCommandlineCheck("kube-controller-manager", key, target, defaultVal, evalFunc)
+	return common.MasterNodeKubernetesCommandlineCheck("kube-controller-manager", key, target, defaultVal, evalFunc)
 }

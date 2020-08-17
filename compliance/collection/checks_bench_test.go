@@ -20,7 +20,7 @@ func BenchmarkRunChecks(b *testing.B) {
 		StandardIds: []string{
 			standards.CISDocker,
 			standards.CISKubernetes,
-			standards.NIST,
+			standards.NIST800190,
 		},
 	}
 
@@ -37,7 +37,7 @@ func BenchmarkCompressResults(b *testing.B) {
 		StandardIds: []string{
 			standards.CISDocker,
 			standards.CISKubernetes,
-			standards.NIST,
+			standards.NIST800190,
 		},
 	}
 
@@ -59,7 +59,7 @@ func BenchmarkChecksAndCompression(b *testing.B) {
 		StandardIds: []string{
 			standards.CISDocker,
 			standards.CISKubernetes,
-			standards.NIST,
+			standards.NIST800190,
 		},
 	}
 

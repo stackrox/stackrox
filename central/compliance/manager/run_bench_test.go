@@ -38,10 +38,7 @@ func BenchmarkFold(b *testing.B) {
 				Name: "CIS_Docker_v1_2_0",
 			},
 		})
-		results := &storage.ComplianceRunResults{
-			NodeResults: make(map[string]*storage.ComplianceRunResults_EntityResults),
-		}
-		run.foldRemoteResults(results, nodeResults)
+		run.foldRemoteResults(nodeResults)
 	}
 }
 

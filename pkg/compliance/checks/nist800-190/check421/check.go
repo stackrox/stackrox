@@ -11,8 +11,8 @@ const (
 )
 
 func init() {
-	standards.RegisterChecksForStandard(standards.NIST, map[string]*standards.CheckAndMetadata{
-		standards.NISTCheckName(checkID): {
+	standards.RegisterChecksForStandard(standards.NIST800190, map[string]*standards.CheckAndMetadata{
+		standards.NIST800190CheckName(checkID): {
 			CheckFunc: common.CheckNoInsecureRegistries,
 			Metadata: &standards.Metadata{
 				InterpretationText: interpretationText,

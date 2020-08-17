@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/compliance/checks/common"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,7 +22,7 @@ func TestMasterAPIServerChecks(t *testing.T) {
 			name: "CIS_Kubernetes_v1_5:1_2_13",
 			commandLines: map[string]*compliance.CommandLine{
 				"test": {
-					Process: kubeAPIProcessName,
+					Process: common.KubeAPIProcessName,
 					Args: []*compliance.CommandLine_Args{
 						{
 							Key:    "enable-admission-plugins",
@@ -36,7 +37,7 @@ func TestMasterAPIServerChecks(t *testing.T) {
 			name: "CIS_Kubernetes_v1_5:1_2_13",
 			commandLines: map[string]*compliance.CommandLine{
 				"test": {
-					Process: kubeAPIProcessName,
+					Process: common.KubeAPIProcessName,
 					Args: []*compliance.CommandLine_Args{
 						{
 							Key:    "enable-admission-plugins",
@@ -51,7 +52,7 @@ func TestMasterAPIServerChecks(t *testing.T) {
 			name: "CIS_Kubernetes_v1_5:1_2_13",
 			commandLines: map[string]*compliance.CommandLine{
 				"test": {
-					Process: kubeAPIProcessName,
+					Process: common.KubeAPIProcessName,
 					Args: []*compliance.CommandLine_Args{
 						{
 							Key:    "enable-admission-plugins",
@@ -66,7 +67,7 @@ func TestMasterAPIServerChecks(t *testing.T) {
 			name: "CIS_Kubernetes_v1_5:1_2_13",
 			commandLines: map[string]*compliance.CommandLine{
 				"test": {
-					Process: kubeAPIProcessName,
+					Process: common.KubeAPIProcessName,
 					Args: []*compliance.CommandLine_Args{
 						{
 							Key: "enable-admission-plugins",

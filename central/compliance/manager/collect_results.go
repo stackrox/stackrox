@@ -6,7 +6,9 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/compliance/framework"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
+	pkgStandards "github.com/stackrox/rox/pkg/compliance/checks/standards"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 )
 
@@ -67,7 +69,7 @@ func getEvidenceProto(evidence framework.EvidenceRecord) *storage.ComplianceResu
 	}
 }
 
-func getResultValueProto(entityResults framework.Results, errors []error) *storage.ComplianceResultValue {
+func getResultValueProto(entityResults framework.Results, remoteResults *storage.ComplianceResultValue, errors []error) *storage.ComplianceResultValue {
 	var evidenceList []*storage.ComplianceResultValue_Evidence
 
 	if entityResults != nil {
@@ -75,6 +77,8 @@ func getResultValueProto(entityResults framework.Results, errors []error) *stora
 			evidenceList = append(evidenceList, getEvidenceProto(evidence))
 		}
 	}
+
+	evidenceList = append(evidenceList, remoteResults.GetEvidence()...)
 
 	for _, err := range errors {
 		evidenceList = append(evidenceList, &storage.ComplianceResultValue_Evidence{
@@ -104,7 +108,7 @@ func getResultValueProto(entityResults framework.Results, errors []error) *stora
 	}
 }
 
-func collectEntityResults(entity framework.ComplianceTarget, checks []framework.Check, allResults map[string]framework.Results) *storage.ComplianceRunResults_EntityResults {
+func collectEntityResults(entity framework.ComplianceTarget, checks []framework.Check, allResults map[string]framework.Results, allRemoteResults map[string]*storage.ComplianceResultValue) *storage.ComplianceRunResults_EntityResults {
 	controlResults := make(map[string]*storage.ComplianceResultValue)
 	for _, check := range checks {
 		if !check.AppliesToScope(entity.Kind()) {
@@ -123,7 +127,9 @@ func collectEntityResults(entity framework.ComplianceTarget, checks []framework.
 			}
 		}
 
-		controlResults[check.ID()] = getResultValueProto(results, errs)
+		remoteResults := allRemoteResults[check.ID()]
+
+		controlResults[check.ID()] = getResultValueProto(results, remoteResults, errs)
 	}
 
 	return &storage.ComplianceRunResults_EntityResults{
@@ -175,21 +181,23 @@ func (r *runInstance) metadataProto(fixTimestamps bool) *storage.ComplianceRunMe
 	}
 }
 
-func (r *runInstance) collectResults(run framework.ComplianceRun) *storage.ComplianceRunResults {
+func (r *runInstance) collectResults(run framework.ComplianceRun, remoteResults map[string]map[string]*compliance.ComplianceStandardResult) *storage.ComplianceRunResults {
+	remoteClusterResults, remoteNodeResults := r.foldRemoteResults(remoteResults)
+
 	domainProto := getDomainProto(r.domain)
 
 	allResults := run.GetAllResults()
 	checks := run.GetChecks()
-	clusterResults := collectEntityResults(r.domain.Cluster(), checks, allResults)
+	clusterResults := collectEntityResults(r.domain.Cluster(), checks, allResults, remoteClusterResults)
 
 	nodeResults := make(map[string]*storage.ComplianceRunResults_EntityResults)
 	for _, node := range r.domain.Nodes() {
-		nodeResults[node.ID()] = collectEntityResults(node, checks, allResults)
+		nodeResults[node.ID()] = collectEntityResults(node, checks, allResults, remoteNodeResults[node.ID()])
 	}
 
 	deploymentResults := make(map[string]*storage.ComplianceRunResults_EntityResults)
 	for _, deployment := range r.domain.Deployments() {
-		deploymentResults[deployment.ID()] = collectEntityResults(deployment, checks, allResults)
+		deploymentResults[deployment.ID()] = collectEntityResults(deployment, checks, allResults, nil)
 	}
 
 	runMetadataProto := r.metadataProto(true)
@@ -202,5 +210,85 @@ func (r *runInstance) collectResults(run framework.ComplianceRun) *storage.Compl
 		ClusterResults:    clusterResults,
 		NodeResults:       nodeResults,
 		DeploymentResults: deploymentResults,
+	}
+}
+
+func (r *runInstance) foldRemoteResults(remoteResults map[string]map[string]*compliance.ComplianceStandardResult) (map[string]*storage.ComplianceResultValue, map[string]map[string]*storage.ComplianceResultValue) {
+	nodeResults := make(map[string]map[string]*storage.ComplianceResultValue)
+	clusterResults := make(map[string]*storage.ComplianceResultValue)
+
+	for _, node := range r.domain.Nodes() {
+		standardResults := r.getStandardResults(node.Node().GetName(), remoteResults)
+		if standardResults == nil {
+			continue
+		}
+
+		// Merge the cluster-level results into a single map of check ID -> check result
+		mergeComplianceResultValue(clusterResults, standardResults.GetClusterCheckResults())
+
+		// Fold in each of the node-level results individually
+		nodeResults[node.ID()] = standardResults.NodeCheckResults
+	}
+	// Add notes for any missing cluster-level checks
+	r.noteMissingNodeClusterChecks(clusterResults)
+
+	return clusterResults, nodeResults
+}
+
+func mergeComplianceResultValue(destination, source map[string]*storage.ComplianceResultValue) {
+	for checkName, sourceComplianceResult := range source {
+		destinationComplianceResult, ok := destination[checkName]
+		if !ok {
+			destination[checkName] = sourceComplianceResult
+			continue
+		}
+		destinationComplianceResult.Evidence = append(destinationComplianceResult.GetEvidence(), sourceComplianceResult.GetEvidence()...)
+		if sourceComplianceResult.GetOverallState() > destinationComplianceResult.GetOverallState() {
+			destinationComplianceResult.OverallState = sourceComplianceResult.GetOverallState()
+		}
+	}
+}
+
+func (r *runInstance) getStandardResults(nodeName string, nodeResults map[string]map[string]*compliance.ComplianceStandardResult) *compliance.ComplianceStandardResult {
+	perStandardNodeResults, ok := nodeResults[nodeName]
+	if !ok {
+		return nil
+	}
+
+	standardResults, ok := perStandardNodeResults[r.standard.ID]
+	if !ok {
+		log.Infof("no check results received from node %s for compliance standard %s", nodeName, r.standard.ID)
+		return nil
+	}
+	return standardResults
+}
+
+func (r *runInstance) noteMissingNodeClusterChecks(clusterResults map[string]*storage.ComplianceResultValue) {
+	standard, ok := pkgStandards.NodeChecks[r.standard.ID]
+	if !ok {
+		return
+	}
+
+	for checkName, checkAndMetadata := range standard {
+		if checkAndMetadata.Metadata.TargetKind != pkgFramework.ClusterKind {
+			continue
+		}
+
+		// Only assign a value to a nil clusterResults after we know there is supposed to be evidence
+		if clusterResults == nil {
+			clusterResults = map[string]*storage.ComplianceResultValue{}
+		}
+
+		if evidence, ok := clusterResults[checkName]; !ok || len(evidence.GetEvidence()) == 0 {
+			clusterResults[checkName] = &storage.ComplianceResultValue{
+				Evidence: []*storage.ComplianceResultValue_Evidence{
+					{
+						State:   storage.ComplianceState_COMPLIANCE_STATE_NOTE,
+						Message: "No evidence was received for this check. This can occur when using a managed Kubernetes service or if the compliance pods are not running on the master nodes.",
+					},
+				},
+				OverallState: storage.ComplianceState_COMPLIANCE_STATE_NOTE,
+			}
+		}
 	}
 }

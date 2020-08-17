@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 const (
@@ -16,14 +17,16 @@ func init() {
 			ID:                 standardID,
 			Scope:              pkgFramework.ClusterKind,
 			AdditionalScopes:   []pkgFramework.TargetKind{pkgFramework.DeploymentKind},
-			DataDependencies:   []string{"Deployments", "K8sRoles", "K8sRoleBindings", "Policies"},
+			DataDependencies:   []string{"Deployments", "K8sRoles", "K8sRoleBindings", "Policies", "HostScraped"},
 			InterpretationText: interpretationText,
 		},
 		clusterIsCompliant)
 }
 
 func clusterIsCompliant(ctx framework.ComplianceContext) {
-	common.IsRBACConfiguredCorrectly(ctx)
+	if !features.ComplianceInNodes.Enabled() {
+		common.IsRBACConfiguredCorrectly(ctx)
+	}
 	common.CheckDeploymentsDoNotHaveClusterAccess(ctx, common.EffectiveAdmin)
 	common.CheckNetworkPoliciesByDeployment(ctx)
 }

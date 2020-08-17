@@ -16,9 +16,14 @@ func init() {
 }
 
 func makeChecksFromRemoteFuncs() []framework.Check {
+	registry := framework.RegistrySingleton()
 	var checks []framework.Check
 	for _, standardChecks := range standards.NodeChecks {
 		for checkName, checkAndMetadata := range standardChecks {
+			if registry.Lookup(checkName) != nil {
+				// Some checks are partially implemented in the nodes and partially implemented in Central.  These will already be registered.
+				continue
+			}
 			checks = append(checks, framework.NewCheckFromFunc(
 				framework.CheckMetadata{
 					ID:                 checkName,

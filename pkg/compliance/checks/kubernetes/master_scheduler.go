@@ -13,5 +13,5 @@ func init() {
 }
 
 func masterSchedulerCommandLine(key, target, defaultVal string, evalFunc common.CommandEvaluationFunc) *standards.CheckAndMetadata {
-	return masterNodeKubernetesCommandlineCheck("kube-scheduler", key, target, defaultVal, evalFunc)
+	return common.MasterNodeKubernetesCommandlineCheck("kube-scheduler", key, target, defaultVal, evalFunc)
 }

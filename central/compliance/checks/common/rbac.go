@@ -17,10 +17,6 @@ var EffectiveAdmin = &storage.PolicyRule{
 	Resources: []string{"*"},
 }
 
-// IsRBACConfiguredCorrectlyInterpretation is the text that explains how IsRBACConfiguredCorrectly works.
-const IsRBACConfiguredCorrectlyInterpretation = `StackRox assesses how the Kubernetes API server is configured in your clusters.
-For this control, StackRox checks that the legacy Application-Based Access Control (ABAC) authorizer is disabled and the more secure Role-Based Access Control (RBAC) authorizer is enabled.`
-
 // IsRBACConfiguredCorrectly returns if RBAC is correctly set up.
 func IsRBACConfiguredCorrectly(ctx framework.ComplianceContext) {
 	authorizationMode := getAPIServerAuthorizationMode(ctx.Data().Deployments())

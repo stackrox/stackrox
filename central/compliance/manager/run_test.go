@@ -67,30 +67,35 @@ func (s *RunTestSuite) TestFoldNodeResults() {
 
 	testRun := makeTestRun("testRun", testStandardID, testStandardName, testNodes)
 
-	complianceRunResults := &storage.ComplianceRunResults{
-		ClusterResults: &storage.ComplianceRunResults_EntityResults{
-			ControlResults: map[string]*storage.ComplianceResultValue{},
-		},
-		NodeResults: map[string]*storage.ComplianceRunResults_EntityResults{
-			"unrelated results": {},
-		},
-	}
+	testRunData, err := framework.NewComplianceRun(
+		framework.NewCheckFromFunc(framework.CheckMetadata{
+			ID:    testNodeCheckID,
+			Scope: pkgFramework.NodeKind,
+		}, nil),
+		framework.NewCheckFromFunc(framework.CheckMetadata{
+			ID:    testClusterCheckID,
+			Scope: pkgFramework.ClusterKind,
+		}, nil),
+	)
+	s.Require().NoError(err)
+
 	expectedNodeResults := &storage.ComplianceResultValue{
 		Evidence: []*storage.ComplianceResultValue_Evidence{
 			{
-				State:   0,
+				State:   1,
 				Message: "Joseph Rules",
 			},
 		},
-		OverallState: 0,
+		OverallState: 1,
 	}
 	expectedClusterResults := &storage.ComplianceResultValue{
 		Evidence: []*storage.ComplianceResultValue_Evidence{
 			{
-				State:   0,
+				State:   1,
 				Message: "Joseph is the best",
 			},
 		},
+		OverallState: 1,
 	}
 	testNodeResults := map[string]map[string]*compliance.ComplianceStandardResult{
 		testNodeName: {
@@ -115,8 +120,7 @@ func (s *RunTestSuite) TestFoldNodeResults() {
 		},
 	}
 
-	testRun.foldRemoteResults(complianceRunResults, testNodeResults)
-	s.Contains(complianceRunResults.NodeResults, "unrelated results")
+	complianceRunResults := testRun.collectResults(testRunData, testNodeResults)
 	s.Require().Contains(complianceRunResults.NodeResults, testNodeID)
 	s.Equal(expectedNodeRunResults, complianceRunResults.NodeResults[testNodeID])
 
@@ -217,14 +221,16 @@ func (s *RunTestSuite) TestMergesMultipleClusterResults() {
 			},
 		},
 	}
-	testResults := &storage.ComplianceRunResults{
-		ClusterResults: &storage.ComplianceRunResults_EntityResults{
-			ControlResults: map[string]*storage.ComplianceResultValue{},
-		},
-	}
+	testRunData, err := framework.NewComplianceRun(
+		framework.NewCheckFromFunc(framework.CheckMetadata{
+			ID:    testName,
+			Scope: pkgFramework.ClusterKind,
+		}, nil),
+	)
+	s.Require().NoError(err)
 
 	testRun := makeTestRun("testRun", pkgStandards.CISKubernetes, pkgStandards.CISKubernetes, testNodes)
-	testRun.foldRemoteResults(testResults, testNodeResults)
+	testResults := testRun.collectResults(testRunData, testNodeResults)
 
 	clusterResults := testResults.GetClusterResults().GetControlResults()
 	s.Require().NotNil(clusterResults)

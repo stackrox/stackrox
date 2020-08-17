@@ -29,12 +29,12 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 		status storage.ComplianceState
 	}{
 		{
-			name:   standards.NISTCheckName("4_2_1"),
+			name:   standards.NIST800190CheckName("4_2_1"),
 			status: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 			cri:    &compliance.ContainerRuntimeInfo{},
 		},
 		{
-			name: standards.NISTCheckName("4_2_1"),
+			name: standards.NIST800190CheckName("4_2_1"),
 			info: types.Info{
 				RegistryConfig: &registry.ServiceConfig{
 					InsecureRegistryCIDRs: []*registry.NetIPNet{&localIPNet},
@@ -48,7 +48,7 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 			status: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 		},
 		{
-			name: standards.NISTCheckName("4_2_1"),
+			name: standards.NIST800190CheckName("4_2_1"),
 			info: types.Info{
 				RegistryConfig: &registry.ServiceConfig{
 					InsecureRegistryCIDRs: []*registry.NetIPNet{&localIPNet, &nonLocalIPNet},
@@ -63,7 +63,7 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 		t.Run(strings.Replace(c.name, ":", "-", -1), func(t *testing.T) {
 			t.Parallel()
 
-			checks := standards.NodeChecks[standards.NIST]
+			checks := standards.NodeChecks[standards.NIST800190]
 			require.NotNil(t, checks)
 			check := checks[c.name]
 			require.NotNil(t, check)

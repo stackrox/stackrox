@@ -8,9 +8,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/assert"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
+	"github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 	pkgSet "github.com/stackrox/rox/pkg/set"
 )
+
+// KubeAPIProcessName is the string name of the kubernetes API server process
+const KubeAPIProcessName = "kube-apiserver"
 
 // FailOverride is passed as an option and will override the fail values if set
 type FailOverride func(msg string) []*storage.ComplianceResultValue_Evidence
@@ -276,4 +280,29 @@ func notContains(values []string, key, target, defaultStr string) (string, bool)
 	} else {
 		return fmt.Sprintf("%q has a default value of %q that contains %q", key, defaultStr, target), false
 	}
+}
+
+// MasterNodeKubernetesCommandlineCheck checks the arguments of the given process if this is the Kubernetes master node
+func MasterNodeKubernetesCommandlineCheck(processName, key, target, defaultVal string, evalFunc CommandEvaluationFunc, failOverride ...FailOverride) *standards.CheckAndMetadata {
+	return &standards.CheckAndMetadata{
+		CheckFunc: func(complianceData *standards.ComplianceData) []*storage.ComplianceResultValue_Evidence {
+			process, exists := GetProcess(complianceData, processName)
+			if !exists {
+				if complianceData.IsMasterNode {
+					return NoteListf("Process %q not found on host, therefore check is not applicable", processName)
+				}
+				return nil
+			}
+			values := GetValuesForCommandFromFlagsAndConfig(process.Args, nil, key)
+			return evalFunc(values, key, target, defaultVal, failOverride...)
+		},
+		Metadata: &standards.Metadata{
+			TargetKind: framework.ClusterKind,
+		},
+	}
+}
+
+// MasterAPIServerCommandLine is a master node process command line check which hard-codes the kube API server process name
+func MasterAPIServerCommandLine(key, target, defaultVal string, evalFunc CommandEvaluationFunc) *standards.CheckAndMetadata {
+	return MasterNodeKubernetesCommandlineCheck(KubeAPIProcessName, key, target, defaultVal, evalFunc)
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/checks/common"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
-	"github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 )
 
@@ -19,25 +18,6 @@ func genericKubernetesCommandlineCheck(processName string, key, target, defaultV
 			}
 			values := common.GetValuesForCommandFromFlagsAndConfig(process.Args, nil, key)
 			return evalFunc(values, key, target, defaultVal, failOverride...)
-		},
-	}
-}
-
-func masterNodeKubernetesCommandlineCheck(processName, key, target, defaultVal string, evalFunc common.CommandEvaluationFunc, failOverride ...common.FailOverride) *standards.CheckAndMetadata {
-	return &standards.CheckAndMetadata{
-		CheckFunc: func(complianceData *standards.ComplianceData) []*storage.ComplianceResultValue_Evidence {
-			process, exists := common.GetProcess(complianceData, processName)
-			if !exists {
-				if complianceData.IsMasterNode {
-					return common.NoteListf("Process %q not found on host, therefore check is not applicable", processName)
-				}
-				return nil
-			}
-			values := common.GetValuesForCommandFromFlagsAndConfig(process.Args, nil, key)
-			return evalFunc(values, key, target, defaultVal, failOverride...)
-		},
-		Metadata: &standards.Metadata{
-			TargetKind: framework.ClusterKind,
 		},
 	}
 }

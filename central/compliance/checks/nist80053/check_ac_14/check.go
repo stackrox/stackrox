@@ -4,14 +4,16 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
+	pkgCommon "github.com/stackrox/rox/pkg/compliance/checks/common"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
 	controlID = "NIST_SP_800_53_Rev_4:AC_14"
 
-	interpretationText = common.IsRBACConfiguredCorrectlyInterpretation + `
+	interpretationText = pkgCommon.IsRBACConfiguredCorrectlyInterpretation + `
 
 StackRox also checks that unauthenticated users are only given RBAC access to API methods or URLs that are generally considered safe.`
 
@@ -110,10 +112,12 @@ func init() {
 		framework.CheckMetadata{
 			ID:                 controlID,
 			Scope:              pkgFramework.ClusterKind,
-			DataDependencies:   []string{"K8sRoles", "K8sRoleBindings"},
+			DataDependencies:   []string{"K8sRoles", "K8sRoleBindings", "HostScraped"},
 			InterpretationText: interpretationText,
 		}, func(ctx framework.ComplianceContext) {
-			common.IsRBACConfiguredCorrectly(ctx)
+			if !features.ComplianceInNodes.Enabled() {
+				common.IsRBACConfiguredCorrectly(ctx)
+			}
 			checkNoExtraPrivilegesForUnauthenticated(ctx)
 		})
 }
