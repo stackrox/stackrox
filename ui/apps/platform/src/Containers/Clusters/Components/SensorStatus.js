@@ -5,7 +5,7 @@ import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
 
 import { healthStatusLabels } from 'messages/common';
-import { getDistanceStrict } from 'utils/dateUtils';
+import { getDateTime, getDistanceStrict } from 'utils/dateUtils';
 
 import HealthStatus from './HealthStatus';
 import { healthStatusStyles, isDelayedSensorHealthStatus } from '../cluster.helpers';
@@ -46,11 +46,15 @@ const SensorStatus = ({ sensorHealthStatus, lastContact, currentDatetime }) => {
             </HealthStatus>
         );
 
-        if (isDelayed) {
+        if (lastContact) {
             // Tooltip has absolute time (in ISO 8601 format) to find info from logs.
             return (
                 <Tooltip
-                    content={<TooltipOverlay>{`Last contact: ${lastContact}`}</TooltipOverlay>}
+                    content={
+                        <TooltipOverlay>{`Last contact: ${getDateTime(
+                            lastContact
+                        )}`}</TooltipOverlay>
+                    }
                 >
                     <div>{sensorStatus}</div>
                 </Tooltip>
