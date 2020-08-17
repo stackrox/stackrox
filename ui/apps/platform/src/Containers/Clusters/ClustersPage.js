@@ -419,6 +419,7 @@ const ClustersPage = ({
                     collectorHealthStatus={original.healthStatus?.collectorHealthStatus}
                     collectorHealthInfo={original.healthStatus?.collectorHealthInfo}
                     sensorHealthStatus={original.healthStatus?.sensorHealthStatus}
+                    healthInfoComplete={original.healthStatus?.healthInfoComplete}
                     lastContact={original.status?.lastContact}
                     currentDatetime={new Date()}
                     isList
