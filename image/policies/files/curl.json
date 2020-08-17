@@ -53,15 +53,6 @@
           "namespace": "stackrox"
         }
       }
-    },
-    {
-      "name": "Don't alert on StackRox scanner-v2",
-      "deployment": {
-        "name": "scanner-v2",
-        "scope": {
-          "namespace": "stackrox"
-        }
-      }
     }
   ]
 }

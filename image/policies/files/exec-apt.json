@@ -15,5 +15,5 @@
     }
   },
   "rationale": "Use of package managers at runtime indicates that new software may be being introduced into containers while they are running.",
-  "remediation": "Run `apt-get remove -y --allow-remove-essential apt` in the image build for production containers. Change applications to no longer use package managers at runtime, if applicable."
+  "remediation": "Run `dpkg -r --force-all apt && dpkg -r --force-all debconf dpkg` in the image build for production containers. Change applications to no longer use package managers at runtime, if applicable."
 }
