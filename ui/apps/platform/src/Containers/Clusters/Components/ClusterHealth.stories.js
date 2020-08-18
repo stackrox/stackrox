@@ -23,10 +23,10 @@ export const ClusterStatusUninitialized = () => (
                 sensorHealthStatus: 'UNINITIALIZED',
             }}
             status={{
-                certExpiryStatus: { sensorCertExpiry: '2020-07-31T21:59:00Z' },
+                certExpiryStatus: null,
                 lastContact: null,
-                sensorVersion: '3.50.0.0',
-                upgradeStatus: { upgradability: 'UP_TO_DATE' },
+                sensorVersion: '',
+                upgradeStatus: null,
             }}
             centralVersion="3.50.0.0"
             currentDatetime={new Date('2019-08-01T14:00:00Z')}

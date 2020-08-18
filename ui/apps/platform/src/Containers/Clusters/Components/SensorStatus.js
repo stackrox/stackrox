@@ -8,6 +8,7 @@ import { healthStatusLabels } from 'messages/common';
 import { getDateTime, getDistanceStrict } from 'utils/dateUtils';
 
 import HealthStatus from './HealthStatus';
+import HealthStatusNotApplicable from './HealthStatusNotApplicable';
 import { healthStatusStyles, isDelayedSensorHealthStatus } from '../cluster.helpers';
 
 /*
@@ -64,7 +65,7 @@ const SensorStatus = ({ sensorHealthStatus, lastContact, currentDatetime }) => {
         return sensorStatus;
     }
 
-    return null;
+    return <HealthStatusNotApplicable />;
 };
 
 SensorStatus.propTypes = {

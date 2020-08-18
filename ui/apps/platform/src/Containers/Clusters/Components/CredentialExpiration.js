@@ -4,9 +4,10 @@ import { differenceInDays } from 'date-fns';
 
 import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
-import { getDate, getDayOfWeek, getDistanceStrictAsPhrase } from 'utils/dateUtils';
+import { getDate, getDateTime, getDayOfWeek, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
 import HealthStatus from './HealthStatus';
+import HealthStatusNotApplicable from './HealthStatusNotApplicable';
 import { healthStatusStyles } from '../cluster.helpers';
 
 const diffDegradedMin = 7; // if less, display a day of the week for Unhealthy
@@ -56,7 +57,11 @@ const CredentialExpiration = ({ certExpiryStatus, currentDatetime }) => {
         // Tooltip has the absolute date (in ISO 8601 format).
         return (
             <Tooltip
-                content={<TooltipOverlay>{`Expiration date: ${sensorCertExpiry}`}</TooltipOverlay>}
+                content={
+                    <TooltipOverlay>{`Expiration date: ${getDateTime(
+                        sensorCertExpiry
+                    )}`}</TooltipOverlay>
+                }
             >
                 <div>
                     <HealthStatus Icon={Icon} iconColor={fgColor}>
@@ -67,7 +72,7 @@ const CredentialExpiration = ({ certExpiryStatus, currentDatetime }) => {
         );
     }
 
-    return null;
+    return <HealthStatusNotApplicable />;
 };
 
 CredentialExpiration.propTypes = {

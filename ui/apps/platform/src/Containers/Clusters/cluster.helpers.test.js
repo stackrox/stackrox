@@ -106,7 +106,7 @@ describe('cluster helpers', () => {
             expect(displayValue).toEqual(expectedDateFormat);
         });
 
-        it('should return a "N/A" if passed a status object with null lastContact field', () => {
+        it('should return a "Not applicable" if passed a status object with null lastContact field', () => {
             const testCluster = {
                 status: {
                     lastContact: null,
@@ -115,17 +115,17 @@ describe('cluster helpers', () => {
 
             const displayValue = formatLastCheckIn(testCluster.status);
 
-            expect(displayValue).toEqual('N/A');
+            expect(displayValue).toEqual('Not applicable');
         });
 
-        it('should return a "N/A" if passed a status object with null status field', () => {
+        it('should return a "Not applicable" if passed a status object with null status field', () => {
             const testCluster = {
                 status: null,
             };
 
             const displayValue = formatLastCheckIn(testCluster.status);
 
-            expect(displayValue).toEqual('N/A');
+            expect(displayValue).toEqual('Not applicable');
         });
     });
 

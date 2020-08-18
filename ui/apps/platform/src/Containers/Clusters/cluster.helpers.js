@@ -1,6 +1,6 @@
 import dateFns from 'date-fns';
 import get from 'lodash/get';
-import { AlertCircle, AlertTriangle, Check, Circle, X } from 'react-feather';
+import { AlertCircle, AlertTriangle, Check, Info, Minus, X } from 'react-feather';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 
@@ -78,7 +78,7 @@ export const centralEnvDefault = {
 // Colors are similar to LabelChip, but fgColor is slightly lighter 700 instead of 800.
 export const healthStatusStyles = {
     UNINITIALIZED: {
-        Icon: Circle,
+        Icon: Minus,
         bgColor: 'bg-base-200',
         fgColor: 'text-base-700',
     },
@@ -102,6 +102,13 @@ export const healthStatusStyles = {
         bgColor: 'bg-success-200',
         fgColor: 'text-success-700',
     },
+};
+
+// Special case for Collector when Sensor is UNHEALTHY or DELAYED.
+export const delayedCollectorStatusStyle = {
+    Icon: Info,
+    bgColor: 'bg-primary-200',
+    fgColor: 'text-primary-700',
 };
 
 // @TODO: add optional button text and func
@@ -219,7 +226,7 @@ export function formatCloudProvider(providerMetadata) {
         }
     }
 
-    return '-';
+    return 'Not applicable';
 }
 
 export function formatLastCheckIn(status) {
@@ -227,7 +234,7 @@ export function formatLastCheckIn(status) {
         return dateFns.format(status.lastContact, dateTimeFormat);
     }
 
-    return 'N/A';
+    return 'Not applicable';
 }
 
 const warningDaysThreshold = 30;

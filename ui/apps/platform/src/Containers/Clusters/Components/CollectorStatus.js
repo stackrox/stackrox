@@ -3,11 +3,17 @@ import React from 'react';
 
 import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
 import Tooltip from 'Components/Tooltip';
+import TooltipOverlay from 'Components/TooltipOverlay';
 import { healthStatusLabels } from 'messages/common';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
 import HealthStatus from './HealthStatus';
-import { healthStatusStyles, isDelayedSensorHealthStatus } from '../cluster.helpers';
+import HealthStatusNotApplicable from './HealthStatusNotApplicable';
+import {
+    delayedCollectorStatusStyle,
+    healthStatusStyles,
+    isDelayedSensorHealthStatus,
+} from '../cluster.helpers';
 
 const trClassName = 'align-bottom leading-normal'; // align-bottom in case heading text wraps
 const thClassName = 'font-600 pl-0 pr-1 py-0 text-left';
@@ -28,7 +34,10 @@ const CollectorStatus = ({
     isList,
 }) => {
     if (collectorHealthStatus) {
-        const { Icon, bgColor, fgColor } = healthStatusStyles[collectorHealthStatus];
+        const { Icon, bgColor, fgColor } =
+            lastContact && isDelayedSensorHealthStatus(sensorHealthStatus)
+                ? delayedCollectorStatusStyle
+                : healthStatusStyles[collectorHealthStatus];
         const labelElement = (
             <span className={`${bgColor} ${fgColor}`}>
                 {healthStatusLabels[collectorHealthStatus]}
@@ -51,77 +60,107 @@ const CollectorStatus = ({
                 <div>{labelElement}</div>
             );
 
-        const healthInfoElement = collectorHealthInfo ? (
-            <table>
-                <tbody>
-                    <tr className={trClassName} key="totalReadyPods">
-                        <th className={thClassName} scope="row">
-                            Collector pods ready:
-                        </th>
-                        <td className={tdClassName}>
-                            <span className={`${bgColor} ${fgColor}`}>
-                                {collectorHealthInfo.totalReadyPods}
-                            </span>
-                        </td>
-                    </tr>
-                    <tr className={trClassName} key="totalDesiredPods">
-                        <th className={thClassName} scope="row">
-                            Collector pods expected:
-                        </th>
-                        <td className={tdClassName}>
-                            <span className={`${bgColor} ${fgColor}`}>
-                                {collectorHealthInfo.totalDesiredPods}
-                            </span>
-                        </td>
-                    </tr>
-                    <tr className={trClassName} key="totalRegisteredNodes">
-                        <th className={thClassName} scope="row">
-                            Registered nodes in cluster:
-                        </th>
-                        <td className={tdClassName}>{collectorHealthInfo.totalRegisteredNodes}</td>
-                    </tr>
-                </tbody>
-            </table>
-        ) : null;
-
-        const incompletenessElement =
-            collectorHealthStatus !== 'UNINITIALIZED' && healthInfoComplete === false ? (
-                <strong>Upgrade sensor to get complete collector health information</strong>
-            ) : null;
-
-        const auxiliaryElement =
-            healthInfoElement && incompletenessElement ? (
-                <div>
-                    {healthInfoElement}
-                    {incompletenessElement}
-                </div>
-            ) : (
-                healthInfoElement || incompletenessElement
+        if (collectorHealthInfo) {
+            const { totalReadyPods, totalDesiredPods, totalRegisteredNodes } = collectorHealthInfo;
+            const totalsElement = (
+                <table>
+                    <tbody>
+                        <tr className={trClassName} key="totalReadyPods">
+                            <th className={thClassName} scope="row">
+                                Collector pods ready:
+                            </th>
+                            <td className={tdClassName}>
+                                <span className={`${bgColor} ${fgColor}`}>{totalReadyPods}</span>
+                            </td>
+                        </tr>
+                        <tr className={trClassName} key="totalDesiredPods">
+                            <th className={thClassName} scope="row">
+                                Collector pods expected:
+                            </th>
+                            <td className={tdClassName}>
+                                <span className={`${bgColor} ${fgColor}`}>{totalDesiredPods}</span>
+                            </td>
+                        </tr>
+                        <tr className={trClassName} key="totalRegisteredNodes">
+                            <th className={thClassName} scope="row">
+                                Registered nodes in cluster:
+                            </th>
+                            <td className={tdClassName}>{totalRegisteredNodes}</td>
+                        </tr>
+                    </tbody>
+                </table>
             );
 
-        return isList && auxiliaryElement ? (
-            <Tooltip
-                content={
-                    <DetailedTooltipOverlay title="Collector DaemonSet" body={auxiliaryElement} />
-                }
-            >
+            const infoElement = healthInfoComplete ? (
+                totalsElement
+            ) : (
                 <div>
-                    <HealthStatus Icon={Icon} iconColor={fgColor}>
+                    {totalsElement}
+                    <div>
+                        <strong>Upgrade Sensor</strong> to get complete Collector health information
+                    </div>
+                </div>
+            );
+
+            return isList ? (
+                <Tooltip
+                    content={
+                        <DetailedTooltipOverlay
+                            title="Collector Health Information"
+                            body={infoElement}
+                        />
+                    }
+                >
+                    <div>
+                        <HealthStatus Icon={Icon} iconColor={fgColor}>
+                            {statusElement}
+                        </HealthStatus>
+                    </div>
+                </Tooltip>
+            ) : (
+                <HealthStatus Icon={Icon} iconColor={fgColor}>
+                    <div>
                         {statusElement}
-                    </HealthStatus>
-                </div>
-            </Tooltip>
-        ) : (
-            <HealthStatus Icon={Icon} iconColor={fgColor}>
+                        {infoElement}
+                    </div>
+                </HealthStatus>
+            );
+        }
+
+        if (collectorHealthStatus === 'UNAVAILABLE') {
+            const reasonUnavailable = (
                 <div>
-                    {statusElement}
-                    {auxiliaryElement}
+                    <strong>Upgrade Sensor</strong> to get Collector health information
                 </div>
+            );
+
+            return isList ? (
+                <Tooltip content={<TooltipOverlay>{reasonUnavailable}</TooltipOverlay>}>
+                    <div>
+                        <HealthStatus Icon={Icon} iconColor={fgColor}>
+                            {labelElement}
+                        </HealthStatus>
+                    </div>
+                </Tooltip>
+            ) : (
+                <HealthStatus Icon={Icon} iconColor={fgColor}>
+                    <div>
+                        {labelElement}
+                        {reasonUnavailable}
+                    </div>
+                </HealthStatus>
+            );
+        }
+
+        // UNINITIALIZED
+        return (
+            <HealthStatus Icon={Icon} iconColor={fgColor}>
+                <div>{labelElement}</div>
             </HealthStatus>
         );
     }
 
-    return null;
+    return <HealthStatusNotApplicable />;
 };
 
 CollectorStatus.propTypes = {

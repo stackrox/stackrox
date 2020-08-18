@@ -91,7 +91,8 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
             <FeatureEnabled featureFlag={knownBackendFlags.ROX_CLUSTER_HEALTH_MONITORING}>
                 {({ featureEnabled }) => {
                     return (
-                        featureEnabled && (
+                        featureEnabled &&
+                        selectedCluster.id && (
                             <CollapsibleCard
                                 open
                                 title="Cluster Health"

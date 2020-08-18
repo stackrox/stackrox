@@ -4,6 +4,7 @@ import React from 'react';
 import { healthStatusLabels } from 'messages/common';
 
 import HealthStatus from './HealthStatus';
+import HealthStatusNotApplicable from './HealthStatusNotApplicable';
 import { healthStatusStyles } from '../cluster.helpers';
 
 /*
@@ -25,7 +26,7 @@ const ClusterStatus = ({ overallHealthStatus }) => {
         );
     }
 
-    return null;
+    return <HealthStatusNotApplicable />;
 };
 
 ClusterStatus.propTypes = {

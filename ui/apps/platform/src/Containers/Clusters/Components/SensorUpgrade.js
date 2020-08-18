@@ -7,6 +7,7 @@ import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
 
 import HealthStatus from './HealthStatus';
+import HealthStatusNotApplicable from './HealthStatusNotApplicable';
 import { findUpgradeState, formatSensorVersion } from '../cluster.helpers';
 
 const typeStyles = {
@@ -158,7 +159,7 @@ const SensorUpgrade = ({ upgradeStatus, centralVersion, sensorVersion, isList, a
         }
     }
 
-    return null;
+    return <HealthStatusNotApplicable />;
 };
 
 SensorUpgrade.propTypes = {
@@ -166,7 +167,7 @@ SensorUpgrade.propTypes = {
     upgradeStatus: PropTypes.shape({
         upgradability: PropTypes.string,
         mostRecentProcess: PropTypes.shape({
-            active: PropTypes.boolean,
+            active: PropTypes.bool,
             process: PropTypes.shape({
                 upgradeState: PropTypes.string,
             }),
