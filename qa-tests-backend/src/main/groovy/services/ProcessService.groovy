@@ -22,6 +22,22 @@ class ProcessService extends BaseService {
         return paths
     }
 
+    static Map<String, Set<Tuple2<Integer, Integer>>> getProcessUserAndGroupIds(String deploymentID) {
+        def response = getClient().getProcessesByDeployment(ProcessServiceOuterClass.GetProcessesByDeploymentRequest
+                .newBuilder()
+                .setDeploymentId(deploymentID)
+                .build())
+        Map<String,Set<Tuple2<Integer,Integer>>> pathToIds = [:]
+        for ( ProcessIndicator process : response.getProcessesList() ) {
+            String path = process.getSignal().getExecFilePath()
+            Integer uid = process.getSignal().getUid()
+            Integer gid = process.getSignal().getGid()
+            pathToIds.putIfAbsent(path, [] as Set<Tuple2<Integer,Integer>>)
+            pathToIds[path].add([uid, gid] as Tuple2<Integer, Integer>)
+        }
+        return pathToIds
+    }
+
     // Returns a map of process path -> list of container id's for each container
     // the path was executed (this list may have duplicates)
     static Map<String, List<String> > getProcessContainerMap(String deploymentID, Set<String> processes = null) {

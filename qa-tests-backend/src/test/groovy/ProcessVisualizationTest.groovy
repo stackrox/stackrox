@@ -17,6 +17,7 @@ class ProcessVisualizationTest extends BaseSpecification {
     static final private String REDISDEPLOYMENT = "redisdeployment"
     static final private String MONGODEPLOYMENT = "mongodeployment"
     static final private String ROX4751DEPLOYMENT = "rox4751deployment"
+    static final private String ROX4979DEPLOYMENT = "rox4979deployment"
 
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
@@ -52,6 +53,10 @@ class ProcessVisualizationTest extends BaseSpecification {
             new Deployment()
                 .setName (ROX4751DEPLOYMENT)
                 .setImage ("stackrox/qa:ROX4751")
+                .addLabel ("app", "test" ),
+            new Deployment()
+                .setName (ROX4979DEPLOYMENT)
+                .setImage ("stackrox/qa:ROX4979")
                 .addLabel ("app", "test" ),
      ]
 
@@ -126,5 +131,125 @@ class ProcessVisualizationTest extends BaseSpecification {
          "/usr/local/bin/gosu", "/usr/bin/mongod", "/usr/bin/numactl"] as Set | MONGODEPLOYMENT
 
         ["/test/bin/exec.sh", "/usr/bin/date", "/usr/bin/sleep"] as Set | ROX4751DEPLOYMENT
-   }
+
+        ["/qa/exec.sh", "/bin/sleep"] as Set | ROX4979DEPLOYMENT
+    }
+
+    @Category([BAT, RUNTIME])
+    @Unroll
+    def "Verify process paths, UIDs, and GIDs on #depName"()  {
+        when:
+        "Get Processes running on deployment: #depName"
+        String uid = DEPLOYMENTS.find { it.name == depName }.deploymentUid
+        assert uid != null
+
+        Map<String,Set<Tuple2<Integer,Integer>>> processToUserAndGroupIds
+        int retries = MAX_SLEEP_TIME / SLEEP_INCREMENT
+        int delaySeconds = SLEEP_INCREMENT / 1000
+        Timer t = new Timer(retries, delaySeconds)
+        while (t.IsValid()) {
+            processToUserAndGroupIds = ProcessService.getProcessUserAndGroupIds(uid)
+            if (containsAllProcessInfo(processToUserAndGroupIds, expectedFilePathAndUIDs)) {
+                break
+            }
+            println "Didn't find all the expected processes in " + depName +
+                    ", retrying... " + processToUserAndGroupIds
+        }
+        println "ProcessVisualizationTest: Dep: " + depName +
+                " Processes and UIDs: " + processToUserAndGroupIds
+
+        then:
+        "Verify process in added : : #depName"
+        assert containsAllProcessInfo(processToUserAndGroupIds, expectedFilePathAndUIDs)
+
+            where:
+        "Data inputs are :"
+
+        expectedFilePathAndUIDs | depName
+
+        [ "/usr/sbin/nginx":[[0, 0]],
+        ] | NGINXDEPLOYMENT
+
+        [ "/docker-java-home/jre/bin/java": [[0, 0]],
+          "/usr/bin/tty":[[0, 0]],
+          "/bin/uname":[[0, 0]],
+          "/usr/local/tomcat/bin/catalina.sh":[[0, 0]],
+          "/usr/bin/dirname":[[0, 0]],
+        ] | STRUTSDEPLOYMENT
+
+        [ "/bin/sh":[[0, 0]],
+          "/bin/sleep":[[0, 0]],
+        ] | CENTOSDEPLOYMENT
+
+        [ "/bin/sh":[[0, 0]],
+          "/bin/sleep":[[0, 0]],
+        ] | FEDORADEPLOYMENT
+
+        [ "/usr/bin/tr":[[101, 101]],
+          "/bin/chown":[[0, 0]],
+          "/bin/egrep":[[101, 101]],
+          "/bin/grep":[[101, 101]],
+          "/usr/local/bin/gosu":[[0, 0]],
+          "/bin/hostname":[[101, 101]],
+          "/usr/share/elasticsearch/bin/elasticsearch":[[101, 101]],
+          "/sbin/ldconfig":[[101, 101]],
+          "/docker-entrypoint.sh":[[0, 0]],
+          "/usr/bin/cut":[[101, 101]],
+          "/usr/bin/id":[[0, 0]],
+          "/docker-java-home/jre/bin/java":[[101, 101]],
+          "/usr/bin/dirname":[[101, 101]],
+        ] | ELASTICDEPLOYMENT
+
+        [ "/test/bin/exec.sh":[[0, 0]],
+          "/usr/bin/date":[[0, 0]],
+          "/usr/bin/sleep":[[0, 0]],
+        ] | ROX4751DEPLOYMENT
+
+        [ "/qa/exec.sh":[[9001, 9000]],
+          "/bin/sleep":[[9001, 9000]],
+        ] | ROX4979DEPLOYMENT
+
+        /*
+        // Enable as part of ROX-5417 (process deduplication should include process UIDs)
+        [ "/usr/bin/id":[[0,0], [999,999]],
+          "/usr/bin/find":[[0,0]],
+          "/usr/local/bin/docker-entrypoint.sh":[[0,0], [999,999]],
+          "/usr/local/bin/gosu":[[0,0]],
+          "/usr/local/bin/redis-server":[[999,999]],
+         ] | REDISDEPLOYMENT
+
+        // On machines with NUMA arch, mongo deployment will also execute path `/bin/true`
+        [ "/bin/chown":[[0,0]],
+          "/usr/local/bin/docker-entrypoint.sh": [[0,0], [999,999]],
+          "/bin/rm":[[999,999]],
+          "/usr/bin/id":[[0,0], [999,999]],
+          "/usr/bin/find":[[0,0]],
+          "/usr/local/bin/gosu":[[0,0]],
+          "/usr/bin/mongod":[[999,999]],
+          "/usr/bin/numactl":[[999,999]],
+        ] | MONGODEPLOYMENT
+        */
+    }
+
+    // Returns true if received contains all the (path,UIDGIDSet) pairs found in expected
+    private static Boolean containsAllProcessInfo(Map<String,Set<Tuple2<Integer,Integer>>> received,
+                                                  Map<String,Set<Tuple2<Integer,Integer>>> expected) {
+        if (received.size() < expected.size()) {
+            return false
+        }
+        for ( String path : expected.keySet() ) {
+            if (!received.containsKey(path)) {
+                return false
+            }
+            if (expected[path].size() != received[path].size()) {
+                return false
+            }
+            for ( Tuple2<Integer, Integer> ids : expected[path]) {
+                if (!received[path].contains(ids)) {
+                    return false
+                }
+            }
+        }
+        return true
+    }
 }
