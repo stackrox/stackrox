@@ -1,6 +1,8 @@
 package notifiers
 
 import (
+	"context"
+
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
@@ -9,6 +11,6 @@ import (
 type AuditNotifier interface {
 	Notifier
 	// SendAuditMessage sends an audit message
-	SendAuditMessage(msg *v1.Audit_Message) error
+	SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) error
 	AuditLoggingEnabled() bool
 }

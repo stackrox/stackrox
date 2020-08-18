@@ -980,7 +980,7 @@ func (s *patchAlertTests) TestSnoozeAlert() {
 	fakeAlert.SnoozeTill = snoozeTill
 	s.storage.EXPECT().UpsertAlert(gomock.Any(), fakeAlert).Return(nil)
 	// We should get a notification for the snoozed alert.
-	s.notifierMock.EXPECT().ProcessAlert(fakeAlert).Return()
+	s.notifierMock.EXPECT().ProcessAlert(context.Background(), fakeAlert).Return()
 	_, err = s.service.SnoozeAlert(context.Background(), &v1.SnoozeAlertRequest{Id: alerttest.FakeAlertID, SnoozeTill: snoozeTill})
 	s.NoError(err)
 
@@ -1004,7 +1004,7 @@ func (s *patchAlertTests) TestResolveAlert() {
 	fakeAlert.State = storage.ViolationState_RESOLVED
 	s.storage.EXPECT().UpsertAlert(gomock.Any(), fakeAlert).Return(nil)
 	// We should get a notification for the resolved alert.
-	s.notifierMock.EXPECT().ProcessAlert(fakeAlert).Return()
+	s.notifierMock.EXPECT().ProcessAlert(context.Background(), fakeAlert).Return()
 
 	_, err := s.service.ResolveAlert(context.Background(), &v1.ResolveAlertRequest{Id: alerttest.FakeAlertID})
 	s.NoError(err)

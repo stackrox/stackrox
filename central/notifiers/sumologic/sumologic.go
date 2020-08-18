@@ -2,6 +2,7 @@ package generic
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"io"
@@ -36,18 +37,18 @@ type sumologic struct {
 	fullyQualifiedEndpoint string
 }
 
-func (*sumologic) Close() error {
+func (*sumologic) Close(context.Context) error {
 	return nil
 }
 
 // AlertNotify takes in an alert and generates the Slack message
-func (s *sumologic) AlertNotify(alert *storage.Alert) error {
+func (s *sumologic) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	clonedAlert := alert.Clone()
 	notifiers.PruneAlert(clonedAlert, 10000)
 
 	return retry.WithRetry(
 		func() error {
-			return s.sendProtoPayload(clonedAlert)
+			return s.sendProtoPayload(ctx, clonedAlert)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -58,16 +59,16 @@ func (s *sumologic) AlertNotify(alert *storage.Alert) error {
 	)
 }
 
-func (s *sumologic) sendProtoPayload(msg proto.Message) error {
+func (s *sumologic) sendProtoPayload(ctx context.Context, msg proto.Message) error {
 	var buf bytes.Buffer
 	if err := new(jsonpb.Marshaler).Marshal(&buf, msg); err != nil {
 		return err
 	}
-	return s.sendPayload(&buf)
+	return s.sendPayload(ctx, &buf)
 }
 
-func (s *sumologic) sendPayload(buf io.Reader) error {
-	req, err := http.NewRequest(http.MethodPost, s.fullyQualifiedEndpoint, buf)
+func (s *sumologic) sendPayload(ctx context.Context, buf io.Reader) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.fullyQualifiedEndpoint, buf)
 	if err != nil {
 		return err
 	}
@@ -124,7 +125,7 @@ type testPayload struct {
 	TestMessage string `json:"testMessage"`
 }
 
-func (s *sumologic) Test() error {
+func (s *sumologic) Test(ctx context.Context) error {
 	payload := testPayload{
 		TestID:      "testalert",
 		TestMessage: "This is a test message created to test integration with StackRox.",
@@ -133,7 +134,7 @@ func (s *sumologic) Test() error {
 	if err != nil {
 		return err
 	}
-	return s.sendPayload(bytes.NewBuffer(marshaledPayload))
+	return s.sendPayload(ctx, bytes.NewBuffer(marshaledPayload))
 }
 
 func init() {

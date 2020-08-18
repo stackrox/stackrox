@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	notifiers "github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -36,27 +37,27 @@ func (m *MockProcessor) EXPECT() *MockProcessorMockRecorder {
 }
 
 // ProcessAlert mocks base method
-func (m *MockProcessor) ProcessAlert(alert *storage.Alert) {
+func (m *MockProcessor) ProcessAlert(ctx context.Context, alert *storage.Alert) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ProcessAlert", alert)
+	m.ctrl.Call(m, "ProcessAlert", ctx, alert)
 }
 
 // ProcessAlert indicates an expected call of ProcessAlert
-func (mr *MockProcessorMockRecorder) ProcessAlert(alert interface{}) *gomock.Call {
+func (mr *MockProcessorMockRecorder) ProcessAlert(ctx, alert interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessAlert", reflect.TypeOf((*MockProcessor)(nil).ProcessAlert), alert)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessAlert", reflect.TypeOf((*MockProcessor)(nil).ProcessAlert), ctx, alert)
 }
 
 // ProcessAuditMessage mocks base method
-func (m *MockProcessor) ProcessAuditMessage(msg *v1.Audit_Message) {
+func (m *MockProcessor) ProcessAuditMessage(ctx context.Context, msg *v1.Audit_Message) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ProcessAuditMessage", msg)
+	m.ctrl.Call(m, "ProcessAuditMessage", ctx, msg)
 }
 
 // ProcessAuditMessage indicates an expected call of ProcessAuditMessage
-func (mr *MockProcessorMockRecorder) ProcessAuditMessage(msg interface{}) *gomock.Call {
+func (mr *MockProcessorMockRecorder) ProcessAuditMessage(ctx, msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessAuditMessage", reflect.TypeOf((*MockProcessor)(nil).ProcessAuditMessage), msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessAuditMessage", reflect.TypeOf((*MockProcessor)(nil).ProcessAuditMessage), ctx, msg)
 }
 
 // HasNotifiers mocks base method
@@ -88,25 +89,25 @@ func (mr *MockProcessorMockRecorder) HasEnabledAuditNotifiers() *gomock.Call {
 }
 
 // UpdateNotifier mocks base method
-func (m *MockProcessor) UpdateNotifier(notifier notifiers.Notifier) {
+func (m *MockProcessor) UpdateNotifier(ctx context.Context, notifier notifiers.Notifier) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateNotifier", notifier)
+	m.ctrl.Call(m, "UpdateNotifier", ctx, notifier)
 }
 
 // UpdateNotifier indicates an expected call of UpdateNotifier
-func (mr *MockProcessorMockRecorder) UpdateNotifier(notifier interface{}) *gomock.Call {
+func (mr *MockProcessorMockRecorder) UpdateNotifier(ctx, notifier interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNotifier", reflect.TypeOf((*MockProcessor)(nil).UpdateNotifier), notifier)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNotifier", reflect.TypeOf((*MockProcessor)(nil).UpdateNotifier), ctx, notifier)
 }
 
 // RemoveNotifier mocks base method
-func (m *MockProcessor) RemoveNotifier(id string) {
+func (m *MockProcessor) RemoveNotifier(ctx context.Context, id string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RemoveNotifier", id)
+	m.ctrl.Call(m, "RemoveNotifier", ctx, id)
 }
 
 // RemoveNotifier indicates an expected call of RemoveNotifier
-func (mr *MockProcessorMockRecorder) RemoveNotifier(id interface{}) *gomock.Call {
+func (mr *MockProcessorMockRecorder) RemoveNotifier(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveNotifier", reflect.TypeOf((*MockProcessor)(nil).RemoveNotifier), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveNotifier", reflect.TypeOf((*MockProcessor)(nil).RemoveNotifier), ctx, id)
 }

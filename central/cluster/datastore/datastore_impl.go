@@ -541,7 +541,7 @@ func (ds *datastoreImpl) markAlertsStale(ctx context.Context, alerts []*storage.
 		errorList.AddError(ds.alertDataStore.MarkAlertStale(ctx, alert.GetId()))
 		if errorList.ToError() == nil {
 			// run notifier for all the resolved alerts
-			ds.notifier.ProcessAlert(alert)
+			ds.notifier.ProcessAlert(ctx, alert)
 		}
 	}
 	return errorList.ToError()

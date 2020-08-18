@@ -353,7 +353,7 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 			continue
 		}
 
-		err = netpolNotifier.NetworkPolicyYAMLNotify(request.GetModification().GetApplyYaml(), clusterName)
+		err = netpolNotifier.NetworkPolicyYAMLNotify(ctx, request.GetModification().GetApplyYaml(), clusterName)
 		if err != nil {
 			errorList.AddStringf("error sending yaml notification to %s: %v", notifierProto.GetName(), err)
 		}

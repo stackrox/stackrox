@@ -1,6 +1,8 @@
 package processor
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -9,13 +11,13 @@ import (
 // Sending alerts.
 //////////////////
 
-func tryToAlert(notifier notifiers.Notifier, alert *storage.Alert) error {
+func tryToAlert(ctx context.Context, notifier notifiers.Notifier, alert *storage.Alert) error {
 	if alert.GetState() == storage.ViolationState_ACTIVE {
 		alertNotifier, ok := notifier.(notifiers.AlertNotifier)
 		if !ok {
 			return nil
 		}
-		return sendNotification(alertNotifier, alert)
+		return sendNotification(ctx, alertNotifier, alert)
 	}
 
 	alertNotifier, ok := notifier.(notifiers.ResolvableAlertNotifier)
@@ -25,8 +27,8 @@ func tryToAlert(notifier notifiers.Notifier, alert *storage.Alert) error {
 	return sendResolvableNotification(alertNotifier, alert)
 }
 
-func sendNotification(notifier notifiers.AlertNotifier, alert *storage.Alert) error {
-	err := notifier.AlertNotify(alert)
+func sendNotification(ctx context.Context, notifier notifiers.AlertNotifier, alert *storage.Alert) error {
+	err := notifier.AlertNotify(ctx, alert)
 	if err != nil {
 		logFailure(notifier, alert, err)
 	}
@@ -55,15 +57,15 @@ func logFailure(notifier notifiers.Notifier, alert *storage.Alert, err error) {
 // Sending Audit Messages.
 //////////////////////////
 
-func tryToSendAudit(notifier notifiers.Notifier, msg *v1.Audit_Message) {
+func tryToSendAudit(ctx context.Context, notifier notifiers.Notifier, msg *v1.Audit_Message) {
 	auditNotifier, ok := notifier.(notifiers.AuditNotifier)
 	if ok {
-		sendAuditMessage(auditNotifier, msg)
+		sendAuditMessage(ctx, auditNotifier, msg)
 	}
 }
 
-func sendAuditMessage(notifier notifiers.AuditNotifier, msg *v1.Audit_Message) {
-	if err := notifier.SendAuditMessage(msg); err != nil {
+func sendAuditMessage(ctx context.Context, notifier notifiers.AuditNotifier, msg *v1.Audit_Message) {
+	if err := notifier.SendAuditMessage(ctx, msg); err != nil {
 		protoNotifier := notifier.ProtoNotifier()
 		log.Errorf("Unable to send audit msg to %s (%s): %v", protoNotifier.GetName(), protoNotifier.GetType(), err)
 	}

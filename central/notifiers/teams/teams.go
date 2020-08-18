@@ -2,6 +2,7 @@ package teams
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -216,12 +217,12 @@ func valueListToString(values []*storage.PolicyValue, opString string) string {
 	return strings.Join(valueList, joinWithWhitespace)
 }
 
-func (*teams) Close() error {
+func (*teams) Close(ctx context.Context) error {
 	return nil
 }
 
 // AlertNotify takes in an alert and generates the Teams message
-func (t *teams) AlertNotify(alert *storage.Alert) error {
+func (t *teams) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	var sections []section
 	title := fmt.Sprintf("New Alert: Deployment %q violates %q Policy", alert.GetDeployment().GetName(), alert.GetPolicy().GetName())
 
@@ -260,7 +261,7 @@ func (t *teams) AlertNotify(alert *storage.Alert) error {
 
 	return retry.WithRetry(
 		func() error {
-			return postMessage(webhook, jsonPayload)
+			return postMessage(ctx, webhook, jsonPayload)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -271,7 +272,7 @@ func (t *teams) AlertNotify(alert *storage.Alert) error {
 }
 
 // YamlNotify takes in a yaml file and generates the teams message
-func (t *teams) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
+func (t *teams) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
 	tagLine := fmt.Sprintf("Network policy YAML applied on cluster %q", clusterName)
 
 	funcMap := template.FuncMap{
@@ -301,7 +302,7 @@ func (t *teams) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 
 	return retry.WithRetry(
 		func() error {
-			return postMessage(webhook, jsonPayload)
+			return postMessage(ctx, webhook, jsonPayload)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -319,7 +320,7 @@ func (t *teams) ProtoNotifier() *storage.Notifier {
 	return t.Notifier
 }
 
-func (t *teams) Test() error {
+func (t *teams) Test(ctx context.Context) error {
 	n := notification{
 		Text: "This is a test message created to test teams integration with StackRox.",
 	}
@@ -332,7 +333,7 @@ func (t *teams) Test() error {
 
 	return retry.WithRetry(
 		func() error {
-			return postMessage(webhook, jsonPayload)
+			return postMessage(ctx, webhook, jsonPayload)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -340,8 +341,8 @@ func (t *teams) Test() error {
 	)
 }
 
-func postMessage(url string, jsonPayload []byte) error {
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
+func postMessage(ctx context.Context, url string, jsonPayload []byte) error {
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return err
 	}

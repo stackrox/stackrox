@@ -50,7 +50,7 @@ func (a *audit) sendAuditMessage(ctx context.Context, req interface{}, grpcMetho
 	if am == nil {
 		return
 	}
-	a.notifications.ProcessAuditMessage(am)
+	a.notifications.ProcessAuditMessage(ctx, am)
 }
 
 func requestToAny(req interface{}) *types.Any {

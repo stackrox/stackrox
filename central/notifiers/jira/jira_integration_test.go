@@ -3,6 +3,7 @@
 package jira
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -49,15 +50,15 @@ func getJira(t *testing.T) *jira {
 
 func TestJiraAlertNotify(t *testing.T) {
 	j := getJira(t)
-	assert.NoError(t, j.AlertNotify(fixtures.GetAlert()))
+	assert.NoError(t, j.AlertNotify(context.Background(), fixtures.GetAlert()))
 }
 
 func TestJiraNetworkPolicyYAMLNotify(t *testing.T) {
 	j := getJira(t)
-	assert.NoError(t, j.NetworkPolicyYAMLNotify(fixtures.GetYAML(), "test-cluster"))
+	assert.NoError(t, j.NetworkPolicyYAMLNotify(context.Background(), fixtures.GetYAML(), "test-cluster"))
 }
 
 func TestJiraTest(t *testing.T) {
 	j := getJira(t)
-	assert.NoError(t, j.Test())
+	assert.NoError(t, j.Test(context.Background()))
 }

@@ -1,6 +1,8 @@
 package processor
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -14,14 +16,14 @@ var (
 // Processor is the interface for processing benchmarks, notifiers, and policies.
 //go:generate mockgen-wrapper
 type Processor interface {
-	ProcessAlert(alert *storage.Alert)
-	ProcessAuditMessage(msg *v1.Audit_Message)
+	ProcessAlert(ctx context.Context, alert *storage.Alert)
+	ProcessAuditMessage(ctx context.Context, msg *v1.Audit_Message)
 
 	HasNotifiers() bool
 	HasEnabledAuditNotifiers() bool
 
-	UpdateNotifier(notifier notifiers.Notifier)
-	RemoveNotifier(id string)
+	UpdateNotifier(ctx context.Context, notifier notifiers.Notifier)
+	RemoveNotifier(ctx context.Context, id string)
 }
 
 // New returns a new Processor

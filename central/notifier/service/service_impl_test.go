@@ -70,7 +70,7 @@ func createUpdateNotifierRequest() *v1.UpdateNotifierRequest {
 
 func (s *notifierServiceTestSuite) TestPutNotifier() {
 	s.datastore.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Return(nil)
-	s.processor.EXPECT().UpdateNotifier(gomock.Any()).Return()
+	s.processor.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Return()
 
 	_, err := s.getSvc().PutNotifier(s.ctx, &storage.Notifier{})
 	s.Error(err)
@@ -81,7 +81,7 @@ func (s *notifierServiceTestSuite) TestPutNotifier() {
 
 func (s *notifierServiceTestSuite) TestUpdateNotifier() {
 	s.datastore.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Return(nil).Times(4)
-	s.processor.EXPECT().UpdateNotifier(gomock.Any()).Return().Times(4)
+	s.processor.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Return().Times(4)
 	s.datastore.EXPECT().GetNotifier(gomock.Any(),
 		createUpdateNotifierRequest().GetNotifier().GetId()).Return(
 		createUpdateNotifierRequest().GetNotifier(), true, nil).Times(4)

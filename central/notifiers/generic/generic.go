@@ -2,6 +2,7 @@ package generic
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -45,22 +46,22 @@ type generic struct {
 	extraFieldsJSONPrefix  string
 }
 
-func (*generic) Close() error {
+func (*generic) Close(ctx context.Context) error {
 	return nil
 }
 
 // AlertNotify takes in an alert and generates the Slack message
-func (g *generic) AlertNotify(alert *storage.Alert) error {
-	return g.postMessageWithRetry(alert, alertMessageKey)
+func (g *generic) AlertNotify(ctx context.Context, alert *storage.Alert) error {
+	return g.postMessageWithRetry(ctx, alert, alertMessageKey)
 }
 
 // YamlNotify takes in a yaml file and generates the Slack message
-func (g *generic) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
+func (g *generic) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
 	msg := &v1.NetworkPolicyNotification{
 		Cluster: clusterName,
 		Yaml:    yaml,
 	}
-	return g.postMessageWithRetry(msg, networkPolicyMessageKey)
+	return g.postMessageWithRetry(ctx, msg, networkPolicyMessageKey)
 }
 
 func validateConfig(generic *storage.Generic) error {
@@ -147,14 +148,14 @@ func (g *generic) ProtoNotifier() *storage.Notifier {
 	return g.Notifier
 }
 
-func (g *generic) Test() error {
+func (g *generic) Test(ctx context.Context) error {
 	alert := &storage.Alert{
 		Id: "testalert",
 		Policy: &storage.Policy{
 			Name: "This is a test message created to test integration with StackRox.",
 		},
 	}
-	return g.AlertNotify(alert)
+	return g.AlertNotify(ctx, alert)
 }
 
 func (g *generic) constructJSON(message proto.Message, msgKey string) (io.Reader, error) {
@@ -173,13 +174,13 @@ func (g *generic) constructJSON(message proto.Message, msgKey string) (io.Reader
 	return bytes.NewBufferString(strJSON), nil
 }
 
-func (g *generic) postMessage(message proto.Message, msgKey string) error {
+func (g *generic) postMessage(ctx context.Context, message proto.Message, msgKey string) error {
 	body, err := g.constructJSON(message, msgKey)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, g.fullyQualifiedEndpoint, body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, g.fullyQualifiedEndpoint, body)
 	if err != nil {
 		return err
 	}
@@ -200,10 +201,10 @@ func (g *generic) postMessage(message proto.Message, msgKey string) error {
 	return notifiers.CreateError("webhook", resp)
 }
 
-func (g *generic) postMessageWithRetry(message proto.Message, msgKey string) error {
+func (g *generic) postMessageWithRetry(ctx context.Context, message proto.Message, msgKey string) error {
 	return retry.WithRetry(
 		func() error {
-			return g.postMessage(message, msgKey)
+			return g.postMessage(ctx, message, msgKey)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -214,11 +215,11 @@ func (g *generic) postMessageWithRetry(message proto.Message, msgKey string) err
 	)
 }
 
-func (g *generic) SendAuditMessage(msg *v1.Audit_Message) error {
+func (g *generic) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) error {
 	if !g.AuditLoggingEnabled() {
 		return nil
 	}
-	return g.postMessageWithRetry(msg, auditMessageKey)
+	return g.postMessageWithRetry(ctx, msg, auditMessageKey)
 }
 
 func (g *generic) AuditLoggingEnabled() bool {

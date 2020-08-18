@@ -2,6 +2,7 @@ package pagerduty
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -78,20 +79,20 @@ func validate(conf *storage.PagerDuty) error {
 	return nil
 }
 
-func (*pagerDuty) Close() error {
+func (*pagerDuty) Close(context.Context) error {
 	return nil
 }
 
-func (p *pagerDuty) AlertNotify(alert *storage.Alert) error {
-	return p.postAlert(alert, newAlert)
+func (p *pagerDuty) AlertNotify(ctx context.Context, alert *storage.Alert) error {
+	return p.postAlert(ctx, alert, newAlert)
 }
 
 func (p *pagerDuty) ProtoNotifier() *storage.Notifier {
 	return p.Notifier
 }
 
-func (p *pagerDuty) Test() error {
-	return p.postAlert(&storage.Alert{
+func (p *pagerDuty) Test(ctx context.Context) error {
+	return p.postAlert(ctx, &storage.Alert{
 		Id: uuid.NewDummy().String(),
 		Policy: &storage.Policy{
 			Description: "Test PagerDuty Policy",
@@ -110,14 +111,14 @@ func (p *pagerDuty) Test() error {
 }
 
 func (p *pagerDuty) AckAlert(alert *storage.Alert) error {
-	return p.postAlert(alert, ackAlert)
+	return p.postAlert(context.Background(), alert, ackAlert)
 }
 
 func (p *pagerDuty) ResolveAlert(alert *storage.Alert) error {
-	return p.postAlert(alert, resolveAlert)
+	return p.postAlert(context.Background(), alert, resolveAlert)
 }
 
-func (p *pagerDuty) postAlert(alert *storage.Alert, eventType string) error {
+func (p *pagerDuty) postAlert(ctx context.Context, alert *storage.Alert, eventType string) error {
 	pagerDutyEvent, err := p.createPagerDutyEvent(alert, eventType)
 	if err != nil {
 		log.Error(err)

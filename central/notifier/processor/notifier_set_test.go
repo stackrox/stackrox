@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -41,6 +42,8 @@ func (s *notifierSetTestSuite) TearDownTest() {
 }
 
 func (s *notifierSetTestSuite) TestHasFunctions() {
+	ctx := context.Background()
+
 	// No notifiers.
 	s.False(s.ns.HasNotifiers())
 	s.False(s.ns.HasEnabledAuditNotifiers())
@@ -49,7 +52,7 @@ func (s *notifierSetTestSuite) TestHasFunctions() {
 	notifier1 := &storage.Notifier{Id: "n1"}
 	s.mockAlertN.EXPECT().ProtoNotifier().Return(notifier1)
 
-	s.ns.UpsertNotifier(s.mockAlertN)
+	s.ns.UpsertNotifier(context.Background(), s.mockAlertN)
 
 	s.True(s.ns.HasNotifiers())
 	s.False(s.ns.HasEnabledAuditNotifiers())
@@ -59,13 +62,15 @@ func (s *notifierSetTestSuite) TestHasFunctions() {
 	s.mockAuditN.EXPECT().ProtoNotifier().Return(notifier2)
 	s.mockAuditN.EXPECT().AuditLoggingEnabled().Return(true)
 
-	s.ns.UpsertNotifier(s.mockAuditN)
+	s.ns.UpsertNotifier(ctx, s.mockAuditN)
 
 	s.True(s.ns.HasNotifiers())
 	s.True(s.ns.HasEnabledAuditNotifiers())
 }
 
 func (s *notifierSetTestSuite) TestCoorelatedPoliciesAndNotifiers() {
+	ctx := context.Background()
+
 	// Add all of our notifiers.
 	notifier1 := &storage.Notifier{Id: "n1"}
 	s.mockAlertN.EXPECT().ProtoNotifier().Return(notifier1)
@@ -74,41 +79,41 @@ func (s *notifierSetTestSuite) TestCoorelatedPoliciesAndNotifiers() {
 	notifier3 := &storage.Notifier{Id: "n3"}
 	s.mockAuditN.EXPECT().ProtoNotifier().Return(notifier3)
 
-	s.ns.UpsertNotifier(s.mockAlertN)
-	s.ns.UpsertNotifier(s.mockResolvableAlertN)
-	s.ns.UpsertNotifier(s.mockAuditN)
+	s.ns.UpsertNotifier(ctx, s.mockAlertN)
+	s.ns.UpsertNotifier(ctx, s.mockResolvableAlertN)
+	s.ns.UpsertNotifier(ctx, s.mockAuditN)
 
 	// Check that the alert notifiers are activated.
-	s.mockAlertN.EXPECT().AlertNotify(gomock.Any()).Return(nil).Times(1)
-	s.mockResolvableAlertN.EXPECT().AlertNotify(gomock.Any()).Return(nil).Times(1)
+	s.mockAlertN.EXPECT().AlertNotify(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	s.mockResolvableAlertN.EXPECT().AlertNotify(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	s.ns.ForEach(func(n notifiers.Notifier, failures AlertSet) {
+	s.ns.ForEach(ctx, func(ctx context.Context, n notifiers.Notifier, failures AlertSet) {
 		an, ok := n.(notifiers.AlertNotifier)
 		if !ok {
 			return
 		}
-		_ = an.AlertNotify(nil)
+		_ = an.AlertNotify(ctx, nil)
 	})
 
 	// Check that the resolvable alert notifiers are activated.
-	s.mockResolvableAlertN.EXPECT().AlertNotify(gomock.Any()).Return(nil).Times(1)
+	s.mockResolvableAlertN.EXPECT().AlertNotify(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	s.ns.ForEach(func(n notifiers.Notifier, failures AlertSet) {
+	s.ns.ForEach(ctx, func(ctx context.Context, n notifiers.Notifier, failures AlertSet) {
 		an, ok := n.(notifiers.ResolvableAlertNotifier)
 		if !ok {
 			return
 		}
-		_ = an.AlertNotify(nil)
+		_ = an.AlertNotify(ctx, nil)
 	})
 
 	// Check that the audit notifiers are activated.
-	s.mockAuditN.EXPECT().SendAuditMessage(gomock.Any()).Return(nil).Times(1)
+	s.mockAuditN.EXPECT().SendAuditMessage(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	s.ns.ForEach(func(n notifiers.Notifier, failures AlertSet) {
+	s.ns.ForEach(ctx, func(ctx context.Context, n notifiers.Notifier, failures AlertSet) {
 		an, ok := n.(notifiers.AuditNotifier)
 		if !ok {
 			return
 		}
-		_ = an.SendAuditMessage(nil)
+		_ = an.SendAuditMessage(ctx, nil)
 	})
 }

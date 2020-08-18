@@ -106,7 +106,7 @@ func TestNotifierCreationAndTest(t *testing.T) {
 	notifier, err := newNotifier(configuration)
 	require.NoError(t, err)
 	defer func() {
-		require.NoError(t, notifier.Close())
+		require.NoError(t, notifier.Close(ctx))
 	}()
 
 	go func() {
@@ -115,10 +115,10 @@ func TestNotifierCreationAndTest(t *testing.T) {
 
 	initDoneSignal.Wait()
 
-	require.NoError(t, notifier.Test())
-	require.NoError(t, notifier.AlertNotify(newAlert(storage.ViolationState_ACTIVE)))
-	require.NoError(t, notifier.AlertNotify(newAlert(storage.ViolationState_SNOOZED)))
-	require.NoError(t, notifier.AlertNotify(newAlert(storage.ViolationState_RESOLVED)))
+	require.NoError(t, notifier.Test(ctx))
+	require.NoError(t, notifier.AlertNotify(ctx, newAlert(storage.ViolationState_ACTIVE)))
+	require.NoError(t, notifier.AlertNotify(ctx, newAlert(storage.ViolationState_SNOOZED)))
+	require.NoError(t, notifier.AlertNotify(ctx, newAlert(storage.ViolationState_RESOLVED)))
 
 	require.Equal(t, context.DeadlineExceeded, <-errCh)
 }

@@ -1,6 +1,8 @@
 package notifiers
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -8,9 +10,9 @@ import (
 //go:generate mockgen-wrapper
 type Notifier interface {
 	// Close closes a notifier instances and releases all its resources.
-	Close() error
+	Close(context.Context) error
 	// ProtoNotifier gets the proto version of the notifier
 	ProtoNotifier() *storage.Notifier
 	// Test sends a test message
-	Test() error
+	Test(context.Context) error
 }

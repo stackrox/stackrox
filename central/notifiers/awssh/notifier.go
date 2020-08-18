@@ -230,7 +230,7 @@ func (n *notifier) uploadBatchIf(ctx context.Context, predicate func(*notifier) 
 	return true
 }
 
-func (n *notifier) Close() error {
+func (n *notifier) Close(ctx context.Context) error {
 	if n.canceler != nil {
 		n.canceler()
 	}
@@ -245,12 +245,12 @@ func (n *notifier) ProtoNotifier() *storage.Notifier {
 //   * n is running, i.e., exactly one go routine is executing n.run(...)
 //   * AWS SecurityHub is reachable
 // If either of the checks fails, an error is returned.
-func (n *notifier) Test() error {
+func (n *notifier) Test(ctx context.Context) error {
 	if n.stopSig.IsDone() {
 		return errNotRunning
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), n.upstreamTimeout)
+	ctx, cancel := context.WithTimeout(ctx, n.upstreamTimeout)
 	defer cancel()
 
 	_, err := n.SecurityHub.GetFindingsWithContext(ctx, &securityhub.GetFindingsInput{
@@ -306,7 +306,7 @@ func (n *notifier) Test() error {
 	return err
 }
 
-func (n *notifier) AlertNotify(alert *storage.Alert) error {
+func (n *notifier) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	if n.stopSig.IsDone() {
 		return errNotRunning
 	}
@@ -316,5 +316,7 @@ func (n *notifier) AlertNotify(alert *storage.Alert) error {
 		return nil
 	case <-n.stopSig.Done():
 		return errNotRunning
+	case <-ctx.Done():
+		return ctx.Err()
 	}
 }

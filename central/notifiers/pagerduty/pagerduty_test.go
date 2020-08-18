@@ -1,6 +1,7 @@
 package pagerduty
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -41,12 +42,12 @@ func getPagerDuty(t *testing.T) *pagerDuty {
 
 func TestPagerDutyAlertNotify(t *testing.T) {
 	p := getPagerDuty(t)
-	assert.NoError(t, p.AlertNotify(fixtures.GetAlert()))
+	assert.NoError(t, p.AlertNotify(context.Background(), fixtures.GetAlert()))
 }
 
 func TestPagerDutyTest(t *testing.T) {
 	s := getPagerDuty(t)
-	assert.NoError(t, s.Test())
+	assert.NoError(t, s.Test(context.Background()))
 }
 
 func TestPagerDutyAckAlert(t *testing.T) {

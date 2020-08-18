@@ -315,7 +315,7 @@ func (s *serviceImpl) changeAlertsState(ctx context.Context, alerts []*storage.A
 			return status.Error(codes.Internal, err.Error())
 		}
 		for _, alert := range alerts[start:end] {
-			s.notifier.ProcessAlert(alert)
+			s.notifier.ProcessAlert(ctx, alert)
 		}
 	}
 	return nil
@@ -331,7 +331,7 @@ func (s *serviceImpl) changeAlertState(ctx context.Context, alert *storage.Alert
 		log.Error(err)
 		return status.Error(codes.Internal, err.Error())
 	}
-	s.notifier.ProcessAlert(alert)
+	s.notifier.ProcessAlert(ctx, alert)
 	return nil
 }
 

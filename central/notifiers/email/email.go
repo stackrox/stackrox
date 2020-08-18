@@ -209,12 +209,12 @@ func (e *email) plainTextAlert(alert *storage.Alert) (string, error) {
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 
-func (*email) Close() error {
+func (*email) Close(context.Context) error {
 	return nil
 }
 
 // AlertNotify takes in an alert and generates the email
-func (e *email) AlertNotify(alert *storage.Alert) error {
+func (e *email) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	subject := fmt.Sprintf("Deployment %v (%v) violates '%v' Policy", alert.GetDeployment().GetName(),
 		alert.GetDeployment().GetId(), alert.GetPolicy().GetName())
 	body, err := e.plainTextAlert(alert)
@@ -223,11 +223,11 @@ func (e *email) AlertNotify(alert *storage.Alert) error {
 	}
 
 	recipient := notifiers.GetLabelValue(alert, e.notifier.GetLabelKey(), e.notifier.GetLabelDefault())
-	return e.sendEmail(recipient, subject, body)
+	return e.sendEmail(ctx, recipient, subject, body)
 }
 
 // YamlNotify takes in a yaml file and generates the email message
-func (e *email) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
+func (e *email) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
 	subject := fmt.Sprintf("New network policy YAML for cluster '%s' needs to be applied", clusterName)
 
 	body, err := notifiers.FormatNetworkPolicyYAML(yaml, clusterName, template.FuncMap{
@@ -238,18 +238,18 @@ func (e *email) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 	if err != nil {
 		return err
 	}
-	return e.sendEmail(e.notifier.GetLabelDefault(), subject, body)
+	return e.sendEmail(ctx, e.notifier.GetLabelDefault(), subject, body)
 }
 
 // Test sends a test notification
-func (e *email) Test() error {
+func (e *email) Test(ctx context.Context) error {
 	subject := "StackRox Test Email"
 	body := fmt.Sprintf("%v\r\n", "This is a test email created to test integration with StackRox.")
-	err := e.sendEmail(e.notifier.GetLabelDefault(), subject, body)
+	err := e.sendEmail(ctx, e.notifier.GetLabelDefault(), subject, body)
 	return err
 }
 
-func (e *email) sendEmail(recipient, subject, body string) error {
+func (e *email) sendEmail(ctx context.Context, recipient, subject, body string) error {
 	var from string
 	if e.config.GetFrom() != "" {
 		from = fmt.Sprintf("%s <%s>", e.config.GetFrom(), e.config.GetSender())
@@ -264,7 +264,7 @@ func (e *email) sendEmail(recipient, subject, body string) error {
 		Body:    body,
 	}
 
-	conn, auth, err := e.connection()
+	conn, auth, err := e.connection(ctx)
 	if err != nil {
 		log.Errorf("Connection failed: %v", err)
 		return err
@@ -349,8 +349,8 @@ func (e *email) createClient(conn net.Conn) (c *smtp.Client, err error) {
 	return smtp.NewClient(conn, e.smtpServer.host)
 }
 
-func (e *email) connection() (conn net.Conn, auth smtp.Auth, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout)
+func (e *email) connection(ctx context.Context) (conn net.Conn, auth smtp.Auth, err error) {
+	ctx, cancel := context.WithTimeout(ctx, connectTimeout)
 	defer cancel()
 
 	if e.config.GetDisableTLS() {

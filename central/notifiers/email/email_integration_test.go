@@ -3,6 +3,7 @@
 package email
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -51,16 +52,16 @@ func getEmail(t *testing.T) *email {
 
 func TestEmailAlertNotify(t *testing.T) {
 	e := getEmail(t)
-	assert.NoError(t, e.AlertNotify(fixtures.GetAlert()))
+	assert.NoError(t, e.AlertNotify(context.Background(), fixtures.GetAlert()))
 }
 
 func TestEmailNetworkPolicyYAMLNotify(t *testing.T) {
 	e := getEmail(t)
 
-	assert.NoError(t, e.NetworkPolicyYAMLNotify(fixtures.GetYAML(), "test-cluster"))
+	assert.NoError(t, e.NetworkPolicyYAMLNotify(context.Background(), fixtures.GetYAML(), "test-cluster"))
 }
 
 func TestEmailTest(t *testing.T) {
 	e := getEmail(t)
-	assert.NoError(t, e.Test())
+	assert.NoError(t, e.Test(context.Background()))
 }

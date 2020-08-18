@@ -1,6 +1,8 @@
 package processor
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -11,10 +13,10 @@ type NotifierSet interface {
 	HasNotifiers() bool
 	HasEnabledAuditNotifiers() bool
 
-	ForEach(f func(notifiers.Notifier, AlertSet))
+	ForEach(ctx context.Context, f func(context.Context, notifiers.Notifier, AlertSet))
 
-	UpsertNotifier(notifier notifiers.Notifier)
-	RemoveNotifier(id string)
+	UpsertNotifier(ctx context.Context, notifier notifiers.Notifier)
+	RemoveNotifier(ctx context.Context, id string)
 }
 
 // NewNotifierSet returns a new instance of a NotifierSet
@@ -58,17 +60,17 @@ func (p *notifierSetImpl) HasEnabledAuditNotifiers() bool {
 }
 
 // ForEachesFailures performs a function on each notifier.
-func (p *notifierSetImpl) ForEach(f func(notifiers.Notifier, AlertSet)) {
+func (p *notifierSetImpl) ForEach(ctx context.Context, f func(context.Context, notifiers.Notifier, AlertSet)) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
 	for notifierID, notifier := range p.notifiers {
-		f(notifier, p.failures[notifierID])
+		f(ctx, notifier, p.failures[notifierID])
 	}
 }
 
 // UpsertNotifier adds or updates a notifier in the set.
-func (p *notifierSetImpl) UpsertNotifier(notifier notifiers.Notifier) {
+func (p *notifierSetImpl) UpsertNotifier(ctx context.Context, notifier notifiers.Notifier) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
@@ -77,7 +79,7 @@ func (p *notifierSetImpl) UpsertNotifier(notifier notifiers.Notifier) {
 		p.failures[notifierID] = NewAlertSet()
 	}
 	if knownNotifier := p.notifiers[notifierID]; knownNotifier != nil && knownNotifier != notifier {
-		if err := knownNotifier.Close(); err != nil {
+		if err := knownNotifier.Close(ctx); err != nil {
 			log.Error("failed to close notifier instance", logging.Err(err))
 		}
 	}
@@ -85,12 +87,12 @@ func (p *notifierSetImpl) UpsertNotifier(notifier notifiers.Notifier) {
 }
 
 // RemoveNotifier removes a notifier from the set.
-func (p *notifierSetImpl) RemoveNotifier(id string) {
+func (p *notifierSetImpl) RemoveNotifier(ctx context.Context, id string) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
 	if notifier := p.notifiers[id]; notifier != nil {
-		if err := notifier.Close(); err != nil {
+		if err := notifier.Close(ctx); err != nil {
 			log.Error("failed to close notifier instance", logging.Err(err))
 		}
 	}

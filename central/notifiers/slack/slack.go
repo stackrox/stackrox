@@ -2,6 +2,7 @@ package slack
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -110,12 +111,12 @@ func (s *slack) getDescription(alert *storage.Alert) (string, error) {
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 
-func (*slack) Close() error {
+func (*slack) Close(ctx context.Context) error {
 	return nil
 }
 
 // AlertNotify takes in an alert and generates the Slack message
-func (s *slack) AlertNotify(alert *storage.Alert) error {
+func (s *slack) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	tagLine := fmt.Sprintf("*Deployment %v (%v) violates '%v' Policy*", alert.Deployment.Name, alert.Deployment.Id, alert.Policy.Name)
 	body, err := s.getDescription(alert)
 	if err != nil {
@@ -143,7 +144,7 @@ func (s *slack) AlertNotify(alert *storage.Alert) error {
 
 	return retry.WithRetry(
 		func() error {
-			return s.postMessage(webhook, jsonPayload)
+			return s.postMessage(ctx, webhook, jsonPayload)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -155,7 +156,7 @@ func (s *slack) AlertNotify(alert *storage.Alert) error {
 }
 
 // YamlNotify takes in a yaml file and generates the Slack message
-func (s *slack) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
+func (s *slack) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
 	if strings.Count(yaml, "\n") > 300 { // Looks like messages are truncated at ~340 lines.
 		return errors.New("yaml is too large (>300 lines) to send over slack")
 	}
@@ -198,7 +199,7 @@ func (s *slack) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 
 	return retry.WithRetry(
 		func() error {
-			return s.postMessage(webhook, jsonPayload)
+			return s.postMessage(ctx, webhook, jsonPayload)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -222,7 +223,7 @@ func (s *slack) ProtoNotifier() *storage.Notifier {
 	return s.Notifier
 }
 
-func (s *slack) Test() error {
+func (s *slack) Test(ctx context.Context) error {
 	n := notification{
 		Text: "This is a test message created to test integration with StackRox.",
 	}
@@ -235,7 +236,7 @@ func (s *slack) Test() error {
 
 	return retry.WithRetry(
 		func() error {
-			return s.postMessage(webhook, jsonPayload)
+			return s.postMessage(ctx, webhook, jsonPayload)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -246,14 +247,14 @@ func (s *slack) Test() error {
 	)
 }
 
-func (s *slack) postMessage(url string, jsonPayload []byte) error {
+func (s *slack) postMessage(ctx context.Context, url string, jsonPayload []byte) error {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := s.client.Do(req)
+	resp, err := s.client.Do(req.WithContext(ctx))
 	if err != nil {
 		log.Errorf("Error posting to slack: %v", err)
 		return errors.Wrap(err, "Error posting to slack")

@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
@@ -34,17 +35,17 @@ func (m *MockNotifier) EXPECT() *MockNotifierMockRecorder {
 }
 
 // Close mocks base method
-func (m *MockNotifier) Close() error {
+func (m *MockNotifier) Close(arg0 context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Close")
+	ret := m.ctrl.Call(m, "Close", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Close indicates an expected call of Close
-func (mr *MockNotifierMockRecorder) Close() *gomock.Call {
+func (mr *MockNotifierMockRecorder) Close(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockNotifier)(nil).Close))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockNotifier)(nil).Close), arg0)
 }
 
 // ProtoNotifier mocks base method
@@ -62,15 +63,15 @@ func (mr *MockNotifierMockRecorder) ProtoNotifier() *gomock.Call {
 }
 
 // Test mocks base method
-func (m *MockNotifier) Test() error {
+func (m *MockNotifier) Test(arg0 context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Test")
+	ret := m.ctrl.Call(m, "Test", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Test indicates an expected call of Test
-func (mr *MockNotifierMockRecorder) Test() *gomock.Call {
+func (mr *MockNotifierMockRecorder) Test(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Test", reflect.TypeOf((*MockNotifier)(nil).Test))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Test", reflect.TypeOf((*MockNotifier)(nil).Test), arg0)
 }

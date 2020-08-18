@@ -21,6 +21,12 @@ const (
 	timeout            = 5 * time.Second
 )
 
+var (
+	client = &http.Client{
+		Transport: proxy.RoundTripper(),
+	}
+)
+
 // Logger is the minimal interface we need to use to log data.
 type Logger interface {
 	Warnf(format string, args ...interface{})
@@ -44,13 +50,13 @@ func (c *Config) postURL(findingID string) string {
 }
 
 // CreateFinding creates the provided Finding.
-func (c *Config) CreateFinding(finding *findings.Finding, id string) error {
+func (c *Config) CreateFinding(ctx context.Context, finding *findings.Finding, id string) error {
 	req, err := c.request(finding, id)
 	if err != nil {
 		return errors.Wrap(err, "request creation")
 	}
 
-	ctx, cancel := timeoutContext()
+	ctx, cancel := timeoutContext(ctx)
 	defer cancel()
 	tokenSource, err := c.getTokenSource(ctx)
 	if err != nil {
@@ -64,11 +70,7 @@ func (c *Config) CreateFinding(finding *findings.Finding, id string) error {
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.AccessToken))
 
-	client := &http.Client{
-		Timeout:   timeout,
-		Transport: proxy.RoundTripper(),
-	}
-	resp, err := client.Do(req)
+	resp, err := client.Do(req.WithContext(ctx))
 	if err != nil {
 		return errors.Wrap(err, "request")
 	}
@@ -107,8 +109,8 @@ func (c *Config) getTokenSource(ctx context.Context) (*google.DefaultCredentials
 	}, nil
 }
 
-func timeoutContext() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), timeout)
+func timeoutContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(ctx, timeout)
 }
 
 func (c *Config) embeddedProjectID() (string, error) {

@@ -1,6 +1,7 @@
 package jira
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -130,12 +131,12 @@ func (j *jira) getAlertDescription(alert *storage.Alert) (string, error) {
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 
-func (j *jira) Close() error {
+func (j *jira) Close(ctx context.Context) error {
 	return nil
 }
 
 // AlertNotify takes in an alert and generates the notification
-func (j *jira) AlertNotify(alert *storage.Alert) error {
+func (j *jira) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	description, err := j.getAlertDescription(alert)
 	if err != nil {
 		return err
@@ -154,10 +155,10 @@ func (j *jira) AlertNotify(alert *storage.Alert) error {
 			Description: description,
 		},
 	}
-	return j.createIssue(alert.GetPolicy().GetSeverity(), i)
+	return j.createIssue(ctx, alert.GetPolicy().GetSeverity(), i)
 }
 
-func (j *jira) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
+func (j *jira) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
 	funcMap := template.FuncMap{
 		"codeBlock": func(s string) string {
 			return fmt.Sprintf("{code:title=Network Policy YAML|theme=FadeToGrey|language=yaml}%s{code}", s)
@@ -182,7 +183,7 @@ func (j *jira) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 			Description: description,
 		},
 	}
-	return j.createIssue(storage.Severity_MEDIUM_SEVERITY, i)
+	return j.createIssue(ctx, storage.Severity_MEDIUM_SEVERITY, i)
 }
 
 func validate(jira *storage.Jira) error {
@@ -289,7 +290,7 @@ func (j *jira) ProtoNotifier() *storage.Notifier {
 	return j.notifier
 }
 
-func (j *jira) createIssue(severity storage.Severity, i *jiraLib.Issue) error {
+func (j *jira) createIssue(ctx context.Context, severity storage.Severity, i *jiraLib.Issue) error {
 	i.Fields.Unknowns = j.unknownMap
 
 	if j.needsPriority {
@@ -311,7 +312,7 @@ func (j *jira) createIssue(severity storage.Severity, i *jiraLib.Issue) error {
 	return err
 }
 
-func (j *jira) Test() error {
+func (j *jira) Test(ctx context.Context) error {
 	i := &jiraLib.Issue{
 		Fields: &jiraLib.IssueFields{
 			Description: "StackRox Test Issue",
@@ -324,7 +325,7 @@ func (j *jira) Test() error {
 			Summary: "This is a test issue created to test integration with StackRox.",
 		},
 	}
-	return j.createIssue(storage.Severity_LOW_SEVERITY, i)
+	return j.createIssue(ctx, storage.Severity_LOW_SEVERITY, i)
 }
 
 // Optimistically tries to match all of the Jira priorities with the known mapping defined in defaultPriorities

@@ -2,6 +2,7 @@ package splunk
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -48,17 +49,17 @@ type splunk struct {
 	*storage.Notifier
 }
 
-func (s *splunk) AlertNotify(alert *storage.Alert) error {
-	return s.postAlert(alert)
+func (s *splunk) AlertNotify(ctx context.Context, alert *storage.Alert) error {
+	return s.postAlert(ctx, alert)
 }
 
 func (s *splunk) ProtoNotifier() *storage.Notifier {
 	return s.Notifier
 }
 
-func (s *splunk) Test() error {
+func (s *splunk) Test(ctx context.Context) error {
 	if s.healthEndpoint != "" {
-		return s.sendHTTPPayload(http.MethodGet, s.healthEndpoint, nil)
+		return s.sendHTTPPayload(ctx, http.MethodGet, s.healthEndpoint, nil)
 	}
 	alert := &storage.Alert{
 		Policy:     &storage.Policy{Name: "Test Policy"},
@@ -67,10 +68,10 @@ func (s *splunk) Test() error {
 			{Message: "This is a sample Splunk alert message created to test integration with StackRox."},
 		},
 	}
-	return s.postAlert(alert)
+	return s.postAlert(ctx, alert)
 }
 
-func (s *splunk) postAlert(alert *storage.Alert) error {
+func (s *splunk) postAlert(ctx context.Context, alert *storage.Alert) error {
 	clonedAlert := alert.Clone()
 	// Splunk's HEC by default has a limitation of data size == 10KB
 	// Removing some of the fields here to make it smaller
@@ -80,7 +81,7 @@ func (s *splunk) postAlert(alert *storage.Alert) error {
 
 	return retry.WithRetry(
 		func() error {
-			return s.sendEvent(clonedAlert)
+			return s.sendEvent(ctx, clonedAlert)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -103,18 +104,18 @@ func getSplunkEvent(msg proto.Message) (*wrapper.SplunkEvent, error) {
 	}, nil
 }
 
-func (*splunk) Close() error {
+func (*splunk) Close(ctx context.Context) error {
 	return nil
 }
 
-func (s *splunk) SendAuditMessage(msg *v1.Audit_Message) error {
+func (s *splunk) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) error {
 	if !s.AuditLoggingEnabled() {
 		return nil
 	}
 
 	return retry.WithRetry(
 		func() error {
-			return s.sendEvent(msg)
+			return s.sendEvent(ctx, msg)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -129,7 +130,7 @@ func (s *splunk) AuditLoggingEnabled() bool {
 	return s.GetSplunk().GetAuditLoggingEnabled()
 }
 
-func (s *splunk) sendEvent(msg proto.Message) error {
+func (s *splunk) sendEvent(ctx context.Context, msg proto.Message) error {
 	splunkEvent, err := getSplunkEvent(msg)
 	if err != nil {
 		return err
@@ -145,11 +146,14 @@ func (s *splunk) sendEvent(msg proto.Message) error {
 		return fmt.Errorf("Splunk HEC truncate data limit (%d bytes) exceeded: %d", s.conf.GetTruncate(), data.Len())
 	}
 
-	return s.sendHTTPPayload(http.MethodPost, s.eventEndpoint, &data)
+	return s.sendHTTPPayload(ctx, http.MethodPost, s.eventEndpoint, &data)
 }
 
-func (s *splunk) sendHTTPPayload(method, path string, data io.Reader) error {
-	req, err := http.NewRequest(method, path, data)
+func (s *splunk) sendHTTPPayload(ctx context.Context, method, path string, data io.Reader) error {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, method, path, data)
 	if err != nil {
 		return err
 	}
@@ -161,7 +165,7 @@ func (s *splunk) sendHTTPPayload(method, path string, data io.Reader) error {
 		Proxy:           proxy.FromConfig(),
 	}
 
-	client := &http.Client{Timeout: timeout, Transport: tr}
+	client := &http.Client{Transport: tr}
 	resp, err := client.Do(req)
 	if err != nil {
 		return err

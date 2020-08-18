@@ -3,6 +3,7 @@
 package slack
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -28,7 +29,7 @@ func TestSlackAlertNotify(t *testing.T) {
 		LabelDefault: webhook,
 	})
 	assert.NoError(t, err)
-	assert.NoError(t, s.AlertNotify(fixtures.GetAlert()))
+	assert.NoError(t, s.AlertNotify(context.Background(), fixtures.GetAlert()))
 }
 
 func TestSlackNetworkPolicyYAMLNotify(t *testing.T) {
@@ -38,7 +39,7 @@ func TestSlackNetworkPolicyYAMLNotify(t *testing.T) {
 		LabelDefault: webhook,
 	})
 	assert.NoError(t, err)
-	assert.NoError(t, s.NetworkPolicyYAMLNotify(fixtures.GetYAML(), "test-cluster"))
+	assert.NoError(t, s.NetworkPolicyYAMLNotify(context.Background(), fixtures.GetYAML(), "test-cluster"))
 }
 
 func TestSlackTest(t *testing.T) {
@@ -48,5 +49,5 @@ func TestSlackTest(t *testing.T) {
 		LabelDefault: webhook,
 	})
 	assert.NoError(t, err)
-	assert.NoError(t, s.Test())
+	assert.NoError(t, s.Test(context.Background()))
 }

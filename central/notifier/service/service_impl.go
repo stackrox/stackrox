@@ -135,7 +135,7 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 	if err := s.storage.UpdateNotifier(ctx, request.GetNotifier()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	s.processor.UpdateNotifier(notifier)
+	s.processor.UpdateNotifier(ctx, notifier)
 	return &v1.Empty{}, nil
 }
 
@@ -156,7 +156,7 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	request.Id = id
-	s.processor.UpdateNotifier(notifier)
+	s.processor.UpdateNotifier(ctx, notifier)
 	return request, nil
 }
 
@@ -177,7 +177,7 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	if err := notifier.Test(); err != nil {
+	if err := notifier.Test(ctx); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	return &v1.Empty{}, nil
@@ -204,7 +204,7 @@ func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNoti
 		return nil, err
 	}
 
-	s.processor.RemoveNotifier(request.GetId())
+	s.processor.RemoveNotifier(ctx, request.GetId())
 	return &v1.Empty{}, nil
 }
 

@@ -1,6 +1,8 @@
 package notifiers
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -9,5 +11,5 @@ import (
 type AlertNotifier interface {
 	Notifier
 	// AlertNotify triggers the plugins to send a notification about an alert
-	AlertNotify(alert *storage.Alert) error
+	AlertNotify(ctx context.Context, alert *storage.Alert) error
 }

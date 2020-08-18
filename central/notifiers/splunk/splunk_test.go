@@ -3,6 +3,7 @@
 package splunk
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -52,10 +53,10 @@ func getSplunk(t *testing.T) *splunk {
 
 func TestSplunkAlertNotify(t *testing.T) {
 	s := getSplunk(t)
-	assert.NoError(t, s.AlertNotify(fixtures.GetAlert()))
+	assert.NoError(t, s.AlertNotify(context.Background(), fixtures.GetAlert()))
 }
 
 func TestSplunkTest(t *testing.T) {
 	s := getSplunk(t)
-	assert.NoError(t, s.Test())
+	assert.NoError(t, s.Test(context.Background()))
 }

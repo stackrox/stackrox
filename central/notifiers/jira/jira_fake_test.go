@@ -1,6 +1,7 @@
 package jira
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -167,7 +168,7 @@ func TestWithFakeJira(t *testing.T) {
 	j, err := newJira(fakeJiraConfig)
 	require.NoError(t, err)
 
-	assert.NoError(t, j.Test())
+	assert.NoError(t, j.Test(context.Background()))
 	require.Len(t, fj.createdIssues, 1)
 	issue := fj.createdIssues[0]
 	assert.Equal(t, "StackRox Test Issue", issue.Fields.Description)
@@ -190,7 +191,7 @@ func TestWithFakeJira(t *testing.T) {
 		},
 		Time: types.TimestampNow(),
 	}
-	assert.NoError(t, j.AlertNotify(testAlert))
+	assert.NoError(t, j.AlertNotify(context.Background(), testAlert))
 	require.Len(t, fj.createdIssues, 2)
 
 	issue = fj.createdIssues[1]

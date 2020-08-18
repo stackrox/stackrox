@@ -1,6 +1,7 @@
 package teams
 
 import (
+	"context"
 	"os"
 	"strings"
 	"testing"
@@ -29,7 +30,7 @@ func TestTeamsAlertNotify(t *testing.T) {
 			LabelDefault: webhook,
 		},
 	}
-	assert.NoError(t, s.AlertNotify(fixtures.GetAlert()))
+	assert.NoError(t, s.AlertNotify(context.Background(), fixtures.GetAlert()))
 }
 
 func TestTeamsRandomAlertNotify(t *testing.T) {
@@ -49,22 +50,22 @@ func TestTeamsRandomAlertNotify(t *testing.T) {
 	alert.Policy.Fields.Env = &storage.KeyValuePolicy{}
 	alert.Policy.Fields.VolumePolicy = &storage.VolumePolicy{}
 	alert.Policy.Fields.ImageName = &storage.ImageNamePolicy{}
-	assert.NoError(t, s.AlertNotify(alert))
+	assert.NoError(t, s.AlertNotify(context.Background(), alert))
 
 	alert.Policy = &storage.Policy{}
-	assert.NoError(t, s.AlertNotify(alert))
+	assert.NoError(t, s.AlertNotify(context.Background(), alert))
 
 	alert.Id = ""
 	alert.Violations = []*storage.Alert_Violation{}
 	alert.Deployment.ClusterId = ""
 	alert.Deployment.ClusterName = ""
-	assert.NoError(t, s.AlertNotify(alert))
+	assert.NoError(t, s.AlertNotify(context.Background(), alert))
 
 	alert.Deployment = &storage.Alert_Deployment{}
-	assert.NoError(t, s.AlertNotify(alert))
+	assert.NoError(t, s.AlertNotify(context.Background(), alert))
 
 	alert = &storage.Alert{}
-	assert.NoError(t, s.AlertNotify(alert))
+	assert.NoError(t, s.AlertNotify(context.Background(), alert))
 }
 
 func TestTeamsNetworkPolicyYAMLNotify(t *testing.T) {
@@ -76,7 +77,7 @@ func TestTeamsNetworkPolicyYAMLNotify(t *testing.T) {
 		},
 	}
 
-	assert.NoError(t, s.NetworkPolicyYAMLNotify(fixtures.GetYAML(), "test-cluster"))
+	assert.NoError(t, s.NetworkPolicyYAMLNotify(context.Background(), fixtures.GetYAML(), "test-cluster"))
 }
 
 func TestTeamsTest(t *testing.T) {
@@ -87,7 +88,7 @@ func TestTeamsTest(t *testing.T) {
 			LabelDefault: webhook,
 		},
 	}
-	assert.NoError(t, s.Test())
+	assert.NoError(t, s.Test(context.Background()))
 }
 
 func TestPolicySeverityEnumConverter(t *testing.T) {

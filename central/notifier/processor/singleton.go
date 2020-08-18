@@ -46,12 +46,12 @@ func initialize() {
 			utils.Should(errors.Wrapf(err, "error creating notifier with %v (%v) and type %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.GetType()))
 			continue
 		}
-		pr.UpdateNotifier(notifier)
+		pr.UpdateNotifier(ctx, notifier)
 	}
 
 	// When alerts have failed, we will want to retry the notifications.
 	loop = NewLoop(ns)
-	loop.Start() // No need to stop, just run as long as central is up.
+	loop.Start(ctx)
 }
 
 // Singleton provides the interface for processing notifications.

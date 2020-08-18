@@ -146,12 +146,12 @@ func (c *cscc) getCluster(id string) (*storage.Cluster, error) {
 	return cluster, nil
 }
 
-func (c *cscc) Close() error {
+func (c *cscc) Close(ctx context.Context) error {
 	return nil
 }
 
 //AlertNotify takes in an alert and generates the notification
-func (c *cscc) AlertNotify(alert *storage.Alert) error {
+func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	alertLink := notifiers.AlertLink(c.Notifier.UiEndpoint, alert.GetId())
 	summary := c.getAlertDescription(alert)
 
@@ -191,7 +191,7 @@ func (c *cscc) AlertNotify(alert *storage.Alert) error {
 
 	return retry.WithRetry(
 		func() error {
-			return c.client.CreateFinding(finding, findingID)
+			return c.client.CreateFinding(ctx, finding, findingID)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -235,6 +235,6 @@ func (c *cscc) ProtoNotifier() *storage.Notifier {
 	return c.Notifier
 }
 
-func (c *cscc) Test() error {
+func (c *cscc) Test(context.Context) error {
 	return errors.New("Test is not yet implemented for Cloud SCC")
 }

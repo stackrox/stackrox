@@ -81,7 +81,7 @@ func (d *alertManagerImpl) markAlertsStale(ctx context.Context, alertsToMark []*
 		err := d.alerts.MarkAlertStale(ctx, existingAlert.GetId())
 		if err == nil {
 			// run notifier for all the resolved alerts
-			d.notifier.ProcessAlert(existingAlert)
+			d.notifier.ProcessAlert(ctx, existingAlert)
 		}
 		errList.AddError(err)
 	}
@@ -91,7 +91,7 @@ func (d *alertManagerImpl) markAlertsStale(ctx context.Context, alertsToMark []*
 // NotifyAndUpdateBatch runs the notifier on the input alerts then stores them.
 func (d *alertManagerImpl) notifyAndUpdateBatch(ctx context.Context, alertsToMark []*storage.Alert) error {
 	for _, existingAlert := range alertsToMark {
-		d.notifier.ProcessAlert(existingAlert)
+		d.notifier.ProcessAlert(ctx, existingAlert)
 	}
 	return d.updateBatch(ctx, alertsToMark)
 }

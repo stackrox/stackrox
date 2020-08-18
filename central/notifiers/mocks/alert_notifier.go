@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
@@ -34,31 +35,31 @@ func (m *MockAlertNotifier) EXPECT() *MockAlertNotifierMockRecorder {
 }
 
 // AlertNotify mocks base method
-func (m *MockAlertNotifier) AlertNotify(arg0 *storage.Alert) error {
+func (m *MockAlertNotifier) AlertNotify(arg0 context.Context, arg1 *storage.Alert) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AlertNotify", arg0)
+	ret := m.ctrl.Call(m, "AlertNotify", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AlertNotify indicates an expected call of AlertNotify
-func (mr *MockAlertNotifierMockRecorder) AlertNotify(arg0 interface{}) *gomock.Call {
+func (mr *MockAlertNotifierMockRecorder) AlertNotify(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AlertNotify", reflect.TypeOf((*MockAlertNotifier)(nil).AlertNotify), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AlertNotify", reflect.TypeOf((*MockAlertNotifier)(nil).AlertNotify), arg0, arg1)
 }
 
 // Close mocks base method
-func (m *MockAlertNotifier) Close() error {
+func (m *MockAlertNotifier) Close(arg0 context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Close")
+	ret := m.ctrl.Call(m, "Close", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Close indicates an expected call of Close
-func (mr *MockAlertNotifierMockRecorder) Close() *gomock.Call {
+func (mr *MockAlertNotifierMockRecorder) Close(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockAlertNotifier)(nil).Close))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockAlertNotifier)(nil).Close), arg0)
 }
 
 // ProtoNotifier mocks base method
@@ -76,15 +77,15 @@ func (mr *MockAlertNotifierMockRecorder) ProtoNotifier() *gomock.Call {
 }
 
 // Test mocks base method
-func (m *MockAlertNotifier) Test() error {
+func (m *MockAlertNotifier) Test(arg0 context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Test")
+	ret := m.ctrl.Call(m, "Test", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Test indicates an expected call of Test
-func (mr *MockAlertNotifierMockRecorder) Test() *gomock.Call {
+func (mr *MockAlertNotifierMockRecorder) Test(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Test", reflect.TypeOf((*MockAlertNotifier)(nil).Test))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Test", reflect.TypeOf((*MockAlertNotifier)(nil).Test), arg0)
 }

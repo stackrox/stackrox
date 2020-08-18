@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -49,17 +50,17 @@ func (mr *MockAuditNotifierMockRecorder) AuditLoggingEnabled() *gomock.Call {
 }
 
 // Close mocks base method
-func (m *MockAuditNotifier) Close() error {
+func (m *MockAuditNotifier) Close(arg0 context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Close")
+	ret := m.ctrl.Call(m, "Close", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Close indicates an expected call of Close
-func (mr *MockAuditNotifierMockRecorder) Close() *gomock.Call {
+func (mr *MockAuditNotifierMockRecorder) Close(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockAuditNotifier)(nil).Close))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockAuditNotifier)(nil).Close), arg0)
 }
 
 // ProtoNotifier mocks base method
@@ -77,29 +78,29 @@ func (mr *MockAuditNotifierMockRecorder) ProtoNotifier() *gomock.Call {
 }
 
 // SendAuditMessage mocks base method
-func (m *MockAuditNotifier) SendAuditMessage(arg0 *v1.Audit_Message) error {
+func (m *MockAuditNotifier) SendAuditMessage(arg0 context.Context, arg1 *v1.Audit_Message) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendAuditMessage", arg0)
+	ret := m.ctrl.Call(m, "SendAuditMessage", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SendAuditMessage indicates an expected call of SendAuditMessage
-func (mr *MockAuditNotifierMockRecorder) SendAuditMessage(arg0 interface{}) *gomock.Call {
+func (mr *MockAuditNotifierMockRecorder) SendAuditMessage(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendAuditMessage", reflect.TypeOf((*MockAuditNotifier)(nil).SendAuditMessage), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendAuditMessage", reflect.TypeOf((*MockAuditNotifier)(nil).SendAuditMessage), arg0, arg1)
 }
 
 // Test mocks base method
-func (m *MockAuditNotifier) Test() error {
+func (m *MockAuditNotifier) Test(arg0 context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Test")
+	ret := m.ctrl.Call(m, "Test", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Test indicates an expected call of Test
-func (mr *MockAuditNotifierMockRecorder) Test() *gomock.Call {
+func (mr *MockAuditNotifierMockRecorder) Test(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Test", reflect.TypeOf((*MockAuditNotifier)(nil).Test))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Test", reflect.TypeOf((*MockAuditNotifier)(nil).Test), arg0)
 }
