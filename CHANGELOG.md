@@ -17,7 +17,9 @@ All notable changes to this project that require documentation updates will be d
   - Green check icon at left of other phrases (for example, in 1 month on 7/31/2020, in 2 months)
 - UI and strings from API: Replace term 'whitelist' with 'excluded scope' in policy context, and 'baseline' in process context (ROX-5315, ROX-5316)
 - UI: Deployment Details in the Violations Side Panel now shows full deployment data if available. If not, a message will appear explaining that the deployment no longer exists.
-
+- UI: When selecting a deployment in the Network Graph, the Network Flows table will now show some additional information: traffic, deployment name,
+  namespace name, ports, protocols, connection type (ROX-5219)
+  
 ## [47.0]
 - Configuration Management tables (except for Controls and Policies) are now paginated through the API, rather than loading all rows into the browser, for better performance in large environments (ROX-5067).
 - Added a global flag `--token-file` to roxctl causing an API token to be read from the specified file (ROX-2319).

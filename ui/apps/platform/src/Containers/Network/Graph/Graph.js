@@ -11,8 +11,8 @@ import { actions as deploymentActions } from 'reducers/deployments';
 
 import NetworkGraph from 'Components/NetworkGraph';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import { filterModes } from 'constants/networkFilterModes';
 import wizardStages from '../Wizard/wizardStages';
-import { filterModes } from './filterModes';
 import Filters from './Overlays/Filters';
 import Legend from './Overlays/Legend';
 

@@ -103,11 +103,24 @@ describe('Network page', () => {
     it('should show the network policy simulator screen after generating network policies', () => {
         cy.visit(riskURL);
         cy.get(selectors.table.rows).eq(0).click({ force: true });
-        cy.get(RiskPageSelectors.networkNodeLink, { timeout: 10000 }).click();
+        cy.get(RiskPageSelectors.viewDeploymentsInNetworkGraphButton, { timeout: 10000 }).click();
 
         cy.get(networkPageSelectors.panels.detailsPanel).should('be.visible');
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
         cy.get(networkPageSelectors.buttons.generateNetworkPolicies).click();
         cy.get(networkPageSelectors.panels.simulatorPanel, { timeout: 10000 }).should('be.visible');
+    });
+
+    it('should show the proper table column headers for the network flows table', () => {
+        cy.visit(riskURL);
+        cy.get(`${selectors.table.rows}:contains('central')`).click();
+        cy.get(RiskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
+        cy.get(`${selectors.tab.tabs}:contains('Network Flows')`).click();
+        cy.get(`${selectors.table.columnHeaders}:contains('Traffic')`);
+        cy.get(`${selectors.table.columnHeaders}:contains('Deployment')`);
+        cy.get(`${selectors.table.columnHeaders}:contains('Namespace')`);
+        cy.get(`${selectors.table.columnHeaders}:contains('Protocols')`);
+        cy.get(`${selectors.table.columnHeaders}:contains('Ports')`);
+        cy.get(`${selectors.table.columnHeaders}:contains('Connection')`);
     });
 });

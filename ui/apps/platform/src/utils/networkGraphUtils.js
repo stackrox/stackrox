@@ -4,7 +4,7 @@ import findIndex from 'lodash/findIndex';
 
 import featureFlags from 'utils/featureFlags';
 import entityTypes from 'constants/entityTypes';
-import { filterModes } from 'Containers/Network/Graph/filterModes';
+import { filterModes } from 'constants/networkFilterModes';
 
 const edgeTypes = {
     NAMESPACE_EDGE: 'NAMESPACE_EDGE',
@@ -410,6 +410,7 @@ export const getEdgesFromNode = ({
             targetNS,
             targetName,
             isActive,
+            isAllowed,
             isDisallowed,
             isBetweenNonIsolated,
         } = link;
@@ -519,6 +520,8 @@ export const getEdgesFromNode = ({
                             targetNodeName,
                             targetNodeNamespace,
                             portsAndProtocols,
+                            isActive,
+                            isAllowed,
                             isDisallowed,
                             traffic: isRelativeIngress ? 'ingress' : 'egress',
                             type: edgeTypes.NODE_TO_NAMESPACE_EDGE,

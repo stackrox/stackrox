@@ -17,7 +17,7 @@ import ReactDOM from 'react-dom';
 import { actions as graphActions } from 'reducers/network/graph';
 import GraphLoader from 'Containers/Network/Graph/Overlays/GraphLoader';
 import { edgeGridLayout, getParentPositions } from 'Containers/Network/Graph/networkGraphLayouts';
-import { filterModes } from 'Containers/Network/Graph/filterModes';
+import { filterModes } from 'constants/networkFilterModes';
 import style from 'Containers/Network/Graph/networkGraphStyles';
 import {
     getLinks,

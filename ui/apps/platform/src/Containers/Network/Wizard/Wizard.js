@@ -12,7 +12,7 @@ import NodesUpdateSection from '../Graph/Overlays/NodesUpdateSection';
 import ZoomButtons from '../Graph/Overlays/ZoomButtons';
 
 function Wizard(props) {
-    const width = props.wizardOpen ? 'w-1/3' : 'w-0';
+    const width = props.wizardOpen ? 'w-2/3' : 'w-0';
 
     return (
         <div

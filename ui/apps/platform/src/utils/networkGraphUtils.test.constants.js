@@ -1,4 +1,4 @@
-import { filterModes } from 'Containers/Network/Graph/filterModes';
+import { filterModes } from 'constants/networkFilterModes';
 
 export const nodes = [
     {

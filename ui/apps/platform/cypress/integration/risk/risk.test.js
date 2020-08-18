@@ -94,7 +94,7 @@ describe('Risk page', () => {
             cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
             cy.wait('@firstDeployment');
 
-            cy.get(RiskPageSelectors.networkNodeLink).click({ force: true });
+            cy.get(RiskPageSelectors.viewDeploymentsInNetworkGraphButton).click({ force: true });
             cy.url().should('contain', '/main/network');
         });
     });

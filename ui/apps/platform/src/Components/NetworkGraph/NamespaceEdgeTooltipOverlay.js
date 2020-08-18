@@ -4,7 +4,7 @@ import pluralize from 'pluralize';
 
 import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
 import TooltipCardSection from 'Components/TooltipCardSection';
-import { filterModes } from 'Containers/Network/Graph/filterModes';
+import { filterModes } from 'constants/networkFilterModes';
 import PortsAndProtocolsFields from './PortsAndProtocolsFields';
 
 const DirectionalTooltipCardSection = ({ numBidirectional, numUnidirectional, type }) => {

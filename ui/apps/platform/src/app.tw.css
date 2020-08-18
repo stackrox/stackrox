@@ -2,8 +2,8 @@
 @import '~slick-carousel/slick/slick-theme.css';
 @import 'css/style.css';
 
-@import "~@stackrox/tailwind-config/light.theme.css";
-@import "~@stackrox/tailwind-config/dark.theme.css";
+@import '~@stackrox/tailwind-config/light.theme.css';
+@import '~@stackrox/tailwind-config/dark.theme.css';
 
 .theme-dark .react-select__option:hover,
 .theme-dark .react-select__option:focus,
@@ -699,6 +699,10 @@ h6 {
 
 .ReactTable .rt-tbody .rt-tr {
     @apply min-h-12 bg-transparent !important;
+}
+
+.ReactTable .rt-expandable {
+    @apply .flex;
 }
 
 .ReactTable .rt-tbody .rt-tr .rt-td {

@@ -5,7 +5,7 @@ import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions as graphActions } from 'reducers/network/graph';
 
-import { filterModes, filterLabels } from '../filterModes';
+import { filterModes, filterLabels } from 'constants/networkFilterModes';
 
 const baseButtonClassName =
     'flex-shrink-0 px-2 py-px border-2 rounded-sm uppercase text-xs font-700';

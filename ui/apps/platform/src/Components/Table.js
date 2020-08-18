@@ -14,6 +14,12 @@ export const rtTrActionsClassName =
     'rt-tr-actions hidden right-0 p-0 mr-2 w-auto text-left self-center';
 export const DEFAULT_PAGE_SIZE = 50;
 
+export const Expander = ({ isExpanded }) => {
+    return (
+        <div className={`rt-expander w-1 pt-2 pointer-events-auto ${isExpanded ? '-open' : ''}`} />
+    );
+};
+
 class Table extends Component {
     static propTypes = {
         columns: ReactTablePropTypes.columns.isRequired,

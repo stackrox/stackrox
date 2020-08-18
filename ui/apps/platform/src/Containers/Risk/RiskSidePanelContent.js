@@ -46,7 +46,7 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
                     <Link
                         className="btn btn-base h-10 no-underline mt-4 ml-3 mr-3"
                         to={`/main/network/${selectedDeployment.id}`}
-                        data-testid="network-node-link"
+                        data-testid="view-deployments-in-network-graph-button"
                     >
                         View Deployment in Network Graph
                     </Link>

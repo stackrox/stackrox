@@ -19,7 +19,7 @@ import TabContent from 'Components/TabContent';
 import PanelButton from 'Components/PanelButton';
 
 import NetworkPoliciesDetails from './NetworkPoliciesDetails';
-import DeploymentNetworkFlows from './DeploymentNetworkFlows';
+import NetworkFlows from './NetworkFlows';
 import wizardStages from '../wizardStages';
 import DeploymentDetails from '../../../Risk/DeploymentDetails';
 
@@ -53,7 +53,7 @@ function Details(props) {
         <Tabs headers={envGraphPanelTabs}>
             <TabContent>
                 <div className="flex flex-1 flex-col h-full">
-                    <DeploymentNetworkFlows
+                    <NetworkFlows
                         deploymentEdges={deploymentEdges}
                         onDeploymentClick={onDeploymentClick}
                     />

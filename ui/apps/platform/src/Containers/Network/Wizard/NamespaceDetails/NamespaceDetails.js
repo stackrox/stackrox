@@ -15,7 +15,7 @@ import TablePagination from 'Components/TablePagination';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Table, { rtTrActionsClassName } from 'Components/Table';
 import RowActionButton from 'Components/RowActionButton';
-import { filterModes, filterLabels } from 'Containers/Network/Graph/filterModes';
+import { filterModes, filterLabels } from 'constants/networkFilterModes';
 
 import * as Icon from 'react-feather';
 import { capitalize } from 'lodash';

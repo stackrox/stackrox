@@ -101,7 +101,7 @@ export const selectors = {
         body: '.Collapsible__contentInner',
     },
     suspiciousProcesses: "[data-testid='suspicious-process']",
-    networkNodeLink: '[data-testid="network-node-link"]',
+    viewDeploymentsInNetworkGraphButton: '[data-testid="view-deployments-in-network-graph-button"]',
     sidePanel: sidePanelSelectors,
     commentsDialog: commentsDialogSelectors,
     eventTimeline: eventTimelineSelectors,
