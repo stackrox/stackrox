@@ -1,12 +1,13 @@
 import groups.Notifiers
 import io.fabric8.kubernetes.client.LocalPortForward
 import io.grpc.StatusRuntimeException
-import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.NotifierOuterClass
 import groups.BAT
 import groups.Integration
 import io.stackrox.proto.storage.ScopeOuterClass
+import objects.AnchoreScannerIntegration
+import objects.ClairScannerIntegration
 import objects.EmailNotifier
 import objects.GenericNotifier
 import objects.JiraNotifier
@@ -16,6 +17,7 @@ import objects.Notifier
 import objects.PagerDutyNotifier
 import objects.SlackNotifier
 import objects.SplunkNotifier
+import objects.StackroxScannerIntegration
 import objects.TeamsNotifier
 import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
@@ -438,25 +440,16 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
                 ""
     }
 
-    static final private BASE_ANCHORE_INTEGRATION = ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-            .setName("anchore")
-            .setType("anchore")
-            .addAllCategories([ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER])
-
-    static final private BASE_ANCHORE_CONFIG = ImageIntegrationOuterClass.AnchoreConfig.newBuilder()
-            .setPassword(Env.get("ANCHORE_PASSWORD", ""))
-            .setUsername(Env.get("ANCHORE_USERNAME", ""))
-            .setEndpoint(Env.get("ANCHORE_ENDPOINT", ""))
-
     @Unroll
     @Category(Integration)
-    def "Verify Anchore integration"() {
-        Assume.assumeTrue(ImageIntegrationService.hasAnchoreDeployment())
+    def "Verify #scanner.name() integration"() {
+        Assume.assumeTrue(scanner.isTestable())
 
         when:
         "the integration is tested"
 
-        def integration = BASE_ANCHORE_INTEGRATION.setAnchore(config())
+        def integration = scanner.getBuilder(scanner.getScannerConfig())
+        assert integration
         def outcome = ImageIntegrationService.getImageIntegrationClient().testImageIntegration(integration.build())
 
         then:
@@ -466,19 +459,22 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         where:
         "tests are:"
 
-        config  | _
-        { -> BASE_ANCHORE_CONFIG.clone() }       | _
+        scanner | _
+        new StackroxScannerIntegration() | _
+        new AnchoreScannerIntegration() | _
+        new ClairScannerIntegration() | _
     }
 
     @Unroll
     @Category(Integration)
-    def "Verify improper Anchore integration - #testAspect"() {
-        Assume.assumeTrue(ImageIntegrationService.hasAnchoreDeployment())
+    def "Verify improper #scanner.name() integration - #testAspect"() {
+        Assume.assumeTrue(scanner.isTestable())
 
         when:
         "the integration is tested"
 
-        def integration = BASE_ANCHORE_INTEGRATION.setAnchore(config())
+        def integration = scanner.getBuilder(config(scanner.getScannerConfig()))
+        assert integration
         ImageIntegrationService.getImageIntegrationClient().testImageIntegration(integration.build())
 
         then:
@@ -489,12 +485,17 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         where:
         "tests are:"
 
-        config  | expectedError          | expectedMessage    | testAspect
-        { -> BASE_ANCHORE_CONFIG.clone().setUsername(Env.mustGet("ANCHORE_USERNAME") + "WRONG")
-        }       | StatusRuntimeException | /401 UNAUTHORIZED/ | "incorrect user"
-        { -> BASE_ANCHORE_CONFIG.clone().setPassword(Env.mustGet("ANCHORE_PASSWORD") + "WRONG")
-        }       | StatusRuntimeException | /401 UNAUTHORIZED/ | "incorrect password"
-        { -> BASE_ANCHORE_CONFIG.clone().setEndpoint("http://127.0.0.1/nowhere")
+        scanner                         | config \
+                | expectedError          | expectedMessage      | testAspect
+        new StackroxScannerIntegration() | { it -> it.setEndpoint("http://127.0.0.1/nowhere")
+        }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
+        new AnchoreScannerIntegration() | { it -> it.setUsername(Env.mustGet("ANCHORE_USERNAME") + "WRONG")
+        }       | StatusRuntimeException | /401 UNAUTHORIZED/   | "incorrect user"
+        new AnchoreScannerIntegration() | { it -> it.setPassword(Env.mustGet("ANCHORE_PASSWORD") + "WRONG")
+        }       | StatusRuntimeException | /401 UNAUTHORIZED/   | "incorrect password"
+        new AnchoreScannerIntegration() | { it -> it.setEndpoint("http://127.0.0.1/nowhere")
+        }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
+        new ClairScannerIntegration()   | { it -> it.setEndpoint("http://127.0.0.1/nowhere")
         }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
     }
 }

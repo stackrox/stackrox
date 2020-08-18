@@ -1035,7 +1035,8 @@ commands:
                 name: Deploy Anchore Scanner
                 command: |
                   ./scripts/ci/anchore/deploy.sh qa-anchore qa
-                  cci-export ANCHORE_ENDPOINT "http://qa-anchore-engine-api.qa-anchore.svc.cluster.local:8228"
+                  cci-export ANCHORE_ENDPOINT "http://qa-anchore-engine-api.qa-anchore:8228"
+                background: true
 
   teardown-anchore:
     parameters:
@@ -1050,6 +1051,36 @@ commands:
                 name: Teardown Anchore Scanner
                 command: |
                   ./scripts/ci/anchore/teardown.sh qa-anchore
+
+  deploy-clair:
+    parameters:
+      cluster-id:
+        type: string
+    steps:
+      - when:
+          condition:
+            equal: ["api-e2e-tests", << parameters.cluster-id >>]
+          steps:
+            - run:
+                name: Deploy Clair Scanner
+                command: |
+                  ./scripts/ci/clair/deploy.sh qa-clair
+                  cci-export CLAIR_ENDPOINT "http://clairsvc.qa-clair:6060"
+                background: true
+
+  teardown-clair:
+    parameters:
+      cluster-id:
+        type: string
+    steps:
+      - when:
+          condition:
+            equal: ["api-e2e-tests", << parameters.cluster-id >>]
+          steps:
+            - run:
+                name: Teardown Clair Scanner
+                command: |
+                  ./scripts/ci/clair/teardown.sh qa-clair
                 
   run-qa-tests:
     parameters:
@@ -1095,6 +1126,13 @@ commands:
 
       - *setupDefaultTLSCerts
 
+      - *setupHelm
+
+      - deploy-anchore:
+          cluster-id: << parameters.cluster-id >>
+      - deploy-clair:
+          cluster-id: << parameters.cluster-id >>
+
       - deploy-stackrox:
           sensor-deploy-flavor: << parameters.sensor-deploy-flavor >>
 
@@ -1102,8 +1140,6 @@ commands:
             - *setupClientTLSCerts
             - setup-egress-proxies
 
-      - deploy-anchore:
-          cluster-id: << parameters.cluster-id >>
       - deploy-default-psp
       - deploy-webhook-server
       - deploy-authz-plugin
@@ -1168,6 +1204,8 @@ commands:
       - *storeMonitoringMetrics
 
       - teardown-anchore:
+          cluster-id: << parameters.cluster-id >>
+      - teardown-clair:
           cluster-id: << parameters.cluster-id >>
 
       - teardown-gke
@@ -1407,6 +1445,7 @@ commands:
 
       - *setupDefaultTLSCerts
 
+      - *setupHelm
       - deploy-stackrox:
           orchestrator-flavor: openshift
           sensor-deploy-flavor: << parameters.sensor-deploy-flavor >>
@@ -1501,8 +1540,6 @@ commands:
         default: false
 
     steps:
-      - *setupHelm
-
       - run:
           name: Deploy central to remote cluster
           command: |
@@ -2558,6 +2595,7 @@ jobs:
 
       - *setupDefaultTLSCerts
 
+      - *setupHelm
       - deploy-stackrox:
           require-cluster-admin: true
           validate-autoupgrade-label: true
@@ -2801,6 +2839,7 @@ jobs:
       - *setupLicense
       - *setupDefaultTLSCerts
 
+      - *setupHelm
       - deploy-stackrox:
           require-cluster-admin: true
           validate-autoupgrade-label: true
@@ -3657,6 +3696,7 @@ jobs:
 
       - *setupDefaultTLSCerts
 
+      - *setupHelm
       - deploy-stackrox:
           post-central-deploy-steps:
             - *setupClientTLSCerts
@@ -3752,6 +3792,7 @@ jobs:
 
       - *setupDefaultTLSCerts
 
+      - *setupHelm
       - deploy-stackrox:
           post-central-deploy-steps:
             - *setupClientTLSCerts
@@ -4075,6 +4116,7 @@ jobs:
             ROX_LICENSE_KEY="$(licenses/ci.sh)"
             cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
 
+      - *setupHelm
       - deploy-stackrox:
           sensor-deploy-flavor: helm
           helm-from-repo: true

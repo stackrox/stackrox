@@ -16,29 +16,27 @@ class SummaryTest extends BaseSpecification {
         expect:
         "Counts API should match orchestrator details"
 
-        def start = System.currentTimeMillis()
-        // Groovy doesn't have do-while loops, so simulating one here.
-        def first = true
-        def counts
-        def deployments
-        while (first ||
-            (counts.numDeployments != deployments.size() && (System.currentTimeMillis() - start) < (60 * 1000))) {
-            first = false
+        withRetry(10, 6) {
+            def counts = SummaryService.getCounts()
+            def deployments = orchestrator.getDeploymentCount() +
+                    orchestrator.getDaemonSetCount() +
+                    orchestrator.getStaticPodCount() +
+                    orchestrator.getStatefulSetCount() +
+                    orchestrator.getJobCount()
 
-            counts = SummaryService.getCounts()
-            deployments = orchestrator.getDeploymentCount() +
-                orchestrator.getDaemonSetCount() +
-                orchestrator.getStaticPodCount() +
-                orchestrator.getStatefulSetCount() +
-                orchestrator.getJobCount()
+            def deploymentNames = Services.getDeployments()*.name
+            if (counts.numDeployments != deployments.size()) {
+                deploymentNames.any { name -> !deployments.contains(name) } .each {
+                    name -> println "SR deployment is missing in K8s list: ${name}"
+                }
+                deployments.any { name -> !deploymentNames.contains(name) } .each {
+                    name -> println "K8s deployment is missing in SR list: ${name}"
+                }
+            }
+            assert counts.numDeployments == deployments.size()
+            assert counts.numSecrets == orchestrator.getSecretCount()
+            assert counts.numNodes == orchestrator.getNodeCount()
         }
-
-        def deploymentNames = Services.getDeployments()*.name
-        println "SR Deployments: ${deploymentNames.sort()}"
-        println "Actual Deployments: ${deployments.sort()}"
-        assert counts.numDeployments == deployments.size()
-        assert counts.numSecrets == orchestrator.getSecretCount()
-        assert counts.numNodes == orchestrator.getNodeCount()
     }
 
     @Category([BAT])

@@ -5,8 +5,11 @@ import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.ImageOuterClass
+import objects.AnchoreScannerIntegration
+import objects.ClairScannerIntegration
 import objects.Deployment
 import objects.Secret
+import objects.StackroxScannerIntegration
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ImageIntegrationService
@@ -49,15 +52,6 @@ class ImageScanningTest extends BaseSpecification {
                     username: "_json_key",
                     password: Env.mustGet("GOOGLE_CREDENTIALS_GCR_SCANNER"),
                     server: "https://us.gcr.io"),
-    ]
-
-    static final private Map<String, Object> SCANNERS = [
-            "StackRox Scanner": [
-                    "add": { ImageIntegrationService.addStackroxScannerIntegration() },
-            ],
-            "Anchore Scanner": [
-                    "add": { ImageIntegrationService.addAnchoreScannerIntegration() },
-            ],
     ]
 
     @Shared
@@ -280,13 +274,14 @@ class ImageScanningTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT, Integration])
-    def "Verify Image Scan Results - #scannerName - #image - #component:#version - #cve - #layerIdx"() {
-        Assume.assumeTrue(scannerName != "Anchore Scanner" || ImageIntegrationService.hasAnchoreDeployment())
+    def "Verify Image Scan Results - #scanner.name() - #component:#version - #image - #cve - #layerIdx"() {
+        Assume.assumeTrue(scanner.isTestable())
 
         when:
         "Add scanner"
-        def scanner = SCANNERS[scannerName]
-        def integrationId = scanner["add"]()
+        def integrationId = ImageIntegrationService.createImageIntegration(
+                scanner.getBuilder(scanner.getScannerConfig()).build()
+        )
         assert integrationId
 
         and:
@@ -319,25 +314,32 @@ class ImageScanningTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        scannerName        | component      | version           | layerIdx | cve
-        "StackRox Scanner" | "openssl-libs" | "1:1.0.1e-34.el7"  | 1 | "RHSA-2014:1052"
-        "StackRox Scanner" | "openssl-libs" | "1:1.0.1e-34.el7"  | 1 | "CVE-2014-3509"
-        "Anchore Scanner"  | "openssl"      | "1.0.1t-1+deb8u12" | 0 | "CVE-2010-0928"
-        "Anchore Scanner"  | "perl"         | "5.20.2-3+deb8u12" | 0 | "CVE-2011-4116"
+        scanner                          | component      | version            | layerIdx | cve
+        new StackroxScannerIntegration() | "openssl-libs" | "1:1.0.1e-34.el7"  | 1        | "RHSA-2014:1052"
+        new StackroxScannerIntegration() | "openssl-libs" | "1:1.0.1e-34.el7"  | 1        | "CVE-2014-3509"
+        new AnchoreScannerIntegration()  | "openssl"      | "1.0.1t-1+deb8u12" | 0        | "CVE-2010-0928"
+        new AnchoreScannerIntegration()  | "perl"         | "5.20.2-3+deb8u12" | 0        | "CVE-2011-4116"
+        new ClairScannerIntegration()    | "apt"          | "1.4.8"            | 0        | "CVE-2011-3374"
+        new ClairScannerIntegration()    | "bash"         | "4.4-5"            | 0        | "CVE-2019-18276"
 
-        image = scannerName == "StackRox Scanner" ?
+        image = scanner.name() == "Stackrox Scanner" ?
                 "richxsl/rhel7@sha256:8f3aae325d2074d2dc328cb532d6e7aeb0c588e15ddf847347038fe0566364d6" :
-                scannerName == "Anchore Scanner" ?
+                scanner.name() == "Anchore Scanner" ?
                 "us.gcr.io/stackrox-ci/qa/registry-image:0.2" :
-                { throw new RuntimeException("An image is needed to test $scannerName") }
+                scanner.name() == "Clair Scanner" ?
+                "nginx:1.12.1" :
+                { throw new RuntimeException("An image is needed to test ${scanner.name()}") }()
     }
 
-    static final IMAGES_FOR_ERROR_TESTS = [
+    static final private IMAGES_FOR_ERROR_TESTS = [
             "Anchore Scanner": [
                     "image does not exist": "non-existent:image",
                     "no access": "quay.io/stackrox/testing:registry-image"
             ],
-            "StackRox Scanner": [
+            "Clair Scanner": [
+                    "image does not exist": "non-existent:image",
+            ],
+            "Stackrox Scanner": [
                     "image does not exist": "non-existent:image",
                     "no access": "quay.io/stackrox/testing:registry-image"
             ],
@@ -345,18 +347,19 @@ class ImageScanningTest extends BaseSpecification {
 
     @Unroll
     @Category(Integration)
-    def "Verify image scan exceptions - #scannerName - #testAspect"() {
-        Assume.assumeTrue(ImageIntegrationService.hasAnchoreDeployment())
+    def "Verify image scan exceptions - #scanner.name() - #testAspect"() {
+        Assume.assumeTrue(scanner.isTestable())
 
         when:
         "Add scanner"
-        def scanner = SCANNERS[scannerName]
-        def integrationId = scanner["add"]()
+        def integrationId = ImageIntegrationService.createImageIntegration(
+                scanner.getBuilder(scanner.getScannerConfig()).build()
+        )
         assert integrationId
 
         and:
         "Scan image"
-        def image = IMAGES_FOR_ERROR_TESTS[scannerName][testAspect]
+        def image = IMAGES_FOR_ERROR_TESTS[scanner.name()][testAspect]
         assert image
         Services.scanImage(image)
 
@@ -375,13 +378,16 @@ class ImageScanningTest extends BaseSpecification {
         where:
         "tests are:"
 
-        scannerName  | expectedError          | expectedMessage    | testAspect
-        "Anchore Scanner" | StatusRuntimeException | /Failed to get the manifest digest/ | "image does not exist"
-        "StackRox Scanner" | StatusRuntimeException | /Failed to get the manifest digest/ | "image does not exist"
+        scanner                          | expectedMessage                     | testAspect
+        new AnchoreScannerIntegration()  | /Failed to get the manifest digest/ | "image does not exist"
+        new ClairScannerIntegration()    | /Failed to get the manifest digest/ | "image does not exist"
+        new StackroxScannerIntegration() | /Failed to get the manifest digest/ | "image does not exist"
 // This is not supported. Scanners get access to previous creds and can pull the images that way.
 // https://stack-rox.atlassian.net/browse/ROX-5376
-//        "Anchore Scanner" | StatusRuntimeException | /access to the requested resource is not authorized/ | "no access"
-//        "StackRox Scanner" | StatusRuntimeException | /status=401/ | "no access"
+//        new AnchoreScannerIntegration() | /access to the requested resource is not authorized/ | "no access"
+//        new StackroxScannerIntegration() | /status=401/ | "no access"
+
+        expectedError = StatusRuntimeException
     }
 
     @Unroll
