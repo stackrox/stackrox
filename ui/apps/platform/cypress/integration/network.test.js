@@ -3,6 +3,7 @@ import { url as riskURL, selectors as RiskPageSelectors } from '../constants/Ris
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 import selectors from '../selectors/index';
+import checkFeatureFlag from '../helpers/features';
 
 function uploadYAMLFile(fileName, selector) {
     cy.fixture(fileName).then((fileContent) => {
@@ -119,8 +120,11 @@ describe('Network page', () => {
         cy.get(`${selectors.table.columnHeaders}:contains('Traffic')`);
         cy.get(`${selectors.table.columnHeaders}:contains('Deployment')`);
         cy.get(`${selectors.table.columnHeaders}:contains('Namespace')`);
-        cy.get(`${selectors.table.columnHeaders}:contains('Protocols')`);
-        cy.get(`${selectors.table.columnHeaders}:contains('Ports')`);
         cy.get(`${selectors.table.columnHeaders}:contains('Connection')`);
+
+        if (checkFeatureFlag('ROX_NETWORK_GRAPH_PORTS', true)) {
+            cy.get(`${selectors.table.columnHeaders}:contains('Protocols')`);
+            cy.get(`${selectors.table.columnHeaders}:contains('Ports')`);
+        }
     });
 });

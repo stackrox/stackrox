@@ -19,6 +19,7 @@ const NetworkFlowsTable = ({
     page,
     filterState,
     onNavigateToNodeById,
+    showPortsAndProtocols,
 }) => {
     const filterStateString = filterState !== filterModes.all ? filterLabels[filterState] : '';
     const columns = [
@@ -70,6 +71,7 @@ const NetworkFlowsTable = ({
                     .join(', ');
                 return ports;
             },
+            hidden: !showPortsAndProtocols,
         },
         {
             Header: 'Connection',
@@ -92,16 +94,22 @@ const NetworkFlowsTable = ({
             },
         },
     ];
+    const modifiedColumns = columns.filter((column) => {
+        return !(
+            (column.accessor === 'portsAndProtocols' || column.expander) &&
+            !showPortsAndProtocols
+        );
+    });
 
     return (
         <Table
             rows={networkFlows}
-            columns={columns}
+            columns={modifiedColumns}
             noDataText={`No ${filterStateString} deployment flows`}
             page={page}
             idAttribute="deploymentId"
             selectedRowId={selectedNode?.id}
-            SubComponent={renderPortsAndProtocols}
+            SubComponent={showPortsAndProtocols ? renderPortsAndProtocols : null}
         />
     );
 };

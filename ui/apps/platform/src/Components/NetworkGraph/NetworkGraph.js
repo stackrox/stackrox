@@ -14,15 +14,17 @@ configuration of 'tippy.js' instance to position the tooltip. */
 import tippy from 'tippy.js';
 import ReactDOM from 'react-dom';
 
+import { selectors } from 'reducers';
+import { createStructuredSelector } from 'reselect';
 import { actions as graphActions } from 'reducers/network/graph';
 import GraphLoader from 'Containers/Network/Graph/Overlays/GraphLoader';
 import { edgeGridLayout, getParentPositions } from 'Containers/Network/Graph/networkGraphLayouts';
+import { NS_FONT_SIZE, MAX_ZOOM, MIN_ZOOM, ZOOM_STEP, GRAPH_PADDING } from 'constants/networkGraph';
 import { filterModes } from 'constants/networkFilterModes';
 import style from 'Containers/Network/Graph/networkGraphStyles';
 import {
     getLinks,
     isNamespace,
-    isDeployment,
     isNamespaceEdge,
     getNodeData,
     getEdges,
@@ -30,10 +32,13 @@ import {
     getNamespaceList,
     getDeploymentList,
     getFilteredNodes,
+    getNetworkFlows,
+    getEdgesFromNode,
     getIngressPortsAndProtocols,
     getEgressPortsAndProtocols,
 } from 'utils/networkGraphUtils';
-import { NS_FONT_SIZE, MAX_ZOOM, MIN_ZOOM, ZOOM_STEP, GRAPH_PADDING } from 'constants/networkGraph';
+import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
+
 import { defaultTippyTooltipProps } from 'Components/Tooltip';
 import NodeTooltipOverlay from './NodeTooltipOverlay';
 import NamespaceEdgeTooltipOverlay from './NamespaceEdgeTooltipOverlay';
@@ -58,6 +63,7 @@ const NetworkGraph = ({
     simulatorOn,
     history,
     match,
+    featureFlags,
 }) => {
     const [selectedNode, setSelectedNode] = useState();
     const [hoveredNode, setHoveredNode] = useState();
@@ -77,6 +83,13 @@ const NetworkGraph = ({
     }));
 
     const links = getLinks(data, networkEdgeMap, networkNodeMap);
+
+    // @TODO: Remove "showPortsAndProtocols" when the feature flag "ROX_NETWORK_GRAPH_PORTS" is defaulted to true
+    const showPortsAndProtocols = isBackendFeatureFlagEnabled(
+        featureFlags,
+        knownBackendFlags.ROX_NETWORK_GRAPH_PORTS,
+        false
+    );
 
     function showTooltip(elm, component) {
         if (!elm) {
@@ -115,7 +128,7 @@ const NetworkGraph = ({
 
     function nodeHoverHandler(ev) {
         const node = ev.target.data();
-        const { id, parent, side, outEdges } = node;
+        const { id, name, parent, side } = node;
         const isChild = !!parent;
         if (!cyRef || !isChild || side) {
             return;
@@ -123,21 +136,26 @@ const NetworkGraph = ({
 
         setHoveredNode(node);
 
+        const configObj = { ...getConfigObj(), hoveredNode: node };
+        const edgesFromNode = getEdgesFromNode(configObj);
+        const { networkFlows, numIngressFlows, numEgressFlows } = getNetworkFlows(
+            edgesFromNode,
+            filterState
+        );
+        const ingressPortsAndProtocols = getIngressPortsAndProtocols(networkFlows);
+        const egressPortsAndProtocols = getEgressPortsAndProtocols(networkFlows);
+
         const nodeElm = cyRef.current.getElementById(id);
         const parentElm = cyRef.current.getElementById(parent);
 
-        const sourceNodes = cyRef.current
-            .nodes()
-            .map((n) => n.data())
-            .filter(isDeployment);
-
-        const ingressPortsAndProtocols = getIngressPortsAndProtocols(sourceNodes, node);
-        const egressPortsAndProtocols = getEgressPortsAndProtocols(outEdges);
         const component = (
             <NodeTooltipOverlay
-                node={node}
+                deploymentName={name}
+                numIngressFlows={numIngressFlows}
+                numEgressFlows={numEgressFlows}
                 ingressPortsAndProtocols={ingressPortsAndProtocols}
                 egressPortsAndProtocols={egressPortsAndProtocols}
+                showPortsAndProtocols={showPortsAndProtocols}
             />
         );
 
@@ -175,6 +193,7 @@ const NetworkGraph = ({
                     numAllowedUnidirectionalLinks={numAllowedUnidirectionalLinks}
                     portsAndProtocols={portsAndProtocols}
                     filterState={filterState}
+                    showPortsAndProtocols={showPortsAndProtocols}
                 />
             );
         } else {
@@ -185,6 +204,7 @@ const NetworkGraph = ({
                     target={targetNodeName}
                     isBidirectional={isBidirectional}
                     portsAndProtocols={portsAndProtocols}
+                    showPortsAndProtocols={showPortsAndProtocols}
                 />
             );
         }
@@ -611,17 +631,22 @@ NetworkGraph.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     setSelectedNodeInGraph: PropTypes.func,
     simulatorOn: PropTypes.bool.isRequired,
+    featureFlags: PropTypes.arrayOf(PropTypes.shape),
 };
 
 NetworkGraph.defaultProps = {
     setSelectedNodeInGraph: null,
     networkEdgeMap: {},
+    featureFlags: [],
 };
 
+const mapStateToProps = createStructuredSelector({
+    featureFlags: selectors.getFeatureFlags,
+});
 const mapDispatchToProps = {
     setNetworkGraphRef: graphActions.setNetworkGraphRef,
     setSelectedNamespace: graphActions.setSelectedNamespace,
     setSelectedNodeInGraph: graphActions.setSelectedNode,
 };
 
-export default withRouter(connect(null, mapDispatchToProps)(NetworkGraph));
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(NetworkGraph));

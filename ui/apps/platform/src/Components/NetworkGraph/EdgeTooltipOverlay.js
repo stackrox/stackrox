@@ -6,7 +6,14 @@ import TooltipCardSection from 'Components/TooltipCardSection';
 import TooltipFieldValue from 'Components/TooltipFieldValue';
 import PortsAndProtocolsFields from './PortsAndProtocolsFields';
 
-const EdgeTooltipOverlay = ({ source, target, isBidirectional, portsAndProtocols }) => {
+// @TODO: Remove "showPortsAndProtocols" when the feature flag "ROX_NETWORK_GRAPH_PORTS" is defaulted to true
+const EdgeTooltipOverlay = ({
+    source,
+    target,
+    isBidirectional,
+    portsAndProtocols,
+    showPortsAndProtocols,
+}) => {
     const title = 'Network Flow';
     const tooltipContents =
         portsAndProtocols.length !== 0 ? (
@@ -29,9 +36,11 @@ const EdgeTooltipOverlay = ({ source, target, isBidirectional, portsAndProtocols
                             <TooltipFieldValue key={target} field="Target" value={target} />
                         </TooltipCardSection>
                     </div>
-                    <TooltipCardSection header="Ports & Protocols">
-                        {tooltipContents}
-                    </TooltipCardSection>
+                    {showPortsAndProtocols && (
+                        <TooltipCardSection header="Ports & Protocols">
+                            {tooltipContents}
+                        </TooltipCardSection>
+                    )}
                 </>
             }
         />
@@ -43,11 +52,13 @@ EdgeTooltipOverlay.propTypes = {
     target: PropTypes.string.isRequired,
     isBidirectional: PropTypes.bool,
     portsAndProtocols: PropTypes.arrayOf(PropTypes.shape),
+    showPortsAndProtocols: PropTypes.bool,
 };
 
 EdgeTooltipOverlay.defaultProps = {
     isBidirectional: false,
     portsAndProtocols: [],
+    showPortsAndProtocols: false,
 };
 
 export default EdgeTooltipOverlay;

@@ -7,6 +7,10 @@ import Table from 'Components/Table';
 const PortsAndProtocolsTable = ({ portsAndProtocols }) => {
     const columns = [
         {
+            Header: 'Traffic',
+            accessor: 'traffic',
+        },
+        {
             Header: 'Protocol',
             accessor: 'protocol',
             Cell: ({ value }) => {

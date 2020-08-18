@@ -7,68 +7,30 @@ import { connect } from 'react-redux';
 import { selectors } from 'reducers';
 import { actions as graphActions } from 'reducers/network/graph';
 
+import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
+import { getNetworkFlows } from 'utils/networkGraphUtils';
 import Panel from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { filterModes, filterLabels } from 'constants/networkFilterModes';
 import NetworkFlowsTable from './NetworkFlowsTable';
 
-/**
- * Grabs the deployment-to-deployment edges and filters based on the filter state
- *
- * @param {!Object[]} edges
- * @param {!Number} filterState
- * @returns {!Object[]}
- */
-export function getNetworkFlows(edges, filterState) {
-    let results;
-    const nodeMapping = edges.reduce(
-        (
-            acc,
-            {
-                data: {
-                    destNodeId,
-                    traffic,
-                    destNodeName,
-                    destNodeNamespace,
-                    isActive,
-                    portsAndProtocols,
-                },
-            }
-        ) => {
-            if (acc[destNodeId]) {
-                return acc;
-            }
-            return {
-                ...acc,
-                [destNodeId]: {
-                    traffic,
-                    deploymentId: destNodeId,
-                    deploymentName: destNodeName,
-                    namespace: destNodeNamespace,
-                    connection: isActive ? 'active' : 'allowed',
-                    portsAndProtocols,
-                },
-            };
-        },
-        {}
-    );
-    switch (filterState) {
-        case filterModes.active:
-            results = Object.values(nodeMapping).filter((edge) => edge.connection === 'active');
-            break;
-        case filterModes.allowed:
-            results = Object.values(nodeMapping).filter((edge) => edge.connection === 'allowed');
-            break;
-        default:
-            results = Object.values(nodeMapping);
-    }
-    return results;
-}
-
-const NetworkFlows = ({ deploymentEdges, networkGraphRef, filterState, onDeploymentClick }) => {
+const NetworkFlows = ({
+    deploymentEdges,
+    networkGraphRef,
+    filterState,
+    onDeploymentClick,
+    featureFlags,
+}) => {
     const [selectedNode, setSelectedNode] = useState(null);
     const [page, setPage] = useState(0);
+
+    // @TODO: Remove "showPortsAndProtocols" when the feature flag "ROX_NETWORK_GRAPH_PORTS" is defaulted to true
+    const showPortsAndProtocols = isBackendFeatureFlagEnabled(
+        featureFlags,
+        knownBackendFlags.ROX_NETWORK_GRAPH_PORTS,
+        false
+    );
 
     const filterStateString = filterState !== filterModes.all ? filterLabels[filterState] : '';
 
@@ -76,7 +38,7 @@ const NetworkFlows = ({ deploymentEdges, networkGraphRef, filterState, onDeploym
         return <NoResultsMessage message={`No ${filterStateString} deployment flows`} />;
     }
 
-    const networkFlows = getNetworkFlows(deploymentEdges, filterState);
+    const { networkFlows } = getNetworkFlows(deploymentEdges, filterState);
 
     const paginationComponent = (
         <TablePagination page={page} dataLength={networkFlows.length} setPage={setPage} />
@@ -128,6 +90,7 @@ const NetworkFlows = ({ deploymentEdges, networkGraphRef, filterState, onDeploym
                         filterState={filterState}
                         onHighlightNode={onHighlightNode}
                         onNavigateToNodeById={onNavigateToNodeById}
+                        showPortsAndProtocols={showPortsAndProtocols}
                     />
                 </div>
             </Panel>
@@ -144,17 +107,20 @@ NetworkFlows.propTypes = {
     }),
     filterState: PropTypes.number.isRequired,
     onDeploymentClick: PropTypes.func,
+    featureFlags: PropTypes.arrayOf(PropTypes.shape),
 };
 
 NetworkFlows.defaultProps = {
     deploymentEdges: [],
     networkGraphRef: null,
     onDeploymentClick: null,
+    featureFlags: [],
 };
 
 const mapStateToProps = createStructuredSelector({
     networkGraphRef: selectors.getNetworkGraphRef,
     filterState: selectors.getNetworkGraphFilterMode,
+    featureFlags: selectors.getFeatureFlags,
 });
 
 const mapDispatchToProps = {

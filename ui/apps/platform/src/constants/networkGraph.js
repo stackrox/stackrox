@@ -36,3 +36,14 @@ export const PROTOCOLS = {
     L4_PROTOCOL_UDP: 'L4_PROTOCOL_UDP',
     L4_PROTOCOL_ANY: 'L4_PROTOCOL_ANY',
 };
+
+export const networkTraffic = {
+    INGRESS: 'ingress',
+    EGRESS: 'egress',
+    BIDIRECTIONAL: 'bidirectional',
+};
+
+export const networkConnections = {
+    ACTIVE: 'active',
+    ALLOWED: 'allowed',
+};

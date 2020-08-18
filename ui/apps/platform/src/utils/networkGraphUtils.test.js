@@ -1,3 +1,4 @@
+import { filterModes } from 'constants/networkFilterModes';
 import {
     getSideMap,
     getNamespaceEdges,
@@ -8,6 +9,7 @@ import {
     getActiveNamespaceList,
     getIngressPortsAndProtocols,
     getEgressPortsAndProtocols,
+    getNetworkFlows,
 } from './networkGraphUtils';
 import {
     filteredData,
@@ -17,6 +19,7 @@ import {
     namespaceList,
     deploymentList,
     namespaceEdgeNodes,
+    deploymentEdges,
 } from './networkGraphUtils.test.constants';
 
 describe('networkGraphUtils', () => {
@@ -84,58 +87,166 @@ describe('networkGraphUtils', () => {
 
     describe('getIngressPortsAndProtocols', () => {
         it('should return the edges going to a target node', () => {
-            const node = {
-                id: '5',
-                ingress: ['3', '4'],
-                egress: ['1'],
-                outEdges: { 0: { properties: [{ port: '8443', protocol: 'L4_PROTOCOL_TCP' }] } },
-            };
-            const nodes = [
-                {
-                    id: '1',
-                    outEdges: {
-                        1: { properties: [{ port: '4000', protocol: 'L4_PROTOCOL_TCP' }] },
-                    },
-                },
-                {
-                    id: '2',
-                    outEdges: { 3: { properties: [{ port: '9', protocol: 'L4_PROTOCOL_UDP' }] } },
-                },
-                {
-                    id: '3',
-                    outEdges: { 4: { properties: [{ port: '443', protocol: 'L4_PROTOCOL_TCP' }] } },
-                },
-                {
-                    id: '4',
-                    outEdges: { 4: { properties: [{ port: '53', protocol: 'L4_PROTOCOL_UDP' }] } },
-                },
-                {
-                    id: '5',
-                    outEdges: {
-                        0: { properties: [{ port: '8443', protocol: 'L4_PROTOCOL_TCP' }] },
-                    },
-                },
-            ];
-            const ingressPortsAndProtocols = getIngressPortsAndProtocols(nodes, node);
+            const { networkFlows } = getNetworkFlows(deploymentEdges, filterModes.all);
+            const ingressPortsAndProtocols = getIngressPortsAndProtocols(networkFlows);
             expect(ingressPortsAndProtocols).toEqual([
-                { port: '443', protocol: 'L4_PROTOCOL_TCP' },
-                { port: '53', protocol: 'L4_PROTOCOL_UDP' },
+                {
+                    port: 123,
+                    protocol: 'L4_PROTOCOL_TCP',
+                    traffic: 'ingress',
+                },
+                {
+                    port: 678,
+                    protocol: 'L4_PROTOCOL_TCP',
+                    traffic: 'ingress',
+                },
             ]);
         });
     });
 
     describe('getEgressPortsAndProtocols', () => {
         it('should return the edges going out of a source node', () => {
-            const node = {
-                id: '5',
-                ingress: ['3', '4'],
-                egress: ['1'],
-                outEdges: { 0: { properties: [{ port: '8443', protocol: 'L4_PROTOCOL_TCP' }] } },
-            };
-            const egressPortsAndProtocols = getEgressPortsAndProtocols(node.outEdges);
+            const { networkFlows } = getNetworkFlows(deploymentEdges, filterModes.all);
+            const egressPortsAndProtocols = getEgressPortsAndProtocols(networkFlows);
             expect(egressPortsAndProtocols).toEqual([
-                { port: '8443', protocol: 'L4_PROTOCOL_TCP' },
+                {
+                    port: 456,
+                    protocol: 'L4_PROTOCOL_TCP',
+                    traffic: 'egress',
+                },
+                {
+                    port: 911,
+                    protocol: 'L4_PROTOCOL_TCP',
+                    traffic: 'egress',
+                },
             ]);
+        });
+    });
+
+    describe('getNetworkFlows', () => {
+        it('should return all network flows', () => {
+            const { networkFlows } = getNetworkFlows(deploymentEdges, filterModes.all);
+
+            expect(networkFlows).toEqual([
+                {
+                    connection: 'active',
+                    deploymentId: '1',
+                    deploymentName: 'node-1',
+                    namespace: 'namespace-a',
+                    portsAndProtocols: [
+                        {
+                            port: 123,
+                            protocol: 'L4_PROTOCOL_TCP',
+                            traffic: 'ingress',
+                        },
+                    ],
+                    traffic: 'ingress',
+                },
+                {
+                    connection: 'allowed',
+                    deploymentId: '2',
+                    deploymentName: 'node-2',
+                    namespace: 'namespace-a',
+                    portsAndProtocols: [
+                        {
+                            port: 456,
+                            protocol: 'L4_PROTOCOL_TCP',
+                            traffic: 'egress',
+                        },
+                    ],
+                    traffic: 'egress',
+                },
+                {
+                    connection: 'active',
+                    deploymentId: '3',
+                    deploymentName: 'node-3',
+                    namespace: 'namespace-a',
+                    portsAndProtocols: [
+                        {
+                            port: 678,
+                            protocol: 'L4_PROTOCOL_TCP',
+                            traffic: 'ingress',
+                        },
+                        {
+                            port: 911,
+                            protocol: 'L4_PROTOCOL_TCP',
+                            traffic: 'egress',
+                        },
+                    ],
+                    traffic: 'bidirectional',
+                },
+            ]);
+        });
+
+        it('should return active network flows', () => {
+            const { networkFlows } = getNetworkFlows(deploymentEdges, filterModes.active);
+
+            expect(networkFlows).toEqual([
+                {
+                    connection: 'active',
+                    deploymentId: '1',
+                    deploymentName: 'node-1',
+                    namespace: 'namespace-a',
+                    portsAndProtocols: [
+                        {
+                            port: 123,
+                            protocol: 'L4_PROTOCOL_TCP',
+                            traffic: 'ingress',
+                        },
+                    ],
+                    traffic: 'ingress',
+                },
+                {
+                    connection: 'active',
+                    deploymentId: '3',
+                    deploymentName: 'node-3',
+                    namespace: 'namespace-a',
+                    portsAndProtocols: [
+                        {
+                            port: 678,
+                            protocol: 'L4_PROTOCOL_TCP',
+                            traffic: 'ingress',
+                        },
+                        {
+                            port: 911,
+                            protocol: 'L4_PROTOCOL_TCP',
+                            traffic: 'egress',
+                        },
+                    ],
+                    traffic: 'bidirectional',
+                },
+            ]);
+        });
+
+        it('should return allowed network flows', () => {
+            const { networkFlows } = getNetworkFlows(deploymentEdges, filterModes.allowed);
+
+            expect(networkFlows).toEqual([
+                {
+                    connection: 'allowed',
+                    deploymentId: '2',
+                    deploymentName: 'node-2',
+                    namespace: 'namespace-a',
+                    portsAndProtocols: [
+                        {
+                            port: 456,
+                            protocol: 'L4_PROTOCOL_TCP',
+                            traffic: 'egress',
+                        },
+                    ],
+                    traffic: 'egress',
+                },
+            ]);
+        });
+
+        it('should return the correct number of directional flows', () => {
+            const { numIngressFlows, numEgressFlows } = getNetworkFlows(
+                deploymentEdges,
+                filterModes.all
+            );
+
+            expect(numIngressFlows).toEqual(2);
+            expect(numEgressFlows).toEqual(2);
         });
     });
 });

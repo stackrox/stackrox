@@ -1198,3 +1198,79 @@ export const namespaceEdgeNodes = [
     { data: { id: 'docker_right', parent: 'docker', side: 'right' }, classes: 'nsEdge' },
     { data: { id: 'docker_bottom', parent: 'docker', side: 'bottom' }, classes: 'nsEdge' },
 ];
+
+export const deploymentEdges = [
+    {
+        data: {
+            destNodeId: '1',
+            destNodeName: 'node-1',
+            destNodeNamespace: 'namespace-a',
+            traffic: 'ingress',
+            isActive: true,
+            isAllowed: true,
+            portsAndProtocols: [
+                {
+                    port: 123,
+                    protocol: 'L4_PROTOCOL_TCP',
+                    traffic: 'ingress',
+                },
+            ],
+        },
+    },
+    {
+        data: {
+            destNodeId: '2',
+            destNodeName: 'node-2',
+            destNodeNamespace: 'namespace-a',
+            traffic: 'egress',
+            isActive: false,
+            isAllowed: true,
+            portsAndProtocols: [
+                {
+                    port: 456,
+                    protocol: 'L4_PROTOCOL_TCP',
+                    traffic: 'egress',
+                },
+            ],
+        },
+    },
+    {
+        data: {
+            destNodeId: '2',
+            destNodeName: 'node-2',
+            destNodeNamespace: 'namespace-a',
+            traffic: 'egress',
+            isActive: false,
+            isAllowed: true,
+            portsAndProtocols: [
+                {
+                    port: 456,
+                    protocol: 'L4_PROTOCOL_TCP',
+                    traffic: 'egress',
+                },
+            ],
+        },
+    },
+    {
+        data: {
+            destNodeId: '3',
+            destNodeName: 'node-3',
+            destNodeNamespace: 'namespace-a',
+            traffic: 'bidirectional',
+            isActive: true,
+            isAllowed: true,
+            portsAndProtocols: [
+                {
+                    port: 678,
+                    protocol: 'L4_PROTOCOL_TCP',
+                    traffic: 'ingress',
+                },
+                {
+                    port: 911,
+                    protocol: 'L4_PROTOCOL_TCP',
+                    traffic: 'egress',
+                },
+            ],
+        },
+    },
+];

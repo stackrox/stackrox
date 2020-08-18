@@ -6,11 +6,25 @@ import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
 import TooltipCardSection from 'Components/TooltipCardSection';
 import PortsAndProtocolsFields from './PortsAndProtocolsFields';
 
-const NetworkTooltipOverlay = ({ node, ingressPortsAndProtocols, egressPortsAndProtocols }) => {
-    const { name } = node;
+const NodePortsAndProtocols = ({ portsAndProtocols }) => {
+    if (portsAndProtocols.length !== 0) {
+        return <PortsAndProtocolsFields portsAndProtocols={portsAndProtocols} />;
+    }
+    return <div>Ports & Protocols Are Unavailable</div>;
+};
+
+// @TODO: Remove "showPortsAndProtocols" when the feature flag "ROX_NETWORK_GRAPH_PORTS" is defaulted to true
+const NodeTooltipOverlay = ({
+    deploymentName,
+    numIngressFlows,
+    numEgressFlows,
+    ingressPortsAndProtocols,
+    egressPortsAndProtocols,
+    showPortsAndProtocols,
+}) => {
     return (
         <DetailedTooltipOverlay
-            title={name}
+            title={deploymentName}
             body={
                 <>
                     <div className="mb-2">
@@ -18,18 +32,14 @@ const NetworkTooltipOverlay = ({ node, ingressPortsAndProtocols, egressPortsAndP
                             header={
                                 <div className="flex items-center">
                                     <ArrowRight className="h-4 w-4 text-base-600" />
-                                    <span className="ml-1">
-                                        {ingressPortsAndProtocols.length} ingress flows
-                                    </span>
+                                    <span className="ml-1">{numIngressFlows} ingress flows</span>
                                 </div>
                             }
                         >
-                            {ingressPortsAndProtocols.length !== 0 ? (
-                                <PortsAndProtocolsFields
+                            {showPortsAndProtocols && (
+                                <NodePortsAndProtocols
                                     portsAndProtocols={ingressPortsAndProtocols}
                                 />
-                            ) : (
-                                <div>No ports & protocols</div>
                             )}
                         </TooltipCardSection>
                     </div>
@@ -38,18 +48,14 @@ const NetworkTooltipOverlay = ({ node, ingressPortsAndProtocols, egressPortsAndP
                             header={
                                 <div className="flex items-center">
                                     <ArrowLeft className="h-4 w-4 text-base-600" />
-                                    <span className="ml-1">
-                                        {egressPortsAndProtocols.length} egress flows
-                                    </span>
+                                    <span className="ml-1">{numEgressFlows} egress flows</span>
                                 </div>
                             }
                         >
-                            {egressPortsAndProtocols.length !== 0 ? (
-                                <PortsAndProtocolsFields
+                            {showPortsAndProtocols && (
+                                <NodePortsAndProtocols
                                     portsAndProtocols={egressPortsAndProtocols}
                                 />
-                            ) : (
-                                <div>No ports & protocols</div>
                             )}
                         </TooltipCardSection>
                     </div>
@@ -59,17 +65,21 @@ const NetworkTooltipOverlay = ({ node, ingressPortsAndProtocols, egressPortsAndP
     );
 };
 
-NetworkTooltipOverlay.propTypes = {
-    node: PropTypes.shape({
-        name: PropTypes.string.isRequired,
-    }).isRequired,
+NodeTooltipOverlay.propTypes = {
+    deploymentName: PropTypes.string.isRequired,
+    numIngressFlows: PropTypes.number,
+    numEgressFlows: PropTypes.number,
     ingressPortsAndProtocols: PropTypes.arrayOf(PropTypes.shape()),
     egressPortsAndProtocols: PropTypes.arrayOf(PropTypes.shape()),
+    showPortsAndProtocols: PropTypes.bool,
 };
 
-NetworkTooltipOverlay.defaultProps = {
+NodeTooltipOverlay.defaultProps = {
+    numIngressFlows: 0,
+    numEgressFlows: 0,
     ingressPortsAndProtocols: [],
     egressPortsAndProtocols: [],
+    showPortsAndProtocols: false,
 };
 
-export default NetworkTooltipOverlay;
+export default NodeTooltipOverlay;

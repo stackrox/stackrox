@@ -1,9 +1,9 @@
 import uniq from 'lodash/uniq';
 import flatMap from 'lodash/flatMap';
-import findIndex from 'lodash/findIndex';
 
 import featureFlags from 'utils/featureFlags';
 import entityTypes from 'constants/entityTypes';
+import { networkTraffic, networkConnections } from 'constants/networkGraph';
 import { filterModes } from 'constants/networkFilterModes';
 
 const edgeTypes = {
@@ -186,7 +186,7 @@ export const getSourceTargetFromKey = (sourceTargetKey) => {
  * @returns {!Object}
  *
  */
-export const getLinkPortsAndProtocols = (nodes) => {
+export const getLinkPortsAndProtocols = (nodes, highlightedNodeId) => {
     const linkPortsAndProtocols = {};
     // create a mapping of node edges -> ports and protocols
     nodes.forEach((sourceNode) => {
@@ -199,13 +199,20 @@ export const getLinkPortsAndProtocols = (nodes) => {
                 targetNode.entity.type === entityTypes.DEPLOYMENT
             ) {
                 const nodeLinkKey = getSourceTargetKey(sourceNode.entity.id, targetNode.entity.id);
+                const traffic =
+                    targetNode.entity.id === highlightedNodeId
+                        ? networkTraffic.INGRESS
+                        : networkTraffic.EGRESS;
+                const modifiedProperties = properties.map((datum) => {
+                    return { ...datum, traffic };
+                });
                 if (linkPortsAndProtocols[nodeLinkKey]) {
                     linkPortsAndProtocols[nodeLinkKey] = [
                         ...linkPortsAndProtocols[nodeLinkKey],
-                        ...properties,
+                        ...modifiedProperties,
                     ];
                 } else {
-                    linkPortsAndProtocols[nodeLinkKey] = properties;
+                    linkPortsAndProtocols[nodeLinkKey] = [...modifiedProperties];
                 }
             }
         });
@@ -233,7 +240,7 @@ export const getNamespaceEdges = ({
     const activeNamespaceLinks = {};
     const namespaceLinks = {};
     const highlightedNodeId = (hoveredNode || selectedNode)?.id;
-    const linkPortsAndProtocols = getLinkPortsAndProtocols(nodes);
+    const linkPortsAndProtocols = getLinkPortsAndProtocols(nodes, highlightedNodeId);
 
     const filteredLinks = links.filter(
         ({ source, target, isActive, sourceNS, targetNS }) =>
@@ -399,7 +406,7 @@ export const getEdgesFromNode = ({
         return [];
     }
 
-    const linkPortsAndProtocols = getLinkPortsAndProtocols(nodes);
+    const linkPortsAndProtocols = getLinkPortsAndProtocols(nodes, highlightedNode?.id);
 
     links.forEach((link) => {
         const {
@@ -466,7 +473,9 @@ export const getEdgesFromNode = ({
                             targetNodeName,
                             targetNodeNamespace,
                             portsAndProtocols,
-                            traffic: isRelativeIngress ? 'ingress' : 'egress',
+                            traffic: isRelativeIngress
+                                ? networkTraffic.INGRESS
+                                : networkTraffic.EGRESS,
                             type: edgeTypes.NODE_TO_NODE_EDGE,
                             ...link,
                         },
@@ -475,7 +484,7 @@ export const getEdgesFromNode = ({
                 } else if (!nodeLinks[nodeLinkKey]?.data?.isBidirectional) {
                     // if this edge is already in the nodeLinks, it means it's going in the other direction
                     nodeLinks[nodeLinkKey].data.isBidirectional = true;
-                    nodeLinks[nodeLinkKey].data.traffic = 'bidirectional';
+                    nodeLinks[nodeLinkKey].data.traffic = networkTraffic.BIDIRECTIONAL;
                     nodeLinks[nodeLinkKey].classes = getClasses({
                         ...coreClasses,
                         bidirectional: true,
@@ -523,7 +532,9 @@ export const getEdgesFromNode = ({
                             isActive,
                             isAllowed,
                             isDisallowed,
-                            traffic: isRelativeIngress ? 'ingress' : 'egress',
+                            traffic: isRelativeIngress
+                                ? networkTraffic.INGRESS
+                                : networkTraffic.EGRESS,
                             type: edgeTypes.NODE_TO_NAMESPACE_EDGE,
                         },
                         classes,
@@ -534,7 +545,7 @@ export const getEdgesFromNode = ({
                 ) {
                     // if this edge is already in the nodeLinks, it means it's going in the other direction
                     nodeLinks[innerSourceEdgeKey].data.isBidirectional = true;
-                    nodeLinks[innerSourceEdgeKey].data.traffic = 'bidirectional';
+                    nodeLinks[innerSourceEdgeKey].data.traffic = networkTraffic.BIDIRECTIONAL;
                     nodeLinks[innerSourceEdgeKey].classes = getClasses({
                         ...coreClasses,
                         bidirectional: true,
@@ -567,7 +578,9 @@ export const getEdgesFromNode = ({
                             isDisallowed,
                             portsAndProtocols,
                             type: edgeTypes.NODE_TO_NAMESPACE_EDGE,
-                            traffic: isRelativeIngress ? 'ingress' : 'egress',
+                            traffic: isRelativeIngress
+                                ? networkTraffic.INGRESS
+                                : networkTraffic.EGRESS,
                         },
                         classes,
                     };
@@ -577,7 +590,7 @@ export const getEdgesFromNode = ({
                 ) {
                     // if this edge is already in the nodeLinks, it means it's going in the other direction
                     nodeLinks[innerTargetEdgeKey].data.isBidirectional = true;
-                    nodeLinks[innerTargetEdgeKey].data.traffic = 'bidirectional';
+                    nodeLinks[innerTargetEdgeKey].data.traffic = networkTraffic.BIDIRECTIONAL;
                     nodeLinks[innerTargetEdgeKey].classes = getClasses({
                         ...coreClasses,
                         bidirectional: true,
@@ -819,48 +832,138 @@ export const getFilteredNodes = (activeNodes, allowedNodes, filterState) => {
 };
 
 /**
- * Iterates through a list of nodes and returns only ports and protocols for have edges that go
- * to a specific node
+ * Grabs the deployment-to-deployment edges and filters based on the filter state
  *
- * @param {!Object[]} nodes list of nodes
- * @param {Object} node the target node
+ * @param {!Object[]} edges
+ * @param {!Number} filterState
  * @returns {!Object[]}
  */
-export const getIngressPortsAndProtocols = (nodes, node = {}) => {
-    const { id, ingress } = node;
-
-    if (!id || !ingress || ingress.length === 0) {
+export function getNetworkFlows(edges, filterState) {
+    if (!edges) {
         return [];
     }
 
-    const targetNodeIndex = findIndex(nodes, (n) => {
-        return n.id === id;
-    });
-
-    const ingressNodes = nodes.filter((n) => ingress.indexOf(n.id) !== -1);
-
-    const ingressPortsAndProtocols = ingressNodes.reduce((acc, curr) => {
-        if (curr?.outEdges[targetNodeIndex]) {
-            return [...acc, ...curr.outEdges[targetNodeIndex].properties];
+    function getConnectionText(isActive, isAllowed) {
+        let connection = '-';
+        if (isActive) {
+            connection = networkConnections.ACTIVE;
+        } else if (isAllowed) {
+            connection = networkConnections.ALLOWED;
         }
-        return acc;
-    }, []);
+        return connection;
+    }
 
-    return ingressPortsAndProtocols;
-};
+    function DirectionalFlows() {
+        let numIngressFlows = 0;
+        let numEgressFlows = 0;
+        return {
+            incrementFlows: (traffic) => {
+                if (
+                    traffic === networkTraffic.INGRESS ||
+                    traffic === networkTraffic.BIDIRECTIONAL
+                ) {
+                    numIngressFlows += 1;
+                }
+                if (traffic === networkTraffic.EGRESS || traffic === networkTraffic.BIDIRECTIONAL) {
+                    numEgressFlows += 1;
+                }
+            },
+            getNumIngressFlows: () => numIngressFlows,
+            getNumEgressFlows: () => numEgressFlows,
+        };
+    }
+
+    let networkFlows;
+    const directionalFlows = new DirectionalFlows();
+    const nodeMapping = edges.reduce(
+        (
+            acc,
+            {
+                data: {
+                    destNodeId,
+                    traffic,
+                    destNodeName,
+                    destNodeNamespace,
+                    isActive,
+                    isAllowed,
+                    portsAndProtocols,
+                },
+            }
+        ) => {
+            // don't double count edges that are divided because they're within different namespaces
+            if (acc[destNodeId]) {
+                return acc;
+            }
+            const connection = getConnectionText(isActive, isAllowed);
+            directionalFlows.incrementFlows(traffic);
+            return {
+                ...acc,
+                [destNodeId]: {
+                    traffic,
+                    deploymentId: destNodeId,
+                    deploymentName: destNodeName,
+                    namespace: destNodeNamespace,
+                    connection,
+                    portsAndProtocols,
+                },
+            };
+        },
+        {}
+    );
+    switch (filterState) {
+        case filterModes.active:
+            networkFlows = Object.values(nodeMapping).filter(
+                (edge) => edge.connection === networkConnections.ACTIVE
+            );
+            break;
+        case filterModes.allowed:
+            networkFlows = Object.values(nodeMapping).filter(
+                (edge) => edge.connection === networkConnections.ALLOWED
+            );
+            break;
+        default:
+            networkFlows = Object.values(nodeMapping);
+    }
+    const numIngressFlows = directionalFlows.getNumIngressFlows();
+    const numEgressFlows = directionalFlows.getNumEgressFlows();
+    return { networkFlows, numIngressFlows, numEgressFlows };
+}
 
 /**
- * Iterates through a list of nodes and returns only ports and protocols for edges that go
- * out of a specific node
+ * Grabs either the ingress or egress ports and protocols from the network flows
  *
- * @param {!Object[]} outEdges node's outedges
+ * @param {!Object[]} networkFlows
+ * @param {!String} traffic
  * @returns {!Object[]}
  */
-export const getEgressPortsAndProtocols = (outEdges) => {
-    if (!outEdges || outEdges.length === 0) {
+function getPortsAndProtocolsByDirectionality(networkFlows, traffic) {
+    if (!networkFlows) {
         return [];
     }
-    return Object.values(outEdges).reduce((acc, curr) => {
-        return [...acc, ...curr.properties];
+    return networkFlows.reduce((acc, networkFlow) => {
+        return [
+            ...acc,
+            ...networkFlow.portsAndProtocols.filter((datum) => datum.traffic === traffic),
+        ];
     }, []);
-};
+}
+
+/**
+ * Grabs either the ingress ports and protocols from the network flows
+ *
+ * @param {!Object[]} networkFlows
+ * @returns {!Object[]}
+ */
+export function getIngressPortsAndProtocols(networkFlows) {
+    return getPortsAndProtocolsByDirectionality(networkFlows, networkTraffic.INGRESS);
+}
+
+/**
+ * Grabs either the egress ports and protocols from the network flows
+ *
+ * @param {!Object[]} networkFlows
+ * @returns {!Object[]}
+ */
+export function getEgressPortsAndProtocols(networkFlows) {
+    return getPortsAndProtocolsByDirectionality(networkFlows, networkTraffic.EGRESS);
+}

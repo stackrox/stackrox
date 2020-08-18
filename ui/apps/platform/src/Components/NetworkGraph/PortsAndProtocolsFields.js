@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import uniq from 'lodash/uniq';
 
 import networkProtocolLabels from 'messages/networkGraph';
 import TooltipFieldValue from 'Components/TooltipFieldValue';
@@ -50,7 +51,8 @@ export function getPortsText(ports) {
 const PortsAndProtocolsFields = ({ portsAndProtocols }) => {
     const portsToProtocolsMap = getPortsAndProtocolsMap(portsAndProtocols);
     const portsAndProtocolsFields = Object.keys(portsToProtocolsMap).map((protocol) => {
-        const ports = portsToProtocolsMap[protocol];
+        const ports = uniq(portsToProtocolsMap[protocol]);
+
         const portsText = getPortsText(ports);
         return <TooltipFieldValue key={protocol} field={protocol} value={portsText} />;
     });
