@@ -100,6 +100,13 @@ var (
 		Help:      "A counter of the total number of network flows received by Central from Sensor",
 	}, []string{"ClusterID"})
 
+	totalNetworkEndpointsReceivedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "total_network_endpoints_received_counter",
+		Help:      "A counter of the total number of network endpoints received by Central from Sensor",
+	}, []string{"ClusterID"})
+
 	riskProcessingHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -189,6 +196,11 @@ func IncrementResourceProcessedCounter(op metrics.Op, resource metrics.Resource)
 // IncrementTotalNetworkFlowsReceivedCounter registers the total number of flows received
 func IncrementTotalNetworkFlowsReceivedCounter(clusterID string, numberOfFlows int) {
 	totalNetworkFlowsReceivedCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfFlows))
+}
+
+// IncrementTotalNetworkEndpointsReceivedCounter registers the total number of endpoints received
+func IncrementTotalNetworkEndpointsReceivedCounter(clusterID string, numberOfEndpoints int) {
+	totalNetworkEndpointsReceivedCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfEndpoints))
 }
 
 // ObserveRiskProcessingDuration adds an observation for risk processing duration.

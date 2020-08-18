@@ -12,6 +12,10 @@ package sensor;
 message NetworkConnectionInfo {
     // Network connections that were added from the last time state was sent.
     repeated NetworkConnection updated_connections  = 1;
+
+    // Listening endpoints that were added from the last time state was sent.
+    repeated NetworkEndpoint updated_endpoints = 3;
+
     //For active connections, the timestamp of the entire message serves as the latest timestamp
     //that connection was deemed active
     google.protobuf.Timestamp time                  = 2;
@@ -30,6 +34,19 @@ message NetworkConnection {
     // If this connection was closed, this gives the timestamp when it was closed. If this is unset, we treat it as an
     // open connection.
     google.protobuf.Timestamp close_timestamp         = 11;
+}
+
+message NetworkEndpoint {
+    SocketFamily socket_family    = 1;
+    storage.L4Protocol protocol   = 2;
+    // The address_data part might be empty to indicate "all interfaces", or to simply save space.
+    NetworkAddress listen_address = 3;
+
+    string container_id = 4;
+
+    // If we're no longer listening on this endpoint, this gives the timestamp when the listen socket
+    // was shutdown. If this is unset, we treat it as an actively listening endpoint.
+    google.protobuf.Timestamp close_timestamp = 5;
 }
 
 message NetworkAddress {

@@ -70,6 +70,20 @@ var (
 		Help:      "A counter of the total number of network flows received by Sensor from Collector",
 	}, []string{"ClusterID"})
 
+	totalNetworkEndpointsSentCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "total_network_endpoints_sent_counter",
+		Help:      "A counter of the total number of network endpoints sent to Central by Sensor",
+	}, []string{"ClusterID"})
+
+	totalNetworkEndpointsReceivedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "total_network_endpoints_received_counter",
+		Help:      "A counter of the total number of network endpoints received by Sensor from Collector",
+	}, []string{"ClusterID"})
+
 	sensorEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -106,6 +120,16 @@ func IncrementTotalNetworkFlowsSentCounter(clusterID string, numberOfFlows int) 
 // IncrementTotalNetworkFlowsReceivedCounter registers the total number of flows received
 func IncrementTotalNetworkFlowsReceivedCounter(clusterID string, numberOfFlows int) {
 	totalNetworkFlowsReceivedCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfFlows))
+}
+
+// IncrementTotalNetworkEndpointsSentCounter increments the total number of endpoints sent
+func IncrementTotalNetworkEndpointsSentCounter(clusterID string, numberOfEndpoints int) {
+	totalNetworkEndpointsSentCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfEndpoints))
+}
+
+// IncrementTotalNetworkEndpointsReceivedCounter increments the total number of endpoints received
+func IncrementTotalNetworkEndpointsReceivedCounter(clusterID string, numberOfEndpoints int) {
+	totalNetworkEndpointsReceivedCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfEndpoints))
 }
 
 // IncrementProcessEnrichmentDrops increments the number of times we could not enrich.

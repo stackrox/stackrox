@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -38,6 +39,7 @@ var (
 type hostConnections struct {
 	hostname           string
 	connections        map[connection]*connStatus
+	endpoints          map[containerEndpoint]*connStatus
 	lastKnownTimestamp timestamp.MicroTS
 
 	// connectionsSequenceID is the sequence ID of the current active connections state
@@ -63,7 +65,7 @@ type networkConnIndicator struct {
 	protocol  storage.L4Protocol
 }
 
-func (i networkConnIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkFlow {
+func (i *networkConnIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkFlow {
 	proto := &storage.NetworkFlow{
 		Props: &storage.NetworkFlowProperties{
 			SrcEntity:  i.srcEntity.ToProto(),
@@ -75,6 +77,27 @@ func (i networkConnIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkFlow
 
 	if ts != timestamp.InfiniteFuture {
 		proto.LastSeenTimestamp = ts.GogoProtobuf()
+	}
+	return proto
+}
+
+type containerEndpointIndicator struct {
+	entity   networkgraph.Entity
+	port     uint16
+	protocol storage.L4Protocol
+}
+
+func (i *containerEndpointIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkEndpoint {
+	proto := &storage.NetworkEndpoint{
+		Props: &storage.NetworkEndpointProperties{
+			Entity:     i.entity.ToProto(),
+			Port:       uint32(i.port),
+			L4Protocol: i.protocol,
+		},
+	}
+
+	if ts != timestamp.InfiniteFuture {
+		proto.LastActiveTimestamp = ts.GogoProtobuf()
 	}
 	return proto
 }
@@ -97,13 +120,23 @@ func (c *connection) String() string {
 	return fmt.Sprintf("%s: %s %s %s", c.containerID, c.local, arrow, c.remote)
 }
 
+type containerEndpoint struct {
+	endpoint    net.NumericEndpoint
+	containerID string
+}
+
+func (e *containerEndpoint) String() string {
+	return fmt.Sprintf("%s: %s", e.containerID, e.endpoint)
+}
+
 type networkFlowManager struct {
 	connectionsByHost      map[string]*hostConnections
 	connectionsByHostMutex sync.Mutex
 
 	clusterEntities *clusterentities.Store
 
-	enrichedLastSentState map[networkConnIndicator]timestamp.MicroTS
+	enrichedConnsLastSentState     map[networkConnIndicator]timestamp.MicroTS
+	enrichedEndpointsLastSentState map[containerEndpointIndicator]timestamp.MicroTS
 
 	done        concurrency.Signal
 	flowUpdates chan *central.MsgFromSensor
@@ -147,16 +180,25 @@ func (m *networkFlowManager) enrichConnections() {
 }
 
 func (m *networkFlowManager) enrichAndSend() {
-	current := m.currentEnrichedConns()
+	currentConns, currentEndpoints := m.currentEnrichedConnsAndEndpoints()
 
-	protoToSend := computeUpdateMessage(current, m.enrichedLastSentState)
-	m.enrichedLastSentState = current
+	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState)
+	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState)
 
-	if protoToSend == nil {
+	m.enrichedConnsLastSentState = currentConns
+	m.enrichedEndpointsLastSentState = currentEndpoints
+
+	if len(updatedConns)+len(updatedEndpoints) == 0 {
 		return
 	}
 
+	protoToSend := &central.NetworkFlowUpdate{
+		Updated:          updatedConns,
+		UpdatedEndpoints: updatedEndpoints,
+	}
+
 	metrics.IncrementTotalNetworkFlowsSentCounter(clusterid.Get(), len(protoToSend.Updated))
+	metrics.IncrementTotalNetworkEndpointsSentCounter(clusterid.Get(), len(protoToSend.UpdatedEndpoints))
 	log.Debugf("Flow update : %v", protoToSend)
 	select {
 	case <-m.done.Done():
@@ -250,6 +292,34 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	}
 }
 
+func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, status *connStatus, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
+	isFresh := timestamp.Now().ElapsedSince(status.firstSeen) < clusterEntityResolutionWaitPeriod
+	if !isFresh {
+		status.used = true
+	}
+
+	container, ok := m.clusterEntities.LookupByContainerID(ep.containerID)
+	if !ok {
+		flowMetrics.ContainerIDMisses.Inc()
+		log.Debugf("Unable to fetch deployment information for container %s: no deployment found", ep.containerID)
+		return
+	}
+
+	status.used = true
+
+	indicator := containerEndpointIndicator{
+		entity:   networkgraph.EntityForDeployment(container.DeploymentID),
+		port:     ep.endpoint.IPAndPort.Port,
+		protocol: ep.endpoint.L4Proto.ToProtobuf(),
+	}
+
+	// Multiple endpoints from a collector can result in a single enriched endpoint,
+	// hence update the timestamp only if we have a more recent endpoint than the one we have already enriched.
+	if oldTS, found := enrichedEndpoints[indicator]; !found || oldTS < status.lastSeen {
+		enrichedEndpoints[indicator] = status.lastSeen
+	}
+}
+
 func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
@@ -265,18 +335,35 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 	flowMetrics.HostConnectionsRemoved.Add(float64(prevSize - len(hostConns.connections)))
 }
 
-func (m *networkFlowManager) currentEnrichedConns() map[networkConnIndicator]timestamp.MicroTS {
+func (m *networkFlowManager) enrichHostContainerEndpoints(hostConns *hostConnections, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
+	hostConns.mutex.Lock()
+	defer hostConns.mutex.Unlock()
+
+	prevSize := len(hostConns.endpoints)
+	for ep, status := range hostConns.endpoints {
+		m.enrichContainerEndpoint(&ep, status, enrichedEndpoints)
+		if status.used && status.lastSeen != timestamp.InfiniteFuture {
+			// endpoints that are no longer active and have already been used can be deleted.
+			delete(hostConns.endpoints, ep)
+		}
+	}
+	flowMetrics.HostEndpointsRemoved.Add(float64(prevSize - len(hostConns.endpoints)))
+}
+
+func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConnIndicator]timestamp.MicroTS, map[containerEndpointIndicator]timestamp.MicroTS) {
 	allHostConns := m.getAllHostConnections()
 
 	enrichedConnections := make(map[networkConnIndicator]timestamp.MicroTS)
+	enrichedEndpoints := make(map[containerEndpointIndicator]timestamp.MicroTS)
 	for _, hostConns := range allHostConns {
 		m.enrichHostConnections(hostConns, enrichedConnections)
+		m.enrichHostContainerEndpoints(hostConns, enrichedEndpoints)
 	}
 
-	return enrichedConnections
+	return enrichedConnections, enrichedEndpoints
 }
 
-func computeUpdateMessage(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS) *central.NetworkFlowUpdate {
+func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS) []*storage.NetworkFlow {
 	var updates []*storage.NetworkFlow
 
 	for conn, currTS := range current {
@@ -292,14 +379,26 @@ func computeUpdateMessage(current map[networkConnIndicator]timestamp.MicroTS, pr
 		}
 	}
 
-	if len(updates) == 0 {
-		return nil
+	return updates
+}
+
+func computeUpdatedEndpoints(current map[containerEndpointIndicator]timestamp.MicroTS, previous map[containerEndpointIndicator]timestamp.MicroTS) []*storage.NetworkEndpoint {
+	var updates []*storage.NetworkEndpoint
+
+	for ep, currTS := range current {
+		prevTS, ok := previous[ep]
+		if !ok || currTS > prevTS {
+			updates = append(updates, ep.toProto(currTS))
+		}
 	}
 
-	return &central.NetworkFlowUpdate{
-		Updated: updates,
-		Time:    timestamp.Now().GogoProtobuf(),
+	for ep, prevTS := range previous {
+		if _, ok := current[ep]; !ok {
+			updates = append(updates, ep.toProto(prevTS))
+		}
 	}
+
+	return updates
 }
 
 func (m *networkFlowManager) getAllHostConnections() []*hostConnections {
@@ -326,6 +425,7 @@ func (m *networkFlowManager) RegisterCollector(hostname string) (HostNetworkInfo
 		conns = &hostConnections{
 			hostname:    hostname,
 			connections: make(map[connection]*connStatus),
+			endpoints:   make(map[containerEndpoint]*connStatus),
 		}
 		m.connectionsByHost[hostname] = conns
 	}
@@ -393,6 +493,10 @@ func (m *networkFlowManager) UnregisterCollector(hostname string, sequenceID int
 
 func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error {
 	updatedConnections := getUpdatedConnections(h.hostname, networkInfo)
+	var updatedEndpoints map[containerEndpoint]timestamp.MicroTS
+	if features.NetworkGraphPorts.Enabled() {
+		updatedEndpoints = getUpdatedContainerEndpoints(h.hostname, networkInfo)
+	}
 
 	collectorTS := timestamp.FromProtobuf(networkInfo.GetTime())
 	tsOffset := nowTimestamp - collectorTS
@@ -409,30 +513,60 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 			// after a connection went down and came back up again.
 			status.lastSeen = h.lastKnownTimestamp
 		}
+		for _, status := range h.endpoints {
+			status.lastSeen = h.lastKnownTimestamp
+		}
 		h.connectionsSequenceID = sequenceID
 	}
 
-	prevSize := len(h.connections)
-	for c, t := range updatedConnections {
-		// timestamp = zero implies the connection is newly added. Add new connections, update existing ones to mark them closed
-		if t != timestamp.InfiniteFuture { // adjust timestamp if not zero.
-			t += tsOffset
-		}
-		status := h.connections[c]
-		if status == nil {
-			status = &connStatus{
-				firstSeen: timestamp.Now(),
+	{
+		prevSize := len(h.connections)
+		for c, t := range updatedConnections {
+			// timestamp = zero implies the connection is newly added. Add new connections, update existing ones to mark them closed
+			if t != timestamp.InfiniteFuture { // adjust timestamp if not zero.
+				t += tsOffset
 			}
-			if t < status.firstSeen {
-				status.firstSeen = t
+			status := h.connections[c]
+			if status == nil {
+				status = &connStatus{
+					firstSeen: timestamp.Now(),
+				}
+				if t < status.firstSeen {
+					status.firstSeen = t
+				}
+				h.connections[c] = status
 			}
-			h.connections[c] = status
+			status.lastSeen = t
 		}
-		status.lastSeen = t
+
+		h.lastKnownTimestamp = nowTimestamp
+		flowMetrics.HostConnectionsAdded.Add(float64(len(h.connections) - prevSize))
 	}
 
-	h.lastKnownTimestamp = nowTimestamp
-	flowMetrics.HostConnectionsAdded.Add(float64(len(h.connections) - prevSize))
+	{
+		prevSize := len(h.endpoints)
+		for ep, t := range updatedEndpoints {
+			// timestamp = zero implies the endpoint is newly added. Add new endpoints, update existing ones to mark them closed
+			if t != timestamp.InfiniteFuture { // adjust timestamp if not zero.
+				t += tsOffset
+			}
+			status := h.endpoints[ep]
+			if status == nil {
+				status = &connStatus{
+					firstSeen: timestamp.Now(),
+				}
+				if t < status.firstSeen {
+					status.firstSeen = t
+				}
+				h.endpoints[ep] = status
+			}
+			status.lastSeen = t
+		}
+
+		h.lastKnownTimestamp = nowTimestamp
+		flowMetrics.HostEndpointsAdded.Add(float64(len(h.endpoints) - prevSize))
+	}
+
 	return nil
 }
 
@@ -489,6 +623,33 @@ func getUpdatedConnections(hostname string, networkInfo *sensor.NetworkConnectio
 	}
 
 	return updatedConnections
+}
+
+func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkConnectionInfo) map[containerEndpoint]timestamp.MicroTS {
+	updatedEndpoints := make(map[containerEndpoint]timestamp.MicroTS)
+
+	flowMetrics.NetworkFlowMessagesPerNode.With(prometheus.Labels{"Hostname": hostname}).Inc()
+
+	for _, endpoint := range networkInfo.GetUpdatedEndpoints() {
+		flowMetrics.ContainerEndpointsPerNode.With(prometheus.Labels{"Hostname": hostname, "Protocol": endpoint.Protocol.String()}).Inc()
+
+		ep := containerEndpoint{
+			containerID: endpoint.GetContainerId(),
+			endpoint: net.NumericEndpoint{
+				IPAndPort: getIPAndPort(endpoint.GetListenAddress()),
+				L4Proto:   net.L4ProtoFromProtobuf(endpoint.GetProtocol()),
+			},
+		}
+
+		// timestamp will be set to close timestamp for closed connections, and zero for newly added connection.
+		ts := timestamp.FromProtobuf(endpoint.GetCloseTimestamp())
+		if ts == 0 {
+			ts = timestamp.InfiniteFuture
+		}
+		updatedEndpoints[ep] = ts
+	}
+
+	return updatedEndpoints
 }
 
 func (m *networkFlowManager) PublicIPsValueStream() concurrency.ReadOnlyValueStream {

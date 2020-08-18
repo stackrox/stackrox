@@ -47,6 +47,13 @@ class NetworkGraphUtil {
         })
     }
 
+    static NetworkGraphOuterClass.NetworkNode findDeploymentNode(
+            NetworkGraphOuterClass.NetworkGraph graph, String deploymentId) {
+        return graph.nodesList.find {
+            it.deploymentId == deploymentId
+        }
+    }
+
     static List<Edge> findEdges(NetworkGraphOuterClass.NetworkGraph graph, String sourceId, String targetId) {
         def sourceNodes = sourceId == null ? graph.nodesList : graph.nodesList.findAll {
             it.deploymentId == sourceId

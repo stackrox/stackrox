@@ -23,11 +23,24 @@ message NetworkFlowProperties {
     L4Protocol l4protocol        = 4;
 }
 
+message NetworkEndpoint {
+  NetworkEndpointProperties props = 1;
+
+  google.protobuf.Timestamp last_active_timestamp = 2;
+}
+
+message NetworkEndpointProperties {
+  NetworkEntityInfo entity = 1;
+  uint32 port              = 2;
+  L4Protocol l4protocol    = 3;
+}
+
 message NetworkEntityInfo {
     enum Type {
-        UNKNOWN_TYPE = 0;
-        DEPLOYMENT = 1;
-        INTERNET = 2;
+        UNKNOWN_TYPE    = 0;
+        DEPLOYMENT      = 1;
+        INTERNET        = 2;
+        LISTEN_ENDPOINT = 3;
     }
 
     message Deployment {

@@ -6,12 +6,17 @@ import (
 )
 
 func init() {
-	prometheus.MustRegister(NetworkFlowsPerNodeByType)
-	prometheus.MustRegister(NetworkFlowMessagesPerNode)
-	prometheus.MustRegister(ContainerIDMisses)
-	prometheus.MustRegister(ExternalFlowCounter)
-	prometheus.MustRegister(HostConnectionsRemoved)
-	prometheus.MustRegister(HostConnectionsAdded)
+	prometheus.MustRegister(
+		NetworkFlowsPerNodeByType,
+		ContainerEndpointsPerNode,
+		NetworkFlowMessagesPerNode,
+		ContainerIDMisses,
+		ExternalFlowCounter,
+		HostConnectionsAdded,
+		HostConnectionsRemoved,
+		HostEndpointsAdded,
+		HostEndpointsRemoved,
+	)
 }
 
 // Metrics for network flows
@@ -22,6 +27,12 @@ var (
 		Name:      "network_flow_total_per_node",
 		Help:      "Total number of network flows received for a specific node",
 	}, []string{"Hostname", "Type", "Protocol"})
+	ContainerEndpointsPerNode = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "network_endpoints_total_per_node",
+		Help:      "Total number of container endpoint updates received for a specific node",
+	}, []string{"Hostname", "Protocol"})
 	NetworkFlowMessagesPerNode = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -52,5 +63,17 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "network_flow_host_connections_removed",
 		Help:      "Total number of flows stored in the host connections maps",
+	})
+	HostEndpointsAdded = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "network_flow_host_endpoints_added",
+		Help:      "Total number of endpoints stored in the host endpoints maps",
+	})
+	HostEndpointsRemoved = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "network_flow_host_endpoints_removed",
+		Help:      "Total number of endpoints stored in the host connections maps",
 	})
 )

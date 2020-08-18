@@ -236,6 +236,10 @@ spec:
           value: {{ .Values.config.collectionMethod }}
         - name: GRPC_SERVER
           value: {{ .Values.endpoint.advertised }}
+        {{ range .Values.envVars -}}
+        - name: {{ .name }}
+          value: {{ .value | quote}}
+        {{ end }}
         resources:
           limits:
             cpu: 750m

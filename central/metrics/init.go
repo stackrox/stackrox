@@ -22,6 +22,7 @@ func init() {
 		policyEvaluationHistogram,
 		resourceProcessedCounterVec,
 		totalNetworkFlowsReceivedCounter,
+		totalNetworkEndpointsReceivedCounter,
 		sensorEventDurationHistogramVec,
 		riskProcessingHistogramVec,
 		totalCacheOperationsCounter,

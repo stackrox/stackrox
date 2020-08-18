@@ -16,6 +16,8 @@ func init() {
 		sensorIndicatorChannelFullCounter,
 		totalNetworkFlowsSentCounter,
 		totalNetworkFlowsReceivedCounter,
+		totalNetworkEndpointsSentCounter,
+		totalNetworkEndpointsReceivedCounter,
 		sensorEvents,
 	)
 }

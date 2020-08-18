@@ -1,19 +1,10 @@
 package service
 
 import (
-	"strings"
-
 	"github.com/gogo/protobuf/types"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
-)
-
-var (
-	l4ProtoByName = map[string]storage.L4Protocol{
-		"tcp": storage.L4Protocol_L4_PROTOCOL_TCP,
-		"udp": storage.L4Protocol_L4_PROTOCOL_UDP,
-	}
 )
 
 type flowGraphBuilder struct {
@@ -87,6 +78,19 @@ func (b *flowGraphBuilder) AddFlows(flows []*storage.NetworkFlow) {
 		if srcNode == nil {
 			continue
 		}
+
+		if props.GetDstEntity().GetType() == storage.NetworkEntityInfo_LISTEN_ENDPOINT {
+			if deployment := srcNode.Entity.GetDeployment(); deployment != nil {
+				deployment.ListenPorts = append(deployment.ListenPorts, &storage.NetworkEntityInfo_Deployment_ListenPort{
+					Port:       props.GetDstPort(),
+					L4Protocol: props.GetL4Protocol(),
+				})
+			} else if added {
+				log.Errorf("UNEXPECTED: Listen endpoint for non-deployment source entity %v", srcEnt)
+				b.removeLastNode()
+			}
+			continue
+		}
 		dstEnt := networkgraph.EntityFromProto(props.GetDstEntity())
 		dstIdx, _, _ := b.getNode(dstEnt, dstEnt.Type != storage.NetworkEntityInfo_DEPLOYMENT)
 		if dstIdx == -1 {
@@ -114,32 +118,6 @@ func (b *flowGraphBuilder) AddFlows(flows []*storage.NetworkFlow) {
 		}
 
 		tgtEdgeBundle.Properties = append(tgtEdgeBundle.Properties, edgeProps)
-	}
-}
-
-func (b *flowGraphBuilder) AddListenPortsFromDeployments(deployments []*storage.Deployment) {
-	// TODO(ROX-5301): Remove this and replace with data obtained from collector.
-	for _, deployment := range deployments {
-		if len(deployment.GetPorts()) == 0 {
-			continue
-		}
-
-		_, node, _ := b.getNode(networkgraph.EntityForDeployment(deployment.GetId()), false)
-		if node == nil {
-			continue
-		}
-		deploymentEntity := node.GetEntity().GetDeployment()
-		if deploymentEntity == nil {
-			continue
-		}
-
-		for _, portCfg := range deployment.GetPorts() {
-			listenPort := &storage.NetworkEntityInfo_Deployment_ListenPort{
-				Port:       uint32(portCfg.GetContainerPort()),
-				L4Protocol: l4ProtoByName[strings.ToLower(portCfg.GetProtocol())],
-			}
-			deploymentEntity.ListenPorts = append(deploymentEntity.ListenPorts, listenPort)
-		}
 	}
 }
 

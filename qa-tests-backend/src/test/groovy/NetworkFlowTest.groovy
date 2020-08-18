@@ -20,6 +20,7 @@ import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import org.junit.Assume
 import org.junit.experimental.categories.Category
+import services.FeatureFlagService
 import services.NetworkGraphService
 import spock.lang.Unroll
 import util.NetworkGraphUtil
@@ -233,6 +234,34 @@ class NetworkFlowTest extends BaseSpecification {
         UDPCONNECTIONSOURCE  | UDPCONNECTIONTARGET   | L4Protocol.L4_PROTOCOL_UDP
         TCPCONNECTIONSOURCE  | TCPCONNECTIONTARGET   | L4Protocol.L4_PROTOCOL_TCP
         //ICMPCONNECTIONSOURCE | NGINXCONNECTIONTARGET | L4Protocol.L4_PROTOCOL_ICMP
+    }
+
+    @Unroll
+    @Category([BAT, RUNTIME, NetworkFlowVisualization])
+    def "Verify listen port availability matches feature flag: #targetDeployment"() {
+        given:
+        "Check feature flag setting"
+        def available = FeatureFlagService.isFeatureFlagEnabled("ROX_NETWORK_GRAPH_PORTS")
+
+        and:
+        "Deployment with listening port"
+        String targetUid = DEPLOYMENTS.find { it.name == targetDeployment }?.deploymentUid
+        assert targetUid
+
+        expect:
+        "Check for (absence of) listening port info"
+        def node = getNode(targetUid, available && expectedListenPorts.size() > 0)
+        assert node
+        assert (node.listenPorts(L4Protocol.L4_PROTOCOL_TCP)*.port as Set) == (expectedListenPorts as Set)
+
+        where:
+        "Data is:"
+
+        targetDeployment      | expectedListenPorts
+        TCPCONNECTIONTARGET   | [80, 8080]
+        NGINXCONNECTIONTARGET | [80]
+        NOCONNECTIONSOURCE    | [80]
+        TCPCONNECTIONSOURCE   | []
     }
 
     @Category([NetworkFlowVisualization])
@@ -664,7 +693,22 @@ class NetworkFlowTest extends BaseSpecification {
                 NetworkPolicyService.undoGeneratedNetworkPolicy().undoModification)
     }
 
-    private checkForEdge(String sourceId, String targetId, Timestamp since = null, int timeoutSeconds = 90) {
+    private static getNode(String deploymentId, boolean withListenPorts, int timeoutSeconds = 90) {
+        def t = new Timer(timeoutSeconds, 1)
+
+        while (t.IsValid()) {
+            def graph = NetworkGraphService.getNetworkGraph()
+            def node = NetworkGraphUtil.findDeploymentNode(graph, deploymentId)
+            if (!node || (withListenPorts && !node?.entity?.deployment?.listenPortsCount)) {
+                continue
+            }
+            return node
+        }
+
+        return null
+    }
+
+    private static checkForEdge(String sourceId, String targetId, Timestamp since = null, int timeoutSeconds = 90) {
         int intervalSeconds = 1
         int waitTime
         def startTime = System.currentTimeMillis()

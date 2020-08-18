@@ -9,7 +9,8 @@ package central;
 
 message NetworkFlowUpdate {
     // Network flows that were added or removed from the last time state was sent to Central.
-    repeated storage.NetworkFlow updated        = 1;
-    google.protobuf.Timestamp time     = 2;
+    repeated storage.NetworkFlow updated               = 1;
+    repeated storage.NetworkEndpoint updated_endpoints = 3;
 
+    google.protobuf.Timestamp time     = 2;
 }

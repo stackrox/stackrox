@@ -6,7 +6,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/pkg/errors"
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/networkflow"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
@@ -133,6 +132,10 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 			srcEnt := props.GetSrcEntity()
 			dstEnt := props.GetDstEntity()
 
+			if !withListenPorts && dstEnt.GetType() == storage.NetworkEntityInfo_LISTEN_ENDPOINT {
+				return false
+			}
+
 			// If we cannot see all flows of all relevant deployments, filter out flows where we can't see network flows
 			// on both ends (this takes care of the relevant network flow filtering).
 			if !canSeeAllFlows {
@@ -178,19 +181,6 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 
 	builder.AddDeployments(maskedDeployments)
 	builder.AddFlows(filteredFlows)
-
-	if withListenPorts {
-		unmaskedDeploymentIDs := make([]string, 0, len(deployments))
-		for _, d := range deployments {
-			unmaskedDeploymentIDs = append(unmaskedDeploymentIDs, d.GetId())
-		}
-		fullDeployments, err := s.deployments.GetDeployments(ctx, unmaskedDeploymentIDs)
-		if err != nil {
-			return nil, errors.Wrap(err, "loading deployments from store")
-		}
-		// TODO(ROX-5301): Replace this with listen port info from collector.
-		builder.AddListenPortsFromDeployments(fullDeployments)
-	}
 
 	return builder.Build(), nil
 }

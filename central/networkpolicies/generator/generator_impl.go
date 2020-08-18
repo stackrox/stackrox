@@ -135,6 +135,7 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	relevantDeploymentsMap := objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments)
 
 	// Since we are generating ingress policies only, retrieve all flows incoming to one of the relevant deployments.
+	// Note that this will never retrieve listen endpoint "flows".
 	// TODO(ROX-???): this needs to be changed should we ever generate egress policies!
 	flows, _, err := clusterFlowStore.GetMatchingFlows(networkGraphGenElevatedCtx, func(flowProps *storage.NetworkFlowProperties) bool {
 		dstEnt := flowProps.GetDstEntity()

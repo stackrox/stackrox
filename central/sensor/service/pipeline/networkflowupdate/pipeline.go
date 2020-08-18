@@ -8,6 +8,8 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -46,15 +48,49 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) (err error) {
 	update := msg.GetNetworkFlowUpdate()
 
-	if len(update.Updated) == 0 {
+	if len(update.GetUpdated())+len(update.GetUpdatedEndpoints()) == 0 {
 		return status.Error(codes.Internal, "received empty updated flows")
 	}
 
-	defer countMetrics.IncrementTotalNetworkFlowsReceivedCounter(s.clusterID, len(update.Updated))
-	if err = s.storeUpdater.update(ctx, update.Updated, update.Time); err != nil {
+	countMetrics.IncrementTotalNetworkFlowsReceivedCounter(s.clusterID, len(update.GetUpdated()))
+
+	var allUpdatedFlows []*storage.NetworkFlow
+	if !features.NetworkGraphPorts.Enabled() {
+		allUpdatedFlows = update.GetUpdated()
+	} else {
+		allUpdatedFlows = make([]*storage.NetworkFlow, 0, len(update.GetUpdated())+len(update.GetUpdatedEndpoints()))
+		allUpdatedFlows = append(allUpdatedFlows, update.GetUpdated()...)
+		allUpdatedFlows = append(allUpdatedFlows, endpointsToListenFlows(update.GetUpdatedEndpoints())...)
+		countMetrics.IncrementTotalNetworkEndpointsReceivedCounter(s.clusterID, len(update.GetUpdatedEndpoints()))
+	}
+
+	if len(allUpdatedFlows) == 0 {
+		return nil
+	}
+
+	if err = s.storeUpdater.update(ctx, allUpdatedFlows, update.Time); err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
 	return nil
 }
 
 func (s *pipelineImpl) OnFinish(_ string) {}
+
+func endpointsToListenFlows(endpoints []*storage.NetworkEndpoint) []*storage.NetworkFlow {
+	listenFlows := make([]*storage.NetworkFlow, 0, len(endpoints))
+
+	for _, ep := range endpoints {
+		listenFlows = append(listenFlows, &storage.NetworkFlow{
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity: ep.GetProps().GetEntity(),
+				DstEntity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_LISTEN_ENDPOINT,
+				},
+				DstPort:    ep.GetProps().GetPort(),
+				L4Protocol: ep.GetProps().GetL4Protocol(),
+			},
+			LastSeenTimestamp: ep.GetLastActiveTimestamp(),
+		})
+	}
+	return listenFlows
+}

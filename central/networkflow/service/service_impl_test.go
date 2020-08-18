@@ -15,12 +15,9 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/objects"
 	"github.com/stackrox/rox/pkg/sac"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -70,6 +67,22 @@ func depFlow(toID, fromID string) *storage.NetworkFlow {
 				Type: storage.NetworkEntityInfo_DEPLOYMENT,
 				Id:   toID,
 			},
+		},
+	}
+}
+
+func listenFlow(depID string, port uint32) *storage.NetworkFlow {
+	return &storage.NetworkFlow{
+		Props: &storage.NetworkFlowProperties{
+			SrcEntity: &storage.NetworkEntityInfo{
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				Id:   depID,
+			},
+			DstEntity: &storage.NetworkEntityInfo{
+				Type: storage.NetworkEntityInfo_LISTEN_ENDPOINT,
+			},
+			DstPort:    port,
+			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
 	}
 }
@@ -289,17 +302,11 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 		sac.ClusterScopeKey("mycluster"),
 	})
 
-	relevantDeployments := []*storage.Deployment{
+	relevantDeployments := []*storage.ListDeployment{
 		{
 			Id:        "depA",
 			Name:      "depA",
 			Namespace: "foo",
-			Ports: []*storage.PortConfig{
-				{
-					ContainerPort: 8443,
-					Protocol:      "TCP",
-				},
-			},
 		},
 		{
 			Id:        "depB",
@@ -315,16 +322,6 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 			Id:        "depD",
 			Name:      "depD",
 			Namespace: "bar",
-			Ports: []*storage.PortConfig{
-				{
-					ContainerPort: 53,
-					Protocol:      "tcp",
-				},
-				{
-					ContainerPort: 53,
-					Protocol:      "udp",
-				},
-			},
 		},
 		{
 			Id:        "depE",
@@ -333,12 +330,7 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 		},
 	}
 
-	relevantListDeployments := make([]*storage.ListDeployment, 0, len(relevantDeployments))
-	for _, d := range relevantDeployments {
-		relevantListDeployments = append(relevantListDeployments, objects.ToListDeployment(d))
-	}
-
-	s.deployments.EXPECT().SearchListDeployments(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(relevantListDeployments, nil)
+	s.deployments.EXPECT().SearchListDeployments(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(relevantDeployments, nil)
 
 	mockFlowStore := nfDSMocks.NewMockFlowDataStore(s.mockCtrl)
 
@@ -358,6 +350,7 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 				depFlow("depA", "depX"),
 				depFlow("depA", "depY"),
 				depFlow("depA", "depZ"),
+				listenFlow("depA", 8443),
 				depFlow("depB", "depA"),
 				depFlow("depB", "depX"),
 				depFlow("depB", "depW"),
@@ -366,6 +359,8 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 				depFlow("depD", "depA"),
 				depFlow("depD", "depE"),
 				depFlow("depD", "depZ"),
+				listenFlow("depD", 53),
+				listenFlow("depD", 8080),
 				depFlow("depE", "depD"),
 				depFlow("depE", "depX"),
 				depFlow("depE", "depB"),
@@ -382,18 +377,13 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 
 	var expectedListenPorts map[string][]*storage.NetworkEntityInfo_Deployment_ListenPort
 	if withListenPorts {
-		s.deployments.EXPECT().GetDeployments(
-			ctxHasAllDeploymentsAccessMatcher,
-			testutils.AssertionMatcher(assert.ElementsMatch, []string{"depA", "depB", "depC", "depD", "depE"})).Return(
-			relevantDeployments, nil)
-
 		expectedListenPorts = map[string][]*storage.NetworkEntityInfo_Deployment_ListenPort{
 			"depA": {
 				{Port: 8443, L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP},
 			},
 			"depD": {
 				{Port: 53, L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP},
-				{Port: 53, L4Protocol: storage.L4Protocol_L4_PROTOCOL_UDP},
+				{Port: 8080, L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP},
 			},
 		}
 	}
