@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"time"
 
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
@@ -46,7 +45,6 @@ type DataStore interface {
 	AddCluster(ctx context.Context, cluster *storage.Cluster) (string, error)
 	UpdateCluster(ctx context.Context, cluster *storage.Cluster) error
 	RemoveCluster(ctx context.Context, id string, done *concurrency.Signal) error
-	UpdateClusterContactTimes(ctx context.Context, t time.Time, ids ...string) error
 	// UpdateClusterStatus updates the cluster status. Note that any cluster-upgrade or cluster-cert-expiry status
 	// passed to this endpoint will be ignored. To insert that, callers MUST separately call
 	// UpdateClusterUpgradeStatus or UpdateClusterCertExpiry status.

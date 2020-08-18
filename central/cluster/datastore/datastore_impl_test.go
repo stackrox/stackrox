@@ -294,14 +294,6 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsRemove() {
 	suite.True(concurrency.WaitWithTimeout(&done, 10*time.Second))
 }
 
-func (suite *ClusterDataStoreTestSuite) TestEnforcesUpdateClusterContactTime() {
-	err := suite.clusterDataStore.UpdateClusterContactTimes(suite.hasNoneCtx, time.Now(), "F")
-	suite.Error(err, "expected an error trying to write without permissions")
-
-	err = suite.clusterDataStore.UpdateClusterContactTimes(suite.hasReadCtx, time.Now(), "IDK")
-	suite.Error(err, "expected an error trying to write without permissions")
-}
-
 func (suite *ClusterDataStoreTestSuite) TestEnforcesUpdateClusterStatus() {
 	err := suite.clusterDataStore.UpdateClusterStatus(suite.hasNoneCtx, "F", &storage.ClusterStatus{})
 	suite.Error(err, "expected an error trying to write without permissions")
@@ -338,11 +330,14 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsSearch() {
 	suite.NoError(err, "expected no error trying to read with permissions")
 }
 
-func (suite *ClusterDataStoreTestSuite) TestUpdateClusterContactTimes() {
+func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
+	if !features.ClusterHealthMonitoring.Enabled() {
+		suite.T().Skip()
+	}
+
 	t := time.Now()
 	ts := protoconv.ConvertTimeToTimestamp(t)
 	ids := []string{"1", "2", "3", "4", "5", "6"}
-
 	existingHealths := []*storage.ClusterHealthStatus{
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
@@ -357,16 +352,81 @@ func (suite *ClusterDataStoreTestSuite) TestUpdateClusterContactTimes() {
 			LastContact:        ts,
 		},
 	}
-	healths := []*storage.ClusterHealthStatus{
+	results := []search.Result{{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"}, {ID: "6"}}
+	clusters := []*storage.Cluster{{Id: "1"}, {Id: "2"}, {Id: "3"}, {Id: "4"}, {Id: "5"}, {Id: "6"}}
+	expected := []*storage.Cluster{
+		{
+			Id:       "1",
+			Priority: 1,
+		},
+		{
+			Id: "2",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			HealthStatus: &storage.ClusterHealthStatus{
+				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				LastContact:        ts,
+			},
+			Priority: 1,
+		},
+		{
+			Id:       "3",
+			Priority: 1,
+		},
+		{
+			Id: "4",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			HealthStatus: &storage.ClusterHealthStatus{
+				SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
+				LastContact:        ts,
+			},
+			Priority: 1,
+		},
+		{
+			Id: "5",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			HealthStatus: &storage.ClusterHealthStatus{
+				SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
+				LastContact:        ts,
+			},
+			Priority: 1,
+		},
+		{
+			Id:       "6",
+			Priority: 1,
+		},
+	}
+
+	suite.indexer.EXPECT().Search(gomock.Any()).Return(results, nil)
+	suite.clusters.EXPECT().GetMany(ids).Return(clusters, []int{}, nil)
+	suite.healthStatuses.EXPECT().GetMany(ids).Return(existingHealths, []int{0, 2, 5}, nil)
+
+	actuals, err := suite.clusterDataStore.SearchRawClusters(suite.hasReadCtx, search.EmptyQuery())
+	suite.NoError(err)
+	suite.Equal(expected, actuals)
+
+	// none are missing
+	existingHealths = []*storage.ClusterHealthStatus{
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 			LastContact:        ts,
 		},
 		{
-			LastContact: ts,
+			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+			LastContact:        ts,
 		},
 		{
-			LastContact: ts,
+			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+			LastContact:        ts,
+		},
+		{
+			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+			LastContact:        ts,
 		},
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
@@ -376,19 +436,90 @@ func (suite *ClusterDataStoreTestSuite) TestUpdateClusterContactTimes() {
 			SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
 			LastContact:        ts,
 		},
+	}
+	expected = []*storage.Cluster{
 		{
-			LastContact: ts,
+			Id: "1",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			HealthStatus: &storage.ClusterHealthStatus{
+				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				LastContact:        ts,
+			},
+			Priority: 1,
+		},
+		{
+			Id: "2",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			HealthStatus: &storage.ClusterHealthStatus{
+				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				LastContact:        ts,
+			},
+			Priority: 1,
+		},
+		{
+			Id: "3",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			HealthStatus: &storage.ClusterHealthStatus{
+				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				LastContact:        ts,
+			},
+			Priority: 1,
+		},
+		{
+			Id: "4",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			HealthStatus: &storage.ClusterHealthStatus{
+				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				LastContact:        ts,
+			},
+			Priority: 1,
+		},
+		{
+			Id: "5",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			HealthStatus: &storage.ClusterHealthStatus{
+				SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
+				LastContact:        ts,
+			},
+			Priority: 1,
+		},
+		{
+			Id: "6",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			HealthStatus: &storage.ClusterHealthStatus{
+				SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
+				LastContact:        ts,
+			},
+			Priority: 1,
 		},
 	}
 
-	suite.healthStatuses.EXPECT().GetMany(ids).Return(existingHealths, []int{1, 2, 5}, nil)
-	suite.healthStatuses.EXPECT().UpsertManyWithIDs(ids, healths).Return(nil)
+	suite.indexer.EXPECT().Search(gomock.Any()).Return(results, nil)
+	suite.clusters.EXPECT().GetMany(ids).Return(clusters, []int{}, nil)
+	suite.healthStatuses.EXPECT().GetMany(ids).Return(existingHealths, []int{}, nil)
 
-	err := suite.clusterDataStore.UpdateClusterContactTimes(suite.hasWriteCtx, t, ids...)
+	actuals, err = suite.clusterDataStore.SearchRawClusters(suite.hasReadCtx, search.EmptyQuery())
 	suite.NoError(err)
+	suite.Equal(expected, actuals)
 }
 
-func (suite *ClusterDataStoreTestSuite) TestPopulateClusterContactTimes() {
+func (suite *ClusterDataStoreTestSuite) TestPopulateLegacyClusterContactTimes() {
+	if features.ClusterHealthMonitoring.Enabled() {
+		suite.T().Skip()
+	}
+
 	t := time.Now()
 	ts := protoconv.ConvertTimeToTimestamp(t)
 	ids := []string{"1", "2", "3", "4", "5", "6"}

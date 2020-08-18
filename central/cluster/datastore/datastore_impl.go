@@ -326,38 +326,6 @@ func (ds *datastoreImpl) UpdateCluster(ctx context.Context, cluster *storage.Clu
 	return nil
 }
 
-func (ds *datastoreImpl) UpdateClusterContactTimes(ctx context.Context, t time.Time, ids ...string) error {
-	if ok, err := clusterSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return errors.New("permission denied")
-	}
-
-	ds.lock.Lock()
-	defer ds.lock.Unlock()
-
-	healthStatuses, missing, err := ds.clusterHealthStorage.GetMany(ids)
-	if err != nil {
-		return err
-	}
-	ts := protoconv.ConvertTimeToTimestamp(t)
-	allStatuses := make([]*storage.ClusterHealthStatus, 0, len(ids))
-	missCount := 0
-	healthIdx := 0
-	for clusterIdx := range ids {
-		if missCount < len(missing) && clusterIdx == missing[missCount] {
-			allStatuses = append(allStatuses, &storage.ClusterHealthStatus{LastContact: ts})
-			missCount++
-			continue
-		}
-		currentHealthStatus := healthStatuses[healthIdx]
-		currentHealthStatus.LastContact = ts
-		allStatuses = append(allStatuses, currentHealthStatus)
-		healthIdx++
-	}
-	return ds.clusterHealthStorage.UpsertManyWithIDs(ids, allStatuses)
-}
-
 func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clusterHealthStatus *storage.ClusterHealthStatus) error {
 	if id == "" {
 		return errors.New("cannot update cluster health. cluster id not provided")

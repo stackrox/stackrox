@@ -19,7 +19,8 @@ All notable changes to this project that require documentation updates will be d
 - UI: Deployment Details in the Violations Side Panel now shows full deployment data if available. If not, a message will appear explaining that the deployment no longer exists.
 - UI: When selecting a deployment in the Network Graph, the Network Flows table will now show some additional information: traffic, deployment name,
   namespace name, ports, protocols, connection type (ROX-5219)
-  
+- In `v1/clusters` response, `healthStatus.lastContact` field is added that represents last time sensor health was probed (aka last sensor contact). `status.lastContact` will be deprecated starting release 49.0, hence use `healthStatus.lastContact` instead.
+
 ## [47.0]
 - Configuration Management tables (except for Controls and Policies) are now paginated through the API, rather than loading all rows into the browser, for better performance in large environments (ROX-5067).
 - Added a global flag `--token-file` to roxctl causing an API token to be read from the specified file (ROX-2319).

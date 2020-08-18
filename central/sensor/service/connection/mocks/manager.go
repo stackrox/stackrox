@@ -13,7 +13,6 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
 	reflect "reflect"
-	time "time"
 )
 
 // MockClusterManager is a mock of ClusterManager interface
@@ -37,25 +36,6 @@ func NewMockClusterManager(ctrl *gomock.Controller) *MockClusterManager {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockClusterManager) EXPECT() *MockClusterManagerMockRecorder {
 	return m.recorder
-}
-
-// UpdateClusterContactTimes mocks base method
-func (m *MockClusterManager) UpdateClusterContactTimes(ctx context.Context, time time.Time, clusterID ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, time}
-	for _, a := range clusterID {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "UpdateClusterContactTimes", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateClusterContactTimes indicates an expected call of UpdateClusterContactTimes
-func (mr *MockClusterManagerMockRecorder) UpdateClusterContactTimes(ctx, time interface{}, clusterID ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, time}, clusterID...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterContactTimes", reflect.TypeOf((*MockClusterManager)(nil).UpdateClusterContactTimes), varargs...)
 }
 
 // UpdateClusterUpgradeStatus mocks base method

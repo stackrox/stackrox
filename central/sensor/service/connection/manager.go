@@ -2,7 +2,6 @@ package connection
 
 import (
 	"context"
-	"time"
 
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -12,7 +11,6 @@ import (
 
 // ClusterManager envelopes functions that interact with clusters
 type ClusterManager interface {
-	UpdateClusterContactTimes(ctx context.Context, time time.Time, clusterID ...string) error
 	UpdateClusterUpgradeStatus(ctx context.Context, clusterID string, status *storage.ClusterUpgradeStatus) error
 	UpdateClusterHealth(ctx context.Context, id string, status *storage.ClusterHealthStatus) error
 	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)

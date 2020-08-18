@@ -1,6 +1,8 @@
 package m44tom45
 
 import (
+	"time"
+
 	"github.com/gogo/protobuf/proto"
 	pTypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
@@ -33,14 +35,14 @@ var (
 )
 
 func migrateClusterBuckets(databases *types.Databases) error {
-	// merge cluster status bucket into cluster bucket and migrate
+	// Merge cluster status bucket into cluster bucket and migrate.
 	count, err := mergeAndMigrateClusterAndStatus(databases.BoltDB, databases.RocksDB)
 	if err != nil {
 		return err
 	}
 	log.WriteToStderrf("Rewrote %d keys from Bolt Bucket %s and %s", count, clusterBucketName, clusterStatusBucketName)
 
-	// migrate last contact cluster_status bucket into new cluster health bucket
+	// Migrate last contact cluster_status bucket into new cluster health bucket.
 	count, err = migrateLastContact(databases.BoltDB, databases.RocksDB)
 	if err != nil {
 		return err
@@ -72,7 +74,7 @@ func mergeAndMigrateClusterAndStatus(boltDB *bbolt.DB, rocksDB *gorocksdb.DB) (i
 				return err
 			}
 
-			// merge status into cluster
+			// Merge status into cluster.
 			statusValue := clusterStatusBucket.Get(k)
 			if statusValue != nil {
 				var clusterStatus storage.ClusterStatus
@@ -115,14 +117,23 @@ func migrateLastContact(boltDB *bbolt.DB, rocksDB *gorocksdb.DB) (int, error) {
 
 		return clusterLastContactBucket.ForEach(func(k, v []byte) error {
 			newKey := rocksdbmigration.GetPrefixedKey(clusterHealthStatusBucketName, k)
-			// merge last contact into health status
+			// Merge last contact into health status.
 			var lastContact pTypes.Timestamp
 			if err := proto.Unmarshal(v, &lastContact); err != nil {
 				return err
 			}
 
+			prevContact, err := pTypes.TimestampFromProto(&lastContact)
+			if err != nil {
+				prevContact = time.Time{}
+			}
+
+			sensorStatus := populateSensorStatus(prevContact)
 			healthStatus := storage.ClusterHealthStatus{
-				LastContact: &lastContact,
+				SensorHealthStatus:    sensorStatus,
+				OverallHealthStatus:   sensorStatus,
+				CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
+				LastContact:           &lastContact,
 			}
 
 			newValue, err := proto.Marshal(&healthStatus)

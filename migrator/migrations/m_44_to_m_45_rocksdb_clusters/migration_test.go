@@ -77,7 +77,12 @@ func insertMessage(bucket bolthelpers.BucketRef, id string, pb proto.Message) er
 }
 
 func (suite *clusterRocksDBMigrationTestSuite) TestClusterRocksDBMigration() {
-	ts := types.TimestampNow()
+	ts1 := types.TimestampNow()
+	ts2 := ts1.Clone()
+	ts2.Seconds = ts2.Seconds - 120
+	ts3 := ts1.Clone()
+	ts3.Seconds = ts3.Seconds - 300
+
 	cases := []struct {
 		boltCluster        *storage.Cluster
 		boltStatus         *storage.ClusterStatus
@@ -94,7 +99,7 @@ func (suite *clusterRocksDBMigrationTestSuite) TestClusterRocksDBMigration() {
 			boltStatus: &storage.ClusterStatus{
 				SensorVersion: "s1",
 			},
-			boltLastContact: ts,
+			boltLastContact: ts1,
 			rocksDBCluster: &storage.Cluster{
 				Id:   "1",
 				Name: "cluster1",
@@ -103,7 +108,10 @@ func (suite *clusterRocksDBMigrationTestSuite) TestClusterRocksDBMigration() {
 				},
 			},
 			rocksDBHealth: &storage.ClusterHealthStatus{
-				LastContact: ts,
+				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
+				OverallHealthStatus:   storage.ClusterHealthStatus_HEALTHY,
+				LastContact:           ts1,
 			},
 			healthShouldExists: true,
 		},
@@ -115,7 +123,7 @@ func (suite *clusterRocksDBMigrationTestSuite) TestClusterRocksDBMigration() {
 			boltStatus: &storage.ClusterStatus{
 				SensorVersion: "s2",
 			},
-			boltLastContact: ts,
+			boltLastContact: ts2,
 			rocksDBCluster: &storage.Cluster{
 				Id:   "2",
 				Name: "cluster2",
@@ -124,7 +132,10 @@ func (suite *clusterRocksDBMigrationTestSuite) TestClusterRocksDBMigration() {
 				},
 			},
 			rocksDBHealth: &storage.ClusterHealthStatus{
-				LastContact: ts,
+				SensorHealthStatus:    storage.ClusterHealthStatus_DEGRADED,
+				CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
+				OverallHealthStatus:   storage.ClusterHealthStatus_DEGRADED,
+				LastContact:           ts2,
 			},
 			healthShouldExists: true,
 		},
@@ -136,7 +147,7 @@ func (suite *clusterRocksDBMigrationTestSuite) TestClusterRocksDBMigration() {
 			boltStatus: &storage.ClusterStatus{
 				SensorVersion: "s3",
 			},
-			boltLastContact: ts,
+			boltLastContact: ts3,
 			rocksDBCluster: &storage.Cluster{
 				Id:   "3",
 				Name: "cluster3",
@@ -145,7 +156,10 @@ func (suite *clusterRocksDBMigrationTestSuite) TestClusterRocksDBMigration() {
 				},
 			},
 			rocksDBHealth: &storage.ClusterHealthStatus{
-				LastContact: ts,
+				SensorHealthStatus:    storage.ClusterHealthStatus_UNHEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
+				OverallHealthStatus:   storage.ClusterHealthStatus_UNHEALTHY,
+				LastContact:           ts3,
 			},
 			healthShouldExists: true,
 		},
