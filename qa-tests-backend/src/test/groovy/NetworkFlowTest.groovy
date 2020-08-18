@@ -252,7 +252,7 @@ class NetworkFlowTest extends BaseSpecification {
         "Check for (absence of) listening port info"
         def node = getNode(targetUid, available && expectedListenPorts.size() > 0)
         assert node
-        assert (node.listenPorts(L4Protocol.L4_PROTOCOL_TCP)*.port as Set) == (expectedListenPorts as Set)
+        assert !available || (node.listenPorts(L4Protocol.L4_PROTOCOL_TCP)*.port as Set) == (expectedListenPorts as Set)
 
         where:
         "Data is:"

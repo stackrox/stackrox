@@ -3619,6 +3619,7 @@ jobs:
       - ROX_SENSOR_DETECTION: true
       - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
+      - ROX_NETWORK_GRAPH_PORTS: true
 
     steps:
       - run-openshift-tests:
@@ -3637,6 +3638,7 @@ jobs:
       - ROX_SENSOR_DETECTION: true
       - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
+      - ROX_NETWORK_GRAPH_PORTS: true
 
     steps:
       - run-openshift-tests:
