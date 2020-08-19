@@ -17,6 +17,8 @@ echo "StackRox METADATA_URL is set to ${METADATA_URL}"
 
 set -x
 
+kubectl cluster-info
+
 kubectl config get-contexts
 context=$(kubectl config get-contexts | grep -E '^\*' | tr -s ' ' | cut -d ' ' -f 3)
 echo "Pulled context: ${context}"
