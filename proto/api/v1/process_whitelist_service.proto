@@ -37,6 +37,16 @@ message LockProcessWhitelistsRequest {
     bool                                 locked = 2;
 }
 
+message DeleteProcessWhitelistsRequest {
+    string query   = 1;
+    bool   confirm = 2;
+}
+
+message DeleteProcessWhitelistsResponse {
+    int32 num_deleted = 1;
+    bool  dry_run     = 2;
+}
+
 // ProcessWhitelistService APIs can be used to manage process baselines.
 service ProcessWhitelistService {
     // GetProcessWhitelistById returns the single process whitelist referenced by the given ID.
@@ -60,5 +70,12 @@ service ProcessWhitelistService {
                 put: "/v1/processwhitelists/lock"
                 body: "*"
             };
+    }
+
+    // DeleteProcessWhitelists deletes whitelists
+    rpc DeleteProcessWhitelists (DeleteProcessWhitelistsRequest) returns (DeleteProcessWhitelistsResponse) {
+        option (google.api.http) = {
+          delete: "/v1/processwhitelists"
+        };
     }
 }

@@ -287,3 +287,76 @@ func (suite *ProcessWhitelistServiceTestSuite) TestUpdateProcessWhitelist() {
 		})
 	}
 }
+
+func (suite *ProcessWhitelistServiceTestSuite) TestDeleteProcessWhitelists() {
+	whitelists := []*storage.ProcessWhitelist{
+		{
+			Key: &storage.ProcessWhitelistKey{
+				DeploymentId:  "d1",
+				ContainerName: "container",
+				ClusterId:     "clusterid",
+				Namespace:     "namespace",
+			},
+		},
+		{
+			Key: &storage.ProcessWhitelistKey{
+				DeploymentId:  "d2",
+				ContainerName: "container",
+				ClusterId:     "clusterid",
+				Namespace:     "namespace",
+			},
+		},
+	}
+
+	for _, whitelist := range whitelists {
+		id, err := suite.datastore.AddProcessWhitelist(hasWriteCtx, whitelist)
+		suite.NoError(err)
+		whitelist.Id = id
+	}
+
+	request := &v1.DeleteProcessWhitelistsRequest{
+		Query: "",
+	}
+	_, err := suite.service.DeleteProcessWhitelists(hasWriteCtx, request)
+	suite.Error(err)
+
+	request = &v1.DeleteProcessWhitelistsRequest{
+		Query:   "Deployment Id:d1",
+		Confirm: false,
+	}
+	resp, err := suite.service.DeleteProcessWhitelists(hasWriteCtx, request)
+	suite.NoError(err)
+	suite.Equal(&v1.DeleteProcessWhitelistsResponse{
+		NumDeleted: 1,
+		DryRun:     true,
+	}, resp)
+
+	// Delete d1
+	request.Confirm = true
+	resp, err = suite.service.DeleteProcessWhitelists(hasWriteCtx, request)
+	suite.NoError(err)
+	suite.Equal(&v1.DeleteProcessWhitelistsResponse{
+		NumDeleted: 1,
+		DryRun:     false,
+	}, resp)
+
+	// Ensure that a second request doesn't return any values deleted
+	resp, err = suite.service.DeleteProcessWhitelists(hasWriteCtx, request)
+	suite.NoError(err)
+	suite.Equal(&v1.DeleteProcessWhitelistsResponse{
+		NumDeleted: 0,
+		DryRun:     false,
+	}, resp)
+
+	// Delete d2 with a generic wildcard on deployment id
+	request = &v1.DeleteProcessWhitelistsRequest{
+		Query:   "Deployment Id:*",
+		Confirm: true,
+	}
+	resp, err = suite.service.DeleteProcessWhitelists(hasWriteCtx, request)
+	suite.NoError(err)
+	suite.Equal(&v1.DeleteProcessWhitelistsResponse{
+		NumDeleted: 1,
+		DryRun:     false,
+	}, resp)
+}

@@ -1,9 +1,10 @@
 package services
 
 import io.stackrox.proto.api.v1.ProcessWhitelistServiceGrpc
-import io.stackrox.proto.api.v1.ProcessWhitelistServiceOuterClass
 import io.stackrox.proto.storage.ProcessWhitelistOuterClass
 import io.stackrox.proto.storage.ProcessWhitelistOuterClass.ProcessWhitelistKey
+import io.stackrox.proto.api.v1.ProcessWhitelistServiceOuterClass
+import io.stackrox.proto.api.v1.ProcessWhitelistServiceOuterClass.DeleteProcessWhitelistsRequest
 import objects.Deployment
 import util.Timer
 
@@ -60,6 +61,12 @@ class ProcessWhitelistService extends BaseService {
         } catch (Exception e) {
             println "Error locking process baselines : ${e}"
         }
+    }
+
+    static deleteProcessWhitelists(String query) {
+        DeleteProcessWhitelistsRequest req = DeleteProcessWhitelistsRequest.newBuilder()
+            .setQuery(query).setConfirm(true).build()
+        return getProcessWhitelistService().deleteProcessWhitelists(req)
     }
 
     static List<ProcessWhitelistOuterClass.ProcessWhitelist> updateProcessWhitelists(

@@ -24,6 +24,7 @@ type DataStore interface {
 	AddProcessWhitelist(ctx context.Context, whitelist *storage.ProcessWhitelist) (string, error)
 	RemoveProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey) error
 	RemoveProcessWhitelistsByDeployment(ctx context.Context, deploymentID string) error
+	RemoveProcessWhitelistsByIDs(ctx context.Context, ids []string) error
 	UpdateProcessWhitelistElements(ctx context.Context, key *storage.ProcessWhitelistKey, addElements []*storage.WhitelistItem, removeElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error)
 	UpsertProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey, addElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error)
 	UserLockProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey, locked bool) (*storage.ProcessWhitelist, error)

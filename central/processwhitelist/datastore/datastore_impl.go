@@ -354,3 +354,21 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(whitelist *storage
 	}
 	return ds.storage.Walk(fn)
 }
+
+func (ds *datastoreImpl) RemoveProcessWhitelistsByIDs(ctx context.Context, ids []string) error {
+	for _, id := range ids {
+		key, err := IDToKey(id)
+		if err != nil {
+			return err
+		}
+		if ok, err := processWhitelistSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).Allowed(ctx); err != nil {
+			return err
+		} else if !ok {
+			return errors.New("permission denied")
+		}
+		if err := ds.removeProcessWhitelistByID(id); err != nil {
+			return errors.Wrapf(err, "removing whitelist %s", id)
+		}
+	}
+	return nil
+}

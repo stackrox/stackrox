@@ -30,6 +30,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
             "pw-deploymentnginx-violation-resolve-whitelist"
     static final private String DEPLOYMENTNGINX_SOFTLOCK = "pw-deploymentnginx-softlock"
     static final private String DEPLOYMENTNGINX_DELETE = "pw-deploymentnginx-delete"
+    static final private String DEPLOYMENTNGINX_DELETE_API = "pw-deploymentnginx-delete-api"
 
     static final private String DEPLOYMENTNGINX_REMOVEPROCESS = "pw-deploymentnginx-removeprocess"
     static final private List<Deployment> DEPLOYMENTS =
@@ -69,13 +70,20 @@ class ProcessWhiteListsTest extends BaseSpecification {
                      .addAnnotation("test", "annotation")
                      .setEnv(["CLUSTER_NAME": "main"])
                      .addLabel("app", "test"),
-                    new Deployment()
-                          .setName(DEPLOYMENTNGINX_REMOVEPROCESS)
-                          .setImage("nginx:1.7.9")
-                          .addPort(22, "TCP")
-                          .addAnnotation("test", "annotation")
-                          .setEnv(["CLUSTER_NAME": "main"])
-                          .addLabel("app", "test"),
+             new Deployment()
+                     .setName(DEPLOYMENTNGINX_DELETE_API)
+                     .setImage("nginx:1.7.9")
+                     .addPort(22, "TCP")
+                     .addAnnotation("test", "annotation")
+                     .setEnv(["CLUSTER_NAME": "main"])
+                     .addLabel("app", "test"),
+             new Deployment()
+                     .setName(DEPLOYMENTNGINX_REMOVEPROCESS)
+                     .setImage("nginx:1.7.9")
+                     .addPort(22, "TCP")
+                     .addAnnotation("test", "annotation")
+                     .setEnv(["CLUSTER_NAME": "main"])
+                     .addLabel("app", "test"),
             ]
 
     def setupSpec() {
@@ -356,4 +364,33 @@ class ProcessWhiteListsTest extends BaseSpecification {
         DEPLOYMENTNGINX_REMOVEPROCESS           |   "nginx"
     }
 
+    @Category(BAT)
+    def "Delete process baselines via API"() {
+        given:
+        "a deployment is deleted"
+        // Get all baselines for our deployment and assert they exist
+        def deployment = DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_DELETE_API }
+        assert deployment != null
+        orchestrator.createDeployment(deployment)
+        String containerName = deployment.getName()
+        def whitelistsCreated = ProcessWhitelistService.
+                waitForDeploymentWhitelistsCreated(clusterId, deployment, containerName)
+        assert(whitelistsCreated)
+
+        when:
+        "delete the whitelists"
+        println "ID: ${deployment.getDeploymentUid()}"
+        ProcessWhitelistService.deleteProcessWhitelists("Deployment Id:${deployment.getDeploymentUid()}")
+
+        then:
+        "Verify that all baselines with that deployment ID have been deleted"
+        def whitelistsDeleted = ProcessWhitelistService.
+                waitForDeploymentWhitelistsDeleted(clusterId, deployment, containerName)
+        assert whitelistsDeleted
+
+        cleanup:
+        "Remove deployment"
+        orchestrator.deleteDeployment(deployment)
     }
+
+}

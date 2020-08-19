@@ -125,6 +125,20 @@ func (mr *MockDataStoreMockRecorder) RemoveProcessWhitelistsByDeployment(ctx, de
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessWhitelistsByDeployment", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessWhitelistsByDeployment), ctx, deploymentID)
 }
 
+// RemoveProcessWhitelistsByIDs mocks base method
+func (m *MockDataStore) RemoveProcessWhitelistsByIDs(ctx context.Context, ids []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveProcessWhitelistsByIDs", ctx, ids)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveProcessWhitelistsByIDs indicates an expected call of RemoveProcessWhitelistsByIDs
+func (mr *MockDataStoreMockRecorder) RemoveProcessWhitelistsByIDs(ctx, ids interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessWhitelistsByIDs", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessWhitelistsByIDs), ctx, ids)
+}
+
 // UpdateProcessWhitelistElements mocks base method
 func (m *MockDataStore) UpdateProcessWhitelistElements(ctx context.Context, key *storage.ProcessWhitelistKey, addElements, removeElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error) {
 	m.ctrl.T.Helper()

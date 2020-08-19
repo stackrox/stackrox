@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/grpc"
@@ -31,6 +32,7 @@ var (
 		user.With(permissions.Modify(resources.ProcessWhitelist)): {
 			"/v1.ProcessWhitelistService/UpdateProcessWhitelists",
 			"/v1.ProcessWhitelistService/LockProcessWhitelists",
+			"/v1.ProcessWhitelistService/DeleteProcessWhitelists",
 		},
 	})
 )
@@ -141,4 +143,34 @@ func (s *serviceImpl) LockProcessWhitelists(ctx context.Context, request *v1.Loc
 		s.sendWhitelistToSensor(w)
 	}
 	return resp, nil
+}
+
+func (s *serviceImpl) DeleteProcessWhitelists(ctx context.Context, request *v1.DeleteProcessWhitelistsRequest) (*v1.DeleteProcessWhitelistsResponse, error) {
+	if request.GetQuery() == "" {
+		return nil, status.Error(codes.InvalidArgument, "query string must be nonempty")
+	}
+
+	q, err := search.ParseQuery(request.GetQuery())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	results, err := s.dataStore.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &v1.DeleteProcessWhitelistsResponse{
+		DryRun:     !request.GetConfirm(),
+		NumDeleted: int32(len(results)),
+	}
+
+	if !request.GetConfirm() {
+		return response, nil
+	}
+
+	if err := s.dataStore.RemoveProcessWhitelistsByIDs(ctx, search.ResultsToIDs(results)); err != nil {
+		return nil, err
+	}
+	return response, nil
 }
