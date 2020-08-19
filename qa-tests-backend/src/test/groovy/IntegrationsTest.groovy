@@ -65,11 +65,13 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
 -----END CERTIFICATE-----'''
 
     def setupSpec() {
+        ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         DEPLOYMENTS.each { Services.waitForDeployment(it) }
     }
 
     def cleanupSpec() {
+        ImageIntegrationService.addStackroxScannerIntegration()
         DEPLOYMENTS.each { orchestrator.deleteDeployment(it) }
     }
 
