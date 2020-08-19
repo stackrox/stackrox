@@ -235,7 +235,18 @@ const NetworkGraph = ({
         // Parent Click
         if (isParent) {
             if (id) {
-                onNamespaceClick({ id, deployments: namespacesWithDeployments[id] || [] });
+                const deployments = (namespacesWithDeployments[id] || []).map((deployment) => {
+                    const deploymentEdges = getEdgesFromNode({
+                        ...getConfigObj(),
+                        selectedNode: deployment.data,
+                    });
+                    const modifiedDeployment = {
+                        ...deployment,
+                    };
+                    modifiedDeployment.data.edges = deploymentEdges;
+                    return modifiedDeployment;
+                });
+                onNamespaceClick({ id, deployments });
                 setSelectedNode(evData);
             }
             return;
@@ -343,6 +354,7 @@ const NetworkGraph = ({
                 }
             });
         });
+
         return {
             nodes: [...namespaceList, ...deploymentList, ...namespaceEdgeNodes],
             edges: getEdges(configObj),

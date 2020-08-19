@@ -1,25 +1,24 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import * as Icon from 'react-feather';
 import { connect } from 'react-redux';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
+import { capitalize } from 'lodash';
 import { createStructuredSelector } from 'reselect';
+
 import { types as deploymentTypes } from 'reducers/deployments';
 import { actions as pageActions } from 'reducers/network/page';
 import { selectors } from 'reducers';
 import { sortValue } from 'sorters/sorters';
-
+import { filterModes, filterLabels } from 'constants/networkFilterModes';
+import { getNetworkFlows } from 'utils/networkGraphUtils';
 import Panel from 'Components/Panel';
 import Loader from 'Components/Loader';
 import TablePagination from 'Components/TablePagination';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Table, { rtTrActionsClassName } from 'Components/Table';
 import RowActionButton from 'Components/RowActionButton';
-import { filterModes, filterLabels } from 'constants/networkFilterModes';
-
-import * as Icon from 'react-feather';
-import { capitalize } from 'lodash';
-
 import wizardStages from '../wizardStages';
 
 class NamespaceDetails extends Component {
@@ -120,9 +119,10 @@ class NamespaceDetails extends Component {
             {
                 Header: `${filterStateString} Flows`,
                 accessor: 'data.edges',
-                Cell: ({ value }) => (
-                    <span>{value.filter(({ data }) => data.destNodeId).length}</span>
-                ),
+                Cell: ({ value }) => {
+                    const { networkFlows } = getNetworkFlows(value, filterState);
+                    return <span>{networkFlows.length}</span>;
+                },
                 sortMethod: sortValue,
             },
             {
