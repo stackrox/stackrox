@@ -25,6 +25,10 @@ func (b *graphBuilder) init(deployments []*storage.Deployment, namespacesByID ma
 	b.namespacesByName = make(map[string]*storage.NamespaceMetadata)
 	b.deploymentsByNS = make(map[*storage.NamespaceMetadata][]*node)
 
+	for _, ns := range namespacesByID {
+		b.namespacesByName[ns.GetName()] = ns
+	}
+
 	for _, deployment := range deployments {
 		node := newNode(deployment)
 		b.allDeployments = append(b.allDeployments, node)
