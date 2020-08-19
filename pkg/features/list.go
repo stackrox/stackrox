@@ -26,7 +26,7 @@ var (
 	ClusterHealthMonitoring = registerFeature("Enable cluster health monitoring", "ROX_CLUSTER_HEALTH_MONITORING", true)
 
 	// SupportSlimCollectorMode enables support for retrieving slim Collector bundles from central.
-	SupportSlimCollectorMode = registerFeature("Support slim Collector mode", "ROX_SUPPORT_SLIM_COLLECTOR_MODE", false)
+	SupportSlimCollectorMode = registerFeature("Support slim Collector mode", "ROX_SUPPORT_SLIM_COLLECTOR_MODE", true)
 
 	// AwsSecurityHubIntegration enables the AWS Security Hub Integration UI.
 	AwsSecurityHubIntegration = registerFeature("Show AWS Security Hub Integration in UI", "ROX_AWS_SECURITY_HUB_INTEGRATION", false)

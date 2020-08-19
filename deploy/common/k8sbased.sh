@@ -273,12 +273,18 @@ function launch_sensor {
         extra_config+=("--collector-image=${COLLECTOR_IMAGE_REPO}")
     fi
 
-    # For now the CI setup requires non-slim collectors.
-    IS_CENTRAL_ENABLED="$(get_central_feature_flag_enabled "$API_ENDPOINT" ROX_SUPPORT_SLIM_COLLECTOR_MODE)"
-    if [[ "${IS_CENTRAL_ENABLED}" == "true" ]]; then
-        extra_config+=("--slim-collector=false")
-        extra_json_config+=', "slimCollector": false'
-    fi
+    # Disabled this special-case for now.
+    # Shall be completely removed when the ROX_SUPPORT_SLIM_COLLECTOR_MODE feature flag is removed.
+    #
+    # Let's see if CI works with slim images now (give that slim collector images are now being published to docker.io
+    # and collector has its bootstrapping timeout increased).
+    #
+    # # For now the CI setup requires non-slim collectors.
+    # IS_CENTRAL_ENABLED="$(get_central_feature_flag_enabled "$API_ENDPOINT" ROX_SUPPORT_SLIM_COLLECTOR_MODE)"
+    # if [[ "${IS_CENTRAL_ENABLED}" == "true" ]]; then
+    #     extra_config+=("--slim-collector=false")
+    #     extra_json_config+=', "slimCollector": false'
+    # fi
 
     # Delete path
     rm -rf "$k8s_dir/sensor-deploy"
