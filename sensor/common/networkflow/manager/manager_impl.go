@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -195,6 +196,7 @@ func (m *networkFlowManager) enrichAndSend() {
 	protoToSend := &central.NetworkFlowUpdate{
 		Updated:          updatedConns,
 		UpdatedEndpoints: updatedEndpoints,
+		Time:             types.TimestampNow(),
 	}
 
 	metrics.IncrementTotalNetworkFlowsSentCounter(clusterid.Get(), len(protoToSend.Updated))

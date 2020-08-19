@@ -19,7 +19,7 @@ type flowStoreUpdaterImpl struct {
 func (s *flowStoreUpdaterImpl) update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *types.Timestamp) error {
 	updatedFlows := make(map[networkFlowProperties]timestamp.MicroTS, len(newFlows))
 
-	// Add existing untermintated flows from the store if this is the first run.
+	// Add existing unterminated flows from the store if this is the first run.
 	if s.isFirst {
 		if err := s.addExistingNonTerminatedFlows(ctx, updatedFlows); err != nil {
 			return err
