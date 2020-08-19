@@ -269,6 +269,18 @@ const styles = [
         },
     },
     {
+        selector: 'edge.hovered',
+        style: {
+            opacity: 1,
+            color: 'hsl(228, 56%, 63%)',
+            'line-color': 'hsl(228, 56%, 63%)',
+            'text-border-color': 'hsl(228, 56%, 63%)',
+            'overlay-padding': '3px',
+            'mid-source-arrow-color': 'hsl(228, 56%, 63%)',
+            'mid-target-arrow-color': 'hsl(228, 56%, 63%)',
+        },
+    },
+    {
         selector: ':active',
         style: {
             'overlay-padding': '3px',

@@ -32,8 +32,12 @@ const EdgeTooltipOverlay = ({
                                 isBidirectional ? 'Bidirectional' : 'Unidirectional'
                             } Connection`}
                         >
-                            <TooltipFieldValue key={source} field="Source" value={source} />
-                            <TooltipFieldValue key={target} field="Target" value={target} />
+                            {!isBidirectional && (
+                                <>
+                                    <TooltipFieldValue key={source} field="Source" value={source} />
+                                    <TooltipFieldValue key={target} field="Target" value={target} />
+                                </>
+                            )}
                         </TooltipCardSection>
                     </div>
                     {showPortsAndProtocols && (

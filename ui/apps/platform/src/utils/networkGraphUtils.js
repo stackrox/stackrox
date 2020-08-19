@@ -6,7 +6,7 @@ import entityTypes from 'constants/entityTypes';
 import { networkTraffic, networkConnections } from 'constants/networkGraph';
 import { filterModes } from 'constants/networkFilterModes';
 
-const edgeTypes = {
+export const edgeTypes = {
     NAMESPACE_EDGE: 'NAMESPACE_EDGE',
     NODE_TO_NODE_EDGE: 'NODE_TO_NODE_EDGE',
     NODE_TO_NAMESPACE_EDGE: 'NODE_TO_NAMESPACE_EDGE',
@@ -234,6 +234,7 @@ export const getNamespaceEdges = ({
     nodeSideMap,
     selectedNode,
     hoveredNode,
+    hoveredEdge,
 }) => {
     const visitedNodeLinks = {};
     const disallowedNamespaceLinks = {};
@@ -346,6 +347,11 @@ export const getNamespaceEdges = ({
             numAllowedBidirectionalLinks,
             numAllowedUnidirectionalLinks,
         } = namespaceLinks[namespaceLinkKey];
+        const isHoveredEdge =
+            (hoveredEdge?.sourceNodeNamespace === sourceNS &&
+                hoveredEdge?.targetNodeNamespace === targetNS) ||
+            (hoveredEdge?.targetNodeNamespace === sourceNS &&
+                hoveredEdge?.sourceNodeNamespace === targetNS);
 
         const isNamespaceActive = activeNamespaceLinks[namespaceLinkKey];
         const isNamespaceEdgeActive = filterState !== filterModes.allowed && isNamespaceActive;
@@ -355,6 +361,7 @@ export const getNamespaceEdges = ({
             namespace: true,
             active: isNamespaceEdgeActive,
             disallowed: isNamespaceEdgeActive && isNamespaceEdgeDisallowed,
+            hovered: isHoveredEdge,
         });
 
         const { source, target } = getSideMap(sourceNS, targetNS, nodeSideMap) || {
@@ -366,6 +373,8 @@ export const getNamespaceEdges = ({
             data: {
                 source,
                 target,
+                sourceNodeNamespace: sourceNS,
+                targetNodeNamespace: targetNS,
                 numBidirectionalLinks,
                 numUnidirectionalLinks,
                 numActiveBidirectionalLinks,
@@ -395,6 +404,7 @@ export const getEdgesFromNode = ({
     nodeSideMap,
     hoveredNode,
     selectedNode,
+    hoveredEdge,
 }) => {
     // to prevent rerendering of duplicate edges
     const nodeLinks = {};
@@ -455,11 +465,16 @@ export const getEdgesFromNode = ({
             const nodeLinkKey = getSourceTargetKey(source, target);
             const portsAndProtocols = linkPortsAndProtocols[nodeLinkKey] || [];
 
+            // if the edge is between two deployments in the same namespace
             if (inSameNamespace) {
                 if (!nodeLinks[nodeLinkKey]) {
                     const classes = getClasses({
                         ...coreClasses,
                         ...directionalClasses,
+                        // if the edge is in the same namespace, it's hovered when the source/target lines up
+                        hovered:
+                            hoveredEdge?.sourceNodeId === source &&
+                            hoveredEdge?.targetNodeId === target,
                     });
                     nodeLinks[nodeLinkKey] = {
                         data: {
@@ -488,6 +503,10 @@ export const getEdgesFromNode = ({
                     nodeLinks[nodeLinkKey].classes = getClasses({
                         ...coreClasses,
                         bidirectional: true,
+                        // if the edge is bidirectional, it means the source/target is backwards if hovered
+                        hovered:
+                            hoveredEdge?.targetNodeId === source &&
+                            hoveredEdge?.sourceNodeId === target,
                     });
                 }
             } else {
@@ -506,6 +525,26 @@ export const getEdgesFromNode = ({
                 const innerSourceEdgeKey = getSourceTargetKey(source, sourceNSSide);
                 const innerTargetEdgeKey = getSourceTargetKey(targetNSSide, target);
 
+                // if the hovered edge is a namespace edge, it hovers all the edges connected to the namespaces
+                const isInnerNamespaceEdge =
+                    isNamespaceEdge(hoveredEdge) &&
+                    ((hoveredEdge?.sourceNodeNamespace === sourceNS &&
+                        hoveredEdge?.targetNodeNamespace === targetNS) ||
+                        (hoveredEdge?.sourceNodeNamespace === targetNS &&
+                            hoveredEdge?.targetNodeNamespace === sourceNS));
+                // if this edge is to the source namespace side, it's hovered when the source is the same
+                const isInnerSourceEdgeHovered =
+                    isInnerNamespaceEdge ||
+                    (isNodeToNamespaceEdge(hoveredEdge) &&
+                        (hoveredEdge?.sourceNodeId === source ||
+                            hoveredEdge?.targetNodeId === source));
+                // if this edge is to the target namespace side, it's hovered when the target is the same
+                const isInnerTargetEdgeHovered =
+                    isInnerNamespaceEdge ||
+                    (isNodeToNamespaceEdge(hoveredEdge) &&
+                        (hoveredEdge?.targetNodeId === target ||
+                            hoveredEdge?.sourceNodeId === target));
+
                 if (!nodeLinks[innerSourceEdgeKey]) {
                     // if the inner edge from source/target to namespace is in the same namespace as selected
                     const classes = getClasses({
@@ -513,14 +552,15 @@ export const getEdgesFromNode = ({
                         ...directionalClasses,
                         inner: true,
                         withinNS: isWithinSourceNS,
+                        hovered: isInnerSourceEdgeHovered,
                     });
                     // Edge from source deployment to it's namespace edge
                     nodeLinks[innerSourceEdgeKey] = {
                         data: {
-                            source,
-                            target: sourceNSSide,
                             destNodeId,
                             destNodeName,
+                            source,
+                            target: sourceNSSide,
                             destNodeNamespace,
                             sourceNodeId,
                             sourceNodeName,
@@ -549,6 +589,7 @@ export const getEdgesFromNode = ({
                     nodeLinks[innerSourceEdgeKey].classes = getClasses({
                         ...coreClasses,
                         bidirectional: true,
+                        hovered: isInnerSourceEdgeHovered,
                     });
                 }
 
@@ -558,6 +599,7 @@ export const getEdgesFromNode = ({
                         ...directionalClasses,
                         inner: true,
                         withinNS: isWithinTargetNS,
+                        hovered: isInnerTargetEdgeHovered,
                     });
 
                     // Edge from namespace edge to target deployment
@@ -594,6 +636,7 @@ export const getEdgesFromNode = ({
                     nodeLinks[innerTargetEdgeKey].classes = getClasses({
                         ...coreClasses,
                         bidirectional: true,
+                        hovered: isInnerTargetEdgeHovered,
                     });
                 }
             }
@@ -623,8 +666,7 @@ export const getDeploymentList = (filteredData, configObj = {}) => {
 
         const isSelected = !!(selectedNode?.id === entity.id);
         const isHovered = !!(hoveredNode?.id === entity.id);
-        const isBackground =
-            !(selectedNode === undefined && hoveredNode === undefined) && !isHovered && !isSelected;
+        const isBackground = !(!selectedNode && !hoveredNode) && !isHovered && !isSelected;
         const isNonIsolated = isNonIsolatedNode(datum);
         const isDisallowed =
             filterState !== filterModes.allowed && edges.some((edge) => edge.data.isDisallowed);
@@ -741,8 +783,7 @@ export const getNamespaceList = (filteredData, deploymentList, { hoveredNode, se
         const isActive = activeNamespaceList.includes(namespace);
         const isHovered = hoveredNode?.id === namespace || hoveredNode?.parent === namespace;
         const isSelected = selectedNode?.id === namespace || selectedNode?.parent === namespace;
-        const isBackground =
-            !(selectedNode === undefined && hoveredNode === undefined) && !isHovered && !isSelected;
+        const isBackground = !(!selectedNode && !hoveredNode) && !isHovered && !isSelected;
         const classes = getClasses({
             nsActive: isActive,
             nsSelected: isSelected,

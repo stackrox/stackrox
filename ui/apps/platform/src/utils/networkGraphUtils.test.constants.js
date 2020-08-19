@@ -559,7 +559,9 @@ export const namespaceEdges = [
         data: {
             count: 2,
             source: 'kube-system_right',
+            sourceNodeNamespace: 'kube-system',
             target: 'stackrox_left',
+            targetNodeNamespace: 'stackrox',
             numBidirectionalLinks: 0,
             numUnidirectionalLinks: 2,
             numActiveBidirectionalLinks: 0,

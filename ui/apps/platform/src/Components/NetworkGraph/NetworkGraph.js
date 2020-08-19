@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import Cytoscape from 'cytoscape';
 import CytoscapeComponent from 'react-cytoscapejs';
-import { throttle } from 'lodash';
+import { throttle, debounce, includes } from 'lodash';
 import popper from 'cytoscape-popper';
 /* Cannot use neither Tooltip nor HoverHint components as Cytoscape renders on
 canvas (no DOM elements). Instead using 'cytoscape-popper' and  special
@@ -36,6 +36,7 @@ import {
     getEdgesFromNode,
     getIngressPortsAndProtocols,
     getEgressPortsAndProtocols,
+    edgeTypes,
 } from 'utils/networkGraphUtils';
 import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 
@@ -66,7 +67,7 @@ const NetworkGraph = ({
     featureFlags,
 }) => {
     const [selectedNode, setSelectedNode] = useState();
-    const [hoveredNode, setHoveredNode] = useState();
+    const [hoveredElement, setHoveredElement] = useState();
     const [firstRenderFinished, setFirstRenderFinished] = useState(false);
     const nodeSideMapRef = useRef({});
     const zoomFontMapRef = useRef({});
@@ -92,12 +93,10 @@ const NetworkGraph = ({
     );
 
     function showTooltip(elm, component) {
-        if (!elm) {
+        if (!elm || !component || !cyRef) {
             return;
         }
-        if (tippyRef.current) {
-            tippyRef.current.destroy();
-        }
+        hideTooltip();
 
         try {
             const popperRef = elm.popperRef();
@@ -116,7 +115,7 @@ const NetworkGraph = ({
 
             tippyRef.current.show();
         } catch (err) {
-            hideTooltip();
+            mouseOutHandler();
         }
     }
 
@@ -134,7 +133,7 @@ const NetworkGraph = ({
             return;
         }
 
-        setHoveredNode(node);
+        setHoveredElement(node);
 
         const configObj = { ...getConfigObj(), hoveredNode: node };
         const edgesFromNode = getEdgesFromNode(configObj);
@@ -164,15 +163,19 @@ const NetworkGraph = ({
         children.removeClass('background');
     }
 
-    function nodeMouseOutHandler() {
-        setHoveredNode();
-    }
-
     function edgeHoverHandler(ev) {
         const edge = ev.target.data();
         const { id, portsAndProtocols } = edge;
         const edgeElm = cyRef.current.getElementById(id);
         let component;
+        if (
+            !cyRef ||
+            (edge.source === hoveredElement?.source && edge.target === hoveredElement?.target)
+        ) {
+            return;
+        }
+
+        setHoveredElement(edge);
 
         if (isNamespaceEdge(edge)) {
             const {
@@ -208,8 +211,24 @@ const NetworkGraph = ({
                 />
             );
         }
-
         showTooltip(edgeElm, component);
+    }
+
+    function mouseOutHandler() {
+        hideTooltip();
+        setHoveredElement();
+    }
+
+    function nodeMouseOutHandler() {
+        if (hoveredElement?.type === 'DEPLOYMENT') {
+            mouseOutHandler();
+        }
+    }
+
+    function edgeMouseOutHandler() {
+        if (includes(Object.values(edgeTypes), hoveredElement?.type)) {
+            mouseOutHandler();
+        }
     }
 
     function clickHandler(ev) {
@@ -315,9 +334,14 @@ const NetworkGraph = ({
     }
 
     function getConfigObj() {
+        const hoveredNode = hoveredElement?.type === 'DEPLOYMENT' ? hoveredElement : null;
+        const hoveredEdge = includes(Object.values(edgeTypes), hoveredElement?.type)
+            ? hoveredElement
+            : null;
         return {
             hoveredNode,
             selectedNode,
+            hoveredEdge,
             links,
             nodes,
             filterState,
@@ -477,14 +501,9 @@ const NetworkGraph = ({
             .off('click mouseover mouseout mousedown drag')
             .on('click', clickHandler)
             .on('mouseover', 'node', throttle(nodeHoverHandler, 100))
-            .on('mouseout', 'node', nodeMouseOutHandler)
-            .on('mouseout mousedown', 'node', () => {
-                hideTooltip();
-            })
-            .on('mouseover', 'edge', throttle(edgeHoverHandler, 100))
-            .on('mouseout mousedown', 'edge', () => {
-                hideTooltip();
-            })
+            .on('mouseout mousedown', 'node', debounce(nodeMouseOutHandler, 100))
+            .on('mouseover', 'edge', debounce(edgeHoverHandler, 200))
+            .on('mouseout mousedown', 'edge', debounce(edgeMouseOutHandler, 100))
             .on('drag', throttle(handleDrag, 100))
             .on('zoom', zoomHandler)
             .ready(() => {
