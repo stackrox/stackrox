@@ -47,9 +47,32 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 }
 
 func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.Image) (bool, error) {
+	// Attempt to short-circuit before checking registries.
+	if ctx.FetchOnlyIfMetadataEmpty() && image.GetMetadata() != nil {
+		return false, nil
+	}
+	if ctx.FetchOpt != ForceRefetch {
+		if metadataValue := e.metadataCache.Get(getRef(image)); metadataValue != nil {
+			e.metrics.IncrementMetadataCacheHit()
+			image.Metadata = metadataValue.(*storage.ImageMetadata).Clone()
+			return true, nil
+		}
+		e.metrics.IncrementMetadataCacheMiss()
+	}
+	if ctx.FetchOpt == NoExternalMetadata {
+		return false, nil
+	}
+
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error getting metadata for image: %s", image.GetName().GetFullName()))
-	for _, registry := range e.integrations.RegistrySet().GetAll() {
-		updated, err := e.enrichImageWithRegistry(ctx, image, registry)
+
+	registries := e.integrations.RegistrySet()
+	if registries.IsEmpty() {
+		errorList.AddError(errors.New("no image registries are integrated"))
+		return false, errorList.ToError()
+	}
+
+	for _, registry := range registries.GetAll() {
+		updated, err := e.enrichImageWithRegistry(image, registry)
 		if err != nil {
 			errorList.AddError(err)
 			continue
@@ -58,6 +81,11 @@ func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.
 			return true, nil
 		}
 	}
+
+	if len(errorList.ErrorStrings()) == 0 {
+		errorList.AddError(errors.New("no matching image registries found"))
+	}
+
 	return false, errorList.ToError()
 }
 
@@ -68,29 +96,11 @@ func getRef(image *storage.Image) string {
 	return image.GetName().GetFullName()
 }
 
-func (e *enricherImpl) enrichImageWithRegistry(ctx EnrichmentContext, image *storage.Image, registry registryTypes.ImageRegistry) (bool, error) {
+func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry registryTypes.ImageRegistry) (bool, error) {
 	if !registry.Global() {
 		return false, nil
 	}
 	if !registry.Match(image.GetName()) {
-		return false, nil
-	}
-
-	if ctx.FetchOnlyIfMetadataEmpty() && image.GetMetadata() != nil {
-		return false, nil
-	}
-
-	ref := getRef(image)
-	if ctx.FetchOpt != ForceRefetch {
-		if metadataValue := e.metadataCache.Get(ref); metadataValue != nil {
-			e.metrics.IncrementMetadataCacheHit()
-			image.Metadata = metadataValue.(*storage.ImageMetadata).Clone()
-			return true, nil
-		}
-		e.metrics.IncrementMetadataCacheMiss()
-	}
-
-	if ctx.FetchOpt == NoExternalMetadata {
 		return false, nil
 	}
 
@@ -102,7 +112,7 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx EnrichmentContext, image *sto
 	}
 	metadata.DataSource = registry.DataSource()
 	image.Metadata = metadata
-	e.metadataCache.Add(ref, metadata)
+	e.metadataCache.Add(getRef(image), metadata)
 	if image.GetId() == "" {
 		if digest := image.Metadata.GetV2().GetDigest(); digest != "" {
 			e.metadataCache.Add(digest, metadata)
@@ -115,8 +125,25 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx EnrichmentContext, image *sto
 }
 
 func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Image) (ScanResult, error) {
+	// Attempt to short-circuit before checking scanners.
+	if ctx.FetchOnlyIfScanEmpty() && image.GetScan() != nil {
+		return ScanNotDone, nil
+	}
+	if e.populateFromCache(ctx, image) {
+		return ScanSucceeded, nil
+	}
+	if ctx.FetchOpt == NoExternalMetadata {
+		return ScanNotDone, nil
+	}
+
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning image: %s", image.GetName().GetFullName()))
-	for _, scanner := range e.integrations.ScannerSet().GetAll() {
+	scanners := e.integrations.ScannerSet()
+	if scanners.IsEmpty() {
+		errorList.AddError(errors.New("no image scanners are integrated"))
+		return ScanNotDone, errorList.ToError()
+	}
+
+	for _, scanner := range scanners.GetAll() {
 		result, err := e.enrichImageWithScanner(ctx, image, scanner)
 		if err != nil {
 			errorList.AddError(err)
@@ -151,26 +178,10 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 		return ScanNotDone, nil
 	}
 
-	if ctx.FetchOnlyIfScanEmpty() && image.GetScan() != nil {
-		return ScanNotDone, nil
-	}
-
-	if e.populateFromCache(ctx, image) {
-		return ScanSucceeded, nil
-	}
-
-	if ctx.FetchOpt == NoExternalMetadata {
-		return ScanNotDone, nil
-	}
-
 	var scan *storage.ImageScan
 
 	if asyncScanner, ok := scanner.(scannerTypes.AsyncScanner); ok && ctx.UseNonBlockingCallsWherePossible {
 		_ = e.asyncRateLimiter.Wait(context.Background())
-
-		if e.populateFromCache(ctx, image) {
-			return ScanSucceeded, nil
-		}
 
 		var err error
 		scan, err = asyncScanner.GetOrTriggerScan(image)
@@ -181,10 +192,6 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 			return ScanTriggered, nil
 		}
 	} else {
-		if e.populateFromCache(ctx, image) {
-			return ScanSucceeded, nil
-		}
-
 		sema := scanner.MaxConcurrentScanSemaphore()
 		_ = sema.Acquire(context.Background(), 1)
 		defer sema.Release(1)

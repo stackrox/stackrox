@@ -12,6 +12,7 @@ type Set interface {
 	Match(image *storage.ImageName) bool
 	GetRegistryMetadataByImage(image *storage.Image) *types.Config
 
+	IsEmpty() bool
 	Clear()
 	UpdateImageIntegration(integration *storage.ImageIntegration) error
 	RemoveImageIntegration(id string) error

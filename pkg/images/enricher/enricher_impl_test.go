@@ -22,6 +22,7 @@ import (
 type fakeRegistryScanner struct {
 	requestedMetadata bool
 	requestedScan     bool
+	notMatch          bool
 }
 
 func (f *fakeRegistryScanner) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
@@ -57,7 +58,7 @@ func (f *fakeRegistryScanner) GetScan(image *storage.Image) (*storage.ImageScan,
 }
 
 func (f *fakeRegistryScanner) Match(image *storage.ImageName) bool {
-	return true
+	return !f.notMatch
 }
 
 func (f *fakeRegistryScanner) Test() error {
@@ -93,11 +94,13 @@ func (f *fakeCVESuppressor) EnrichImageWithSuppressedCVEs(image *storage.Image) 
 
 func TestEnricherFlow(t *testing.T) {
 	cases := []struct {
-		name            string
-		ctx             EnrichmentContext
-		inMetadataCache bool
-		inScanCache     bool
-		image           *storage.Image
+		name                 string
+		ctx                  EnrichmentContext
+		inMetadataCache      bool
+		inScanCache          bool
+		shortCircuitRegistry bool
+		shortCircuitScanner  bool
+		image                *storage.Image
 
 		fsr    *fakeRegistryScanner
 		result EnrichmentResult
@@ -125,9 +128,11 @@ func TestEnricherFlow(t *testing.T) {
 			ctx: EnrichmentContext{
 				FetchOpt: UseCachesIfPossible,
 			},
-			inMetadataCache: true,
-			inScanCache:     true,
-			image:           &storage.Image{Id: "id"},
+			inMetadataCache:      true,
+			inScanCache:          true,
+			shortCircuitRegistry: true,
+			shortCircuitScanner:  true,
+			image:                &storage.Image{Id: "id"},
 
 			fsr: &fakeRegistryScanner{
 				requestedMetadata: false,
@@ -161,9 +166,10 @@ func TestEnricherFlow(t *testing.T) {
 			ctx: EnrichmentContext{
 				FetchOpt: ForceRefetchScansOnly,
 			},
-			inMetadataCache: true,
-			inScanCache:     true,
-			image:           &storage.Image{Id: "id"},
+			inMetadataCache:      true,
+			inScanCache:          true,
+			shortCircuitRegistry: true,
+			image:                &storage.Image{Id: "id"},
 
 			fsr: &fakeRegistryScanner{
 				requestedMetadata: false,
@@ -179,9 +185,11 @@ func TestEnricherFlow(t *testing.T) {
 			ctx: EnrichmentContext{
 				FetchOpt: NoExternalMetadata,
 			},
-			inMetadataCache: false,
-			inScanCache:     false,
-			image:           &storage.Image{Id: "id"},
+			inMetadataCache:      false,
+			inScanCache:          false,
+			shortCircuitRegistry: true,
+			shortCircuitScanner:  true,
+			image:                &storage.Image{Id: "id"},
 
 			fsr: &fakeRegistryScanner{
 				requestedMetadata: false,
@@ -193,12 +201,14 @@ func TestEnricherFlow(t *testing.T) {
 			},
 		},
 		{
-			name: "data not in cache, but iamge already has metadata and scan",
+			name: "data not in cache, but image already has metadata and scan",
 			ctx: EnrichmentContext{
 				FetchOpt: UseCachesIfPossible,
 			},
-			inMetadataCache: false,
-			inScanCache:     false,
+			inMetadataCache:      false,
+			inScanCache:          false,
+			shortCircuitRegistry: true,
+			shortCircuitScanner:  true,
 			image: &storage.Image{
 				Id:       "id",
 				Metadata: &storage.ImageMetadata{},
@@ -239,8 +249,10 @@ func TestEnricherFlow(t *testing.T) {
 			ctx: EnrichmentContext{
 				FetchOpt: IgnoreExistingImages,
 			},
-			inMetadataCache: true,
-			inScanCache:     true,
+			inMetadataCache:      true,
+			inScanCache:          true,
+			shortCircuitRegistry: true,
+			shortCircuitScanner:  true,
 			image: &storage.Image{
 				Id:       "id",
 				Metadata: &storage.ImageMetadata{},
@@ -262,16 +274,22 @@ func TestEnricherFlow(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
+			set := mocks.NewMockSet(ctrl)
+
 			fsr := &fakeRegistryScanner{}
 			registrySet := mocks2.NewMockSet(ctrl)
-			registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr})
+			if !c.shortCircuitRegistry {
+				registrySet.EXPECT().IsEmpty().Return(false)
+				registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr})
+				set.EXPECT().RegistrySet().Return(registrySet)
+			}
 
 			scannerSet := mocks3.NewMockSet(ctrl)
-			scannerSet.EXPECT().GetAll().Return([]types2.ImageScanner{fsr})
-
-			set := mocks.NewMockSet(ctrl)
-			set.EXPECT().RegistrySet().Return(registrySet)
-			set.EXPECT().ScannerSet().Return(scannerSet)
+			if !c.shortCircuitScanner {
+				scannerSet.EXPECT().IsEmpty().Return(false)
+				scannerSet.EXPECT().GetAll().Return([]types2.ImageScanner{fsr})
+				set.EXPECT().ScannerSet().Return(scannerSet)
+			}
 
 			enricherImpl := &enricherImpl{
 				cves:            &fakeCVESuppressor{},
@@ -305,9 +323,11 @@ func TestCVESuppression(t *testing.T) {
 
 	fsr := &fakeRegistryScanner{}
 	registrySet := mocks2.NewMockSet(ctrl)
+	registrySet.EXPECT().IsEmpty().Return(false)
 	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr})
 
 	scannerSet := mocks3.NewMockSet(ctrl)
+	scannerSet.EXPECT().IsEmpty().Return(false)
 	scannerSet.EXPECT().GetAll().Return([]types2.ImageScanner{fsr})
 
 	set := mocks.NewMockSet(ctrl)
@@ -328,6 +348,143 @@ func TestCVESuppression(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, results.ImageUpdated)
 	assert.True(t, img.Scan.Components[0].Vulns[0].Suppressed)
+}
+
+func TestZeroIntegrations(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	registrySet := mocks2.NewMockSet(ctrl)
+	registrySet.EXPECT().IsEmpty().Return(true)
+
+	scannerSet := mocks3.NewMockSet(ctrl)
+	scannerSet.EXPECT().IsEmpty().Return(true)
+
+	set := mocks.NewMockSet(ctrl)
+	set.EXPECT().RegistrySet().Return(registrySet)
+	set.EXPECT().ScannerSet().Return(scannerSet)
+
+	enricherImpl := &enricherImpl{
+		cves:            &fakeCVESuppressor{},
+		integrations:    set,
+		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
+		metadataCache:   expiringcache.NewExpiringCache(1 * time.Minute),
+		scanCache:       expiringcache.NewExpiringCache(1 * time.Minute),
+		metrics:         newMetrics(pkgMetrics.CentralSubsystem),
+	}
+
+	img := &storage.Image{Id: "id"}
+	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
+	assert.Error(t, err)
+	expectedErrMsg := "image enrichment errors: [error getting metadata for image:  error: no image registries are integrated, error scanning image:  error: no image scanners are integrated]"
+	assert.Equal(t, expectedErrMsg, err.Error())
+	assert.False(t, results.ImageUpdated)
+	assert.Equal(t, ScanNotDone, results.ScanResult)
+}
+
+func TestZeroRegistryIntegrations(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	registrySet := mocks2.NewMockSet(ctrl)
+	registrySet.EXPECT().IsEmpty().Return(true)
+
+	fsr := &fakeRegistryScanner{}
+	scannerSet := mocks3.NewMockSet(ctrl)
+	scannerSet.EXPECT().IsEmpty().Return(false)
+	scannerSet.EXPECT().GetAll().Return([]types2.ImageScanner{fsr})
+
+	set := mocks.NewMockSet(ctrl)
+	set.EXPECT().RegistrySet().Return(registrySet)
+	set.EXPECT().ScannerSet().Return(scannerSet)
+
+	enricherImpl := &enricherImpl{
+		cves:            &fakeCVESuppressor{},
+		integrations:    set,
+		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
+		metadataCache:   expiringcache.NewExpiringCache(1 * time.Minute),
+		scanCache:       expiringcache.NewExpiringCache(1 * time.Minute),
+		metrics:         newMetrics(pkgMetrics.CentralSubsystem),
+	}
+
+	img := &storage.Image{Id: "id"}
+	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
+	assert.Error(t, err)
+	expectedErrMsg := "image enrichment error: error getting metadata for image:  error: no image registries are integrated"
+	assert.Equal(t, expectedErrMsg, err.Error())
+	assert.True(t, results.ImageUpdated)
+	assert.Equal(t, ScanSucceeded, results.ScanResult)
+}
+
+func TestNoMatchingRegistryIntegration(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	fsr := &fakeRegistryScanner{
+		notMatch: true,
+	}
+	registrySet := mocks2.NewMockSet(ctrl)
+	registrySet.EXPECT().IsEmpty().Return(false)
+	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr})
+
+	scannerSet := mocks3.NewMockSet(ctrl)
+	scannerSet.EXPECT().IsEmpty().Return(false)
+	scannerSet.EXPECT().GetAll().Return([]types2.ImageScanner{fsr})
+
+	set := mocks.NewMockSet(ctrl)
+	set.EXPECT().RegistrySet().Return(registrySet)
+	set.EXPECT().ScannerSet().Return(scannerSet)
+
+	enricherImpl := &enricherImpl{
+		cves:            &fakeCVESuppressor{},
+		integrations:    set,
+		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
+		metadataCache:   expiringcache.NewExpiringCache(1 * time.Minute),
+		scanCache:       expiringcache.NewExpiringCache(1 * time.Minute),
+		metrics:         newMetrics(pkgMetrics.CentralSubsystem),
+	}
+
+	img := &storage.Image{Id: "id"}
+	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
+	assert.Error(t, err)
+	expectedErrMsg := "image enrichment error: error getting metadata for image:  error: no matching image registries found"
+	assert.Equal(t, expectedErrMsg, err.Error())
+	assert.False(t, results.ImageUpdated)
+	assert.Equal(t, ScanNotDone, results.ScanResult)
+}
+
+func TestZeroScannerIntegrations(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	fsr := &fakeRegistryScanner{}
+	registrySet := mocks2.NewMockSet(ctrl)
+	registrySet.EXPECT().IsEmpty().Return(false)
+	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr})
+
+	scannerSet := mocks3.NewMockSet(ctrl)
+	scannerSet.EXPECT().IsEmpty().Return(true)
+
+	set := mocks.NewMockSet(ctrl)
+	set.EXPECT().RegistrySet().Return(registrySet)
+	set.EXPECT().ScannerSet().Return(scannerSet)
+
+	enricherImpl := &enricherImpl{
+		cves:            &fakeCVESuppressor{},
+		integrations:    set,
+		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
+		metadataCache:   expiringcache.NewExpiringCache(1 * time.Minute),
+		scanCache:       expiringcache.NewExpiringCache(1 * time.Minute),
+		metrics:         newMetrics(pkgMetrics.CentralSubsystem),
+	}
+
+	img := &storage.Image{Id: "id"}
+	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
+	assert.Error(t, err)
+	expectedErrMsg := "image enrichment error: error scanning image:  error: no image scanners are integrated"
+	assert.Equal(t, expectedErrMsg, err.Error())
+	assert.True(t, results.ImageUpdated)
+	assert.Equal(t, ScanNotDone, results.ScanResult)
 }
 
 func TestFillScanStats(t *testing.T) {

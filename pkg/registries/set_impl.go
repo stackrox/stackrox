@@ -83,6 +83,14 @@ func (e *setImpl) Match(image *storage.ImageName) bool {
 	return false
 }
 
+// IsEmpty returns whether the set is empty.
+func (e *setImpl) IsEmpty() bool {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+
+	return len(e.integrations) == 0
+}
+
 // Clear removes all present integrations.
 func (e *setImpl) Clear() {
 	e.lock.Lock()

@@ -20,6 +20,10 @@ All notable changes to this project that require documentation updates will be d
 - UI: When selecting a deployment in the Network Graph, the Network Flows table will now show some additional information: traffic, deployment name,
   namespace name, ports, protocols, connection type (ROX-5219)
 - In `v1/clusters` response, `healthStatus.lastContact` field is added that represents last time sensor health was probed (aka last sensor contact). `status.lastContact` will be deprecated starting release 49.0, hence use `healthStatus.lastContact` instead.
+- When attempting to scan an image, we now send back error messages under any of the following conditions:
+  - no registries integrated
+  - no matching registries found
+  - no scanners integrated
 
 ## [47.0]
 - Configuration Management tables (except for Controls and Policies) are now paginated through the API, rather than loading all rows into the browser, for better performance in large environments (ROX-5067).

@@ -23,7 +23,7 @@ func (r *registryWithDataSource) DataSource() *storage.DataSource {
 func (e *factoryImpl) CreateRegistry(source *storage.ImageIntegration) (types.ImageRegistry, error) {
 	creator, exists := e.creators[source.GetType()]
 	if !exists {
-		return nil, fmt.Errorf("Registry with type '%s' does not exist", source.GetType())
+		return nil, fmt.Errorf("registry with type '%s' does not exist", source.GetType())
 	}
 	integration, err := creator(source)
 	if err != nil {

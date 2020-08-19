@@ -10,6 +10,7 @@ import (
 type Set interface {
 	GetAll() []types.ImageScanner
 
+	IsEmpty() bool
 	Clear()
 	UpdateImageIntegration(integration *storage.ImageIntegration) error
 	RemoveImageIntegration(id string) error

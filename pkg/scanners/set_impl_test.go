@@ -110,6 +110,8 @@ func TestSet(t *testing.T) {
 	mockFactory := mocks.NewMockFactory(ctrl)
 	s := NewSet(mockFactory)
 
+	assert.True(t, s.IsEmpty())
+
 	goodIntegration := &storage.ImageIntegration{Id: "GOOD"}
 	mockFactory.EXPECT().CreateScanner(goodIntegration).Return(&fakeScanner{typ: "FAKE"}, nil).Times(2)
 
@@ -119,17 +121,19 @@ func TestSet(t *testing.T) {
 
 	err := s.UpdateImageIntegration(goodIntegration)
 	require.Nil(t, err)
+	assert.False(t, s.IsEmpty())
 
 	err = s.UpdateImageIntegration(badIntegration)
 	require.NotNil(t, err)
 	assert.Equal(t, errText, err.Error())
+	assert.False(t, s.IsEmpty())
 
 	all := s.GetAll()
 	assert.Len(t, all, 1)
 	assert.Equal(t, "FAKE", all[0].Type())
 
 	s.Clear()
-	assert.Len(t, s.GetAll(), 0)
+	assert.True(t, s.IsEmpty())
 
 	err = s.UpdateImageIntegration(goodIntegration)
 	require.Nil(t, err)
@@ -139,6 +143,6 @@ func TestSet(t *testing.T) {
 
 	err = s.RemoveImageIntegration(goodIntegration.GetId())
 	require.Nil(t, err)
-	assert.Len(t, s.GetAll(), 0)
+	assert.True(t, s.IsEmpty())
 
 }

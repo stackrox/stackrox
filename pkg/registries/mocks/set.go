@@ -76,6 +76,20 @@ func (mr *MockSetMockRecorder) GetRegistryMetadataByImage(image interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistryMetadataByImage", reflect.TypeOf((*MockSet)(nil).GetRegistryMetadataByImage), image)
 }
 
+// IsEmpty mocks base method
+func (m *MockSet) IsEmpty() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsEmpty")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsEmpty indicates an expected call of IsEmpty
+func (mr *MockSetMockRecorder) IsEmpty() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEmpty", reflect.TypeOf((*MockSet)(nil).IsEmpty))
+}
+
 // Clear mocks base method
 func (m *MockSet) Clear() {
 	m.ctrl.T.Helper()
