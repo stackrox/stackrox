@@ -71,7 +71,7 @@ test_collector_image_references_in_deployment_bundles() {
     fi
 
     # Verify that generated bundle references the expected collector image.
-    COLLECTOR_IMAGE_TAG="$(grep "image: docker.io/stackrox/collector" "sensor-${CLUSTER_NAME}/sensor.yaml" | sed -e 's/[^:]*: [^:]*:\(.*\)$/\1/;')"
+    COLLECTOR_IMAGE_TAG="$(egrep 'image: \S+/collector' "sensor-${CLUSTER_NAME}/sensor.yaml" | sed -e 's/[^:]*: [^:]*:\(.*\)$/\1/;')"
     COLLECTOR_IMAGE_TAG_SUFFIX="$(echo "$COLLECTOR_IMAGE_TAG" | sed -e 's/.*-\([^-]*\)$/\1/;')"
 
     if [ "$COLLECTOR_IMAGE_TAG_SUFFIX" == "$EXPECTED_IMAGE_TAG" ]; then
@@ -87,7 +87,7 @@ test_collector_image_references_in_deployment_bundles() {
     # Verify that refetching deployment bundle for newly created cluster works as expected (i.e. that the bundle references the expected collector image).
     OUTPUT="$(roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
     sensor get-bundle --output-dir="sensor-${CLUSTER_NAME}-refetched" "$CLUSTER_NAME" 2>&1)"
-    COLLECTOR_IMAGE_TAG="$(grep "image: docker.io/stackrox/collector" "sensor-${CLUSTER_NAME}-refetched/sensor.yaml" | sed -e 's/[^:]*: [^:]*:\(.*\)$/\1/;')"
+    COLLECTOR_IMAGE_TAG="$(egrep 'image: \S+/collector' "sensor-${CLUSTER_NAME}-refetched/sensor.yaml" | sed -e 's/[^:]*: [^:]*:\(.*\)$/\1/;')"
     COLLECTOR_IMAGE_TAG_SUFFIX="$(echo "$COLLECTOR_IMAGE_TAG" | sed -e 's/.*-\([^-]*\)$/\1/;')"
 
     if [ "$COLLECTOR_IMAGE_TAG_SUFFIX" == "$EXPECTED_IMAGE_TAG" ]; then
