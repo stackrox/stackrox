@@ -29,5 +29,5 @@ func DialTLS(ctx context.Context, endpoint string, tlsClientConf *tls.Config, op
 // optionally using TLS for securing the transport layer and the given dial options.
 // Note: if tlsClientConf is nil, the options *must* contain `WithInsecure()`, otherwise the connection will fail.
 func DialTLSWebSocket(ctx context.Context, endpoint string, tlsClientConf *tls.Config, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	return client.ConnectViaWSProxy(ctx, endpoint, tlsClientConf, client.DialOpts(opts...))
+	return client.ConnectViaProxy(ctx, endpoint, tlsClientConf, client.DialOpts(opts...), client.UseWebSocket(true))
 }

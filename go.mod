@@ -3,8 +3,8 @@ module github.com/stackrox/rox
 go 1.13
 
 require (
-	cloud.google.com/go v0.47.0
-	cloud.google.com/go/storage v1.1.0
+	cloud.google.com/go v0.62.0
+	cloud.google.com/go/storage v1.10.0
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Masterminds/sprig v0.0.0-20190301161902-9f8fceff796f
 	github.com/NYTimes/gziphandler v1.1.1
@@ -36,11 +36,11 @@ require (
 	github.com/gobuffalo/packr v1.30.1
 	github.com/godbus/dbus/v5 v5.0.3
 	github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d
-	github.com/golang/mock v1.3.1
-	github.com/golang/protobuf v1.3.5
+	github.com/golang/mock v1.4.3
+	github.com/golang/protobuf v1.4.2
 	github.com/golangci/golangci-lint v1.27.1-0.20200616100528-38d298c2c859
 	github.com/google/certificate-transparency-go v1.0.21
-	github.com/google/go-cmp v0.4.0
+	github.com/google/go-cmp v0.5.1
 	github.com/googleapis/gnostic v0.2.0
 	github.com/gorilla/schema v1.1.0
 	github.com/graph-gophers/graphql-go v0.0.0-20190513003547-158e7b876106
@@ -85,17 +85,17 @@ require (
 	go.etcd.io/bbolt v1.3.5
 	go.uber.org/atomic v1.6.0
 	go.uber.org/zap v1.15.1-0.20200717220000-53a387079b46
-	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
-	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
-	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
-	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
-	golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/net v0.0.0-20200707034311-ab3426394381
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
+	golang.org/x/sys v0.0.0-20200803210538-64077c9b5642
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
-	golang.org/x/tools v0.0.0-20200519015757-0d0afa43d58a
-	golang.stackrox.io/grpc-http1 v0.1.0
-	google.golang.org/api v0.13.0
-	google.golang.org/genproto v0.0.0-20191108220845-16a3f7862a1a
-	google.golang.org/grpc v1.29.1
+	golang.org/x/tools v0.0.0-20200804011535-6c149bb5ef0d
+	golang.stackrox.io/grpc-http1 v0.2.0
+	google.golang.org/api v0.30.0
+	google.golang.org/genproto v0.0.0-20200804131852-c06518451d9c
+	google.golang.org/grpc v1.31.0
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.3.1
 	gopkg.in/yaml.v2 v2.3.0
@@ -129,7 +129,6 @@ replace (
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f
 	golang.org/x/oauth2 => github.com/misberner/oauth2 v0.0.0-20200208204620-d153c71f6b8d
-	golang.stackrox.io/grpc-http1 => github.com/stackrox/go-grpc-http1-websocket v0.0.0-20200616234304-48e6480d35e6
 	honnef.co/go/tools => honnef.co/go/tools v0.0.0-20200207073116-104ba5a2aac5
 
 	k8s.io/api => k8s.io/api v0.0.0-20191114100352-16d7abae0d2a
