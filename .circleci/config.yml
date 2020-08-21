@@ -1091,7 +1091,7 @@ commands:
                 name: Teardown Clair Scanner
                 command: |
                   ./scripts/ci/clair/teardown.sh qa-clair
-                
+
   run-qa-tests:
     parameters:
       cluster-id:
@@ -1755,7 +1755,7 @@ commands:
     description: "Prepare and save NPM dependencies cache"
     steps:
       - create-concatenated-ui-monorepo-lock:
-          output-filename: ui/monorepo.lock      
+          output-filename: ui/monorepo.lock
 
       - run:
           name: Calculate lock file digest
@@ -1777,7 +1777,7 @@ commands:
     description: "Restore NPM dependencies cache"
     steps:
       - create-concatenated-ui-monorepo-lock:
-          output-filename: ui/monorepo.lock      
+          output-filename: ui/monorepo.lock
 
       - restore_cache:
           name: Restore NPM dependencies cache
@@ -2572,6 +2572,7 @@ jobs:
       - ROX_POLICY_IMPORT_EXPORT: true
       - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
+      - ROX_NETWORK_FLOWS_SEARCH_FILTER_UI: true
 
     steps:
       - checkout
