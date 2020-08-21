@@ -696,16 +696,20 @@ class NetworkFlowTest extends BaseSpecification {
     private static getNode(String deploymentId, boolean withListenPorts, int timeoutSeconds = 90) {
         def t = new Timer(timeoutSeconds, 1)
 
+        NetworkGraphOuterClass.NetworkNode match = null
         while (t.IsValid()) {
             def graph = NetworkGraphService.getNetworkGraph()
             def node = NetworkGraphUtil.findDeploymentNode(graph, deploymentId)
+            if (node) {
+                match = node
+            }
             if (!node || (withListenPorts && !node?.entity?.deployment?.listenPortsCount)) {
                 continue
             }
             return node
         }
 
-        return null
+        return match
     }
 
     private static checkForEdge(String sourceId, String targetId, Timestamp since = null, int timeoutSeconds = 90) {
