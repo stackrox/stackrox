@@ -19,7 +19,7 @@ function RiskPageHeader({ autoFocusSearchInput, isViewFiltered, searchOptions })
                 placeholder="Add one or more resource filters"
                 autoFocus={autoFocusSearchInput}
             />
-            <CreatePolicyFromSearch />;
+            <CreatePolicyFromSearch />
         </PageHeader>
     );
 }

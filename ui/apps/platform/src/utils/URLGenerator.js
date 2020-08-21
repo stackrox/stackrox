@@ -6,6 +6,7 @@ import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import useCases from 'constants/useCaseTypes';
 import {
     nestedPaths as workflowPaths,
+    clustersPath,
     riskPath,
     secretsPath,
     urlEntityListTypes,
@@ -20,6 +21,11 @@ const defaultPathMap = {
 };
 
 const legacyPathMap = {
+    [useCases.CLUSTERS]: {
+        [pageTypes.ENTITY]: clustersPath,
+        [pageTypes.LIST]: '/main/clusters',
+        [pageTypes.DASHBOARD]: '/main/clusters',
+    },
     [useCases.RISK]: {
         [pageTypes.ENTITY]: riskPath,
         [pageTypes.LIST]: '/main/risk',
@@ -79,7 +85,9 @@ function generateURL(workflowState) {
     }
 
     // Add url params for legacy contexts
-    if (useCase === useCases.SECRET) {
+    if (useCase === useCases.CLUSTERS) {
+        params.clusterId = params.pageEntityId;
+    } else if (useCase === useCases.SECRET) {
         params.secretId = params.pageEntityId;
     } else if (useCase === useCases.RISK) {
         params.deploymentId = params.pageEntityId;

@@ -9,6 +9,7 @@ import {
     nestedPaths as workflowPaths,
     urlEntityListTypes,
     urlEntityTypes,
+    clustersPath,
     riskPath,
 } from '../routePaths';
 
@@ -100,17 +101,31 @@ function parseURL(location) {
         path: workflowPaths.DASHBOARD,
         exact: true,
     });
-    const riskParams = {
-        params: {
-            ...matchPath(pathname, {
-                path: riskPath,
-                exact: true,
-            }),
-            context: useCases.RISK,
-        },
-    };
 
-    const { params } = entityParams || listParams || dashboardParams || riskParams;
+    // check for legacy-Workflow sections
+    const matchedRiskParams = matchPath(pathname, {
+        path: riskPath,
+        exact: true,
+    });
+    const matchedClustersParams = matchPath(pathname, {
+        path: clustersPath,
+        exact: true,
+    });
+    const legacyParams = matchedRiskParams
+        ? {
+              params: {
+                  ...matchedRiskParams,
+                  context: useCases.RISK,
+              },
+          }
+        : {
+              params: {
+                  ...matchedClustersParams,
+                  context: useCases.CLUSTERS,
+              },
+          };
+
+    const { params } = entityParams || listParams || dashboardParams || legacyParams;
     const queryStr = search ? qs.parse(search, { ignoreQueryPrefix: true }) : {};
 
     const stateStackFromURLParams = paramsToStateStack(params) || [];

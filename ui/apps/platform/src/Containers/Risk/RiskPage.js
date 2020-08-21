@@ -50,7 +50,6 @@ const RiskPage = ({
             <section className="flex flex-1 flex-col h-full">
                 <div className="flex flex-1 flex-col">
                     <RiskPageHeader
-                        setSelectedDeploymentId={setSelectedDeploymentId}
                         isViewFiltered={isViewFiltered}
                         searchOptions={searchOptions}
                         autoFocusSearchInput={autoFocusSearchInput}

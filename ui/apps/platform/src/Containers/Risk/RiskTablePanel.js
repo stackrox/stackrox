@@ -11,13 +11,13 @@ import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { fetchDeployments, fetchDeploymentsCount } from 'services/DeploymentsService';
-import RiskTable from './RiskTable';
 import {
     filterAllowedSearch,
     convertToRestSearch,
     convertSortToGraphQLFormat,
     convertSortToRestFormat,
-} from './riskPageUtils';
+} from 'utils/searchUtils';
+import RiskTable from './RiskTable';
 
 const DEFAULT_RISK_SORT = [{ id: 'Priority', desc: false }];
 function RiskTablePanel({

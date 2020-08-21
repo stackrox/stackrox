@@ -1,0 +1,95 @@
+{
+    "cluster": {
+        "id": "e433ce11-1c00-4b36-a080-6d21a5782ed2",
+        "name": "remote",
+        "type": "KUBERNETES_CLUSTER",
+        "mainImage": "stackrox/main",
+        "collectorImage": "",
+        "centralApiEndpoint": "central.stackrox:443",
+        "runtimeSupport": false,
+        "collectionMethod": "KERNEL_MODULE",
+        "DEPRECATEDProviderMetadata": null,
+        "admissionController": false,
+        "admissionControllerUpdates": false,
+        "DEPRECATEDOrchestratorMetadata": null,
+        "status": {
+            "sensorVersion": "3.0.47.x-104-g2a7be2f021",
+            "lastContact": "2020-08-19T17:44:23.859543Z",
+            "providerMetadata": null,
+            "orchestratorMetadata": {
+                "version": "v1.14.8",
+                "buildDate": "2019-10-15T12:02:12Z",
+                "apiVersions": [
+                    "admissionregistration.k8s.io/v1beta1",
+                    "apiextensions.k8s.io/v1beta1",
+                    "apiregistration.k8s.io/v1",
+                    "apiregistration.k8s.io/v1beta1",
+                    "app.k8s.io/v1beta1",
+                    "apps/v1",
+                    "apps/v1beta1",
+                    "apps/v1beta2",
+                    "authentication.k8s.io/v1",
+                    "authentication.k8s.io/v1beta1",
+                    "authorization.k8s.io/v1",
+                    "authorization.k8s.io/v1beta1",
+                    "autoscaling/v1",
+                    "autoscaling/v2beta1",
+                    "autoscaling/v2beta2",
+                    "batch/v1",
+                    "batch/v1beta1",
+                    "certificates.k8s.io/v1beta1",
+                    "compose.docker.com/v1alpha3",
+                    "compose.docker.com/v1beta1",
+                    "compose.docker.com/v1beta2",
+                    "coordination.k8s.io/v1",
+                    "coordination.k8s.io/v1beta1",
+                    "events.k8s.io/v1beta1",
+                    "extensions/v1beta1",
+                    "networking.k8s.io/v1",
+                    "networking.k8s.io/v1beta1",
+                    "node.k8s.io/v1beta1",
+                    "policy/v1beta1",
+                    "rbac.authorization.k8s.io/v1",
+                    "rbac.authorization.k8s.io/v1beta1",
+                    "scheduling.k8s.io/v1",
+                    "scheduling.k8s.io/v1beta1",
+                    "storage.k8s.io/v1",
+                    "storage.k8s.io/v1beta1",
+                    "v1"
+                ]
+            },
+            "upgradeStatus": {
+                "upgradability": "UP_TO_DATE",
+                "upgradabilityStatusReason": "sensor is running the same version as Central",
+                "mostRecentProcess": null
+            },
+            "certExpiryStatus": { "sensorCertExpiry": "2021-08-19T14:13:00Z" }
+        },
+        "dynamicConfig": {
+            "admissionControllerConfig": {
+                "enabled": false,
+                "timeoutSeconds": 3,
+                "scanInline": false,
+                "disableBypass": false,
+                "enforceOnUpdates": false
+            },
+            "registryOverride": ""
+        },
+        "tolerationsConfig": { "disabled": false },
+        "priority": "1",
+        "healthStatus": {
+            "collectorHealthInfo": {
+                "version": "3.0.19-14-g2f03c2d816-latest",
+                "totalDesiredPods": 1,
+                "totalReadyPods": 1,
+                "totalRegisteredNodes": 1
+            },
+            "sensorHealthStatus": "HEALTHY",
+            "collectorHealthStatus": "HEALTHY",
+            "overallHealthStatus": "HEALTHY",
+            "lastContact": "2020-08-19T17:44:23.859543Z",
+            "healthInfoComplete": true
+        },
+        "slimCollector": false
+    }
+}

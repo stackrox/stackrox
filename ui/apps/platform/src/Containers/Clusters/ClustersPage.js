@@ -1,230 +1,66 @@
-/* eslint-disable react/jsx-no-bind */
-import React, { useEffect, useState, useReducer } from 'react';
-import PropTypes from 'prop-types';
+import React, { useEffect, useState, useCallback } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import * as Icon from 'react-feather';
 import { generatePath } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import get from 'lodash/get';
+import { useQuery } from '@apollo/client';
 
-import CloseButton from 'Components/CloseButton';
-import Dialog from 'Components/Dialog';
 import PageHeader from 'Components/PageHeader';
-import Panel from 'Components/Panel';
-import PanelButton from 'Components/PanelButton';
-import SearchInput from 'Components/SearchInput';
 import ToggleSwitch from 'Components/ToggleSwitch';
-import CheckboxTable from 'Components/CheckboxTable';
-import {
-    defaultHeaderClassName,
-    defaultColumnClassName,
-    wrapClassName,
-    rtTrActionsClassName,
-} from 'Components/Table';
-import TableHeader from 'Components/TableHeader';
-import RowActionButton from 'Components/RowActionButton';
-import useInterval from 'hooks/useInterval';
+import URLSearchInput from 'Components/URLSearchInput';
+import entityTypes, { searchCategories } from 'constants/entityTypes';
+import workflowStateContext from 'Containers/workflowStateContext';
+import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import { actions as clustersActions } from 'reducers/clusters';
 import { selectors } from 'reducers';
-import {
-    fetchClustersAsArray,
-    getAutoUpgradeConfig,
-    deleteClusters,
-    upgradeCluster,
-    upgradeClusters,
-    saveAutoUpgradeConfig,
-} from 'services/ClustersService';
-import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
-import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 import { clustersPath } from 'routePaths';
+import { getAutoUpgradeConfig, saveAutoUpgradeConfig } from 'services/ClustersService';
+import parseURL from 'utils/URLParser';
 
+import ClustersTablePanel from './ClustersTablePanel';
 import ClustersSidePanel from './ClustersSidePanel';
-
 // @TODO, refactor these helper utilities to this folder,
 //        when retiring clusters in Integrations section
-import {
-    clusterTablePollingInterval,
-    formatCloudProvider,
-    formatClusterType,
-    formatCollectionMethod,
-    formatConfiguredField,
-    formatLastCheckIn,
-    getUpgradeableClusters,
-} from './cluster.helpers';
-import ClusterStatus from './Components/ClusterStatus';
-import CollectorStatus from './Components/CollectorStatus';
-import CredentialExpiration from './Components/CredentialExpiration';
-import SensorStatus from './Components/SensorStatus';
-import SensorUpgrade from './Components/SensorUpgrade';
 
 const ClustersPage = ({
-    featureFlags,
     history,
-    location: { search },
+    location: { pathname, search },
     match: {
-        params: { clusterId },
+        params: { clusterId: selectedClusterId },
     },
-    metadata,
-    searchOptions,
-    searchModifiers,
-    searchSuggestions,
-    setSearchModifiers,
-    setSearchOptions,
-    setSearchSuggestions,
 }) => {
-    const [currentClusters, setCurrentClusters] = useState([]);
-    const [showDialog, setShowDialog] = useState(false);
+    const workflowState = parseURL({ pathname, search });
+
     const [autoUpgradeConfig, setAutoUpgradeConfig] = useState({});
-    const [checkedClusterIds, setCheckedClusters] = useState([]);
-    const [upgradableClusters, setUpgradableClusters] = useState([]);
-    const [tableRef, setTableRef] = useState(null);
-    const [selectedClusterId, setSelectedClusterId] = useState(clusterId);
-    const [pollingCount, setPollingCount] = useState(0);
 
-    function notificationsReducer(state, action) {
-        switch (action.type) {
-            case 'ADD_NOTIFICATION': {
-                return [...state, action.payload];
-            }
-            case 'REMOVE_NOTIFICATION': {
-                return state.filter((note) => note !== action.payload);
-            }
-            default: {
-                return state;
-            }
-        }
-    }
-    const [notifications, dispatch] = useReducer(notificationsReducer, []);
+    // Handle changes to the currently selected deployment.
+    const setSelectedClusterId = useCallback(
+        (newCluster) => {
+            const newClusterId = newCluster?.id || newCluster || '';
+            const newWorkflowState = newClusterId
+                ? workflowState.pushRelatedEntity(entityTypes.CLUSTER, newClusterId)
+                : workflowState.pop();
 
-    // @TODO, implement actual delete logic into this stub function
-    const onDeleteHandler = (cluster) => (e) => {
-        e.stopPropagation();
-        setCheckedClusters([cluster.id]);
-        setShowDialog(true);
-    };
+            const newUrl = newWorkflowState.toUrl();
 
-    function renderRowActionButtons(cluster) {
-        return (
-            <div className="border-2 border-r-2 border-base-400 bg-base-100">
-                <RowActionButton
-                    text="Delete cluster"
-                    icon={<Icon.Trash2 className="my-1 h-4 w-4" />}
-                    className="hover:bg-alert-200 text-alert-600 hover:text-alert-700"
-                    onClick={onDeleteHandler(cluster)}
-                />
-            </div>
-        );
-    }
-
-    function calculateUpgradeableClusters(selection) {
-        const currentlySelectedClusters = currentClusters.filter((cluster) =>
-            selection.includes(cluster.id)
-        );
-
-        const upgradeableList = getUpgradeableClusters(currentlySelectedClusters);
-
-        setUpgradableClusters(upgradeableList);
-    }
-
-    function toggleCluster(id) {
-        const selection = toggleRow(id, checkedClusterIds);
-        setCheckedClusters(selection);
-
-        calculateUpgradeableClusters(selection);
-    }
-
-    function toggleAllClusters() {
-        const rowsLength = checkedClusterIds.length;
-        const ref = tableRef.reactTable;
-        const selection = toggleSelectAll(rowsLength, checkedClusterIds, ref);
-        setCheckedClusters(selection);
-
-        calculateUpgradeableClusters(selection);
-    }
-
-    // @TODO: Change table component to use href for accessibility and better UX here, instead of an onclick
-    function handleRowClick(cluster) {
-        const newClusterId = (cluster && cluster.id) || '';
-        setSelectedClusterId(newClusterId);
-    }
-
-    function refreshClusterList() {
-        return fetchClustersAsArray(searchOptions).then((clusters) => {
-            setCurrentClusters(clusters);
-        });
-    }
-
-    useEffect(
-        () => {
-            refreshClusterList();
+            history.push(newUrl);
         },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [searchOptions, pollingCount]
+        [workflowState, history]
     );
 
-    // use a custom hook to set up polling, thanks Dan Abramov and Rob Stark
-    useInterval(() => {
-        setPollingCount(pollingCount + 1);
-    }, clusterTablePollingInterval);
+    const searchQueryOptions = {
+        variables: {
+            categories: [searchCategories.CLUSTER],
+        },
+    };
+    const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
+    const searchOptions = (searchData && searchData.searchOptions) || [];
+    const autoFocusSearchInput = !selectedClusterId;
 
     function fetchConfig() {
         getAutoUpgradeConfig().then((config) => {
             setAutoUpgradeConfig(config);
         });
-    }
-
-    function onAddCluster() {
-        setSelectedClusterId('new');
-    }
-
-    function upgradeSelectedClusters() {
-        upgradeClusters(checkedClusterIds).then(() => {
-            setCheckedClusters([]);
-
-            refreshClusterList();
-        });
-    }
-
-    function upgradeSingleCluster(id) {
-        upgradeCluster(id)
-            .then(() => {
-                refreshClusterList();
-            })
-            .catch((error) => {
-                const serverError = get(
-                    error,
-                    'response.data.message',
-                    'An unknown error has occurred.'
-                );
-                const givenCluster = currentClusters.find((cluster) => cluster.id === id);
-                const clusterName = givenCluster ? givenCluster.name : '-';
-                const payload = `Failed to trigger upgrade for cluster ${clusterName}. Error: ${serverError}`;
-
-                dispatch({ type: 'ADD_NOTIFICATION', payload });
-            });
-    }
-
-    function deleteSelectedClusters() {
-        setShowDialog(true);
-    }
-
-    function hideDialog() {
-        setShowDialog(false);
-    }
-
-    function makeDeleteRequest() {
-        deleteClusters(checkedClusterIds)
-            .then(() => {
-                setCheckedClusters([]);
-
-                fetchClustersAsArray().then((clusters) => {
-                    setCurrentClusters(clusters);
-                });
-            })
-            .finally(() => {
-                setShowDialog(false);
-            });
     }
 
     useEffect(() => {
@@ -264,234 +100,18 @@ const ClustersPage = ({
             fetchConfig();
         });
     }
-
-    const headerActions = (
-        <>
-            <PanelButton
-                icon={<Icon.DownloadCloud className="h-4 w-4 ml-1" />}
-                tooltip={`Upgrade (${upgradableClusters.length})`}
-                className="btn btn-tertiary ml-2"
-                onClick={upgradeSelectedClusters}
-                disabled={upgradableClusters.length === 0 || !!selectedClusterId}
-            >
-                {`Upgrade (${upgradableClusters.length})`}
-            </PanelButton>
-            <PanelButton
-                icon={<Icon.Trash2 className="h-4 w-4 ml-1" />}
-                tooltip={`Delete (${checkedClusterIds.length})`}
-                className="btn btn-alert ml-2"
-                onClick={deleteSelectedClusters}
-                disabled={checkedClusterIds.length === 0 || !!selectedClusterId}
-            >
-                {`Delete (${checkedClusterIds.length})`}
-            </PanelButton>
-            <PanelButton
-                icon={<Icon.Plus className="h-4 w-4 ml-1" />}
-                tooltip="New Cluster"
-                className="btn btn-base ml-2"
-                onClick={onAddCluster}
-                disabled={!!selectedClusterId}
-            >
-                New Cluster
-            </PanelButton>
-        </>
-    );
-
-    const headerComponent = (
-        <TableHeader length={currentClusters.length} type="Cluster" isViewFiltered={false} />
-    );
-
-    // Because of fixed checkbox width, total of column ratios must be less than 100%
-    // 1 * 1/9 + 7 * 1/8 = 98.6%
-    const clusterColumnsWithoutHealth = [
-        {
-            accessor: 'name',
-            Header: 'Name',
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Orchestrator',
-            Cell: ({ original }) => formatClusterType(original.type),
-            headerClassName: `w-1/9 ${defaultHeaderClassName}`,
-            className: `w-1/9 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Runtime Collection',
-            Cell: ({ original }) => formatCollectionMethod(original.collectionMethod),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Admission Controller',
-            Cell: ({ original }) => formatConfiguredField(original.admissionController),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Cloud Provider',
-            Cell: ({ original }) => formatCloudProvider(original.status?.providerMetadata),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Last check-in',
-            Cell: ({ original }) => formatLastCheckIn(original.status),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Sensor Upgrade',
-            Cell: ({ original }) => (
-                <SensorUpgrade
-                    upgradeStatus={original.status?.upgradeStatus}
-                    centralVersion={metadata.version}
-                    sensorVersion={original.status?.sensorVersion}
-                    isList
-                    actionProps={{
-                        clusterId: original.id,
-                        upgradeSingleCluster,
-                    }}
-                />
-            ),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Credential Expiration',
-            Cell: ({ original }) => (
-                <CredentialExpiration
-                    certExpiryStatus={original.status?.certExpiryStatus}
-                    currentDatetime={new Date()}
-                />
-            ),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName} word-break`,
-        },
-        {
-            Header: '',
-            accessor: '',
-            headerClassName: 'hidden',
-            className: rtTrActionsClassName,
-            Cell: ({ original }) => renderRowActionButtons(original),
-        },
-    ];
-
-    // Because of fixed checkbox width, total of column ratios must be less than 100%
-    // 2/6 + 2/7 + 2/8 + 1/10 = 96.90674%
-    const clusterColumnsWithHealth = [
-        {
-            accessor: 'name',
-            Header: 'Name',
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Cloud Provider',
-            // eslint-disable-next-line react/prop-types
-            Cell: ({ original }) => formatCloudProvider(original.status?.providerMetadata),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Cluster Status',
-            Cell: ({ original }) => (
-                <ClusterStatus overallHealthStatus={original.healthStatus?.overallHealthStatus} />
-            ),
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Sensor Status',
-            Cell: ({ original }) => (
-                <SensorStatus
-                    sensorHealthStatus={original.healthStatus?.sensorHealthStatus}
-                    lastContact={original.status?.lastContact}
-                    currentDatetime={new Date()}
-                />
-            ),
-            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Collector Status',
-            Cell: ({ original }) => (
-                <CollectorStatus
-                    collectorHealthStatus={original.healthStatus?.collectorHealthStatus}
-                    collectorHealthInfo={original.healthStatus?.collectorHealthInfo}
-                    sensorHealthStatus={original.healthStatus?.sensorHealthStatus}
-                    healthInfoComplete={original.healthStatus?.healthInfoComplete}
-                    lastContact={original.status?.lastContact}
-                    currentDatetime={new Date()}
-                    isList
-                />
-            ),
-            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Sensor Upgrade',
-            Cell: ({ original }) => (
-                <SensorUpgrade
-                    upgradeStatus={original.status?.upgradeStatus}
-                    centralVersion={metadata.version}
-                    sensorVersion={original.status?.sensorVersion}
-                    isList
-                    actionProps={{
-                        clusterId: original.id,
-                        upgradeSingleCluster,
-                    }}
-                />
-            ),
-            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Credential Expiration',
-            Cell: ({ original }) => (
-                <CredentialExpiration
-                    certExpiryStatus={original.status?.certExpiryStatus}
-                    currentDatetime={new Date()}
-                />
-            ),
-            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: '',
-            accessor: '',
-            headerClassName: 'hidden',
-            className: rtTrActionsClassName,
-            Cell: ({ original }) => renderRowActionButtons(original),
-        },
-    ];
-
-    const clusterColumns = isBackendFeatureFlagEnabled(
-        featureFlags,
-        knownBackendFlags.ROX_CLUSTER_HEALTH_MONITORING,
-        false
-    )
-        ? clusterColumnsWithHealth
-        : clusterColumnsWithoutHealth;
-
     const headerText = 'Clusters';
     const subHeaderText = 'Resource list';
-    const defaultOption = searchModifiers.find((x) => x.value === 'Cluster:');
 
     const pageHeader = (
         <PageHeader header={headerText} subHeader={subHeaderText}>
             <div className="flex flex-1 items-center justify-end">
-                <SearchInput
+                <URLSearchInput
                     className="w-full"
-                    id="clusters-search"
-                    searchOptions={searchOptions}
-                    searchModifiers={searchModifiers}
-                    searchSuggestions={searchSuggestions}
-                    setSearchOptions={setSearchOptions}
-                    setSearchModifiers={setSearchModifiers}
-                    setSearchSuggestions={setSearchSuggestions}
-                    defaultOption={defaultOption}
-                    autoCompleteCategories={['CLUSTERS']}
+                    categoryOptions={searchOptions}
+                    categories={['CLUSTERS']}
+                    placeholder="Add one or more filters"
+                    autoFocus={autoFocusSearchInput}
                 />
                 <div className="flex items-center min-w-64 ml-4">
                     <ToggleSwitch
@@ -505,128 +125,40 @@ const ClustersPage = ({
         </PageHeader>
     );
 
-    const messages = notifications.map((note) => (
-        <div
-            key={note}
-            className="flex flex-1 border-b border-base-400 items-center justify-end relative py-0 pl-3 w-full"
-        >
-            <span className="w-full">{note}</span>
-            <CloseButton
-                onClose={() => {
-                    dispatch({ type: 'REMOVE_NOTIFICATION', payload: note });
-                }}
-                className="border-base-400 border-l"
-            />
-        </div>
-    ));
-
-    // getValueFromSelectedClusterAtPath returns the value at the given path
-    // within the selected cluster, if there is a selected cluster.
-    // It returns null if there is no selected cluster, or if the selected cluster
-    // has no value at path.
-    function getValueFromSelectedClusterAtPath(path) {
-        if (!currentClusters || !currentClusters.length) {
-            return null;
-        }
-        const selectedCluster = currentClusters.find((cluster) => cluster.id === selectedClusterId);
-        if (!selectedCluster) {
-            return null;
-        }
-        return get(selectedCluster, path, null);
-    }
-
-    function getCurrentCertExpiryStatusOrNull() {
-        return getValueFromSelectedClusterAtPath('status.certExpiryStatus');
-    }
-
-    function getCurrentUpgradeStatusOrNull() {
-        return getValueFromSelectedClusterAtPath('status.upgradeStatus');
-    }
-
     return (
-        <section className="flex flex-1 flex-col h-full">
-            <div className="flex flex-1 flex-col">
-                {pageHeader}
-                <div className="flex flex-1 relative">
-                    <div className="shadow border-primary-300 w-full overflow-hidden">
-                        <Panel
-                            headerTextComponent={headerComponent}
-                            headerComponents={headerActions}
-                        >
-                            {messages.length > 0 && (
-                                <div className="flex flex-col w-full items-center bg-warning-200 text-warning-8000 justify-center font-700 text-center">
-                                    {messages}
-                                </div>
-                            )}
-                            <div data-testid="clusters-table" className="w-full">
-                                <CheckboxTable
-                                    ref={(table) => {
-                                        setTableRef(table);
-                                    }}
-                                    rows={currentClusters}
-                                    columns={clusterColumns}
-                                    onRowClick={handleRowClick}
-                                    toggleRow={toggleCluster}
-                                    toggleSelectAll={toggleAllClusters}
-                                    selection={checkedClusterIds}
-                                    selectedRowId={selectedClusterId}
-                                    noDataText="No clusters to show."
-                                    minRows={20}
-                                />
-                            </div>
-                        </Panel>
+        <workflowStateContext.Provider value={workflowState}>
+            <section className="flex flex-1 flex-col h-full">
+                <div className="flex flex-1 flex-col">
+                    {pageHeader}
+                    <div className="flex flex-1 relative">
+                        <ClustersTablePanel
+                            selectedClusterId={selectedClusterId}
+                            setSelectedClusterId={setSelectedClusterId}
+                            searchOptions={searchOptions}
+                        />
+                        <ClustersSidePanel
+                            selectedClusterId={selectedClusterId}
+                            setSelectedClusterId={setSelectedClusterId}
+                        />
                     </div>
-                    <ClustersSidePanel
-                        selectedClusterId={selectedClusterId}
-                        setSelectedClusterId={setSelectedClusterId}
-                        upgradeStatus={getCurrentUpgradeStatusOrNull()}
-                        certExpiryStatus={getCurrentCertExpiryStatusOrNull()}
-                    />
                 </div>
-            </div>
-            <Dialog
-                className="w-1/3"
-                isOpen={showDialog}
-                text={`Deleting a cluster configuration doesn't remove StackRox services running in the cluster. To remove them, run the "delete-sensor.sh" script from the sensor installation bundle. Are you sure you want to delete ${checkedClusterIds.length} cluster(s)?`}
-                onConfirm={makeDeleteRequest}
-                confirmText="Delete"
-                onCancel={hideDialog}
-                isDestructive
-            />
-        </section>
+            </section>
+        </workflowStateContext.Provider>
     );
 };
 
 ClustersPage.propTypes = {
-    featureFlags: PropTypes.arrayOf(PropTypes.shape({ envVar: PropTypes.string })).isRequired,
-
     history: ReactRouterPropTypes.history.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     match: ReactRouterPropTypes.match.isRequired,
-
-    metadata: PropTypes.shape({ version: PropTypes.string }).isRequired,
-
-    // Search specific input.
-    searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
-    searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
-    searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
-    setSearchOptions: PropTypes.func.isRequired,
-    setSearchModifiers: PropTypes.func.isRequired,
-    setSearchSuggestions: PropTypes.func.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
-    featureFlags: selectors.getFeatureFlags,
-    metadata: selectors.getMetadata,
     searchOptions: selectors.getClustersSearchOptions,
-    searchModifiers: selectors.getClustersSearchModifiers,
-    searchSuggestions: selectors.getClustersSearchSuggestions,
 });
 
 const mapDispatchToProps = {
     setSearchOptions: clustersActions.setClustersSearchOptions,
-    setSearchModifiers: clustersActions.setClustersSearchModifiers,
-    setSearchSuggestions: clustersActions.setClustersSearchSuggestions,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(ClustersPage);

@@ -42,6 +42,7 @@ export const alerts = {
 };
 
 export const clusters = {
+    single: 'v1/clusters/**',
     list: 'v1/clusters*',
     zip: 'api/extensions/clusters/zip',
 };

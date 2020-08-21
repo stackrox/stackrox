@@ -49,13 +49,7 @@ function fetchCentralEnv() {
     });
 }
 
-function ClustersSidePanel({
-    metadata,
-    selectedClusterId,
-    setSelectedClusterId,
-    upgradeStatus,
-    certExpiryStatus,
-}) {
+function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }) {
     const defaultCluster = cloneDeep(newClusterDefault);
     const envAwareClusterDefault = {
         ...defaultCluster,
@@ -293,6 +287,9 @@ function ClustersSidePanel({
 
     const showPanelButtons = !messageState || !messageState.blocking;
 
+    const upgradeStatus = selectedCluster?.status?.upgradeStatus ?? null;
+    const certExpiryStatus = selectedCluster?.status?.certExpiryStatus ?? null;
+
     const upgradeStateObject = findUpgradeState(upgradeStatus);
     const upgradeStatusDetail = upgradeStatus && getUpgradeStatusDetail(upgradeStatus);
     const upgradeMessage =
@@ -453,14 +450,10 @@ ClustersSidePanel.propTypes = {
         .isRequired,
     setSelectedClusterId: PropTypes.func.isRequired,
     selectedClusterId: PropTypes.string,
-    upgradeStatus: PropTypes.shape({}),
-    certExpiryStatus: PropTypes.shape({ sensorCertExpiry: PropTypes.string }),
 };
 
 ClustersSidePanel.defaultProps = {
     selectedClusterId: '',
-    upgradeStatus: null,
-    certExpiryStatus: null,
 };
 
 const mapStateToProps = createStructuredSelector({

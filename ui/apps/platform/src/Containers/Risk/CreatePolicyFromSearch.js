@@ -14,7 +14,7 @@ import { actions as pageActions } from 'reducers/policies/page';
 import { actions as wizardActions } from 'reducers/policies/wizard';
 import { generatePolicyFromSearch } from 'services/PoliciesService';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
-import { convertToRestSearch } from './riskPageUtils';
+import { convertToRestSearch } from 'utils/searchUtils';
 
 function CreatePolicyFromSearch({
     history,
