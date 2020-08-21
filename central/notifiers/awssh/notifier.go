@@ -64,7 +64,7 @@ func init() {
 		}
 
 		go func() {
-			switch err := notifier.run(ctx, nil); err {
+			switch err := notifier.run(ctx); err {
 			case nil, context.Canceled, context.DeadlineExceeded:
 				log.Debug("ceasing notifier operation", logging.Err(err))
 			default:
@@ -103,9 +103,10 @@ type configuration struct {
 type notifier struct {
 	configuration
 	*securityhub.SecurityHub
-	cache   map[string]*storage.Alert
-	alertCh chan *storage.Alert
-	stopSig concurrency.Signal
+	cache       map[string]*storage.Alert
+	alertCh     chan *storage.Alert
+	stopSig     concurrency.Signal
+	initDoneSig concurrency.Signal
 }
 
 func newNotifier(configuration configuration) (*notifier, error) {
@@ -136,16 +137,19 @@ func newNotifier(configuration configuration) (*notifier, error) {
 		SecurityHub:   securityhub.New(awss),
 		cache:         map[string]*storage.Alert{},
 		alertCh:       make(chan *storage.Alert),
+		initDoneSig:   concurrency.NewSignal(),
 	}, nil
+}
+
+func (n *notifier) waitForInitDone() {
+	n.initDoneSig.Wait()
 }
 
 // run executes n's event processing loop until either an error occurs or ctx is marked as done.
 // If syncer is not nil, run writes to syncer when initialization is done (or an error occured).
-func (n *notifier) run(ctx context.Context, initDoneSignal *concurrency.Signal) error {
+func (n *notifier) run(ctx context.Context) error {
 	if !n.stopSig.Reset() {
-		if initDoneSignal != nil {
-			initDoneSignal.Signal()
-		}
+		n.initDoneSig.Signal()
 		return errAlreadyRunning
 	}
 	defer func() {
@@ -156,9 +160,7 @@ func (n *notifier) run(ctx context.Context, initDoneSignal *concurrency.Signal) 
 	uploadTimer := time.NewTimer(n.uploadTimeout)
 	defer uploadTimer.Stop()
 
-	if initDoneSignal != nil {
-		initDoneSignal.Signal()
-	}
+	n.initDoneSig.Signal()
 
 	for {
 		select {

@@ -9,7 +9,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
@@ -101,7 +100,6 @@ func TestNotifierCreationAndTest(t *testing.T) {
 	configuration.canceler = cancel
 
 	errCh := make(chan error)
-	initDoneSignal := concurrency.NewSignal()
 
 	notifier, err := newNotifier(configuration)
 	require.NoError(t, err)
@@ -110,10 +108,10 @@ func TestNotifierCreationAndTest(t *testing.T) {
 	}()
 
 	go func() {
-		errCh <- notifier.run(ctx, &initDoneSignal)
+		errCh <- notifier.run(ctx)
 	}()
 
-	initDoneSignal.Wait()
+	notifier.waitForInitDone()
 
 	require.NoError(t, notifier.Test(ctx))
 	require.NoError(t, notifier.AlertNotify(ctx, newAlert(storage.ViolationState_ACTIVE)))
