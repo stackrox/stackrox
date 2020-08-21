@@ -1,3 +1,4 @@
+
 import static Services.waitForViolation
 
 import groups.BAT
@@ -8,6 +9,7 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ProcessWhitelistOuterClass
 import objects.DaemonSet
 import objects.Deployment
+import objects.GCRImageIntegration
 import org.junit.experimental.categories.Category
 import services.AlertService
 import services.CreatePolicyService
@@ -33,7 +35,7 @@ class Enforcement extends BaseSpecification {
     private String gcrId
 
     def setupSpec() {
-        gcrId = ImageIntegrationService.addGcrRegistry()
+        gcrId = GCRImageIntegration.createDefaultIntegration()
         assert gcrId != ""
     }
 

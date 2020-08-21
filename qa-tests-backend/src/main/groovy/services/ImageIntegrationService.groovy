@@ -7,6 +7,7 @@ import io.stackrox.proto.api.v1.ImageIntegrationServiceGrpc
 import io.stackrox.proto.api.v1.ImageIntegrationServiceOuterClass
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.ImageIntegrationOuterClass.ImageIntegrationCategory
+import objects.StackroxScannerIntegration
 import util.Env
 import util.Timer
 
@@ -126,10 +127,7 @@ class ImageIntegrationService extends BaseService {
         Helper functions to simplify creating known integrations
     */
 
-    // For now, we delete the auto registered StackRox Scanner integration
-    // since the QA tests are not stable when we run with them.
-    // This function returns whether or not the integration was deleted.
-    static boolean deleteAutoRegisteredStackRoxScannerIntegrationIfExists() {
+    static boolean deleteStackRoxScannerIntegrationIfExists() {
         try {
             // The Stackrox Scanner integration is auto-added by the product,
             // so we first check whether it already exists.
@@ -143,6 +141,7 @@ class ImageIntegrationService extends BaseService {
                 throw new RuntimeException("UNEXPECTED: Got more than one scanner integration: ${scannerIntegrations}")
             }
             if (scannerIntegrations.integrationsCount == 0) {
+                println "No Stackrox scanner integrations were found"
                 return false
             }
             def id = scannerIntegrations.getIntegrations(0).id
@@ -156,20 +155,8 @@ class ImageIntegrationService extends BaseService {
         }
     }
 
-    // This function adds the Stackrox scanner integration.
-    // Currently, we do this if it was deleted by the test on setup,
-    // so that the test leaves things in the same state after cleanup.
     static String addStackroxScannerIntegration() {
-        ImageIntegrationOuterClass.ImageIntegration integration =
-                ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                        .setName(Constants.AUTO_REGISTERED_STACKROX_SCANNER_INTEGRATION)
-                        .setType("clairify")
-                        .addAllCategories([ImageIntegrationCategory.SCANNER])
-                        .setClairify(ImageIntegrationOuterClass.ClairifyConfig.newBuilder()
-                                .setEndpoint("https://scanner.stackrox:8080"))
-                        .build()
-
-        return createImageIntegration(integration)
+        return StackroxScannerIntegration.createDefaultIntegration()
     }
 
     static addAzureRegistry() {
@@ -185,43 +172,6 @@ class ImageIntegrationService extends BaseService {
                         .build()
 
         return createImageIntegration(integration)
-    }
-
-    static String addGcrRegistry(
-            String name = "gcr",
-            String endpoint = "us.gcr.io",
-            boolean includeScanner = true) {
-        ImageIntegrationOuterClass.ImageIntegration integration =
-                ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                        .setName(name)
-                        .setType("google")
-                        .addAllCategories(getIntegrationCategories(includeScanner))
-                        .setGoogle(ImageIntegrationOuterClass.GoogleConfig.newBuilder()
-                                .setServiceAccount(Env.mustGet("GOOGLE_CREDENTIALS_GCR_SCANNER"))
-                                .setEndpoint(endpoint)
-                                .setProject("stackrox-ci"))
-                        .build()
-
-        return createImageIntegration(integration)
-    }
-
-    static String addGcrNoAccessRegistry(
-            String name = "gcr-no-access",
-            String endpoint = "us.gcr.io",
-            boolean includeScanner = true) {
-        ImageIntegrationOuterClass.ImageIntegration integration =
-                ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                        .setName(name)
-                        .setType("google")
-                        .addAllCategories(getIntegrationCategories(includeScanner))
-                        .setGoogle(ImageIntegrationOuterClass.GoogleConfig.newBuilder()
-                                .setServiceAccount(Env.mustGet("GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY"))
-                                .setEndpoint(endpoint)
-                                .setProject("stackrox-ci"))
-                        .setSkipTestIntegration(true)
-                        .build()
-
-        return createImageIntegration(integration, true)
     }
 
     static String handleUnreliableGCRAutoGenerate() {
@@ -265,76 +215,6 @@ class ImageIntegrationService extends BaseService {
         else {
             println "There is no auto-registered GCR integration to delete"
         }
-    }
-
-    static String addDefaultQuayRegistry(
-            String name = "quay",
-            String endpoint = "quay.io",
-            boolean includeScanner = true,
-            boolean insecure = false) {
-        ImageIntegrationOuterClass.ImageIntegration integration =
-                ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                        .setName(name)
-                        .setType("quay")
-                        .addAllCategories(getIntegrationCategories(includeScanner))
-                        .setQuay(ImageIntegrationOuterClass.QuayConfig.newBuilder()
-                                .setEndpoint(endpoint)
-                                .setOauthToken(Env.mustGet("QUAY_BEARER_TOKEN"))
-                                .setInsecure(insecure))
-                        .build()
-
-        return createImageIntegration(integration)
-    }
-
-    static String addDuplicateQuayRegistry(boolean includeScanner = true, boolean insecure = false) {
-        ImageIntegrationOuterClass.ImageIntegration integration =
-                ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                        .setName("quay-duplicate")
-                        .setType("quay")
-                        .addAllCategories(getIntegrationCategories(includeScanner))
-                        .setQuay(ImageIntegrationOuterClass.QuayConfig.newBuilder()
-                        .setEndpoint("quay.io")
-                        .setOauthToken(Env.mustGet("QUAY_BEARER_TOKEN"))
-                        .setInsecure(insecure))
-                        .build()
-
-        return createImageIntegration(integration)
-    }
-
-    static String addSecondaryQuayRegistry(boolean includeScanner = true, boolean insecure = false) {
-        ImageIntegrationOuterClass.ImageIntegration integration =
-                ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                        .setName("quay-secondary")
-                        .setType("quay")
-                        .addAllCategories(getIntegrationCategories(includeScanner))
-                        .setQuay(ImageIntegrationOuterClass.QuayConfig.newBuilder()
-                        .setEndpoint("quay.io")
-                        .setOauthToken(Env.mustGet("QUAY_SECONDARY_BEARER_TOKEN"))
-                        .setInsecure(insecure))
-                        .build()
-
-        return createImageIntegration(integration)
-    }
-
-    static ImageIntegrationOuterClass.ImageIntegration getECRIntegrationConfig(
-            String name,
-            String registryID = Env.mustGetAWSECRRegistryID(),
-            String registryRegion = Env.mustGetAWSECRRegistryRegion(),
-            String endpoint = "",
-            String accessKeyId = Env.mustGetAWSAccessKeyID(),
-            String accessKey = Env.mustGetAWSSecretAccessKey()) {
-        return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                .setName(name)
-                .setType("ecr")
-                .addAllCategories([ImageIntegrationCategory.REGISTRY])
-                .setEcr(ImageIntegrationOuterClass.ECRConfig.newBuilder()
-                        .setRegistryId(registryID)
-                        .setRegion(registryRegion)
-                        .setEndpoint(endpoint)
-                        .setAccessKeyId(accessKeyId)
-                        .setSecretAccessKey(accessKey)
-                )
-                .build()
     }
 
     static getIntegrationCategories(boolean includeScanner) {

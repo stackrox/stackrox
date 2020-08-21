@@ -2,13 +2,13 @@ import groups.BAT
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
 import objects.Deployment
+import objects.GCRImageIntegration
 import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.ImageIntegrationService
 import spock.lang.Shared
-import spock.lang.Unroll
 import util.Env
 import util.Timer
 
@@ -86,7 +86,7 @@ class AdmissionControllerNoImageScanTest extends BaseSpecification {
 
         and:
         "Enable registry integration"
-        gcrId = ImageIntegrationService.addGcrRegistry()
+        gcrId = GCRImageIntegration.createDefaultIntegration()
         assert gcrId != ""
 
         then:

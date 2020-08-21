@@ -1,3 +1,4 @@
+
 import static Services.getPolicies
 import static Services.waitForViolation
 
@@ -25,6 +26,7 @@ import org.junit.experimental.categories.Category
 import spock.lang.Stepwise
 import spock.lang.Unroll
 import objects.Deployment
+import objects.GCRImageIntegration
 import objects.Service
 import java.util.stream.Collectors
 
@@ -82,7 +84,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     private String gcrId
 
     def setupSpec() {
-        gcrId = ImageIntegrationService.addGcrRegistry()
+        gcrId = GCRImageIntegration.createDefaultIntegration()
         assert gcrId != ""
 
         orchestrator.batchCreateDeployments(DEPLOYMENTS)

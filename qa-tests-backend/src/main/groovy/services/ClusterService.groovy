@@ -78,4 +78,17 @@ class ClusterService extends BaseService {
             println "Error deleting cluster: ${e}"
         }
     }
+
+    static Boolean isEKS() {
+        Boolean isEKS = false
+        try {
+            isEKS = getClusterServiceClient().getClusters().getClustersList().every {
+                Cluster cluster -> cluster.getStatus().getProviderMetadata().hasAws() &&
+                                   cluster.getStatus().getOrchestratorMetadata().getVersion().contains("eks")
+            }
+        } catch (Exception e) {
+            println "Error getting cluster info: ${e}"
+        }
+        isEKS
+    }
 }

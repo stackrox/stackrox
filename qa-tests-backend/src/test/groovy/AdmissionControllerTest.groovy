@@ -7,6 +7,7 @@ import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 import objects.Deployment
+import objects.GCRImageIntegration
 import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.experimental.categories.Category
@@ -84,8 +85,8 @@ class AdmissionControllerTest extends BaseSpecification {
                 [PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
         )
 
-        ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
-        gcrId = ImageIntegrationService.addGcrRegistry()
+        ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
+        gcrId = GCRImageIntegration.createDefaultIntegration()
         assert gcrId != ""
     }
 

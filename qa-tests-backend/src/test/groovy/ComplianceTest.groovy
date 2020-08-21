@@ -17,6 +17,7 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import objects.Control
 import objects.CsvRow
 import objects.Deployment
+import objects.GCRImageIntegration
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Service
@@ -72,7 +73,7 @@ class ComplianceTest extends BaseSpecification {
 
         // Clear image cache and add gcr
         ImageService.clearImageCaches()
-        gcrId = ImageIntegrationService.addGcrRegistry()
+        gcrId = GCRImageIntegration.createDefaultIntegration()
 
         // Get compliance metadata
         standardsByName = ComplianceService.getComplianceStandards().collectEntries {
@@ -562,7 +563,7 @@ class ComplianceTest extends BaseSpecification {
         given:
         "remove image integrations"
         def gcrRemoved = ImageIntegrationService.deleteImageIntegration(gcrId)
-        ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
+        ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
 
         and:
         "add notifier integration"
@@ -605,7 +606,7 @@ class ComplianceTest extends BaseSpecification {
         cleanup:
         "re-add image integrations"
         if (gcrRemoved) {
-            gcrId = ImageIntegrationService.addGcrRegistry()
+            gcrId = GCRImageIntegration.createDefaultIntegration()
         }
         notifier.deleteNotifier()
         Services.updatePolicy(originalUbuntuPackageManagementPolicy)

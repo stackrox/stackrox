@@ -226,6 +226,10 @@ class Env {
         return mustGet("AWS_ECR_REGISTRY_REGION") // us-east-2
     }
 
+    static String mustGetAWSECRDockerPullPassword() {
+        return mustGet("AWS_ECR_DOCKER_PULL_PASSWORD") // aws ecr get-login-password
+    }
+
     static String mustGetGCSBucketName() {
         return mustGet("GCP_GCS_BACKUP_TEST_BUCKET_NAME") // stackrox-qa-gcs-test
     }

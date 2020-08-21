@@ -8,13 +8,16 @@ import groups.Integration
 import io.stackrox.proto.storage.ScopeOuterClass
 import objects.AnchoreScannerIntegration
 import objects.ClairScannerIntegration
+import objects.ECRRegistryIntegration
 import objects.EmailNotifier
+import objects.GCRImageIntegration
 import objects.GenericNotifier
 import objects.JiraNotifier
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Notifier
 import objects.PagerDutyNotifier
+import objects.QuayImageIntegration
 import objects.SlackNotifier
 import objects.SplunkNotifier
 import objects.StackroxScannerIntegration
@@ -22,6 +25,7 @@ import objects.TeamsNotifier
 import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.experimental.categories.Category
+import services.ClusterService
 import services.CreatePolicyService
 import services.ExternalBackupService
 import services.ImageIntegrationService
@@ -65,7 +69,7 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
 -----END CERTIFICATE-----'''
 
     def setupSpec() {
-        ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
+        ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         DEPLOYMENTS.each { Services.waitForDeployment(it) }
     }
@@ -422,37 +426,15 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
 
     @Unroll
     @Category(Integration)
-    def "Verify AWS ECR Integration: #integrationName"() {
-        when:
-        "the integration is tested"
-        def registry = ImageIntegrationService.getECRIntegrationConfig(integrationName, registryID, region, endpoint)
-
-        then:
-        "verify test integration"
-        assert ImageIntegrationService.testImageIntegration(registry)
-
-        where:
-        "configurations are:"
-
-        integrationName        | registryID                    | region                            |
-                endpoint
-        "ECR with endpoint"    | Env.mustGetAWSECRRegistryID() | Env.mustGetAWSECRRegistryRegion() |
-                "ecr.${Env.mustGetAWSECRRegistryRegion()}.amazonaws.com"
-        "ECR without endpoint" | Env.mustGetAWSECRRegistryID() | Env.mustGetAWSECRRegistryRegion() |
-                ""
-    }
-
-    @Unroll
-    @Category(Integration)
-    def "Verify #scanner.name() integration"() {
-        Assume.assumeTrue(scanner.isTestable())
+    def "Verify #imageIntegration.name() integration - #testAspect"() {
+        Assume.assumeTrue(imageIntegration.isTestable())
+        Assume.assumeTrue(!testAspect.contains("IAM") || ClusterService.isEKS())
 
         when:
         "the integration is tested"
-
-        def integration = scanner.getBuilder(scanner.getScannerConfig())
-        assert integration
-        def outcome = ImageIntegrationService.getImageIntegrationClient().testImageIntegration(integration.build())
+        def outcome = ImageIntegrationService.getImageIntegrationClient().testImageIntegration(
+                imageIntegration.getCustomBuilder(customArgs).build()
+        )
 
         then:
         "verify test integration outcome"
@@ -461,23 +443,29 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         where:
         "tests are:"
 
-        scanner | _
-        new StackroxScannerIntegration() | _
-        new AnchoreScannerIntegration() | _
-        new ClairScannerIntegration() | _
+        imageIntegration                 | customArgs      | testAspect
+        new StackroxScannerIntegration() | [:]             | "default config"
+        new AnchoreScannerIntegration()  | [:]             | "default config"
+        new ClairScannerIntegration()    | [:]             | "default config"
+        new QuayImageIntegration()       | [:]             | "default config"
+        new GCRImageIntegration()        | [:]             | "default config"
+
+        new GCRImageIntegration()        | [:]             | "default config"
+        new ECRRegistryIntegration()     | [:]             | "default config"
+        new ECRRegistryIntegration()     | [endpoint: "",] | "without endpoint"
+        new ECRRegistryIntegration()     | [useIam: true,] | "requires IAM"
     }
 
     @Unroll
     @Category(Integration)
-    def "Verify improper #scanner.name() integration - #testAspect"() {
-        Assume.assumeTrue(scanner.isTestable())
+    def "Verify improper #imageIntegration.name() integration - #testAspect"() {
+        Assume.assumeTrue(imageIntegration.isTestable())
 
         when:
         "the integration is tested"
-
-        def integration = scanner.getBuilder(config(scanner.getScannerConfig()))
-        assert integration
-        ImageIntegrationService.getImageIntegrationClient().testImageIntegration(integration.build())
+        ImageIntegrationService.getImageIntegrationClient().testImageIntegration(
+                imageIntegration.getCustomBuilder(getCustomArgs()).build()
+        )
 
         then:
         "verify test integration outcome"
@@ -487,17 +475,43 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         where:
         "tests are:"
 
-        scanner                         | config \
+        imageIntegration                         | getCustomArgs  \
                 | expectedError          | expectedMessage      | testAspect
-        new StackroxScannerIntegration() | { it -> it.setEndpoint("http://127.0.0.1/nowhere")
+
+        new StackroxScannerIntegration() | { [endpoint: "http://127.0.0.1/nowhere",]
         }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
-        new AnchoreScannerIntegration() | { it -> it.setUsername(Env.mustGet("ANCHORE_USERNAME") + "WRONG")
+
+        new AnchoreScannerIntegration() | { [username: Env.mustGet("ANCHORE_USERNAME") + "WRONG",]
         }       | StatusRuntimeException | /401 UNAUTHORIZED/   | "incorrect user"
-        new AnchoreScannerIntegration() | { it -> it.setPassword(Env.mustGet("ANCHORE_PASSWORD") + "WRONG")
+        new AnchoreScannerIntegration() | { [password: Env.mustGet("ANCHORE_PASSWORD") + "WRONG",]
         }       | StatusRuntimeException | /401 UNAUTHORIZED/   | "incorrect password"
-        new AnchoreScannerIntegration() | { it -> it.setEndpoint("http://127.0.0.1/nowhere")
+        new AnchoreScannerIntegration() | { [endpoint: "http://127.0.0.1/nowhere",]
         }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
-        new ClairScannerIntegration()   | { it -> it.setEndpoint("http://127.0.0.1/nowhere")
+
+        new ClairScannerIntegration()   | { [endpoint: "http://127.0.0.1/nowhere",]
         }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
+
+        new ECRRegistryIntegration()    | { [endpoint: "http://127.0.0.1/nowhere",]
+        }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
+        new ECRRegistryIntegration()    | { [registryId: '0123456789',]
+        }       | StatusRuntimeException | /InvalidParameterException/ | "incorrect registry ID"
+        new ECRRegistryIntegration()    | { [region: 'nowhere',]
+        }       | StatusRuntimeException | /valid region/ | "incorrect region"
+        new ECRRegistryIntegration()    | { [accessKeyId: Env.mustGetAWSAccessKeyID() + "OOPS",]
+        }       | StatusRuntimeException | /UnrecognizedClientException/ | "incorrect key"
+        new ECRRegistryIntegration()    | { [secretAccessKey: Env.mustGetAWSSecretAccessKey() + "OOPS",]
+        }       | StatusRuntimeException | /InvalidSignatureException/ | "incorrect secret"
+
+        new QuayImageIntegration()      | { [endpoint: "http://127.0.0.1/nowhere",]
+        }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
+        new QuayImageIntegration()      | { [oauthToken: "EnFzYsRVC4TIBjRenrKt9193KSz9o7vkoWiIGX86",]
+        }       | StatusRuntimeException | /Invalid bearer token format/ | "incorrect token"
+
+        new GCRImageIntegration() | { [endpoint: "http://127.0.0.1/nowhere",]
+        }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
+        new GCRImageIntegration() | { [serviceAccount: Env.mustGet("GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY"),]
+        }       | StatusRuntimeException | /PermissionDenied/ | "account without access"
+        new GCRImageIntegration() | { [project: "not-a-project",]
+        }       | StatusRuntimeException | /PermissionDenied/ | "incorrect project"
     }
 }

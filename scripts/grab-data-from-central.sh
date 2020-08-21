@@ -31,6 +31,7 @@ main() {
 
     mkdir -p ${dest}
 
+    curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/clusters | jq > ${dest}/clusters.json
     curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/imageintegrations | jq > ${dest}/imageintegrations.json
 
     for objects in "images" "deployments" "policies" "alerts" "serviceaccounts" "secrets"; do

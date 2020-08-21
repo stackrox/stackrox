@@ -78,6 +78,16 @@ restoreGradle: &restoreGradle
       - *gradleCacheKey
       - v1-rox-gradle
 
+getECRDockerPullPassword: &getECRDockerPullPassword
+  run:
+    name: Get AWS ECR Docker Pull Password
+    command: |
+      set +e
+      aws --version
+      PASS="$(aws --region="${AWS_ECR_REGISTRY_REGION}" ecr get-login-password)"
+      cci-export AWS_ECR_DOCKER_PULL_PASSWORD "${PASS}"
+      exit 0
+
 setupHelm: &setupHelm
   run:
     name: Setup tiller by default in GKE Cluster
@@ -1144,6 +1154,7 @@ commands:
       - deploy-webhook-server
       - deploy-authz-plugin
 
+      - *getECRDockerPullPassword
       - *restoreGradle
       - run:
           name: QA Automation Platform Part 1
@@ -1457,6 +1468,7 @@ commands:
       - deploy-webhook-server
       - deploy-authz-plugin
 
+      - *getECRDockerPullPassword
       - *restoreGradle
       - run:
           name: QA Automation Platform Part 1
@@ -3706,6 +3718,7 @@ jobs:
       - deploy-webhook-server
       - deploy-authz-plugin
 
+      - *getECRDockerPullPassword
       - *restoreGradle
       - run:
           name: QA Automation Platform
@@ -3802,6 +3815,7 @@ jobs:
       - deploy-webhook-server
       - deploy-authz-plugin
 
+      - *getECRDockerPullPassword
       - *restoreGradle
       - run:
           name: QA Automation Platform

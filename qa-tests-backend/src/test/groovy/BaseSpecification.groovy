@@ -14,6 +14,7 @@ import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
 import services.BaseService
+import services.ClusterService
 import services.ImageIntegrationService
 import services.MetadataService
 import services.RoleService
@@ -104,6 +105,8 @@ class BaseSpecification extends Specification {
                 def metadata = MetadataService.getMetadataServiceClient().getMetadata()
                 println "Testing against:"
                 println metadata
+                println "isGKE: ${orchestrator.isGKE()}"
+                println "isEKS: ${ClusterService.isEKS()}"
             }
             catch (Exception ex) {
                 println "Check the test target deployment, auth credentials, kube service proxy, etc."
