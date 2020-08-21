@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/secrets"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -177,6 +178,12 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+	defer func() {
+		if err := notifier.Close(ctx); err != nil {
+			log.Warn("failed to close temporary notifier instance", logging.Err(err))
+		}
+	}()
+
 	if err := notifier.Test(ctx); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
