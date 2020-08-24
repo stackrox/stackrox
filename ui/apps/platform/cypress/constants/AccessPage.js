@@ -2,6 +2,8 @@ import scopeSelectors from '../helpers/scopeSelectors';
 
 export const url = '/main/access';
 
+const authProviderPanel = '[data-testid="auth-provider-panel"]';
+
 export const selectors = {
     roles: '.rt-tr > .rt-td',
     permissionsPanel: 'div[data-testid=panel]:nth(1)',
@@ -15,6 +17,7 @@ export const selectors = {
     addNewRoleButton: 'button:contains("Add New Role")',
     input: {
         roleName: 'div[data-testid="role-name"] input',
+        issuer: '[data-testid=labeled-key-value-pair]:contains("Issuer") input',
     },
     tabs: {
         authProviders: '[data-testid="tab"]:contains("Auth Provider Rules")',
@@ -43,4 +46,8 @@ export const selectors = {
         fragmentCallbackRadio: '#fragment-radio',
         httpPostCallbackRadio: '#post-radio',
     },
+    authProviderDetails: scopeSelectors(authProviderPanel, {
+        clientSecret: '[data-testid=labeled-key-value-pair]:contains("Client Secret")',
+        issuer: '[data-testid=labeled-key-value-pair]:contains("Issuer")',
+    }),
 };

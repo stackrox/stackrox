@@ -252,7 +252,11 @@ function* saveAuthProvider(action) {
             yield call(getAuthProviders);
             yield call(fetchUsersAttributes);
             yield put(groupActions.saveRuleGroup(filteredGroups, defaultRole));
-            yield put(actions.selectAuthProvider(remaining));
+            const newAuthProviders = yield select(selectors.getAuthProviders);
+            const updatedSelectedAuthProvider = newAuthProviders.find(
+                (provider) => provider.id === authProvider.id
+            );
+            yield put(actions.selectAuthProvider(updatedSelectedAuthProvider));
         }
         yield put(actions.setAuthProviderEditingState(false));
         yield put(actions.setSaveAuthProviderError(null));

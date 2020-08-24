@@ -62,6 +62,24 @@ describe('Access Control Page', () => {
             });
         });
 
+        it('should modify an auth provider with a client secret without losing the value', () => {
+            navigateToThePanel('fixture:auth/authProvidersWithClientSecret.json');
+            cy.server();
+            cy.route('PUT', '/v1/authProviders/auth-provider-1', {}).as('saveAuthProvider');
+
+            cy.get(`${selectors.authProviderDetails.clientSecret}:contains("*****")`);
+
+            cy.get(selectors.editButton).click();
+
+            cy.get(selectors.authProviders.doNotUseClientSecretCheckbox).should('not.be.disabled');
+            cy.get(selectors.authProviders.clientSecretInput).should('not.be.disabled');
+
+            cy.get(selectors.input.issuer).clear().type('irrelevant-updated');
+            cy.get(selectors.saveButton).click();
+
+            cy.get(`${selectors.authProviderDetails.clientSecret}:contains("*****")`);
+        });
+
         it('should select the first auth provider by default', () => {
             navigateToThePanel();
 
