@@ -6,7 +6,7 @@ import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { selectors } from 'reducers';
 
 import PageHeader from 'Components/PageHeader';
-import SearchInput from 'Components/SearchInput';
+import ReduxSearchInput from 'Containers/Search/ReduxSearchInput';
 import SearchResults from 'Containers/Search/SearchResults';
 import * as Icon from 'react-feather';
 import onClickOutside from 'react-onclickoutside';
@@ -46,7 +46,7 @@ class SearchModal extends Component {
             <div className="flex flex-col h-full w-full">
                 <div className="flex w-full bg-base-100">
                     <PageHeader header="Search All:">
-                        <SearchInput
+                        <ReduxSearchInput
                             className="w-full flex-shrink"
                             searchOptions={this.props.searchOptions}
                             searchModifiers={this.props.searchModifiers}

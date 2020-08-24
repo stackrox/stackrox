@@ -7,7 +7,7 @@ import { actions as pageActions } from 'reducers/network/page';
 import { actions as searchActions } from 'reducers/network/search';
 
 import PageHeader from 'Components/PageHeader';
-import SearchInput from 'Components/SearchInput';
+import ReduxSearchInput from 'Containers/Search/ReduxSearchInput';
 import ClusterSelect from './ClusterSelect';
 import SimulatorButton from './SimulatorButton';
 import TimeWindowSelector from './TimeWindowSelector';
@@ -35,7 +35,7 @@ class Header extends Component {
         return (
             <PageHeader header="Network Graph" subHeader={subHeader} classes="w-2/3">
                 <ClusterSelect />
-                <SearchInput
+                <ReduxSearchInput
                     id="network"
                     className="w-full pl-2"
                     searchOptions={this.props.searchOptions}

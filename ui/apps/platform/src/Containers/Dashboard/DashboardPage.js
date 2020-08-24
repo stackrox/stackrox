@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { useTheme } from 'Containers/ThemeProvider';
 import PageHeader from 'Components/PageHeader';
-import SearchInput from 'Components/SearchInput';
+import ReduxSearchInput from 'Containers/Search/ReduxSearchInput';
 import DashboardCompliance from 'Containers/Dashboard/DashboardCompliance';
 import TopRiskyDeployments from 'Containers/Dashboard/TopRiskyDeployments';
 import { selectors } from 'reducers';
@@ -25,7 +25,7 @@ const DashboardPage = (props) => {
             <div className="flex flex-col w-full">
                 <div>
                     <PageHeader header="Dashboard" subHeader={subHeader}>
-                        <SearchInput
+                        <ReduxSearchInput
                             className="w-full"
                             searchOptions={props.searchOptions}
                             searchModifiers={props.searchModifiers}

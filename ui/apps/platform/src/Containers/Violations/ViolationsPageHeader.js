@@ -8,7 +8,7 @@ import { selectors } from 'reducers';
 import { fetchAlerts, fetchAlertCount } from 'services/AlertsService';
 
 import PageHeader from 'Components/PageHeader';
-import SearchInput from 'Components/SearchInput';
+import ReduxSearchInput from 'Containers/Search/ReduxSearchInput';
 
 import { pageSize } from 'Components/TableV2';
 
@@ -81,7 +81,7 @@ function ViolationsPageHeader({
     const defaultOption = searchModifiers.find((x) => x.value === 'Deployment:');
     return (
         <PageHeader header="Violations" subHeader={subHeader}>
-            <SearchInput
+            <ReduxSearchInput
                 className="w-full"
                 id="alerts"
                 searchOptions={searchOptions}

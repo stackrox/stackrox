@@ -1,7 +1,5 @@
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { createStructuredSelector } from 'reselect';
 
 import { Creatable } from 'Components/ReactSelect';
 import {
@@ -15,49 +13,51 @@ import {
     removeValuesForKey,
 } from 'Components/URLSearchInputWithAutocomplete';
 
-import { actions as searchAutoCompleteActions } from 'reducers/searchAutocomplete';
-import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
+
+export const searchInputPropTypes = {
+    className: PropTypes.string,
+    placeholder: PropTypes.string,
+    searchOptions: PropTypes.arrayOf(PropTypes.object),
+    searchModifiers: PropTypes.arrayOf(PropTypes.object),
+    setSearchOptions: PropTypes.func.isRequired,
+    setSearchSuggestions: PropTypes.func.isRequired,
+    onSearch: PropTypes.func,
+    isGlobal: PropTypes.bool,
+    defaultOption: PropTypes.shape({
+        value: PropTypes.string,
+        label: PropTypes.string,
+        category: PropTypes.string,
+    }),
+    autoCompleteResults: PropTypes.arrayOf(PropTypes.string),
+    sendAutoCompleteRequest: PropTypes.func,
+    clearAutoComplete: PropTypes.func,
+    autoCompleteCategories: PropTypes.arrayOf(PropTypes.string),
+    setAllSearchOptions: PropTypes.func.isRequired,
+};
+
+export const searchInputDefaultProps = {
+    placeholder: 'Add one or more resource filters',
+    className: '',
+    searchOptions: [],
+    searchModifiers: [],
+    onSearch: null,
+    isGlobal: false,
+    defaultOption: null,
+    autoCompleteResults: [],
+    sendAutoCompleteRequest: null,
+    clearAutoComplete: null,
+    autoCompleteCategories: [],
+};
 
 // This is a legacy search component, that will be removed soon as we move everything to URLSearchInput.
 // For now, some of the code is duplicated, and some of the components are referenced from URLSearchInput
 // in order to avoid unnecessarily excessive code duplication.
 
 class SearchInput extends Component {
-    static propTypes = {
-        className: PropTypes.string,
-        placeholder: PropTypes.string,
-        searchOptions: PropTypes.arrayOf(PropTypes.object),
-        searchModifiers: PropTypes.arrayOf(PropTypes.object),
-        setSearchOptions: PropTypes.func.isRequired,
-        setSearchSuggestions: PropTypes.func.isRequired,
-        onSearch: PropTypes.func,
-        isGlobal: PropTypes.bool,
-        defaultOption: PropTypes.shape({
-            value: PropTypes.string,
-            label: PropTypes.string,
-            category: PropTypes.string,
-        }),
-        autoCompleteResults: PropTypes.arrayOf(PropTypes.string),
-        sendAutoCompleteRequest: PropTypes.func,
-        clearAutoComplete: PropTypes.func,
-        autoCompleteCategories: PropTypes.arrayOf(PropTypes.string),
-        setAllSearchOptions: PropTypes.func.isRequired,
-    };
+    static propTypes = searchInputPropTypes;
 
-    static defaultProps = {
-        placeholder: 'Add one or more resource filters',
-        className: '',
-        searchOptions: [],
-        searchModifiers: [],
-        onSearch: null,
-        isGlobal: false,
-        defaultOption: null,
-        autoCompleteResults: [],
-        sendAutoCompleteRequest: null,
-        clearAutoComplete: null,
-        autoCompleteCategories: [],
-    };
+    static defaultProps = searchInputDefaultProps;
 
     componentWillUnmount() {
         if (!this.props.isGlobal) {
@@ -222,14 +222,4 @@ class SearchInput extends Component {
     }
 }
 
-const mapStateToProps = createStructuredSelector({
-    autoCompleteResults: selectors.getAutoCompleteResults,
-});
-
-const mapDispatchToProps = {
-    sendAutoCompleteRequest: searchAutoCompleteActions.sendAutoCompleteRequest,
-    clearAutoComplete: searchAutoCompleteActions.clearAutoComplete,
-    setAllSearchOptions: searchAutoCompleteActions.setAllSearchOptions,
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(SearchInput);
+export default SearchInput;

@@ -9,7 +9,7 @@ import { actions as tableActions } from 'reducers/policies/table';
 import { createSelector, createStructuredSelector } from 'reselect';
 
 import PageHeader from 'Components/PageHeader';
-import SearchInput from 'Components/SearchInput';
+import ReduxSearchInput from 'Containers/Search/ReduxSearchInput';
 
 // Header Is the top line with the search box.
 class Header extends Component {
@@ -41,7 +41,7 @@ class Header extends Component {
         const defaultOption = this.props.searchModifiers.find((x) => x.value === 'Policy:');
         return (
             <PageHeader header="Policies" subHeader={subHeader}>
-                <SearchInput
+                <ReduxSearchInput
                     className="w-full"
                     id="policies"
                     searchOptions={this.props.searchOptions}
