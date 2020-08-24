@@ -2,10 +2,14 @@ package testutils
 
 import (
 	"context"
+	"crypto/tls"
+	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stretchr/testify/require"
@@ -57,4 +61,42 @@ func GRPCConnectionToCentral(t *testing.T) *grpc.ClientConn {
 	conn, err := clientconn.GRPCConnection(context.Background(), mtls.CentralSubject, endpoint, opts)
 	require.NoError(t, err)
 	return conn
+}
+
+// HTTPClientForCentral returns an *http.Client for talking to central in tests. Basic auth credentials and
+// the hostname and scheme part of the URL may be omitted.
+func HTTPClientForCentral(t T) *http.Client {
+	baseTransport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+
+	endpoint := RoxAPIEndpoint(t)
+	user := RoxUsername(t)
+	pw := RoxPassword(t)
+
+	transport := httputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		modReq := req.Clone(req.Context())
+		modReq.SetBasicAuth(user, pw)
+		if modReq.URL.Host == "" {
+			modReq.URL.Host = endpoint
+		}
+		if modReq.URL.Scheme == "" {
+			modReq.URL.Scheme = "https"
+		}
+		resp, err := baseTransport.RoundTrip(modReq)
+		if err != nil {
+			return nil, err
+		}
+		resp.Request = req
+		return resp, nil
+	})
+
+	client := &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: transport,
+	}
+
+	return client
 }

@@ -2,13 +2,10 @@ package tests
 
 import (
 	"archive/zip"
-	"crypto/tls"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/pkg/tar"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -32,18 +29,8 @@ func TestBackup(t *testing.T) {
 		_ = os.Remove("backup.zip")
 	}()
 
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-	req, err := http.NewRequest(http.MethodGet, "https://"+testutils.RoxAPIEndpoint(t)+"/db/backup", nil)
-	require.NoError(t, err)
-	req.SetBasicAuth(testutils.RoxUsername(t), testutils.RoxPassword(t))
-	resp, err := client.Do(req)
+	client := testutils.HTTPClientForCentral(t)
+	resp, err := client.Get("/db/backup")
 	require.NoError(t, err)
 	defer utils.IgnoreError(resp.Body.Close)
 	_, err = io.Copy(out, resp.Body)

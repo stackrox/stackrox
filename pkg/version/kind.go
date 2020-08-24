@@ -17,6 +17,8 @@ const (
 	RCKind
 	// ReleaseKind is the version kind for release version strings.
 	ReleaseKind
+	// NightlyKind is the version kind for nightly release version strings.
+	NightlyKind
 )
 
 //go:generate stringer -type=Kind
@@ -38,8 +40,10 @@ func GetVersionKind(versionStr string) Kind {
 	switch {
 	case releaseRegex.MatchString(versionStr):
 		return ReleaseKind
-	case rcRegex.MatchString(versionStr), nightlyRegex.MatchString(versionStr):
+	case rcRegex.MatchString(versionStr):
 		return RCKind
+	case nightlyRegex.MatchString(versionStr):
+		return NightlyKind
 	case devRegex.MatchString(versionStr):
 		return DevelopmentKind
 	default:

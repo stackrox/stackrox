@@ -12,11 +12,12 @@ func _() {
 	_ = x[DevelopmentKind-1]
 	_ = x[RCKind-2]
 	_ = x[ReleaseKind-3]
+	_ = x[NightlyKind-4]
 }
 
-const _Kind_name = "InvalidKindDevelopmentKindRCKindReleaseKind"
+const _Kind_name = "InvalidKindDevelopmentKindRCKindReleaseKindNightlyKind"
 
-var _Kind_index = [...]uint8{0, 11, 26, 32, 43}
+var _Kind_index = [...]uint8{0, 11, 26, 32, 43, 54}
 
 func (i Kind) String() string {
 	if i < 0 || i >= Kind(len(_Kind_index)-1) {

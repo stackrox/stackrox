@@ -55,7 +55,7 @@ func TestGetVersionKind(t *testing.T) {
 		},
 		{
 			versionStr:   "2.5.33.x-nightly-20191107",
-			expectedKind: RCKind,
+			expectedKind: NightlyKind,
 		},
 	}
 

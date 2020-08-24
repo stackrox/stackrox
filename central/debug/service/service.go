@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/telemetry/data"
@@ -316,6 +317,11 @@ func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
 			ServerHandler: http.HandlerFunc(s.getDiagnosticDump),
 		},
+		{
+			Route:         "/debug/versions.json",
+			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
+			ServerHandler: http.HandlerFunc(s.getVersionsJSON),
+		},
 	}
 
 	return customRoutes
@@ -393,6 +399,24 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	if err := zipWriter.Close(); err != nil {
 		log.Error(err)
 	}
+}
+
+func (s *serviceImpl) getVersionsJSON(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		httputil.WriteErrorf(w, http.StatusMethodNotAllowed, "invalid method %q, only GET requests are allowed", r.Method)
+		return
+	}
+
+	versions := version.GetAllVersions()
+	versionsJSON, err := json.Marshal(&versions)
+	if err != nil {
+		httputil.WriteErrorf(w, http.StatusInternalServerError, "could not marshal version info to JSON: %v", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Length", strconv.Itoa(len(versionsJSON)))
+	_, _ = w.Write(versionsJSON)
 }
 
 func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
