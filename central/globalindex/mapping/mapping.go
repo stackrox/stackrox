@@ -90,6 +90,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	// Images in dackbox support an expanded set of search options
 	imageSearchOptions := search.CombineOptionsMaps(
 		imageMapping.OptionsMap,
+		imageMapping.ImageDeploymentOptions,
 		imageComponentEdgeMapping.OptionsMap,
 		imageComponentMapping.OptionsMap,
 		componentVulnEdgeMapping.OptionsMap,
@@ -101,6 +102,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		componentVulnEdgeMapping.OptionsMap,
 		imageMapping.OptionsMap,
 		cveMapping.OptionsMap,
+		imageMapping.ImageDeploymentOptions,
 	)
 	cveSearchOptions := search.CombineOptionsMaps(
 		cveMapping.OptionsMap,
@@ -108,6 +110,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		imageComponentMapping.OptionsMap,
 		imageComponentEdgeMapping.OptionsMap,
 		imageMapping.OptionsMap,
+		deployments.OptionsMap,
 	)
 
 	// EntityOptionsMap is a mapping from search categories to the options map for that category.

@@ -3,9 +3,7 @@ package loaders
 import (
 	"context"
 	"reflect"
-	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/image/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -105,14 +103,7 @@ func (idl *imageLoaderImpl) load(ctx context.Context, ids []string) ([]*storage.
 			return nil, err
 		}
 		idl.setAll(images)
-		images, missing = idl.readAll(ids)
-	}
-	if len(missing) > 0 {
-		missingIDs := make([]string, 0, len(missing))
-		for _, m := range missing {
-			missingIDs = append(missingIDs, ids[m])
-		}
-		return nil, errors.Errorf("not all images could be found: %s", strings.Join(missingIDs, ","))
+		images, _ = idl.readAll(ids)
 	}
 	return images, nil
 }

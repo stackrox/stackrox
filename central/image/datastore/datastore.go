@@ -6,6 +6,7 @@ import (
 	"github.com/blevesearch/bleve"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
+	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	dackBoxStore "github.com/stackrox/rox/central/image/datastore/internal/store/dackbox"
@@ -52,7 +53,9 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 		componentCVEEdgeIndexer.New(bleveIndex),
 		componentIndexer.New(bleveIndex),
 		imageComponentEdgeIndexer.New(bleveIndex),
-		imageIndexer.New(bleveIndex))
+		imageIndexer.New(bleveIndex),
+		deploymentIndexer.New(bleveIndex, nil),
+	)
 	ds, err := newDatastoreImpl(storage, indexer, searcher, imageComponents, risks, imageRanker, imageComponentRanker)
 	if err != nil {
 		return nil, err

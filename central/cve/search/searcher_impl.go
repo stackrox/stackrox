@@ -40,12 +40,12 @@ var (
 	deploymentOnlyOptionsMap = search.Difference(
 		deploymentMappings.OptionsMap,
 		search.CombineOptionsMaps(
-			imageMappings.ImageOnlyOptionsMap,
+			imageMappings.OptionsMap,
 			clusterMappings.OptionsMap,
 		),
 	)
 	imageOnlyOptionsMap = search.Difference(
-		imageMappings.ImageOnlyOptionsMap,
+		imageMappings.OptionsMap,
 		search.CombineOptionsMaps(
 			imageComponentEdgeMappings.OptionsMap,
 			componentMappings.OptionsMap,

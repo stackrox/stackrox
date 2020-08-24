@@ -36,10 +36,10 @@ var (
 		search.CombineOptionsMaps(
 			clusterMappings.OptionsMap,
 			nsMappings.OptionsMap,
-			imageMappings.ImageOnlyOptionsMap))
+			imageMappings.OptionsMap))
 
 	imageOnlyOptionsMap = search.Difference(
-		imageMappings.ImageOnlyOptionsMap,
+		imageMappings.OptionsMap,
 		search.CombineOptionsMaps(
 			imageComponentEdgeMappings.OptionsMap,
 			componentMappings.OptionsMap,

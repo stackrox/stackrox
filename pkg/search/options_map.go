@@ -45,6 +45,15 @@ type optionsMapImpl struct {
 	primaryCategory v1.SearchCategory
 }
 
+// NewOptionsMap creates an empty options map
+func NewOptionsMap(category v1.SearchCategory) OptionsMap {
+	return &optionsMapImpl{
+		normalized:      make(map[string]*v1.SearchField),
+		original:        make(map[FieldLabel]*v1.SearchField),
+		primaryCategory: category,
+	}
+}
+
 func (o *optionsMapImpl) PrimaryCategory() v1.SearchCategory {
 	return o.primaryCategory
 }

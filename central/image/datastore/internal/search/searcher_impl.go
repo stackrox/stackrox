@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/compound"
 	"github.com/stackrox/rox/pkg/search/derivedfields"
 	"github.com/stackrox/rox/pkg/search/filtered"
+	"github.com/stackrox/rox/pkg/search/options/deployments"
 	imageMappings "github.com/stackrox/rox/pkg/search/options/images"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -131,20 +132,24 @@ func formatSearcher(graphProvider graph.Provider,
 	componentCVEEdgeIndexer blevesearch.UnsafeSearcher,
 	componentIndexer blevesearch.UnsafeSearcher,
 	imageComponentEdgeIndexer blevesearch.UnsafeSearcher,
-	imageIndexer blevesearch.UnsafeSearcher) search.Searcher {
+	imageIndexer blevesearch.UnsafeSearcher,
+	deploymentIndexer blevesearch.UnsafeSearcher) search.Searcher {
 
 	cveSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(cveIndexer)
 	componentCVEEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentCVEEdgeIndexer)
 	componentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentIndexer)
 	imageComponentEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageComponentEdgeIndexer)
 	imageSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageIndexer)
+	deploymentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(deploymentIndexer)
 
 	compoundSearcher := getCompoundImageSearcher(
 		cveSearcher,
 		componentCVEEdgeSearcher,
 		componentSearcher,
 		imageComponentEdgeSearcher,
-		imageSearcher)
+		imageSearcher,
+		deploymentSearcher,
+	)
 	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), pkgImageSAC.GetSACFilter())
 
 	transformedSortSearcher := sortfields.TransformSortFields(filteredSearcher)
@@ -159,7 +164,9 @@ func getCompoundImageSearcher(
 	componentCVEEdgeSearcher search.Searcher,
 	componentSearcher search.Searcher,
 	imageComponentEdgeSearcher search.Searcher,
-	imageSearcher search.Searcher) search.Searcher {
+	imageSearcher search.Searcher,
+	deploymentSearcher search.Searcher,
+) search.Searcher {
 	// The ordering of these is important, so do not change.
 	return compound.NewSearcher([]compound.SearcherSpec{
 		{
@@ -190,6 +197,12 @@ func getCompoundImageSearcher(
 			Searcher:   scoped.WithScoping(imageSearcher, dackbox.ToCategory(v1.SearchCategory_IMAGES)),
 			Options:    imageOnlyOptionsMap,
 			LinkToPrev: dackbox.GraphTransformations[v1.SearchCategory_IMAGE_COMPONENT_EDGE][v1.SearchCategory_IMAGES],
+		},
+		{
+			Searcher:       scoped.WithScoping(deploymentSearcher, dackbox.ToCategory(v1.SearchCategory_DEPLOYMENTS)),
+			Transformation: dackbox.GraphTransformations[v1.SearchCategory_DEPLOYMENTS][v1.SearchCategory_IMAGES],
+			Options:        deployments.OptionsMap,
+			LinkToPrev:     dackbox.GraphTransformations[v1.SearchCategory_IMAGES][v1.SearchCategory_DEPLOYMENTS],
 		},
 	})
 }

@@ -35,9 +35,9 @@ var (
 		Field: search.Component.String(),
 	}
 
-	deploymentOnlyOptionsMap = search.Difference(deploymentMappings.OptionsMap, imageMappings.ImageOnlyOptionsMap)
+	deploymentOnlyOptionsMap = search.Difference(deploymentMappings.OptionsMap, imageMappings.OptionsMap)
 	imageOnlyOptionsMap      = search.Difference(
-		imageMappings.ImageOnlyOptionsMap,
+		imageMappings.OptionsMap,
 		search.CombineOptionsMaps(
 			imageComponentEdgeMappings.OptionsMap,
 			componentMappings.OptionsMap,

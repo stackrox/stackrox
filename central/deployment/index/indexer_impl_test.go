@@ -8,7 +8,6 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globalindex"
-	imageIndex "github.com/stackrox/rox/central/image/index"
 	processIndicatorIndex "github.com/stackrox/rox/central/processindicator/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -34,7 +33,6 @@ type DeploymentIndexTestSuite struct {
 	bleveIndex   bleve.Index
 	processIndex bleve.Index
 	indexer      Indexer
-	imageIndexer imageIndex.Indexer
 }
 
 func (suite *DeploymentIndexTestSuite) SetupTest() {
@@ -46,7 +44,6 @@ func (suite *DeploymentIndexTestSuite) SetupTest() {
 	suite.Require().NoError(err)
 
 	suite.indexer = New(suite.bleveIndex, suite.processIndex)
-	suite.imageIndexer = imageIndex.New(suite.bleveIndex)
 }
 
 func (suite *DeploymentIndexTestSuite) TearDownTest() {
@@ -59,59 +56,30 @@ func (suite *DeploymentIndexTestSuite) TearDownTest() {
 // and request highlights from the search, the highlights we get
 // actually match the value in the deployments.
 func (suite *DeploymentIndexTestSuite) TestHighlighting() {
-	img22 := &storage.Image{Id: "SHA22", Name: &storage.ImageName{Tag: "2.2"}}
-	img221 := &storage.Image{Id: "SHA221", Name: &storage.ImageName{Tag: "2.2.1"}}
-
 	deployment22 := &storage.Deployment{
 		Id: "22",
 		Containers: []*storage.Container{
-			{Image: types.ToContainerImage(img22), Volumes: []*storage.Volume{{Name: "volume22a"}, {Name: "volume22b"}, {Name: "nomatch"}}},
+			{Volumes: []*storage.Volume{{Name: "volume22a"}, {Name: "volume22b"}, {Name: "nomatch"}}},
 		},
 	}
 	deployment221 := &storage.Deployment{
 		Id: "221",
 		Containers: []*storage.Container{
-			{Image: types.ToContainerImage(img221), Volumes: []*storage.Volume{{Name: "volume221a"}}, Resources: &storage.Resources{CpuCoresRequest: 0.1}},
+			{Volumes: []*storage.Volume{{Name: "volume221a"}}, Resources: &storage.Resources{CpuCoresRequest: 0.1}},
 			{Resources: &storage.Resources{CpuCoresRequest: 0.75}},
 		},
 	}
 	depWithBoth22And221 := &storage.Deployment{
 		Id:         "Dep22And221",
-		Containers: []*storage.Container{{Image: types.ToContainerImage(img22)}, {Image: types.ToContainerImage(img221)}},
+		Containers: []*storage.Container{},
 	}
 
 	suite.NoError(suite.indexer.AddDeployments([]*storage.Deployment{deployment22, deployment221, depWithBoth22And221}))
-	suite.NoError(suite.imageIndexer.AddImages([]*storage.Image{img22, img221}))
 
 	cases := []struct {
 		q                    *v1.Query
 		expectedIdsToMatches map[string]map[string][]string
 	}{
-		{
-			q: search.NewQueryBuilder().AddStringsHighlighted(search.ImageTag, "r/2.2.*").ProtoQuery(),
-			expectedIdsToMatches: map[string]map[string][]string{
-				deployment22.GetId(): {
-					"image.name.tag": {img22.GetName().GetTag()},
-				},
-				deployment221.GetId(): {
-					"image.name.tag": {img221.GetName().GetTag()},
-				},
-				depWithBoth22And221.GetId(): {
-					"image.name.tag": {img22.GetName().GetTag(), img221.GetName().GetTag()},
-				},
-			},
-		},
-		{
-			q: search.NewQueryBuilder().AddStringsHighlighted(search.ImageTag, "r/2.2.*").AddStrings(search.DeploymentID, "22").ProtoQuery(),
-			expectedIdsToMatches: map[string]map[string][]string{
-				deployment22.GetId(): {
-					"image.name.tag": {img22.GetName().GetTag()},
-				},
-				deployment221.GetId(): {
-					"image.name.tag": {img221.GetName().GetTag()},
-				},
-			},
-		},
 		{
 			q: search.NewQueryBuilder().AddStringsHighlighted(search.DeploymentID, "22").ProtoQuery(),
 			expectedIdsToMatches: map[string]map[string][]string{
@@ -126,17 +94,14 @@ func (suite *DeploymentIndexTestSuite) TestHighlighting() {
 		{
 			q: search.NewQueryBuilder().
 				AddStringsHighlighted(search.DeploymentID, "22").
-				AddStringsHighlighted(search.ImageTag, "2.2").
 				ProtoQuery(),
 
 			expectedIdsToMatches: map[string]map[string][]string{
 				deployment22.GetId(): {
-					"image.name.tag": {img22.GetName().GetTag()},
-					"deployment.id":  {deployment22.GetId()},
+					"deployment.id": {deployment22.GetId()},
 				},
 				deployment221.GetId(): {
-					"deployment.id":  {deployment221.GetId()},
-					"image.name.tag": {img221.GetName().GetTag()},
+					"deployment.id": {deployment221.GetId()},
 				},
 			},
 		},
@@ -188,9 +153,7 @@ func (suite *DeploymentIndexTestSuite) TestHighlighting() {
 
 func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	deployment := fixtures.GetDeployment()
-	images := fixtures.DeploymentImages()
 	suite.NoError(suite.indexer.AddDeployment(deployment))
-	suite.NoError(suite.imageIndexer.AddImages(images))
 
 	containerPort22Dep := &storage.Deployment{
 		Id:   "CONTAINERPORT22DEP",
@@ -211,8 +174,6 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	}
 
 	suite.NoError(suite.indexer.AddDeployment(notNginx110Dep))
-	suite.NoError(suite.imageIndexer.AddImage(img110))
-	suite.NoError(suite.imageIndexer.AddImage(imgNginx))
 
 	imgNginx110 := &storage.Image{Id: "SHANGINX110", Name: &storage.ImageName{Tag: "1.10", Remote: "nginx"}}
 	nginx110Dep := &storage.Deployment{
@@ -221,7 +182,6 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 		Containers: []*storage.Container{{Image: types.ToContainerImage(imgNginx110)}},
 	}
 	suite.NoError(suite.indexer.AddDeployment(nginx110Dep))
-	suite.NoError(suite.imageIndexer.AddImage(imgNginx110))
 
 	badEmailDep := &storage.Deployment{
 		Id:     "BADEMAILID",
@@ -321,14 +281,6 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			expectedIDs: []string{deployment.GetId(), notNginx110Dep.GetId(), nginx110Dep.GetId(), containerPort22Dep.GetId(), badEmailDep.GetId()},
 		},
 		{
-			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch", search.ImageRegistry: "stackrox"},
-			expectedIDs: []string{deployment.GetId()},
-		},
-		{
-			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nomatch", search.ImageRegistry: "nonexistent"},
-			expectedIDs: []string{},
-		},
-		{
 			fieldValues: map[search.FieldLabel]string{search.ProcessName: fixtures.GetProcessIndicator().GetSignal().GetName()},
 			expectedIDs: []string{deployment.GetId()},
 		},
@@ -345,96 +297,8 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			expectedIDs: []string{deployment.GetId()},
 		},
 		{
-
-			linkedFields:      []search.FieldLabel{search.ImageTag, search.ImageRemote},
-			linkedFieldValues: []string{"1.10", "nginx"},
-			expectedIDs:       []string{nginx110Dep.GetId()},
-		},
-		{
-			fieldValues: map[search.FieldLabel]string{search.ImageTag: "latest"},
-			expectedIDs: []string{deployment.GetId()},
-		},
-		{
-			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "latest"},
-			highlightedFields: []search.FieldLabel{search.ImageTag},
-			docIDS:            []string{nginx110Dep.GetId()},
-		},
-		{
-			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "latest"},
-			highlightedFields: []search.FieldLabel{search.ImageTag},
-			docIDS:            []string{deployment.GetId()},
-			expectedIDs:       []string{deployment.GetId()},
-			expectedMatches:   map[string][]string{"image.name.tag": {"latest"}},
-		},
-		{
-			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "latest"},
-			highlightedFields: []search.FieldLabel{search.ImageTag},
-			expectedIDs:       []string{deployment.GetId()},
-			expectedMatches:   map[string][]string{"image.name.tag": {"latest"}},
-		},
-		{
-			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "lat"},
-			highlightedFields: []search.FieldLabel{search.ImageTag},
-			expectedIDs:       []string{deployment.GetId()},
-			expectedMatches:   map[string][]string{"image.name.tag": {"latest"}},
-		},
-		{
-			fieldValues:       map[search.FieldLabel]string{search.ImageTag: search.ExactMatchString("lat")},
-			highlightedFields: []search.FieldLabel{search.ImageTag},
-		},
-		{
-			fieldValues:       map[search.FieldLabel]string{search.ImageTag: search.ExactMatchString("latest")},
-			highlightedFields: []search.FieldLabel{search.ImageTag},
-			expectedIDs:       []string{deployment.GetId()},
-			expectedMatches:   map[string][]string{"image.name.tag": {"latest"}},
-		},
-		{
-			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "lata"},
-			highlightedFields: []search.FieldLabel{search.ImageTag},
-		},
-		{
-			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "r/latest"},
-			highlightedFields: []search.FieldLabel{search.ImageTag},
-			expectedIDs:       []string{deployment.GetId()},
-			expectedMatches:   map[string][]string{"image.name.tag": {"latest"}},
-		},
-		{
-			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "r/lat.*"},
-			highlightedFields: []search.FieldLabel{search.ImageTag},
-			expectedIDs:       []string{deployment.GetId()},
-			expectedMatches:   map[string][]string{"image.name.tag": {"latest"}},
-		},
-		{
-			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "r/lat"},
-			highlightedFields: []search.FieldLabel{search.ImageTag},
-		},
-		{
-			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "r/lata.*"},
-			highlightedFields: []search.FieldLabel{search.ImageTag},
-		},
-		{
 			fieldValues: map[search.FieldLabel]string{search.CPUCoresRequest: ">0.5"},
 			expectedIDs: []string{deployment.GetId()},
-		},
-		{
-			fieldValues: map[search.FieldLabel]string{search.DockerfileInstructionKeyword: "r/.*"},
-			expectedIDs: []string{deployment.GetId()},
-		},
-		{
-			fieldValues: map[search.FieldLabel]string{search.DockerfileInstructionKeyword: search.RegexQueryString("CMD")},
-			expectedIDs: []string{deployment.GetId()},
-		},
-		{
-			fieldValues: map[search.FieldLabel]string{search.DockerfileInstructionKeyword: "r/cmd"},
-			expectedIDs: []string{deployment.GetId()},
-		},
-		{
-			fieldValues: map[search.FieldLabel]string{search.DockerfileInstructionValue: "r/.*"},
-			expectedIDs: []string{deployment.GetId()},
-		},
-		{
-			fieldValues: map[search.FieldLabel]string{search.ImageTag: search.WildcardString},
-			expectedIDs: []string{nginx110Dep.GetId(), deployment.GetId(), notNginx110Dep.GetId()},
 		},
 		{
 			linkedFields:      []search.FieldLabel{search.Port, search.PortProtocol},
@@ -454,72 +318,6 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			expectedMatches: map[string][]string{
 				"deployment.ports.container_port": {"22"},
 				"deployment.ports.protocol":       {"tcp"},
-			},
-		},
-		{
-			linkedFields:      []search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
-			linkedFieldValues: []string{"ADD", "443/tcp"},
-			expectedIDs:       []string{},
-		},
-		{
-			linkedFields:      []search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
-			linkedFieldValues: []string{"ADD", "file:4ee"},
-			expectedIDs:       []string{deployment.GetId()},
-		},
-		{
-			linkedFields:          []search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
-			linkedFieldValues:     []string{"ADD", "file:4ee"},
-			highlightLinkedFields: true,
-			expectedIDs:           []string{deployment.GetId()},
-			expectedMatches: map[string][]string{
-				"image.metadata.v1.layers.instruction": {"ADD"},
-				"image.metadata.v1.layers.value":       {"file:4eedf861fb567fffb2694b65ebdd58d5e371a2c28c3863f363f333cb34e5eb7b in /"},
-			},
-		},
-		{
-			linkedFields:      []search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
-			linkedFieldValues: []string{"CMD", "["},
-			expectedIDs:       []string{deployment.GetId()},
-		},
-		{
-			linkedFields:      []search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
-			linkedFieldValues: []string{"cmd", "["},
-			expectedIDs:       []string{deployment.GetId()},
-		},
-		{
-			linkedFields:      []search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
-			linkedFieldValues: []string{"r/cmd", "["},
-			expectedIDs:       []string{deployment.GetId()},
-		},
-		{
-			linkedFields:      []search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
-			linkedFieldValues: []string{"r/.*", "r/.*"},
-			expectedIDs:       []string{deployment.GetId()},
-		},
-		{
-			linkedFields:          []search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
-			linkedFieldValues:     []string{"r/.*", "r/.*"},
-			highlightLinkedFields: true,
-			expectedIDs:           []string{deployment.GetId()},
-			expectedMatches: func() map[string][]string {
-				m := make(map[string][]string)
-				for _, img := range images {
-					for _, layer := range img.GetMetadata().GetV1().GetLayers() {
-						m["image.metadata.v1.layers.instruction"] = append(m["image.metadata.v1.layers.instruction"], layer.GetInstruction())
-						m["image.metadata.v1.layers.value"] = append(m["image.metadata.v1.layers.value"], layer.GetValue())
-					}
-				}
-				return m
-			}(),
-		},
-		{
-			linkedFields:          []search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
-			linkedFieldValues:     []string{"CMD", "["},
-			highlightLinkedFields: true,
-			expectedIDs:           []string{deployment.GetId()},
-			expectedMatches: map[string][]string{
-				"image.metadata.v1.layers.instruction": {"CMD", "CMD"},
-				"image.metadata.v1.layers.value":       {`["nginx" "-g" "daemon off;"]`, `["/bin/bash"]`},
 			},
 		},
 		{

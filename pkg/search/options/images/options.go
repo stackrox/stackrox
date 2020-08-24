@@ -7,12 +7,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/options/deployments"
 )
 
-// ImageOnlyOptionsMap describes the options for Image fields only
-var ImageOnlyOptionsMap = search.Walk(v1.SearchCategory_IMAGES, "image", (*storage.Image)(nil))
-
 // OptionsMap describes the options for Images
-var OptionsMap = search.Walk(v1.SearchCategory_IMAGES, "image", (*storage.Image)(nil)).
-	Add(search.Cluster, deployments.OptionsMap.MustGet(search.Cluster.String())).
+var OptionsMap = search.Walk(v1.SearchCategory_IMAGES, "image", (*storage.Image)(nil))
+
+// ImageDeploymentOptions defines the deployment options available to search on images
+var ImageDeploymentOptions = search.NewOptionsMap(v1.SearchCategory_IMAGES).Add(search.Cluster, deployments.OptionsMap.MustGet(search.Cluster.String())).
 	Add(search.ClusterID, deployments.OptionsMap.MustGet(search.ClusterID.String())).
 	Add(search.Namespace, deployments.OptionsMap.MustGet(search.Namespace.String())).
 	Add(search.NamespaceID, deployments.OptionsMap.MustGet(search.NamespaceID.String())).

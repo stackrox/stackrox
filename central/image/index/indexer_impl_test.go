@@ -78,20 +78,8 @@ func (suite *ImageIndexTestSuite) TestSearchImages() {
 	suite.NoError(err)
 	suite.Len(results, 4)
 
-	// Filter on a deployment property.
-	q := search.NewQueryBuilder().AddStrings(search.Cluster, "prod cluster").ProtoQuery()
-	results, err = suite.indexer.Search(q)
-	suite.NoError(err)
-	suite.Len(results, 2)
-
-	// Filter on both deployment and image properties => should return intersection.
-	q = search.NewQueryBuilder().AddStrings(search.Cluster, "prod cluster").AddStrings(search.ImageRegistry, "docker.io").ProtoQuery()
-	results, err = suite.indexer.Search(q)
-	suite.NoError(err)
-	suite.Len(results, 1)
-
 	// Filter on only image properties => should work as expected.
-	q = search.NewQueryBuilder().AddStrings(search.ImageRegistry, "docker.io").ProtoQuery()
+	q := search.NewQueryBuilder().AddStrings(search.ImageRegistry, "docker.io").ProtoQuery()
 	results, err = suite.indexer.Search(q)
 	suite.NoError(err)
 	suite.Len(results, 3)
