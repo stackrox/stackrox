@@ -15,7 +15,7 @@ class Tabs extends Component {
             'tracking-wide bg-base-100 font-700 text-sm shadow uppercase px-2 py-3 border-r border-l border-t border-base-400 rounded-t-sm',
         tabDisabledClass:
             'disabled tracking-wide bg-base-100 font-700 px-2 px-3 py-3 text-base-500 text-sm uppercase',
-        tabContentBgColor: 'bg-base-200 border-t shadow z-10 border-base-400',
+        tabContentBgColor: 'bg-base-200 border-t shadow border-base-400',
         hasTabSpacing: false,
     };
 
