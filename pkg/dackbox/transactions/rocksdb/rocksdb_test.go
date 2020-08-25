@@ -1,11 +1,11 @@
 package rocksdb
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/dackbox/transactions"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -17,22 +17,19 @@ func TestRocksDBDackBox(t *testing.T) {
 type TestSuite struct {
 	suite.Suite
 
-	dir     string
 	db      *rocksdb.RocksDB
 	factory transactions.DBTransactionFactory
 }
 
 func (s *TestSuite) SetupTest() {
-	db, dir, err := rocksdb.NewTemp("")
+	db, err := rocksdb.NewTemp("")
 	require.NoError(s.T(), err)
-	s.dir = dir
 	s.db = db
 	s.factory = NewRocksDBWrapper(db)
 }
 
 func (s *TestSuite) TearDownTest() {
-	s.db.Close()
-	_ = os.RemoveAll(s.dir)
+	rocksdbtest.TearDownRocksDB(s.db)
 }
 
 func (s *TestSuite) TestTransactions() {

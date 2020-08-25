@@ -25,7 +25,7 @@ func BenchmarkAddIndicator(b *testing.B) {
 		indicators = append(indicators, pi)
 	}
 
-	db, _, err := rocksdb.NewTemp(testutils.DBFileNameForT(b))
+	db, err := rocksdb.NewTemp(testutils.DBFileNameForT(b))
 	require.NoError(b, err)
 
 	store := rocksdbStore.New(db)

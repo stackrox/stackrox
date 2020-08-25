@@ -2,21 +2,19 @@ package m43tom44
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tecbot/gorocksdb"
 )
 
 func TestSubjectMigration(t *testing.T) {
-	rocksDB, dir, err := rocksdb.NewTemp(t.Name())
-	require.NoError(t, err)
-	func() { _ = os.RemoveAll(dir) }()
+	rocksDB := rocksdbtest.RocksDBForT(t)
+	defer rocksdbtest.TearDownRocksDB(rocksDB)
 
 	wb := gorocksdb.NewWriteBatch()
 	bindings := make([]*storage.K8SRoleBinding, 0, 10000)

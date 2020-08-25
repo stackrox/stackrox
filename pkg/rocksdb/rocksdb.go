@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 type RocksDB struct {
 	opsInProgress atomic.Uint32
 	closing       atomic.Bool
+	dir           string
 
 	*gorocksdb.DB
 }
@@ -70,13 +72,18 @@ func (r *RocksDB) Close() {
 }
 
 // NewTemp creates a new DB, but places it in the host temporary directory.
-func NewTemp(name string) (*RocksDB, string, error) {
+func NewTemp(name string) (*RocksDB, error) {
 	tmpDir, err := ioutil.TempDir("", fmt.Sprintf("rocksdb-%s", strings.Replace(name, "/", "_", -1)))
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
-	db, err := New(tmpDir)
-	return db, tmpDir, err
+	return New(tmpDir)
+}
+
+// CloseAndRemove closes the database and removes it. Should only be used for testing
+func CloseAndRemove(db *RocksDB) error {
+	db.Close()
+	return os.RemoveAll(db.dir)
 }
 
 // New creates a new RocksDB at the specified path
@@ -86,7 +93,8 @@ func New(path string) (*RocksDB, error) {
 		return nil, err
 	}
 	return &RocksDB{
-		DB: db,
+		DB:  db,
+		dir: path,
 	}, nil
 }
 

@@ -57,8 +57,7 @@ type ProcessWhitelistServiceTestSuite struct {
 	datastore datastore.DataStore
 	service   Service
 
-	db  *rocksdb.RocksDB
-	dir string
+	db *rocksdb.RocksDB
 
 	reprocessor     *mocks.MockLoop
 	resultDatastore *resultsMocks.MockDataStore
@@ -67,11 +66,10 @@ type ProcessWhitelistServiceTestSuite struct {
 }
 
 func (suite *ProcessWhitelistServiceTestSuite) SetupTest() {
-	db, dir, err := rocksdb.NewTemp(suite.T().Name() + ".db")
+	db, err := rocksdb.NewTemp(suite.T().Name() + ".db")
 	suite.Require().NoError(err)
 
 	suite.db = db
-	suite.dir = dir
 
 	store, err := rocksdbStore.New(db)
 	suite.NoError(err)
@@ -94,7 +92,7 @@ func (suite *ProcessWhitelistServiceTestSuite) SetupTest() {
 }
 
 func (suite *ProcessWhitelistServiceTestSuite) TearDownTest() {
-	rocksdbtest.TearDownRocksDB(suite.db, suite.dir)
+	rocksdbtest.TearDownRocksDB(suite.db)
 	suite.mockCtrl.Finish()
 }
 

@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
@@ -28,8 +29,7 @@ func (suite *VersionStoreTestSuite) SetupTest() {
 	boltDB, err := bolthelper.NewTemp(suite.T().Name() + ".db")
 	suite.Require().NoError(err, "Failed to make BoltDB")
 
-	rocksDB, _, err := rocksdb.NewTemp(suite.T().Name())
-	suite.Require().NoError(err, "failed to create rocksDB")
+	rocksDB := rocksdbtest.RocksDBForT(suite.T())
 
 	suite.boltDB = boltDB
 	suite.rocksDB = rocksDB

@@ -12,12 +12,15 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/require"
 )
 
 func BenchmarkDBs(b *testing.B) {
 	b.Run("rocksdb", func(b *testing.B) {
-		db, _, err := rocksdb.NewTemp("alert_bench_test")
+		db, err := rocksdb.NewTemp("alert_bench_test")
+		defer rocksdbtest.TearDownRocksDB(db)
+
 		require.NoError(b, err)
 		benchmarkLoad(b, rocksDBStore.NewFullStore(db), nil)
 	})

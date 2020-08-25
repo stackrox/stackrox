@@ -1,24 +1,21 @@
 package rocksdb
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestFullStoreImpl(t *testing.T) {
-	db, dir, err := rocksdb.NewTemp(t.Name())
+	db, err := rocksdb.NewTemp(t.Name())
 	require.NoError(t, err)
-	defer func() {
-		_ = os.RemoveAll(dir)
-	}()
-	defer db.Close()
+	defer rocksdbtest.TearDownRocksDB(db)
 
 	store := NewFullStore(db)
 	alert := fixtures.GetAlert()

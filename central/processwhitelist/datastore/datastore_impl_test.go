@@ -36,8 +36,7 @@ type ProcessWhitelistDataStoreTestSuite struct {
 	indexer        index.Indexer
 	searcher       whitelistSearch.Searcher
 
-	db  *rocksdb.RocksDB
-	dir string
+	db *rocksdb.RocksDB
 
 	whitelistResultsStore *mocks.MockDataStore
 
@@ -52,11 +51,10 @@ func (suite *ProcessWhitelistDataStoreTestSuite) SetupTest() {
 		),
 	)
 
-	db, dir, err := rocksdb.NewTemp(suite.T().Name() + ".db")
+	db, err := rocksdb.NewTemp(suite.T().Name() + ".db")
 	suite.Require().NoError(err)
 
 	suite.db = db
-	suite.dir = dir
 
 	suite.storage, err = rocksdbStore.New(db)
 	suite.NoError(err)
@@ -76,7 +74,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) SetupTest() {
 
 func (suite *ProcessWhitelistDataStoreTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
-	rocksdbtest.TearDownRocksDB(suite.db, suite.dir)
+	rocksdbtest.TearDownRocksDB(suite.db)
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) mustSerializeKey(key *storage.ProcessWhitelistKey) string {

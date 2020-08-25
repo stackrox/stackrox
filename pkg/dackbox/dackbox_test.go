@@ -1,10 +1,10 @@
 package dackbox
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -15,14 +15,13 @@ func TestDackBox(t *testing.T) {
 type DackBoxTestSuite struct {
 	suite.Suite
 
-	dir string
 	db  *rocksdb.RocksDB
 	sdb *DackBox
 }
 
 func (s *DackBoxTestSuite) SetupTest() {
 	var err error
-	s.db, s.dir, err = rocksdb.NewTemp("reference")
+	s.db, err = rocksdb.NewTemp("reference")
 	if err != nil {
 		s.FailNowf("failed to create DB: %+v", err.Error())
 	}
@@ -33,8 +32,7 @@ func (s *DackBoxTestSuite) SetupTest() {
 }
 
 func (s *DackBoxTestSuite) TearDownTest() {
-	s.db.Close()
-	_ = os.RemoveAll(s.dir)
+	rocksdbtest.TearDownRocksDB(s.db)
 }
 
 func (s *DackBoxTestSuite) TestRaceAddConfig1() {

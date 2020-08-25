@@ -2,19 +2,19 @@ package m41tom42
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tecbot/gorocksdb"
 )
 
 func TestRemovePrefix(t *testing.T) {
-	rocksDB, dir, err := rocksdb.NewTemp(t.Name())
+	rocksDB, err := rocksdb.NewTemp(t.Name())
 	require.NoError(t, err)
-	func() { _ = os.RemoveAll(dir) }()
+	defer rocksdbtest.TearDownRocksDB(rocksDB)
 
 	wb := gorocksdb.NewWriteBatch()
 	for i := 0; i < 5500; i++ {

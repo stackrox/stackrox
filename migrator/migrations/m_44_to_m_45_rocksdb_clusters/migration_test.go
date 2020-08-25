@@ -1,7 +1,6 @@
 package m44tom45
 
 import (
-	"os"
 	"reflect"
 	"testing"
 
@@ -14,6 +13,7 @@ import (
 	dbTypes "github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 	"github.com/tecbot/gorocksdb"
 	bolt "go.etcd.io/bbolt"
@@ -26,8 +26,8 @@ func TestMigration(t *testing.T) {
 type clusterRocksDBMigrationTestSuite struct {
 	suite.Suite
 
+	db        *rocksdb.RocksDB
 	databases *dbTypes.Databases
-	dir       string
 }
 
 func (suite *clusterRocksDBMigrationTestSuite) SetupTest() {
@@ -48,16 +48,16 @@ func (suite *clusterRocksDBMigrationTestSuite) SetupTest() {
 		return err
 	}))
 
-	rocksDB, dir, err := rocksdb.NewTemp(suite.T().Name())
+	rocksDB, err := rocksdb.NewTemp(suite.T().Name())
 	suite.NoError(err)
 
+	suite.db = rocksDB
 	suite.databases = &dbTypes.Databases{BoltDB: db, RocksDB: rocksDB.DB}
-	suite.dir = dir
 }
 
 func (suite *clusterRocksDBMigrationTestSuite) TearDownTest() {
 	testutils.TearDownDB(suite.databases.BoltDB)
-	_ = os.RemoveAll(suite.dir)
+	rocksdbtest.TearDownRocksDB(suite.db)
 }
 
 func insertMessage(bucket bolthelpers.BucketRef, id string, pb proto.Message) error {

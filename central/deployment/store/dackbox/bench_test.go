@@ -18,7 +18,7 @@ import (
 const maxGRPCSize = 4194304
 
 func getDeploymentStore(b *testing.B) *StoreImpl {
-	db, _, err := rocksdb.NewTemp("reference")
+	db, err := rocksdb.NewTemp("reference")
 	if err != nil {
 		b.Fatal(err)
 	}

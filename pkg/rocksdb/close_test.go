@@ -10,7 +10,7 @@ import (
 )
 
 func TestSynchronousCloseBaseCase(t *testing.T) {
-	db, _, err := NewTemp(t.Name())
+	db, err := NewTemp(t.Name())
 	require.NoError(t, err)
 	require.NotNil(t, db)
 
@@ -22,7 +22,7 @@ func TestSynchronousCloseBaseCase(t *testing.T) {
 }
 
 func TestConcurrentWritesAndCloses(t *testing.T) {
-	db, _, err := NewTemp(t.Name())
+	db, err := NewTemp(t.Name())
 	require.NoError(t, err)
 	require.NotNil(t, db)
 

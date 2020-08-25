@@ -53,7 +53,6 @@ type IndicatorDataStoreTestSuite struct {
 	searcher        processSearch.Searcher
 
 	rocksDB *rocksdb.RocksDB
-	dir     string
 	boltDB  *bolt.DB
 
 	hasNoneCtx  context.Context
@@ -92,7 +91,7 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TearDownTest() {
-	rocksdbtest.TearDownRocksDB(suite.rocksDB, suite.dir)
+	rocksdbtest.TearDownRocksDB(suite.rocksDB)
 	testutils.TearDownDB(suite.boltDB)
 	suite.mockCtrl.Finish()
 }

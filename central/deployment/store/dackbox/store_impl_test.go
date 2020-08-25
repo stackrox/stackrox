@@ -22,7 +22,6 @@ type DeploymentStoreTestSuite struct {
 	suite.Suite
 
 	db    *rocksdb.RocksDB
-	dir   string
 	dacky *dackbox.DackBox
 
 	store *StoreImpl
@@ -30,7 +29,7 @@ type DeploymentStoreTestSuite struct {
 
 func (suite *DeploymentStoreTestSuite) SetupSuite() {
 	var err error
-	suite.db, suite.dir, err = rocksdb.NewTemp("reference")
+	suite.db, err = rocksdb.NewTemp("reference")
 	if err != nil {
 		suite.FailNowf("failed to create DB: %+v", err.Error())
 	}
@@ -45,7 +44,7 @@ func (suite *DeploymentStoreTestSuite) SetupSuite() {
 }
 
 func (suite *DeploymentStoreTestSuite) TearDownSuite() {
-	rocksdbtest.TearDownRocksDB(suite.db, suite.dir)
+	rocksdbtest.TearDownRocksDB(suite.db)
 }
 
 func (suite *DeploymentStoreTestSuite) verifyDeploymentsAre(store *StoreImpl, deployments ...*storage.Deployment) {

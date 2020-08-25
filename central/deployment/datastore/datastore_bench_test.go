@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -22,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	search2 "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -38,10 +38,9 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 
 	blevePath := filepath.Join(tempPath, "scorch.bleve")
 
-	db, dir, err := rocksdb.NewTemp("benchmark_search_all")
+	db, err := rocksdb.NewTemp("benchmark_search_all")
 	require.NoError(b, err)
-	defer db.Close()
-	defer func() { _ = os.RemoveAll(dir) }()
+	defer rocksdbtest.TearDownRocksDB(db)
 
 	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	require.NoError(b, err)

@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -18,6 +17,7 @@ import (
 	rocksdbHelper "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -29,7 +29,6 @@ type ServiceAccountDataStoreTestSuite struct {
 	suite.Suite
 
 	db         *rocksdbHelper.RocksDB
-	dir        string
 	bleveIndex bleve.Index
 
 	indexer   index.Indexer
@@ -45,10 +44,9 @@ func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
 	suite.bleveIndex, err = globalindex.TempInitializeIndices("")
 	suite.Require().NoError(err)
 
-	db, dir, err := rocksdbHelper.NewTemp(suite.T().Name())
+	db, err := rocksdbHelper.NewTemp(suite.T().Name())
 	suite.Require().NoError(err)
 	suite.db = db
-	suite.dir = dir
 
 	suite.storage, err = rocksdb.New(db)
 	suite.Require().NoError(err)
@@ -64,8 +62,7 @@ func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
 }
 
 func (suite *ServiceAccountDataStoreTestSuite) TearDownSuite() {
-	suite.db.Close()
-	_ = os.RemoveAll(suite.dir)
+	rocksdbtest.TearDownRocksDB(suite.db)
 	suite.NoError(suite.bleveIndex.Close())
 }
 

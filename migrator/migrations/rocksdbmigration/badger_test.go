@@ -2,12 +2,11 @@ package rocksdbmigration
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tecbot/gorocksdb"
@@ -29,11 +28,10 @@ func TestMigrateBadger(t *testing.T) {
 	}
 	require.NoError(t, wb.Flush())
 
-	rocksDB, dir, err := rocksdb.NewTemp(t.Name())
-	require.NoError(t, err)
-	func() { _ = os.RemoveAll(dir) }()
+	rocksDB := rocksdbtest.RocksDBForT(t)
+	defer rocksdbtest.TearDownRocksDB(rocksDB)
 
-	err = migrateBadger(&types.Databases{
+	err := migrateBadger(&types.Databases{
 		BadgerDB: db,
 		RocksDB:  rocksDB.DB,
 	})

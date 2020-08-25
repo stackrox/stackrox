@@ -22,7 +22,6 @@ type ImageStoreTestSuite struct {
 	suite.Suite
 
 	db    *rocksdb.RocksDB
-	dir   string
 	dacky *dackbox.DackBox
 
 	store      store.Store
@@ -32,7 +31,7 @@ type ImageStoreTestSuite struct {
 func (suite *ImageStoreTestSuite) SetupSuite() {
 	var err error
 
-	suite.db, suite.dir, err = rocksdb.NewTemp("reference")
+	suite.db, err = rocksdb.NewTemp("reference")
 	if err != nil {
 		suite.FailNowf("failed to create DB: %+v", err.Error())
 	}
@@ -52,7 +51,7 @@ func (suite *ImageStoreTestSuite) SetupSuite() {
 }
 
 func (suite *ImageStoreTestSuite) TearDownSuite() {
-	rocksdbtest.TearDownRocksDB(suite.db, suite.dir)
+	rocksdbtest.TearDownRocksDB(suite.db)
 }
 
 func (suite *ImageStoreTestSuite) TestImages() {

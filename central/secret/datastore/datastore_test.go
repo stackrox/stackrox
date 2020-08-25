@@ -30,8 +30,7 @@ type SecretDataStoreTestSuite struct {
 
 	bleveIndex bleve.Index
 
-	db  *rocksdb.RocksDB
-	dir string
+	db *rocksdb.RocksDB
 
 	indexer   index.Indexer
 	searcher  secretSearch.Searcher
@@ -46,11 +45,10 @@ func (suite *SecretDataStoreTestSuite) SetupSuite() {
 	suite.bleveIndex, err = globalindex.TempInitializeIndices("")
 	suite.Require().NoError(err)
 
-	db, dir, err := rocksdb.NewTemp(suite.T().Name() + ".db")
+	db, err := rocksdb.NewTemp(suite.T().Name() + ".db")
 	suite.Require().NoError(err)
 
 	suite.db = db
-	suite.dir = dir
 
 	suite.storage = rocksdbStore.New(db)
 	suite.indexer = index.New(suite.bleveIndex)
@@ -66,7 +64,7 @@ func (suite *SecretDataStoreTestSuite) SetupSuite() {
 
 func (suite *SecretDataStoreTestSuite) TearDownSuite() {
 	suite.NoError(suite.bleveIndex.Close())
-	rocksdbtest.TearDownRocksDB(suite.db, suite.dir)
+	rocksdbtest.TearDownRocksDB(suite.db)
 }
 
 func (suite *SecretDataStoreTestSuite) assertSearchResults(q *v1.Query, s *storage.Secret) {

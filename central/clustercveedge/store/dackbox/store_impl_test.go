@@ -19,7 +19,6 @@ type EdgeStoreTestSuite struct {
 	suite.Suite
 
 	db    *rocksdb.RocksDB
-	dir   string
 	dacky *dackbox.DackBox
 
 	store store.Store
@@ -27,7 +26,7 @@ type EdgeStoreTestSuite struct {
 
 func (suite *EdgeStoreTestSuite) SetupSuite() {
 	var err error
-	suite.db, suite.dir, err = rocksdb.NewTemp("reference")
+	suite.db, err = rocksdb.NewTemp("reference")
 	if err != nil {
 		suite.FailNowf("failed to create DB: %+v", err.Error())
 	}
@@ -42,7 +41,7 @@ func (suite *EdgeStoreTestSuite) SetupSuite() {
 }
 
 func (suite *EdgeStoreTestSuite) TearDownSuite() {
-	rocksdbtest.TearDownRocksDB(suite.db, suite.dir)
+	rocksdbtest.TearDownRocksDB(suite.db)
 }
 
 func (suite *EdgeStoreTestSuite) TestImages() {

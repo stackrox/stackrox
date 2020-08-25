@@ -1,11 +1,11 @@
 package dackbox
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -16,14 +16,13 @@ func TestDackBoxTransaction(t *testing.T) {
 type DackBoxTransactionTestSuite struct {
 	suite.Suite
 
-	dir string
 	db  *rocksdb.RocksDB
 	sdb *DackBox
 }
 
 func (s *DackBoxTransactionTestSuite) SetupTest() {
 	var err error
-	s.db, s.dir, err = rocksdb.NewTemp("reference")
+	s.db, err = rocksdb.NewTemp("reference")
 	if err != nil {
 		s.FailNowf("failed to create DB: %+v", err.Error())
 	}
@@ -34,8 +33,7 @@ func (s *DackBoxTransactionTestSuite) SetupTest() {
 }
 
 func (s *DackBoxTransactionTestSuite) TearDownTest() {
-	s.db.Close()
-	_ = os.RemoveAll(s.dir)
+	rocksdbtest.TearDownRocksDB(s.db)
 }
 
 func (s *DackBoxTransactionTestSuite) TestRefView() {

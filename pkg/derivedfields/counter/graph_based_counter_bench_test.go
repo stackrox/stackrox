@@ -3,7 +3,6 @@ package counter
 import (
 	"context"
 	"math"
-	"os"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/dackbox"
@@ -11,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/filtered"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,7 +34,7 @@ func TestLinearGraphDerivedFieldCounting(t *testing.T) {
 	)
 	require.NoError(t, err, "filter creation should have succeeded")
 
-	db, dacky, dir := setupTest(t)
+	db, dacky := setupTest(t)
 	froms := generateGraph(t, dacky, prefixPath, linkFactor)
 	counter := NewGraphBasedDerivedFieldCounter(dacky, dackbox.Path{Path: prefixPath, ForwardTraversal: true}, filter)
 
@@ -44,7 +44,7 @@ func TestLinearGraphDerivedFieldCounting(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, expectedCounts, actualCounts)
 
-	tearDown(db, dir)
+	rocksdbtest.TearDownRocksDB(db)
 }
 
 func BenchmarkLinearGraphDerivedFieldCounting(b *testing.B) {
@@ -56,7 +56,7 @@ func BenchmarkLinearGraphDerivedFieldCounting(b *testing.B) {
 	)
 	require.NoError(b, err, "filter creation should have succeeded")
 
-	db, dacky, dir := setupTest(b)
+	db, dacky := setupTest(b)
 	froms := generateGraph(b, dacky, prefixPath, linkFactor)
 	counter := NewGraphBasedDerivedFieldCounter(dacky, dackbox.Path{Path: prefixPath, ForwardTraversal: true}, filter)
 
@@ -66,7 +66,7 @@ func BenchmarkLinearGraphDerivedFieldCounting(b *testing.B) {
 		require.NoError(b, err)
 	}
 
-	tearDown(db, dir)
+	rocksdbtest.TearDownRocksDB(db)
 }
 
 func BenchmarkBranchedGraphDerivedFieldCounting(b *testing.B) {
@@ -77,7 +77,7 @@ func BenchmarkBranchedGraphDerivedFieldCounting(b *testing.B) {
 	)
 	require.NoError(b, err, "filter creation should have succeeded")
 
-	db, dacky, dir := setupTest(b)
+	db, dacky := setupTest(b)
 	froms := generateGraph(b, dacky, prefixPath, linkFactor)
 	counter := NewGraphBasedDerivedFieldCounter(dacky, dackbox.Path{Path: prefixPath, ForwardTraversal: true}, filter)
 
@@ -90,7 +90,7 @@ func BenchmarkBranchedGraphDerivedFieldCounting(b *testing.B) {
 		require.EqualValues(b, expectedCounts, actualCounts)
 	}
 
-	tearDown(db, dir)
+	rocksdbtest.TearDownRocksDB(db)
 }
 
 func getExpectedCounts(froms []string, linkFactor, graphDepth int) map[string]int32 {
@@ -102,14 +102,14 @@ func getExpectedCounts(froms []string, linkFactor, graphDepth int) map[string]in
 	return expectedCounts
 }
 
-func setupTest(t require.TestingT) (*rocksdb.RocksDB, *dackbox.DackBox, string) {
-	db, dir, err := rocksdb.NewTemp("reference")
+func setupTest(t require.TestingT) (*rocksdb.RocksDB, *dackbox.DackBox) {
+	db, err := rocksdb.NewTemp("reference")
 	require.NoErrorf(t, err, "failed to create DB")
 
 	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte{}, []byte{}, []byte{})
 	require.NoErrorf(t, err, "failed to create counter")
 
-	return db, dacky, dir
+	return db, dacky
 }
 
 func generateGraph(t require.TestingT, dacky *dackbox.DackBox, prefixPath [][]byte, edgeFactor int) []string {
@@ -153,9 +153,4 @@ func addLink(t require.TestingT, dacky *dackbox.DackBox, from []byte, to []byte)
 	require.NoError(t, err, "addRef should have succeeded")
 	err = view.Commit()
 	require.NoError(t, err, "commit should have succeeded")
-}
-
-func tearDown(db *rocksdb.RocksDB, dir string) {
-	db.Close()
-	_ = os.RemoveAll(dir)
 }

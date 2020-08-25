@@ -31,7 +31,6 @@ type gathererTestSuite struct {
 	badger    *badger.DB
 	badgerDir string
 	rocks     *rocksdb.RocksDB
-	rocksDir  string
 	index     bleve.Index
 
 	gatherer *CentralGatherer
@@ -50,7 +49,6 @@ func (s *gathererTestSuite) SetupSuite() {
 	rocksDB := rocksdbtest.RocksDBForT(s.T())
 	s.Require().NoError(err, "Failed to make BadgerDB: %s", err)
 	s.rocks = rocksDB
-	s.rocksDir = dir
 
 	index, err := globalindex.MemOnlyIndex()
 	s.Require().NoError(err, "Failed to make in-memory Bleve: %s", err)
@@ -70,7 +68,7 @@ func (s *gathererTestSuite) TearDownSuite() {
 		testutils.TearDownBadger(s.badger, s.badgerDir)
 	}
 	if s.rocks != nil {
-		rocksdbtest.TearDownRocksDB(s.rocks, s.rocksDir)
+		rocksdbtest.TearDownRocksDB(s.rocks)
 	}
 }
 
