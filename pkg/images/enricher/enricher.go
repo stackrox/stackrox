@@ -38,6 +38,10 @@ type EnrichmentContext struct {
 	// UseNonBlockingCallsWherePossible tells the enricher to make non-blocking calls to image scanners where that is
 	// possible. Note that, if NoExternalMetadata is true, this param is irrelevant since no external calls are made at all.
 	UseNonBlockingCallsWherePossible bool
+
+	// Internal is used to indicate when the caller is internal.
+	// This is used to indicate that we do not want to fail upon failing to find integrations.
+	Internal bool
 }
 
 // FetchOnlyIfMetadataEmpty checks the fetch opts and return whether or not we can used a cached or saved

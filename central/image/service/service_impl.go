@@ -179,7 +179,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	}
 
 	img := types.ToImage(request.GetImage())
-	if _, err := s.enricher.EnrichImage(enricher.EnrichmentContext{FetchOpt: fetchOpt}, img); err != nil {
+	if _, err := s.enricher.EnrichImage(enricher.EnrichmentContext{FetchOpt: fetchOpt, Internal: true}, img); err != nil {
 		log.Errorf("error enriching image %q: %v", request.GetImage().GetName().GetFullName(), err)
 		// purposefully, don't return here because we still need to save it into the DB so there is a reference
 		// even if we weren't able to enrich it

@@ -382,6 +382,36 @@ func TestZeroIntegrations(t *testing.T) {
 	assert.Equal(t, ScanNotDone, results.ScanResult)
 }
 
+func TestZeroIntegrationsInternal(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	registrySet := mocks2.NewMockSet(ctrl)
+	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{})
+
+	scannerSet := mocks3.NewMockSet(ctrl)
+	scannerSet.EXPECT().GetAll().Return([]types2.ImageScanner{})
+
+	set := mocks.NewMockSet(ctrl)
+	set.EXPECT().RegistrySet().Return(registrySet)
+	set.EXPECT().ScannerSet().Return(scannerSet)
+
+	enricherImpl := &enricherImpl{
+		cves:            &fakeCVESuppressor{},
+		integrations:    set,
+		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
+		metadataCache:   expiringcache.NewExpiringCache(1 * time.Minute),
+		scanCache:       expiringcache.NewExpiringCache(1 * time.Minute),
+		metrics:         newMetrics(pkgMetrics.CentralSubsystem),
+	}
+
+	img := &storage.Image{Id: "id"}
+	results, err := enricherImpl.EnrichImage(EnrichmentContext{Internal: true}, img)
+	assert.NoError(t, err)
+	assert.False(t, results.ImageUpdated)
+	assert.Equal(t, ScanNotDone, results.ScanResult)
+}
+
 func TestZeroRegistryIntegrations(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

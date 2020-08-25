@@ -66,7 +66,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error getting metadata for image: %s", image.GetName().GetFullName()))
 
 	registries := e.integrations.RegistrySet()
-	if registries.IsEmpty() {
+	if !ctx.Internal && registries.IsEmpty() {
 		errorList.AddError(errors.New("no image registries are integrated"))
 		return false, errorList.ToError()
 	}
@@ -82,7 +82,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.
 		}
 	}
 
-	if len(errorList.ErrorStrings()) == 0 {
+	if !ctx.Internal && len(errorList.ErrorStrings()) == 0 {
 		errorList.AddError(errors.New("no matching image registries found"))
 	}
 
@@ -138,7 +138,7 @@ func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Imag
 
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning image: %s", image.GetName().GetFullName()))
 	scanners := e.integrations.ScannerSet()
-	if scanners.IsEmpty() {
+	if !ctx.Internal && scanners.IsEmpty() {
 		errorList.AddError(errors.New("no image scanners are integrated"))
 		return ScanNotDone, errorList.ToError()
 	}
