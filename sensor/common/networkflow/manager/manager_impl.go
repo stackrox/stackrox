@@ -256,6 +256,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		lookupResults = []clusterentities.LookupResult{
 			{
 				Entity: networkgraph.Entity{
+					ID:   networkgraph.ExternalSourceID,
 					Type: storage.NetworkEntityInfo_INTERNET,
 				},
 				ContainerPorts: []uint16{port},

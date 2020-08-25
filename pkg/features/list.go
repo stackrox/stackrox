@@ -34,7 +34,10 @@ var (
 	// NetworkGraphPorts enables port-related features in the network graph.
 	NetworkGraphPorts = registerFeature("Enable port-related features in network graph", "ROX_NETWORK_GRAPH_PORTS", true)
 
-	// NetworkFlowsSearchFilterUI enables client-side filtering for network flows
+	// NetworkFlowsSearchFilterUI enables client-side filtering for network flows.
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
 	NetworkFlowsSearchFilterUI = registerFeature("Enable client-side network flows search", "ROX_NETWORK_FLOWS_SEARCH_FILTER_UI", false)
+
+	// NetworkGraphExternalSrcs enables external sources feature in network graph.
+	NetworkGraphExternalSrcs = registerFeature("Enable external sources feature in network graph ", "ROX_NETWORK_GRAPH_EXTERNAL_SRCS", false)
 )
