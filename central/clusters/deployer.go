@@ -22,6 +22,7 @@ var (
 type RenderOptions struct {
 	CreateUpgraderSA bool
 	SlimCollector    bool
+	IstioVersion     string
 }
 
 func generateCollectorImageNameFromString(collectorImage, tag string) (*storage.ImageName, error) {

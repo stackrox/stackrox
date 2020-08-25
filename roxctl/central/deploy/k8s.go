@@ -1,10 +1,14 @@
 package deploy
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
@@ -135,6 +139,11 @@ func k8s() *cobra.Command {
 
 	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", "the deployment tool to use (kubectl, helm)", "central")
 
+	flagWrap.StringVar(&k8sConfig.IstioVersion, "istio-support", "",
+		fmt.Sprintf(
+			"Generate deployment files supporting the given Istio version (kubectl output format only). Valid versions: %s",
+			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
+
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.Monitoring.LoadBalancerType}, "monitoring-lb-type", "the method of exposing Monitoring (lb, np, none)", "monitoring", "monitoring-type=on-prem")
 	utils.Must(flagWrap.MarkHidden("monitoring-lb-type"))
 
@@ -148,6 +157,11 @@ func openshift() *cobra.Command {
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (route, lb, np, none)", "central")
+
+	flagWrap.StringVar(&k8sConfig.IstioVersion, "istio-support", "",
+		fmt.Sprintf(
+			"Generate deployment files supporting the given Istio version (kubectl output format only). Valid versions: %s",
+			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
 
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.Monitoring.LoadBalancerType}, "monitoring-lb-type", "the method of exposing Monitoring (route, lb, np, none)", "monitoring", "monitoring-type=on-prem")
 	utils.Must(flagWrap.MarkHidden("monitoring-lb-type"))

@@ -13,7 +13,9 @@ import (
 	"github.com/stackrox/rox/image/sensor"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/zip"
@@ -47,7 +49,16 @@ func renderBaseFiles(cluster *storage.Cluster, renderOpts clusters.RenderOptions
 		return nil, errors.Wrap(err, "unable to get required cluster information")
 	}
 
-	baseFiles, err := renderer.RenderSensor(fields, &certs)
+	var opts helmutil.Options
+	if renderOpts.IstioVersion != "" {
+		istioAPIResources, err := istioutils.GetAPIResourcesByVersion(renderOpts.IstioVersion)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to retrieve Istio API resources")
+		}
+		opts.APIVersions = helmutil.VersionSetFromResources(istioAPIResources...)
+	}
+
+	baseFiles, err := renderer.RenderSensor(fields, &certs, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get required cluster information")
 	}
@@ -117,7 +128,12 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		slimCollector = *params.SlimCollector
 	}
 
-	renderOpts := clusters.RenderOptions{CreateUpgraderSA: createUpgraderSA, SlimCollector: slimCollector}
+	renderOpts := clusters.RenderOptions{
+		CreateUpgraderSA: createUpgraderSA,
+		SlimCollector:    slimCollector,
+		IstioVersion:     params.IstioVersion,
+	}
+
 	baseFiles, err := renderBaseFiles(cluster, renderOpts, certs)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)

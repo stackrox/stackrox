@@ -1,13 +1,16 @@
 package renderer
 
 import (
+	"bytes"
 	"strconv"
 	"testing"
 
 	"github.com/stackrox/rox/image/sensor"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/helmutil"
+	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRenderSensorHelm(t *testing.T) {
@@ -17,16 +20,17 @@ func TestRenderSensorHelm(t *testing.T) {
 		envVars[feature.EnvVar()] = strconv.FormatBool(feature.Enabled())
 	}
 
-	var cases = []struct {
-		name                string
+	cases := map[string]struct {
 		admissionController bool
+		istioVersion        string
 	}{
-		{name: "withAdmissionController", admissionController: true},
-		{name: "withoutAdmissionController", admissionController: false},
+		"withAdmissionController":    {admissionController: true},
+		"withoutAdmissionController": {admissionController: false},
+		"onIstio":                    {istioVersion: "1.5"},
 	}
 
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
 
 			fields := map[string]interface{}{
 				"ImageRegistry": "stackrox.io",
@@ -72,10 +76,19 @@ func TestRenderSensorHelm(t *testing.T) {
 				"admission-control-key.pem":  []byte("stu"),
 			}}
 
-			files, err := RenderSensor(fields, certs)
+			var opts helmutil.Options
+
+			if c.istioVersion != "" {
+				istioAPIResources, err := istioutils.GetAPIResourcesByVersion(c.istioVersion)
+				require.NoError(t, err)
+				opts.APIVersions = helmutil.VersionSetFromResources(istioAPIResources...)
+			}
+
+			files, err := RenderSensor(fields, certs, opts)
 
 			admissionControllerRendered := false
 			admissionControllerSecretRendered := false
+			hasDestinationRule := false
 
 			for _, file := range files {
 				if file.Name == "admission-controller.yaml" {
@@ -84,11 +97,16 @@ func TestRenderSensorHelm(t *testing.T) {
 				if file.Name == "admission-controller-secret.yaml" {
 					admissionControllerSecretRendered = true
 				}
+				if bytes.Contains(file.Content, []byte("DestinationRule")) {
+					hasDestinationRule = true
+				}
 			}
-			utils.Must(err)
+
+			require.NoError(t, err)
 
 			assert.Equal(t, c.admissionController, admissionControllerRendered, "incorrect bundle rendered")
 			assert.Equal(t, c.admissionController, admissionControllerSecretRendered, "incorrect bundle rendered")
+			assert.Equal(t, c.istioVersion != "", hasDestinationRule, "unexpected presence/absence of destination rule")
 		})
 	}
 }

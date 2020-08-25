@@ -2661,6 +2661,11 @@ jobs:
             API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/slim-collector.sh
 
       - run:
+          name: Test istio-support flag in roxctl
+          command: |
+            API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/istio-support.sh
+
+      - run:
           name: API tests
           command: |
             CA="${SERVICE_CA_FILE}" ./tests/yamls/roxctl_verification.sh

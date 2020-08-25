@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
+	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/zip"
@@ -159,6 +160,9 @@ type K8sConfig struct {
 	OfflineMode bool
 
 	EnableTelemetry bool
+
+	// IstioVersion is the version of Istio to render for (if any)
+	IstioVersion string
 }
 
 // Config configures the deployer for the central service.
@@ -188,6 +192,8 @@ type Config struct {
 	Version        string
 
 	ConfigFileOverrides map[string]string
+
+	RenderOpts *helmutil.Options // additional render options, if any (only legal in non-Helm mode).
 }
 
 func executeRawTemplate(raw string, c *Config) ([]byte, error) {

@@ -20,9 +20,9 @@ When central is deployed in offline mode, a matching kernel support package need
 )
 
 // GetBundle downloads the sensor bundle for the cluster with the given ID to the specified output directory.
-func GetBundle(id, outputDir string, createUpgraderSA bool, timeout time.Duration, slimCollector bool) error {
+func GetBundle(params apiparams.ClusterZip, outputDir string, timeout time.Duration) error {
 	path := "/api/extensions/clusters/zip"
-	body, err := json.Marshal(&apiparams.ClusterZip{ID: id, CreateUpgraderSA: &createUpgraderSA, SlimCollector: &slimCollector})
+	body, err := json.Marshal(&params)
 	if err != nil {
 		return err
 	}

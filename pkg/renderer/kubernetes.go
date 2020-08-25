@@ -219,6 +219,9 @@ func render(c Config, mode mode, centralOverrides map[string]func() io.ReadClose
 		if mode != renderAll {
 			return nil, fmt.Errorf("mode %s not supported in helm", mode)
 		}
+		if c.K8sConfig != nil && c.K8sConfig.IstioVersion != "" {
+			return nil, errors.New("setting an istio version is not supported when outputting Helm charts")
+		}
 		renderedFiles, err = renderHelm(c, centralOverrides)
 	} else {
 		renderedFiles, err = renderKubectl(c, mode, centralOverrides)

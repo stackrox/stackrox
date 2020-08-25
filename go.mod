@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go v0.62.0
 	cloud.google.com/go/storage v1.10.0
 	github.com/BurntSushi/toml v0.3.1
+	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig v0.0.0-20190301161902-9f8fceff796f
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PagerDuty/go-pagerduty v0.0.0-20191002190746-f60f4fc45222
@@ -108,6 +109,7 @@ require (
 	k8s.io/helm v2.14.0+incompatible
 	k8s.io/klog v0.4.0
 	k8s.io/kubectl v0.0.0-20191114113550-6123e1c827f7
+	k8s.io/utils v0.0.0-20190801114015-581e00157fb1
 	sigs.k8s.io/yaml v1.1.0
 )
 

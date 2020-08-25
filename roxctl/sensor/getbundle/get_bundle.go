@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -24,7 +27,7 @@ Use --slim-collector=false if that is not desired.`
 Use --slim-collector if that is not desired.`
 )
 
-func downloadBundle(outputDir, clusterIDOrName string, createUpgraderSA bool, timeout time.Duration, slimCollectorP *bool) error {
+func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, createUpgraderSA bool, slimCollectorP *bool, istioVersion string) error {
 	conn, err := common.GetGRPCConnection()
 	if err != nil {
 		return err
@@ -65,7 +68,14 @@ func downloadBundle(outputDir, clusterIDOrName string, createUpgraderSA bool, ti
 		}
 	}
 
-	if err := util.GetBundle(clusterID, outputDir, createUpgraderSA, timeout, slimCollector); err != nil {
+	params := apiparams.ClusterZip{
+		ID:               clusterID,
+		CreateUpgraderSA: &createUpgraderSA,
+		SlimCollector:    pointers.Bool(slimCollector),
+		IstioVersion:     istioVersion,
+	}
+
+	if err := util.GetBundle(params, outputDir, timeout); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
 	return nil
@@ -76,6 +86,7 @@ func Command() *cobra.Command {
 	var createUpgraderSA bool
 	var outputDir string
 	var slimCollector *bool
+	var istioVersion string
 
 	c := &cobra.Command{
 		Use: "get-bundle <cluster-name-or-id>",
@@ -85,7 +96,7 @@ func Command() *cobra.Command {
 				return errors.Errorf("Expected exactly one argument, but %d were provided", len(args))
 			}
 
-			if err := downloadBundle(outputDir, args[0], createUpgraderSA, flags.Timeout(c), slimCollector); err != nil {
+			if err := downloadBundle(outputDir, args[0], flags.Timeout(c), createUpgraderSA, slimCollector, istioVersion); err != nil {
 				return errors.Wrap(err, "error downloading sensor bundle")
 			}
 			return nil
@@ -94,6 +105,10 @@ func Command() *cobra.Command {
 
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "output directory for bundle contents (default: auto-generated directory name inside the current directory)")
 	c.PersistentFlags().BoolVar(&createUpgraderSA, "create-upgrader-sa", false, "whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades")
+	c.PersistentFlags().StringVar(&istioVersion, "istio-support", "",
+		fmt.Sprintf(
+			"Generate deployment files supporting the given Istio version. Valid versions: %s",
+			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
 
 	if features.SupportSlimCollectorMode.Enabled() {
 		autobool.NewFlag(c.PersistentFlags(), &slimCollector, "slim-collector", "Use slim collector in deployment bundle")

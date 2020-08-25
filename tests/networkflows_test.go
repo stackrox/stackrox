@@ -34,9 +34,16 @@ func TestStackroxNetworkFlows(t *testing.T) {
 	cancel()
 
 	require.NoError(t, err)
-	require.Len(t, clusters.GetClusters(), 1)
+	var mainCluster *storage.Cluster
+	for _, cluster := range clusters.GetClusters() {
+		if cluster.GetName() == "remote" {
+			mainCluster = cluster
+			break
+		}
+	}
+	require.NotNil(t, mainCluster, "cluster with name remote not found")
 
-	clusterID := clusters.GetClusters()[0].GetId()
+	clusterID := mainCluster.GetId()
 
 	service := v1.NewNetworkGraphServiceClient(conn)
 

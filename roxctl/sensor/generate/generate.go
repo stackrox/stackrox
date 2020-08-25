@@ -11,7 +11,9 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/search"
@@ -21,6 +23,7 @@ import (
 	"github.com/stackrox/rox/roxctl/sensor/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -56,6 +59,8 @@ var (
 	continueIfExists bool
 
 	createUpgraderSA bool
+
+	istioVersion string
 
 	outputDir string
 
@@ -116,7 +121,13 @@ func fullClusterCreation(timeout time.Duration) error {
 		}
 	}
 
-	if err := util.GetBundle(id, outputDir, createUpgraderSA, timeout, cluster.GetSlimCollector()); err != nil {
+	params := apiparams.ClusterZip{
+		ID:               id,
+		CreateUpgraderSA: &createUpgraderSA,
+		SlimCollector:    pointer.BoolPtr(cluster.GetSlimCollector()),
+		IstioVersion:     istioVersion,
+	}
+	if err := util.GetBundle(params, outputDir, timeout); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
 	return nil
@@ -189,6 +200,11 @@ func Command() *cobra.Command {
 	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &cluster.CollectionMethod}, "collection-method", "which collection method to use for runtime support (none, default, kernel-module, ebpf)")
 
 	c.PersistentFlags().BoolVar(&createUpgraderSA, "create-upgrader-sa", false, "whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades")
+
+	c.PersistentFlags().StringVar(&istioVersion, "istio-support", "",
+		fmt.Sprintf(
+			"Generate deployment files supporting the given Istio version. Valid versions: %s",
+			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
 
 	c.PersistentFlags().BoolVar(&cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes")
 

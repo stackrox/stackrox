@@ -11,6 +11,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/image/sensor"
+	"github.com/stackrox/rox/pkg/helmutil"
+	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/zip"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/renderutil"
@@ -80,7 +82,16 @@ func renderHelmFiles(c Config, mode mode, ch *chart.Chart, prefix string) ([]*zi
 		return nil, errors.Wrap(err, "executing values.yaml template")
 	}
 	ch.Values.Raw = string(valuesData)
-	m, err := renderutil.Render(ch, &chart.Config{Raw: ch.Values.Raw}, renderutil.Options{})
+	var renderOpts helmutil.Options
+
+	if c.K8sConfig != nil && c.K8sConfig.IstioVersion != "" {
+		istioAPIResources, err := istioutils.GetAPIResourcesByVersion(c.K8sConfig.IstioVersion)
+		if err != nil {
+			return nil, errors.Wrap(err, "obtaining Istio API resources")
+		}
+		renderOpts.APIVersions = helmutil.VersionSetFromResources(istioAPIResources...)
+	}
+	m, err := helmutil.Render(ch, &chart.Config{Raw: ch.Values.Raw}, renderOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -196,10 +207,10 @@ func RenderSensorTLSSecretsOnly(values map[string]interface{}, certs *sensor.Cer
 }
 
 // RenderSensor renders the sensorchart and returns rendered files
-func RenderSensor(values map[string]interface{}, certs *sensor.Certs) ([]*zip.File, error) {
+func RenderSensor(values map[string]interface{}, certs *sensor.Certs, opts helmutil.Options) ([]*zip.File, error) {
 	ch := image.GetSensorChart(values, certs)
 
-	m, err := renderutil.Render(ch, &chart.Config{Raw: ch.Values.Raw}, renderutil.Options{})
+	m, err := helmutil.Render(ch, &chart.Config{Raw: ch.Values.Raw}, opts)
 	if err != nil {
 		return nil, err
 	}
