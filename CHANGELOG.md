@@ -39,6 +39,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - no registries integrated
   - no matching registries found
   - no scanners integrated
+- In `/v1/images` response, the `vulns` field `discoveredAt` will be replaced by `firstSystemOccurrence` starting release 49.0. This field represents the first time the CVE was ever discovered in the system.
 
 ## [47.0]
 - Configuration Management tables (except for Controls and Policies) are now paginated through the API, rather than loading all rows into the browser, for better performance in large environments (ROX-5067).
