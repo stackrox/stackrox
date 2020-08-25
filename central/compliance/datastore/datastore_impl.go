@@ -152,7 +152,6 @@ func (ds *datastoreImpl) StoreRunResults(ctx context.Context, results *storage.C
 	} else if !ok {
 		return errors.New("permission denied")
 	}
-
 	return ds.storage.StoreRunResults(results)
 }
 

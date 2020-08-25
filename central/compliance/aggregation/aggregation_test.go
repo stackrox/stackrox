@@ -47,7 +47,7 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 			Cluster: &storage.Cluster{
 				Id: cluster,
 			},
-			Deployments: map[string]*storage.ComplianceDeployment{
+			Deployments: map[string]*storage.Deployment{
 				cluster + "deployment1": {
 					Id:          cluster + "deployment1",
 					Namespace:   qualifiedNamespace(cluster, "namespace1"),
@@ -518,9 +518,9 @@ func TestIsValidCheck(t *testing.T) {
 
 func mockBenchmarkRunResult() *storage.ComplianceRunResults {
 	deploymentResults := make(map[string]*storage.ComplianceRunResults_EntityResults)
-	deployments := make(map[string]*storage.ComplianceDeployment)
+	deployments := make(map[string]*storage.Deployment)
 	for i := 0; i < 10000; i++ {
-		deployment := fixtures.GetComplianceDeployment()
+		deployment := fixtures.GetDeployment()
 		deployment.Id = uuid.NewV4().String()
 		results := &storage.ComplianceRunResults_EntityResults{
 			ControlResults: make(map[string]*storage.ComplianceResultValue),
