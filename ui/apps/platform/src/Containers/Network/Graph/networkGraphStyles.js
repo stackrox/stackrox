@@ -36,14 +36,7 @@ const styles = [
             label: 'data(name)',
             padding: '0px',
             'text-transform': 'uppercase',
-            'z-compound-depth': 'top',
-        },
-    },
-    {
-        selector: ':parent > node.deployment',
-        style: {
-            'background-color': COLORS.inactive,
-            ...deploymentStyle,
+            'z-compound-depth': 'auto',
         },
     },
     {
@@ -99,6 +92,13 @@ const styles = [
             'overlay-color': 'hsla(227, 85%, 50%, 1)',
             'overlay-opacity': 0.1,
             'z-compound-depth': 'auto',
+        },
+    },
+    {
+        selector: ':parent > node.deployment',
+        style: {
+            'background-color': COLORS.inactive,
+            ...deploymentStyle,
         },
     },
     {
