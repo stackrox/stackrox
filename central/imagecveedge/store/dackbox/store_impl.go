@@ -3,9 +3,8 @@ package dackbox
 import (
 	"time"
 
-	"github.com/gogo/protobuf/proto"
-	edgeDackBox "github.com/stackrox/rox/central/clustercveedge/dackbox"
-	"github.com/stackrox/rox/central/clustercveedge/store"
+	edgeDackBox "github.com/stackrox/rox/central/imagecveedge/dackbox"
+	"github.com/stackrox/rox/central/imagecveedge/store"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	pkgBatcher "github.com/stackrox/rox/pkg/batcher"
@@ -50,7 +49,7 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 }
 
 func (b *storeImpl) Count() (int, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "ClusterCVEEdge")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "ImageCVEEdge")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
@@ -66,8 +65,8 @@ func (b *storeImpl) Count() (int, error) {
 	return count, nil
 }
 
-func (b *storeImpl) GetAll() ([]*storage.ClusterCVEEdge, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "ClusterCVEEdge")
+func (b *storeImpl) GetAll() ([]*storage.ImageCVEEdge, error) {
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "ImageCVEEdge")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
@@ -79,16 +78,16 @@ func (b *storeImpl) GetAll() ([]*storage.ClusterCVEEdge, error) {
 	if err != nil {
 		return nil, err
 	}
-	ret := make([]*storage.ClusterCVEEdge, 0, len(msgs))
+	ret := make([]*storage.ImageCVEEdge, 0, len(msgs))
 	for _, msg := range msgs {
-		ret = append(ret, msg.(*storage.ClusterCVEEdge))
+		ret = append(ret, msg.(*storage.ImageCVEEdge))
 	}
 
 	return ret, nil
 }
 
-func (b *storeImpl) Get(id string) (edges *storage.ClusterCVEEdge, exists bool, err error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ClusterCVEEdge")
+func (b *storeImpl) Get(id string) (cve *storage.ImageCVEEdge, exists bool, err error) {
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ImageCVEEdge")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
@@ -101,11 +100,11 @@ func (b *storeImpl) Get(id string) (edges *storage.ClusterCVEEdge, exists bool, 
 		return nil, false, err
 	}
 
-	return msg.(*storage.ClusterCVEEdge), msg != nil, err
+	return msg.(*storage.ImageCVEEdge), true, err
 }
 
-func (b *storeImpl) GetBatch(ids []string) ([]*storage.ClusterCVEEdge, []int, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "ClusterCVEEdge")
+func (b *storeImpl) GetBatch(ids []string) ([]*storage.ImageCVEEdge, []int, error) {
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "ImageCVEEdge")
 
 	dackTxn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
@@ -113,30 +112,25 @@ func (b *storeImpl) GetBatch(ids []string) ([]*storage.ClusterCVEEdge, []int, er
 	}
 	defer dackTxn.Discard()
 
-	msgs := make([]proto.Message, 0, len(ids)/2)
-	missing := make([]int, 0, len(ids)/2)
+	ret := make([]*storage.ImageCVEEdge, 0, len(ids))
+	var missing []int
 	for idx, id := range ids {
 		msg, err := b.reader.ReadIn(edgeDackBox.BucketHandler.GetKey(id), dackTxn)
 		if err != nil {
 			return nil, nil, err
 		}
 		if msg != nil {
-			msgs = append(msgs, msg)
+			ret = append(ret, msg.(*storage.ImageCVEEdge))
 		} else {
 			missing = append(missing, idx)
 		}
 	}
 
-	ret := make([]*storage.ClusterCVEEdge, 0, len(msgs))
-	for _, msg := range msgs {
-		ret = append(ret, msg.(*storage.ClusterCVEEdge))
-	}
-
 	return ret, missing, nil
 }
 
-func (b *storeImpl) Upsert(objs ...*storage.ClusterCVEEdge) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "ClusterCVEEdge")
+func (b *storeImpl) Upsert(objs ...*storage.ImageCVEEdge) error {
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "ImageCVEEdge")
 
 	batcher := pkgBatcher.New(len(objs), batchSize)
 	for {
@@ -144,7 +138,6 @@ func (b *storeImpl) Upsert(objs ...*storage.ClusterCVEEdge) error {
 		if !valid {
 			break
 		}
-
 		if err := b.upsertBatch(objs[start:end]...); err != nil {
 			return err
 		}
@@ -153,7 +146,7 @@ func (b *storeImpl) Upsert(objs ...*storage.ClusterCVEEdge) error {
 }
 
 func (b *storeImpl) Delete(ids ...string) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.RemoveMany, "ClusterCVEEdge")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.RemoveMany, "ImageCVEEdge")
 
 	batcher := pkgBatcher.New(len(ids), batchSize)
 	for {
@@ -161,7 +154,6 @@ func (b *storeImpl) Delete(ids ...string) error {
 		if !valid {
 			break
 		}
-
 		if err := b.deleteBatch(ids[start:end]...); err != nil {
 			return err
 		}
@@ -169,7 +161,7 @@ func (b *storeImpl) Delete(ids ...string) error {
 	return nil
 }
 
-func (b *storeImpl) upsertBatch(objs ...*storage.ClusterCVEEdge) error {
+func (b *storeImpl) upsertBatch(objs ...*storage.ImageCVEEdge) error {
 	dackTxn, err := b.dacky.NewTransaction()
 	if err != nil {
 		return err

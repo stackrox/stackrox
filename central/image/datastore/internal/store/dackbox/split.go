@@ -17,6 +17,7 @@ func Split(image *storage.Image) ImageParts {
 	// These need to be called in order.
 	parts.listImage = splitListImage(parts)
 	parts.children = splitComponents(parts)
+	parts.imageCVEEdges = generateImageToCVEEdges(parts)
 
 	// Clear components in the top level image.
 	if parts.image.GetScan() != nil {
@@ -97,4 +98,18 @@ func generateImageComponentEdge(image *storage.Image, converted *storage.ImageCo
 	}
 	ret.Location = embedded.GetLocation()
 	return ret
+}
+
+func generateImageToCVEEdges(parts ImageParts) map[string]*storage.ImageCVEEdge {
+	imageCVEEdges := make(map[string]*storage.ImageCVEEdge)
+	for _, componentParts := range parts.children {
+		for _, cveParts := range componentParts.children {
+			if _, ok := imageCVEEdges[cveParts.cve.GetId()]; !ok {
+				imageCVEEdges[cveParts.cve.GetId()] = &storage.ImageCVEEdge{
+					Id: edges.EdgeID{ParentID: parts.image.GetId(), ChildID: cveParts.cve.GetId()}.ToString(),
+				}
+			}
+		}
+	}
+	return imageCVEEdges
 }

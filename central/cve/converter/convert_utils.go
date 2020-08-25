@@ -221,18 +221,18 @@ func ProtoCVEsToEmbeddedCVEs(protoCVEs []*storage.CVE) ([]*storage.EmbeddedVulne
 // It converts all the fields except except Fixed By which gets set depending on the CVE
 func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability {
 	embeddedCVE := &storage.EmbeddedVulnerability{
-		Cve:                protoCVE.GetId(),
-		Cvss:               protoCVE.GetCvss(),
-		Summary:            protoCVE.GetSummary(),
-		Link:               protoCVE.GetLink(),
-		CvssV2:             protoCVE.GetCvssV2(),
-		CvssV3:             protoCVE.GetCvssV3(),
-		PublishedOn:        protoCVE.GetPublishedOn(),
-		LastModified:       protoCVE.GetLastModified(),
-		DiscoveredAt:       protoCVE.GetCreatedAt(),
-		Suppressed:         protoCVE.GetSuppressed(),
-		SuppressActivation: protoCVE.GetSuppressActivation(),
-		SuppressExpiry:     protoCVE.GetSuppressExpiry(),
+		Cve:                   protoCVE.GetId(),
+		Cvss:                  protoCVE.GetCvss(),
+		Summary:               protoCVE.GetSummary(),
+		Link:                  protoCVE.GetLink(),
+		CvssV2:                protoCVE.GetCvssV2(),
+		CvssV3:                protoCVE.GetCvssV3(),
+		PublishedOn:           protoCVE.GetPublishedOn(),
+		LastModified:          protoCVE.GetLastModified(),
+		FirstSystemOccurrence: protoCVE.GetCreatedAt(),
+		Suppressed:            protoCVE.GetSuppressed(),
+		SuppressActivation:    protoCVE.GetSuppressActivation(),
+		SuppressExpiry:        protoCVE.GetSuppressExpiry(),
 	}
 	if protoCVE.CvssV3 != nil {
 		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3

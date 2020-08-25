@@ -31,4 +31,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_42_to_m_43_rocksdb_api_token"
 	_ "github.com/stackrox/rox/migrator/migrations/m_43_to_m_44_subject_enrichment"
 	_ "github.com/stackrox/rox/migrator/migrations/m_44_to_m_45_rocksdb_clusters"
+	_ "github.com/stackrox/rox/migrator/migrations/m_45_to_m_46_imagecveedge"
 )

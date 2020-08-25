@@ -6,10 +6,9 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
-	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
+	"github.com/stackrox/rox/migrator/rockshelper"
 	dbTypes "github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -190,34 +189,18 @@ func (suite *clusterRocksDBMigrationTestSuite) TestClusterRocksDBMigration() {
 
 	readOpts := gorocksdb.NewDefaultReadOptions()
 	for _, c := range cases {
-		cluster, exists, err := getFromRocksDB(suite.databases.RocksDB, readOpts, &storage.Cluster{}, clusterBucketName, []byte(c.boltCluster.GetId()))
+		cluster, exists, err := rockshelper.ReadFromRocksDB(suite.databases.RocksDB, readOpts, &storage.Cluster{}, clusterBucketName, []byte(c.boltCluster.GetId()))
 		suite.NoError(err)
 		suite.True(exists)
 		suite.EqualValues(c.rocksDBCluster, cluster.(*storage.Cluster))
 	}
 
 	for _, c := range cases {
-		health, exists, err := getFromRocksDB(suite.databases.RocksDB, readOpts, &storage.ClusterHealthStatus{}, clusterHealthStatusBucketName, []byte(c.boltCluster.GetId()))
+		health, exists, err := rockshelper.ReadFromRocksDB(suite.databases.RocksDB, readOpts, &storage.ClusterHealthStatus{}, clusterHealthStatusBucketName, []byte(c.boltCluster.GetId()))
 		suite.NoError(err)
 		suite.Equal(c.healthShouldExists, exists)
 		if exists {
 			suite.EqualValues(c.rocksDBHealth, health.(*storage.ClusterHealthStatus))
 		}
 	}
-}
-
-func getFromRocksDB(db *gorocksdb.DB, opts *gorocksdb.ReadOptions, msg proto.Message, prefix []byte, id []byte) (proto.Message, bool, error) {
-	key := rocksdbmigration.GetPrefixedKey(prefix, id)
-	slice, err := db.Get(opts, key)
-	if err != nil {
-		return nil, false, errors.Wrapf(err, "getting key %s", key)
-	}
-	defer slice.Free()
-	if !slice.Exists() {
-		return nil, false, nil
-	}
-	if err := proto.Unmarshal(slice.Data(), msg); err != nil {
-		return nil, false, errors.Wrapf(err, "deserializing object with key %s", key)
-	}
-	return msg, true, nil
 }

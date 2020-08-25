@@ -15,6 +15,8 @@ type ImageParts struct {
 	listImage *storage.ListImage
 
 	children []ComponentParts
+	// imageCVEEdges stores CVE ID to *storage.imageCVEEdge object mappings
+	imageCVEEdges map[string]*storage.ImageCVEEdge
 }
 
 // ComponentParts represents the pieces of data in an image component.

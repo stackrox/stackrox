@@ -96,10 +96,10 @@ func generateImageComponentEdge(image *storage.Image, converted *storage.ImageCo
 }
 
 func generateCVE(img *storage.Image, from *storage.EmbeddedVulnerability) *storage.CVE {
-	var earliesScan = earliestCVEScanTimes[from.GetCve()]
-	if earliesScan == nil || earliesScan.Compare(img.GetScan().GetScanTime()) > 0 {
-		earliesScan = img.GetScan().GetScanTime()
-		earliestCVEScanTimes[from.GetCve()] = earliesScan
+	earliestScan := earliestCVEScanTimes[from.GetCve()]
+	if earliestScan == nil || earliestScan.Compare(img.GetScan().GetScanTime()) > 0 {
+		earliestScan = img.GetScan().GetScanTime()
+		earliestCVEScanTimes[from.GetCve()] = earliestScan
 	}
 	ret := &storage.CVE{
 		Type:         storage.CVE_IMAGE_CVE,
@@ -109,7 +109,7 @@ func generateCVE(img *storage.Image, from *storage.EmbeddedVulnerability) *stora
 		Link:         from.GetLink(),
 		PublishedOn:  from.GetPublishedOn(),
 		LastModified: from.GetLastModified(),
-		CreatedAt:    earliesScan,
+		CreatedAt:    earliestScan,
 		CvssV2:       from.GetCvssV2(),
 		CvssV3:       from.GetCvssV3(),
 	}

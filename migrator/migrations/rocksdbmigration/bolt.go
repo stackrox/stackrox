@@ -77,3 +77,8 @@ func GetPrefixedKey(prefix []byte, id []byte) []byte {
 	newKey = append(newKey, id...)
 	return newKey
 }
+
+// GetIDFromPrefixedKey removes prefix from key and returns it
+func GetIDFromPrefixedKey(prefix []byte, key []byte) []byte {
+	return key[len(prefix)+len(separator):]
+}

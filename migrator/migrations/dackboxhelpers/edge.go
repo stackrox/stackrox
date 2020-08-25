@@ -1,4 +1,4 @@
-package edges
+package dackboxhelpers
 
 import (
 	"encoding/base64"
@@ -16,15 +16,15 @@ type EdgeID struct {
 
 // FromString reads a EdgeID from string form.
 func FromString(str string) (EdgeID, error) {
-	nameAndVersionEncoded := strings.Split(str, ":")
-	if len(nameAndVersionEncoded) != 2 {
+	encodedCompositeID := strings.Split(str, ":")
+	if len(encodedCompositeID) != 2 {
 		return EdgeID{}, errors.Errorf("invalid id: %s", str)
 	}
-	parentID, err := base64.RawURLEncoding.DecodeString(nameAndVersionEncoded[0])
+	parentID, err := base64.RawURLEncoding.DecodeString(encodedCompositeID[0])
 	if err != nil {
 		return EdgeID{}, err
 	}
-	childID, err := base64.RawURLEncoding.DecodeString(nameAndVersionEncoded[1])
+	childID, err := base64.RawURLEncoding.DecodeString(encodedCompositeID[1])
 	if err != nil {
 		return EdgeID{}, err
 	}

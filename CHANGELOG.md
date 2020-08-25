@@ -15,6 +15,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     [`hd` parameter](https://developers.google.com/identity/protocols/oauth2/openid-connect#hd-param),
     or to pre-select an authentication method in PingFederate via the
     [`pfidpadapterid` parameter](https://docs.pingidentity.com/bundle/pingfederate-93/page/nfr1564003024683.html).
+- In `/v1/images` response, the `vulns` field `discoveredAt` is replaced by `firstSystemOccurrence` starting release 49.0. This field represents the first time the CVE was ever discovered in the system.
+- In `/v1/images` response, a new field `firstImageOccurrence` is added to `vulns` which represents the first time a CVE was discovered in respective image.
 
 ## [48.0]
 - UI: Hovering over a namespace edge in the Network Graph will show the ports and protocols for it's connections (ROX-5228).

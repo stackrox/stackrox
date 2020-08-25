@@ -34,6 +34,7 @@ message CVE {
     string                    summary               = 4;
     string                    link                  = 5;
     google.protobuf.Timestamp published_on          = 6 [(gogoproto.moretags) = "search:\"CVE Published On,store\""];
+    // Time when the CVE was first seen in the system.
     google.protobuf.Timestamp created_at            = 15 [(gogoproto.moretags) = "search:\"CVE Created Time,store\""];
     google.protobuf.Timestamp last_modified         = 7;
     repeated Reference        references            = 8;

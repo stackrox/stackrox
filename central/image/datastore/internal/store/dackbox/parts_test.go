@@ -124,7 +124,14 @@ func TestSplitAndMergeImage(t *testing.T) {
 				FixableCves: 2,
 			},
 		},
-
+		imageCVEEdges: map[string]*storage.ImageCVEEdge{
+			"cve1": {
+				Id: edges.EdgeID{ParentID: "sha", ChildID: "cve1"}.ToString(),
+			},
+			"cve2": {
+				Id: edges.EdgeID{ParentID: "sha", ChildID: "cve2"}.ToString(),
+			},
+		},
 		children: []ComponentParts{
 			{
 				component: &storage.ImageComponent{

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
 	imageComponentEdgeDackBox "github.com/stackrox/rox/central/imagecomponentedge/dackbox"
+	imageCVEEdgeDackBox "github.com/stackrox/rox/central/imagecveedge/dackbox"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -18,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stackrox/rox/pkg/images/types"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type storeImpl struct {
@@ -237,6 +239,10 @@ func (b *storeImpl) writeImageParts(parts *ImageParts, iTime *protoTypes.Timesta
 		componentKeys = append(componentKeys, componentKey)
 	}
 
+	if err := b.writeImageCVEEdges(dackTxn, parts.imageCVEEdges, iTime); err != nil {
+		return err
+	}
+
 	if err := imageDackBox.Upserter.UpsertIn(nil, parts.image, dackTxn); err != nil {
 		return err
 	}
@@ -248,6 +254,25 @@ func (b *storeImpl) writeImageParts(parts *ImageParts, iTime *protoTypes.Timesta
 		return err
 	}
 	return dackTxn.Commit()
+}
+
+func (b *storeImpl) writeImageCVEEdges(txn *dackbox.Transaction, edges map[string]*storage.ImageCVEEdge, iTime *protoTypes.Timestamp) error {
+	for _, edge := range edges {
+		// If image-cve edge exists, it means we have already determined and stored its first image occurrence.
+		// If not, this is the first image occurrence.
+		if msg, err := imageCVEEdgeDackBox.Reader.ReadIn(imageCVEEdgeDackBox.BucketHandler.GetKey(edge.GetId()), txn); err != nil {
+			return err
+		} else if msg != nil {
+			continue
+		}
+
+		edge.FirstImageOccurrence = iTime
+
+		if err := imageCVEEdgeDackBox.Upserter.UpsertIn(nil, edge, txn); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (b *storeImpl) writeComponentParts(txn *dackbox.Transaction, parts *ComponentParts, iTime *protoTypes.Timestamp) ([]byte, error) {
@@ -334,6 +359,11 @@ func (b *storeImpl) deleteImageKeys(keys *imageKeySet) error {
 		}
 	}
 
+	for _, imageCVEEdgeKey := range keys.imageCVEEdgeKeys {
+		if err := imageCVEEdgeDackBox.Deleter.DeleteIn(imageCVEEdgeKey, upsertTxn); err != nil {
+			return err
+		}
+	}
 	return upsertTxn.Commit()
 }
 
@@ -356,10 +386,11 @@ func (b *storeImpl) readImage(txn *dackbox.Transaction, id string) (*storage.Ima
 }
 
 type imageKeySet struct {
-	imageKey      []byte
-	listImageKey  []byte
-	componentKeys []componentKeySet
-	allKeys       [][]byte
+	imageKey         []byte
+	listImageKey     []byte
+	componentKeys    []componentKeySet
+	imageCVEEdgeKeys [][]byte
+	allKeys          [][]byte
 }
 
 type componentKeySet struct {
@@ -376,7 +407,7 @@ type cveKeySet struct {
 
 func (b *storeImpl) readImageParts(txn *dackbox.Transaction, keys *imageKeySet) (*ImageParts, error) {
 	// Read the objects for the keys.
-	parts := ImageParts{}
+	parts := ImageParts{imageCVEEdges: make(map[string]*storage.ImageCVEEdge)}
 	msg, err := imageDackBox.Reader.ReadIn(keys.imageKey, txn)
 	if err != nil {
 		return nil, err
@@ -418,31 +449,51 @@ func (b *storeImpl) readImageParts(txn *dackbox.Transaction, keys *imageKeySet) 
 			if cveMsg == nil {
 				continue
 			}
+			cve := cveMsg.(*storage.CVE)
 			componentPart.children = append(componentPart.children, CVEParts{
 				edge: cveEdgeMsg.(*storage.ComponentCVEEdge),
-				cve:  cveMsg.(*storage.CVE),
+				cve:  cve,
 			})
 		}
 		parts.children = append(parts.children, componentPart)
 	}
 
+	// Gather all the edges from image to cves and store it as a map from CVE IDs to *storage.ImageCVEEdge object.
+	for _, imageCVEEdgeKey := range keys.imageCVEEdgeKeys {
+		imageCVEEdgeMsg, err := imageCVEEdgeDackBox.Reader.ReadIn(imageCVEEdgeKey, txn)
+		if err != nil {
+			return nil, err
+		}
+
+		if imageCVEEdgeMsg == nil {
+			continue
+		}
+
+		imageCVEEdge := imageCVEEdgeMsg.(*storage.ImageCVEEdge)
+		edgeID, err := edges.FromString(imageCVEEdge.GetId())
+		if err != nil {
+			return nil, err
+		}
+		parts.imageCVEEdges[edgeID.ChildID] = imageCVEEdge
+	}
 	return &parts, nil
 }
 
 // Helper that walks the graph and collects the ids of the parts of an image.
-func gatherKeysForImage(txn *dackbox.Transaction, id string) (*imageKeySet, error) {
+func gatherKeysForImage(txn *dackbox.Transaction, imageID string) (*imageKeySet, error) {
 	var allKeys [][]byte
+	allCVEsSet := set.NewStringSet()
 	ret := &imageKeySet{}
 
 	// Get the keys for the image and list image
-	ret.imageKey = imageDackBox.BucketHandler.GetKey(id)
+	ret.imageKey = imageDackBox.BucketHandler.GetKey(imageID)
 	allKeys = append(allKeys, ret.imageKey)
-	ret.listImageKey = imageDackBox.ListBucketHandler.GetKey(id)
+	ret.listImageKey = imageDackBox.ListBucketHandler.GetKey(imageID)
 	allKeys = append(allKeys, ret.listImageKey)
 
 	// Get the keys of the components.
 	for _, componentKey := range componentDackBox.BucketHandler.FilterKeys(txn.Graph().GetRefsFrom(ret.imageKey)) {
-		componentEdgeID := edges.EdgeID{ParentID: id,
+		componentEdgeID := edges.EdgeID{ParentID: imageID,
 			ChildID: componentDackBox.BucketHandler.GetID(componentKey),
 		}.ToString()
 		component := componentKeySet{
@@ -450,9 +501,10 @@ func gatherKeysForImage(txn *dackbox.Transaction, id string) (*imageKeySet, erro
 			imageComponentEdgeKey: imageComponentEdgeDackBox.BucketHandler.GetKey(componentEdgeID),
 		}
 		for _, cveKey := range cveDackBox.BucketHandler.FilterKeys(txn.Graph().GetRefsFrom(componentKey)) {
+			cveID := cveDackBox.BucketHandler.GetID(cveKey)
 			cveEdgeID := edges.EdgeID{
 				ParentID: componentDackBox.BucketHandler.GetID(componentKey),
-				ChildID:  cveDackBox.BucketHandler.GetID(cveKey),
+				ChildID:  cveID,
 			}.ToString()
 			cve := cveKeySet{
 				componentCVEEdgeKey: componentCVEEdgeDackBox.BucketHandler.GetKey(cveEdgeID),
@@ -461,10 +513,22 @@ func gatherKeysForImage(txn *dackbox.Transaction, id string) (*imageKeySet, erro
 			component.cveKeys = append(component.cveKeys, cve)
 			allKeys = append(allKeys, cve.cveKey)
 			allKeys = append(allKeys, cve.componentCVEEdgeKey)
+
+			allCVEsSet.Add(cveID)
 		}
 		ret.componentKeys = append(ret.componentKeys, component)
 		allKeys = append(allKeys, component.componentKey)
 		allKeys = append(allKeys, component.imageComponentEdgeKey)
+	}
+
+	for cveID := range allCVEsSet {
+		imageCVEEdgeID := edges.EdgeID{
+			ParentID: imageID,
+			ChildID:  cveID,
+		}.ToString()
+		imageCVEEdgeKey := imageCVEEdgeDackBox.BucketHandler.GetKey(imageCVEEdgeID)
+		ret.imageCVEEdgeKeys = append(ret.imageCVEEdgeKeys, imageCVEEdgeKey)
+		allKeys = append(allKeys, imageCVEEdgeKey)
 	}
 
 	// Generate a set of all the keys.
