@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/oauth2"
 )
@@ -58,6 +59,8 @@ type backendImpl struct {
 	formPostMode    bool
 
 	config map[string]string
+
+	httpClient *http.Client
 }
 
 func (p *backendImpl) OnEnable(provider authproviders.Provider) {
@@ -77,7 +80,7 @@ func (p *backendImpl) ExchangeToken(ctx context.Context, token, state string) (*
 }
 
 func (p *backendImpl) RefreshAccessToken(ctx context.Context, refreshToken string) (*authproviders.AuthResponse, error) {
-	token, err := p.baseOauthConfig.TokenSource(ctx, &oauth2.Token{
+	token, err := p.baseOauthConfig.TokenSource(p.injectHTTPClient(ctx), &oauth2.Token{
 		RefreshToken: refreshToken,
 	}).Token()
 	if err != nil {
@@ -128,7 +131,7 @@ func (p *backendImpl) RefreshURL() string {
 }
 
 func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, nonceVerification nonceVerificationSetting) (*authproviders.AuthResponse, error) {
-	idToken, err := p.idTokenVerifier.Verify(ctx, rawIDToken)
+	idToken, err := p.idTokenVerifier.Verify(p.injectHTTPClient(ctx), rawIDToken)
 	if err != nil {
 		return nil, err
 	}
@@ -159,11 +162,30 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		return nil, errors.New("no issuer provided")
 	}
 
-	if strings.HasPrefix(issuer, "http://") {
+	if !strings.Contains(issuer, "://") {
+		issuer = "https://" + issuer
+	}
+
+	issuerURL, err := url.Parse(issuer)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse issuer URL")
+	}
+
+	if issuerURL.Scheme == "http" {
 		return nil, errors.New("unencrypted http is not allowed for OIDC issuers")
 	}
-	if !strings.HasPrefix(issuer, "https://") {
-		issuer = "https://" + issuer
+
+	urlForDiscovery := &url.URL{
+		Opaque:  issuerURL.Opaque,
+		Scheme:  issuerURL.Scheme,
+		Host:    issuerURL.Host,
+		Path:    issuerURL.Path,
+		RawPath: issuerURL.RawPath,
+	}
+
+	httpClient := http.DefaultClient
+	if stringutils.ConsumeSuffix(&urlForDiscovery.Scheme, "+insecure") {
+		httpClient = insecureHTTPClient
 	}
 
 	oidcCfg := oidc.Config{
@@ -174,7 +196,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		return nil, errors.New("no client ID provided")
 	}
 
-	oidcProvider, issuer, err := createOIDCProvider(ctx, issuer)
+	oidcProvider, _, err := createOIDCProvider(context.WithValue(ctx, oauth2.HTTPClient, httpClient), urlForDiscovery.String())
 	if err != nil {
 		return nil, err
 	}
@@ -188,6 +210,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		defaultUIEndpoint:  uiEndpoints[0],
 		allowedUIEndpoints: set.NewStringSet(uiEndpoints...),
 		provider:           provider,
+		httpClient:         httpClient,
 	}
 
 	p.baseRedirectURL = url.URL{
@@ -232,6 +255,18 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 	if clientSecret != "" && provider.SupportsScope(oidc.ScopeOfflineAccess) {
 		p.baseOauthConfig.Scopes = append(p.baseOauthConfig.Scopes, oidc.ScopeOfflineAccess)
 	}
+
+	// Adjust the auth URL endpoint to incorporate the query string and fragment from the issuer URL.
+	authURL, err := url.Parse(p.baseOauthConfig.Endpoint.AuthURL)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unparseable OAuth2 auth URL %q", p.baseOauthConfig.Endpoint.AuthURL)
+	}
+
+	authURL.RawQuery = stringutils.JoinNonEmpty("&", authURL.RawQuery, issuerURL.RawQuery)
+	authURL.ForceQuery = authURL.ForceQuery || issuerURL.ForceQuery
+	authURL.Fragment = stringutils.JoinNonEmpty("&", authURL.Fragment, issuerURL.Fragment)
+
+	p.baseOauthConfig.Endpoint.AuthURL = authURL.String()
 
 	p.config = map[string]string{
 		issuerConfigKey:       issuer,
@@ -312,13 +347,14 @@ func (p *backendImpl) processIDPResponseForImplicitFlow(ctx context.Context, res
 func (p *backendImpl) processIDPResponseForCodeFlow(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, error) {
 	code := responseData.Get("code")
 	if code == "" {
+		log.Debugf("Failed to locate 'code' field in IdP response. Response data: %+v", responseData)
 		return nil, errors.New("required form fields not found")
 	}
 
 	ri := requestinfo.FromContext(ctx)
 	oauthCfg := p.oauthCfgForRequest(&ri)
 
-	token, err := oauthCfg.Exchange(ctx, code)
+	token, err := oauthCfg.Exchange(p.injectHTTPClient(ctx), code)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to obtain ID token for code")
 	}
@@ -394,4 +430,11 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 		claim.Attributes["groups"] = userInfo.Groups
 	}
 	return claim
+}
+
+func (p *backendImpl) injectHTTPClient(ctx context.Context) context.Context {
+	if p.httpClient != nil {
+		return context.WithValue(ctx, oauth2.HTTPClient, p.httpClient)
+	}
+	return ctx
 }

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/coreos/go-oidc"
+	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
@@ -23,22 +24,26 @@ type createOIDCProviderResult struct {
 	err      error
 }
 
-func createOIDCProviderAsync(issuer string, resultC chan<- createOIDCProviderResult) {
-	provider, err := oidc.NewProvider(context.Background(), issuer)
+func createOIDCProviderAsync(ctx context.Context, issuer string, resultC chan<- createOIDCProviderResult) {
+	provider, err := oidc.NewProvider(ctx, issuer)
 	if err != nil {
 		if strings.HasSuffix(issuer, "/") {
 			issuer = strings.TrimSuffix(issuer, "/")
 		} else {
 			issuer = issuer + "/"
 		}
-		provider, err = oidc.NewProvider(context.Background(), issuer)
+		provider, err = oidc.NewProvider(ctx, issuer)
 	}
-	resultC <- createOIDCProviderResult{issuer: issuer, provider: provider, err: err}
+
+	select {
+	case resultC <- createOIDCProviderResult{issuer: issuer, provider: provider, err: err}:
+	case <-ctx.Done():
+	}
 }
 
 func createOIDCProvider(ctx context.Context, issuer string) (*oidc.Provider, string, error) {
 	resultC := make(chan createOIDCProviderResult, 1)
-	go createOIDCProviderAsync(issuer, resultC)
+	go createOIDCProviderAsync(contextutil.WithValuesFrom(context.Background(), ctx), issuer, resultC)
 	select {
 	case res := <-resultC:
 		return res.provider, res.issuer, res.err

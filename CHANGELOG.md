@@ -5,6 +5,16 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+- OIDC authentication providers: added support for two rarely-needed configuration options:
+  - The `Issuer` can now be prefixed with `https+insecure://` to instruct StackRox to skip TLS validation
+    when talking to the provider endpoints. It is **strongly** advised to limit the use of this to testing
+    environments.
+  - The `Issuer` can now contain a querystring (`?key1=value1&key2=value2`), which will be appended as-is
+    to the authorization endpoint. This can be used to customize the provider's login screen, e.g., by
+    optimizing the GSuite login screen to a specific hosted domain via the
+    [`hd` parameter](https://developers.google.com/identity/protocols/oauth2/openid-connect#hd-param),
+    or to pre-select an authentication method in PingFederate via the
+    [`pfidpadapterid` parameter](https://docs.pingidentity.com/bundle/pingfederate-93/page/nfr1564003024683.html).
 
 ## [48.0]
 - UI: Hovering over a namespace edge in the Network Graph will show the ports and protocols for it's connections (ROX-5228).
