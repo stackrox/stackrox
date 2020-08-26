@@ -63,13 +63,9 @@ const NamespaceEdgeTooltipOverlay = ({
                     type="allowed"
                 />
             )}
-            {showPortsAndProtocols && (
+            {showPortsAndProtocols && portsAndProtocols.length !== 0 && (
                 <TooltipCardSection header="Ports & Protocols">
-                    {portsAndProtocols.length !== 0 ? (
-                        <PortsAndProtocolsFields portsAndProtocols={portsAndProtocols} />
-                    ) : (
-                        <div>Unavailable</div>
-                    )}
+                    <PortsAndProtocolsFields portsAndProtocols={portsAndProtocols} />
                 </TooltipCardSection>
             )}
         </>

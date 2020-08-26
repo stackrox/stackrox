@@ -6,13 +6,6 @@ import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
 import TooltipCardSection from 'Components/TooltipCardSection';
 import PortsAndProtocolsFields from './PortsAndProtocolsFields';
 
-const NodePortsAndProtocols = ({ portsAndProtocols }) => {
-    if (portsAndProtocols.length !== 0) {
-        return <PortsAndProtocolsFields portsAndProtocols={portsAndProtocols} />;
-    }
-    return <div>Ports & Protocols Are Unavailable</div>;
-};
-
 // @TODO: Remove "showPortsAndProtocols" when the feature flag "ROX_NETWORK_GRAPH_PORTS" is defaulted to true
 const NodeTooltipOverlay = ({
     deploymentName,
@@ -36,8 +29,8 @@ const NodeTooltipOverlay = ({
                                 </div>
                             }
                         >
-                            {showPortsAndProtocols && (
-                                <NodePortsAndProtocols
+                            {showPortsAndProtocols && ingressPortsAndProtocols.length !== 0 && (
+                                <PortsAndProtocolsFields
                                     portsAndProtocols={ingressPortsAndProtocols}
                                 />
                             )}
@@ -52,8 +45,8 @@ const NodeTooltipOverlay = ({
                                 </div>
                             }
                         >
-                            {showPortsAndProtocols && (
-                                <NodePortsAndProtocols
+                            {showPortsAndProtocols && egressPortsAndProtocols.length !== 0 && (
+                                <PortsAndProtocolsFields
                                     portsAndProtocols={egressPortsAndProtocols}
                                 />
                             )}

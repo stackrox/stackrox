@@ -15,12 +15,6 @@ const EdgeTooltipOverlay = ({
     showPortsAndProtocols,
 }) => {
     const title = 'Network Flow';
-    const tooltipContents =
-        portsAndProtocols.length !== 0 ? (
-            <PortsAndProtocolsFields portsAndProtocols={portsAndProtocols} />
-        ) : (
-            <div>Unavailable</div>
-        );
     return (
         <DetailedTooltipOverlay
             title={title}
@@ -40,9 +34,9 @@ const EdgeTooltipOverlay = ({
                             )}
                         </TooltipCardSection>
                     </div>
-                    {showPortsAndProtocols && (
+                    {showPortsAndProtocols && portsAndProtocols.length !== 0 && (
                         <TooltipCardSection header="Ports & Protocols">
-                            {tooltipContents}
+                            <PortsAndProtocolsFields portsAndProtocols={portsAndProtocols} />
                         </TooltipCardSection>
                     )}
                 </>
