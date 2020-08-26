@@ -1,7 +1,7 @@
-
 import static Services.getPolicies
 import static Services.waitForViolation
 
+import io.grpc.StatusRuntimeException
 import io.stackrox.proto.storage.AlertOuterClass
 import services.ImageService
 import spock.lang.Shared
@@ -262,7 +262,20 @@ class DefaultPoliciesTest extends BaseSpecification {
             .setQuery("Namespace:kube-system+Policy:!Kubernetes Dashboard").build()
         )
         List<ListAlert> nonWhitelistedKubeSystemViolations = kubeSystemViolations.stream()
-                .filter { x -> !WHITELISTED_KUBE_SYSTEM_POLICIES.contains(x.policy.name) }.collect()
+             .filter { x -> !WHITELISTED_KUBE_SYSTEM_POLICIES.contains(x.policy.name) }
+             .filter {
+                     // ROX-5350 - Ignore alerts for deleted policies
+            violation -> Boolean exists = false
+                try {
+                    Services.getPolicy(violation.policy.id)
+                    exists = true
+                }
+                catch (StatusRuntimeException e) {
+                    println "Cannot get the policy associated with the alert: ${e}"
+                    println violation
+                }
+                exists
+        }.collect()
 
         if (nonWhitelistedKubeSystemViolations.size() != 0) {
             nonWhitelistedKubeSystemViolations.forEach {
