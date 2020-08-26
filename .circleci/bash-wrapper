@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# The second check is necessary because, in subshells of the parent shell,
+# we want to ensure that the original REAL_BASH_ENV is not clobbered.
+if [ -n "${BASH_ENV:-}" ] && [ "${BASH_ENV}" != "/etc/bash.env" ]; then
+  export REAL_BASH_ENV="${BASH_ENV}"
+fi
+
+export BASH_ENV="/etc/bash.env"
+
+exec /bin/real-bash "$@"

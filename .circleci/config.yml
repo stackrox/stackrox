@@ -71,6 +71,37 @@ saveGoModCache: &saveGoModCache
     paths:
       - /go/pkg/mod
 
+restoreGoBuildBinaryCache: &restoreGoBuildBinaryCache
+  restore_cache:
+    name: Restoring Go binary build cache
+    keys:
+      - go-binary-cache-v2-{{ .Environment.CIRCLE_JOB }}-{{ .Branch }}-{{ .Revision }}
+      - go-binary-cache-v2-{{ .Environment.CIRCLE_JOB }}-{{ .Branch }}-
+      - go-binary-cache-v2-{{ .Environment.CIRCLE_JOB }}-master-
+      - go-binary-cache-v2-{{ .Environment.CIRCLE_JOB }}-
+      - go-binary-cache-v2-
+
+saveGoBuildBinaryCache: &saveGoBuildBinaryCache
+  save_cache:
+    name: Saving Go binary build cache
+    key: go-binary-cache-v2-{{ .Environment.CIRCLE_JOB }}-{{ .Branch }}-{{ .Revision }}
+    paths:
+      - /home/circleci/go/src/github.com/stackrox/rox/linux-gocache
+
+goModBinaryCacheKey: &goModBinaryCacheKey 'rox-go-binary-pkg-mod-v2-{{ checksum "go.sum" }}'
+restoreGoModBinaryCache: &restoreGoModBinaryCache
+  restore_cache:
+    name: Restore Go module cache
+    keys:
+      - *goModBinaryCacheKey
+
+saveGoModBinaryCache: &saveGoModBinaryCache
+  save_cache:
+    name: Saving Go module cache
+    key: *goModBinaryCacheKey
+    paths:
+      - /home/circleci/go/pkg/mod
+
 gradleCacheKey: &gradleCacheKey 'v1-rox-gradle-{{ checksum "qa-tests-backend/build.gradle" }}'
 restoreGradle: &restoreGradle
   restore_cache:
@@ -485,6 +516,14 @@ executors:
   custom:
     docker:
       - image: docker.io/stackrox/apollo-ci:0.2.14
+        auth:
+          username: $DOCKER_IO_PULL_USERNAME
+          password: $DOCKER_IO_PULL_PASSWORD
+    working_directory: /go/src/github.com/stackrox/rox
+
+  binary-builder:
+    docker:
+      - image: docker.io/stackrox/main:testing-builder-ci
         auth:
           username: $DOCKER_IO_PULL_USERNAME
           password: $DOCKER_IO_PULL_PASSWORD
@@ -2042,17 +2081,32 @@ jobs:
       - cleanup-clusters-on-fail
 
   pre-build-go-binaries:
-    executor: custom
-    resource_class: large
+    machine: true
+    working_directory: ~/go/src/github.com/stackrox/rox
     environment:
+      - GOPATH: /home/circleci/go
       - KOPS_AUTOMATION_VERSION: 0.2.7
       - EKS_AUTOMATION_VERSION: 0.0.1
+    resource_class: large
     steps:
       - checkout
-      - *restoreGoModCache
+      - run:
+          name: Create cci-export utility and setup env
+          command: |
+            sudo mv /bin/bash /bin/real-bash
+            sudo cp .circleci/bash-wrapper /bin/bash
+            sudo cp .circleci/bash.env /etc/bash.env
+      - run:
+          name: "Install new golang version"
+          command: |
+            sudo rm -rf /usr/local/go
+            VERSION=1.13.10
+            wget -c "https://storage.googleapis.com/golang/go${VERSION}.linux-amd64.tar.gz"
+            sudo tar -C /usr/local -xvzf go${VERSION}.linux-amd64.tar.gz
+            cci-export PATH $PATH:$GOPATH/bin
+      - *restoreGoModBinaryCache
       - setup-go-build-env
-      - *restoreGoBuildCache
-      - setup_remote_docker
+      - *restoreGoBuildBinaryCache
       - setup-dep-env:
           docker-login: true
 
@@ -2060,14 +2114,15 @@ jobs:
           name: Build the main Go binaries
           command: make main-build
 
-      - *saveGoBuildCache
+      - *saveGoBuildBinaryCache
+      - *saveGoModBinaryCache
 
       - run:
           name: Generate the swagger docs
           command: make swagger-docs
 
       - persist_to_workspace:
-          root: /go/src/github.com/stackrox/rox
+          root: ~/go/src/github.com/stackrox/rox
           paths:
             - bin/linux/central
             - bin/linux/migrator
