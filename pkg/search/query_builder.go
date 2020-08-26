@@ -62,11 +62,6 @@ func IsNegationQuery(value string) bool {
 	return strings.HasPrefix(value, NegationPrefix)
 }
 
-// NullQueryString returns a null query
-func NullQueryString() string {
-	return NullString
-}
-
 // NumericQueryString converts a numeric query to the string query format.
 func NumericQueryString(comparator storage.Comparator, value float32) string {
 	return fmt.Sprintf("%s%.2f", comparatorRepresentation[comparator], value)
@@ -93,15 +88,6 @@ func NewQueryBuilder() *QueryBuilder {
 		fieldsToValues:    make(map[FieldLabel][]string),
 		highlightedFields: make(map[FieldLabel]struct{}),
 	}
-}
-
-// AddLinkedRegexesHighlighted adds linked regexes.
-func (qb *QueryBuilder) AddLinkedRegexesHighlighted(fields []FieldLabel, values []string) *QueryBuilder {
-	regexValues := make([]string, len(values))
-	for i, value := range values {
-		regexValues[i] = RegexQueryString(value)
-	}
-	return qb.AddLinkedFieldsHighlighted(fields, regexValues)
 }
 
 // AddLinkedFields adds a bunch of fields and values where the matches must be in corresponding places in both fields.
@@ -159,21 +145,10 @@ func (qb *QueryBuilder) addLinkedFields(fields []FieldLabel, values []string, hi
 	return qb
 }
 
-// AddDaysHighlighted is a convenience wrapper around AddDays and MarkHighlighted.
-func (qb *QueryBuilder) AddDaysHighlighted(k FieldLabel, days int64) *QueryBuilder {
-	return qb.AddDays(k, days).MarkHighlighted(k)
-}
-
 // AddDays adds a query on the (timestamp) field k that matches if the value in k
 // is at least 'days' days before time.Now.
 func (qb *QueryBuilder) AddDays(k FieldLabel, days int64) *QueryBuilder {
 	return qb.AddStrings(k, fmt.Sprintf(">%dd", days))
-}
-
-// AddDaysBefore adds a query on the (timestamp) field k that matches if the value in k
-// is more recent 'days' before time.Now.
-func (qb *QueryBuilder) AddDaysBefore(k FieldLabel, days int64) *QueryBuilder {
-	return qb.AddStrings(k, fmt.Sprintf("<%dd", days))
 }
 
 // MarkHighlighted marks the field as one that we want results to be highlighted for.
@@ -265,15 +240,6 @@ func (qb *QueryBuilder) AddGenericTypeLinkedFieldsHighligted(fields []FieldLabel
 		strValues = append(strValues, generic.String(value))
 	}
 	return qb.addLinkedFields(fields, strValues, true)
-}
-
-// AddGenericTypeLinkedFieldsWithHighligtedValues allows you to add linked fields of different types and specify granuarly which ones you want highlights for.
-func (qb *QueryBuilder) AddGenericTypeLinkedFieldsWithHighligtedValues(fields []FieldLabel, values []interface{}, highlighted []bool) *QueryBuilder {
-	strValues := make([]string, 0, len(values))
-	for _, value := range values {
-		strValues = append(strValues, generic.String(value))
-	}
-	return qb.AddLinkedFieldsWithHighlightValues(fields, strValues, highlighted)
 }
 
 // Query returns the string version of the query.

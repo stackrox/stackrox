@@ -28,20 +28,6 @@ func ParseQuery(query string, opts ...ParseQueryOption) (*v1.Query, error) {
 // ParseQueryOption represents an option to use when parsing queries.
 type ParseQueryOption func(parser *generalQueryParser)
 
-// LinkFields will parse the input query string as a set of linked fields.
-func LinkFields() ParseQueryOption {
-	return func(parser *generalQueryParser) {
-		parser.LinkFields = true
-	}
-}
-
-// HighlightFields will cause all fields in the input query to be highlighted in the output query object.
-func HighlightFields() ParseQueryOption {
-	return func(parser *generalQueryParser) {
-		parser.HighlightFields = true
-	}
-}
-
 // MatchAllIfEmpty will cause an empty query to be returned if the input query is empty (as opposed to an error).
 func MatchAllIfEmpty() ParseQueryOption {
 	return func(parser *generalQueryParser) {
