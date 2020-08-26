@@ -321,7 +321,7 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
     @Category([BAT, Notifiers])
     def "Verify Policy Violation Notifications: #type"() {
         when:
-        "Create notificaiton(s)"
+        "Create notifications(s)"
         for (Notifier notifier : notifierTypes) {
             notifier.createNotifier()
         }
@@ -365,6 +365,7 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
             CreatePolicyService.deletePolicy(policyId)
         }
         for (Notifier notifier : notifierTypes) {
+            notifier.validateViolationResolution()
             notifier.cleanup()
             notifier.deleteNotifier()
         }

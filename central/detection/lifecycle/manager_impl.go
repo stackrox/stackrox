@@ -317,13 +317,15 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 		}
 	}
 
-	// Perform notifications and update DB.
-	modifiedDeployments, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, presentAlerts, alertmanager.WithPolicyID(policy.GetId()))
-	if err != nil {
-		return err
-	}
-	if modifiedDeployments.Cardinality() > 0 {
-		defer m.reprocessor.ReprocessRiskForDeployments(modifiedDeployments.AsSlice()...)
+	if policies.AppliesAtRunTime(policy) {
+		// Perform notifications and update DB.
+		modifiedDeployments, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, presentAlerts, alertmanager.WithPolicyID(policy.GetId()))
+		if err != nil {
+			return err
+		}
+		if modifiedDeployments.Cardinality() > 0 {
+			defer m.reprocessor.ReprocessRiskForDeployments(modifiedDeployments.AsSlice()...)
+		}
 	}
 	return nil
 }
@@ -339,18 +341,24 @@ func (m *managerImpl) RemovePolicy(policyID string) error {
 	if err := m.deploytimeDetector.PolicySet().RemovePolicy(policyID); err != nil {
 		return err
 	}
+
+	numRuntimeAlerts := len(m.runtimeDetector.PolicySet().GetCompiledPolicies())
 	if err := m.runtimeDetector.PolicySet().RemovePolicy(policyID); err != nil {
 		return err
 	}
+	runtimeAlertRemoved := len(m.runtimeDetector.PolicySet().GetCompiledPolicies())-numRuntimeAlerts > 0
 
 	m.removedPolicies.Add(policyID)
 
-	modifiedDeployments, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithPolicyID(policyID))
-	if err != nil {
-		return err
-	}
-	if modifiedDeployments.Cardinality() > 0 {
-		m.reprocessor.ReprocessRiskForDeployments(modifiedDeployments.AsSlice()...)
+	// Runtime alerts need to be explicitly removed as their updates are not synced from sensors
+	if runtimeAlertRemoved {
+		modifiedDeployments, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithPolicyID(policyID))
+		if err != nil {
+			return err
+		}
+		if modifiedDeployments.Cardinality() > 0 {
+			m.reprocessor.ReprocessRiskForDeployments(modifiedDeployments.AsSlice()...)
+		}
 	}
 	return nil
 }

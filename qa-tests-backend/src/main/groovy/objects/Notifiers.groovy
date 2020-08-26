@@ -44,6 +44,8 @@ class Notifier {
 
     void cleanup() { }
 
+    void validateViolationResolution() { }
+
     String getId() {
         return notifier.id
     }
@@ -189,9 +191,9 @@ class TeamsNotifier extends Notifier {
 }
 
 class PagerDutyNotifier extends Notifier {
+    private final baseURL = "https://api.pagerduty.com/incidents"
     private final pagerdutyURL =
-            "https://api.pagerduty.com/incidents?sort_by=created_at%3Adesc&&limit=1&service_ids[]=PRRAAWO"
-    private final pagerdutyResolveURL = "https://api.pagerduty.com/incidents"
+            baseURL + "?sort_by=created_at%3Adesc&&limit=1&service_ids[]=PRRAAWO"
     private final pagerdutyToken = Env.mustGetPagerdutyToken()
     private incidentID = null
     private incidentWatcherIndex = 0
@@ -207,9 +209,28 @@ class PagerDutyNotifier extends Notifier {
         assert newIncidents.incidents[0].description.contains(policy.description)
         incidentID = newIncidents.incidents[0].id
         println "new pagerduty incident ID: ${incidentID}"
+
+        incidentWatcherIndex = getLatestPagerDutyIncident().incidents[0].incident_number
+    }
+
+    void validateViolationResolution() {
+        Timer t = new Timer(30, 3)
+        while (t.IsValid()) {
+            println "Waiting for PagerDuty alert resolution"
+            def response = getIncident(incidentID)
+            if (response.incident.status == "resolved") {
+                incidentID = null
+                return
+            }
+        }
+        println "PagerDuty alert ${incidentID} was not resolved by StackRox"
+        assert incidentID == null
     }
 
     void cleanup() {
+        if (incidentID == null) {
+            return
+        }
         try {
             JsonObject incident = new JsonObject()
             incident.addProperty("id", incidentID)
@@ -220,7 +241,7 @@ class PagerDutyNotifier extends Notifier {
             JsonObject jsonBody = new JsonObject()
             jsonBody.add("incidents", incidents)
 
-            URL url = new URL(pagerdutyResolveURL)
+            URL url = new URL(baseURL)
             HttpURLConnection con = (HttpURLConnection) url.openConnection()
             con.setRequestMethod("PUT")
             con.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
@@ -240,6 +261,22 @@ class PagerDutyNotifier extends Notifier {
 
     def resetIncidentWatcherIndex() {
         incidentWatcherIndex = getLatestPagerDutyIncident().incidents[0].incident_number
+    }
+
+    private getIncident(String id) {
+        try {
+            def con = (HttpURLConnection) new URL(baseURL+"/${id}").openConnection()
+            con.setRequestMethod("GET")
+            con.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+            con.setRequestProperty("Accept", "application/vnd.pagerduty+json;version=2")
+            con.setRequestProperty("Authorization", "Token token=${pagerdutyToken}")
+
+            def jsonSlurper = new JsonSlurper()
+            return jsonSlurper.parseText(con.getInputStream().getText())
+        } catch (Exception e) {
+            println "Error getting PagerDuty incidents"
+            throw e
+        }
     }
 
     private getLatestPagerDutyIncident() {

@@ -81,6 +81,7 @@ func (d *alertManagerImpl) markAlertsStale(ctx context.Context, alertsToMark []*
 		err := d.alerts.MarkAlertStale(ctx, existingAlert.GetId())
 		if err == nil {
 			// run notifier for all the resolved alerts
+			existingAlert.State = storage.ViolationState_RESOLVED
 			d.notifier.ProcessAlert(ctx, existingAlert)
 		}
 		errList.AddError(err)
