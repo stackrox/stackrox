@@ -11,6 +11,8 @@ import HealthStatus from './HealthStatus';
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
 import { healthStatusStyles, isDelayedSensorHealthStatus } from '../cluster.helpers';
 
+const testId = 'sensorStatus';
+
 /*
  * Sensor Status in Clusters list or Cluster side panel
  *
@@ -30,7 +32,7 @@ const SensorStatus = ({ sensorHealthStatus, lastContact, currentDatetime }) => {
         // In rare case that the block does not fit in a narrow column,
         // the space and "whitespace-no-wrap" cause time phrase to wrap as a unit.
         const statusElement = isDelayed ? (
-            <div>
+            <div data-testid={testId}>
                 {labelElement}{' '}
                 <span className="whitespace-no-wrap">{`for ${getDistanceStrict(
                     lastContact,
@@ -38,7 +40,7 @@ const SensorStatus = ({ sensorHealthStatus, lastContact, currentDatetime }) => {
                 )}`}</span>
             </div>
         ) : (
-            <div>{labelElement}</div>
+            <div data-testid={testId}>{labelElement}</div>
         );
 
         const sensorStatus = (
@@ -65,7 +67,7 @@ const SensorStatus = ({ sensorHealthStatus, lastContact, currentDatetime }) => {
         return sensorStatus;
     }
 
-    return <HealthStatusNotApplicable />;
+    return <HealthStatusNotApplicable testId={testId} />;
 };
 
 SensorStatus.propTypes = {

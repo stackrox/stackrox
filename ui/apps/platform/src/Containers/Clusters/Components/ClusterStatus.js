@@ -7,6 +7,8 @@ import HealthStatus from './HealthStatus';
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
 import { healthStatusStyles } from '../cluster.helpers';
 
+const testId = 'clusterStatus';
+
 /*
  * Cluster Status in Clusters list or Cluster side panel
  *
@@ -17,7 +19,7 @@ const ClusterStatus = ({ overallHealthStatus }) => {
         const { Icon, bgColor, fgColor } = healthStatusStyles[overallHealthStatus];
         return (
             <HealthStatus Icon={Icon} iconColor={fgColor}>
-                <div>
+                <div data-testid={testId}>
                     <span className={`${bgColor} ${fgColor}`}>
                         {healthStatusLabels[overallHealthStatus]}
                     </span>
@@ -26,7 +28,7 @@ const ClusterStatus = ({ overallHealthStatus }) => {
         );
     }
 
-    return <HealthStatusNotApplicable />;
+    return <HealthStatusNotApplicable testId={testId} />;
 };
 
 ClusterStatus.propTypes = {

@@ -13,6 +13,8 @@ import { healthStatusStyles } from '../cluster.helpers';
 const diffDegradedMin = 7; // if less, display a day of the week for Unhealthy
 const diffHealthyMin = 30; // if less, display a date for Degraded
 
+const testId = 'credentialExpiration';
+
 const CredentialExpiration = ({ certExpiryStatus, currentDatetime }) => {
     if (certExpiryStatus?.sensorCertExpiry) {
         const { sensorCertExpiry } = certExpiryStatus;
@@ -42,7 +44,7 @@ const CredentialExpiration = ({ certExpiryStatus, currentDatetime }) => {
         // Display day or date unless expiration is today or more than 1 month in the future.
         const expirationElement =
             diffInDays !== 0 && diffInDays < 60 ? (
-                <div>
+                <div data-testid={testId}>
                     {distanceElement}{' '}
                     <span className="whitespace-no-wrap">{`on ${
                         diffInDays > 0 && diffInDays < 7
@@ -51,7 +53,7 @@ const CredentialExpiration = ({ certExpiryStatus, currentDatetime }) => {
                     }`}</span>
                 </div>
             ) : (
-                <div>{distanceElement}</div>
+                <div data-testid={testId}>{distanceElement}</div>
             );
 
         // Tooltip has the absolute date (in ISO 8601 format).
@@ -72,7 +74,7 @@ const CredentialExpiration = ({ certExpiryStatus, currentDatetime }) => {
         );
     }
 
-    return <HealthStatusNotApplicable />;
+    return <HealthStatusNotApplicable testId={testId} />;
 };
 
 CredentialExpiration.propTypes = {

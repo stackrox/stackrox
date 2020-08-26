@@ -92,6 +92,8 @@ export const dashboard = {
     timeseries: '/v1/alerts/summary/timeseries?*',
 };
 
+export const metadata = 'v1/metadata';
+
 export const network = {
     networkGraph: '/v1/networkpolicies/cluster/*',
     epoch: '/v1/networkpolicies/graph/epoch',

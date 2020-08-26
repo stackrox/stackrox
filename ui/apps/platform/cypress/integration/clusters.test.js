@@ -1,6 +1,6 @@
 import dateFns from 'date-fns';
 import { selectors, clustersUrl } from '../constants/ClustersPage';
-import { clusters as clustersApi } from '../constants/apiEndpoints';
+import { clusters as clustersApi, metadata as metadataApi } from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 import checkFeatureFlag from '../helpers/features';
 
@@ -25,7 +25,7 @@ describe('Clusters page', () => {
         it('should display all the columns expected in clusters list page', () => {
             cy.visit(clustersUrl);
 
-            const tableColumns = checkFeatureFlag('ROX_CLUSTER_HEALTH_MONITORING', true)
+            const expectedHeadings = checkFeatureFlag('ROX_CLUSTER_HEALTH_MONITORING', true)
                 ? [
                       'Name',
                       'Cloud Provider',
@@ -46,8 +46,13 @@ describe('Clusters page', () => {
                       'Credential Expiration',
                   ];
 
-            tableColumns.forEach((col) => {
-                cy.get(`${selectors.clusters.tableColumn}:contains('${col}')`);
+            cy.get(selectors.clusters.tableHeadingCell).should(($ths) => {
+                let n = 0;
+                expectedHeadings.forEach((expectedHeading) => {
+                    expect($ths.eq(n).text()).to.equal(expectedHeading);
+                    n += 1;
+                });
+                expect($ths.length).to.equal(n);
             });
         });
     });
@@ -90,7 +95,7 @@ describe('Cluster Cert Expiration', () => {
         cy.route('GET', clustersApi.single, { cluster: mockCluster }).as('cluster');
 
         cy.visit(clustersUrl);
-        cy.get(selectors.tableFirstRow).click();
+        cy.get(`${selectors.clusters.tableRowGroup}:first-child`).click();
         cy.wait('@cluster');
 
         cy.get(selectors.sidePanel);
@@ -257,5 +262,155 @@ describe('Cluster Creation Flow', () => {
                 cy.route('GET', clustersApi.list, '@singleCluster').as('clusters');
                 cy.get(`.rt-tr:contains("${clusterName}")`).should('not.exist');
             });
+    });
+});
+
+describe('Cluster Health', () => {
+    withAuth();
+
+    let clustersFixture;
+
+    before(function beforeHook() {
+        // skip the test if feature flag is not enabled
+        if (checkFeatureFlag('ROX_CLUSTER_HEALTH_MONITORING', false)) {
+            this.skip();
+        }
+
+        cy.fixture('clusters/health.json').then((clustersArg) => {
+            clustersFixture = clustersArg;
+        });
+    });
+
+    // For comparison to `lastContact` and `sensorCertExpiry` in clusters fixture.
+    const currentDatetime = new Date('2020-08-31T13:01:00Z');
+
+    // For comparison to `sensorVersion` in clusters fixture.
+    const version = '3.0.50.0';
+
+    beforeEach(() => {
+        cy.server();
+        cy.route('GET', clustersApi.list, clustersFixture).as('GetClusters');
+        cy.route('GET', metadataApi, {
+            version,
+            buildFlavor: 'release',
+            releaseBuild: true,
+            licenseStatus: 'VALID',
+        }).as('GetMetadata');
+
+        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
+
+        cy.visit(clustersUrl);
+        cy.wait(['@GetClusters', '@GetMetadata']);
+    });
+
+    const expectedClusters = [
+        {
+            clusterName: 'alpha-amsterdam-1',
+            cloudProvider: 'Not applicable',
+            clusterStatus: 'Uninitialized',
+            sensorStatus: 'Uninitialized',
+            collectorStatus: 'Uninitialized',
+            sensorUpgrade: 'Not applicable',
+            credentialExpiration: 'Not applicable',
+        },
+        {
+            clusterName: 'epsilon-edison-5',
+            cloudProvider: 'AWS us-west1',
+            clusterStatus: 'Unhealthy',
+            sensorStatus: 'Unhealthy for 1 hour',
+            collectorStatus: 'Healthy 1 hour ago',
+            sensorUpgrade: 'Up to date with Central',
+            credentialExpiration: 'in 6 days on Monday',
+        },
+        {
+            clusterName: 'eta-7',
+            cloudProvider: 'GCP us-west1',
+            clusterStatus: 'Unhealthy',
+            sensorStatus: 'Healthy',
+            collectorStatus: 'Unhealthy',
+            sensorUpgrade: 'Up to date with Central',
+            credentialExpiration: 'in 29 days on 09/29/2020',
+        },
+        {
+            clusterName: 'kappa-kilogramme-10',
+            cloudProvider: 'AWS us-central1',
+            clusterStatus: 'Degraded',
+            sensorStatus: 'Degraded for 2 minutes',
+            collectorStatus: 'Healthy 2 minutes ago',
+            sensorUpgrade: 'Up to date with Central',
+            credentialExpiration: 'in 1 month on 09/30/2020',
+        },
+        {
+            clusterName: 'lambda-liverpool-11',
+            cloudProvider: 'GCP us-central1',
+            clusterStatus: 'Degraded',
+            sensorStatus: 'Healthy',
+            collectorStatus: 'Degraded',
+            sensorUpgrade: 'Upgrade available',
+            credentialExpiration: 'in 2 months',
+        },
+        {
+            clusterName: 'mu-madegascar-12',
+            cloudProvider: 'AWS eu-central1',
+            clusterStatus: 'Healthy',
+            sensorStatus: 'Healthy',
+            collectorStatus: 'Unavailable',
+            sensorUpgrade: 'Upgrade available',
+            credentialExpiration: 'in 12 months',
+        },
+        {
+            clusterName: 'nu-york-13',
+            cloudProvider: 'AWS ap-southeast1',
+            clusterStatus: 'Healthy',
+            sensorStatus: 'Healthy',
+            collectorStatus: 'Healthy',
+            sensorUpgrade: 'Up to date with Central',
+            credentialExpiration: 'in 1 year',
+        },
+    ];
+
+    it('should appear in the list', () => {
+        /*
+         * Some cells have no internal markup (for example, Name or Cloud Provider).
+         * Other cells have div and spans for status color versus default color.
+         */
+        cy.get(selectors.clusters.tableDataCell).should(($tds) => {
+            let n = 0;
+            expectedClusters.forEach((expectedCluster) => {
+                Object.keys(expectedCluster).forEach((key) => {
+                    expect($tds.eq(n).text()).to.equal(expectedCluster[key]);
+                    n += 1;
+                });
+            });
+            expect($tds.length).to.equal(n);
+        });
+    });
+
+    expectedClusters.forEach((expectedCluster, i) => {
+        const {
+            clusterName,
+            clusterStatus,
+            sensorStatus,
+            collectorStatus,
+            sensorUpgrade,
+            credentialExpiration,
+        } = expectedCluster;
+
+        it(`should appear in the form for ${clusterName}`, () => {
+            const cluster = clustersFixture.clusters[i];
+            cy.route('GET', clustersApi.single, { cluster }).as('GetCluster');
+            cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${i + 1})`).click();
+            cy.wait('@GetCluster');
+
+            cy.get(selectors.clusterForm.nameInput).should('have.value', clusterName);
+            cy.get(selectors.clusterHealth.clusterStatus).should('have.text', clusterStatus);
+            cy.get(selectors.clusterHealth.sensorStatus).should('have.text', sensorStatus);
+            cy.get(selectors.clusterHealth.collectorStatus).should('have.text', collectorStatus);
+            cy.get(selectors.clusterHealth.sensorUpgrade).should('have.text', sensorUpgrade);
+            cy.get(selectors.clusterHealth.credentialExpiration).should(
+                'have.text',
+                credentialExpiration
+            );
+        });
     });
 });

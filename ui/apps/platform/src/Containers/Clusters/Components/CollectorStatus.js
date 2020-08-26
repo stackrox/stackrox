@@ -1,5 +1,5 @@
-import PropTypes from 'prop-types';
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
 import Tooltip from 'Components/Tooltip';
@@ -18,6 +18,8 @@ import {
 const trClassName = 'align-bottom leading-normal'; // align-bottom in case heading text wraps
 const thClassName = 'font-600 pl-0 pr-1 py-0 text-left';
 const tdClassName = 'p-0 text-right';
+
+const testId = 'collectorStatus';
 
 /*
  * Collector Status in Clusters list if `isList={true}` or Cluster side panel if `isList={false}`
@@ -50,14 +52,14 @@ const CollectorStatus = ({
         // If lastContact <= currentDateTime: X units ago
         const statusElement =
             lastContact && isDelayedSensorHealthStatus(sensorHealthStatus) ? (
-                <div>
+                <div data-testid={testId}>
                     {labelElement}{' '}
                     <span className="whitespace-no-wrap">
                         {getDistanceStrictAsPhrase(lastContact, currentDatetime)}
                     </span>
                 </div>
             ) : (
-                <div>{labelElement}</div>
+                <div data-testid={testId}>{labelElement}</div>
             );
 
         if (collectorHealthInfo) {
@@ -69,7 +71,7 @@ const CollectorStatus = ({
                             <th className={thClassName} scope="row">
                                 Collector pods ready:
                             </th>
-                            <td className={tdClassName}>
+                            <td className={tdClassName} data-testid="totalReadyPods">
                                 <span className={`${bgColor} ${fgColor}`}>{totalReadyPods}</span>
                             </td>
                         </tr>
@@ -77,7 +79,7 @@ const CollectorStatus = ({
                             <th className={thClassName} scope="row">
                                 Collector pods expected:
                             </th>
-                            <td className={tdClassName}>
+                            <td className={tdClassName} data-testid="totalDesiredPods">
                                 <span className={`${bgColor} ${fgColor}`}>{totalDesiredPods}</span>
                             </td>
                         </tr>
@@ -85,7 +87,9 @@ const CollectorStatus = ({
                             <th className={thClassName} scope="row">
                                 Registered nodes in cluster:
                             </th>
-                            <td className={tdClassName}>{totalRegisteredNodes}</td>
+                            <td className={tdClassName} data-testid="totalRegisteredNodes">
+                                {totalRegisteredNodes}
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -138,14 +142,14 @@ const CollectorStatus = ({
                 <Tooltip content={<TooltipOverlay>{reasonUnavailable}</TooltipOverlay>}>
                     <div>
                         <HealthStatus Icon={Icon} iconColor={fgColor}>
-                            {labelElement}
+                            {statusElement}
                         </HealthStatus>
                     </div>
                 </Tooltip>
             ) : (
                 <HealthStatus Icon={Icon} iconColor={fgColor}>
                     <div>
-                        {labelElement}
+                        {statusElement}
                         {reasonUnavailable}
                     </div>
                 </HealthStatus>
@@ -155,12 +159,12 @@ const CollectorStatus = ({
         // UNINITIALIZED
         return (
             <HealthStatus Icon={Icon} iconColor={fgColor}>
-                <div>{labelElement}</div>
+                <div>{statusElement}</div>
             </HealthStatus>
         );
     }
 
-    return <HealthStatusNotApplicable />;
+    return <HealthStatusNotApplicable testId={testId} />;
 };
 
 CollectorStatus.propTypes = {

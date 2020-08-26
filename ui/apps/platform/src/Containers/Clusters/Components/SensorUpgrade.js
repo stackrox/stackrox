@@ -1,6 +1,6 @@
 /* eslint-disable react/jsx-no-bind */
-import PropTypes from 'prop-types';
 import React from 'react';
+import PropTypes from 'prop-types';
 import { AlertTriangle, Check, DownloadCloud, Loader, X } from 'react-feather';
 
 import Tooltip from 'Components/Tooltip';
@@ -49,6 +49,8 @@ const trClassName = 'align-top leading-normal';
 const thClassName = 'font-600 pl-0 pr-1 py-0 text-left';
 const tdClassName = 'p-0 text-left';
 
+const testId = 'sensorUpgrade';
+
 /*
  * Sensor Upgrade cell
  * - in Clusters list might have an action (for example, Upgrade available or Retry upgrade)
@@ -96,7 +98,7 @@ const SensorUpgrade = ({ upgradeStatus, centralVersion, sensorVersion, isList, a
             }
 
             const upgradeElement = (
-                <div>
+                <div data-testid={testId}>
                     {displayElement}
                     {displayElement && actionElement ? <br /> : null}
                     {actionElement}
@@ -113,7 +115,7 @@ const SensorUpgrade = ({ upgradeStatus, centralVersion, sensorVersion, isList, a
                             <th className={thClassName} scope="row">
                                 Sensor version:
                             </th>
-                            <td className={tdClassName}>
+                            <td className={tdClassName} data-testid="sensorVersion">
                                 {sensorVersion && type === 'current' ? (
                                     <span className={`${bgColor} ${fgColor}`}>{sensorVersion}</span>
                                 ) : (
@@ -125,7 +127,7 @@ const SensorUpgrade = ({ upgradeStatus, centralVersion, sensorVersion, isList, a
                             <th className={thClassName} scope="row">
                                 Central version:
                             </th>
-                            <td className={tdClassName}>
+                            <td className={tdClassName} data-testid="centralVersion">
                                 {type === 'download' ? (
                                     <span className={`${bgColor} ${fgColor}`}>
                                         {centralVersion}
@@ -159,7 +161,7 @@ const SensorUpgrade = ({ upgradeStatus, centralVersion, sensorVersion, isList, a
         }
     }
 
-    return <HealthStatusNotApplicable />;
+    return <HealthStatusNotApplicable testId={testId} />;
 };
 
 SensorUpgrade.propTypes = {
