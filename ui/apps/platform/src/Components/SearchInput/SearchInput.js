@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import findLastIndex from 'lodash/findLastIndex';
 
 import { Creatable } from 'Components/ReactSelect';
 import {
@@ -21,7 +22,6 @@ export const searchInputPropTypes = {
     searchOptions: PropTypes.arrayOf(PropTypes.object),
     searchModifiers: PropTypes.arrayOf(PropTypes.object),
     setSearchOptions: PropTypes.func.isRequired,
-    setSearchSuggestions: PropTypes.func.isRequired,
     onSearch: PropTypes.func,
     isGlobal: PropTypes.bool,
     defaultOption: PropTypes.shape({
@@ -33,7 +33,7 @@ export const searchInputPropTypes = {
     sendAutoCompleteRequest: PropTypes.func,
     clearAutoComplete: PropTypes.func,
     autoCompleteCategories: PropTypes.arrayOf(PropTypes.string),
-    setAllSearchOptions: PropTypes.func.isRequired,
+    setAllSearchOptions: PropTypes.func,
 };
 
 export const searchInputDefaultProps = {
@@ -48,11 +48,46 @@ export const searchInputDefaultProps = {
     sendAutoCompleteRequest: null,
     clearAutoComplete: null,
     autoCompleteCategories: [],
+    setAllSearchOptions: () => {},
 };
 
 // This is a legacy search component, that will be removed soon as we move everything to URLSearchInput.
 // For now, some of the code is duplicated, and some of the components are referenced from URLSearchInput
 // in order to avoid unnecessarily excessive code duplication.
+
+/**
+ * Gets the last category search option in the search options
+ *
+ * @param {!Object[]} searchOptions
+ * @returns {!string}
+ *
+ */
+export function getLastModifier(searchOptions) {
+    const categoryIndex = findLastIndex(searchOptions, ['type', 'categoryOption']);
+    if (categoryIndex === -1) {
+        return null;
+    }
+    const category = searchOptions[categoryIndex]?.value.replace(':', '');
+    return category;
+}
+
+/**
+ * Creates the search modifiers based on an array of category strings
+ *
+ * @param {!string[]} categories an array of category strings
+ * @returns {!Object[]}
+ *
+ * ex: ["Category"] -> [{ value: "Category:", label: "Category:", type: "categoryOption" }]
+ */
+export function createSearchModifiers(categories) {
+    return categories.map((category) => {
+        return {
+            value: `${category}:`,
+            label: `${category}:`,
+            type: 'categoryOption',
+        };
+    });
+}
 
 class SearchInput extends Component {
     static propTypes = searchInputPropTypes;

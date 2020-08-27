@@ -19,7 +19,7 @@ function navigateToNetworkGraphWithMockedData() {
     cy.wait('@networkGraph');
 }
 
-describe('Network page', () => {
+xdescribe('Network page', () => {
     withAuth();
 
     it('should have selected item in nav bar', () => {
@@ -111,6 +111,10 @@ describe('Network page', () => {
         cy.get(networkPageSelectors.buttons.generateNetworkPolicies).click();
         cy.get(networkPageSelectors.panels.simulatorPanel, { timeout: 10000 }).should('be.visible');
     });
+});
+
+describe('Network Flows Table', () => {
+    withAuth();
 
     it('should show the proper table column headers for the network flows table', () => {
         cy.visit(riskURL);
@@ -126,5 +130,60 @@ describe('Network page', () => {
             cy.get(`${selectors.table.columnHeaders}:contains('Protocols')`);
             cy.get(`${selectors.table.columnHeaders}:contains('Ports')`);
         }
+    });
+
+    // eslint-disable-next-line func-names
+    it('should show the proper client-side autocomplete results for network flows table', function () {
+        if (checkFeatureFlag('ROX_NETWORK_FLOWS_SEARCH_FILTER_UI', false)) {
+            this.skip();
+        }
+
+        cy.visit(riskURL);
+        cy.get(`${selectors.table.rows}:contains('central')`).click();
+        cy.get(RiskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
+        cy.get(`${selectors.tab.tabs}:contains('Network Flows')`).click();
+
+        // check autocomplete results for Traffic
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Traffic:{enter}');
+        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(0)`).contains('ingress');
+        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(1)`).contains(
+            'bidirectional'
+        );
+        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(2)`).contains('egress');
+
+        // check autocomplete results for Deployment names
+        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Deployment:{enter}');
+        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(0)`).contains('sensor');
+        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(1)`).contains('scanner');
+        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(2)`).contains('coredns');
+
+        // check autocomplete results for Namespace names
+        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Namespace:{enter}');
+        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(0)`).contains('stackrox');
+        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(1)`).contains('kube-system');
+
+        // check autocomplete results for Protocols
+        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Protocols:{enter}');
+        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(0)`).contains(
+            'L4_PROTOCOL_TCP'
+        );
+        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(1)`).contains(
+            'L4_PROTOCOL_UDP'
+        );
+
+        // check autocomplete results for Ports
+        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Ports:{enter}');
+        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(0)`).contains('8443');
+        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(1)`).contains('8080');
+        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(2)`).contains('53');
+
+        // check autocomplete results for Connections
+        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Connection:{enter}');
+        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(0)`).contains('active');
     });
 });

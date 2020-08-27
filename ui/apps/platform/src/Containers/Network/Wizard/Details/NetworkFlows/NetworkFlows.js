@@ -9,10 +9,12 @@ import { actions as graphActions } from 'reducers/network/graph';
 
 import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 import { getNetworkFlows } from 'utils/networkGraphUtils';
+import { filterModes, filterLabels } from 'constants/networkFilterModes';
 import Panel from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import { filterModes, filterLabels } from 'constants/networkFilterModes';
+import FeatureEnabled from 'Containers/FeatureEnabled/FeatureEnabled';
+import NetworkFlowsSearch from './NetworkFlowsSearch';
 import NetworkFlowsTable from './NetworkFlowsTable';
 
 const NetworkFlows = ({
@@ -25,6 +27,12 @@ const NetworkFlows = ({
     const [selectedNode, setSelectedNode] = useState(null);
     const [page, setPage] = useState(0);
 
+    const filterStateString = filterState !== filterModes.all ? filterLabels[filterState] : '';
+
+    if (!deploymentEdges.length) {
+        return <NoResultsMessage message={`No ${filterStateString} deployment flows`} />;
+    }
+
     // @TODO: Remove "showPortsAndProtocols" when the feature flag "ROX_NETWORK_GRAPH_PORTS" is defaulted to true
     const showPortsAndProtocols = isBackendFeatureFlagEnabled(
         featureFlags,
@@ -32,16 +40,21 @@ const NetworkFlows = ({
         false
     );
 
-    const filterStateString = filterState !== filterModes.all ? filterLabels[filterState] : '';
-
-    if (!deploymentEdges.length) {
-        return <NoResultsMessage message={`No ${filterStateString} deployment flows`} />;
-    }
-
     const { networkFlows } = getNetworkFlows(deploymentEdges, filterState);
 
-    const paginationComponent = (
-        <TablePagination page={page} dataLength={networkFlows.length} setPage={setPage} />
+    const headerComponents = (
+        <>
+            <FeatureEnabled featureFlag={knownBackendFlags.ROX_NETWORK_FLOWS_SEARCH_FILTER_UI}>
+                {({ featureEnabled }) =>
+                    featureEnabled && (
+                        <div className="flex flex-1">
+                            <NetworkFlowsSearch networkFlows={networkFlows} />
+                        </div>
+                    )
+                }
+            </FeatureEnabled>
+            <TablePagination page={page} dataLength={networkFlows.length} setPage={setPage} />
+        </>
     );
     const subHeaderText = `${networkFlows.length} ${filterStateString} ${pluralize(
         'Flow',
@@ -77,11 +90,7 @@ const NetworkFlows = ({
 
     return (
         <div className="w-full h-full">
-            <Panel
-                header={subHeaderText}
-                headerComponents={paginationComponent}
-                isUpperCase={false}
-            >
+            <Panel header={subHeaderText} headerComponents={headerComponents} isUpperCase={false}>
                 <div className="w-full h-full bg-base-100">
                     <NetworkFlowsTable
                         networkFlows={networkFlows}
