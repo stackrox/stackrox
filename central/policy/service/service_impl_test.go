@@ -268,7 +268,7 @@ func (s *PolicyServiceTestSuite) TestImportPolicy() {
 	}
 
 	s.policies.EXPECT().ImportPolicies(ctx, []*storage.Policy{importedPolicy}, false).Return(mockImportResp, true, nil)
-	s.mockBuildTimePolicies.EXPECT().RemovePolicy(importedPolicy.GetId()).Return(nil)
+	s.mockBuildTimePolicies.EXPECT().RemovePolicy(importedPolicy.GetId())
 	s.mockLifecycleManager.EXPECT().UpsertPolicy(importedPolicy).Return(nil)
 	s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, nil)
 	s.mockConnectionManager.EXPECT().BroadcastMessage(gomock.Any())
@@ -350,7 +350,7 @@ func (s *PolicyServiceTestSuite) TestImportAndUpgradePolicy() {
 	}
 
 	s.policies.EXPECT().ImportPolicies(ctx, []*storage.Policy{importRespPolicy}, false).Return(mockImportResp, true, nil)
-	s.mockBuildTimePolicies.EXPECT().RemovePolicy(importRespPolicy.GetId()).Return(nil)
+	s.mockBuildTimePolicies.EXPECT().RemovePolicy(importRespPolicy.GetId())
 	s.mockLifecycleManager.EXPECT().UpsertPolicy(importRespPolicy).Return(nil)
 	s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, nil)
 	s.mockConnectionManager.EXPECT().BroadcastMessage(gomock.Any())

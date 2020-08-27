@@ -16,8 +16,9 @@ type PolicySet interface {
 	ForEach(func(CompiledPolicy) error) error
 	GetCompiledPolicies() map[string]CompiledPolicy
 
+	Exists(id string) bool
 	UpsertPolicy(*storage.Policy) error
-	RemovePolicy(policyID string) error
+	RemovePolicy(policyID string)
 }
 
 // NewPolicySet returns a new instance of a PolicySet.

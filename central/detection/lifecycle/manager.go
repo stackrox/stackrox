@@ -7,12 +7,9 @@ import (
 	"github.com/stackrox/rox/central/detection/alertmanager"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/runtime"
-	"github.com/stackrox/rox/central/enrichment"
-	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	whitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
-	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
@@ -41,20 +38,16 @@ type Manager interface {
 }
 
 // newManager returns a new manager with the injected dependencies.
-func newManager(enricher enrichment.Enricher, deploytimeDetector deploytime.Detector, runtimeDetector runtime.Detector,
+func newManager(deploytimeDetector deploytime.Detector, runtimeDetector runtime.Detector,
 	deploymentDatastore deploymentDatastore.DataStore, processesDataStore processDatastore.DataStore, whitelists whitelistDataStore.DataStore,
-	imageDataStore imageDataStore.DataStore, alertManager alertmanager.AlertManager, riskManager riskManager.Manager,
-	reprocessor reprocessor.Loop, deletedDeploymentsCache expiringcache.Cache, filter filter.Filter) *managerImpl {
+	alertManager alertmanager.AlertManager, reprocessor reprocessor.Loop, deletedDeploymentsCache expiringcache.Cache, filter filter.Filter) *managerImpl {
 	m := &managerImpl{
-		enricher:                enricher,
-		riskManager:             riskManager,
 		deploytimeDetector:      deploytimeDetector,
 		runtimeDetector:         runtimeDetector,
 		alertManager:            alertManager,
 		deploymentDataStore:     deploymentDatastore,
 		processesDataStore:      processesDataStore,
 		whitelists:              whitelists,
-		imageDataStore:          imageDataStore,
 		reprocessor:             reprocessor,
 		deletedDeploymentsCache: deletedDeploymentsCache,
 		processFilter:           filter,

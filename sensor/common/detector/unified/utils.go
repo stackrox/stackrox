@@ -32,8 +32,6 @@ func reconcilePolicySets(newList []*storage.Policy, policySet detection.PolicySe
 		policyIDSet.Remove(p.GetId())
 	}
 	for removedPolicyID := range policyIDSet {
-		if err := policySet.RemovePolicy(removedPolicyID); err != nil {
-			log.Errorf("error removing policy %q", removedPolicyID)
-		}
+		policySet.RemovePolicy(removedPolicyID)
 	}
 }

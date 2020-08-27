@@ -1,5 +1,8 @@
 import static Services.getPolicies
 import static Services.waitForViolation
+import static Services.waitForResolvedViolation
+import io.stackrox.proto.storage.PolicyOuterClass
+import services.CreatePolicyService
 import groups.BAT
 import groups.SMOKE
 import objects.Deployment
@@ -23,6 +26,12 @@ class RuntimePolicyTest extends BaseSpecification  {
                     .addLabel ( "app", "test" )
                     .setCommand(["sh" , "-c" , "apt -y update && sleep 600"]),
     ]
+
+    static final private DEPLOYMENTREMOVAL =  new Deployment()
+            .setName ("runtimeremoval")
+            .setImage ("redis@sha256:96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e")
+            .addLabel ( "app", "test" )
+            .setCommand(["sh" , "-c" , "apt -y update && sleep 600"])
 
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
@@ -58,6 +67,45 @@ class RuntimePolicyTest extends BaseSpecification  {
         DEPLOYMENTAPTGET | "Ubuntu Package Manager Execution"
 
         DEPLOYMENTAPT | "Ubuntu Package Manager Execution"
+    }
+
+    @Unroll
+    @Category([BAT])
+    def "Verify runtime alerts are removed once policy is removed"() {
+        given:
+        "Create runtime alert"
+        def policy = PolicyOuterClass.Policy.newBuilder()
+                .addLifecycleStages(PolicyOuterClass.LifecycleStage.RUNTIME)
+                .addCategories("Test")
+                .setDisabled(false)
+                .setSeverityValue(2)
+                .setName("runtime-removal-policy")
+                .addPolicySections(PolicyOuterClass.PolicySection.newBuilder()
+                .addPolicyGroups(
+                    PolicyOuterClass.PolicyGroup.newBuilder()
+                            .setFieldName("Process Name")
+                            .setBooleanOperator(PolicyOuterClass.BooleanOperator.AND)
+                           .addValues(
+                           PolicyOuterClass.PolicyValue.newBuilder()
+                                .setValue("apt")
+                                .build()
+                    )
+                ).build())
+                .build()
+        def policyID = CreatePolicyService.createNewPolicy(policy)
+        orchestrator.createDeployment(DEPLOYMENTREMOVAL)
+
+        when:
+        "Verify violation triggered then remove the policy"
+        assert waitForViolation(DEPLOYMENTREMOVAL.name, policy.name, 66)
+        CreatePolicyService.deletePolicy(policyID)
+
+        then:
+        "Verify Violation is removed"
+        assert waitForResolvedViolation(DEPLOYMENTREMOVAL.name, policy.name, 66)
+
+        cleanup:
+        orchestrator.deleteDeployment(DEPLOYMENTREMOVAL)
     }
 
 }

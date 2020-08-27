@@ -225,6 +225,10 @@ func (d *alertManagerImpl) shouldMarkAlertStale(alert *storage.Alert, presentAle
 		return true
 	}
 
+	if !d.runtimeDetector.PolicySet().Exists(alert.GetPolicy().GetId()) {
+		return true
+	}
+
 	// We only want to mark runtime alerts as stale if a policy update causes them to no longer be produced.
 	// To determine if this is a policy update, we check if there is a filter on policy ids here.
 	specifiedPolicyIDs := set.NewStringSet()

@@ -556,7 +556,7 @@ func (s *serviceImpl) addActivePolicy(policy *storage.Policy) error {
 	if policies.AppliesAtBuildTime(policy) {
 		errorList.AddError(s.buildTimePolicies.UpsertPolicy(policy))
 	} else {
-		errorList.AddError(s.buildTimePolicies.RemovePolicy(policy.GetId()))
+		s.buildTimePolicies.RemovePolicy(policy.GetId())
 	}
 
 	errorList.AddError(s.lifecycleManager.UpsertPolicy(policy))
@@ -565,7 +565,7 @@ func (s *serviceImpl) addActivePolicy(policy *storage.Policy) error {
 
 func (s *serviceImpl) removeActivePolicy(policy *storage.Policy) error {
 	errorList := errorhelpers.NewErrorList("error removing policy from detection: ")
-	errorList.AddError(s.buildTimePolicies.RemovePolicy(policy.GetId()))
+	s.buildTimePolicies.RemovePolicy(policy.GetId())
 	errorList.AddError(s.lifecycleManager.RemovePolicy(policy.GetId()))
 	return errorList.ToError()
 }

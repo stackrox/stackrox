@@ -44,12 +44,17 @@ func (p *setImpl) UpsertPolicy(policy *storage.Policy) error {
 }
 
 // RemovePolicy removes a policy from the set.
-func (p *setImpl) RemovePolicy(policyID string) error {
+func (p *setImpl) RemovePolicy(policyID string) {
 	p.policyIDToCompiled.Delete(policyID)
-	return nil
 }
 
 // GetCompiledPolicies returns all of the compiled policies
 func (p *setImpl) GetCompiledPolicies() map[string]CompiledPolicy {
 	return p.policyIDToCompiled.GetMap()
+}
+
+// Exists returns if the specific policy id exists in the set
+func (p *setImpl) Exists(id string) bool {
+	_, exists := p.policyIDToCompiled.Get(id)
+	return exists
 }

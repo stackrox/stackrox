@@ -12,14 +12,11 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/lifecycle/metrics"
 	"github.com/stackrox/rox/central/detection/runtime"
-	"github.com/stackrox/rox/central/enrichment"
-	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	centralMetrics "github.com/stackrox/rox/central/metrics"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processwhitelist"
 	whitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
-	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -49,8 +46,6 @@ type processWhitelistKey struct {
 
 type managerImpl struct {
 	reprocessor        reprocessor.Loop
-	enricher           enrichment.Enricher
-	riskManager        riskManager.Manager
 	runtimeDetector    runtime.Detector
 	deploytimeDetector deploytime.Detector
 	alertManager       alertmanager.AlertManager
@@ -58,7 +53,6 @@ type managerImpl struct {
 	deploymentDataStore     deploymentDatastore.DataStore
 	processesDataStore      processIndicatorDatastore.DataStore
 	whitelists              whitelistDataStore.DataStore
-	imageDataStore          imageDatastore.DataStore
 	deletedDeploymentsCache expiringcache.Cache
 	processFilter           filter.Filter
 
@@ -300,10 +294,7 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 			return errors.Wrapf(err, "adding policy %s to deploy time detector", policy.GetName())
 		}
 	} else {
-		err := m.deploytimeDetector.PolicySet().RemovePolicy(policy.GetId())
-		if err != nil {
-			return errors.Wrapf(err, "removing policy %s from deploy time detector", policy.GetName())
-		}
+		m.deploytimeDetector.PolicySet().RemovePolicy(policy.GetId())
 	}
 
 	if policies.AppliesAtRunTime(policy) {
@@ -311,10 +302,7 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 			return errors.Wrapf(err, "adding policy %s to runtime detector", policy.GetName())
 		}
 	} else {
-		err := m.runtimeDetector.PolicySet().RemovePolicy(policy.GetId())
-		if err != nil {
-			return errors.Wrapf(err, "removing policy %s from runtime detector", policy.GetName())
-		}
+		m.runtimeDetector.PolicySet().RemovePolicy(policy.GetId())
 	}
 
 	if policies.AppliesAtRunTime(policy) {
@@ -338,15 +326,12 @@ func (m *managerImpl) DeploymentRemoved(deployment *storage.Deployment) error {
 func (m *managerImpl) RemovePolicy(policyID string) error {
 	m.policyAlertsLock.Lock()
 	defer m.policyAlertsLock.Unlock()
-	if err := m.deploytimeDetector.PolicySet().RemovePolicy(policyID); err != nil {
-		return err
-	}
+
+	m.deploytimeDetector.PolicySet().RemovePolicy(policyID)
 
 	numRuntimeAlerts := len(m.runtimeDetector.PolicySet().GetCompiledPolicies())
-	if err := m.runtimeDetector.PolicySet().RemovePolicy(policyID); err != nil {
-		return err
-	}
-	runtimeAlertRemoved := len(m.runtimeDetector.PolicySet().GetCompiledPolicies())-numRuntimeAlerts > 0
+	m.runtimeDetector.PolicySet().RemovePolicy(policyID)
+	runtimeAlertRemoved := numRuntimeAlerts-len(m.runtimeDetector.PolicySet().GetCompiledPolicies()) > 0
 
 	m.removedPolicies.Add(policyID)
 

@@ -76,6 +76,20 @@ func (mr *MockPolicySetMockRecorder) GetCompiledPolicies() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCompiledPolicies", reflect.TypeOf((*MockPolicySet)(nil).GetCompiledPolicies))
 }
 
+// Exists mocks base method
+func (m *MockPolicySet) Exists(id string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exists", id)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Exists indicates an expected call of Exists
+func (mr *MockPolicySetMockRecorder) Exists(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockPolicySet)(nil).Exists), id)
+}
+
 // UpsertPolicy mocks base method
 func (m *MockPolicySet) UpsertPolicy(arg0 *storage.Policy) error {
 	m.ctrl.T.Helper()
@@ -91,11 +105,9 @@ func (mr *MockPolicySetMockRecorder) UpsertPolicy(arg0 interface{}) *gomock.Call
 }
 
 // RemovePolicy mocks base method
-func (m *MockPolicySet) RemovePolicy(policyID string) error {
+func (m *MockPolicySet) RemovePolicy(policyID string) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemovePolicy", policyID)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "RemovePolicy", policyID)
 }
 
 // RemovePolicy indicates an expected call of RemovePolicy
