@@ -48,8 +48,8 @@ class NetworkFlowTest extends BaseSpecification {
     static final private String MULTIPLEPORTSCONNECTION = "two-ports-connect-source"
     static final private String EXTERNALDESTINATION = "external-destination-source"
 
-    static final private List<Deployment> DEPLOYMENTS = [
-            //Target deployments
+    // Target deployments
+    static final private List<Deployment> TARGETDEPLOYMENTS = [
             new Deployment()
                     .setName(UDPCONNECTIONTARGET)
                     .setImage("stackrox/qa:socat")
@@ -75,8 +75,10 @@ class NetworkFlowTest extends BaseSpecification {
                     .addLabel("app", NGINXCONNECTIONTARGET)
                     .setExposeAsService(true)
                     .setCreateLoadBalancer(true),
+    ]
 
-            //Source deployments
+    // Source deployments
+    static final private List<Deployment> SOURCEDEPLOYMENTS = [
             new Deployment()
                     .setName(NOCONNECTIONSOURCE)
                     .setImage("nginx")
@@ -145,8 +147,18 @@ class NetworkFlowTest extends BaseSpecification {
                                   "done" as String,]),
     ]
 
+    static final private List<Deployment> DEPLOYMENTS = SOURCEDEPLOYMENTS + TARGETDEPLOYMENTS
+
     def setupSpec() {
-        orchestrator.batchCreateDeployments(DEPLOYMENTS)
+        orchestrator.batchCreateDeployments(TARGETDEPLOYMENTS)
+        for (Deployment d : TARGETDEPLOYMENTS) {
+            assert Services.waitForDeployment(d)
+        }
+        orchestrator.batchCreateDeployments(SOURCEDEPLOYMENTS)
+        for (Deployment d : SOURCEDEPLOYMENTS) {
+            assert Services.waitForDeployment(d)
+        }
+
         //
         // Commenting out ICMP test setup for now
         // See ROX-635
@@ -164,9 +176,6 @@ class NetworkFlowTest extends BaseSpecification {
         orchestrator.createDeployment(icmp)
         DEPLOYMENTS.add(icmp)
         */
-        for (Deployment d : DEPLOYMENTS) {
-            assert Services.waitForDeployment(d)
-        }
     }
 
     def cleanupSpec() {
@@ -394,7 +403,7 @@ class NetworkFlowTest extends BaseSpecification {
         assert sourceUid != null
 
         when:
-        "Check for edge in entwork graph"
+        "Check for edge in network graph"
         println "Checking for edge between ${SINGLECONNECTIONSOURCE} and ${NGINXCONNECTIONTARGET}"
         List<Edge> edges = checkForEdge(sourceUid, targetUid)
         assert edges
