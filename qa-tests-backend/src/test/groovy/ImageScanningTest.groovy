@@ -10,7 +10,6 @@ import objects.ClairScannerIntegration
 import objects.Deployment
 import objects.ECRRegistryIntegration
 import objects.GCRImageIntegration
-import objects.GCRImageIntegration
 import objects.QuayImageIntegration
 import objects.Secret
 import objects.StackroxScannerIntegration

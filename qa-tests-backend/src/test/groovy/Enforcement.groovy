@@ -1,29 +1,221 @@
-
 import static Services.waitForViolation
 
 import groups.BAT
 import groups.Integration
 import groups.PolicyEnforcement
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
-import io.stackrox.proto.storage.PolicyOuterClass
-import io.stackrox.proto.storage.ProcessWhitelistOuterClass
-import objects.DaemonSet
-import objects.Deployment
-import objects.GCRImageIntegration
-import org.junit.experimental.categories.Category
-import services.AlertService
-import services.CreatePolicyService
-import services.ImageIntegrationService
-import services.ProcessWhitelistService
-import services.ClusterService
-import spock.lang.Shared
-import spock.lang.Unroll
 import io.stackrox.proto.storage.AlertOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
+import io.stackrox.proto.storage.ProcessWhitelistOuterClass
+import io.stackrox.proto.storage.ScopeOuterClass
+import objects.DaemonSet
+import objects.Deployment
+import org.junit.experimental.categories.Category
+import services.AlertService
+import services.ClusterService
+import services.CreatePolicyService
+import services.ProcessWhitelistService
+import spock.lang.Shared
+import spock.lang.Unroll
 import util.Timer
 
 class Enforcement extends BaseSpecification {
+
+    // Test labels - each test has its own unique label space. This is also used to name
+    // each tests policy and deployment.
+    private final static String KILL_ENFORCEMENT = "kill-enforcement"
+    private final static String SCALE_DOWN_ENFORCEMENT = "scale-down-enforcement"
+    private final static String SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE = "scale-down-enforcement-build-deploy-image"
+    private final static String SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_CVSS = "scale-down-enforcement-build-deploy-cvss"
+    private final static String NODE_CONSTRAINT_ENFORCEMENT = "node-constraint-enforcement"
+    private final static String FAIL_BUILD_ENFORCEMENT = "fail-build-enforcement"
+    private final static String FAIL_BUILD_ENFORCEMENT_WITH_SCALE_TO_ZERO = "fail-build-enforcement-with-scale-to-zero"
+    private final static String SCALE_DOWN_AND_NODE_CONSTRAINT = "scale-down-and-node-constraint"
+    private final static String SCALE_DOWN_AND_NODE_CONSTRAINT_FOR_DS = "scale-down-and-node-constraint-for-ds"
+    private final static String ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS =
+            "alert-and-kill-enforcement-whitelist-process"
+    private final static String NO_ENFORCEMENT_ON_UPDATE = "no-enforcement-on-update"
+    private final static String NO_ENFORCEMENT_WITH_BYPASS_ANNOTATION = "no-enforcement-with-bypass-annotation"
+
+    // Test policies - per test specific copies of well known builtin policies with a new name,
+    // limited by app label and with initial enforcement actions.
+    private final static Map<String, Closure> POLICIES = [
+            (KILL_ENFORCEMENT)                         : {
+                duplicatePolicyForTest(
+                        APT_GET_POLICY,
+                        KILL_ENFORCEMENT,
+                        [EnforcementAction.KILL_POD_ENFORCEMENT,])
+            },
+            (SCALE_DOWN_ENFORCEMENT)                   : {
+                duplicatePolicyForTest(
+                        CONTAINER_PORT_22_POLICY,
+                        SCALE_DOWN_ENFORCEMENT,
+                        [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,])
+            },
+            (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE): {
+                PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
+                        .setName(SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE)
+                        .setDescription("Test image tag")
+                        .setRationale("Test image tag")
+                        .addLifecycleStages(LifecycleStage.BUILD)
+                        .addLifecycleStages(LifecycleStage.DEPLOY)
+                        .addCategories("Image Assurance")
+                        .setDisabled(false)
+                        .setSeverityValue(2)
+                        .addAllEnforcementActions([EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,
+                                                   EnforcementAction.FAIL_BUILD_ENFORCEMENT]
+                        )
+                        .addScope(
+                                ScopeOuterClass.Scope.newBuilder()
+                                        .setLabel(ScopeOuterClass.Scope.Label.newBuilder()
+                                        .setKey("app").setValue(SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE))
+                        )
+                        .setFields(PolicyOuterClass.PolicyFields.newBuilder()
+                                .setImageName(PolicyOuterClass.ImageNamePolicy.newBuilder()
+                                        .setTag("enforcement")
+                                        .build())
+                                .build())
+                        .build()
+                CreatePolicyService.createNewPolicy(policy)
+            },
+            (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_CVSS) : {
+                duplicatePolicyForTest(
+                        CVSS,
+                        SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_CVSS,
+                        [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT, EnforcementAction.FAIL_BUILD_ENFORCEMENT],
+                        [LifecycleStage.BUILD, LifecycleStage.DEPLOY]
+                )
+            },
+            (NODE_CONSTRAINT_ENFORCEMENT)              : {
+                duplicatePolicyForTest(
+                        CONTAINER_PORT_22_POLICY,
+                        NODE_CONSTRAINT_ENFORCEMENT,
+                        [EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,])
+            },
+            (FAIL_BUILD_ENFORCEMENT) : {
+                duplicatePolicyForTest(
+                        LATEST_TAG,
+                        FAIL_BUILD_ENFORCEMENT,
+                        [EnforcementAction.FAIL_BUILD_ENFORCEMENT],
+                        [LifecycleStage.BUILD, LifecycleStage.DEPLOY]
+                )
+            },
+            (FAIL_BUILD_ENFORCEMENT_WITH_SCALE_TO_ZERO) : {
+                duplicatePolicyForTest(
+                        LATEST_TAG,
+                        FAIL_BUILD_ENFORCEMENT_WITH_SCALE_TO_ZERO,
+                        [EnforcementAction.FAIL_BUILD_ENFORCEMENT, EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT],
+                        [LifecycleStage.BUILD, LifecycleStage.DEPLOY]
+                )
+            },
+            (SCALE_DOWN_AND_NODE_CONSTRAINT): {
+                duplicatePolicyForTest(
+                        CONTAINER_PORT_22_POLICY,
+                        SCALE_DOWN_AND_NODE_CONSTRAINT,
+                        [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,
+                         EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,],
+                )
+            },
+            (SCALE_DOWN_AND_NODE_CONSTRAINT_FOR_DS): {
+                duplicatePolicyForTest(
+                        CONTAINER_PORT_22_POLICY,
+                        SCALE_DOWN_AND_NODE_CONSTRAINT_FOR_DS,
+                        [EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
+                         EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,],
+                )
+            },
+            (ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS): {
+                duplicatePolicyForTest(
+                        WHITELISTPROCESS_POLICY,
+                        ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS,
+                        [EnforcementAction.KILL_POD_ENFORCEMENT],
+                )
+            },
+            (NO_ENFORCEMENT_ON_UPDATE): {
+                duplicatePolicyForTest(
+                        CONTAINER_PORT_22_POLICY,
+                        NO_ENFORCEMENT_ON_UPDATE,
+                        [],
+                )
+            },
+            (NO_ENFORCEMENT_WITH_BYPASS_ANNOTATION): {
+                duplicatePolicyForTest(
+                        CONTAINER_PORT_22_POLICY,
+                        NO_ENFORCEMENT_WITH_BYPASS_ANNOTATION,
+                        [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT],
+                )
+            },
+    ]
+
+    // Test deployments - the map key will be set as name and "app" label.
+    private final static Map<String, Deployment> DEPLOYMENTS = [
+            (KILL_ENFORCEMENT):
+                    new Deployment()
+                            .setImage("nginx")
+                            .setCommand(["sh", "-c", "while true; do sleep 5; apt-get -y update; done"])
+                            .setSkipReplicaWait(true),
+            (SCALE_DOWN_ENFORCEMENT):
+                    new Deployment()
+                            .setImage("busybox")
+                            .addPort(22)
+                            .setCommand(["sleep", "600"])
+                            .setSkipReplicaWait(true),
+            (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE):
+                    new Deployment()
+                            .setImage("stackrox/qa:enforcement")
+                            .addPort(22)
+                            .setSkipReplicaWait(true),
+            (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_CVSS):
+                    new Deployment()
+                            .setImage("us.gcr.io/stackrox-ci/nginx:1.9.1")
+                            .addPort(22)
+                            .setSkipReplicaWait(true)
+                            .setCommand(["sleep", "600"]),
+            (NODE_CONSTRAINT_ENFORCEMENT):
+                    new Deployment()
+                            .setImage("busybox")
+                            .addPort(22)
+                            .setCommand(["sleep", "600"])
+                            .setSkipReplicaWait(true),
+            (SCALE_DOWN_AND_NODE_CONSTRAINT):
+                    new Deployment()
+                            .setImage("busybox")
+                            .addPort(22)
+                            .setCommand(["sleep", "600"])
+                            .setSkipReplicaWait(true),
+            (ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS):
+                    new Deployment()
+                            .setImage("nginx:1.7.9")
+                            .addPort(22, "TCP")
+                            .addAnnotation("test", "annotation")
+                            .setEnv(["CLUSTER_NAME": "main"]),
+            (NO_ENFORCEMENT_ON_UPDATE):
+                    new Deployment()
+                            .setImage("busybox")
+                            .addPort(22)
+                            .setCommand(["sleep", "600"])
+                            .setSkipReplicaWait(true),
+            (NO_ENFORCEMENT_WITH_BYPASS_ANNOTATION):
+                    new Deployment()
+                            .setImage("busybox")
+                            .addPort(22)
+                            .setCommand(["sleep", "600"])
+                            .addAnnotation("admission.stackrox.io/break-glass", "yay")
+                            .setSkipReplicaWait(false),
+    ]
+
+    private final static Map<String, DaemonSet> DAEMON_SETS = [
+            (SCALE_DOWN_AND_NODE_CONSTRAINT_FOR_DS):
+                    new DaemonSet()
+                            .setImage("busybox")
+                            .addPort(22)
+                            .setCommand(["sleep", "600"])
+                            .setSkipReplicaWait(true) as DaemonSet,
+    ]
+
+    // Policies used in this test
     private final static String CONTAINER_PORT_22_POLICY = "Secure Shell (ssh) Port Exposed"
     private final static String APT_GET_POLICY = "Ubuntu Package Manager Execution"
     private final static String LATEST_TAG = "Latest tag"
@@ -32,15 +224,39 @@ class Enforcement extends BaseSpecification {
     private final static String WHITELISTPROCESS_POLICY = "Unauthorized Process Execution"
 
     @Shared
-    private String gcrId
+    private static final Map<String, String> CREATED_POLICIES = [:]
 
     def setupSpec() {
-        gcrId = GCRImageIntegration.createDefaultIntegration()
-        assert gcrId != ""
+        POLICIES.each {
+            label, create ->
+            CREATED_POLICIES[label] = create()
+            assert CREATED_POLICIES[label], "${label} policy should have been created"
+        }
+
+        println "Waiting for policies to propagate..."
+        sleep 10000
+
+        orchestrator.batchCreateDeployments(DEPLOYMENTS.collect {
+            label, d -> d.setName(label).addLabel("app", label)
+        })
+        DEPLOYMENTS.each {
+            label, d -> assert Services.waitForDeployment(d)
+        }
+        DAEMON_SETS.each {
+            label, d -> d.setName(label).addLabel("app", label).create()
+        }
     }
 
     def cleanupSpec() {
-        assert ImageIntegrationService.deleteImageIntegration(gcrId)
+        CREATED_POLICIES.each {
+            unused, policyId -> CreatePolicyService.deletePolicy(policyId)
+        }
+        DEPLOYMENTS.each {
+            label, d -> orchestrator.deleteDeployment(d)
+        }
+        DAEMON_SETS.each {
+            unused, d -> d.delete()
+        }
     }
 
     @Category([BAT, Integration, PolicyEnforcement])
@@ -49,48 +265,30 @@ class Enforcement extends BaseSpecification {
         // that is configured for Kill Pod enforcement
 
         given:
-        "Add kill enforcement to an existing runtime policy"
-        def startEnforcements = Services.updatePolicyEnforcement(
-                APT_GET_POLICY,
-                [EnforcementAction.KILL_POD_ENFORCEMENT,]
-        )
+        "policy and deployment already fabricated"
+        Deployment d = DEPLOYMENTS[KILL_ENFORCEMENT]
 
-        when:
-        "Create Deployment to test kill enforcement"
-        Deployment d = new Deployment()
-                .setName("kill-enforcement-int")
-                .setImage("nginx")
-                .addLabel("app", "kill-enforcement-int")
-                .setCommand(["sh" , "-c" , "while true; do sleep 5; apt-get -y update; done"])
-                .setSkipReplicaWait(true)
-        orchestrator.createDeployment(d)
-        assert Services.waitForDeployment(d)
-
-        and:
+        expect:
         "get violation details"
         List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
                 d.name,
-                APT_GET_POLICY,
+                KILL_ENFORCEMENT,
                 60
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
         AlertOuterClass.Alert alert = AlertService.getViolation(violations.get(0).id)
 
-        then:
+        and:
         "check pod was killed"
         def startTime = System.currentTimeMillis()
+        assert d.pods.size() > 0
         assert d.pods.collect {
             it -> println "checking if ${it.name} was killed"
             orchestrator.wasContainerKilled(it.name)
         }.find { it == true }
         assert alert.enforcement.action == EnforcementAction.KILL_POD_ENFORCEMENT
         println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
-        assert Services.getAlertEnforcementCount("kill-enforcement-int", APT_GET_POLICY) > 0
-
-        cleanup:
-        "restore enforcement state of policy and remove deployment"
-        Services.updatePolicyEnforcement(APT_GET_POLICY, startEnforcements)
-        orchestrator.deleteDeployment(d)
+        assert Services.getAlertEnforcementCount(KILL_ENFORCEMENT, KILL_ENFORCEMENT) > 0
     }
 
     @Category([BAT, Integration, PolicyEnforcement])
@@ -99,37 +297,22 @@ class Enforcement extends BaseSpecification {
         // that is configured for scale-down enforcement
 
         given:
-        "Add scale-down enforcement to an existing policy"
-        def startEnforcements = Services.updatePolicyEnforcement(
-                CONTAINER_PORT_22_POLICY,
-                [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
-        )
+        "policy and deployment already fabricated"
+        Deployment d = DEPLOYMENTS[SCALE_DOWN_ENFORCEMENT]
 
-        when:
-        "Create Deployment to test scale-down enforcement"
-        Deployment d = new Deployment()
-                .setName("scale-down-enforcement-int")
-                .setImage("busybox")
-                .addPort(22)
-                .addLabel("app", "scale-down-enforcement-int")
-                .setCommand(["sleep", "600"])
-                .setSkipReplicaWait(true)
-        orchestrator.createDeployment(d)
-        assert Services.waitForDeployment(d)
-
-        and:
+        expect:
         "get violation details"
         List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
                 d.name,
-                CONTAINER_PORT_22_POLICY,
+                SCALE_DOWN_ENFORCEMENT,
                 30
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
         AlertOuterClass.Alert alert = AlertService.getViolation(violations.get(0).id)
 
-        then:
+        and:
         "check deployment was scaled-down to 0 replicas"
-        def replicaCount = 1
+        def replicaCount = orchestrator.getDeploymentReplicaCount(d)
         def startTime = System.currentTimeMillis()
         while (replicaCount > 0 && (System.currentTimeMillis() - startTime) < 60000) {
             replicaCount = orchestrator.getDeploymentReplicaCount(d)
@@ -139,13 +322,8 @@ class Enforcement extends BaseSpecification {
         println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
         assert Services.getAlertEnforcementCount(
-                "scale-down-enforcement-int",
-                CONTAINER_PORT_22_POLICY) == 1
-
-        cleanup:
-        "restore enforcement state of policy and remove deployment"
-        Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
-        orchestrator.deleteDeployment(d)
+                SCALE_DOWN_ENFORCEMENT,
+                SCALE_DOWN_ENFORCEMENT) == 1
     }
 
     @Category([BAT, Integration, PolicyEnforcement])
@@ -155,57 +333,22 @@ class Enforcement extends BaseSpecification {
         // DEPLOY Lifecycle Stages
 
         given:
-        "custom policy to test image tag with enforcement and lifecycle stages"
-        PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
-                .setName("TestImageTagPolicyForEnforcement")
-                .setDescription("Test image tag")
-                .setRationale("Test image tag")
-                .addLifecycleStages(LifecycleStage.BUILD)
-                .addLifecycleStages(LifecycleStage.DEPLOY)
-                .addCategories("Image Assurance")
-                .setDisabled(false)
-                .setSeverityValue(2)
-                .setFields(PolicyOuterClass.PolicyFields.newBuilder()
-                        .setImageName(PolicyOuterClass.ImageNamePolicy.newBuilder()
-                                .setTag("enforcement")
-                                .build())
-                        .build())
-                .build()
-        String policyID = CreatePolicyService.createNewPolicy(policy)
-        assert policyID != null
+        "policy and deployment already fabricated"
+        Deployment d = DEPLOYMENTS[SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE]
 
-        and:
-        "add enforcement action"
-        Services.updatePolicyEnforcement(
-                "TestImageTagPolicyForEnforcement",
-                [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,
-                 EnforcementAction.FAIL_BUILD_ENFORCEMENT]
-        )
-
-        when:
-        "Create Deployment to test scale-down enforcement"
-        Deployment d = new Deployment()
-                .setName("scale-down-enforcement-build-deploy-image")
-                .setImage("stackrox/qa:enforcement")
-                .addPort(22)
-                .addLabel("app", "scale-down-enforcement-build-deploy")
-                .setSkipReplicaWait(true)
-        orchestrator.createDeployment(d)
-        assert Services.waitForDeployment(d)
-
-        and:
+        expect:
         "get violation details"
         List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
                 d.name,
-                "TestImageTagPolicyForEnforcement",
+                SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE,
                 30
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
         AlertOuterClass.Alert alert = AlertService.getViolation(violations.get(0).id)
 
-        then:
+        and:
         "check deployment was scaled-down to 0 replicas"
-        def replicaCount = 1
+        def replicaCount = orchestrator.getDeploymentReplicaCount(d)
         def startTime = System.currentTimeMillis()
         while (replicaCount > 0 && (System.currentTimeMillis() - startTime) < 60000) {
             replicaCount = orchestrator.getDeploymentReplicaCount(d)
@@ -216,14 +359,7 @@ class Enforcement extends BaseSpecification {
         assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
         assert Services.getAlertEnforcementCount(
                 d.name,
-                "TestImageTagPolicyForEnforcement") == 1
-
-        cleanup:
-        "restore enforcement state of policy and remove deployment"
-        orchestrator.deleteDeployment(d)
-        if (policyID) {
-            CreatePolicyService.deletePolicy(policyID)
-        }
+                SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE) == 1
     }
 
     @Category([BAT, Integration, PolicyEnforcement])
@@ -233,45 +369,22 @@ class Enforcement extends BaseSpecification {
         // DEPLOY Lifecycle Stages
 
         given:
-        "add BUILD and DEPLOY lifecycle stages"
-        def startlifeCycle = Services.updatePolicyLifecycleStage(
-                CVSS,
-                [LifecycleStage.BUILD, LifecycleStage.DEPLOY]
-        )
+        "policy and deployment already fabricated"
+        Deployment d = DEPLOYMENTS[SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_CVSS]
 
-        and:
-        "Add scale-down and fail-build enforcement to an existing policy"
-        def startEnforcements = Services.updatePolicyEnforcement(
-                CVSS,
-                [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,
-                 EnforcementAction.FAIL_BUILD_ENFORCEMENT]
-        )
-
-        when:
-        "Create Deployment to test scale-down enforcement"
-        Deployment d = new Deployment()
-                .setName("scale-down-enforcement-build-deploy-cvss")
-                .setImage("us.gcr.io/stackrox-ci/nginx:1.9.1")
-                .addPort(22)
-                .addLabel("app", "scale-down-enforcement-build-deploy")
-                .setSkipReplicaWait(true)
-                .setCommand(["sleep", "600"])
-        orchestrator.createDeployment(d)
-        assert Services.waitForDeployment(d)
-
-        and:
+        expect:
         "get violation details"
         List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
                 d.name,
-                CVSS,
+                SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_CVSS,
                 30
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
         AlertOuterClass.Alert alert = AlertService.getViolation(violations.get(0).id)
 
-        then:
+        and:
         "check deployment was scaled-down to 0 replicas"
-        def replicaCount = 1
+        def replicaCount = orchestrator.getDeploymentReplicaCount(d)
         def startTime = System.currentTimeMillis()
         while (replicaCount > 0 && (System.currentTimeMillis() - startTime) < 60000) {
             replicaCount = orchestrator.getDeploymentReplicaCount(d)
@@ -282,13 +395,7 @@ class Enforcement extends BaseSpecification {
         assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
         assert Services.getAlertEnforcementCount(
                 d.name,
-                CVSS) == 1
-
-        cleanup:
-        "restore enforcement state of policy and remove deployment"
-        Services.updatePolicyEnforcement(CVSS, startEnforcements)
-        Services.updatePolicyLifecycleStage(CVSS, startlifeCycle)
-        orchestrator.deleteDeployment(d)
+                SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_CVSS) == 1
     }
 
     @Category([BAT, Integration, PolicyEnforcement])
@@ -297,35 +404,20 @@ class Enforcement extends BaseSpecification {
         // that is configured for node constraint enforcement
 
         given:
-        "Add node constraint enforcement to an existing policy"
-        def startEnforcements = Services.updatePolicyEnforcement(
-                CONTAINER_PORT_22_POLICY,
-                [EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,]
-        )
+        "policy and deployment already fabricated"
+        Deployment d = DEPLOYMENTS[NODE_CONSTRAINT_ENFORCEMENT]
 
-        when:
-        "Create Deployment to test node constraint enforcement"
-        Deployment d = new Deployment()
-                .setName("node-constraint-enforcement-int")
-                .setImage("busybox")
-                .addPort(22)
-                .addLabel("app", "node-constraint-enforcement-int")
-                .setCommand(["sleep", "600"])
-                .setSkipReplicaWait(true)
-        orchestrator.createDeployment(d)
-        assert Services.waitForDeployment(d)
-
-        and:
+        expect:
         "get violation details"
         List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
                 d.name,
-                CONTAINER_PORT_22_POLICY,
+                NODE_CONSTRAINT_ENFORCEMENT,
                 30
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
         AlertOuterClass.Alert alert = AlertService.getViolation(violations.get(0).id)
 
-        then:
+        and:
         "check deployment set with unsatisfiable node constraint, and unavailable nodes = desired nodes"
         def nodeSelectors = null
         def startTime = System.currentTimeMillis()
@@ -339,33 +431,20 @@ class Enforcement extends BaseSpecification {
                 orchestrator.getDeploymentReplicaCount(d)
         assert alert.enforcement.action == EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT
         assert Services.getAlertEnforcementCount(
-                "node-constraint-enforcement-int",
-                CONTAINER_PORT_22_POLICY) == 1
-
-        cleanup:
-        "restore enforcement state of policy and remove deployment"
-        Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
-        orchestrator.deleteDeployment(d)
+                d.name,
+                NODE_CONSTRAINT_ENFORCEMENT) == 1
     }
 
+    @Unroll
     @Category([BAT, Integration, PolicyEnforcement])
-    def "Test Fail Build Enforcement - Integration"() {
+    def "Test Fail Build Enforcement - #policyName - Integration (build,deploy)"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for fail build enforcement
 
         given:
-        "Apply policy at Build time"
-        def startlifeCycle = Services.updatePolicyLifecycleStage(
-                LATEST_TAG,
-                [LifecycleStage.BUILD, LifecycleStage.DEPLOY]
-        )
-        "Add node constraint enforcement to an existing policy"
-        def startEnforcements = Services.updatePolicyEnforcement(
-                LATEST_TAG,
-                [EnforcementAction.FAIL_BUILD_ENFORCEMENT,]
-        )
+        "policy already fabricated"
 
-        when:
+        and:
         "Request Image Scan"
         def scanResults = Services.requestBuildImageScan(
                 "docker.io",
@@ -373,99 +452,48 @@ class Enforcement extends BaseSpecification {
                 "latest"
         )
 
-        then:
+        expect:
         "verify violation and enforcement"
         assert scanResults.getAlertsList().findAll {
-            it.getPolicy().name == LATEST_TAG &&
+            it.getPolicy().name == policyName &&
             it.getPolicy().getEnforcementActionsList().find {
                 it.getNumber() == EnforcementAction.FAIL_BUILD_ENFORCEMENT_VALUE
             }
         }.size() == 1
 
-        cleanup:
-        "restore enforcement state of policy and remove deployment"
-        Services.updatePolicyEnforcement(LATEST_TAG, startEnforcements)
-        Services.updatePolicyLifecycleStage(LATEST_TAG, startlifeCycle)
-    }
-
-    @Category([BAT, Integration, PolicyEnforcement])
-    def "Test Fail Build Enforcement - Integration (build,deploy)"() {
-        // This test verifies enforcement by triggering a policy violation on a policy
-        // that is configured for fail build enforcement
-
-        given:
-        "Apply policy at Build time"
-        def startlifeCycle = Services.updatePolicyLifecycleStage(
-                LATEST_TAG,
-                [LifecycleStage.BUILD, LifecycleStage.DEPLOY]
-        )
-        "Add node constraint enforcement to an existing policy"
-        def startEnforcements = Services.updatePolicyEnforcement(
-                LATEST_TAG,
-                [EnforcementAction.FAIL_BUILD_ENFORCEMENT, EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT]
-        )
-
-        when:
-        "Request Image Scan"
-        def scanResults = Services.requestBuildImageScan(
-                "docker.io",
-                "library/nginx",
-                "latest"
-        )
-
-        then:
-        "verify violation and enforcement"
-        assert scanResults.getAlertsList().findAll {
-            it.getPolicy().name == LATEST_TAG &&
-            it.getPolicy().getEnforcementActionsList().find {
-                it.getNumber() == EnforcementAction.FAIL_BUILD_ENFORCEMENT_VALUE
-            }
-        }.size() == 1
-
-        cleanup:
-        "restore enforcement state of policy and remove deployment"
-        Services.updatePolicyEnforcement(LATEST_TAG, startEnforcements)
-        Services.updatePolicyLifecycleStage(LATEST_TAG, startlifeCycle)
+        where:
+        policyName | _
+        FAIL_BUILD_ENFORCEMENT | _
+        FAIL_BUILD_ENFORCEMENT_WITH_SCALE_TO_ZERO | _
     }
 
     @Category([Integration, PolicyEnforcement])
-    def "Test Scale-down and Node Selection Enforcement - Deployment"() {
+    def "Test Scale-down and Node Constraint Enforcement - Deployment"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for scale-down enforcement
 
         given:
-        "Add scale-down and Node Selection enforcement to an existing policy"
-        def startEnforcements = Services.updatePolicyEnforcement(
-                CONTAINER_PORT_22_POLICY,
-                [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,
-                 EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
-                ]
-        )
+        "policy and deployment already fabricated"
+        Deployment d = DEPLOYMENTS[SCALE_DOWN_AND_NODE_CONSTRAINT]
 
-        when:
-        "Create Deployment to test scale-down and Node Selection enforcement"
-        Deployment d = new Deployment()
-                .setName("scale-node-deployment-enforcement-int")
-                .setImage("busybox")
-                .addPort(22)
-                .addLabel("app", "scale-node-deployment-enforcement-int")
-                .setSkipReplicaWait(true)
-                .setCommand(["sleep", "600"])
-        orchestrator.createDeployment(d)
-
-        and:
+        expect:
         "get violation details"
         List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
                 d.name,
-                CONTAINER_PORT_22_POLICY,
+                SCALE_DOWN_AND_NODE_CONSTRAINT,
                 30
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
-        AlertOuterClass.Alert alert = AlertService.getViolation(violations.get(0).id)
+        AlertOuterClass.ListAlert scaleToZeroViolation = violations.find {
+            v -> AlertOuterClass.Alert a = AlertService.getViolation(v.id)
+            a.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
+        }
+        assert scaleToZeroViolation
+        AlertOuterClass.Alert alert = AlertService.getViolation(scaleToZeroViolation.id)
 
-        then:
+        and:
         "check deployment was scaled-down to 0 replicas and node selection was not applied"
-        def replicaCount = 1
+        def replicaCount = orchestrator.getDeploymentReplicaCount(d)
         def startTime = System.currentTimeMillis()
         while (replicaCount > 0 && (System.currentTimeMillis() - startTime) < 60000) {
             replicaCount = orchestrator.getDeploymentReplicaCount(d)
@@ -479,51 +507,30 @@ class Enforcement extends BaseSpecification {
         assert orchestrator.getDeploymentUnavailableReplicaCount(d) !=
                 orchestrator.getDeploymentReplicaCount(d)
         assert Services.getAlertEnforcementCount(
-                "scale-node-deployment-enforcement-int",
-                CONTAINER_PORT_22_POLICY) == 1
-
-        cleanup:
-        "restore enforcement state of policy and remove deployment"
-        Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
-        orchestrator.deleteDeployment(d)
+                d.name,
+                SCALE_DOWN_AND_NODE_CONSTRAINT) == 1
     }
 
     @Category([Integration, PolicyEnforcement])
-    def "Test Scale-down and Node Selection Enforcement - DaemonSet"() {
+    def "Test Scale-down and Node Constraint Enforcement - DaemonSet"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for scale-down enforcement
 
         given:
-        "Add scale-down and Node Selection enforcement to an existing policy"
-        def startEnforcements = Services.updatePolicyEnforcement(
-                CONTAINER_PORT_22_POLICY,
-                [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,
-                 EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
-                ]
-        )
+        "policy and daemon set already fabricated"
+        DaemonSet d = DAEMON_SETS[SCALE_DOWN_AND_NODE_CONSTRAINT_FOR_DS]
 
-        when:
-        "Create DaemonSet to test scale-down and Node Selection enforcement"
-        DaemonSet d = new DaemonSet()
-                .setName("scale-node-daemonset-enforcement-int")
-                .setImage("busybox")
-                .addPort(22)
-                .addLabel("app", "scale-node-daemonset-enforcement-int")
-                .setSkipReplicaWait(true)
-                .setCommand(["sleep", "600"])
-                .create()
-
-        and:
+        expect:
         "get violation details"
         List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
                 d.name,
-                CONTAINER_PORT_22_POLICY,
+                SCALE_DOWN_AND_NODE_CONSTRAINT_FOR_DS,
                 30
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
         AlertOuterClass.Alert alert = AlertService.getViolation(violations.get(0).id)
 
-        then:
+        and:
         "check deployment set with unsatisfiable node constraint, and unavailable nodes = desired nodes"
         def nodeSelectors = null
         def startTime = System.currentTimeMillis()
@@ -538,13 +545,8 @@ class Enforcement extends BaseSpecification {
         assert alert.enforcement.action == EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT
         assert orchestrator.getDaemonSetReplicaCount(d) == 0
         assert Services.getAlertEnforcementCount(
-                "scale-node-daemonset-enforcement-int",
-                CONTAINER_PORT_22_POLICY) == 1
-
-        cleanup:
-        "restore enforcement state of policy and remove deployment"
-        Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
-        d.delete()
+                d.name,
+                SCALE_DOWN_AND_NODE_CONSTRAINT_FOR_DS) == 1
     }
 
     @Unroll
@@ -571,9 +573,9 @@ class Enforcement extends BaseSpecification {
         where:
         "Data inputs:"
 
-        lifecycles                                        | policy         | allowed
+        lifecycles                | policy         | allowed
 
-        [LifecycleStage.BUILD,]   | SCAN_AGE     | true
+        [LifecycleStage.BUILD,]   | SCAN_AGE       | true
 
         [LifecycleStage.DEPLOY,]  | LATEST_TAG     | true
 
@@ -618,7 +620,7 @@ class Enforcement extends BaseSpecification {
         def enforcements = EnforcementAction.values() as List
         enforcements.remove(EnforcementAction.UNSET_ENFORCEMENT)
         enforcements.remove(EnforcementAction.UNRECOGNIZED)
-        def result = Services.updatePolicyEnforcement(policy, enforcements)
+        List<EnforcementAction> result = Services.updatePolicyEnforcement(policy, enforcements, false)
         assert !result.contains("EXCEPTION")
 
         then:
@@ -630,7 +632,7 @@ class Enforcement extends BaseSpecification {
         "revert policy lifecycle"
         Services.updatePolicyLifecycleStage(policy, originalStages)
         if (!result.contains("EXCEPTION")) {
-            Services.updatePolicyEnforcement(policy, result)
+            Services.updatePolicyEnforcement(policy, result, false)
         }
 
         where:
@@ -663,71 +665,51 @@ class Enforcement extends BaseSpecification {
     }
 
     @Category([BAT, PolicyEnforcement])
-    def "Test Alert and  Kill Pod Enforcement - Whitelist Process"() {
+    def "Test Alert and Kill Pod Enforcement - Whitelist Process"() {
         // This test verifies enforcement of kill pod after triggering a policy violation of
         //  Unauthorized Process Execution
         given:
-        "launch deployment and policy violation to whitelist process policy"
-        Deployment wpDeployment = new Deployment()
-                .setName("deploymentnginx")
-                .setImage("nginx:1.7.9")
-                .addPort(22, "TCP")
-                .addAnnotation("test", "annotation")
-                .setEnv(["CLUSTER_NAME": "main"])
-                .addLabel("app", "test")
-        orchestrator.createDeployment(wpDeployment)
+        "policy and deployment already fabricated"
+        Deployment d = DEPLOYMENTS[ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS]
 
-        def startEnforcements = Services.updatePolicyEnforcement(
-                WHITELISTPROCESS_POLICY,
-                [EnforcementAction.KILL_POD_ENFORCEMENT,
-                ]
-        )
-        assert !startEnforcements.contains("EXCEPTION")
         when:
         String clusterId = ClusterService.getClusterId()
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
-                getProcessWhitelist(clusterId, wpDeployment)
+                getProcessWhitelist(clusterId, d)
         assert (whitelist != null)
         println whitelist
         List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists = ProcessWhitelistService.
-                lockProcessWhitelists(clusterId, wpDeployment, "", true)
+                lockProcessWhitelists(clusterId, d, "", true)
         assert lockProcessWhitelists.size() ==  1
         assert  lockProcessWhitelists.get(0).getElementsList().
                 find { it.element.processName.equalsIgnoreCase("/usr/sbin/nginx") } != null
-        orchestrator.execInContainer(wpDeployment, "pwd")
-        assert waitForViolation(wpDeployment.name, WHITELISTPROCESS_POLICY, 90)
+        orchestrator.execInContainer(d, "pwd")
+        assert waitForViolation(d.name, ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS, 90)
 
         then:
         "check pod was killed"
         List<AlertOuterClass.ListAlert> violations = AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest
                 .newBuilder().build())
         String alertId = violations.find {
-            it.getPolicy().name.equalsIgnoreCase(WHITELISTPROCESS_POLICY) &&
-            it.deployment.id.equalsIgnoreCase(wpDeployment.deploymentUid) }?.id
+            it.getPolicy().name.equalsIgnoreCase(ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS) &&
+            it.deployment.id.equalsIgnoreCase(d.deploymentUid) }?.id
         assert (alertId != null)
         AlertOuterClass.Alert alert = AlertService.getViolation(alertId)
         assert alert != null
 
         def startTime = System.currentTimeMillis()
-        assert wpDeployment.pods.collect {
+        assert d.pods.collect {
             it ->
             println "checking if ${it.name} was killed"
             orchestrator.wasContainerKilled(it.name)
         }.find { it == true }
         assert alert.enforcement.action == EnforcementAction.KILL_POD_ENFORCEMENT
         println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
-        assert Services.getAlertEnforcementCount(wpDeployment.name, WHITELISTPROCESS_POLICY) > 0
+        assert Services.getAlertEnforcementCount(d.name, ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS) > 0
 
         cleanup:
-        "remove deployment"
-        if (!startEnforcements.contains("EXCEPTION")) {
-            Services.updatePolicyEnforcement(WHITELISTPROCESS_POLICY, startEnforcements)
-        }
         if (alertId != null) {
             AlertService.resolveAlert(alertId, false)
-        }
-        if (wpDeployment.deploymentUid != null) {
-            orchestrator.deleteDeployment(wpDeployment)
         }
     }
 
@@ -737,34 +719,29 @@ class Enforcement extends BaseSpecification {
         // that is configured for scale-down enforcement, but not applying enforcements because
         // the policy is only violated once the deployment has been updated
 
-        def startEnforcements = null
-
         given:
-        "Create Deployment to test scale-down enforcement"
-        Deployment d = new Deployment()
-                .setName("scale-down-enforcement-int")
-                .setImage("busybox")
-                .addPort(22)
-                .addLabel("app", "scale-down-enforcement-int")
-                .setCommand(["sleep", "600"])
-                .setSkipReplicaWait(true)
-        orchestrator.createDeployment(d)
-        assert Services.waitForDeployment(d)
+        "policy and deployment already fabricated"
+        Deployment d = DEPLOYMENTS[NO_ENFORCEMENT_ON_UPDATE]
 
-        when:
+        and:
         "get violation details"
         List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
                 d.name,
-                CONTAINER_PORT_22_POLICY,
+                NO_ENFORCEMENT_ON_UPDATE,
                 30
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
 
         and:
+        "not scaled down"
+        assert orchestrator.getDeploymentReplicaCount(d) == 1
+
+        when:
         "Add scale-down enforcement to an existing policy"
-        startEnforcements = Services.updatePolicyEnforcement(
-                CONTAINER_PORT_22_POLICY,
-                [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
+        Services.updatePolicyEnforcement(
+                NO_ENFORCEMENT_ON_UPDATE,
+                [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,],
+                false
         )
 
         and:
@@ -779,13 +756,8 @@ class Enforcement extends BaseSpecification {
         Timer t = new Timer(10, 1)
         println "Verifying that enforcement action was not taken"
         while (t.IsValid()) {
-            assert orchestrator.getDeploymentReplicaCount(d) == 2
+            assert orchestrator.getDeploymentReplicaCount(d) != 0
         }
-
-        cleanup:
-        "restore enforcement state of policy and remove deployment"
-        Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
-        orchestrator.deleteDeployment(d)
     }
 
     @Category([BAT, Integration, PolicyEnforcement])
@@ -795,30 +767,14 @@ class Enforcement extends BaseSpecification {
         // annotation.
 
         given:
-        "Add scale-down enforcement to an existing policy"
-        def startEnforcements = Services.updatePolicyEnforcement(
-                CONTAINER_PORT_22_POLICY,
-                [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
-        )
+        "policy and deployment already fabricated"
+        Deployment d = DEPLOYMENTS[NO_ENFORCEMENT_WITH_BYPASS_ANNOTATION]
 
-        when:
-        "Create Deployment to test scale-down enforcement"
-        Deployment d = new Deployment()
-                .setName("scale-down-enforcement-bypass")
-                .setImage("busybox")
-                .addPort(22)
-                .addLabel("app", "scale-down-enforcement-bypass")
-                .setCommand(["sleep", "600"])
-                .addAnnotation("admission.stackrox.io/break-glass", "yay")
-                .setSkipReplicaWait(false)
-        orchestrator.createDeployment(d)
-        assert Services.waitForDeployment(d)
-
-        then:
+        expect:
         "get violation details"
         List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
                 d.name,
-                CONTAINER_PORT_22_POLICY,
+                NO_ENFORCEMENT_WITH_BYPASS_ANNOTATION,
                 30
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
@@ -833,11 +789,39 @@ class Enforcement extends BaseSpecification {
             def replicaCount = orchestrator.getDeploymentReplicaCount(d)
             assert replicaCount > 0
         }
-
-        cleanup:
-        "restore enforcement state of policy and remove deployment"
-        Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
-        orchestrator.deleteDeployment(d)
     }
 
+    static String duplicatePolicyForTest(
+            String policyName,
+            String appLabel,
+            List<EnforcementAction> enforcementActions,
+            List<LifecycleStage> stages = []
+    ) {
+        PolicyOuterClass.Policy policyMeta = Services.getPolicyByName(policyName)
+
+        def builder = PolicyOuterClass.Policy.newBuilder(policyMeta)
+
+        builder.setId("")
+        builder.setName(appLabel)
+
+        builder.addScope(
+                ScopeOuterClass.Scope.newBuilder().
+                        setLabel(ScopeOuterClass.Scope.Label.newBuilder()
+                                .setKey("app").setValue(appLabel)))
+
+        builder.clearEnforcementActions()
+        if (enforcementActions != null && !enforcementActions.isEmpty()) {
+            builder.addAllEnforcementActions(enforcementActions)
+        } else {
+            builder.addAllEnforcementActions([])
+        }
+        if (stages != []) {
+            builder.clearLifecycleStages()
+            builder.addAllLifecycleStages(stages)
+        }
+
+        def policyDef = builder.build()
+
+        return CreatePolicyService.createNewPolicy(policyDef)
+    }
 }

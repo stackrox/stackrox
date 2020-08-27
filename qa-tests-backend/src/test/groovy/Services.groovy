@@ -309,7 +309,9 @@ class Services extends BaseService {
         return images
     }
 
-    static updatePolicyEnforcement(String policyName, List<EnforcementAction> enforcementActions) {
+    static List<EnforcementAction> updatePolicyEnforcement(String policyName,
+                                                           List<EnforcementAction> enforcementActions,
+                                                           Boolean waitForPropagation = true) {
         Policy policyMeta = getPolicyByName(policyName)
 
         def builder = Policy.newBuilder(policyMeta).clearEnforcementActions()
@@ -326,7 +328,10 @@ class Services extends BaseService {
             println e.toString()
             return ["EXCEPTION"]
         }
-        sleep 10000 // Sleep for a little bit to make sure the update propagates in Central and then to Sensor.
+
+        if (waitForPropagation) {
+            sleep 10000 // Sleep for a little bit to make sure the update propagates in Central and then to Sensor.
+        }
 
         if (enforcementActions != null && !enforcementActions.isEmpty()) {
             println "Updated enforcement of '${policyName}' to ${enforcementActions}"
