@@ -2,8 +2,10 @@ package jwt
 
 import (
 	"crypto/x509"
+	"encoding/pem"
 	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/tokens"
@@ -18,15 +20,35 @@ var (
 )
 
 const (
-	privateKeyPath = "/run/secrets/stackrox.io/jwt/jwt-key.der"
-	issuerID       = "https://stackrox.io/jwt"
+	privateKeyPath    = "/run/secrets/stackrox.io/jwt/jwt-key.der"
+	privateKeyPathPEM = "/run/secrets/stackrox.io/jwt/jwt-key.pem"
+	issuerID          = "https://stackrox.io/jwt"
 
 	keyID = "jwtk0"
 )
 
+func getBytesFromPem(path string) ([]byte, error) {
+	bytesPemEncoded, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	decoded, _ := pem.Decode(bytesPemEncoded)
+	if decoded == nil {
+		return nil, errors.Errorf("invalid PEM in %s", path)
+	}
+	return decoded.Bytes, nil
+}
+
 // GetPrivateKeyBytes returns the contents of the file containing the private key.
 func GetPrivateKeyBytes() ([]byte, error) {
-	return ioutil.ReadFile(privateKeyPath)
+	if _, err := os.Stat(privateKeyPath); err == nil {
+		return ioutil.ReadFile(privateKeyPath)
+	} else if _, err := os.Stat(privateKeyPathPEM); err == nil {
+		// Second attempt: Try reading PEM version and convert.
+		return getBytesFromPem(privateKeyPathPEM)
+	} else {
+		return nil, errors.Wrap(err, "could not load private key")
+	}
 }
 
 func create() (tokens.IssuerFactory, tokens.Validator, error) {
