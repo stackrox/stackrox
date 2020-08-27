@@ -140,11 +140,7 @@ export function getColumnsForClusters({ featureFlags, metadata, rowActions }) {
         {
             Header: 'Sensor Status',
             Cell: ({ original }) => (
-                <SensorStatus
-                    sensorHealthStatus={original.healthStatus?.sensorHealthStatus}
-                    lastContact={original.status?.lastContact}
-                    currentDatetime={new Date()}
-                />
+                <SensorStatus healthStatus={original.healthStatus} currentDatetime={new Date()} />
             ),
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`,
@@ -153,11 +149,7 @@ export function getColumnsForClusters({ featureFlags, metadata, rowActions }) {
             Header: 'Collector Status',
             Cell: ({ original }) => (
                 <CollectorStatus
-                    collectorHealthStatus={original.healthStatus?.collectorHealthStatus}
-                    collectorHealthInfo={original.healthStatus?.collectorHealthInfo}
-                    sensorHealthStatus={original.healthStatus?.sensorHealthStatus}
-                    healthInfoComplete={original.healthStatus?.healthInfoComplete}
-                    lastContact={original.status?.lastContact}
+                    healthStatus={original.healthStatus}
                     currentDatetime={new Date()}
                     isList
                 />
@@ -188,6 +180,7 @@ export function getColumnsForClusters({ featureFlags, metadata, rowActions }) {
                 <CredentialExpiration
                     certExpiryStatus={original.status?.certExpiryStatus}
                     currentDatetime={new Date()}
+                    isList
                 />
             ),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,

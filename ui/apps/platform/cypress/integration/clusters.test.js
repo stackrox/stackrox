@@ -338,7 +338,7 @@ describe('Cluster Health', () => {
             sensorStatus: 'Degraded for 2 minutes',
             collectorStatus: 'Healthy 2 minutes ago',
             sensorUpgrade: 'Up to date with Central',
-            credentialExpiration: 'in 1 month on 09/30/2020',
+            credentialExpiration: 'in 1 month',
         },
         {
             clusterName: 'lambda-liverpool-11',

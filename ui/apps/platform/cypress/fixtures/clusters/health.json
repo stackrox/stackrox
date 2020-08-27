@@ -15,7 +15,6 @@
             "DEPRECATEDOrchestratorMetadata": null,
             "status": {
                 "sensorVersion": "",
-                "lastContact": null,
                 "providerMetadata": null,
                 "orchestratorMetadata": null,
                 "upgradeStatus": null,
@@ -60,7 +59,6 @@
             "DEPRECATEDOrchestratorMetadata": null,
             "status": {
                 "sensorVersion": "3.50.0.0",
-                "lastContact": "2020-08-31T12:01:00Z",
                 "providerMetadata": {
                     "region": "us-west1",
                     "aws": {}
@@ -122,7 +120,6 @@
             "DEPRECATEDOrchestratorMetadata": null,
             "status": {
                 "sensorVersion": "3.50.0.0",
-                "lastContact": "2020-08-31T13:00:59Z",
                 "providerMetadata": {
                     "region": "us-west1",
                     "google": {}
@@ -183,7 +180,6 @@
             "DEPRECATEDOrchestratorMetadata": null,
             "status": {
                 "sensorVersion": "3.50.0.0",
-                "lastContact": "2020-08-31T12:59:00Z",
                 "providerMetadata": {
                     "region": "us-central1",
                     "aws": {}
@@ -245,7 +241,6 @@
             "DEPRECATEDOrchestratorMetadata": null,
             "status": {
                 "sensorVersion": "3.48.0.0",
-                "lastContact": "2020-08-31T13:00:59Z",
                 "providerMetadata": {
                     "region": "us-central1",
                     "google": {}
@@ -306,7 +301,6 @@
             "DEPRECATEDOrchestratorMetadata": null,
             "status": {
                 "sensorVersion": "3.47.0.0",
-                "lastContact": "2020-08-31T13:00:59Z",
                 "providerMetadata": {
                     "region": "eu-central1",
                     "aws": {}
@@ -363,7 +357,6 @@
             "DEPRECATEDOrchestratorMetadata": null,
             "status": {
                 "sensorVersion": "3.50.0.0",
-                "lastContact": "2020-08-31T13:00:59Z",
                 "providerMetadata": {
                     "region": "ap-southeast1",
                     "aws": {}

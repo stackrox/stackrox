@@ -53,6 +53,7 @@ export const isUnhealthyDaysAgoInList = () => (
         <CredentialExpiration
             certExpiryStatus={{ sensorCertExpiry: '2020-07-31T21:59:00Z' }}
             currentDatetime={new Date('2020-08-03T21:58:00Z')}
+            isList
         />
     </InList>
 );
@@ -63,16 +64,18 @@ export const isUnhealthyHoursAgoAtSide = () => (
         <CredentialExpiration
             certExpiryStatus={{ sensorCertExpiry: '2020-07-31T21:59:00Z' }}
             currentDatetime={new Date('2020-08-01T21:58:00Z')}
+            isList={false}
         />
     </AtSide>
 );
 
 // 1 minute ago
-export const isUnhealthyMinuteAgoList = () => (
+export const isUnhealthyMinuteAgoInList = () => (
     <InList>
         <CredentialExpiration
             certExpiryStatus={{ sensorCertExpiry: '2020-07-31T21:59:00Z' }}
             currentDatetime={new Date('2020-07-31T22:00:00Z')}
+            isList
         />
     </InList>
 );
@@ -83,6 +86,7 @@ export const isUnhealthyExactTimeAtSide = () => (
         <CredentialExpiration
             certExpiryStatus={{ sensorCertExpiry: '2020-07-31T21:59:00Z' }}
             currentDatetime={new Date('2020-07-31T21:59:00Z')}
+            isList={false}
         />
     </AtSide>
 );
@@ -93,6 +97,7 @@ export const isUnhealthyInMinutesInList = () => (
         <CredentialExpiration
             certExpiryStatus={{ sensorCertExpiry: '2020-07-31T21:59:00Z' }}
             currentDatetime={new Date('2020-07-31T21:00:00Z')}
+            isList
         />
     </InList>
 );
@@ -103,6 +108,7 @@ export const isUnhealthyInHoursAtSide = () => (
         <CredentialExpiration
             certExpiryStatus={{ sensorCertExpiry: '2020-07-31T21:59:00Z' }}
             currentDatetime={new Date('2020-07-31T14:00:00Z')}
+            isList={false}
         />
     </AtSide>
 );
@@ -113,6 +119,7 @@ export const isUnhealthyInDaysOnDayInList = () => (
         <CredentialExpiration
             certExpiryStatus={{ sensorCertExpiry: '2020-07-31T21:59:00Z' }}
             currentDatetime={new Date('2020-07-24T22:00:00Z')}
+            isList
         />
     </InList>
 );
@@ -123,6 +130,7 @@ export const isDegradedInDaysOnDateAtSide = () => (
         <CredentialExpiration
             certExpiryStatus={{ sensorCertExpiry: '2020-07-31T21:59:00Z' }}
             currentDatetime={new Date('2020-07-02T14:00:00Z')}
+            isList={false}
         />
     </AtSide>
 );
@@ -133,6 +141,7 @@ export const isHealthyInMonthOnDateInList = () => (
         <CredentialExpiration
             certExpiryStatus={{ sensorCertExpiry: '2020-07-31T21:59:00Z' }}
             currentDatetime={new Date('2020-07-01T14:00:00Z')}
+            isList
         />
     </InList>
 );
@@ -143,6 +152,7 @@ export const isHealthInMonthOnDateAtSide = () => (
         <CredentialExpiration
             certExpiryStatus={{ sensorCertExpiry: '2020-07-31T21:59:00Z' }}
             currentDatetime={new Date('2020-06-02T14:00:00Z')}
+            isList={false}
         />
     </AtSide>
 );
@@ -153,6 +163,7 @@ export const isHealthyInMonthsInList = () => (
         <CredentialExpiration
             certExpiryStatus={{ sensorCertExpiry: '2020-07-31T21:59:00Z' }}
             currentDatetime={new Date('2020-06-01T14:00:00Z')}
+            isList
         />
     </InList>
 );

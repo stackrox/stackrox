@@ -34,8 +34,7 @@ const ClusterHealth = ({ healthStatus, status, centralVersion, currentDatetime }
                     </th>
                     <td className={tdClass}>
                         <SensorStatus
-                            sensorHealthStatus={healthStatus?.sensorHealthStatus}
-                            lastContact={status?.lastContact}
+                            healthStatus={healthStatus}
                             currentDatetime={currentDatetime}
                         />
                     </td>
@@ -46,11 +45,7 @@ const ClusterHealth = ({ healthStatus, status, centralVersion, currentDatetime }
                     </th>
                     <td className={tdClass}>
                         <CollectorStatus
-                            collectorHealthStatus={healthStatus?.collectorHealthStatus}
-                            collectorHealthInfo={healthStatus?.collectorHealthInfo}
-                            healthInfoComplete={healthStatus?.healthInfoComplete}
-                            sensorHealthStatus={healthStatus?.sensorHealthStatus}
-                            lastContact={status?.lastContact}
+                            healthStatus={healthStatus}
                             currentDatetime={currentDatetime}
                             isList={false}
                         />
@@ -78,6 +73,7 @@ const ClusterHealth = ({ healthStatus, status, centralVersion, currentDatetime }
                         <CredentialExpiration
                             certExpiryStatus={status?.certExpiryStatus}
                             currentDatetime={currentDatetime}
+                            isList={false}
                         />
                     </td>
                 </tr>
@@ -90,12 +86,13 @@ ClusterHealth.propTypes = {
     healthStatus: PropTypes.shape({
         collectorHealthStatus: PropTypes.string,
         collectorHealthInfo: PropTypes.object,
+        healthInfoComplete: PropTypes.bool,
         overallHealthStatus: PropTypes.string,
         sensorHealthStatus: PropTypes.string,
+        lastContact: PropTypes.string, // ISO 8601
     }),
     status: PropTypes.shape({
         certExpiryStatus: PropTypes.object,
-        lastContact: PropTypes.string, // ISO 8601
         sensorVersion: PropTypes.string,
         upgradeStatus: PropTypes.object,
     }),

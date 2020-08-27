@@ -107,8 +107,8 @@ export const healthStatusStyles = {
 // Special case for Collector when Sensor is UNHEALTHY or DELAYED.
 export const delayedCollectorStatusStyle = {
     Icon: Info,
-    bgColor: 'bg-primary-200',
-    fgColor: 'text-primary-700',
+    bgColor: 'bg-base-200',
+    fgColor: 'text-base-700',
 };
 
 // @TODO: add optional button text and func

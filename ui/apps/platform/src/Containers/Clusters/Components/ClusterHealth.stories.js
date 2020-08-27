@@ -21,10 +21,10 @@ export const ClusterStatusUninitialized = () => (
                 healthInfoComplete: false,
                 overallHealthStatus: 'UNINITIALIZED',
                 sensorHealthStatus: 'UNINITIALIZED',
+                lastContact: null,
             }}
             status={{
                 certExpiryStatus: null,
-                lastContact: null,
                 sensorVersion: '',
                 upgradeStatus: null,
             }}
@@ -47,10 +47,10 @@ export const SensorStatusUnhealthy = () => (
                 healthInfoComplete: true,
                 overallHealthStatus: 'UNHEALTHY',
                 sensorHealthStatus: 'UNHEALTHY',
+                lastContact: '2020-07-02T13:00:00Z',
             }}
             status={{
                 certExpiryStatus: { sensorCertExpiry: '2020-07-31T21:59:00Z' },
-                lastContact: '2020-07-02T13:00:00Z',
                 sensorVersion: '3.50.0.0',
                 upgradeStatus: { upgradability: 'UP_TO_DATE' },
             }}
@@ -73,10 +73,10 @@ export const CollectorStatusUnhealthy = () => (
                 healthInfoComplete: true,
                 overallHealthStatus: 'UNHEALTHY',
                 sensorHealthStatus: 'HEALTHY',
+                lastContact: '2020-06-01T13:58:01Z',
             }}
             status={{
                 certExpiryStatus: { sensorCertExpiry: '2020-07-31T21:59:00Z' },
-                lastContact: '2020-06-01T13:58:01Z',
                 sensorVersion: '3.50.0.0',
                 upgradeStatus: { upgradability: 'UP_TO_DATE' },
             }}
@@ -99,10 +99,10 @@ export const SensorStatusDegraded = () => (
                 healthInfoComplete: true,
                 overallHealthStatus: 'DEGRADED',
                 sensorHealthStatus: 'DEGRADED',
+                lastContact: '2020-06-01T13:57:01Z',
             }}
             status={{
                 certExpiryStatus: { sensorCertExpiry: '2020-07-31T21:59:00Z' },
-                lastContact: '2020-06-01T13:57:01Z',
                 sensorVersion: '3.50.0.0',
                 upgradeStatus: { upgradability: 'UP_TO_DATE' },
             }}
@@ -125,10 +125,10 @@ export const CollectorStatusDegraded = () => (
                 healthInfoComplete: true,
                 overallHealthStatus: 'DEGRADED',
                 sensorHealthStatus: 'HEALTHY',
+                lastContact: '2020-06-01T13:58:01Z',
             }}
             status={{
                 certExpiryStatus: { sensorCertExpiry: '2020-07-31T21:59:00Z' },
-                lastContact: '2020-06-01T13:58:01Z',
                 sensorVersion: '3.48.0.0',
                 upgradeStatus: { upgradability: 'AUTO_UPGRADE_POSSIBLE' },
             }}
@@ -147,10 +147,10 @@ export const CollectorStatusUnavailable = () => (
                 healthInfoComplete: false,
                 overallHealthStatus: 'HEALTHY',
                 sensorHealthStatus: 'HEALTHY',
+                lastContact: '2020-07-24T21:59:01Z',
             }}
             status={{
                 certExpiryStatus: { sensorCertExpiry: '2020-07-31T21:59:00Z' },
-                lastContact: '2020-07-24T21:59:01Z',
                 sensorVersion: '3.47.0.0',
                 upgradeStatus: { upgradability: 'AUTO_UPGRADE_POSSIBLE' },
             }}
@@ -173,10 +173,10 @@ export const ClusterStatusHealthy = () => (
                 healthInfoComplete: true,
                 overallHealthStatus: 'HEALTHY',
                 sensorHealthStatus: 'HEALTHY',
+                lastContact: '2020-06-01T13:58:01Z',
             }}
             status={{
                 certExpiryStatus: { sensorCertExpiry: '2020-07-31T21:59:00Z' },
-                lastContact: '2020-06-01T13:58:01Z',
                 sensorVersion: '3.50.0.0',
                 upgradeStatus: { upgradability: 'UP_TO_DATE' },
             }}

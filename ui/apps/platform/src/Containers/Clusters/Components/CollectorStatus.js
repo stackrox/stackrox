@@ -26,16 +26,15 @@ const testId = 'collectorStatus';
  *
  * Caller is responsible for optional chaining in case healthStatus is null.
  */
-const CollectorStatus = ({
-    collectorHealthStatus,
-    collectorHealthInfo,
-    healthInfoComplete,
-    sensorHealthStatus,
-    lastContact,
-    currentDatetime,
-    isList,
-}) => {
-    if (collectorHealthStatus) {
+const CollectorStatus = ({ healthStatus, currentDatetime, isList }) => {
+    if (healthStatus?.collectorHealthStatus) {
+        const {
+            collectorHealthStatus,
+            collectorHealthInfo,
+            healthInfoComplete,
+            sensorHealthStatus,
+            lastContact,
+        } = healthStatus;
         const { Icon, bgColor, fgColor } =
             lastContact && isDelayedSensorHealthStatus(sensorHealthStatus)
                 ? delayedCollectorStatusStyle
@@ -168,31 +167,29 @@ const CollectorStatus = ({
 };
 
 CollectorStatus.propTypes = {
-    collectorHealthStatus: PropTypes.oneOf([
-        'UNINITIALIZED',
-        'UNAVAILABLE',
-        'UNHEALTHY',
-        'DEGRADED',
-        'HEALTHY',
-    ]),
-    collectorHealthInfo: PropTypes.shape({
-        totalDesiredPods: PropTypes.number.isRequired,
-        totalReadyPods: PropTypes.number.isRequired,
-        totalRegisteredNodes: PropTypes.number.isRequired,
+    healthStatus: PropTypes.shape({
+        collectorHealthStatus: PropTypes.oneOf([
+            'UNINITIALIZED',
+            'UNAVAILABLE',
+            'UNHEALTHY',
+            'DEGRADED',
+            'HEALTHY',
+        ]),
+        collectorHealthInfo: PropTypes.shape({
+            totalDesiredPods: PropTypes.number.isRequired,
+            totalReadyPods: PropTypes.number.isRequired,
+            totalRegisteredNodes: PropTypes.number.isRequired,
+        }),
+        healthInfoComplete: PropTypes.bool,
+        sensorHealthStatus: PropTypes.oneOf(['UNINITIALIZED', 'UNHEALTHY', 'DEGRADED', 'HEALTHY']),
+        lastContact: PropTypes.string, // ISO 8601
     }),
-    healthInfoComplete: PropTypes.bool,
-    sensorHealthStatus: PropTypes.oneOf(['UNINITIALIZED', 'UNHEALTHY', 'DEGRADED', 'HEALTHY']),
-    lastContact: PropTypes.string, // ISO 8601
     currentDatetime: PropTypes.instanceOf(Date).isRequired,
     isList: PropTypes.bool.isRequired,
 };
 
 CollectorStatus.defaultProps = {
-    collectorHealthStatus: null,
-    collectorHealthInfo: null,
-    healthInfoComplete: false,
-    sensorHealthStatus: null,
-    lastContact: null,
+    healthStatus: null,
 };
 
 export default CollectorStatus;

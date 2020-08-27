@@ -50,10 +50,13 @@ const InList = ({ children }) => (
 export const isUninitializedInList = () => (
     <InList>
         <CollectorStatus
-            collectorHealthStatus="UNINITIALIZED"
-            collectorHealthInfo={null}
-            healthInfoComplete={false}
-            lastContact={null}
+            healthStatus={{
+                collectorHealthStatus: 'UNINITIALIZED',
+                collectorHealthInfo: null,
+                healthInfoComplete: false,
+                sensorHealthStatus: 'UNINITIALIZED',
+                lastContact: null,
+            }}
             currentDatetime={new Date('2020-07-29T00:00:00Z')}
             isList
         />
@@ -63,10 +66,13 @@ export const isUninitializedInList = () => (
 export const isUnavailableAtSide = () => (
     <AtSide>
         <CollectorStatus
-            collectorHealthStatus="UNAVAILABLE"
-            collectorHealthInfo={null}
-            healthInfoComplete={false}
-            lastContact="2020-07-28T23:59:30Z"
+            healthStatus={{
+                collectorHealthStatus: 'UNAVAILABLE',
+                collectorHealthInfo: null,
+                healthInfoComplete: false,
+                sensorHealthStatus: 'HEALTHY',
+                lastContact: '2020-07-28T23:59:30Z',
+            }}
             currentDatetime={new Date('2020-07-29T00:00:00Z')}
             isList={false}
         />
@@ -77,15 +83,17 @@ export const isUnavailableAtSide = () => (
 export const isUnhealthyWithTimeDifferenceInList = () => (
     <InList>
         <CollectorStatus
-            collectorHealthStatus="UNHEALTHY"
-            collectorHealthInfo={{
-                totalReadyPods: 7,
-                totalDesiredPods: 10,
-                totalRegisteredNodes: 12,
+            healthStatus={{
+                collectorHealthStatus: 'UNHEALTHY',
+                collectorHealthInfo: {
+                    totalReadyPods: 7,
+                    totalDesiredPods: 10,
+                    totalRegisteredNodes: 12,
+                },
+                healthInfoComplete: true,
+                sensorHealthStatus: 'UNHEALTHY',
+                lastContact: '2020-07-28T00:00:00Z',
             }}
-            healthInfoComplete
-            sensorHealthStatus="UNHEALTHY"
-            lastContact="2020-07-28T00:00:00Z"
             currentDatetime={new Date('2020-07-29T00:00:00Z')}
             isList
         />
@@ -95,15 +103,17 @@ export const isUnhealthyWithTimeDifferenceInList = () => (
 export const isUnhealthyWithoutTimeDifferenceAtSide = () => (
     <AtSide>
         <CollectorStatus
-            collectorHealthStatus="UNHEALTHY"
-            collectorHealthInfo={{
-                totalReadyPods: 7,
-                totalDesiredPods: 10,
-                totalRegisteredNodes: 12,
+            healthStatus={{
+                collectorHealthStatus: 'UNHEALTHY',
+                collectorHealthInfo: {
+                    totalReadyPods: 7,
+                    totalDesiredPods: 10,
+                    totalRegisteredNodes: 12,
+                },
+                healthInfoComplete: true,
+                sensorHealthStatus: 'HEALTHY',
+                lastContact: '2020-07-28T23:59:01Z',
             }}
-            healthInfoComplete
-            sensorHealthStatus="HEALTHY"
-            lastContact="2020-07-28T23:59:01Z"
             currentDatetime={new Date('2020-07-29T00:00:00Z')}
             isList={false}
         />
@@ -114,15 +124,17 @@ export const isUnhealthyWithoutTimeDifferenceAtSide = () => (
 export const isDegradedWithTimeDifferenceAtSide = () => (
     <AtSide>
         <CollectorStatus
-            collectorHealthStatus="DEGRADED"
-            collectorHealthInfo={{
-                totalReadyPods: 8,
-                totalDesiredPods: 10,
-                totalRegisteredNodes: 12,
+            healthStatus={{
+                collectorHealthStatus: 'DEGRADED',
+                collectorHealthInfo: {
+                    totalReadyPods: 8,
+                    totalDesiredPods: 10,
+                    totalRegisteredNodes: 12,
+                },
+                healthInfoComplete: true,
+                sensorHealthStatus: 'DEGRADED',
+                lastContact: '2020-07-28T23:57:01Z',
             }}
-            healthInfoComplete
-            sensorHealthStatus="DEGRADED"
-            lastContact="2020-07-28T23:57:01Z"
             currentDatetime={new Date('2020-07-29T00:00:00Z')}
             isList={false}
         />
@@ -132,15 +144,17 @@ export const isDegradedWithTimeDifferenceAtSide = () => (
 export const isDegradedWithoutTimeDifferenceInList = () => (
     <InList>
         <CollectorStatus
-            collectorHealthStatus="DEGRADED"
-            collectorHealthInfo={{
-                totalReadyPods: 8,
-                totalDesiredPods: 10,
-                totalRegisteredNodes: 12,
+            healthStatus={{
+                collectorHealthStatus: 'DEGRADED',
+                collectorHealthInfo: {
+                    totalReadyPods: 8,
+                    totalDesiredPods: 10,
+                    totalRegisteredNodes: 12,
+                },
+                healthInfoComplete: true,
+                sensorHealthStatus: 'HEALTHY',
+                lastContact: '2020-07-28T23:59:30Z',
             }}
-            healthInfoComplete
-            sensorHealthStatus="HEALTHY"
-            lastContact="2020-07-28T23:59:30Z"
             currentDatetime={new Date('2020-07-29T00:00:00Z')}
             isList
         />
@@ -151,15 +165,17 @@ export const isDegradedWithoutTimeDifferenceInList = () => (
 export const isHealthyWithTimeDifferenceInList = () => (
     <InList>
         <CollectorStatus
-            collectorHealthStatus="HEALTHY"
-            collectorHealthInfo={{
-                totalReadyPods: 10,
-                totalDesiredPods: 10,
-                totalRegisteredNodes: 12,
+            healthStatus={{
+                collectorHealthStatus: 'HEALTHY',
+                collectorHealthInfo: {
+                    totalReadyPods: 10,
+                    totalDesiredPods: 10,
+                    totalRegisteredNodes: 12,
+                },
+                healthInfoComplete: true,
+                sensorHealthStatus: 'UNHEALTHY',
+                lastContact: '2020-07-28T23:00:00Z',
             }}
-            healthInfoComplete
-            sensorHealthStatus="UNHEALTHY"
-            lastContact="2020-07-28T23:00:00Z"
             currentDatetime={new Date('2020-07-29T00:00:00Z')}
             isList
         />
@@ -169,15 +185,17 @@ export const isHealthyWithTimeDifferenceInList = () => (
 export const isHealthyWithoutTimeDifferenceAtSide = () => (
     <AtSide>
         <CollectorStatus
-            collectorHealthStatus="HEALTHY"
-            collectorHealthInfo={{
-                totalReadyPods: 10,
-                totalDesiredPods: 10,
-                totalRegisteredNodes: 12,
+            healthStatus={{
+                collectorHealthStatus: 'HEALTHY',
+                collectorHealthInfo: {
+                    totalReadyPods: 10,
+                    totalDesiredPods: 10,
+                    totalRegisteredNodes: 12,
+                },
+                healthInfoComplete: true,
+                sensorHealthStatus: 'HEALTHY',
+                lastContact: '2020-07-28T23:59:30Z',
             }}
-            healthInfoComplete
-            sensorHealthStatus="HEALTHY"
-            lastContact="2020-07-28T23:59:30Z"
             currentDatetime={new Date('2020-07-29T00:00:00Z')}
             isList={false}
         />
@@ -190,15 +208,17 @@ export const isHealthyWithoutTimeDifferenceAtSide = () => (
 export const isHealthyWithoutCompleteHealthInfoAtSide = () => (
     <AtSide>
         <CollectorStatus
-            collectorHealthStatus="HEALTHY"
-            collectorHealthInfo={{
-                totalReadyPods: 10,
-                totalDesiredPods: 10,
-                totalRegisteredNodes: 12,
+            healthStatus={{
+                collectorHealthStatus: 'HEALTHY',
+                collectorHealthInfo: {
+                    totalReadyPods: 10,
+                    totalDesiredPods: 10,
+                    totalRegisteredNodes: 12,
+                },
+                healthInfoComplete: false,
+                sensorHealthStatus: 'HEALTHY',
+                lastContact: '2020-07-28T23:59:30Z',
             }}
-            healthInfoComplete={false}
-            sensorHealthStatus="HEALTHY"
-            lastContact="2020-07-28T23:59:30Z"
             currentDatetime={new Date('2020-07-29T00:00:00Z')}
             isList={false}
         />

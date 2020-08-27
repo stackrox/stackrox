@@ -18,8 +18,9 @@ const testId = 'sensorStatus';
  *
  * Caller is responsible for optional chaining in case healthStatus is null.
  */
-const SensorStatus = ({ sensorHealthStatus, lastContact, currentDatetime }) => {
-    if (sensorHealthStatus) {
+const SensorStatus = ({ healthStatus, currentDatetime }) => {
+    if (healthStatus?.sensorHealthStatus) {
+        const { sensorHealthStatus, lastContact } = healthStatus;
         const { Icon, bgColor, fgColor } = healthStatusStyles[sensorHealthStatus];
         const labelElement = (
             <span className={`${bgColor} ${fgColor}`}>
@@ -71,14 +72,15 @@ const SensorStatus = ({ sensorHealthStatus, lastContact, currentDatetime }) => {
 };
 
 SensorStatus.propTypes = {
-    sensorHealthStatus: PropTypes.oneOf(['UNINITIALIZED', 'UNHEALTHY', 'DEGRADED', 'HEALTHY']),
-    lastContact: PropTypes.string, // ISO 8601
+    healthStatus: PropTypes.shape({
+        sensorHealthStatus: PropTypes.oneOf(['UNINITIALIZED', 'UNHEALTHY', 'DEGRADED', 'HEALTHY']),
+        lastContact: PropTypes.string, // ISO 8601
+    }),
     currentDatetime: PropTypes.instanceOf(Date).isRequired,
 };
 
 SensorStatus.defaultProps = {
-    sensorHealthStatus: null,
-    lastContact: null,
+    healthStatus: null,
 };
 
 export default SensorStatus;
