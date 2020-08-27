@@ -40,7 +40,7 @@ message Alert {
     message Violation {
         string message                                 = 1;
         reserved 2; // formerly link
-        repeated ProcessIndicator DEPRECATED_processes = 3;
+        reserved 3; // formerly processes
     }
     repeated Violation violations            = 5;
 

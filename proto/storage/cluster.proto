@@ -85,12 +85,10 @@ message Cluster {
     reserved                                                     8;
     CollectionMethod          collection_method                = 17;
 
-    reserved                                                     9,10,11;
+    reserved                                                     9,10,11,12,14;
 
-    ProviderMetadata          DEPRECATED_provider_metadata     = 12;
     bool                      admission_controller             = 13;
     bool                      admission_controller_updates     = 21;
-    OrchestratorMetadata      DEPRECATED_orchestrator_metadata = 14;
 
     ClusterStatus             status                           = 15;
     DynamicClusterConfig      dynamic_config                   = 18;
