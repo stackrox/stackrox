@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 const (
@@ -24,9 +23,6 @@ func init() {
 }
 
 func clusterIsCompliant(ctx framework.ComplianceContext) {
-	if !features.ComplianceInNodes.Enabled() {
-		common.IsRBACConfiguredCorrectly(ctx)
-	}
 	common.CheckDeploymentsDoNotHaveClusterAccess(ctx, common.EffectiveAdmin)
 	common.CheckNetworkPoliciesByDeployment(ctx)
 }

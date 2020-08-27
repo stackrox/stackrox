@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	pkgCommon "github.com/stackrox/rox/pkg/compliance/checks/common"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 const (
@@ -25,9 +24,6 @@ func init() {
 			InterpretationText: interpretationText,
 		},
 		func(ctx framework.ComplianceContext) {
-			if !features.ComplianceInNodes.Enabled() {
-				common.IsRBACConfiguredCorrectly(ctx)
-			}
 			common.LimitedUsersAndGroupsWithClusterAdmin(ctx)
 		})
 }

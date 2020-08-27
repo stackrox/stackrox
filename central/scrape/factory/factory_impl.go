@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -29,7 +28,7 @@ func (f *scrapeFactory) RunScrape(domain framework.ComplianceDomain, kill concur
 	if conn == nil {
 		return nil, fmt.Errorf("could not perform host scrape for cluster %q: no active connection from sensor", clusterID)
 	}
-	if features.ComplianceInNodes.Enabled() && !conn.HasCapability(centralsensor.ComplianceInNodesCap) {
+	if !conn.HasCapability(centralsensor.ComplianceInNodesCap) {
 		return nil, fmt.Errorf("could not perform per-node compliance checks for cluster %q: sensor does not support in-node checks", clusterID)
 	}
 

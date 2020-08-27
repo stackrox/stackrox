@@ -2,16 +2,11 @@ package remote
 
 import (
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/pkg/compliance/checks/standards"
-	"github.com/stackrox/rox/pkg/features"
-
 	_ "github.com/stackrox/rox/pkg/compliance/checks" // Make sure all checks are available
+	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 )
 
 func init() {
-	if !features.ComplianceInNodes.Enabled() {
-		return
-	}
 	framework.MustRegisterChecks(makeChecksFromRemoteFuncs()...)
 }
 

@@ -1,12 +1,10 @@
 package checkac14
 
 import (
-	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
 	pkgCommon "github.com/stackrox/rox/pkg/compliance/checks/common"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -115,9 +113,6 @@ func init() {
 			DataDependencies:   []string{"K8sRoles", "K8sRoleBindings", "HostScraped"},
 			InterpretationText: interpretationText,
 		}, func(ctx framework.ComplianceContext) {
-			if !features.ComplianceInNodes.Enabled() {
-				common.IsRBACConfiguredCorrectly(ctx)
-			}
 			checkNoExtraPrivilegesForUnauthenticated(ctx)
 		})
 }

@@ -12,6 +12,7 @@ func init() {
 }
 
 func clusterIsCompliant() *standards.CheckAndMetadata {
+	// This is a partial check.  The evidence from this check will be folded together with evidence generated in central
 	checkAndMetadata := common.MasterAPIServerRBACConfigurationCommandLine()
 	checkAndMetadata.Metadata.InterpretationText = interpretationText
 	return checkAndMetadata

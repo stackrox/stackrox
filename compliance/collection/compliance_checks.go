@@ -2,6 +2,10 @@ package main
 
 import (
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/compliance/collection/command"
+	"github.com/stackrox/rox/compliance/collection/containerruntimes/crio"
+	"github.com/stackrox/rox/compliance/collection/containerruntimes/docker"
+	"github.com/stackrox/rox/compliance/collection/file"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -86,4 +90,60 @@ func sendResults(results map[string]*compliance.ComplianceStandardResult, client
 			},
 		},
 	})
+}
+
+func gatherData(scrapeConfig *sensor.MsgToCompliance_ScrapeConfig, scrapeID string) *standards.ComplianceData {
+	complianceData := &standards.ComplianceData{
+		NodeName: getNode(),
+	}
+
+	log.Infof("Running compliance scrape %q for node %q", scrapeID, getNode())
+
+	var err error
+	log.Infof("Container runtime is %v", scrapeConfig.GetContainerRuntime())
+	if scrapeConfig.GetContainerRuntime() == storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME {
+		log.Info("Starting to collect Docker data")
+		complianceData.DockerData, complianceData.ContainerRuntimeInfo, err = docker.GetDockerData()
+		if err != nil {
+			log.Errorf("Collecting Docker data failed: %v", err)
+		} else {
+			log.Info("Successfully collected relevant Docker data")
+		}
+	} else if scrapeConfig.GetContainerRuntime() == storage.ContainerRuntime_CRIO_CONTAINER_RUNTIME {
+		log.Info("Collecting relevant CRI-O data")
+		complianceData.ContainerRuntimeInfo, err = crio.GetContainerRuntimeData()
+		if err != nil {
+			log.Errorf("Collecting CRI-O data failed: %v", err)
+		} else {
+			log.Info("Successfully collected relevant CRI-O data")
+		}
+	} else {
+		log.Info("Unknown container runtime, not collecting any data ...")
+	}
+
+	log.Info("Starting to collect systemd files")
+	complianceData.SystemdFiles, err = file.CollectSystemdFiles()
+	if err != nil {
+		log.Errorf("Collecting systemd files failed: %v", err)
+	}
+	log.Info("Successfully collected relevant systemd files")
+
+	log.Info("Starting to collect configuration files")
+	complianceData.Files, err = file.CollectFiles()
+	if err != nil {
+		log.Errorf("Collecting configuration files failed: %v", err)
+	}
+	log.Info("Successfully collected relevant configuration files")
+
+	log.Info("Starting to collect command lines")
+	complianceData.CommandLines, err = command.RetrieveCommands()
+	if err != nil {
+		log.Errorf("Collecting command lines failed: %v", err)
+	}
+	log.Info("Successfully collected relevant command lines")
+
+	complianceData.IsMasterNode = scrapeConfig.GetIsMasterNode()
+
+	complianceData.Time = types.TimestampNow()
+	return complianceData
 }

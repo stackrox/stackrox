@@ -36,19 +36,3 @@ func MustRegisterNewCheckIfFlagEnabled(metadata CheckMetadata, checkFn CheckFunc
 	}
 	MustRegisterNewCheck(metadata, checkFn)
 }
-
-// MustRegisterChecksIfFlagDisabled calls MustRegisterChecks if the given feature flag is NOT enabled
-func MustRegisterChecksIfFlagDisabled(checks ...Check) {
-	if features.ComplianceInNodes.Enabled() {
-		return
-	}
-	MustRegisterChecks(checks...)
-}
-
-// MustRegisterCheckIfFlagDisabled calls MustRegisterNewCheck if the given feature flag is NOT enabled
-func MustRegisterCheckIfFlagDisabled(metadata CheckMetadata, checkFn CheckFunc) {
-	if features.ComplianceInNodes.Enabled() {
-		return
-	}
-	MustRegisterNewCheck(metadata, checkFn)
-}

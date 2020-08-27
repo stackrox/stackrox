@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -92,10 +91,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if features.ComplianceInNodes.Enabled() {
-		capsSet := centralsensor.NewSensorCapabilitySet(centralsensor.ComplianceInNodesCap)
-		ctx = centralsensor.AppendCapsInfoToContext(ctx, capsSet)
-	}
+	capsSet := centralsensor.NewSensorCapabilitySet(centralsensor.ComplianceInNodesCap)
+	ctx = centralsensor.AppendCapsInfoToContext(ctx, capsSet)
 	communicateStream, err := client.Communicate(ctx)
 	if err != nil {
 		panic(err)

@@ -16,12 +16,10 @@ const (
 )
 
 var (
-	defaultComplianceReturn *compliance.ComplianceReturn
-	defaultCheckResults     *compliance.ComplianceReturn
+	defaultCheckResults *compliance.ComplianceReturn
 )
 
 func init() {
-	defaultComplianceReturn = loadComplianceReturn(scrapeFixturePath)
 	defaultCheckResults = loadComplianceReturn(resultsFixturePath)
 }
 
@@ -33,13 +31,6 @@ func loadComplianceReturn(path string) *compliance.ComplianceReturn {
 	var complianceReturn compliance.ComplianceReturn
 	utils.Must(jsonpb.Unmarshal(buf, &complianceReturn))
 	return &complianceReturn
-}
-
-func getComplianceReturn(scrapeID, nodeName string) *compliance.ComplianceReturn {
-	cr := defaultComplianceReturn.Clone()
-	cr.ScrapeId = scrapeID
-	cr.NodeName = nodeName
-	return cr
 }
 
 func getCheckResults(scrapeID, nodeName string) *compliance.ComplianceReturn {

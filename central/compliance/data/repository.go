@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/compress"
 	"github.com/stackrox/rox/pkg/compliance/data"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -288,9 +287,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 
 	r.hostScrape = scrapeResults
 
-	if features.ComplianceInNodes.Enabled() {
-		r.nodeResults = getNodeResults(scrapeResults)
-	}
+	r.nodeResults = getNodeResults(scrapeResults)
 
 	// check for latest compliance results to determine
 	// if CIS benchmarks were ever run

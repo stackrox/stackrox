@@ -17,20 +17,6 @@ var EffectiveAdmin = &storage.PolicyRule{
 	Resources: []string{"*"},
 }
 
-// IsRBACConfiguredCorrectly returns if RBAC is correctly set up.
-func IsRBACConfiguredCorrectly(ctx framework.ComplianceContext) {
-	authorizationMode := getAPIServerAuthorizationMode(ctx.Data().Deployments())
-	if !isRBACEnabled(ctx.Data().Cluster(), authorizationMode) {
-		framework.Fail(ctx, "RBAC is not available or not enabled.")
-		return
-	}
-	if isABACEnabled(ctx.Data().Cluster(), authorizationMode) {
-		framework.Fail(ctx, "ABAC is enabled or available.")
-		return
-	}
-	framework.Pass(ctx, "RBAC is enabled and ABAC is disabled.")
-}
-
 // CheckVolumeAccessIsLimited checks that not all service accounts can manipulate volumes.
 func CheckVolumeAccessIsLimited(ctx framework.ComplianceContext) {
 	// Collect a list of all known service accounts with bound permissions.

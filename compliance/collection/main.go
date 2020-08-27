@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -50,14 +49,8 @@ func runRecv(client sensor.ComplianceService_CommunicateClient, config *sensor.M
 		}
 		switch t := msg.Msg.(type) {
 		case *sensor.MsgToCompliance_Trigger:
-			if features.ComplianceInNodes.Enabled() {
-				if err := runChecks(client, config, t.Trigger); err != nil {
-					return errors.Wrap(err, "error running checks")
-				}
-			} else {
-				if err := runScrape(client, config, t.Trigger); err != nil {
-					return errors.Wrap(err, "error running scrape")
-				}
+			if err := runChecks(client, config, t.Trigger); err != nil {
+				return errors.Wrap(err, "error running checks")
 			}
 		default:
 			utils.Should(errors.Errorf("Unhandled msg type: %T", t))

@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 const checkID = "PCI_DSS_3_2:8_1_1"
@@ -22,9 +21,6 @@ func init() {
 }
 
 func clusterIsCompliant(ctx framework.ComplianceContext) {
-	if !features.ComplianceInNodes.Enabled() {
-		common.IsRBACConfiguredCorrectly(ctx)
-	}
 	common.AdministratorUsersPresent(ctx)
 	common.CheckDeploymentsDoNotHaveClusterAccess(ctx, common.EffectiveAdmin)
 }

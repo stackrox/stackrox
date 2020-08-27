@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -29,10 +28,7 @@ type commandHandlerImpl struct {
 }
 
 func (c *commandHandlerImpl) Capabilities() []centralsensor.SensorCapability {
-	if features.ComplianceInNodes.Enabled() {
-		return []centralsensor.SensorCapability{centralsensor.ComplianceInNodesCap}
-	}
-	return nil
+	return []centralsensor.SensorCapability{centralsensor.ComplianceInNodesCap}
 }
 
 func (c *commandHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
