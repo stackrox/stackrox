@@ -43,11 +43,28 @@ class ImageService extends BaseService {
         }
     }
 
-    static deleteImages(RawQuery query = RawQuery.newBuilder().build(), Boolean confirm = false) {
+    static ImageServiceOuterClass.DeleteImagesResponse deleteImages(
+            RawQuery query = RawQuery.newBuilder().build(), Boolean confirm = false
+    ) {
         ImageServiceOuterClass.DeleteImagesResponse response = getImageClient()
                 .deleteImages(ImageServiceOuterClass.DeleteImagesRequest.newBuilder()
                         .setQuery(query)
                         .setConfirm(confirm).build())
         println "Deleted ${response.numDeleted} images based on ${query.query}"
+        return response
+    }
+
+    static deleteImagesWithRetry(RawQuery query, Boolean confirm = false, Integer expectedDeletions = 1) {
+        Integer deletedCount = 0
+        withRetry(5, 2) {
+            ImageServiceOuterClass.DeleteImagesResponse response = deleteImages(query, confirm)
+            deletedCount += response.numDeleted
+            if (deletedCount < expectedDeletions) {
+                throw new RuntimeException("The number of images deleted has yet to reach its expected count. " +
+                        deletedCount + " -v- " + expectedDeletions)
+            }
+        }
+        println "Deleted at least as many images as expected based on ${query.query}. " +
+                deletedCount + " -v- " + expectedDeletions
     }
 }
