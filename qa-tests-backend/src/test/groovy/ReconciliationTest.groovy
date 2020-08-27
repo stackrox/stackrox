@@ -12,10 +12,12 @@ import services.NamespaceService
 import services.NetworkPolicyService
 import services.SecretService
 
+import spock.lang.Retry
 import org.junit.experimental.categories.Category
 import groups.SensorBounce
 import util.Timer
 
+@Retry(count = 0)
 class ReconciliationTest extends BaseSpecification {
 
     private static final Map<String, Integer> EXPECTED_MIN_DELETIONS_BY_KEY = [
@@ -118,6 +120,9 @@ class ReconciliationTest extends BaseSpecification {
 
         def sensorDeployment = new Deployment().setNamespace("stackrox").setName("sensor")
         orchestrator.deleteAndWaitForDeploymentDeletion(sensorDeployment)
+
+        def labels = ["app":"sensor"]
+        orchestrator.waitForAllPodsToBeRemoved("stackrox", labels)
 
         orchestrator.identity {
             // Delete objects from k8s
