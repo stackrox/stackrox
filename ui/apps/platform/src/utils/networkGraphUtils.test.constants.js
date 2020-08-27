@@ -570,9 +570,15 @@ export const namespaceEdges = [
             numAllowedUnidirectionalLinks: 0,
             portsAndProtocols: [
                 {
+                    port: '*',
+                    protocol: 'L4_PROTOCOL_ANY',
+                    traffic: 'ingress',
+                },
+                {
                     lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
                     port: 443,
                     protocol: 'L4_PROTOCOL_TCP',
+                    traffic: 'egress',
                 },
             ],
             type: 'NAMESPACE_EDGE',

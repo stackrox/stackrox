@@ -10,6 +10,7 @@ import {
     getIngressPortsAndProtocols,
     getEgressPortsAndProtocols,
     getNetworkFlows,
+    createPortsAndProtocolsSelector,
 } from './networkGraphUtils';
 import {
     filteredData,
@@ -247,6 +248,68 @@ describe('networkGraphUtils', () => {
 
             expect(numIngressFlows).toEqual(2);
             expect(numEgressFlows).toEqual(2);
+        });
+    });
+    describe('createPortsAndProtocolsSelector', () => {
+        it('should get ports/protocols when it exists in the mapping', () => {
+            const nodes = [
+                {
+                    entity: { type: 'DEPLOYMENT', id: '0' },
+                    outEdges: {
+                        1: { properties: [{ port: 8443, protocol: 'L4_PROTOCOL_TCP' }] },
+                        2: { properties: [{ port: 3000, protocol: 'L4_PROTOCOL_TCP' }] },
+                    },
+                },
+                {
+                    entity: { type: 'DEPLOYMENT', id: '1' },
+                    outEdges: {},
+                },
+                {
+                    entity: { type: 'DEPLOYMENT', id: '2' },
+                    outEdges: {},
+                },
+            ];
+            const highlightedNodeId = nodes[0].entity.type.id;
+
+            const getPortsAndProtocolsByLink = createPortsAndProtocolsSelector(
+                nodes,
+                highlightedNodeId
+            );
+
+            expect(getPortsAndProtocolsByLink('0**__**1')).toEqual([
+                { port: 8443, protocol: 'L4_PROTOCOL_TCP', traffic: 'egress' },
+            ]);
+        });
+
+        it('should get a single element that represents any protocol/any ports when it does not exist in the mapping', () => {
+            const nodes = [
+                {
+                    entity: { type: 'DEPLOYMENT', id: '0' },
+                    outEdges: {
+                        1: { properties: [{ port: 8443, protocol: 'L4_PROTOCOL_TCP' }] },
+                        2: { properties: [{ port: 3000, protocol: 'L4_PROTOCOL_TCP' }] },
+                    },
+                },
+                {
+                    entity: { type: 'DEPLOYMENT', id: '1' },
+                    outEdges: {},
+                },
+                {
+                    entity: { type: 'DEPLOYMENT', id: '2' },
+                    outEdges: {},
+                },
+            ];
+            const highlightedNodeId = nodes[0].entity.type.id;
+            const isEgress = false;
+
+            const getPortsAndProtocolsByLink = createPortsAndProtocolsSelector(
+                nodes,
+                highlightedNodeId
+            );
+
+            expect(getPortsAndProtocolsByLink('1**__**0', isEgress)).toEqual([
+                { port: '*', protocol: 'L4_PROTOCOL_ANY', traffic: 'ingress' },
+            ]);
         });
     });
 });

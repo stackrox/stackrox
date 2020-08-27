@@ -180,14 +180,16 @@ export const getSourceTargetFromKey = (sourceTargetKey) => {
 };
 
 /**
- * Gets a mapping of ports/protocols based on node links (source->target)
+ * Creates a mapping of ports/protocols based on node links (source->target), and then
+ * returns a closure to allow getting the ports/protocols of a specific source->target
  *
  * @param {!Object[]} node
  * @returns {!Object}
  *
  */
-export const getLinkPortsAndProtocols = (nodes, highlightedNodeId) => {
+export const createPortsAndProtocolsSelector = (nodes, highlightedNodeId) => {
     const linkPortsAndProtocols = {};
+
     // create a mapping of node edges -> ports and protocols
     nodes.forEach((sourceNode) => {
         const targetNodeIndices = Object.keys(sourceNode.outEdges);
@@ -217,7 +219,22 @@ export const getLinkPortsAndProtocols = (nodes, highlightedNodeId) => {
             }
         });
     });
-    return linkPortsAndProtocols;
+
+    function getPortsAndProtocolsByLink(nodeLinkKey, isEgress) {
+        if (linkPortsAndProtocols[nodeLinkKey]) {
+            return linkPortsAndProtocols[nodeLinkKey];
+        }
+        if (typeof isEgress !== 'boolean') {
+            throw Error('The value for isEgress must be set');
+        }
+        // if the mapping doesn't contain the ports/protocols information, it's because we create
+        // additional edges between egress non-isolated and ingress non-isolated nodes. For those cases,
+        // we want to default to showing Any protocols/ Any ports
+        const traffic = isEgress ? 'egress' : 'ingress';
+        return [{ port: '*', protocol: 'L4_PROTOCOL_ANY', traffic }];
+    }
+
+    return getPortsAndProtocolsByLink;
 };
 
 /**
@@ -241,7 +258,7 @@ export const getNamespaceEdges = ({
     const activeNamespaceLinks = {};
     const namespaceLinks = {};
     const highlightedNodeId = (hoveredNode || selectedNode)?.id;
-    const linkPortsAndProtocols = getLinkPortsAndProtocols(nodes, highlightedNodeId);
+    const getPortsAndProtocolsByLink = createPortsAndProtocolsSelector(nodes, highlightedNodeId);
 
     const filteredLinks = links.filter(
         ({ source, target, isActive, sourceNS, targetNS }) =>
@@ -256,26 +273,11 @@ export const getNamespaceEdges = ({
             sourceNS !== targetNS
     );
 
-    // create a mapping of node edges -> ports and protocols
-    nodes.forEach((sourceNode) => {
-        const targetNodeIndices = Object.keys(sourceNode.outEdges);
-        targetNodeIndices.forEach((targetNodeIndex) => {
-            const { properties } = sourceNode.outEdges[targetNodeIndex];
-            const targetNode = nodes[targetNodeIndex];
-            if (
-                sourceNode.entity.type === entityTypes.DEPLOYMENT &&
-                targetNode.entity.type === entityTypes.DEPLOYMENT
-            ) {
-                const nodeLinkKey = getSourceTargetKey(sourceNode.entity.id, targetNode.entity.id);
-                linkPortsAndProtocols[nodeLinkKey] = properties;
-            }
-        });
-    });
-
     filteredLinks.forEach(
         ({ source, target, sourceNS, targetNS, isActive, isAllowed, isDisallowed }) => {
             const namespaceLinkKey = getSourceTargetKey(sourceNS, targetNS);
             const nodeLinkKey = getSourceTargetKey(source, target);
+            const isEgress = source === highlightedNodeId;
 
             // keep track of which namespace links are active
             if (isActive) {
@@ -286,7 +288,7 @@ export const getNamespaceEdges = ({
                 disallowedNamespaceLinks[namespaceLinkKey] = true;
             }
 
-            const portsAndProtocols = linkPortsAndProtocols[nodeLinkKey] || [];
+            const portsAndProtocols = getPortsAndProtocolsByLink(nodeLinkKey, isEgress);
             const isLinkPreviouslyVisited = visitedNodeLinks[nodeLinkKey];
 
             const namespaceLink = namespaceLinks[namespaceLinkKey] || {
@@ -416,7 +418,7 @@ export const getEdgesFromNode = ({
         return [];
     }
 
-    const linkPortsAndProtocols = getLinkPortsAndProtocols(nodes, highlightedNode?.id);
+    const getPortsAndProtocolsByLink = createPortsAndProtocolsSelector(nodes, highlightedNode?.id);
 
     links.forEach((link) => {
         const {
@@ -432,6 +434,7 @@ export const getEdgesFromNode = ({
             isBetweenNonIsolated,
         } = link;
         const isSourceNode = highlightedNode?.id === source;
+        const isEgress = isSourceNode;
         const isTargetNode = highlightedNode?.id === target;
         // if the currently hovered/selected node is a target for this link (ingress)
         const isRelativeIngress = highlightedNode?.id === target;
@@ -463,7 +466,7 @@ export const getEdgesFromNode = ({
             };
             const inSameNamespace = sourceNS === targetNS;
             const nodeLinkKey = getSourceTargetKey(source, target);
-            const portsAndProtocols = linkPortsAndProtocols[nodeLinkKey] || [];
+            const portsAndProtocols = getPortsAndProtocolsByLink(nodeLinkKey, isEgress);
 
             // if the edge is between two deployments in the same namespace
             if (inSameNamespace) {
@@ -884,11 +887,11 @@ export function getNetworkFlows(edges, filterState) {
         return [];
     }
 
-    function getConnectionText(isActive, isAllowed) {
+    function getConnectionText(isActive) {
         let connection = '-';
         if (isActive) {
             connection = networkConnections.ACTIVE;
-        } else if (isAllowed) {
+        } else {
             connection = networkConnections.ALLOWED;
         }
         return connection;
@@ -926,7 +929,6 @@ export function getNetworkFlows(edges, filterState) {
                     destNodeName,
                     destNodeNamespace,
                     isActive,
-                    isAllowed,
                     portsAndProtocols,
                 },
             }
@@ -935,7 +937,7 @@ export function getNetworkFlows(edges, filterState) {
             if (acc[destNodeId]) {
                 return acc;
             }
-            const connection = getConnectionText(isActive, isAllowed);
+            const connection = getConnectionText(isActive);
             directionalFlows.incrementFlows(traffic);
             return {
                 ...acc,
