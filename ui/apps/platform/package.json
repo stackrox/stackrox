@@ -133,7 +133,7 @@
         "@types/node": "^14.0.11",
         "@types/react": "^16.9.35",
         "@types/react-dom": "^16.9.8",
-        "cypress": "^4.7.0",
+        "cypress": "^5.0.0",
         "cypress-file-upload": "^3.5.3",
         "enzyme": "^3.11.0",
         "enzyme-adapter-react-16": "^1.15.2",

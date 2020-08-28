@@ -184,22 +184,21 @@ describe('Cluster Creation Flow', () => {
         // mocking a ZIP file download
         //   based on: https://github.com/cypress-io/cypress/issues/1956#issuecomment-455157737
         cy.fixture('clusters/sensor-kubernetes-cluster-testinstance.zip').then((dataURI) => {
-            return Cypress.Blob.base64StringToBlob(dataURI, 'image/jpeg').then((blob) => {
-                return cy
-                    .route({
-                        url: clustersApi.zip,
-                        method: 'POST',
-                        response: '',
-                        onResponse: (xhr) => {
-                            xhr.response.body = blob; // eslint-disable-line no-param-reassign
-                        },
-                        headers: {
-                            'content-disposition':
-                                'attachment; filename="sensor-kubernetes-cluster-testinstance.zip"',
-                        },
-                    })
-                    .as('download');
-            });
+            const blob = Cypress.Blob.base64StringToBlob(dataURI, 'image/jpeg');
+            return cy
+                .route({
+                    url: clustersApi.zip,
+                    method: 'POST',
+                    response: '',
+                    onResponse: (xhr) => {
+                        xhr.response.body = blob; // eslint-disable-line no-param-reassign
+                    },
+                    headers: {
+                        'content-disposition':
+                            'attachment; filename="sensor-kubernetes-cluster-testinstance.zip"',
+                    },
+                })
+                .as('download');
         });
 
         cy.route('GET', clustersApi.list, '@singleCluster').as('clusters');

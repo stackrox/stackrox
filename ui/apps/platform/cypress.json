@@ -1,6 +1,6 @@
 {
     "baseUrl": "https://localhost:3000",
-    "blacklistHosts": ["*.*"],
+    "blockHosts": ["*.*"],
     "chromeWebSecurity": false,
     "ignoreTestFiles": ["**/constants/**/*", "**/helpers/**/*"],
     "viewportWidth": 1440,
