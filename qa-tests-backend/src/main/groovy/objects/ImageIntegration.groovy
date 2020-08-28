@@ -157,6 +157,38 @@ class ECRRegistryIntegration implements ImageIntegration {
     }
 }
 
+class AzureRegistryIntegration implements ImageIntegration {
+
+    static String name() { "Azure Registry" }
+
+    static Boolean isTestable() {
+        return true
+    }
+
+    static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
+        Map defaultArgs = [
+                name: "acr",
+                endpoint: "stackroxci.azurecr.io",
+                username: "stackroxci",
+                password: Env.mustGet("AZURE_REGISTRY_PASSWORD"),
+        ]
+        Map args = defaultArgs + customArgs
+
+        ImageIntegrationOuterClass.DockerConfig.Builder config =
+                ImageIntegrationOuterClass.DockerConfig.newBuilder()
+                        .setEndpoint(args.endpoint as String)
+                        .setUsername(args.username as String)
+                        .setPassword(args.password as String)
+
+        return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+                .setName(args.name as String)
+                .setType("azure")
+                .clearCategories()
+                .addAllCategories([ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY])
+                .setDocker(config)
+    }
+}
+
 class QuayImageIntegration implements ImageIntegration {
 
     static String name() { "Quay Registry+Scanner" }

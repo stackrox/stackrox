@@ -7,6 +7,7 @@ import groups.BAT
 import groups.Integration
 import io.stackrox.proto.storage.ScopeOuterClass
 import objects.AnchoreScannerIntegration
+import objects.AzureRegistryIntegration
 import objects.ClairScannerIntegration
 import objects.ECRRegistryIntegration
 import objects.EmailNotifier
@@ -450,8 +451,7 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         new ClairScannerIntegration()    | [:]             | "default config"
         new QuayImageIntegration()       | [:]             | "default config"
         new GCRImageIntegration()        | [:]             | "default config"
-
-        new GCRImageIntegration()        | [:]             | "default config"
+        new AzureRegistryIntegration()   | [:]             | "default config"
         new ECRRegistryIntegration()     | [:]             | "default config"
         new ECRRegistryIntegration()     | [endpoint: "",] | "without endpoint"
         new ECRRegistryIntegration()     | [useIam: true,] | "requires IAM"
@@ -490,6 +490,13 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
 
         new ClairScannerIntegration()   | { [endpoint: "http://127.0.0.1/nowhere",]
+        }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
+
+        new AzureRegistryIntegration() | { [username: "WRONG",]
+        }       | StatusRuntimeException | /UNAUTHORIZED/   | "incorrect user"
+        new AzureRegistryIntegration() | { [password: "WRONG",]
+        }       | StatusRuntimeException | /UNAUTHORIZED/   | "incorrect password"
+        new AzureRegistryIntegration() | { [endpoint: "http://127.0.0.1/nowhere",]
         }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
 
         new ECRRegistryIntegration()    | { [endpoint: "http://127.0.0.1/nowhere",]

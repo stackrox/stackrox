@@ -6,32 +6,12 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import objects.Deployment
 import org.junit.experimental.categories.Category
 import services.CVEService
-import services.ImageIntegrationService
 import services.ImageService
 import services.PolicyService
-import spock.lang.Shared
 import spock.lang.Unroll
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 
 class ImageManagementTest extends BaseSpecification {
-    @Shared
-    private String azureId
-    @Shared
-    private static final boolean CHECK_AZURE = false
-
-    def setupSpec() {
-        if (CHECK_AZURE) {
-            azureId = ImageIntegrationService.addAzureRegistry()
-            assert azureId != ""
-        }
-    }
-
-    def cleanupSpec() {
-        if (CHECK_AZURE) {
-            assert ImageIntegrationService.deleteImageIntegration(azureId)
-        }
-    }
-
     @Unroll
     @Category([BAT, Integration])
     def "Verify CI/CD Integration Endpoint - #policy - #imageRegistry #note"() {
