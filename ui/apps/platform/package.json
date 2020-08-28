@@ -39,7 +39,7 @@
         "js-base64": "^2.5.2",
         "jspdf": "^1.5.3",
         "jspdf-autotable": "^3.5.3",
-        "lodash": "^4.17.15",
+        "lodash": "^4.17.20",
         "mobx": "^4.2.0",
         "normalizr": "^3.6.0",
         "object-resolve-path": "^1.1.1",
