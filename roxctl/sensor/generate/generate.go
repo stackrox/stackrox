@@ -41,8 +41,6 @@ Please use --collector-image-repository exclusively in all invocations.`
 	warningDeprecatedFlagMonitoringEndpointUsed = `WARNING: The flag --monitoring-endpoint has been deprecated and has no impact. It will be removed in a future version of roxctl.
 Remove it from your invocations of roxctl to avoid future breakages.`
 
-	warningDefaultForCreateUpgraderSaWillChange = `WARNING: The default for the --create-upgrader-sa flag will change to true in future versions of roxctl.
-If you want to preserve the old behavior, please change your invocations to explicitly specify --create-upgrader-sa=false.`
 	infoDefaultingToSlimCollector          = `Defaulting to slim collector image since kernel probes seem to be available for central.`
 	infoDefaultingToComprehensiveCollector = `Defaulting to comprehensive collector image since kernel probes seem to be unavailable for central.`
 )
@@ -151,12 +149,6 @@ func Command() *cobra.Command {
 				fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedFlagMonitoringEndpointUsed)
 			}
 
-			// Migration process for changed default for "--create-upgrader-sa".
-			// Can be removed in a future release.
-			if !c.Flags().Lookup("create-upgrader-sa").Changed {
-				fmt.Fprintf(os.Stderr, "%s\n\n", warningDefaultForCreateUpgraderSaWillChange)
-			}
-
 			// Migration process for renaming "--image" parameter to "--main-image-repository".
 			// Can be removed in a future release.
 			if c.PersistentFlags().Lookup("image").Changed && c.PersistentFlags().Lookup("main-image-repository").Changed {
@@ -199,7 +191,7 @@ func Command() *cobra.Command {
 
 	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &cluster.CollectionMethod}, "collection-method", "which collection method to use for runtime support (none, default, kernel-module, ebpf)")
 
-	c.PersistentFlags().BoolVar(&createUpgraderSA, "create-upgrader-sa", false, "whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades")
+	c.PersistentFlags().BoolVar(&createUpgraderSA, "create-upgrader-sa", true, "whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades")
 
 	c.PersistentFlags().StringVar(&istioVersion, "istio-support", "",
 		fmt.Sprintf(
