@@ -69,7 +69,7 @@
         "react-router-redux": "^5.0.0-alpha.9",
         "react-select": "^2.0.0",
         "react-slick": "^0.21.0",
-        "react-spinners": "^0.4.5",
+        "react-spinners": "^0.9.0",
         "react-table": "^6.8.6",
         "react-toastify": "^3.4.3",
         "react-transition-group": "^4.4.1",
