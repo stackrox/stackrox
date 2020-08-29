@@ -3,3 +3,4 @@ v1:Secret:additional-ca-sensor
 v1:ResourceQuota:gke-resource-quotas
 v1:ConfigMap:admission-control
 rbac.authorization.k8s.io/v1:ClusterRoleBinding:stackrox:upgrade-sensors
+authorization.openshift.io/v1:ClusterRoleBinding:stackrox:upgrade-sensors
