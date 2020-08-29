@@ -1,15 +1,18 @@
 package common
 
 import (
+	"context"
+	"crypto/tls"
 	"net"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/grpc/alpn"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
-	http1DowngradeClient "github.com/stackrox/rox/pkg/grpc/http1downgrade/client"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	http1DowngradeClient "golang.stackrox.io/grpc-http1/client"
 	"google.golang.org/grpc"
 )
 
@@ -46,7 +49,9 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 	}
 
 	if !flags.UseDirectGRPC() {
-		opts.DialTLS = http1DowngradeClient.ConnectViaProxy
+		opts.DialTLS = func(ctx context.Context, endpoint string, tlsClientConf *tls.Config, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+			return http1DowngradeClient.ConnectViaProxy(ctx, endpoint, tlsClientConf, http1DowngradeClient.ExtraH2ALPNs(alpn.PureGRPCALPNString), http1DowngradeClient.DialOpts(opts...))
+		}
 	}
 
 	apiToken, err := RetrieveAuthToken()
