@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
 
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/datastore"
 	complianceDSTypes "github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/compliance/standards"
@@ -16,28 +18,6 @@ import (
 type options struct {
 	format                  string
 	clusterIDs, standardIDs []string
-}
-
-func idfilter(ids []string) func(string) bool {
-	if len(ids) == 0 {
-		return func(string) bool { return true }
-	}
-	return func(s string) bool {
-		for _, v := range ids {
-			if s == v {
-				return true
-			}
-		}
-		return false
-	}
-}
-
-func (o options) clusterIDFilter() func(string) bool {
-	return idfilter(o.clusterIDs)
-}
-
-func (o options) standardIDFilter() func(string) bool {
-	return idfilter(o.standardIDs)
 }
 
 func parseOptions(r *http.Request) (options options, err error) {
@@ -159,7 +139,15 @@ func CSVHandler() http.HandlerFunc {
 			}
 		}
 
-		data, err := complianceDS.GetLatestRunResultsFiltered(r.Context(), options.clusterIDFilter(), options.standardIDFilter(), complianceDSTypes.WithMessageStrings)
+		if len(options.clusterIDs) == 0 {
+			clusterIDs, err := getClusterIDs(r.Context())
+			if err != nil {
+				csv.WriteError(w, http.StatusInternalServerError, err)
+				return
+			}
+			options.clusterIDs = clusterIDs
+		}
+		data, err := complianceDS.GetLatestRunResultsForClustersAndStandards(r.Context(), options.clusterIDs, options.standardIDs, complianceDSTypes.WithMessageStrings)
 		if err != nil {
 			csv.WriteError(w, http.StatusInternalServerError, err)
 			return
@@ -205,4 +193,19 @@ func CSVHandler() http.HandlerFunc {
 		}
 		output.Write(w, "compliance_export")
 	}
+}
+
+func getClusterIDs(ctx context.Context) ([]string, error) {
+	clusterDS := clusterDatastore.Singleton()
+
+	clusters, err := clusterDS.GetClusters(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterIDs := make([]string, len(clusters))
+	for i, cluster := range clusters {
+		clusterIDs[i] = cluster.GetId()
+	}
+	return clusterIDs, nil
 }

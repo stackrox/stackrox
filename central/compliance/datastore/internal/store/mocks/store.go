@@ -80,19 +80,19 @@ func (mr *MockStoreMockRecorder) GetLatestRunResultsBatch(clusterIDs, standardID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResultsBatch", reflect.TypeOf((*MockStore)(nil).GetLatestRunResultsBatch), clusterIDs, standardIDs, flags)
 }
 
-// GetLatestRunResultsFiltered mocks base method
-func (m *MockStore) GetLatestRunResultsFiltered(clusterIDFilter, standardIDFilter func(string) bool, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
+// GetLatestRunResultsByClusterAndStandard mocks base method
+func (m *MockStore) GetLatestRunResultsByClusterAndStandard(clusterIDs, standardIDs []string, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLatestRunResultsFiltered", clusterIDFilter, standardIDFilter, flags)
+	ret := m.ctrl.Call(m, "GetLatestRunResultsByClusterAndStandard", clusterIDs, standardIDs, flags)
 	ret0, _ := ret[0].(map[compliance.ClusterStandardPair]types.ResultsWithStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetLatestRunResultsFiltered indicates an expected call of GetLatestRunResultsFiltered
-func (mr *MockStoreMockRecorder) GetLatestRunResultsFiltered(clusterIDFilter, standardIDFilter, flags interface{}) *gomock.Call {
+// GetLatestRunResultsByClusterAndStandard indicates an expected call of GetLatestRunResultsByClusterAndStandard
+func (mr *MockStoreMockRecorder) GetLatestRunResultsByClusterAndStandard(clusterIDs, standardIDs, flags interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResultsFiltered", reflect.TypeOf((*MockStore)(nil).GetLatestRunResultsFiltered), clusterIDFilter, standardIDFilter, flags)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResultsByClusterAndStandard", reflect.TypeOf((*MockStore)(nil).GetLatestRunResultsByClusterAndStandard), clusterIDs, standardIDs, flags)
 }
 
 // GetLatestRunMetadataBatch mocks base method

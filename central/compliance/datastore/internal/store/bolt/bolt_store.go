@@ -1,4 +1,4 @@
-package store
+package bolt
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance"
+	"github.com/stackrox/rox/central/compliance/datastore/internal/store"
 	dsTypes "github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -35,7 +36,7 @@ var (
 )
 
 // NewBoltStore returns a compliance results store that is backed by bolt.
-func NewBoltStore(db *bbolt.DB) (Store, error) {
+func NewBoltStore(db *bbolt.DB) (store.Store, error) {
 	return newBoltStore(db)
 }
 
@@ -88,7 +89,7 @@ func loadMessageStrings(resultsBucket *bbolt.Bucket, resultsProto *storage.Compl
 			return err
 		}
 	}
-	if !reconstituteStrings(resultsProto, &stringsProto) {
+	if !store.ReconstituteStrings(resultsProto, &stringsProto) {
 		return errors.New("some message strings could not be loaded")
 	}
 	return nil
@@ -310,29 +311,17 @@ func (s *boltStore) GetLatestRunMetadataBatch(clusterID string, standardIDs []st
 	return results, nil
 }
 
-func (s *boltStore) GetLatestRunResultsFiltered(clusterIDFilter, standardIDFilter func(string) bool, flags dsTypes.GetFlags) (map[compliance.ClusterStandardPair]dsTypes.ResultsWithStatus, error) {
+func (s *boltStore) GetLatestRunResultsByClusterAndStandard(clusterIDs, standardIDs []string, flags dsTypes.GetFlags) (map[compliance.ClusterStandardPair]dsTypes.ResultsWithStatus, error) {
 	results := make(map[compliance.ClusterStandardPair]dsTypes.ResultsWithStatus)
 	err := s.resultsBucket.View(func(b *bbolt.Bucket) error {
-		clusterCursor := b.Cursor()
-		for clusterKey, _ := clusterCursor.First(); clusterKey != nil; clusterKey, _ = clusterCursor.Next() {
-			clusterID := string(clusterKey)
-			if !clusterIDFilter(clusterID) {
-				continue
-			}
-
-			clusterBucket := b.Bucket(clusterKey)
+		for _, clusterID := range clusterIDs {
+			clusterBucket := b.Bucket([]byte(clusterID))
 			if clusterBucket == nil {
+				// Might want to record missing instead of just continuing
 				continue
 			}
-
-			standardCursor := clusterBucket.Cursor()
-			for standardKey, _ := standardCursor.First(); standardKey != nil; standardKey, _ = standardCursor.Next() {
-				standardID := string(standardKey)
-				if !standardIDFilter(standardID) {
-					continue
-				}
-
-				standardBucket := clusterBucket.Bucket(standardKey)
+			for _, standardID := range standardIDs {
+				standardBucket := clusterBucket.Bucket([]byte(standardID))
 				if standardBucket == nil {
 					continue
 				}
@@ -405,7 +394,7 @@ func (s *boltStore) StoreRunResults(runResults *storage.ComplianceRunResults) er
 		return errors.Wrap(err, "serializing metadata")
 	}
 
-	stringsProto := externalizeStrings(runResults)
+	stringsProto := store.ExternalizeStrings(runResults)
 	serializedStrings, err := stringsProto.Marshal()
 	if err != nil {
 		return errors.Wrap(err, "serializing message strings")

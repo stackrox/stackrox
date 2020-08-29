@@ -82,19 +82,19 @@ func (mr *MockDataStoreMockRecorder) GetLatestRunResultsBatch(arg0, arg1, arg2, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResultsBatch", reflect.TypeOf((*MockDataStore)(nil).GetLatestRunResultsBatch), arg0, arg1, arg2, arg3)
 }
 
-// GetLatestRunResultsFiltered mocks base method
-func (m *MockDataStore) GetLatestRunResultsFiltered(arg0 context.Context, arg1, arg2 func(string) bool, arg3 types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
+// GetLatestRunResultsForClustersAndStandards mocks base method
+func (m *MockDataStore) GetLatestRunResultsForClustersAndStandards(arg0 context.Context, arg1, arg2 []string, arg3 types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLatestRunResultsFiltered", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "GetLatestRunResultsForClustersAndStandards", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(map[compliance.ClusterStandardPair]types.ResultsWithStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetLatestRunResultsFiltered indicates an expected call of GetLatestRunResultsFiltered
-func (mr *MockDataStoreMockRecorder) GetLatestRunResultsFiltered(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+// GetLatestRunResultsForClustersAndStandards indicates an expected call of GetLatestRunResultsForClustersAndStandards
+func (mr *MockDataStoreMockRecorder) GetLatestRunResultsForClustersAndStandards(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResultsFiltered", reflect.TypeOf((*MockDataStore)(nil).GetLatestRunResultsFiltered), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResultsForClustersAndStandards", reflect.TypeOf((*MockDataStore)(nil).GetLatestRunResultsForClustersAndStandards), arg0, arg1, arg2, arg3)
 }
 
 // GetSpecificRunResults mocks base method

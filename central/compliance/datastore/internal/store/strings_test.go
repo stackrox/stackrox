@@ -52,7 +52,7 @@ func TestStringsRoundTrip(t *testing.T) {
 	}
 
 	resultsWithoutStrings := results.Clone()
-	stringsProto := externalizeStrings(resultsWithoutStrings)
+	stringsProto := ExternalizeStrings(resultsWithoutStrings)
 	assert.ElementsMatch(t, stringsProto.Strings, []string{"foo", "bar", "baz"})
 
 	for _, cr := range resultsWithoutStrings.GetClusterResults().GetControlResults() {
@@ -78,6 +78,6 @@ func TestStringsRoundTrip(t *testing.T) {
 		}
 	}
 
-	assert.True(t, reconstituteStrings(resultsWithoutStrings, stringsProto))
+	assert.True(t, ReconstituteStrings(resultsWithoutStrings, stringsProto))
 	assert.Equal(t, results, resultsWithoutStrings)
 }

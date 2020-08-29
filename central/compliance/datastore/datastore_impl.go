@@ -93,8 +93,8 @@ func (ds *datastoreImpl) GetLatestRunResultsBatch(ctx context.Context, clusterID
 	return filteredResults, err
 }
 
-func (ds *datastoreImpl) GetLatestRunResultsFiltered(ctx context.Context, clusterIDFilter, standardIDFilter func(string) bool, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
-	results, err := ds.storage.GetLatestRunResultsFiltered(clusterIDFilter, standardIDFilter, flags)
+func (ds *datastoreImpl) GetLatestRunResultsForClustersAndStandards(ctx context.Context, clusterIDs, standardIDs []string, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
+	results, err := ds.storage.GetLatestRunResultsByClusterAndStandard(clusterIDs, standardIDs, flags)
 	if err != nil {
 		return nil, err
 	}

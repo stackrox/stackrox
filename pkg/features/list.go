@@ -37,4 +37,7 @@ var (
 
 	// NetworkGraphExternalSrcs enables external sources feature in network graph.
 	NetworkGraphExternalSrcs = registerFeature("Enable external sources feature in network graph ", "ROX_NETWORK_GRAPH_EXTERNAL_SRCS", false)
+
+	// ComplianceInRocksDB switches compliance over to using RocksDB instead of Bolt
+	ComplianceInRocksDB = registerFeature("Switch compliance to using RocksDB", "ROX_COMPLIANCE_IN_ROCKSDB", true)
 )

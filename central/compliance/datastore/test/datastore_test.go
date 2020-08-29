@@ -136,12 +136,12 @@ func (s *complianceDataStoreTestSuite) TestGetLatestRunResultsFiltered() {
 	s.mockFilter.EXPECT().FilterBatchResults(s.hasReadCtx, expectedReturn).Return(expectedReturn, nil)
 
 	// Expect storage fetch.
-	s.mockStorage.EXPECT().GetLatestRunResultsFiltered(gomock.Any(), gomock.Any(), types.WithMessageStrings).Return(expectedReturn, nil)
+	s.mockStorage.EXPECT().GetLatestRunResultsByClusterAndStandard(gomock.Any(), gomock.Any(), types.WithMessageStrings).Return(expectedReturn, nil)
 
 	// Call tested.
-	clusterIDs := func(id string) bool { return true }
-	standardIDs := func(id string) bool { return true }
-	result, err := s.dataStore.GetLatestRunResultsFiltered(s.hasReadCtx, clusterIDs, standardIDs, types.WithMessageStrings)
+	clusterIDs := []string{csPair.ClusterID}
+	standardIDs := []string{csPair.StandardID}
+	result, err := s.dataStore.GetLatestRunResultsForClustersAndStandards(s.hasReadCtx, clusterIDs, standardIDs, types.WithMessageStrings)
 
 	// Check results match.
 	s.Nil(err)

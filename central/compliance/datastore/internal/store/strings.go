@@ -27,10 +27,10 @@ func (c *stringCollector) Collect(s string) int {
 	return idx
 }
 
-// externalizeStrings modifies resultsProto to contain only empty `Message` fields in the evidence proto, and creates
+// ExternalizeStrings modifies resultsProto to contain only empty `Message` fields in the evidence proto, and creates
 // and returns a `ComplianceStrings` proto that contains the strings and allows looking up the original message strings
 // through the newly populated `MessageId` field in the evidence record.
-func externalizeStrings(resultsProto *storage.ComplianceRunResults) *storage.ComplianceStrings {
+func ExternalizeStrings(resultsProto *storage.ComplianceRunResults) *storage.ComplianceStrings {
 	sc := newStringCollector()
 	externalizeStringsForEntity(resultsProto.GetClusterResults(), sc)
 	for _, deploymentResults := range resultsProto.GetDeploymentResults() {
@@ -54,9 +54,9 @@ func externalizeStringsForEntity(entityResults *storage.ComplianceRunResults_Ent
 	}
 }
 
-// reconstituteStrings populates all messages in the evidence records of the given result, by looking up the string
+// ReconstituteStrings populates all messages in the evidence records of the given result, by looking up the string
 // value for the message ID in the given strings proto.
-func reconstituteStrings(resultsProto *storage.ComplianceRunResults, stringsProto *storage.ComplianceStrings) bool {
+func ReconstituteStrings(resultsProto *storage.ComplianceRunResults, stringsProto *storage.ComplianceStrings) bool {
 	allFound := reconstituteStringsForEntity(resultsProto.GetClusterResults(), stringsProto)
 	for _, deploymentResults := range resultsProto.GetDeploymentResults() {
 		allFound = reconstituteStringsForEntity(deploymentResults, stringsProto) && allFound

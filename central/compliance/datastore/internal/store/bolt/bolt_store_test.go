@@ -1,10 +1,12 @@
-package store
+package bolt
 
 import (
 	"testing"
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/central/compliance"
+	"github.com/stackrox/rox/central/compliance/datastore/internal/store"
 	dsTypes "github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -56,9 +58,10 @@ func (s *boltStoreTestSuite) TestBatchGetOnEmpty() {
 	s.Len(results, 0)
 }
 
-func (s *boltStoreTestSuite) TestFilteredGetOnEmpty() {
-	truePred := func(string) bool { return true }
-	results, err := s.store.GetLatestRunResultsFiltered(truePred, truePred, 0)
+func (s *boltStoreTestSuite) TestGetLatestRunResultsByClusterAndStandardOnEmpty() {
+	clusterIDs := []string{"some ID"}
+	standardIDs := []string{"some ID"}
+	results, err := s.store.GetLatestRunResultsByClusterAndStandard(clusterIDs, standardIDs, 0)
 	s.NoError(err)
 	s.Len(results, 0)
 }
@@ -237,4 +240,41 @@ func (s *boltStoreTestSuite) TestStoreFailures() {
 	storedResults, err = s.store.GetLatestRunResults("cluster1", "standardA", 0)
 	s.Require().NoError(err)
 	s.Equal(dsTypes.ResultsWithStatus{LastSuccessfulResults: run5Results}, storedResults)
+}
+
+func (s *boltStoreTestSuite) TestGetLatestRunResultsByClusterAndStandard() {
+	filterIn := store.GetMockResult()
+	s.Require().NoError(s.store.StoreRunResults(filterIn))
+
+	filterInOld := store.GetMockResult()
+	filterInOld.RunMetadata.FinishTimestamp.Seconds = filterInOld.RunMetadata.FinishTimestamp.Seconds - 600
+	s.Require().NoError(s.store.StoreRunResults(filterInOld))
+
+	filterOutCluster := store.GetMockResult()
+	filterOutCluster.RunMetadata.ClusterId = "Not this cluster!"
+	s.Require().NoError(s.store.StoreRunResults(filterOutCluster))
+
+	filterOutStandard := store.GetMockResult()
+	filterOutStandard.RunMetadata.StandardId = "Not this standard!"
+	s.Require().NoError(s.store.StoreRunResults(filterOutStandard))
+
+	filterOutClusterAndStandard := store.GetMockResult()
+	filterOutClusterAndStandard.RunMetadata.ClusterId = "Another bad cluster"
+	filterOutClusterAndStandard.RunMetadata.StandardId = "Another bad standard"
+	s.Require().NoError(s.store.StoreRunResults(filterOutClusterAndStandard))
+
+	clusterIDs := []string{filterIn.RunMetadata.ClusterId}
+	standardIDs := []string{filterIn.RunMetadata.StandardId}
+
+	resultMap, err := s.store.GetLatestRunResultsByClusterAndStandard(clusterIDs, standardIDs, 0)
+	s.Require().NoError(err)
+	expectedPair := compliance.ClusterStandardPair{
+		ClusterID:  filterIn.RunMetadata.ClusterId,
+		StandardID: filterIn.RunMetadata.StandardId,
+	}
+	s.Len(resultMap, 1)
+	s.Require().Contains(resultMap, expectedPair)
+	result := resultMap[expectedPair]
+	s.Equal(filterIn, result.LastSuccessfulResults)
+	s.Empty(result.FailedRuns)
 }

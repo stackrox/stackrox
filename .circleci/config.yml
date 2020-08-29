@@ -238,7 +238,7 @@ waitForAPI: &waitForAPI
       set +e
       NUM_SUCCESSES_IN_A_ROW=0
       SUCCESSES_NEEDED_IN_A_ROW=3
-      for i in $(seq 1 25); do
+      for i in $(seq 1 40); do
         metadata="$(curl -sk --connect-timeout 5 --max-time 10 "${METADATA_URL}")"
         if [[ $? -eq 0 && "$(jq '.licenseStatus' -r \<<<"$metadata")" != "RESTARTING" ]]; then
           NUM_SUCCESSES_IN_A_ROW=$(( NUM_SUCCESSES_IN_A_ROW + 1 ))
