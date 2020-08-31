@@ -34,9 +34,9 @@ message AWSSecurityHub {
         string access_key_id     = 1 [(gogoproto.moretags) = "scrub:\"always\""];
         string secret_access_key = 2 [(gogoproto.moretags) = "scrub:\"always\""];
     }
-    string region           = 1;
-    // If empty, default to AWS's chained client credentials resolver.
-    Credentials credentials = 2;
+    string region             = 1;
+    Credentials credentials   = 2;
+    string account_id         = 3;
 }
 
 message CSCC {

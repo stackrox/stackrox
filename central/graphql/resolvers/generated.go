@@ -19,6 +19,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"accountId: String!",
 	}))
 	utils.Must(builder.AddType("AWSSecurityHub", []string{
+		"accountId: String!",
 		"credentials: AWSSecurityHub_Credentials",
 		"region: String!",
 	}))
@@ -1176,6 +1177,11 @@ func (resolver *Resolver) wrapAWSSecurityHubs(values []*storage.AWSSecurityHub, 
 		output[i] = &aWSSecurityHubResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *aWSSecurityHubResolver) AccountId(ctx context.Context) string {
+	value := resolver.data.GetAccountId()
+	return value
 }
 
 func (resolver *aWSSecurityHubResolver) Credentials(ctx context.Context) (*aWSSecurityHub_CredentialsResolver, error) {

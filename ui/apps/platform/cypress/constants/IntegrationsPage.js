@@ -75,9 +75,10 @@ export const selectors = {
     awsSecurityHubForm: {
         nameInput: "form input[name='name']",
         active: "form input[name='enabled']",
-        awsRegion: "form input[name='awssh.region']",
-        awsAccessKeyId: "form input[name='awssh.credentials.accessKeyId']",
-        awsSecretAccessKey: "form input[name='awssh.credentials.secretAccessKey']",
+        awsAccountNumber: "form input[name='awsSecurityHub.accountId']",
+        awsRegionPlaceholder: 'form .react-select__placeholder',
+        awsAccessKeyId: "form input[name='awsSecurityHub.credentials.accessKeyId']",
+        awsSecretAccessKey: "form input[name='awsSecurityHub.credentials.secretAccessKey']",
     },
     resultsSection: '[data-testid="results-message"]',
     labeledValue: '[data-testid="labeled-value"]',

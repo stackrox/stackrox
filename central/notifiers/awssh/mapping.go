@@ -2,13 +2,11 @@ package awssh
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/securityhub"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
@@ -20,13 +18,13 @@ const (
 	resourceTypeOther     = "Other"
 )
 
-func mapAlertToFinding(alert *storage.Alert) *securityhub.AwsSecurityFinding {
+func mapAlertToFinding(account string, arn string, alert *storage.Alert) *securityhub.AwsSecurityFinding {
 	severity := float64(alert.GetPolicy().GetSeverity())
 
 	finding := &securityhub.AwsSecurityFinding{
 		SchemaVersion: aws.String(schemaVersion),
-		AwsAccountId:  aws.String(product.account),
-		ProductArn:    aws.String(product.arn),
+		AwsAccountId:  aws.String(account),
+		ProductArn:    aws.String(arn),
 		// See https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-custom-providers.html
 		ProductFields: map[string]*string{
 			"ProviderName":    aws.String(product.name),
@@ -53,7 +51,7 @@ func mapAlertToFinding(alert *storage.Alert) *securityhub.AwsSecurityFinding {
 			// With that, we instead create a custom resource and describe the deployment context of the alert in this
 			// resource.
 			{
-				Id:   aws.String(alert.GetDeployment().GetClusterId()),
+				Id:   aws.String(fmt.Sprintf("deployment: %s", alert.GetDeployment().GetName())),
 				Type: aws.String(resourceTypeOther),
 				Details: &securityhub.ResourceDetails{
 					Other: map[string]*string{
@@ -72,8 +70,11 @@ func mapAlertToFinding(alert *storage.Alert) *securityhub.AwsSecurityFinding {
 	}
 
 	for _, container := range alert.GetDeployment().GetContainers() {
+		if container.GetImage().GetId() == "" {
+			continue
+		}
 		finding.Resources = append(finding.Resources, &securityhub.Resource{
-			Id:   aws.String(container.GetImage().GetId()),
+			Id:   aws.String(fmt.Sprintf("container: %s.%s@%s: %s", alert.GetDeployment().GetName(), alert.GetDeployment().GetNamespace(), alert.GetDeployment().GetClusterName(), container.GetName())),
 			Type: aws.String(resourceTypeContainer),
 			Details: &securityhub.ResourceDetails{
 				Container: &securityhub.ContainerDetails{
@@ -82,6 +83,13 @@ func mapAlertToFinding(alert *storage.Alert) *securityhub.AwsSecurityFinding {
 					ImageName: aws.String(container.GetImage().GetName().GetFullName()),
 				},
 			},
+		})
+	}
+
+	for _, violation := range alert.GetViolations() {
+		finding.Resources = append(finding.Resources, &securityhub.Resource{
+			Id:   aws.String("violation: " + violation.GetMessage()),
+			Type: aws.String(resourceTypeOther),
 		})
 	}
 
@@ -101,18 +109,9 @@ func mapAlertToFinding(alert *storage.Alert) *securityhub.AwsSecurityFinding {
 
 // TODO(tvoss): Fine-tune the description as we iterate on the mapping.
 func createDescriptionForAlert(alert *storage.Alert) string {
-	if len(alert.GetViolations()) == 0 {
-		return fmt.Sprintf("Policy %s violated", alert.GetPolicy().GetName())
+	s := alert.GetPolicy().GetDescription()
+	if len(s) > 1024 {
+		s = s[:1024]
 	}
-
-	distinct := set.StringSet{}
-	for _, v := range alert.GetViolations() {
-		if vText := v.GetMessage(); vText != "" {
-			distinct.Add(vText)
-		}
-	}
-
-	return strings.Join(distinct.AsSortedSlice(func(a, b string) bool {
-		return a < b
-	}), " ")
+	return s
 }

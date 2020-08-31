@@ -83,7 +83,8 @@ describe('Notifiers Test', () => {
 
             cy.get(selectors.awsSecurityHubForm.nameInput);
             cy.get(selectors.awsSecurityHubForm.active);
-            cy.get(selectors.awsSecurityHubForm.awsRegion);
+            cy.get(selectors.awsSecurityHubForm.awsAccountNumber);
+            cy.get(selectors.awsSecurityHubForm.awsRegionPlaceholder);
             cy.get(selectors.awsSecurityHubForm.awsAccessKeyId);
             cy.get(selectors.awsSecurityHubForm.awsSecretAccessKey);
         });

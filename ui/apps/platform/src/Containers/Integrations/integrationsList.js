@@ -201,7 +201,7 @@ const integrationsList = {
         },
         {
             label: 'AWS Security Hub',
-            type: 'awssh',
+            type: 'awsSecurityHub',
             source: 'notifiers',
             image: s3, // TODO: replace with ref to Security Hub image when that becomes available
             featureFlagDependency: knownBackendFlags.ROX_AWS_SECURITY_HUB_INTEGRATION,

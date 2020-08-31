@@ -21,9 +21,22 @@ const tableColumnDescriptor = Object.freeze({
         ],
     },
     notifiers: {
-        awssh: [
+        awsSecurityHub: [
             { accessor: 'name', Header: 'Name' },
-            { accessor: 'labelRegion', Header: 'AWS Region', className: 'word-break' },
+            {
+                accessor: 'awsSecurityHub.accountId',
+                Header: 'AWS Account Number',
+            },
+            { accessor: 'awsSecurityHub.region', Header: 'AWS Region' },
+            {
+                accessor: 'awsSecurityHub.credentials.accessKeyId',
+                Header: 'AWS Access Key ID',
+            },
+            {
+                accessor: 'enabled',
+                Header: 'Enabled',
+                Cell: ({ original }) => <span>{original?.enabled ? 'Yes' : 'No'}</span>,
+            },
         ],
         slack: [
             { accessor: 'name', Header: 'Name' },

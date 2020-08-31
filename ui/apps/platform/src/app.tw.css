@@ -321,6 +321,10 @@ h6 {
     @apply p-0 !important;
 }
 
+.react-select__placeholder {
+    color: var(--base-500) !important;
+}
+
 .severity-tile {
     background: hsla(0, 0%, 100%, 0.19);
 }

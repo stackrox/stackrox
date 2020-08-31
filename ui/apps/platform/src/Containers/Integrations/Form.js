@@ -80,8 +80,8 @@ class Form extends Component {
         const { location } = window;
         data.uiEndpoint = this.props.source === 'authProviders' ? location.host : location.origin;
         data.type = this.props.type;
-        // Set a default value of true for everything but auth plugins (they have their own toggle for that).
-        if (this.props.source !== 'authPlugins') {
+        // Set a default value of true for everything but auth plugins or AWS SH (they have their own toggle for that).
+        if (this.props.source !== 'authPlugins' && data.type !== 'awsSecurityHub') {
             data.enabled = true;
         }
         data.categories = data.categories || [];
@@ -199,6 +199,11 @@ class Form extends Component {
                                 <div className="flex mt-4" htmlFor={field.key} key={field.label}>
                                     <div className={`mr-4 flex ${width} capitalize ${align}`}>
                                         {field.label}
+                                        {field.required && (
+                                            <span className="text-base-500 italic pl-2">
+                                                (required)
+                                            </span>
+                                        )}
                                         {helpIconDescription && (
                                             <div className="ml-2">
                                                 <HelpIcon description={helpIconDescription} />
@@ -221,13 +226,36 @@ class Form extends Component {
         );
     };
 
+    // TODO: generalize this form validation for all integrations
+    //       (currently just checking AWS Security Hub)
+    checkFormValidity = (formData) => {
+        if (
+            formData?.name?.length > 0 &&
+            formData?.awsSecurityHub?.accountId?.length > 0 &&
+            formData?.awsSecurityHub?.region?.length > 0 &&
+            formData?.awsSecurityHub?.credentials?.accessKeyId?.length > 0 &&
+            formData?.awsSecurityHub?.credentials?.secretAccessKey?.length > 0
+        ) {
+            return true;
+        }
+        return false;
+    };
+
     render() {
         const header = this.isEditMode() ? this.props.formData.name : 'New Integration';
+
+        // TODO: generalize this form validation for all integrations
+        //       (currently just checking AWS Security Hub)
+        const isValid =
+            this.props.type === 'awsSecurityHub'
+                ? this.checkFormValidity(this.props.formData)
+                : true;
         const buttons = (
             <>
                 <PanelButton
                     icon={<Icon.Save className="h-4 w-4" />}
                     className="btn btn-success mx-1"
+                    disabled={!isValid}
                     onClick={this.onSubmit}
                     tooltip={this.isEditMode() ? 'Save' : 'Create'}
                 >

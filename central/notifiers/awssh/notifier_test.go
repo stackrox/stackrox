@@ -17,6 +17,12 @@ import (
 func configFromEnv() (*storage.AWSSecurityHub, error) {
 	result := storage.AWSSecurityHub{}
 
+	if v, set := os.LookupEnv("NOTIFIER_AWS_ACCOUNT_ID"); set {
+		result.AccountId = v
+	} else {
+		return nil, errors.New("missing value for NOTIFIER_AWS_ACCOUNT_ID in env")
+	}
+
 	if v, set := os.LookupEnv("NOTIFIER_AWS_SECURITY_HUB_REGION"); set {
 		result.Region = v
 	} else {
@@ -44,9 +50,10 @@ func newAlert(state storage.ViolationState) *storage.Alert {
 	return &storage.Alert{
 		Id: uuid.NewV4().String(),
 		Policy: &storage.Policy{
-			Id:       uuid.NewV4().String(),
-			Name:     "example policy",
-			Severity: storage.Severity_HIGH_SEVERITY,
+			Id:          uuid.NewV4().String(),
+			Name:        "example policy",
+			Description: "Some random description",
+			Severity:    storage.Severity_HIGH_SEVERITY,
 		},
 		Deployment: &storage.Alert_Deployment{
 			Id:          uuid.NewV4().String(),
@@ -65,6 +72,12 @@ func newAlert(state storage.ViolationState) *storage.Alert {
 					},
 				},
 			},
+		},
+		Violations: []*storage.Alert_Violation{
+			{Message: "one"},
+			{Message: "two"},
+			{Message: "three"},
+			{Message: "https://www.stackrox.com"},
 		},
 		FirstOccurred: types.TimestampNow(),
 		Time:          types.TimestampNow(),

@@ -3,6 +3,7 @@ package awssh
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -17,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
+	"go.uber.org/zap"
 )
 
 var (
@@ -25,22 +27,20 @@ var (
 	log                  = logging.CurrentModule().Logger()
 	defaultConfiguration = configuration{
 		upstreamTimeout: 2 * time.Second,
-		batchSize:       50,
+		batchSize:       5,
 		uploadTimeout:   15 * time.Second,
 	}
 	product = struct {
-		account string
-		arn     string
-		name    string
-		version string
+		arnFormatter func(string) string
+		name         string
+		version      string
 	}{
-		account: "939357552774",
 		// arn is the StackRox-provider-specific ARN that we received
 		// when registering our integration with AWS Security Hub. If this ARN
 		// changes, we need to adjust this constant.
-		// arn:aws:securityhub:us-east-2::product/stackrox/kubernetes-security
-		// "arn:aws:securityhub:us-east-1:939357552774:product/939357552774/default"
-		arn:  "arn:aws:securityhub::939357552774:product/939357552774/default",
+		arnFormatter: func(region string) string {
+			return fmt.Sprintf("arn:aws:securityhub:%s::product/stackrox/kubernetes-security", region)
+		},
 		name: "kubernetes-security",
 		// TODO(tvoss): Bump to proper version once we default the feature to true.
 		version: "0.0.0",
@@ -72,20 +72,31 @@ func init() {
 			}
 		}()
 
+		notifier.waitForInitDone()
+
 		return notifier, nil
 	})
 }
 
 func validateNotifierConfiguration(config *storage.AWSSecurityHub) (*storage.AWSSecurityHub, error) {
-	if credentials := config.GetCredentials(); credentials != nil {
-		accessKeyIDEmpty := credentials.GetAccessKeyId() == ""
-		secretAccessKeyEmpty := credentials.GetSecretAccessKey() == ""
-		switch {
-		case accessKeyIDEmpty && !secretAccessKeyEmpty:
-			return nil, errors.New("access key ID must not be empty")
-		case !accessKeyIDEmpty && secretAccessKeyEmpty:
-			return nil, errors.New("secret access key must not be empty")
-		}
+	if config.GetRegion() == "" {
+		return nil, errors.New("AWS region must not be empty")
+	}
+
+	if config.GetAccountId() == "" {
+		return nil, errors.New("AWS account ID must not be empty")
+	}
+
+	if config.GetCredentials() == nil {
+		return nil, errors.New("AWS credentials must not be empty")
+	}
+
+	if config.GetCredentials().GetAccessKeyId() == "" {
+		return nil, errors.New("AWS access key ID must not be empty")
+	}
+
+	if config.GetCredentials().GetSecretAccessKey() == "" {
+		return nil, errors.New("AWS secret access key must not be empty")
 	}
 
 	return config, nil
@@ -103,6 +114,8 @@ type configuration struct {
 type notifier struct {
 	configuration
 	*securityhub.SecurityHub
+	account     string
+	arn         string
 	cache       map[string]*storage.Alert
 	alertCh     chan *storage.Alert
 	stopSig     concurrency.Signal
@@ -115,7 +128,7 @@ func newNotifier(configuration configuration) (*notifier, error) {
 		return nil, errors.Wrap(err, "failed to validate config for AWS SecurityHub")
 	}
 
-	awsConfig := aws.NewConfig().WithLogger(aws.LoggerFunc(log.Debug)).WithLogLevel(aws.LogDebug)
+	awsConfig := aws.NewConfig().WithLogger(aws.LoggerFunc(log.Debug)).WithLogLevel(aws.LogDebugWithHTTPBody)
 	if region := config.GetRegion(); region != "" {
 		awsConfig = awsConfig.WithRegion(config.GetRegion())
 	}
@@ -135,6 +148,8 @@ func newNotifier(configuration configuration) (*notifier, error) {
 	return &notifier{
 		configuration: configuration,
 		SecurityHub:   securityhub.New(awss),
+		account:       config.GetAccountId(),
+		arn:           product.arnFormatter(config.GetRegion()),
 		cache:         map[string]*storage.Alert{},
 		alertCh:       make(chan *storage.Alert),
 		initDoneSig:   concurrency.NewSignal(),
@@ -157,27 +172,27 @@ func (n *notifier) run(ctx context.Context) error {
 	}()
 
 	doneCh := ctx.Done()
-	uploadTimer := time.NewTimer(n.uploadTimeout)
-	defer uploadTimer.Stop()
+	lastUpload := time.Time{}
+	uploadTicker := time.NewTicker(n.uploadTimeout)
+	defer uploadTicker.Stop()
 
 	n.initDoneSig.Signal()
 
 	for {
 		select {
 		case alert := <-n.alertCh:
-			if uploadedBatch := n.processAlert(ctx, alert); uploadedBatch {
-				if !uploadTimer.Stop() {
-					<-uploadTimer.C
-				}
-				uploadTimer.Reset(n.uploadTimeout)
+			if n.processAlert(ctx, alert) {
+				lastUpload = time.Now()
 			}
-		case <-uploadTimer.C:
+		case <-uploadTicker.C:
 			// If the upload timer kicks in, we haven't received a new alert for
 			// uploadTimeout seconds. We aim to minimize the amount of state
 			// kept in memory and drain our internal cache here.
-			_ = n.uploadBatchIf(ctx, func(n *notifier) bool {
+			if time.Since(lastUpload) > n.uploadTimeout && n.uploadBatchIf(ctx, func(n *notifier) bool {
 				return len(n.cache) > 0
-			})
+			}) {
+				lastUpload = time.Now()
+			}
 		case <-doneCh:
 			return ctx.Err()
 		}
@@ -214,15 +229,30 @@ func (n *notifier) uploadBatchIf(ctx context.Context, predicate func(*notifier) 
 	input := &securityhub.BatchImportFindingsInput{}
 
 	for _, alert := range n.cache {
-		input.Findings = append(input.Findings, mapAlertToFinding(alert))
+		input.Findings = append(input.Findings, mapAlertToFinding(n.account, n.arn, alert))
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, n.upstreamTimeout)
 	defer cancel()
 
-	_, err := n.SecurityHub.BatchImportFindingsWithContext(ctx, input)
+	result, err := n.SecurityHub.BatchImportFindingsWithContext(ctx, input)
 	if err != nil {
 		log.Warn("failed to upload batch", logging.Err(err))
+		return false
+	}
+
+	if result.FailedCount != nil && *result.FailedCount > 0 {
+		cache := make(map[string]*storage.Alert)
+		for _, finding := range result.FailedFindings {
+			if id := finding.Id; id != nil {
+				if entry := n.cache[*id]; entry != nil {
+					cache[*id] = entry
+				}
+			}
+		}
+		log.Warn("failed to upload batch", zap.Any("failures", result.FailedFindings))
+		n.cache = cache
+
 		return false
 	}
 
@@ -260,7 +290,7 @@ func (n *notifier) Test(ctx context.Context) error {
 			ProductArn: []*securityhub.StringFilter{
 				{
 					Comparison: aws.String(securityhub.StringFilterComparisonEquals),
-					Value:      aws.String(product.arn),
+					Value:      aws.String(n.arn),
 				},
 			},
 		},
@@ -272,7 +302,7 @@ func (n *notifier) Test(ctx context.Context) error {
 
 	_, err = n.SecurityHub.BatchImportFindings(&securityhub.BatchImportFindingsInput{
 		Findings: []*securityhub.AwsSecurityFinding{
-			mapAlertToFinding(&storage.Alert{
+			mapAlertToFinding(n.account, n.arn, &storage.Alert{
 				Id: uuid.NewV4().String(),
 				Policy: &storage.Policy{
 					Id:       uuid.NewV4().String(),

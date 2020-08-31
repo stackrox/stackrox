@@ -1,5 +1,6 @@
 import resolvePath from 'object-resolve-path';
 import set from 'lodash/set';
+import isEmpty from 'lodash/isEmpty';
 
 import formDescriptors from 'Containers/Integrations/formDescriptors';
 
@@ -124,4 +125,20 @@ export function setFormSubmissionOptions(source, type, data, metadata = {}) {
         options = { updatePassword };
     }
     return options;
+}
+
+export function getDefaultValues(source, type) {
+    if (formDescriptors[source] && formDescriptors[source][type]) {
+        const initialValues = formDescriptors[source][type].reduce((values, field) => {
+            if (field.default) {
+                const newInitialValues = { ...values };
+                set(newInitialValues, field.jsonpath, field.default);
+                return newInitialValues;
+            }
+            return values;
+        }, {});
+
+        return isEmpty(initialValues) ? null : initialValues;
+    }
+    return null;
 }
