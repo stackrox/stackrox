@@ -1,10 +1,13 @@
 import static Services.getSearchResponse
 import static Services.waitForViolation
+
 import objects.Deployment
 import spock.lang.Unroll
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import org.junit.experimental.categories.Category
 import groups.BAT
+import orchestratormanager.OrchestratorTypes
+import util.Env
 
 class GlobalSearch extends BaseSpecification {
 
@@ -15,11 +18,17 @@ class GlobalSearch extends BaseSpecification {
             .addLabel("app", "test")
             .setCommand(["sleep", "600"])
 
+    // https://stack-rox.atlassian.net/browse/ROX-5298 &
+    // https://stack-rox.atlassian.net/browse/ROX-5355
+    // Note: Using an extra long timeout here because Class methods are not @retried
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
+            Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT ? 300 : 30
+
     def setupSpec() {
         orchestrator.createDeployment(DEPLOYMENT)
         assert Services.waitForDeployment(DEPLOYMENT)
         // Wait for the latest tag violation since we try to search by it.
-        def foundViolation = waitForViolation(DEPLOYMENT.getName(), "Latest tag")
+        def foundViolation = waitForViolation(DEPLOYMENT.getName(), "Latest tag", WAIT_FOR_VIOLATION_TIMEOUT)
         if (!foundViolation) {
             def policy = Services.getPolicyByName("Latest tag")
             println "'Latest tag' policy:"
