@@ -1,3 +1,4 @@
+apiVersion: v1
 name: central
 description: StackRox Central Server
 version: {{.Version}}

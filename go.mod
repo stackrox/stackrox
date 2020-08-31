@@ -5,6 +5,7 @@ go 1.13
 require (
 	cloud.google.com/go v0.62.0
 	cloud.google.com/go/storage v1.10.0
+	github.com/Azure/go-autorest/autorest v0.11.4 // indirect
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig v0.0.0-20190301161902-9f8fceff796f
@@ -18,7 +19,6 @@ require (
 	github.com/blevesearch/bleve v0.8.0
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e
-	github.com/containerd/continuity v0.0.0-20200101070350-669de920ecb0 // indirect
 	github.com/containers/image/v5 v5.5.2
 	github.com/coreos/go-oidc v2.1.0+incompatible
 	github.com/coreos/go-systemd/v22 v22.0.0
@@ -26,7 +26,7 @@ require (
 	github.com/deckarep/golang-set v1.7.1
 	github.com/dgraph-io/badger v0.0.0-20190131175406-28ef9bfd2438
 	github.com/docker/distribution v2.7.1+incompatible
-	github.com/docker/docker v1.4.2-0.20191219165747-a9416c67da9f
+	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0
 	github.com/facebookincubator/nvdtools v0.1.4-0.20191024132624-1cb041402875
@@ -100,14 +100,15 @@ require (
 	gopkg.in/square/go-jose.v2 v2.3.1
 	gopkg.in/yaml.v2 v2.3.0
 	gotest.tools v2.2.0+incompatible
-	honnef.co/go/tools v0.0.1-2020.1.4
+	helm.sh/helm/v3 v3.3.0
+	honnef.co/go/tools v0.0.1-2020.1.5
 	k8s.io/api v0.19.0
 	k8s.io/apimachinery v0.19.0
 	k8s.io/apiserver v0.19.0
 	k8s.io/client-go v11.0.0+incompatible
-	k8s.io/helm v2.14.0+incompatible
 	k8s.io/kubectl v0.19.0
 	k8s.io/utils v0.0.0-20200821003339-5e75c0163111
+	rsc.io/letsencrypt v0.0.3 // indirect
 	sigs.k8s.io/yaml v1.2.0
 )
 
@@ -121,15 +122,22 @@ replace (
 	github.com/fullsailor/pkcs7 => github.com/misberner/pkcs7 v0.0.0-20190417093538-a48bf0f78dea
 	github.com/go-resty/resty => gopkg.in/resty.v1 v1.11.0
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20200827223713-3c42fc2eb426
+
+	// Something pulls in an older version with uppercase OpenAPIv2 package version
+	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.1
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20200409184839-c0893dd603f8
 	github.com/mattn/goveralls => github.com/viswajithiii/goveralls v0.0.3-0.20190917224517-4dd02c532775
 	github.com/nilslice/protolock => github.com/viswajithiii/protolock v0.10.1-0.20190117180626-43bb8a9ba4e8
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc9
-	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20200827190008-3062137373b5
+	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20200623090625-83993cebb5ae
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f
 	golang.org/x/oauth2 => github.com/misberner/oauth2 v0.0.0-20200208204620-d153c71f6b8d
-	honnef.co/go/tools => honnef.co/go/tools v0.0.0-20200207073116-104ba5a2aac5
 
+	// Helm needs k8s 0.19.0 deps in order to not screw everything up
+	helm.sh/helm/v3 => github.com/misberner/helm/v3 v3.3.1-0.20200828132258-c3bfeb777bfb
+	honnef.co/go/tools => honnef.co/go/tools v0.0.1-2020.1.5
+
+	// Circular github.com/stackrox/rox sets this to an incompatible version
 	k8s.io/client-go => k8s.io/client-go v0.19.0
 )

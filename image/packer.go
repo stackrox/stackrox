@@ -20,9 +20,8 @@ import (
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
+	"helm.sh/helm/v3/pkg/chart/loader"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/helm/pkg/chartutil"
-	"k8s.io/helm/pkg/proto/hapi/chart"
 )
 
 const (
@@ -86,35 +85,34 @@ func ReadFileAndTemplate(pathToFile string, funcs template.FuncMap) (*template.T
 	return tpl.Parse(contents)
 }
 
-func mustGetChart(box packr.Box, overrides map[string]func() io.ReadCloser, prefixes ...string) *chart.Chart {
-	ch, err := getChart(box, prefixes, overrides)
+func mustGetChart(box packr.Box, overrides map[string]func() io.ReadCloser, prefixes ...string) []*loader.BufferedFile {
+	ch, err := getChartFiles(box, prefixes, overrides)
 	utils.Must(err)
 	return ch
 }
-func mustGetSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.Certs) *chart.Chart {
+func mustGetSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.Certs) []*loader.BufferedFile {
 	ch, err := getSensorChart(box, values, certs)
 	utils.Must(err)
 	return ch
 }
 
 // GetCentralChart returns the Helm chart for Central
-func GetCentralChart(overrides map[string]func() io.ReadCloser) *chart.Chart {
-	prefixes := []string{centralChartPrefix}
-	return mustGetChart(K8sBox, overrides, prefixes...)
+func GetCentralChart(overrides map[string]func() io.ReadCloser) []*loader.BufferedFile {
+	return mustGetChart(K8sBox, overrides, centralChartPrefix)
 }
 
 // GetScannerChart returns the Helm chart for the scanner
-func GetScannerChart() *chart.Chart {
+func GetScannerChart() []*loader.BufferedFile {
 	return mustGetChart(K8sBox, nil, scannerChartPrefix)
 }
 
 // GetMonitoringChart returns the Helm chart for Monitoring
-func GetMonitoringChart() *chart.Chart {
+func GetMonitoringChart() []*loader.BufferedFile {
 	return mustGetChart(K8sBox, nil, monitoringChartPrefix)
 }
 
 // GetSensorChart returns the Helm chart for sensor
-func GetSensorChart(values map[string]interface{}, certs *sensor.Certs) *chart.Chart {
+func GetSensorChart(values map[string]interface{}, certs *sensor.Certs) []*loader.BufferedFile {
 	return mustGetSensorChart(K8sBox, values, certs)
 }
 
@@ -139,8 +137,8 @@ var (
 
 // We need to stamp in the version to the Chart.yaml files prior to loading the chart
 // or it will fail
-func getChart(box packr.Box, prefixes []string, overrides map[string]func() io.ReadCloser) (*chart.Chart, error) {
-	var chartFiles []*chartutil.BufferedFile
+func getChartFiles(box packr.Box, prefixes []string, overrides map[string]func() io.ReadCloser) ([]*loader.BufferedFile, error) {
+	var chartFiles []*loader.BufferedFile
 	for _, prefix := range prefixes {
 		err := box.WalkPrefix(prefix, func(name string, file packd.File) error {
 			trimmedPath := strings.TrimPrefix(name, prefix)
@@ -164,12 +162,13 @@ func getChart(box packr.Box, prefixes []string, overrides map[string]func() io.R
 				}
 				data, err = templates.ExecuteToBytes(t, map[string]string{
 					"Version": version.GetMainVersion(),
+					"Name":    prefix,
 				})
 				if err != nil {
 					return err
 				}
 			}
-			chartFiles = append(chartFiles, &chartutil.BufferedFile{
+			chartFiles = append(chartFiles, &loader.BufferedFile{
 				Name: trimmedPath,
 				Data: data,
 			})
@@ -180,10 +179,10 @@ func getChart(box packr.Box, prefixes []string, overrides map[string]func() io.R
 		}
 	}
 
-	return chartutil.LoadFiles(chartFiles)
+	return chartFiles, nil
 }
 
-func processSensorChartFile(path string, file packd.File, chartFiles *[]*chartutil.BufferedFile, values map[string]interface{}) error {
+func processSensorChartFile(path string, file packd.File, chartFiles *[]*loader.BufferedFile, values map[string]interface{}) error {
 	if path == "main.go" || path == ".helmignore" ||
 		path == "README.md" ||
 		strings.HasPrefix(path, "scripts") {
@@ -204,15 +203,15 @@ func processSensorChartFile(path string, file packd.File, chartFiles *[]*chartut
 		return err
 	}
 
-	*chartFiles = append(*chartFiles, &chartutil.BufferedFile{
+	*chartFiles = append(*chartFiles, &loader.BufferedFile{
 		Name: path,
 		Data: data,
 	})
 	return nil
 }
 
-func getSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.Certs) (*chart.Chart, error) {
-	chartFiles := make([]*chartutil.BufferedFile, 0)
+func getSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.Certs) ([]*loader.BufferedFile, error) {
+	chartFiles := make([]*loader.BufferedFile, 0)
 
 	err := box.WalkPrefix(sensorChartPrefix, func(name string, file packd.File) error {
 		trimmedPath := strings.TrimPrefix(name, sensorChartPrefix)
@@ -224,7 +223,7 @@ func getSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.
 	}
 
 	for path, data := range certs.Files {
-		chartFiles = append(chartFiles, &chartutil.BufferedFile{
+		chartFiles = append(chartFiles, &loader.BufferedFile{
 			Name: path,
 			Data: data,
 		})
@@ -237,10 +236,10 @@ func getSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.
 
 	chartFiles = append(chartFiles, scriptFiles...)
 
-	return chartutil.LoadFiles(chartFiles)
+	return chartFiles, nil
 }
 
-func addScripts(box packr.Box, values map[string]interface{}) ([]*chartutil.BufferedFile, error) {
+func addScripts(box packr.Box, values map[string]interface{}) ([]*loader.BufferedFile, error) {
 	if values["ClusterType"] == storage.ClusterType_KUBERNETES_CLUSTER.String() {
 		return scripts(box, values, k8sScriptsFileMap)
 	} else if values["ClusterType"] == storage.ClusterType_OPENSHIFT_CLUSTER.String() {
@@ -251,8 +250,8 @@ func addScripts(box packr.Box, values map[string]interface{}) ([]*chartutil.Buff
 	}
 }
 
-func scripts(box packr.Box, values map[string]interface{}, filenameMap map[string]string) ([]*chartutil.BufferedFile, error) {
-	var chartFiles []*chartutil.BufferedFile
+func scripts(box packr.Box, values map[string]interface{}, filenameMap map[string]string) ([]*loader.BufferedFile, error) {
+	var chartFiles []*loader.BufferedFile
 	for srcFile, dstFile := range filenameMap {
 		fileData, err := box.Find(srcFile)
 		if err != nil {
@@ -266,7 +265,7 @@ func scripts(box packr.Box, values map[string]interface{}, filenameMap map[strin
 		if err != nil {
 			return nil, err
 		}
-		chartFiles = append(chartFiles, &chartutil.BufferedFile{
+		chartFiles = append(chartFiles, &loader.BufferedFile{
 			Name: dstFile,
 			Data: data,
 		})

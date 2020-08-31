@@ -196,8 +196,8 @@ type Config struct {
 	RenderOpts *helmutil.Options // additional render options, if any (only legal in non-Helm mode).
 }
 
-func executeRawTemplate(raw string, c *Config) ([]byte, error) {
-	t, err := template.New("temp").Parse(raw)
+func executeRawTemplate(raw []byte, c *Config) ([]byte, error) {
+	t, err := template.New("temp").Parse(string(raw))
 	if err != nil {
 		return nil, err
 	}

@@ -5,7 +5,7 @@ import (
 	"unicode"
 
 	"github.com/stackrox/rox/pkg/set"
-	"k8s.io/helm/pkg/chartutil"
+	"helm.sh/helm/v3/pkg/chartutil"
 )
 
 // VersionSetFromResources creates a set of API versions from the given list of resources.
@@ -24,5 +24,5 @@ func VersionSetFromResources(resources ...string) chartutil.VersionSet {
 		allVersions.Add(resource[:lastSlashIdx])
 	}
 
-	return chartutil.NewVersionSet(allVersions.AsSlice()...)
+	return allVersions.AsSlice()
 }

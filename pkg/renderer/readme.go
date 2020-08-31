@@ -81,7 +81,7 @@ func instructions(c Config, mode mode) (string, error) {
 		}
 	}
 
-	data, err := executeRawTemplate(template, &c)
+	data, err := executeRawTemplate([]byte(template), &c)
 	if err != nil {
 		utils.Should(err)
 		return "", err

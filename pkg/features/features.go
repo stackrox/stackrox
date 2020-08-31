@@ -11,6 +11,7 @@ type FeatureFlag interface {
 	Name() string
 	EnvVar() string
 	Enabled() bool
+	Default() bool
 }
 
 var (

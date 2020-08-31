@@ -21,6 +21,10 @@ func (f *feature) Name() string {
 	return f.name
 }
 
+func (f *feature) Default() bool {
+	return f.defaultValue
+}
+
 func (f *feature) Enabled() bool {
 	if buildinfo.ReleaseBuild {
 		return f.defaultValue

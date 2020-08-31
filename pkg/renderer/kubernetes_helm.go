@@ -7,23 +7,21 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
-	google_protobuf "github.com/golang/protobuf/ptypes/any"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/image/sensor"
 	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/zip"
-	"k8s.io/helm/pkg/proto/hapi/chart"
-	"k8s.io/helm/pkg/renderutil"
+	"helm.sh/helm/v3/pkg/chart"
 )
 
-func executeChartFiles(prefix string, c Config, files ...*google_protobuf.Any) ([]*zip.File, error) {
+func executeChartFiles(prefix string, c Config, files ...*chart.File) ([]*zip.File, error) {
 	zipFiles := make([]*zip.File, 0, len(files))
 	for _, f := range files {
-		file, ok, err := executeChartFile(prefix, f.GetTypeUrl(), string(f.GetValue()), c)
+		file, ok, err := executeChartFile(prefix, f.Name, f.Data, c)
 		if err != nil {
-			return nil, errors.Wrapf(err, "executing template for file %s", f.GetTypeUrl())
+			return nil, errors.Wrapf(err, "executing template for file %s", f.Name)
 		}
 		if !ok {
 			continue
@@ -33,8 +31,8 @@ func executeChartFiles(prefix string, c Config, files ...*google_protobuf.Any) (
 	return zipFiles, nil
 }
 
-func executeChartFile(prefix string, filename string, templateStr string, c Config) (*zip.File, bool, error) {
-	data, err := executeRawTemplate(templateStr, &c)
+func executeChartFile(prefix string, filename string, templateBytes []byte, c Config) (*zip.File, bool, error) {
+	data, err := executeRawTemplate(templateBytes, &c)
 	if err != nil {
 		return nil, false, err
 	}
@@ -73,15 +71,7 @@ func getSensorChartFile(filename string, data []byte) (*zip.File, bool) {
 }
 
 // Helm charts consist of Chart.yaml, values.yaml and templates
-func renderHelmFiles(c Config, mode mode, ch *chart.Chart, prefix string) ([]*zip.File, error) {
-	ch.Metadata = &chart.Metadata{
-		Name: prefix,
-	}
-	valuesData, err := executeRawTemplate(ch.Values.Raw, &c)
-	if err != nil {
-		return nil, errors.Wrap(err, "executing values.yaml template")
-	}
-	ch.Values.Raw = string(valuesData)
+func renderHelmFiles(c Config, mode mode, chTpl chartPrefixPair) ([]*zip.File, error) {
 	var renderOpts helmutil.Options
 
 	if c.K8sConfig != nil && c.K8sConfig.IstioVersion != "" {
@@ -91,7 +81,13 @@ func renderHelmFiles(c Config, mode mode, ch *chart.Chart, prefix string) ([]*zi
 		}
 		renderOpts.APIVersions = helmutil.VersionSetFromResources(istioAPIResources...)
 	}
-	m, err := helmutil.Render(ch, &chart.Config{Raw: ch.Values.Raw}, renderOpts)
+
+	ch, err := chTpl.Instantiate(&c)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to instantiate chart %s", chTpl.prefix)
+	}
+	m, err := helmutil.Render(ch, nil, renderOpts)
+
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +95,7 @@ func renderHelmFiles(c Config, mode mode, ch *chart.Chart, prefix string) ([]*zi
 	var renderedFiles []*zip.File
 	// For kubectl files, we don't want to have the templates path so we trim it out
 	for k, v := range m {
-		if file, ok := getChartFile(prefix, filepath.Base(k), []byte(v)); ok {
+		if file, ok := getChartFile(chTpl.prefix, filepath.Base(k), []byte(v)); ok {
 			renderedFiles = append(renderedFiles, file)
 		}
 	}
@@ -110,56 +106,53 @@ func renderHelmFiles(c Config, mode mode, ch *chart.Chart, prefix string) ([]*zi
 
 	// execute the extra files (scripts, README, etc), but filter out config files (these get rendered into configmaps
 	// directly).
-	var filteredFiles []*google_protobuf.Any
+	var filteredFiles []*chart.File
 	for _, f := range ch.Files {
-		if strings.HasPrefix(f.GetTypeUrl(), "config/") {
+		if strings.HasPrefix(f.Name, "config/") {
 			continue
 		}
 		filteredFiles = append(filteredFiles, f)
 	}
 
-	files, err := executeChartFiles(prefix, c, filteredFiles...)
+	files, err := executeChartFiles(chTpl.prefix, c, filteredFiles...)
 	if err != nil {
 		return nil, errors.Wrap(err, "executing chart files")
 	}
 	return append(renderedFiles, files...), nil
 }
 
-func chartToFiles(prefix string, ch *chart.Chart, c Config) ([]*zip.File, error) {
-	renderedFiles, err := executeChartFiles(prefix, c, ch.Files...)
-	if err != nil {
-		return nil, err
-	}
+func chartToFiles(prefix string, ch *chart.Chart) ([]*zip.File, error) {
+	var renderedFiles []*zip.File
 
-	for _, f := range ch.Templates {
-		if file, ok := getChartFile(prefix, f.Name, f.GetData()); ok {
-			renderedFiles = append(renderedFiles, file)
+	for _, f := range ch.Raw {
+		if f.Name == "Chart.yaml" {
+			continue
 		}
-	}
 
-	// Execute Values template
-	valueFile, ok, err := executeChartFile(prefix, "values.yaml", ch.Values.Raw, c)
-	if err != nil {
-		return nil, err
-	}
-	if ok {
-		// Values potentially contains passwords
-		valueFile.Flags |= zip.Sensitive
-		renderedFiles = append(renderedFiles, valueFile)
+		zf, ok := getChartFile(prefix, f.Name, f.Data)
+		if !ok {
+			continue
+		}
+
+		if f.Name == "values.yaml" {
+			// Values potentially contains passwords
+			zf.Flags |= zip.Sensitive
+		}
+
+		renderedFiles = append(renderedFiles, zf)
 	}
 
 	// Need the chart file :|
-	out, err := yaml.Marshal(ch.GetMetadata())
+	out, err := yaml.Marshal(ch.Metadata)
 	if err != nil {
 		return nil, err
 	}
-	chartFile, ok, err := executeChartFile(prefix, "Chart.yaml", string(out), c)
-	if err != nil {
-		return nil, err
+
+	zf, ok := getChartFile(prefix, "Chart.yaml", out)
+	if !ok {
+		return nil, errors.New("empty Chart.yaml file")
 	}
-	if ok {
-		renderedFiles = append(renderedFiles, chartFile)
-	}
+	renderedFiles = append(renderedFiles, zf)
 	return renderedFiles, nil
 }
 
@@ -170,10 +163,14 @@ func renderHelm(c Config, centralOverrides map[string]func() io.ReadCloser) ([]*
 	}
 
 	var renderedFiles []*zip.File
-	for _, chartPrefixPair := range chartsToProcess {
-		currentRenderedFiles, err := chartToFiles(chartPrefixPair.prefix, chartPrefixPair.chart, c)
+	for _, chTpl := range chartsToProcess {
+		ch, err := chTpl.Instantiate(&c)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to render %s chart", chartPrefixPair.prefix)
+			return nil, errors.Wrapf(err, "instantiating chart %s", chTpl.prefix)
+		}
+		currentRenderedFiles, err := chartToFiles(chTpl.prefix, ch)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to package %s chart", chTpl.prefix)
 		}
 		renderedFiles = append(renderedFiles, currentRenderedFiles...)
 	}
@@ -182,11 +179,18 @@ func renderHelm(c Config, centralOverrides map[string]func() io.ReadCloser) ([]*
 
 // RenderSensorTLSSecretsOnly renders just the TLS secrets from the sensor helm chart, concatenated into one YAML file.
 func RenderSensorTLSSecretsOnly(values map[string]interface{}, certs *sensor.Certs) ([]byte, error) {
-	ch := image.GetSensorChart(values, certs)
-	if err := filterChartToFiles(ch, image.SensorMTLSFiles); err != nil {
+	chTpl := chartPrefixPair{image.GetSensorChart(values, certs), "sensor"}
+
+	if err := filterChartToFiles(&chTpl, image.SensorMTLSFiles); err != nil {
 		return nil, err
 	}
-	m, err := renderutil.Render(ch, &chart.Config{Raw: ch.Values.Raw}, renderutil.Options{})
+
+	ch, err := chTpl.Instantiate(nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to instantiate sensor chart")
+	}
+
+	m, err := helmutil.Render(ch, nil, helmutil.Options{})
 	if err != nil {
 		return nil, err
 	}
@@ -208,9 +212,14 @@ func RenderSensorTLSSecretsOnly(values map[string]interface{}, certs *sensor.Cer
 
 // RenderSensor renders the sensorchart and returns rendered files
 func RenderSensor(values map[string]interface{}, certs *sensor.Certs, opts helmutil.Options) ([]*zip.File, error) {
-	ch := image.GetSensorChart(values, certs)
+	chTpl := chartPrefixPair{image.GetSensorChart(values, certs), "sensor"}
 
-	m, err := helmutil.Render(ch, &chart.Config{Raw: ch.Values.Raw}, opts)
+	ch, err := chTpl.Instantiate(nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to instantiate sensor chart")
+	}
+
+	m, err := helmutil.Render(ch, nil, opts)
 	if err != nil {
 		return nil, err
 	}

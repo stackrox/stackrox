@@ -1676,12 +1676,10 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 			out.RawByte(']')
 		}
 	}
-	{
+	if len(in.SystemStatus) != 0 {
 		const prefix string = ",\"SystemStatus\":"
 		out.RawString(prefix)
-		if in.SystemStatus == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
-			out.RawString("null")
-		} else {
+		{
 			out.RawByte('[')
 			for v51, v52 := range in.SystemStatus {
 				if v51 > 0 {
