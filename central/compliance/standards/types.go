@@ -108,11 +108,16 @@ type Category struct {
 
 	controls  map[string]*Control
 	allChecks []framework.Check
+
+	qualifiedID string
 }
 
 // QualifiedID returns the qualified ID of this category.
 func (c *Category) QualifiedID() string {
-	return buildQualifiedID(c.Standard.ID, c.ID)
+	if c.qualifiedID == "" {
+		c.qualifiedID = buildQualifiedID(c.Standard.ID, c.ID)
+	}
+	return c.qualifiedID
 }
 
 // LookupControl retrieves a control from this category by its unqualified ID.
@@ -152,11 +157,16 @@ type Control struct {
 	Category *Category
 
 	Check framework.Check
+
+	qualifiedID string
 }
 
 // QualifiedID returns the qualified ID of this control.
 func (c *Control) QualifiedID() string {
-	return buildQualifiedID(c.Standard.ID, c.ID)
+	if c.qualifiedID == "" {
+		c.qualifiedID = buildQualifiedID(c.Standard.ID, c.ID)
+	}
+	return c.qualifiedID
 }
 
 // ToProto returns the proto representation of a control.
