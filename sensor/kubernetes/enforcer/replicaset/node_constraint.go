@@ -1,6 +1,8 @@
 package replicaset
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/common"
@@ -10,10 +12,10 @@ import (
 )
 
 // EnforceNodeConstraint reschedules the ReplicaSet with unsatisfiable constraints.
-func EnforceNodeConstraint(client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
+func EnforceNodeConstraint(ctx context.Context, client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
 	// Load the current ReplicaSet for the deployment.
 	var rs *appsV1.ReplicaSet
-	rs, err = client.AppsV1().ReplicaSets(deploymentInfo.GetNamespace()).Get(deploymentInfo.GetDeploymentName(), metav1.GetOptions{})
+	rs, err = client.AppsV1().ReplicaSets(deploymentInfo.GetNamespace()).Get(ctx, deploymentInfo.GetDeploymentName(), metav1.GetOptions{})
 	if err != nil {
 		return retry.MakeRetryable(err)
 	}
@@ -25,7 +27,7 @@ func EnforceNodeConstraint(client kubernetes.Interface, deploymentInfo *central.
 	}
 
 	// Post the new ReplicaSet data.
-	_, err = client.AppsV1().ReplicaSets(deploymentInfo.GetNamespace()).Update(rs)
+	_, err = client.AppsV1().ReplicaSets(deploymentInfo.GetNamespace()).Update(ctx, rs, metav1.UpdateOptions{})
 	if err != nil {
 		return retry.MakeRetryable(err)
 	}

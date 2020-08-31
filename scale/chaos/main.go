@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -45,6 +46,8 @@ func main() {
 	nextInterval := applyJitter(interval)
 	log.Infof("Will attempt to terminate Central in %0.2f seconds", nextInterval.Seconds())
 
+	ctx := context.Background()
+
 	for {
 		select {
 		case sig := <-signalsC:
@@ -54,7 +57,7 @@ func main() {
 		case <-time.After(nextInterval):
 			nextInterval = applyJitter(interval)
 
-			podList, err := client.CoreV1().Pods("stackrox").List(v1.ListOptions{
+			podList, err := client.CoreV1().Pods("stackrox").List(ctx, v1.ListOptions{
 				LabelSelector: "app=central",
 			})
 			if err != nil {
@@ -66,7 +69,7 @@ func main() {
 			}
 			for _, pod := range podList.Items {
 				log.Infof("Deleting pod %s", pod.Name)
-				err := client.CoreV1().Pods("stackrox").Delete(pod.Name, &v1.DeleteOptions{
+				err := client.CoreV1().Pods("stackrox").Delete(ctx, pod.Name, v1.DeleteOptions{
 					GracePeriodSeconds: &gracePeriod,
 				})
 				if err != nil {

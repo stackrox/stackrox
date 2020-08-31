@@ -30,7 +30,7 @@ func easyjson220accf5DecodeGithubComStackroxRoxPkgDockerTypes(in *jlexer.Lexer, 
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -112,22 +112,12 @@ func easyjson220accf5EncodeGithubComStackroxRoxPkgDockerTypes(out *jwriter.Write
 	_ = first
 	{
 		const prefix string = ",\"Id\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.String(string(in.ID))
 	}
 	if len(in.RepoTags) != 0 {
 		const prefix string = ",\"RepoTags\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		{
 			out.RawByte('[')
 			for v3, v4 := range in.RepoTags {
@@ -141,12 +131,7 @@ func easyjson220accf5EncodeGithubComStackroxRoxPkgDockerTypes(out *jwriter.Write
 	}
 	if len(in.RepoDigests) != 0 {
 		const prefix string = ",\"RepoDigests\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		{
 			out.RawByte('[')
 			for v5, v6 := range in.RepoDigests {
@@ -160,12 +145,7 @@ func easyjson220accf5EncodeGithubComStackroxRoxPkgDockerTypes(out *jwriter.Write
 	}
 	if in.Config != nil {
 		const prefix string = ",\"Config\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		easyjson220accf5EncodeGithubComStackroxRoxPkgDockerTypes1(out, *in.Config)
 	}
 	out.RawByte('}')
@@ -205,7 +185,7 @@ func easyjson220accf5DecodeGithubComStackroxRoxPkgDockerTypes1(in *jlexer.Lexer,
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -241,12 +221,8 @@ func easyjson220accf5EncodeGithubComStackroxRoxPkgDockerTypes1(out *jwriter.Writ
 	_ = first
 	if in.Healthcheck != nil {
 		const prefix string = ",\"Healthcheck\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		easyjson220accf5EncodeGithubComDockerDockerApiTypesContainer(out, *in.Healthcheck)
 	}
 	if in.User != "" {
@@ -272,7 +248,7 @@ func easyjson220accf5DecodeGithubComDockerDockerApiTypesContainer(in *jlexer.Lex
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -327,12 +303,8 @@ func easyjson220accf5EncodeGithubComDockerDockerApiTypesContainer(out *jwriter.W
 	_ = first
 	if len(in.Test) != 0 {
 		const prefix string = ",\"Test\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		{
 			out.RawByte('[')
 			for v8, v9 := range in.Test {

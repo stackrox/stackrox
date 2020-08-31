@@ -35,15 +35,19 @@ main() {
     curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/imageintegrations | jq > ${dest}/imageintegrations.json
 
     for objects in "images" "deployments" "policies" "alerts" "serviceaccounts" "secrets"; do
+        echo "Pulling StackRox ${objects}"
         curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/${objects} | jq > ${dest}/${objects}.json
 
         jq_tweezer=".${objects}[].id"
-        object_list=$(cat ${dest}/${objects}.json | jq "${jq_tweezer}")
+        object_list=($(cat ${dest}/${objects}.json | jq "${jq_tweezer}"))
+        echo "Will pull ${#object_list[@]} ${objects} from StackRox"
 
         mkdir -p ${dest}/${objects}
-        for id in ${object_list}; do
+        for id in "${object_list[@]}"; do
             id=$(echo ${id} | sed s/\"//g)
+            echo "Pulling $id"
             curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/${objects}/${id} | jq > ${dest}/${objects}/${id}.json
+            echo "Done"
         done
     done
 }

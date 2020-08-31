@@ -1,6 +1,7 @@
 package gatherers
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/telemetry/data"
@@ -53,7 +54,7 @@ func (s *NodeGathererTestSuite) TestGatherNodes() {
 		},
 	}
 	gatherer := newNodeGatherer(fake.NewSimpleClientset(noConditions, conditions))
-	gathered, err := gatherer.Gather()
+	gathered, err := gatherer.Gather(context.Background())
 	s.NoError(err)
 	s.Len(gathered, 2)
 	idMap := make(map[string]*data.NodeInfo, 2)

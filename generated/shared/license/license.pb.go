@@ -9,6 +9,7 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	io "io"
 	math "math"
+	math_bits "math/bits"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -20,7 +21,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type License struct {
 	Metadata             *License_Metadata     `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
@@ -45,7 +46,7 @@ func (m *License) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return xxx_messageInfo_License.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalTo(b)
+		n, err := m.MarshalToSizedBuffer(b)
 		if err != nil {
 			return nil, err
 		}
@@ -125,7 +126,7 @@ func (m *License_Contact) XXX_Marshal(b []byte, deterministic bool) ([]byte, err
 		return xxx_messageInfo_License_Contact.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalTo(b)
+		n, err := m.MarshalToSizedBuffer(b)
 		if err != nil {
 			return nil, err
 		}
@@ -210,7 +211,7 @@ func (m *License_Metadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, er
 		return xxx_messageInfo_License_Metadata.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalTo(b)
+		n, err := m.MarshalToSizedBuffer(b)
 		if err != nil {
 			return nil, err
 		}
@@ -318,7 +319,7 @@ func (m *License_Restrictions) XXX_Marshal(b []byte, deterministic bool) ([]byte
 		return xxx_messageInfo_License_Restrictions.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := m.MarshalTo(b)
+		n, err := m.MarshalToSizedBuffer(b)
 		if err != nil {
 			return nil, err
 		}
@@ -485,7 +486,7 @@ var fileDescriptor_0d66812ae03ea278 = []byte{
 func (m *License) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalTo(dAtA)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
 	if err != nil {
 		return nil, err
 	}
@@ -493,50 +494,62 @@ func (m *License) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *License) MarshalTo(dAtA []byte) (int, error) {
-	var i int
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *License) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.Metadata != nil {
-		dAtA[i] = 0xa
-		i++
-		i = encodeVarintLicense(dAtA, i, uint64(m.Metadata.Size()))
-		n1, err := m.Metadata.MarshalTo(dAtA[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n1
-	}
-	if m.SupportContact != nil {
-		dAtA[i] = 0x12
-		i++
-		i = encodeVarintLicense(dAtA, i, uint64(m.SupportContact.Size()))
-		n2, err := m.SupportContact.MarshalTo(dAtA[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n2
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
 	}
 	if m.Restrictions != nil {
-		dAtA[i] = 0x1a
-		i++
-		i = encodeVarintLicense(dAtA, i, uint64(m.Restrictions.Size()))
-		n3, err := m.Restrictions.MarshalTo(dAtA[i:])
-		if err != nil {
-			return 0, err
+		{
+			size, err := m.Restrictions.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintLicense(dAtA, i, uint64(size))
 		}
-		i += n3
+		i--
+		dAtA[i] = 0x1a
 	}
-	if m.XXX_unrecognized != nil {
-		i += copy(dAtA[i:], m.XXX_unrecognized)
+	if m.SupportContact != nil {
+		{
+			size, err := m.SupportContact.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintLicense(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
 	}
-	return i, nil
+	if m.Metadata != nil {
+		{
+			size, err := m.Metadata.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintLicense(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *License_Contact) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalTo(dAtA)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
 	if err != nil {
 		return nil, err
 	}
@@ -544,44 +557,54 @@ func (m *License_Contact) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *License_Contact) MarshalTo(dAtA []byte) (int, error) {
-	var i int
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *License_Contact) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.Phone) > 0 {
-		dAtA[i] = 0xa
-		i++
-		i = encodeVarintLicense(dAtA, i, uint64(len(m.Phone)))
-		i += copy(dAtA[i:], m.Phone)
-	}
-	if len(m.Email) > 0 {
-		dAtA[i] = 0x12
-		i++
-		i = encodeVarintLicense(dAtA, i, uint64(len(m.Email)))
-		i += copy(dAtA[i:], m.Email)
-	}
-	if len(m.Url) > 0 {
-		dAtA[i] = 0x1a
-		i++
-		i = encodeVarintLicense(dAtA, i, uint64(len(m.Url)))
-		i += copy(dAtA[i:], m.Url)
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
 	}
 	if len(m.Name) > 0 {
-		dAtA[i] = 0x22
-		i++
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
 		i = encodeVarintLicense(dAtA, i, uint64(len(m.Name)))
-		i += copy(dAtA[i:], m.Name)
+		i--
+		dAtA[i] = 0x22
 	}
-	if m.XXX_unrecognized != nil {
-		i += copy(dAtA[i:], m.XXX_unrecognized)
+	if len(m.Url) > 0 {
+		i -= len(m.Url)
+		copy(dAtA[i:], m.Url)
+		i = encodeVarintLicense(dAtA, i, uint64(len(m.Url)))
+		i--
+		dAtA[i] = 0x1a
 	}
-	return i, nil
+	if len(m.Email) > 0 {
+		i -= len(m.Email)
+		copy(dAtA[i:], m.Email)
+		i = encodeVarintLicense(dAtA, i, uint64(len(m.Email)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Phone) > 0 {
+		i -= len(m.Phone)
+		copy(dAtA[i:], m.Phone)
+		i = encodeVarintLicense(dAtA, i, uint64(len(m.Phone)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *License_Metadata) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalTo(dAtA)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
 	if err != nil {
 		return nil, err
 	}
@@ -589,54 +612,66 @@ func (m *License_Metadata) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *License_Metadata) MarshalTo(dAtA []byte) (int, error) {
-	var i int
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *License_Metadata) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.Id) > 0 {
-		dAtA[i] = 0xa
-		i++
-		i = encodeVarintLicense(dAtA, i, uint64(len(m.Id)))
-		i += copy(dAtA[i:], m.Id)
-	}
-	if len(m.SigningKeyId) > 0 {
-		dAtA[i] = 0x12
-		i++
-		i = encodeVarintLicense(dAtA, i, uint64(len(m.SigningKeyId)))
-		i += copy(dAtA[i:], m.SigningKeyId)
-	}
-	if m.IssueDate != nil {
-		dAtA[i] = 0x1a
-		i++
-		i = encodeVarintLicense(dAtA, i, uint64(m.IssueDate.Size()))
-		n4, err := m.IssueDate.MarshalTo(dAtA[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n4
-	}
-	if len(m.LicensedForId) > 0 {
-		dAtA[i] = 0x22
-		i++
-		i = encodeVarintLicense(dAtA, i, uint64(len(m.LicensedForId)))
-		i += copy(dAtA[i:], m.LicensedForId)
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
 	}
 	if len(m.LicensedForName) > 0 {
-		dAtA[i] = 0x2a
-		i++
+		i -= len(m.LicensedForName)
+		copy(dAtA[i:], m.LicensedForName)
 		i = encodeVarintLicense(dAtA, i, uint64(len(m.LicensedForName)))
-		i += copy(dAtA[i:], m.LicensedForName)
+		i--
+		dAtA[i] = 0x2a
 	}
-	if m.XXX_unrecognized != nil {
-		i += copy(dAtA[i:], m.XXX_unrecognized)
+	if len(m.LicensedForId) > 0 {
+		i -= len(m.LicensedForId)
+		copy(dAtA[i:], m.LicensedForId)
+		i = encodeVarintLicense(dAtA, i, uint64(len(m.LicensedForId)))
+		i--
+		dAtA[i] = 0x22
 	}
-	return i, nil
+	if m.IssueDate != nil {
+		{
+			size, err := m.IssueDate.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintLicense(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.SigningKeyId) > 0 {
+		i -= len(m.SigningKeyId)
+		copy(dAtA[i:], m.SigningKeyId)
+		i = encodeVarintLicense(dAtA, i, uint64(len(m.SigningKeyId)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintLicense(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *License_Restrictions) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := m.MarshalTo(dAtA)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
 	if err != nil {
 		return nil, err
 	}
@@ -644,125 +679,126 @@ func (m *License_Restrictions) Marshal() (dAtA []byte, err error) {
 }
 
 func (m *License_Restrictions) MarshalTo(dAtA []byte) (int, error) {
-	var i int
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *License_Restrictions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.NotValidBefore != nil {
-		dAtA[i] = 0xa
-		i++
-		i = encodeVarintLicense(dAtA, i, uint64(m.NotValidBefore.Size()))
-		n5, err := m.NotValidBefore.MarshalTo(dAtA[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n5
-	}
-	if m.NotValidAfter != nil {
-		dAtA[i] = 0x12
-		i++
-		i = encodeVarintLicense(dAtA, i, uint64(m.NotValidAfter.Size()))
-		n6, err := m.NotValidAfter.MarshalTo(dAtA[i:])
-		if err != nil {
-			return 0, err
-		}
-		i += n6
-	}
-	if len(m.EnforcementUrl) > 0 {
-		dAtA[i] = 0x1a
-		i++
-		i = encodeVarintLicense(dAtA, i, uint64(len(m.EnforcementUrl)))
-		i += copy(dAtA[i:], m.EnforcementUrl)
-	}
-	if m.AllowOffline {
-		dAtA[i] = 0x20
-		i++
-		if m.AllowOffline {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i++
-	}
-	if m.MaxNodes != 0 {
-		dAtA[i] = 0x28
-		i++
-		i = encodeVarintLicense(dAtA, i, uint64(m.MaxNodes))
-	}
-	if m.NoNodeRestriction {
-		dAtA[i] = 0x30
-		i++
-		if m.NoNodeRestriction {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i++
-	}
-	if len(m.BuildFlavors) > 0 {
-		for _, s := range m.BuildFlavors {
-			dAtA[i] = 0x3a
-			i++
-			l = len(s)
-			for l >= 1<<7 {
-				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
-				l >>= 7
-				i++
-			}
-			dAtA[i] = uint8(l)
-			i++
-			i += copy(dAtA[i:], s)
-		}
-	}
-	if m.NoBuildFlavorRestriction {
-		dAtA[i] = 0x40
-		i++
-		if m.NoBuildFlavorRestriction {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i++
-	}
-	if len(m.DeploymentEnvironments) > 0 {
-		for _, s := range m.DeploymentEnvironments {
-			dAtA[i] = 0x4a
-			i++
-			l = len(s)
-			for l >= 1<<7 {
-				dAtA[i] = uint8(uint64(l)&0x7f | 0x80)
-				l >>= 7
-				i++
-			}
-			dAtA[i] = uint8(l)
-			i++
-			i += copy(dAtA[i:], s)
-		}
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
 	}
 	if m.NoDeploymentEnvironmentRestriction {
-		dAtA[i] = 0x50
-		i++
+		i--
 		if m.NoDeploymentEnvironmentRestriction {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
 		}
-		i++
+		i--
+		dAtA[i] = 0x50
 	}
-	if m.XXX_unrecognized != nil {
-		i += copy(dAtA[i:], m.XXX_unrecognized)
+	if len(m.DeploymentEnvironments) > 0 {
+		for iNdEx := len(m.DeploymentEnvironments) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.DeploymentEnvironments[iNdEx])
+			copy(dAtA[i:], m.DeploymentEnvironments[iNdEx])
+			i = encodeVarintLicense(dAtA, i, uint64(len(m.DeploymentEnvironments[iNdEx])))
+			i--
+			dAtA[i] = 0x4a
+		}
 	}
-	return i, nil
+	if m.NoBuildFlavorRestriction {
+		i--
+		if m.NoBuildFlavorRestriction {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x40
+	}
+	if len(m.BuildFlavors) > 0 {
+		for iNdEx := len(m.BuildFlavors) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.BuildFlavors[iNdEx])
+			copy(dAtA[i:], m.BuildFlavors[iNdEx])
+			i = encodeVarintLicense(dAtA, i, uint64(len(m.BuildFlavors[iNdEx])))
+			i--
+			dAtA[i] = 0x3a
+		}
+	}
+	if m.NoNodeRestriction {
+		i--
+		if m.NoNodeRestriction {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.MaxNodes != 0 {
+		i = encodeVarintLicense(dAtA, i, uint64(m.MaxNodes))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.AllowOffline {
+		i--
+		if m.AllowOffline {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x20
+	}
+	if len(m.EnforcementUrl) > 0 {
+		i -= len(m.EnforcementUrl)
+		copy(dAtA[i:], m.EnforcementUrl)
+		i = encodeVarintLicense(dAtA, i, uint64(len(m.EnforcementUrl)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.NotValidAfter != nil {
+		{
+			size, err := m.NotValidAfter.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintLicense(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.NotValidBefore != nil {
+		{
+			size, err := m.NotValidBefore.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintLicense(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
 }
 
 func encodeVarintLicense(dAtA []byte, offset int, v uint64) int {
+	offset -= sovLicense(v)
+	base := offset
 	for v >= 1<<7 {
 		dAtA[offset] = uint8(v&0x7f | 0x80)
 		v >>= 7
 		offset++
 	}
 	dAtA[offset] = uint8(v)
-	return offset + 1
+	return base
 }
 func (m *License) Size() (n int) {
 	if m == nil {
@@ -900,14 +936,7 @@ func (m *License_Restrictions) Size() (n int) {
 }
 
 func sovLicense(x uint64) (n int) {
-	for {
-		n++
-		x >>= 7
-		if x == 0 {
-			break
-		}
-	}
-	return n
+	return (math_bits.Len64(x|1) + 6) / 7
 }
 func sozLicense(x uint64) (n int) {
 	return sovLicense(uint64((x << 1) ^ uint64((int64(x) >> 63))))
@@ -1798,6 +1827,7 @@ func (m *License_Restrictions) Unmarshal(dAtA []byte) error {
 func skipLicense(dAtA []byte) (n int, err error) {
 	l := len(dAtA)
 	iNdEx := 0
+	depth := 0
 	for iNdEx < l {
 		var wire uint64
 		for shift := uint(0); ; shift += 7 {
@@ -1829,10 +1859,8 @@ func skipLicense(dAtA []byte) (n int, err error) {
 					break
 				}
 			}
-			return iNdEx, nil
 		case 1:
 			iNdEx += 8
-			return iNdEx, nil
 		case 2:
 			var length int
 			for shift := uint(0); ; shift += 7 {
@@ -1853,55 +1881,30 @@ func skipLicense(dAtA []byte) (n int, err error) {
 				return 0, ErrInvalidLengthLicense
 			}
 			iNdEx += length
-			if iNdEx < 0 {
-				return 0, ErrInvalidLengthLicense
-			}
-			return iNdEx, nil
 		case 3:
-			for {
-				var innerWire uint64
-				var start int = iNdEx
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return 0, ErrIntOverflowLicense
-					}
-					if iNdEx >= l {
-						return 0, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					innerWire |= (uint64(b) & 0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				innerWireType := int(innerWire & 0x7)
-				if innerWireType == 4 {
-					break
-				}
-				next, err := skipLicense(dAtA[start:])
-				if err != nil {
-					return 0, err
-				}
-				iNdEx = start + next
-				if iNdEx < 0 {
-					return 0, ErrInvalidLengthLicense
-				}
-			}
-			return iNdEx, nil
+			depth++
 		case 4:
-			return iNdEx, nil
+			if depth == 0 {
+				return 0, ErrUnexpectedEndOfGroupLicense
+			}
+			depth--
 		case 5:
 			iNdEx += 4
-			return iNdEx, nil
 		default:
 			return 0, fmt.Errorf("proto: illegal wireType %d", wireType)
 		}
+		if iNdEx < 0 {
+			return 0, ErrInvalidLengthLicense
+		}
+		if depth == 0 {
+			return iNdEx, nil
+		}
 	}
-	panic("unreachable")
+	return 0, io.ErrUnexpectedEOF
 }
 
 var (
-	ErrInvalidLengthLicense = fmt.Errorf("proto: negative length found during unmarshaling")
-	ErrIntOverflowLicense   = fmt.Errorf("proto: integer overflow")
+	ErrInvalidLengthLicense        = fmt.Errorf("proto: negative length found during unmarshaling")
+	ErrIntOverflowLicense          = fmt.Errorf("proto: integer overflow")
+	ErrUnexpectedEndOfGroupLicense = fmt.Errorf("proto: unexpected end of group")
 )

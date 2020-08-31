@@ -1,6 +1,7 @@
 package fake
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"time"
@@ -298,32 +299,32 @@ func newTimerWithJitter(duration time.Duration) *time.Timer {
 
 // manageDeployment takes in the initial resources and then will recreate them when they are deleted
 // this function should be called with go w.manageDeployment
-func (w *WorkloadManager) manageDeployment(resources *deploymentResourcesToBeManaged) {
+func (w *WorkloadManager) manageDeployment(ctx context.Context, resources *deploymentResourcesToBeManaged) {
 	// Handle resources that were initialized for initial startup. These start up resources
 	// are like deploying Sensor into a new environment and syncing all objects
-	w.manageDeploymentLifecycle(resources)
+	w.manageDeploymentLifecycle(ctx, resources)
 
 	// The previous function returning means that the deployments, replicaset and pods were all deleted
 	// Now we recreate the objects again
 	for count := 0; resources.workload.NumLifecycles == 0 || count < resources.workload.NumLifecycles; count++ {
 		resources = w.getDeployment(resources.workload)
 		deployment, replicaSet, pods := resources.deployment, resources.replicaSet, resources.pods
-		if _, err := w.client.Kubernetes().AppsV1().Deployments(deployment.Namespace).Create(deployment); err != nil {
+		if _, err := w.client.Kubernetes().AppsV1().Deployments(deployment.Namespace).Create(ctx, deployment, metav1.CreateOptions{}); err != nil {
 			log.Errorf("error creating deployment: %v", err)
 		}
-		if _, err := w.client.Kubernetes().AppsV1().ReplicaSets(deployment.Namespace).Create(replicaSet); err != nil {
+		if _, err := w.client.Kubernetes().AppsV1().ReplicaSets(deployment.Namespace).Create(ctx, replicaSet, metav1.CreateOptions{}); err != nil {
 			log.Errorf("error creating replica set: %v", err)
 		}
 		for _, pod := range pods {
-			if _, err := w.client.Kubernetes().CoreV1().Pods(deployment.Namespace).Create(pod); err != nil {
+			if _, err := w.client.Kubernetes().CoreV1().Pods(deployment.Namespace).Create(ctx, pod, metav1.CreateOptions{}); err != nil {
 				log.Errorf("error creating pod: %v", err)
 			}
 		}
-		w.manageDeploymentLifecycle(resources)
+		w.manageDeploymentLifecycle(ctx, resources)
 	}
 }
 
-func (w *WorkloadManager) manageDeploymentLifecycle(resources *deploymentResourcesToBeManaged) {
+func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resources *deploymentResourcesToBeManaged) {
 	timer := newTimerWithJitter(resources.workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(resources.workload.LifecycleDuration))))
 	defer timer.Stop()
 
@@ -337,17 +338,17 @@ func (w *WorkloadManager) manageDeploymentLifecycle(resources *deploymentResourc
 	replicaSetClient := w.client.Kubernetes().AppsV1().ReplicaSets(deployment.Namespace)
 
 	for _, pod := range resources.pods {
-		go w.managePod(&stopSig, resources.workload.PodWorkload, pod)
+		go w.managePod(ctx, &stopSig, resources.workload.PodWorkload, pod)
 	}
 
 	for {
 		select {
 		case <-timer.C:
 			stopSig.Signal()
-			if err := deploymentClient.Delete(deployment.Name, &metav1.DeleteOptions{}); err != nil {
+			if err := deploymentClient.Delete(ctx, deployment.Name, metav1.DeleteOptions{}); err != nil {
 				log.Error(err)
 			}
-			if err := replicaSetClient.Delete(replicaset.Name, &metav1.DeleteOptions{}); err != nil {
+			if err := replicaSetClient.Delete(ctx, replicaset.Name, metav1.DeleteOptions{}); err != nil {
 				log.Error(err)
 			}
 			return
@@ -359,10 +360,10 @@ func (w *WorkloadManager) manageDeploymentLifecycle(resources *deploymentResourc
 			deployment.Annotations = annotations
 			replicaset.Annotations = annotations
 
-			if _, err := deploymentClient.Update(deployment); err != nil {
+			if _, err := deploymentClient.Update(ctx, deployment, metav1.UpdateOptions{}); err != nil {
 				log.Errorf("error updating deployment: %v", err)
 			}
-			if _, err := replicaSetClient.Update(replicaset); err != nil {
+			if _, err := replicaSetClient.Update(ctx, replicaset, metav1.UpdateOptions{}); err != nil {
 				log.Errorf("error updating replica set: %v", err)
 			}
 		}
@@ -386,7 +387,7 @@ func populatePodContainerStatuses(pod *corev1.Pod) {
 	pod.Status.ContainerStatuses = statuses
 }
 
-func (w *WorkloadManager) managePod(deploymentSig *concurrency.Signal, podWorkload podWorkload, pod *corev1.Pod) {
+func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurrency.Signal, podWorkload podWorkload, pod *corev1.Pod) {
 	podDeadline := newTimerWithJitter(podWorkload.LifecycleDuration)
 	defer podDeadline.Stop()
 
@@ -396,14 +397,16 @@ func (w *WorkloadManager) managePod(deploymentSig *concurrency.Signal, podWorklo
 	client := w.client.Kubernetes().CoreV1().Pods(pod.Namespace)
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case <-deploymentSig.Done():
 			// Deployment has been deleted so delete pod
-			if err := client.Delete(pod.Name, &metav1.DeleteOptions{}); err != nil {
+			if err := client.Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
 				log.Errorf("error deleting pod: %v", err)
 			}
 			return
 		case <-podDeadline.C:
-			if err := client.Delete(pod.Name, &metav1.DeleteOptions{}); err != nil {
+			if err := client.Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
 				log.Errorf("error deleting pod: %v", err)
 			}
 			ipPool.remove(pod.Status.PodIP)
@@ -420,7 +423,7 @@ func (w *WorkloadManager) managePod(deploymentSig *concurrency.Signal, podWorklo
 			pod.Status.PodIP = generateAndAddIPToPool()
 			populatePodContainerStatuses(pod)
 
-			if _, err := client.Create(pod); err != nil {
+			if _, err := client.Create(ctx, pod, metav1.CreateOptions{}); err != nil {
 				log.Errorf("error creating pod: %v", err)
 			}
 			podSig = concurrency.NewSignal()

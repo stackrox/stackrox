@@ -1,13 +1,15 @@
 package enforcer
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/common"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/pod"
 )
 
-func (e *enforcerImpl) kill(enforcement *central.SensorEnforcement) error {
+func (e *enforcerImpl) kill(ctx context.Context, enforcement *central.SensorEnforcement) error {
 	// Fetch the container info, fail if none present as we can only kill containers.
 	containerInfo := enforcement.GetContainerInstance()
 	if containerInfo == nil {
@@ -18,7 +20,7 @@ func (e *enforcerImpl) kill(enforcement *central.SensorEnforcement) error {
 	var enforcementExecuted bool
 	err := withReasonableRetry(func() error {
 		var err error
-		enforcementExecuted, err = pod.EnforceKill(e.client, containerInfo)
+		enforcementExecuted, err = pod.EnforceKill(ctx, e.client, containerInfo)
 		return err
 	})
 	if err != nil {

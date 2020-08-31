@@ -1,6 +1,7 @@
 package fake
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"time"
@@ -80,14 +81,14 @@ func generateAndAddIPToPool() string {
 	return ip
 }
 
-func (w *WorkloadManager) getRandomHostConnection() (manager.HostNetworkInfo, bool) {
+func (w *WorkloadManager) getRandomHostConnection(ctx context.Context) (manager.HostNetworkInfo, bool) {
 	// Return false if the network manager hasn't been initialized yet
 	if w.networkManager == nil {
 		return nil, false
 	}
 	if len(registeredHostConnections) == 0 {
 		// Initialize the host connections
-		nodeResp, err := w.fakeClient.CoreV1().Nodes().List(v1.ListOptions{})
+		nodeResp, err := w.fakeClient.CoreV1().Nodes().List(ctx, v1.ListOptions{})
 		if err != nil {
 			log.Errorf("error listing nodes: %v", err)
 			return nil, false
@@ -101,10 +102,18 @@ func (w *WorkloadManager) getRandomHostConnection() (manager.HostNetworkInfo, bo
 }
 
 // manageFlows should be called via `go manageFlows` as it will run forever
-func (w *WorkloadManager) manageFlows(workload networkWorkload) {
+func (w *WorkloadManager) manageFlows(ctx context.Context, workload networkWorkload) {
 	// Pick a valid pod
 	ticker := time.NewTicker(workload.FlowInterval)
-	for range ticker.C {
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+
 		conns := make([]*sensor.NetworkConnection, 0, workload.BatchSize)
 		for i := 0; i < workload.BatchSize; i++ {
 			src, ok := ipPool.randomElem()
@@ -140,7 +149,7 @@ func (w *WorkloadManager) manageFlows(workload networkWorkload) {
 			}
 			conns = append(conns, conn)
 		}
-		hostConn, ok := w.getRandomHostConnection()
+		hostConn, ok := w.getRandomHostConnection(ctx)
 		if !ok {
 			continue
 		}

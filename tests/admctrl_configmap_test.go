@@ -23,7 +23,10 @@ func TestAdmissionControllerConfigMap(t *testing.T) {
 
 	k8sClient := createK8sClient(t)
 
-	cm, err := k8sClient.CoreV1().ConfigMaps(namespaces.StackRox).Get(admissioncontrol.ConfigMapName, metav1.GetOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cm, err := k8sClient.CoreV1().ConfigMaps(namespaces.StackRox).Get(ctx, admissioncontrol.ConfigMapName, metav1.GetOptions{})
 	require.NoError(t, err, "could not obtain admission controller configmap")
 
 	policiesGZData := cm.BinaryData[admissioncontrol.PoliciesGZDataKey]
@@ -62,7 +65,7 @@ func TestAdmissionControllerConfigMap(t *testing.T) {
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	newPolicy, err = policyServiceClient.PostPolicy(ctx, &v1.PostPolicyRequest{
 		Policy: newPolicy,
@@ -76,7 +79,10 @@ func TestAdmissionControllerConfigMap(t *testing.T) {
 	}()
 
 	testutils.Retry(t, 10, 3*time.Second, func(t testutils.T) {
-		newCM, err := k8sClient.CoreV1().ConfigMaps(namespaces.StackRox).Get(admissioncontrol.ConfigMapName, metav1.GetOptions{})
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		newCM, err := k8sClient.CoreV1().ConfigMaps(namespaces.StackRox).Get(ctx, admissioncontrol.ConfigMapName, metav1.GetOptions{})
 		require.NoError(t, err, "could not obtain admission controller configmap")
 
 		newTimestamp := newCM.Data[admissioncontrol.LastUpdateTimeDataKey]

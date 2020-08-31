@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/sensor/upgrader/resources"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 	v1 "k8s.io/api/authorization/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type accessCheck struct{}
@@ -84,7 +85,7 @@ func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execut
 				ResourceAttributes: &ra,
 			},
 		}
-		sarResult, err := sarClient.Create(sar)
+		sarResult, err := sarClient.Create(ctx.Context(), sar, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to perform SelfSubjectAccessReview check")
 		}

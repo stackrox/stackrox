@@ -1,6 +1,7 @@
 package enforcer
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -14,40 +15,42 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/statefulset"
 )
 
-func (e *enforcerImpl) unsatisfiableNodeConstraint(enforcement *central.SensorEnforcement) (err error) {
+func (e *enforcerImpl) unsatisfiableNodeConstraint(ctx context.Context, enforcement *central.SensorEnforcement) (err error) {
 	deploymentInfo := enforcement.GetDeployment()
 	if deploymentInfo == nil {
 		return errors.New("unable to apply constraint to non-deployment")
 	}
 
-	var function func() error
+	var function func(ctx context.Context) error
 	switch deploymentInfo.GetDeploymentType() {
 	case pkgKubernetes.Deployment:
-		function = func() error {
-			return deployment.EnforceNodeConstraint(e.client, deploymentInfo)
+		function = func(ctx context.Context) error {
+			return deployment.EnforceNodeConstraint(ctx, e.client, deploymentInfo)
 		}
 	case pkgKubernetes.DaemonSet:
-		function = func() error {
-			return daemonset.EnforceNodeConstraint(e.client, deploymentInfo)
+		function = func(ctx context.Context) error {
+			return daemonset.EnforceNodeConstraint(ctx, e.client, deploymentInfo)
 		}
 	case pkgKubernetes.ReplicaSet:
-		function = func() error {
-			return replicaset.EnforceNodeConstraint(e.client, deploymentInfo)
+		function = func(ctx context.Context) error {
+			return replicaset.EnforceNodeConstraint(ctx, e.client, deploymentInfo)
 		}
 	case pkgKubernetes.ReplicationController:
-		function = func() error {
-			return replicationcontroller.EnforceNodeConstraint(e.client, deploymentInfo)
+		function = func(ctx context.Context) error {
+			return replicationcontroller.EnforceNodeConstraint(ctx, e.client, deploymentInfo)
 		}
 	case pkgKubernetes.StatefulSet:
-		function = func() error {
-			return statefulset.EnforceNodeConstraint(e.client, deploymentInfo)
+		function = func(ctx context.Context) error {
+			return statefulset.EnforceNodeConstraint(ctx, e.client, deploymentInfo)
 		}
 	default:
 		return fmt.Errorf("unknown type: %s", deploymentInfo.GetDeploymentType())
 	}
 
 	// Retry any retriable errors encountered when trying to run the enforcement function.
-	err = withReasonableRetry(function)
+	err = withReasonableRetry(func() error {
+		return function(ctx)
+	})
 	if err != nil {
 		return
 	}

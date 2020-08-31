@@ -1,6 +1,7 @@
 package fieldmap
 
 import (
+	"fmt"
 	"reflect"
 )
 
@@ -62,12 +63,12 @@ func visitElemField(currentType reflect.Type, path FieldPath, visitField func(fi
 // concrete type.
 func visitInterfaceFields(parentType, currentType reflect.Type, path FieldPath, visitField func(fieldPath FieldPath) bool) {
 	ptrToParent := reflect.PtrTo(parentType)
-	method, ok := ptrToParent.MethodByName("XXX_OneofFuncs")
+	method, ok := ptrToParent.MethodByName("XXX_OneofWrappers")
 	if !ok {
-		panic("XXX_OneofFuncs should exist for all protobuf oneofs")
+		panic(fmt.Sprintf("XXX_OneofWrappers should exist for all protobuf oneofs, not found for %s", parentType.Name()))
 	}
 	out := method.Func.Call([]reflect.Value{reflect.New(parentType)})
-	actualOneOfFields := out[3].Interface().([]interface{})
+	actualOneOfFields := out[0].Interface().([]interface{})
 	for _, f := range actualOneOfFields {
 		typ := reflect.TypeOf(f)
 		if typ.Implements(currentType) {

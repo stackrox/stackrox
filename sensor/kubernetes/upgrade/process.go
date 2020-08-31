@@ -84,6 +84,10 @@ func (p *process) Run() {
 	p.doneSig.Signal()
 }
 
+func (p *process) ctx() context.Context {
+	return concurrency.AsContext(&p.doneSig)
+}
+
 func (p *process) handleCentralCheckIns() {
 	var reqRetry *central.UpgradeCheckInFromSensorRequest
 	var retryTimer *time.Timer
@@ -187,7 +191,7 @@ func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) erro
 		FieldSelector: fmt.Sprintf("metadata.name=%s", name),
 	}
 
-	deploymentsList, err := deploymentsClient.List(listOpts)
+	deploymentsList, err := deploymentsClient.List(p.ctx(), listOpts)
 	if err != nil {
 		return err
 	}
@@ -200,7 +204,7 @@ func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) erro
 	watchOpts.ResourceVersion = deploymentsList.ResourceVersion
 
 	log.Infof("Deployment %s with UID %s is still present, watching for changes ...", name, uid)
-	watcher, err := deploymentsClient.Watch(watchOpts)
+	watcher, err := deploymentsClient.Watch(p.ctx(), watchOpts)
 	if err != nil {
 		return err
 	}
@@ -238,7 +242,7 @@ func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) erro
 func (p *process) createUpgraderDeploymentIfNecessary() error {
 	deploymentsClient := p.k8sClient.AppsV1().Deployments(namespaces.StackRox)
 
-	upgraderDeployment, err := deploymentsClient.Get(upgraderDeploymentName, metav1.GetOptions{})
+	upgraderDeployment, err := deploymentsClient.Get(p.ctx(), upgraderDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		if !k8sErrors.IsNotFound(err) {
 			return errors.Wrap(err, "retrieving existing upgrader deployment")
@@ -253,7 +257,7 @@ func (p *process) createUpgraderDeploymentIfNecessary() error {
 		}
 
 		log.Info("Found leftover upgrader deployment. Deleting ...")
-		err := deploymentsClient.Delete(upgraderDeployment.GetName(), &metav1.DeleteOptions{
+		err := deploymentsClient.Delete(p.ctx(), upgraderDeployment.GetName(), metav1.DeleteOptions{
 			Preconditions:     &metav1.Preconditions{UID: &upgraderDeployment.UID},
 			PropagationPolicy: &pkgKubernetes.DeletePolicyBackground,
 		})
@@ -274,7 +278,7 @@ func (p *process) createUpgraderDeploymentIfNecessary() error {
 		return errors.Wrap(err, "instantiating upgrader deployment object")
 	}
 
-	_, err = deploymentsClient.Create(newDeployment)
+	_, err = deploymentsClient.Create(p.ctx(), newDeployment, metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "creating new upgrader deployment")
 	}
@@ -330,7 +334,7 @@ func (p *process) pollAndUpdateProgress() ([]*central.UpgradeCheckInFromSensorRe
 	errs := errorhelpers.NewErrorList("polling")
 
 	deploymentsClient := p.k8sClient.AppsV1().Deployments(namespaces.StackRox)
-	foundDeployment, err := deploymentsClient.Get(upgraderDeploymentName, metav1.GetOptions{})
+	foundDeployment, err := deploymentsClient.Get(p.ctx(), upgraderDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return nil, true, nil
@@ -341,7 +345,7 @@ func (p *process) pollAndUpdateProgress() ([]*central.UpgradeCheckInFromSensorRe
 	}
 
 	podsClient := p.k8sClient.CoreV1().Pods(foundDeployment.GetNamespace())
-	pods, err := podsClient.List(metav1.ListOptions{
+	pods, err := podsClient.List(p.ctx(), metav1.ListOptions{
 		LabelSelector: metav1.FormatLabelSelector(foundDeployment.Spec.Selector),
 	})
 	if err != nil {
@@ -409,7 +413,7 @@ func (p *process) GetID() string {
 func (p *process) chooseServiceAccount() string {
 	saClient := p.k8sClient.CoreV1().ServiceAccounts(namespaces.StackRox)
 
-	sensorUpgraderSA, err := saClient.Get(preferredServiceAccountName, metav1.GetOptions{})
+	sensorUpgraderSA, err := saClient.Get(p.ctx(), preferredServiceAccountName, metav1.GetOptions{})
 	if err != nil {
 		if !k8sErrors.IsNotFound(err) {
 			log.Warnf("Could not check for existence of %q service account: %v. Performing upgrade with default %q service account", preferredServiceAccountName, err, fallbackServiceAccountName)

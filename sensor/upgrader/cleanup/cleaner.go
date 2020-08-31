@@ -34,7 +34,7 @@ func (c *cleaner) CleanupOwner() error {
 	}
 
 	client := c.ctx.DynamicClientForResource(ownerResourceMD, ownerRef.Namespace)
-	return client.Delete(ownerRef.Name, kubernetes.DeleteBackgroundOption)
+	return client.Delete(c.ctx.Context(), ownerRef.Name, kubernetes.DeleteBackgroundOption)
 }
 
 func (c *cleaner) CleanupState(own bool) error {
@@ -60,7 +60,7 @@ func (c *cleaner) CleanupState(own bool) error {
 		if err != nil {
 			return err
 		}
-		if err := client.Delete(obj.GetName(), kubernetes.DeleteBackgroundOption); err != nil && !k8sErrors.IsNotFound(err) {
+		if err := client.Delete(c.ctx.Context(), obj.GetName(), kubernetes.DeleteBackgroundOption); err != nil && !k8sErrors.IsNotFound(err) {
 			return errors.Wrapf(err, "deleting %v", k8sobjects.RefOf(obj))
 		}
 	}

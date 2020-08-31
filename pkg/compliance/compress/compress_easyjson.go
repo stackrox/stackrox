@@ -30,7 +30,7 @@ func easyjson24245084DecodeGithubComStackroxRoxPkgComplianceCompress(in *jlexer.
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -43,11 +43,7 @@ func easyjson24245084DecodeGithubComStackroxRoxPkgComplianceCompress(in *jlexer.
 				in.Skip()
 			} else {
 				in.Delim('{')
-				if !in.IsDelim('}') {
-					out.ResultMap = make(map[string]*compliance.ComplianceStandardResult)
-				} else {
-					out.ResultMap = nil
-				}
+				out.ResultMap = make(map[string]*compliance.ComplianceStandardResult)
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
@@ -82,12 +78,7 @@ func easyjson24245084EncodeGithubComStackroxRoxPkgComplianceCompress(out *jwrite
 	_ = first
 	{
 		const prefix string = ",\"ResultMap\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		if in.ResultMap == nil && (out.Flags&jwriter.NilMapAsEmpty) == 0 {
 			out.RawString(`null`)
 		} else {
@@ -147,7 +138,7 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedInternalapiCompliance(in
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -227,12 +218,8 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(ou
 	_ = first
 	if len(in.NodeCheckResults) != 0 {
 		const prefix string = ",\"node_check_results\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		{
 			out.RawByte('{')
 			v5First := true
@@ -294,7 +281,7 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in *jlexer.Lexer
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -351,12 +338,8 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out *jwriter.Wri
 	_ = first
 	if len(in.Evidence) != 0 {
 		const prefix string = ",\"evidence\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		{
 			out.RawByte('[')
 			for v8, v9 := range in.Evidence {
@@ -395,7 +378,7 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorageComplianceResultV
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -425,12 +408,8 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorageComplianceResultV
 	_ = first
 	if in.State != 0 {
 		const prefix string = ",\"state\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.Int32(int32(in.State))
 	}
 	if in.Message != "" {

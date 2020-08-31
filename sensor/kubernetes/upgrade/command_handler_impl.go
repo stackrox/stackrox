@@ -1,6 +1,8 @@
 package upgrade
 
 import (
+	"context"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -8,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	kubernetes2 "github.com/stackrox/rox/pkg/kubernetes"
+	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -24,7 +26,7 @@ var (
 )
 
 type commandHandler struct {
-	runSig concurrency.Signal
+	stopSig concurrency.Signal
 
 	currentProcess      *process
 	currentProcessMutex sync.Mutex
@@ -57,12 +59,12 @@ func NewCommandHandler() (common.SensorComponent, error) {
 }
 
 func (h *commandHandler) Start() error {
-	h.runSig.Reset()
+	h.stopSig.Reset()
 	return nil
 }
 
 func (h *commandHandler) Stop(err error) {
-	h.runSig.Signal()
+	h.stopSig.Signal()
 }
 
 func (h *commandHandler) Capabilities() []centralsensor.SensorCapability {
@@ -75,7 +77,7 @@ func (h *commandHandler) ResponsesC() <-chan *central.MsgFromSensor {
 
 func (h *commandHandler) waitForTermination(proc *process) {
 	select {
-	case <-h.runSig.Done():
+	case <-h.stopSig.Done():
 		return
 	case <-proc.doneSig.Done():
 	}
@@ -104,7 +106,7 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 	h.currentProcessMutex.Lock()
 	defer h.currentProcessMutex.Unlock()
 
-	if h.runSig.IsDone() {
+	if h.stopSig.IsDone() {
 		return errors.Errorf("unable to send command: %s", proto.MarshalTextString(trigger))
 	}
 
@@ -143,7 +145,7 @@ func (h *commandHandler) deleteUpgraderDeployments() {
 	// Only try deleting once. There's no big issue if these linger around as the upgrader doesn't do anything without
 	// being told to by central, so we don't go out of our way to make sure they are gone.
 	err := h.k8sClient.AppsV1().Deployments(namespaces.StackRox).DeleteCollection(
-		kubernetes2.DeleteBackgroundOption, v1.ListOptions{
+		h.ctx(), pkgKubernetes.DeleteBackgroundOption, v1.ListOptions{
 			LabelSelector: v1.FormatLabelSelector(&v1.LabelSelector{
 				MatchExpressions: []v1.LabelSelectorRequirement{
 					{Key: "app", Operator: v1.LabelSelectorOpIn, Values: []string{upgraderDeploymentName}},
@@ -154,4 +156,8 @@ func (h *commandHandler) deleteUpgraderDeployments() {
 	if err != nil {
 		log.Errorf("Could not delete upgrader deployment: %v", err)
 	}
+}
+
+func (h *commandHandler) ctx() context.Context {
+	return concurrency.AsContext(&h.stopSig)
 }

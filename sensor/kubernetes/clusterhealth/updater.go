@@ -1,6 +1,7 @@
 package clusterhealth
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -84,11 +85,11 @@ func (u *updaterImpl) run() {
 }
 
 func (u *updaterImpl) getCollectorInfo() (*storage.CollectorHealthInfo, error) {
-	nodes, err := u.client.CoreV1().Nodes().List(metav1.ListOptions{})
+	nodes, err := u.client.CoreV1().Nodes().List(u.ctx(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
-	collectorDS, err := u.client.AppsV1().DaemonSets(namespaces.StackRox).Get(collectorDaemonsetName, metav1.GetOptions{})
+	collectorDS, err := u.client.AppsV1().DaemonSets(namespaces.StackRox).Get(u.ctx(), collectorDaemonsetName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -111,6 +112,10 @@ func (u *updaterImpl) getCollectorInfo() (*storage.CollectorHealthInfo, error) {
 		TotalReadyPods:       collectorDS.Status.NumberReady,
 		TotalRegisteredNodes: int32(len(nodes.Items)),
 	}, nil
+}
+
+func (u *updaterImpl) ctx() context.Context {
+	return concurrency.AsContext(&u.stopSig)
 }
 
 // NewUpdater returns a new ready-to-use updater.

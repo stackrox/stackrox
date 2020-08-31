@@ -1,6 +1,7 @@
 package daemonset
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -9,6 +10,6 @@ import (
 )
 
 // EnforceZeroReplica does nothing but err out, since we can't zero out daemon set replica counts.
-func EnforceZeroReplica(client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
+func EnforceZeroReplica(_ context.Context, client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
 	return fmt.Errorf("scaling to 0 is not supported for %s", pkgKub.DaemonSet)
 }

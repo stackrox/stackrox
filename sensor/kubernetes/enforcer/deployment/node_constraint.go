@@ -1,6 +1,8 @@
 package deployment
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/common"
@@ -10,10 +12,10 @@ import (
 )
 
 // EnforceNodeConstraint reschedules the Deployment with unsatisfiable constraints.
-func EnforceNodeConstraint(client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
+func EnforceNodeConstraint(ctx context.Context, client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
 	// Load the current Deployment.
 	var d *appsV1.Deployment
-	d, err = client.AppsV1().Deployments(deploymentInfo.GetNamespace()).Get(deploymentInfo.GetDeploymentName(), metav1.GetOptions{})
+	d, err = client.AppsV1().Deployments(deploymentInfo.GetNamespace()).Get(ctx, deploymentInfo.GetDeploymentName(), metav1.GetOptions{})
 	if err != nil {
 		return retry.MakeRetryable(err)
 	}
@@ -25,7 +27,7 @@ func EnforceNodeConstraint(client kubernetes.Interface, deploymentInfo *central.
 	}
 
 	// Post the new Deployment data.
-	_, err = client.AppsV1().Deployments(deploymentInfo.GetNamespace()).Update(d)
+	_, err = client.AppsV1().Deployments(deploymentInfo.GetNamespace()).Update(ctx, d, metav1.UpdateOptions{})
 	if err != nil {
 		return retry.MakeRetryable(err)
 	}

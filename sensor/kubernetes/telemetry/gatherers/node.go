@@ -1,6 +1,7 @@
 package gatherers
 
 import (
+	"context"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/k8sutil"
@@ -21,8 +22,8 @@ func newNodeGatherer(k8sClient kubernetes.Interface) *nodeGatherer {
 }
 
 // Gather returns a list of stats about all the nodes in the cluster this Sensor is monitoring
-func (c *nodeGatherer) Gather() ([]*data.NodeInfo, error) {
-	nodesList, err := c.k8sClient.CoreV1().Nodes().List(metav1.ListOptions{})
+func (c *nodeGatherer) Gather(ctx context.Context) ([]*data.NodeInfo, error) {
+	nodesList, err := c.k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}

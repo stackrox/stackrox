@@ -1,6 +1,7 @@
 package fake
 
 import (
+	"context"
 	"time"
 
 	"github.com/openshift/client-go/apps/clientset/versioned"
@@ -8,9 +9,12 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
-	fake "github.com/stackrox/rox/sensor/kubernetes/fake/copied"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/version"
+	"k8s.io/apimachinery/pkg/watch"
+	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 var (
@@ -18,6 +22,16 @@ var (
 
 	workloadRegistry = make(map[string]*workload)
 )
+
+func init() {
+	// This needs to be increased in order to prevent the fake watcher from panicing.
+	// Note that as this is a global variable, it _must_ be set in an init() in order to
+	// ensure race-freeness. While it may look weird that we are setting this unconditionally
+	// whenever the fake package is imported (including in prod), this doesn't hurt and is
+	// actually WAI since `DefaultChanSize` is only applied to *fake* watchers in the first
+	// place, even if that is not at all apparent from the name.
+	watch.DefaultChanSize = 100000
+}
 
 // clientSetImpl implements our client.Interface
 type clientSetImpl struct {
@@ -109,6 +123,17 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	}
 
 	w.fakeClient = fake.NewSimpleClientset(objects...)
+	w.fakeClient.Discovery().(*fakediscovery.FakeDiscovery).FakedServerVersion = &version.Info{
+		Major:        "1",
+		Minor:        "14",
+		GitVersion:   "v1.14.8",
+		GitCommit:    "211047e9a1922595eaa3a1127ed365e9299a6c23",
+		GitTreeState: "clean",
+		BuildDate:    "2019-10-15T12:02:12Z",
+		GoVersion:    "go1.12.10",
+		Compiler:     "gc",
+		Platform:     "linux/amd64",
+	}
 	w.client = &clientSetImpl{
 		kubernetes: w.fakeClient,
 	}
@@ -117,8 +142,8 @@ func (w *WorkloadManager) initializePreexistingResources() {
 
 	// Fork management of deployment resources
 	for _, resource := range resources {
-		go w.manageDeployment(resource)
+		go w.manageDeployment(context.Background(), resource)
 	}
 
-	go w.manageFlows(w.workload.NetworkWorkload)
+	go w.manageFlows(context.Background(), w.workload.NetworkWorkload)
 }

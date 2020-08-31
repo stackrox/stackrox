@@ -1,6 +1,7 @@
 package gatherers
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/telemetry/data"
@@ -35,7 +36,7 @@ func (s *NamespaceGathererTestSuite) TestGatherNamespaces() {
 		},
 	}
 	gatherer := newNamespaceGatherer(fake.NewSimpleClientset(knownNamespace, unknownNamespace), resources.DeploymentStoreSingleton())
-	namespaces, err := gatherer.Gather()
+	namespaces, err := gatherer.Gather(context.Background())
 	s.Empty(err)
 	s.Len(namespaces, 2)
 	nameMap := make(map[string]*data.NamespaceInfo, 2)

@@ -28,8 +28,8 @@ var (
 var (
 	DeletePolicyForeground = metav1.DeletePropagationForeground
 	DeletePolicyBackground = metav1.DeletePropagationBackground
-	DeleteOption           = &metav1.DeleteOptions{PropagationPolicy: &DeletePolicyForeground}
-	DeleteBackgroundOption = &metav1.DeleteOptions{PropagationPolicy: &DeletePolicyBackground}
+	DeleteOption           = metav1.DeleteOptions{PropagationPolicy: &DeletePolicyForeground}
+	DeleteBackgroundOption = metav1.DeleteOptions{PropagationPolicy: &DeletePolicyBackground}
 
 	ScaleToZeroSpec = autoscalingV1.ScaleSpec{
 		Replicas: 0,

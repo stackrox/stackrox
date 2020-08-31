@@ -50,7 +50,6 @@ var (
 			replacement: "github.com/stackrox/rox/pkg/sync",
 			whitelist: set.NewStringSet(
 				"github.com/stackrox/rox/pkg/bolthelper/crud/proto",
-				"github.com/stackrox/rox/sensor/kubernetes/fake/copied",
 			),
 		},
 		"github.com/magiconair/properties/assert": {

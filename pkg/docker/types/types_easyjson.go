@@ -35,7 +35,7 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes(in *jlexer.Lexer, 
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -76,7 +76,7 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes(in *jlexer.Lexer, 
 				in.Delim('[')
 				if out.Images == nil {
 					if !in.IsDelim(']') {
-						out.Images = make([]ImageWrap, 0, 1)
+						out.Images = make([]ImageWrap, 0, 0)
 					} else {
 						out.Images = []ImageWrap{}
 					}
@@ -109,22 +109,12 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes(out *jwriter.Write
 	_ = first
 	{
 		const prefix string = ",\"Info\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out, in.Info)
 	}
 	{
 		const prefix string = ",\"Containers\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Containers == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -140,12 +130,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes(out *jwriter.Write
 	}
 	{
 		const prefix string = ",\"Images\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Images == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -161,12 +146,7 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes(out *jwriter.Write
 	}
 	{
 		const prefix string = ",\"BridgeNetwork\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes1(out, in.BridgeNetwork)
 	}
 	out.RawByte('}')
@@ -206,7 +186,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes1(in *jlexer.Lexer, out 
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -245,11 +225,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes1(in *jlexer.Lexer, out 
 				in.Skip()
 			} else {
 				in.Delim('{')
-				if !in.IsDelim('}') {
-					out.Containers = make(map[string]types.EndpointResource)
-				} else {
-					out.Containers = nil
-				}
+				out.Containers = make(map[string]types.EndpointResource)
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
@@ -265,11 +241,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes1(in *jlexer.Lexer, out 
 				in.Skip()
 			} else {
 				in.Delim('{')
-				if !in.IsDelim('}') {
-					out.Options = make(map[string]string)
-				} else {
-					out.Options = nil
-				}
+				out.Options = make(map[string]string)
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
@@ -285,11 +257,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes1(in *jlexer.Lexer, out 
 				in.Skip()
 			} else {
 				in.Delim('{')
-				if !in.IsDelim('}') {
-					out.Labels = make(map[string]string)
-				} else {
-					out.Labels = nil
-				}
+				out.Labels = make(map[string]string)
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
@@ -359,132 +327,67 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes1(out *jwriter.Writer, i
 	_ = first
 	{
 		const prefix string = ",\"Name\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.String(string(in.Name))
 	}
 	{
 		const prefix string = ",\"Id\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.ID))
 	}
 	{
 		const prefix string = ",\"Created\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Raw((in.Created).MarshalJSON())
 	}
 	{
 		const prefix string = ",\"Scope\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.Scope))
 	}
 	{
 		const prefix string = ",\"Driver\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.Driver))
 	}
 	{
 		const prefix string = ",\"EnableIPv6\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.EnableIPv6))
 	}
 	{
 		const prefix string = ",\"IPAM\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork(out, in.IPAM)
 	}
 	{
 		const prefix string = ",\"Internal\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.Internal))
 	}
 	{
 		const prefix string = ",\"Attachable\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.Attachable))
 	}
 	{
 		const prefix string = ",\"Ingress\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.Ingress))
 	}
 	{
 		const prefix string = ",\"ConfigFrom\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork1(out, in.ConfigFrom)
 	}
 	{
 		const prefix string = ",\"ConfigOnly\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.ConfigOnly))
 	}
 	{
 		const prefix string = ",\"Containers\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Containers == nil && (out.Flags&jwriter.NilMapAsEmpty) == 0 {
 			out.RawString(`null`)
 		} else {
@@ -505,12 +408,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes1(out *jwriter.Writer, i
 	}
 	{
 		const prefix string = ",\"Options\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Options == nil && (out.Flags&jwriter.NilMapAsEmpty) == 0 {
 			out.RawString(`null`)
 		} else {
@@ -531,12 +429,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes1(out *jwriter.Writer, i
 	}
 	{
 		const prefix string = ",\"Labels\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Labels == nil && (out.Flags&jwriter.NilMapAsEmpty) == 0 {
 			out.RawString(`null`)
 		} else {
@@ -557,12 +450,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes1(out *jwriter.Writer, i
 	}
 	if len(in.Peers) != 0 {
 		const prefix string = ",\"Peers\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		{
 			out.RawByte('[')
 			for v15, v16 := range in.Peers {
@@ -576,12 +464,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes1(out *jwriter.Writer, i
 	}
 	if len(in.Services) != 0 {
 		const prefix string = ",\"Services\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		{
 			out.RawByte('{')
 			v17First := true
@@ -611,7 +494,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesNetwork3(in *jlexer.Lexe
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -685,22 +568,12 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork3(out *jwriter.Wr
 	_ = first
 	{
 		const prefix string = ",\"VIP\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.String(string(in.VIP))
 	}
 	{
 		const prefix string = ",\"Ports\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Ports == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -716,22 +589,12 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork3(out *jwriter.Wr
 	}
 	{
 		const prefix string = ",\"LocalLBIndex\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int(int(in.LocalLBIndex))
 	}
 	{
 		const prefix string = ",\"Tasks\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Tasks == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -758,7 +621,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesNetwork4(in *jlexer.Lexe
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -777,11 +640,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesNetwork4(in *jlexer.Lexe
 				in.Skip()
 			} else {
 				in.Delim('{')
-				if !in.IsDelim('}') {
-					out.Info = make(map[string]string)
-				} else {
-					out.Info = nil
-				}
+				out.Info = make(map[string]string)
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
@@ -808,42 +667,22 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork4(out *jwriter.Wr
 	_ = first
 	{
 		const prefix string = ",\"Name\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.String(string(in.Name))
 	}
 	{
 		const prefix string = ",\"EndpointID\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.EndpointID))
 	}
 	{
 		const prefix string = ",\"EndpointIP\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.EndpointIP))
 	}
 	{
 		const prefix string = ",\"Info\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Info == nil && (out.Flags&jwriter.NilMapAsEmpty) == 0 {
 			out.RawString(`null`)
 		} else {
@@ -875,7 +714,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesNetwork2(in *jlexer.Lexe
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -903,22 +742,12 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork2(out *jwriter.Wr
 	_ = first
 	{
 		const prefix string = ",\"Name\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.String(string(in.Name))
 	}
 	{
 		const prefix string = ",\"IP\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.IP))
 	}
 	out.RawByte('}')
@@ -934,7 +763,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes2(in *jlexer.Lexer, out 
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -968,52 +797,27 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes2(out *jwriter.Writer, i
 	_ = first
 	{
 		const prefix string = ",\"Name\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.String(string(in.Name))
 	}
 	{
 		const prefix string = ",\"EndpointID\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.EndpointID))
 	}
 	{
 		const prefix string = ",\"MacAddress\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.MacAddress))
 	}
 	{
 		const prefix string = ",\"IPv4Address\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.IPv4Address))
 	}
 	{
 		const prefix string = ",\"IPv6Address\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.IPv6Address))
 	}
 	out.RawByte('}')
@@ -1029,7 +833,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesNetwork1(in *jlexer.Lexe
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -1055,12 +859,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork1(out *jwriter.Wr
 	_ = first
 	{
 		const prefix string = ",\"Network\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.String(string(in.Network))
 	}
 	out.RawByte('}')
@@ -1076,7 +875,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesNetwork(in *jlexer.Lexer
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -1091,11 +890,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesNetwork(in *jlexer.Lexer
 				in.Skip()
 			} else {
 				in.Delim('{')
-				if !in.IsDelim('}') {
-					out.Options = make(map[string]string)
-				} else {
-					out.Options = nil
-				}
+				out.Options = make(map[string]string)
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
@@ -1145,22 +940,12 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork(out *jwriter.Wri
 	_ = first
 	{
 		const prefix string = ",\"Driver\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.String(string(in.Driver))
 	}
 	{
 		const prefix string = ",\"Options\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Options == nil && (out.Flags&jwriter.NilMapAsEmpty) == 0 {
 			out.RawString(`null`)
 		} else {
@@ -1181,12 +966,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork(out *jwriter.Wri
 	}
 	{
 		const prefix string = ",\"Config\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Config == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -1213,7 +993,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesNetwork5(in *jlexer.Lexe
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -1263,12 +1043,8 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesNetwork5(out *jwriter.Wr
 	_ = first
 	if in.Subnet != "" {
 		const prefix string = ",\"Subnet\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.String(string(in.Subnet))
 	}
 	if in.IPRange != "" {
@@ -1328,7 +1104,7 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes1(in *jlexer.Lexer,
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -1346,7 +1122,7 @@ func easyjson6601e8cdDecodeGithubComStackroxRoxPkgDockerTypes1(in *jlexer.Lexer,
 				in.Delim('[')
 				if out.History == nil {
 					if !in.IsDelim(']') {
-						out.History = make([]image.HistoryResponseItem, 0, 1)
+						out.History = make([]image.HistoryResponseItem, 0, 0)
 					} else {
 						out.History = []image.HistoryResponseItem{}
 					}
@@ -1377,22 +1153,12 @@ func easyjson6601e8cdEncodeGithubComStackroxRoxPkgDockerTypes1(out *jwriter.Writ
 	_ = first
 	{
 		const prefix string = ",\"image\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		(in.Image).MarshalEasyJSON(out)
 	}
 	{
 		const prefix string = ",\"history\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.History == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -1419,7 +1185,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesImage(in *jlexer.Lexer, 
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -1476,62 +1242,32 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesImage(out *jwriter.Write
 	_ = first
 	{
 		const prefix string = ",\"Comment\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.String(string(in.Comment))
 	}
 	{
 		const prefix string = ",\"Created\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int64(int64(in.Created))
 	}
 	{
 		const prefix string = ",\"CreatedBy\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.CreatedBy))
 	}
 	{
 		const prefix string = ",\"Id\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.ID))
 	}
 	{
 		const prefix string = ",\"Size\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int64(int64(in.Size))
 	}
 	{
 		const prefix string = ",\"Tags\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Tags == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -1558,7 +1294,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes(in *jlexer.Lexer, out *
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -1702,6 +1438,8 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes(in *jlexer.Lexer, out *
 			out.KernelVersion = string(in.String())
 		case "OperatingSystem":
 			out.OperatingSystem = string(in.String())
+		case "OSVersion":
+			out.OSVersion = string(in.String())
 		case "OSType":
 			out.OSType = string(in.String())
 		case "Architecture":
@@ -1791,11 +1529,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes(in *jlexer.Lexer, out *
 				in.Skip()
 			} else {
 				in.Delim('{')
-				if !in.IsDelim('}') {
-					out.Runtimes = make(map[string]types.Runtime)
-				} else {
-					out.Runtimes = nil
-				}
+				out.Runtimes = make(map[string]types.Runtime)
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
@@ -1886,82 +1620,42 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 	_ = first
 	{
 		const prefix string = ",\"ID\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.String(string(in.ID))
 	}
 	{
 		const prefix string = ",\"Containers\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int(int(in.Containers))
 	}
 	{
 		const prefix string = ",\"ContainersRunning\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int(int(in.ContainersRunning))
 	}
 	{
 		const prefix string = ",\"ContainersPaused\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int(int(in.ContainersPaused))
 	}
 	{
 		const prefix string = ",\"ContainersStopped\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int(int(in.ContainersStopped))
 	}
 	{
 		const prefix string = ",\"Images\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int(int(in.Images))
 	}
 	{
 		const prefix string = ",\"Driver\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.Driver))
 	}
 	{
 		const prefix string = ",\"DriverStatus\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.DriverStatus == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -1984,12 +1678,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 	}
 	{
 		const prefix string = ",\"SystemStatus\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.SystemStatus == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -2012,272 +1701,142 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 	}
 	{
 		const prefix string = ",\"Plugins\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes3(out, in.Plugins)
 	}
 	{
 		const prefix string = ",\"MemoryLimit\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.MemoryLimit))
 	}
 	{
 		const prefix string = ",\"SwapLimit\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.SwapLimit))
 	}
 	{
 		const prefix string = ",\"KernelMemory\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.KernelMemory))
 	}
 	{
 		const prefix string = ",\"KernelMemoryTCP\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.KernelMemoryTCP))
 	}
 	{
 		const prefix string = ",\"CpuCfsPeriod\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.CPUCfsPeriod))
 	}
 	{
 		const prefix string = ",\"CpuCfsQuota\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.CPUCfsQuota))
 	}
 	{
 		const prefix string = ",\"CPUShares\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.CPUShares))
 	}
 	{
 		const prefix string = ",\"CPUSet\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.CPUSet))
 	}
 	{
 		const prefix string = ",\"PidsLimit\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.PidsLimit))
 	}
 	{
 		const prefix string = ",\"IPv4Forwarding\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.IPv4Forwarding))
 	}
 	{
 		const prefix string = ",\"BridgeNfIptables\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.BridgeNfIptables))
 	}
 	{
 		const prefix string = ",\"BridgeNfIp6tables\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.BridgeNfIP6tables))
 	}
 	{
 		const prefix string = ",\"Debug\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.Debug))
 	}
 	{
 		const prefix string = ",\"NFd\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int(int(in.NFd))
 	}
 	{
 		const prefix string = ",\"OomKillDisable\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.OomKillDisable))
 	}
 	{
 		const prefix string = ",\"NGoroutines\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int(int(in.NGoroutines))
 	}
 	{
 		const prefix string = ",\"SystemTime\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.SystemTime))
 	}
 	{
 		const prefix string = ",\"LoggingDriver\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.LoggingDriver))
 	}
 	{
 		const prefix string = ",\"CgroupDriver\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.CgroupDriver))
 	}
 	{
 		const prefix string = ",\"NEventsListener\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int(int(in.NEventsListener))
 	}
 	{
 		const prefix string = ",\"KernelVersion\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.KernelVersion))
 	}
 	{
 		const prefix string = ",\"OperatingSystem\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.OperatingSystem))
 	}
 	{
+		const prefix string = ",\"OSVersion\":"
+		out.RawString(prefix)
+		out.String(string(in.OSVersion))
+	}
+	{
 		const prefix string = ",\"OSType\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.OSType))
 	}
 	{
 		const prefix string = ",\"Architecture\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.Architecture))
 	}
 	{
 		const prefix string = ",\"IndexServerAddress\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.IndexServerAddress))
 	}
 	{
 		const prefix string = ",\"RegistryConfig\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.RegistryConfig == nil {
 			out.RawString("null")
 		} else {
@@ -2286,32 +1845,17 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 	}
 	{
 		const prefix string = ",\"NCPU\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int(int(in.NCPU))
 	}
 	{
 		const prefix string = ",\"MemTotal\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int64(int64(in.MemTotal))
 	}
 	{
 		const prefix string = ",\"GenericResources\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.GenericResources == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -2327,62 +1871,32 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 	}
 	{
 		const prefix string = ",\"DockerRootDir\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.DockerRootDir))
 	}
 	{
 		const prefix string = ",\"HttpProxy\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.HTTPProxy))
 	}
 	{
 		const prefix string = ",\"HttpsProxy\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.HTTPSProxy))
 	}
 	{
 		const prefix string = ",\"NoProxy\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.NoProxy))
 	}
 	{
 		const prefix string = ",\"Name\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.Name))
 	}
 	{
 		const prefix string = ",\"Labels\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Labels == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -2398,52 +1912,27 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 	}
 	{
 		const prefix string = ",\"ExperimentalBuild\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.ExperimentalBuild))
 	}
 	{
 		const prefix string = ",\"ServerVersion\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.ServerVersion))
 	}
 	{
 		const prefix string = ",\"ClusterStore\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.ClusterStore))
 	}
 	{
 		const prefix string = ",\"ClusterAdvertise\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.ClusterAdvertise))
 	}
 	{
 		const prefix string = ",\"Runtimes\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Runtimes == nil && (out.Flags&jwriter.NilMapAsEmpty) == 0 {
 			out.RawString(`null`)
 		} else {
@@ -2464,92 +1953,47 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 	}
 	{
 		const prefix string = ",\"DefaultRuntime\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.DefaultRuntime))
 	}
 	{
 		const prefix string = ",\"Swarm\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm1(out, in.Swarm)
 	}
 	{
 		const prefix string = ",\"LiveRestoreEnabled\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.LiveRestoreEnabled))
 	}
 	{
 		const prefix string = ",\"Isolation\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.Isolation))
 	}
 	{
 		const prefix string = ",\"InitBinary\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.InitBinary))
 	}
 	{
 		const prefix string = ",\"ContainerdCommit\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes5(out, in.ContainerdCommit)
 	}
 	{
 		const prefix string = ",\"RuncCommit\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes5(out, in.RuncCommit)
 	}
 	{
 		const prefix string = ",\"InitCommit\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		easyjson6601e8cdEncodeGithubComDockerDockerApiTypes5(out, in.InitCommit)
 	}
 	{
 		const prefix string = ",\"SecurityOptions\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.SecurityOptions == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -2565,22 +2009,12 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes(out *jwriter.Writer, in
 	}
 	if in.ProductLicense != "" {
 		const prefix string = ",\"ProductLicense\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.ProductLicense))
 	}
 	{
 		const prefix string = ",\"Warnings\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Warnings == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -2607,7 +2041,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes5(in *jlexer.Lexer, out 
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -2635,22 +2069,12 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes5(out *jwriter.Writer, i
 	_ = first
 	{
 		const prefix string = ",\"ID\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.String(string(in.ID))
 	}
 	{
 		const prefix string = ",\"Expected\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.Expected))
 	}
 	out.RawByte('}')
@@ -2666,7 +2090,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm1(in *jlexer.Lexer,
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -2760,62 +2184,32 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm1(out *jwriter.Writ
 	_ = first
 	{
 		const prefix string = ",\"NodeID\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.String(string(in.NodeID))
 	}
 	{
 		const prefix string = ",\"NodeAddr\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.NodeAddr))
 	}
 	{
 		const prefix string = ",\"LocalNodeState\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.LocalNodeState))
 	}
 	{
 		const prefix string = ",\"ControlAvailable\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.ControlAvailable))
 	}
 	{
 		const prefix string = ",\"Error\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.Error))
 	}
 	{
 		const prefix string = ",\"RemoteManagers\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.RemoteManagers == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -2831,42 +2225,22 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm1(out *jwriter.Writ
 	}
 	if in.Nodes != 0 {
 		const prefix string = ",\"Nodes\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int(int(in.Nodes))
 	}
 	if in.Managers != 0 {
 		const prefix string = ",\"Managers\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int(int(in.Managers))
 	}
 	if in.Cluster != nil {
 		const prefix string = ",\"Cluster\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm3(out, *in.Cluster)
 	}
 	if len(in.Warnings) != 0 {
 		const prefix string = ",\"Warnings\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		{
 			out.RawByte('[')
 			for v67, v68 := range in.Warnings {
@@ -2891,7 +2265,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm3(in *jlexer.Lexer,
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -2960,52 +2334,27 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm3(out *jwriter.Writ
 	_ = first
 	{
 		const prefix string = ",\"ID\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.String(string(in.ID))
 	}
 	{
 		const prefix string = ",\"Spec\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm4(out, in.Spec)
 	}
 	{
 		const prefix string = ",\"TLSInfo\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm5(out, in.TLSInfo)
 	}
 	{
 		const prefix string = ",\"RootRotationInProgress\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.RootRotationInProgress))
 	}
 	{
 		const prefix string = ",\"DefaultAddrPool\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.DefaultAddrPool == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -3021,52 +2370,27 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm3(out *jwriter.Writ
 	}
 	{
 		const prefix string = ",\"SubnetSize\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Uint32(uint32(in.SubnetSize))
 	}
 	{
 		const prefix string = ",\"DataPathPort\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Uint32(uint32(in.DataPathPort))
 	}
 	if true {
 		const prefix string = ",\"Version\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm6(out, in.Version)
 	}
 	if true {
 		const prefix string = ",\"CreatedAt\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Raw((in.CreatedAt).MarshalJSON())
 	}
 	if true {
 		const prefix string = ",\"UpdatedAt\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Raw((in.UpdatedAt).MarshalJSON())
 	}
 	out.RawByte('}')
@@ -3082,7 +2406,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm6(in *jlexer.Lexer,
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -3108,12 +2432,8 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm6(out *jwriter.Writ
 	_ = first
 	if in.Index != 0 {
 		const prefix string = ",\"Index\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.Uint64(uint64(in.Index))
 	}
 	out.RawByte('}')
@@ -3129,7 +2449,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm5(in *jlexer.Lexer,
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -3169,12 +2489,8 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm5(out *jwriter.Writ
 	_ = first
 	if in.TrustRoot != "" {
 		const prefix string = ",\"TrustRoot\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.String(string(in.TrustRoot))
 	}
 	if len(in.CertIssuerSubject) != 0 {
@@ -3210,7 +2526,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm4(in *jlexer.Lexer,
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -3237,11 +2553,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm4(in *jlexer.Lexer,
 				in.Skip()
 			} else {
 				in.Delim('{')
-				if !in.IsDelim('}') {
-					out.Labels = make(map[string]string)
-				} else {
-					out.Labels = nil
-				}
+				out.Labels = make(map[string]string)
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
@@ -3268,12 +2580,8 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm4(out *jwriter.Writ
 	_ = first
 	if true {
 		const prefix string = ",\"Orchestration\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm7(out, in.Orchestration)
 	}
 	if true {
@@ -3375,7 +2683,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm12(in *jlexer.Lexer
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -3401,12 +2709,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm12(out *jwriter.Wri
 	_ = first
 	{
 		const prefix string = ",\"AutoLockManagers\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.Bool(bool(in.AutoLockManagers))
 	}
 	out.RawByte('}')
@@ -3422,7 +2725,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm11(in *jlexer.Lexer
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -3456,12 +2759,8 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm11(out *jwriter.Wri
 	_ = first
 	if in.LogDriver != nil {
 		const prefix string = ",\"LogDriver\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm13(out, *in.LogDriver)
 	}
 	out.RawByte('}')
@@ -3477,7 +2776,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm13(in *jlexer.Lexer
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -3523,12 +2822,8 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm13(out *jwriter.Wri
 	_ = first
 	if in.Name != "" {
 		const prefix string = ",\"Name\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.String(string(in.Name))
 	}
 	if len(in.Options) != 0 {
@@ -3568,7 +2863,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm10(in *jlexer.Lexer
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -3631,12 +2926,8 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm10(out *jwriter.Wri
 	_ = first
 	if in.NodeCertExpiry != 0 {
 		const prefix string = ",\"NodeCertExpiry\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.Int64(int64(in.NodeCertExpiry))
 	}
 	if len(in.ExternalCAs) != 0 {
@@ -3705,7 +2996,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm14(in *jlexer.Lexer
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -3755,32 +3046,17 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm14(out *jwriter.Wri
 	_ = first
 	{
 		const prefix string = ",\"Protocol\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.String(string(in.Protocol))
 	}
 	{
 		const prefix string = ",\"URL\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.URL))
 	}
 	if len(in.Options) != 0 {
 		const prefix string = ",\"Options\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		{
 			out.RawByte('{')
 			v86First := true
@@ -3799,12 +3075,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm14(out *jwriter.Wri
 	}
 	{
 		const prefix string = ",\"CACert\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.CACert))
 	}
 	out.RawByte('}')
@@ -3820,7 +3091,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm9(in *jlexer.Lexer,
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -3846,12 +3117,8 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm9(out *jwriter.Writ
 	_ = first
 	if in.HeartbeatPeriod != 0 {
 		const prefix string = ",\"HeartbeatPeriod\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.Int64(int64(in.HeartbeatPeriod))
 	}
 	out.RawByte('}')
@@ -3867,7 +3134,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm8(in *jlexer.Lexer,
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -3909,12 +3176,8 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm8(out *jwriter.Writ
 	_ = first
 	if in.SnapshotInterval != 0 {
 		const prefix string = ",\"SnapshotInterval\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.Uint64(uint64(in.SnapshotInterval))
 	}
 	if in.KeepOldSnapshots != nil {
@@ -3949,12 +3212,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm8(out *jwriter.Writ
 	}
 	{
 		const prefix string = ",\"HeartbeatTick\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int(int(in.HeartbeatTick))
 	}
 	out.RawByte('}')
@@ -3970,7 +3228,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm7(in *jlexer.Lexer,
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -4004,12 +3262,8 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm7(out *jwriter.Writ
 	_ = first
 	if in.TaskHistoryRetentionLimit != nil {
 		const prefix string = ",\"TaskHistoryRetentionLimit\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.Int64(int64(*in.TaskHistoryRetentionLimit))
 	}
 	out.RawByte('}')
@@ -4025,7 +3279,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm2(in *jlexer.Lexer,
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -4053,22 +3307,12 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm2(out *jwriter.Writ
 	_ = first
 	{
 		const prefix string = ",\"NodeID\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.String(string(in.NodeID))
 	}
 	{
 		const prefix string = ",\"Addr\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.String(string(in.Addr))
 	}
 	out.RawByte('}')
@@ -4084,7 +3328,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes4(in *jlexer.Lexer, out 
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -4133,22 +3377,12 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes4(out *jwriter.Writer, i
 	_ = first
 	{
 		const prefix string = ",\"path\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.String(string(in.Path))
 	}
 	if len(in.Args) != 0 {
 		const prefix string = ",\"runtimeArgs\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		{
 			out.RawByte('[')
 			for v88, v89 := range in.Args {
@@ -4173,7 +3407,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm(in *jlexer.Lexer, 
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -4217,12 +3451,8 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm(out *jwriter.Write
 	_ = first
 	if in.NamedResourceSpec != nil {
 		const prefix string = ",\"NamedResourceSpec\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm15(out, *in.NamedResourceSpec)
 	}
 	if in.DiscreteResourceSpec != nil {
@@ -4248,7 +3478,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm16(in *jlexer.Lexer
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -4276,12 +3506,8 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm16(out *jwriter.Wri
 	_ = first
 	if in.Kind != "" {
 		const prefix string = ",\"Kind\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.String(string(in.Kind))
 	}
 	if in.Value != 0 {
@@ -4307,7 +3533,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesSwarm15(in *jlexer.Lexer
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -4335,12 +3561,8 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesSwarm15(out *jwriter.Wri
 	_ = first
 	if in.Kind != "" {
 		const prefix string = ",\"Kind\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		first = false
+		out.RawString(prefix[1:])
 		out.String(string(in.Kind))
 	}
 	if in.Value != "" {
@@ -4366,7 +3588,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesRegistry(in *jlexer.Lexe
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -4468,11 +3690,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesRegistry(in *jlexer.Lexe
 				in.Skip()
 			} else {
 				in.Delim('{')
-				if !in.IsDelim('}') {
-					out.IndexConfigs = make(map[string]*registry.IndexInfo)
-				} else {
-					out.IndexConfigs = nil
-				}
+				out.IndexConfigs = make(map[string]*registry.IndexInfo)
 				for !in.IsDelim('}') {
 					key := string(in.String())
 					in.WantColon()
@@ -4530,12 +3748,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry(out *jwriter.Wr
 	_ = first
 	{
 		const prefix string = ",\"AllowNondistributableArtifactsCIDRs\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		if in.AllowNondistributableArtifactsCIDRs == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -4555,12 +3768,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry(out *jwriter.Wr
 	}
 	{
 		const prefix string = ",\"AllowNondistributableArtifactsHostnames\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.AllowNondistributableArtifactsHostnames == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -4576,12 +3784,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry(out *jwriter.Wr
 	}
 	{
 		const prefix string = ",\"InsecureRegistryCIDRs\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.InsecureRegistryCIDRs == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -4601,12 +3804,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry(out *jwriter.Wr
 	}
 	{
 		const prefix string = ",\"IndexConfigs\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.IndexConfigs == nil && (out.Flags&jwriter.NilMapAsEmpty) == 0 {
 			out.RawString(`null`)
 		} else {
@@ -4631,12 +3829,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry(out *jwriter.Wr
 	}
 	{
 		const prefix string = ",\"Mirrors\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Mirrors == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -4663,7 +3856,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypesRegistry1(in *jlexer.Lex
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -4716,22 +3909,12 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry1(out *jwriter.W
 	_ = first
 	{
 		const prefix string = ",\"Name\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		out.String(string(in.Name))
 	}
 	{
 		const prefix string = ",\"Mirrors\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Mirrors == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -4747,22 +3930,12 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypesRegistry1(out *jwriter.W
 	}
 	{
 		const prefix string = ",\"Secure\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.Secure))
 	}
 	{
 		const prefix string = ",\"Official\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Bool(bool(in.Official))
 	}
 	out.RawByte('}')
@@ -4778,7 +3951,7 @@ func easyjson6601e8cdDecodeGithubComDockerDockerApiTypes3(in *jlexer.Lexer, out 
 	}
 	in.Delim('{')
 	for !in.IsDelim('}') {
-		key := in.UnsafeString()
+		key := in.UnsafeFieldName(false)
 		in.WantColon()
 		if in.IsNull() {
 			in.Skip()
@@ -4894,12 +4067,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes3(out *jwriter.Writer, i
 	_ = first
 	{
 		const prefix string = ",\"Volume\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix[1:])
 		if in.Volume == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -4915,12 +4083,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes3(out *jwriter.Writer, i
 	}
 	{
 		const prefix string = ",\"Network\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Network == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -4936,12 +4099,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes3(out *jwriter.Writer, i
 	}
 	{
 		const prefix string = ",\"Authorization\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Authorization == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {
@@ -4957,12 +4115,7 @@ func easyjson6601e8cdEncodeGithubComDockerDockerApiTypes3(out *jwriter.Writer, i
 	}
 	{
 		const prefix string = ",\"Log\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		if in.Log == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
 			out.RawString("null")
 		} else {

@@ -43,10 +43,10 @@ func (c *ClusterGatherer) Gather(ctx context.Context) *data.ClusterInfo {
 	providerMetadata := providers.GetMetadata(ctx)
 	cloudProvider := telemetry.GetProviderString(providerMetadata)
 
-	nodes, err := c.nodeGatherer.Gather()
+	nodes, err := c.nodeGatherer.Gather(ctx)
 	errorList.AddError(err)
 
-	namespaces, nsErrors := c.namespaceGatherer.Gather()
+	namespaces, nsErrors := c.namespaceGatherer.Gather(ctx)
 	errorList.AddErrors(nsErrors...)
 
 	return &data.ClusterInfo{

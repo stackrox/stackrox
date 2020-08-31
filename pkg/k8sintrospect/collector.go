@@ -2,6 +2,7 @@ package k8sintrospect
 
 import (
 	"bytes"
+	"context"
 	"encoding/csv"
 	"fmt"
 	"math"
@@ -12,7 +13,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -41,7 +41,7 @@ var (
 )
 
 type collector struct {
-	ctx      concurrency.ErrorWaitable
+	ctx      context.Context
 	callback FileCallback
 
 	cfg Config
@@ -52,7 +52,7 @@ type collector struct {
 	errors []error
 }
 
-func newCollector(ctx concurrency.ErrorWaitable, k8sRESTConfig *rest.Config, cfg Config, cb FileCallback) (*collector, error) {
+func newCollector(ctx context.Context, k8sRESTConfig *rest.Config, cfg Config, cb FileCallback) (*collector, error) {
 	restConfigShallowCopy := *k8sRESTConfig
 	oldWrapTransport := restConfigShallowCopy.WrapTransport
 	restConfigShallowCopy.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
@@ -177,7 +177,7 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 				SinceSeconds: &[]int64{int64(logWindow / time.Second)}[0],
 				TailLines:    &[]int64{maxLogLines}[0],
 			}
-			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw()
+			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw(c.ctx)
 			if err != nil {
 				logsData = []byte(fmt.Sprintf("Error retrieving container logs: %v", err))
 			} else {
@@ -197,7 +197,7 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 				SinceTime: &since,
 				TailLines: &[]int64{maxLogLines}[0],
 			}
-			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw()
+			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw(c.ctx)
 			if err != nil {
 				logsData = []byte(fmt.Sprintf("Error retrieving previous container logs: %v", err))
 			} else {
@@ -220,7 +220,7 @@ func (c *collector) recordError(err error) {
 }
 
 func (c *collector) collectObjectsData(ns string, cfg ObjectConfig, resourceClient dynamic.NamespaceableResourceInterface) error {
-	objList, err := resourceClient.Namespace(ns).List(metav1.ListOptions{})
+	objList, err := resourceClient.Namespace(ns).List(c.ctx, metav1.ListOptions{})
 	if err != nil {
 		c.recordError(err)
 		return nil
@@ -250,7 +250,7 @@ func (c *collector) collectObjectsData(ns string, cfg ObjectConfig, resourceClie
 }
 
 func (c *collector) collectNamespaceData(ns string) (bool, error) {
-	namespace, err := c.client.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
+	namespace, err := c.client.CoreV1().Namespaces().Get(c.ctx, ns, metav1.GetOptions{})
 	if err != nil && k8sErrors.IsNotFound(err) {
 		return false, nil
 	}
@@ -271,7 +271,7 @@ func (c *collector) collectNamespaceData(ns string) (bool, error) {
 }
 
 func (c *collector) collectEventsData(ns string) error {
-	eventList, err := c.client.CoreV1().Events(ns).List(metav1.ListOptions{
+	eventList, err := c.client.CoreV1().Events(ns).List(c.ctx, metav1.ListOptions{
 		Limit: 500,
 	})
 	if err != nil {
@@ -328,7 +328,7 @@ func (c *collector) collectEventsData(ns string) error {
 }
 
 func (c *collector) collectPodsData(ns string) error {
-	podList, err := c.client.CoreV1().Pods(ns).List(metav1.ListOptions{})
+	podList, err := c.client.CoreV1().Pods(ns).List(c.ctx, metav1.ListOptions{})
 	if err != nil {
 		c.recordError(errors.Wrapf(err, "could not list pods in namespace %q", ns))
 		return nil

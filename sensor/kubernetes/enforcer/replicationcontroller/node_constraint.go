@@ -1,6 +1,8 @@
 package replicationcontroller
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/common"
@@ -10,10 +12,10 @@ import (
 )
 
 // EnforceNodeConstraint reschedules the ReplicationController with unsatisfiable constraints.
-func EnforceNodeConstraint(client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
+func EnforceNodeConstraint(ctx context.Context, client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
 	// Load the current ReplicationController for the deployment.
 	var rc *coreV1.ReplicationController
-	rc, err = client.CoreV1().ReplicationControllers(deploymentInfo.GetNamespace()).Get(deploymentInfo.GetDeploymentName(), metav1.GetOptions{})
+	rc, err = client.CoreV1().ReplicationControllers(deploymentInfo.GetNamespace()).Get(ctx, deploymentInfo.GetDeploymentName(), metav1.GetOptions{})
 	if err != nil {
 		return retry.MakeRetryable(err)
 	}
@@ -25,7 +27,7 @@ func EnforceNodeConstraint(client kubernetes.Interface, deploymentInfo *central.
 	}
 
 	// Post the new ReplicationController data.
-	_, err = client.CoreV1().ReplicationControllers(deploymentInfo.GetNamespace()).Update(rc)
+	_, err = client.CoreV1().ReplicationControllers(deploymentInfo.GetNamespace()).Update(ctx, rc, metav1.UpdateOptions{})
 	if err != nil {
 		return retry.MakeRetryable(err)
 	}

@@ -168,7 +168,7 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 			return nil, errors.Errorf("server does not support resource type of supposed owner %v", config.Owner)
 		}
 		ownerResourceClient := c.DynamicClientForResource(ownerRes, config.Owner.Namespace)
-		ownerObj, err := ownerResourceClient.Get(config.Owner.Name, metav1.GetOptions{})
+		ownerObj, err := ownerResourceClient.Get(ctx, config.Owner.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, errors.Wrapf(err, "could not retrieve supposed owner %v", config.Owner)
 		}
@@ -354,7 +354,7 @@ func (c *UpgradeContext) List(resourcePurpose resources.Purpose, listOpts *metav
 			continue
 		}
 		resourceClient := c.DynamicClientForResource(resourceMD, common.Namespace)
-		listObj, err := resourceClient.List(*listOpts)
+		listObj, err := resourceClient.List(c.ctx, *listOpts)
 		if err != nil {
 			return nil, errors.Wrapf(err, "listing relevant objects of type %v", resourceMD)
 		}

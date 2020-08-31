@@ -52,7 +52,7 @@ func (e *executor) executeAction(act plan.ActionDesc) error {
 
 	switch act.ActionName {
 	case plan.CreateAction:
-		if _, err := client.Create(&obj, metaV1.CreateOptions{}); err != nil {
+		if _, err := client.Create(e.ctx.Context(), &obj, metaV1.CreateOptions{}); err != nil {
 			if k8sErrors.IsAlreadyExists(err) && common.IsSharedObject(act.ObjectRef) {
 				log.Warnf("Skipping creation of shared object %v", act.ObjectRef)
 			} else {
@@ -60,7 +60,7 @@ func (e *executor) executeAction(act plan.ActionDesc) error {
 			}
 		}
 	case plan.UpdateAction:
-		if _, err := client.Update(&obj, metaV1.UpdateOptions{}); err != nil {
+		if _, err := client.Update(e.ctx.Context(), &obj, metaV1.UpdateOptions{}); err != nil {
 			// The upgrader is very focused on getting the Kubernetes objects to the end state
 			// obtained from the bundle. Hence, it doesn't make sense for us to bother with
 			// the resourceVersion, since our update is NOT a function of the original object.
@@ -75,13 +75,13 @@ func (e *executor) executeAction(act plan.ActionDesc) error {
 			}
 			log.Warnf("The update for object %v hit a conflict. Trying again without setting resourceVersion: %v", act.ObjectRef, err)
 			obj.SetResourceVersion("")
-			_, err := client.Update(&obj, metaV1.UpdateOptions{})
+			_, err := client.Update(e.ctx.Context(), &obj, metaV1.UpdateOptions{})
 			if err != nil {
 				return errors.Wrapf(err, "updating after clearing resourceVersion of object %v", act.ObjectRef)
 			}
 		}
 	case plan.DeleteAction:
-		if err := client.Delete(act.ObjectRef.Name, kubernetes.DeleteBackgroundOption); err != nil {
+		if err := client.Delete(e.ctx.Context(), act.ObjectRef.Name, kubernetes.DeleteBackgroundOption); err != nil {
 			return err
 		}
 	default:

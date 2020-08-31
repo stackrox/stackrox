@@ -33,6 +33,8 @@ func (h *commandHandler) dispatchApplyCommand(cmd *central.NetworkPoliciesComman
 }
 
 func (h *commandHandler) doApply(cmd *central.NetworkPoliciesCommand_Apply) (*storage.NetworkPolicyModification, error) {
+	ctx := h.ctx()
+
 	policies, toDelete, err := parseModification(cmd.GetModification())
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing network policy modification")
@@ -44,8 +46,8 @@ func (h *commandHandler) doApply(cmd *central.NetworkPoliciesCommand_Apply) (*st
 
 	tx := h.createApplyTx(cmd.GetApplyId())
 
-	if err := tx.Do(policies, toDelete); err != nil {
-		rollbackErr := tx.Rollback()
+	if err := tx.Do(ctx, policies, toDelete); err != nil {
+		rollbackErr := tx.Rollback(ctx)
 		if rollbackErr == nil {
 			return nil, errors.Wrap(err, "error applying network policies modification. The old state has been restored")
 		}

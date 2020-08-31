@@ -1,6 +1,8 @@
 package replicationcontroller
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/retry"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
@@ -9,7 +11,7 @@ import (
 )
 
 // EnforceZeroReplica scales a ReplicationController down to 0 instances.
-func EnforceZeroReplica(client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
+func EnforceZeroReplica(ctx context.Context, client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
 	scaleRequest := &autoscalingv1.Scale{
 		Spec: autoscalingv1.ScaleSpec{Replicas: 0},
 		ObjectMeta: metav1.ObjectMeta{
@@ -18,7 +20,7 @@ func EnforceZeroReplica(client kubernetes.Interface, deploymentInfo *central.Dep
 		},
 	}
 
-	_, err = client.CoreV1().ReplicationControllers(deploymentInfo.GetNamespace()).UpdateScale(deploymentInfo.GetDeploymentName(), scaleRequest)
+	_, err = client.CoreV1().ReplicationControllers(deploymentInfo.GetNamespace()).UpdateScale(ctx, deploymentInfo.GetDeploymentName(), scaleRequest, metav1.UpdateOptions{})
 	if err != nil {
 		return retry.MakeRetryable(err)
 	}

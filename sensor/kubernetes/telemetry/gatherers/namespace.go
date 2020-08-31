@@ -1,6 +1,8 @@
 package gatherers
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/pkg/telemetry"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
@@ -21,9 +23,9 @@ func newNamespaceGatherer(k8sClient kubernetes.Interface, deploymentStore *resou
 }
 
 // Gather returns a list of stats about all the namespaces in the cluster this Sensor is monitoring
-func (n *namespaceGatherer) Gather() ([]*data.NamespaceInfo, []error) {
+func (n *namespaceGatherer) Gather(ctx context.Context) ([]*data.NamespaceInfo, []error) {
 	var errList []error
-	namespaceList, err := n.k8sClient.CoreV1().Namespaces().List(v1.ListOptions{})
+	namespaceList, err := n.k8sClient.CoreV1().Namespaces().List(ctx, v1.ListOptions{})
 	if err != nil {
 		errList = append(errList, err)
 		return nil, errList
@@ -32,7 +34,7 @@ func (n *namespaceGatherer) Gather() ([]*data.NamespaceInfo, []error) {
 	namespaceInfoList := make([]*data.NamespaceInfo, 0, len(namespaceList.Items))
 	for _, namespace := range namespaceList.Items {
 		podsForNamespace := n.k8sClient.CoreV1().Pods(namespace.Name)
-		pods, err := podsForNamespace.List(v1.ListOptions{})
+		pods, err := podsForNamespace.List(ctx, v1.ListOptions{})
 		if err != nil {
 			errList = append(errList, err)
 			continue

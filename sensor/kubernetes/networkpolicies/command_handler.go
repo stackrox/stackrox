@@ -1,6 +1,7 @@
 package networkpolicies
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
@@ -128,4 +129,8 @@ func (h *commandHandler) dispatchCommand(cmd *central.NetworkPoliciesCommand) (*
 	default:
 		return nil, fmt.Errorf("unknown network policy command of type %T", c)
 	}
+}
+
+func (h *commandHandler) ctx() context.Context {
+	return concurrency.AsContext(&h.stopSig)
 }

@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -66,7 +67,9 @@ func TestPod(t *testing.T) {
 		require.False(t, pod.Started.After(events[0].Timestamp.Time))
 	})
 
-	k8sPod, err := createK8sClient(t).CoreV1().Pods("default").Get(podName, metav1.GetOptions{
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	k8sPod, err := createK8sClient(t).CoreV1().Pods("default").Get(ctx, podName, metav1.GetOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Pod",
 			APIVersion: "v1",

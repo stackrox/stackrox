@@ -1,6 +1,8 @@
 package enforcer
 
 import (
+	"context"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -23,7 +25,7 @@ type Enforcer interface {
 }
 
 // EnforceFunc represents an enforcement function.
-type EnforceFunc func(*central.SensorEnforcement) error
+type EnforceFunc func(context.Context, *central.SensorEnforcement) error
 
 // CreateEnforcer creates a new enforcer that performs the given enforcement actions.
 func CreateEnforcer(enforcementMap map[storage.EnforcementAction]EnforceFunc) Enforcer {
@@ -129,7 +131,7 @@ func (e *enforcer) start() {
 				continue
 			}
 
-			if err := f(action); err != nil {
+			if err := f(concurrency.AsContext(&e.stopC), action); err != nil {
 				log.Errorf("error during enforcement. action: %s err: %v", proto.MarshalTextString(action), err)
 			} else {
 				log.Infof("enforcement successful. action %s", proto.MarshalTextString(action))

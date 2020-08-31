@@ -1,6 +1,7 @@
 package networkpolicies
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -36,7 +37,7 @@ const (
 )
 
 type rollbackAction interface {
-	Execute(client networkingV1Client.NetworkingV1Interface) error
+	Execute(ctx context.Context, client networkingV1Client.NetworkingV1Interface) error
 	Record(mod *storage.NetworkPolicyModification)
 }
 
@@ -48,23 +49,23 @@ type applyTx struct {
 	rollbackActions []rollbackAction
 }
 
-func (t *applyTx) Do(newOrUpdated []*networkingV1.NetworkPolicy, toDelete map[k8sutil.NSObjRef]struct{}) error {
+func (t *applyTx) Do(ctx context.Context, newOrUpdated []*networkingV1.NetworkPolicy, toDelete map[k8sutil.NSObjRef]struct{}) error {
 	for _, policy := range newOrUpdated {
 		ref := k8sutil.RefOf(policy)
 		if _, shouldReplace := toDelete[ref]; shouldReplace {
-			if err := t.replaceNetworkPolicy(policy); err != nil {
+			if err := t.replaceNetworkPolicy(ctx, policy); err != nil {
 				return err
 			}
 			delete(toDelete, ref)
 		} else {
-			if err := t.createNetworkPolicy(policy); err != nil {
+			if err := t.createNetworkPolicy(ctx, policy); err != nil {
 				return err
 			}
 		}
 	}
 
 	for deleteRef := range toDelete {
-		if err := t.deleteNetworkPolicy(deleteRef.Namespace, deleteRef.Name); err != nil {
+		if err := t.deleteNetworkPolicy(ctx, deleteRef.Namespace, deleteRef.Name); err != nil {
 			return err
 		}
 	}
@@ -94,8 +95,8 @@ type deletePolicy struct {
 	name, namespace string
 }
 
-func (a *deletePolicy) Execute(client networkingV1Client.NetworkingV1Interface) error {
-	return client.NetworkPolicies(a.namespace).Delete(a.name, kubernetes.DeleteBackgroundOption)
+func (a *deletePolicy) Execute(ctx context.Context, client networkingV1Client.NetworkingV1Interface) error {
+	return client.NetworkPolicies(a.namespace).Delete(ctx, a.name, kubernetes.DeleteBackgroundOption)
 }
 
 func (a *deletePolicy) Record(mod *storage.NetworkPolicyModification) {
@@ -110,8 +111,8 @@ type restorePolicy struct {
 	wasDeleted bool
 }
 
-func (a *restorePolicy) Execute(client networkingV1Client.NetworkingV1Interface) error {
-	_, err := client.NetworkPolicies(a.oldPolicy.Namespace).Update(a.oldPolicy)
+func (a *restorePolicy) Execute(ctx context.Context, client networkingV1Client.NetworkingV1Interface) error {
+	_, err := client.NetworkPolicies(a.oldPolicy.Namespace).Update(ctx, a.oldPolicy, metav1.UpdateOptions{})
 	return err
 }
 
@@ -135,15 +136,15 @@ func (a *restorePolicy) Record(mod *storage.NetworkPolicyModification) {
 	}
 }
 
-func (t *applyTx) Rollback() error {
+func (t *applyTx) Rollback(ctx context.Context) error {
 	var errList errorhelpers.ErrorList
 	for i := len(t.rollbackActions) - 1; i >= 0; i-- {
-		errList.AddError(t.rollbackActions[i].Execute(t.networkingClient))
+		errList.AddError(t.rollbackActions[i].Execute(ctx, t.networkingClient))
 	}
 	return errList.ToError()
 }
 
-func (t *applyTx) createNetworkPolicy(policy *networkingV1.NetworkPolicy) error {
+func (t *applyTx) createNetworkPolicy(ctx context.Context, policy *networkingV1.NetworkPolicy) error {
 	nsClient := t.networkingClient.NetworkPolicies(policy.Namespace)
 
 	if policy.ResourceVersion != "" {
@@ -151,7 +152,7 @@ func (t *applyTx) createNetworkPolicy(policy *networkingV1.NetworkPolicy) error 
 		policy.ResourceVersion = ""
 	}
 
-	_, err := nsClient.Create(policy)
+	_, err := nsClient.Create(ctx, policy, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -162,11 +163,12 @@ func (t *applyTx) createNetworkPolicy(policy *networkingV1.NetworkPolicy) error 
 	return nil
 }
 
-func (t *applyTx) replaceNetworkPolicy(policy *networkingV1.NetworkPolicy) error {
+func (t *applyTx) replaceNetworkPolicy(ctx context.Context, policy *networkingV1.NetworkPolicy) error {
 	nsClient := t.networkingClient.NetworkPolicies(policy.Namespace)
 
 	for retryCount := 0; retryCount < maxConflictRetries; retryCount++ {
-		old, err := nsClient.Get(policy.Name, metav1.GetOptions{})
+		old, err := nsClient.Get(ctx, policy.Name, metav1.GetOptions{})
+
 		if err != nil {
 			return errors.Wrap(err, "retrieving network policy")
 		}
@@ -182,7 +184,7 @@ func (t *applyTx) replaceNetworkPolicy(policy *networkingV1.NetworkPolicy) error
 		t.annotateAndLabel(policy)
 		policy.Annotations[previousJSONAnnotationKey] = string(oldJSON)
 
-		updated, err := nsClient.Update(policy)
+		updated, err := nsClient.Update(ctx, policy, metav1.UpdateOptions{})
 		if err != nil {
 			if k8sErrors.IsConflict(err) {
 				log.Errorf("Encountered conflict when trying to update network policy %s/%s: %v. Retrying (attempt %d of %d)...", old.GetNamespace(), old.GetName(), err, retryCount+1, maxConflictRetries)
@@ -204,10 +206,10 @@ func (t *applyTx) replaceNetworkPolicy(policy *networkingV1.NetworkPolicy) error
 	return fmt.Errorf("trying to update network policy %s/%s: giving up after %d conflicts", policy.GetNamespace(), policy.GetName(), maxConflictRetries)
 }
 
-func (t *applyTx) deleteNetworkPolicy(namespace, name string) error {
+func (t *applyTx) deleteNetworkPolicy(ctx context.Context, namespace, name string) error {
 	nsClient := t.networkingClient.NetworkPolicies(namespace)
 
-	existing, err := nsClient.Get(name, metav1.GetOptions{})
+	existing, err := nsClient.Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "retrieving network policy")
 	}
@@ -225,7 +227,7 @@ func (t *applyTx) deleteNetworkPolicy(namespace, name string) error {
 	deleted.Name = ""
 	deleted.ResourceVersion = ""
 
-	deleted, err = nsClient.Create(deleted)
+	deleted, err = nsClient.Create(ctx, deleted, metav1.CreateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "creating backup network policy")
 	}
@@ -234,7 +236,7 @@ func (t *applyTx) deleteNetworkPolicy(namespace, name string) error {
 		name:      deleted.Name,
 	}})
 
-	err = nsClient.Delete(existing.Name, kubernetes.DeleteBackgroundOption)
+	err = nsClient.Delete(ctx, existing.Name, kubernetes.DeleteBackgroundOption)
 	if err != nil {
 		return errors.Wrapf(err, "deleting network policy %s/%s", existing.Namespace, existing.Name)
 	}

@@ -2,6 +2,7 @@ package admissioncontroller
 
 import (
 	"compress/gzip"
+	"context"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
@@ -72,9 +73,13 @@ func (p *configMapPersister) ResponsesC() <-chan *central.MsgFromSensor {
 	return nil
 }
 
+func (p *configMapPersister) ctx() context.Context {
+	return concurrency.AsContext(&p.stopSig)
+}
+
 func (p *configMapPersister) run() {
 	// Attempt to apply the initial config, if any.
-	if err := p.applyCurrentConfigMap(); err != nil {
+	if err := p.applyCurrentConfigMap(p.ctx()); err != nil {
 		log.Errorf("Could not apply admission controller config map: %v", err)
 	}
 
@@ -86,14 +91,14 @@ func (p *configMapPersister) run() {
 		case <-p.settingsStreamIt.Done():
 			p.settingsStreamIt = p.settingsStreamIt.TryNext()
 
-			if err := p.applyCurrentConfigMap(); err != nil {
+			if err := p.applyCurrentConfigMap(p.ctx()); err != nil {
 				log.Errorf("Could not apply admission controller config map: %v", err)
 			}
 		}
 	}
 }
 
-func (p *configMapPersister) applyCurrentConfigMap() error {
+func (p *configMapPersister) applyCurrentConfigMap(ctx context.Context) error {
 	configMap, err := p.createCurrentConfigMap()
 	if err != nil {
 		return errors.Wrap(err, "instantiating config map")
@@ -102,13 +107,13 @@ func (p *configMapPersister) applyCurrentConfigMap() error {
 		return nil
 	}
 
-	_, err = p.client.Create(configMap)
+	_, err = p.client.Create(ctx, configMap, metav1.CreateOptions{})
 	if err != nil {
 		if !k8serrors.IsAlreadyExists(err) {
 			return errors.Wrap(err, "telling Kubernetes to create config map")
 		}
 
-		if _, err := p.client.Update(configMap); err != nil {
+		if _, err := p.client.Update(ctx, configMap, metav1.UpdateOptions{}); err != nil {
 			return errors.Wrap(err, "telling Kubernetes to update existing config map")
 		}
 	}

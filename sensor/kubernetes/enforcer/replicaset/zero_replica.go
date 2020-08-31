@@ -1,6 +1,8 @@
 package replicaset
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/retry"
@@ -10,7 +12,7 @@ import (
 )
 
 // EnforceZeroReplica scales a ReplicaSet down to 0 instances.
-func EnforceZeroReplica(client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
+func EnforceZeroReplica(ctx context.Context, client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
 	scaleRequest := &autoscalingV1.Scale{
 		Spec: pkgKubernetes.ScaleToZeroSpec,
 		ObjectMeta: metav1.ObjectMeta{
@@ -19,7 +21,7 @@ func EnforceZeroReplica(client kubernetes.Interface, deploymentInfo *central.Dep
 		},
 	}
 
-	_, err = client.AppsV1().ReplicaSets(deploymentInfo.GetNamespace()).UpdateScale(deploymentInfo.GetDeploymentName(), scaleRequest)
+	_, err = client.AppsV1().ReplicaSets(deploymentInfo.GetNamespace()).UpdateScale(ctx, deploymentInfo.GetDeploymentName(), scaleRequest, metav1.UpdateOptions{})
 	if err != nil {
 		return retry.MakeRetryable(err)
 	}

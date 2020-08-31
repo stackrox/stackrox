@@ -31,7 +31,7 @@ type snapshotter struct {
 func (s *snapshotter) SnapshotState() ([]k8sutil.Object, error) {
 	coreV1Client := s.ctx.ClientSet().CoreV1()
 
-	snapshotSecret, err := coreV1Client.Secrets(common.Namespace).Get(secretName, metav1.GetOptions{})
+	snapshotSecret, err := coreV1Client.Secrets(common.Namespace).Get(s.ctx.Context(), secretName, metav1.GetOptions{})
 	if k8sErrors.IsNotFound(err) {
 		snapshotSecret = nil
 		err = nil
@@ -58,7 +58,7 @@ func (s *snapshotter) SnapshotState() ([]k8sutil.Object, error) {
 	}
 
 	if s.opts.Store {
-		_, err = coreV1Client.Secrets(common.Namespace).Create(snapshotSecret)
+		_, err = coreV1Client.Secrets(common.Namespace).Create(s.ctx.Context(), snapshotSecret, metav1.CreateOptions{})
 		if err != nil {
 			return nil, errors.Wrap(err, "creating state snapshot secret")
 		}
