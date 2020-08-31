@@ -3,8 +3,7 @@ import PropTypes from 'prop-types';
 
 import { eventTypes } from 'constants/timelineTypes';
 import { eventPropTypes, defaultEventPropTypes } from 'constants/propTypes/timelinePropTypes';
-import Tooltip from 'Components/Tooltip';
-import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
+import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
 import ProcessActivityTooltipFields from './EventTooltipFields/ProcessActivityTooltipFields';
 import TerminationTooltipFields from './EventTooltipFields/TerminationTooltipFields';
 import DefaultTooltipFields from './EventTooltipFields/DefaultTooltipFields';

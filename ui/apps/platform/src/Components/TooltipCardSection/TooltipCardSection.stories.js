@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowRight, ArrowLeft } from 'react-feather';
 
-import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
+import { DetailedTooltipOverlay } from '@stackrox/ui-components';
 import TooltipFieldValue from 'Components/TooltipFieldValue';
 import TooltipCardSection from 'Components/TooltipCardSection';
 

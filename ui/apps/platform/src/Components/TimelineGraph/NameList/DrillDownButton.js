@@ -2,8 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { ChevronRight } from 'react-feather';
 
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import Button from 'Components/Button';
 
 const DrillDownButton = ({ tooltip, onClick }) => {

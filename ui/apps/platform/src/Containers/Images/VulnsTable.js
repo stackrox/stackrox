@@ -1,8 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Table from 'Components/Table';
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
     const columns = [

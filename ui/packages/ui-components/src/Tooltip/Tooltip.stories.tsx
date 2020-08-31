@@ -1,16 +1,17 @@
 import React from 'react';
+import { Meta, Story } from '@storybook/react/types-6-0';
 
 import * as Icon from 'react-feather';
-import TooltipOverlay from 'Components/TooltipOverlay';
-import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
+import TooltipOverlay from '../TooltipOverlay';
+import DetailedTooltipOverlay from '../DetailedTooltipOverlay';
 import Tooltip from './Tooltip';
 
 export default {
     title: 'Tooltip',
     component: Tooltip,
-};
+} as Meta;
 
-export const withButton = () => (
+export const ForButton: Story<{}> = () => (
     <Tooltip content={<TooltipOverlay>What does the octocat say?</TooltipOverlay>}>
         <button type="button">
             <Icon.GitHub />
@@ -19,7 +20,7 @@ export const withButton = () => (
     </Tooltip>
 );
 
-export const withComplexTooltipContent = () => (
+export const ComplexTooltipContent: Story<{}> = () => (
     <Tooltip
         content={
             <DetailedTooltipOverlay

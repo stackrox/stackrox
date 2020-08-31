@@ -1,9 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay, DetailedTooltipOverlay } from '@stackrox/ui-components';
 import { healthStatusLabels } from 'messages/common';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 

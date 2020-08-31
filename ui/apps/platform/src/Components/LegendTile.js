@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import deploymentActiveConnection from 'images/legend-icons/deployment-active-connection.svg';
 import deploymentAllowedConnection from 'images/legend-icons/deployment-allowed-connection.svg';
 import nonIsolatedDeploymentAllowed from 'images/legend-icons/non-isolated-deployment-allowed.svg';

@@ -11,8 +11,7 @@ import colors from 'constants/visuals/colors';
 
 import PropTypes from 'prop-types';
 import merge from 'deepmerge';
-import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
-import HoverHint from './HoverHint';
+import { DetailedTooltipOverlay, HoverHint } from '@stackrox/ui-components';
 
 const sortByXValue = (a, b) => {
     if (a.x < b.x) {

@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 
-import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
+import { DetailedTooltipOverlay } from '@stackrox/ui-components';
 import TooltipCardSection from 'Components/TooltipCardSection';
 import { filterModes } from 'constants/networkFilterModes';
 import PortsAndProtocolsFields from './PortsAndProtocolsFields';

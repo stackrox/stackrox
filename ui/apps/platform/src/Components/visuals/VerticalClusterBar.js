@@ -15,8 +15,7 @@ import merge from 'deepmerge';
 
 import { standardBaseTypes } from 'constants/entityTypes';
 import colors from 'constants/visuals/colors';
-import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
-import HoverHint from './HoverHint';
+import { DetailedTooltipOverlay, HoverHint } from '@stackrox/ui-components';
 
 class VerticalClusterBar extends Component {
     static propTypes = {

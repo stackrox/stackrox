@@ -1,8 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import Tooltip from 'Components/Tooltip';
-import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
+import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
 import { colorTypes, defaultColorType } from 'constants/visuals/colors';
 
 const getBackgroundColor = (colorType) => {

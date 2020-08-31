@@ -1,7 +1,16 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactElement } from 'react';
+import PropTypes, { InferProps } from 'prop-types';
 
-const DetailedTooltipOverlay = ({ title, subtitle, body, footer }) => {
+/**
+ * Alternative to {@link TooltipOverlay} that provides layout for complex tooltip content with
+ * title, subtitle and footer in addition to the main body.
+ */
+function DetailedTooltipOverlay({
+    title,
+    subtitle,
+    body,
+    footer,
+}: DetailedTooltipOverlayProps): ReactElement | null {
     if (!title || !body) {
         return null;
     }
@@ -30,12 +39,12 @@ const DetailedTooltipOverlay = ({ title, subtitle, body, footer }) => {
             )}
         </div>
     );
-};
+}
 
 DetailedTooltipOverlay.propTypes = {
     title: PropTypes.string.isRequired,
-    body: PropTypes.node.isRequired,
     subtitle: PropTypes.string,
+    body: PropTypes.node.isRequired,
     footer: PropTypes.node,
 };
 
@@ -44,4 +53,5 @@ DetailedTooltipOverlay.defaultProps = {
     footer: '',
 };
 
+export type DetailedTooltipOverlayProps = InferProps<typeof DetailedTooltipOverlay.propTypes>;
 export default DetailedTooltipOverlay;

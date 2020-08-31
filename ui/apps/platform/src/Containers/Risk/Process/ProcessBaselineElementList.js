@@ -1,8 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import { addDeleteProcesses } from 'services/ProcessesService';
 
 const ProcessBaselineElementList = ({ baselineKey, elements, processEpoch, setProcessEpoch }) => {

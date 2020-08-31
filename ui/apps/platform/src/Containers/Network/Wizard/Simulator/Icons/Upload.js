@@ -3,8 +3,7 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import { useDropzone } from 'react-dropzone';
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as notificationActions } from 'reducers/notifications';
 

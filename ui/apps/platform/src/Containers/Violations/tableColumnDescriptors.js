@@ -5,8 +5,7 @@ import { sortDate, sortSeverity } from 'sorters/sorters';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import * as Icon from 'react-feather';
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 import { severityLabels, lifecycleStageLabels } from 'messages/common';
 

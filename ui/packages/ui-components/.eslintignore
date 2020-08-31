@@ -1,0 +1,15 @@
+# See https://eslint.org/docs/user-guide/configuring#ignorepatterns-in-config-files for more about ignoring files.
+
+# local build artifacts
+/node_modules
+/lib
+/coverage
+/test-results
+
+# enable for StoryBook config files
+!.storybook
+
+# enable for configuration files
+!.eslintrc.js
+!.prettierrc.js
+!.postcssrc.js

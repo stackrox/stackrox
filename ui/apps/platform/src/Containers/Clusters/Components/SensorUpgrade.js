@@ -3,8 +3,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { AlertTriangle, Check, DownloadCloud, Loader, X } from 'react-feather';
 
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 import HealthStatus from './HealthStatus';
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';

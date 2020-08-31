@@ -40,7 +40,7 @@ import {
 } from 'utils/networkGraphUtils';
 import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 
-import { defaultTippyTooltipProps } from 'Components/Tooltip';
+import { defaultTippyTooltipProps } from '@stackrox/ui-components/lib/Tooltip';
 import NodeTooltipOverlay from './NodeTooltipOverlay';
 import NamespaceEdgeTooltipOverlay from './NamespaceEdgeTooltipOverlay';
 import EdgeTooltipOverlay from './EdgeTooltipOverlay';

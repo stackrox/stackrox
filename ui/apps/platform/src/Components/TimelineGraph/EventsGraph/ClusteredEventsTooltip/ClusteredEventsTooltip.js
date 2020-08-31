@@ -4,8 +4,7 @@ import pluralize from 'pluralize';
 
 import { eventTypes } from 'constants/timelineTypes';
 import { eventPropTypes } from 'constants/propTypes/timelinePropTypes';
-import Tooltip from 'Components/Tooltip';
-import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
+import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
 import getTimeRangeTextOfEvents from './getTimeRangeTextOfEvents';
 import ProcessActivityTooltipFields from '../EventTooltipFields/ProcessActivityTooltipFields';
 import TerminationTooltipFields from '../EventTooltipFields/TerminationTooltipFields';

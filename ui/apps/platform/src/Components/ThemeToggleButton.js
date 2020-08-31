@@ -1,7 +1,6 @@
 import React from 'react';
 import { useTheme } from 'Containers/ThemeProvider';
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 import { Moon, Sun } from 'react-feather';
 

@@ -3,8 +3,7 @@ import PropTypes from 'prop-types';
 import Table, { defaultHeaderClassName } from 'Components/Table';
 import NoComponentVulnMessage from 'Components/NoComponentVulnMessage';
 import { sortValue } from 'sorters/sorters';
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 import VulnsTable from './VulnsTable';
 

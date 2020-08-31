@@ -3,8 +3,7 @@ import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { ChevronDown } from 'react-feather';
 
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 const optionsClass =
     'flex items-center relative text-left px-2 py-3 text-sm border-b border-base-400 hover:bg-base-200 capitalize';

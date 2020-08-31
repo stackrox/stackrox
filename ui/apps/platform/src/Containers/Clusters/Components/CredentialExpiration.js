@@ -3,8 +3,7 @@ import PropTypes from 'prop-types';
 import { ExternalLink } from 'react-feather';
 import { differenceInDays } from 'date-fns';
 
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import { getDate, getDayOfWeek, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
 import HealthStatus from './HealthStatus';

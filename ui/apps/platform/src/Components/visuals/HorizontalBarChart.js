@@ -13,8 +13,8 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import merge from 'deepmerge';
 
-import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
-import HoverHint from './HoverHint';
+import { DetailedTooltipOverlay, HoverHint } from '@stackrox/ui-components';
+
 import BarGradient from './BarGradient';
 
 const minimalMargin = { top: -15, bottom: 0, left: 0, right: 0 };

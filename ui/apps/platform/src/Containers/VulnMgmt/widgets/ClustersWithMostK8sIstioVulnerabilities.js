@@ -14,8 +14,7 @@ import NumberedGrid from 'Components/NumberedGrid';
 import FixableCVECount from 'Components/FixableCVECount';
 import kubeSVG from 'images/kube.svg';
 import istioSVG from 'images/istio.svg';
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 // need to add query for fixable cves for dashboard once it's supported
 const CLUSTER_WITH_MOST_K8S_ISTIO_VULNERABILTIES = gql`

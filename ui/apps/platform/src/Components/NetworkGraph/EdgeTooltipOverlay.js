@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
+import { DetailedTooltipOverlay } from '@stackrox/ui-components';
 import TooltipCardSection from 'Components/TooltipCardSection';
 import TooltipFieldValue from 'Components/TooltipFieldValue';
 import PortsAndProtocolsFields from './PortsAndProtocolsFields';

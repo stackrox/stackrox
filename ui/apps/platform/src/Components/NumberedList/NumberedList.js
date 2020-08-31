@@ -2,8 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 
-import Tooltip from 'Components/Tooltip';
-import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
+import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
 
 const leftSideClasses = 'p-2 text-sm text-primary-800 font-600 w-full';
 

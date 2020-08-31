@@ -13,8 +13,7 @@ import {
     ChartLabel,
 } from 'react-vis';
 import BarGradient from 'Components/visuals/BarGradient';
-import HoverHint from 'Components/visuals/HoverHint';
-import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
+import { HoverHint, DetailedTooltipOverlay } from '@stackrox/ui-components';
 import useGraphHoverHint from 'hooks/useGraphHoverHint';
 
 const NUM_TICKS = 3;

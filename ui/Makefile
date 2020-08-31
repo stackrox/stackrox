@@ -65,7 +65,7 @@ clean:
 	rm -f deps
 	rm -f lint
 	rm -rf build
-	rm -rf node_modules
+	rm -rf node_modules apps/*/node_modules packages/*/node_modules
 
 .PHONY: publish-packages
 publish-packages:

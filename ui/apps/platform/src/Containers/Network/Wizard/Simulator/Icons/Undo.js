@@ -3,8 +3,7 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import { selectors } from 'reducers';
 import { actions as wizardActions } from 'reducers/network/wizard';
 

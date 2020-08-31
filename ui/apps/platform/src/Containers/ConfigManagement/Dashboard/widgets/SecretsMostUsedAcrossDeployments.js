@@ -1,8 +1,7 @@
 import React from 'react';
 import Loader from 'Components/Loader';
 import { Link, withRouter } from 'react-router-dom';
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import URLService from 'utils/URLService';
 import { gql } from '@apollo/client';
 import entityTypes from 'constants/entityTypes';

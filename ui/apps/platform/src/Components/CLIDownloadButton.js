@@ -5,8 +5,7 @@ import { connect } from 'react-redux';
 import { actions as CLIDownloadActions } from 'reducers/cli';
 
 import * as Icon from 'react-feather';
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 const CLIDownloadButton = ({
     toggleCLIDownloadView,

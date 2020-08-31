@@ -5,8 +5,7 @@ import { resolveAlert } from 'services/AlertsService';
 import { excludeDeployments } from 'services/PoliciesService';
 
 import * as Icon from 'react-feather';
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 function ViolationActionButtons({ violation, setSelectedAlertId }) {
     function resolveAlertAction(shouldExclude) {

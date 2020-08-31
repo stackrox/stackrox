@@ -5,8 +5,7 @@ import { Activity } from 'react-feather';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 
-import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
-import Tooltip from 'Components/Tooltip';
+import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
 import { clustersPath } from 'routePaths';
 
 const bgHoverDefault = 'hover:bg-base-200';

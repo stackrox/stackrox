@@ -4,11 +4,11 @@ import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { MoreHorizontal } from 'react-feather';
+import { Avatar } from '@stackrox/ui-components';
 
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 import Menu from 'Components/Menu';
-import Avatar from 'Components/Avatar';
 import User from 'utils/User';
 
 const topNavMenuBtnClass =

@@ -4,8 +4,7 @@ import * as Icon from 'react-feather';
 import find from 'lodash/find';
 import dateFns from 'date-fns';
 
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { sortValue, sortDate } from 'sorters/sorters';
 

@@ -1,7 +1,6 @@
 import React from 'react';
 
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import Button from 'Components/Button';
 import PolicyViolationEvent from 'Components/TimelineGraph/EventsGraph/EventMarker/PolicyViolationEvent';
 import ProcessActivityEvent from 'Components/TimelineGraph/EventsGraph/EventMarker/ProcessActivityEvent';

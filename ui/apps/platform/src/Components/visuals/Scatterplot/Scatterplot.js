@@ -14,8 +14,7 @@ import {
     ChartLabel,
 } from 'react-vis';
 import useGraphHoverHint from 'hooks/useGraphHoverHint';
-import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
-import HoverHint from '../HoverHint';
+import { DetailedTooltipOverlay, HoverHint } from '@stackrox/ui-components';
 
 import { getHighValue, getLowValue } from '../visual.helpers';
 

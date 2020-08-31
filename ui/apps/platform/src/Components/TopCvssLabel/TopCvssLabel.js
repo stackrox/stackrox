@@ -3,8 +3,7 @@ import PropTypes from 'prop-types';
 import LabelChip from 'Components/LabelChip';
 import LabelChipSubtext from 'Components/LabelChipSubtext';
 import { getSeverityChipType } from 'utils/vulnerabilityUtils';
-import Tooltip from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 const CVSSLabelChip = ({ cvss, expanded }) => {
     const chipType = getSeverityChipType(cvss);

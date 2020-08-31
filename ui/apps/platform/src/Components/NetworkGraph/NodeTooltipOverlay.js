@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { ArrowRight, ArrowLeft } from 'react-feather';
 
-import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
+import { DetailedTooltipOverlay } from '@stackrox/ui-components';
 import TooltipCardSection from 'Components/TooltipCardSection';
 import PortsAndProtocolsFields from './PortsAndProtocolsFields';
 

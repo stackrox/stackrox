@@ -1,11 +1,9 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, ReactElement } from 'react';
 import { createPortal } from 'react-dom';
-import PropTypes from 'prop-types';
-// this component targets DOM elements, and therefore compliments Tooltip component
-// eslint-disable-next-line no-restricted-imports
+import PropTypes, { InferProps } from 'prop-types';
 import tippy from 'tippy.js';
 
-import { defaultTippyTooltipProps } from 'Components/Tooltip';
+import { defaultTippyTooltipProps } from '../Tooltip';
 
 /**
  * This component is supposed to be used only in case a hover hint / tooltip
@@ -17,16 +15,20 @@ import { defaultTippyTooltipProps } from 'Components/Tooltip';
  * This component proxies props (besides `target` and `children`) to the
  * instance of `tippy.js`.
  *
- * @see {@link Components/Tooltip} for defining tooltips directly in JSX
+ * @see {@link Tooltip} for defining tooltips directly in JSX
  */
-const HoverHint = ({ target, children, ...props }) => {
-    const elRef = useRef(null);
+function HoverHint({ target, children, ...props }: HoverHintProps): ReactElement {
+    const elRef = useRef<Element>();
     // to avoid creating an element on every render
     if (!elRef.current) {
         elRef.current = document.createElement('div');
     }
 
     useEffect(() => {
+        if (!elRef.current) {
+            return undefined;
+        }
+
         document.body.appendChild(elRef.current);
         const tippyInstance = tippy(target, {
             content: elRef.current,
@@ -35,7 +37,7 @@ const HoverHint = ({ target, children, ...props }) => {
         });
         tippyInstance.show();
 
-        return () => {
+        return (): void => {
             if (typeof tippyInstance.destroy === 'function') {
                 tippyInstance.destroy();
             }
@@ -43,7 +45,7 @@ const HoverHint = ({ target, children, ...props }) => {
     }, [props, target]);
 
     return createPortal(children, elRef.current);
-};
+}
 
 HoverHint.propTypes = {
     /** target DOM element */
@@ -52,4 +54,5 @@ HoverHint.propTypes = {
     children: PropTypes.node.isRequired,
 };
 
+export type HoverHintProps = InferProps<typeof HoverHint.propTypes>;
 export default HoverHint;

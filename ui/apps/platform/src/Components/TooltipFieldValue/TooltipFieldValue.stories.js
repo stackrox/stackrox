@@ -1,6 +1,6 @@
 import React from 'react';
 
-import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
+import { DetailedTooltipOverlay } from '@stackrox/ui-components';
 import TooltipFieldValue from 'Components/TooltipFieldValue';
 
 export default {
