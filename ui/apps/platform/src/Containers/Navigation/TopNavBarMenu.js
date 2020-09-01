@@ -59,7 +59,7 @@ function TopNavBarMenu({ logout, shouldHaveReadPermission, userData }) {
     buttonIcon = (
         <Avatar
             name={user.name || user.username}
-            className="mx-3 h-10 w-10 flex items-center justify-center leading-none"
+            extraClassName="mx-3 h-10 w-10 flex items-center justify-center leading-none"
         />
     );
     buttonText = '';
