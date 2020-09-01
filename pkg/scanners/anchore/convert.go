@@ -35,6 +35,9 @@ func convertImageScan(i *anchoreClient.AnchoreImage, packages []anchoreClient.Co
 		ScanTime:        protoTS,
 		Components:      stitchPackagesAndVulns(packages, vulns),
 		OperatingSystem: "unknown",
+		Notes: []storage.ImageScan_Note{
+			storage.ImageScan_OS_UNAVAILABLE,
+		},
 	}
 }
 

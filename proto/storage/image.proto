@@ -10,7 +10,7 @@ import "protobuf/gogoproto/gogo.proto";
 
 package storage;
 
-// Next Tag: 13
+// Next Tag: 15
 message Image {
     string                    id           = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
     ImageName                 name         = 1;
@@ -38,6 +38,12 @@ message Image {
     oneof set_top_cvss {
         float                 top_cvss     = 13 [(gogoproto.moretags) = "search:\"Image Top CVSS,store\""];
     }
+
+    enum Note {
+        MISSING_METADATA    = 0;
+        MISSING_SCAN_DATA   = 1;
+    }
+    repeated Note             notes        = 14;
 }
 
 message DataSource {
@@ -51,6 +57,15 @@ message ImageScan {
     string                              operating_system = 4 [(gogoproto.moretags) = "search:\"Image OS,store\""];
     // DataSource contains information about which integration was used to scan the image
     DataSource                          data_source      = 3;
+    enum Note {
+        UNSET                     = 0;
+        OS_UNAVAILABLE            = 1;
+        PARTIAL_SCAN_DATA         = 2;
+        OS_CVES_UNAVAILABLE       = 3;
+        OS_CVES_STALE             = 4;
+        LANGUAGE_CVES_UNAVAILABLE = 5;
+    }
+    repeated Note                       notes            = 5;
 }
 
 message EmbeddedImageScanComponent {

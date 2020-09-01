@@ -249,6 +249,9 @@ func (c *googleScanner) GetScan(image *storage.Image) (*storage.ImageScan, error
 		ScanTime:        gogoTypes.TimestampNow(),
 		Components:      components,
 		OperatingSystem: "unknown",
+		Notes: []storage.ImageScan_Note{
+			storage.ImageScan_OS_UNAVAILABLE,
+		},
 	}, nil
 }
 

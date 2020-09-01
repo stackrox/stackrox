@@ -51,17 +51,18 @@ func convertScanToImageScan(s *scanResult) *storage.ImageScan {
 	if err != nil {
 		log.Error(err)
 	}
-	components := convertNVDFindingsAndPackagesToComponents(s.Findings, s.InstalledPackages)
+
 	os := stringutils.GetAfterLast(s.OS, "_")
 	if os == "" {
 		os = "unknown"
 	} else {
 		os = fmt.Sprintf("%s:%s", strings.ToLower(os), s.OSVersion)
 	}
+
 	return &storage.ImageScan{
 		OperatingSystem: os,
 		ScanTime:        completedAt,
-		Components:      components,
+		Components:      convertNVDFindingsAndPackagesToComponents(s.Findings, s.InstalledPackages),
 	}
 }
 

@@ -34,9 +34,15 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 
 	updatedMetadata, err := e.enrichWithMetadata(ctx, image)
 	errorList.AddError(err)
+	if !updatedMetadata {
+		image.Notes = append(image.Notes, storage.Image_MISSING_METADATA)
+	}
 
 	scanResult, err := e.enrichWithScan(ctx, image)
 	errorList.AddError(err)
+	if scanResult == ScanNotDone {
+		image.Notes = append(image.Notes, storage.Image_MISSING_SCAN_DATA)
+	}
 
 	e.cves.EnrichImageWithSuppressedCVEs(image)
 

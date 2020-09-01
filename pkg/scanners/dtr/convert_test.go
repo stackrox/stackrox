@@ -132,6 +132,7 @@ func TestConvertTagScanSummariesToImageScans(t *testing.T) {
 		Components:      expectedComponents,
 		ScanTime:        protoTime,
 		OperatingSystem: "unknown",
+		Notes:           []storage.ImageScan_Note{storage.ImageScan_OS_UNAVAILABLE},
 	}
 
 	actualScans := convertTagScanSummaryToImageScan(nil, tagScanSummary)

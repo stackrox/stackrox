@@ -56,7 +56,6 @@ require (
 	github.com/machinebox/graphql v0.2.2
 	github.com/magiconair/properties v1.8.1
 	github.com/mailru/easyjson v0.7.6
-	github.com/matryer/is v1.3.0 // indirect
 	github.com/mattn/goveralls v0.0.2
 	github.com/mauricelam/genny v0.0.0-20190320071652-0800202903e5
 	github.com/mitchellh/go-wordwrap v1.0.0
@@ -77,7 +76,7 @@ require (
 	github.com/stackrox/anchore-client v0.0.0-20190929180200-981e05834836
 	github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191029220117-2a73008e51a9
-	github.com/stackrox/scanner v0.0.0-20191202203519-a2a15f33f41a
+	github.com/stackrox/scanner v0.0.0-20200828185353-f2362ea7df99
 	github.com/stretchr/testify v1.6.1
 	github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222
 	github.com/tkuchiki/go-timezone v0.1.3

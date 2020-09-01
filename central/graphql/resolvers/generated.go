@@ -518,6 +518,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"metadata: ImageMetadata",
 		"name: ImageName",
 		"notPullable: Boolean!",
+		"notes: [Image_Note!]!",
 		"priority: Int!",
 		"riskScore: Float!",
 		"scan: ImageScan",
@@ -564,9 +565,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("ImageScan", []string{
 		"dataSource: DataSource",
+		"notes: [ImageScan_Note!]!",
 		"operatingSystem: String!",
 		"scanTime: Time",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageScan_Note(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Image_Note(0)))
 	utils.Must(builder.AddType("Jira", []string{
 		"defaultFieldsJson: String!",
 		"issueType: String!",
@@ -5137,6 +5141,12 @@ func (resolver *imageResolver) NotPullable(ctx context.Context) bool {
 	return value
 }
 
+func (resolver *imageResolver) Notes(ctx context.Context) []string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetNotes()
+	return stringSlice(value)
+}
+
 func (resolver *imageResolver) Priority(ctx context.Context) int32 {
 	value := resolver.data.GetPriority()
 	if resolver.data == nil {
@@ -5484,6 +5494,11 @@ func (resolver *imageScanResolver) DataSource(ctx context.Context) (*dataSourceR
 	return resolver.root.wrapDataSource(value, true, nil)
 }
 
+func (resolver *imageScanResolver) Notes(ctx context.Context) []string {
+	value := resolver.data.GetNotes()
+	return stringSlice(value)
+}
+
 func (resolver *imageScanResolver) OperatingSystem(ctx context.Context) string {
 	value := resolver.data.GetOperatingSystem()
 	return value
@@ -5492,6 +5507,42 @@ func (resolver *imageScanResolver) OperatingSystem(ctx context.Context) string {
 func (resolver *imageScanResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetScanTime()
 	return timestamp(value)
+}
+
+func toImageScan_Note(value *string) storage.ImageScan_Note {
+	if value != nil {
+		return storage.ImageScan_Note(storage.ImageScan_Note_value[*value])
+	}
+	return storage.ImageScan_Note(0)
+}
+
+func toImageScan_Notes(values *[]string) []storage.ImageScan_Note {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ImageScan_Note, len(*values))
+	for i, v := range *values {
+		output[i] = toImageScan_Note(&v)
+	}
+	return output
+}
+
+func toImage_Note(value *string) storage.Image_Note {
+	if value != nil {
+		return storage.Image_Note(storage.Image_Note_value[*value])
+	}
+	return storage.Image_Note(0)
+}
+
+func toImage_Notes(values *[]string) []storage.Image_Note {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Image_Note, len(*values))
+	for i, v := range *values {
+		output[i] = toImage_Note(&v)
+	}
+	return output
 }
 
 type jiraResolver struct {

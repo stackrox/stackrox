@@ -111,10 +111,41 @@ func convertLayerToImageScan(image *storage.Image, layerEnvelope *clairV1.LayerE
 		return nil
 	}
 
+	var notes []storage.ImageScan_Note
+	var hasStaleCVEs bool
+	for _, note := range layerEnvelope.Notes {
+		n := convertNote(note)
+		if n == -1 {
+			continue
+		}
+		if n == storage.ImageScan_OS_CVES_STALE {
+			hasStaleCVEs = true
+		}
+		notes = append(notes, n)
+	}
+
+	if len(layerEnvelope.Notes) == 1 && !hasStaleCVEs {
+		notes = append(notes, storage.ImageScan_PARTIAL_SCAN_DATA)
+	}
+
 	return &storage.ImageScan{
 		OperatingSystem: stringutils.OrDefault(layerEnvelope.Layer.NamespaceName, "unknown"),
 		ScanTime:        gogoProto.TimestampNow(),
 		Components:      clairConv.ConvertFeatures(image, layerEnvelope.Layer.Features),
+		Notes:           notes,
+	}
+}
+
+func convertNote(note clairV1.Note) storage.ImageScan_Note {
+	switch note {
+	case clairV1.OSCVEsUnavailable:
+		return storage.ImageScan_OS_CVES_UNAVAILABLE
+	case clairV1.OSCVEsStale:
+		return storage.ImageScan_OS_CVES_STALE
+	case clairV1.LanguageCVEsUnavailable:
+		return storage.ImageScan_LANGUAGE_CVES_UNAVAILABLE
+	default:
+		return -1
 	}
 }
 

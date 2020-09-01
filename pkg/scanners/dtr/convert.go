@@ -120,5 +120,8 @@ func convertTagScanSummaryToImageScan(image *storage.Image, tagScanSummary *tagS
 		ScanTime:        completedAt,
 		Components:      uniqueLayers,
 		OperatingSystem: "unknown",
+		Notes: []storage.ImageScan_Note{
+			storage.ImageScan_OS_UNAVAILABLE,
+		},
 	}
 }
