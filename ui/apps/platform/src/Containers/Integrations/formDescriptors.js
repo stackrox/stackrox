@@ -332,14 +332,14 @@ const formDescriptors = {
             {
                 label: 'Access Key ID',
                 jsonpath: 'awsSecurityHub.credentials.accessKeyId',
-                type: 'text',
+                type: 'password',
                 placeholder: 'EXAMPLE7AKIAIOSFODNN',
                 required: true,
             },
             {
                 label: 'Secret Access Key',
                 jsonpath: 'awsSecurityHub.credentials.secretAccessKey',
-                type: 'text',
+                type: 'password',
                 placeholder: 'EXAMPLEKEYwJalrXUtnFEMI/K7MDENG/bPxRfiCY',
                 required: true,
             },

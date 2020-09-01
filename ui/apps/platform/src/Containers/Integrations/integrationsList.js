@@ -1,6 +1,7 @@
 import anchore from 'images/anchore.svg';
 import artifactory from 'images/artifactory.svg';
 import aws from 'images/aws.svg';
+import awsSecurityHub from 'images/aws-security-hub.svg';
 import azure from 'images/azure.svg';
 import clair from 'images/clair.svg';
 import docker from 'images/docker.svg';
@@ -203,7 +204,7 @@ const integrationsList = {
             label: 'AWS Security Hub',
             type: 'awsSecurityHub',
             source: 'notifiers',
-            image: s3, // TODO: replace with ref to Security Hub image when that becomes available
+            image: awsSecurityHub,
             featureFlagDependency: knownBackendFlags.ROX_AWS_SECURITY_HUB_INTEGRATION,
         },
     ],

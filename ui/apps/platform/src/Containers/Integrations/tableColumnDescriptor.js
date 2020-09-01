@@ -29,10 +29,6 @@ const tableColumnDescriptor = Object.freeze({
             },
             { accessor: 'awsSecurityHub.region', Header: 'AWS Region' },
             {
-                accessor: 'awsSecurityHub.credentials.accessKeyId',
-                Header: 'AWS Access Key ID',
-            },
-            {
                 accessor: 'enabled',
                 Header: 'Enabled',
                 Cell: ({ original }) => <span>{original?.enabled ? 'Yes' : 'No'}</span>,

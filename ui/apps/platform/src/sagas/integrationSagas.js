@@ -91,7 +91,7 @@ function* watchFetchRequest() {
 }
 
 function* saveIntegration(action) {
-    const { source, sourceType, integration, options } = action.params;
+    const { source, sourceType, integration, options, displayName } = action.params;
     try {
         if (source === 'authProviders') {
             yield call(AuthService.saveAuthProvider, integration);
@@ -109,7 +109,9 @@ function* saveIntegration(action) {
             yield put(fetchIntegrationsActionMap[source]);
         }
         yield put(
-            notificationActions.addNotification(`Successfully integrated ${integration.type}`)
+            notificationActions.addNotification(
+                `Successfully integrated ${displayName || integration.type}`
+            )
         );
         yield put(notificationActions.removeOldestNotification());
         yield put(actions.setCreateState(false));

@@ -67,7 +67,9 @@ class Form extends Component {
         const { source, type, isNewIntegration } = this.props;
         const data = this.addDefaultFormValues();
         const options = setFormSubmissionOptions(source, type, data, { isNewIntegration });
-        this.props.saveIntegration(source, type, data, options);
+        const displayName = type === 'awsSecurityHub' ? 'AWS Security Hub' : '';
+
+        this.props.saveIntegration(source, type, data, options, displayName);
     };
 
     // isEditMode returns true if the form is editing an existing entity
@@ -334,8 +336,16 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = (dispatch) => ({
-    saveIntegration: (source, sourceType, integration, options) =>
-        dispatch(actions.saveIntegration.request({ source, sourceType, integration, options })),
+    saveIntegration: (source, sourceType, integration, options, displayName) =>
+        dispatch(
+            actions.saveIntegration.request({
+                source,
+                sourceType,
+                integration,
+                options,
+                displayName,
+            })
+        ),
     testIntegration: (source, integration, options) =>
         dispatch(actions.testIntegration(source, integration, options)),
     triggerBackup: (source, id) => dispatch(actions.triggerBackup(source, id)),
