@@ -320,7 +320,8 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 		}
 	}
 	if len(imagesToPrune) > 0 {
-		log.Infof("[Image Pruning] Removing the following images (total %d): %+v", len(imagesToPrune), imagesToPrune)
+		log.Infof("[Image Pruning] Removing %d images", len(imagesToPrune))
+		log.Debugf("[Image Pruning] Removing images %+v", imagesToPrune)
 		if err := g.images.DeleteImages(pruningCtx, imagesToPrune...); err != nil {
 			log.Error(err)
 		}
