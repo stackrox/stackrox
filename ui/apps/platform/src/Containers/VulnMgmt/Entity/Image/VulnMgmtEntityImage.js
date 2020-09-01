@@ -60,6 +60,9 @@ const VulnMgmtImage = ({
                 scan {
                     scanTime
                     operatingSystem
+                    dataSource {
+                        name
+                    }
                     components {
                         id
                         priority

@@ -77,12 +77,16 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                 '-',
         },
         {
+            key: 'Scanner',
+            value: <span>{scan?.dataSource?.name || '-'}</span>,
+        },
+        {
             key: 'Scan time',
             value: (scan && <DateTimeField date={scan.scanTime} asString />) || '-',
         },
         {
             key: 'Image OS',
-            value: (scan && <span>{scan.operatingSystem}</span>) || '-',
+            value: <span>{scan?.operatingSystem || '-'}</span>,
         },
     ];
 

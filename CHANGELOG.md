@@ -22,6 +22,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   `--create-upgrader-sa=false`. 
 - UI: Hovering over a node in the Network Graph will show that node's listening ports (ROX-5469)
 - Fixed an issue on the API docs page where the left menu panel no longer scrolled independently of the main content.
+- UI: Added `Scanner` to the image single page in Vuln Mgmt (ROX-5289)
 
 ## [48.0]
 - UI: Hovering over a namespace edge in the Network Graph will show the ports and protocols for it's connections (ROX-5228).
