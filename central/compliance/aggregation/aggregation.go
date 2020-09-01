@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -33,13 +32,15 @@ const (
 	minScope  = v1.ComplianceAggregation_STANDARD
 	maxScope  = v1.ComplianceAggregation_CHECK
 	numScopes = maxScope - minScope + 1
+
+	checkName = "check"
 )
 
 type flatCheckValues [numScopes]string
 
 func (f *flatCheckValues) get(scope v1.ComplianceAggregation_Scope) string {
 	if scope == v1.ComplianceAggregation_CHECK {
-		return uuid.NewV4().String()
+		return checkName
 	}
 	return f[scope-minScope]
 }
@@ -282,6 +283,12 @@ func (a *aggregatorImpl) GetResultsWithEvidence(ctx context.Context, queryString
 
 // Aggregate takes in a search query, groupby scopes and unit scope and returns the results of the aggregation
 func (a *aggregatorImpl) Aggregate(ctx context.Context, queryString string, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) ([]*v1.ComplianceAggregation_Result, []*v1.ComplianceAggregation_Source, map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
+	for _, groupScope := range groupBy {
+		if groupScope == v1.ComplianceAggregation_CHECK {
+			return nil, nil, nil, errors.New("Group by clause cannot contain CHECK scope")
+		}
+	}
+
 	validResults, sources, mask, err := a.getResultsAndMask(ctx, queryString, 0)
 	if err != nil {
 		return nil, nil, nil, err
@@ -496,8 +503,14 @@ func (a *aggregatorImpl) getAggregatedResults(groupBy []v1.ComplianceAggregation
 	domainMap := make(map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain)
 	for key, groupByValue := range groups {
 		var counts passFailCounts
-		for _, u := range groupByValue.unitMap {
-			counts = counts.Add(u.Reduce())
+		if unit != v1.ComplianceAggregation_CHECK {
+			for _, u := range groupByValue.unitMap {
+				counts = counts.Add(u.Reduce())
+			}
+		} else {
+			// If looking at a check, don't reduce and instead just take the value
+			// of the unit map
+			counts = *groupByValue.unitMap[checkName]
 		}
 
 		result := &v1.ComplianceAggregation_Result{
