@@ -20,6 +20,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The default for the `--create-upgrader-sa` flag has changed to `true` in both the `roxctl sensor generate` and the
   `roxctl sensor get-bundle` commands. In order to restore the old behavior, you need to explicitly specify
   `--create-upgrader-sa=false`. 
+- UI: Hovering over a node in the Network Graph will show that node's listening ports (ROX-5469)
 
 ## [48.0]
 - UI: Hovering over a namespace edge in the Network Graph will show the ports and protocols for it's connections (ROX-5228).

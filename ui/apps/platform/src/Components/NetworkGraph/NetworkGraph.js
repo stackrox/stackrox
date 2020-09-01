@@ -127,7 +127,7 @@ const NetworkGraph = ({
 
     function nodeHoverHandler(ev) {
         const node = ev.target.data();
-        const { id, name, parent, side } = node;
+        const { id, name, parent, listenPorts, side } = node;
         const isChild = !!parent;
         if (!cyRef || !isChild || side) {
             return;
@@ -154,6 +154,7 @@ const NetworkGraph = ({
                 numEgressFlows={numEgressFlows}
                 ingressPortsAndProtocols={ingressPortsAndProtocols}
                 egressPortsAndProtocols={egressPortsAndProtocols}
+                listenPorts={listenPorts}
                 showPortsAndProtocols={showPortsAndProtocols}
             />
         );

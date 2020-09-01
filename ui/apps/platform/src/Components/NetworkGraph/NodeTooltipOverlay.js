@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { ArrowRight, ArrowLeft } from 'react-feather';
+import { ArrowRight, ArrowLeft, Rss } from 'react-feather';
 
 import { DetailedTooltipOverlay } from '@stackrox/ui-components';
 import TooltipCardSection from 'Components/TooltipCardSection';
@@ -13,6 +13,7 @@ const NodeTooltipOverlay = ({
     numEgressFlows,
     ingressPortsAndProtocols,
     egressPortsAndProtocols,
+    listenPorts,
     showPortsAndProtocols,
 }) => {
     return (
@@ -36,7 +37,7 @@ const NodeTooltipOverlay = ({
                             )}
                         </TooltipCardSection>
                     </div>
-                    <div>
+                    <div className="mb-2">
                         <TooltipCardSection
                             header={
                                 <div className="flex items-center">
@@ -52,6 +53,22 @@ const NodeTooltipOverlay = ({
                             )}
                         </TooltipCardSection>
                     </div>
+                    <div>
+                        <TooltipCardSection
+                            header={
+                                <div className="flex items-center">
+                                    <Rss className="h-4 w-4 text-base-600" />
+                                    <span className="ml-1">
+                                        Listening Ports: {listenPorts.length}
+                                    </span>
+                                </div>
+                            }
+                        >
+                            {listenPorts && listenPorts.length !== 0 && (
+                                <PortsAndProtocolsFields portsAndProtocols={listenPorts} />
+                            )}
+                        </TooltipCardSection>
+                    </div>
                 </>
             }
         />
@@ -64,6 +81,7 @@ NodeTooltipOverlay.propTypes = {
     numEgressFlows: PropTypes.number,
     ingressPortsAndProtocols: PropTypes.arrayOf(PropTypes.shape()),
     egressPortsAndProtocols: PropTypes.arrayOf(PropTypes.shape()),
+    listenPorts: PropTypes.arrayOf(PropTypes.shape),
     showPortsAndProtocols: PropTypes.bool,
 };
 
@@ -72,6 +90,7 @@ NodeTooltipOverlay.defaultProps = {
     numEgressFlows: 0,
     ingressPortsAndProtocols: [],
     egressPortsAndProtocols: [],
+    listenPorts: [],
     showPortsAndProtocols: false,
 };
 

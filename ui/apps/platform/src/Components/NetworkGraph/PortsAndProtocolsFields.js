@@ -14,8 +14,8 @@ import TooltipFieldValue from 'Components/TooltipFieldValue';
  */
 export function getPortsAndProtocolsMap(portsAndProtocols) {
     const portsAndProtocolsMap = {};
-    portsAndProtocols.forEach(({ port, protocol }) => {
-        const protocolLabel = networkProtocolLabels[protocol];
+    portsAndProtocols.forEach(({ port, protocol, l4protocol }) => {
+        const protocolLabel = networkProtocolLabels[protocol || l4protocol];
         if (portsAndProtocolsMap[protocolLabel]) {
             portsAndProtocolsMap[protocolLabel].push(port);
         } else {
