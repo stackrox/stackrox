@@ -165,7 +165,7 @@ func setupNginxLatestTagDeployment(t *testing.T) {
 }
 
 func setupDeployment(t *testing.T, image, deploymentName string) {
-	cmd := exec.Command(`kubectl`, `run`, deploymentName, fmt.Sprintf("--image=%s", image))
+	cmd := exec.Command(`kubectl`, `create`, `deployment`, deploymentName, fmt.Sprintf("--image=%s", image))
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
 
