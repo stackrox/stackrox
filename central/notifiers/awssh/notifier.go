@@ -52,7 +52,7 @@ func init() {
 		return
 	}
 
-	notifiers.Add("awssh", func(descriptor *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add("awsSecurityHub", func(descriptor *storage.Notifier) (notifiers.Notifier, error) {
 		ctx, cancel := context.WithCancel(context.Background())
 		configuration := defaultConfiguration
 		configuration.descriptor = descriptor
