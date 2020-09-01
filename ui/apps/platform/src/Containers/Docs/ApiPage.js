@@ -31,10 +31,7 @@ function SwaggerBrowser({ uri }) {
     if (result) {
         return (
             // Redoc components unreadable with StackRox dark theme, their styles need to be tuned
-            // for now just always enforcing light theme
-            <div className="theme-light">
-                <RedocStandalone spec={result.data} />
-            </div>
+            <RedocStandalone spec={result.data} />
         );
     }
 }

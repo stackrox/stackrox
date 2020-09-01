@@ -21,6 +21,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   `roxctl sensor get-bundle` commands. In order to restore the old behavior, you need to explicitly specify
   `--create-upgrader-sa=false`. 
 - UI: Hovering over a node in the Network Graph will show that node's listening ports (ROX-5469)
+- Fixed an issue on the API docs page where the left menu panel no longer scrolled independently of the main content.
 
 ## [48.0]
 - UI: Hovering over a namespace edge in the Network Graph will show the ports and protocols for it's connections (ROX-5228).
