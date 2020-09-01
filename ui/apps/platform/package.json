@@ -152,7 +152,7 @@
         "istanbul-lib-coverage": "^3.0.0",
         "jest-junit": "^10.0.0",
         "mocha": "^5.2.0",
-        "mocha-junit-reporter": "^1.23.3",
+        "mocha-junit-reporter": "^2.0.0",
         "mocha-multi-reporters": "^1.1.7",
         "node-fetch": "^2.6.0",
         "npm-run-all": "^4.1.5",
