@@ -140,4 +140,5 @@ replace (
 
 	// Circular github.com/stackrox/rox sets this to an incompatible version
 	k8s.io/client-go => k8s.io/client-go v0.19.0
+	vbom.ml/util => github.com/fvbommel/util v0.0.0-20200828041400-c69461e88a36
 )
