@@ -888,7 +888,7 @@ func TestRemoveOrphanedNetworkFlows(t *testing.T) {
 			flows := networkFlowDatastoreMocks.NewMockFlowDataStore(ctrl)
 
 			clusters.EXPECT().GetClusters(pruningCtx).Return([]*storage.Cluster{{Id: "cluster"}}, nil)
-			clusterFlows.EXPECT().GetFlowStore(pruningCtx, "cluster").Return(flows)
+			clusterFlows.EXPECT().GetFlowStore(pruningCtx, "cluster").Return(flows, nil)
 
 			flows.EXPECT().RemoveMatchingFlows(pruningCtx, gomock.Any(), gomock.Any()).DoAndReturn(
 				func(ctx context.Context, keyFn func(props *storage.NetworkFlowProperties) bool, valueFn func(flow *storage.NetworkFlow) bool) error {

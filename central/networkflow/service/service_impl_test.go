@@ -203,7 +203,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 			}, pred), *types.TimestampNow(), nil
 		})
 
-	s.flows.EXPECT().GetFlowStore(ctxHasClusterWideNetworkFlowAccessMatcher, "mycluster").Return(mockFlowStore)
+	s.flows.EXPECT().GetFlowStore(ctxHasClusterWideNetworkFlowAccessMatcher, "mycluster").Return(mockFlowStore, nil)
 
 	s.deployments.EXPECT().Search(gomock.Not(ctxHasAllDeploymentsAccessMatcher), gomock.Any()).Return(
 		[]search.Result{
@@ -368,7 +368,7 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 			}, pred), *types.TimestampNow(), nil
 		})
 
-	s.flows.EXPECT().GetFlowStore(ctxHasClusterWideNetworkFlowAccessMatcher, "mycluster").Return(mockFlowStore)
+	s.flows.EXPECT().GetFlowStore(ctxHasClusterWideNetworkFlowAccessMatcher, "mycluster").Return(mockFlowStore, nil)
 
 	s.deployments.EXPECT().SearchListDeployments(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(
 		[]*storage.ListDeployment{

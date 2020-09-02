@@ -2891,6 +2891,7 @@ jobs:
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
       - ROX_AWS_SECURITY_HUB_INTEGRATION: true
       - ROX_CLUSTER_HEALTH_MONITORING: true
+      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
 
     steps:
       - checkout
@@ -2960,6 +2961,7 @@ jobs:
       - ROX_AUTH_TEST_MODE_UI: true
       - ROX_CLUSTER_HEALTH_MONITORING: true
       - ROX_NETWORK_GRAPH_PORTS: true
+      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
 
     steps:
       - run-qa-tests:
@@ -2982,6 +2984,7 @@ jobs:
       - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
       - ROX_NETWORK_GRAPH_PORTS: true
+      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
 
     steps:
       - checkout
@@ -3014,6 +3017,7 @@ jobs:
       - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
       - ROX_NETWORK_GRAPH_PORTS: true
+      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
 
     steps:
       - run-qa-tests:
@@ -3044,6 +3048,7 @@ jobs:
       - ROX_ROCKSDB: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
       - ROX_NETWORK_GRAPH_PORTS: true
+      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
 
     steps:
       - run-qa-tests:
@@ -3694,6 +3699,7 @@ jobs:
       - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
       - ROX_NETWORK_GRAPH_PORTS: true
+      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
 
     steps:
       - run-openshift-tests:
@@ -3713,6 +3719,7 @@ jobs:
       - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
       - ROX_NETWORK_GRAPH_PORTS: true
+      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
 
     steps:
       - run-openshift-tests:

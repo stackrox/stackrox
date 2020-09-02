@@ -290,12 +290,19 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		))
 
 	if err := ds.risks.RemoveRisk(deleteRelatedCtx, id, storage.RiskSubjectType_DEPLOYMENT); err != nil {
-		return err
+		errorList.AddError(err)
 	}
+
 	if err := ds.whitelists.RemoveProcessWhitelistsByDeployment(deleteRelatedCtx, id); err != nil {
 		errorList.AddError(err)
 	}
-	flowStore := ds.networkFlows.GetFlowStore(deleteRelatedCtx, clusterID)
+
+	flowStore, err := ds.networkFlows.GetFlowStore(deleteRelatedCtx, clusterID)
+	if err != nil {
+		errorList.AddError(err)
+		return errorList.ToError()
+	}
+
 	if err := flowStore.RemoveFlowsForDeployment(deleteRelatedCtx, id); err != nil {
 		errorList.AddError(err)
 	}

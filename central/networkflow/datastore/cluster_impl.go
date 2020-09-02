@@ -14,15 +14,15 @@ type clusterDataStoreImpl struct {
 	deletedDeploymentsCache expiringcache.Cache
 }
 
-func (cds *clusterDataStoreImpl) GetFlowStore(ctx context.Context, clusterID string) FlowDataStore {
+func (cds *clusterDataStoreImpl) GetFlowStore(ctx context.Context, clusterID string) (FlowDataStore, error) {
 	if ok, err := networkGraphSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil || !ok {
-		return nil
+		return nil, err
 	}
 
 	return &flowDataStoreImpl{
 		storage:                 cds.storage.GetFlowStore(clusterID),
 		deletedDeploymentsCache: cds.deletedDeploymentsCache,
-	}
+	}, nil
 }
 
 func (cds *clusterDataStoreImpl) CreateFlowStore(ctx context.Context, clusterID string) (FlowDataStore, error) {

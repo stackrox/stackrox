@@ -35,12 +35,25 @@ message NetworkEndpointProperties {
   L4Protocol l4protocol    = 3;
 }
 
+message NetworkEntity {
+    message Scope {
+        string cluster_id = 1;
+    }
+
+    NetworkEntityInfo info  = 1;
+    // `scope` represents known cluster network peers to which the flows must be scoped. In future, to restrict flows
+    // to more granular entities, such as deployment, scope could include deployment ID.
+    // Note: The highest scope level is cluster.
+    Scope             scope = 2;
+}
+
 message NetworkEntityInfo {
     enum Type {
         UNKNOWN_TYPE    = 0;
         DEPLOYMENT      = 1;
         INTERNET        = 2;
         LISTEN_ENDPOINT = 3;
+        EXTERNAL_SOURCE = 4;
     }
 
     message Deployment {
@@ -56,11 +69,19 @@ message NetworkEntityInfo {
         repeated ListenPort listen_ports = 4;
     }
 
-    Type type = 1;
-    string id = 2;
+    message ExternalSource {
+        string     name = 1;
+        oneof source {
+            string cidr = 2;
+        }
+    }
+
+    Type               type            = 1;
+    string             id              = 2;
 
     oneof desc {
-        Deployment deployment = 3;
+        Deployment     deployment      = 3;
+        ExternalSource external_source = 4;
     }
 }
 

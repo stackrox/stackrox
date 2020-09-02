@@ -376,7 +376,7 @@ func (s *generatorTestSuite) TestGenerate() {
 			},
 		}, *types.TimestampNow(), nil)
 
-	s.mockGlobalFlowDataStore.EXPECT().GetFlowStore(gomock.Any(), gomock.Eq("mycluster")).Return(mockFlowStore)
+	s.mockGlobalFlowDataStore.EXPECT().GetFlowStore(gomock.Any(), gomock.Eq("mycluster")).Return(mockFlowStore, nil)
 
 	generatedPolicies, toDelete, err := s.generator.Generate(s.hasReadCtx, req)
 	s.NoError(err)
@@ -647,7 +647,7 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 			depFlow("depF", "depG"),
 		}, *types.TimestampNow(), nil)
 
-	s.mockGlobalFlowDataStore.EXPECT().GetFlowStore(gomock.Any(), gomock.Eq("mycluster")).Return(mockFlowStore)
+	s.mockGlobalFlowDataStore.EXPECT().GetFlowStore(gomock.Any(), gomock.Eq("mycluster")).Return(mockFlowStore, nil)
 
 	// Expect a query for looking up deployments that were not selected as part of the initial query
 	// (visible or invisible).

@@ -663,6 +663,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddUnionType("NetworkEntityInfoDesc", []string{
 		"NetworkEntityInfo_Deployment",
+		"NetworkEntityInfo_ExternalSource",
 	}))
 	utils.Must(builder.AddType("NetworkEntityInfo_Deployment", []string{
 		"cluster: String!",
@@ -673,6 +674,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("NetworkEntityInfo_Deployment_ListenPort", []string{
 		"l4Protocol: L4Protocol!",
 		"port: Int!",
+	}))
+	utils.Must(builder.AddType("NetworkEntityInfo_ExternalSource", []string{
+		"name: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NetworkEntityInfo_Type(0)))
 	utils.Must(builder.AddType("NetworkFlow", []string{
@@ -6234,11 +6238,21 @@ func (resolver *networkEntityInfoResolver) Desc() *networkEntityInfoDescResolver
 			resolver: &networkEntityInfo_DeploymentResolver{root: resolver.root, data: val},
 		}
 	}
+	if val := resolver.data.GetExternalSource(); val != nil {
+		return &networkEntityInfoDescResolver{
+			resolver: &networkEntityInfo_ExternalSourceResolver{root: resolver.root, data: val},
+		}
+	}
 	return nil
 }
 
 func (resolver *networkEntityInfoDescResolver) ToNetworkEntityInfo_Deployment() (*networkEntityInfo_DeploymentResolver, bool) {
 	res, ok := resolver.resolver.(*networkEntityInfo_DeploymentResolver)
+	return res, ok
+}
+
+func (resolver *networkEntityInfoDescResolver) ToNetworkEntityInfo_ExternalSource() (*networkEntityInfo_ExternalSourceResolver, bool) {
+	res, ok := resolver.resolver.(*networkEntityInfo_ExternalSourceResolver)
 	return res, ok
 }
 
@@ -6318,6 +6332,35 @@ func (resolver *networkEntityInfo_Deployment_ListenPortResolver) L4Protocol(ctx 
 func (resolver *networkEntityInfo_Deployment_ListenPortResolver) Port(ctx context.Context) int32 {
 	value := resolver.data.GetPort()
 	return int32(value)
+}
+
+type networkEntityInfo_ExternalSourceResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NetworkEntityInfo_ExternalSource
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_ExternalSource(value *storage.NetworkEntityInfo_ExternalSource, ok bool, err error) (*networkEntityInfo_ExternalSourceResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &networkEntityInfo_ExternalSourceResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_ExternalSources(values []*storage.NetworkEntityInfo_ExternalSource, err error) ([]*networkEntityInfo_ExternalSourceResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*networkEntityInfo_ExternalSourceResolver, len(values))
+	for i, v := range values {
+		output[i] = &networkEntityInfo_ExternalSourceResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *networkEntityInfo_ExternalSourceResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
 }
 
 func toNetworkEntityInfo_Type(value *string) storage.NetworkEntityInfo_Type {

@@ -114,9 +114,10 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 			sac.ClusterScopeKeys(request.GetClusterId())))
 
-	flowStore := s.clusterFlows.GetFlowStore(networkGraphGenElevatedCtx, request.GetClusterId())
-
-	if flowStore == nil {
+	flowStore, err := s.clusterFlows.GetFlowStore(networkGraphGenElevatedCtx, request.GetClusterId())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "could not obtain flows for cluster %s: %v", request.GetClusterId(), err)
+	} else if flowStore == nil {
 		return nil, status.Errorf(codes.NotFound, "no flows found for cluster %s", request.GetClusterId())
 	}
 

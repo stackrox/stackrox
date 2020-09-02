@@ -120,7 +120,7 @@ func (b *datastoreImpl) GetNamespaces(ctx context.Context) ([]*storage.Namespace
 		scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())}
 		if ok, err := namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, scopeKeys...).
 			Allowed(ctx); err != nil || !ok {
-			return nil
+			return err
 		}
 		allowedNamespaces = append(allowedNamespaces, namespace)
 		return nil

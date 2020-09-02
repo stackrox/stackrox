@@ -248,7 +248,12 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 		return err
 	}
 
-	flowStore := f.networkFlowDataStore.GetFlowStore(ctx, domain.Cluster().ID())
+	flowStore, err := f.networkFlowDataStore.GetFlowStore(ctx, domain.Cluster().ID())
+	if err != nil {
+		return err
+	} else if flowStore == nil {
+		return errors.Errorf("no flows found for cluster %q", domain.Cluster().ID())
+	}
 	r.networkFlows, _, err = flowStore.GetAllFlows(ctx, nil)
 	if err != nil {
 		return err

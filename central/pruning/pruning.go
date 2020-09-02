@@ -269,8 +269,11 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(deployments set.Frozen
 	}
 
 	for _, c := range clusters {
-		store := g.networkflows.GetFlowStore(pruningCtx, c.GetId())
-		if store == nil {
+		store, err := g.networkflows.GetFlowStore(pruningCtx, c.GetId())
+		if err != nil {
+			log.Errorf("error getting flow store for cluster %q: %v", c.GetId(), err)
+			continue
+		} else if store == nil {
 			continue
 		}
 		now := types.TimestampNow()
@@ -282,7 +285,7 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(deployments set.Frozen
 		valueMatchFn := func(flow *storage.NetworkFlow) bool {
 			return flow.LastSeenTimestamp != nil && protoutils.Sub(now, flow.LastSeenTimestamp) > orphanWindow
 		}
-		err := store.RemoveMatchingFlows(pruningCtx, keyMatchFn, valueMatchFn)
+		err = store.RemoveMatchingFlows(pruningCtx, keyMatchFn, valueMatchFn)
 		if err != nil {
 			log.Errorf("error removing orphaned flows for cluster %q: %v", c.GetName(), err)
 		}

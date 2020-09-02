@@ -35,11 +35,12 @@ func (m *MockClusterDataStore) EXPECT() *MockClusterDataStoreMockRecorder {
 }
 
 // GetFlowStore mocks base method
-func (m *MockClusterDataStore) GetFlowStore(ctx context.Context, clusterID string) datastore.FlowDataStore {
+func (m *MockClusterDataStore) GetFlowStore(ctx context.Context, clusterID string) (datastore.FlowDataStore, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFlowStore", ctx, clusterID)
 	ret0, _ := ret[0].(datastore.FlowDataStore)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetFlowStore indicates an expected call of GetFlowStore

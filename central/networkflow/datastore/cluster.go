@@ -10,7 +10,7 @@ import (
 // ClusterDataStore stores the network edges per cluster.
 //go:generate mockgen-wrapper
 type ClusterDataStore interface {
-	GetFlowStore(ctx context.Context, clusterID string) FlowDataStore
+	GetFlowStore(ctx context.Context, clusterID string) (FlowDataStore, error)
 
 	CreateFlowStore(ctx context.Context, clusterID string) (FlowDataStore, error)
 }

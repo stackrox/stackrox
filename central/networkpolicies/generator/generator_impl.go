@@ -107,9 +107,11 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 			sac.ResourceScopeKeys(resources.NetworkGraph),
 			sac.ClusterScopeKeys(clusterID)))
 
-	clusterFlowStore := g.globalFlowDataStore.GetFlowStore(networkGraphGenElevatedCtx, clusterID)
-	if clusterFlowStore == nil {
-		return nil, fmt.Errorf("could not obtain flow store for cluster %q", clusterID)
+	clusterFlowStore, err := g.globalFlowDataStore.GetFlowStore(networkGraphGenElevatedCtx, clusterID)
+	if err != nil {
+		return nil, err
+	} else if clusterFlowStore == nil {
+		return nil, errors.Errorf("could not obtain flow store for cluster %q", clusterID)
 	}
 
 	clusterIDQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
