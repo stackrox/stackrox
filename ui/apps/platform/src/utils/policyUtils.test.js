@@ -3,6 +3,7 @@ import {
     getPolicySeverityCounts,
     sortDeploymentsByPolicyViolations,
     getExcludedNamesByType,
+    removeEmptyPolicyFields,
 } from './policyUtils';
 
 describe('policyUtils', () => {
@@ -294,6 +295,108 @@ describe('policyUtils', () => {
             const names = getExcludedNamesByType(excludedScopes, 'image');
 
             expect(names).toEqual('docker.io/library/mysql:5, k8s.gcr.io/coredns:1.3.1');
+        });
+    });
+
+    describe('removeEmptyPolicyFields', () => {
+        it('should handle an empty object', () => {
+            const result = removeEmptyPolicyFields({});
+            expect(result).toStrictEqual({});
+        });
+
+        it('should remove empty array, null, empty string and undefined', () => {
+            const result = removeEmptyPolicyFields({
+                key1: null,
+                key2: [],
+                key3: undefined,
+                key4: '',
+                key5: 'value',
+                objKey7: {
+                    objKey71: {
+                        key711: null,
+                        key712: [],
+                        key713: undefined,
+                        key714: '',
+                    },
+                    key72: null,
+                    key73: [],
+                    key74: undefined,
+                    key75: '',
+                    key76: 'value',
+                    key77: {},
+                },
+            });
+            expect(result).toStrictEqual({
+                key5: 'value',
+                objKey7: {
+                    key76: 'value',
+                },
+            });
+        });
+
+        it('should copy over policySections key', () => {
+            const policySections = {
+                policySections: {
+                    key1: '',
+                    key2: null,
+                    key3: {
+                        key31: null,
+                    },
+                },
+            };
+            const result = removeEmptyPolicyFields({
+                policySections,
+                someValue: 'value',
+            });
+
+            expect(result).toStrictEqual({
+                policySections,
+                someValue: 'value',
+            });
+            expect(result.policySections).not.toBe(policySections); // copied not referenced
+        });
+
+        it('should not confuse policySections with fakePolicySections', () => {
+            const policySections = {
+                policySections: {
+                    key1: '',
+                    key2: null,
+                    key3: {
+                        key31: null,
+                    },
+                },
+            };
+            const result = removeEmptyPolicyFields({
+                policySections,
+                fakePolicySections: policySections,
+                someValue: 'value',
+            });
+
+            expect(result).toStrictEqual({
+                policySections,
+                someValue: 'value',
+            });
+        });
+
+        it('should handle top-level whitelistEnabled being falsy', () => {
+            const result = removeEmptyPolicyFields({
+                whitelistEnabled: false,
+                someValue: 'value',
+            });
+            expect(result).toStrictEqual({
+                someValue: 'value',
+            });
+        });
+
+        it('should handle top-level whitelistEnabled being truthy', () => {
+            const result = removeEmptyPolicyFields({
+                whitelistEnabled: true,
+                someValue: 'value',
+            });
+            expect(result).toStrictEqual({
+                whitelistEnabled: true,
+                someValue: 'value',
+            });
         });
     });
 });

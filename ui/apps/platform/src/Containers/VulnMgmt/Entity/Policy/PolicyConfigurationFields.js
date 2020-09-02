@@ -2,7 +2,7 @@ import React from 'react';
 
 import Widget from 'Components/Widget';
 
-import removeEmptyFields from 'utils/removeEmptyFields';
+import { removeEmptyPolicyFields } from 'utils/policyUtils';
 import fieldsMap from 'Containers/Policies/Wizard/Details/descriptors';
 
 const PolicyConfigurationFields = ({ fields, ...rest }) => {
@@ -10,7 +10,7 @@ const PolicyConfigurationFields = ({ fields, ...rest }) => {
         return null;
     }
 
-    const paredFields = removeEmptyFields(fields);
+    const paredFields = removeEmptyPolicyFields(fields);
     const fieldKeys = Object.keys(paredFields);
 
     const fieldList = fieldKeys.map((key) => {

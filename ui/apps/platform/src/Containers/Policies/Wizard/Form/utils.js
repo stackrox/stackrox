@@ -1,10 +1,11 @@
+import { keyBy } from 'lodash';
+
 import {
     policyDetails,
     policyConfiguration,
     policyStatus,
 } from 'Containers/Policies/Wizard/Form/descriptors';
-import removeEmptyFields from 'utils/removeEmptyFields';
-import { keyBy } from 'lodash';
+import { removeEmptyPolicyFields } from 'utils/policyUtils';
 import { clientOnlyWhitelistFieldNames } from './whitelistFieldNames';
 
 function filterAndMapWhitelists(whitelists, filterFunc, mapFunc) {
@@ -193,14 +194,14 @@ function postFormatNestedPolicyFields(policy) {
 }
 
 export function preFormatPolicyFields(policy) {
-    let formattedPolicy = removeEmptyFields(policy);
+    let formattedPolicy = removeEmptyPolicyFields(policy);
     formattedPolicy = preFormatWhitelistField(formattedPolicy);
     formattedPolicy = preFormatNestedPolicyFields(formattedPolicy);
     return formattedPolicy;
 }
 
 export function formatPolicyFields(policy) {
-    let serverPolicy = removeEmptyFields(policy);
+    let serverPolicy = removeEmptyPolicyFields(policy);
     serverPolicy = postFormatLifecycleField(serverPolicy);
     serverPolicy = postFormatEnforcementField(serverPolicy);
     serverPolicy = postFormatWhitelistField(serverPolicy);

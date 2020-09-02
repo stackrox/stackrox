@@ -1,3 +1,6 @@
+import { cloneDeep } from 'lodash';
+
+import removeEmptyFieldsDeep from 'utils/removeEmptyFieldsDeep';
 import { severities } from 'constants/severities';
 
 export function getPolicySeverityCounts(failingPolicies) {
@@ -176,4 +179,33 @@ export function getExcludedNamesByType(scopes, exclusionType) {
     }, []);
 
     return names.join(', ');
+}
+
+/**
+ * Deletes empty fields from the policy object taking into account
+ * API & UI specific fields.
+ *
+ * @param {object} policy a policy object
+ * @return {object} cleaned-up deep copy of a policy object w/o empty fields
+ */
+export function removeEmptyPolicyFields(policy) {
+    const cleanedPolicyCopy = removeEmptyFieldsDeep(policy);
+
+    if (policy.policySections) {
+        // never remove policySections as it's always expected to be present on a policy object
+        cleanedPolicyCopy.policySections = cloneDeep(policy.policySections);
+    }
+
+    // The following fields are not used if they have falsy values,
+    //   but those still returned from the API,
+    //   so we have to filter them out separately
+    //   Note: `readOnlyRootFs` is not in this list, because its only allowed value is `false`
+    const exceptionFields = ['whitelistEnabled'];
+    exceptionFields.forEach((fieldName) => {
+        if (!cleanedPolicyCopy[fieldName]) {
+            delete cleanedPolicyCopy[fieldName];
+        }
+    });
+
+    return cleanedPolicyCopy;
 }

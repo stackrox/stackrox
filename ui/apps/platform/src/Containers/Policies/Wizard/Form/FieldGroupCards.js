@@ -7,7 +7,7 @@ import sortBy from 'lodash/sortBy';
 
 import Select from 'Components/ReactSelect';
 import flattenObject from 'utils/flattenObject';
-import removeEmptyFields from 'utils/removeEmptyFields';
+import { removeEmptyPolicyFields } from 'utils/policyUtils';
 import { getPolicyFormDataKeys } from 'Containers/Policies/Wizard/Form/utils';
 import FormField from 'Components/FormField';
 import Field from 'Containers/Policies/Wizard/Form/Field';
@@ -151,7 +151,7 @@ class FieldGroupCards extends Component {
         formFields.length === 1 && formFields.find((field) => field.header);
 
     render() {
-        const formData = Object.keys(flattenObject(removeEmptyFields(this.props.formData)));
+        const formData = Object.keys(flattenObject(removeEmptyPolicyFields(this.props.formData)));
 
         return this.props.fieldGroups.map((fieldGroup) => {
             const { header: fieldGroupName, descriptor: formFields, dataTestId } = fieldGroup;

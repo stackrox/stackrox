@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import { selectors } from 'reducers';
 import { createStructuredSelector } from 'reselect';
 
-import removeEmptyFields from 'utils/removeEmptyFields';
+import { removeEmptyPolicyFields } from 'utils/policyUtils';
 
 import fieldsMap from 'Containers/Policies/Wizard/Details/descriptors';
 import { policyConfiguration } from 'Containers/Policies/Wizard/Form/descriptors';
@@ -22,7 +22,7 @@ class ConfigurationFields extends Component {
             return '';
         }
 
-        const fields = removeEmptyFields(this.props.policy.fields);
+        const fields = removeEmptyPolicyFields(this.props.policy.fields);
         const fieldKeys = Object.keys(fields);
         if (!fieldKeys.length) {
             return '';
