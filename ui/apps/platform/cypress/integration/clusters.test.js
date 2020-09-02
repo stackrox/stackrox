@@ -304,67 +304,137 @@ describe('Cluster Health', () => {
 
     const expectedClusters = [
         {
-            clusterName: 'alpha-amsterdam-1',
-            cloudProvider: 'Not applicable',
-            clusterStatus: 'Uninitialized',
-            sensorStatus: 'Uninitialized',
-            collectorStatus: 'Uninitialized',
-            sensorUpgrade: 'Not applicable',
-            credentialExpiration: 'Not applicable',
+            expectedInListAndSide: {
+                clusterName: 'alpha-amsterdam-1',
+                cloudProvider: 'Not applicable',
+                clusterStatus: 'Uninitialized',
+                sensorStatus: 'Uninitialized',
+                collectorStatus: 'Uninitialized',
+                sensorUpgrade: 'Not applicable',
+                credentialExpiration: 'Not applicable',
+            },
+            expectedInSide: {
+                totalReadyPods: null,
+                totalDesiredPods: null,
+                totalRegisteredNodes: null,
+                healthInfoComplete: null,
+                sensorVersion: null,
+                centralVersion: null,
+            },
         },
         {
-            clusterName: 'epsilon-edison-5',
-            cloudProvider: 'AWS us-west1',
-            clusterStatus: 'Unhealthy',
-            sensorStatus: 'Unhealthy for 1 hour',
-            collectorStatus: 'Healthy 1 hour ago',
-            sensorUpgrade: 'Up to date with Central',
-            credentialExpiration: 'in 6 days on Monday',
+            expectedInListAndSide: {
+                clusterName: 'epsilon-edison-5',
+                cloudProvider: 'AWS us-west1',
+                clusterStatus: 'Unhealthy',
+                sensorStatus: 'Unhealthy for 1 hour',
+                collectorStatus: 'Healthy 1 hour ago',
+                sensorUpgrade: 'Upgrade available',
+                credentialExpiration: 'in 6 days on Monday',
+            },
+            expectedInSide: {
+                totalReadyPods: '10',
+                totalDesiredPods: '10',
+                totalRegisteredNodes: '12',
+                healthInfoComplete: null,
+                sensorVersion: '3.0.48.0',
+                centralVersion: '3.0.50.0',
+            },
         },
         {
-            clusterName: 'eta-7',
-            cloudProvider: 'GCP us-west1',
-            clusterStatus: 'Unhealthy',
-            sensorStatus: 'Healthy',
-            collectorStatus: 'Unhealthy',
-            sensorUpgrade: 'Up to date with Central',
-            credentialExpiration: 'in 29 days on 09/29/2020',
+            expectedInListAndSide: {
+                clusterName: 'eta-7',
+                cloudProvider: 'GCP us-west1',
+                clusterStatus: 'Unhealthy',
+                sensorStatus: 'Healthy',
+                collectorStatus: 'Unhealthy',
+                sensorUpgrade: 'Up to date with Central',
+                credentialExpiration: 'in 29 days on 09/29/2020',
+            },
+            expectedInSide: {
+                totalReadyPods: '3',
+                totalDesiredPods: '5',
+                totalRegisteredNodes: '6',
+                healthInfoComplete: null,
+                sensorVersion: '3.0.50.0',
+                centralVersion: '3.0.50.0',
+            },
         },
         {
-            clusterName: 'kappa-kilogramme-10',
-            cloudProvider: 'AWS us-central1',
-            clusterStatus: 'Degraded',
-            sensorStatus: 'Degraded for 2 minutes',
-            collectorStatus: 'Healthy 2 minutes ago',
-            sensorUpgrade: 'Up to date with Central',
-            credentialExpiration: 'in 1 month',
+            expectedInListAndSide: {
+                clusterName: 'kappa-kilogramme-10',
+                cloudProvider: 'AWS us-central1',
+                clusterStatus: 'Degraded',
+                sensorStatus: 'Degraded for 2 minutes',
+                collectorStatus: 'Healthy 2 minutes ago',
+                sensorUpgrade: 'Up to date with Central',
+                credentialExpiration: 'in 1 month',
+            },
+            expectedInSide: {
+                totalReadyPods: '10',
+                totalDesiredPods: '10',
+                totalRegisteredNodes: '12',
+                healthInfoComplete: null,
+                sensorVersion: '3.0.50.0',
+                centralVersion: '3.0.50.0',
+            },
         },
         {
-            clusterName: 'lambda-liverpool-11',
-            cloudProvider: 'GCP us-central1',
-            clusterStatus: 'Degraded',
-            sensorStatus: 'Healthy',
-            collectorStatus: 'Degraded',
-            sensorUpgrade: 'Upgrade available',
-            credentialExpiration: 'in 2 months',
+            expectedInListAndSide: {
+                clusterName: 'lambda-liverpool-11',
+                cloudProvider: 'GCP us-central1',
+                clusterStatus: 'Degraded',
+                sensorStatus: 'Healthy',
+                collectorStatus: 'Degraded',
+                sensorUpgrade: 'Up to date with Central',
+                credentialExpiration: 'in 2 months',
+            },
+            expectedInSide: {
+                totalReadyPods: '8',
+                totalDesiredPods: '10',
+                totalRegisteredNodes: '12',
+                healthInfoComplete: null,
+                sensorVersion: '3.0.50.0',
+                centralVersion: '3.0.50.0',
+            },
         },
         {
-            clusterName: 'mu-madegascar-12',
-            cloudProvider: 'AWS eu-central1',
-            clusterStatus: 'Healthy',
-            sensorStatus: 'Healthy',
-            collectorStatus: 'Unavailable',
-            sensorUpgrade: 'Upgrade available',
-            credentialExpiration: 'in 12 months',
+            expectedInListAndSide: {
+                clusterName: 'mu-madegascar-12',
+                cloudProvider: 'AWS eu-central1',
+                clusterStatus: 'Healthy',
+                sensorStatus: 'Healthy',
+                collectorStatus: 'Unavailable',
+                sensorUpgrade: 'Upgrade available',
+                credentialExpiration: 'in 12 months',
+            },
+            expectedInSide: {
+                totalReadyPods: null,
+                totalDesiredPods: null,
+                totalRegisteredNodes: null,
+                healthInfoComplete: 'Upgrade Sensor to get Collector health information',
+                sensorVersion: '3.0.47.0',
+                centralVersion: '3.0.50.0',
+            },
         },
         {
-            clusterName: 'nu-york-13',
-            cloudProvider: 'AWS ap-southeast1',
-            clusterStatus: 'Healthy',
-            sensorStatus: 'Healthy',
-            collectorStatus: 'Healthy',
-            sensorUpgrade: 'Up to date with Central',
-            credentialExpiration: 'in 1 year',
+            expectedInListAndSide: {
+                clusterName: 'nu-york-13',
+                cloudProvider: 'AWS ap-southeast1',
+                clusterStatus: 'Healthy',
+                sensorStatus: 'Healthy',
+                collectorStatus: 'Healthy',
+                sensorUpgrade: 'Up to date with Central',
+                credentialExpiration: 'in 1 year',
+            },
+            expectedInSide: {
+                totalReadyPods: '7',
+                totalDesiredPods: '7',
+                totalRegisteredNodes: '7',
+                healthInfoComplete: null,
+                sensorVersion: '3.0.50.0',
+                centralVersion: '3.0.50.0',
+            },
         },
     ];
 
@@ -375,9 +445,9 @@ describe('Cluster Health', () => {
          */
         cy.get(selectors.clusters.tableDataCell).should(($tds) => {
             let n = 0;
-            expectedClusters.forEach((expectedCluster) => {
-                Object.keys(expectedCluster).forEach((key) => {
-                    expect($tds.eq(n).text()).to.equal(expectedCluster[key]);
+            expectedClusters.forEach(({ expectedInListAndSide }) => {
+                Object.keys(expectedInListAndSide).forEach((key) => {
+                    expect($tds.eq(n).text()).to.equal(expectedInListAndSide[key]);
                     n += 1;
                 });
             });
@@ -385,7 +455,7 @@ describe('Cluster Health', () => {
         });
     });
 
-    expectedClusters.forEach((expectedCluster, i) => {
+    expectedClusters.forEach(({ expectedInListAndSide, expectedInSide }, i) => {
         const {
             clusterName,
             clusterStatus,
@@ -393,7 +463,15 @@ describe('Cluster Health', () => {
             collectorStatus,
             sensorUpgrade,
             credentialExpiration,
-        } = expectedCluster;
+        } = expectedInListAndSide;
+        const {
+            totalReadyPods,
+            totalDesiredPods,
+            totalRegisteredNodes,
+            healthInfoComplete,
+            sensorVersion,
+            centralVersion,
+        } = expectedInSide;
 
         it(`should appear in the form for ${clusterName}`, () => {
             const cluster = clustersFixture.clusters[i];
@@ -402,10 +480,47 @@ describe('Cluster Health', () => {
             cy.wait('@GetCluster');
 
             cy.get(selectors.clusterForm.nameInput).should('have.value', clusterName);
+
+            // Cluster Status
             cy.get(selectors.clusterHealth.clusterStatus).should('have.text', clusterStatus);
+
+            // Sensor Status
             cy.get(selectors.clusterHealth.sensorStatus).should('have.text', sensorStatus);
+
+            // Collector Status
             cy.get(selectors.clusterHealth.collectorStatus).should('have.text', collectorStatus);
+            if (typeof totalReadyPods === 'string') {
+                cy.get(selectors.clusterHealth.totalReadyPods).should('have.text', totalReadyPods);
+            }
+            if (typeof totalDesiredPods === 'string') {
+                cy.get(selectors.clusterHealth.totalDesiredPods).should(
+                    'have.text',
+                    totalDesiredPods
+                );
+            }
+            if (typeof totalRegisteredNodes === 'string') {
+                cy.get(selectors.clusterHealth.totalRegisteredNodes).should(
+                    'have.text',
+                    totalRegisteredNodes
+                );
+            }
+            if (typeof healthInfoComplete === 'string') {
+                cy.get(selectors.clusterHealth.healthInfoComplete).should(
+                    'have.text',
+                    healthInfoComplete
+                );
+            }
+
+            // Sensor Upgrade
             cy.get(selectors.clusterHealth.sensorUpgrade).should('have.text', sensorUpgrade);
+            if (typeof sensorVersion === 'string') {
+                cy.get(selectors.clusterHealth.sensorVersion).should('have.text', sensorVersion);
+            }
+            if (typeof centralVersion === 'string') {
+                cy.get(selectors.clusterHealth.centralVersion).should('have.text', centralVersion);
+            }
+
+            // Credential Expiration
             cy.get(selectors.clusterHealth.credentialExpiration).should(
                 'have.text',
                 credentialExpiration

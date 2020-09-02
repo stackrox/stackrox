@@ -97,7 +97,7 @@ const CollectorStatus = ({ healthStatus, currentDatetime, isList }) => {
             ) : (
                 <div>
                     {totalsElement}
-                    <div>
+                    <div data-testid="healthInfoComplete">
                         <strong>Upgrade Sensor</strong> to get complete Collector health information
                     </div>
                 </div>
@@ -130,7 +130,7 @@ const CollectorStatus = ({ healthStatus, currentDatetime, isList }) => {
 
         if (collectorHealthStatus === 'UNAVAILABLE') {
             const reasonUnavailable = (
-                <div>
+                <div data-testid="healthInfoComplete">
                     <strong>Upgrade Sensor</strong> to get Collector health information
                 </div>
             );

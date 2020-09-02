@@ -32,11 +32,17 @@ export const selectors = {
         imageInput: 'input[name="mainImage"]',
         endpointInput: 'input[name="centralApiEndpoint"]',
     }),
-    clusterHealth: scopeSelectors('[data-testid="cluster-form"]', {
+    clusterHealth: scopeSelectors('[data-testid="clusters-side-panel"]', {
         clusterStatus: '[data-testid="clusterStatus"]',
         sensorStatus: '[data-testid="sensorStatus"]',
         collectorStatus: '[data-testid="collectorStatus"]',
+        totalReadyPods: '[data-testid="totalReadyPods"]',
+        totalDesiredPods: '[data-testid="totalDesiredPods"]',
+        totalRegisteredNodes: '[data-testid="totalRegisteredNodes"]',
+        healthInfoComplete: '[data-testid="healthInfoComplete"]',
         sensorUpgrade: '[data-testid="sensorUpgrade"]',
+        sensorVersion: '[data-testid="sensorVersion"]',
+        centralVersion: '[data-testid="centralVersion"]',
         credentialExpiration: '[data-testid="credentialExpiration"]',
     }),
     dialog: '.dialog',

@@ -58,7 +58,7 @@
             "admissionControllerUpdates": false,
             "DEPRECATEDOrchestratorMetadata": null,
             "status": {
-                "sensorVersion": "3.50.0.0",
+                "sensorVersion": "3.0.48.0",
                 "providerMetadata": {
                     "region": "us-west1",
                     "aws": {}
@@ -69,8 +69,7 @@
                     "apiVersions": []
                 },
                 "upgradeStatus": {
-                    "upgradability": "UP_TO_DATE",
-                    "upgradabilityStatusReason": "sensor is running the same version as Central",
+                    "upgradability": "AUTO_UPGRADE_POSSIBLE",
                     "mostRecentProcess": null
                 },
                 "certExpiryStatus": {
@@ -119,7 +118,7 @@
             "admissionControllerUpdates": false,
             "DEPRECATEDOrchestratorMetadata": null,
             "status": {
-                "sensorVersion": "3.50.0.0",
+                "sensorVersion": "3.0.50.0",
                 "providerMetadata": {
                     "region": "us-west1",
                     "google": {}
@@ -179,7 +178,7 @@
             "admissionControllerUpdates": false,
             "DEPRECATEDOrchestratorMetadata": null,
             "status": {
-                "sensorVersion": "3.50.0.0",
+                "sensorVersion": "3.0.50.0",
                 "providerMetadata": {
                     "region": "us-central1",
                     "aws": {}
@@ -240,7 +239,7 @@
             "admissionControllerUpdates": false,
             "DEPRECATEDOrchestratorMetadata": null,
             "status": {
-                "sensorVersion": "3.48.0.0",
+                "sensorVersion": "3.0.50.0",
                 "providerMetadata": {
                     "region": "us-central1",
                     "google": {}
@@ -251,7 +250,8 @@
                     "apiVersions": []
                 },
                 "upgradeStatus": {
-                    "upgradability": "AUTO_UPGRADE_POSSIBLE",
+                    "upgradability": "UP_TO_DATE",
+                    "upgradabilityStatusReason": "sensor is running the same version as Central",
                     "mostRecentProcess": null
                 },
                 "certExpiryStatus": {
@@ -300,7 +300,7 @@
             "admissionControllerUpdates": false,
             "DEPRECATEDOrchestratorMetadata": null,
             "status": {
-                "sensorVersion": "3.47.0.0",
+                "sensorVersion": "3.0.47.0",
                 "providerMetadata": {
                     "region": "eu-central1",
                     "aws": {}
@@ -356,7 +356,7 @@
             "admissionControllerUpdates": false,
             "DEPRECATEDOrchestratorMetadata": null,
             "status": {
-                "sensorVersion": "3.50.0.0",
+                "sensorVersion": "3.0.50.0",
                 "providerMetadata": {
                     "region": "ap-southeast1",
                     "aws": {}
