@@ -1,10 +1,10 @@
-import { getLastModifier, createSearchModifiers } from './SearchInput';
+import { getLastCategoryInSearchOptions, createSearchModifiers } from './SearchInput';
 
 describe('SearchInput', () => {
-    describe('getLastModifier', () => {
+    describe('getLastCategoryInSearchOptions', () => {
         it('should get no category when theres no category in the search options', () => {
             const searchOptions = [{ label: 'Apple', value: 'Apple' }];
-            const category = getLastModifier(searchOptions);
+            const category = getLastCategoryInSearchOptions(searchOptions);
             expect(category).toEqual(null);
         });
 
@@ -14,7 +14,7 @@ describe('SearchInput', () => {
                 { label: 'Apple', value: 'Apple' },
                 { label: 'Banana', value: 'Banana' },
             ];
-            const category = getLastModifier(searchOptions);
+            const category = getLastCategoryInSearchOptions(searchOptions);
             expect(category).toEqual('Fruit');
         });
 
@@ -27,7 +27,7 @@ describe('SearchInput', () => {
                 { label: 'Batman', value: 'Batman' },
                 { label: 'Superman', value: 'Superman' },
             ];
-            const category = getLastModifier(searchOptions);
+            const category = getLastCategoryInSearchOptions(searchOptions);
             expect(category).toEqual('Superhero');
         });
     });

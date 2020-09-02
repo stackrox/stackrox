@@ -1,7 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 
-import SearchInput, { getLastModifier, createSearchModifiers } from 'Components/SearchInput';
+import useAutoCompleteResults from 'hooks/useAutoCompleteResults';
+import SearchInput, { createSearchModifiers } from 'Components/SearchInput';
+import getNetworkFlowValueByCategory from './networkFlowUtils/getNetworkFlowValueByCategory';
 
 const networkFlowCategories = [
     'Traffic',
@@ -13,56 +15,13 @@ const networkFlowCategories = [
 ];
 const networkFlowSearchModifiers = createSearchModifiers(networkFlowCategories);
 
-const categoryToFieldResolverMap = {
-    Traffic: (datum) => datum.traffic,
-    Deployment: (datum) => datum.deploymentName,
-    Namespace: (datum) => datum.namespace,
-    Protocols: (datum) => datum.portsAndProtocols.map((d) => d.protocol),
-    Ports: (datum) => datum.portsAndProtocols.map((d) => d.port),
-    Connection: (datum) => datum.connection,
-};
-
-export function getValueByCategory(datum, category) {
-    const resolveData = categoryToFieldResolverMap[category];
-    const value = resolveData && resolveData(datum);
-    return value;
-}
-
-export function getNetworkFlowsAutoCompleteResultsMap({ networkFlows }) {
-    const autoCompleteResultsMap = networkFlows.reduce((acc, networkFlow) => {
-        networkFlowCategories.forEach((category) => {
-            const value = getValueByCategory(networkFlow, category);
-            if (!acc[category]) {
-                acc[category] = new Set();
-            }
-            // if the value is an array, we need to add each item to the set
-            if (Array.isArray(value)) {
-                value.forEach((datum) => acc[category].add(datum.toString()));
-            } else {
-                acc[category].add(value.toString());
-            }
-        });
-        return acc;
-    }, {});
-    // convert the Set -> Array for each category
-    Object.keys(autoCompleteResultsMap).forEach((category) => {
-        autoCompleteResultsMap[category] = Array.from(autoCompleteResultsMap[category]);
-    });
-    return autoCompleteResultsMap;
-}
-
-const NetworkFlowsSearch = ({ networkFlows }) => {
-    const [searchOptions, setSearchOptions] = useState([]);
-
-    const autoCompleteResultsMap = useMemo(
-        () =>
-            getNetworkFlowsAutoCompleteResultsMap({
-                networkFlows,
-            }),
-        [networkFlows]
+const NetworkFlowsSearch = ({ networkFlows, searchOptions, setSearchOptions }) => {
+    const autoCompleteResults = useAutoCompleteResults(
+        networkFlows,
+        searchOptions,
+        networkFlowCategories,
+        getNetworkFlowValueByCategory
     );
-    const category = getLastModifier(searchOptions);
-    const autoCompleteResults = autoCompleteResultsMap[category] || [];
 
     return (
         <SearchInput
@@ -91,10 +50,13 @@ NetworkFlowsSearch.propTypes = {
             connection: PropTypes.string.isRequired,
         })
     ),
+    searchOptions: PropTypes.arrayOf(PropTypes.shape),
+    setSearchOptions: PropTypes.func.isRequired,
 };
 
 NetworkFlowsSearch.defaultProps = {
     networkFlows: [],
+    searchOptions: [],
 };
 
 export default NetworkFlowsSearch;

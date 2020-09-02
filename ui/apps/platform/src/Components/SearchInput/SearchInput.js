@@ -62,7 +62,7 @@ export const searchInputDefaultProps = {
  * @returns {!string}
  *
  */
-export function getLastModifier(searchOptions) {
+export function getLastCategoryInSearchOptions(searchOptions) {
     const categoryIndex = findLastIndex(searchOptions, ['type', 'categoryOption']);
     if (categoryIndex === -1) {
         return null;

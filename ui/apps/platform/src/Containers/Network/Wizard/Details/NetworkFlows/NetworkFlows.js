@@ -14,8 +14,10 @@ import Panel from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import FeatureEnabled from 'Containers/FeatureEnabled/FeatureEnabled';
+import useSearchFilteredData from 'hooks/useSearchFilteredData';
 import NetworkFlowsSearch from './NetworkFlowsSearch';
 import NetworkFlowsTable from './NetworkFlowsTable';
+import getNetworkFlowValueByCategory from './networkFlowUtils/getNetworkFlowValueByCategory';
 
 const NetworkFlows = ({
     deploymentEdges,
@@ -24,13 +26,22 @@ const NetworkFlows = ({
     onDeploymentClick,
     featureFlags,
 }) => {
+    const { networkFlows } = getNetworkFlows(deploymentEdges, filterState);
+
     const [selectedNode, setSelectedNode] = useState(null);
     const [page, setPage] = useState(0);
+    const [searchOptions, setSearchOptions] = useState([]);
+
+    const filteredNetworkFlows = useSearchFilteredData(
+        networkFlows,
+        searchOptions,
+        getNetworkFlowValueByCategory
+    );
 
     const filterStateString = filterState !== filterModes.all ? filterLabels[filterState] : '';
 
-    if (!deploymentEdges.length) {
-        return <NoResultsMessage message={`No ${filterStateString} deployment flows`} />;
+    if (!filteredNetworkFlows.length) {
+        return <NoResultsMessage message={`No ${filterStateString} network flows`} />;
     }
 
     // @TODO: Remove "showPortsAndProtocols" when the feature flag "ROX_NETWORK_GRAPH_PORTS" is defaulted to true
@@ -40,25 +51,31 @@ const NetworkFlows = ({
         false
     );
 
-    const { networkFlows } = getNetworkFlows(deploymentEdges, filterState);
-
     const headerComponents = (
         <>
             <FeatureEnabled featureFlag={knownBackendFlags.ROX_NETWORK_FLOWS_SEARCH_FILTER_UI}>
                 {({ featureEnabled }) =>
                     featureEnabled && (
                         <div className="flex flex-1">
-                            <NetworkFlowsSearch networkFlows={networkFlows} />
+                            <NetworkFlowsSearch
+                                networkFlows={networkFlows}
+                                searchOptions={searchOptions}
+                                setSearchOptions={setSearchOptions}
+                            />
                         </div>
                     )
                 }
             </FeatureEnabled>
-            <TablePagination page={page} dataLength={networkFlows.length} setPage={setPage} />
+            <TablePagination
+                page={page}
+                dataLength={filteredNetworkFlows.length}
+                setPage={setPage}
+            />
         </>
     );
-    const subHeaderText = `${networkFlows.length} ${filterStateString} ${pluralize(
+    const subHeaderText = `${filteredNetworkFlows.length} ${filterStateString} ${pluralize(
         'Flow',
-        networkFlows.length
+        filteredNetworkFlows.length
     )}`;
 
     function getNodeDataById(nodeId) {
@@ -93,7 +110,7 @@ const NetworkFlows = ({
             <Panel header={subHeaderText} headerComponents={headerComponents} isUpperCase={false}>
                 <div className="w-full h-full bg-base-100">
                     <NetworkFlowsTable
-                        networkFlows={networkFlows}
+                        networkFlows={filteredNetworkFlows}
                         page={page}
                         selectedNode={selectedNode}
                         filterState={filterState}

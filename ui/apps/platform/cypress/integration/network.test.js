@@ -19,7 +19,7 @@ function navigateToNetworkGraphWithMockedData() {
     cy.wait('@networkGraph');
 }
 
-xdescribe('Network page', () => {
+describe('Network page', () => {
     withAuth();
 
     it('should have selected item in nav bar', () => {
@@ -145,45 +145,98 @@ describe('Network Flows Table', () => {
 
         // check autocomplete results for Traffic
         cy.get(networkPageSelectors.networkFlowsSearch.input).type('Traffic:{enter}');
-        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(0)`).contains('ingress');
-        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(1)`).contains(
-            'bidirectional'
-        );
-        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(2)`).contains('egress');
+        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('ingress');
+        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('bidirectional');
+        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('egress');
 
         // check autocomplete results for Deployment names
         cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
         cy.get(networkPageSelectors.networkFlowsSearch.input).type('Deployment:{enter}');
-        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(0)`).contains('sensor');
-        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(1)`).contains('scanner');
-        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(2)`).contains('coredns');
+        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('sensor');
+        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('scanner');
+        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('monitoring');
+        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('kube-dns');
 
         // check autocomplete results for Namespace names
         cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
         cy.get(networkPageSelectors.networkFlowsSearch.input).type('Namespace:{enter}');
-        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(0)`).contains('stackrox');
-        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(1)`).contains('kube-system');
+        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('stackrox');
+        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('kube-system');
 
         // check autocomplete results for Protocols
         cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
         cy.get(networkPageSelectors.networkFlowsSearch.input).type('Protocols:{enter}');
-        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(0)`).contains(
-            'L4_PROTOCOL_TCP'
-        );
-        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(1)`).contains(
-            'L4_PROTOCOL_UDP'
-        );
+        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('L4_PROTOCOL_TCP');
+        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('L4_PROTOCOL_UDP');
 
         // check autocomplete results for Ports
         cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
         cy.get(networkPageSelectors.networkFlowsSearch.input).type('Ports:{enter}');
-        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(0)`).contains('8443');
-        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(1)`).contains('8080');
-        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(2)`).contains('53');
+        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('8443');
+        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('8080');
+        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('53');
 
         // check autocomplete results for Connections
         cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
         cy.get(networkPageSelectors.networkFlowsSearch.input).type('Connection:{enter}');
-        cy.get(`${networkPageSelectors.networkFlowsSearch.options}:eq(0)`).contains('active');
+        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('active');
+    });
+
+    // eslint-disable-next-line func-names
+    it('should properly filter the network flows table', function () {
+        if (checkFeatureFlag('ROX_NETWORK_FLOWS_SEARCH_FILTER_UI', false)) {
+            this.skip();
+        }
+
+        cy.visit(riskURL);
+        cy.get(`${selectors.table.rows}:contains('central')`).click();
+        cy.get(RiskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
+        cy.get(`${selectors.tab.tabs}:contains('Network Flows')`).click();
+
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Traffic:{enter}');
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('ingress{enter}');
+        cy.get(selectors.table.rows).each(($el) => {
+            cy.wrap($el).get(`${selectors.table.cells}:eq(1)`).contains('ingress');
+        });
+
+        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
+        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Deployment:{enter}');
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('sensor{enter}');
+        cy.get(selectors.table.rows).each(($el) => {
+            cy.wrap($el).get(`${selectors.table.cells}:eq(2)`).contains('sensor');
+        });
+
+        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
+        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Namespace:{enter}');
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('kube-system{enter}');
+        cy.get(selectors.table.rows).each(($el) => {
+            cy.wrap($el).get(`${selectors.table.cells}:eq(3)`).contains('kube-system');
+        });
+
+        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
+        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Protocols:{enter}');
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('L4_PROTOCOL_TCP{enter}');
+        cy.get(selectors.table.rows).each(($el) => {
+            cy.wrap($el).get(`${selectors.table.cells}:eq(4)`).contains('TCP');
+        });
+
+        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
+        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Ports:{enter}');
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('8443{enter}');
+        cy.get(selectors.table.rows).each(($el) => {
+            cy.wrap($el).get(`${selectors.table.cells}:eq(5)`).contains('8443');
+        });
+
+        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
+        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Connection:{enter}');
+        cy.get(networkPageSelectors.networkFlowsSearch.input).type('active{enter}');
+        cy.get(selectors.table.rows).each(($el) => {
+            cy.wrap($el).get(`${selectors.table.cells}:eq(6)`).contains('active');
+        });
     });
 });
