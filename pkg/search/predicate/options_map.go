@@ -3,7 +3,6 @@ package predicate
 import (
 	"strings"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -12,7 +11,7 @@ type wrappedOptionsMap struct {
 	prefix     string
 }
 
-func (w wrappedOptionsMap) Get(field string) (*v1.SearchField, bool) {
+func (w wrappedOptionsMap) Get(field string) (*search.Field, bool) {
 	searchField, ok := w.optionsMap.Get(field)
 	if !ok {
 		return nil, false

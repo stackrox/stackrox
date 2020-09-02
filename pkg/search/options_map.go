@@ -22,16 +22,16 @@ func HasApplicableOptions(specifiedFields []string, optionsMap OptionsMap) bool 
 type OptionsMap interface {
 	// Get looks for the given string in the OptionsMap. The string is usually user-entered.
 	// Get allows case-insensitive lookups.
-	Get(field string) (*v1.SearchField, bool)
+	Get(field string) (*Field, bool)
 	// MustGet is used when the values must exist
-	MustGet(field string) *v1.SearchField
+	MustGet(field string) *Field
 	// Add adds a search field to the map
-	Add(label FieldLabel, field *v1.SearchField) OptionsMap
+	Add(label FieldLabel, field *Field) OptionsMap
 	// Remove removes a search field from the map
 	Remove(label FieldLabel) OptionsMap
 	// Original returns the original options-map, with cases preserved for FieldLabels.
 	// Use this if you need the entire map, with values preserved.
-	Original() map[FieldLabel]*v1.SearchField
+	Original() map[FieldLabel]*Field
 	// Merge merges two OptionsMaps
 	Merge(o OptionsMap) OptionsMap
 	// PrimaryCategory is the category of the object this options map describes. Note that some of the fields might
@@ -40,16 +40,16 @@ type OptionsMap interface {
 }
 
 type optionsMapImpl struct {
-	normalized      map[string]*v1.SearchField
-	original        map[FieldLabel]*v1.SearchField
+	normalized      map[string]*Field
+	original        map[FieldLabel]*Field
 	primaryCategory v1.SearchCategory
 }
 
 // NewOptionsMap creates an empty options map
 func NewOptionsMap(category v1.SearchCategory) OptionsMap {
 	return &optionsMapImpl{
-		normalized:      make(map[string]*v1.SearchField),
-		original:        make(map[FieldLabel]*v1.SearchField),
+		normalized:      make(map[string]*Field),
+		original:        make(map[FieldLabel]*Field),
 		primaryCategory: category,
 	}
 }
@@ -58,12 +58,12 @@ func (o *optionsMapImpl) PrimaryCategory() v1.SearchCategory {
 	return o.primaryCategory
 }
 
-func (o *optionsMapImpl) Get(field string) (*v1.SearchField, bool) {
+func (o *optionsMapImpl) Get(field string) (*Field, bool) {
 	sf, exists := o.normalized[strings.ToLower(field)]
 	return sf, exists
 }
 
-func (o *optionsMapImpl) MustGet(field string) *v1.SearchField {
+func (o *optionsMapImpl) MustGet(field string) *Field {
 	sf, exists := o.normalized[strings.ToLower(field)]
 	if !exists {
 		panic(fmt.Sprintf("Could not find field %s in OptionsMap", field))
@@ -71,7 +71,7 @@ func (o *optionsMapImpl) MustGet(field string) *v1.SearchField {
 	return sf
 }
 
-func (o *optionsMapImpl) Add(label FieldLabel, field *v1.SearchField) OptionsMap {
+func (o *optionsMapImpl) Add(label FieldLabel, field *Field) OptionsMap {
 	if _, ok := o.original[label]; ok {
 		return o
 	}
@@ -86,7 +86,7 @@ func (o *optionsMapImpl) Remove(label FieldLabel) OptionsMap {
 	return o
 }
 
-func (o *optionsMapImpl) Original() map[FieldLabel]*v1.SearchField {
+func (o *optionsMapImpl) Original() map[FieldLabel]*Field {
 	return o.original
 }
 
@@ -107,7 +107,7 @@ func Difference(o1 OptionsMap, o2 OptionsMap) OptionsMap {
 		return o1
 	}
 
-	ret := OptionsMapFromMap(o1.PrimaryCategory(), make(map[FieldLabel]*v1.SearchField))
+	ret := OptionsMapFromMap(o1.PrimaryCategory(), make(map[FieldLabel]*Field))
 	o2.Original()
 	for k, v := range o1.Original() {
 		if _, ok := o2.Original()[k]; !ok {
@@ -122,7 +122,7 @@ func CombineOptionsMaps(os ...OptionsMap) OptionsMap {
 	if len(os) == 0 {
 		return nil
 	}
-	ret := OptionsMapFromMap(os[0].PrimaryCategory(), make(map[FieldLabel]*v1.SearchField))
+	ret := OptionsMapFromMap(os[0].PrimaryCategory(), make(map[FieldLabel]*Field))
 	for _, o := range os {
 		ret.Merge(o)
 	}
@@ -130,8 +130,8 @@ func CombineOptionsMaps(os ...OptionsMap) OptionsMap {
 }
 
 // OptionsMapFromMap constructs an OptionsMap object from the given map.
-func OptionsMapFromMap(primaryCategory v1.SearchCategory, m map[FieldLabel]*v1.SearchField) OptionsMap {
-	normalized := make(map[string]*v1.SearchField)
+func OptionsMapFromMap(primaryCategory v1.SearchCategory, m map[FieldLabel]*Field) OptionsMap {
+	normalized := make(map[string]*Field)
 	for k, v := range m {
 		normalized[strings.ToLower(string(k))] = v
 	}

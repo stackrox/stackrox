@@ -66,15 +66,6 @@ message RawSearchRequest {
     repeated SearchCategory categories = 2;
 }
 
-message SearchField {
-    string field_path       = 1;
-    SearchDataType type     = 2;
-    bool store              = 3;
-    bool hidden             = 4;
-    SearchCategory category = 5;
-    string analyzer         = 6;
-}
-
 message QuerySortOption {
     string field    = 1;
     bool   reversed = 2;

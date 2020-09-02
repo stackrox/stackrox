@@ -132,7 +132,7 @@ func getMatchingValuesFromFields(field string, hit *search.DocumentMatch, validA
 }
 
 type searchFieldAndValue struct {
-	sf        *v1.SearchField
+	sf        *searchPkg.Field
 	value     string
 	highlight bool
 }

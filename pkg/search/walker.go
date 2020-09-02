@@ -33,20 +33,20 @@ var (
 
 type searchWalker struct {
 	category v1.SearchCategory
-	fields   map[FieldLabel]*v1.SearchField
+	fields   map[FieldLabel]*Field
 }
 
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
 func Walk(category v1.SearchCategory, prefix string, obj interface{}) OptionsMap {
 	sw := searchWalker{
 		category: category,
-		fields:   make(map[FieldLabel]*v1.SearchField),
+		fields:   make(map[FieldLabel]*Field),
 	}
 	sw.walkRecursive(prefix, reflect.TypeOf(obj))
 	return OptionsMapFromMap(category, sw.fields)
 }
 
-func (s *searchWalker) getSearchField(path, tag string) (string, *v1.SearchField) {
+func (s *searchWalker) getSearchField(path, tag string) (string, *Field) {
 	if tag == "" {
 		return "", nil
 	}
@@ -79,7 +79,7 @@ func (s *searchWalker) getSearchField(path, tag string) (string, *v1.SearchField
 		}
 	}
 
-	return fieldName, &v1.SearchField{
+	return fieldName, &Field{
 		FieldPath: path,
 		Store:     store,
 		Hidden:    hidden,

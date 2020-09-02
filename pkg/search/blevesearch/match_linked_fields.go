@@ -107,8 +107,8 @@ func matchAndHighlight(hit *search.DocumentMatch, fieldsAndValues []searchFieldA
 	return true
 }
 
-func newMapSearchField(path string, sf *v1.SearchField) *v1.SearchField {
-	return &v1.SearchField{
+func newMapSearchField(path string, sf *searchPkg.Field) *searchPkg.Field {
+	return &searchPkg.Field{
 		FieldPath: path,
 		Type:      v1.SearchDataType_SEARCH_STRING,
 		Store:     sf.GetStore(),

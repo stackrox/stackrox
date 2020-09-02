@@ -11,7 +11,7 @@ import (
 )
 
 // DocumentMappingFromOptionsMap creates a ready-to-use document mapping from the given optionsMap
-func DocumentMappingFromOptionsMap(optionsMap map[search.FieldLabel]*v1.SearchField) *mapping.DocumentMapping {
+func DocumentMappingFromOptionsMap(optionsMap map[search.FieldLabel]*search.Field) *mapping.DocumentMapping {
 	rootDocumentMapping := newDocumentMapping(false)
 	for _, field := range optionsMap {
 		path := strings.Split(field.FieldPath, ".")
@@ -32,7 +32,7 @@ func DocumentMappingFromOptionsMap(optionsMap map[search.FieldLabel]*v1.SearchFi
 	return rootDocumentMapping
 }
 
-func addToDocumentMapping(path []string, searchField *v1.SearchField, docMap *mapping.DocumentMapping) {
+func addToDocumentMapping(path []string, searchField *search.Field, docMap *mapping.DocumentMapping) {
 	// Base case is either no path or the leaf of the path, for which we add a field mapping.
 	if len(path) < 1 {
 		panic("path is empty, check that FieldPath is set in the search field")
@@ -69,8 +69,8 @@ func newDocumentMapping(dynamic bool) *mapping.DocumentMapping {
 	return docMap
 }
 
-func searchFieldToMapping(sf *v1.SearchField) *mapping.FieldMapping {
-	switch sf.Type {
+func searchFieldToMapping(sf *search.Field) *mapping.FieldMapping {
+	switch sf.GetType() {
 	case v1.SearchDataType_SEARCH_STRING:
 		return setFieldMappingDefaults(mapping.NewTextFieldMapping(), sf)
 	case v1.SearchDataType_SEARCH_BOOL:
@@ -78,11 +78,11 @@ func searchFieldToMapping(sf *v1.SearchField) *mapping.FieldMapping {
 	case v1.SearchDataType_SEARCH_NUMERIC, v1.SearchDataType_SEARCH_ENUM, v1.SearchDataType_SEARCH_DATETIME:
 		return setFieldMappingDefaults(mapping.NewNumericFieldMapping(), sf)
 	default:
-		panic(fmt.Errorf("Search Field '%s' is not handled in the mapping", sf.Type))
+		panic(fmt.Errorf("Search Field '%s' is not handled in the mapping", sf.GetType()))
 	}
 }
 
-func setFieldMappingDefaults(m *mapping.FieldMapping, searchField *v1.SearchField) *mapping.FieldMapping {
+func setFieldMappingDefaults(m *mapping.FieldMapping, searchField *search.Field) *mapping.FieldMapping {
 	// Allows for string query
 	m.IncludeInAll = false
 	m.IncludeTermVectors = true

@@ -35,10 +35,10 @@ func (m *MockOptionsMap) EXPECT() *MockOptionsMapMockRecorder {
 }
 
 // Get mocks base method
-func (m *MockOptionsMap) Get(field string) (*v1.SearchField, bool) {
+func (m *MockOptionsMap) Get(field string) (*search.Field, bool) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", field)
-	ret0, _ := ret[0].(*v1.SearchField)
+	ret0, _ := ret[0].(*search.Field)
 	ret1, _ := ret[1].(bool)
 	return ret0, ret1
 }
@@ -50,10 +50,10 @@ func (mr *MockOptionsMapMockRecorder) Get(field interface{}) *gomock.Call {
 }
 
 // MustGet mocks base method
-func (m *MockOptionsMap) MustGet(field string) *v1.SearchField {
+func (m *MockOptionsMap) MustGet(field string) *search.Field {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MustGet", field)
-	ret0, _ := ret[0].(*v1.SearchField)
+	ret0, _ := ret[0].(*search.Field)
 	return ret0
 }
 
@@ -64,7 +64,7 @@ func (mr *MockOptionsMapMockRecorder) MustGet(field interface{}) *gomock.Call {
 }
 
 // Add mocks base method
-func (m *MockOptionsMap) Add(label search.FieldLabel, field *v1.SearchField) search.OptionsMap {
+func (m *MockOptionsMap) Add(label search.FieldLabel, field *search.Field) search.OptionsMap {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", label, field)
 	ret0, _ := ret[0].(search.OptionsMap)
@@ -92,10 +92,10 @@ func (mr *MockOptionsMapMockRecorder) Remove(label interface{}) *gomock.Call {
 }
 
 // Original mocks base method
-func (m *MockOptionsMap) Original() map[search.FieldLabel]*v1.SearchField {
+func (m *MockOptionsMap) Original() map[search.FieldLabel]*search.Field {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Original")
-	ret0, _ := ret[0].(map[search.FieldLabel]*v1.SearchField)
+	ret0, _ := ret[0].(map[search.FieldLabel]*search.Field)
 	return ret0
 }
 

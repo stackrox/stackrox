@@ -233,7 +233,7 @@ func newClusterNSFieldBaseResultsChecker(opts search.OptionsMap, namespaceScoped
 		return nil, errors.Errorf("field %s is not stored, which is a requirement for access scope enforcement", clusterIDField.GetFieldPath())
 	}
 
-	var nsField *v1.SearchField
+	var nsField *search.Field
 	if namespaceScoped {
 		nsField = origMap[search.Namespace]
 		if nsField == nil {
