@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import CollapsibleCard from 'Components/CollapsibleCard';
+import FormFieldRequired from 'Components/forms/FormFieldRequired';
 import Loader from 'Components/Loader';
 import Select from 'Components/Select';
 import ToggleSwitch from 'Components/ToggleSwitch';
@@ -142,121 +143,87 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                 <div className="p-3">
                     <div className="mb-4">
                         <label htmlFor="name" className={labelClassName}>
-                            Cluster Name
-                            <span
-                                aria-label="Required"
-                                data-testid="required"
-                                className="text-alert-500 ml-1"
-                            >
-                                *
-                            </span>
+                            Cluster Name{' '}
+                            <FormFieldRequired empty={selectedCluster.name.length === 0} />
                         </label>
-                        <div className="flex">
-                            <input
-                                id="name"
-                                name="name"
-                                value={selectedCluster.name}
-                                onChange={handleChange}
-                                disabled={selectedCluster.id}
-                                className={inputTextClassName}
-                            />
-                        </div>
+                        <input
+                            id="name"
+                            name="name"
+                            value={selectedCluster.name}
+                            onChange={handleChange}
+                            disabled={selectedCluster.id}
+                            className={inputTextClassName}
+                        />
                     </div>
                     <div className="mb-4">
                         <label htmlFor="clusterType" className={labelClassName}>
-                            Cluster Type
-                            <span
-                                aria-label="Required"
-                                data-testid="required"
-                                className="text-alert-500 ml-1"
-                            >
-                                *
-                            </span>
+                            Cluster Type{' '}
+                            <FormFieldRequired empty={selectedCluster.type.length === 0} />
                         </label>
-                        <div className="flex">
-                            <Select
-                                id="clusterType"
-                                options={clusterTypeOptions}
-                                placeholder="Select a cluster type"
-                                onChange={onClusterTypeChange}
-                                className={selectElementClassName}
-                                wrapperClass={selectWrapperClassName}
-                                triggerClass="border-l border-base-300"
-                                value={selectedCluster.type}
-                            />
-                        </div>
+                        <Select
+                            id="clusterType"
+                            options={clusterTypeOptions}
+                            placeholder="Select a cluster type"
+                            onChange={onClusterTypeChange}
+                            className={selectElementClassName}
+                            wrapperClass={selectWrapperClassName}
+                            triggerClass="border-l border-base-300"
+                            value={selectedCluster.type}
+                        />
                     </div>
                     <div className="mb-4">
                         <label htmlFor="mainImage" className={labelClassName}>
-                            Main Image Repository
-                            <span
-                                aria-label="Required"
-                                data-testid="required"
-                                className="text-alert-500 ml-1"
-                            >
-                                *
-                            </span>
+                            Main Image Repository{' '}
+                            <FormFieldRequired empty={selectedCluster.mainImage.length === 0} />
                         </label>
-                        <div className="flex">
-                            <input
-                                id="mainImage"
-                                name="mainImage"
-                                onChange={handleChange}
-                                value={selectedCluster.mainImage}
-                                className={inputTextClassName}
-                            />
-                        </div>
+                        <input
+                            id="mainImage"
+                            name="mainImage"
+                            onChange={handleChange}
+                            value={selectedCluster.mainImage}
+                            className={inputTextClassName}
+                        />
                     </div>
                     <div className="mb-4">
                         <label htmlFor="centralApiEndpoint" className={labelClassName}>
-                            Central API Endpoint (include port)
-                            <span
-                                aria-label="Required"
-                                data-testid="required"
-                                className="text-alert-500 ml-1"
-                            >
-                                *
-                            </span>
-                        </label>
-                        <div className="flex">
-                            <input
-                                id="centralApiEndpoint"
-                                name="centralApiEndpoint"
-                                onChange={handleChange}
-                                value={selectedCluster.centralApiEndpoint}
-                                className={inputTextClassName}
+                            Central API Endpoint (include port){' '}
+                            <FormFieldRequired
+                                empty={selectedCluster.centralApiEndpoint.length === 0}
                             />
-                        </div>
+                        </label>
+                        <input
+                            id="centralApiEndpoint"
+                            name="centralApiEndpoint"
+                            onChange={handleChange}
+                            value={selectedCluster.centralApiEndpoint}
+                            className={inputTextClassName}
+                        />
                     </div>
                     <div className="mb-4">
                         <label htmlFor="collectionMethod" className={labelClassName}>
                             Collection Method
                         </label>
-                        <div className="flex">
-                            <Select
-                                options={runtimeOptions}
-                                placeholder="Select a runtime option"
-                                onChange={onCollectionMethodChange}
-                                className={selectElementClassName}
-                                wrapperClass={selectWrapperClassName}
-                                triggerClass="border-l border-base-300"
-                                value={selectedCluster.collectionMethod}
-                            />
-                        </div>
+                        <Select
+                            options={runtimeOptions}
+                            placeholder="Select a runtime option"
+                            onChange={onCollectionMethodChange}
+                            className={selectElementClassName}
+                            wrapperClass={selectWrapperClassName}
+                            triggerClass="border-l border-base-300"
+                            value={selectedCluster.collectionMethod}
+                        />
                     </div>
                     <div className="mb-4">
                         <label htmlFor="collectorImage" className={labelClassName}>
                             Collector Image Repository (uses Main image repository by default)
                         </label>
-                        <div className="flex">
-                            <input
-                                id="collectorImage"
-                                name="collectorImage"
-                                onChange={handleChange}
-                                value={selectedCluster.collectorImage}
-                                className={inputTextClassName}
-                            />
-                        </div>
+                        <input
+                            id="collectorImage"
+                            name="collectorImage"
+                            onChange={handleChange}
+                            value={selectedCluster.collectorImage}
+                            className={inputTextClassName}
+                        />
                     </div>
                     {selectedCluster.type === 'KUBERNETES_CLUSTER' && (
                         <>
@@ -382,16 +349,14 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                                     cluster
                                 </span>
                             </label>
-                            <div className="flex">
-                                <input
-                                    id="dynamicConfig.registryOverride"
-                                    name="dynamicConfig.registryOverride"
-                                    onChange={handleChange}
-                                    value={selectedCluster.dynamicConfig.registryOverride}
-                                    className={inputTextClassName}
-                                    placeholder="image-mirror.example.com"
-                                />
-                            </div>
+                            <input
+                                id="dynamicConfig.registryOverride"
+                                name="dynamicConfig.registryOverride"
+                                onChange={handleChange}
+                                value={selectedCluster.dynamicConfig.registryOverride}
+                                className={inputTextClassName}
+                                placeholder="image-mirror.example.com"
+                            />
                         </div>
                         <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
                             <label

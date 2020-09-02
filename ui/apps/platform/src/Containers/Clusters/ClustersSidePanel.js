@@ -49,6 +49,20 @@ function fetchCentralEnv() {
     });
 }
 
+const requiredKeys = ['name', 'type', 'mainImage', 'centralApiEndpoint'];
+
+const validate = (values) => {
+    const errors = {};
+
+    requiredKeys.forEach((key) => {
+        if (values[key].length === 0) {
+            errors[key] = 'This field is required';
+        }
+    });
+
+    return errors;
+};
+
 function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }) {
     const defaultCluster = cloneDeep(newClusterDefault);
     const envAwareClusterDefault = {
@@ -279,6 +293,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
             }
             className={`mr-2 btn ${showFormStyles ? 'btn-base' : 'btn-success'}`}
             onClick={onNext}
+            disabled={showFormStyles && Object.keys(validate(selectedCluster)).length !== 0}
             tooltip={showFormStyles ? 'Next' : 'Finish'}
         >
             {showFormStyles ? 'Next' : 'Finish'}
