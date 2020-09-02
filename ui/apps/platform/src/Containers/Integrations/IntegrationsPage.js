@@ -110,7 +110,8 @@ class IntegrationsPage extends Component {
     };
 
     findIntegrations = (source, type) => {
-        const typeLowerMatches = (integration) => integration.type === type.toLowerCase();
+        const typeLowerMatches = (integration) =>
+            integration.type.toLowerCase() === type.toLowerCase();
 
         switch (source) {
             case 'authPlugins':

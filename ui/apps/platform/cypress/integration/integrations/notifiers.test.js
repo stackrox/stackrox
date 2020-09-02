@@ -74,6 +74,34 @@ describe('Notifiers Test', () => {
     });
 
     describe('AWS Security Hub notifier', () => {
+        it('should show the AWS Security Hub notifier', () => {
+            cy.get(selectors.awsSecurityHubTile).click();
+            cy.get(`${selectors.modalHeader}:contains('Configure AWS Security Hub plugin')`);
+            cy.get(`${selectors.resultsSection}:contains('No AWS Security Hub integrations')`);
+        });
+
+        it('should disable the save button if all the required fields are not filled out', () => {
+            cy.get(selectors.awsSecurityHubTile).click();
+
+            cy.get(`${selectors.resultsSection}:contains('No AWS Security Hub integrations')`);
+
+            cy.get(selectors.buttons.new).click();
+            cy.get(selectors.buttons.create).should('be.disabled'); // starts out disabled
+
+            cy.get(selectors.awsSecurityHubForm.nameInput).type('Test AWS Sec Hub integration');
+            cy.get(selectors.awsSecurityHubForm.awsAccountNumber).type('939357552774');
+            cy.get(selectors.awsSecurityHubForm.awsRegion).click();
+            cy.get(
+                `${selectors.awsSecurityHubForm.awsRegionListItems}:contains('us-east-2')`
+            ).click();
+            cy.get(selectors.awsSecurityHubForm.awsAccessKeyId).type('EXAMPLE7AKIAIOSFODNN');
+            // not filling out the last field, Secret Acccess Key
+
+            cy.get(selectors.buttons.create).should('be.disabled'); // still disabled
+
+            cy.get(selectors.buttons.closePanel).click();
+        });
+
         it('should allow you to configure a new AWS Security Hub integration when none exists', () => {
             cy.get(selectors.awsSecurityHubTile).click();
 
@@ -81,12 +109,21 @@ describe('Notifiers Test', () => {
 
             cy.get(selectors.buttons.new).click();
 
-            cy.get(selectors.awsSecurityHubForm.nameInput);
-            cy.get(selectors.awsSecurityHubForm.active);
-            cy.get(selectors.awsSecurityHubForm.awsAccountNumber);
-            cy.get(selectors.awsSecurityHubForm.awsRegionPlaceholder);
-            cy.get(selectors.awsSecurityHubForm.awsAccessKeyId);
-            cy.get(selectors.awsSecurityHubForm.awsSecretAccessKey);
+            cy.get(selectors.awsSecurityHubForm.nameInput).type('Test AWS Sec Hub integration');
+            cy.get(selectors.awsSecurityHubForm.awsAccountNumber).type('939357552774');
+            cy.get(selectors.awsSecurityHubForm.awsRegion).click();
+            cy.get(
+                `${selectors.awsSecurityHubForm.awsRegionListItems}:contains('us-east-2')`
+            ).click();
+            cy.get(selectors.awsSecurityHubForm.awsAccessKeyId).type('EXAMPLE7AKIAIOSFODNN');
+            cy.get(selectors.awsSecurityHubForm.awsSecretAccessKey).type(
+                'EXAMPLEKEYwJalrXUtnFEMI/K7MDENG/bPxRfiCY'
+            );
+            cy.get(selectors.awsSecurityHubForm.active).should('be.checked');
+
+            cy.get(selectors.buttons.create).click();
+
+            cy.get(`${selectors.toast.body}:contains("Successfully integrated AWS Security Hub")`);
         });
     });
 });
