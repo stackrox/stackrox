@@ -6,6 +6,7 @@ import objects.Deployment
 import objects.SecretKeyRef
 import objects.Volume
 import orchestratormanager.OrchestratorTypes
+import org.junit.Assume
 import org.junit.experimental.categories.Category
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -805,6 +806,9 @@ class PolicyFieldsTest extends BaseSpecification {
     @Unroll
     @Category([BAT])
     def "Expect violation for policy field '#fieldName' - #testName"() {
+        // ROX-5298 - Policy tests are unreliable on Openshift
+        Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
+
         expect:
         "Verify expected violations are triggered"
         assert waitForViolation(deployment.name, policy.name, WAIT_FOR_VIOLATION_TIMEOUT)
@@ -880,6 +884,9 @@ class PolicyFieldsTest extends BaseSpecification {
     @Unroll
     @Category([BAT])
     def "Expect no violation for policy field '#fieldName' - #testName"() {
+        // ROX-5298 - Policy tests are unreliable on Openshift
+        Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
+
         expect:
         "Verify unexpected violations are not triggered"
         def violations = AlertService.getViolations(ListAlertsRequest.newBuilder()

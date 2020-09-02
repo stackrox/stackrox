@@ -5,11 +5,14 @@ import groups.BAT
 import objects.Deployment
 import objects.SecretKeyRef
 import objects.Volume
+import orchestratormanager.OrchestratorTypes
+import org.junit.Assume
 import org.junit.experimental.categories.Category
 import spock.lang.Shared
 import spock.lang.Unroll
 import services.CreatePolicyService
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass.PatchPolicyRequest
+import util.Env
 
 class BuiltinPoliciesTest extends BaseSpecification {
     static final private String TRIGGER_MOST = "trigger-most"
@@ -99,6 +102,9 @@ class BuiltinPoliciesTest extends BaseSpecification {
     @Unroll
     @Category([BAT])
     def "Verify policy '#policyName' is triggered"(String policyName, String deploymentName) {
+        // ROX-5298 - Policy tests are unreliable on Openshift
+        Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
+
         when:
         "An existing policy"
         assert getPolicies().find { it.name == policyName }
