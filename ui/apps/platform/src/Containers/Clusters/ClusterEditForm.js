@@ -11,6 +11,25 @@ import { knownBackendFlags } from 'utils/featureFlags';
 import { clusterTypeOptions, runtimeOptions } from './cluster.helpers';
 import ClusterHealth from './Components/ClusterHealth';
 
+const labelClassName = 'block py-2 text-base-600 font-700';
+const sublabelClassName = 'font-600 italic';
+
+const inputBaseClassName =
+    'bg-base-100 border-2 border-base-300 hover:border-base-400 font-600 leading-normal p-2 rounded text-base-600';
+const inputTextClassName = `${inputBaseClassName} w-full`;
+const inputNumberClassName = `${inputBaseClassName} text-right w-12`;
+
+// The select element base style includes: pr-8 w-full
+const selectElementClassName =
+    'bg-base-100 block border-base-300 focus:border-base-500 p-2 text-base-600 z-1';
+const selectWrapperClassName =
+    'bg-base-100 border-2 border-base-300 hover:border-base-400 font-600 leading-normal rounded text-base-600 w-full';
+
+const divToggleOuterClassName =
+    'bg-base-100 border-2 border-base-300 hover:border-base-400 font-600 leading-normal mb-4 px-2 py-2 rounded text-base-600 w-full';
+
+const justifyBetweenClassName = 'flex items-center justify-between';
+
 // factory that returns a handler to normalize our generic Select component's return value
 function getSelectComparison(options, key, selectedCluster, handleChange) {
     return function compareSelected(selectedOption) {
@@ -122,8 +141,8 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
             >
                 <div className="p-3">
                     <div className="mb-4">
-                        <label htmlFor="name" className="block py-2 text-base-600 font-700">
-                            Cluster Name{' '}
+                        <label htmlFor="name" className={labelClassName}>
+                            Cluster Name
                             <span
                                 aria-label="Required"
                                 data-testid="required"
@@ -139,13 +158,13 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                                 value={selectedCluster.name}
                                 onChange={handleChange}
                                 disabled={selectedCluster.id}
-                                className="bg-base-100 border-2 rounded p-2 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10"
+                                className={inputTextClassName}
                             />
                         </div>
                     </div>
                     <div className="mb-4">
-                        <label htmlFor="clusterType" className="block py-2 text-base-600 font-700">
-                            Cluster Type{' '}
+                        <label htmlFor="clusterType" className={labelClassName}>
+                            Cluster Type
                             <span
                                 aria-label="Required"
                                 data-testid="required"
@@ -160,16 +179,16 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                                 options={clusterTypeOptions}
                                 placeholder="Select a cluster type"
                                 onChange={onClusterTypeChange}
-                                className="block w-full border-r bg-base-100 border-base-300 text-base-600 p-3 pr-8 z-1 focus:border-base-500"
-                                wrapperClass="bg-base-100 border-2 rounded border-base-300 w-full font-600 text-base-600 hover:border-base-400"
+                                className={selectElementClassName}
+                                wrapperClass={selectWrapperClassName}
                                 triggerClass="border-l border-base-300"
                                 value={selectedCluster.type}
                             />
                         </div>
                     </div>
                     <div className="mb-4">
-                        <label htmlFor="mainImage" className="block py-2 text-base-600 font-700">
-                            Main Image Repository{' '}
+                        <label htmlFor="mainImage" className={labelClassName}>
+                            Main Image Repository
                             <span
                                 aria-label="Required"
                                 data-testid="required"
@@ -184,16 +203,13 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                                 name="mainImage"
                                 onChange={handleChange}
                                 value={selectedCluster.mainImage}
-                                className="bg-base-100 border-2 rounded p-2 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10"
+                                className={inputTextClassName}
                             />
                         </div>
                     </div>
                     <div className="mb-4">
-                        <label
-                            htmlFor="centralApiEndpoint"
-                            className="block py-2 text-base-600 font-700"
-                        >
-                            Central API Endpoint (include port){' '}
+                        <label htmlFor="centralApiEndpoint" className={labelClassName}>
+                            Central API Endpoint (include port)
                             <span
                                 aria-label="Required"
                                 data-testid="required"
@@ -208,15 +224,12 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                                 name="centralApiEndpoint"
                                 onChange={handleChange}
                                 value={selectedCluster.centralApiEndpoint}
-                                className="bg-base-100 border-2 rounded p-2 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10"
+                                className={inputTextClassName}
                             />
                         </div>
                     </div>
                     <div className="mb-4">
-                        <label
-                            htmlFor="collectionMethod"
-                            className="block py-2 text-base-600 font-700"
-                        >
+                        <label htmlFor="collectionMethod" className={labelClassName}>
                             Collection Method
                         </label>
                         <div className="flex">
@@ -224,18 +237,15 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                                 options={runtimeOptions}
                                 placeholder="Select a runtime option"
                                 onChange={onCollectionMethodChange}
-                                className="block w-full bg-base-100 border-base-300 text-base-600 p-3 pr-8 z-1 focus:border-base-500"
-                                wrapperClass="bg-base-100 border-2 rounded border-base-300 w-full font-600 text-base-600 hover:border-base-400"
+                                className={selectElementClassName}
+                                wrapperClass={selectWrapperClassName}
                                 triggerClass="border-l border-base-300"
                                 value={selectedCluster.collectionMethod}
                             />
                         </div>
                     </div>
                     <div className="mb-4">
-                        <label
-                            htmlFor="collectorImage"
-                            className="block py-2 text-base-600 font-700"
-                        >
+                        <label htmlFor="collectorImage" className={labelClassName}>
                             Collector Image Repository (uses Main image repository by default)
                         </label>
                         <div className="flex">
@@ -244,17 +254,16 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                                 name="collectorImage"
                                 onChange={handleChange}
                                 value={selectedCluster.collectorImage}
-                                className="bg-base-100 border-2 rounded p-2 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10"
+                                className={inputTextClassName}
                             />
                         </div>
                     </div>
                     {selectedCluster.type === 'KUBERNETES_CLUSTER' && (
                         <>
-                            <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
-                                <label
-                                    htmlFor="admissionController"
-                                    className="block py-2 text-base-600 font-700"
-                                >
+                            <div
+                                className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}
+                            >
+                                <label htmlFor="admissionController" className={labelClassName}>
                                     Create Admission Controller Webhook
                                 </label>
                                 <ToggleSwitch
@@ -272,10 +281,12 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                                 {({ featureEnabled }) => {
                                     return (
                                         featureEnabled && (
-                                            <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
+                                            <div
+                                                className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}
+                                            >
                                                 <label
                                                     htmlFor="admissionControllerUpdates"
-                                                    className="block py-2 text-base-600 font-700"
+                                                    className={labelClassName}
                                                 >
                                                     Configure Admission Controller Webhook to listen
                                                     on updates
@@ -297,44 +308,45 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                             </FeatureEnabled>
                         </>
                     )}
-                    <div className="mb-4 flex flex-col bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 justify-between">
-                        <div className="flex items-center justify-between">
-                            <label
-                                htmlFor="tolerationsConfig.disabled"
-                                className="block py-2 text-base-600 font-700"
-                            >
-                                Enable Taint Tolerations
-                            </label>
-                            <ToggleSwitch
-                                id="tolerationsConfig.disabled"
-                                name="tolerationsConfig.disabled"
-                                toggleHandler={handleChange}
-                                flipped
-                                // TODO: check until API guarantees a tolerationsConfig object is returned
-                                // with false, if not yet set
-                                enabled={
-                                    !(
-                                        selectedCluster.tolerationsConfig === null ||
-                                        selectedCluster.tolerationsConfig.disabled === false
-                                    )
-                                }
-                            />
-                        </div>
-                        <div className="flex py-1 italic">
-                            Tolerate all taints to run on all nodes of this cluster
-                        </div>
+                    <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
+                        <label htmlFor="tolerationsConfig.disabled" className={labelClassName}>
+                            <span>Enable Taint Tolerations</span>
+                            <br />
+                            <span className={sublabelClassName}>
+                                Tolerate all taints to run on all nodes of this cluster
+                            </span>
+                        </label>
+                        <ToggleSwitch
+                            id="tolerationsConfig.disabled"
+                            name="tolerationsConfig.disabled"
+                            toggleHandler={handleChange}
+                            flipped
+                            // TODO: check until API guarantees a tolerationsConfig object is returned
+                            // with false, if not yet set
+                            enabled={
+                                !(
+                                    selectedCluster.tolerationsConfig === null ||
+                                    selectedCluster.tolerationsConfig.disabled === false
+                                )
+                            }
+                        />
                     </div>
                     <FeatureEnabled featureFlag={knownBackendFlags.ROX_SUPPORT_SLIM_COLLECTOR_MODE}>
                         {({ featureEnabled }) => {
                             return (
                                 featureEnabled && (
-                                    <div className="mb-4 flex flex-col bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 justify-between">
-                                        <div className="flex items-center justify-between">
+                                    <div className={`flex flex-col ${divToggleOuterClassName}`}>
+                                        <div className={justifyBetweenClassName}>
                                             <label
                                                 htmlFor="slimCollector"
-                                                className="block py-2 text-base-600 font-700"
+                                                className={labelClassName}
                                             >
-                                                Enable Slim Collector Mode
+                                                <span>Enable Slim Collector Mode</span>
+                                                <br />
+                                                <span className={sublabelClassName}>
+                                                    New cluster will be set up using a slim
+                                                    collector image
+                                                </span>
                                             </label>
                                             <ToggleSwitch
                                                 id="slimCollector"
@@ -343,12 +355,7 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                                                 enabled={selectedCluster.slimCollector}
                                             />
                                         </div>
-                                        <div className="flex py-1 italic">
-                                            New cluster will be set up using a slim collector image
-                                        </div>
-                                        <div className="flex py-1">
-                                            {renderSlimCollectorWarning()}
-                                        </div>
+                                        {renderSlimCollectorWarning()}
                                     </div>
                                 )
                             );
@@ -366,29 +373,30 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                         <div className="mb-4">
                             <label
                                 htmlFor="dynamicConfig.registryOverride"
-                                className="block py-2 text-base-600 font-700"
+                                className={labelClassName}
                             >
-                                Custom default image registry
+                                <span>Custom default image registry</span>
+                                <br />
+                                <span className={sublabelClassName}>
+                                    Set a value if the default registry is not docker.io in this
+                                    cluster
+                                </span>
                             </label>
-                            <div className="flex py-1 pl-2 italic">
-                                Set a value if the default registry is not docker.io in this cluster
-                            </div>
                             <div className="flex">
                                 <input
                                     id="dynamicConfig.registryOverride"
                                     name="dynamicConfig.registryOverride"
                                     onChange={handleChange}
                                     value={selectedCluster.dynamicConfig.registryOverride}
-                                    className="bg-base-100 border-2 rounded p-2 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10"
+                                    className={inputTextClassName}
                                     placeholder="image-mirror.example.com"
                                 />
                             </div>
                         </div>
-                        <h3>Admission Controller</h3>
-                        <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
+                        <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
                             <label
                                 htmlFor="dynamicConfig.admissionControllerConfig.enabled"
-                                className="block py-2 text-base-600 font-700"
+                                className={labelClassName}
                             >
                                 Enable Admission Controller
                             </label>
@@ -407,10 +415,12 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                             {({ featureEnabled }) => {
                                 return (
                                     featureEnabled && (
-                                        <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
+                                        <div
+                                            className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}
+                                        >
                                             <label
                                                 htmlFor="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
-                                                className="block py-2 text-base-600 font-700"
+                                                className={labelClassName}
                                             >
                                                 Enforce on Updates
                                             </label>
@@ -434,16 +444,16 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                                 );
                             }}
                         </FeatureEnabled>
-                        <div className="mb-4 flex px-2 py-2 items-center justify-between">
+                        <div className={`mb-4 pl-2 ${justifyBetweenClassName}`}>
                             <label
                                 htmlFor="dynamicConfig.admissionControllerConfig
                             .timeoutSeconds"
-                                className="py-2 text-base-600 font-700 flex"
+                                className={labelClassName}
                             >
-                                Timeout (Seconds)
+                                Timeout (seconds)
                             </label>
                             <input
-                                className="min-h-10 border-2 bg-base-100 border-base-300 text-base-600 p-3 rounded-r-sm cursor-pointer z-1 focus:border-base-300 w-12 font-600"
+                                className={inputNumberClassName}
                                 id="dynamicConfig.admissionControllerConfig.timeoutSeconds"
                                 name="dynamicConfig.admissionControllerConfig.timeoutSeconds"
                                 onChange={handleChange}
@@ -453,10 +463,10 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                                 }
                             />
                         </div>
-                        <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
+                        <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
                             <label
                                 htmlFor="dynamicConfig.admissionControllerConfig.scanInline"
-                                className="block py-2 text-base-600 font-700"
+                                className={labelClassName}
                             >
                                 Contact Image Scanners
                             </label>
@@ -470,10 +480,10 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                                 }
                             />
                         </div>
-                        <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
+                        <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
                             <label
                                 htmlFor="dynamicConfig.admissionControllerConfig.disableBypass"
-                                className="block py-2 text-base-600 font-700"
+                                className={labelClassName}
                             >
                                 Disable Use of Bypass Annotation
                             </label>
