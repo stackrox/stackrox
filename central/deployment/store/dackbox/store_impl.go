@@ -114,50 +114,6 @@ func (b *StoreImpl) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeploy
 	return ret, missing, nil
 }
 
-// ListDeployments returns all list deployments regardless of request
-func (b *StoreImpl) ListDeployments() ([]*storage.ListDeployment, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Deployment")
-
-	txn, err := b.dacky.NewReadOnlyTransaction()
-	if err != nil {
-		return nil, err
-	}
-	defer txn.Discard()
-
-	msgs, err := deploymentDackBox.ListReader.ReadAllIn(deploymentDackBox.ListBucket, txn)
-	if err != nil {
-		return nil, err
-	}
-	ret := make([]*storage.ListDeployment, 0, len(msgs))
-	for _, msg := range msgs {
-		ret = append(ret, msg.(*storage.ListDeployment))
-	}
-
-	return ret, nil
-}
-
-// GetDeployments returns all deployments regardless of request.
-func (b *StoreImpl) GetDeployments() ([]*storage.Deployment, error) {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Deployment")
-
-	txn, err := b.dacky.NewReadOnlyTransaction()
-	if err != nil {
-		return nil, err
-	}
-	defer txn.Discard()
-
-	msgs, err := deploymentDackBox.Reader.ReadAllIn(deploymentDackBox.Bucket, txn)
-	if err != nil {
-		return nil, err
-	}
-	ret := make([]*storage.Deployment, 0, len(msgs))
-	for _, msg := range msgs {
-		ret = append(ret, msg.(*storage.Deployment))
-	}
-
-	return ret, nil
-}
-
 // GetDeployment returns deployment with given id.
 func (b *StoreImpl) GetDeployment(id string) (deployment *storage.Deployment, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "Deployment")

@@ -80,10 +80,6 @@ func (c *cachedStore) ListDeployment(id string) (*storage.ListDeployment, bool, 
 	return c.store.ListDeployment(id)
 }
 
-func (c *cachedStore) ListDeployments() ([]*storage.ListDeployment, error) {
-	return c.store.ListDeployments()
-}
-
 func (c *cachedStore) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeployment, []int, error) {
 	var deployments []*storage.ListDeployment
 	var missingIndices []int
@@ -136,10 +132,6 @@ func (c *cachedStore) GetDeployment(id string) (*storage.Deployment, bool, error
 
 	c.testAndSetCacheEntry(id, deployment)
 	return deployment, true, nil
-}
-
-func (c *cachedStore) GetDeployments() ([]*storage.Deployment, error) {
-	return c.store.GetDeployments()
 }
 
 func (c *cachedStore) GetDeploymentsWithIDs(ids ...string) ([]*storage.Deployment, []int, error) {

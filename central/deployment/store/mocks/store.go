@@ -49,21 +49,6 @@ func (mr *MockStoreMockRecorder) ListDeployment(id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDeployment", reflect.TypeOf((*MockStore)(nil).ListDeployment), id)
 }
 
-// ListDeployments mocks base method
-func (m *MockStore) ListDeployments() ([]*storage.ListDeployment, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListDeployments")
-	ret0, _ := ret[0].([]*storage.ListDeployment)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListDeployments indicates an expected call of ListDeployments
-func (mr *MockStoreMockRecorder) ListDeployments() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDeployments", reflect.TypeOf((*MockStore)(nil).ListDeployments))
-}
-
 // ListDeploymentsWithIDs mocks base method
 func (m *MockStore) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeployment, []int, error) {
 	m.ctrl.T.Helper()
@@ -98,21 +83,6 @@ func (m *MockStore) GetDeployment(id string) (*storage.Deployment, bool, error) 
 func (mr *MockStoreMockRecorder) GetDeployment(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeployment", reflect.TypeOf((*MockStore)(nil).GetDeployment), id)
-}
-
-// GetDeployments mocks base method
-func (m *MockStore) GetDeployments() ([]*storage.Deployment, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDeployments")
-	ret0, _ := ret[0].([]*storage.Deployment)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetDeployments indicates an expected call of GetDeployments
-func (mr *MockStoreMockRecorder) GetDeployments() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeployments", reflect.TypeOf((*MockStore)(nil).GetDeployments))
 }
 
 // GetDeploymentsWithIDs mocks base method
