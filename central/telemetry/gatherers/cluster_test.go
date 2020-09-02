@@ -25,7 +25,6 @@ var (
 			CollectorImage: "098",
 			Status: &storage.ClusterStatus{
 				SensorVersion: "555",
-				LastContact:   &types.Timestamp{Seconds: 300},
 				ProviderMetadata: &storage.ProviderMetadata{
 					Provider: &storage.ProviderMetadata_Google{
 						Google: &storage.GoogleProviderMetadata{},
@@ -34,6 +33,9 @@ var (
 				OrchestratorMetadata: &storage.OrchestratorMetadata{
 					Version: "333",
 				},
+			},
+			HealthStatus: &storage.ClusterHealthStatus{
+				LastContact: &types.Timestamp{Seconds: 300},
 			},
 		},
 	}

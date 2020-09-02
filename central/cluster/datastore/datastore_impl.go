@@ -592,10 +592,6 @@ func (ds *datastoreImpl) populateHealthInfos(clusters ...*storage.Cluster) {
 		if features.ClusterHealthMonitoring.Enabled() {
 			cluster.HealthStatus = infos[healthIdx]
 		}
-		if cluster.Status == nil {
-			cluster.Status = &storage.ClusterStatus{}
-		}
-		cluster.Status.LastContact = infos[healthIdx].GetLastContact()
 		healthIdx++
 	}
 }

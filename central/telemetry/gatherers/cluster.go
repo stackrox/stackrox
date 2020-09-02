@@ -168,6 +168,5 @@ func (c *ClusterGatherer) clusterFromDatastores(ctx context.Context, cluster *st
 }
 
 func getLastContact(cluster *storage.Cluster) *time.Time {
-	status := cluster.GetStatus()
-	return telemetry.GetTimeOrNil(status.GetLastContact())
+	return telemetry.GetTimeOrNil(cluster.GetHealthStatus().GetLastContact())
 }

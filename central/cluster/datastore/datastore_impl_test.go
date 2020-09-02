@@ -361,9 +361,6 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 		},
 		{
 			Id: "2",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
 			HealthStatus: &storage.ClusterHealthStatus{
 				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 				LastContact:        ts,
@@ -376,9 +373,6 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 		},
 		{
 			Id: "4",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
 			HealthStatus: &storage.ClusterHealthStatus{
 				SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
 				LastContact:        ts,
@@ -387,9 +381,6 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 		},
 		{
 			Id: "5",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
 			HealthStatus: &storage.ClusterHealthStatus{
 				SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
 				LastContact:        ts,
@@ -440,9 +431,6 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 	expected = []*storage.Cluster{
 		{
 			Id: "1",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
 			HealthStatus: &storage.ClusterHealthStatus{
 				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 				LastContact:        ts,
@@ -451,9 +439,6 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 		},
 		{
 			Id: "2",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
 			HealthStatus: &storage.ClusterHealthStatus{
 				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 				LastContact:        ts,
@@ -462,9 +447,6 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 		},
 		{
 			Id: "3",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
 			HealthStatus: &storage.ClusterHealthStatus{
 				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 				LastContact:        ts,
@@ -473,9 +455,6 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 		},
 		{
 			Id: "4",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
 			HealthStatus: &storage.ClusterHealthStatus{
 				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 				LastContact:        ts,
@@ -484,9 +463,6 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 		},
 		{
 			Id: "5",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
 			HealthStatus: &storage.ClusterHealthStatus{
 				SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
 				LastContact:        ts,
@@ -495,9 +471,6 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 		},
 		{
 			Id: "6",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
 			HealthStatus: &storage.ClusterHealthStatus{
 				SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
 				LastContact:        ts,
@@ -545,10 +518,7 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateLegacyClusterContactTimes() 
 			Priority: 1,
 		},
 		{
-			Id: "2",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
+			Id:       "2",
 			Priority: 1,
 		},
 		{
@@ -556,17 +526,11 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateLegacyClusterContactTimes() 
 			Priority: 1,
 		},
 		{
-			Id: "4",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
+			Id:       "4",
 			Priority: 1,
 		},
 		{
-			Id: "5",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
+			Id:       "5",
 			Priority: 1,
 		},
 		{
@@ -612,45 +576,27 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateLegacyClusterContactTimes() 
 	}
 	expected = []*storage.Cluster{
 		{
-			Id: "1",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
+			Id:       "1",
 			Priority: 1,
 		},
 		{
-			Id: "2",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
+			Id:       "2",
 			Priority: 1,
 		},
 		{
-			Id: "3",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
+			Id:       "3",
 			Priority: 1,
 		},
 		{
-			Id: "4",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
+			Id:       "4",
 			Priority: 1,
 		},
 		{
-			Id: "5",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
+			Id:       "5",
 			Priority: 1,
 		},
 		{
-			Id: "6",
-			Status: &storage.ClusterStatus{
-				LastContact: ts,
-			},
+			Id:       "6",
 			Priority: 1,
 		},
 	}

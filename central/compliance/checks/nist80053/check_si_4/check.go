@@ -19,7 +19,7 @@ For this control, StackRox verifies that StackRox monitoring components are depl
 )
 
 func checkClusterCheckedInInThePastHour(ctx framework.ComplianceContext) {
-	lastContact := ctx.Data().Cluster().GetStatus().GetLastContact()
+	lastContact := ctx.Data().Cluster().GetHealthStatus().GetLastContact()
 	if lastContact == nil {
 		framework.Fail(ctx, neverCheckedInEvidence)
 		return

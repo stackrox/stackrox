@@ -104,8 +104,8 @@ message ClusterCertExpiryStatus {
 
 message ClusterStatus {
     string                    sensor_version        = 1;
-    // This field will be deprecated starting release 49.0. Use healthStatus.lastContact instead.
-    google.protobuf.Timestamp last_contact          = 2;
+    // This field has been deprecated starting release 49.0. Use healthStatus.lastContact instead.
+    google.protobuf.Timestamp DEPRECATED_last_contact = 2;
     ProviderMetadata          provider_metadata     = 3;
     OrchestratorMetadata      orchestrator_metadata = 4;
     ClusterUpgradeStatus      upgrade_status        = 5;

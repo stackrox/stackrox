@@ -38,7 +38,7 @@ func TestCheckClusterCheckedInInThePastHour(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			mockCtx, mockData, records := testutils.SetupMockCtxAndMockData(ctrl)
-			mockData.EXPECT().Cluster().Return(&storage.Cluster{Status: &storage.ClusterStatus{LastContact: c.clusterContactTime}})
+			mockData.EXPECT().Cluster().Return(&storage.Cluster{HealthStatus: &storage.ClusterHealthStatus{LastContact: c.clusterContactTime}})
 			checkClusterCheckedInInThePastHour(mockCtx)
 			records.AssertExpectedResult(c.shouldPass, t)
 		})

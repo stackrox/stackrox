@@ -200,7 +200,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterHealthStatus_HealthStatusLabel(0)))
 	utils.Must(builder.AddType("ClusterStatus", []string{
 		"certExpiryStatus: ClusterCertExpiryStatus",
-		"lastContact: Time",
 		"orchestratorMetadata: OrchestratorMetadata",
 		"providerMetadata: ProviderMetadata",
 		"sensorVersion: String!",
@@ -2631,11 +2630,6 @@ func (resolver *Resolver) wrapClusterStatuses(values []*storage.ClusterStatus, e
 func (resolver *clusterStatusResolver) CertExpiryStatus(ctx context.Context) (*clusterCertExpiryStatusResolver, error) {
 	value := resolver.data.GetCertExpiryStatus()
 	return resolver.root.wrapClusterCertExpiryStatus(value, true, nil)
-}
-
-func (resolver *clusterStatusResolver) LastContact(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetLastContact()
-	return timestamp(value)
 }
 
 func (resolver *clusterStatusResolver) OrchestratorMetadata(ctx context.Context) (*orchestratorMetadataResolver, error) {

@@ -239,7 +239,7 @@ describe('Cluster Creation Flow', () => {
                 cy.route('GET', `${clustersApi.list}/${clusterId}`, {
                     cluster: {
                         id: clusterId,
-                        status: {
+                        healthStatus: {
                             lastContact: '2018-06-25T19:12:44.955289Z',
                         },
                     },

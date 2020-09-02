@@ -90,40 +90,40 @@ describe('cluster helpers', () => {
     });
 
     describe('formatLastCheckIn', () => {
-        it('should return a formatted date string if passed a status object with a lastContact field', () => {
+        it('should return a formatted date string if passed a health status object with a lastContact field', () => {
             const testCluster = {
-                status: {
+                healthStatus: {
                     lastContact: '2019-08-28T17:20:29.156602Z',
                 },
             };
 
-            const displayValue = formatLastCheckIn(testCluster.status);
+            const displayValue = formatLastCheckIn(testCluster.healthStatus);
 
             const expectedDateFormat = dateFns.format(
-                testCluster.status.lastContact,
+                testCluster.healthStatus.lastContact,
                 dateTimeFormat
             );
             expect(displayValue).toEqual(expectedDateFormat);
         });
 
-        it('should return a "Not applicable" if passed a status object with null lastContact field', () => {
+        it('should return a "Not applicable" if passed a health status object with null lastContact field', () => {
             const testCluster = {
-                status: {
+                healthStatus: {
                     lastContact: null,
                 },
             };
 
-            const displayValue = formatLastCheckIn(testCluster.status);
+            const displayValue = formatLastCheckIn(testCluster.healthStatus);
 
             expect(displayValue).toEqual('Not applicable');
         });
 
         it('should return a "Not applicable" if passed a status object with null status field', () => {
             const testCluster = {
-                status: null,
+                healthStatus: null,
             };
 
-            const displayValue = formatLastCheckIn(testCluster.status);
+            const displayValue = formatLastCheckIn(testCluster.healthStatus);
 
             expect(displayValue).toEqual('Not applicable');
         });

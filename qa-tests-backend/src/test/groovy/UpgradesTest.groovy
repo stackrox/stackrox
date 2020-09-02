@@ -60,7 +60,6 @@ class UpgradesTest extends BaseSpecification {
                         .build()
                 )
                 .setStatus(ClusterOuterClass.ClusterStatus.newBuilder()
-                        .setLastContact(Timestamp.newBuilder().setSeconds(1551412107).setNanos(857477786).build())
                         .setProviderMetadata(ClusterOuterClass.ProviderMetadata.newBuilder()
                                 .setGoogle(ClusterOuterClass.GoogleProviderMetadata.newBuilder()
                                         .setProject("ultra-current-825")

@@ -72,7 +72,7 @@ export function getColumnsForClusters({ featureFlags, metadata, rowActions }) {
         },
         {
             Header: 'Last check-in',
-            Cell: ({ original }) => formatLastCheckIn(original.status),
+            Cell: ({ original }) => formatLastCheckIn(original.healthStatus),
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
         },

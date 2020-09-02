@@ -229,9 +229,9 @@ export function formatCloudProvider(providerMetadata) {
     return 'Not applicable';
 }
 
-export function formatLastCheckIn(status) {
-    if (status && status.lastContact) {
-        return dateFns.format(status.lastContact, dateTimeFormat);
+export function formatLastCheckIn(healthStatus) {
+    if (healthStatus && healthStatus.lastContact) {
+        return dateFns.format(healthStatus.lastContact, dateTimeFormat);
     }
 
     return 'Not applicable';

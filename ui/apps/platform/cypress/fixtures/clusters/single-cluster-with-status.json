@@ -14,7 +14,6 @@
         "DEPRECATEDOrchestratorMetadata": null,
         "status": {
             "sensorVersion": "3.0.47.x-104-g2a7be2f021",
-            "lastContact": "2020-08-19T17:44:23.859543Z",
             "providerMetadata": null,
             "orchestratorMetadata": {
                 "version": "v1.14.8",

@@ -129,8 +129,8 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
                         // stop polling after contact is established
                         if (
                             selectedCluster &&
-                            selectedCluster.status &&
-                            selectedCluster.status.lastContact
+                            selectedCluster.healthStatus &&
+                            selectedCluster.healthStatus.lastContact
                         ) {
                             setPollingDelay(null);
                         }
@@ -193,8 +193,8 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
                     if (
                         !(
                             selectedCluster &&
-                            selectedCluster.status &&
-                            selectedCluster.status.lastContact
+                            selectedCluster.healthStatus &&
+                            selectedCluster.healthStatus.lastContact
                         )
                     ) {
                         setPollingDelay(clusterDetailPollingInterval);
@@ -450,8 +450,8 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
                     clusterCheckedIn={
                         !!(
                             selectedCluster &&
-                            selectedCluster.status &&
-                            selectedCluster.status.lastContact
+                            selectedCluster.healthStatus &&
+                            selectedCluster.healthStatus.lastContact
                         )
                     }
                 />
