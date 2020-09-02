@@ -209,8 +209,12 @@ class Kubernetes implements OrchestratorMain {
     }
 
     List<Pod> getPods(String namespace, String appName) {
+        return getPodsByLabel(namespace, ["app": appName])
+    }
+
+    List<Pod> getPodsByLabel(String namespace, Map<String, String> label) {
         def selector = new LabelSelector()
-        selector.matchLabels = ["app": appName]
+        selector.matchLabels = label
         PodList list = evaluateWithRetry(2, 3) {
             return client.pods().inNamespace(namespace).withLabelSelector(selector).list()
         }
@@ -227,7 +231,7 @@ class Kubernetes implements OrchestratorMain {
 
     def getAndPrintPods(String ns, String name) {
         println "Status of ${name}'s pods:"
-        for (Pod pod : getPods(ns, name)) {
+        for (Pod pod : getPodsByLabel(ns, ["deployment": name])) {
             println "\t- ${pod.metadata.name}"
             for (ContainerStatus status : pod.status.containerStatuses) {
                 println "\t  Container status: ${status.state}"
@@ -1454,7 +1458,7 @@ class Kubernetes implements OrchestratorMain {
                                 metadata: new ObjectMeta(
                                         name: deployment.name,
                                         namespace: deployment.namespace,
-                                        labels: deployment.labels,
+                                        labels: deployment.labels + ["deployment": deployment.name],
                                 ),
                                 spec: generatePodSpec(deployment)
                         )
