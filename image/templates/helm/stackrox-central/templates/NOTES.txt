@@ -1,0 +1,31 @@
+{{- include "stackrox.init" . -}}
+
+StackRox {{.Chart.AppVersion}} has been installed.
+
+{{ if ._rox.central.adminPasswordGenerated -}}
+An administrator password has been generated automatically. Use username 'admin' and the following
+password to log in for initial setup:
+
+  {{ ._rox.central.adminPassword }}
+
+{{ end -}}
+
+{{ if ._rox.global.docker -}}
+Using Docker registry {{ ._rox.global.docker.registry}}.
+{{- end }}
+
+{{ if ._rox.notes -}}
+Please take note of the following:
+{{ range ._rox.notes }}
+- {{ . | wrapWith 98 "\n  " -}}
+{{ end -}}
+{{ end }}
+
+{{ if ._rox.warnings -}}
+When installing StackRox, the following warnings were encountered:
+{{ range ._rox.warnings }}
+- WARNING: {{ . | wrapWith 98 "\n  " -}}
+{{ end -}}
+{{- end }}
+
+Thank you for using StackRox!

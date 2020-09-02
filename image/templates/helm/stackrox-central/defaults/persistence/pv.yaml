@@ -1,0 +1,6 @@
+name: stackrox-db
+storageClass:
+value:
+  persistentVolumeClaim:
+    claimName: stackrox-db
+size: {{ default 100 .Values.persistence.pv.size }}

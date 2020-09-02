@@ -1,0 +1,177 @@
+{{- include "stackrox.init" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+  namespace: {{.Release.Namespace}}
+  labels:
+    {{ template "defaultLabels" . }}
+    app: central
+  annotations:
+    {{ template "defaultAnnotations" . }}
+    owner: stackrox
+    email: support@stackrox.com
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: central
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: {{.Release.Namespace}}
+      labels:
+        app.kubernetes.io/name: stackrox
+        app: central
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "8443"
+    spec:
+      {{- if ._rox.central.nodeSelector }}
+      nodeSelector:
+      {{- toYaml ._rox.central.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if ._rox.global.openShiftCluster }}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 25
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/compute
+                    operator: In
+                    values:
+                    - "true"
+            - weight: 75
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: NotIn
+                    values:
+                    - "true"
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: NotIn
+                    values:
+                    - "true"
+      {{- end}}
+      serviceAccount: central
+      securityContext:
+        fsGroup: 4000
+        runAsUser: 4000
+      containers:
+      - name: central
+        image: "{{ ._rox.central.mainImageRepository }}:{{ ._rox.central.mainImageTag }}"
+        command:
+          - /stackrox/central-entrypoint.sh
+        ports:
+          - name: api
+            containerPort: 8443
+        readinessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /v1/ping
+            port: 8443
+        resources:
+{{ toYaml ._rox.central.resources | indent 10 }}
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+          readOnlyRootFilesystem: true
+        env:
+          - name: ROX_INIT_TELEMETRY_ENABLED
+            value: {{ ._rox.central.env.telemetryEnabled | quote }}
+          - name: ROX_OFFLINE_MODE
+            value: {{ ._rox.central.env.offlineMode | quote }}
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log/stackrox/
+        - name: stackrox-data-volume
+          mountPath: /stackrox/data
+        - name: central-tmp-volume
+          mountPath: /tmp
+        - name: central-etc-ssl-volume
+          mountPath: /etc/ssl
+        - name: central-etc-pki-volume
+          mountPath: /etc/pki/ca-trust
+        - name: central-certs-volume
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
+        - name: central-default-tls-cert-volume
+          mountPath: /run/secrets/stackrox.io/default-tls-cert/
+          readOnly: true
+        - name: central-htpasswd-volume
+          mountPath: /run/secrets/stackrox.io/htpasswd/
+          readOnly: true
+        - name: central-jwt-volume
+          mountPath: /run/secrets/stackrox.io/jwt/
+          readOnly: true
+        - name: additional-ca-volume
+          mountPath: /usr/local/share/ca-certificates/
+          readOnly: true
+        - name: central-license-volume
+          mountPath: /run/secrets/stackrox.io/central-license/
+          readOnly: true
+        - name: {{ ._rox.global.persistence.name }}
+          mountPath: /var/lib/stackrox
+        - name: central-config-volume
+          mountPath: /etc/stackrox
+        - name: proxy-config-volume
+          mountPath: /run/secrets/stackrox.io/proxy-config/
+          readOnly: true
+        - name: endpoints-config-volume
+          mountPath: /etc/stackrox.d/endpoints/
+          readOnly: true
+      volumes:
+      - name: varlog
+        emptyDir: {}
+      - name: stackrox-data-volume
+        emptyDir: {}
+      - name: central-tmp-volume
+        emptyDir: {}
+      - name: central-etc-ssl-volume
+        emptyDir: {}
+      - name: central-etc-pki-volume
+        emptyDir: {}
+      - name: central-certs-volume
+        secret:
+          secretName: central-tls
+      - name: central-default-tls-cert-volume
+        secret:
+          secretName: central-default-tls-cert
+          optional: true
+      - name: central-htpasswd-volume
+        secret:
+          secretName: central-htpasswd
+          optional: true
+      - name: central-jwt-volume
+        secret:
+          secretName: central-tls
+          items:
+            - key: jwt-key.pem
+              path: jwt-key.pem
+      - name: additional-ca-volume
+        secret:
+          secretName: additional-ca
+          optional: true
+      - name: central-license-volume
+        secret:
+          secretName: central-license
+          optional: true
+      - name: central-config-volume
+        configMap:
+          name: central-config
+          optional: true
+      - name: proxy-config-volume
+        secret:
+          secretName: proxy-config
+          optional: true
+      - name: endpoints-config-volume
+        configMap:
+          name: central-endpoints
+      - name: {{ ._rox.global.persistence.name }}
+{{ toYaml ._rox.global.persistence.value | indent 8 }}

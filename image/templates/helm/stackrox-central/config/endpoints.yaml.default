@@ -1,0 +1,31 @@
+# Sample endpoints.yaml configuration for StackRox Central.
+#
+# # CAREFUL: If the following line is uncommented, do not expose the default endpoint on port 8443 by default.
+# #          This will break normal operation.
+# disableDefault: true # if true, don't serve on :8443
+# endpoints:
+#   # Serve plaintext HTTP only on port 8080
+#   - listen: ":8080"
+#     # Backend protocols, possible values are 'http' and 'grpc'. If unset or empty, assume both.
+#     protocols:
+#       - http
+#     tls:
+#       # Disable TLS. If this is not specified, assume TLS is enabled.
+#       disable: true
+#   # Serve HTTP and  gRPC for sensors only on port 8444
+#   - listen: ":8444"
+#     tls:
+#       # Which TLS certificates to serve, possible values are 'service' (StackRox-generated service certificates)
+#       # and 'default' (user-configured default TLS certificate). If unset or empty, assume both.
+#       serverCerts:
+#         - default
+#         - service
+#       # Client authentication settings.
+#       clientAuth:
+#         # Enforce TLS client authentication. If unset, do not enforce, only request certificates
+#         # opportunistically.
+#         required: true
+#         # Which TLS client CAs to serve, possible values are 'service' (CA for StackRox-generated service
+#         # certificates) and 'user' (CAs for PKI auth providers). If unset or empty, assume both.
+#         certAuthorities: # if not set, assume ["user", "service"]
+#           - service

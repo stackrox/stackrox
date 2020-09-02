@@ -1,0 +1,70 @@
+
+## Chart Settings. Can be overwritten using --values/--set.
+#
+# persistence:
+#     pv:
+#         size: 100
+#
+# - OR -
+#
+# persistence:
+#     hostpath: "/foo"
+
+# offlineMode: "false"
+# telemetryEnabled: "true"
+
+# Main Image can be overwritten:
+mainImageTag: "3.0.48.0"
+mainImageRepository: "stackrox/main"
+# mainImageRepository: "main" # For stackrox.io registry
+
+# Configure default TLS certificate and key
+# defaultTlsCert:
+#   cert: |
+#     -----BEGIN CERTIFICATE-----
+#     [...]
+#     -----END CERTIFICATE-----
+#   key: |
+#     -----BEGIN RSA PRIVATE KEY-----
+#     [...]
+#     -----END RSA PRIVATE KEY-----
+
+## Configure secrets for pulling Docker images
+#
+# imagePullSecret:
+#   username: ...
+#   password: ...
+#   registry: ...
+
+# To implement:
+# enableScanner: false
+
+centralResources:
+    requests:
+        memory: "4Gi"
+        cpu: "1500m"
+    limits:
+        memory: "8Gi"
+        cpu: "2000m"
+
+central:
+    nodeSelector: null
+
+defaults:
+
+    persistence:
+        pv:
+            name: stackrox-db
+            type: "pv"
+            storageClass:
+            value:
+                persistentVolumeClaim:
+                    claimName: stackrox-db
+            size: 100
+
+        hostpath:
+            name: stackrox-db
+            type: "hostpath"
+            value:
+                hostPath:
+                    path: "/var/lib/stackrox"

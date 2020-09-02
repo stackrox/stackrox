@@ -1,0 +1,26 @@
+# # NOTE: Both central and scanner should be restarted if this secret is changed.
+# # While it is possible that some components will pick up the new proxy configuration
+# # without a restart, it cannot be guaranteed that this will apply to every possible
+# # integration etc.
+# url: http://proxy.name:port
+# username: username
+# password: password
+# # If the following value is set to true, the proxy wil NOT be excluded for the default hosts:
+# # - *.stackrox, *.stackrox.svc
+# # - localhost, localhost.localdomain, 127.0.0.0/8, ::1
+# # - *.local
+# omitDefaultExcludes: false
+# excludes:  # hostnames (may include * components) for which not to use a proxy, like in-cluster repositories.
+# - some.domain
+# # The following configuration sections allow specifying a different proxy to be used for HTTP(S) connections.
+# # If they are omitted, the above configuration is used for HTTP(S) connections as well as TCP connections.
+# # If only the `http` section is given, it will be used for HTTPS connections as well.
+# # Note: in most cases, a single, global proxy configuration is sufficient.
+# http:
+#   url: http://http-proxy.name:port
+#   username: username
+#   password: password
+# https:
+#   url: http://https-proxy.name:port
+#   username: username
+#   password: password

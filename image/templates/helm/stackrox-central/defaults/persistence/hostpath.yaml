@@ -1,0 +1,4 @@
+name: stackrox-db
+value:
+    hostPath:
+        path: {{ default "/var/lib/stackrox" .Values.persistence.hostpath }}
