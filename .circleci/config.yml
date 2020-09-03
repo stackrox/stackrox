@@ -119,28 +119,6 @@ getECRDockerPullPassword: &getECRDockerPullPassword
       cci-export AWS_ECR_DOCKER_PULL_PASSWORD "${PASS}"
       exit 0
 
-setupHelm: &setupHelm
-  run:
-    name: Setup tiller by default in GKE Cluster
-    command: |
-      kubectl apply -f ./deploy/k8s/tillerbind.yaml
-
-      SUCCESS=0
-      for i in {1..10}; do
-        if helm init --service-account helm  --tiller-connection-timeout 5 --wait; then
-          SUCCESS=1
-          break
-        fi
-        echo "Failed to connect to helm. Retrying in 5 seconds"
-        sleep 5
-        kubectl -n kube-system get pod
-      done
-
-      if (( ! SUCCESS )); then
-        echo "Failed to connect to helm"
-        exit 1
-      fi
-
 refreshAlpineBaseImage: &refreshAlpineBaseImage
   run:
     name: Refresh base image
@@ -515,7 +493,7 @@ version: 2.1
 executors:
   custom:
     docker:
-      - image: docker.io/stackrox/apollo-ci:0.3.1
+      - image: docker.io/stackrox/apollo-ci:0.3.3
         auth:
           username: $DOCKER_IO_PULL_USERNAME
           password: $DOCKER_IO_PULL_PASSWORD
@@ -1045,10 +1023,10 @@ commands:
             kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait || true
             kubectl delete -R -f scripts/ci/psp --wait || true
             kubectl delete ns stackrox --wait || true
-            helm del --purge monitoring || true
-            helm del --purge central || true
-            helm del --purge scanner || true
-            helm del --purge sensor || true
+            helm uninstall monitoring || true
+            helm uninstall central || true
+            helm uninstall scanner || true
+            helm uninstall sensor || true
 
   deploy-webhook-server:
     steps:
@@ -1174,8 +1152,6 @@ commands:
       - *setupLicense
 
       - *setupDefaultTLSCerts
-
-      - *setupHelm
 
       - deploy-anchore:
           cluster-id: << parameters.cluster-id >>
@@ -1495,7 +1471,6 @@ commands:
 
       - *setupDefaultTLSCerts
 
-      - *setupHelm
       - deploy-stackrox:
           orchestrator-flavor: openshift
           sensor-deploy-flavor: << parameters.sensor-deploy-flavor >>
@@ -1673,7 +1648,7 @@ commands:
                     extra_args+=(-f feature-flag-values.yaml)
                 fi
               fi
-              helm install --namespace stackrox -f values.yaml --name sensor . "${extra_args[@]}"
+              helm install --namespace stackrox -f values.yaml sensor . "${extra_args[@]}"
               rm -rf "${RENDERED_CHART_DIR}"
             fi
       - run:
@@ -2664,7 +2639,6 @@ jobs:
 
       - *setupDefaultTLSCerts
 
-      - *setupHelm
       - deploy-stackrox:
           require-cluster-admin: true
           validate-autoupgrade-label: true
@@ -2911,7 +2885,6 @@ jobs:
       - *setupLicense
       - *setupDefaultTLSCerts
 
-      - *setupHelm
       - deploy-stackrox:
           require-cluster-admin: true
           validate-autoupgrade-label: true
@@ -3624,7 +3597,6 @@ jobs:
           cluster-id: scale-test
       - remove-existing-stackrox-resources
 
-      - *setupHelm
       - *setupGoogleAppCreds
       - *setupLicense
 
@@ -3775,7 +3747,6 @@ jobs:
 
       - *setupDefaultTLSCerts
 
-      - *setupHelm
       - deploy-stackrox:
           post-central-deploy-steps:
             - *setupClientTLSCerts
@@ -3872,7 +3843,6 @@ jobs:
 
       - *setupDefaultTLSCerts
 
-      - *setupHelm
       - deploy-stackrox:
           post-central-deploy-steps:
             - *setupClientTLSCerts
@@ -4197,7 +4167,6 @@ jobs:
             ROX_LICENSE_KEY="$(licenses/ci.sh)"
             cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
 
-      - *setupHelm
       - deploy-stackrox:
           sensor-deploy-flavor: helm
           helm-from-repo: true
