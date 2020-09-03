@@ -61,6 +61,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		manager.Singleton(),
 		networkpolicies.NewCommandHandler(client.Kubernetes()),
 		clusterstatus.NewUpdater(client.Kubernetes()),
+		clusterhealth.NewUpdater(client.Kubernetes()),
 		complianceCommandHandler,
 		processSignals,
 		telemetry.NewCommandHandler(client.Kubernetes()),
@@ -69,10 +70,6 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 
 	if admCtrlSettingsMgr != nil {
 		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(client.Kubernetes(), admCtrlSettingsMgr))
-	}
-
-	if features.ClusterHealthMonitoring.Enabled() {
-		components = append(components, clusterhealth.NewUpdater(client.Kubernetes()))
 	}
 
 	s := sensor.NewSensor(

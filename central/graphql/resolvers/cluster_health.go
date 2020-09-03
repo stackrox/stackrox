@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -15,9 +14,6 @@ import (
 
 func init() {
 	schema := getBuilder()
-	if !features.ClusterHealthMonitoring.Enabled() {
-		return
-	}
 	utils.Must(
 		schema.AddQuery("clusterHealthCounter(query: String): ClusterHealthCounter!"),
 		schema.AddType("ClusterHealthCounter", []string{
@@ -43,9 +39,6 @@ type ClusterHealthCounterResolver struct {
 func (resolver *Resolver) ClusterHealthCounter(ctx context.Context, args RawQuery) (*ClusterHealthCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ClusterHealthCounter")
 
-	if !features.ClusterHealthMonitoring.Enabled() {
-		return nil, nil
-	}
 	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err

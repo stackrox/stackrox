@@ -22,8 +22,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -347,18 +345,8 @@ func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clu
 		return err
 	}
 
-	if !features.ClusterHealthMonitoring.Enabled() {
-		if protoconv.ConvertTimestampToTimeOrDefault(clusterHealthStatus.GetLastContact(), time.Time{}).IsZero() {
-			clusterHealthStatus.LastContact = oldHealth.GetLastContact()
-		}
-	}
-
 	if err := ds.clusterHealthStorage.UpsertWithID(id, clusterHealthStatus); err != nil {
 		return err
-	}
-
-	if !features.ClusterHealthMonitoring.Enabled() {
-		return nil
 	}
 
 	// If no change in cluster health status, no need to rebuild index
@@ -583,15 +571,11 @@ func (ds *datastoreImpl) populateHealthInfos(clusters ...*storage.Cluster) {
 	missCount := 0
 	healthIdx := 0
 	for clusterIdx, cluster := range clusters {
-		cluster.HealthStatus = nil
 		if missCount < len(missing) && clusterIdx == missing[missCount] {
 			missCount++
 			continue
 		}
-
-		if features.ClusterHealthMonitoring.Enabled() {
-			cluster.HealthStatus = infos[healthIdx]
-		}
+		cluster.HealthStatus = infos[healthIdx]
 		healthIdx++
 	}
 }

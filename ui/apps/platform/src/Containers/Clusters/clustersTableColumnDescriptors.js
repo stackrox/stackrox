@@ -8,22 +8,15 @@ import {
     wrapClassName,
     rtTrActionsClassName,
 } from 'Components/Table';
-import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 
-import {
-    formatCloudProvider,
-    formatClusterType,
-    formatCollectionMethod,
-    formatConfiguredField,
-    formatLastCheckIn,
-} from './cluster.helpers';
+import { formatCloudProvider } from './cluster.helpers';
 import ClusterStatus from './Components/ClusterStatus';
 import CollectorStatus from './Components/CollectorStatus';
 import CredentialExpiration from './Components/CredentialExpiration';
 import SensorStatus from './Components/SensorStatus';
 import SensorUpgrade from './Components/SensorUpgrade';
 
-export function getColumnsForClusters({ featureFlags, metadata, rowActions }) {
+export function getColumnsForClusters({ metadata, rowActions }) {
     function renderRowActionButtons(cluster) {
         return (
             <div className="border-2 border-r-2 border-base-400 bg-base-100">
@@ -36,82 +29,6 @@ export function getColumnsForClusters({ featureFlags, metadata, rowActions }) {
             </div>
         );
     }
-
-    // Because of fixed checkbox width, total of column ratios must be less than 100%
-    // 1 * 1/9 + 7 * 1/8 = 98.6%
-    const clusterColumnsWithoutHealth = [
-        {
-            accessor: 'name',
-            Header: 'Name',
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Orchestrator',
-            Cell: ({ original }) => formatClusterType(original.type),
-            headerClassName: `w-1/9 ${defaultHeaderClassName}`,
-            className: `w-1/9 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Runtime Collection',
-            Cell: ({ original }) => formatCollectionMethod(original.collectionMethod),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Admission Controller',
-            Cell: ({ original }) => formatConfiguredField(original.admissionController),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Cloud Provider',
-            Cell: ({ original }) => formatCloudProvider(original.status?.providerMetadata),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Last check-in',
-            Cell: ({ original }) => formatLastCheckIn(original.healthStatus),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Sensor Upgrade',
-            Cell: ({ original }) => (
-                <SensorUpgrade
-                    upgradeStatus={original.status?.upgradeStatus}
-                    centralVersion={metadata.version}
-                    sensorVersion={original.status?.sensorVersion}
-                    isList
-                    actionProps={{
-                        clusterId: original.id,
-                        upgradeSingleCluster: rowActions.upgradeSingleCluster,
-                    }}
-                />
-            ),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
-        },
-        {
-            Header: 'Credential Expiration',
-            Cell: ({ original }) => (
-                <CredentialExpiration
-                    certExpiryStatus={original.status?.certExpiryStatus}
-                    currentDatetime={new Date()}
-                />
-            ),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName} word-break`,
-        },
-        {
-            Header: '',
-            accessor: '',
-            headerClassName: 'hidden',
-            className: rtTrActionsClassName,
-            Cell: ({ original }) => renderRowActionButtons(original),
-        },
-    ];
 
     // Because of fixed checkbox width, total of column ratios must be less than 100%
     // 2/6 + 2/7 + 2/8 + 1/10 = 96.90674%
@@ -195,15 +112,7 @@ export function getColumnsForClusters({ featureFlags, metadata, rowActions }) {
         },
     ];
 
-    const clusterColumns = isBackendFeatureFlagEnabled(
-        featureFlags,
-        knownBackendFlags.ROX_CLUSTER_HEALTH_MONITORING,
-        false
-    )
-        ? clusterColumnsWithHealth
-        : clusterColumnsWithoutHealth;
-
-    return clusterColumns;
+    return clusterColumnsWithHealth;
 }
 
 export default {

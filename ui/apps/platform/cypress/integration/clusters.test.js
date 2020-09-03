@@ -2,7 +2,6 @@ import dateFns from 'date-fns';
 import { selectors, clustersUrl } from '../constants/ClustersPage';
 import { clusters as clustersApi, metadata as metadataApi } from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
-import checkFeatureFlag from '../helpers/features';
 
 describe('Clusters page', () => {
     withAuth();
@@ -25,26 +24,15 @@ describe('Clusters page', () => {
         it('should display all the columns expected in clusters list page', () => {
             cy.visit(clustersUrl);
 
-            const expectedHeadings = checkFeatureFlag('ROX_CLUSTER_HEALTH_MONITORING', true)
-                ? [
-                      'Name',
-                      'Cloud Provider',
-                      'Cluster Status',
-                      'Sensor Status',
-                      'Collector Status',
-                      'Sensor Upgrade',
-                      'Credential Expiration',
-                  ]
-                : [
-                      'Name',
-                      'Orchestrator',
-                      'Runtime Collection',
-                      'Admission Controller',
-                      'Cloud Provider',
-                      'Last check-in',
-                      'Sensor Upgrade',
-                      'Credential Expiration',
-                  ];
+            const expectedHeadings = [
+                'Name',
+                'Cloud Provider',
+                'Cluster Status',
+                'Sensor Status',
+                'Collector Status',
+                'Sensor Upgrade',
+                'Credential Expiration',
+            ];
 
             cy.get(selectors.clusters.tableHeadingCell).should(($ths) => {
                 let n = 0;
@@ -270,11 +258,6 @@ describe('Cluster Health', () => {
     let clustersFixture;
 
     before(function beforeHook() {
-        // skip the test if feature flag is not enabled
-        if (checkFeatureFlag('ROX_CLUSTER_HEALTH_MONITORING', false)) {
-            this.skip();
-        }
-
         cy.fixture('clusters/health.json').then((clustersArg) => {
             clustersFixture = clustersArg;
         });

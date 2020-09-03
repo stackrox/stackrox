@@ -29,13 +29,7 @@ import { filterAllowedSearch, convertToRestSearch } from 'utils/searchUtils';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
 
-function ClustersTablePanel({
-    selectedClusterId,
-    setSelectedClusterId,
-    searchOptions,
-    metadata,
-    featureFlags,
-}) {
+function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOptions, metadata }) {
     const workflowState = useContext(workflowStateContext);
     const pageSearch = workflowState.search[searchParams.page];
 
@@ -230,7 +224,6 @@ function ClustersTablePanel({
     }
 
     const columnOptions = {
-        featureFlags,
         metadata,
         rowActions: {
             onDeleteHandler,
@@ -278,7 +271,6 @@ function ClustersTablePanel({
 }
 
 ClustersTablePanel.propTypes = {
-    featureFlags: PropTypes.arrayOf(PropTypes.shape({ envVar: PropTypes.string })).isRequired,
     metadata: PropTypes.shape({ version: PropTypes.string }).isRequired,
     selectedClusterId: PropTypes.string,
     setSelectedClusterId: PropTypes.func.isRequired,
@@ -291,7 +283,6 @@ ClustersTablePanel.defaultProps = {
 };
 
 const mapStateToProps = createStructuredSelector({
-    featureFlags: selectors.getFeatureFlags,
     metadata: selectors.getMetadata,
 });
 

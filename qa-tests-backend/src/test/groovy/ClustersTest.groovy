@@ -29,16 +29,14 @@ class ClustersTest extends BaseSpecification {
     }
 
     def "Test cluster health status is healthy"() {
-        if (FeatureFlagService.isFeatureFlagEnabled("ROX_CLUSTER_HEALTH_MONITORING")) {
-            when:
-            "Get the cluster, and the cluster health status"
-            def cluster = ClusterService.getCluster()
-            assert cluster
-            def overallClusterHealthStatus = cluster.overallClusterHealthStatus
+        when:
+        "Get the cluster, and the cluster health status"
+        def cluster = ClusterService.getCluster()
+        assert cluster
+        def overallClusterHealthStatus = cluster.healthStatus.overallHealthStatus
 
-            then:
-            "Verify the cluster's overall health status is healthy"
-            assert overallClusterHealthStatus == ClusterOuterClass.HealthStatusLabel.HEALTHY
-        }
+        then:
+        "Verify the cluster's overall health status is healthy"
+        assert overallClusterHealthStatus == ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel.HEALTHY
     }
 }

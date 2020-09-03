@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -331,10 +330,6 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsSearch() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
-	if !features.ClusterHealthMonitoring.Enabled() {
-		suite.T().Skip()
-	}
-
 	t := time.Now()
 	ts := protoconv.ConvertTimeToTimestamp(t)
 	ids := []string{"1", "2", "3", "4", "5", "6"}
@@ -488,128 +483,6 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterHealthInfo() {
 	suite.Equal(expected, actuals)
 }
 
-func (suite *ClusterDataStoreTestSuite) TestPopulateLegacyClusterContactTimes() {
-	if features.ClusterHealthMonitoring.Enabled() {
-		suite.T().Skip()
-	}
-
-	t := time.Now()
-	ts := protoconv.ConvertTimeToTimestamp(t)
-	ids := []string{"1", "2", "3", "4", "5", "6"}
-	existingHealths := []*storage.ClusterHealthStatus{
-		{
-			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-			LastContact:        ts,
-		},
-		{
-			SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
-			LastContact:        ts,
-		},
-		{
-			SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-			LastContact:        ts,
-		},
-	}
-	results := []search.Result{{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"}, {ID: "6"}}
-	clusters := []*storage.Cluster{{Id: "1"}, {Id: "2"}, {Id: "3"}, {Id: "4"}, {Id: "5"}, {Id: "6"}}
-	expected := []*storage.Cluster{
-		{
-			Id:       "1",
-			Priority: 1,
-		},
-		{
-			Id:       "2",
-			Priority: 1,
-		},
-		{
-			Id:       "3",
-			Priority: 1,
-		},
-		{
-			Id:       "4",
-			Priority: 1,
-		},
-		{
-			Id:       "5",
-			Priority: 1,
-		},
-		{
-			Id:       "6",
-			Priority: 1,
-		},
-	}
-
-	suite.indexer.EXPECT().Search(gomock.Any()).Return(results, nil)
-	suite.clusters.EXPECT().GetMany(ids).Return(clusters, []int{}, nil)
-	suite.healthStatuses.EXPECT().GetMany(ids).Return(existingHealths, []int{0, 2, 5}, nil)
-
-	actuals, err := suite.clusterDataStore.SearchRawClusters(suite.hasReadCtx, search.EmptyQuery())
-	suite.NoError(err)
-	suite.Equal(expected, actuals)
-
-	// none are missing
-	existingHealths = []*storage.ClusterHealthStatus{
-		{
-			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-			LastContact:        ts,
-		},
-		{
-			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-			LastContact:        ts,
-		},
-		{
-			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-			LastContact:        ts,
-		},
-		{
-			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-			LastContact:        ts,
-		},
-		{
-			SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
-			LastContact:        ts,
-		},
-		{
-			SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-			LastContact:        ts,
-		},
-	}
-	expected = []*storage.Cluster{
-		{
-			Id:       "1",
-			Priority: 1,
-		},
-		{
-			Id:       "2",
-			Priority: 1,
-		},
-		{
-			Id:       "3",
-			Priority: 1,
-		},
-		{
-			Id:       "4",
-			Priority: 1,
-		},
-		{
-			Id:       "5",
-			Priority: 1,
-		},
-		{
-			Id:       "6",
-			Priority: 1,
-		},
-	}
-
-	suite.indexer.EXPECT().Search(gomock.Any()).Return(results, nil)
-	suite.clusters.EXPECT().GetMany(ids).Return(clusters, []int{}, nil)
-	suite.healthStatuses.EXPECT().GetMany(ids).Return(existingHealths, []int{}, nil)
-
-	actuals, err = suite.clusterDataStore.SearchRawClusters(suite.hasReadCtx, search.EmptyQuery())
-	suite.NoError(err)
-	suite.Equal(expected, actuals)
-}
-
 func (suite *ClusterDataStoreTestSuite) TestUpdateClusterHealth() {
 	t1 := time.Now()
 	t3 := time.Now().Add(-30 * time.Minute)
@@ -748,14 +621,11 @@ func (suite *ClusterDataStoreTestSuite) TestUpdateClusterHealth() {
 	for _, c := range cases {
 		suite.healthStatuses.EXPECT().Get(c.cluster.GetId()).Return(c.oldHealth, true, nil)
 		suite.healthStatuses.EXPECT().UpsertWithID(c.cluster.GetId(), c.newHealth)
-
-		if features.ClusterHealthMonitoring.Enabled() {
-			if !c.skipIndex {
-				suite.clusters.EXPECT().Get(c.cluster.GetId()).Return(c.cluster, true, nil)
-				cluster := c.cluster
-				cluster.HealthStatus = c.newHealth
-				suite.indexer.EXPECT().AddCluster(cluster).Return(nil)
-			}
+		if !c.skipIndex {
+			suite.clusters.EXPECT().Get(c.cluster.GetId()).Return(c.cluster, true, nil)
+			cluster := c.cluster
+			cluster.HealthStatus = c.newHealth
+			suite.indexer.EXPECT().AddCluster(cluster).Return(nil)
 		}
 
 		err := suite.clusterDataStore.UpdateClusterHealth(suite.hasWriteCtx, c.cluster.GetId(), c.newHealth)

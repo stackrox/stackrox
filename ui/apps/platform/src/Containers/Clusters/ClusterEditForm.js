@@ -108,32 +108,25 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
     return (
         <form className="px-4 w-full mb-8" data-testid="cluster-form">
             {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
-            <FeatureEnabled featureFlag={knownBackendFlags.ROX_CLUSTER_HEALTH_MONITORING}>
-                {({ featureEnabled }) => {
-                    return (
-                        featureEnabled &&
-                        selectedCluster.id && (
-                            <CollapsibleCard
-                                open
-                                title="Cluster Health"
-                                cardClassName="border border-base-400 mb-2"
-                                titleClassName="border-b border-base-300 bg-primary-200 leading-normal cursor-pointer flex justify-between items-center hover:bg-primary-300 hover:border-primary-300"
-                            >
-                                <div className="p-3">
-                                    <div className="mb-4">
-                                        <ClusterHealth
-                                            healthStatus={selectedCluster.healthStatus}
-                                            status={selectedCluster.status}
-                                            centralVersion={centralVersion}
-                                            currentDatetime={new Date()}
-                                        />
-                                    </div>
-                                </div>
-                            </CollapsibleCard>
-                        )
-                    );
-                }}
-            </FeatureEnabled>
+            {selectedCluster.id && (
+                <CollapsibleCard
+                    open
+                    title="Cluster Health"
+                    cardClassName="border border-base-400 mb-2"
+                    titleClassName="border-b border-base-300 bg-primary-200 leading-normal cursor-pointer flex justify-between items-center hover:bg-primary-300 hover:border-primary-300"
+                >
+                    <div className="p-3">
+                        <div className="mb-4">
+                            <ClusterHealth
+                                healthStatus={selectedCluster.healthStatus}
+                                status={selectedCluster.status}
+                                centralVersion={centralVersion}
+                                currentDatetime={new Date()}
+                            />
+                        </div>
+                    </div>
+                </CollapsibleCard>
+            )}
             <CollapsibleCard
                 open
                 title="Static Configuration (requires deployment)"
