@@ -21,6 +21,29 @@ const fetchIntegrationsActionMap = {
     apitoken: apiTokenActions.fetchAPITokens.request(),
 };
 
+function getFriendlyErrorMessage(type, response) {
+    let errorMessage = '';
+
+    switch (type) {
+        case 'awsSecurityHub': {
+            if (response?.data?.error?.includes('403')) {
+                errorMessage = 'Credentials are incorrect. Please re-enter them and try again.';
+            } else if (response?.data?.error?.includes('AccessDenied')) {
+                errorMessage =
+                    'Access denied. The account number does not match the credentials provided. Please re-enter the account number and try again.';
+            } else {
+                errorMessage = response?.data?.error || 'An unknown error has occurred.';
+            }
+            break;
+        }
+        default: {
+            errorMessage = response?.data?.error || 'An unknown error has occurred.';
+        }
+    }
+
+    return errorMessage;
+}
+
 // Call fetchIntegration with the given source, and pass the response/failure
 // with the given action type.
 function* fetchIntegrationWrapper(source, action) {
@@ -156,7 +179,9 @@ function* testIntegration(action) {
         yield put(notificationActions.removeOldestNotification());
     } catch (error) {
         if (error.response) {
-            yield put(notificationActions.addNotification(error.response.data.error));
+            const errorMessage = getFriendlyErrorMessage(integration?.type, error?.response);
+
+            yield put(notificationActions.addNotification(errorMessage));
             yield put(notificationActions.removeOldestNotification());
         } else {
             Raven.captureException(error);

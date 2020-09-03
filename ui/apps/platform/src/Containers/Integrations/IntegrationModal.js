@@ -219,7 +219,7 @@ class IntegrationModal extends Component {
                     isOpen={this.state.showConfirmationDialog}
                     text="Only one integration of this type is allowed. Edit the existing integration, or delete it and then create a new one."
                     onCancel={this.hideConfirmationDialog}
-                    cancelText="Go Back"
+                    cancelText="OK"
                 />
             );
         }
