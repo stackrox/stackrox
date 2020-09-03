@@ -231,12 +231,14 @@ class Form extends Component {
     // TODO: generalize this form validation for all integrations
     //       (currently just checking AWS Security Hub)
     checkFormValidity = (formData) => {
+        const { isNewIntegration } = this.props;
         if (
             formData?.name?.length > 0 &&
             formData?.awsSecurityHub?.accountId?.length > 0 &&
             formData?.awsSecurityHub?.region?.length > 0 &&
-            formData?.awsSecurityHub?.credentials?.accessKeyId?.length > 0 &&
-            formData?.awsSecurityHub?.credentials?.secretAccessKey?.length > 0
+            (formData?.awsSecurityHub?.credentials?.accessKeyId?.length > 0 || !isNewIntegration) &&
+            (formData?.awsSecurityHub?.credentials?.secretAccessKey?.length > 0 ||
+                !isNewIntegration)
         ) {
             return true;
         }

@@ -188,18 +188,19 @@ class IntegrationModal extends Component {
     };
 
     renderForm = () => {
-        const { source, type } = this.props;
-        const { selectedIntegration } = this.state;
         if (!this.formIsOpen()) {
             return null;
         }
+
+        const { source, type } = this.props;
+        const { selectedIntegration } = this.state;
+        const isNewIntegration = selectedIntegration === null;
 
         const initialValues = selectedIntegration || getDefaultValues(source, type);
         // we want to add a new "hasStoredCredentials" field to determine whether this
         // integration can possibly use stored credentials if the password field is empty
         // on submission
         const modifiedSelectedIntegration = setStoredCredentialFields(source, type, initialValues);
-        const isNewIntegration = modifiedSelectedIntegration === null;
         return (
             <Form
                 initialValues={modifiedSelectedIntegration}

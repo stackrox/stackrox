@@ -333,15 +333,21 @@ const formDescriptors = {
                 label: 'Access Key ID',
                 jsonpath: 'awsSecurityHub.credentials.accessKeyId',
                 type: 'password',
-                placeholder: 'EXAMPLE7AKIAIOSFODNN',
+                placeholderFunction: (values) => {
+                    return values.hasStoredCredentials ? '' : 'EXAMPLE7AKIACCESSKEY';
+                },
                 required: true,
+                ...storedCredentialFields,
             },
             {
                 label: 'Secret Access Key',
                 jsonpath: 'awsSecurityHub.credentials.secretAccessKey',
                 type: 'password',
-                placeholder: 'EXAMPLEKEYwJalrXUtnFEMI/K7MDENG/bPxRfiCY',
+                placeholderFunction: (values) => {
+                    return values.hasStoredCredentials ? '' : 'EXAMPLE7w/arSECRETKEY';
+                },
                 required: true,
+                ...storedCredentialFields,
             },
             {
                 label: 'Integration Active',
