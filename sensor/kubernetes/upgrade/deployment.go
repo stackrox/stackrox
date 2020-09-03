@@ -9,7 +9,15 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+var (
+	upgraderCPURequest = resource.MustParse("50m")
+	upgraderCPULimit   = resource.MustParse("500m")
+	upgraderMemRequest = resource.MustParse("50Mi")
+	upgraderMemLimit   = resource.MustParse("500Mi")
 )
 
 func toK8sEnvVars(triggerEnvVars []*central.SensorUpgradeTrigger_EnvVarDef) []v1.EnvVar {
@@ -136,6 +144,16 @@ func (p *process) createDeployment(serviceAccountName string) (*appsV1.Deploymen
 							Image:   image,
 							Command: p.trigger.GetCommand(),
 							Env:     toK8sEnvVars(p.trigger.GetEnvVars()),
+							Resources: v1.ResourceRequirements{
+								Requests: v1.ResourceList{
+									v1.ResourceCPU:    upgraderCPURequest,
+									v1.ResourceMemory: upgraderMemRequest,
+								},
+								Limits: v1.ResourceList{
+									v1.ResourceCPU:    upgraderCPULimit,
+									v1.ResourceMemory: upgraderMemLimit,
+								},
+							},
 							VolumeMounts: []v1.VolumeMount{
 								{
 									Name:      "sensor-tls-volume",
