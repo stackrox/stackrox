@@ -35,6 +35,7 @@ func getDomainProto(domain framework.ComplianceDomain) *storage.ComplianceDomain
 	}
 
 	return &storage.ComplianceDomain{
+		Id:          domain.ID(),
 		Cluster:     domain.Cluster().Cluster(),
 		Nodes:       nodeMap,
 		Deployments: deploymentMap,
@@ -163,13 +164,12 @@ func (r *runInstance) metadataProto(fixTimestamps bool) *storage.ComplianceRunMe
 		FinishTimestamp: finishTS,
 		Success:         r.status == v1.ComplianceRun_FINISHED && r.err == nil,
 		ErrorMessage:    errMsg,
+		DomainId:        r.domain.ID(),
 	}
 }
 
 func (r *runInstance) collectResults(run framework.ComplianceRun, remoteResults map[string]map[string]*compliance.ComplianceStandardResult) *storage.ComplianceRunResults {
 	remoteClusterResults, remoteNodeResults := r.foldRemoteResults(remoteResults)
-
-	domainProto := getDomainProto(r.domain)
 
 	allResults := run.GetAllResults()
 	checks := run.GetChecks()
@@ -190,7 +190,6 @@ func (r *runInstance) collectResults(run framework.ComplianceRun, remoteResults 
 	runMetadataProto.Success = true
 
 	return &storage.ComplianceRunResults{
-		Domain:            domainProto,
 		RunMetadata:       runMetadataProto,
 		ClusterResults:    clusterResults,
 		NodeResults:       nodeResults,

@@ -652,6 +652,11 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 		if err != nil {
 			return nil, errors.Wrapf(err, "could not create domain for cluster ID %q", clusterID)
 		}
+		domainPB := getDomainProto(domain)
+		err = m.resultsStore.StoreComplianceDomain(ctx, domainPB)
+		if err != nil {
+			return nil, errors.Wrapf(err, "could not create domain protobuf for ID %q", clusterID)
+		}
 
 		var scrapeBasedPromise, scrapeLessPromise dataPromise
 		for _, standard := range standardImpls {

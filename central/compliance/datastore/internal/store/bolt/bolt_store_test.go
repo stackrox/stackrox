@@ -243,22 +243,22 @@ func (s *boltStoreTestSuite) TestStoreFailures() {
 }
 
 func (s *boltStoreTestSuite) TestGetLatestRunResultsByClusterAndStandard() {
-	filterIn := store.GetMockResult()
+	filterIn, _ := store.GetMockResult()
 	s.Require().NoError(s.store.StoreRunResults(filterIn))
 
-	filterInOld := store.GetMockResult()
+	filterInOld, _ := store.GetMockResult()
 	filterInOld.RunMetadata.FinishTimestamp.Seconds = filterInOld.RunMetadata.FinishTimestamp.Seconds - 600
 	s.Require().NoError(s.store.StoreRunResults(filterInOld))
 
-	filterOutCluster := store.GetMockResult()
+	filterOutCluster, _ := store.GetMockResult()
 	filterOutCluster.RunMetadata.ClusterId = "Not this cluster!"
 	s.Require().NoError(s.store.StoreRunResults(filterOutCluster))
 
-	filterOutStandard := store.GetMockResult()
+	filterOutStandard, _ := store.GetMockResult()
 	filterOutStandard.RunMetadata.StandardId = "Not this standard!"
 	s.Require().NoError(s.store.StoreRunResults(filterOutStandard))
 
-	filterOutClusterAndStandard := store.GetMockResult()
+	filterOutClusterAndStandard, _ := store.GetMockResult()
 	filterOutClusterAndStandard.RunMetadata.ClusterId = "Another bad cluster"
 	filterOutClusterAndStandard.RunMetadata.StandardId = "Another bad standard"
 	s.Require().NoError(s.store.StoreRunResults(filterOutClusterAndStandard))

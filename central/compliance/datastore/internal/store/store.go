@@ -16,4 +16,5 @@ type Store interface {
 	GetLatestRunMetadataBatch(clusterID string, standardIDs []string) (map[compliance.ClusterStandardPair]types.ComplianceRunsMetadata, error)
 	StoreRunResults(results *storage.ComplianceRunResults) error
 	StoreFailure(metadata *storage.ComplianceRunMetadata) error
+	StoreComplianceDomain(domain *storage.ComplianceDomain) error
 }

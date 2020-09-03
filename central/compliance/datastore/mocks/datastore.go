@@ -142,6 +142,20 @@ func (mr *MockDataStoreMockRecorder) QueryControlResults(arg0, arg1 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryControlResults", reflect.TypeOf((*MockDataStore)(nil).QueryControlResults), arg0, arg1)
 }
 
+// StoreComplianceDomain mocks base method
+func (m *MockDataStore) StoreComplianceDomain(arg0 context.Context, arg1 *storage.ComplianceDomain) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StoreComplianceDomain", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StoreComplianceDomain indicates an expected call of StoreComplianceDomain
+func (mr *MockDataStoreMockRecorder) StoreComplianceDomain(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreComplianceDomain", reflect.TypeOf((*MockDataStore)(nil).StoreComplianceDomain), arg0, arg1)
+}
+
 // StoreFailure mocks base method
 func (m *MockDataStore) StoreFailure(arg0 context.Context, arg1 *storage.ComplianceRunMetadata) error {
 	m.ctrl.T.Helper()

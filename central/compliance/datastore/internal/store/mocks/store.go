@@ -137,3 +137,17 @@ func (mr *MockStoreMockRecorder) StoreFailure(metadata interface{}) *gomock.Call
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreFailure", reflect.TypeOf((*MockStore)(nil).StoreFailure), metadata)
 }
+
+// StoreComplianceDomain mocks base method
+func (m *MockStore) StoreComplianceDomain(domain *storage.ComplianceDomain) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StoreComplianceDomain", domain)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StoreComplianceDomain indicates an expected call of StoreComplianceDomain
+func (mr *MockStoreMockRecorder) StoreComplianceDomain(domain interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreComplianceDomain", reflect.TypeOf((*MockStore)(nil).StoreComplianceDomain), domain)
+}

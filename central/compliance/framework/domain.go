@@ -1,9 +1,13 @@
 package framework
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/uuid"
+)
 
 // ComplianceDomain is the domain (i.e., the set of all potential target objects) for a compliance run.
 type ComplianceDomain interface {
+	ID() string
 	Cluster() ComplianceTarget
 	Nodes() []ComplianceTarget
 	Deployments() []ComplianceTarget
@@ -11,6 +15,7 @@ type ComplianceDomain interface {
 }
 
 type complianceDomain struct {
+	domainID    string
 	cluster     clusterTarget
 	nodes       []nodeTarget
 	deployments []deploymentTarget
@@ -28,11 +33,16 @@ func newComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deploy
 		deploymentTargets[i] = targetForDeployment(deployment)
 	}
 	return &complianceDomain{
+		domainID:    uuid.NewV4().String(),
 		cluster:     clusterTarget,
 		nodes:       nodeTargets,
 		deployments: deploymentTargets,
 		pods:        pods,
 	}
+}
+
+func (d *complianceDomain) ID() string {
+	return d.domainID
 }
 
 func (d *complianceDomain) Cluster() ComplianceTarget {

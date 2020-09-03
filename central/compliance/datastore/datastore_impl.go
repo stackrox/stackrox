@@ -163,3 +163,12 @@ func (ds *datastoreImpl) StoreFailure(ctx context.Context, metadata *storage.Com
 	}
 	return ds.storage.StoreFailure(metadata)
 }
+
+func (ds *datastoreImpl) StoreComplianceDomain(ctx context.Context, domain *storage.ComplianceDomain) error {
+	if ok, err := complianceSAC.WriteAllowed(ctx, sac.ClusterScopeKey(domain.GetCluster().GetId())); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+	return ds.storage.StoreComplianceDomain(domain)
+}

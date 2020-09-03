@@ -332,6 +332,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("ComplianceRunMetadata", []string{
 		"clusterId: String!",
+		"domainId: String!",
 		"errorMessage: String!",
 		"finishTimestamp: Time",
 		"runId: String!",
@@ -3660,6 +3661,11 @@ func (resolver *Resolver) wrapComplianceRunMetadatas(values []*storage.Complianc
 
 func (resolver *complianceRunMetadataResolver) ClusterId(ctx context.Context) string {
 	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *complianceRunMetadataResolver) DomainId(ctx context.Context) string {
+	value := resolver.data.GetDomainId()
 	return value
 }
 

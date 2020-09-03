@@ -24,6 +24,7 @@ type DataStore interface {
 
 	StoreRunResults(ctx context.Context, results *storage.ComplianceRunResults) error
 	StoreFailure(ctx context.Context, metadata *storage.ComplianceRunMetadata) error
+	StoreComplianceDomain(ctx context.Context, domain *storage.ComplianceDomain) error
 }
 
 // NewDataStore returns a new instance of a DataStore.

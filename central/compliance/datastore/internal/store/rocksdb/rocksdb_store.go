@@ -12,6 +12,7 @@ import (
 	dsTypes "github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
@@ -26,6 +27,7 @@ const (
 	maxFailedRuns = 10
 
 	resultCacheExpiry = 30 * time.Second
+	domainCacheExpiry = 30 * time.Second
 )
 
 var (
@@ -34,9 +36,13 @@ var (
 
 	resultsBucketName = []byte("compliance-run-results")
 
-	resultsKey  = []byte("results")
-	metadataKey = []byte("metadata")
-	stringsKey  = []byte("strings")
+	resultsKey  = dbhelper.GetBucketKey(resultsBucketName, []byte("results"))
+	metadataKey = dbhelper.GetBucketKey(resultsBucketName, []byte("metadata"))
+	stringsKey  = dbhelper.GetBucketKey(resultsBucketName, []byte("strings"))
+	domainKey   = dbhelper.GetBucketKey(resultsBucketName, []byte("domain"))
+
+	cacheLock   = concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize)
+	domainCache = expiringcache.NewExpiringCache(domainCacheExpiry, expiringcache.UpdateExpirationOnGets)
 
 	log = logging.LoggerForModule()
 )
@@ -111,16 +117,17 @@ func getClusterStandardPrefixes(clusterID, standardID string) ([]byte, []byte, [
 	// trailing colon is intentional, this prefix will always be followed by a timestamp and a run ID
 	partialPrefix := fmt.Sprintf("%s:%s:", clusterID, standardID)
 
-	partialMetadataPrefix := []byte(fmt.Sprintf("%s:%s", string(metadataKey), partialPrefix))
-	metadataPrefix := dbhelper.GetBucketKey(resultsBucketName, partialMetadataPrefix)
+	metadataPrefix := getPrefix(string(metadataKey), partialPrefix)
 
-	partialResultsPrefix := []byte(fmt.Sprintf("%s:%s", string(resultsKey), partialPrefix))
-	resultsPrefix := dbhelper.GetBucketKey(resultsBucketName, partialResultsPrefix)
+	resultsPrefix := getPrefix(string(resultsKey), partialPrefix)
 
-	partialStringsPrefix := []byte(fmt.Sprintf("%s:%s", string(stringsKey), partialPrefix))
-	stringsPrefix := dbhelper.GetBucketKey(resultsBucketName, partialStringsPrefix)
+	stringsPrefix := getPrefix(string(stringsKey), partialPrefix)
 
 	return metadataPrefix, resultsPrefix, stringsPrefix
+}
+
+func getPrefix(leftPrefix, rightPrefix string) []byte {
+	return []byte(leftPrefix + ":" + rightPrefix)
 }
 
 type getLatestResultsArgs struct {
@@ -260,6 +267,17 @@ func unmarshalResults(getArgs *getLatestResultsArgs) (*storage.ComplianceRunMeta
 
 	results.RunMetadata = metadata
 
+	domainKey := getDomainKey(metadata.GetClusterId(), metadata.GetDomainId())
+	domain, err := getDomain(getArgs, domainKey)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "getting domain")
+	}
+	// Use the externalized domain if we have one, otherwise this is probably legacy data and the domain should already
+	// be in the ComplianceRunResult
+	if domain != nil {
+		results.Domain = domain
+	}
+
 	if getArgs.flags&(dsTypes.WithMessageStrings|dsTypes.RequireMessageStrings) != 0 {
 		if err := unmarshalMessageStrings(getArgs, stringsKey, &results); err != nil {
 			if getArgs.flags&dsTypes.RequireMessageStrings != 0 {
@@ -269,6 +287,32 @@ func unmarshalResults(getArgs *getLatestResultsArgs) (*storage.ComplianceRunMeta
 		}
 	}
 	return metadata, &results, nil
+}
+
+func getDomain(getArgs *getLatestResultsArgs, key []byte) (*storage.ComplianceDomain, error) {
+	cacheLock.Lock(string(key))
+	defer cacheLock.Unlock(string(key))
+	cachedDomain := domainCache.Get(string(key))
+	if cachedDomain != nil {
+		return cachedDomain.(*storage.ComplianceDomain), nil
+	}
+
+	domainSlice, err := getArgs.db.Get(readOptions, key)
+	if err != nil {
+		return nil, err
+	}
+	defer domainSlice.Free()
+	domainBytes := domainSlice.Data()
+	if len(domainBytes) == 0 {
+		return nil, nil
+	}
+	var domain storage.ComplianceDomain
+	if err = domain.Unmarshal(domainBytes); err != nil {
+		return nil, err
+	}
+	domainCache.Add(string(key), &domain)
+
+	return &domain, nil
 }
 
 func unmarshalMetadata(iterator *gorocksdb.Iterator) (*storage.ComplianceRunMetadata, error) {
@@ -281,6 +325,12 @@ func unmarshalMetadata(iterator *gorocksdb.Iterator) (*storage.ComplianceRunMeta
 		return nil, errors.Wrap(err, "unmarshalling metadata")
 	}
 	return &metadata, nil
+}
+
+func getDomainKey(clusterID, domainID string) []byte {
+	// Store externalized domain under the key "compliance-run-results\x00domain:CLUSTER:DOMAIN_ID.
+	// Note the lack of a standard ID as all standard results for the same cluster will have the same domain.
+	return []byte(fmt.Sprintf("%s:%s:%s", string(domainKey), clusterID, domainID))
 }
 
 func (r *rocksdbStore) GetLatestRunResultsBatch(clusterIDs, standardIDs []string, flags dsTypes.GetFlags) (map[compliance.ClusterStandardPair]dsTypes.ResultsWithStatus, error) {
@@ -421,6 +471,9 @@ func (r *rocksdbStore) StoreRunResults(runResults *storage.ComplianceRunResults)
 		return errors.Wrap(err, "serializing message strings")
 	}
 
+	// The domain will be stored externally.  This will be repopulated when the results are queried.
+	runResults.Domain = nil
+
 	serializedResults, err := runResults.Marshal()
 	if err != nil {
 		return errors.Wrap(err, "serializing results")
@@ -474,4 +527,15 @@ func (r *rocksdbStore) StoreFailure(metadata *storage.ComplianceRunMetadata) err
 	}
 	err = r.db.Put(writeOptions, mdKey, serializedMD)
 	return errors.Wrap(err, "storing metadata")
+}
+
+func (r *rocksdbStore) StoreComplianceDomain(domain *storage.ComplianceDomain) error {
+	serializedDomain, err := domain.Marshal()
+	if err != nil {
+		return errors.Wrap(err, "serializing domain")
+	}
+
+	domainKey := getDomainKey(domain.GetCluster().GetId(), domain.GetId())
+	err = r.db.Put(writeOptions, domainKey, serializedDomain)
+	return errors.Wrap(err, "storing domain")
 }

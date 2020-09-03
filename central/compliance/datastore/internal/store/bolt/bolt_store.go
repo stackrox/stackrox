@@ -450,3 +450,7 @@ func (s *boltStore) clear() error {
 		})
 	})
 }
+
+func (s *boltStore) StoreComplianceDomain(domain *storage.ComplianceDomain) error {
+	panic("Not implemented")
+}
