@@ -654,8 +654,8 @@ commands:
       - run:
           name: Verify that StackRox services did not restart during the runs
           command: |
-            if [[ $(ls /tmp/k8s-service-logs/stackrox/*-previous.log | wc -l) != 0 ]]; then
-              ls /tmp/k8s-service-logs/stackrox/*-previous.log
+            if [[ $(ls /tmp/k8s-service-logs/stackrox/pods/*-previous.log | wc -l) != 0 ]]; then
+              ls /tmp/k8s-service-logs/stackrox/pods/*-previous.log
               exit 1
             fi
           when: always
@@ -663,7 +663,7 @@ commands:
       - run:
           name: Verify that StackRox service logs contain no suspicious entries
           command: |
-            if ! scripts/ci/logcheck/check.sh /tmp/k8s-service-logs/stackrox/*.log; then
+            if ! scripts/ci/logcheck/check.sh /tmp/k8s-service-logs/stackrox/pods/*.log; then
               echo >&2 "Found at least one suspicious log file entry."
               exit 1
             fi
@@ -1667,6 +1667,13 @@ commands:
             else
               echo "Skipping for helm sensor deploy...  "
             fi
+
+      - *waitForSensorK8s
+
+      - run:
+          name: Bounce collectors to avoid restarts on initial module pull
+          command: |
+            kubectl -n stackrox delete pod -l app=collector --grace-period=0
 
       - *waitForSensorK8s
 

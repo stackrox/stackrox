@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/image/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -68,6 +69,9 @@ func (idl *imageLoaderImpl) FromID(ctx context.Context, id string) (*storage.Ima
 	images, err := idl.load(ctx, []string{id})
 	if err != nil {
 		return nil, err
+	}
+	if len(images) == 0 {
+		return nil, errors.Errorf("could not find image for id %q:", id)
 	}
 	return images[0], nil
 }

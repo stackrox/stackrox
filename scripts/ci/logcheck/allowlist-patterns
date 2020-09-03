@@ -4,4 +4,4 @@
 # postgres connections at startup messages are OK (ROX-4913)
 the database system is starting up
 # quay is intermittent
-Unexpected status code 520 when retrieving image scan
+unexpected status code 520 when retrieving image scan
