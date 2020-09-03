@@ -82,4 +82,46 @@ volumes:
   - hostPath
   - secret
 {{ end }}
+{{ if .Values.config.admissionControl.createService }}
+---
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    kubernetes.io/description: admission-control is the security constraint for the admission controller
+  name: admission-control
+  labels:
+    app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
+users:
+  - system:serviceaccount:stackrox:admission-control
+priority: 0
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - '*'
+supplementalGroups:
+  type: RunAsAny
+fsGroup:
+  type: RunAsAny
+groups: []
+readOnlyRootFilesystem: true
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+allowedCapabilities: []
+defaultAddCapabilities: []
+requiredDropCapabilities: []
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - secret
+{{ end }}
 {{ end }}

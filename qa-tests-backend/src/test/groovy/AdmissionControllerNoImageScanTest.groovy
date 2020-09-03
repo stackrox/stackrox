@@ -3,13 +3,11 @@ import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
 import objects.Deployment
 import objects.GCRImageIntegration
-import orchestratormanager.OrchestratorTypes
-import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.ImageIntegrationService
 import spock.lang.Shared
-import util.Env
+import spock.lang.Unroll
 import util.Timer
 
 class AdmissionControllerNoImageScanTest extends BaseSpecification {
@@ -21,8 +19,6 @@ class AdmissionControllerNoImageScanTest extends BaseSpecification {
     private final static String NO_IMAGE_SCANS = "Images with no scans"
 
     def setupSpec() {
-        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
-
         noImageScansEnforcements = Services.updatePolicyEnforcement(
                 NO_IMAGE_SCANS,
                 [PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
@@ -36,8 +32,6 @@ class AdmissionControllerNoImageScanTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
-
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
                 .setEnabled(false)
                 .build()
@@ -59,8 +53,6 @@ class AdmissionControllerNoImageScanTest extends BaseSpecification {
         // operations.
 
         when:
-        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
-
         def ac = AdmissionControllerConfig.newBuilder()
                 .setEnabled(true)
                 .setScanInline(false)

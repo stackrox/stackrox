@@ -55,6 +55,15 @@ EOF
 fi
 {{- end}}
 
+{{if .AdmissionController }}
+echo "Creating secrets for admission controller..."
+${KUBE_COMMAND} apply -f "$DIR/admission-controller-secret.yaml"
+${KUBE_COMMAND} apply -f "$DIR/admission-controller.yaml"
+{{- else }}
+echo "Deleting admission controller webhook, if it exists"
+${KUBE_COMMAND} delete validatingwebhookconfiguration stackrox --ignore-not-found
+{{- end }}
+
 echo "Creating secrets for collector..."
 ${KUBE_COMMAND} apply -f "$DIR/collector-secret.yaml"
 

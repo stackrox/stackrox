@@ -199,6 +199,8 @@ spec:
             - name: certs
               mountPath: /run/secrets/stackrox.io/certs/
               readOnly: true
+            - name: ssl
+              mountPath: /etc/ssl
       volumes:
         - name: certs
           secret:
@@ -215,6 +217,8 @@ spec:
             name: admission-control
             optional: true
         - name: config-store
+          emptyDir: {}
+        - name: ssl
           emptyDir: {}
 ---
 apiVersion: networking.k8s.io/v1
@@ -263,42 +267,42 @@ metadata:
     app.kubernetes.io/name: stackrox
     auto-upgrade.stackrox.io/component: "sensor"
 webhooks:
-- name: policyeval.stackrox.io
-  rules:
-    - apiGroups:
+  - name: policyeval.stackrox.io
+    rules:
+      - apiGroups:
         - '*'
-      apiVersions:
+        apiVersions:
         - '*'
-      operations:
+        operations:
         - CREATE
-      {{ if .Values.config.admissionControl.listenOnUpdates }}
+        {{ if .Values.config.admissionControl.listenOnUpdates }}
         - UPDATE
-      {{ end }}
-      resources:
-        - pods
-        - deployments
-        - replicasets
-        - replicationcontrollers
-        - statefulsets
-        - daemonsets
-  namespaceSelector:
-    matchExpressions:
+        {{- end }}
+        resources:
+          - pods
+          - deployments
+          - replicasets
+          - replicationcontrollers
+          - statefulsets
+          - daemonsets
+    namespaceSelector:
+      matchExpressions:
       - key: namespace.metadata.stackrox.io/name
         operator: NotIn
         values:
           - stackrox
           - kube-system
           - kube-public
-  failurePolicy: Ignore
-  clientConfig:
-    caBundle: {{ .Files.Get "secrets/ca.pem" | b64enc }}
-    service:
-      namespace: stackrox
-  {{ if .Values.config.admissionControl.createService }}
-      name: admission-control
-      path: /validate
-  {{ else }}
-      name: sensor-webhook
-      path: /admissioncontroller
-  {{ end }}
-{{ end }}
+    failurePolicy: Ignore
+    clientConfig:
+      caBundle: {{ .Files.Get "secrets/ca.pem" | b64enc }}
+      service:
+        namespace: stackrox
+        {{ if .Values.config.admissionControl.createService }}
+        name: admission-control
+        path: /validate
+        {{- else }}
+        name: sensor-webhook
+        path: /admissioncontroller
+        {{- end }}
+{{- end }}

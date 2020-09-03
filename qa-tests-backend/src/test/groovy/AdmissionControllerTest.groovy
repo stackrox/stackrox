@@ -8,7 +8,6 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 import objects.Deployment
 import objects.GCRImageIntegration
-import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.CVEService
@@ -20,7 +19,6 @@ import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Timeout
 import spock.lang.Unroll
-import util.Env
 import util.Helpers
 import util.Timer
 
@@ -70,8 +68,6 @@ class AdmissionControllerTest extends BaseSpecification {
         .addLabel("app", "random-busybox")
 
     def setupSpec() {
-        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
-
         clusterId = ClusterService.getClusterId()
         assert clusterId
 
@@ -107,8 +103,6 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
-
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
                 .setEnabled(false)
                 .build()
@@ -132,7 +126,6 @@ class AdmissionControllerTest extends BaseSpecification {
     @Category([BAT])
     def "Verify Admission Controller Config (#desc)"() {
         when:
-        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
 
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
                                 .setEnabled(true)
@@ -171,7 +164,6 @@ class AdmissionControllerTest extends BaseSpecification {
     def "Verify CVE snoozing applies to images scanned by admission controller #image"() {
         given:
         "Create policy looking for a specific CVE"
-        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
         Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_ADMISSION_CONTROL_SERVICE"))
 
         // We don't want to block on CVSS
@@ -264,7 +256,6 @@ class AdmissionControllerTest extends BaseSpecification {
     @Category([BAT])
     def "Verify Admission Controller Enforcement on Updates (#desc)"() {
         when:
-        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
         Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_ADMISSION_CONTROL_SERVICE"))
         Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE"))
 
@@ -312,8 +303,6 @@ class AdmissionControllerTest extends BaseSpecification {
     @Category([BAT])
     def "Verify Admission Controller Enforcement respects Cluster/Namespace scopes (match: #clusterMatch/#nsMatch)"() {
         when:
-        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
-
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
                 .setEnabled(true)
                 .setScanInline(false)
@@ -372,7 +361,6 @@ class AdmissionControllerTest extends BaseSpecification {
     def "Verify admission controller does not impair cluster operations when unstable"() {
         when:
         "Check if test is applicable"
-        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
         Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_ADMISSION_CONTROL_SERVICE"))
 
         and:
