@@ -3,6 +3,7 @@ package renderer
 import (
 	"bytes"
 	"io"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -179,16 +180,13 @@ func renderHelm(c Config, centralOverrides map[string]func() io.ReadCloser) ([]*
 
 // RenderSensorTLSSecretsOnly renders just the TLS secrets from the sensor helm chart, concatenated into one YAML file.
 func RenderSensorTLSSecretsOnly(values map[string]interface{}, certs *sensor.Certs) ([]byte, error) {
-	chTpl := chartPrefixPair{image.GetSensorChart(values, certs), "sensor"}
-
-	if err := filterChartToFiles(&chTpl, image.SensorMTLSFiles); err != nil {
-		return nil, err
+	metaVals := make(map[string]interface{}, len(values)+1)
+	for k, v := range values {
+		metaVals[k] = v
 	}
+	metaVals["CertsOnly"] = true
 
-	ch, err := chTpl.Instantiate(nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to instantiate sensor chart")
-	}
+	ch := image.GetSensorChart(metaVals, certs)
 
 	m, err := helmutil.Render(ch, nil, helmutil.Options{})
 	if err != nil {
@@ -197,7 +195,11 @@ func RenderSensorTLSSecretsOnly(values map[string]interface{}, certs *sensor.Cer
 
 	var out bytes.Buffer
 	var firstPrinted bool
-	for _, fileContents := range m {
+	for filePath, fileContents := range m {
+		if path.Ext(filePath) != ".yaml" {
+			continue
+		}
+
 		if len(strings.TrimSpace(fileContents)) == 0 {
 			continue
 		}
@@ -212,12 +214,7 @@ func RenderSensorTLSSecretsOnly(values map[string]interface{}, certs *sensor.Cer
 
 // RenderSensor renders the sensorchart and returns rendered files
 func RenderSensor(values map[string]interface{}, certs *sensor.Certs, opts helmutil.Options) ([]*zip.File, error) {
-	chTpl := chartPrefixPair{image.GetSensorChart(values, certs), "sensor"}
-
-	ch, err := chTpl.Instantiate(nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to instantiate sensor chart")
-	}
+	ch := image.GetSensorChart(values, certs)
 
 	m, err := helmutil.Render(ch, nil, opts)
 	if err != nil {
@@ -227,11 +224,6 @@ func RenderSensor(values map[string]interface{}, certs *sensor.Certs, opts helmu
 	var renderedFiles []*zip.File
 	// For kubectl files, we don't want to have the templates path so we trim it out
 	for k, v := range m {
-		// file excluded from sensor bundle for kubectl, since the ca-setup-sensor.sh script takes care of
-		// additional CA certs in the kubectl deploy method.
-		if filepath.Base(k) == "additional-ca-sensor.yaml" {
-			continue
-		}
 		if file, ok := getSensorChartFile(filepath.Base(k), []byte(v)); ok {
 			renderedFiles = append(renderedFiles, file)
 		}

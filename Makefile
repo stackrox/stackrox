@@ -582,10 +582,8 @@ collectorVersion=$(shell cat COLLECTOR_VERSION)
 render-helm-yamls:
 	@rm -rf /tmp/$(TAG)
 	@mkdir -p /tmp/$(TAG)
-	cp -R $(sensorChartDir)/* /tmp/$(TAG)
-	@rm -f /tmp/$(TAG)/main.go
-	cp $(BASE_DIR)/deploy/common/docker-auth.sh  /tmp/$(TAG)/scripts/
-	@go run -tags "$(subst $(comma),$(space),$(GOTAGS))" $(BASE_DIR)/$(sensorChartDir)/main.go "$(TAG)" "$(collectorVersion)" "${BASE_DIR}/$(sensorChartDir)"
+	@go run -tags "$(subst $(comma),$(space),$(GOTAGS))" $(BASE_DIR)/$(sensorChartDir)/main.go "$(TAG)" "$(collectorVersion)" /tmp/$(TAG)
+	@cp $(BASE_DIR)/deploy/common/docker-auth.sh  /tmp/$(TAG)/scripts/
 
 .PHONY: ossls-audit
 ossls-audit: download-deps

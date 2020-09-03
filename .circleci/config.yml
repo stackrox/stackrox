@@ -2687,7 +2687,7 @@ jobs:
             [[ -f gencerts/cluster-remote-tls.yaml ]]
             # Use the certs in future steps that will use client auth.
             # This will ensure that the certs are valid.
-            sensor_tls_cert="$(kubectl create --dry-run -o json -f gencerts/cluster-remote-tls.yaml | jq 'select(.metadata.name=="sensor-tls")')"
+            sensor_tls_cert="$(kubectl create --dry-run=client -o json -f gencerts/cluster-remote-tls.yaml | jq 'select(.metadata.name=="sensor-tls")')"
             for file in ca.pem sensor-cert.pem sensor-key.pem; do
               echo "${sensor_tls_cert}" | jq --arg filename "${file}" '.data[$filename]' -r | base64 --decode > "gencerts/${file}"
             done

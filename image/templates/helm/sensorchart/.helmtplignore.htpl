@@ -1,0 +1,14 @@
+[< if .KubectlOutput >]
+scripts/
+/README.md
+/.helmignore
+# file excluded from sensor bundle for kubectl, since the ca-setup-sensor.sh script
+# takes care of additional CA certs in the kubectl deploy method.
+templates/additional-ca-sensor.yaml
+[< end >]
+[< if .CertsOnly >]
+scripts/
+!/*.yaml
+!templates/*-secret.yaml
+templates/*
+[< end >]

@@ -7,12 +7,12 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/Masterminds/sprig"
 	"github.com/gobuffalo/packd"
 	"github.com/gobuffalo/packr"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/sensor"
+	"github.com/stackrox/rox/pkg/helmtpl"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/namespaces"
 	rendererUtils "github.com/stackrox/rox/pkg/renderer/utils"
@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
+	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -90,7 +91,7 @@ func mustGetChart(box packr.Box, overrides map[string]func() io.ReadCloser, pref
 	utils.Must(err)
 	return ch
 }
-func mustGetSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.Certs) []*loader.BufferedFile {
+func mustGetSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.Certs) *chart.Chart {
 	ch, err := getSensorChart(box, values, certs)
 	utils.Must(err)
 	return ch
@@ -112,7 +113,7 @@ func GetMonitoringChart() []*loader.BufferedFile {
 }
 
 // GetSensorChart returns the Helm chart for sensor
-func GetSensorChart(values map[string]interface{}, certs *sensor.Certs) []*loader.BufferedFile {
+func GetSensorChart(values map[string]interface{}, certs *sensor.Certs) *chart.Chart {
 	return mustGetSensorChart(K8sBox, values, certs)
 }
 
@@ -182,61 +183,72 @@ func getChartFiles(box packr.Box, prefixes []string, overrides map[string]func()
 	return chartFiles, nil
 }
 
-func processSensorChartFile(path string, file packd.File, chartFiles *[]*loader.BufferedFile, values map[string]interface{}) error {
-	if path == "main.go" || path == ".helmignore" ||
-		path == "README.md" ||
-		strings.HasPrefix(path, "scripts") {
+func getFilesFromBox(box packr.Box, prefix string) ([]*loader.BufferedFile, error) {
+	normPrefix := path.Clean(prefix)
+	if normPrefix == "." {
+		normPrefix = ""
+	} else {
+		normPrefix = strings.TrimRight(normPrefix, "/") + "/"
+	}
+
+	var files []*loader.BufferedFile
+	err := box.WalkPrefix(normPrefix, func(path string, file packd.File) error {
+		relativePath := strings.TrimPrefix(path, normPrefix)
+		contents, err := ioutil.ReadAll(file)
+		if err != nil {
+			return errors.Wrapf(err, "reading file %s from packr box", path)
+		}
+		files = append(files, &loader.BufferedFile{
+			Name: relativePath,
+			Data: contents,
+		})
 		return nil
-	}
-
-	// Render the versions into the files that need it
-	t, err := template.New(strings.TrimSuffix(path, ".yaml")).
-		Delims("!!", "!!").Funcs(rendererUtils.BuiltinFuncs).Funcs(sprig.TxtFuncMap()).
-		Parse(file.String())
-	if err != nil {
-		return err
-	}
-
-	data, err := templates.ExecuteToBytes(t, values)
-
-	if err != nil {
-		return err
-	}
-
-	*chartFiles = append(*chartFiles, &loader.BufferedFile{
-		Name: path,
-		Data: data,
-	})
-	return nil
-}
-
-func getSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.Certs) ([]*loader.BufferedFile, error) {
-	chartFiles := make([]*loader.BufferedFile, 0)
-
-	err := box.WalkPrefix(sensorChartPrefix, func(name string, file packd.File) error {
-		trimmedPath := strings.TrimPrefix(name, sensorChartPrefix)
-		return processSensorChartFile(trimmedPath, file, &chartFiles, values)
 	})
 
 	if err != nil {
 		return nil, err
 	}
+	return files, nil
+}
 
-	for path, data := range certs.Files {
-		chartFiles = append(chartFiles, &loader.BufferedFile{
-			Name: path,
+// GetSensorChartTemplate loads the Sensor helmtpl meta-template from the given Box.
+func GetSensorChartTemplate(box packr.Box) (*helmtpl.ChartTemplate, error) {
+	chartTplFiles, err := getFilesFromBox(box, sensorChartPrefix)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching sensor chart files from box")
+	}
+
+	return helmtpl.Load(chartTplFiles)
+}
+
+func getSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.Certs) (*chart.Chart, error) {
+	chartTpl, err := GetSensorChartTemplate(box)
+	if err != nil {
+		return nil, errors.Wrap(err, "loading sensor chart template")
+	}
+
+	renderedFiles, err := chartTpl.InstantiateRaw(values)
+	if err != nil {
+		return nil, errors.Wrap(err, "instantiating sensor chart template")
+	}
+
+	for certPath, data := range certs.Files {
+		renderedFiles = append(renderedFiles, &loader.BufferedFile{
+			Name: certPath,
 			Data: data,
 		})
 	}
 
-	scriptFiles, err := addScripts(box, values)
-	if err != nil {
-		return nil, err
+	if certOnly, _ := values["CertsOnly"].(bool); !certOnly {
+		scriptFiles, err := addScripts(box, values)
+		if err != nil {
+			return nil, err
+		}
+
+		renderedFiles = append(renderedFiles, scriptFiles...)
 	}
 
-	chartFiles = append(chartFiles, scriptFiles...)
-
-	return chartFiles, nil
+	return loader.LoadFiles(renderedFiles)
 }
 
 func addScripts(box packr.Box, values map[string]interface{}) ([]*loader.BufferedFile, error) {

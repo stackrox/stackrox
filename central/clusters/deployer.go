@@ -100,6 +100,8 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		"OfflineMode": env.OfflineModeEnv.BooleanSetting(),
 
 		"SlimCollector": opts.SlimCollector,
+
+		"KubectlOutput": true,
 	}
 
 	if features.AdmissionControlService.Enabled() && c.AdmissionController {

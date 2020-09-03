@@ -85,6 +85,7 @@ func TestRenderSensorHelm(t *testing.T) {
 			}
 
 			files, err := RenderSensor(fields, certs, opts)
+			require.NoError(t, err)
 
 			admissionControllerRendered := false
 			admissionControllerSecretRendered := false
@@ -101,8 +102,6 @@ func TestRenderSensorHelm(t *testing.T) {
 					hasDestinationRule = true
 				}
 			}
-
-			require.NoError(t, err)
 
 			assert.Equal(t, c.admissionController, admissionControllerRendered, "incorrect bundle rendered")
 			assert.Equal(t, c.admissionController, admissionControllerSecretRendered, "incorrect bundle rendered")
