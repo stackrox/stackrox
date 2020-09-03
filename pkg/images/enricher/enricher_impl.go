@@ -77,6 +77,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.
 		return false, errorList.ToError()
 	}
 
+	log.Infof("Getting metadata for image %s", image.GetName().GetFullName())
 	for _, registry := range registries.GetAll() {
 		updated, err := e.enrichImageWithRegistry(image, registry)
 		if err != nil {

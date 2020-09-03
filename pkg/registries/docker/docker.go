@@ -125,7 +125,6 @@ func (r *Registry) Global() bool {
 
 // Metadata returns the metadata via this registries implementation
 func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
-	log.Infof("Getting metadata for image %s", image.GetName().GetFullName())
 	if image == nil {
 		return nil, nil
 	}
