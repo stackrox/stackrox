@@ -12,6 +12,8 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/store/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
+	netEntityMocks "github.com/stackrox/rox/central/networkflow/datastore/entities/mocks"
+	netFlowsMocks "github.com/stackrox/rox/central/networkflow/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	"github.com/stackrox/rox/central/ranking"
@@ -49,6 +51,8 @@ type ClusterDataStoreTestSuite struct {
 	deploymentDataStore *deploymentMocks.MockDataStore
 	nodeDataStore       *nodeMocks.MockGlobalDataStore
 	secretDataStore     *secretMocks.MockDataStore
+	flowsDataStore      *netFlowsMocks.MockClusterDataStore
+	netEntityDataStore  *netEntityMocks.MockEntityDataStore
 	connMgr             *connectionMocks.MockManager
 	alertDataStore      *alertMocks.MockDataStore
 	riskDataStore       *riskMocks.MockDataStore
@@ -78,6 +82,8 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.alertDataStore = alertMocks.NewMockDataStore(suite.mockCtrl)
 	suite.nodeDataStore = nodeMocks.NewMockGlobalDataStore(suite.mockCtrl)
 	suite.secretDataStore = secretMocks.NewMockDataStore(suite.mockCtrl)
+	suite.flowsDataStore = netFlowsMocks.NewMockClusterDataStore(suite.mockCtrl)
+	suite.netEntityDataStore = netEntityMocks.NewMockEntityDataStore(suite.mockCtrl)
 	suite.riskDataStore = riskMocks.NewMockDataStore(suite.mockCtrl)
 	suite.connMgr = connectionMocks.NewMockManager(suite.mockCtrl)
 	suite.notifierMock = notifierMocks.NewMockProcessor(suite.mockCtrl)
@@ -99,6 +105,8 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 		suite.deploymentDataStore,
 		suite.nodeDataStore,
 		suite.secretDataStore,
+		suite.flowsDataStore,
+		suite.netEntityDataStore,
 		suite.connMgr,
 		suite.notifierMock,
 		suite.mockProvider,
@@ -149,6 +157,9 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	suite.deploymentDataStore.EXPECT().RemoveDeployment(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	suite.nodeDataStore.EXPECT().RemoveClusterNodeStores(gomock.Any(), gomock.Any()).Return(nil)
 	suite.secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(testSecrets, nil)
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		suite.netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil)
+	}
 	suite.secretDataStore.EXPECT().RemoveSecret(gomock.Any(), gomock.Any()).Return(nil)
 
 	done := concurrency.NewSignal()
@@ -236,6 +247,7 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesAdd() {
 func (suite *ClusterDataStoreTestSuite) TestAllowsAdd() {
 	suite.clusters.EXPECT().Upsert(gomock.Any()).Return(nil)
 	suite.indexer.EXPECT().AddCluster(gomock.Any()).Return(nil)
+	suite.flowsDataStore.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).Return(netFlowsMocks.NewMockFlowDataStore(suite.mockCtrl), nil)
 
 	_, err := suite.clusterDataStore.AddCluster(suite.hasWriteCtx, &storage.Cluster{Name: "blah"})
 	suite.NoError(err, "expected no error trying to write with permissions")
@@ -284,6 +296,9 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsRemove() {
 	suite.namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.deploymentDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.nodeDataStore.EXPECT().RemoveClusterNodeStores(gomock.Any(), gomock.Any()).Return(nil)
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		suite.netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), gomock.Any()).Return(nil)
+	}
 	suite.secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
 

@@ -11,6 +11,8 @@ import (
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
+	netFlowDataStore "github.com/stackrox/rox/central/networkflow/datastore"
+	netEntityDataStore "github.com/stackrox/rox/central/networkflow/datastore/entities"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/ranking"
@@ -51,6 +53,8 @@ type datastoreImpl struct {
 	deploymentDataStore deploymentDataStore.DataStore
 	nodeDataStore       nodeDataStore.GlobalDataStore
 	secretsDataStore    secretDataStore.DataStore
+	netFlowsDataStore   netFlowDataStore.ClusterDataStore
+	netEntityDataStore  netEntityDataStore.EntityDataStore
 	cm                  connection.Manager
 
 	clusterRanker *ranking.Ranker
@@ -275,6 +279,16 @@ func (ds *datastoreImpl) AddCluster(ctx context.Context, cluster *storage.Cluste
 		return "", err
 	}
 	ds.cache.Add(cluster.GetId(), cluster.GetName())
+
+	// Temporarily elevate permissions to create network flow store for the cluster.
+	networkGraphElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkGraph)))
+
+	if _, err := ds.netFlowsDataStore.CreateFlowStore(networkGraphElevatedCtx, cluster.GetId()); err != nil {
+		return "", errors.Wrapf(err, "could not create flow store for cluster %s", cluster.GetId())
+	}
 	return cluster.GetId(), nil
 }
 
@@ -390,7 +404,7 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 	deleteRelatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Namespace, resources.Deployment, resources.Alert, resources.Node, resources.Secret),
+			sac.ResourceScopeKeys(resources.NetworkGraph, resources.Namespace, resources.Deployment, resources.Alert, resources.Node, resources.Secret),
 		))
 	go ds.postRemoveCluster(deleteRelatedCtx, cluster, done)
 	return ds.indexer.DeleteCluster(id)
@@ -418,6 +432,13 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	// Remove nodes associated with this cluster
 	if err := ds.nodeDataStore.RemoveClusterNodeStores(ctx, cluster.GetId()); err != nil {
 		log.Errorf("failed to remove nodes for cluster %s: %v", cluster.GetId(), err)
+	}
+
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		err := ds.netEntityDataStore.DeleteExternalNetworkEntitiesForCluster(ctx, cluster.GetId())
+		if err != nil {
+			log.Errorf("failed to delete external network graph entities for removed cluster %s: %v", cluster.GetId(), err)
+		}
 	}
 
 	ds.removeClusterSecrets(ctx, cluster)

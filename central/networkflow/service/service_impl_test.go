@@ -8,13 +8,16 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
+	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	dDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/networkflow"
+	entityMocks "github.com/stackrox/rox/central/networkflow/datastore/entities/mocks"
 	nfDSMocks "github.com/stackrox/rox/central/networkflow/datastore/mocks"
 	npDSMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
@@ -27,6 +30,9 @@ func TestNetworkGraph(t *testing.T) {
 
 type NetworkGraphServiceTestSuite struct {
 	suite.Suite
+
+	clusters    *clusterDSMocks.MockDataStore
+	entities    *entityMocks.MockEntityDataStore
 	deployments *dDSMocks.MockDataStore
 	flows       *nfDSMocks.MockClusterDataStore
 	evaluator   *npDSMocks.MockEvaluator
@@ -38,12 +44,14 @@ type NetworkGraphServiceTestSuite struct {
 func (s *NetworkGraphServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
+	s.clusters = clusterDSMocks.NewMockDataStore(s.mockCtrl)
 	s.deployments = dDSMocks.NewMockDataStore(s.mockCtrl)
+	s.entities = entityMocks.NewMockEntityDataStore(s.mockCtrl)
 	s.flows = nfDSMocks.NewMockClusterDataStore(s.mockCtrl)
 
 	s.evaluator = npDSMocks.NewMockEvaluator(s.mockCtrl)
 
-	s.tested = newService(s.flows, s.deployments)
+	s.tested = newService(s.flows, s.entities, s.deployments, s.clusters)
 }
 
 func (s *NetworkGraphServiceTestSuite) TearDownTest() {
@@ -419,4 +427,81 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 	sort.Strings(expected)
 	sort.Strings(flowStrings)
 	s.Equal(expected, flowStrings)
+}
+
+func (s *NetworkGraphServiceTestSuite) TestCreateExternalNetworkEntity() {
+	if !features.NetworkGraphExternalSrcs.Enabled() {
+		s.T().Skip()
+	}
+
+	ctx := sac.WithAllAccess(context.Background())
+	mockFlowStore := nfDSMocks.NewMockFlowDataStore(s.mockCtrl)
+
+	// Validation failure-no cluster ID provided
+	request := &v1.CreateNetworkEntityRequest{
+		ClusterId: "",
+		Entity: &storage.NetworkEntityInfo_ExternalSource{
+			Name: "cidr1",
+			Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+				Cidr: "192.0.2.0/24",
+			},
+		},
+	}
+	_, err := s.tested.CreateExternalNetworkEntity(ctx, request)
+	s.Error(err)
+
+	// Valid request
+	request = &v1.CreateNetworkEntityRequest{
+		ClusterId: "c1",
+		Entity: &storage.NetworkEntityInfo_ExternalSource{
+			Name: "cidr1",
+			Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+				Cidr: "192.0.2.0/24",
+			},
+		},
+	}
+	s.entities.EXPECT().UpsertExternalNetworkEntity(ctx, gomock.Any()).Return(nil)
+	s.clusters.EXPECT().Exists(gomock.Any(), "c1").Return(true, nil)
+	s.flows.EXPECT().GetFlowStore(ctx, request.ClusterId).Return(mockFlowStore, nil)
+	mockFlowStore.EXPECT().UpsertFlows(ctx, gomock.Any(), gomock.Any()).Return(nil)
+	_, err = s.tested.CreateExternalNetworkEntity(ctx, request)
+	s.NoError(err)
+
+	// Flow store not found-no flows upserted
+	s.entities.EXPECT().UpsertExternalNetworkEntity(ctx, gomock.Any()).Return(nil)
+	s.clusters.EXPECT().Exists(gomock.Any(), "c1").Return(true, nil)
+	s.flows.EXPECT().GetFlowStore(ctx, request.ClusterId).Return(nil, err)
+	_, err = s.tested.CreateExternalNetworkEntity(ctx, request)
+	s.Error(err)
+
+	// Cluster not found-no flows upserted
+	s.clusters.EXPECT().Exists(gomock.Any(), "c1").Return(false, nil)
+	_, err = s.tested.CreateExternalNetworkEntity(ctx, request)
+	s.Error(err)
+}
+
+func (s *NetworkGraphServiceTestSuite) TestDeleteExternalNetworkEntity() {
+	if !features.NetworkGraphExternalSrcs.Enabled() {
+		s.T().Skip()
+	}
+
+	ctx := sac.WithAllAccess(context.Background())
+	mockFlowStore := nfDSMocks.NewMockFlowDataStore(s.mockCtrl)
+
+	id, _ := sac.NewClusterScopeResourceID("c1", "id")
+	request := &v1.ResourceByID{
+		Id: id.ToString(),
+	}
+
+	s.entities.EXPECT().DeleteExternalNetworkEntity(ctx, gomock.Any()).Return(nil)
+	s.flows.EXPECT().GetFlowStore(gomock.Any(), "c1").Return(mockFlowStore, nil)
+	mockFlowStore.EXPECT().RemoveMatchingFlows(ctx, gomock.Any(), gomock.Any()).Return(nil)
+	_, err := s.tested.DeleteExternalNetworkEntity(ctx, request)
+	s.NoError(err)
+
+	// Flow store not found-no flows upserted
+	s.entities.EXPECT().DeleteExternalNetworkEntity(ctx, gomock.Any()).Return(nil)
+	s.flows.EXPECT().GetFlowStore(gomock.Any(), "c1").Return(nil, err)
+	_, err = s.tested.DeleteExternalNetworkEntity(ctx, request)
+	s.Error(err)
 }

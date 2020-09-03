@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/networkflow/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	pkgRocksDB "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -16,10 +15,6 @@ import (
 )
 
 func TestNetworkEntityDataStore(t *testing.T) {
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		t.Skip()
-	}
-
 	suite.Run(t, new(NetworkEntityDataStoreTestSuite))
 }
 

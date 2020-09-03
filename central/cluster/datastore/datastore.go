@@ -9,6 +9,8 @@ import (
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
+	netFlowsDataStore "github.com/stackrox/rox/central/networkflow/datastore"
+	netEntityDataStore "github.com/stackrox/rox/central/networkflow/datastore/entities"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/ranking"
@@ -68,6 +70,8 @@ func New(
 	dds deploymentDataStore.DataStore,
 	ns nodeDataStore.GlobalDataStore,
 	ss secretDataStore.DataStore,
+	flows netFlowsDataStore.ClusterDataStore,
+	netEntities netEntityDataStore.EntityDataStore,
 	cm connection.Manager,
 	notifier notifierProcessor.Processor,
 	graphProvider graph.Provider,
@@ -82,6 +86,8 @@ func New(
 		deploymentDataStore:  dds,
 		nodeDataStore:        ns,
 		secretsDataStore:     ss,
+		netFlowsDataStore:    flows,
+		netEntityDataStore:   netEntities,
 		cm:                   cm,
 		notifier:             notifier,
 		clusterRanker:        clusterRanker,

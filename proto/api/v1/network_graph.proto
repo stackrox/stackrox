@@ -6,6 +6,8 @@ option java_package = "io.stackrox.proto.api.v1";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/network_flow.proto";
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
 
 package v1;
 
@@ -43,6 +45,19 @@ message NetworkGraph {
     repeated NetworkNode nodes = 2;
 }
 
+message CreateNetworkEntityRequest {
+    string                                   cluster_id = 1;
+    storage.NetworkEntityInfo.ExternalSource entity     = 2;
+}
+
+message GetExternalNetworkEntitiesRequest {
+    string cluster_id = 1;
+}
+
+message GetExternalNetworkEntitiesResponse {
+    repeated storage.NetworkEntity entities = 1;
+}
+
 service NetworkGraphService {
     rpc GetNetworkGraph (NetworkGraphRequest) returns (NetworkGraph) {
         option (google.api.http) = {
@@ -50,4 +65,22 @@ service NetworkGraphService {
         };
     }
 
+    rpc GetExternalNetworkEntities (GetExternalNetworkEntitiesRequest) returns (GetExternalNetworkEntitiesResponse) {
+        option (google.api.http) = {
+            get: "/v1/networkgraph/cluster/{cluster_id}/externalentities"
+        };
+    }
+
+    rpc CreateExternalNetworkEntity (CreateNetworkEntityRequest) returns (storage.NetworkEntity) {
+        option (google.api.http) = {
+            post: "/v1/networkgraph/cluster/{cluster_id}/externalentities"
+            body: "*"
+        };
+    }
+
+    rpc DeleteExternalNetworkEntity (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/networkgraph/externalentities/{id}"
+        };
+    }
 }

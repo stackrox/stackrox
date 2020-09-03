@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
+	netFlowsDataStore "github.com/stackrox/rox/central/networkflow/datastore"
+	netEntityDataStore "github.com/stackrox/rox/central/networkflow/datastore/entities"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/ranking"
@@ -40,6 +42,8 @@ func initialize() {
 		deploymentDataStore.Singleton(),
 		nodeDataStore.Singleton(),
 		secretDataStore.Singleton(),
+		netFlowsDataStore.Singleton(),
+		netEntityDataStore.Singleton(),
 		connection.ManagerSingleton(),
 		notifierProcessor.Singleton(),
 		dackbox.GetGlobalDackBox(),

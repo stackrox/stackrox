@@ -2,17 +2,21 @@ package service
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	dDS "github.com/stackrox/rox/central/deployment/datastore"
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/networkflow"
-	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
+	networkFlowDS "github.com/stackrox/rox/central/networkflow/datastore"
+	"github.com/stackrox/rox/central/networkflow/datastore/entities"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -21,7 +25,9 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -31,8 +37,14 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.NetworkGraph)): {
 			"/v1.NetworkGraphService/GetNetworkGraph",
+			"/v1.NetworkGraphService/GetExternalNetworkEntities",
+		},
+		user.With(permissions.Modify(resources.NetworkGraph)): {
+			"/v1.NetworkGraphService/CreateExternalNetworkEntity",
+			"/v1.NetworkGraphService/DeleteExternalNetworkEntity",
 		},
 	})
+
 	defaultSince    = -5 * time.Minute
 	deploymentSAC   = sac.ForResource(resources.Deployment)
 	networkGraphSAC = sac.ForResource(resources.NetworkGraph)
@@ -40,8 +52,10 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
-	clusterFlows nfDS.ClusterDataStore
-	deployments  dDS.DataStore
+	clusterFlows networkFlowDS.ClusterDataStore
+	entities     entities.EntityDataStore
+	deployments  deploymentDS.DataStore
+	clusters     clusterDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -57,6 +71,159 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
+}
+
+func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v1.GetExternalNetworkEntitiesRequest) (*v1.GetExternalNetworkEntitiesResponse, error) {
+	if !features.NetworkGraphExternalSrcs.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "support for external sources in network graph is not enabled")
+	}
+
+	ret, err := s.entities.GetAllEntitiesForCluster(ctx, request.GetClusterId())
+	if errors.Is(err, errorhelpers.ErrInvalidArgs) {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.GetExternalNetworkEntitiesResponse{
+		Entities: ret,
+	}, nil
+}
+
+func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *v1.CreateNetworkEntityRequest) (*storage.NetworkEntity, error) {
+	if !features.NetworkGraphExternalSrcs.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "support for external sources in network graph is not enabled")
+	}
+
+	// If an error is returned here, it means one of the arguments is invalid.
+	id, err := sac.NewClusterScopeResourceID(request.GetClusterId(), uuid.NewV4().String())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	if err := s.validateCluster(id.ClusterID); err != nil {
+		return nil, err
+	}
+
+	entity := &storage.NetworkEntity{
+		Info: &storage.NetworkEntityInfo{
+			Id:   id.ToString(),
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: request.GetEntity(),
+			},
+		},
+		Scope: &storage.NetworkEntity_Scope{
+			ClusterId: request.GetClusterId(),
+		},
+	}
+
+	err = s.entities.UpsertExternalNetworkEntity(ctx, entity)
+	if errors.Is(err, errorhelpers.ErrInvalidArgs) {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if errors.Is(err, errorhelpers.ErrAlreadyExists) {
+		return nil, status.Error(codes.AlreadyExists, err.Error())
+	}
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	// Create a disconnected flow with this entity as source entity so that the node appears in network graph.
+	if err := s.addNetworkEntityToGraph(ctx, entity.GetInfo(), entity.GetScope().GetClusterId()); err != nil {
+		return nil, err
+	}
+
+	// TODO(ROX-5464): Push updated list of cidr blocks to sensor
+	return entity, nil
+}
+
+func (s *serviceImpl) addNetworkEntityToGraph(ctx context.Context, entity *storage.NetworkEntityInfo, clusterID string) error {
+	flowStore, err := s.getFlowStore(ctx, clusterID)
+	if err != nil {
+		return err
+	}
+	if flowStore == nil {
+		return status.Errorf(codes.NotFound, "no flows found for cluster %s", clusterID)
+	}
+
+	flows := []*storage.NetworkFlow{
+		{
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity: entity,
+			},
+		},
+	}
+	return flowStore.UpsertFlows(ctx, flows, timestamp.Now())
+}
+
+func (s *serviceImpl) DeleteExternalNetworkEntity(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
+	if !features.NetworkGraphExternalSrcs.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "support for external sources in network graph is not enabled")
+	}
+
+	if err := s.entities.DeleteExternalNetworkEntity(ctx, request.GetId()); err != nil {
+		if errors.Is(err, errorhelpers.ErrInvalidArgs) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		return nil, err
+	}
+
+	id, err := sac.GetClusterScopedResourceID(request.GetId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	// Delete the flows to the network entity so that the next get request does not include it.
+	// We cannot tolerate central-collector latency for getting the updated view of all the flows.
+	if err := s.removeNetworkEntityFromGraph(ctx, request.GetId(), id.ClusterID); err != nil {
+		return nil, err
+	}
+
+	// TODO(ROX-5464): Push updated list of cidr blocks to sensor.
+	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) removeNetworkEntityFromGraph(ctx context.Context, entityID string, clusterID string) error {
+	flowStore, err := s.getFlowStore(ctx, clusterID)
+	if err != nil {
+		return err
+	}
+	if flowStore == nil {
+		return status.Errorf(codes.NotFound, "no flows found for cluster %s", clusterID)
+	}
+
+	keyMatchFunc := func(props *storage.NetworkFlowProperties) bool {
+		return props.GetSrcEntity().GetId() == entityID || props.GetDstEntity().GetId() == entityID
+	}
+	return flowStore.RemoveMatchingFlows(ctx, keyMatchFunc, nil)
+}
+
+func (s *serviceImpl) getFlowStore(ctx context.Context, clusterID string) (networkFlowDS.FlowDataStore, error) {
+	flowStore, err := s.clusterFlows.GetFlowStore(ctx, clusterID)
+	if err != nil {
+		return nil, err
+	}
+	if flowStore == nil {
+		return nil, status.Errorf(codes.NotFound, "no flows found for cluster %s", clusterID)
+	}
+	return flowStore, nil
+}
+
+func (s *serviceImpl) validateCluster(clusterID string) error {
+	// Use elevated context to perform certain cluster validations.
+	clusterReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Cluster)))
+
+	if exists, err := s.clusters.Exists(clusterReadCtx, clusterID); err != nil {
+		return err
+	} else if !exists {
+		return status.Errorf(codes.NotFound, "cluster %s not found. It may have been deleted", clusterID)
+	}
+	return nil
 }
 
 func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.NetworkGraphRequest) (*v1.NetworkGraph, error) {
@@ -186,7 +353,7 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 	return builder.Build(), nil
 }
 
-func filterFlowsAndMaskScopeAlienDeployments(ctx context.Context, clusterID string, flows []*storage.NetworkFlow, deploymentsMap map[string]*storage.ListDeployment, deploymentDS dDS.DataStore, allDeploymentsVisible bool) (filtered []*storage.NetworkFlow, maskedDeployments []*storage.ListDeployment, err error) {
+func filterFlowsAndMaskScopeAlienDeployments(ctx context.Context, clusterID string, flows []*storage.NetworkFlow, deploymentsMap map[string]*storage.ListDeployment, deploymentDS deploymentDS.DataStore, allDeploymentsVisible bool) (filtered []*storage.NetworkFlow, maskedDeployments []*storage.ListDeployment, err error) {
 	isVisibleDeployment := func(string) bool { return true }
 	if !allDeploymentsVisible {
 		// Find out which deployments we *can* see.

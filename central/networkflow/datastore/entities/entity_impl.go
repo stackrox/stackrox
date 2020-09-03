@@ -118,7 +118,7 @@ func (ds *entityDataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, 
 
 	decodedID, err := sac.GetClusterScopedResourceID(id)
 	if err != nil {
-		return err
+		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 
 	if ok, err := networkGraphSAC.WriteAllowed(ctx, sac.ClusterScopeKey(decodedID.ClusterID)); err != nil {
