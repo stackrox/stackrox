@@ -16,6 +16,8 @@ const (
 	schemaVersion         = "2018-10-08"
 	resourceTypeContainer = "Container"
 	resourceTypeOther     = "Other"
+
+	maxResources = 32
 )
 
 func mapAlertToFinding(account string, arn string, alert *storage.Alert) *securityhub.AwsSecurityFinding {
@@ -86,11 +88,20 @@ func mapAlertToFinding(account string, arn string, alert *storage.Alert) *securi
 		})
 	}
 
-	for _, violation := range alert.GetViolations() {
+	for i, violation := range alert.GetViolations() {
 		finding.Resources = append(finding.Resources, &securityhub.Resource{
 			Id:   aws.String("violation: " + violation.GetMessage()),
 			Type: aws.String(resourceTypeOther),
 		})
+		// If we are going to add eclipse the maxResource limit, the use the last entry to
+		// reference the StackRox UI and break
+		if len(finding.Resources) == maxResources-1 && i != len(alert.GetViolations())-1 {
+			finding.Resources = append(finding.Resources, &securityhub.Resource{
+				Id:   aws.String("Note: More than 32 violations found. Please consult the StackRox product to see more."),
+				Type: aws.String(resourceTypeOther),
+			})
+			break
+		}
 	}
 
 	switch alert.GetState() {
@@ -112,6 +123,9 @@ func createDescriptionForAlert(alert *storage.Alert) string {
 	s := alert.GetPolicy().GetDescription()
 	if len(s) > 1024 {
 		s = s[:1024]
+	}
+	if s == "" {
+		return "<policy has no description>"
 	}
 	return s
 }

@@ -21,6 +21,10 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	heartbeatInterval = 5 * time.Minute
+)
+
 var (
 	errAlreadyRunning    = errors.New("already running")
 	errNotRunning        = errors.New("not running")
@@ -160,6 +164,46 @@ func (n *notifier) waitForInitDone() {
 	n.initDoneSig.Wait()
 }
 
+func (n *notifier) sendHeartbeat() {
+	now := aws.String(time.Now().UTC().Format(iso8601UTC))
+	_, err := n.SecurityHub.BatchImportFindings(&securityhub.BatchImportFindingsInput{
+
+		Findings: []*securityhub.AwsSecurityFinding{
+			{
+				SchemaVersion: aws.String(schemaVersion),
+				AwsAccountId:  aws.String(n.account),
+				ProductArn:    aws.String(n.arn),
+				ProductFields: map[string]*string{
+					"ProviderName":    aws.String(product.name),
+					"ProviderVersion": aws.String(product.version),
+				},
+				Description: aws.String("Heartbeat message from StackRox"),
+				GeneratorId: aws.String("StackRox"),
+				Id:          aws.String("heartbeat-" + *now),
+				Title:       aws.String("Heartbeat message from StackRox"),
+				Types: []*string{
+					aws.String("Heartbeat"),
+				},
+				CreatedAt: now,
+				UpdatedAt: now,
+				Severity: &securityhub.Severity{
+					Normalized: aws.Int64(0),
+					Product:    aws.Float64(0),
+				},
+				Resources: []*securityhub.Resource{
+					{
+						Id:   aws.String("heartbeat-" + *now),
+						Type: aws.String(resourceTypeOther),
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		log.Errorf("unable to send heartbeat to AWS SecurityHub: %v", err)
+	}
+}
+
 // run executes n's event processing loop until either an error occurs or ctx is marked as done.
 // If syncer is not nil, run writes to syncer when initialization is done (or an error occured).
 func (n *notifier) run(ctx context.Context) error {
@@ -176,6 +220,8 @@ func (n *notifier) run(ctx context.Context) error {
 	uploadTicker := time.NewTicker(n.uploadTimeout)
 	defer uploadTicker.Stop()
 
+	heartbeatTicker := time.NewTicker(heartbeatInterval)
+
 	n.initDoneSig.Signal()
 
 	for {
@@ -184,6 +230,8 @@ func (n *notifier) run(ctx context.Context) error {
 			if n.processAlert(ctx, alert) {
 				lastUpload = time.Now()
 			}
+		case <-heartbeatTicker.C:
+			n.sendHeartbeat()
 		case <-uploadTicker.C:
 			// If the upload timer kicks in, we haven't received a new alert for
 			// uploadTimeout seconds. We aim to minimize the amount of state
@@ -305,9 +353,10 @@ func (n *notifier) Test(ctx context.Context) error {
 			mapAlertToFinding(n.account, n.arn, &storage.Alert{
 				Id: uuid.NewV4().String(),
 				Policy: &storage.Policy{
-					Id:       uuid.NewV4().String(),
-					Name:     "example policy",
-					Severity: storage.Severity_HIGH_SEVERITY,
+					Id:          uuid.NewV4().String(),
+					Name:        "example policy",
+					Severity:    storage.Severity_HIGH_SEVERITY,
+					Description: "This finding tests the SecurityHub integration",
 				},
 				Deployment: &storage.Alert_Deployment{
 					Id:          uuid.NewV4().String(),
