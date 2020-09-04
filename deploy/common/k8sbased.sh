@@ -236,14 +236,6 @@ function launch_central {
         $unzip_dir/central/scripts/port-forward.sh 8000
     fi
 
-    wait_for_central "${API_ENDPOINT}"
-    echo "Successfully deployed Central!"
-
-    echo "Access the UI at: https://${API_ENDPOINT}"
-    if [[ "$AUTH0_SUPPORT" == "true" ]]; then
-        setup_auth0 "${API_ENDPOINT}"
-    fi
-
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then
       "${COMMON_DIR}/monitoring.sh"
     fi
@@ -251,6 +243,14 @@ function launch_central {
     if [[ -n "$CI" ]]; then
         echo "Sleep for 1 minute to allow for GKE stabilization"
         sleep 60
+    fi
+
+    wait_for_central "${API_ENDPOINT}"
+    echo "Successfully deployed Central!"
+
+    echo "Access the UI at: https://${API_ENDPOINT}"
+    if [[ "$AUTH0_SUPPORT" == "true" ]]; then
+        setup_auth0 "${API_ENDPOINT}"
     fi
 }
 
