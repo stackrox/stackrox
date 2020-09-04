@@ -5,7 +5,7 @@ option java_package = "io.stackrox.proto.storage";
 
 import "storage/schedule.proto";
 
-import "protobuf/gogoproto/gogo.proto";
+import "gogoproto/gogo.proto";
 
 package storage;
 

@@ -4,9 +4,15 @@ TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long)
 
+# GOPATH might actually be a colon-separated list of paths. For the purposes of this makefile,
+# work with the first element only.
+GOPATH := $(patsubst :%,,$(GOPATH))
+
+GOBIN ?= $(GOPATH)/bin
+
 ALPINE_MIRROR_BUILD_ARG := $(ALPINE_MIRROR:%=--build-arg ALPINE_MIRROR=%)
 
-export CGO_ENABLED DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOPRIVATE
+export CGO_ENABLED DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOPRIVATE GOBIN
 CGO_ENABLED := 1
 GOARCH := amd64
 DEFAULT_GOOS := linux
@@ -41,58 +47,58 @@ all: deps style test image
 ###### Binaries we depend on (need to be defined on top) ############
 #####################################################################
 
-GOLANGCILINT_BIN := $(GOPATH)/bin/golangci-lint
+GOLANGCILINT_BIN := $(GOBIN)/golangci-lint
 $(GOLANGCILINT_BIN): deps
 	@echo "+ $@"
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint
 
-EASYJSON_BIN := $(GOPATH)/bin/easyjson
+EASYJSON_BIN := $(GOBIN)/easyjson
 $(EASYJSON_BIN): deps
 	@echo "+ $@"
 	go install github.com/mailru/easyjson/easyjson
 
-STATICCHECK_BIN := $(GOPATH)/bin/staticcheck
+STATICCHECK_BIN := $(GOBIN)/staticcheck
 $(STATICCHECK_BIN): deps
 	@echo "+ $@"
 	@go install honnef.co/go/tools/cmd/staticcheck
 
-GOVERALLS_BIN := $(GOPATH)/bin/goveralls
+GOVERALLS_BIN := $(GOBIN)/goveralls
 $(GOVERALLS_BIN): deps
 	@echo "+ $@"
 	go install github.com/mattn/goveralls
 
-ROXVET_BIN := $(GOPATH)/bin/roxvet
+ROXVET_BIN := $(GOBIN)/roxvet
 .PHONY: $(ROXVET_BIN)
 $(ROXVET_BIN): deps
 	@echo "+ $@"
 	go install ./tools/roxvet
 
-STRINGER_BIN := $(GOPATH)/bin/stringer
+STRINGER_BIN := $(GOBIN)/stringer
 $(STRINGER_BIN): deps
 	@echo "+ $@"
 	go install golang.org/x/tools/cmd/stringer
 
-MOCKGEN_BIN := $(GOPATH)/bin/mockgen
+MOCKGEN_BIN := $(GOBIN)/mockgen
 $(MOCKGEN_BIN): deps
 	@echo "+ $@"
 	go install github.com/golang/mock/mockgen
 
-GENNY_BIN := $(GOPATH)/bin/genny
+GENNY_BIN := $(GOBIN)/genny
 $(GENNY_BIN): deps
 	@echo "+ $@"
 	go install github.com/mauricelam/genny
 
-PACKR_BIN := $(GOPATH)/bin/packr
+PACKR_BIN := $(GOBIN)/packr
 $(PACKR_BIN): deps
 	@echo "+ $@"
 	go install github.com/gobuffalo/packr/packr
 
-GO_JUNIT_REPORT_BIN := $(GOPATH)/bin/go-junit-report
+GO_JUNIT_REPORT_BIN := $(GOBIN)/go-junit-report
 $(GO_JUNIT_REPORT_BIN): deps
 	@echo "+ $@"
 	go install github.com/jstemmer/go-junit-report
 
-PROTOLOCK_BIN := $(GOPATH)/bin/protolock
+PROTOLOCK_BIN := $(GOBIN)/protolock
 $(PROTOLOCK_BIN): deps
 	@echo "+ $@"
 	@go install github.com/nilslice/protolock/cmd/protolock
@@ -607,7 +613,7 @@ docs-tag:
 scanner-tag:
 	@cat SCANNER_VERSION
 
-GET_DEVTOOLS_CMD := $(MAKE) -qp | sed -e '/^\# Not a target:$$/{ N; d; }' | egrep -v '^(\s*(\#.*)?$$|\s|%|\(|\.)' | egrep '^[^[:space:]:]*:' | cut -d: -f1 | sort | uniq | grep '^$(GOPATH)/bin/'
+GET_DEVTOOLS_CMD := $(MAKE) -qp | sed -e '/^\# Not a target:$$/{ N; d; }' | egrep -v '^(\s*(\#.*)?$$|\s|%|\(|\.)' | egrep '^[^[:space:]:]*:' | cut -d: -f1 | sort | uniq | grep '^$(GOBIN)/'
 .PHONY: clean-dev-tools
 clean-dev-tools:
 	@echo "+ $@"

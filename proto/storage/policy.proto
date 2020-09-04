@@ -6,7 +6,7 @@ option java_package = "io.stackrox.proto.storage";
 import "google/protobuf/timestamp.proto";
 import "storage/scope.proto";
 import "storage/image.proto";
-import "protobuf/gogoproto/gogo.proto";
+import "gogoproto/gogo.proto";
 import "storage/deployment.proto";
 import "storage/rbac.proto";
 

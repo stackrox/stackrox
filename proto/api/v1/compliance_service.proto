@@ -3,7 +3,7 @@ syntax = "proto3";
 option go_package = "v1";
 
 import weak "google/api/annotations.proto";
-import "protobuf/gogoproto/gogo.proto";
+import "gogoproto/gogo.proto";
 import "storage/compliance.proto";
 import "api/v1/search_service.proto";
 import "api/v1/common.proto";

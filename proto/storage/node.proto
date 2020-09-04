@@ -7,7 +7,7 @@ import "google/protobuf/timestamp.proto";
 import "storage/container_runtime.proto";
 import "storage/taints.proto";
 
-import "protobuf/gogoproto/gogo.proto";
+import "gogoproto/gogo.proto";
 
 package storage;
 

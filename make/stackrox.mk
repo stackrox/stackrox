@@ -46,7 +46,7 @@ test-integration:
 .PHONY: test-all
 test-all: test-integration
 
-GO_JUNIT_REPORT_BIN := $(GOPATH)/bin/go-junit-report
+GO_JUNIT_REPORT_BIN := $(GOBIN)/go-junit-report
 $(GO_JUNIT_REPORT_BIN):
 	@echo "+ $@"
 	go install github.com/jstemmer/go-junit-report
