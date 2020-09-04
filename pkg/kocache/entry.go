@@ -77,7 +77,7 @@ func (e *entry) IsError() bool {
 func (e *entry) Populate(client *http.Client, upstreamURL string, opts Options) {
 	err := e.doPopulate(client, upstreamURL, opts)
 	defer e.done.SignalWithError(err)
-	e.lastAccess = timestamp.Now()
+	e.lastAccess.StoreAtomic(timestamp.Now())
 }
 
 func (e *entry) doPopulate(client *http.Client, upstreamURL string, opts Options) error {
