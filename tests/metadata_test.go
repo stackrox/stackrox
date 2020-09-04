@@ -7,7 +7,9 @@ import (
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,13 +30,7 @@ func TestMetadataIsSetCorrectly(t *testing.T) {
 	service := v1.NewMetadataServiceClient(conn)
 	metadata, err := service.GetMetadata(ctx, &v1.Empty{})
 	require.NoError(t, err)
-	if tag := os.Getenv("CIRCLE_TAG"); tag != "" {
-		assert.Equal(t, "release", metadata.GetBuildFlavor())
-		assert.True(t, metadata.ReleaseBuild)
-		assert.Equal(t, tag, metadata.Version)
-	} else {
-		assert.Equal(t, "development", metadata.GetBuildFlavor())
-		assert.False(t, metadata.ReleaseBuild)
-	}
-
+	assert.Equal(t, buildinfo.BuildFlavor, metadata.GetBuildFlavor())
+	assert.Equal(t, buildinfo.ReleaseBuild, metadata.GetReleaseBuild())
+	assert.Equal(t, version.GetMainVersion(), metadata.GetVersion())
 }

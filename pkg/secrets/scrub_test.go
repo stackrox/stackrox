@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -140,7 +141,7 @@ func TestStringTypePanic(t *testing.T) {
 	assert.Error(t, validateStructTagsOnType(reflect.TypeOf(test)))
 	defer func() {
 		err := recover()
-		assert.EqualError(t, err.(error), "field type mismatch secrets.stringType!=string")
+		assert.Contains(t, fmt.Sprint(err), "field type mismatch secrets.stringType!=string")
 	}()
 	ScrubSecretsFromStructWithReplacement(test, "")
 }
@@ -152,7 +153,7 @@ func TestNonStringPanic(t *testing.T) {
 	assert.Error(t, validateStructTagsOnType(reflect.TypeOf(test)))
 	defer func() {
 		err := recover()
-		assert.EqualError(t, err.(error), "expected string kind, got int")
+		assert.Contains(t, fmt.Sprint(err), "expected string kind, got int")
 	}()
 	ScrubSecretsFromStructWithReplacement(test, "")
 }

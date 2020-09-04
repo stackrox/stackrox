@@ -24,10 +24,10 @@ func ScrubSecretsFromStructWithReplacement(obj interface{}, replacement string) 
 		switch scrubTag {
 		case scrubTagAlways:
 			if field.Kind() != reflect.String {
-				utils.Should(errors.Errorf("expected string kind, got %s", field.Kind()))
+				utils.Must(errors.Errorf("expected string kind, got %s", field.Kind()))
 			}
 			if field.Type() != reflect.TypeOf(replacement) {
-				utils.Should(errors.Errorf("field type mismatch %s!=%s", field.Type(), reflect.TypeOf(replacement)))
+				utils.Must(errors.Errorf("field type mismatch %s!=%s", field.Type(), reflect.TypeOf(replacement)))
 			}
 			if field.String() != "" {
 				field.Set(reflect.ValueOf(replacement))

@@ -77,9 +77,6 @@ func (c *chartPrefixPair) Instantiate(cfg *Config) (*chart.Chart, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "error loading rendered chart")
 	}
-	ch.Metadata = &chart.Metadata{
-		Name: c.prefix,
-	}
 
 	return ch, nil
 }

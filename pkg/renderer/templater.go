@@ -206,9 +206,8 @@ func executeRawTemplate(raw []byte, c *Config) ([]byte, error) {
 
 // ExecuteTemplate renders a given template, injecting the given values.
 func ExecuteTemplate(temp *template.Template, values interface{}) ([]byte, error) {
-	var b []byte
-	buf := bytes.NewBuffer(b)
-	err := temp.Execute(buf, values)
+	var buf bytes.Buffer
+	err := temp.Execute(&buf, values)
 	if err != nil {
 		log.Errorf("Template execution failed: %s", err)
 		return nil, err

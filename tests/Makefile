@@ -1,6 +1,8 @@
 ROX_PROJECT=tests
 TESTFLAGS=-race -p 1
 
+TOPLEVEL=$(CURDIR)/..
+
 .PHONY: all
 all: test
 	@echo "+ $@"
@@ -9,13 +11,13 @@ all: test
 .PHONY: destructive-tests
 destructive-tests:
 	@echo "+ $@"
-	@go test -cover -tags destructive -run TestClusterDeletion 2>&1 | tee test.log
+	@GOTAGS=$(GOTAGS),test,destructive ../scripts/go-test.sh -cover -run TestClusterDeletion 2>&1 | tee test.log
 	@$(MAKE) report
 
 .PHONY: external-backup-tests
 external-backup-tests:
 	@echo "+ $@"
-	@go test -cover -tags externalbackups -run TestGCSExternalBackup 2>&1 | tee test.log
+	@GOTAGS=$(GOTAGS),test,externalbackups ../scripts/go-test.sh -cover -run TestGCSExternalBackup 2>&1 | tee test.log
 	@$(MAKE) report
 
 include ../make/stackrox.mk
