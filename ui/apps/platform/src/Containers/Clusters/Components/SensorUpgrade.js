@@ -29,8 +29,8 @@ const typeStyles = {
     },
     progress: {
         Icon: Loader,
-        bgColor: 'bg-success-200',
-        fgColor: 'text-success-700',
+        bgColor: 'bg-tertiary-200',
+        fgColor: 'text-tertiary-700',
     },
     failure: {
         Icon: X,

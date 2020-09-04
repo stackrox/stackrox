@@ -4,15 +4,19 @@ import { connect } from 'react-redux';
 import { selectors } from 'reducers';
 import { format } from 'date-fns';
 import { createStructuredSelector } from 'reselect';
-import * as Icon from 'react-feather';
+import { ArrowRight, Check } from 'react-feather';
 import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 import set from 'lodash/set';
 
+import Button from 'Components/Button';
+import CollapsibleCard from 'Components/CollapsibleCard';
+import Dialog from 'Components/Dialog';
 import Message from 'Components/Message';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import useInterval from 'hooks/useInterval';
+import { generateSecuredClusterCertSecret } from 'services/CertGenerationService';
 import {
     getClusterById,
     saveCluster,
@@ -35,10 +39,6 @@ import {
     wizardSteps,
     centralEnvDefault,
 } from './cluster.helpers';
-import CollapsibleCard from '../../Components/CollapsibleCard';
-import Button from '../../Components/Button';
-import { generateSecuredClusterCertSecret } from '../../services/CertGenerationService';
-import Dialog from '../../Components/Dialog';
 
 function fetchCentralEnv() {
     return fetchKernelSupportAvailable().then((kernelSupportAvailable) => {
@@ -78,6 +78,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
     const [wizardStep, setWizardStep] = useState(wizardSteps.FORM);
     const [loadingCounter, setLoadingCounter] = useState(0);
     const [messageState, setMessageState] = useState(null);
+    const [isBlocked, setIsBlocked] = useState(false);
     const [pollingCount, setPollingCount] = useState(0);
     const [pollingDelay, setPollingDelay] = useState(null);
     const [submissionError, setSubmissionError] = useState('');
@@ -91,6 +92,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
         setSelectedClusterId('');
         setSelectedCluster(envAwareClusterDefault);
         setMessageState(null);
+        setIsBlocked(false);
         setWizardStep(wizardSteps.FORM);
         setPollingDelay(null);
         setFreshCredentialsDownloaded(false);
@@ -120,6 +122,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
             if (clusterIdToRetrieve && clusterIdToRetrieve !== 'new') {
                 setLoadingCounter((prev) => prev + 1);
                 setMessageState(null);
+                setIsBlocked(false);
                 // don't want to cache or memoize, because we always want the latest real-time data
                 getClusterById(clusterIdToRetrieve)
                     .then((cluster) => {
@@ -127,20 +130,16 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
                         setSelectedCluster(cluster);
 
                         // stop polling after contact is established
-                        if (
-                            selectedCluster &&
-                            selectedCluster.healthStatus &&
-                            selectedCluster.healthStatus.lastContact
-                        ) {
+                        if (selectedCluster?.healthStatus?.lastContact) {
                             setPollingDelay(null);
                         }
                     })
                     .catch(() => {
                         setMessageState({
-                            blocking: true,
                             type: 'error',
                             message: 'There was an error downloading the configuration files.',
                         });
+                        setIsBlocked(true);
                     })
                     .finally(() => {
                         setLoadingCounter((prev) => prev - 1);
@@ -162,14 +161,13 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
     }, pollingDelay);
 
     /**
-     * naive implementation of form handler
-     *  - replace with more robust system, probably react-final-form
-     *
      * @param   {Event}  event  native JS Event object from an onChange event in an input
      *
      * @return  {nothing}       Side effect: change the corresponding property in selectedCluster
      */
     function onChange(event) {
+        // event.target.name can be a dot path to property like:
+        // dynamicConfig.admissionControllerConfig.timeoutSeconds
         if (get(selectedCluster, event.target.name) !== undefined) {
             const newClusterSettings = { ...selectedCluster };
             const newValue =
@@ -190,24 +188,14 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
 
                     setWizardStep(wizardSteps.DEPLOYMENT);
 
-                    if (
-                        !(
-                            selectedCluster &&
-                            selectedCluster.healthStatus &&
-                            selectedCluster.healthStatus.lastContact
-                        )
-                    ) {
+                    if (!selectedCluster?.healthStatus?.lastContact) {
                         setPollingDelay(clusterDetailPollingInterval);
                     }
                 })
                 .catch((error) => {
-                    const serverError = get(
-                        error,
-                        'response.data.message',
-                        'An unknown error has occurred.'
+                    setSubmissionError(
+                        error?.response?.data?.message || 'An unknown error has occurred.'
                     );
-
-                    setSubmissionError(serverError);
                 });
         } else {
             unselectCluster();
@@ -221,13 +209,9 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
     function onDownload() {
         setSubmissionError('');
         downloadClusterYaml(selectedCluster.id, createUpgraderSA).catch((error) => {
-            const serverError = get(
-                error,
-                'response.data.message',
-                'We could not download the configuration files.'
+            setSubmissionError(
+                error?.response?.data?.message || 'We could not download the configuration files.'
             );
-
-            setSubmissionError(serverError);
         });
     }
 
@@ -245,25 +229,18 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
                 hideCertRotationModal();
             })
             .catch((error) => {
-                const serverError = get(
-                    error,
-                    'response.data.message',
-                    'Failed to apply new credentials to the cluster.'
+                setSubmissionError(
+                    error?.response?.data?.message ||
+                        'Failed to apply new credentials to the cluster.'
                 );
-
-                setSubmissionError(serverError);
             });
     }
 
     function generateCertSecret() {
         generateSecuredClusterCertSecret(selectedClusterId).catch((error) => {
-            const serverError = get(
-                error,
-                'response.data.message',
-                'Failed to regenerate certificates.'
+            setSubmissionError(
+                error?.response?.data?.message || 'Failed to regenerate certificates.'
             );
-
-            setSubmissionError(serverError);
             setFreshCredentialsDownloaded(false);
         });
         setFreshCredentialsDownloaded(true);
@@ -275,32 +252,32 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
     if (!selectedClusterId) {
         return null;
     }
-    const showFormStyles =
-        wizardStep === wizardSteps.FORM && !(messageState && messageState.blocking);
-    const showDeploymentStyles =
-        wizardStep === wizardSteps.DEPLOYMENT && !(messageState && messageState.blocking);
+
     const selectedClusterName = (selectedCluster && selectedCluster.name) || '';
 
     // @TODO: improve error handling when adding support for new clusters
-    const panelButtons = (
+    const isForm = wizardStep === wizardSteps.FORM;
+    const iconClassName = 'h-4 w-4';
+
+    const panelButtons = isBlocked ? (
+        <div />
+    ) : (
         <PanelButton
             icon={
-                showFormStyles ? (
-                    <Icon.ArrowRight className="h-4 w-4" />
+                isForm ? (
+                    <ArrowRight className={iconClassName} />
                 ) : (
-                    <Icon.Check className="h-4 w-4" />
+                    <Check className={iconClassName} />
                 )
             }
-            className={`mr-2 btn ${showFormStyles ? 'btn-base' : 'btn-success'}`}
+            className={`mr-2 btn ${isForm ? 'btn-base' : 'btn-success'}`}
             onClick={onNext}
-            disabled={showFormStyles && Object.keys(validate(selectedCluster)).length !== 0}
-            tooltip={showFormStyles ? 'Next' : 'Finish'}
+            disabled={isForm && Object.keys(validate(selectedCluster)).length !== 0}
+            tooltip={isForm ? 'Next' : 'Finish'}
         >
-            {showFormStyles ? 'Next' : 'Finish'}
+            {isForm ? 'Next' : 'Finish'}
         </PanelButton>
     );
-
-    const showPanelButtons = !messageState || !messageState.blocking;
 
     const upgradeStatus = selectedCluster?.status?.upgradeStatus ?? null;
     const certExpiryStatus = selectedCluster?.status?.certExpiryStatus ?? null;
@@ -316,7 +293,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
         <Panel
             id="clusters-side-panel"
             header={selectedClusterName}
-            headerComponents={showPanelButtons ? panelButtons : <div />}
+            headerComponents={panelButtons}
             bodyClassName="pt-4"
             className="w-full h-full absolute right-0 top-0 md:w-1/2 min-w-72 md:relative z-0 bg-base-100"
             onClose={unselectCluster}
@@ -432,7 +409,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
                     </div>
                 </div>
             )}
-            {showFormStyles && (
+            {!isBlocked && wizardStep === wizardSteps.FORM && (
                 <ClusterEditForm
                     centralEnv={centralEnv}
                     centralVersion={metadata.version}
@@ -441,7 +418,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
                     isLoading={loadingCounter > 0}
                 />
             )}
-            {showDeploymentStyles && (
+            {!isBlocked && wizardStep === wizardSteps.DEPLOYMENT && (
                 <ClusterDeployment
                     editing={!!selectedCluster}
                     createUpgraderSA={createUpgraderSA}

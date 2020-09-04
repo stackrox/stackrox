@@ -2,8 +2,6 @@ import dateFns from 'date-fns';
 import get from 'lodash/get';
 import { AlertCircle, AlertTriangle, Check, Info, Minus, X } from 'react-feather';
 
-import dateTimeFormat from 'constants/dateTimeFormat';
-
 export const runtimeOptions = [
     {
         label: 'No Runtime Collection',
@@ -67,6 +65,7 @@ export const newClusterDefault = {
             disableBypass: false,
         },
     },
+    healthStatus: null,
     slimCollector: false,
 };
 
@@ -189,26 +188,6 @@ const upgradeStates = {
     },
 };
 
-function findOptionInList(options, value) {
-    return options.find((opt) => opt.value === value);
-}
-
-export function formatClusterType(value) {
-    const match = findOptionInList(clusterTypeOptions, value);
-
-    return match.tableDisplay;
-}
-
-export function formatCollectionMethod(value) {
-    const match = findOptionInList(runtimeOptions, value);
-
-    return match.tableDisplay;
-}
-
-export function formatConfiguredField(value) {
-    return value ? 'Configured' : 'Not configured';
-}
-
 export function formatCloudProvider(providerMetadata) {
     if (providerMetadata) {
         const { region } = providerMetadata;
@@ -224,14 +203,6 @@ export function formatCloudProvider(providerMetadata) {
         if (providerMetadata.google) {
             return `GCP ${region}`;
         }
-    }
-
-    return 'Not applicable';
-}
-
-export function formatLastCheckIn(healthStatus) {
-    if (healthStatus && healthStatus.lastContact) {
-        return dateFns.format(healthStatus.lastContact, dateTimeFormat);
     }
 
     return 'Not applicable';
@@ -405,10 +376,6 @@ export default {
     clusterDetailPollingInterval,
     newClusterDefault,
     findUpgradeState,
-    formatClusterType,
-    formatCollectionMethod,
-    formatConfiguredField,
-    formatLastCheckIn,
     isUpToDateStateObject,
     wizardSteps,
 };

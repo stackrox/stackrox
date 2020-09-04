@@ -1,134 +1,13 @@
 import dateFns from 'date-fns';
-import dateTimeFormat from 'constants/dateTimeFormat';
 
 import {
     findUpgradeState,
-    formatClusterType,
-    formatConfiguredField,
-    formatCollectionMethod,
-    formatLastCheckIn,
     formatSensorVersion,
     getUpgradeableClusters,
     getCredentialExpirationProps,
 } from './cluster.helpers';
 
 describe('cluster helpers', () => {
-    describe('formatClusterType', () => {
-        it('should return the string "Kubernetes" if passed a value of KUBERNETES_CLUSTER', () => {
-            const testCluster = {
-                type: 'KUBERNETES_CLUSTER',
-            };
-
-            const displayValue = formatClusterType(testCluster.type);
-
-            expect(displayValue).toEqual('Kubernetes');
-        });
-
-        it('should return the string "OpenShift" if passed a value of OPENSHIFT_CLUSTER', () => {
-            const testCluster = {
-                type: 'OPENSHIFT_CLUSTER',
-            };
-
-            const displayValue = formatClusterType(testCluster.type);
-
-            expect(displayValue).toEqual('OpenShift');
-        });
-    });
-
-    describe('formatCollectionMethod', () => {
-        it('should return the string "None" if passed a value of NO_COLLECTION', () => {
-            const testCluster = {
-                collectionMethod: 'NO_COLLECTION',
-            };
-
-            const displayValue = formatCollectionMethod(testCluster.collectionMethod);
-
-            expect(displayValue).toEqual('None');
-        });
-
-        it('should return the string "Kernel Module" if passed a value of KERNEL_MODULE', () => {
-            const testCluster = {
-                collectionMethod: 'KERNEL_MODULE',
-            };
-
-            const displayValue = formatCollectionMethod(testCluster.collectionMethod);
-
-            expect(displayValue).toEqual('Kernel Module');
-        });
-
-        it('should return the string "eBPF" if passed a value of EBPF', () => {
-            const testCluster = {
-                collectionMethod: 'EBPF',
-            };
-
-            const displayValue = formatCollectionMethod(testCluster.collectionMethod);
-
-            expect(displayValue).toEqual('eBPF');
-        });
-    });
-
-    describe('formatConfiguredField', () => {
-        it('should return the string "Not configured" if passed a value of false', () => {
-            const testCluster = {
-                admissionController: false,
-            };
-
-            const displayValue = formatConfiguredField(testCluster.admissionController);
-
-            expect(displayValue).toEqual('Not configured');
-        });
-
-        it('should return the string "Configured" if passed a value of false', () => {
-            const testCluster = {
-                admissionController: true,
-            };
-
-            const displayValue = formatConfiguredField(testCluster.admissionController);
-
-            expect(displayValue).toEqual('Configured');
-        });
-    });
-
-    describe('formatLastCheckIn', () => {
-        it('should return a formatted date string if passed a health status object with a lastContact field', () => {
-            const testCluster = {
-                healthStatus: {
-                    lastContact: '2019-08-28T17:20:29.156602Z',
-                },
-            };
-
-            const displayValue = formatLastCheckIn(testCluster.healthStatus);
-
-            const expectedDateFormat = dateFns.format(
-                testCluster.healthStatus.lastContact,
-                dateTimeFormat
-            );
-            expect(displayValue).toEqual(expectedDateFormat);
-        });
-
-        it('should return a "Not applicable" if passed a health status object with null lastContact field', () => {
-            const testCluster = {
-                healthStatus: {
-                    lastContact: null,
-                },
-            };
-
-            const displayValue = formatLastCheckIn(testCluster.healthStatus);
-
-            expect(displayValue).toEqual('Not applicable');
-        });
-
-        it('should return a "Not applicable" if passed a status object with null status field', () => {
-            const testCluster = {
-                healthStatus: null,
-            };
-
-            const displayValue = formatLastCheckIn(testCluster.healthStatus);
-
-            expect(displayValue).toEqual('Not applicable');
-        });
-    });
-
     describe('formatSensorVersion', () => {
         it('should return sensor version string if passed a status object with a sensorVersion field', () => {
             const sensorVersion = 'sensorVersion';
