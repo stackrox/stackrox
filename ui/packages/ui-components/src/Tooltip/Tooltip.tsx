@@ -1,14 +1,14 @@
 import React, { ReactElement } from 'react';
-import Tippy, { TippyProps } from '@tippy.js/react';
+import Tippy, { TippyProps } from '@tippyjs/react';
 
 export const defaultTippyTooltipProps = {
     arrow: true,
 };
 
 /**
- * Proxy component for `@tippy.js/react` that sets default behavior / props for
+ * Proxy component for `@tippyjs/react` that sets default behavior / props for
  * Tippy component. It's expected that this component will be used instead of
- * importing `@tippy.js/react` directly for the UI consistency.
+ * importing `@tippyjs/react` directly for the UI consistency.
  *
  * @see {@link TooltipOverlay} for a preferred content component to use for tooltip
  * @see {@link HoverHint} for adding tooltip to any DOM element in cases this component cannot be used

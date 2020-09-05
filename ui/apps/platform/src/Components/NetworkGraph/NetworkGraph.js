@@ -106,10 +106,9 @@ const NetworkGraph = ({
             tippyRef.current = tippy(document.createElement('div'), {
                 content,
                 ...defaultTippyTooltipProps,
-                lazy: false,
-                onCreate(instance) {
-                    // eslint-disable-next-line no-param-reassign
-                    instance.popperInstance.reference = popperRef;
+                getReferenceClientRect: popperRef.getBoundingClientRect,
+                onHidden(instance) {
+                    instance.destroy();
                 },
             });
 

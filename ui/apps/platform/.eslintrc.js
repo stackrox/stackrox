@@ -45,7 +45,7 @@ const commonRules = {
                         "Existing components 'Tooltip' and 'HoverHint' might cover your use-case. If not, comment the reason of using 'tippy.js' directly.",
                 },
                 {
-                    name: '@tippy.js/react',
+                    name: '@tippyjs/react',
                     message:
                         "Consider using existing components like 'Tooltip' and 'HoverHint' instead, comment the reason if you have to use Tippy directly.",
                 },
