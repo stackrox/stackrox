@@ -1,23 +1,12 @@
-SHELL=/bin/bash
+include $(CURDIR)/make/env.mk
+
 ROX_PROJECT=apollo
 TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long)
 
-# GOPATH might actually be a colon-separated list of paths. For the purposes of this makefile,
-# work with the first element only.
-GOPATH := $(patsubst :%,,$(GOPATH))
-
-GOBIN ?= $(GOPATH)/bin
-
 ALPINE_MIRROR_BUILD_ARG := $(ALPINE_MIRROR:%=--build-arg ALPINE_MIRROR=%)
 
-export CGO_ENABLED DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOPRIVATE GOBIN
-CGO_ENABLED := 1
-GOARCH := amd64
-DEFAULT_GOOS := linux
-GO111MODULE := on
-GOPRIVATE := github.com/stackrox
 BUILD_IMAGE := stackrox/main:rocksdb-builder-6.7.3-4
 RHEL_BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-6.7.3-4
 
@@ -25,14 +14,6 @@ GOBUILD := $(CURDIR)/scripts/go-build.sh
 
 LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v$(CURDIR)/linux-gocache:/linux-gocache:delegated -v $(GOPATH):/go:delegated
 GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go
-
-RELEASE_GOTAGS := release
-ifdef CI
-ifneq ($(CIRCLE_TAG),)
-GOTAGS := $(RELEASE_GOTAGS)
-TAG := $(CIRCLE_TAG)
-endif
-endif
 
 null :=
 space := $(null) $(null)

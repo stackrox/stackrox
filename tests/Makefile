@@ -1,3 +1,5 @@
+include $(CURDIR)/../make/env.mk
+
 ROX_PROJECT=tests
 TESTFLAGS=-race -p 1
 

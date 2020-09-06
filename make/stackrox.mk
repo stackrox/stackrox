@@ -2,7 +2,6 @@
 IMAGE ?= $(ROX_PROJECT)
 PROJECT_SUBDIR ?= $(ROX_PROJECT)
 BINARY ?= $(ROX_PROJECT)
-GO_BASE_PATH ?= /go/src/github.com/stackrox/rox
 
 GO111MODULE := on
 export GO111MODULE
