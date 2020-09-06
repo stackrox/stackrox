@@ -81,7 +81,8 @@ func generateFilesForScannerV1(params *apiparams.Scanner, clusterType storage.Cl
 				ScannerImage:   stringutils.OrDefault(params.ScannerImage, defaults.ScannerImage()),
 				ScannerDBImage: stringutils.OrDefault(params.ScannerDBImage, defaults.ScannerDBImage()),
 			},
-			OfflineMode: params.OfflineMode,
+			OfflineMode:  params.OfflineMode,
+			IstioVersion: params.IstioVersion,
 		},
 		SecretsByteMap: map[string][]byte{
 			"ca.pem":           centralCA,

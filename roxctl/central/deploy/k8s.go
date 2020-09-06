@@ -139,10 +139,16 @@ func k8s() *cobra.Command {
 
 	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", "the deployment tool to use (kubectl, helm)", "central")
 
-	flagWrap.StringVar(&k8sConfig.IstioVersion, "istio-support", "",
+	flagWrap.Var(istioSupportWrapper{&k8sConfig.IstioVersion}, "istio-support",
 		fmt.Sprintf(
 			"Generate deployment files supporting the given Istio version (kubectl output format only). Valid versions: %s",
-			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
+			strings.Join(istioutils.ListKnownIstioVersions(), ", ")),
+		"central", "output-format=kubectl",
+	)
+	utils.Must(
+		flagWrap.SetAnnotation("istio-support", flags.OptionalKey, []string{"true"}),
+		flagWrap.SetAnnotation("istio-support", flags.InteractiveUsageKey, []string{"Istio version when deploying into an Istio-enabled cluster (leave empty when not running Istio)"}),
+	)
 
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.Monitoring.LoadBalancerType}, "monitoring-lb-type", "the method of exposing Monitoring (lb, np, none)", "monitoring", "monitoring-type=on-prem")
 	utils.Must(flagWrap.MarkHidden("monitoring-lb-type"))
@@ -158,10 +164,16 @@ func openshift() *cobra.Command {
 
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (route, lb, np, none)", "central")
 
-	flagWrap.StringVar(&k8sConfig.IstioVersion, "istio-support", "",
+	flagWrap.Var(istioSupportWrapper{&k8sConfig.IstioVersion}, "istio-support",
 		fmt.Sprintf(
-			"Generate deployment files supporting the given Istio version (kubectl output format only). Valid versions: %s",
-			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
+			"Generate deployment files supporting the given Istio version. Valid versions: %s",
+			strings.Join(istioutils.ListKnownIstioVersions(), ", ")),
+		"central",
+	)
+	utils.Must(
+		flagWrap.SetAnnotation("istio-support", flags.OptionalKey, []string{"true"}),
+		flagWrap.SetAnnotation("istio-support", flags.InteractiveUsageKey, []string{"Istio version when deploying into an Istio-enabled cluster (leave empty when not running Istio)"}),
+	)
 
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.Monitoring.LoadBalancerType}, "monitoring-lb-type", "the method of exposing Monitoring (route, lb, np, none)", "monitoring", "monitoring-type=on-prem")
 	utils.Must(flagWrap.MarkHidden("monitoring-lb-type"))

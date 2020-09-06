@@ -9,4 +9,6 @@ type Scanner struct {
 	ScannerImage   string `json:"scannerImage"`
 	ScannerDBImage string `json:"scannerDBImage"`
 	OfflineMode    bool   `json:"offlineMode"`
+
+	IstioVersion string `json:"istioVersion"`
 }

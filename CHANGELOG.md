@@ -25,6 +25,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - UI: Added `Scanner` to the image single page in Vuln Mgmt (ROX-5289)
 - In `v1/clusters` response, `status.lastContact` has been deprecated, hence use `healthStatus.lastContact` instead.
 - UI: Disable the Next button when required fields are empty in the Cluster form (ROX-5519)
+- `roxctl` can now be instructed to generate YAML files with support for Istio-enabled clusters, via the
+  `--istio-support=<istio version>` flag. Istio versions in the range of 1.0-1.7 are supported. The flag is available
+   for the commands `roxctl central generate`, `roxctl scanner generate`, `roxctl sensor generate`, and
+   `roxctl sensor get-bundle`. The interactive installer (`roxctl central generate interactive`) will also prompt for
+   this configuration option.
 
 ## [48.0]
 - UI: Hovering over a namespace edge in the Network Graph will show the ports and protocols for it's connections (ROX-5228).
