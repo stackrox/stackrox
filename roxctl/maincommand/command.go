@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/roxctl/db"
 	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/gcp"
+	"github.com/stackrox/rox/roxctl/helm"
 	"github.com/stackrox/rox/roxctl/image"
 	"github.com/stackrox/rox/roxctl/logconvert"
 	"github.com/stackrox/rox/roxctl/scanner"
@@ -54,7 +55,9 @@ func Command() *cobra.Command {
 		scanner.Command(),
 		sensor.Command(),
 		db.Command(),
+		helm.Command(),
 		versionCommand(),
 	)
+
 	return c
 }

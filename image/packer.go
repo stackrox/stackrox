@@ -32,6 +32,8 @@ const (
 	scannerChartPrefix    = "helm/scannerchart/"
 	monitoringChartPrefix = "helm/monitoringchart/"
 	chartYamlFile         = "Chart.yaml"
+	// CentralServicesChartPrefix points to the new stackrox-central-services Helm Chart.
+	CentralServicesChartPrefix = "helm/stackrox-central/"
 )
 
 // These are the go based files from packr
@@ -183,7 +185,8 @@ func getChartFiles(box packr.Box, prefixes []string, overrides map[string]func()
 	return chartFiles, nil
 }
 
-func getFilesFromBox(box packr.Box, prefix string) ([]*loader.BufferedFile, error) {
+// GetFilesFromBox returns all files from the box matching the provided prefix.
+func GetFilesFromBox(box packr.Box, prefix string) ([]*loader.BufferedFile, error) {
 	normPrefix := path.Clean(prefix)
 	if normPrefix == "." {
 		normPrefix = ""
@@ -213,7 +216,7 @@ func getFilesFromBox(box packr.Box, prefix string) ([]*loader.BufferedFile, erro
 
 // GetSensorChartTemplate loads the Sensor helmtpl meta-template from the given Box.
 func GetSensorChartTemplate(box packr.Box) (*helmtpl.ChartTemplate, error) {
-	chartTplFiles, err := getFilesFromBox(box, sensorChartPrefix)
+	chartTplFiles, err := GetFilesFromBox(box, sensorChartPrefix)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching sensor chart files from box")
 	}

@@ -2703,6 +2703,11 @@ jobs:
             API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/istio-support.sh
 
       - run:
+          name: Test Helm chart generation in roxctl
+          command: |
+             MAIN_TAG=$(make --quiet tag) ./tests/roxctl/helm-chart-generation.sh
+
+      - run:
           name: API tests
           command: |
             CA="${SERVICE_CA_FILE}" ./tests/yamls/roxctl_verification.sh

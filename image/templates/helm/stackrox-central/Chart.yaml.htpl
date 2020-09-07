@@ -3,5 +3,4 @@ name: stackrox-central
 description: Helm Chart for StackRox Central Clusters
 type: application
 version: 0.1.0
-# appVersion needs to be meta-templated. TODO(ROX-5469):
-appVersion: 3.0.48.x-15-g1f9bddfa0a
+appVersion: [<.MainVersion>]
