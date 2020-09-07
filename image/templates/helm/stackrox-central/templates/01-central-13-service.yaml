@@ -1,12 +1,14 @@
+{{- include "srox.init" . -}}
+
 apiVersion: v1
 kind: Service
 metadata:
   name: central
-  namespace: {{.Release.Namespace}}
+  namespace: {{ .Release.Namespace }}
   labels:
-    {{ template "defaultLabels" . }}
+    {{- include "srox.defaultLabels" . | nindent 4 }}
   annotations:
-    {{ template "defaultAnnotations" . }}
+    {{- include "srox.defaultAnnotations" . | nindent 4 }}
 spec:
   ports:
   - name: https
@@ -16,16 +18,18 @@ spec:
     app: central
   type: ClusterIP
 
-{{ if .Capabilities.APIVersions.Has "networking.istio.io/v1alpha3/DestinationRule" }}
+{{ if ._rox.env.istio }}
 ---
+
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
   name: central-internal-no-istio-mtls
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: stackrox
+    {{- include "srox.defaultLabels" . | nindent 4 }}
   annotations:
+    {{- include "srox.defaultAnnotations" . | nindent 4 }}
     stackrox.io/description: "Disable Istio mTLS for port 443, since StackRox services use built-in mTLS."
 spec:
   host: central.{{ .Release.Namespace }}.svc.cluster.local

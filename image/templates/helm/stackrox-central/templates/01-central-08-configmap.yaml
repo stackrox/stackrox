@@ -1,0 +1,14 @@
+{{- include "srox.init" . -}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: central-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.defaultLabels" . | nindent 4 }}
+  annotations:
+    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+data:
+  central-config.yaml: |
+    {{- include "srox.expand" (list . ._rox.central.config) | nindent 4 }}

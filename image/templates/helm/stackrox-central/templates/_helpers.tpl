@@ -1,198 +1,107 @@
-{{- define "stackrox.init" -}}
-
 {{/*
-    This template sets up the _rox structure, containing everything required by the resource template files.
+    Misceallaneous helper templates.
    */}}
 
-{{- if not ._rox -}}
-
 {{/*
-    Initial Setup
+  srox.expand $ $spec
+
+  Parses and expands a "specification string" in the following way:
+  - If $spec is a dictionary, return $spec rendered as a YAML.
+  - Otherwise, if $spec starts with a backslash character (`\`), return $spec minus the leading
+    backslash character.
+  - Otherwise, if $spec starts with an `@` character, strip off the first character and
+    treat the remainder of the string as a `|`-separated list of file names. Try to load
+    each referenced file, in order, via `stackrox.getFile`. The result is the first file
+    that could be successfully loaded. If no file could be loaded, expansion fails.
+  - Otherwise, return $spec as-is.
    */}}
-{{- $warnings := (list) -}}
-{{- $notes := (list) -}}
-{{- $customCertGen := false -}}
-{{- $adminPasswordGenerated := false -}}
-{{- $mainImageTag := default .Chart.AppVersion .Values.mainImageTag -}}
-{{- $mainImageRepository := default "stackrox.io/main" .Values.mainImageRepository -}}
-
-
-{{/*
-    Normalization.
-  */}}
-{{- if not .Values.central -}}{{- $_ := set .Values "central" dict -}}{{- end -}}
-{{- if not .Values.persistence -}}{{- $_ := set .Values "persistence" (dict "pv" dict) -}}{{- end -}}
-
-{{/*
-     Generate TLS Certificates.
-   */}}
-{{- $caCert := genCA "StackRox Certificate Authority" 1825 -}}
-{{- $centralCN := "central.stackrox" -}}
-{{- $centralSANs := list $centralCN (printf "%s.svc" $centralCN) -}}
-{{- $centralCert := genSignedCert $centralCN nil $centralSANs 365 $caCert -}}
-{{- $customCertGen = true -}}
-
-{{/*
-    Generate Admin Password.
-   */}}
-{{- $adminPassword := "" -}}
-{{- if not .Values.central.adminPassword -}}
-  {{- $adminPassword = randAlphaNum 32 -}}
-  {{- $adminPasswordGenerated = true -}}
-{{- else -}}
-  {{- $adminPassword = .Values.central.adminPassword -}}
-{{- end -}}
-
-{{/*
-     Generate JWT Key.
-  */}}
-{{- $jwtKey := genPrivateKey "rsa" -}}
-
-{{/*
-    Setup Default TLS Certificate.
-   */}}
-{{- $defaultTlsCert := dict -}}
-{{- if .Values.defaultTlsCert -}}
-  {{- $_ := set $defaultTlsCert "cert" (required "defaultTlsCert.cert must be provided" .Values.defaultTlsCert.cert) -}}
-  {{- $_ := set $defaultTlsCert "key" (required "defaultTlsCert.key must be provided" .Values.defaultTlsCert.key) -}}
-  {{- $notes = append $notes "Configured default TLS certificate" -}}
-{{- end -}}
-
-{{/*
-    Setup configuration for persistence backend.
-  */}}
-{{- $persistenceConf := dict -}}
-{{- if .Values.persistence -}}
-  {{/*
-       Sanity checks for user provided persistence configuration.
-     */}}
-  {{- if and (hasKey .Values.persistence "pv") (hasKey .Values.persistence "hostpath") -}}
-    {{- fail "Multiple persistence backends selected" -}}
-  {{- end -}}
-
-  {{- if hasKey .Values.persistence "pv" -}}
-    {{/*
-         Handle Persistent Volumes
-       */}}
-    {{- $persistenceConf = mustMergeOverwrite .Values.defaults.persistence.pv .Values.persistence.pv -}}
-    {{- $notes = append $notes (printf "Using persistent volume (size: %v)" $persistenceConf.size) -}}
-  {{- else if hasKey .Values.persistence "hostpath" -}}
-    {{/*
-         Handle HostPath
-       */}}
-      {{- $persistenceConf = mustMergeOverwrite .Values.defaults.persistence.hostpath (dict "value" (dict "hostPath" (dict "path" .Values.persistence.hostpath))) -}}
-      {{- $notes = append $notes (printf "Using host path '%s' for persistence" ($persistenceConf.value.hostPath.path)) -}}
+{{- define "srox.expand" -}}
+{{- $ := index . 0 -}}
+{{- $spec := index . 1 -}}
+{{- $result := "" -}}
+{{- if kindIs "string" $spec -}}
+  {{- if hasPrefix "\\" $spec -}}
+    {{- /* use \ as string-wide escape character */ -}}
+    {{- $result = trimPrefix "\\" $spec -}}
+  {{- else if hasPrefix "@" $spec -}}
+    {{- /* treat as file list (first found matches) */ -}}
+    {{- $fileList := regexSplit "\\s*\\|\\s*" ($spec | trimPrefix "@" | trim) -1 -}}
+    {{- $fileRes := dict -}}
+    {{- $_ := include "srox.loadFile" (list $ $fileRes $fileList) -}}
+    {{- if not $fileRes.found -}}
+      {{- include "srox.fail" (printf "Expanding reference %q: none of the referenced files were found" $spec) -}}
+    {{- end -}}
+    {{- $result = $fileRes.contents -}}
   {{- else -}}
-    {{- fail "Invalid persistence configuration" -}}
+    {{/* treat as raw string */}}
+    {{- $result = $spec -}}
   {{- end -}}
-{{- else -}}
-  {{/*
-       Setup default persistence.
-     */}}
-  {{- $notes = append $notes "Using default persistent backend 'pv' (Persistent Volume)" -}}
-  {{- $persistenceConf = .Values.defaults.persistence.pv -}}
+{{- else if not (kindIs "invalid" $spec) -}}
+  {{- /* render non-string, non-nil values as YAML */ -}}
+  {{- $result = toYaml $spec -}}
+{{- end -}}
+{{- $result -}}
 {{- end -}}
 
-{{/*
-    Setup Environment Variables.
-   */}}
-{{- $env := dict -}}
-{{- $_ := set $env "telemetryEnabled" (default "true" .Values.telemetryEnabled) -}}
-{{- $_ := set $env "offlineMode" (default "false" .Values.offlineMode) -}}
 
 {{/*
-    Environment Feature Detection.
+  srox.loadFile $ $out $fileName-or-list
+
+  This helper function reads a file. It differs from $.Files.Get in that it also takes
+  $.Values.meta.fileOverrides into account. Furthermore, it can receive a list of file names,
+  and will try these files in order. Finally, it indicates whether a file was found via the
+  $out.found property (as opposed to $.Files.Get, which cannot distinguish between a successful
+  read of an empty file, and this file not being found).
+  The file contents will be returned via $out.contents
    */}}
-{{- $openShiftCluster := false -}}
-{{- if .Capabilities.APIVersions.Has "apps.openshift.io/v1" -}}
-  {{- $openShiftCluster = true -}}
+{{ define "srox.loadFile" }}
+{{ $ := index . 0 }}
+{{ $out := index . 1 }}
+{{ $fileNames := index . 2 }}
+{{ if not (kindIs "slice" $fileNames) }}
+  {{ $fileNames = list $fileNames }}
+{{ end }}
+{{ $contents := index dict "" }}
+{{ range $fileName := $fileNames }}
+  {{ if kindIs "invalid" $contents }}
+    {{ $contents = index $.Values.meta.fileOverrides $fileName }}
+  {{ end }}
+  {{ if kindIs "invalid" $contents }}
+    {{ range $path, $_ := $.Files.Glob $fileName }}
+      {{ if kindIs "invalid" $contents }}
+        {{ $contents = $.Files.Get $path }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+{{ if not (kindIs "invalid" $contents) }}
+  {{ $_ := set $out "contents" $contents }}
+{{ end }}
+{{ $_ := set $out "found" (not (kindIs "invalid" $contents)) }}
+{{ end }}
+
+
+{{/*
+  srox.checkGenerated $ $cfgPath
+
+  Checks if the value at configuration path $cfgPath (e.g., "central.adminPassword.value") was
+  generated. Evaluates to the string "true" if this is the case, and an empty string otherwise.
+   */}}
+{{- define "srox.checkGenerated" -}}
+{{- $ := index . 0 -}}
+{{- $cfgPath := index . 1 -}}
+{{- $genCfg := $._rox._state.generated -}}
+{{- $exists := true -}}
+{{- range $pathElem := splitList "." $cfgPath -}}
+  {{- if $exists -}}
+    {{- if hasKey $genCfg $pathElem -}}
+      {{- $genCfg = index $genCfg $pathElem -}}
+    {{- else -}}
+      {{- $exists = false -}}
+    {{- end -}}
+  {{- end -}}
 {{- end -}}
-
-{{/*
-    Setup Image Pull Secrets for Docker Registry.
-   */}}
-{{- $dockerConfig := dict -}}
-{{- if .Values.imagePullSecret -}}
-{{- $username := .Values.imagePullSecret.username -}}
-{{- $password := .Values.imagePullSecret.password -}}
-{{- $registry := default "https://stackrox.io" .Values.imagePullSecret.registry -}}
-{{- $auth := dict "auth" (printf "%s:%s" $username $password | b64enc) -}}
-{{- $registryAuth := dict $registry $auth -}}
-{{- $dockerAuths := dict "auths" $registryAuth -}}
-{{- $_ := set $dockerConfig "registry" $registry -}}
-{{- $_ := set $dockerConfig "auths" $dockerAuths -}}
-{{- else -}}
-  {{- $warnings = append $warnings "No Image Pull Secrets provided. Make sure they are set up properly." -}}
-{{- end -}}
-
-{{/*
-    Setup License.
-   */}}
-{{- $license := "" -}}
-{{- if .Values.license -}}
-  {{- $license = .Values.license -}}
-{{- else -}}
-  {{- $warnings = append $warnings "No StackRox license provided. Make sure a valid license exists in Kubernetes secret 'central-license'." -}}
-{{- end -}}
-
-{{/*
-    Assemble Global Configuration.
-   */}}
-{{- $globalCfg := dict -}}
-{{- $_ := set $globalCfg "caCert" $caCert -}}
-{{- $_ := set $globalCfg "persistence" $persistenceConf -}}
-{{- $_ := set $globalCfg "docker" $dockerConfig -}}
-{{- $_ := set $globalCfg "license" $license -}}
-{{- $_ := set $globalCfg "openShiftCluster" $openShiftCluster -}}
-
-{{/*
-    Assemble Central Configuration.
-   */}}
-{{- $centralCfg := dict -}}
-{{- $_ := set $centralCfg "tlsCert" $centralCert -}}
-{{- $_ := set $centralCfg "jwtKey" $jwtKey -}}
-{{- $_ := set $centralCfg "env" $env -}}
-{{- $_ := set $centralCfg "endpoints" (.Files.Get "config/endpoints.yaml.default") -}}
-{{- $_ := set $centralCfg "mainImageTag" $mainImageTag -}}
-{{- $_ := set $centralCfg "mainImageRepository" $mainImageRepository -}}
-
-{{- $_ := set $centralCfg "defaultTlsCert" $defaultTlsCert -}}
-{{- $_ := set $centralCfg "resources" .Values.centralResources -}}
-{{- $_ := set $centralCfg "adminPassword" $adminPassword -}}
-{{- $_ := set $centralCfg "adminPasswordGenerated" $adminPasswordGenerated -}}
-
-{{- $_ := set $centralCfg "nodeSelector" .Values.central.nodeSelector -}}
-
-{{- if $customCertGen -}}
-  {{- $warnings = append $warnings "Helm has generated at least one TLS certificate. For compatibility reasons, this certificate uses a 4096-bit RSA key. For improved performance and security, consider generating certificates with elliptic curve (ECDSA) keys using `roxctl foo bar baz`." -}}
-{{- end -}}
-
-{{- $warnings = append $warnings "This helm chart is still experimental. Use with caution." -}}
-
-{{/*
-    Assemble _rox Value.
-   */}}
-{{- $rox := dict -}}
-{{- $_ := set $rox "version" .Chart.AppVersion -}}
-{{- $_ := set $rox "global" $globalCfg -}}
-{{- $_ := set $rox "central" $centralCfg -}}
-{{- $_ := set $rox "warnings" $warnings -}}
-{{- $_ := set $rox "notes" $notes -}}
-
-{{- $_ := set . "_rox" $rox -}}
+{{- if $exists -}}
+true
 {{- end -}}
 {{- end -}}
-
-{{/*
-    Specialized Template Functions to be included from the Template Files.
-   */}}
-
-{{- define "defaultLabels" -}}
-    app.kubernetes.io/name: stackrox
-    app.kubernetes.io/managed-by: Helm
-{{- end }}
-
-{{- define "defaultAnnotations" -}}
-    meta.helm.sh/release-namespace: stackrox
-    meta.helm.sh/release-name: {{ .Release.Name }}
-{{- end }}

@@ -1,17 +1,15 @@
-{{- include "stackrox.init" . -}}
+{{- include "srox.init" . -}}
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: central
-  namespace: {{.Release.Namespace}}
+  namespace: {{ .Release.Namespace }}
   labels:
-    {{ template "defaultLabels" . }}
+    {{- include "srox.defaultLabels" . | nindent 4 }}
     app: central
   annotations:
-    {{ template "defaultAnnotations" . }}
-    owner: stackrox
-    email: support@stackrox.com
+    {{- include "srox.defaultAnnotations" . | nindent 4 }}
 spec:
   replicas: 1
   minReadySeconds: 15
@@ -22,18 +20,19 @@ spec:
     type: Recreate
   template:
     metadata:
-      namespace: {{.Release.Namespace}}
+      namespace: {{ .Release.Namespace }}
       labels:
-        app.kubernetes.io/name: stackrox
         app: central
+        {{- include "srox.defaultLabels" . | nindent 8 }}
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443"
+        {{- include "srox.defaultAnnotations" . | nindent 8 }}
     spec:
-      {{- if ._rox.central.nodeSelector }}
+      {{- if ._rox.central._nodeSelector }}
       nodeSelector:
-      {{- toYaml ._rox.central.nodeSelector | nindent 8 }}
+        {{- ._rox.central._nodeSelector | nindent 8 }}
       {{- end }}
-      {{- if ._rox.global.openShiftCluster }}
+      {{- if ._rox.env.openshift }}
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -65,7 +64,7 @@ spec:
         runAsUser: 4000
       containers:
       - name: central
-        image: "{{ ._rox.central.mainImageRepository }}:{{ ._rox.central.mainImageTag }}"
+        image: {{ ._rox.central.image.fullRef | quote }}
         command:
           - /stackrox/central-entrypoint.sh
         ports:
@@ -77,16 +76,16 @@ spec:
             path: /v1/ping
             port: 8443
         resources:
-{{ toYaml ._rox.central.resources | indent 10 }}
+          {{- include "srox.expand" (list . ._rox.central.resources) | nindent 10 }}
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
           readOnlyRootFilesystem: true
         env:
           - name: ROX_INIT_TELEMETRY_ENABLED
-            value: {{ ._rox.central.env.telemetryEnabled | quote }}
+            value: {{ ._rox.central.disableTelemetry | not | quote }}
           - name: ROX_OFFLINE_MODE
-            value: {{ ._rox.central.env.offlineMode | quote }}
+            value: {{ ._rox.env.offlineMode | quote }}
         volumeMounts:
         - name: varlog
           mountPath: /var/log/stackrox/
@@ -116,7 +115,7 @@ spec:
         - name: central-license-volume
           mountPath: /run/secrets/stackrox.io/central-license/
           readOnly: true
-        - name: {{ ._rox.global.persistence.name }}
+        - name: stackrox-db
           mountPath: /var/lib/stackrox
         - name: central-config-volume
           mountPath: /etc/stackrox
@@ -173,5 +172,5 @@ spec:
       - name: endpoints-config-volume
         configMap:
           name: central-endpoints
-      - name: {{ ._rox.global.persistence.name }}
-{{ toYaml ._rox.global.persistence.value | indent 8 }}
+      - name: stackrox-db
+        {{- toYaml ._rox.central.persistence._volumeCfg | nindent 8 }}

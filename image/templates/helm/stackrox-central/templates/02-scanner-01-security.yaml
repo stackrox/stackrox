@@ -1,0 +1,101 @@
+{{- include "srox.init" . -}}
+
+{{- if not ._rox.scanner.disable -}}
+
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox-scanner-psp
+  labels:
+    {{- include "srox.defaultLabels" . | nindent 4 }}
+  annotations:
+    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+rules:
+- apiGroups:
+  - policy
+  resources:
+  - podsecuritypolicies
+  resourceNames:
+  - stackrox-scanner
+  verbs:
+  - use
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-scanner-psp
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.defaultLabels" . | nindent 4 }}
+  annotations:
+    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: stackrox-scanner-psp
+subjects:
+  - kind: ServiceAccount
+    name: scanner
+    namespace: {{ .Release.Namespace }}
+
+---
+
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: stackrox-scanner
+  labels:
+    {{- include "srox.defaultLabels" . | nindent 4 }}
+  annotations:
+    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+
+{{- if ._rox.env.openshift }}
+---
+
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  name: scanner
+  labels:
+    {{- include "srox.defaultLabels" . | nindent 4 }}
+  annotations:
+    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    kubernetes.io/description: scanner is the security constraint for the Scanner container
+priority: 100
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - '*'
+users:
+  - system:serviceaccount:{{ .Release.Namespace }}:scanner
+volumes:
+  - '*'
+
+{{ end -}}
+
+{{ end -}}

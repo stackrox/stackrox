@@ -1,12 +1,14 @@
+{{- include "srox.init" . -}}
+
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-ext-to-central
   namespace: {{.Release.Namespace}}
   labels:
-    {{ template "defaultLabels" . }}
+    {{- include "srox.defaultLabels" . | nindent 4 }}
   annotations:
-    {{ template "defaultAnnotations" . }}
+    {{- include "srox.defaultAnnotations" . | nindent 4 }}
 spec:
   ingress:
   - ports:

@@ -1,13 +1,13 @@
-{{- include "stackrox.init" . -}}
+{{- include "srox.init" . -}}
 
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox-central-psp
   labels:
-    {{ template "defaultLabels" . }}
+    {{- include "srox.defaultLabels" . | nindent 4 }}
   annotations:
-    {{ template "defaultAnnotations" . }}
+    {{- include "srox.defaultAnnotations" . | nindent 4 }}
 rules:
   - apiGroups:
       - policy
@@ -51,9 +51,9 @@ spec:
     - 'downwardAPI'
     - 'persistentVolumeClaim'
     - 'hostPath'
-  {{if eq ._rox.global.persistence.type "hostpath" -}}
+  {{ if ._rox.central.persistence.hostPath -}}
   allowedHostPaths:
-    - pathPrefix: {{._rox.global.persistence.value.hostPath.path}}
+    - pathPrefix: {{ ._rox.central.persistence.hostPath }}
   {{- end}}
   hostNetwork: false
   hostIPC: false
@@ -72,3 +72,46 @@ spec:
     ranges:
       - min: 4000
         max: 4000
+
+{{- if ._rox.env.openshift }}
+---
+
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  name: central
+  labels:
+    {{- include "srox.defaultLabels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/description: central is the security constraint for the central server
+    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+allowHostDirVolumePlugin: {{ ._rox.central.persistence.hostPath | not | not }}
+allowedCapabilities: []
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+defaultAddCapabilities: []
+fsGroup:
+  type: MustRunAs
+  ranges:
+    - max: 4000
+      min: 4000
+priority: 0
+readOnlyRootFilesystem: true
+requiredDropCapabilities: []
+runAsUser:
+  type: MustRunAs
+  uid: 4000
+seLinuxContext:
+  type: MustRunAs
+seccompProfiles:
+  - '*'
+users:
+  - system:serviceaccount:{{ .Release.Namespace }}:central
+volumes:
+  - '*'
+
+{{- end }}

@@ -1,0 +1,24 @@
+# Reduced resource overrides for the stackrox-central-services Helm chart that allow deploying
+# on Docker for Desktop on a typical developer box.
+
+central:
+  resources:
+    requests:
+      cpu: 1
+      memory: 1Gi
+    limits:
+      cpu: 1
+      memory: 4Gi
+
+scanner:
+  replicas: 1
+  autoscaling:
+    disabled: true
+
+  resources:
+    requests:
+      memory: "500Mi"
+      cpu: "500m"
+    limits:
+      memory: "2500Mi"
+      cpu: "2000m"

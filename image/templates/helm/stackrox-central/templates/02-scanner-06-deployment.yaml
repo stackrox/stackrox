@@ -1,0 +1,254 @@
+{{- include "srox.init" . -}}
+
+{{- if not ._rox.scanner.disable -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: scanner
+    {{- include "srox.defaultLabels" . | nindent 4 }}
+  annotations:
+    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+spec:
+  replicas: {{ ._rox.scanner.replicas }}
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: scanner
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: scanner
+        {{- include "srox.defaultLabels" . | nindent 8 }}
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
+        {{- include "srox.defaultAnnotations" . | nindent 8 }}
+    spec:
+      {{- if ._rox.env.openshift -}}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 25
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/compute
+                    operator: In
+                    values:
+                    - "true"
+            - weight: 75
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: NotIn
+                    values:
+                    - "true"
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: NotIn
+                    values:
+                    - "true"
+      {{- end }}
+      containers:
+      - name: scanner
+        image: {{ ._rox.scanner.image.fullRef | quote }}
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        resources:
+          {{- ._rox.scanner.resources | toYaml | nindent 10 }}
+        command:
+        - /entrypoint.sh
+        ports:
+        - name: https
+          containerPort: 8080
+        - name: grpc
+          containerPort: 8443
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+          runAsUser: 4000
+        readinessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /scanner/ping
+            port: 8080
+          timeoutSeconds: 10
+          periodSeconds: 10
+          failureThreshold: 6
+          successThreshold: 1
+        volumeMounts:
+        - mountPath: /etc/ssl
+          name: central-etc-ssl-volume
+        - mountPath: /usr/local/share/ca-certificates/
+          name: additional-ca-volume
+          readOnly: true
+        - name: scanner-config-volume
+          mountPath: /etc/scanner
+          readOnly: true
+        - name: scanner-tls-volume
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
+        - name: vuln-temp-db
+          mountPath: /var/lib/stackrox
+        - name: proxy-config-volume
+          mountPath: /run/secrets/stackrox.io/proxy-config/
+          readOnly: true
+        - name: scanner-db-password
+          mountPath: /run/secrets/stackrox.io/secrets
+      serviceAccount: scanner
+      volumes:
+      - name: additional-ca-volume
+        secret:
+          defaultMode: 420
+          optional: true
+          secretName: additional-ca
+      - emptyDir: {}
+        name: central-etc-ssl-volume
+      - name: scanner-config-volume
+        configMap:
+          name: scanner-config
+      - name: scanner-tls-volume
+        secret:
+          secretName: scanner-tls
+      - name: vuln-temp-db
+        emptyDir: {}
+      - name: proxy-config-volume
+        secret:
+          secretName: proxy-config
+          optional: true
+      - name: scanner-db-password
+        secret:
+          secretName: scanner-db-password
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-db
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: scanner-db
+    {{- include "srox.defaultLabels" . | nindent 4 }}
+  annotations:
+    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: scanner-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: scanner-db
+        {{- include "srox.defaultLabels" . | nindent 8 }}
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "5432"
+        {{- include "srox.defaultAnnotations" . | nindent 8 }}
+    spec:
+      {{ if ._rox.env.openshift }}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 25
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/compute
+                    operator: In
+                    values:
+                    - "true"
+            - weight: 75
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: NotIn
+                    values:
+                    - "true"
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: NotIn
+                    values:
+                    - "true"
+      {{- end }}
+      initContainers:
+        - name: init-db
+          image: {{ ._rox.scanner.dbImage.fullRef | quote }}
+          command:
+          - /bin/sh
+          - -c
+          - |
+            mkdir -p /var/lib/postgresql/data
+            chmod 700 /var/lib/postgresql/data
+            chown -R postgres:postgres /var/lib/postgresql
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/postgresql/data
+          securityContext:
+            runAsUser: 0
+      containers:
+      - name: db
+        command: ["/usr/local/bin/docker-entrypoint.sh", "postgres", "-c", "config_file=/etc/postgresql.conf"]
+        image: {{ ._rox.scanner.dbImage.fullRef | quote }}
+        ports:
+        - name: https-db
+          containerPort: 5432
+        resources:
+          {{- ._rox.scanner.dbResources | toYaml | nindent 10 }}
+        securityContext:
+          runAsUser: 70
+          runAsGroup: 70
+        volumeMounts:
+          - name: db-data
+            mountPath: /var/lib/postgresql/data
+          - name: scanner-db-tls-volume
+            mountPath: /run/secrets/stackrox.io/certs
+          - name: scanner-db-password
+            mountPath: /run/secrets/stackrox.io/secrets
+      serviceAccount: scanner
+      securityContext:
+        fsGroup: 70
+      volumes:
+      - name: scanner-config-volume
+        configMap:
+          name: scanner-config
+      - name: scanner-tls-volume
+        secret:
+          secretName: scanner-tls
+      - name: scanner-db-tls-volume
+        secret:
+          secretName: scanner-db-tls
+          defaultMode: 0640
+          items:
+          - key: cert.pem
+            path: server.crt
+          - key: key.pem
+            path: server.key
+          - key: ca.pem
+            path: root.crt
+      - name: db-data
+        emptyDir: {}
+      - name: scanner-db-password
+        secret:
+          secretName: scanner-db-password
+
+{{ end -}}
