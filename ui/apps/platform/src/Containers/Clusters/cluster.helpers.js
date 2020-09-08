@@ -1,6 +1,8 @@
-import dateFns from 'date-fns';
+import { differenceInDays, distanceInWordsStrict } from 'date-fns';
 import get from 'lodash/get';
 import { AlertCircle, AlertTriangle, Check, Info, Minus, X } from 'react-feather';
+
+import { getDate } from 'utils/dateUtils';
 
 export const runtimeOptions = [
     {
@@ -188,6 +190,16 @@ const upgradeStates = {
     },
 };
 
+export function formatKubernetesVersion(orchestratorMetadata) {
+    return orchestratorMetadata?.version || 'Not applicable';
+}
+
+export function formatBuildDate(orchestratorMetadata) {
+    return orchestratorMetadata?.buildDate
+        ? getDate(orchestratorMetadata.buildDate)
+        : 'Not applicable';
+}
+
 export function formatCloudProvider(providerMetadata) {
     if (providerMetadata) {
         const { region } = providerMetadata;
@@ -208,19 +220,41 @@ export function formatCloudProvider(providerMetadata) {
     return 'Not applicable';
 }
 
-const warningDaysThreshold = 30;
+const diffDegradedMin = 7; // Unhealthy if less than a week in the future
+const diffHealthyMin = 30; // Degraded if less than a month in the future
+
+/*
+ * Adapt health status categories to certificate expiration.
+ */
+export const getCredentialExpirationStatus = (sensorCertExpiry, currentDatetime) => {
+    // date-fns@2: differenceInDays(parseISO(sensorCertExpiry, currentDatetime))
+    const diffInDays = differenceInDays(sensorCertExpiry, currentDatetime);
+
+    if (diffInDays < diffDegradedMin) {
+        return 'UNHEALTHY';
+    }
+
+    if (diffInDays < diffHealthyMin) {
+        return 'DEGRADED';
+    }
+
+    return 'HEALTHY';
+};
+
+export const isCertificateExpiringSoon = (sensorCertExpiry, currentDatetime) =>
+    getCredentialExpirationStatus(sensorCertExpiry, currentDatetime) !== 'HEALTHY';
 
 export function getCredentialExpirationProps(certExpiryStatus) {
     if (certExpiryStatus?.sensorCertExpiry) {
         const { sensorCertExpiry } = certExpiryStatus;
         const now = new Date();
-        const diffInWords = dateFns.distanceInWordsStrict(sensorCertExpiry, now);
-        const diffInDays = dateFns.differenceInDays(sensorCertExpiry, now);
-        const showExpiringSoon = diffInDays < warningDaysThreshold;
+        const diffInWords = distanceInWordsStrict(sensorCertExpiry, now);
+        const diffInDays = differenceInDays(sensorCertExpiry, now);
+        const showExpiringSoon = diffInDays < diffHealthyMin;
         let messageType;
-        if (diffInDays < 7) {
+        if (diffInDays < diffDegradedMin) {
             messageType = 'error';
-        } else if (diffInDays < warningDaysThreshold) {
+        } else if (diffInDays < diffHealthyMin) {
             messageType = 'warn';
         } else {
             messageType = 'info';

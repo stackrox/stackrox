@@ -8,10 +8,7 @@ import { getDate, getDayOfWeek, getDistanceStrictAsPhrase } from 'utils/dateUtil
 
 import HealthStatus from './HealthStatus';
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
-import { healthStatusStyles } from '../cluster.helpers';
-
-const diffDegradedMin = 7; // Unhealthy if less than a week in the future
-const diffHealthyMin = 30; // Degraded if less than a month in the future
+import { getCredentialExpirationStatus, healthStatusStyles } from '../cluster.helpers';
 
 const testId = 'credentialExpiration';
 
@@ -19,17 +16,8 @@ const CredentialExpiration = ({ certExpiryStatus, currentDatetime, isList }) => 
     if (certExpiryStatus?.sensorCertExpiry) {
         const { sensorCertExpiry } = certExpiryStatus;
 
-        // date-fns@2: differenceInDays(parseISO(sensorCertExpiry, currentDatetime))
-        const diffInDays = differenceInDays(sensorCertExpiry, currentDatetime);
-
         // Adapt health status categories to certificate expiration.
-        let healthStatus = 'HEALTHY';
-        if (diffInDays < diffDegradedMin) {
-            healthStatus = 'UNHEALTHY';
-        } else if (diffInDays < diffHealthyMin) {
-            healthStatus = 'DEGRADED';
-        }
-
+        const healthStatus = getCredentialExpirationStatus(sensorCertExpiry, currentDatetime);
         const { Icon, bgColor, fgColor } = healthStatusStyles[healthStatus];
 
         // Order arguments according to date-fns@2 convention:
@@ -41,28 +29,10 @@ const CredentialExpiration = ({ certExpiryStatus, currentDatetime, isList }) => 
             </span>
         );
 
-        /*
-         * If status is healthy or expiration is today: distance only
-         * If expiration is within the next week: distance and day
-         * If expiration is in the past or at least a week in the future: distance and date
-         */
-        const statusElement =
-            healthStatus === 'HEALTHY' || diffInDays === 0 ? (
-                <div data-testid={testId}>{distanceElement}</div>
-            ) : (
-                <div data-testid={testId}>
-                    {distanceElement}{' '}
-                    <span className="whitespace-no-wrap">{`on ${
-                        diffInDays > 0 && diffInDays < 7
-                            ? getDayOfWeek(sensorCertExpiry)
-                            : getDate(sensorCertExpiry)
-                    }`}</span>
-                </div>
-            );
-
+        let expirationElement = null;
         if (healthStatus === 'HEALTHY') {
             // A tooltip displays expiration date, which is at least a month in the future.
-            return (
+            expirationElement = (
                 <Tooltip
                     content={
                         <TooltipOverlay>{`Expiration date: ${getDate(
@@ -70,23 +40,36 @@ const CredentialExpiration = ({ certExpiryStatus, currentDatetime, isList }) => 
                         )}`}</TooltipOverlay>
                     }
                 >
-                    <div>
-                        <HealthStatus Icon={Icon} iconColor={fgColor}>
-                            {statusElement}
-                        </HealthStatus>
-                    </div>
+                    <div data-testid={testId}>{distanceElement}</div>
                 </Tooltip>
             );
+        } else {
+            // date-fns@2: differenceInDays(parseISO(sensorCertExpiry, currentDatetime))
+            const diffInDays = differenceInDays(sensorCertExpiry, currentDatetime);
+
+            if (diffInDays === 0) {
+                expirationElement = <div data-testid={testId}>{distanceElement}</div>;
+            } else {
+                expirationElement = (
+                    <div data-testid={testId}>
+                        {distanceElement}{' '}
+                        <span className="whitespace-no-wrap">{`on ${
+                            diffInDays > 0 && diffInDays < 7
+                                ? getDayOfWeek(sensorCertExpiry)
+                                : getDate(sensorCertExpiry)
+                        }`}</span>
+                    </div>
+                );
+            }
         }
 
-        // Cluster side panel has external link to heading of topic in Help Center.
         return (
             <HealthStatus Icon={Icon} iconColor={fgColor}>
-                {isList ? (
-                    statusElement
+                {isList || healthStatus === 'HEALTHY' ? (
+                    expirationElement
                 ) : (
                     <div>
-                        {statusElement}
+                        {expirationElement}
                         <div className="flex flex-row items-end leading-tight text-tertiary-700">
                             <a
                                 href="/docs/product/configure-stackrox/reissue-internal-certificates/#secured-clusters-sensor-collector-admission-controller"
