@@ -11,4 +11,4 @@ metadata:
     {{- include "srox.defaultAnnotations" . | nindent 4 }}
 data:
   endpoints.yaml: |
-    {{- include "srox.expand" (list . ._rox.central.endpointConfig) | nindent 4 }}
+    {{- ._rox.central._endpointsConfig | nindent 4 }}

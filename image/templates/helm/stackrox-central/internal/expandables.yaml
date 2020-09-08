@@ -1,0 +1,36 @@
+licenseKey: true
+imagePullSecrets:
+  username: true
+  password: true
+env:
+  proxyConfig: true
+ca:
+  cert: true
+  key: true
+central:
+  config: true
+  endpointsConfig: true
+  nodeSelector: true
+  jwtSigner:
+    key: true
+  serviceTLS:
+    cert: true
+    key: true
+  defaultTLS:
+    cert: true
+    key: true
+  adminPassword:
+    value: true
+    htpasswd: true
+  resources: true
+scanner:
+  resources: true
+  dbResources: true
+  dbPassword:
+    value: true
+  serviceTLS:
+    cert: true
+    key: true
+  dbServiceTLS:
+    cert: true
+    key: true

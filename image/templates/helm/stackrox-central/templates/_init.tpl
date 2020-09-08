@@ -22,8 +22,11 @@
 {{/*
     $rox / ._rox is the dictionary in which _all_ data that is modified by the init logic
     is stored.
+    We ensure that it has the required shape, and then right after merging the user-specified
+    $.Values, we apply some bootstrap defaults.
    */}}
-{{ $rox := deepCopy $.Values }}
+{{ $rox := $.Files.Get "internal/config-shape.yaml" | fromYaml | merge (deepCopy $.Values) }}
+{{ $rox = $.Files.Get "internal/bootstrap-defaults.yaml" | fromYaml | merge $rox }}
 {{ $_ := set $ "_rox" $rox }}
 
 {{/* Global state (accessed from sub-templates) */}}
@@ -35,7 +38,7 @@
     General validation.
    */}}
 {{ if ne $.Release.Namespace "stackrox" }}
-  {{ if $.Values.allowNonstandardNamespace }}
+  {{ if $._rox.allowNonstandardNamespace }}
     {{ include "srox.warn" (list $ "You have chosen to deploy to a namespace other than 'stackrox'. This might work, but is unsupported. Use with caution.") }}
   {{ else }}
     {{ include "srox.fail" (printf "You have chosen to deploy to namespace '%s', not 'stackrox'. If this was accidental, please re-run helm with the '-n stackrox' option. Otherwise, if you need to deploy into this namespace, set the 'allowNonstandardNamespace' configuration value to true." $.Release.Namespace) }}
@@ -43,7 +46,7 @@
 {{ end }}
 
 {{ if ne $.Release.Name $.Chart.Name }}
-  {{ if $.Values.allowNonstandardReleaseName }}
+  {{ if $._rox.allowNonstandardReleaseName }}
     {{ include "srox.warn" (list $ (printf "You have chosen a release name of '%s', not '%s'. Accompanying scripts and commands in documentation might require adjustments." $.Release.Name $.Chart.Name)) }}
   {{ else }}
     {{ include "srox.fail" (printf "You have chosen a release name of '%s', not '%s'. We strongly recommend using the standard release name. If you must use a different name, set the 'allowNonstandardReleaseName' configuration option to true." $.Release.Name $.Chart.Name) }}
@@ -58,61 +61,23 @@
     the option to inject via `--set`/`-f` everything we rely upon.
    */}}
 {{ $apiResources := list }}
-{{ if not (kindIs "invalid" $.Values.meta.apiServer.overrideAPIResources) }}
-  {{ $apiResources = $.Values.meta.apiServer.overrideAPIResources }}
+{{ if not (kindIs "invalid" $._rox.meta.apiServer.overrideAPIResources) }}
+  {{ $apiResources = $._rox.meta.apiServer.overrideAPIResources }}
 {{ else }}
   {{ range $apiResource := $.Capabilities.APIVersions }}
     {{ $apiResources = append $apiResources $apiResource }}
   {{ end }}
 {{ end }}
-{{ if $.Values.meta.apiServer.extraAPIResources }}
-  {{ $apiResources = concat $apiResources $.Values.meta.apiServer.extraAPIResources }}
+{{ if $._rox.meta.apiServer.extraAPIResources }}
+  {{ $apiResources = concat $apiResources $._rox.meta.apiServer.extraAPIResources }}
 {{ end }}
-{{ $apiServerVersion := coalesce $.Values.meta.apiServer.version $.Capabilities.KubeVersion.Version }}
+{{ $apiServerVersion := coalesce $._rox.meta.apiServer.version $.Capabilities.KubeVersion.Version }}
 {{ $apiServer := dict "apiResources" $apiResources "version" $apiServerVersion }}
 {{ $_ = set $._rox "_apiServer" $apiServer }}
 
 
-{{/* Image pull secret setup. */}}
-{{ $imagePullSecrets := $._rox.imagePullSecrets }}
-{{ $imagePullSecretNames := default list $imagePullSecrets.useExisting }}
-{{ if not (kindIs "slice" $imagePullSecretNames) }}
-  {{ $imagePullSecretNames = regexSplit "\\s*,\\s*" (trim $imagePullSecretNames) -1 }}
-{{ end }}
-{{ if $imagePullSecrets.useFromDefaultServiceAccount }}
-  {{ $defaultSA := dict }}
-  {{ include "srox.safeLookup" (list $ $defaultSA "v1" "ServiceAccount" $.Release.Namespace "default") }}
-  {{ if $defaultSA.result }}
-    {{ $imagePullSecretNames = concat $imagePullSecretNames (default list $defaultSA.result.imagePullSecrets) }}
-  {{ end }}
-{{ end }}
-{{ $imagePullCreds := dict }}
-{{ if $imagePullSecrets.username }}
-  {{ $imagePullCreds = dict "username" $imagePullSecrets.username "password" $imagePullSecrets.password }}
-  {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox" }}
-{{ else if $imagePullSecrets.password }}
-  {{ include "srox.fail" "Whenever an image pull password is specified, a username must be specified as well "}}
-{{ end }}
-{{ if and $.Release.IsInstall (not $imagePullSecretNames) (not $imagePullSecrets.allowNone) }}
-  {{ include "srox.fail" "You have not specified any image pull secrets, and no existing image pull secrets were automatically inferred. If your registry does not need image pull credentials, explicitly set the 'imagePullSecrets.allowNone' option to 'true'" }}
-{{ end }}
-
 {{/*
-    Always assume that there is a `stackrox` image pull secret, even if it wasn't specified.
-    This is required for updates anyway, so referencing it on first install will minimize a later
-    diff.
-   */}}
-{{ $imagePullSecretNames = append $imagePullSecretNames "stackrox" | uniq | sortAlpha }}
-{{ $_ = set $imagePullSecrets "_names" $imagePullSecretNames }}
-{{ $_ = set $imagePullSecrets "_creds" $imagePullCreds }}
-
-
-{{/* Global CA setup */}}
-{{ $caCertSpec := dict "CN" "StackRox Certificate Authority" "ca" true }}
-{{ include "srox.configureCrypto" (list $ "ca" $caCertSpec) }}
-
-{{/*
-    Environment setup.
+    Environment setup - part 1
    */}}
 {{ $env := $._rox.env }}
 
@@ -140,6 +105,62 @@
   {{ end }}
 {{ end }}
 
+{{/* Apply defaults */}}
+{{ $defaultsCfg := $.Files.Get "internal/defaults.yaml" | fromYaml }}
+{{ $platformCfgFile := dict }}
+{{ include "srox.loadFile" (list $ $platformCfgFile (printf "internal/platforms/%s.yaml" (default "default" $env.platform))) }}
+{{ if not $platformCfgFile.found }}
+  {{ include "srox.fail" (printf "Invalid platform %q. Please select a valid platform, or leave this field unset." $env.platform) }}
+{{ end }}
+{{ $defaultsCfg = mergeOverwrite $defaultsCfg (fromYaml $platformCfgFile.contents) }}
+{{ $_ = set $rox "_defaults" $defaultsCfg }}
+{{ $rox = merge $rox $defaultsCfg.defaults }}
+
+
+{{/* Expand applicable config values */}}
+{{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
+{{ include "srox.expandAll" (list $ $rox $expandables) }}
+
+
+{{/* Image pull secret setup. */}}
+{{ $imagePullSecrets := $._rox.imagePullSecrets }}
+{{ $imagePullSecretNames := default list $imagePullSecrets.useExisting }}
+{{ if not (kindIs "slice" $imagePullSecretNames) }}
+  {{ $imagePullSecretNames = regexSplit "\\s*,\\s*" (trim $imagePullSecretNames) -1 }}
+{{ end }}
+{{ if $imagePullSecrets.useFromDefaultServiceAccount }}
+  {{ $defaultSA := dict }}
+  {{ include "srox.safeLookup" (list $ $defaultSA "v1" "ServiceAccount" $.Release.Namespace "default") }}
+  {{ if $defaultSA.result }}
+    {{ $imagePullSecretNames = concat $imagePullSecretNames (default list $defaultSA.result.imagePullSecrets) }}
+  {{ end }}
+{{ end }}
+{{ $imagePullCreds := dict }}
+{{ if $imagePullSecrets._username }}
+  {{ $imagePullCreds = dict "username" $imagePullSecrets._username "password" $imagePullSecrets._password }}
+  {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox" }}
+{{ else if $imagePullSecrets._password }}
+  {{ include "srox.fail" "Whenever an image pull password is specified, a username must be specified as well "}}
+{{ end }}
+{{ if and $.Release.IsInstall (not $imagePullSecretNames) (not $imagePullSecrets.allowNone) }}
+  {{ include "srox.fail" "You have not specified any image pull secrets, and no existing image pull secrets were automatically inferred. If your registry does not need image pull credentials, explicitly set the 'imagePullSecrets.allowNone' option to 'true'" }}
+{{ end }}
+
+{{/*
+    Always assume that there is a `stackrox` image pull secret, even if it wasn't specified.
+    This is required for updates anyway, so referencing it on first install will minimize a later
+    diff.
+   */}}
+{{ $imagePullSecretNames = append $imagePullSecretNames "stackrox" | uniq | sortAlpha }}
+{{ $_ = set $imagePullSecrets "_names" $imagePullSecretNames }}
+{{ $_ = set $imagePullSecrets "_creds" $imagePullCreds }}
+
+
+{{/* Global CA setup */}}
+{{ $caCertSpec := dict "CN" "StackRox Certificate Authority" "ca" true }}
+{{ include "srox.configureCrypto" (list $ "ca" $caCertSpec) }}
+
+
 {{/* Proxy configuration.
      Note: The reason this is different is that unlike the endpoints config, the proxy configuration
      might contain sensitive data and thus might _not_ be stored in the always available canonical
@@ -148,14 +169,16 @@
      However, we won't take any chances, and therefore only create that secret if we can be reasonably
      confident that lookup actually works, by trying to lookup the default service account.
    */}}
-{{ $proxyCfg := dict.nil }}
-{{ if not (kindIs "invalid" $env.proxyConfig) }}
-  {{ $proxyCfg = include "srox.expand" (list $ $env.proxyConfig) }}
-{{ else }}
-  {{ $fileOut := dict }}
-  {{ include "srox.loadFile" (list $ $fileOut "config/proxy-config.yaml") }}
+{{ $proxyCfg := $env._proxyConfig }}
+{{ $fileOut := dict }}
+{{ include "srox.loadFile" (list $ $fileOut "config/proxy-config.yaml") }}
+{{ if $fileOut.found }}
+  {{ if not (kindIs "invalid" $proxyCfg) }}
+    {{ include "srox.fail" "Both env.proxyConfig was specified, and a config/proxy-config.yaml was found. Please remove/rename the config file, or comment out the env.proxyConfig stanza." }}
+  {{ end }}
   {{ $proxyCfg = $fileOut.contents }}
 {{ end }}
+
 {{/* On first install, create a default proxy config, but only if we can be sure none exists. */}}
 {{ if and (kindIs "invalid" $proxyCfg) $.Release.IsInstall }}
   {{ $lookupOut := dict }}
@@ -195,7 +218,7 @@
 {{/* License Key */}}
 {{/* Note: this is at the top-level in $.Values, but this is purely to achieve a less surprising
      user interface. It effectively is part of the Central configuration. */}}
-{{ $licenseKey := include "srox.expand" (list $ $._rox.licenseKey) }}
+{{ $licenseKey := $._rox._licenseKey }}
 {{ if and (not $licenseKey) $.Release.IsInstall }}
   {{/* Even on install, check if there might be a pre-existing license key to minimize confusion. */}}
   {{ $licenseLookupOut := dict }}
@@ -204,12 +227,11 @@
     {{ include "srox.warn" (list $ "No StackRox license provided. Make sure a valid license exists in Kubernetes secret 'central-license'.") }}
   {{ end }}
 {{ end }}
-{{ $_ = set $centralCfg "_licenseKey" $licenseKey }}
 
 {{/* Setup Default TLS Certificate. */}}
 {{ if $._rox.central.defaultTLS }}
-  {{ $cert := include "srox.expand" (list $ $._rox.central.defaultTLS.cert) }}
-  {{ $key := include "srox.expand" (list $ $._rox.central.defaultTLS.key) }}
+  {{ $cert := $._rox.central.defaultTLS._cert }}
+  {{ $key := $._rox.central.defaultTLS._key }}
   {{ if and $cert $key }}
     {{ $defaultTLSCert := dict "Cert" $cert "Key" $key }}
     {{ $_ := set $._rox.central "_defaultTLS" $defaultTLSCert }}
@@ -237,7 +259,7 @@
      or no other persistence backend has been configured yet. */}}
 {{ if or (and $centralCfg.persistence.persistentVolumeClaim (values $centralCfg.persistence.persistentVolumeClaim | compact)) (not $volumeCfg) }}
   {{ $pvcCfg := $centralCfg.persistence.persistentVolumeClaim }}
-  {{ $pvcCfg = merge $pvcCfg $._rox.defaults.persistence.pv (dict "createClaim" $.Release.IsInstall) }}
+  {{ $pvcCfg = merge $pvcCfg $._rox._defaults.pvcDefaults (dict "createClaim" $.Release.IsInstall) }}
   {{ $_ := set $volumeCfg "persistentVolumeClaim" (dict "claimName" $pvcCfg.claimName) }}
   {{ if $pvcCfg.createClaim }}
     {{ $_ = set $centralCfg.persistence "_pvcCfg" $pvcCfg }}
@@ -287,7 +309,7 @@
 {{/* Setup Image Pull Secrets for Docker Registry.
      Note: This must happen afterwards, as we rely on "srox.configureImage" to collect the
      set of all referenced images first. */}}
-{{ if $imagePullSecrets.username }}
+{{ if $imagePullSecrets._username }}
   {{ $dockerAuths := dict }}
   {{ range $image := keys $._rox._state.referencedImages }}
     {{ $registry := splitList "/" $image | first }}
@@ -299,7 +321,7 @@
     {{ end }}
     {{ $_ := set $dockerAuths $registry dict }}
   {{ end }}
-  {{ $authToken := printf "%s:%s" $imagePullSecrets.username $imagePullSecrets.password | b64enc }}
+  {{ $authToken := printf "%s:%s" $imagePullSecrets._username $imagePullSecrets._password | b64enc }}
   {{ range $regSettings := values $dockerAuths }}
     {{ $_ := set $regSettings "auth" $authToken }}
   {{ end }}

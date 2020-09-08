@@ -76,7 +76,7 @@ spec:
             path: /v1/ping
             port: 8443
         resources:
-          {{- include "srox.expand" (list . ._rox.central.resources) | nindent 10 }}
+          {{- ._rox.central._resources | nindent 10 }}
         securityContext:
           capabilities:
             drop: ["NET_RAW"]

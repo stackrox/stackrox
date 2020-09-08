@@ -3,12 +3,12 @@
 
   This helper function configures a private key or certificate (public cert + private key)
   config entry, from an input config which is accessed via $cryptoConfigPath relative to
-  $.Values, which we'll refer to as $inputCfg. $inputCfg is expected to be a dict with at
+  $._rox, which we'll refer to as $inputCfg. $inputCfg is expected to be a dict with at
   least `key` and `generate` properties. If `generate` is null, it defaults to either `true`
   on installations, and `false` on upgrades. `key` is an expandable string.
   The result in either mode is written to a dict $outputCfg under $._rox accessed by the
   $cryptoConfigPath, with a '_' prepended to the last path element. E.g., if
-  $cryptoConfigPath is "a.b.c", the input configuration will be read from $.Values.a.b.c, and
+  $cryptoConfigPath is "a.b.c", the input configuration will be read from $._rox.a.b.c, and
   the output configuration will be stored in $._rox.a.b._c.
 
   Private key-only mode is selected if $spec.keyOnly contains a non-zero string, which specifies
@@ -43,7 +43,7 @@
 {{ $spec := index . 2 }}
 
 {{/* Resolve $cryptoConfigPath. */}}
-{{ $cfg := $.Values }}
+{{ $cfg := $._rox }}
 {{ $newGenerated := dict }}
 {{ $genCfg := $newGenerated }}
 {{ $cryptoConfigPathList := splitList "." $cryptoConfigPath }}
@@ -54,9 +54,15 @@
   {{ $genCfg = $newCfg }}
 {{ end }}
 
+{{/* Make sure `cert` and `key` are expanded (this should already be the case, but better
+     safe than sorry. */}}
+{{ $certExpandSpec := dict "cert" true "key" true }}
+{{ include "srox.expandAll" (list $ $cfg $certExpandSpec $cryptoConfigPathList) }}
+
+{{ $certPEM := $cfg._cert }}
+{{ $keyPEM := $cfg._key }}
+
 {{ $result := dict }}
-{{ $certPEM := include "srox.expand" (list $ $cfg.cert) }}
-{{ $keyPEM := include "srox.expand" (list $ $cfg.key) }}
 {{ if and $certPEM $keyPEM }}
   {{ if $spec.ca }}
     {{ $result = buildCustomCert (b64enc $certPEM) (b64enc $keyPEM) }}
@@ -117,7 +123,7 @@
   srox.configurePassword $ $pwConfigPath [$htpasswdUser]
 
   This helper function reads a password configuration (YAML dict with `value`
-  and `generate` properties) referenced by $pwConfigPath relative to $.Values. It
+  and `generate` properties) referenced by $pwConfigPath relative to $._rox. It
   ensures the dict with the same config path relative to $._rox and prepending an underscore
   to the last path element is populated in the following way:
   - If the `value` property of the input config is nonzero, set `value` in the result to the
@@ -143,7 +149,7 @@
 {{ if gt (len .) 2 }}
   {{ $htpasswdUser = index . 2 }}
 {{ end }}
-{{ $cfg := $.Values }}
+{{ $cfg := $._rox }}
 {{ $newGenerated := dict }}
 {{ $genCfg := $newGenerated }}
 {{ $pwConfigPathList := splitList "." $pwConfigPath }}
@@ -153,9 +159,15 @@
   {{ $_ := set $genCfg $pathElem $newCfg }}
   {{ $genCfg = $newCfg }}
 {{ end }}
+
+{{/* Make sure that `value` and `htpasswd` within $cfg are expanded (this should already be the
+     case but better safe than sorry). */}}
+{{ $pwExpandSpec := dict "value" true "htpasswd" true }}
+{{ include "srox.expandAll" (list $ $cfg $pwExpandSpec $pwConfigPathList) }}
+
 {{ $result := dict }}
-{{ if and $htpasswdUser (not (kindIs "invalid" $cfg.htpasswd)) }}
-  {{ $htpasswd := include "srox.expand" (list $ $cfg.htpasswd) }}
+{{ if and $htpasswdUser (not (kindIs "invalid" $cfg._htpasswd)) }}
+  {{ $htpasswd := $cfg._htpasswd }}
   {{ $_ := set $result "htpasswd" $htpasswd }}
 {{ end }}
 {{ if not $result.htpasswd }}
@@ -170,7 +182,7 @@
       {{ $_ := set $genCfg "value" $pw }}
     {{ end }}
   {{ else }}
-    {{ $pw = include "srox.expand" (list $ $cfg.value) }}
+    {{ $pw = $cfg._value }}
   {{ end }}
   {{ if not (kindIs "invalid" $pw) }}
     {{ $_ := set $result "value" $pw }}

@@ -1,0 +1,66 @@
+defaults:
+
+  imagePullSecrets:
+    allowNone: false
+    useExisting: []
+    useFromDefaultServiceAccount: true
+
+  image:
+    registry: stackrox.io
+
+  env:
+    offlineMode: false
+
+  central:
+    config: "@config/central/config.yaml|config/central/config.yaml.default"
+    endpointsConfig: "@config/central/endpoints.yaml|config/central/endpoints.yaml.default"
+
+    image:
+      name: main
+      tag: 3.0.48.x-121-g337915cd3d
+
+    resources:
+      requests:
+        memory: "4Gi"
+        cpu: "1500m"
+      limits:
+        memory: "8Gi"
+        cpu: "2000m"
+
+  scanner:
+    disable: false
+    replicas: 3
+    logLevel: INFO
+
+    autoscaling:
+      disable: false
+      minReplicas: 1
+      maxReplicas: 5
+
+    resources:
+      requests:
+        memory: "1500Mi"
+        cpu: "1000m"
+      limits:
+        memory: "3000Mi"
+        cpu: "2000m"
+
+    image:
+      name: scanner
+      tag: 2.3.2
+
+    dbResources:
+      limits:
+        cpu: 2
+        memory: 4Gi
+      requests:
+        cpu: 200m
+        memory: 200Mi
+
+    dbImage:
+      name: scanner-db
+      tag: 2.3.2
+
+pvcDefaults:
+  claimName: "stackrox-db"
+  size: "100Gi"

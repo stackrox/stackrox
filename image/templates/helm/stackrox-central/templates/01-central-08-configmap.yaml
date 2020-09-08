@@ -11,4 +11,4 @@ metadata:
     {{- include "srox.defaultAnnotations" . | nindent 4 }}
 data:
   central-config.yaml: |
-    {{- include "srox.expand" (list . ._rox.central.config) | nindent 4 }}
+    {{- ._rox.central._config | nindent 4 }}
