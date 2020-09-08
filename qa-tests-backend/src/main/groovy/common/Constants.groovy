@@ -12,6 +12,7 @@ class Constants {
     static final FAILURE_DEBUG_DIR = "/tmp/qa-tests-backend-logs"
     static final FAILURE_DEBUG_LIMIT = 10
     static final AUTO_REGISTERED_STACKROX_SCANNER_INTEGRATION = "Stackrox Scanner"
+    static final ANY_FIXED_VULN_POLICY = "any-fixed-vulnerabilities"
     static final Map<String, String> CSV_COLUMN_MAPPING = [
             "Standard" : "standard",
             "Cluster" : "cluster",
@@ -26,7 +27,8 @@ class Constants {
     ]
     static final VIOLATIONS_WHITELIST = [
             // TODO(ROX-2659) Remove the fixable CVSS one from here, that's not okay.
-            "monitoring" : ["CVSS >= 7", "Ubuntu Package Manager in Image", "Curl in Image", "Fixable CVSS >= 7"],
+            "monitoring" : ["CVSS >= 7", "Ubuntu Package Manager in Image", "Curl in Image", "Fixable CVSS >= 7",
+                            ANY_FIXED_VULN_POLICY],
             "scanner" : ["Red Hat Package Manager Execution", "Red Hat Package Manager in Image", "Curl in Image"],
             "collector": ["Ubuntu Package Manager in Image"],
             "authorization-plugin" : ["Latest tag", "90-Day Image Age"],

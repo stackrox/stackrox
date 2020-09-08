@@ -2,10 +2,9 @@ import static Services.getPolicies
 import static Services.waitForViolation
 
 import io.grpc.StatusRuntimeException
-import io.stackrox.proto.storage.AlertOuterClass
-import services.ImageService
 import spock.lang.Shared
 import services.AlertService
+import services.CreatePolicyService
 import services.FeatureFlagService
 import services.ImageIntegrationService
 import common.Constants
@@ -15,6 +14,11 @@ import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest.Re
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsGroupResponse
 import io.stackrox.proto.storage.AlertOuterClass.ListAlert
+import io.stackrox.proto.storage.PolicyOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
+import io.stackrox.proto.storage.PolicyOuterClass.Policy
+import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
+import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
 import io.stackrox.proto.storage.RiskOuterClass
 import io.stackrox.proto.storage.RiskOuterClass.Risk.Result
 
@@ -48,6 +52,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             "Curl in Image",
             "Wget in Image",
             "Mount Docker Socket",
+            Constants.ANY_FIXED_VULN_POLICY,
     ]
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
@@ -82,8 +87,26 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     @Shared
     private String gcrId
+    @Shared
+    private String anyFixedPolicyId
 
     def setupSpec() {
+        def anyFixedPolicy = Policy.newBuilder()
+        .setName(Constants.ANY_FIXED_VULN_POLICY)
+                .addLifecycleStages(LifecycleStage.DEPLOY)
+                .addCategories("Test")
+                .setDisabled(false)
+                .setSeverityValue(2)
+                .addPolicySections(
+                        PolicySection.newBuilder().addPolicyGroups(
+                                PolicyGroup.newBuilder()
+                                        .setFieldName("Fixed By")
+                                        .addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue(".*"))
+                        )
+                ).build()
+        anyFixedPolicyId = CreatePolicyService.createNewPolicy(anyFixedPolicy)
+        assert anyFixedPolicyId
+
         gcrId = GCRImageIntegration.createDefaultIntegration()
         assert gcrId != ""
 
@@ -99,6 +122,9 @@ class DefaultPoliciesTest extends BaseSpecification {
             orchestrator.deleteDeployment(deployment)
         }
         assert ImageIntegrationService.deleteImageIntegration(gcrId)
+        if (anyFixedPolicyId) {
+            CreatePolicyService.deletePolicy(anyFixedPolicyId)
+        }
     }
 
     @Unroll
@@ -172,16 +198,6 @@ class DefaultPoliciesTest extends BaseSpecification {
             def policyName = it.policy.name
             !Constants.VIOLATIONS_WHITELIST.containsKey(deploymentName) ||
                     !Constants.VIOLATIONS_WHITELIST.get(deploymentName).contains(policyName)
-        }
-        for (ListAlert violation: unexpectedViolations) {
-            def fullViolation = AlertService.getViolation(violation.getId())
-            println ">>> An unexpected violation: "
-            println fullViolation
-            println "<<<"
-            for (AlertOuterClass.Alert.Deployment.Container container:
-                    fullViolation.getDeployment().getContainersList()) {
-                print ImageService.getImage(container.getImage().getId())
-            }
         }
         unexpectedViolations == []
     }
