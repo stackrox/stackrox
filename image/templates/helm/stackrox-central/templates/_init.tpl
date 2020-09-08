@@ -253,7 +253,7 @@
   {{ if not $centralCfg.nodeSelector }}
     {{ include "srox.warn" (list $ "You have selected host path persistence, but not specified a node selector. This is unlikely to work reliably.") }}
   {{ end }}
-  {{ $_ := set $volumeCfg "hostPath" $centralCfg.persistence.hostPath }}
+  {{ $_ := set $volumeCfg "hostPath" (dict "path" $centralCfg.persistence.hostPath) }}
 {{ end }}
 {{/* Configure PVC if either any of the settings in `central.persistence.persistentVolumeClaim` are non-zero,
      or no other persistence backend has been configured yet. */}}
@@ -281,8 +281,8 @@
 
 {{ if and $scannerCfg.disable (or $.Release.IsInstall $.Release.IsUpgrade) }}
   {{/* We generally don't recommend customers run without scanner, so show a warning to the user */}}
-  {{ $action := ternary $.Release.IsInstall "deploy StackRox Central Services without Scanner" "upgrade StackRox Central Services without Scanner (possibly removing an existing Scanner deployment)" }}
-  {{ include "srox.warn" (list $ printf "You have chosen to %s. Certain features dependent on image scanning might not work." $action) }}
+  {{ $action := ternary "deploy StackRox Central Services without Scanner" "upgrade StackRox Central Services without Scanner (possibly removing an existing Scanner deployment)" $.Release.IsInstall }}
+  {{ include "srox.warn" (list $ (printf "You have chosen to %s. Certain features dependent on image scanning might not work." $action)) }}
 {{ else if not $scannerCfg.disable }}
   {{ include "srox.configureImage" (list $ $scannerCfg.image) }}
   {{ include "srox.configureImage" (list $ $scannerCfg.dbImage) }}
