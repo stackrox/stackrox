@@ -2,11 +2,13 @@ package awssh
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/securityhub"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
@@ -19,6 +21,44 @@ const (
 
 	maxResources = 32
 )
+
+var (
+	categoryMap = map[string]string{
+		"vulnerability management": "Software and Configuration Checks/Vulnerabilities/CVE",
+		"anomalous activity":       "Unusual Behaviors/Container",
+		"cryptocurrency mining":    "Unusual Behaviors/Container",
+		"devops best practices":    "TTPs",
+		"kubernetes":               "TTPs",
+		"network tools":            "Unusual Behaviors/Network Flows",
+		"package management":       "TTPs",
+		"privileges":               "TTPs/Privilege Escalation",
+		"security best practices":  "TTPs",
+		"system modification":      "Effects",
+	}
+
+	defaultFindingType = "TTPs"
+)
+
+func categoriesToFindings(categories []string) []*string {
+	if len(categories) == 0 {
+		return []*string{
+			aws.String(defaultFindingType),
+		}
+	}
+	findingSet := set.NewStringSet()
+	for _, category := range categories {
+		if awsFindingType, ok := categoryMap[strings.ToLower(category)]; ok {
+			findingSet.Add(awsFindingType)
+			continue
+		}
+		findingSet.Add(defaultFindingType)
+	}
+	findings := make([]*string, 0, len(findingSet))
+	for finding := range findingSet {
+		findings = append(findings, aws.String(finding))
+	}
+	return findings
+}
 
 func mapAlertToFinding(account string, arn string, alert *storage.Alert) *securityhub.AwsSecurityFinding {
 	severity := float64(alert.GetPolicy().GetSeverity())
@@ -43,10 +83,7 @@ func mapAlertToFinding(account string, arn string, alert *storage.Alert) *securi
 			Normalized: aws.Int64(int64(100 * severity / criticalSeverity)),
 			Product:    aws.Float64(severity),
 		},
-		Types: []*string{
-			// TODO(tvoss): Determine proper mapping according to https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-findings-format.html#securityhub-findings-format-type-taxonomy
-			aws.String("Software and Configuration Checks/Vulnerabilities/CVE"),
-		},
+		Types: categoriesToFindings(alert.GetPolicy().GetCategories()),
 		Resources: []*securityhub.Resource{
 			// At the time of this writing, AWS security hub does not support the notion of a k8s cluster/deployment.
 			// While it supports a resource type AwsEksCluster, it lacks support for cluster details.
