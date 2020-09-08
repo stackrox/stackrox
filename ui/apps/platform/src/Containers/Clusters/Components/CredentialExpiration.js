@@ -72,10 +72,11 @@ const CredentialExpiration = ({ certExpiryStatus, currentDatetime, isList }) => 
                         {expirationElement}
                         <div className="flex flex-row items-end leading-tight text-tertiary-700">
                             <a
-                                href="/docs/product/configure-stackrox/reissue-internal-certificates/#secured-clusters-sensor-collector-admission-controller"
+                                href="/docs/product/docs/configure-stackrox/reissue-internal-certificates/#secured-clusters-sensor-collector-admission-controller"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="underline"
+                                data-testid="reissueCertificatesLink"
                             >
                                 Re-issue internal certificates
                             </a>

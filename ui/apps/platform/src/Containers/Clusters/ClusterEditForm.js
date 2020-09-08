@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import CollapsibleCard from 'Components/CollapsibleCard';
+// import CollapsibleCard from 'Components/CollapsibleCard';
+import CollapsibleSection from 'Components/CollapsibleSection';
 import FormFieldRequired from 'Components/forms/FormFieldRequired';
 import Loader from 'Components/Loader';
 import Select from 'Components/Select';
@@ -10,7 +11,7 @@ import FeatureEnabled from 'Containers/FeatureEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
 
 import { clusterTypeOptions, runtimeOptions } from './cluster.helpers';
-import ClusterHealth from './Components/ClusterHealth';
+import ClusterSummary from './Components/ClusterSummary';
 
 const labelClassName = 'block py-2 text-base-600 font-700';
 const sublabelClassName = 'font-600 italic';
@@ -106,346 +107,346 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
     }
 
     return (
-        <form className="px-4 w-full mb-8" data-testid="cluster-form">
+        <div className="px-4 w-full">
             {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
             {selectedCluster.id && (
-                <CollapsibleCard
-                    open
-                    title="Cluster Health"
-                    cardClassName="border border-base-400 mb-2"
-                    titleClassName="border-b border-base-300 bg-primary-200 leading-normal cursor-pointer flex justify-between items-center hover:bg-primary-300 hover:border-primary-300"
+                <ClusterSummary
+                    healthStatus={selectedCluster.healthStatus}
+                    status={selectedCluster.status}
+                    centralVersion={centralVersion}
+                    currentDatetime={new Date()}
+                    clusterId={selectedCluster.id}
+                />
+            )}
+            <form
+                className="grid grid-columns-1 md:grid-columns-2 grid-gap-4 xl:grid-gap-6 mb-4 w-full"
+                data-testid="cluster-form"
+            >
+                <CollapsibleSection
+                    title="Static Configuration (requires deployment)"
+                    titleClassName="text-xl"
                 >
-                    <div className="p-3">
+                    <div className="bg-base-100 pb-3 pt-1 px-3 rounded shadow">
                         <div className="mb-4">
-                            <ClusterHealth
-                                healthStatus={selectedCluster.healthStatus}
-                                status={selectedCluster.status}
-                                centralVersion={centralVersion}
-                                currentDatetime={new Date()}
+                            <label htmlFor="name" className={labelClassName}>
+                                Cluster Name{' '}
+                                <FormFieldRequired empty={selectedCluster.name.length === 0} />
+                            </label>
+                            <input
+                                id="name"
+                                name="name"
+                                value={selectedCluster.name}
+                                onChange={handleChange}
+                                disabled={selectedCluster.id}
+                                className={inputTextClassName}
                             />
                         </div>
-                    </div>
-                </CollapsibleCard>
-            )}
-            <CollapsibleCard
-                open
-                title="Static Configuration (requires deployment)"
-                cardClassName="border border-base-400 mb-2"
-                titleClassName="border-b border-base-300 bg-primary-200 leading-normal cursor-pointer flex justify-between items-center hover:bg-primary-300 hover:border-primary-300"
-            >
-                <div className="p-3">
-                    <div className="mb-4">
-                        <label htmlFor="name" className={labelClassName}>
-                            Cluster Name{' '}
-                            <FormFieldRequired empty={selectedCluster.name.length === 0} />
-                        </label>
-                        <input
-                            id="name"
-                            name="name"
-                            value={selectedCluster.name}
-                            onChange={handleChange}
-                            disabled={selectedCluster.id}
-                            className={inputTextClassName}
-                        />
-                    </div>
-                    <div className="mb-4">
-                        <label htmlFor="clusterType" className={labelClassName}>
-                            Cluster Type{' '}
-                            <FormFieldRequired empty={selectedCluster.type.length === 0} />
-                        </label>
-                        <Select
-                            id="clusterType"
-                            options={clusterTypeOptions}
-                            placeholder="Select a cluster type"
-                            onChange={onClusterTypeChange}
-                            className={selectElementClassName}
-                            wrapperClass={selectWrapperClassName}
-                            triggerClass="border-l border-base-300"
-                            value={selectedCluster.type}
-                        />
-                    </div>
-                    <div className="mb-4">
-                        <label htmlFor="mainImage" className={labelClassName}>
-                            Main Image Repository{' '}
-                            <FormFieldRequired empty={selectedCluster.mainImage.length === 0} />
-                        </label>
-                        <input
-                            id="mainImage"
-                            name="mainImage"
-                            onChange={handleChange}
-                            value={selectedCluster.mainImage}
-                            className={inputTextClassName}
-                        />
-                    </div>
-                    <div className="mb-4">
-                        <label htmlFor="centralApiEndpoint" className={labelClassName}>
-                            Central API Endpoint (include port){' '}
-                            <FormFieldRequired
-                                empty={selectedCluster.centralApiEndpoint.length === 0}
+                        <div className="mb-4">
+                            <label htmlFor="clusterType" className={labelClassName}>
+                                Cluster Type{' '}
+                                <FormFieldRequired empty={selectedCluster.type.length === 0} />
+                            </label>
+                            <Select
+                                id="clusterType"
+                                options={clusterTypeOptions}
+                                placeholder="Select a cluster type"
+                                onChange={onClusterTypeChange}
+                                className={selectElementClassName}
+                                wrapperClass={selectWrapperClassName}
+                                triggerClass="border-l border-base-300"
+                                value={selectedCluster.type}
                             />
-                        </label>
-                        <input
-                            id="centralApiEndpoint"
-                            name="centralApiEndpoint"
-                            onChange={handleChange}
-                            value={selectedCluster.centralApiEndpoint}
-                            className={inputTextClassName}
-                        />
-                    </div>
-                    <div className="mb-4">
-                        <label htmlFor="collectionMethod" className={labelClassName}>
-                            Collection Method
-                        </label>
-                        <Select
-                            options={runtimeOptions}
-                            placeholder="Select a runtime option"
-                            onChange={onCollectionMethodChange}
-                            className={selectElementClassName}
-                            wrapperClass={selectWrapperClassName}
-                            triggerClass="border-l border-base-300"
-                            value={selectedCluster.collectionMethod}
-                        />
-                    </div>
-                    <div className="mb-4">
-                        <label htmlFor="collectorImage" className={labelClassName}>
-                            Collector Image Repository (uses Main image repository by default)
-                        </label>
-                        <input
-                            id="collectorImage"
-                            name="collectorImage"
-                            onChange={handleChange}
-                            value={selectedCluster.collectorImage}
-                            className={inputTextClassName}
-                        />
-                    </div>
-                    <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
-                        <label htmlFor="admissionController" className={labelClassName}>
-                            Create Admission Controller Webhook
-                        </label>
-                        <ToggleSwitch
-                            id="admissionController"
-                            name="admissionController"
-                            toggleHandler={handleChange}
-                            enabled={selectedCluster.admissionController}
-                        />
-                    </div>
-                    <FeatureEnabled
-                        featureFlag={knownBackendFlags.ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE}
-                    >
-                        {({ featureEnabled }) => {
-                            return (
-                                featureEnabled && (
-                                    <div
-                                        className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}
-                                    >
-                                        <label
-                                            htmlFor="admissionControllerUpdates"
-                                            className={labelClassName}
+                        </div>
+                        <div className="mb-4">
+                            <label htmlFor="mainImage" className={labelClassName}>
+                                Main Image Repository{' '}
+                                <FormFieldRequired empty={selectedCluster.mainImage.length === 0} />
+                            </label>
+                            <input
+                                id="mainImage"
+                                name="mainImage"
+                                onChange={handleChange}
+                                value={selectedCluster.mainImage}
+                                className={inputTextClassName}
+                            />
+                        </div>
+                        <div className="mb-4">
+                            <label htmlFor="centralApiEndpoint" className={labelClassName}>
+                                Central API Endpoint (include port){' '}
+                                <FormFieldRequired
+                                    empty={selectedCluster.centralApiEndpoint.length === 0}
+                                />
+                            </label>
+                            <input
+                                id="centralApiEndpoint"
+                                name="centralApiEndpoint"
+                                onChange={handleChange}
+                                value={selectedCluster.centralApiEndpoint}
+                                className={inputTextClassName}
+                            />
+                        </div>
+                        <div className="mb-4">
+                            <label htmlFor="collectionMethod" className={labelClassName}>
+                                Collection Method
+                            </label>
+                            <Select
+                                options={runtimeOptions}
+                                placeholder="Select a runtime option"
+                                onChange={onCollectionMethodChange}
+                                className={selectElementClassName}
+                                wrapperClass={selectWrapperClassName}
+                                triggerClass="border-l border-base-300"
+                                value={selectedCluster.collectionMethod}
+                            />
+                        </div>
+                        <div className="mb-4">
+                            <label htmlFor="collectorImage" className={labelClassName}>
+                                Collector Image Repository (uses Main image repository by default)
+                            </label>
+                            <input
+                                id="collectorImage"
+                                name="collectorImage"
+                                onChange={handleChange}
+                                value={selectedCluster.collectorImage}
+                                className={inputTextClassName}
+                            />
+                        </div>
+                        <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
+                            <label htmlFor="admissionController" className={labelClassName}>
+                                Create Admission Controller Webhook
+                            </label>
+                            <ToggleSwitch
+                                id="admissionController"
+                                name="admissionController"
+                                toggleHandler={handleChange}
+                                enabled={selectedCluster.admissionController}
+                            />
+                        </div>
+                        <FeatureEnabled
+                            featureFlag={knownBackendFlags.ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE}
+                        >
+                            {({ featureEnabled }) => {
+                                return (
+                                    featureEnabled && (
+                                        <div
+                                            className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}
                                         >
-                                            Configure Admission Controller Webhook to listen on
-                                            updates
-                                        </label>
-                                        <ToggleSwitch
-                                            id="admissionControllerUpdates"
-                                            name="admissionControllerUpdates"
-                                            toggleHandler={handleChange}
-                                            enabled={
-                                                selectedCluster.admissionController &&
-                                                selectedCluster.admissionControllerUpdates
-                                            }
-                                            disabled={!selectedCluster.admissionController}
-                                        />
-                                    </div>
-                                )
-                            );
-                        }}
-                    </FeatureEnabled>
-                    <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
-                        <label htmlFor="tolerationsConfig.disabled" className={labelClassName}>
-                            <span>Enable Taint Tolerations</span>
-                            <br />
-                            <span className={sublabelClassName}>
-                                Tolerate all taints to run on all nodes of this cluster
-                            </span>
-                        </label>
-                        <ToggleSwitch
-                            id="tolerationsConfig.disabled"
-                            name="tolerationsConfig.disabled"
-                            toggleHandler={handleChange}
-                            flipped
-                            // TODO: check until API guarantees a tolerationsConfig object is returned
-                            // with false, if not yet set
-                            enabled={
-                                !(
-                                    selectedCluster.tolerationsConfig === null ||
-                                    selectedCluster.tolerationsConfig.disabled === false
-                                )
-                            }
-                        />
-                    </div>
-                    <FeatureEnabled featureFlag={knownBackendFlags.ROX_SUPPORT_SLIM_COLLECTOR_MODE}>
-                        {({ featureEnabled }) => {
-                            return (
-                                featureEnabled && (
-                                    <div className={`flex flex-col ${divToggleOuterClassName}`}>
-                                        <div className={justifyBetweenClassName}>
                                             <label
-                                                htmlFor="slimCollector"
+                                                htmlFor="admissionControllerUpdates"
                                                 className={labelClassName}
                                             >
-                                                <span>Enable Slim Collector Mode</span>
-                                                <br />
-                                                <span className={sublabelClassName}>
-                                                    New cluster will be set up using a slim
-                                                    collector image
-                                                </span>
+                                                Configure Admission Controller Webhook to listen on
+                                                updates
                                             </label>
                                             <ToggleSwitch
-                                                id="slimCollector"
-                                                name="slimCollector"
+                                                id="admissionControllerUpdates"
+                                                name="admissionControllerUpdates"
                                                 toggleHandler={handleChange}
-                                                enabled={selectedCluster.slimCollector}
+                                                enabled={
+                                                    selectedCluster.admissionController &&
+                                                    selectedCluster.admissionControllerUpdates
+                                                }
+                                                disabled={!selectedCluster.admissionController}
                                             />
                                         </div>
-                                        {renderSlimCollectorWarning()}
-                                    </div>
-                                )
-                            );
-                        }}
-                    </FeatureEnabled>
-                </div>
-            </CollapsibleCard>
-            {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
-            <CollapsibleCard
-                title="Dynamic Configuration (syncs with Sensor)"
-                titleClassName="border-b border-base-300 bg-primary-200 leading-normal cursor-pointer flex justify-between items-center hover:bg-primary-300 hover:border-primary-300"
-            >
-                <div className="p-3">
-                    <div className="mb-4">
-                        <label htmlFor="dynamicConfig.registryOverride" className={labelClassName}>
-                            <span>Custom default image registry</span>
-                            <br />
-                            <span className={sublabelClassName}>
-                                Set a value if the default registry is not docker.io in this cluster
-                            </span>
-                        </label>
-                        <div className="flex">
+                                    )
+                                );
+                            }}
+                        </FeatureEnabled>
+                        <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
+                            <label htmlFor="tolerationsConfig.disabled" className={labelClassName}>
+                                <span>Enable Taint Tolerations</span>
+                                <br />
+                                <span className={sublabelClassName}>
+                                    Tolerate all taints to run on all nodes of this cluster
+                                </span>
+                            </label>
+                            <ToggleSwitch
+                                id="tolerationsConfig.disabled"
+                                name="tolerationsConfig.disabled"
+                                toggleHandler={handleChange}
+                                flipped
+                                // TODO: check until API guarantees a tolerationsConfig object is returned
+                                // with false, if not yet set
+                                enabled={
+                                    !(
+                                        selectedCluster.tolerationsConfig === null ||
+                                        selectedCluster.tolerationsConfig.disabled === false
+                                    )
+                                }
+                            />
+                        </div>
+                        <FeatureEnabled
+                            featureFlag={knownBackendFlags.ROX_SUPPORT_SLIM_COLLECTOR_MODE}
+                        >
+                            {({ featureEnabled }) => {
+                                return (
+                                    featureEnabled && (
+                                        <div className={`flex flex-col ${divToggleOuterClassName}`}>
+                                            <div className={justifyBetweenClassName}>
+                                                <label
+                                                    htmlFor="slimCollector"
+                                                    className={labelClassName}
+                                                >
+                                                    <span>Enable Slim Collector Mode</span>
+                                                    <br />
+                                                    <span className={sublabelClassName}>
+                                                        New cluster will be set up using a slim
+                                                        collector image
+                                                    </span>
+                                                </label>
+                                                <ToggleSwitch
+                                                    id="slimCollector"
+                                                    name="slimCollector"
+                                                    toggleHandler={handleChange}
+                                                    enabled={selectedCluster.slimCollector}
+                                                />
+                                            </div>
+                                            {renderSlimCollectorWarning()}
+                                        </div>
+                                    )
+                                );
+                            }}
+                        </FeatureEnabled>
+                    </div>
+                </CollapsibleSection>
+                {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
+                <CollapsibleSection
+                    title="Dynamic Configuration (syncs with Sensor)"
+                    titleClassName="text-xl"
+                >
+                    <div className="bg-base-100 pb-3 pt-1 px-3 rounded shadow">
+                        <div className="mb-4">
+                            <label
+                                htmlFor="dynamicConfig.registryOverride"
+                                className={labelClassName}
+                            >
+                                <span>Custom default image registry</span>
+                                <br />
+                                <span className={sublabelClassName}>
+                                    Set a value if the default registry is not docker.io in this
+                                    cluster
+                                </span>
+                            </label>
+                            <div className="flex">
+                                <input
+                                    id="dynamicConfig.registryOverride"
+                                    name="dynamicConfig.registryOverride"
+                                    onChange={handleChange}
+                                    value={selectedCluster.dynamicConfig.registryOverride}
+                                    className={inputTextClassName}
+                                    placeholder="image-mirror.example.com"
+                                />
+                            </div>
+                        </div>
+                        <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
+                            <label
+                                htmlFor="dynamicConfig.admissionControllerConfig.enabled"
+                                className={labelClassName}
+                            >
+                                Enable Admission Controller
+                            </label>
+                            <ToggleSwitch
+                                id="dynamicConfig.admissionControllerConfig.enabled"
+                                name="dynamicConfig.admissionControllerConfig.enabled"
+                                toggleHandler={handleChange}
+                                enabled={
+                                    selectedCluster.dynamicConfig.admissionControllerConfig.enabled
+                                }
+                            />
+                        </div>
+                        <FeatureEnabled
+                            featureFlag={knownBackendFlags.ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE}
+                        >
+                            {({ featureEnabled }) => {
+                                return (
+                                    featureEnabled && (
+                                        <div
+                                            className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}
+                                        >
+                                            <label
+                                                htmlFor="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
+                                                className={labelClassName}
+                                            >
+                                                Enforce on Updates
+                                            </label>
+                                            <ToggleSwitch
+                                                id="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
+                                                name="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
+                                                toggleHandler={handleChange}
+                                                enabled={
+                                                    selectedCluster.dynamicConfig
+                                                        .admissionControllerConfig.enabled &&
+                                                    selectedCluster.dynamicConfig
+                                                        .admissionControllerConfig.enforceOnUpdates
+                                                }
+                                                disabled={
+                                                    !selectedCluster.dynamicConfig
+                                                        .admissionControllerConfig.enabled
+                                                }
+                                            />
+                                        </div>
+                                    )
+                                );
+                            }}
+                        </FeatureEnabled>
+                        <div className={`mb-4 pl-2 ${justifyBetweenClassName}`}>
+                            <label
+                                htmlFor="dynamicConfig.admissionControllerConfig
+                            .timeoutSeconds"
+                                className={labelClassName}
+                            >
+                                Timeout (seconds)
+                            </label>
                             <input
-                                id="dynamicConfig.registryOverride"
-                                name="dynamicConfig.registryOverride"
+                                className={inputNumberClassName}
+                                id="dynamicConfig.admissionControllerConfig.timeoutSeconds"
+                                name="dynamicConfig.admissionControllerConfig.timeoutSeconds"
                                 onChange={handleChange}
-                                value={selectedCluster.dynamicConfig.registryOverride}
-                                className={inputTextClassName}
-                                placeholder="image-mirror.example.com"
+                                value={
+                                    selectedCluster.dynamicConfig.admissionControllerConfig
+                                        .timeoutSeconds
+                                }
+                            />
+                        </div>
+                        <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
+                            <label
+                                htmlFor="dynamicConfig.admissionControllerConfig.scanInline"
+                                className={labelClassName}
+                            >
+                                Contact Image Scanners
+                            </label>
+                            <ToggleSwitch
+                                id="dynamicConfig.admissionControllerConfig.scanInline"
+                                name="dynamicConfig.admissionControllerConfig.scanInline"
+                                toggleHandler={handleChange}
+                                enabled={
+                                    selectedCluster.dynamicConfig.admissionControllerConfig
+                                        .scanInline
+                                }
+                            />
+                        </div>
+                        <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
+                            <label
+                                htmlFor="dynamicConfig.admissionControllerConfig.disableBypass"
+                                className={labelClassName}
+                            >
+                                Disable Use of Bypass Annotation
+                            </label>
+                            <ToggleSwitch
+                                id="dynamicConfig.admissionControllerConfig.disableBypass"
+                                name="dynamicConfig.admissionControllerConfig.disableBypass"
+                                toggleHandler={handleChange}
+                                enabled={
+                                    selectedCluster.dynamicConfig.admissionControllerConfig
+                                        .disableBypass
+                                }
                             />
                         </div>
                     </div>
-                    <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
-                        <label
-                            htmlFor="dynamicConfig.admissionControllerConfig.enabled"
-                            className={labelClassName}
-                        >
-                            Enable Admission Controller
-                        </label>
-                        <ToggleSwitch
-                            id="dynamicConfig.admissionControllerConfig.enabled"
-                            name="dynamicConfig.admissionControllerConfig.enabled"
-                            toggleHandler={handleChange}
-                            enabled={
-                                selectedCluster.dynamicConfig.admissionControllerConfig.enabled
-                            }
-                        />
-                    </div>
-                    <FeatureEnabled
-                        featureFlag={knownBackendFlags.ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE}
-                    >
-                        {({ featureEnabled }) => {
-                            return (
-                                featureEnabled && (
-                                    <div
-                                        className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}
-                                    >
-                                        <label
-                                            htmlFor="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
-                                            className={labelClassName}
-                                        >
-                                            Enforce on Updates
-                                        </label>
-                                        <ToggleSwitch
-                                            id="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
-                                            name="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
-                                            toggleHandler={handleChange}
-                                            enabled={
-                                                selectedCluster.dynamicConfig
-                                                    .admissionControllerConfig.enabled &&
-                                                selectedCluster.dynamicConfig
-                                                    .admissionControllerConfig.enforceOnUpdates
-                                            }
-                                            disabled={
-                                                !selectedCluster.dynamicConfig
-                                                    .admissionControllerConfig.enabled
-                                            }
-                                        />
-                                    </div>
-                                )
-                            );
-                        }}
-                    </FeatureEnabled>
-                    <div className={`mb-4 pl-2 ${justifyBetweenClassName}`}>
-                        <label
-                            htmlFor="dynamicConfig.admissionControllerConfig
-                        .timeoutSeconds"
-                            className={labelClassName}
-                        >
-                            Timeout (seconds)
-                        </label>
-                        <input
-                            className={inputNumberClassName}
-                            id="dynamicConfig.admissionControllerConfig.timeoutSeconds"
-                            name="dynamicConfig.admissionControllerConfig.timeoutSeconds"
-                            onChange={handleChange}
-                            value={
-                                selectedCluster.dynamicConfig.admissionControllerConfig
-                                    .timeoutSeconds
-                            }
-                        />
-                    </div>
-                    <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
-                        <label
-                            htmlFor="dynamicConfig.admissionControllerConfig.scanInline"
-                            className={labelClassName}
-                        >
-                            Contact Image Scanners
-                        </label>
-                        <ToggleSwitch
-                            id="dynamicConfig.admissionControllerConfig.scanInline"
-                            name="dynamicConfig.admissionControllerConfig.scanInline"
-                            toggleHandler={handleChange}
-                            enabled={
-                                selectedCluster.dynamicConfig.admissionControllerConfig.scanInline
-                            }
-                        />
-                    </div>
-                    <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
-                        <label
-                            htmlFor="dynamicConfig.admissionControllerConfig.disableBypass"
-                            className={labelClassName}
-                        >
-                            Disable Use of Bypass Annotation
-                        </label>
-                        <ToggleSwitch
-                            id="dynamicConfig.admissionControllerConfig.disableBypass"
-                            name="dynamicConfig.admissionControllerConfig.disableBypass"
-                            toggleHandler={handleChange}
-                            enabled={
-                                selectedCluster.dynamicConfig.admissionControllerConfig
-                                    .disableBypass
-                            }
-                        />
-                    </div>
-                </div>
-            </CollapsibleCard>
-        </form>
+                </CollapsibleSection>
+            </form>
+        </div>
     );
 }
 

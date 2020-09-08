@@ -54,8 +54,8 @@ const CredentialInteraction = ({ certExpiryStatus, currentDatetime, upgradeStatu
 
     if (isDownloadSuccessful) {
         interactionElement = (
-            <div>
-                <div>
+            <div className="mt-2">
+                <div data-testid="downloadedToReissueCertificate">
                     Apply downloaded YAML file to the cluster:{' '}
                     <span className="font-700 whitespace-no-wrap">kubectl apply -f</span>
                 </div>
@@ -72,8 +72,8 @@ const CredentialInteraction = ({ certExpiryStatus, currentDatetime, upgradeStatu
             // Order arguments according to date-fns@2 convention:
             // If initiationOfCertRotation <= currentDateTime: X units ago
             interactionElement = (
-                <div>
-                    <div>
+                <div className="mt-2">
+                    <div data-testid="upgradedToReissueCertificate">
                         An automatic upgrade applied new credentials to the cluster{' '}
                         {getDistanceStrictAsPhrase(datetimeOfCertRotation, currentDatetime)}.
                     </div>
@@ -121,20 +121,23 @@ const CredentialInteraction = ({ certExpiryStatus, currentDatetime, upgradeStatu
             };
 
             interactionElement = (
-                <form>
+                <form className="mt-2">
                     <ul>
                         <li className={fieldClassName}>
                             <input
                                 type="radio"
-                                id="downloadToReissue"
-                                data-testid="downloadToReissue"
+                                id="downloadToReissueCertificate"
+                                data-testid="downloadToReissueCertificate"
                                 name="howToReissue"
                                 value={download}
                                 checked={howToReissue === download}
                                 onChange={onChangeHowToReissue}
                                 className={radioClassName}
                             />
-                            <label htmlFor="downloadToReissue" className={labelClassName}>
+                            <label
+                                htmlFor="downloadToReissueCertificate"
+                                className={labelClassName}
+                            >
                                 Download YAML file
                                 <br />
                                 and then apply it to the cluster
@@ -143,8 +146,8 @@ const CredentialInteraction = ({ certExpiryStatus, currentDatetime, upgradeStatu
                         <li className={fieldClassName}>
                             <input
                                 type="radio"
-                                id="upgradeToReissue"
-                                data-testid="upgradeToReissue"
+                                id="upgradeToReissueCertificate"
+                                data-testid="upgradeToReissueCertificate"
                                 name="howToReissue"
                                 value={upgrade}
                                 checked={howToReissue === upgrade}
@@ -152,7 +155,7 @@ const CredentialInteraction = ({ certExpiryStatus, currentDatetime, upgradeStatu
                                 className={radioClassName}
                                 disabled={!isUpToDate}
                             />
-                            <label htmlFor="upgradeToReissue" className={labelClassName}>
+                            <label htmlFor="upgradeToReissueCertificate" className={labelClassName}>
                                 Use automatic upgrade
                                 <br />
                                 if Sensor is up to date with Central
@@ -164,6 +167,7 @@ const CredentialInteraction = ({ certExpiryStatus, currentDatetime, upgradeStatu
                         disabled={disabledReissueButton}
                         onClick={onClickReissue}
                         className="btn btn-tertiary"
+                        data-testid="reissueCertificateButton"
                     >
                         Re-issue certificate
                     </button>

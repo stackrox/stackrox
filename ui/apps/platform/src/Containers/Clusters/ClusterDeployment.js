@@ -16,7 +16,7 @@ const ClusterDeploymentPage = ({
     createUpgraderSA,
     toggleSA,
 }) => (
-    <div className="w-full">
+    <div className="max-w-sm">
         <div className="px-4">
             {editing && clusterCheckedIn && (
                 <div className="w-full pb-3">

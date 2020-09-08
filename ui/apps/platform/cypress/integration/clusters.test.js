@@ -49,6 +49,7 @@ describe('Clusters page', () => {
 describe('Cluster Cert Expiration', () => {
     withAuth();
 
+    // TODO Replace modified cluster API response with health.json fixtures.
     // Make a request to the clusters API, and modify it to have the changes we need.
     // Do it this way to avoid having to deal with the overhead of maintaining full-blown fixtures.
     const getModifiedMockCluster = (
@@ -89,53 +90,58 @@ describe('Cluster Cert Expiration', () => {
         cy.get(selectors.sidePanel);
     };
 
-    it('should not show warning if expiration is more than 30 days away', () => {
+    it('should not show button if expiration is more than 30 days away', () => {
         const mockExpiry = dateFns.addDays(new Date(), 31);
         cy.fixture('clusters/single-cluster-with-status.json').then((resp) => {
             const certCluster = getModifiedMockCluster(resp.cluster, mockExpiry);
 
             openSidePanelWithMockedClusters(certCluster);
 
-            cy.get(selectors.credentialExpirationBanner).should('not.exist');
+            cy.get(selectors.clusterHealth.credentialExpiration).should('have.text', 'in 1 month');
+            cy.get(selectors.clusterHealth.reissueCertificatesLink).should('not.exist');
+            cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
         });
     });
 
     describe('should show warning if expiration is less than 30 days away', () => {
-        const verifyBannerTextEquals = (expectedText) => {
-            cy.get(selectors.credentialExpirationBanner)
-                .invoke('text')
-                .then((text) => {
-                    expect(text).to.equal(expectedText);
-                });
-        };
-
         const mockExpiry = dateFns.addDays(new Date(), 29);
+        const expectedExpirationPhrase = 'in 28 days';
 
-        it('should not show auto-upgrade link if sensor is not up-to-date', () => {
+        it('should disable auto-upgrade option if sensor is not up-to-date', () => {
             cy.fixture('clusters/single-cluster-with-status.json').then((resp) => {
                 const outdatedCluster = getModifiedMockCluster(resp.cluster, mockExpiry, true);
 
                 openSidePanelWithMockedClusters(outdatedCluster);
 
-                verifyBannerTextEquals(
-                    'This cluster’s credentials expire in 28 days. To use renewed certificates, download this YAML file and apply it to your cluster.'
-                );
+                cy.get(selectors.clusterHealth.credentialExpiration).should((element) => {
+                    expect(element.text()).to.contain(expectedExpirationPhrase);
+                });
+                cy.get(selectors.clusterHealth.reissueCertificatesLink);
+
+                cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('be.enabled');
+                cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('be.disabled');
+                cy.get(selectors.clusterHealth.reissueCertificateButton).should('be.enabled');
             });
         });
 
-        it('should show auto-upgrade link if sensor is up-to-date', () => {
+        it('should enable auto-upgrade option if sensor is up-to-date', () => {
             cy.fixture('clusters/single-cluster-with-status.json').then((resp) => {
                 const outdatedCluster = getModifiedMockCluster(resp.cluster, mockExpiry);
 
                 openSidePanelWithMockedClusters(outdatedCluster);
 
-                verifyBannerTextEquals(
-                    'This cluster’s credentials expire in 28 days. To use renewed certificates, download this YAML file and apply it to your cluster, or apply credentials by using an automatic upgrade.'
-                );
+                cy.get(selectors.clusterHealth.credentialExpiration).should((element) => {
+                    expect(element.text()).to.contain(expectedExpirationPhrase);
+                });
+                cy.get(selectors.clusterHealth.reissueCertificatesLink);
+
+                cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('be.enabled');
+                cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('be.enabled');
+                cy.get(selectors.clusterHealth.reissueCertificateButton).should('be.enabled');
             });
         });
 
-        it('should show auto-upgrade link, and banner with time of recent upgrade', () => {
+        it('should show result of recent upgrade instead of button', () => {
             const mockCertRotationTime = dateFns.addMinutes(new Date(), -5);
 
             cy.fixture('clusters/single-cluster-with-status.json').then((resp) => {
@@ -148,14 +154,16 @@ describe('Cluster Cert Expiration', () => {
 
                 openSidePanelWithMockedClusters(outdatedCluster);
 
-                cy.get(selectors.credentialExpirationBanner).should(
+                cy.get(selectors.clusterHealth.credentialExpiration).should((element) => {
+                    expect(element.text()).to.contain(expectedExpirationPhrase);
+                });
+                cy.get(selectors.clusterHealth.reissueCertificatesLink);
+
+                cy.get(selectors.clusterHealth.upgradedToReissueCertificate).should(
                     'contain',
-                    'This cluster’s credentials expire in 28 days. To use renewed certificates, download this YAML file and apply it to your cluster, or apply credentials by using an automatic upgrade.'
+                    'An automatic upgrade applied new credentials to the cluster'
                 );
-                cy.get(selectors.credentialExpirationBanner).should(
-                    'contain',
-                    'An automatic upgrade applied renewed credentials on '
-                );
+                cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
             });
         });
     });

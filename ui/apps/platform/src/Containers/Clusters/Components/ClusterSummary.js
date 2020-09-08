@@ -7,6 +7,7 @@ import Widget from 'Components/Widget';
 
 import ClusterStatus from './ClusterStatus';
 import CollectorStatus from './CollectorStatus';
+import CredentialExpiration from './CredentialExpiration';
 import CredentialInteraction from './CredentialInteraction';
 import SensorStatus from './SensorStatus';
 import SensorUpgrade from './SensorUpgrade';
@@ -36,15 +37,15 @@ const ClusterSummary = ({ healthStatus, status, centralVersion, currentDatetime,
                     keyValuePairs={[
                         {
                             key: 'Kubernetes version',
-                            value: formatKubernetesVersion(status.orchestratorMetadata),
+                            value: formatKubernetesVersion(status?.orchestratorMetadata),
                         },
                         {
                             key: 'Build date',
-                            value: formatBuildDate(status.orchestratorMetadata),
+                            value: formatBuildDate(status?.orchestratorMetadata),
                         },
                         {
                             key: 'Cloud provider',
-                            value: formatCloudProvider(status.providerMetadata),
+                            value: formatCloudProvider(status?.providerMetadata),
                         },
                     ]}
                 />
@@ -103,12 +104,20 @@ const ClusterSummary = ({ healthStatus, status, centralVersion, currentDatetime,
             </div>
             <div className="s-1">
                 <Widget header="Credential Expiration" bodyClassName="p-2">
-                    <CredentialInteraction
-                        certExpiryStatus={status?.certExpiryStatus}
-                        currentDatetime={currentDatetime}
-                        upgradeStatus={status?.upgradeStatus}
-                        clusterId={clusterId}
-                    />
+                    {status?.certExpiryStatus?.sensorCertExpiry ? (
+                        <CredentialInteraction
+                            certExpiryStatus={status?.certExpiryStatus}
+                            currentDatetime={currentDatetime}
+                            upgradeStatus={status?.upgradeStatus}
+                            clusterId={clusterId}
+                        />
+                    ) : (
+                        <CredentialExpiration
+                            certExpiryStatus={status?.certExpiryStatus}
+                            currentDatetime={currentDatetime}
+                            isList={false}
+                        />
+                    )}
                 </Widget>
             </div>
         </div>

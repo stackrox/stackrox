@@ -233,7 +233,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     const clusterColumns = getColumnsForClusters(columnOptions);
 
     return (
-        <div className="shadow border-primary-300 w-full overflow-hidden">
+        <div className={`overflow-hidden w-full ${selectedClusterId ? 'overlay' : ''}`}>
             <Panel headerTextComponent={headerComponent} headerComponents={headerActions}>
                 {messages.length > 0 && (
                     <div className="flex flex-col w-full items-center bg-warning-200 text-warning-8000 justify-center font-700 text-center">

@@ -386,7 +386,7 @@ export function findUpgradeState(upgradeStatus) {
 }
 
 export function isUpToDateStateObject(upgradeStateObject) {
-    return upgradeStateObject.type === 'current';
+    return upgradeStateObject?.type === 'current';
 }
 
 export function getUpgradeableClusters(clusters = []) {
