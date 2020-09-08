@@ -107,7 +107,7 @@ func (c *cacheImpl) Walk(fn func(msg proto.Message) error) error {
 	defer c.lock.RUnlock()
 
 	for _, msg := range c.cache {
-		if err := fn(msg); err != nil {
+		if err := fn(proto.Clone(msg)); err != nil {
 			return err
 		}
 	}
@@ -119,7 +119,7 @@ func (c *cacheImpl) WalkAllWithID(fn func(id []byte, msg proto.Message) error) e
 	defer c.lock.RUnlock()
 
 	for id, msg := range c.cache {
-		if err := fn([]byte(id), msg); err != nil {
+		if err := fn([]byte(id), proto.Clone(msg)); err != nil {
 			return err
 		}
 	}
