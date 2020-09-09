@@ -30,6 +30,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
    for the commands `roxctl central generate`, `roxctl scanner generate`, `roxctl sensor generate`, and
    `roxctl sensor get-bundle`. The interactive installer (`roxctl central generate interactive`) will also prompt for
    this configuration option.
+- Support for enforcing policies on DeploymentConfig resources in Openshift.
 
 ## [48.0]
 - UI: Hovering over a namespace edge in the Network Graph will show the ports and protocols for it's connections (ROX-5228).

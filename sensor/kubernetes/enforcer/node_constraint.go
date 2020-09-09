@@ -25,23 +25,23 @@ func (e *enforcerImpl) unsatisfiableNodeConstraint(ctx context.Context, enforcem
 	switch deploymentInfo.GetDeploymentType() {
 	case pkgKubernetes.Deployment:
 		function = func(ctx context.Context) error {
-			return deployment.EnforceNodeConstraint(ctx, e.client, deploymentInfo)
+			return deployment.EnforceNodeConstraint(ctx, e.client.Kubernetes(), deploymentInfo)
 		}
 	case pkgKubernetes.DaemonSet:
 		function = func(ctx context.Context) error {
-			return daemonset.EnforceNodeConstraint(ctx, e.client, deploymentInfo)
+			return daemonset.EnforceNodeConstraint(ctx, e.client.Kubernetes(), deploymentInfo)
 		}
 	case pkgKubernetes.ReplicaSet:
 		function = func(ctx context.Context) error {
-			return replicaset.EnforceNodeConstraint(ctx, e.client, deploymentInfo)
+			return replicaset.EnforceNodeConstraint(ctx, e.client.Kubernetes(), deploymentInfo)
 		}
 	case pkgKubernetes.ReplicationController:
 		function = func(ctx context.Context) error {
-			return replicationcontroller.EnforceNodeConstraint(ctx, e.client, deploymentInfo)
+			return replicationcontroller.EnforceNodeConstraint(ctx, e.client.Kubernetes(), deploymentInfo)
 		}
 	case pkgKubernetes.StatefulSet:
 		function = func(ctx context.Context) error {
-			return statefulset.EnforceNodeConstraint(ctx, e.client, deploymentInfo)
+			return statefulset.EnforceNodeConstraint(ctx, e.client.Kubernetes(), deploymentInfo)
 		}
 	default:
 		return fmt.Errorf("unknown type: %s", deploymentInfo.GetDeploymentType())

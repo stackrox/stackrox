@@ -40,7 +40,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 
 	configHandler := config.NewCommandHandler(admCtrlSettingsMgr)
 
-	enforcer := enforcer.MustCreate(client.Kubernetes())
+	enforcer := enforcer.MustCreate(client)
 
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, imageCache)

@@ -285,6 +285,9 @@ webhooks:
           - replicationcontrollers
           - statefulsets
           - daemonsets
+          {{- if eq .Values.cluster.type "OPENSHIFT_CLUSTER" }}
+          - deploymentconfigs
+          {{- end }}
     namespaceSelector:
       matchExpressions:
       - key: namespace.metadata.stackrox.io/name
@@ -293,6 +296,7 @@ webhooks:
           - stackrox
           - kube-system
           - kube-public
+          - istio-system
     failurePolicy: Ignore
     clientConfig:
       caBundle: {{ .Files.Get "secrets/ca.pem" | b64enc }}

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/common"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/daemonset"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/deployment"
+	"github.com/stackrox/rox/sensor/kubernetes/enforcer/deploymentconfig"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/replicaset"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/replicationcontroller"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/statefulset"
@@ -26,23 +27,27 @@ func (e *enforcerImpl) scaleToZero(ctx context.Context, enforcement *central.Sen
 	switch deploymentInfo.GetDeploymentType() {
 	case pkgKubernetes.Deployment:
 		function = func(ctx context.Context) error {
-			return deployment.EnforceZeroReplica(ctx, e.client, deploymentInfo)
+			return deployment.EnforceZeroReplica(ctx, e.client.Kubernetes(), deploymentInfo)
+		}
+	case pkgKubernetes.DeploymentConfig:
+		function = func(ctx context.Context) error {
+			return deploymentconfig.EnforceZeroReplica(ctx, e.client.Openshift(), deploymentInfo)
 		}
 	case pkgKubernetes.DaemonSet:
 		function = func(ctx context.Context) error {
-			return daemonset.EnforceZeroReplica(ctx, e.client, deploymentInfo)
+			return daemonset.EnforceZeroReplica(ctx, e.client.Kubernetes(), deploymentInfo)
 		}
 	case pkgKubernetes.ReplicaSet:
 		function = func(ctx context.Context) error {
-			return replicaset.EnforceZeroReplica(ctx, e.client, deploymentInfo)
+			return replicaset.EnforceZeroReplica(ctx, e.client.Kubernetes(), deploymentInfo)
 		}
 	case pkgKubernetes.ReplicationController:
 		function = func(ctx context.Context) error {
-			return replicationcontroller.EnforceZeroReplica(ctx, e.client, deploymentInfo)
+			return replicationcontroller.EnforceZeroReplica(ctx, e.client.Kubernetes(), deploymentInfo)
 		}
 	case pkgKubernetes.StatefulSet:
 		function = func(ctx context.Context) error {
-			return statefulset.EnforceZeroReplica(ctx, e.client, deploymentInfo)
+			return statefulset.EnforceZeroReplica(ctx, e.client.Kubernetes(), deploymentInfo)
 		}
 	default:
 		return fmt.Errorf("unknown type: %s", deploymentInfo.GetDeploymentType())
