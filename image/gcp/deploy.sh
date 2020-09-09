@@ -149,8 +149,8 @@ try_install_sensor() {
     roxctl --endpoint central.stackrox:443 --password "$(cat /tmp/stackrox/password)" sensor generate k8s \
     --central central.stackrox:443 \
     --collection-method "$collection_method" \
-    --collector-image "$collector_image" \
-    --image "$(cat /data/values/main-image | sed 's/[:@].*//')" \
+    --collector-image-repository "$collector_image" \
+    --main-image-repository "$(cat /data/values/main-image | sed 's/[:@].*//')" \
     --name "$cluster_name"
 
     if [[ "$?" -ne 0 ]]; then

@@ -30,7 +30,7 @@ fi
 
 API_ENDPOINT="${API_ENDPOINT-:localhost:8000}"
 
-get_cluster_zip "${API_ENDPOINT}" "mock-cluster-$1" KUBERNETES_CLUSTER "$MAIN_IMAGE" "central.stackrox:443" "$DIR" "true" ""
+get_cluster_zip "${API_ENDPOINT}" "mock-cluster-$1" KUBERNETES_CLUSTER "$MAIN_IMAGE" "central.stackrox:443" "$DIR" "default" ""
 
 unzip_dir="$DIR/sensor-deploy"
 rm -rf "$unzip_dir"

@@ -31,6 +31,12 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
    `roxctl sensor get-bundle`. The interactive installer (`roxctl central generate interactive`) will also prompt for
    this configuration option.
 - Support for enforcing policies on DeploymentConfig resources in Openshift.
+- The following deprecated roxctl flags have been removed for the command `sensor generate`:
+  - `--admission-controller` (replaced by `--create-admission-controller`)
+  - `--image` (replaced by `--main-image-repository`)
+  - `--collector-image` (replaced by `--collector-image-repository`
+  - `--runtime` (`--collection-method` is to be used instead)
+  - `--monitoring-endpoint`
 
 ## [48.0]
 - UI: Hovering over a namespace edge in the Network Graph will show the ports and protocols for it's connections (ROX-5228).

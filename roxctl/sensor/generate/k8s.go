@@ -8,14 +8,6 @@ import (
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
-const (
-	warningDeprecatedAdmissionControllerFlagSet = `WARNING: The --admission-controller flag has been renamed to --create-admission-controller and will be removed
-in future versions of roxctl. Please use --create-admission-controller to suppress this warning
-text and avoid breakages in the future.`
-	errorDeprecatedAndNewAdmissionControllerFlagSet = `It is illegal to specify both the --admission-controller and --create-admission-controller flags.
-Please use --create-admission-controller exclusively in all invocations.`
-)
-
 func k8s() *cobra.Command {
 	c := &cobra.Command{
 		Use: "k8s",

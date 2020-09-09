@@ -81,7 +81,7 @@ function wait_for_central {
 #   - image reference (e.g., stackrox/main:$(git describe --tags --abbrev=10 --dirty))
 #   - central API endpoint reachable from the container (e.g., my-host:8080)
 #   - directory to drop files in
-#   - runtime support (collection method)
+#   - collection method
 #   - extra fields in JSON format (a leading comma MUST be added; a trailing comma must NOT be added)
 function get_cluster_zip {
     LOCAL_API_ENDPOINT="$1"
@@ -90,20 +90,22 @@ function get_cluster_zip {
     CLUSTER_IMAGE="$4"
     CLUSTER_API_ENDPOINT="$5"
     OUTPUT_DIR="$6"
-    RUNTIME_SUPPORT="$7"
+    COLLECTION_METHOD="$7"
     EXTRA_JSON="$8"
 
-    RUNTIME_ENUM=""
-    if [[ "$RUNTIME_SUPPORT" == "ebpf" ]]; then
-      RUNTIME_ENUM="EBPF"
-    elif [[ "$RUNTIME_SUPPORT" == "kernel-module" ]]; then
-      RUNTIME_ENUM="KERNEL_MODULE"
+    COLLECTION_METHOD_ENUM="default"
+    if [[ "$COLLECTION_METHOD" == "ebpf" ]]; then
+      COLLECTION_METHOD_ENUM="EBPF"
+    elif [[ "$COLLECTION_METHOD" == "kernel-module" ]]; then
+      COLLECTION_METHOD_ENUM="KERNEL_MODULE"
+    elif [[ "$COLLECTION_METHOD" == "none" ]]; then
+      COLLECTION_METHOD_ENUM="NO_COLLECTION"
     else
-      RUNTIME_ENUM="NO_COLLECTION"
+      echo "Unknown collection method '$COLLECTION_METHOD', using default collection-method."
     fi
 
     echo "Creating a new cluster"
-    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"main_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\", \"collection_method\": \"$RUNTIME_ENUM\", \"admission_controller\": $ADMISSION_CONTROLLER $EXTRA_JSON}"
+    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"main_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\", \"collection_method\": \"$COLLECTION_METHOD_ENUM\", \"admission_controller\": $ADMISSION_CONTROLLER $EXTRA_JSON}"
 
     TMP=$(mktemp)
     STATUS=$(curl_central -X POST \

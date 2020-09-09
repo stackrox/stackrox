@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/pflag/autobool"
 	"github.com/stackrox/rox/roxctl/sensor/util"
@@ -27,20 +26,6 @@ import (
 )
 
 const (
-	warningDeprecatedImageFlagSet = `WARNING: The --image flag has been renamed to --main-image-repository and will be removed in future versions of roxctl.
-Please use --main-image-repository to suppress this warning text and avoid breakages in the future.`
-
-	errorDeprecatedAndNewImageFlagSet = `It is illegal to specify both the --image and --main-image-repository flags.
-Please use --main-image-repository exclusively in all invocations.`
-
-	warningDeprecatedCollectorImageFlagSet = `WARNING: The --collector-image flag has been renamed to --collector-image-repository and will be removed in future versions of roxctl.
-Please use --collector-image-repository to suppress this warning text and avoid breakages in the future.`
-	errorDeprecatedAndNewCollectorImageFlagSet = `It is illegal to specify both the --collector-image and --collector-image-repository flags.
-Please use --collector-image-repository exclusively in all invocations.`
-
-	warningDeprecatedFlagMonitoringEndpointUsed = `WARNING: The flag --monitoring-endpoint has been deprecated and has no impact. It will be removed in a future version of roxctl.
-Remove it from your invocations of roxctl to avoid future breakages.`
-
 	infoDefaultingToSlimCollector          = `Defaulting to slim collector image since kernel probes seem to be available for central.`
 	infoDefaultingToComprehensiveCollector = `Defaulting to comprehensive collector image since kernel probes seem to be unavailable for central.`
 )
@@ -133,55 +118,10 @@ func fullClusterCreation(timeout time.Duration) error {
 
 // Command defines the sensor generate command tree
 func Command() *cobra.Command {
-	var monitoringEndpointNoop string
-
 	c := &cobra.Command{
 		Use: "generate",
 		Run: func(c *cobra.Command, _ []string) {
 			_ = c.Help()
-		},
-		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
-			// Print deprecation warnings. Note that we print out an additional newline in order to seperate
-			// the warning from the rest of the program output.
-
-			// Can be removed in a future release.
-			if c.Flags().Lookup("monitoring-endpoint").Changed {
-				fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedFlagMonitoringEndpointUsed)
-			}
-
-			// Migration process for renaming "--image" parameter to "--main-image-repository".
-			// Can be removed in a future release.
-			if c.PersistentFlags().Lookup("image").Changed && c.PersistentFlags().Lookup("main-image-repository").Changed {
-				fmt.Fprintln(os.Stderr, errorDeprecatedAndNewImageFlagSet)
-				return errors.New("Specified deprecated flag --image and new flag --main-image-repository at the same time")
-			}
-			if c.PersistentFlags().Lookup("image").Changed {
-				fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedImageFlagSet)
-			}
-
-			// Migration process for renaming "--collector-image" parameter to "--collector-image-repository".
-			// Can be removed in a future release.
-			if c.PersistentFlags().Lookup("collector-image").Changed && c.PersistentFlags().Lookup("collector-image-repository").Changed {
-				fmt.Fprintln(os.Stderr, errorDeprecatedAndNewCollectorImageFlagSet)
-				return errors.New("Specified deprecated flag --collector-image and new flag --collector-image-repository at the same time")
-			}
-			if c.PersistentFlags().Lookup("collector-image").Changed {
-				fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedCollectorImageFlagSet)
-			}
-
-			// Migration process for renaming "--admission-controller" parameter to "--create-admission-controller".
-			// Can be removed in a future release.
-			if c.PersistentFlags().Lookup("admission-controller").Changed && c.PersistentFlags().Lookup("create-admission-controller").Changed {
-				// Add extra newline to delimit the warning from regular program output.
-				fmt.Fprintln(os.Stderr, errorDeprecatedAndNewAdmissionControllerFlagSet)
-				return errors.New("Specified deprecated flag --admission-controller and new flag --create-admission-controller at the same time")
-			}
-			if c.PersistentFlags().Lookup("admission-controller").Changed {
-				// Add extra newline to delimit the warning from regular program output.
-				fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedAdmissionControllerFlagSet)
-			}
-
-			return nil
 		},
 	}
 
@@ -189,17 +129,8 @@ func Command() *cobra.Command {
 	c.PersistentFlags().BoolVar(&continueIfExists, "continue-if-exists", false, "continue with downloading the sensor bundle even if the cluster already exists")
 	c.PersistentFlags().StringVar(&cluster.Name, "name", "", "cluster name to identify the cluster")
 	c.PersistentFlags().StringVar(&cluster.CentralApiEndpoint, "central", "central.stackrox:443", "endpoint that sensor should connect to")
-	c.PersistentFlags().StringVar(&cluster.MainImage, "image", defaults.MainImageRepo(), "image repo sensor should be deployed with")
-	utils.Must(c.PersistentFlags().MarkHidden("image"))
 	c.PersistentFlags().StringVar(&cluster.MainImage, "main-image-repository", defaults.MainImageRepo(), "image repository sensor should be deployed with")
-	c.PersistentFlags().StringVar(&cluster.CollectorImage, "collector-image", "", "image repo collector should be deployed with (leave blank to use default)")
-	utils.Must(c.PersistentFlags().MarkHidden("collector-image"))
 	c.PersistentFlags().StringVar(&cluster.CollectorImage, "collector-image-repository", "", "image repository collector should be deployed with (leave blank to use default)")
-
-	c.PersistentFlags().StringVar(&monitoringEndpointNoop, "monitoring-endpoint", "", "endpoint for monitoring (DEPRECATED)")
-	utils.Must(c.PersistentFlags().MarkHidden("monitoring-endpoint"))
-
-	c.PersistentFlags().BoolVar(&cluster.RuntimeSupport, "runtime", true, "whether or not to have runtime support (DEPRECATED, use Collection Method instead)")
 
 	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &cluster.CollectionMethod}, "collection-method", "which collection method to use for runtime support (none, default, kernel-module, ebpf)")
 
@@ -218,9 +149,7 @@ func Command() *cobra.Command {
 		slimCollectorP = pointers.Bool(false)
 	}
 
-	c.PersistentFlags().BoolVar(&cluster.AdmissionController, "admission-controller", false, "whether or not to use an admission controller for enforcement")
 	c.PersistentFlags().BoolVar(&cluster.AdmissionController, "create-admission-controller", false, "whether or not to use an admission controller for enforcement")
-	utils.Must(c.PersistentFlags().MarkHidden("admission-controller"))
 	if features.AdmissionControlEnforceOnUpdate.Enabled() {
 		c.PersistentFlags().BoolVar(&cluster.AdmissionControllerUpdates, "admission-controller-listen-on-updates", false, "whether or not to configure the admission controller webhook to listen on object updates")
 	}

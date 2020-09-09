@@ -261,7 +261,7 @@ function launch_sensor {
     local extra_json_config=()
 
     if [[ "$ADMISSION_CONTROLLER" == "true" ]]; then
-    	extra_config+=("--admission-controller=true")
+        extra_config+=("--create-admission-controller=true")
     	extra_json_config+=', "admissionController": true'
     fi
     if [[ "$ADMISSION_CONTROLLER_UPDATES" == "true" ]]; then
@@ -270,7 +270,7 @@ function launch_sensor {
     fi
 
     if [[ -n "$COLLECTOR_IMAGE_REPO" ]]; then
-        extra_config+=("--collector-image=${COLLECTOR_IMAGE_REPO}")
+        extra_config+=("--collector-image-repository=${COLLECTOR_IMAGE_REPO}")
     fi
 
     # Disabled this special-case for now.
@@ -291,13 +291,13 @@ function launch_sensor {
 
     if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }
-        roxctl -p ${ROX_ADMIN_PASSWORD} --endpoint "${API_ENDPOINT}" sensor generate --image="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
-             --collection-method="$RUNTIME_SUPPORT" \
+        roxctl -p ${ROX_ADMIN_PASSWORD} --endpoint "${API_ENDPOINT}" sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
+             --collection-method="$COLLECTION_METHOD" \
              "${ORCH}" \
              "${extra_config[@]+"${extra_config[@]}"}"
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
     else
-        get_cluster_zip "$API_ENDPOINT" "$CLUSTER" ${CLUSTER_TYPE} "${MAIN_IMAGE_REPO}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$RUNTIME_SUPPORT" "$extra_json_config"
+        get_cluster_zip "$API_ENDPOINT" "$CLUSTER" ${CLUSTER_TYPE} "${MAIN_IMAGE_REPO}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
         unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
         rm "$k8s_dir/sensor-deploy.zip"
     fi

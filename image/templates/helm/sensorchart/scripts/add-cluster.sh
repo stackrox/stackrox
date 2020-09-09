@@ -42,7 +42,6 @@ type: kubernetes.io/dockerconfigjson
 EOF
 fi
 
-runtimeSupport=false
 if [ "${config_collectionMethod}" != "NO_COLLECTION" ]; then
   if ! ${KUBE_COMMAND} get secret/collector-stackrox -n stackrox &>/dev/null; then
     registry_auth="$("${DIR}/docker-auth.sh" -m k8s "${image_registry_collector}")"
@@ -58,7 +57,6 @@ metadata:
 type: kubernetes.io/dockerconfigjson
 EOF
   fi
-  runtimeSupport=true
 fi
 
 # add cluster
@@ -68,7 +66,6 @@ fi
   --arg mimage "${image_registry_main}/${image_repository_main}" \
   --arg cimage "${image_registry_collector}/${image_repository_collector}" \
   --arg ce "${endpoint_central}" \
-  --argjson rs "${runtimeSupport}" \
   --arg cm "${config_collectionMethod}" \
   --argjson ac "${config_admissionControl_createService}" \
   --argjson acu "${config_admissionControl_listenOnUpdates}" \
@@ -81,7 +78,7 @@ fi
   --arg ro "${config_registryOverride}" \
   --argjson td "${config_disableTaintTolerations}" \
   '{"cluster": { "name": $cn, "type": $ct, "mainImage": $mimage, "collectorImage": $cimage,
-  "centralApiEndpoint": $ce, "runtimeSupport": $rs, "collectionMethod": $cm, "admissionController": $ac,
+  "centralApiEndpoint": $ce, "collectionMethod": $cm, "admissionController": $ac,
   "admissionControllerUpdates": $acu, "dynamicConfig": { "admissionControllerConfig": { "enabled": $aes,
   "timeoutSeconds": $to, "scanInline": $si, "enforceOnUpdates": $aeu,
   "disableBypass": $db }, "registryOverride": $ro }, "tolerationsConfig": {"disabled": $td} } }')

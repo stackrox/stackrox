@@ -81,12 +81,9 @@ func validateInput(cluster *storage.Cluster) error {
 func addDefaults(cluster *storage.Cluster) error {
 	// For backwards compatibility reasons, if Collection Method is not set then honor defaults for runtime support
 	if cluster.GetCollectionMethod() == storage.CollectionMethod_UNSET_COLLECTION {
-		if !cluster.GetRuntimeSupport() {
-			cluster.CollectionMethod = storage.CollectionMethod_NO_COLLECTION
-		} else {
-			cluster.CollectionMethod = storage.CollectionMethod_KERNEL_MODULE
-		}
+		cluster.CollectionMethod = storage.CollectionMethod_KERNEL_MODULE
 	}
+	cluster.RuntimeSupport = cluster.GetCollectionMethod() != storage.CollectionMethod_NO_COLLECTION
 
 	if cluster.GetTolerationsConfig() == nil {
 		cluster.TolerationsConfig = &storage.TolerationsConfig{
