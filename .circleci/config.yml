@@ -40,6 +40,12 @@ setupGoogleAppCreds: &setupGoogleAppCreds
       gcloud auth activate-service-account --key-file /tmp/gcp.json
       gcloud auth list
 
+loginToGCR: &loginToGCR
+  run:
+    name: Docker login to gcr.io
+    command: docker login -u _json_key -p "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" https://gcr.io
+    when: always
+
 restoreGoBuildCache: &restoreGoBuildCache
   restore_cache:
     name: Restoring Go build cache
@@ -852,6 +858,7 @@ commands:
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
 
+      - *loginToGCR
       - run:
           name: Destroy EKS cluster
           command: |
@@ -864,7 +871,7 @@ commands:
             docker run --rm -t \
               -v $PWD/eks/data:/data \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              stackrox/eks-automation:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
+              gcr.io/stackrox-infra/automation-flavors/eks:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: on_fail
 
       - run:
@@ -1975,7 +1982,7 @@ jobs:
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.2.9
-      - EKS_AUTOMATION_VERSION: 0.0.1
+      - EKS_AUTOMATION_VERSION: 0.0.3
     steps:
       - checkout
       - restore-npm-deps-cache
@@ -2031,7 +2038,7 @@ jobs:
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.2.9
-      - EKS_AUTOMATION_VERSION: 0.0.1
+      - EKS_AUTOMATION_VERSION: 0.0.3
     steps:
       - checkout
       - *restoreGoModCache
@@ -2069,7 +2076,7 @@ jobs:
     environment:
       - GOPATH: /home/circleci/go
       - KOPS_AUTOMATION_VERSION: 0.2.9
-      - EKS_AUTOMATION_VERSION: 0.0.1
+      - EKS_AUTOMATION_VERSION: 0.0.3
     resource_class: large
     steps:
       - checkout
@@ -2125,7 +2132,7 @@ jobs:
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.2.9
-      - EKS_AUTOMATION_VERSION: 0.0.1
+      - EKS_AUTOMATION_VERSION: 0.0.3
     steps:
       - checkout
       - setup_remote_docker
@@ -2207,7 +2214,7 @@ jobs:
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.2.9
-      - EKS_AUTOMATION_VERSION: 0.0.1
+      - EKS_AUTOMATION_VERSION: 0.0.3
     steps:
       - checkout
       - setup_remote_docker
@@ -2270,7 +2277,7 @@ jobs:
     executor: custom
     environment:
       - KOPS_AUTOMATION_VERSION: 0.2.9
-      - EKS_AUTOMATION_VERSION: 0.0.1
+      - EKS_AUTOMATION_VERSION: 0.0.3
     steps:
       - checkout
       - setup_remote_docker
@@ -2406,7 +2413,7 @@ jobs:
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.2.9
-      - EKS_AUTOMATION_VERSION: 0.0.1
+      - EKS_AUTOMATION_VERSION: 0.0.3
     steps:
       - checkout
       - setup_remote_docker
@@ -2470,7 +2477,7 @@ jobs:
   provision-eks-api-e2e-tests:
     executor: custom
     environment:
-      - EKS_AUTOMATION_VERSION: 0.0.1
+      - EKS_AUTOMATION_VERSION: 0.0.3
     steps:
       - checkout
       - check-label-exists-or-skip:
@@ -2479,13 +2486,10 @@ jobs:
 
       - setup_remote_docker
 
-      - run:
-          name: Login to Docker Hub
-          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
-
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
 
+      - *loginToGCR
       - run:
           name: Create EKS cluster
           command: |
@@ -2493,7 +2497,7 @@ jobs:
             docker run --name eks-automation -t \
               -v $PWD/eks:/data \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              stackrox/eks-automation:$EKS_AUTOMATION_VERSION create "${CIRCLE_WORKFLOW_ID:0:7}"
+              gcr.io/stackrox-infra/automation-flavors/eks:$EKS_AUTOMATION_VERSION create "${CIRCLE_WORKFLOW_ID:0:7}"
             docker cp eks-automation:/data $PWD/eks
 
       - run:
@@ -2521,7 +2525,7 @@ jobs:
             docker run --rm -t \
               -v $PWD/eks/data:/data \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              stackrox/eks-automation:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
+              gcr.io/stackrox-infra/automation-flavors/eks:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: on_fail
 
   provision-kops-api-e2e-tests:
@@ -3714,7 +3718,7 @@ jobs:
   eks-api-e2e-tests:
     executor: custom
     environment:
-      - EKS_AUTOMATION_VERSION: 0.0.1
+      - EKS_AUTOMATION_VERSION: 0.0.3
       - LOCAL_PORT: 8000
       - COLLECTION_METHOD: kernel-module
       - MONITORING_SUPPORT: true
@@ -3793,13 +3797,14 @@ jobs:
       - *storeK8sLogs
       - *storeQALogs
 
+      - *loginToGCR
       - run:
           name: Destroy EKS cluster
           command: |
             docker run --rm -t \
               -v $PWD/eks/data:/data \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              stackrox/eks-automation:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
+              gcr.io/stackrox-infra/automation-flavors/eks:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: always
 
   kops-api-e2e-tests:
