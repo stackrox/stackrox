@@ -260,9 +260,9 @@ func (b *storeImpl) writeImageCVEEdges(txn *dackbox.Transaction, edges map[strin
 	for _, edge := range edges {
 		// If image-cve edge exists, it means we have already determined and stored its first image occurrence.
 		// If not, this is the first image occurrence.
-		if msg, err := imageCVEEdgeDackBox.Reader.ReadIn(imageCVEEdgeDackBox.BucketHandler.GetKey(edge.GetId()), txn); err != nil {
+		if exists, err := imageCVEEdgeDackBox.Reader.ExistsIn(imageCVEEdgeDackBox.BucketHandler.GetKey(edge.GetId()), txn); err != nil {
 			return err
-		} else if msg != nil {
+		} else if exists {
 			continue
 		}
 
