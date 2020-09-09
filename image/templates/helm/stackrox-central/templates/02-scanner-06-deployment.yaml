@@ -30,7 +30,7 @@ spec:
         traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
         {{- include "srox.defaultAnnotations" . | nindent 8 }}
     spec:
-      {{- if ._rox.env.openshift -}}
+      {{- if ._rox.env.openshift }}
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

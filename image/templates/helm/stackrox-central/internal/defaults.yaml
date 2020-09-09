@@ -27,6 +27,16 @@ defaults:
         memory: "8Gi"
         cpu: "2000m"
 
+    exposure:
+      loadBalancer:
+        enabled: false
+        port: 443
+      nodePort:
+        enabled: false
+        port: null
+      route:
+        enabled: false
+
   scanner:
     disable: false
     replicas: 3

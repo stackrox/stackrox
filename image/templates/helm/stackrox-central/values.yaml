@@ -161,6 +161,26 @@
 #    none: null
 #
 #
+#  exposure:
+#
+#    # LoadBalancer configuration.
+#    # Disabled by default.
+#    # Default port is 443.
+#    loadBalancer:
+#      enabled: null
+#      port: null
+#
+#    # NodePort configuration.
+#    # Disabled by default.
+#    nodePort:
+#      enabled: null
+#      port: null
+#
+#    # Route configuration.
+#    # Disabled by default.
+#    route:
+#      enabled: null
+#
 #
 ## Configuration options relating to StackRox Scanner.
 #scanner:

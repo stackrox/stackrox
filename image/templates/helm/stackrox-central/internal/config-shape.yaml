@@ -50,6 +50,16 @@ central:
       storageClass: null # string
       size: null # int | string
     none: null # bool
+  exposure:
+    loadBalancer:
+      enabled: null # bool
+      port: null # int
+    nodePort:
+      enabled: null # bool
+      port: null # int
+    route:
+      enabled: null # bool
+
 scanner:
   disable: null # bool
   replicas: null # int

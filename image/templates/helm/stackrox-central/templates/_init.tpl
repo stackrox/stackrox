@@ -274,6 +274,29 @@
 
 
 {{/*
+    Exposure configuration setup & sanity checks.
+   */}}
+{{ if $._rox.central.exposure.loadBalancer.enabled }}
+  {{ include "srox.note" (list $ (printf "Exposing StackRox Central via LoadBalancer service.")) }}
+{{ end }}
+{{ if $._rox.central.exposure.nodePort.enabled }}
+  {{ include "srox.note" (list $ (printf "Exposing StackRox Central via NodePort service.")) }}
+{{ end }}
+{{ if $._rox.central.exposure.route.enabled }}
+  {{ if not $env.openshift }}
+    {{ include "srox.fail" (printf "The exposure method 'Route' is only available on OpenShift clusters.") }}
+  {{ end }}
+  {{ include "srox.note" (list $ (printf "Exposing StackRox Central via OpenShift Route https://central.%s." $.Release.Namespace)) }}
+{{ end }}
+
+{{ if not (or $._rox.central.exposure.loadBalancer.enabled $._rox.central.exposure.nodePort.enabled $._rox.central.exposure.route.enabled) }}
+  {{ include "srox.note" (list $ "Not exposing StackRox Central, it will only be reachable cluster-internally.") }}
+  {{ include "srox.note" (list $ "To enable exposure via LoadBalancer service, use --set central.exposure.loadBalancer.enabled=true.") }}
+  {{ include "srox.note" (list $ "To enable exposure via NodePort service, use --set central.exposure.nodePort.enabled=true.") }}
+  {{ include "srox.note" (list $ (printf "To acccess StackRox Central via a port-forward on your local port 18443, run: kubectl -n %s port-forward svc/central 18443:443." .Release.Namespace)) }}
+{{ end }}
+
+{{/*
     Scanner setup.
    */}}
 
