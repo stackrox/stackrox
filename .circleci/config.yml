@@ -3374,6 +3374,9 @@ jobs:
             cci-export MAIN_IMAGE_TAG "$(make --quiet tag CIRCLE_TAG=)"
             ./deploy/k8s/central.sh
 
+            # Remove the scanner HPA for these tests to avoid resource throttling
+            kubectl -n stackrox delete hpa/scanner
+
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
             cci-export ROX_USERNAME "$ROX_USERNAME"
             cci-export ROX_PASSWORD "$ROX_PASSWORD"
@@ -3425,7 +3428,7 @@ jobs:
       - *waitForAPI
       - validate-upgrade:
           upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
-          desc: "Validate rollback to BadgerDB once migrations have been performed on RocksDB"
+          desc: "Validate roll forward to RocksDB from RocksDB on 44"
       - check-stackrox-logs:
           collect: true
 
