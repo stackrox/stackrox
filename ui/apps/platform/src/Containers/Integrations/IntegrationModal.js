@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
+
 import { actions } from 'reducers/integrations';
 import { createStructuredSelector } from 'reselect';
 import * as Icon from 'react-feather';
@@ -58,6 +59,23 @@ class IntegrationModal extends Component {
             onlyOneIntegrationAllowed: false,
             selection: [],
         };
+    }
+
+    // TODO: refactor Integration page to use Formik,
+    //       so this check will not be necessary when editing AWS Security Hub integration
+    // eslint-disable-next-line camelcase
+    UNSAFE_componentWillReceiveProps(prevProps) {
+        const { selectedIntegration } = this.state;
+        if (selectedIntegration) {
+            const integrationToCheck = prevProps.integrations.find(
+                (item) => item.id === selectedIntegration.id
+            );
+            if (integrationToCheck) {
+                if (integrationToCheck !== selectedIntegration) {
+                    this.setState({ selectedIntegration: integrationToCheck });
+                }
+            }
+        }
     }
 
     componentWillUnmount() {
