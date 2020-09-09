@@ -222,6 +222,7 @@ func main() {
 
 	// Start the prometheus metrics server
 	pkgMetrics.NewDefaultHTTPServer().RunForever()
+	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
 	var restartingFlag concurrency.Flag
 

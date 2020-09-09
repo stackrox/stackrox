@@ -37,6 +37,7 @@ func main() {
 
 	// Start the prometheus metrics server
 	metrics.NewDefaultHTTPServer().RunForever()
+	metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, os.Interrupt, unix.SIGTERM)
