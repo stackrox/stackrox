@@ -1,4 +1,5 @@
-import dateFns from 'date-fns';
+import cloneDeep from 'lodash/cloneDeep';
+
 import { selectors, clustersUrl } from '../constants/ClustersPage';
 import { clusters as clustersApi, metadata as metadataApi } from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
@@ -46,125 +47,135 @@ describe('Clusters page', () => {
     });
 });
 
-describe('Cluster Cert Expiration', () => {
+describe('Cluster Certificate Expiration', () => {
     withAuth();
 
-    // TODO Replace modified cluster API response with health.json fixtures.
-    // Make a request to the clusters API, and modify it to have the changes we need.
-    // Do it this way to avoid having to deal with the overhead of maintaining full-blown fixtures.
-    const getModifiedMockCluster = (
-        cluster,
-        expiry,
-        upgradeStatusOutOfDate,
-        recentCertRotationUpgradeTime
-    ) => {
-        const modifiedCluster = { ...cluster };
-        modifiedCluster.status.certExpiryStatus = { sensorCertExpiry: expiry };
-        if (upgradeStatusOutOfDate) {
-            modifiedCluster.status.upgradeStatus.upgradability = 'AUTO_UPGRADE_POSSIBLE';
-        } else {
-            modifiedCluster.status.upgradeStatus.upgradability = 'UP_TO_DATE';
-        }
-        if (recentCertRotationUpgradeTime) {
-            modifiedCluster.status.upgradeStatus.mostRecentProcess = {
-                type: 'CERT_ROTATION',
-                initiatedAt: recentCertRotationUpgradeTime,
-                progress: {
-                    upgradeState: 'UPGRADE_COMPLETE',
-                },
-            };
-        } else {
-            modifiedCluster.status.upgradeStatus.mostRecentProcess = null;
-        }
-        return modifiedCluster;
-    };
+    let clustersFixture;
 
-    const openSidePanelWithMockedClusters = (mockCluster) => {
+    before(function beforeHook() {
+        cy.fixture('clusters/health.json').then((clustersArg) => {
+            clustersFixture = clustersArg;
+        });
+    });
+
+    // For comparison to `lastContact` and `sensorCertExpiry` in clusters fixture.
+    const currentDatetime = new Date('2020-08-31T13:01:00Z');
+
+    beforeEach(() => {
         cy.server();
-        cy.route('GET', clustersApi.single, { cluster: mockCluster }).as('cluster');
+        cy.route('GET', clustersApi.list, clustersFixture).as('GetClusters');
+        cy.route('GET', metadataApi, {
+            version: '3.0.50.0', // for comparison to `sensorVersion` in clusters fixture
+            buildFlavor: 'release',
+            releaseBuild: true,
+            licenseStatus: 'VALID',
+        }).as('GetMetadata');
+
+        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
 
         cy.visit(clustersUrl);
-        cy.get(`${selectors.clusters.tableRowGroup}:first-child`).click();
-        cy.wait('@cluster');
+        cy.wait(['@GetClusters', '@GetMetadata']);
+    });
 
-        cy.get(selectors.sidePanel);
-    };
+    describe('Credential Expiration status is Healthy', () => {
+        it('should not show link or form', () => {
+            const { clusters } = clustersFixture;
+            const n = clusters.findIndex((cluster) => cluster.name === 'kappa-kilogramme-10');
+            const cluster = clusters[n];
 
-    it('should not show button if expiration is more than 30 days away', () => {
-        const mockExpiry = dateFns.addDays(new Date(), 31);
-        cy.fixture('clusters/single-cluster-with-status.json').then((resp) => {
-            const certCluster = getModifiedMockCluster(resp.cluster, mockExpiry);
-
-            openSidePanelWithMockedClusters(certCluster);
+            cy.route('GET', clustersApi.single, { cluster }).as('GetCluster');
+            cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
+            cy.wait('@GetCluster');
 
             cy.get(selectors.clusterHealth.credentialExpiration).should('have.text', 'in 1 month');
             cy.get(selectors.clusterHealth.reissueCertificatesLink).should('not.exist');
+            cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('not.exist');
+            cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('not.exist');
             cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
         });
     });
 
-    describe('should show warning if expiration is less than 30 days away', () => {
-        const mockExpiry = dateFns.addDays(new Date(), 29);
-        const expectedExpirationPhrase = 'in 28 days';
+    describe('Sensor is not up to date with Central', () => {
+        const expectedExpiration = 'in 6 days on Monday'; // Unhealthy
 
-        it('should disable auto-upgrade option if sensor is not up-to-date', () => {
-            cy.fixture('clusters/single-cluster-with-status.json').then((resp) => {
-                const outdatedCluster = getModifiedMockCluster(resp.cluster, mockExpiry, true);
+        it('should disable the upgrade option', () => {
+            const { clusters } = clustersFixture;
+            const n = clusters.findIndex((cluster) => cluster.name === 'epsilon-edison-5');
+            const cluster = clusters[n];
 
-                openSidePanelWithMockedClusters(outdatedCluster);
+            cy.route('GET', clustersApi.single, { cluster }).as('GetCluster');
+            cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
+            cy.wait('@GetCluster');
 
-                cy.get(selectors.clusterHealth.credentialExpiration).should((element) => {
-                    expect(element.text()).to.contain(expectedExpirationPhrase);
-                });
-                cy.get(selectors.clusterHealth.reissueCertificatesLink);
-
-                cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('be.enabled');
-                cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('be.disabled');
-                cy.get(selectors.clusterHealth.reissueCertificateButton).should('be.enabled');
-            });
+            cy.get(selectors.clusterHealth.credentialExpiration).should(
+                'have.text',
+                expectedExpiration
+            );
+            cy.get(selectors.clusterHealth.reissueCertificatesLink);
+            cy.get(selectors.clusterHealth.downloadToReissueCertificate)
+                .should('be.enabled')
+                .should('be.checked');
+            cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('be.disabled');
+            cy.get(selectors.clusterHealth.reissueCertificateButton).should('be.enabled');
         });
 
-        it('should enable auto-upgrade option if sensor is up-to-date', () => {
-            cy.fixture('clusters/single-cluster-with-status.json').then((resp) => {
-                const outdatedCluster = getModifiedMockCluster(resp.cluster, mockExpiry);
+        // TODO mock Download YAML file for it('should display a message for success instead of the form')
+    });
 
-                openSidePanelWithMockedClusters(outdatedCluster);
+    describe('Sensor is up to date with Central', () => {
+        const expectedExpiration = 'in 29 days on 09/29/2020'; // Degraded
 
-                cy.get(selectors.clusterHealth.credentialExpiration).should((element) => {
-                    expect(element.text()).to.contain(expectedExpirationPhrase);
-                });
-                cy.get(selectors.clusterHealth.reissueCertificatesLink);
+        it('should enable the upgrade option', () => {
+            const { clusters } = clustersFixture;
+            const n = clusters.findIndex((cluster) => cluster.name === 'eta-7');
+            const cluster = clusters[n];
 
-                cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('be.enabled');
-                cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('be.enabled');
-                cy.get(selectors.clusterHealth.reissueCertificateButton).should('be.enabled');
-            });
+            cy.route('GET', clustersApi.single, { cluster }).as('GetCluster');
+            cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
+            cy.wait('@GetCluster');
+
+            cy.get(selectors.clusterHealth.credentialExpiration).should(
+                'have.text',
+                expectedExpiration
+            );
+            cy.get(selectors.clusterHealth.reissueCertificatesLink);
+            cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('be.enabled');
+            cy.get(selectors.clusterHealth.upgradeToReissueCertificate)
+                .should('be.enabled')
+                .should('be.checked');
+            cy.get(selectors.clusterHealth.reissueCertificateButton).should('be.enabled');
         });
 
-        it('should show result of recent upgrade instead of button', () => {
-            const mockCertRotationTime = dateFns.addMinutes(new Date(), -5);
+        it('should display a message for success instead of the form', () => {
+            const { clusters } = clustersFixture;
+            const n = clusters.findIndex((cluster) => cluster.name === 'eta-7');
+            const cluster = cloneDeep(clusters[n]);
 
-            cy.fixture('clusters/single-cluster-with-status.json').then((resp) => {
-                const outdatedCluster = getModifiedMockCluster(
-                    resp.cluster,
-                    mockExpiry,
-                    false,
-                    mockCertRotationTime
-                );
+            // Mock the result of using an automatic upgrade to re-issue the certificate.
+            cluster.status.upgradeStatus.mostRecentProcess = {
+                type: 'CERT_ROTATION',
+                initiatedAt: currentDatetime,
+                progress: {
+                    upgradeState: 'UPGRADE_COMPLETE',
+                },
+            };
 
-                openSidePanelWithMockedClusters(outdatedCluster);
+            cy.route('GET', clustersApi.single, { cluster }).as('GetCluster');
+            cy.get(`${selectors.clusters.tableRowGroup}:nth-child(${n + 1})`).click();
+            cy.wait('@GetCluster');
 
-                cy.get(selectors.clusterHealth.credentialExpiration).should((element) => {
-                    expect(element.text()).to.contain(expectedExpirationPhrase);
-                });
-                cy.get(selectors.clusterHealth.reissueCertificatesLink);
-
-                cy.get(selectors.clusterHealth.upgradedToReissueCertificate).should(
-                    'contain',
-                    'An automatic upgrade applied new credentials to the cluster'
-                );
-                cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
-            });
+            cy.get(selectors.clusterHealth.credentialExpiration).should(
+                'have.text',
+                expectedExpiration
+            );
+            cy.get(selectors.clusterHealth.reissueCertificatesLink);
+            cy.get(selectors.clusterHealth.upgradedToReissueCertificate).should(
+                'have.text',
+                'An automatic upgrade applied new credentials to the cluster 0 seconds ago.'
+            );
+            cy.get(selectors.clusterHealth.downloadToReissueCertificate).should('not.exist');
+            cy.get(selectors.clusterHealth.upgradeToReissueCertificate).should('not.exist');
+            cy.get(selectors.clusterHealth.reissueCertificateButton).should('not.exist');
         });
     });
 });
@@ -271,22 +282,18 @@ describe('Cluster Health', () => {
         });
     });
 
-    // For comparison to `lastContact` and `sensorCertExpiry` in clusters fixture.
-    const currentDatetime = new Date('2020-08-31T13:01:00Z');
-
-    // For comparison to `sensorVersion` in clusters fixture.
-    const version = '3.0.50.0';
-
     beforeEach(() => {
         cy.server();
         cy.route('GET', clustersApi.list, clustersFixture).as('GetClusters');
         cy.route('GET', metadataApi, {
-            version,
+            version: '3.0.50.0', // for comparison to `sensorVersion` in clusters fixture
             buildFlavor: 'release',
             releaseBuild: true,
             licenseStatus: 'VALID',
         }).as('GetMetadata');
 
+        // For comparison to `lastContact` and `sensorCertExpiry` in clusters fixture.
+        const currentDatetime = new Date('2020-08-31T13:01:00Z');
         cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
 
         cy.visit(clustersUrl);
