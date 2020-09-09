@@ -47,3 +47,10 @@ export const networkConnections = {
     ACTIVE: 'active',
     ALLOWED: 'allowed',
 };
+
+export const nodeConnectionKeys = {
+    INGRESS_ACTIVE: 'ingressActive',
+    INGRESS_ALLOWED: 'ingressAllowed',
+    EGRESS_ACTIVE: 'egressActive',
+    EGRESS_ALLOWED: 'egressAllowed',
+};

@@ -26,37 +26,69 @@ export const isNodeToNodeEdge = (edge) => edge?.type === edgeTypes.NODE_TO_NODE_
 export const isNodeToNamespaceEdge = (edge) => edge?.type === edgeTypes.NODE_TO_NAMESPACE_EDGE;
 
 /**
+ * Create a key using a source and target with a delimiter in between
+ *
+ * @param {!string} source a string representing the source node
+ * @param {!string} target a string representing the target node
+ * @returns {!string}
+ *
+ * ex: getSourceTargetKey("source", "target") => "source**__**target"
+ */
+export const getSourceTargetKey = (source, target) => {
+    return [source, target].sort().join(LINK_DELIMITER);
+};
+
+/**
+ * Gets the source and target from a node link key
+ *
+ * @param {!string} sourceTargetKey a string representing a key using a source and target
+ * @returns {!String[]}
+ *
+ * ex: getSourceTargetFromKey("source**__**target") => ["source", "target"]
+ */
+export const getSourceTargetFromKey = (sourceTargetKey) => {
+    return sourceTargetKey.split(LINK_DELIMITER);
+};
+
+/**
  * Iterates through a list of nodes and returns only links in the same namespace
  *
  * @param {!Object[]} nodes list of nodes
+ * @param {!Object} networkEdgeMap map of edges in the graph by srcId--tgtId key
+ * @param {!Object} networkNodeMap map of nodes in the graph by nodeId
+ * @param {!string} filterState current filter state
  * @returns {!Object[]}
  */
-export const getLinks = (nodes, networkEdgeMap, networkNodeMap) => {
+export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState) => {
     const filteredLinks = [];
+    // a map of all the edges in the node set to know whether we need to add disallowed edges
+    const filteredEdgeHashTable = {};
+
+    const isActive = (edgeKey) => !!networkEdgeMap[edgeKey]?.active;
+    const isNonIsolated = (nodeId) => !!networkNodeMap[nodeId]?.nonIsolated;
+    const isBetweenNonIsolated = (sourceId, targetId) =>
+        isNonIsolated(sourceId) && isNonIsolated(targetId);
+    const isAllowed = (edgeKey, { source, target, targetNS, sourceNS }) =>
+        sourceNS === 'stackrox' ||
+        targetNS === 'stackrox' ||
+        isBetweenNonIsolated(source, target) ||
+        !!networkEdgeMap[edgeKey]?.allowed;
+    const isDisallowed = (edgeKey, link) =>
+        featureFlags.SHOW_DISALLOWED_CONNECTIONS && isActive(edgeKey) && !isAllowed(edgeKey, link);
 
     nodes.forEach((node) => {
         if (node?.entity?.type !== entityTypes.DEPLOYMENT || !networkEdgeMap) {
             return;
         }
-        const { id: srcDeploymentId, deployment: srcDeployment } = node.entity;
-        const sourceNS = srcDeployment?.namespace;
 
-        const isActive = (key) => !!networkEdgeMap[key]?.active;
-        const isNonIsolated = (id) => !!networkNodeMap[id]?.nonIsolated;
-        const isBetweenNonIsolated = (srcId, tgtId) => isNonIsolated(srcId) && isNonIsolated(tgtId);
-        const isAllowed = (key, { source, target, targetNS }) =>
-            sourceNS === 'stackrox' ||
-            targetNS === 'stackrox' ||
-            isBetweenNonIsolated(source, target) ||
-            !!networkEdgeMap[key]?.allowed;
-        const isDisallowed = (key, link) =>
-            featureFlags.SHOW_DISALLOWED_CONNECTIONS && isActive(key) && !isAllowed(key, link);
+        const { id: sourceDeploymentId, deployment: sourceDeployment } = node.entity;
+        const sourceNS = sourceDeployment?.namespace;
 
         // For nodes that are egress non-isolated, add outgoing edges to ingress non-isolated nodes, as long as the pair
         // of nodes is not fully non-isolated. This is a compromise to make the non-isolation highlight only apply in
         // the case when there are neither ingress nor egress policies (the data sent from the backend is optimized to
         // treat both phenomena separately and omit edges from a egress non-isolated to an ingress non-isolated
-        // deployment, but that would be to confusing in the UI).
+        // deployment, but that would be too confusing in the UI).
         if (node.nonIsolatedEgress) {
             nodes.forEach((targetNode) => {
                 if (
@@ -67,56 +99,98 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap) => {
                     return;
                 }
 
-                const { id: tgtDeploymentId, deployment: tgtDeployment } = targetNode.entity;
-                const targetNS = tgtDeployment?.namespace;
-                const key = [srcDeploymentId, tgtDeploymentId].sort().join('--');
+                const { id: targetDeploymentId, deployment: targetDeployment } = targetNode.entity;
+                const targetNS = targetDeployment?.namespace;
+                const edgeKey = getSourceTargetKey(sourceDeploymentId, targetDeploymentId);
 
                 const link = {
-                    source: srcDeploymentId,
-                    target: tgtDeploymentId,
-                    sourceName: srcDeployment.name,
-                    targetName: tgtDeployment.name,
+                    source: sourceDeploymentId,
+                    target: targetDeploymentId,
+                    sourceName: sourceDeployment.name,
+                    targetName: targetDeployment.name,
                     sourceNS,
                     targetNS,
                 };
 
-                link.isActive = isActive(key);
-                link.isBetweenNonIsolated = isBetweenNonIsolated(srcDeploymentId, tgtDeploymentId);
-                link.isAllowed = isAllowed(key, link);
-                link.isDisallowed = isDisallowed(key, link);
+                link.isActive = isActive(edgeKey);
+                link.isBetweenNonIsolated = isBetweenNonIsolated(
+                    sourceDeploymentId,
+                    targetDeploymentId
+                );
+                link.isAllowed = isAllowed(edgeKey, link);
+                link.isDisallowed = isDisallowed(edgeKey, link);
 
                 // Do not draw implicit links between fully non-isolated nodes unless the connection is active.
                 const isImplicit = node.nonIsolatedIngress && targetNode.nonIsolatedEgress;
                 if (!isImplicit || link.isActive) {
                     filteredLinks.push(link);
+                    filteredEdgeHashTable[edgeKey] = true;
                 }
             });
         }
 
-        Object.keys(node.outEdges).forEach((targetIndex) => {
-            const tgtNode = nodes[targetIndex];
-            if (tgtNode?.entity?.type !== entityTypes.DEPLOYMENT) {
-                return;
-            }
-            const { id: tgtDeploymentId, deployment: tgtDeployment } = tgtNode.entity;
-            const targetNS = tgtDeployment?.namespace;
-            const key = [srcDeploymentId, tgtDeploymentId].sort().join('--');
+        Object.keys(node.outEdges).forEach((targetDeploymentId) => {
+            const targetNode = networkNodeMap[targetDeploymentId].active;
+            const { deployment: targetDeployment } = targetNode.entity;
+            const targetNS = targetDeployment?.namespace;
+            const edgeKey = getSourceTargetKey(sourceDeploymentId, targetDeploymentId);
             const link = {
-                source: srcDeploymentId,
-                target: tgtDeploymentId,
+                source: sourceDeploymentId,
+                target: targetDeploymentId,
                 sourceName: node.entity.deployment.name,
-                targetName: tgtDeployment.name,
+                targetName: targetDeployment.name,
                 sourceNS,
                 targetNS,
             };
 
-            link.isActive = isActive(key);
-            link.isBetweenNonIsolated = isBetweenNonIsolated(srcDeploymentId, tgtDeploymentId);
-            link.isAllowed = isAllowed(key, link);
-            link.isDisallowed = isDisallowed(key, link);
+            link.isActive = isActive(edgeKey);
+            link.isBetweenNonIsolated = isBetweenNonIsolated(
+                sourceDeploymentId,
+                targetDeploymentId
+            );
+            link.isAllowed = isAllowed(edgeKey, link);
+            link.isDisallowed = isDisallowed(edgeKey, link);
 
             filteredLinks.push(link);
+            filteredEdgeHashTable[edgeKey] = true;
         });
+
+        // if in the All filter state, merge active outEdges for each node from networkNodeMap so
+        // we include disallowed edges that are not part of the allowed node set
+        if (filterState === filterModes.all) {
+            Object.keys(networkNodeMap[sourceDeploymentId].active.outEdges).forEach(
+                (targetDeploymentId) => {
+                    const targetNode = networkNodeMap[targetDeploymentId];
+                    const {
+                        name: targetName,
+                        namespace: targetNS,
+                    } = targetNode.active.entity.deployment;
+                    const edgeKey = getSourceTargetKey(sourceDeploymentId, targetDeploymentId);
+                    // to prevent double counting if an edge is also allowed and active
+                    if (!filteredEdgeHashTable[edgeKey]) {
+                        const link = {
+                            source: sourceDeploymentId,
+                            target: targetDeploymentId,
+                            sourceName: node.entity.deployment.name,
+                            targetName,
+                            sourceNS,
+                            targetNS,
+                        };
+
+                        link.isActive = isActive(edgeKey);
+                        link.isBetweenNonIsolated = isBetweenNonIsolated(
+                            sourceDeploymentId,
+                            targetDeploymentId
+                        );
+                        link.isAllowed = isAllowed(edgeKey, link);
+                        link.isDisallowed = isDisallowed(edgeKey, link);
+
+                        filteredLinks.push(link);
+                        filteredEdgeHashTable[edgeKey] = true;
+                    }
+                }
+            );
+        }
     });
 
     return filteredLinks;
@@ -155,47 +229,37 @@ export const getClasses = (map) => {
 };
 
 /**
- * Create a key using a source and target with a delimiter in between
- *
- * @param {!string} source a string representing the source node
- * @param {!string} target a string representing the target node
- * @returns {!string}
- *
- * ex: getSourceTargetKey("source", "target") => "source**__**target"
- */
-export const getSourceTargetKey = (source, target) => {
-    return [source, target].sort().join(LINK_DELIMITER);
-};
-
-/**
- * Gets the source and target from a node link key
- *
- * @param {!string} sourceTargetKey a string representing a key using a source and target
- * @returns {!String[]}
- *
- * ex: getSourceTargetFromKey("source**__**target") => ["source", "target"]
- */
-export const getSourceTargetFromKey = (sourceTargetKey) => {
-    return sourceTargetKey.split(LINK_DELIMITER);
-};
-
-/**
  * Creates a mapping of ports/protocols based on node links (source->target), and then
  * returns a closure to allow getting the ports/protocols of a specific source->target
  *
  * @param {!Object[]} node
+ * @param {!String} highlightedNodeId
+ * @param {!Object} networkNodeMap
+ * @param {!String} filterState
  * @returns {!Object}
  *
  */
-export const createPortsAndProtocolsSelector = (nodes, highlightedNodeId) => {
+export const createPortsAndProtocolsSelector = (
+    nodes,
+    highlightedNodeId,
+    networkNodeMap,
+    filterState
+) => {
     const linkPortsAndProtocols = {};
 
     // create a mapping of node edges -> ports and protocols
     nodes.forEach((sourceNode) => {
-        const targetNodeIndices = Object.keys(sourceNode.outEdges);
-        targetNodeIndices.forEach((targetNodeIndex) => {
-            const { properties } = sourceNode.outEdges[targetNodeIndex];
-            const targetNode = nodes[targetNodeIndex];
+        const targetNodeIds = Object.keys(sourceNode.outEdges);
+        targetNodeIds.forEach((targetNodeId) => {
+            if (!networkNodeMap?.[targetNodeId]) {
+                return;
+            }
+            const { allowed, active } = networkNodeMap[targetNodeId];
+            let targetNode = allowed;
+            if (filterState === filterModes.active) {
+                targetNode = active;
+            }
+            const { properties } = sourceNode.outEdges[targetNodeId];
             if (
                 sourceNode.entity.type === entityTypes.DEPLOYMENT &&
                 targetNode.entity.type === entityTypes.DEPLOYMENT
@@ -241,7 +305,7 @@ export const createPortsAndProtocolsSelector = (nodes, highlightedNodeId) => {
  * Iterates through a list of links and returns bundled edges between namespaces
  *
  * @param {!Object} configObj config object of the current network graph state
- *                            that contains links, filterState, and nodeSideMap
+ *                            that contains links, filterState, nodeSideMap
  * @returns {!Object[]} list of objects describing bundled edges between namespaces
  */
 export const getNamespaceEdges = ({
@@ -252,13 +316,19 @@ export const getNamespaceEdges = ({
     selectedNode,
     hoveredNode,
     hoveredEdge,
+    networkNodeMap,
 }) => {
     const visitedNodeLinks = {};
     const disallowedNamespaceLinks = {};
     const activeNamespaceLinks = {};
     const namespaceLinks = {};
     const highlightedNodeId = (hoveredNode || selectedNode)?.id;
-    const getPortsAndProtocolsByLink = createPortsAndProtocolsSelector(nodes, highlightedNodeId);
+    const getPortsAndProtocolsByLink = createPortsAndProtocolsSelector(
+        nodes,
+        highlightedNodeId,
+        networkNodeMap,
+        filterState
+    );
 
     const filteredLinks = links.filter(
         ({ source, target, isActive, sourceNS, targetNS }) =>
@@ -407,6 +477,7 @@ export const getEdgesFromNode = ({
     hoveredNode,
     selectedNode,
     hoveredEdge,
+    networkNodeMap,
 }) => {
     // to prevent rerendering of duplicate edges
     const nodeLinks = {};
@@ -418,7 +489,12 @@ export const getEdgesFromNode = ({
         return [];
     }
 
-    const getPortsAndProtocolsByLink = createPortsAndProtocolsSelector(nodes, highlightedNode?.id);
+    const getPortsAndProtocolsByLink = createPortsAndProtocolsSelector(
+        nodes,
+        highlightedNode?.id,
+        networkNodeMap,
+        filterState
+    );
 
     links.forEach((link) => {
         const {
@@ -835,21 +911,17 @@ export const getNamespaceEdgeNodes = (namespaceList) => {
 /**
  * Iterates through a list of active nodes and returns nodes with active network policies
  *
- * @param {!Object[]} activeNodes list of active nodes
- * @param {!Object[]} allowedNodes list of allowed nodes
+ * @param {!Object} networkNodeMap map of nodes by nodeId
  * @returns {!Object[]}
  */
-const getActiveNetPolNodes = (activeNodes, allowedNodes) => {
-    return activeNodes.map((activeNode) => {
+const getActiveNetworkPolicyNodes = (networkNodeMap) => {
+    return Object.keys(networkNodeMap).map((nodeId) => {
+        const { active: activeNode, allowed: allowedNode } = networkNodeMap[nodeId];
         const node = { ...activeNode };
-        const matchedNode = allowedNodes.find(
-            // default true for allowedNode.entity.id to prevent nullish equality
-            (allowedNode) => (allowedNode?.entity?.id ?? true) === node?.entity?.id
-        );
-        if (!matchedNode) {
+        if (!allowedNode) {
             return node;
         }
-        node.policyIds = flatMap(matchedNode.policyIds);
+        node.policyIds = flatMap(allowedNode.policyIds);
         return node;
     });
 };
@@ -857,12 +929,21 @@ const getActiveNetPolNodes = (activeNodes, allowedNodes) => {
 /**
  * Iterates through a list of nodes and returns only links in the same namespace
  *
- * @param {!Object[]} activeNodes list of active nodes
- * @param {!Object[]} allowedNodes list of allowed nodes
+ * @param {!Object} networkNodeMap map of nodes by nodeId
  * @param {string} filterState current filter state of the network graph
  * @returns {!Object[]}
  */
-export const getFilteredNodes = (activeNodes, allowedNodes, filterState) => {
+export const getFilteredNodes = (networkNodeMap, filterState) => {
+    const activeNodes = [];
+    const allowedNodes = [];
+    Object.keys(networkNodeMap).forEach((id) => {
+        if (networkNodeMap[id].active) {
+            activeNodes.push(networkNodeMap[id].active);
+        }
+        if (networkNodeMap[id].allowed) {
+            allowedNodes.push(networkNodeMap[id].allowed);
+        }
+    });
     if (filterState !== filterModes.active) {
         return allowedNodes;
     }
@@ -872,7 +953,7 @@ export const getFilteredNodes = (activeNodes, allowedNodes, filterState) => {
         return activeNodes;
     }
 
-    return getActiveNetPolNodes(activeNodes, allowedNodes);
+    return getActiveNetworkPolicyNodes(networkNodeMap);
 };
 
 /**

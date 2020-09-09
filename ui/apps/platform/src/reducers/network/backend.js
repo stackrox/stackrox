@@ -33,13 +33,6 @@ const networkPolicyGraph = (state = { nodes: [] }, action) => {
     return state;
 };
 
-const networkFlowGraph = (state = { nodes: [], edges: [] }, action) => {
-    if (action.type === types.FETCH_NETWORK_FLOW_GRAPH.SUCCESS) {
-        return isEqual(action.response, state) ? state : action.response;
-    }
-    return state;
-};
-
 const networkPolicies = (state = [], action) => {
     if (action.type === types.FETCH_NETWORK_POLICIES.SUCCESS) {
         return isEqual(action.response, state) ? state : action.response;
@@ -106,7 +99,6 @@ const networkPolicyApplicationState = (state = 'INITIAL', action) => {
 
 const reducer = combineReducers({
     networkPolicyGraph,
-    networkFlowGraph,
     networkPolicies,
     nodeUpdatesEpoch,
     networkErrorMessage,
@@ -118,7 +110,6 @@ const reducer = combineReducers({
 // Selectors
 
 const getNetworkPolicyGraph = (state) => state.networkPolicyGraph;
-const getNetworkFlowGraph = (state) => state.networkFlowGraph;
 const getNetworkPolicies = (state) => state.networkPolicies;
 const getNodeUpdatesEpoch = (state) => state.nodeUpdatesEpoch;
 const getNetworkErrorMessage = (state) => state.networkErrorMessage;
@@ -128,7 +119,6 @@ const getNetworkPolicyApplicationState = (state) => state.networkPolicyApplicati
 
 export const selectors = {
     getNetworkPolicyGraph,
-    getNetworkFlowGraph,
     getNetworkPolicies,
     getNodeUpdatesEpoch,
     getNetworkErrorMessage,

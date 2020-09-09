@@ -144,9 +144,6 @@ Details.defaultProps = {
 const mapStateToProps = createStructuredSelector({
     wizardOpen: selectors.getNetworkWizardOpen,
     wizardStage: selectors.getNetworkWizardStage,
-
-    networkPolicyGraph: selectors.getNetworkPolicyGraph,
-    nodeUpdatesEpoch: selectors.getNodeUpdatesEpoch,
     deployment: selectors.getNodeDeployment,
     selectedNode: selectors.getSelectedNode,
     selectedNamespace: selectors.getSelectedNamespace,

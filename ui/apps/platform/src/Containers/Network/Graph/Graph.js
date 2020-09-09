@@ -2,13 +2,14 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import PropTypes from 'prop-types';
+import isEmpty from 'lodash/isEmpty';
+
 import { selectors } from 'reducers';
 import { actions as backendActions } from 'reducers/network/backend';
 import { actions as graphActions } from 'reducers/network/graph';
 import { actions as pageActions } from 'reducers/network/page';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as deploymentActions } from 'reducers/deployments';
-
 import NetworkGraph from 'Components/NetworkGraph';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { filterModes } from 'constants/networkFilterModes';
@@ -25,14 +26,7 @@ class Graph extends Component {
         networkNodeMap: PropTypes.shape({}).isRequired,
         networkEdgeMap: PropTypes.shape({}),
 
-        networkPolicyGraph: PropTypes.shape({
-            nodes: PropTypes.arrayOf(PropTypes.shape({})),
-        }).isRequired,
         networkPolicyGraphState: PropTypes.string.isRequired,
-
-        networkFlowGraph: PropTypes.shape({
-            nodes: PropTypes.arrayOf(PropTypes.shape({})),
-        }),
         networkFlowGraphUpdateKey: PropTypes.number.isRequired,
         networkFlowGraphState: PropTypes.string.isRequired,
         setSelectedNode: PropTypes.func.isRequired,
@@ -49,7 +43,6 @@ class Graph extends Component {
 
     static defaultProps = {
         networkEdgeMap: null,
-        networkFlowGraph: null,
     };
 
     shouldComponentUpdate(nextProps) {
@@ -59,9 +52,11 @@ class Graph extends Component {
             isLoading,
             wizardOpen,
             networkEdgeMap,
+            networkNodeMap,
         } = this.props;
         return (
             !networkEdgeMap ||
+            isEmpty(networkNodeMap) ||
             nextProps.networkFlowGraphUpdateKey !== networkFlowGraphUpdateKey ||
             nextProps.filterState !== filterState ||
             nextProps.isLoading !== isLoading ||
@@ -98,24 +93,20 @@ class Graph extends Component {
     };
 
     renderGraph = (simulatorOn) => {
+        const { networkNodeMap } = this.props;
         // If we have more than 1100 nodes, display a message instead of the graph.
-        const { networkPolicyGraph, networkFlowGraph } = this.props;
-        const { nodes: allowedNodes } = networkPolicyGraph;
-        const { nodes: activeNodes } = networkFlowGraph;
         const nodeLimit = 1100;
-        if (allowedNodes.length > nodeLimit || activeNodes.length > nodeLimit) {
+        if (Object.keys(networkNodeMap).length > nodeLimit) {
             // hopefully a temporal solution
             return (
                 <NoResultsMessage message="There are too many deployments to render on the graph. Please refine your search to a set of namespaces or deployments to display." />
             );
         }
         const { networkFlowGraphUpdateKey, networkEdgeMap } = this.props;
-        const { closeWizard, filterState, networkNodeMap } = this.props;
+        const { closeWizard, filterState } = this.props;
         return (
             <NetworkGraph
                 updateKey={networkFlowGraphUpdateKey}
-                activeNodes={activeNodes}
-                allowedNodes={allowedNodes}
                 networkEdgeMap={networkEdgeMap}
                 networkNodeMap={networkNodeMap}
                 onNodeClick={this.onNodeClick}
@@ -160,10 +151,7 @@ const mapStateToProps = createStructuredSelector({
     networkNodeMap: selectors.getNetworkNodeMap,
     networkEdgeMap: selectors.getNetworkEdgeMap,
 
-    networkPolicyGraph: selectors.getNetworkPolicyGraph,
     networkPolicyGraphState: selectors.getNetworkPolicyGraphState,
-
-    networkFlowGraph: selectors.getNetworkFlowGraph,
     networkFlowGraphUpdateKey: selectors.getNetworkFlowGraphUpdateKey,
     networkFlowGraphState: selectors.getNetworkFlowGraphState,
 

@@ -50,8 +50,6 @@ Cytoscape('layout', 'edgeGridLayout', edgeGridLayout);
 Cytoscape.use(edgeGridLayout);
 
 const NetworkGraph = ({
-    activeNodes,
-    allowedNodes,
     networkEdgeMap,
     networkNodeMap,
     onNodeClick,
@@ -77,13 +75,13 @@ const NetworkGraph = ({
     const tippyRef = useRef();
     const namespacesWithDeployments = {};
 
-    const nodes = getFilteredNodes(activeNodes, allowedNodes, filterState);
+    const nodes = getFilteredNodes(networkNodeMap, filterState);
     const data = nodes.map((datum) => ({
         ...datum,
         isActive: filterState !== filterModes.active && datum.internetAccess,
     }));
 
-    const links = getLinks(data, networkEdgeMap, networkNodeMap);
+    const links = getLinks(data, networkEdgeMap, networkNodeMap, filterState);
 
     // @TODO: Remove "showPortsAndProtocols" when the feature flag "ROX_NETWORK_GRAPH_PORTS" is defaulted to true
     const showPortsAndProtocols = isBackendFeatureFlagEnabled(
@@ -587,14 +585,7 @@ const NetworkGraph = ({
 
     useEffect(setWindowResize, []);
     useEffect(setGraphRef, []);
-    useEffect(runLayout, [
-        activeNodes,
-        allowedNodes,
-        networkNodeMap,
-        networkEdgeMap,
-        filterState,
-        simulatorOn,
-    ]);
+    useEffect(runLayout, [networkNodeMap, networkEdgeMap, filterState, simulatorOn]);
     useEffect(grabifyNamespaces);
     useEffect(calculateNodeSideMap);
 
@@ -628,28 +619,6 @@ const NetworkGraph = ({
 };
 
 NetworkGraph.propTypes = {
-    activeNodes: PropTypes.arrayOf(
-        PropTypes.shape({
-            entity: PropTypes.shape({
-                type: PropTypes.string.isRequired,
-                id: PropTypes.string.isRequired,
-                deployment: PropTypes.shape({
-                    name: PropTypes.string.isRequired,
-                }),
-            }).isRequired,
-        })
-    ).isRequired,
-    allowedNodes: PropTypes.arrayOf(
-        PropTypes.shape({
-            entity: PropTypes.shape({
-                type: PropTypes.string.isRequired,
-                id: PropTypes.string.isRequired,
-                deployment: PropTypes.shape({
-                    name: PropTypes.string.isRequired,
-                }),
-            }).isRequired,
-        })
-    ).isRequired,
     networkEdgeMap: PropTypes.shape({}),
     networkNodeMap: PropTypes.shape({}).isRequired,
     onNamespaceClick: PropTypes.func.isRequired,

@@ -8,7 +8,8 @@ import { types as backendTypes } from 'reducers/network/backend';
 import { types as searchTypes } from 'reducers/network/search';
 
 import { filterModes } from 'constants/networkFilterModes';
-import { isNonIsolatedNode } from 'utils/networkGraphUtils';
+import { isNonIsolatedNode, getSourceTargetKey } from 'utils/networkGraphUtils';
+import { nodeConnectionKeys } from 'constants/networkGraph';
 import entityTypes from 'constants/entityTypes';
 
 export const networkGraphClusters = {
@@ -31,7 +32,7 @@ const setEdgeMapState = (graph, state, property) => {
                 return;
             }
             const { id: tgtDeploymentId } = tgtNode.entity;
-            const mapKey = [srcDeploymentId, tgtDeploymentId].sort().join('--');
+            const mapKey = getSourceTargetKey(srcDeploymentId, tgtDeploymentId);
             if (!newState[mapKey]) {
                 newState[mapKey] = {};
             }
@@ -49,7 +50,7 @@ const setEdgeMapState = (graph, state, property) => {
 
 const setNodeMapState = (graph, state, propertyConfig) => {
     const newState = { ...state };
-    const { ingressKey, egressKey } = propertyConfig;
+    const { ingressKey, egressKey, filterState } = propertyConfig;
     graph.nodes.forEach((node) => {
         if (node?.entity?.type !== entityTypes.DEPLOYMENT) {
             return;
@@ -58,6 +59,8 @@ const setNodeMapState = (graph, state, propertyConfig) => {
         if (!newState[id]) {
             newState[id] = {};
         }
+        // set outEdges to use nodeId instead of index relative to nodes array
+        newState[id][filterState] = { ...node, outEdges: {} };
         if (isNonIsolatedNode(node)) {
             newState[id].nonIsolated = true;
         }
@@ -68,12 +71,16 @@ const setNodeMapState = (graph, state, propertyConfig) => {
                 return;
             }
             const { id: tgtDeploymentId } = tgtNode.entity;
+            if (!newState[tgtDeploymentId]) {
+                newState[tgtDeploymentId] = {};
+            }
             newState[id][egressKey].push(tgtDeploymentId);
             if (get(newState, [tgtDeploymentId, ingressKey])) {
                 newState[tgtDeploymentId][ingressKey].push(id);
             } else {
                 set(newState, [tgtDeploymentId, ingressKey], [id]);
             }
+            newState[id][filterState].outEdges[tgtDeploymentId] = node.outEdges[tgtIndex];
         });
     });
     return newState;
@@ -175,12 +182,14 @@ const networkNodeMap = (state = {}, action) => {
         const { flowGraph, policyGraph } = action;
         let newState = {};
         newState = setNodeMapState(flowGraph, newState, {
-            ingressKey: 'ingressActive',
-            egressKey: 'egressActive',
+            ingressKey: nodeConnectionKeys.INGRESS_ACTIVE,
+            egressKey: nodeConnectionKeys.EGRESS_ACTIVE,
+            filterState: 'active',
         });
         newState = setNodeMapState(policyGraph, newState, {
-            ingressKey: 'ingressAllowed',
-            egressKey: 'egressAllowed',
+            ingressKey: nodeConnectionKeys.INGRESS_ALLOWED,
+            egressKey: nodeConnectionKeys.EGRESS_ALLOWED,
+            filterState: 'allowed',
         });
         return newState;
     }

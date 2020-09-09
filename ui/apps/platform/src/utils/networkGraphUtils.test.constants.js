@@ -12,7 +12,7 @@ export const nodes = [
         nonIsolatedIngress: true,
         nonIsolatedEgress: true,
         outEdges: {
-            '4': {
+            '892424ba-b70d-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -21,7 +21,7 @@ export const nodes = [
                     },
                 ],
             },
-            '8': {
+            'e2f0275b-b70c-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -43,7 +43,7 @@ export const nodes = [
         nonIsolatedIngress: false,
         nonIsolatedEgress: true,
         outEdges: {
-            '4': {
+            '892424ba-b70d-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -52,7 +52,7 @@ export const nodes = [
                     },
                 ],
             },
-            '8': {
+            'e2f0275b-b70c-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -74,7 +74,7 @@ export const nodes = [
         nonIsolatedIngress: true,
         nonIsolatedEgress: true,
         outEdges: {
-            '4': {
+            '892424ba-b70d-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -83,7 +83,7 @@ export const nodes = [
                     },
                 ],
             },
-            '8': {
+            'e2f0275b-b70c-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -105,7 +105,7 @@ export const nodes = [
         nonIsolatedIngress: true,
         nonIsolatedEgress: true,
         outEdges: {
-            '4': {
+            '892424ba-b70d-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -114,7 +114,7 @@ export const nodes = [
                     },
                 ],
             },
-            '8': {
+            'e2f0275b-b70c-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -136,7 +136,7 @@ export const nodes = [
         nonIsolatedIngress: false,
         nonIsolatedEgress: true,
         outEdges: {
-            '8': {
+            'e2f0275b-b70c-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -158,7 +158,7 @@ export const nodes = [
         nonIsolatedIngress: false,
         nonIsolatedEgress: true,
         outEdges: {
-            '4': {
+            '892424ba-b70d-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -167,7 +167,7 @@ export const nodes = [
                     },
                 ],
             },
-            '8': {
+            'e2f0275b-b70c-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -189,7 +189,7 @@ export const nodes = [
         nonIsolatedIngress: false,
         nonIsolatedEgress: true,
         outEdges: {
-            '4': {
+            '892424ba-b70d-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -198,7 +198,7 @@ export const nodes = [
                     },
                 ],
             },
-            '5': {
+            'e34b1fe2-b70c-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -207,7 +207,7 @@ export const nodes = [
                     },
                 ],
             },
-            '8': {
+            'e2f0275b-b70c-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -229,7 +229,7 @@ export const nodes = [
         nonIsolatedIngress: true,
         nonIsolatedEgress: true,
         outEdges: {
-            '4': {
+            '892424ba-b70d-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -238,7 +238,7 @@ export const nodes = [
                     },
                 ],
             },
-            '8': {
+            'e2f0275b-b70c-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -260,7 +260,7 @@ export const nodes = [
         nonIsolatedIngress: false,
         nonIsolatedEgress: true,
         outEdges: {
-            '4': {
+            '892424ba-b70d-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -269,7 +269,7 @@ export const nodes = [
                     },
                 ],
             },
-            '6': {
+            'e349f5d4-b70c-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -295,7 +295,7 @@ export const nodes = [
         nonIsolatedIngress: true,
         nonIsolatedEgress: true,
         outEdges: {
-            '4': {
+            '892424ba-b70d-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -304,7 +304,7 @@ export const nodes = [
                     },
                 ],
             },
-            '8': {
+            'e2f0275b-b70c-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -330,7 +330,7 @@ export const nodes = [
         nonIsolatedIngress: true,
         nonIsolatedEgress: true,
         outEdges: {
-            '4': {
+            '892424ba-b70d-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -339,7 +339,7 @@ export const nodes = [
                     },
                 ],
             },
-            '8': {
+            'e2f0275b-b70c-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -365,7 +365,7 @@ export const nodes = [
         nonIsolatedIngress: true,
         nonIsolatedEgress: true,
         outEdges: {
-            '4': {
+            '892424ba-b70d-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -374,7 +374,7 @@ export const nodes = [
                     },
                 ],
             },
-            '8': {
+            'e2f0275b-b70c-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -400,7 +400,7 @@ export const nodes = [
         nonIsolatedIngress: true,
         nonIsolatedEgress: true,
         outEdges: {
-            '4': {
+            '892424ba-b70d-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -409,7 +409,7 @@ export const nodes = [
                     },
                 ],
             },
-            '8': {
+            'e2f0275b-b70c-11ea-a716-025000000001': {
                 properties: [
                     {
                         lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
@@ -551,6 +551,7 @@ export const configObj = {
     nodeSideMap,
     hoveredNode: null,
     selectedNode: null,
+    networkNodeMap: {},
 };
 
 export const namespaceEdges = [
