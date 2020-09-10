@@ -347,10 +347,11 @@ export function findUpgradeState(upgradeStatus) {
 
     switch (upgradability) {
         case 'UP_TO_DATE': {
-            if (!hasRelevantInformationFromMostRecentUpgrade(upgradeStatus)) {
+            if (!upgradeStatus?.mostRecentProcess?.active) {
                 return upgradeStates.UP_TO_DATE;
             }
 
+            // Display active progress while using automatic upgrade to re-issue certificates.
             const upgradeState = get(
                 upgradeStatus,
                 'mostRecentProcess.progress.upgradeState',

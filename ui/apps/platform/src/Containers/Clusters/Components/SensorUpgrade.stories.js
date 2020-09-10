@@ -54,30 +54,36 @@ const InList = ({ children }) => (
     </div>
 );
 
+// kappa-kilogramme-10
 export const typeCompleteWithoutMostRecentProcessAtSide = () => (
     <AtSide>
         <SensorUpgrade
             upgradeStatus={{ upgradability: 'UP_TO_DATE' }}
-            sensorVersion="3.47.0.0"
-            centralVersion="3.47.0.0"
+            sensorVersion="3.0.50.0"
+            centralVersion="3.0.50.0"
             isList={false}
             actionProps={null}
         />
     </AtSide>
 );
 
-export const typeCompleteWithMostRecentProcessInList = () => (
+// lambda-liverpool-11
+export const typeCompleteWithMostRecentProcessIncompleteInList = () => (
     <InList>
         <SensorUpgrade
             upgradeStatus={{
                 upgradability: 'UP_TO_DATE',
                 mostRecentProcess: {
                     active: false,
-                    progress: { upgradeState: 'UPGRADE_COMPLETE' },
+                    progress: {
+                        upgradeState: 'UPGRADE_INITIALIZATION_ERROR',
+                        upgradeStatusDetail: 'Pod terminated: (error)',
+                    },
+                    type: 'UPGRADE',
                 },
             }}
-            sensorVersion="3.47.0.0"
-            centralVersion="3.47.0.0"
+            sensorVersion="3.0.50.0"
+            centralVersion="3.0.50.0"
             isList
             actionProps={{
                 clusterId,
@@ -87,24 +93,72 @@ export const typeCompleteWithMostRecentProcessInList = () => (
     </InList>
 );
 
-export const typeDownloadAtSide = () => (
+// lambda-liverpool-11
+export const typeCompleteWithMostRecentProcessIncompleteAtSide = () => (
     <AtSide>
         <SensorUpgrade
-            upgradeStatus={{ upgradability: 'AUTO_UPGRADE_POSSIBLE' }}
-            sensorVersion="3.46.0.0"
-            centralVersion="3.47.0.0"
+            upgradeStatus={{
+                upgradability: 'UP_TO_DATE',
+                mostRecentProcess: {
+                    active: false,
+                    progress: {
+                        upgradeState: 'UPGRADE_INITIALIZATION_ERROR',
+                        upgradeStatusDetail: 'Pod terminated: (error)',
+                    },
+                    type: 'UPGRADE',
+                },
+            }}
+            sensorVersion="3.0.50.0"
+            centralVersion="3.0.50.0"
             isList={false}
             actionProps={null}
         />
     </AtSide>
 );
 
+// nu-york-13
+export const typeCompleteWithMostRecentProcessCompleteInList = () => (
+    <InList>
+        <SensorUpgrade
+            upgradeStatus={{
+                upgradability: 'UP_TO_DATE',
+                mostRecentProcess: {
+                    active: false,
+                    progress: { upgradeState: 'UPGRADE_COMPLETE' },
+                    type: 'UPGRADE',
+                },
+            }}
+            sensorVersion="3.0.50.0"
+            centralVersion="3.0.50.0"
+            isList
+            actionProps={{
+                clusterId,
+                upgradeSingleCluster,
+            }}
+        />
+    </InList>
+);
+
+// epsilon-edison-5
+export const typeDownloadAtSide = () => (
+    <AtSide>
+        <SensorUpgrade
+            upgradeStatus={{ upgradability: 'AUTO_UPGRADE_POSSIBLE' }}
+            sensorVersion="3.0.48.0"
+            centralVersion="3.0.50.0"
+            isList={false}
+            actionProps={null}
+        />
+    </AtSide>
+);
+
+// epsilon-edison-5
 export const typeDownloadInList = () => (
     <InList>
         <SensorUpgrade
             upgradeStatus={{ upgradability: 'AUTO_UPGRADE_POSSIBLE' }}
-            sensorVersion="3.46.0.0"
-            centralVersion="3.47.0.0"
+            sensorVersion="3.0.48.0"
+            centralVersion="3.0.50.0"
             isList
             actionProps={{
                 clusterId,
@@ -118,8 +172,8 @@ export const typeInterventionAtSide = () => (
     <AtSide>
         <SensorUpgrade
             upgradeStatus={{ upgradability: 'MANUAL_UPGRADE_REQUIRED' }}
-            sensorVersion="3.46.0.0"
-            centralVersion="3.47.0.0"
+            sensorVersion="3.0.49.0"
+            centralVersion="3.0.50.0"
             isList={false}
             actionProps={null}
         />
@@ -134,10 +188,11 @@ export const typeProgressInList = () => (
                 mostRecentProcess: {
                     active: true,
                     progress: { upgradeState: 'UPGRADER_LAUNCHING' },
+                    type: 'UPGRADE',
                 },
             }}
-            sensorVersion="3.46.0.0"
-            centralVersion="3.47.0.0"
+            sensorVersion="3.0.49.0"
+            centralVersion="3.0.50.0"
             isList
             actionProps={{
                 clusterId,
@@ -155,10 +210,11 @@ export const typeFailureWithoutActionInList = () => (
                 mostRecentProcess: {
                     active: true,
                     progress: { upgradeState: 'UPGRADE_ERROR_ROLLING_BACK' },
+                    type: 'UPGRADE',
                 },
             }}
-            sensorVersion="3.46.0.0"
-            centralVersion="3.47.0.0"
+            sensorVersion="3.0.49.0"
+            centralVersion="3.0.50.0"
             isList
             actionProps={{
                 clusterId,
@@ -176,10 +232,11 @@ export const typeFailureWithActionInList = () => (
                 mostRecentProcess: {
                     active: false,
                     progress: { upgradeState: 'UPGRADE_ERROR_ROLLED_BACK' },
+                    type: 'UPGRADE',
                 },
             }}
-            sensorVersion="3.46.0.0"
-            centralVersion="3.47.0.0"
+            sensorVersion="3.0.49.0"
+            centralVersion="3.0.50.0"
             isList
             actionProps={{
                 clusterId,
@@ -189,18 +246,22 @@ export const typeFailureWithActionInList = () => (
     </InList>
 );
 
-export const typeFailureAtSide = () => (
+export const typeFailureWithUpgradeStatusDetailAtSide = () => (
     <AtSide>
         <SensorUpgrade
             upgradeStatus={{
                 upgradability: 'AUTO_UPGRADE_POSSIBLE',
                 mostRecentProcess: {
                     active: false,
-                    progress: { upgradeState: 'UPGRADE_ERROR_ROLLED_BACK' },
+                    progress: {
+                        upgradeState: 'UPGRADE_INITIALIZATION_ERROR',
+                        upgradeStatusDetail: 'Pod terminated: (error)',
+                    },
+                    type: 'UPGRADE',
                 },
             }}
-            sensorVersion="3.46.0.0"
-            centralVersion="3.47.0.0"
+            sensorVersion="3.0.49.0"
+            centralVersion="3.0.50.0"
             isList={false}
             actionProps={null}
         />

@@ -140,19 +140,40 @@ const SensorUpgrade = ({ upgradeStatus, centralVersion, sensorVersion, isList, a
                 </table>
             );
 
-            // Tooltip requires an HTML element instead of a React element as its child :(
-            return isList ? (
-                <Tooltip content={<TooltipOverlay>{versionNumbers}</TooltipOverlay>}>
-                    <div>
-                        <HealthStatus Icon={Icon} iconColor={fgColor}>
-                            {upgradeElement}
-                        </HealthStatus>
+            const detailElement =
+                (type === 'failure' || type === 'intervention') &&
+                upgradeStatus?.mostRecentProcess?.progress?.upgradeStatusDetail ? (
+                    <div className="mb-2" data-testid="upgradeStatusDetail">
+                        {upgradeStatus.mostRecentProcess.progress.upgradeStatusDetail}
                     </div>
-                </Tooltip>
-            ) : (
+                ) : null;
+
+            if (isList) {
+                const overlayElement = detailElement ? (
+                    <div>
+                        {detailElement}
+                        {versionNumbers}
+                    </div>
+                ) : (
+                    versionNumbers
+                );
+
+                return (
+                    <Tooltip content={<TooltipOverlay>{overlayElement}</TooltipOverlay>}>
+                        <div>
+                            <HealthStatus Icon={Icon} iconColor={fgColor}>
+                                {upgradeElement}
+                            </HealthStatus>
+                        </div>
+                    </Tooltip>
+                );
+            }
+
+            return (
                 <HealthStatus Icon={Icon} iconColor={fgColor}>
                     <div>
                         {upgradeElement}
+                        {detailElement}
                         {versionNumbers}
                     </div>
                 </HealthStatus>
@@ -169,9 +190,11 @@ SensorUpgrade.propTypes = {
         upgradability: PropTypes.string,
         mostRecentProcess: PropTypes.shape({
             active: PropTypes.bool,
-            process: PropTypes.shape({
+            progress: PropTypes.shape({
                 upgradeState: PropTypes.string,
+                upgradeStatusDetail: PropTypes.string,
             }),
+            type: PropTypes.string,
         }),
     }),
     sensorVersion: PropTypes.string,

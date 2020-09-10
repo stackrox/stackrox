@@ -5,6 +5,7 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+- UI: Do not display incomplete process status when Sensor Upgrade is up to date (ROX-5579)
 
 ## [49.0]
 - OIDC authentication providers: added support for two rarely-needed configuration options:
