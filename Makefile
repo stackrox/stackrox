@@ -3,7 +3,10 @@ include $(CURDIR)/make/env.mk
 ROX_PROJECT=apollo
 TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
+
+ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long)
+endif
 
 ALPINE_MIRROR_BUILD_ARG := $(ALPINE_MIRROR:%=--build-arg ALPINE_MIRROR=%)
 

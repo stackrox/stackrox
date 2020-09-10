@@ -22,6 +22,7 @@ ifeq ($(GOBIN),)
 GOBIN := $(GOPATH)/bin
 endif
 
+TAG := # make sure tag is never injectable as an env var
 RELEASE_GOTAGS := release
 ifdef CI
 ifneq ($(CIRCLE_TAG),)
