@@ -99,48 +99,8 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		return
 	}
 
-	msg, err := stream.Recv()
-	if err != nil {
-		s.stopC.SignalWithError(errors.Wrap(err, "receiving initial cluster config"))
-		return
-	}
-
-	if msg.GetClusterConfig() == nil {
-		s.stopC.SignalWithError(errors.Errorf("initial message received from Sensor was not a cluster config: %T", msg.Msg))
-		return
-	}
-
-	// Send the initial cluster config to the config handler
-	if err := configHandler.ProcessMessage(msg); err != nil {
-		s.stopC.SignalWithError(errors.Wrap(err, "processing initial cluster config"))
-		return
-	}
-
-	msg, err = stream.Recv()
-	if err != nil {
-		s.stopC.SignalWithError(errors.Wrap(err, "receiving initial policies"))
-		return
-	}
-
-	if msg.GetPolicySync() == nil {
-		s.stopC.SignalWithError(errors.Errorf("second message received from Sensor was not a policy sync: %T", msg.Msg))
-		return
-	}
-
-	if err := detector.ProcessMessage(msg); err != nil {
-		s.stopC.SignalWithError(errors.Wrap(err, "policy sync could not be successfully processed"))
-		return
-	}
-
-	msg, err = stream.Recv()
-	if err != nil {
-		s.stopC.SignalWithError(errors.Wrap(err, "receiving initial baselines"))
-		return
-	}
-
-	// Policy Sync
-	if err := detector.ProcessMessage(msg); err != nil {
-		s.stopC.SignalWithError(errors.Wrap(err, "process baselines could not be successfully processed"))
+	if err := s.initialSync(stream, capsSet, configHandler, detector); err != nil {
+		s.stopC.SignalWithError(err)
 		return
 	}
 
@@ -164,6 +124,54 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	/////////////////
 	_ = s.stopC.Wait()
 	log.Info("Communication with central ended.")
+}
+
+func (s *centralCommunicationImpl) initialSync(stream central.SensorService_CommunicateClient, capabilities centralsensor.SensorCapabilitySet, configHandler config.Handler, detector detector.Detector) error {
+	// DO NOT CHANGE THE ORDER. Please refer to `Run()` at `central/sensor/service/connection/connection_impl.go`
+	if err := s.initialConfigSync(stream, configHandler); err != nil {
+		return err
+	}
+
+	return s.initialPolicySync(stream, detector)
+}
+
+func (s *centralCommunicationImpl) initialConfigSync(stream central.SensorService_CommunicateClient, handler config.Handler) error {
+	msg, err := stream.Recv()
+	if err != nil {
+		return errors.Wrap(err, "receiving initial cluster config")
+	}
+	if msg.GetClusterConfig() == nil {
+		return errors.Errorf("initial message received from Sensor was not a cluster config: %T", msg.Msg)
+	}
+	// Send the initial cluster config to the config handler
+	if err := handler.ProcessMessage(msg); err != nil {
+		return errors.Wrap(err, "processing initial cluster config")
+	}
+	return nil
+}
+
+func (s *centralCommunicationImpl) initialPolicySync(stream central.SensorService_CommunicateClient, detector detector.Detector) error {
+	// Policy sync
+	msg, err := stream.Recv()
+	if err != nil {
+		return errors.Wrap(err, "receiving initial policies")
+	}
+	if msg.GetPolicySync() == nil {
+		return errors.Errorf("second message received from Sensor was not a policy sync: %T", msg.Msg)
+	}
+	if err := detector.ProcessMessage(msg); err != nil {
+		return errors.Wrap(err, "policy sync could not be successfully processed")
+	}
+
+	// Process baselines sync
+	msg, err = stream.Recv()
+	if err != nil {
+		return errors.Wrap(err, "receiving initial baselines")
+	}
+	if err := detector.ProcessMessage(msg); err != nil {
+		return errors.Wrap(err, "process baselines could not be successfully processed")
+	}
+	return nil
 }
 
 func runAll(err error, fs ...func(error)) {

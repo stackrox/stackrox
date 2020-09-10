@@ -15,4 +15,7 @@ const (
 
 	// HealthMonitoringCap identifies the capability to send health information
 	HealthMonitoringCap SensorCapability = "HealthMonitoring"
+
+	// NetworkGraphExternalSrcsCap identifies the capability to handle custom network graph external sources.
+	NetworkGraphExternalSrcsCap SensorCapability = "NetworkGraphExternalSrcs"
 )

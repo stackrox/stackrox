@@ -14,3 +14,8 @@ message NetworkFlowUpdate {
 
     google.protobuf.Timestamp time     = 2;
 }
+
+message PushNetworkEntitiesRequest {
+    repeated storage.NetworkEntityInfo entities = 1;
+    int64                              seqID    = 2;
+}

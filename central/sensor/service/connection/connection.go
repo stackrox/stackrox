@@ -2,6 +2,7 @@ package connection
 
 import (
 	"github.com/stackrox/rox/central/scrape"
+	"github.com/stackrox/rox/central/sensor/networkentities"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/telemetry"
@@ -21,6 +22,7 @@ type SensorConnection interface {
 	Stopped() concurrency.ReadOnlyErrorSignal
 
 	Scrapes() scrape.Controller
+	NetworkEntities() networkentities.Controller
 	NetworkPolicies() networkpolicies.Controller
 	Telemetry() telemetry.Controller
 

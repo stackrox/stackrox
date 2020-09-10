@@ -41,6 +41,7 @@ message MsgToSensor {
         ReassessPolicies               reassess_policies                  =  8;
         WhitelistSync                  whitelist_sync                     =  9;
         CancelPullTelemetryDataRequest cancel_pull_telemetry_data_request = 10;
+        PushNetworkEntitiesRequest     push_network_entities_request      = 11;
     }
 }
 

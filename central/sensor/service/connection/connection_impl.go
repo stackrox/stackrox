@@ -5,7 +5,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/scrape"
+	"github.com/stackrox/rox/central/sensor/networkentities"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
+	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/telemetry"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -31,6 +33,7 @@ type sensorConnection struct {
 
 	scrapeCtrl          scrape.Controller
 	networkPoliciesCtrl networkpolicies.Controller
+	networkEntitiesCtrl networkentities.Controller
 	telemetryCtrl       telemetry.Controller
 
 	sensorEventHandler *sensorEventHandler
@@ -40,14 +43,15 @@ type sensorConnection struct {
 
 	eventPipeline pipeline.ClusterPipeline
 
-	clusterMgr   ClusterManager
-	policyMgr    PolicyManager
-	whitelistMgr WhitelistManager
+	clusterMgr       common.ClusterManager
+	networkEntityMgr common.NetworkEntityManager
+	policyMgr        common.PolicyManager
+	whitelistMgr     common.ProcessBaselineManager
 
 	capabilities centralsensor.SensorCapabilitySet
 }
 
-func newConnection(ctx context.Context, clusterID string, eventPipeline pipeline.ClusterPipeline, clusterMgr ClusterManager, policyMgr PolicyManager, whitelistMgr WhitelistManager) *sensorConnection {
+func newConnection(ctx context.Context, clusterID string, eventPipeline pipeline.ClusterPipeline, clusterMgr common.ClusterManager, networkEntityMgr common.NetworkEntityManager, policyMgr common.PolicyManager, whitelistMgr common.ProcessBaselineManager) *sensorConnection {
 	conn := &sensorConnection{
 		stopSig:       concurrency.NewErrorSignal(),
 		stoppedSig:    concurrency.NewErrorSignal(),
@@ -55,10 +59,11 @@ func newConnection(ctx context.Context, clusterID string, eventPipeline pipeline
 		eventPipeline: eventPipeline,
 		queues:        make(map[string]*dedupingQueue),
 
-		clusterID:    clusterID,
-		clusterMgr:   clusterMgr,
-		policyMgr:    policyMgr,
-		whitelistMgr: whitelistMgr,
+		clusterID:        clusterID,
+		clusterMgr:       clusterMgr,
+		policyMgr:        policyMgr,
+		networkEntityMgr: networkEntityMgr,
+		whitelistMgr:     whitelistMgr,
 
 		capabilities: centralsensor.ExtractCapsFromContext(ctx),
 	}
@@ -67,6 +72,7 @@ func newConnection(ctx context.Context, clusterID string, eventPipeline pipeline
 	conn.sensorEventHandler = newSensorEventHandler(eventPipeline, conn, &conn.stopSig)
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
+	conn.networkEntitiesCtrl = networkentities.NewController(clusterID, networkEntityMgr, conn, &conn.stopSig)
 	conn.telemetryCtrl = telemetry.NewController(conn.capabilities, conn, &conn.stopSig)
 
 	return conn
@@ -155,6 +161,10 @@ func (c *sensorConnection) Scrapes() scrape.Controller {
 
 func (c *sensorConnection) InjectMessageIntoQueue(msg *central.MsgFromSensor) {
 	c.multiplexedPush(sac.WithAllAccess(context.Background()), msg, nil)
+}
+
+func (c *sensorConnection) NetworkEntities() networkentities.Controller {
+	return c.networkEntitiesCtrl
 }
 
 func (c *sensorConnection) NetworkPolicies() networkpolicies.Controller {
@@ -292,6 +302,13 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 	}
 
 	go c.runSend(server)
+
+	// Trigger initial network graph external sources sync. Network graph external sources capability is added to sensor only if the the feature is enabled.
+	if connectionCapabilities.Contains(centralsensor.NetworkGraphExternalSrcsCap) {
+		if err := c.NetworkEntities().SyncNow(ctx); err != nil {
+			log.Errorf("Unable to sync initial external network entities to cluster %q: %v", c.clusterID, err)
+		}
+	}
 
 	c.runRecv(ctx, server)
 	return c.stopSig.Err()

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/image"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/networkflow/service"
@@ -39,7 +40,6 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	}
 
 	configHandler := config.NewCommandHandler(admCtrlSettingsMgr)
-
 	enforcer := enforcer.MustCreate(client)
 
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
@@ -67,6 +67,10 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		telemetry.NewCommandHandler(client.Kubernetes()),
 	}
 	components = append(components, extraComponents...)
+
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		components = append(components, externalsrcs.NewHandler())
+	}
 
 	if admCtrlSettingsMgr != nil {
 		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(client.Kubernetes(), admCtrlSettingsMgr))

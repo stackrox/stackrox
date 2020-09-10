@@ -62,6 +62,7 @@ import (
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
+	networkEntityDataStore "github.com/stackrox/rox/central/networkflow/datastore/entities"
 	networkFlowService "github.com/stackrox/rox/central/networkflow/service"
 	networkPolicyService "github.com/stackrox/rox/central/networkpolicies/service"
 	nodeService "github.com/stackrox/rox/central/node/service"
@@ -359,7 +360,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 	}
 
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
-	if err := connection.ManagerSingleton().Start(clusterDataStore.Singleton(), policyDataStore.Singleton(), processWhitelistDataStore.Singleton(), autoTriggerUpgrades); err != nil {
+	if err := connection.ManagerSingleton().Start(clusterDataStore.Singleton(), networkEntityDataStore.Singleton(), policyDataStore.Singleton(), processWhitelistDataStore.Singleton(), autoTriggerUpgrades); err != nil {
 		log.Panicf("Couldn't start sensor connection manager: %v", err)
 	}
 

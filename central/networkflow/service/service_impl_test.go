@@ -15,6 +15,7 @@ import (
 	nfDSMocks "github.com/stackrox/rox/central/networkflow/datastore/mocks"
 	npDSMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
 	"github.com/stackrox/rox/central/role/resources"
+	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -31,12 +32,13 @@ func TestNetworkGraph(t *testing.T) {
 type NetworkGraphServiceTestSuite struct {
 	suite.Suite
 
-	clusters    *clusterDSMocks.MockDataStore
-	entities    *entityMocks.MockEntityDataStore
-	deployments *dDSMocks.MockDataStore
-	flows       *nfDSMocks.MockClusterDataStore
-	evaluator   *npDSMocks.MockEvaluator
-	tested      *serviceImpl
+	clusters      *clusterDSMocks.MockDataStore
+	entities      *entityMocks.MockEntityDataStore
+	deployments   *dDSMocks.MockDataStore
+	flows         *nfDSMocks.MockClusterDataStore
+	sensorConnMgr *connMocks.MockManager
+	evaluator     *npDSMocks.MockEvaluator
+	tested        *serviceImpl
 
 	mockCtrl *gomock.Controller
 }
@@ -48,10 +50,10 @@ func (s *NetworkGraphServiceTestSuite) SetupTest() {
 	s.deployments = dDSMocks.NewMockDataStore(s.mockCtrl)
 	s.entities = entityMocks.NewMockEntityDataStore(s.mockCtrl)
 	s.flows = nfDSMocks.NewMockClusterDataStore(s.mockCtrl)
-
+	s.sensorConnMgr = connMocks.NewMockManager(s.mockCtrl)
 	s.evaluator = npDSMocks.NewMockEvaluator(s.mockCtrl)
 
-	s.tested = newService(s.flows, s.entities, s.deployments, s.clusters)
+	s.tested = newService(s.flows, s.entities, s.deployments, s.clusters, s.sensorConnMgr)
 }
 
 func (s *NetworkGraphServiceTestSuite) TearDownTest() {

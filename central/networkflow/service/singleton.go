@@ -5,6 +5,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	entityDataStore "github.com/stackrox/rox/central/networkflow/datastore/entities"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -20,7 +21,7 @@ func initialize() {
 	if features.NetworkGraphExternalSrcs.Enabled() {
 		entityDS = entityDataStore.Singleton()
 	}
-	as = New(nfDS.Singleton(), entityDS, deploymentDataStore.Singleton(), clusterDataStore.Singleton())
+	as = New(nfDS.Singleton(), entityDS, deploymentDataStore.Singleton(), clusterDataStore.Singleton(), connection.ManagerSingleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

@@ -13,6 +13,7 @@ import (
 	networkFlowDS "github.com/stackrox/rox/central/networkflow/datastore"
 	"github.com/stackrox/rox/central/networkflow/datastore/entities"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -56,6 +57,8 @@ type serviceImpl struct {
 	entities     entities.EntityDataStore
 	deployments  deploymentDS.DataStore
 	clusters     clusterDS.DataStore
+
+	sensorConnMgr connection.Manager
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -135,7 +138,7 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 		return nil, err
 	}
 
-	// TODO(ROX-5464): Push updated list of cidr blocks to sensor
+	go s.doPushExternalNetworkEntitiesToSensor(ctx, id.ClusterID)
 	return entity, nil
 }
 
@@ -181,7 +184,7 @@ func (s *serviceImpl) DeleteExternalNetworkEntity(ctx context.Context, request *
 		return nil, err
 	}
 
-	// TODO(ROX-5464): Push updated list of cidr blocks to sensor.
+	go s.doPushExternalNetworkEntitiesToSensor(ctx, id.ClusterID)
 	return &v1.Empty{}, nil
 }
 
@@ -224,6 +227,13 @@ func (s *serviceImpl) validateCluster(clusterID string) error {
 		return status.Errorf(codes.NotFound, "cluster %s not found. It may have been deleted", clusterID)
 	}
 	return nil
+}
+
+func (s *serviceImpl) doPushExternalNetworkEntitiesToSensor(ctx context.Context, clusterID string) {
+	if err := s.sensorConnMgr.PushExternalNetworkEntitiesToSensor(ctx, clusterID); err != nil {
+		log.Errorf("failed to sync external sources network flows for cluster: %v", err)
+		return
+	}
 }
 
 func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.NetworkGraphRequest) (*v1.NetworkGraph, error) {

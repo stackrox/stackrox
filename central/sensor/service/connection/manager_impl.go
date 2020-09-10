@@ -7,6 +7,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -52,9 +53,10 @@ type manager struct {
 	connectionsByClusterID      map[string]connectionAndUpgradeController
 	connectionsByClusterIDMutex sync.RWMutex
 
-	clusters            ClusterManager
-	policies            PolicyManager
-	whitelists          WhitelistManager
+	clusters            common.ClusterManager
+	networkEntities     common.NetworkEntityManager
+	policies            common.PolicyManager
+	whitelists          common.ProcessBaselineManager
 	autoTriggerUpgrades *concurrency.Flag
 }
 
@@ -84,8 +86,9 @@ func (m *manager) initializeUpgradeControllers() error {
 	return nil
 }
 
-func (m *manager) Start(clusterManager ClusterManager, policyManager PolicyManager, whitelistManager WhitelistManager, autoTriggerUpgrades *concurrency.Flag) error {
+func (m *manager) Start(clusterManager common.ClusterManager, networkEntityManager common.NetworkEntityManager, policyManager common.PolicyManager, whitelistManager common.ProcessBaselineManager, autoTriggerUpgrades *concurrency.Flag) error {
 	m.clusters = clusterManager
+	m.networkEntities = networkEntityManager
 	m.policies = policyManager
 	m.whitelists = whitelistManager
 	m.autoTriggerUpgrades = autoTriggerUpgrades
@@ -192,7 +195,7 @@ func (m *manager) replaceConnection(ctx context.Context, clusterID string, newCo
 }
 
 func (m *manager) HandleConnection(ctx context.Context, clusterID string, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
-	conn := newConnection(ctx, clusterID, eventPipeline, m.clusters, m.policies, m.whitelists)
+	conn := newConnection(ctx, clusterID, eventPipeline, m.clusters, m.networkEntities, m.policies, m.whitelists)
 
 	oldConnection, err := m.replaceConnection(ctx, clusterID, conn)
 	if err != nil {
@@ -329,4 +332,17 @@ func (m *manager) SendMessage(clusterID string, msg *central.MsgToSensor) error 
 		return errors.Errorf("no valid cluster %q connection", clusterID)
 	}
 	return connAndUpgradeCtrl.connection.InjectMessage(concurrency.Never(), msg)
+}
+
+func (m *manager) PushExternalNetworkEntitiesToSensor(ctx context.Context, clusterID string) error {
+	conn := m.GetConnection(clusterID)
+	if conn == nil {
+		return nil
+	}
+
+	// This is not perfect, however, the closest.
+	if !conn.HasCapability(centralsensor.NetworkGraphExternalSrcsCap) {
+		return errors.New("sensor version must be up-to-date with Central")
+	}
+	return conn.NetworkEntities().SyncNow(ctx)
 }
