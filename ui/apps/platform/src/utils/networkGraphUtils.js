@@ -757,6 +757,8 @@ export const getDeploymentList = (filteredData, configObj = {}) => {
             hovered: isHovered,
             background: isBackground,
             nonIsolated: isNonIsolated,
+            // TODO: add with ROX-5461
+            // externallyConnected: isExternallyConnected,
         });
 
         let ingress = [];

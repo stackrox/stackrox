@@ -36,15 +36,32 @@ describe('Network page', () => {
             .eq(0)
             .children()
             .should('have.class', 'icon-node');
-        cy.get(networkPageSelectors.legend.deployments)
-            .eq(1)
-            .children()
-            .children()
-            .should('have.class', 'icon-potential');
-        cy.get(networkPageSelectors.legend.deployments)
-            .eq(2)
-            .children()
-            .should('have.class', 'icon-node');
+
+        if (checkFeatureFlag('ROX_NETWORK_GRAPH_EXTERNAL_SRCS', true)) {
+            cy.get(networkPageSelectors.legend.deployments)
+                .eq(1)
+                .children()
+                .should('have.attr', 'alt', 'deployment-external-connections');
+            cy.get(networkPageSelectors.legend.deployments)
+                .eq(2)
+                .children()
+                .children()
+                .should('have.class', 'icon-potential');
+            cy.get(networkPageSelectors.legend.deployments)
+                .eq(3)
+                .children()
+                .should('have.class', 'icon-node');
+        } else {
+            cy.get(networkPageSelectors.legend.deployments)
+                .eq(1)
+                .children()
+                .children()
+                .should('have.class', 'icon-potential');
+            cy.get(networkPageSelectors.legend.deployments)
+                .eq(2)
+                .children()
+                .should('have.class', 'icon-node');
+        }
 
         cy.get(networkPageSelectors.legend.namespaces)
             .eq(0)

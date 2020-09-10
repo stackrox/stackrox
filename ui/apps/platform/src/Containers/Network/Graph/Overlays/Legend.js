@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 
 import LegendTile from 'Components/LegendTile';
-import featureFlags from 'utils/featureFlags';
+import FeatureEnabled from 'Containers/FeatureEnabled';
+import featureFlags, { knownBackendFlags } from 'utils/featureFlags';
 
 const LegendContent = ({ isOpen, toggleLegend }) => {
     if (!isOpen) {
@@ -20,6 +21,19 @@ const LegendContent = ({ isOpen, toggleLegend }) => {
             <div className="bg-primary-100">
                 <div className="flex border-b border-base-400" data-testid="deployment-legend">
                     <LegendTile name="deployment" tooltip="Deployment" type="font" />
+                    <FeatureEnabled featureFlag={knownBackendFlags.ROX_NETWORK_GRAPH_EXTERNAL_SRCS}>
+                        {({ featureEnabled }) => {
+                            return (
+                                featureEnabled && (
+                                    <LegendTile
+                                        name="deployment-external-connections"
+                                        tooltip="Deployment with active external connections"
+                                        type="svg"
+                                    />
+                                )
+                            );
+                        }}
+                    </FeatureEnabled>
                     <LegendTile
                         name="deployment-allowed-connections"
                         tooltip="Deployment with allowed external connections"
@@ -95,29 +109,22 @@ const Legend = () => {
         return e.key === 'Enter' ? toggleLegend(!isOpen) : null;
     }
 
-    function renderLegendButton() {
-        if (isOpen) {
-            return null;
-        }
-        return (
-            <div
-                role="button"
-                className="uppercase p-2 hover:bg-base-200 hover:text-primary-700 cursor-pointer"
-                onClick={toggleLegend}
-                onKeyUp={handleKeyUp}
-                tabIndex="0"
-            >
-                Legend
-            </div>
-        );
-    }
-
     return (
         <div
             data-testid="legend"
             className="env-graph-legend absolute bottom-0 left-0 mb-2 ml-2 bg-base-100 text-base-500 text-sm font-700 border-base-400 border-2 rounded-sm z-10"
         >
-            {renderLegendButton()}
+            {!isOpen && (
+                <div
+                    role="button"
+                    className="uppercase p-2 hover:bg-base-200 hover:text-primary-700 cursor-pointer"
+                    onClick={toggleLegend}
+                    onKeyUp={handleKeyUp}
+                    tabIndex="0"
+                >
+                    Legend
+                </div>
+            )}
             <LegendContent isOpen={isOpen} toggleLegend={toggleLegend} />
         </div>
     );

@@ -1,4 +1,10 @@
-import { NS_FONT_SIZE, TEXT_MAX_WIDTH, NODE_WIDTH, COLORS } from 'constants/networkGraph';
+import {
+    NS_FONT_SIZE,
+    TEXT_MAX_WIDTH,
+    NODE_WIDTH,
+    NODE_SOLID_BORDER_WIDTH,
+    COLORS,
+} from 'constants/networkGraph';
 
 const deploymentStyle = {
     width: NODE_WIDTH,
@@ -117,6 +123,18 @@ const styles = [
             'border-style': 'double',
             'border-width': '1px',
             'border-color': COLORS.nonIsolated,
+        },
+    },
+    {
+        selector: 'node.externallyConnected',
+        style: {
+            width: NODE_WIDTH + NODE_SOLID_BORDER_WIDTH,
+            height: NODE_WIDTH + NODE_SOLID_BORDER_WIDTH,
+            'background-color': COLORS.externallyConnectedNode,
+            'border-style': 'solid',
+            'border-width': NODE_SOLID_BORDER_WIDTH,
+            'border-color': COLORS.externallyConnectedBorder,
+            'text-margin-y': '4px',
         },
     },
     {

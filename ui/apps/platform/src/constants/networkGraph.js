@@ -4,6 +4,7 @@ export const TEXT_MAX_WIDTH = 30;
 export const NODE_WIDTH = 8;
 export const NODE_PADDING = 20;
 export const SIDE_NODE_PADDING = 10;
+export const NODE_SOLID_BORDER_WIDTH = 2;
 
 export const GRAPH_PADDING = 50;
 
@@ -21,6 +22,8 @@ export const COLORS = {
     nonIsolated: 'hsla(2, 78%, 71%, 1)',
     active: 'hsla(214, 74%, 68%, 1)',
     disallowed: 'orange',
+    externallyConnectedNode: 'hsla(242, 99%, 72%, 1)',
+    externallyConnectedBorder: 'hsla(230, 90%, 85%, 1)',
     hoveredActive: 'hsla(214, 74%, 58%, 1)',
     selectedActive: 'hsla(214, 74%, 48%, 1)',
     label: 'hsla(231, 22%, 49%, 1)',

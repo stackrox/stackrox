@@ -4,6 +4,7 @@ import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import deploymentActiveConnection from 'images/legend-icons/deployment-active-connection.svg';
 import deploymentAllowedConnection from 'images/legend-icons/deployment-allowed-connection.svg';
 import nonIsolatedDeploymentAllowed from 'images/legend-icons/non-isolated-deployment-allowed.svg';
+import deploymentExternalConnections from 'images/legend-icons/deployment-with-external-flows.svg';
 import disallowedConnection from 'images/legend-icons/disallowed-connection.svg';
 import namespace from 'images/legend-icons/namespace.svg';
 import namespaceAllowed from 'images/legend-icons/namespace-allowed.svg';
@@ -20,6 +21,7 @@ const svgMapping = {
     'namespace-connection': namespaceConnection,
     'non-isolated-deployment-allowed': nonIsolatedDeploymentAllowed,
     'namespace-disallowed-connection': namespaceDisallowedConnection,
+    'deployment-external-connections': deploymentExternalConnections,
 };
 
 const fontIconMapping = {
@@ -31,7 +33,7 @@ const fontIconMapping = {
         <i className="icon-node text-3xl" style={{ color: constants.COLORS.nonIsolated }} />
     ),
     'deployment-allowed-connections': (
-        <span className="text-center text-3xl relative">
+        <span className="flex text-center text-3xl relative">
             <i
                 className="icon-potential absolute top-0 right-0"
                 style={{ color: constants.INTERNET_ACCESS_NODE_BORDER_COLOR }}
