@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/hako/durafmt"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -19,21 +20,27 @@ import (
 // Command defines the command.. See usage strings for details.
 func Command() *cobra.Command {
 	var licenseData []byte
+	var json bool
 	c := &cobra.Command{
 		Use: "info",
 		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			if len(licenseData) == 0 {
 				return errors.New("no license data supplied")
 			}
-			return infoLicense(licenseData)
+			return infoLicense(licenseData, json)
 		}),
 	}
 
 	c.Flags().Var(&flags.LicenseVar{Data: &licenseData}, "license", flags.LicenseUsage)
+	c.Flags().BoolVar(&json, "json", false, "output as json")
 	return c
 }
 
-func infoLicense(licenseData []byte) error {
+var (
+	jsonMarshaler = &jsonpb.Marshaler{}
+)
+
+func infoLicense(licenseData []byte, json bool) error {
 	protoBytes, _, err := license.ParseLicenseKey(string(licenseData))
 	if err != nil {
 		return errors.Wrap(err, "failed to parse license key")
@@ -44,7 +51,13 @@ func infoLicense(licenseData []byte) error {
 		return errors.Wrap(err, "failed to unmarshal license key")
 	}
 
-	printLicense(os.Stdout, license)
+	if json {
+		if err := jsonMarshaler.Marshal(os.Stdout, license); err != nil {
+			return errors.Wrap(err, "failed to marshal json")
+		}
+	} else {
+		printLicense(os.Stdout, license)
+	}
 	return nil
 }
 

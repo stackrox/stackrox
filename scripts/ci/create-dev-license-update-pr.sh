@@ -20,7 +20,8 @@ it is time to update our development license.
 Once all CI checks pass on this PR, please approve and merge it. Afterwards, please delete the branch.
 
 **NOTE**: If CI checks fail, the most likely reason is that the signing key needs to be rotated. Follow
-the instructions on https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/874053651 for this."
+the instructions on https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/874053651 for this. When you're done,
+make sure to close this PR and delete this branch."
 
 curl -sS --fail \
 	-o "$pr_response_file" \
