@@ -6,6 +6,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 - UI: Do not display incomplete process status when Sensor Upgrade is up to date (ROX-5579)
+- The minimum number of replicas for the Scanner Horizontal Pod Autoscaler has been set to 2 for better availability.
 
 ## [49.0]
 - OIDC authentication providers: added support for two rarely-needed configuration options:

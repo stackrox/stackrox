@@ -26,8 +26,16 @@ spec:
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
     spec:
-      {{if eq .Values.clusterType "OPENSHIFT_CLUSTER"}}
       affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: scanner
+              topologyKey: kubernetes.io/hostname
+      {{if eq .Values.clusterType "OPENSHIFT_CLUSTER"}}
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 25
