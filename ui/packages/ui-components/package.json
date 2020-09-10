@@ -34,7 +34,7 @@
         "lint-fix:src": "eslint --fix --ext .js,.jsx,.ts,.tsx ./",
         "lint-fix": "npm-run-all lint-fix:*",
         "prepublishOnly": "yarn clean && yarn build",
-        "prestorybook": "[ ! -d ../../node_modules/@storybook/addon-docs ] && ln -sf ../../packages/ui-components/node_modules/@storybook/addon-docs ../../node_modules/@storybook/addon-docs; [ ! -d ../../node_modules/@storybook/addon-essentials ] && ln -sf ../../packages/ui-components/node_modules/@storybook/addon-essentials ../../node_modules/@storybook/addon-essentials",
+        "prestorybook": "[ -d ../../node_modules/@storybook/addon-docs ] || ln -sf ../../packages/ui-components/node_modules/@storybook/addon-docs ../../node_modules/@storybook/addon-docs; [ -d ../../node_modules/@storybook/addon-essentials ] || ln -sf ../../packages/ui-components/node_modules/@storybook/addon-essentials ../../node_modules/@storybook/addon-essentials",
         "storybook": "yarn start:tailwind & start-storybook -p 6006"
     },
     "peerDependencies": {
