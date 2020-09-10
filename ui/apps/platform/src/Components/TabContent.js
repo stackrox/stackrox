@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 const TabContent = ({ children, extraClasses }) => (
-    <div className={`${extraClasses} flex flex-1 flex-col h-full overflow-auto`}>{children}</div>
+    <div className={`${extraClasses} flex min-h-full overflow-auto`}>{children}</div>
 );
 
 TabContent.defaultProps = {

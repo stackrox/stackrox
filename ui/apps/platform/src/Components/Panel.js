@@ -8,9 +8,9 @@ export const headerClassName = 'flex w-full min-h-14 border-b border-base-400';
 
 const Panel = (props) => (
     <div
-        className={`flex flex-col border-r border-base-400 overflow-auto w-full ${
-            props.className
-        } ${props.short ? '' : 'h-full'}`}
+        className={`flex flex-col border-r border-base-400 w-full ${props.className} ${
+            props.short ? '' : 'h-full'
+        }`}
         data-testid={props.id}
     >
         <div className="flex-no-wrap">
