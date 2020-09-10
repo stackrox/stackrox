@@ -16,7 +16,7 @@
         "axios": "^0.18.1",
         "computed-style-to-inline-style": "^3.0.0",
         "core-js": "^3.6.5",
-        "cytoscape": "^3.15.1",
+        "cytoscape": "^3.15.2",
         "cytoscape-cose-bilkent": "^4.0.0",
         "cytoscape-node-html-label": "^1.2.0",
         "cytoscape-popper": "^1.0.7",
