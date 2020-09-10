@@ -5,6 +5,8 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+
+## [49.0]
 - OIDC authentication providers: added support for two rarely-needed configuration options:
   - The `Issuer` can now be prefixed with `https+insecure://` to instruct StackRox to skip TLS validation
     when talking to the provider endpoints. It is **strongly** advised to limit the use of this to testing
