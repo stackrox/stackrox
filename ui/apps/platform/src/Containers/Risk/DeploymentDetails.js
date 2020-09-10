@@ -7,8 +7,20 @@ import { fetchDeployment } from 'services/DeploymentsService';
 import KeyValuePairs from 'Components/KeyValuePairs';
 import CollapsibleCard from 'Components/CollapsibleCard';
 import Message from 'Components/Message';
+import { portExposureLabels } from 'messages/common';
 import SecurityContext from './SecurityContext';
 import ContainerConfigurations from './ContainerConfigurations';
+
+const formatDeploymentPorts = (ports) => {
+    return ports.map(({ exposure, exposureInfos, ...rest }) => {
+        const formattedPort = { ...rest };
+        formattedPort.exposure = portExposureLabels[exposure];
+        formattedPort.exposureInfos = exposureInfos.map(({ level, ...restInfo }) => {
+            return { ...restInfo, level: portExposureLabels[level] };
+        });
+        return formattedPort;
+    });
+};
 
 const deploymentDetailsMap = {
     id: { label: 'Deployment ID' },
@@ -24,7 +36,10 @@ const deploymentDetailsMap = {
     },
     labels: { label: 'Labels' },
     annotations: { label: 'Annotations' },
-    ports: { label: 'Port configuration' },
+    ports: {
+        label: 'Port configuration',
+        formatValue: (v) => formatDeploymentPorts(v),
+    },
     serviceAccount: { label: 'Service Account' },
     imagePullSecrets: {
         label: 'Image Pull Secrets',

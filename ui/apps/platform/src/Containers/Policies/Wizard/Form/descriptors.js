@@ -7,21 +7,6 @@ import {
 } from 'messages/common';
 import { clientOnlyWhitelistFieldNames } from './whitelistFieldNames';
 
-// const equalityOptions = [
-//     { label: 'Is greater than', value: 'GREATER_THAN' },
-//     {
-//         label: 'Is greater than or equal to',
-//         value: 'GREATER_THAN_OR_EQUALS',
-//     },
-//     { label: 'Is equal to', value: 'EQUALS' },
-//     {
-//         label: 'Is less than or equal to',
-//         value: 'LESS_THAN_OR_EQUALS',
-//     },
-//     { label: 'Is less than', value: 'LESS_THAN' },
-// ];
-
-// TO-DO: to add when old policy format is deprecated
 const equalityOptions = [
     { label: 'Is greater than', value: '>' },
     {

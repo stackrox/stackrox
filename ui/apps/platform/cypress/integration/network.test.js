@@ -113,6 +113,19 @@ describe('Network page', () => {
     });
 });
 
+describe('Network Deployment Details', () => {
+    withAuth();
+
+    it('should show the port exposure levels using port configuration labels', () => {
+        cy.visit(riskURL);
+        cy.get(`${selectors.table.rows}:contains('central')`).click();
+        cy.get(RiskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
+        cy.get(`${selectors.tab.tabs}:contains('Details')`).click();
+        cy.get(`[data-testid="exposure"]:contains('ClusterIP')`);
+        cy.get(`[data-testid="level"]:contains('ClusterIP')`);
+    });
+});
+
 describe('Network Flows Table', () => {
     withAuth();
 
