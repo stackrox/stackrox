@@ -2151,7 +2151,7 @@ jobs:
             wget --quiet https://github.com/gruntwork-io/fetch/releases/download/v0.3.5/fetch_linux_amd64
             sudo install fetch_linux_amd64 /usr/bin/fetch
             export GITHUB_OAUTH_TOKEN="$GITHUB_TOKEN"
-            fetch --repo="https://github.com/stackrox/ossls" --tag="0.8.0" --release-asset="ossls_linux_amd64" .
+            fetch --repo="https://github.com/stackrox/ossls" --tag="0.7.0" --release-asset="ossls_linux_amd64" .
             sudo install ossls_linux_amd64 /usr/bin/ossls
             ossls version
 
@@ -2229,7 +2229,7 @@ jobs:
             wget --quiet https://github.com/gruntwork-io/fetch/releases/download/v0.3.5/fetch_linux_amd64
             sudo install fetch_linux_amd64 /usr/bin/fetch
             export GITHUB_OAUTH_TOKEN="$GITHUB_TOKEN"
-            fetch --repo="https://github.com/stackrox/ossls" --tag="0.8.0" --release-asset="ossls_linux_amd64" .
+            fetch --repo="https://github.com/stackrox/ossls" --tag="0.7.0" --release-asset="ossls_linux_amd64" .
             sudo install ossls_linux_amd64 /usr/bin/ossls
             ossls version
 
