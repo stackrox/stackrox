@@ -3,7 +3,7 @@ export const types = {
 };
 
 // featureFlags defines UI specific feature flags.
-const featureFlags = {
+export const UIfeatureFlags = {
     [types.SHOW_DISALLOWED_CONNECTIONS]: false,
 };
 
@@ -32,5 +32,3 @@ export const isBackendFeatureFlagEnabled = (backendFeatureFlags, envVar, default
     }
     return featureFlag.enabled;
 };
-
-export default featureFlags;

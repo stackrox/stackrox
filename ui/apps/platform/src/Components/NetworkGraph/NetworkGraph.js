@@ -345,6 +345,7 @@ const NetworkGraph = ({
             filterState,
             nodeSideMap,
             networkNodeMap,
+            featureFlags,
         };
     }
 

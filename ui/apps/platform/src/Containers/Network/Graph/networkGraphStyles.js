@@ -108,24 +108,6 @@ const styles = [
         },
     },
     {
-        selector: 'node.active',
-        style: {
-            'background-color': COLORS.active,
-            'border-style': 'double',
-            'border-width': '1px',
-            'border-color': COLORS.active,
-        },
-    },
-    {
-        selector: 'node.nonIsolated',
-        style: {
-            'background-color': COLORS.nonIsolated,
-            'border-style': 'double',
-            'border-width': '1px',
-            'border-color': COLORS.nonIsolated,
-        },
-    },
-    {
         selector: 'node.externallyConnected',
         style: {
             width: NODE_WIDTH + NODE_SOLID_BORDER_WIDTH,
@@ -138,8 +120,29 @@ const styles = [
         },
     },
     {
+        selector: 'node.active',
+        style: {
+            ...deploymentStyle,
+            'background-color': COLORS.active,
+            'border-style': 'double',
+            'border-width': '1px',
+            'border-color': COLORS.active,
+        },
+    },
+    {
+        selector: 'node.nonIsolated',
+        style: {
+            ...deploymentStyle,
+            'background-color': COLORS.nonIsolated,
+            'border-style': 'double',
+            'border-width': '1px',
+            'border-color': COLORS.nonIsolated,
+        },
+    },
+    {
         selector: 'node.disallowed',
         style: {
+            ...deploymentStyle,
             'background-color': COLORS.disallowed,
         },
     },

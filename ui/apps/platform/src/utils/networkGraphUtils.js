@@ -1,7 +1,7 @@
 import uniq from 'lodash/uniq';
 import flatMap from 'lodash/flatMap';
 
-import featureFlags from 'utils/featureFlags';
+import { UIfeatureFlags, isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 import entityTypes from 'constants/entityTypes';
 import { networkTraffic, networkConnections } from 'constants/networkGraph';
 import { filterModes } from 'constants/networkFilterModes';
@@ -74,7 +74,9 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState) => 
         isBetweenNonIsolated(source, target) ||
         !!networkEdgeMap[edgeKey]?.allowed;
     const isDisallowed = (edgeKey, link) =>
-        featureFlags.SHOW_DISALLOWED_CONNECTIONS && isActive(edgeKey) && !isAllowed(edgeKey, link);
+        UIfeatureFlags.SHOW_DISALLOWED_CONNECTIONS &&
+        isActive(edgeKey) &&
+        !isAllowed(edgeKey, link);
 
     nodes.forEach((node) => {
         if (node?.entity?.type !== entityTypes.DEPLOYMENT || !networkEdgeMap) {
@@ -735,13 +737,18 @@ export const getEdgesFromNode = ({
  * @returns {!Object[]}
  */
 export const getDeploymentList = (filteredData, configObj = {}) => {
-    const { hoveredNode, selectedNode, filterState, networkNodeMap } = configObj;
+    const { hoveredNode, selectedNode, filterState, networkNodeMap, featureFlags } = configObj;
     const deploymentList = filteredData.map((datum) => {
-        const { entity, ...datumProps } = datum;
+        const { entity, internetAccess, ...datumProps } = datum;
         const { deployment, ...entityProps } = entity;
         const { namespace, ...deploymentProps } = deployment;
 
         const edges = getEdgesFromNode(configObj);
+        const showExternalSources = isBackendFeatureFlagEnabled(
+            featureFlags,
+            knownBackendFlags.ROX_NETWORK_GRAPH_EXTERNAL_SRCS,
+            false
+        );
 
         const isSelected = !!(selectedNode?.id === entity.id);
         const isHovered = !!(hoveredNode?.id === entity.id);
@@ -749,6 +756,8 @@ export const getDeploymentList = (filteredData, configObj = {}) => {
         const isNonIsolated = isNonIsolatedNode(datum);
         const isDisallowed =
             filterState !== filterModes.allowed && edges.some((edge) => edge.data.isDisallowed);
+        const isExternallyConnected =
+            showExternalSources && internetAccess && filterState !== filterModes.allowed;
         const classes = getClasses({
             active: datum.isActive,
             selected: isSelected,
@@ -757,8 +766,7 @@ export const getDeploymentList = (filteredData, configObj = {}) => {
             hovered: isHovered,
             background: isBackground,
             nonIsolated: isNonIsolated,
-            // TODO: add with ROX-5461
-            // externallyConnected: isExternallyConnected,
+            externallyConnected: isExternallyConnected,
         });
 
         let ingress = [];
