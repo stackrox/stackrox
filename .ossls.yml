@@ -15,9 +15,10 @@ patterns:
   - "*LICENSE*"
   - "*LICENCE*"
   - "*NOTICE*"
-  - "*author*"
-  - "*copying*"
-  - "*license*"
-  - "*License*"
-  - "*notice*"
+  - '~^.*(?i:notice|licen[cs]e).*\.(?i:txt|md)$'
   - "package.json"
+excludePatterns:
+  - "*.go"
+  - "*.js"
+  - "*.ts"
+  - "*.sh"
