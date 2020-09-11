@@ -7,6 +7,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [NEXT RELEASE]
 - UI: Do not display incomplete process status when Sensor Upgrade is up to date (ROX-5579)
 - The minimum number of replicas for the Scanner Horizontal Pod Autoscaler has been set to 2 for better availability.
+- The ROX_CONTINUE_UNKNOWN_OS feature flag is on by default in Scanner
+  - Scans done by StackRox Scanner on images whose OS cannot be determined will no longer fail if the image also has feature components. Instead, they will continue and give partial scan results.
+    - An example is the `fedora:32` image
 
 ## [49.0]
 - OIDC authentication providers: added support for two rarely-needed configuration options:
