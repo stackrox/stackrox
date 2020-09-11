@@ -17,7 +17,7 @@ defaults:
 
     image:
       name: main
-      tag: 3.0.48.x-121-g337915cd3d
+      tag: [<.MainVersion>]
 
     resources:
       requests:
@@ -57,7 +57,7 @@ defaults:
 
     image:
       name: scanner
-      tag: 2.3.2
+      tag: [<.ScannerVersion>]
 
     dbResources:
       limits:
@@ -69,7 +69,7 @@ defaults:
 
     dbImage:
       name: scanner-db
-      tag: 2.3.2
+      tag: [<.ScannerVersion>]
 
 pvcDefaults:
   claimName: "stackrox-db"

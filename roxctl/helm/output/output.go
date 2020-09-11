@@ -21,6 +21,7 @@ import (
 
 var (
 	metaValues = map[string]interface{}{
+		"ChartVersion":   version.GetChartVersion(),
 		"MainVersion":    version.GetMainVersion(),
 		"ScannerVersion": version.GetScannerVersion(),
 	}
