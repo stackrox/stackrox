@@ -149,7 +149,7 @@
 #      cpu: "1500m"
 #    limits:
 #      memory: "8Gi"
-#      cpu: "2000m"
+#      cpu: "4000m"
 #
 #  persistence:
 #    hostPath: null

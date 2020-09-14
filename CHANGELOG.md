@@ -10,6 +10,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The ROX_CONTINUE_UNKNOWN_OS feature flag is on by default in Scanner
   - Scans done by StackRox Scanner on images whose OS cannot be determined will no longer fail if the image also has feature components. Instead, they will continue and give partial scan results.
     - An example is the `fedora:32` image
+- The default resource limit for Central has been changed to 4 cores. Please see the resource sizing guidelines in the help documentation for
+  finer-grained settings.
 
 ## [49.0]
 - OIDC authentication providers: added support for two rarely-needed configuration options:
