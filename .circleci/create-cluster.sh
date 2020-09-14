@@ -8,6 +8,16 @@
 
 CLUSTER_NAME="${CLUSTER_NAME:-prevent-ci-${CIRCLE_BUILD_NUM}}"
 
+check-cluster-existence() {
+  cluster_name="$1"
+  cluster_json="$(gcloud beta container clusters list --filter name="$cluster_name" --format json)"
+  if [[ $(jq length <<< "$cluster_json") == 0 ]]; then
+    return 1
+  fi
+  zone="$(jq .[0].zone <<< "$cluster_json")"
+  gcloud config set compute/zone "${zone}"
+}
+
 create-cluster() {
   REGION=us-central1
   NUM_NODES="${NUM_NODES:-3}"
