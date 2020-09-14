@@ -72,8 +72,6 @@ service ClustersService {
         };
     }
 
-    // Semantically this is related to cluster creation, but technically this could be rightfully moved
-    // into some kind of 'Central Environment' service.
     rpc GetKernelSupportAvailable(Empty) returns (KernelSupportAvailableResponse) {
         option (google.api.http) = {
             get: "/v1/clusters-env/kernel-support-available"
