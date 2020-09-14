@@ -24,8 +24,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     [`hd` parameter](https://developers.google.com/identity/protocols/oauth2/openid-connect#hd-param),
     or to pre-select an authentication method in PingFederate via the
     [`pfidpadapterid` parameter](https://docs.pingidentity.com/bundle/pingfederate-93/page/nfr1564003024683.html).
-- In `/v1/images` response, the `vulns` field `discoveredAt` is replaced by `firstSystemOccurrence` starting release 49.0. This field represents the first time the CVE was ever discovered in the system.
-- In `/v1/images` response, a new field `firstImageOccurrence` is added to `vulns` which represents the first time a CVE was discovered in respective image.
+- In `GetImage(/v1/images/{id})` response, the `vulns` field `discoveredAt` is replaced by `firstSystemOccurrence` starting release 49.0. This field represents the first time the CVE was ever discovered in the system.
+- In `GetImage(/v1/images/{id})` response, a new field `firstImageOccurrence` is added to `vulns` which represents the first time a CVE was discovered in respective image.
 - The default for the `--create-upgrader-sa` flag has changed to `true` in both the `roxctl sensor generate` and the
   `roxctl sensor get-bundle` commands. In order to restore the old behavior, you need to explicitly specify
   `--create-upgrader-sa=false`. 
@@ -70,7 +70,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - no registries integrated
   - no matching registries found
   - no scanners integrated
-- In `/v1/images` response, the `vulns` field `discoveredAt` will be replaced by `firstSystemOccurrence` starting release 49.0. This field represents the first time the CVE was ever discovered in the system.
+- In `GetImage(/v1/images/{id})` response, the `vulns` field `discoveredAt` will be replaced by `firstSystemOccurrence` starting release 49.0. This field represents the first time the CVE was ever discovered in the system.
 
 ## [47.0]
 - Configuration Management tables (except for Controls and Policies) are now paginated through the API, rather than loading all rows into the browser, for better performance in large environments (ROX-5067).
