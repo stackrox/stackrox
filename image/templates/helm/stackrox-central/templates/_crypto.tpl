@@ -172,7 +172,7 @@
 {{ end }}
 {{ if not $result.htpasswd }}
   {{ $pw := dict.nil }}
-  {{ if kindIs "invalid" $cfg.value }}
+  {{ if kindIs "invalid" $cfg._value }}
     {{ $generate := $cfg.generate }}
     {{ if kindIs "invalid" $generate }}
       {{ $generate = $.Release.IsInstall }}
