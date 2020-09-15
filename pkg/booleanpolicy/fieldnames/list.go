@@ -39,6 +39,7 @@ var (
 	RequiredAnnotation     = newFieldName("Required Annotation")
 	RequiredImageLabel     = newFieldName("Required Image Label")
 	RequiredLabel          = newFieldName("Required Label")
+	ServiceAccount         = newFieldName("Service Account")
 	UnscannedImage         = newFieldName("Unscanned Image")
 	VolumeDestination      = newFieldName("Volume Destination")
 	VolumeName             = newFieldName("Volume Name")

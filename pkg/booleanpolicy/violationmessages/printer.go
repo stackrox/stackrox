@@ -49,6 +49,7 @@ var (
 			fieldnames.RequiredAnnotation:     {{required: set.NewStringSet(search.Annotation.String()), printerFuncKey: printer.RequiredAnnotationKey}},
 			fieldnames.RequiredImageLabel:     {{required: set.NewStringSet(search.ImageLabel.String()), printerFuncKey: printer.RequiredImageLabelKey}},
 			fieldnames.RequiredLabel:          {{required: set.NewStringSet(search.Label.String()), printerFuncKey: printer.RequiredLabelKey}},
+			fieldnames.ServiceAccount:         {{required: set.NewStringSet(search.ServiceAccountName.String()), printerFuncKey: printer.ServiceAccountKey}},
 			fieldnames.WhitelistsEnabled:      {{required: set.NewStringSet(augmentedobjs.NotWhitelistedCustomTag), printerFuncKey: printer.ProcessWhitelistKey}},
 			fieldnames.UnscannedImage:         {{required: set.NewStringSet(augmentedobjs.ImageScanCustomTag), printerFuncKey: printer.ImageScanKey}},
 			fieldnames.VolumeDestination:      {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},

@@ -525,6 +525,14 @@ class PolicyFieldsTest extends BaseSpecification {
             ["ELEVATED_CLUSTER_WIDE"]
     )
 
+    // Service Account is default
+
+    static final private DEFAULT_SERVICE_ACCOUNT_NAME = setPolicyFieldANDValues(
+            BASE_POLICY.clone().setName("AAA_DEFAULT_SERVICE_ACCOUNT_NAME"),
+            "Service Account",
+            ["default"]
+    )
+
     // "Exposed Port"
 
     static final private HAS_PORT_25_EXPOSED = setPolicyFieldANDValues(
@@ -744,6 +752,7 @@ class PolicyFieldsTest extends BaseSpecification {
             NO_IMAGE_TAG,
             NO_OLD_IMAGE_SCANS,
             MINIMUM_RBAC_CLUSTER_WIDE,
+            DEFAULT_SERVICE_ACCOUNT_NAME,
             HAS_PORT_25_EXPOSED,
             HAS_EXTERNAL_EXPOSURE,
             IS_PRIVILEGED,
@@ -855,6 +864,7 @@ class PolicyFieldsTest extends BaseSpecification {
         "Image Tag"                 | NO_IMAGE_TAG                         | WITH_IMAGE_TAG_TO_MATCH                | "match"
         //"Image Scan Age"       | NO_OLD_IMAGE_SCANS | UNSCANNED | "match"
         "Minimum RBAC Permissions"  | MINIMUM_RBAC_CLUSTER_WIDE            | SENSOR                                 | "match"
+        "Service Account"           | DEFAULT_SERVICE_ACCOUNT_NAME         | DEP_A                                  | "match"
         "Exposed Port"              | HAS_PORT_25_EXPOSED                  | WITH_PORT_25_EXPOSED                   | "match"
         "Port Exposure Method"      | HAS_EXTERNAL_EXPOSURE                | WITH_LB_SERVICE                        | "match"
         "Privileged Container"      | IS_PRIVILEGED                        | WITH_PRIVILEGE                         | "match"
@@ -942,6 +952,7 @@ class PolicyFieldsTest extends BaseSpecification {
         "Image Tag"                 | NO_IMAGE_TAG                          | WITH_IMAGE_TAG_TO_NOT_MATCH            | "no match"
         "Image Scan Age"            | NO_OLD_IMAGE_SCANS                    | WITH_RECENT_SCAN_AGE                   | "no match"
         "Minimum RBAC Permissions"  | MINIMUM_RBAC_CLUSTER_WIDE             | CENTRAL                                | "no match"
+        "Service Account"           | DEFAULT_SERVICE_ACCOUNT_NAME          | CENTRAL                                | "no match"
         "Exposed Port"              | HAS_PORT_25_EXPOSED                   | WITHOUT_PORTS_EXPOSED                  | "no match"
         "Port Exposure Method"      | HAS_EXTERNAL_EXPOSURE                 | WITHOUT_SERVICE                        | "no match"
         "Privileged Container"      | IS_PRIVILEGED                         | WITHOUT_PRIVILEGE                      | "no match"

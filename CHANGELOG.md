@@ -12,6 +12,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     - An example is the `fedora:32` image
 - The default resource limit for Central has been changed to 4 cores. Please see the resource sizing guidelines in the help documentation for
   finer-grained settings.
+- A new policy criteria on "Service Account" has been added which runs policy evaluation against the deployment's service account name.
 
 ## [49.0]
 - OIDC authentication providers: added support for two rarely-needed configuration options:

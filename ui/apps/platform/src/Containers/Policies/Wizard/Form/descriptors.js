@@ -840,6 +840,17 @@ const policyConfigurationDescriptor = [
         canBooleanLogic: false,
     },
     {
+        label: 'Service Account',
+        name: 'Service Account',
+        longName: 'Service Account Name',
+        negatedName: `Service Account Name doesn't match`,
+        category: policyCriteriaCategories.KUBERNETES_ACCESS,
+        type: 'text',
+        required: false,
+        default: false,
+        canBooleanLogic: true,
+    },
+    {
         label: 'Minimum RBAC Permissions',
         name: 'Minimum RBAC Permissions',
         longName: 'RBAC permission level is at least',

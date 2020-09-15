@@ -26,6 +26,7 @@ const (
 	RequiredImageLabelKey   = "requiredImageLabel"
 	RequiredLabelKey        = "requiredLabel"
 	ResourceKey             = "resource"
+	ServiceAccountKey       = "serviceAccount"
 	VolumeKey               = "volume"
 )
 
@@ -53,5 +54,6 @@ func init() {
 	registerFunc(RequiredImageLabelKey, requiredImageLabelPrinter)
 	registerFunc(RequiredLabelKey, requiredLabelPrinter)
 	registerFunc(ResourceKey, resourcePrinter)
+	registerFunc(ServiceAccountKey, serviceAccountPrinter)
 	registerFunc(VolumeKey, volumePrinter)
 }
