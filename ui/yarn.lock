@@ -6144,10 +6144,10 @@
   resolved "https://registry.yarnpkg.com/@types/parse5/-/parse5-5.0.3.tgz#e7b5aebbac150f8b5fdd4a46e7f0bd8e65e19109"
   integrity sha512-kUNnecmtkunAoQ3CnjmMkzNU/gtxG8guhi+Fk2U/kOpIKjIMKnXGp4IJCgQJrXSgMsWYimYG4TGjz/UzbGEBTw==
 
-"@types/prop-types@*", "@types/prop-types@^15.5.3":
-  version "15.7.2"
-  resolved "https://registry.yarnpkg.com/@types/prop-types/-/prop-types-15.7.2.tgz#0e58ae66773d7fd7c372a493aff740878ec9ceaa"
-  integrity sha512-f8JzJNWVhKtc9dg/dyDNfliTKNOJSLa7Oht/ElZdF/UbMUmAH3rLmAk3ODNjw0mZajDEgatA03tRjB4+Dp/tzA==
+"@types/prop-types@*", "@types/prop-types@^15.7.3":
+  version "15.7.3"
+  resolved "https://registry.yarnpkg.com/@types/prop-types/-/prop-types-15.7.3.tgz#2ab0d5da2e5815f94b0b9d4b95d1e5f243ab2ca7"
+  integrity sha512-KfRL3PuHmqQLOG+2tGpRO26Ctg+Cq1E01D2DMriKEATHgWLfeNDmq9e29Q9WIky0dQ3NPkd1mzYH8Lm936Z9qw==
 
 "@types/q@^1.5.1":
   version "1.5.2"
@@ -20016,13 +20016,13 @@ react-router-enzyme-context@^1.2.0:
     history "^4.7.2"
     prop-types "^15.6.0"
 
-react-router-prop-types@^1.0.4:
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/react-router-prop-types/-/react-router-prop-types-1.0.4.tgz#74716e92d014bb51ee4376ee198f34903cf8dc1d"
-  integrity sha512-tXDQe0pnBTXjFivBa69hYibtgI3hz+Q/VmhMT7vIzYVPv574dd+lIuBIWOBH9dZkHeSuD6iur6zkmss3QVTeew==
+react-router-prop-types@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/react-router-prop-types/-/react-router-prop-types-1.0.5.tgz#2e671d8412a793106bf70dc15c9ecc83ea4bc15b"
+  integrity sha512-q1xlFU2ol2U5zeVbA5hyBuxD3scHenqgMgCTuJQUanA2SyG8A3Fb1S6DleOo1cnGJB5Q05hnLge64kRj+xsuPA==
   dependencies:
-    "@types/prop-types" "^15.5.3"
-    prop-types "^15.6.1"
+    "@types/prop-types" "^15.7.3"
+    prop-types "^15.7.2"
 
 react-router-redux@^5.0.0-alpha.9:
   version "5.0.0-alpha.9"
