@@ -69,7 +69,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	components = append(components, extraComponents...)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		components = append(components, externalsrcs.NewHandler())
+		components = append(components, externalsrcs.Singleton())
 	}
 
 	if admCtrlSettingsMgr != nil {

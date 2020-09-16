@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/clusterid"
+	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 )
@@ -135,6 +136,7 @@ type networkFlowManager struct {
 	connectionsByHostMutex sync.Mutex
 
 	clusterEntities *clusterentities.Store
+	externalSrcs    externalsrcs.Store
 
 	enrichedConnsLastSentState     map[networkConnIndicator]timestamp.MicroTS
 	enrichedEndpointsLastSentState map[containerEndpointIndicator]timestamp.MicroTS
@@ -657,4 +659,8 @@ func getUpdatedContainerEndpoints(hostname string, networkInfo *sensor.NetworkCo
 
 func (m *networkFlowManager) PublicIPsValueStream() concurrency.ReadOnlyValueStream {
 	return m.publicIPs.PublicIPsProtoStream()
+}
+
+func (m *networkFlowManager) ExternalSrcsValueStream() concurrency.ReadOnlyValueStream {
+	return m.externalSrcs.ExternalSrcsValueStream()
 }

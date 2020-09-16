@@ -42,3 +42,8 @@ func ExtractCapsFromContext(ctx context.Context) SensorCapabilitySet {
 
 	return result
 }
+
+// String returns the string form of sensor capability.
+func (s SensorCapability) String() string {
+	return string(s)
+}

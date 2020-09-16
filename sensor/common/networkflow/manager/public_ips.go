@@ -30,7 +30,8 @@ type publicIPsManager struct {
 	publicIPDeletions  map[net.IPAddress]time.Time
 
 	publicIPListProtoStream *concurrency.ValueStream
-	lastSentList            *sensor.IPAddressList
+
+	lastSentIPAddrList *sensor.IPAddressList
 }
 
 func newPublicIPsManager() *publicIPsManager {
@@ -51,7 +52,6 @@ func (m *publicIPsManager) Run(ctx concurrency.Waitable, clusterEntities *cluste
 		select {
 		case <-ctx.Done():
 			return
-
 		case <-m.publicIPsUpdateSig.Done():
 			m.regenerateAndPushPublicIPsProto()
 		}
@@ -107,12 +107,12 @@ func (m *publicIPsManager) regenerateAndPushPublicIPsProto() {
 
 	normalizeIPsList(publicIPsList)
 
-	if m.lastSentList != nil && ipsListsEqual(publicIPsList, m.lastSentList) {
+	if m.lastSentIPAddrList != nil && ipsListsEqual(publicIPsList, m.lastSentIPAddrList) {
 		return
 	}
 
 	m.publicIPListProtoStream.Push(publicIPsList)
-	m.lastSentList = publicIPsList
+	m.lastSentIPAddrList = publicIPsList
 }
 
 func (m *publicIPsManager) PublicIPsProtoStream() concurrency.ReadOnlyValueStream {
@@ -143,5 +143,6 @@ func normalizeIPsList(listProto *sensor.IPAddressList) {
 }
 
 func ipsListsEqual(a, b *sensor.IPAddressList) bool {
-	return sliceutils.Uint32Equal(a.GetIpv4Addresses(), b.GetIpv4Addresses()) && sliceutils.Uint64Equal(a.GetIpv6Addresses(), b.GetIpv6Addresses())
+	return sliceutils.Uint32Equal(a.GetIpv4Addresses(), b.GetIpv4Addresses()) &&
+		sliceutils.Uint64Equal(a.GetIpv6Addresses(), b.GetIpv6Addresses())
 }

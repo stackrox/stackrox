@@ -9,6 +9,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/set"
@@ -86,13 +87,27 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 			return err
 		}
 	}
+	var externalSrcsIterator concurrency.ValueStreamIter
+	if capsSet.Contains(centralsensor.NetworkGraphExternalSrcsCap.String()) {
+		// Non-strict allows us to skip to the most recent element using `TryNext()` and this is fine since each element in the stream
+		// is a full network list that we want to monitor.
+		externalSrcsIterator = s.manager.ExternalSrcsValueStream().Iterator(false)
+		if err := s.sendExternalSrcsList(stream, externalSrcsIterator); err != nil {
+			return err
+		}
+	}
 
 	for {
 		// If the publicIPsIterator is nil (i.e., Sensor does not support receive public IP list updates), leave this
 		// as nil, which means the respective select branch will never be taken.
-		var itDoneC <-chan struct{}
+		var publicIPItrDoneC <-chan struct{}
 		if publicIPsIterator != nil {
-			itDoneC = publicIPsIterator.Done()
+			publicIPItrDoneC = publicIPsIterator.Done()
+		}
+
+		var externalSrcsItrDoneC <-chan struct{}
+		if externalSrcsIterator != nil {
+			externalSrcsItrDoneC = externalSrcsIterator.Done()
 		}
 
 		select {
@@ -118,9 +133,14 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 				return status.Errorf(codes.Internal, "could not process connections: %v", err)
 			}
 
-		case <-itDoneC:
+		case <-publicIPItrDoneC:
 			publicIPsIterator = publicIPsIterator.TryNext()
 			if err := s.sendPublicIPList(stream, publicIPsIterator); err != nil {
+				return err
+			}
+		case <-externalSrcsItrDoneC:
+			externalSrcsIterator = externalSrcsIterator.TryNext()
+			if err := s.sendExternalSrcsList(stream, externalSrcsIterator); err != nil {
 				return err
 			}
 		}
@@ -155,6 +175,22 @@ func (s *serviceImpl) sendPublicIPList(stream sensor.NetworkConnectionInfoServic
 
 	if err := stream.Send(controlMsg); err != nil {
 		return errors.Wrap(err, "sending public IPs list")
+	}
+	return nil
+}
+
+func (s *serviceImpl) sendExternalSrcsList(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer, iter concurrency.ValueStreamIter) error {
+	listProto, _ := iter.Value().(*sensor.IPNetworkList)
+	if listProto == nil {
+		return nil
+	}
+
+	controlMsg := &sensor.NetworkFlowsControlMessage{
+		IpNetworks: listProto,
+	}
+
+	if err := stream.Send(controlMsg); err != nil {
+		return errors.Wrap(err, "sending external sources (IP Network) list")
 	}
 	return nil
 }

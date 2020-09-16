@@ -78,7 +78,7 @@ type ValueStreamIter interface {
 	// in the stream.
 	Next(ctx ErrorWaitable) (ValueStreamIter, error)
 
-	// TryNext attempts to obtain an iterator to the next element in the stream, or returns nil if no next available is
+	// TryNext attempts to obtain an iterator to the next element in the stream, or returns nil if no next element is
 	// available yet. This method never blocks.
 	TryNext() ValueStreamIter
 

@@ -18,6 +18,7 @@ type Manager interface {
 	RegisterCollector(hostname string) (HostNetworkInfo, int64)
 
 	PublicIPsValueStream() concurrency.ReadOnlyValueStream
+	ExternalSrcsValueStream() concurrency.ReadOnlyValueStream
 
 	common.SensorComponent
 }

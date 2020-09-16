@@ -2,13 +2,13 @@ package entities
 
 import (
 	"context"
-	"net"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkflow/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -174,7 +174,7 @@ func (ds *entityDataStoreImpl) validateExternalNetworkEntity(entity *storage.Net
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, "network entity must be specified")
 	}
 
-	if _, _, err := net.ParseCIDR(entity.GetInfo().GetExternalSource().GetCidr()); err != nil {
+	if _, err := networkgraph.ValidateCIDR(entity.GetInfo().GetExternalSource().GetCidr()); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 

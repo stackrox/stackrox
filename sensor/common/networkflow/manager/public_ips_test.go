@@ -70,6 +70,10 @@ func TestPublicIPsManager(t *testing.T) {
 	require.NotNil(t, vs)
 	assert.Len(t, vs.Value().(*sensor.IPAddressList).GetIpv4Addresses(), 2)
 
+	assert.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
+	assert.Nil(t, vs.TryNext())
+	assert.False(t, mgr.publicIPsUpdateSig.IsDone())
+
 	mgr.OnRemoved(net.ParseIP("4.4.4.4"))
 
 	assert.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
