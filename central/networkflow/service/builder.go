@@ -74,6 +74,7 @@ func (b *flowGraphBuilder) AddFlows(flows []*storage.NetworkFlow) {
 	for _, flow := range flows {
 		props := flow.GetProps()
 		srcEnt := networkgraph.EntityFromProto(props.GetSrcEntity())
+		// Deployment accessible by request scope are already added as nodes before adding the flows, hence we skip adding them again.
 		_, srcNode, added := b.getNode(srcEnt, srcEnt.Type != storage.NetworkEntityInfo_DEPLOYMENT)
 		if srcNode == nil {
 			continue
@@ -91,8 +92,10 @@ func (b *flowGraphBuilder) AddFlows(flows []*storage.NetworkFlow) {
 			}
 			continue
 		}
+
 		dstEnt := networkgraph.EntityFromProto(props.GetDstEntity())
 		dstIdx, _, _ := b.getNode(dstEnt, dstEnt.Type != storage.NetworkEntityInfo_DEPLOYMENT)
+		// For non-deployment nodes, if the destination deployment is not accessible, remove this source node.
 		if dstIdx == -1 {
 			if added {
 				b.removeLastNode()
