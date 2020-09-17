@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 
 import { actions } from 'reducers/integrations';
@@ -287,4 +286,4 @@ const mapDispatchToProps = (dispatch) => ({
     setCreateState: (state) => dispatch(actions.setCreateState(state)),
 });
 
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(IntegrationModal));
+export default connect(mapStateToProps, mapDispatchToProps)(IntegrationModal);
