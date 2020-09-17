@@ -18,6 +18,7 @@ import Loader from 'Components/Loader';
 import TabContent from 'Components/TabContent';
 import PanelButton from 'Components/PanelButton';
 
+import { getEdgesFromNode } from 'utils/networkGraphUtils';
 import NetworkPoliciesDetails from './NetworkPoliciesDetails';
 import NetworkFlows from './NetworkFlows';
 import wizardStages from '../wizardStages';
@@ -39,7 +40,16 @@ function Details(props) {
         { text: 'Details' },
         { text: 'Network Policies' },
     ];
-    const deploymentEdges = selectedNode.edges.filter(
+
+    let edges = [];
+    const configObj = props.networkGraphRef.getConfigObj();
+    if (configObj?.links.length === 0) {
+        edges = selectedNode.edges;
+    } else {
+        edges = getEdgesFromNode({ ...configObj, selectedNode });
+    }
+
+    const deploymentEdges = edges.filter(
         ({ data }) => data.destNodeNamespace && data.destNodeName && data.source !== data.target
     );
 
@@ -129,6 +139,7 @@ Details.propTypes = {
     onClose: PropTypes.func.isRequired,
     networkGraphRef: PropTypes.shape({
         setSelectedNode: PropTypes.func,
+        getConfigObj: PropTypes.func,
     }),
     setWizardStage: PropTypes.func.isRequired,
     setSelectedNode: PropTypes.func.isRequired,

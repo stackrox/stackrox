@@ -100,7 +100,9 @@ const NetworkFlows = ({
             const { onNodeClick } = networkGraphRef;
             const node = getNodeDataById(nodeId);
             if (node) {
+                networkGraphRef.setSelectedNode(node);
                 onNodeClick(node);
+                setSelectedNode(node);
             }
         };
     }

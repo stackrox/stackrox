@@ -42,4 +42,7 @@ export const selectors = {
     networkFlowsSearch: scopeSelectors(networkPanels.detailsPanel, {
         ...search,
     }),
+    networkDetailsPanel: scopeSelectors(networkPanels.detailsPanel, {
+        header: '[data-testid="network-details-panel-header"]',
+    }),
 };

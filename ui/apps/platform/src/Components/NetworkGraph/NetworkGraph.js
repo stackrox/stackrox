@@ -239,6 +239,7 @@ const NetworkGraph = ({
         // Canvas or Selected node click: clear selection
         if (!id || !evData || (selectedNode && evData && id === selectedNode.id)) {
             setSelectedNode();
+            setSelectedNodeInGraph();
             onClickOutside();
             history.push('/main/network');
             return;
@@ -265,6 +266,7 @@ const NetworkGraph = ({
                 });
                 onNamespaceClick({ id, deployments });
                 setSelectedNode(evData);
+                setSelectedNodeInGraph(evData);
             }
             return;
         }
@@ -272,6 +274,7 @@ const NetworkGraph = ({
         // Node click: select node
         if (target.isNode()) {
             setSelectedNode(evData);
+            setSelectedNodeInGraph(evData);
             history.push(`/main/network/${evData.id}`);
             onNodeClick(evData);
         }
@@ -538,6 +541,7 @@ const NetworkGraph = ({
             selectedNode,
             getNodeData: getNodeDataFromList,
             onNodeClick,
+            getConfigObj,
         });
     }
 
@@ -572,6 +576,7 @@ const NetworkGraph = ({
         }
         if (simulatorOn) {
             setSelectedNode();
+            setSelectedNodeInGraph();
             setSelectedNamespace(null);
         }
     }

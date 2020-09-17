@@ -1,5 +1,7 @@
 import { url as networkUrl, selectors as networkPageSelectors } from '../constants/NetworkPage';
-import { url as riskURL, selectors as RiskPageSelectors } from '../constants/RiskPage';
+import { url as riskURL, selectors as riskPageSelectors } from '../constants/RiskPage';
+import generalPageSelectors from '../constants/GeneralPage';
+
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 import selectors from '../selectors/index';
@@ -121,7 +123,7 @@ describe('Network page', () => {
     it('should show the network policy simulator screen after generating network policies', () => {
         cy.visit(riskURL);
         cy.get(selectors.table.rows).eq(0).click({ force: true });
-        cy.get(RiskPageSelectors.viewDeploymentsInNetworkGraphButton, { timeout: 10000 }).click();
+        cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton, { timeout: 10000 }).click();
 
         cy.get(networkPageSelectors.panels.detailsPanel).should('be.visible');
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
@@ -136,7 +138,7 @@ describe('Network Deployment Details', () => {
     it('should show the port exposure levels using port configuration labels', () => {
         cy.visit(riskURL);
         cy.get(`${selectors.table.rows}:contains('central')`).click();
-        cy.get(RiskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
+        cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
         cy.get(`${selectors.tab.tabs}:contains('Details')`).click();
         cy.get(`[data-testid="exposure"]:contains('ClusterIP')`);
         cy.get(`[data-testid="level"]:contains('ClusterIP')`);
@@ -146,10 +148,23 @@ describe('Network Deployment Details', () => {
 describe('Network Flows Table', () => {
     withAuth();
 
+    it('should let you navigate to a different deployment', () => {
+        cy.visit(networkUrl);
+        cy.get(`${generalPageSelectors.leftNavLinks}:contains('Risk')`).click();
+        cy.get(`${selectors.table.rows}:contains('central')`).click();
+        cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
+        cy.get(networkPageSelectors.networkDetailsPanel.header).contains('central');
+        cy.wait(1500);
+        cy.get(`${selectors.table.rows}:eq(0) .hidden button`)
+            .invoke('show')
+            .click({ force: true });
+        cy.get(networkPageSelectors.networkDetailsPanel.header).should('not.contain', 'central');
+    });
+
     it('should show the proper table column headers for the network flows table', () => {
         cy.visit(riskURL);
         cy.get(`${selectors.table.rows}:contains('central')`).click();
-        cy.get(RiskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
+        cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
         cy.get(`${selectors.tab.tabs}:contains('Network Flows')`).click();
         cy.get(`${selectors.table.columnHeaders}:contains('Traffic')`);
         cy.get(`${selectors.table.columnHeaders}:contains('Deployment')`);
@@ -170,7 +185,7 @@ describe('Network Flows Table', () => {
 
         cy.visit(riskURL);
         cy.get(`${selectors.table.rows}:contains('central')`).click();
-        cy.get(RiskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
+        cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
         cy.get(`${selectors.tab.tabs}:contains('Network Flows')`).click();
 
         // check autocomplete results for Traffic
@@ -220,7 +235,7 @@ describe('Network Flows Table', () => {
 
         cy.visit(riskURL);
         cy.get(`${selectors.table.rows}:contains('central')`).click();
-        cy.get(RiskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
+        cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
         cy.get(`${selectors.tab.tabs}:contains('Network Flows')`).click();
 
         cy.get(networkPageSelectors.networkFlowsSearch.input).type('Traffic:{enter}');

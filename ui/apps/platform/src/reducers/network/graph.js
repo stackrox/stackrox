@@ -195,7 +195,10 @@ const networkNodeMap = (state = {}, action) => {
 
 const selectedNode = (state = null, action) => {
     if (action.type === types.SET_SELECTED_NODE) {
-        return action.node;
+        const { node } = action;
+        if (node) {
+            return node;
+        }
     }
     return state;
 };
