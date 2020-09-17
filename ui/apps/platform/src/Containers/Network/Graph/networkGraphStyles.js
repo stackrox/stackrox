@@ -108,18 +108,6 @@ const styles = [
         },
     },
     {
-        selector: 'node.externallyConnected',
-        style: {
-            width: NODE_WIDTH + NODE_SOLID_BORDER_WIDTH,
-            height: NODE_WIDTH + NODE_SOLID_BORDER_WIDTH,
-            'background-color': COLORS.externallyConnectedNode,
-            'border-style': 'solid',
-            'border-width': NODE_SOLID_BORDER_WIDTH,
-            'border-color': COLORS.externallyConnectedBorder,
-            'text-margin-y': '4px',
-        },
-    },
-    {
         selector: 'node.active',
         style: {
             ...deploymentStyle,
@@ -137,6 +125,18 @@ const styles = [
             'border-style': 'double',
             'border-width': '1px',
             'border-color': COLORS.nonIsolated,
+        },
+    },
+    {
+        selector: 'node.externallyConnected',
+        style: {
+            width: NODE_WIDTH + NODE_SOLID_BORDER_WIDTH,
+            height: NODE_WIDTH + NODE_SOLID_BORDER_WIDTH,
+            'background-color': COLORS.externallyConnectedNode,
+            'border-style': 'solid',
+            'border-width': NODE_SOLID_BORDER_WIDTH,
+            'border-color': COLORS.externallyConnectedBorder,
+            'text-margin-y': '4px',
         },
     },
     {

@@ -25,14 +25,14 @@ const setEdgeMapState = (graph, state, property) => {
         if (node?.entity?.type !== entityTypes.DEPLOYMENT) {
             return;
         }
-        const { id: srcDeploymentId } = node.entity;
-        Object.keys(node.outEdges).forEach((tgtIndex) => {
-            const tgtNode = graph.nodes[tgtIndex];
-            if (tgtNode?.entity?.type !== entityTypes.DEPLOYMENT) {
+        const { id: sourceDeploymentId } = node.entity;
+        Object.keys(node.outEdges).forEach((targetIndex) => {
+            const targetNode = graph.nodes[targetIndex];
+            if (targetNode?.entity?.type !== entityTypes.DEPLOYMENT) {
                 return;
             }
-            const { id: tgtDeploymentId } = tgtNode.entity;
-            const mapKey = getSourceTargetKey(srcDeploymentId, tgtDeploymentId);
+            const { id: targetDeploymentId } = targetNode.entity;
+            const mapKey = getSourceTargetKey(sourceDeploymentId, targetDeploymentId);
             if (!newState[mapKey]) {
                 newState[mapKey] = {};
             }
@@ -40,8 +40,8 @@ const setEdgeMapState = (graph, state, property) => {
                 newState[mapKey][property] = [];
             }
             newState[mapKey][property].push({
-                source: srcDeploymentId,
-                target: tgtDeploymentId,
+                source: sourceDeploymentId,
+                target: targetDeploymentId,
             });
         });
     });
@@ -52,9 +52,6 @@ const setNodeMapState = (graph, state, propertyConfig) => {
     const newState = { ...state };
     const { ingressKey, egressKey, filterState } = propertyConfig;
     graph.nodes.forEach((node) => {
-        if (node?.entity?.type !== entityTypes.DEPLOYMENT) {
-            return;
-        }
         const { id } = node.entity;
         if (!newState[id]) {
             newState[id] = {};
@@ -65,22 +62,22 @@ const setNodeMapState = (graph, state, propertyConfig) => {
             newState[id].nonIsolated = true;
         }
         newState[id][egressKey] = [];
-        Object.keys(node.outEdges).forEach((tgtIndex) => {
-            const tgtNode = graph.nodes[tgtIndex];
-            if (tgtNode?.entity?.type !== entityTypes.DEPLOYMENT) {
-                return;
+        Object.keys(node.outEdges).forEach((targetIndex) => {
+            const targetNode = graph.nodes[targetIndex];
+            const { id: targetDeploymentId, type: targetDeploymentType } = targetNode.entity;
+            if (!newState[targetDeploymentId]) {
+                newState[targetDeploymentId] = {};
             }
-            const { id: tgtDeploymentId } = tgtNode.entity;
-            if (!newState[tgtDeploymentId]) {
-                newState[tgtDeploymentId] = {};
-            }
-            newState[id][egressKey].push(tgtDeploymentId);
-            if (get(newState, [tgtDeploymentId, ingressKey])) {
-                newState[tgtDeploymentId][ingressKey].push(id);
+            newState[id][egressKey].push(targetDeploymentId);
+            if (get(newState, [targetDeploymentId, ingressKey])) {
+                newState[targetDeploymentId][ingressKey].push(id);
             } else {
-                set(newState, [tgtDeploymentId, ingressKey], [id]);
+                set(newState, [targetDeploymentId, ingressKey], [id]);
             }
-            newState[id][filterState].outEdges[tgtDeploymentId] = node.outEdges[tgtIndex];
+            if (targetDeploymentType !== entityTypes.DEPLOYMENT) {
+                newState[id][filterState].externallyConnected = true;
+            }
+            newState[id][filterState].outEdges[targetDeploymentId] = node.outEdges[targetIndex];
         });
     });
     return newState;

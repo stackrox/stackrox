@@ -133,6 +133,9 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState) => 
 
         Object.keys(node.outEdges).forEach((targetDeploymentId) => {
             const targetNode = networkNodeMap[targetDeploymentId].active;
+            if (targetNode?.entity?.type !== entityTypes.DEPLOYMENT) {
+                return;
+            }
             const { deployment: targetDeployment } = targetNode.entity;
             const targetNS = targetDeployment?.namespace;
             const edgeKey = getSourceTargetKey(sourceDeploymentId, targetDeploymentId);
@@ -163,6 +166,9 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState) => 
             Object.keys(networkNodeMap[sourceDeploymentId].active.outEdges).forEach(
                 (targetDeploymentId) => {
                     const targetNode = networkNodeMap[targetDeploymentId];
+                    if (targetNode.active.entity.type !== entityTypes.DEPLOYMENT) {
+                        return;
+                    }
                     const {
                         name: targetName,
                         namespace: targetNS,
@@ -739,9 +745,11 @@ export const getEdgesFromNode = ({
 export const getDeploymentList = (filteredData, configObj = {}) => {
     const { hoveredNode, selectedNode, filterState, networkNodeMap, featureFlags } = configObj;
     const deploymentList = filteredData.map((datum) => {
-        const { entity, internetAccess, ...datumProps } = datum;
+        const { entity, ...datumProps } = datum;
         const { deployment, ...entityProps } = entity;
         const { namespace, ...deploymentProps } = deployment;
+
+        const entityData = networkNodeMap[entity.id];
 
         const edges = getEdgesFromNode(configObj);
         const showExternalSources = isBackendFeatureFlagEnabled(
@@ -750,6 +758,11 @@ export const getDeploymentList = (filteredData, configObj = {}) => {
             false
         );
 
+        const externallyConnected =
+            filterState === filterModes.all
+                ? entityData.active.externallyConnected
+                : datum.externallyConnected;
+
         const isSelected = !!(selectedNode?.id === entity.id);
         const isHovered = !!(hoveredNode?.id === entity.id);
         const isBackground = !(!selectedNode && !hoveredNode) && !isHovered && !isSelected;
@@ -757,7 +770,7 @@ export const getDeploymentList = (filteredData, configObj = {}) => {
         const isDisallowed =
             filterState !== filterModes.allowed && edges.some((edge) => edge.data.isDisallowed);
         const isExternallyConnected =
-            showExternalSources && internetAccess && filterState !== filterModes.allowed;
+            showExternalSources && externallyConnected && filterState !== filterModes.allowed;
         const classes = getClasses({
             active: datum.isActive,
             selected: isSelected,
@@ -771,7 +784,6 @@ export const getDeploymentList = (filteredData, configObj = {}) => {
 
         let ingress = [];
         let egress = [];
-        const entityData = networkNodeMap[entity.id];
         if (entityData) {
             const {
                 ingressAllowed = [],
@@ -925,15 +937,16 @@ export const getNamespaceEdgeNodes = (namespaceList) => {
  * @returns {!Object[]}
  */
 const getActiveNetworkPolicyNodes = (networkNodeMap) => {
-    return Object.keys(networkNodeMap).map((nodeId) => {
+    const nodes = [];
+    Object.keys(networkNodeMap).forEach((nodeId) => {
         const { active: activeNode, allowed: allowedNode } = networkNodeMap[nodeId];
         const node = { ...activeNode };
-        if (!allowedNode) {
-            return node;
+        if (allowedNode) {
+            node.policyIds = flatMap(allowedNode.policyIds);
         }
-        node.policyIds = flatMap(allowedNode.policyIds);
-        return node;
+        nodes.push(node);
     });
+    return nodes;
 };
 
 /**
