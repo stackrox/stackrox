@@ -108,7 +108,9 @@ func GetAvailableResources(client discovery.ServerResourcesInterface, expectedGV
 	seenGVs := make(map[schema.GroupVersion]struct{})
 	for _, resourceList := range resourceLists {
 		gv := populateFromResourceList(resourceList, expectedGVKs, &result)
-		seenGVs[*gv] = struct{}{}
+		if gv != nil {
+			seenGVs[*gv] = struct{}{}
+		}
 	}
 	// If err is nil, then we've got everything that's available, just return.
 	if err == nil {
