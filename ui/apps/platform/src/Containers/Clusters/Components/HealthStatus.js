@@ -21,7 +21,7 @@ const HealthStatus = ({ children, Icon, iconColor }) => (
 
 HealthStatus.propTypes = {
     children: PropTypes.element.isRequired, // flex-row assumes a child element wraps multiple grandchildren
-    Icon: PropTypes.element.isRequired,
+    Icon: PropTypes.elementType.isRequired,
     iconColor: PropTypes.string.isRequired,
 };
 
