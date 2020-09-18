@@ -147,7 +147,7 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 		return nil, errors.Wrapf(err, "could not obtain network flow information for cluster %q", clusterID)
 	}
 
-	okFlows, missingInfoFlows := networkflow.UpdateFlowsWithDeployments(flows, objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments))
+	okFlows, missingInfoFlows := networkflow.UpdateFlowsWithEntityDesc(flows, objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments), nil)
 
 	return g.buildGraph(ctx, clusterID, relevantDeployments, okFlows, missingInfoFlows, includePorts)
 }

@@ -33,3 +33,11 @@ func EntityForDeployment(id string) Entity {
 		ID:   id,
 	}
 }
+
+// InternetEntity returns the de-facto INTERNET network entity to which all the connections to unidentified external sources are attributed to.
+func InternetEntity() Entity {
+	return Entity{
+		ID:   InternetExternalSourceID,
+		Type: storage.NetworkEntityInfo_INTERNET,
+	}
+}

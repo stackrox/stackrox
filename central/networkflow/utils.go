@@ -1,6 +1,9 @@
 package networkflow
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/networkgraph"
+)
 
 // EntityForDeployment returns a NetworkEntityInfo for the given deployment.
 func EntityForDeployment(deployment *storage.ListDeployment) *storage.NetworkEntityInfo {
@@ -38,18 +41,29 @@ func PopulateDeploymentDesc(entity *storage.NetworkEntityInfo, deploymentsMap ma
 	return true
 }
 
-// UpdateFlowsWithDeployments populates the entity descriptions for source and destination deployment entities in the
+// UpdateFlowsWithEntityDesc populates the entity descriptions for source and destination network entities in the
 // list of flows. It returns two slices: one containing flows with fully populated information, the other containing
-// flows with partially or completely missing deployment information.
-func UpdateFlowsWithDeployments(flows []*storage.NetworkFlow, deployments map[string]*storage.ListDeployment) (okFlows []*storage.NetworkFlow, missingInfoFlows []*storage.NetworkFlow) {
+// flows with partially or completely missing deployment entity information.
+// Note: Missing external sources are marked as INTERNET.
+func UpdateFlowsWithEntityDesc(flows []*storage.NetworkFlow, deployments map[string]*storage.ListDeployment, externalSrcs map[string]*storage.NetworkEntityInfo) (okFlows []*storage.NetworkFlow, missingInfoFlows []*storage.NetworkFlow) {
 	okFlows = flows[:0]
 	for _, flow := range flows {
-		ok := PopulateDeploymentDesc(flow.GetProps().GetSrcEntity(), deployments)
-		if !PopulateDeploymentDesc(flow.GetProps().GetDstEntity(), deployments) {
-			ok = false
+		srcOk, dstOk := false, false
+		if networkgraph.IsExternal(flow.GetProps().GetSrcEntity()) {
+			PopulateExternalSrcsDesc(flow.GetProps().GetSrcEntity(), externalSrcs)
+			srcOk = true
+		} else {
+			srcOk = PopulateDeploymentDesc(flow.GetProps().GetSrcEntity(), deployments)
 		}
 
-		if ok {
+		if networkgraph.IsExternal(flow.GetProps().GetDstEntity()) {
+			PopulateExternalSrcsDesc(flow.GetProps().GetDstEntity(), externalSrcs)
+			dstOk = true
+		} else {
+			dstOk = PopulateDeploymentDesc(flow.GetProps().GetDstEntity(), deployments)
+		}
+
+		if srcOk && dstOk {
 			okFlows = append(okFlows, flow)
 		} else {
 			missingInfoFlows = append(missingInfoFlows, flow)
@@ -57,4 +71,21 @@ func UpdateFlowsWithDeployments(flows []*storage.NetworkFlow, deployments map[st
 	}
 
 	return
+}
+
+// PopulateExternalSrcsDesc populates the entity with external source information from the given map. If external source
+// could not be found in the map, it is populated with the de-facto INTERNET entity desc.
+// Note: If entity is not EXTERNAL_SOURCE we return true.
+func PopulateExternalSrcsDesc(entity *storage.NetworkEntityInfo, externalSrcs map[string]*storage.NetworkEntityInfo) {
+	if entity.GetType() != storage.NetworkEntityInfo_EXTERNAL_SOURCE {
+		return
+	}
+
+	src, ok := externalSrcs[entity.GetId()]
+	if ok {
+		entity.Desc = src.GetDesc()
+		return
+	}
+	// If the external source (CIDR block) is not visible, mark this entity as INTERNET.
+	*entity = *networkgraph.InternetEntity().ToProto()
 }

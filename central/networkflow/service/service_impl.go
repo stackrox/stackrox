@@ -226,27 +226,25 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 	builder := newFlowGraphBuilder()
 	builder.AddDeployments(deployments)
 
-	externalSrcSet := set.NewStringSet()
+	externalSrcs := make(map[string]*storage.NetworkEntityInfo)
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		externalSrcs, err := s.entities.GetAllEntitiesForCluster(ctx, requestClone.GetClusterId())
+		srcs, err := s.entities.GetAllEntitiesForCluster(ctx, requestClone.GetClusterId())
 		if err != nil {
 			return nil, err
 		}
 
-		// Add the de-facto INTERNET entity as visible.
-		externalSrcSet.Add(networkgraph.InternetExternalSourceID)
-		for _, src := range externalSrcs {
-			externalSrcSet.Add(src.GetInfo().GetId())
+		for _, src := range srcs {
+			externalSrcs[src.GetInfo().GetId()] = src.GetInfo()
 		}
 	}
 
-	if err := s.addDeploymentFlowsToGraph(ctx, requestClone, withListenPorts, builder, deployments, externalSrcSet); err != nil {
+	if err := s.addDeploymentFlowsToGraph(ctx, requestClone, withListenPorts, builder, deployments, externalSrcs); err != nil {
 		return nil, err
 	}
 	return builder.Build(), nil
 }
 
-func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1.NetworkGraphRequest, withListenPorts bool, graphBuilder *flowGraphBuilder, deployments []*storage.ListDeployment, visibleExternalSrcs set.StringSet) error {
+func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1.NetworkGraphRequest, withListenPorts bool, graphBuilder *flowGraphBuilder, deployments []*storage.ListDeployment, externalSrcs map[string]*storage.NetworkEntityInfo) error {
 	// Build a possibly reduced map of only those deployments for which we can see network flows.
 	networkFlowsChecker := networkGraphSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ClusterID(request.GetClusterId())
 	filteredSlice, err := sac.FilterSliceReflect(ctx, networkFlowsChecker, deployments, func(deployment *storage.ListDeployment) sac.ScopePredicate {
@@ -286,7 +284,8 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1
 			srcEnt := props.GetSrcEntity()
 			dstEnt := props.GetDstEntity()
 
-			// Exclude all flows having both external endpoints.
+			// Exclude all flows having both external endpoints. Although if one endpoint is an invisible external source,
+			// we still want to show the flow  given that the other endpoint is visible, however, attribute it to INTERNET.
 			if networkgraph.AllExternal(srcEnt, dstEnt) {
 				return false
 			}
@@ -301,13 +300,6 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1
 				if !networkgraph.AnyDeploymentInFilter(srcEnt, dstEnt, deploymentsWithFlows) {
 					return false
 				}
-			}
-
-			// If one of the endpoint is an external source but not visible i.e. was deleted, remove the flow.
-			// Ideally we want to attribute such flows to INTERNET.
-			// TODO(ROX-5632): Associate these flows with INTERNET entity.
-			if networkgraph.AnyExternal(srcEnt, dstEnt) && !networkgraph.AnyExternalInFilter(srcEnt, dstEnt, visibleExternalSrcs) {
-				return false
 			}
 
 			for _, entity := range []*storage.NetworkEntityInfo{props.GetSrcEntity(), props.GetDstEntity()} {
@@ -335,7 +327,7 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1
 		return err
 	}
 
-	flows, missingInfoFlows := networkflow.UpdateFlowsWithDeployments(flows, deploymentsMap)
+	flows, missingInfoFlows := networkflow.UpdateFlowsWithEntityDesc(flows, deploymentsMap, externalSrcs)
 
 	graphBuilder.AddFlows(flows)
 
