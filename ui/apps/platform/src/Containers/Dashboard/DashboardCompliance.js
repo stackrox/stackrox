@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, withRouter } from 'react-router-dom';
 import sortBy from 'lodash/sortBy';
-import { AGGREGATED_RESULTS_ACROSS_ENTITY } from 'queries/controls';
+import { AGGREGATED_RESULTS_ACROSS_ENTITIES } from 'queries/controls';
 import URLService from 'utils/URLService';
 import useCases from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
@@ -21,11 +21,11 @@ const standardsResultsMap = {
 const DashboardCompliance = ({ match, location }) => {
     const { isDarkMode } = useTheme();
     function processData(data) {
-        if (!data || !data.results || !data.results.results.length) {
+        if (!data || !data.controls || !data.controls.results.length) {
             return [];
         }
         const { complianceStandards } = data;
-        const modifiedData = data.results.results.map((result) => {
+        const modifiedData = data.controls.results.map((result) => {
             const standard = complianceStandards.find(
                 (cs) => cs.id === result.aggregationKeys[0].id
             );
@@ -131,9 +131,8 @@ const DashboardCompliance = ({ match, location }) => {
             </h2>
             <div className="flex">
                 <Query
-                    query={AGGREGATED_RESULTS_ACROSS_ENTITY}
+                    query={AGGREGATED_RESULTS_ACROSS_ENTITIES}
                     variables={{
-                        unit: entityTypes.CONTROL,
                         groupBy: [entityTypes.STANDARD],
                     }}
                 >
