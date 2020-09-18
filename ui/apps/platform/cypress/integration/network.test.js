@@ -29,6 +29,14 @@ describe('Network page', () => {
 
         cy.get(networkPageSelectors.network).click();
         cy.get(networkPageSelectors.network).should('have.class', 'bg-primary-700');
+
+        // TODO, use this pattern to more thoroughly test the graph using the cytoscape
+        cy.get('#cytoscapeContainer').then(() => {
+            cy.window().then((win) => {
+                // eslint-disable-next-line no-console
+                console.log('window.cytoscape', win.cytoscape);
+            });
+        });
     });
 
     it('should display a legend', () => {

@@ -499,6 +499,7 @@ const NetworkGraph = ({
 
     function configureCY(cyInstance) {
         cyRef.current = cyInstance;
+
         cyRef.current
             .off('click mouseover mouseout mousedown drag')
             .on('click', clickHandler)
@@ -515,6 +516,11 @@ const NetworkGraph = ({
                 zoomToFit();
                 setFirstRenderFinished(true);
             });
+
+        // if running in the UI e2e test environment, expose the cytoscape object to the tests
+        if (window.Cypress) {
+            window.cytoscape = cyRef.current;
+        }
     }
 
     const elements = getElements();
