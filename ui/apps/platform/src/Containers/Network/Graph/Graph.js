@@ -13,6 +13,7 @@ import { actions as deploymentActions } from 'reducers/deployments';
 import NetworkGraph from 'Components/NetworkGraph';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { filterModes } from 'constants/networkFilterModes';
+import entityTypes from 'constants/entityTypes';
 import wizardStages from '../Wizard/wizardStages';
 import Filters from './Overlays/Filters';
 import Legend from './Overlays/Legend';
@@ -38,11 +39,15 @@ class Graph extends Component {
         openWizard: PropTypes.func.isRequired,
         closeWizard: PropTypes.func.isRequired,
 
+        clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
+        selectedClusterId: PropTypes.string,
+
         isLoading: PropTypes.bool.isRequired,
     };
 
     static defaultProps = {
         networkEdgeMap: null,
+        selectedClusterId: '',
     };
 
     shouldComponentUpdate(nextProps) {
@@ -82,7 +87,7 @@ class Graph extends Component {
     };
 
     onNodeClick = (node) => {
-        if (this.isSimulatorOn()) {
+        if (node?.type === entityTypes.CLUSTER || this.isSimulatorOn()) {
             return;
         }
         this.props.setSelectedNode(node);
@@ -103,7 +108,11 @@ class Graph extends Component {
             );
         }
         const { networkFlowGraphUpdateKey, networkEdgeMap } = this.props;
-        const { closeWizard, filterState } = this.props;
+        const { closeWizard, filterState, clusters, selectedClusterId } = this.props;
+
+        const selectedClusterName =
+            clusters.find((cluster) => cluster.id === selectedClusterId)?.name || 'Unknown cluster';
+
         return (
             <NetworkGraph
                 updateKey={networkFlowGraphUpdateKey}
@@ -114,6 +123,7 @@ class Graph extends Component {
                 onClickOutside={closeWizard}
                 filterState={filterState}
                 simulatorOn={simulatorOn}
+                selectedClusterName={selectedClusterName}
             />
         );
     };
@@ -154,6 +164,9 @@ const mapStateToProps = createStructuredSelector({
     networkPolicyGraphState: selectors.getNetworkPolicyGraphState,
     networkFlowGraphUpdateKey: selectors.getNetworkFlowGraphUpdateKey,
     networkFlowGraphState: selectors.getNetworkFlowGraphState,
+
+    clusters: selectors.getClusters,
+    selectedClusterId: selectors.getSelectedNetworkClusterId,
 
     isLoading: selectors.getNetworkGraphLoading,
 });

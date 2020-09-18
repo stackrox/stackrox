@@ -878,7 +878,12 @@ export const getActiveNamespaceList = (filteredData, deploymentList) => {
  *                            that contains hoveredNode, and selectedNode
  * @returns {!Object[]}
  */
-export const getNamespaceList = (filteredData, deploymentList, { hoveredNode, selectedNode }) => {
+export const getNamespaceList = (
+    filteredData,
+    deploymentList,
+    { hoveredNode, selectedNode },
+    cluster
+) => {
     const activeNamespaceList = getActiveNamespaceList(filteredData, deploymentList);
     return uniq(filteredData.map((datum) => datum.entity.deployment.namespace)).map((namespace) => {
         const isActive = activeNamespaceList.includes(namespace);
@@ -886,6 +891,7 @@ export const getNamespaceList = (filteredData, deploymentList, { hoveredNode, se
         const isSelected = selectedNode?.id === namespace || selectedNode?.parent === namespace;
         const isBackground = !(!selectedNode && !hoveredNode) && !isHovered && !isSelected;
         const classes = getClasses({
+            nsGroup: true,
             nsActive: isActive,
             nsSelected: isSelected,
             nsHovered: isHovered,
@@ -898,6 +904,7 @@ export const getNamespaceList = (filteredData, deploymentList, { hoveredNode, se
                 name: `${isActive ? '\ue901' : ''} ${namespace}`,
                 active: isActive,
                 type: entityTypes.NAMESPACE,
+                parent: cluster,
             },
             classes,
         };

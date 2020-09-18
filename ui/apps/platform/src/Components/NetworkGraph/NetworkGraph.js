@@ -21,6 +21,7 @@ import GraphLoader from 'Containers/Network/Graph/Overlays/GraphLoader';
 import { edgeGridLayout, getParentPositions } from 'Containers/Network/Graph/networkGraphLayouts';
 import { NS_FONT_SIZE, MAX_ZOOM, MIN_ZOOM, ZOOM_STEP, GRAPH_PADDING } from 'constants/networkGraph';
 import { filterModes } from 'constants/networkFilterModes';
+import entityTypes from 'constants/entityTypes';
 import style from 'Containers/Network/Graph/networkGraphStyles';
 import {
     getLinks,
@@ -60,6 +61,7 @@ const NetworkGraph = ({
     setSelectedNamespace,
     setSelectedNodeInGraph,
     simulatorOn,
+    selectedClusterName,
     history,
     match,
     featureFlags,
@@ -124,9 +126,9 @@ const NetworkGraph = ({
 
     function nodeHoverHandler(ev) {
         const node = ev.target.data();
-        const { id, name, parent, listenPorts, side } = node;
-        const isChild = !!parent;
-        if (!cyRef || !isChild || side) {
+        const { id, name, parent, listenPorts, side, type } = node;
+        const isDeployment = type === entityTypes.DEPLOYMENT;
+        if (!cyRef || !isDeployment || side) {
             return;
         }
 
@@ -232,12 +234,17 @@ const NetworkGraph = ({
     function clickHandler(ev) {
         const { target } = ev;
         const evData = target.data && target.data();
-        const id = evData && evData.id;
-        const isParent = target.isParent && target.isParent();
+        const { id, type } = evData;
+        const targetIsNamespace = type === entityTypes.NAMESPACE;
         const isEdge = target.isEdge && target.isEdge();
 
         // Canvas or Selected node click: clear selection
-        if (!id || !evData || (selectedNode && evData && id === selectedNode.id)) {
+        if (
+            !id ||
+            !evData ||
+            (selectedNode && id === selectedNode.id) ||
+            type === entityTypes.CLUSTER
+        ) {
             setSelectedNode();
             setSelectedNodeInGraph();
             onClickOutside();
@@ -250,8 +257,8 @@ const NetworkGraph = ({
             return;
         }
 
-        // Parent Click
-        if (isParent) {
+        // Namespace Click
+        if (targetIsNamespace) {
             if (id) {
                 const deployments = (namespacesWithDeployments[id] || []).map((deployment) => {
                     const deploymentEdges = getEdgesFromNode({
@@ -271,16 +278,15 @@ const NetworkGraph = ({
             return;
         }
 
-        // Node click: select node
+        // if we didn't return early, must be click off a NS
+        setSelectedNamespace(null);
+
+        // New Node click: select node
         if (target.isNode()) {
             setSelectedNode(evData);
             setSelectedNodeInGraph(evData);
-            history.push(`/main/network/${evData.id}`);
+            history.push(`/main/network/${id}`);
             onNodeClick(evData);
-        }
-
-        if (!isParent) {
-            setSelectedNamespace(null);
         }
     }
 
@@ -367,7 +373,12 @@ const NetworkGraph = ({
         const configObj = getConfigObj();
         const filteredData = data.filter((datum) => datum?.entity?.deployment);
         const deploymentList = getDeploymentList(filteredData, configObj);
-        const namespaceList = getNamespaceList(filteredData, deploymentList, configObj);
+        const namespaceList = getNamespaceList(
+            filteredData,
+            deploymentList,
+            configObj,
+            selectedClusterName
+        );
         const namespaceEdgeNodes = getNamespaceEdgeNodes(namespaceList);
 
         namespaceList.forEach((namespace) => {
@@ -381,9 +392,34 @@ const NetworkGraph = ({
             });
         });
 
+        const clusterGroup = {
+            classes: 'cluster',
+            data: {
+                id: selectedClusterName,
+                name: selectedClusterName,
+                active: false,
+                type: entityTypes.CLUSTER,
+            },
+        };
+
+        const allNodes = [...namespaceList, ...deploymentList, ...namespaceEdgeNodes];
+        const allEdges = getEdges(configObj);
+
+        // @TODO: Remove "showClusters" flag when the feature flag "ROX_NETWORK_GRAPH_EXTERNAL_SRCS" is defaulted to true
+        //        and don't forget to add `clusterGroup to `allNodes` array above
+        const showCluster = isBackendFeatureFlagEnabled(
+            featureFlags,
+            knownBackendFlags.ROX_NETWORK_GRAPH_EXTERNAL_SRCS,
+            false
+        );
+        if (showCluster) {
+            allNodes.push(clusterGroup);
+        }
+        // end of TODO to be removed
+
         return {
-            nodes: [...namespaceList, ...deploymentList, ...namespaceEdgeNodes],
-            edges: getEdges(configObj),
+            nodes: allNodes,
+            edges: allEdges,
         };
     }
 
@@ -394,10 +430,16 @@ const NetworkGraph = ({
         }
 
         // Get a map of all the side nodes per namespace
-        const namespaces = cyRef.current.nodes(':parent');
+        const groups = cyRef.current.nodes(':parent');
+        const namespaces = groups.filter((group) => {
+            const groupData = group.data();
+            return groupData.type !== entityTypes.CLUSTER;
+        });
         const sideNodesPerParent = namespaces.reduce((acc, namespace) => {
             const { id } = namespace.data(); // to
-
+            if (!id) {
+                return { ...acc };
+            }
             const sideNodes = cyRef.current.nodes(`[parent="${id}"][side]`);
 
             const nodesInfo = sideNodes.map((node) => {
@@ -592,7 +634,7 @@ const NetworkGraph = ({
             return;
         }
         const CY = cyRef.current;
-        CY.nodes(`[parent]`).ungrabify();
+        CY.nodes(`.cluster`).ungrabify();
     }
 
     useEffect(setWindowResize, []);
@@ -643,6 +685,7 @@ NetworkGraph.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     setSelectedNodeInGraph: PropTypes.func,
     simulatorOn: PropTypes.bool.isRequired,
+    selectedClusterName: PropTypes.string.isRequired,
     featureFlags: PropTypes.arrayOf(PropTypes.shape),
 };
 

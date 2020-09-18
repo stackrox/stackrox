@@ -26,7 +26,29 @@ const deploymentStyle = {
 // the order of the styles in this array matters
 const styles = [
     {
-        selector: ':parent',
+        selector: '.cluster',
+        style: {
+            'background-color': 'rgba(218, 226, 251)',
+            'border-width': '1.5px',
+            'border-color': COLORS.inactiveNS,
+            events: 'no',
+            shape: 'roundrectangle',
+            'compound-sizing-wrt-labels': 'include',
+            'font-family': 'stackrox, Open Sans',
+            'text-margin-y': '8px',
+            'text-valign': 'bottom',
+            'font-size': NS_FONT_SIZE,
+            color: COLORS.label,
+            'font-weight': 700,
+            label: 'data(name)',
+            'background-opacity': '0.5',
+            padding: '8px',
+            'text-transform': 'uppercase',
+            'z-compound-depth': 'auto',
+        },
+    },
+    {
+        selector: '.nsGroup',
         style: {
             'background-color': '#fff',
             'border-width': '1.5px',

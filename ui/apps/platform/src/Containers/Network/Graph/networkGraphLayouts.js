@@ -4,6 +4,7 @@ import {
     NODE_PADDING,
     SIDE_NODE_PADDING,
 } from 'constants/networkGraph';
+import entityTypes from 'constants/entityTypes';
 
 const nodeWidth = TEXT_MAX_WIDTH + NODE_WIDTH;
 const nodeHeight = NODE_WIDTH + NODE_PADDING;
@@ -31,7 +32,7 @@ function getParentDimensions(nodeCount) {
 // Gets positions and dimensions for all parent nodes
 export function getParentPositions(nodes, padding) {
     const NSNames = nodes
-        .filter((node) => !node.data().parent && node.data().name)
+        .filter((node) => node.data().type === entityTypes.NAMESPACE)
         .map((parent) => parent.data().id);
 
     // Get namespace dimensions sorted by width
@@ -89,7 +90,7 @@ edgeGridLayout.prototype.run = function () {
     const options = edgeGridOptions;
     const { parentPadding, position, eles } = options;
 
-    const nodes = eles.nodes().not(':parent');
+    const nodes = eles.nodes().not('.namespace').not('.cluster');
 
     const renderNodes = nodes.not('[side]');
     const sideNodes = eles.nodes('[side]');
