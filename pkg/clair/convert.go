@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scans"
 	clairV1 "github.com/stackrox/scanner/api/v1"
+	clientMetadata "github.com/stackrox/scanner/pkg/clairify/client/metadata"
 	"github.com/stackrox/scanner/pkg/component"
 )
 
@@ -29,7 +30,7 @@ var (
 	}
 )
 
-type nvd struct {
+type metadata struct {
 	PublishedOn  string `json:"PublishedDateTime"`
 	LastModified string `json:"LastModifiedDateTime"`
 	CvssV2       *cvss  `json:"CVSSv2"`
@@ -45,12 +46,20 @@ type cvss struct {
 
 // ConvertVulnerability converts a clair vulnerability to a proto vulnerability
 func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerability {
-	if _, ok := v.Metadata["NVD"]; !ok {
+	var vulnMetadataMap interface{}
+	var link string
+	if metadata, ok := v.Metadata[clientMetadata.NVD]; ok {
+		vulnMetadataMap = metadata
+		link = scans.GetVulnLink(v.Name)
+	} else if metadata, ok := v.Metadata[clientMetadata.RedHat]; ok {
+		vulnMetadataMap = metadata
+		link = scans.GetRedHatVulnLink(v.Name)
+	} else {
 		return nil
 	}
 
 	if v.Link == "" {
-		v.Link = scans.GetVulnLink(v.Name)
+		v.Link = link
 	}
 	vul := &storage.EmbeddedVulnerability{
 		Cve:     v.Name,
@@ -61,35 +70,35 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 		},
 		VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 	}
-	nvdMap := v.Metadata["NVD"]
-	d, err := json.Marshal(nvdMap)
+
+	d, err := json.Marshal(vulnMetadataMap)
 	if err != nil {
 		return vul
 	}
-	var n nvd
-	if err := json.Unmarshal(d, &n); err != nil {
+	var m metadata
+	if err := json.Unmarshal(d, &m); err != nil {
 		return vul
 	}
-	if n.PublishedOn != "" {
-		if ts, err := time.Parse(timeFormat, n.PublishedOn); err == nil {
+	if m.PublishedOn != "" {
+		if ts, err := time.Parse(timeFormat, m.PublishedOn); err == nil {
 			vul.PublishedOn = protoconv.ConvertTimeToTimestamp(ts)
 		}
 	}
-	if n.LastModified != "" {
-		if ts, err := time.Parse(timeFormat, n.LastModified); err == nil {
+	if m.LastModified != "" {
+		if ts, err := time.Parse(timeFormat, m.LastModified); err == nil {
 			vul.LastModified = protoconv.ConvertTimeToTimestamp(ts)
 		}
 	}
 
-	if n.CvssV2 != nil && n.CvssV2.Vectors != "" {
-		if cvssV2, err := cvssv2.ParseCVSSV2(n.CvssV2.Vectors); err == nil {
-			cvssV2.ExploitabilityScore = n.CvssV2.ExploitabilityScore
-			cvssV2.ImpactScore = n.CvssV2.ImpactScore
-			cvssV2.Score = n.CvssV2.Score
+	if m.CvssV2 != nil && m.CvssV2.Vectors != "" {
+		if cvssV2, err := cvssv2.ParseCVSSV2(m.CvssV2.Vectors); err == nil {
+			cvssV2.ExploitabilityScore = m.CvssV2.ExploitabilityScore
+			cvssV2.ImpactScore = m.CvssV2.ImpactScore
+			cvssV2.Score = m.CvssV2.Score
 
 			vul.CvssV2 = cvssV2
 			// This sets the top level score for use in policies. It will be overwritten if v3 exists
-			vul.Cvss = n.CvssV2.Score
+			vul.Cvss = m.CvssV2.Score
 			vul.ScoreVersion = storage.EmbeddedVulnerability_V2
 			vul.GetCvssV2().Severity = cvssv2.Severity(vul.GetCvss())
 		} else {
@@ -97,14 +106,14 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 		}
 	}
 
-	if n.CvssV3 != nil && n.CvssV3.Vectors != "" {
-		if cvssV3, err := cvssv3.ParseCVSSV3(n.CvssV3.Vectors); err == nil {
-			cvssV3.ExploitabilityScore = n.CvssV3.ExploitabilityScore
-			cvssV3.ImpactScore = n.CvssV3.ImpactScore
-			cvssV3.Score = n.CvssV3.Score
+	if m.CvssV3 != nil && m.CvssV3.Vectors != "" {
+		if cvssV3, err := cvssv3.ParseCVSSV3(m.CvssV3.Vectors); err == nil {
+			cvssV3.ExploitabilityScore = m.CvssV3.ExploitabilityScore
+			cvssV3.ImpactScore = m.CvssV3.ImpactScore
+			cvssV3.Score = m.CvssV3.Score
 
 			vul.CvssV3 = cvssV3
-			vul.Cvss = n.CvssV3.Score
+			vul.Cvss = m.CvssV3.Score
 			vul.ScoreVersion = storage.EmbeddedVulnerability_V3
 			vul.GetCvssV3().Severity = cvssv3.Severity(vul.GetCvss())
 		} else {

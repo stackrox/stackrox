@@ -13,6 +13,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The default resource limit for Central has been changed to 4 cores. Please see the resource sizing guidelines in the help documentation for
   finer-grained settings.
 - A new policy criteria on "Service Account" has been added which runs policy evaluation against the deployment's service account name.
+- Use Red Hat CVSS scores instead of NVD for `rhel` and `centos` based images scanned by StackRox Scanner.
+  - CVSS3 is used if it exists otherwise CVSS2 is used.
 
 ## [49.0]
 - OIDC authentication providers: added support for two rarely-needed configuration options:
