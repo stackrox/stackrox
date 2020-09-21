@@ -15,6 +15,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - A new policy criteria on "Service Account" has been added which runs policy evaluation against the deployment's service account name.
 - Use Red Hat CVSS scores instead of NVD for `rhel` and `centos` based images scanned by StackRox Scanner.
   - CVSS3 is used if it exists otherwise CVSS2 is used.
+- Added support for .NET Core runtime CVEs (data from NVD).
+  - This affects images with .NET Core and/or ASP.NET Core runtime(s) installed
 
 ## [49.0]
 - OIDC authentication providers: added support for two rarely-needed configuration options:
