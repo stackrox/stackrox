@@ -6,9 +6,9 @@ metadata:
   name: central-config
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "configmap" "central-config") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "configmap" "central-config") | nindent 4 }}
 data:
   central-config.yaml: |
     {{- ._rox.central._config | nindent 4 }}

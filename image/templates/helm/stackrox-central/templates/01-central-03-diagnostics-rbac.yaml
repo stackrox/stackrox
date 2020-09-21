@@ -6,9 +6,9 @@ metadata:
   name: stackrox-central-diagnostics
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "role" "stackrox-central-diagnostics") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "role" "stackrox-central-diagnostics") | nindent 4 }}
 rules:
 - apiGroups:
   - '*'
@@ -24,9 +24,9 @@ metadata:
   name: stackrox-central-diagnostics
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "rolebinding" "stackrox-central-diagnostics") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "rolebinding" "stackrox-central-diagnostics") | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role

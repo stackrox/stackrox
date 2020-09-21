@@ -8,9 +8,9 @@ metadata:
   name: scanner
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "service" "scanner") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "service" "scanner") | nindent 4 }}
 spec:
   ports:
     - name: https-scanner
@@ -31,9 +31,9 @@ metadata:
   name: scanner-db
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "service" "scanner-db") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "service" "scanner-db") | nindent 4 }}
 spec:
   ports:
     - name: tcp-db
@@ -52,10 +52,10 @@ metadata:
   name: scanner-internal-no-istio-mtls
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "destinationrule" "scanner-internal-no-istio-mtls") | nindent 4 }}
   annotations:
     stackrox.io/description: "Disable Istio mTLS for ports 8080 and 8443, since StackRox services use built-in mTLS."
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "destinationrule" "scanner-internal-no-istio-mtls") | nindent 4 }}
 spec:
   host: scanner.{{ .Release.Namespace }}.svc.cluster.local
   trafficPolicy:
@@ -77,10 +77,10 @@ metadata:
   name: scanner-db-internal-no-istio-mtls
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "destinationrule" "scanner-db-internal-no-istio-mtls") | nindent 4 }}
   annotations:
     stackrox.io/description: "Disable Istio mTLS for port 5432, since StackRox services use built-in mTLS."
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "destinationrule" "scanner-db-internal-no-istio-mtls") | nindent 4 }}
 spec:
   host: scanner-db.{{ .Release.Namespace }}.svc.cluster.local
   trafficPolicy:

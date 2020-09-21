@@ -7,12 +7,11 @@ metadata:
   name: stackrox
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "application" "stackrox") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "application" "stackrox") | nindent 4 }}
     kubernetes-engine.cloud.google.com/icon: "data:image/png;base64,{{ .Files.Get "assets/icon.png" | b64enc }}"
     marketplace.cloud.google.com/deploy-info: '{partner_id: "stackrox-launcher-project-1", product_id: "stackrox-kubernetes-security", partner_name: "StackRox"}'
-
 spec:
   descriptor:
     type: StackRox

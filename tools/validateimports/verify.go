@@ -14,6 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"golang.org/x/tools/go/ast/astutil"
 )
 
@@ -57,6 +58,9 @@ var (
 		},
 		"github.com/prometheus/common/log": {
 			replacement: "a logger instead",
+		},
+		"k8s.io/helm/...": {
+			replacement: "package from helm.sh/v3",
 		},
 	}
 )
@@ -139,8 +143,17 @@ func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName
 // checkForbidden returns an error if an import has been forbidden and the importing package isn't on the whitelist
 func checkForbidden(impPath, packageName string) error {
 	forbiddenDetails, ok := forbiddenImports[impPath]
-	if !ok {
-		return nil
+	for !ok {
+		if !stringutils.ConsumeSuffix(&impPath, "/...") {
+			impPath += "/..."
+		} else {
+			slashIdx := strings.LastIndex(impPath, "/")
+			if slashIdx == -1 {
+				return nil
+			}
+			impPath = impPath[:slashIdx] + "/..."
+		}
+		forbiddenDetails, ok = forbiddenImports[impPath]
 	}
 
 	if forbiddenDetails.replacement == packageName {

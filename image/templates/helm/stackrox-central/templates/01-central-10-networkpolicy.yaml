@@ -6,9 +6,9 @@ metadata:
   name: allow-ext-to-central
   namespace: {{.Release.Namespace}}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "networkpolicy" "allow-ext-to-central") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "networkpolicy" "allow-ext-to-central") | nindent 4 }}
 spec:
   ingress:
   - ports:

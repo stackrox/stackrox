@@ -8,9 +8,9 @@ metadata:
   name: scanner-config
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "configmap" "scanner-config") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "configmap" "scanner-config") | nindent 4 }}
 data:
   config.yaml: |
     {{- tpl (.Files.Get "config-templates/scanner/config.yaml.tpl") . | nindent 4 }}

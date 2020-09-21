@@ -5,9 +5,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox-central-psp
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "clusterrole" "stackrox-central-psp") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "clusterrole" "stackrox-central-psp") | nindent 4 }}
 rules:
   - apiGroups:
       - policy
@@ -24,7 +24,9 @@ metadata:
   name: stackrox-central-psp
   namespace: {{.Release.Namespace}}
   labels:
-    app.kubernetes.io/name: stackrox
+    {{- include "srox.labels" (list . "rolebinding" "stackrox-central-psp") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "stackrox-central-psp") | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -39,7 +41,9 @@ kind: PodSecurityPolicy
 metadata:
   name: stackrox-central
   labels:
-    app.kubernetes.io/name: stackrox
+    {{- include "srox.labels" (list . "podsecuritypolicy" "stackrox-central") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "podsecuritypolicy" "stackrox-central") | nindent 4 }}
 spec:
   privileged: false
   allowPrivilegeEscalation: false
@@ -81,10 +85,10 @@ apiVersion: security.openshift.io/v1
 metadata:
   name: central
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "securitycontextconstraints" "central") | nindent 4 }}
   annotations:
     kubernetes.io/description: central is the security constraint for the central server
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "securitycontextconstraints" "central") | nindent 4 }}
 allowHostDirVolumePlugin: {{ ._rox.central.persistence.hostPath | not | not }}
 allowedCapabilities: []
 allowHostIPC: false

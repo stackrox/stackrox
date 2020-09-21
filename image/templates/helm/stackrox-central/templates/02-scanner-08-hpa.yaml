@@ -9,9 +9,9 @@ metadata:
   name: scanner
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "horizontalpodautoscaler" "scanner") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "horizontalpodautoscaler" "scanner") | nindent 4 }}
 spec:
   minReplicas: {{ ._rox.scanner.autoscaling.minReplicas }}
   maxReplicas: {{ ._rox.scanner.autoscaling.maxReplicas }}

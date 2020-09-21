@@ -1,15 +1,16 @@
 {{- include "srox.init" . -}}
 
 {{ if ._rox.central.persistence._pvcCfg -}}
-kind: PersistentVolumeClaim
+{{- $claimName := ._rox.central.persistence._pvcCfg.claimName -}}
 apiVersion: v1
+kind: PersistentVolumeClaim
 metadata:
-  name: {{ ._rox.central.persistence._pvcCfg.claimName }}
+  name: {{ $claimName }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "persistentvolumeclaim" $claimName) | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "persistentvolumeclaim" $claimName) | nindent 4 }}
     "helm.sh/hook": "pre-install,pre-upgrade"
     "helm.sh/resource-policy": keep
     "helm.sh/hook-delete-policy": never

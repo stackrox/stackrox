@@ -88,6 +88,20 @@ func ReadFileAndTemplate(pathToFile string, funcs template.FuncMap) (*template.T
 	return tpl.Parse(contents)
 }
 
+func getChartTemplate(prefix string) (*helmtpl.ChartTemplate, error) {
+	// Retrieve template files from box.
+	chartTplFiles, err := GetFilesFromBox(K8sBox, prefix)
+	if err != nil {
+		return nil, errors.Wrapf(err, "fetching %s chart files from box", prefix)
+	}
+	chartTpl, err := helmtpl.Load(chartTplFiles)
+	if err != nil {
+		return nil, errors.Wrapf(err, "loading %s helmtpl", prefix)
+	}
+
+	return chartTpl, nil
+}
+
 func mustGetChart(box packr.Box, overrides map[string]func() io.ReadCloser, prefixes ...string) []*loader.BufferedFile {
 	ch, err := getChartFiles(box, prefixes, overrides)
 	utils.Must(err)
@@ -117,6 +131,11 @@ func GetMonitoringChart() []*loader.BufferedFile {
 // GetSensorChart returns the Helm chart for sensor
 func GetSensorChart(values map[string]interface{}, certs *sensor.Certs) *chart.Chart {
 	return mustGetSensorChart(K8sBox, values, certs)
+}
+
+// GetCentralServicesChartTemplate retrieves the StackRox Central Services Helm chart template.
+func GetCentralServicesChartTemplate() (*helmtpl.ChartTemplate, error) {
+	return getChartTemplate(CentralServicesChartPrefix)
 }
 
 var (

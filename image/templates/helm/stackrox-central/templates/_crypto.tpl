@@ -64,11 +64,7 @@
 
 {{ $result := dict }}
 {{ if and $certPEM $keyPEM }}
-  {{ if $spec.ca }}
-    {{ $result = buildCustomCert (b64enc $certPEM) (b64enc $keyPEM) }}
-  {{ else }}
-    {{ $result = dict "Cert" $certPEM "Key" $keyPEM }}
-  {{ end }}
+  {{ $result = dict "Cert" $certPEM "Key" $keyPEM }}
 {{ else if or $certPEM $keyPEM }}
   {{ if and $keyPEM $spec.keyOnly }}
     {{ $_ := set $result "Key" $keyPEM }}
@@ -93,7 +89,11 @@
       {{ end }}
       {{ $sans := dict }}
       {{ include "srox.computeSANs" (list $ $sans $spec.dnsBase) }}
-      {{ $result = genSignedCert $spec.CN nil $sans.result 365 $._rox._ca }}
+      {{ $ca := $._rox._ca }}
+      {{ if kindIs "map" $ca }}
+        {{ $ca = buildCustomCert (b64enc $ca.Cert) (b64enc $ca.Key) }}
+      {{ end }}
+      {{ $result = genSignedCert $spec.CN nil $sans.result 365 $ca }}
       {{ $_ := set $genCfg "cert" $result.Cert }}
       {{ $_ = set $genCfg "key" $result.Key }}
     {{ end }}

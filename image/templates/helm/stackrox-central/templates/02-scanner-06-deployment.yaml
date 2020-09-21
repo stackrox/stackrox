@@ -9,9 +9,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: scanner
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "deployment" "scanner") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "deployment" "scanner") | nindent 4 }}
 spec:
   replicas: {{ ._rox.scanner.replicas }}
   minReadySeconds: 15
@@ -25,10 +25,10 @@ spec:
       namespace: {{ .Release.Namespace }}
       labels:
         app: scanner
-        {{- include "srox.defaultLabels" . | nindent 8 }}
+        {{- include "srox.podLabels" (list . "deployment" "scanner") | nindent 8 }}
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
-        {{- include "srox.defaultAnnotations" . | nindent 8 }}
+        {{- include "srox.podAnnotations" (list . "deployment" "scanner") | nindent 8 }}
     spec:
       affinity:
         podAntiAffinity:
@@ -76,6 +76,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        {{- include "srox.envVars" (list . "deployment" "scanner" "scanner") | nindent 8 }}
         resources:
           {{- ._rox.scanner._resources | nindent 10 }}
         command:
@@ -151,9 +152,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: scanner-db
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "deployment" "scanner-db") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "deployment" "scanner-db") | nindent 4 }}
 spec:
   replicas: 1
   minReadySeconds: 15
@@ -167,10 +168,10 @@ spec:
       namespace: {{ .Release.Namespace }}
       labels:
         app: scanner-db
-        {{- include "srox.defaultLabels" . | nindent 8 }}
+        {{- include "srox.podLabels" (list . "deployment" "scanner-db") | nindent 8 }}
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "5432"
-        {{- include "srox.defaultAnnotations" . | nindent 8 }}
+        {{- include "srox.podAnnotations" (list . "deployment" "scanner-db") | nindent 8 }}
     spec:
       {{ if ._rox.env.openshift }}
       affinity:
@@ -222,6 +223,8 @@ spec:
           containerPort: 5432
         resources:
           {{- ._rox.scanner._dbResources | nindent 10 }}
+        env:
+          {{- include "srox.envVars" (list . "deployment" "scanner-db" "db") | nindent 10 }}
         securityContext:
           runAsUser: 70
           runAsGroup: 70

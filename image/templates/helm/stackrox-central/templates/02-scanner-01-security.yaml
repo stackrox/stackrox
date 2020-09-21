@@ -7,9 +7,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox-scanner-psp
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "clusterrole" "stackrox-scanner-psp") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "clusterrole" "stackrox-scanner-psp") | nindent 4 }}
 rules:
 - apiGroups:
   - policy
@@ -28,9 +28,9 @@ metadata:
   name: stackrox-scanner-psp
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "rolebinding" "stackrox-scanner-psp") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "rolebinding" "stackrox-scanner-psp") | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -47,9 +47,9 @@ kind: PodSecurityPolicy
 metadata:
   name: stackrox-scanner
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "podsecuritypolicy" "stackrox-scanner") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "podsecuritypolicy" "stackrox-scanner") | nindent 4 }}
 spec:
   privileged: false
   allowPrivilegeEscalation: false
@@ -80,9 +80,9 @@ apiVersion: security.openshift.io/v1
 metadata:
   name: scanner
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "securitycontextconstraints" "scanner") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "securitycontextconstraints" "scanner") | nindent 4 }}
     kubernetes.io/description: scanner is the security constraint for the Scanner container
 priority: 100
 runAsUser:

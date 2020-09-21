@@ -6,10 +6,10 @@ metadata:
   name: central
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "deployment" "central") | nindent 4 }}
     app: central
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "deployment" "central") | nindent 4 }}
 spec:
   replicas: 1
   minReadySeconds: 15
@@ -23,10 +23,10 @@ spec:
       namespace: {{ .Release.Namespace }}
       labels:
         app: central
-        {{- include "srox.defaultLabels" . | nindent 8 }}
+        {{- include "srox.podLabels" (list . "deployment" "central") | nindent 8 }}
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443"
-        {{- include "srox.defaultAnnotations" . | nindent 8 }}
+        {{- include "srox.podAnnotations" (list . "deployment" "central") | nindent 8 }}
     spec:
       {{- if ._rox.central._nodeSelector }}
       nodeSelector:
@@ -82,10 +82,11 @@ spec:
             drop: ["NET_RAW"]
           readOnlyRootFilesystem: true
         env:
-          - name: ROX_INIT_TELEMETRY_ENABLED
-            value: {{ ._rox.central.disableTelemetry | not | quote }}
-          - name: ROX_OFFLINE_MODE
-            value: {{ ._rox.env.offlineMode | quote }}
+        - name: ROX_INIT_TELEMETRY_ENABLED
+          value: {{ ._rox.central.disableTelemetry | not | quote }}
+        - name: ROX_OFFLINE_MODE
+          value: {{ ._rox.env.offlineMode | quote }}
+        {{- include "srox.envVars" (list . "deployment" "central" "central") | nindent 8 }}
         volumeMounts:
         - name: varlog
           mountPath: /var/log/stackrox/

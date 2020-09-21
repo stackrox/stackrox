@@ -8,9 +8,9 @@ metadata:
   name: scanner
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "networkpolicy" "scanner") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "networkpolicy" "scanner") | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
@@ -36,9 +36,9 @@ metadata:
   name: scanner-db
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "networkpolicy" "scanner-db") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "networkpolicy" "scanner-db") | nindent 4 }}
 spec:
   podSelector:
     matchLabels:

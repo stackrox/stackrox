@@ -6,9 +6,9 @@ metadata:
   name: central
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "service" "central") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "service" "central") | nindent 4 }}
 spec:
   ports:
   - name: https
@@ -27,9 +27,9 @@ metadata:
   name: central-internal-no-istio-mtls
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "destinationrule" "central-internal-no-istio-mtls") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "destinationrule" "central-internal-no-istio-mtls") | nindent 4 }}
     stackrox.io/description: "Disable Istio mTLS for port 443, since StackRox services use built-in mTLS."
 spec:
   host: central.{{ .Release.Namespace }}.svc.cluster.local

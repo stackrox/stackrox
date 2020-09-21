@@ -7,9 +7,9 @@ metadata:
   name: central
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "route" "central") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "route" "central") | nindent 4 }}
 spec:
   port:
     targetPort: https
@@ -25,9 +25,9 @@ metadata:
   name: central-mtls
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "route" "central-mtls") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "route" "central-mtls") | nindent 4 }}
 spec:
   host: "central.{{ .Release.Namespace }}"
   port:
@@ -45,13 +45,13 @@ apiVersion: v1
 kind: Service
 metadata:
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "service" "central-loadbalancer") | nindent 4 }}
     cloud.google.com/app-protocols: '{"api": "HTTPS"}'
     service.alpha.kubernetes.io/app-protocols: '{"api": "HTTPS"}'
   name: central-loadbalancer
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "service" "central-loadbalancer") | nindent 4 }}
 spec:
   type: NodePort
   ports:
@@ -72,9 +72,9 @@ metadata:
   name: central-loadbalancer
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.defaultLabels" . | nindent 4 }}
+    {{- include "srox.labels" (list . "service" "central-loadbalancer") | nindent 4 }}
   annotations:
-    {{- include "srox.defaultAnnotations" . | nindent 4 }}
+    {{- include "srox.annotations" (list . "service" "central-loadbalancer") | nindent 4 }}
 spec:
   type: LoadBalancer
   ports:

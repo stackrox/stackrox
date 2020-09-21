@@ -91,11 +91,36 @@ scanner:
     cert: null # string
     key: null # string
     generate: null # bool
+customize:
+  labels: {} # dict
+  annotations: {} # dict
+  podLabels: {} # dict
+  podAnnotations: {} # dict
+  envVars: {} # dict
+  central:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  scanner:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  scanner-db:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  other: {} # dict
 allowNonstandardNamespace: null # bool
 allowNonstandardReleaseName: null # bool
 meta:
   useLookup: null # bool
-  fileOverrides: null # dict
+  fileOverrides: {} # dict
   apiServer:
     version: null # string
     overrideAPIResources: null # [string]
