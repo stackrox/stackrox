@@ -3124,10 +3124,13 @@ jobs:
       - run:
           name: Setup CI License
           command: |
-            echo "Issuing a CI license for testing the build"
-            ROX_LICENSE_KEY="$(licenses/ci.sh)"
+            cci-export ROX_LICENSE_KEY "${ROX_PROD_LICENSE}"
 
-            cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
+            # TODO: reinstate the below once we have a good solution.
+            # echo "Issuing a CI license for testing the build"
+            # ROX_LICENSE_KEY="$(licenses/ci.sh)"
+
+            # cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
 
       - run:
           name: Install license key

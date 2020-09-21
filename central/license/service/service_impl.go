@@ -95,6 +95,13 @@ func (s *service) GetLicenses(ctx context.Context, req *v1.GetLicensesRequest) (
 	return resp, nil
 }
 
+var (
+	licenseAcceptedStates = map[v1.LicenseInfo_Status]struct{}{
+		v1.LicenseInfo_NOT_YET_VALID: {},
+		v1.LicenseInfo_VALID:         {},
+	}
+)
+
 func (s *service) AddLicense(ctx context.Context, req *v1.AddLicenseRequest) (*v1.AddLicenseResponse, error) {
 	if req.GetLicenseKey() == "" {
 		return nil, status.Error(codes.InvalidArgument, "must provide a non-empty license key")
@@ -105,9 +112,11 @@ func (s *service) AddLicense(ctx context.Context, req *v1.AddLicenseRequest) (*v
 		return nil, status.Errorf(codes.Internal, "failed to add license key: %v", err)
 	}
 
+	_, licenseAccepted := licenseAcceptedStates[licenseInfo.GetStatus()]
+
 	return &v1.AddLicenseResponse{
 		License:  licenseInfo,
-		Accepted: true,
+		Accepted: licenseAccepted,
 	}, nil
 }
 
