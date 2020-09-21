@@ -912,9 +912,6 @@ commands:
       machine-type:
         type: string
         default: e2-standard-4
-      wait:
-        type: boolean
-        default: false
 
     steps:
       - setup-gcp
@@ -924,13 +921,6 @@ commands:
       - run:
           name: Assign environment variables
           command: |
-            if [[ -f "/go/src/github.com/stackrox/rox/.ci-clusters/<< parameters.cluster-id >>" ]]; then
-              source .circleci/create-cluster.sh
-              cluster=$(cat "/go/src/github.com/stackrox/rox/.ci-clusters/<< parameters.cluster-id >>")
-              if check-cluster-existence "$cluster"; then
-                  return 0
-              fi
-            fi
             CLUSTER_NAME="rox-ci-<< parameters.cluster-id >>-${CIRCLE_BUILD_NUM}"
             cci-export CLUSTER_NAME "$CLUSTER_NAME"
             echo "Assigned cluster name is $CLUSTER_NAME"
@@ -953,15 +943,15 @@ commands:
             echo "Using gke release channel: $GKE_RELEASE_CHANNEL"
 
       - create-gke:
-          wait: << parameters.wait >>
+          wait: false
 
       - run:
           name: Save cluster config
           command: |
             CONFIG_DIR="/go/src/github.com/stackrox/rox/.ci-clusters/<< parameters.cluster-id >>"
             mkdir -p "$CONFIG_DIR"
-            echo "$CLUSTER_NAME" >"${CONFIG_DIR}/name"
-            gcloud config get-value compute/zone >"${CONFIG_DIR}/zone"
+            echo "$CLUSTER_NAME" >>"${CONFIG_DIR}/name"
+            gcloud config get-value compute/zone >>"${CONFIG_DIR}/zone"
             cp .circleci/gke-refresh-token-forever.sh "${CONFIG_DIR}/refresh-token-forever.sh"
 
       - build-liveness-check
@@ -2319,6 +2309,7 @@ jobs:
           label: ci-no-api-tests
       - provision-gke-cluster:
           cluster-id: api-nongroovy-tests
+          num-nodes: 2
 
   provision-gke-ui-e2e-tests:
     executor: custom
@@ -2640,9 +2631,7 @@ jobs:
       - setup_remote_docker
       - setup-gcp
       - setup-dep-env
-      - provision-gke-cluster:
-          cluster-id: api-nongroovy-tests
-          wait: true
+
       - attach-gke-cluster:
           cluster-id: api-nongroovy-tests
       - remove-existing-stackrox-resources
@@ -2899,9 +2888,6 @@ jobs:
       - setup-gcp
       - setup-dep-env
 
-      - provision-gke-cluster:
-          cluster-id: ui-e2e-tests
-          wait: true
       - attach-gke-cluster:
           cluster-id: ui-e2e-tests
       - remove-existing-stackrox-resources
@@ -3068,9 +3054,6 @@ jobs:
       - *setupRoxctl
       - setup-gcp
       - setup-dep-env
-      - provision-gke-cluster:
-          cluster-id: upgrade-test
-          wait: true
       - attach-gke-cluster:
           cluster-id: upgrade-test
       - remove-existing-stackrox-resources
@@ -3624,9 +3607,6 @@ jobs:
       - *setupRoxctl
       - setup-gcp
       - setup-dep-env
-      - provision-gke-cluster:
-          cluster-id: scale-test
-          wait: true
       - attach-gke-cluster:
           cluster-id: scale-test
       - remove-existing-stackrox-resources
