@@ -95,10 +95,11 @@ class CVETest extends BaseSpecification {
                 false     | 0               | 1          | 1              | NGINX_1_10_2_IMAGE
         "CVE-2019-9232"  | 7.5  | "V3"         | 3.6         | "2019-09-27T19:15:00Z" |
                 true      | 0               | 1          | 1              | NGINX_1_10_2_IMAGE
-        "CVE-2020-8177"  | 5.4  | "V3"         | 4.2         | "2020-06-24T00:00:00Z" |
-                false     | 0               | 1          | 2              | RED_HAT_IMAGE
-        "CVE-2019-14866" | 6.7  | "V3"         | 5.9         | "2019-08-30T00:00:00Z" |
-                false     | 0               | 1          | 1              | RED_HAT_IMAGE
+// TODO(ROX-5653)
+//        "CVE-2020-8177"  | 5.4  | "V3"         | 4.2         | "2020-06-24T00:00:00Z" |
+//                false     | 0               | 1          | 2              | RED_HAT_IMAGE
+//        "CVE-2019-14866" | 6.7  | "V3"         | 5.9         | "2019-08-30T00:00:00Z" |
+//                false     | 0               | 1          | 1              | RED_HAT_IMAGE
     }
 
     @Unroll
