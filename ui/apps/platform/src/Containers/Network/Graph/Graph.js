@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
+import { createSelector, createStructuredSelector } from 'reselect';
 import PropTypes from 'prop-types';
 import isEmpty from 'lodash/isEmpty';
 
@@ -21,8 +21,8 @@ import Legend from './Overlays/Legend';
 class Graph extends Component {
     static propTypes = {
         wizardOpen: PropTypes.bool.isRequired,
-        wizardStage: PropTypes.string.isRequired,
         filterState: PropTypes.number.isRequired,
+        isSimulatorOn: PropTypes.bool.isRequired,
 
         networkNodeMap: PropTypes.shape({}).isRequired,
         networkEdgeMap: PropTypes.shape({}),
@@ -58,6 +58,7 @@ class Graph extends Component {
             wizardOpen,
             networkEdgeMap,
             networkNodeMap,
+            isSimulatorOn,
         } = this.props;
         return (
             !networkEdgeMap ||
@@ -65,20 +66,13 @@ class Graph extends Component {
             nextProps.networkFlowGraphUpdateKey !== networkFlowGraphUpdateKey ||
             nextProps.filterState !== filterState ||
             nextProps.isLoading !== isLoading ||
-            nextProps.wizardOpen !== wizardOpen
+            nextProps.wizardOpen !== wizardOpen ||
+            nextProps.isSimulatorOn !== isSimulatorOn
         );
     }
 
-    isSimulatorOn = () => {
-        const { wizardOpen, wizardStage } = this.props;
-        const simulatorOn =
-            wizardOpen &&
-            (wizardStage === wizardStages.simulator || wizardStage === wizardStages.creator);
-        return simulatorOn;
-    };
-
     onNamespaceClick = (namespace) => {
-        if (this.isSimulatorOn()) {
+        if (this.props.isSimulatorOn) {
             return;
         }
         this.props.setSelectedNamespace(namespace);
@@ -87,7 +81,7 @@ class Graph extends Component {
     };
 
     onNodeClick = (node) => {
-        if (node?.type === entityTypes.CLUSTER || this.isSimulatorOn()) {
+        if (node?.type === entityTypes.CLUSTER || this.props.isSimulatorOn) {
             return;
         }
         this.props.setSelectedNode(node);
@@ -129,13 +123,10 @@ class Graph extends Component {
     };
 
     render() {
-        const { wizardOpen, wizardStage, filterState } = this.props;
+        const { filterState, isSimulatorOn } = this.props;
         const { networkFlowGraphState, networkPolicyGraphState } = this.props;
         // Simulator styling.
-        const simulatorOn =
-            wizardOpen &&
-            (wizardStage === wizardStages.simulator || wizardStage === wizardStages.creator);
-        const simulatorMode = simulatorOn ? 'simulator-mode' : '';
+        const simulatorMode = isSimulatorOn ? 'simulator-mode' : '';
 
         // Graph nodes and styling.
         const networkGraphState =
@@ -145,7 +136,7 @@ class Graph extends Component {
         // Rendering.
         return (
             <div className={`${simulatorMode} ${networkGraphStateClass} w-full h-full theme-light`}>
-                {this.renderGraph(simulatorOn)}
+                {this.renderGraph(isSimulatorOn)}
                 <Filters />
                 <Legend />
             </div>
@@ -153,10 +144,17 @@ class Graph extends Component {
     }
 }
 
+const getIsSimulatorOn = createSelector(
+    [selectors.getNetworkWizardOpen, selectors.getNetworkWizardStage],
+    (wizardOpen, wizardStage) =>
+        wizardOpen &&
+        (wizardStage === wizardStages.simulator || wizardStage === wizardStages.creator)
+);
+
 const mapStateToProps = createStructuredSelector({
     wizardOpen: selectors.getNetworkWizardOpen,
-    wizardStage: selectors.getNetworkWizardStage,
     filterState: selectors.getNetworkGraphFilterMode,
+    isSimulatorOn: getIsSimulatorOn,
 
     networkNodeMap: selectors.getNetworkNodeMap,
     networkEdgeMap: selectors.getNetworkEdgeMap,

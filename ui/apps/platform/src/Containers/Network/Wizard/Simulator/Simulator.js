@@ -3,7 +3,6 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions as wizardActions } from 'reducers/network/wizard';
-import { actions as pageActions } from 'reducers/network/page';
 import PropTypes from 'prop-types';
 import Panel from 'Components/Panel';
 
@@ -12,15 +11,9 @@ import ProcessingView from './ProcessingView';
 import SuccessView from './SuccessView';
 import ErrorView from './ErrorView';
 
-const Simulator = ({
-    closeWizard,
-    setModification,
-    wizardOpen,
-    wizardStage,
-    modificationState,
-}) => {
-    function onClose() {
-        closeWizard();
+const Simulator = ({ onClose, setModification, wizardOpen, wizardStage, modificationState }) => {
+    function onCloseHandler() {
+        onClose();
         setModification(null);
     }
 
@@ -38,7 +31,7 @@ const Simulator = ({
             <Panel
                 className="border-t-0 border-r-0 border-b-0"
                 header="Network Policy Simulator"
-                onClose={onClose}
+                onClose={onCloseHandler}
                 closeButtonClassName={`bg-${colorType}-600 hover:bg-${colorType}-700`}
                 closeButtonIconColor="text-base-100"
             >
@@ -53,7 +46,7 @@ const Simulator = ({
 Simulator.propTypes = {
     wizardOpen: PropTypes.bool.isRequired,
     wizardStage: PropTypes.string.isRequired,
-    closeWizard: PropTypes.func.isRequired,
+    onClose: PropTypes.func.isRequired,
     setModification: PropTypes.func.isRequired,
     modificationState: PropTypes.string.isRequired,
 };
@@ -67,7 +60,6 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = {
-    closeWizard: pageActions.closeNetworkWizard,
     setModification: wizardActions.setNetworkPolicyModification,
 };
 

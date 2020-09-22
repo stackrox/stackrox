@@ -29,7 +29,7 @@ class Page extends Component {
         return (
             <section className="flex flex-1 h-full w-full">
                 <div className="flex flex-1 flex-col w-full overflow-hidden">
-                    <div className="flex">
+                    <div className="flex border-b border-base-400">
                         <Header />
                     </div>
                     <section className="network-grid-bg flex flex-1 relative">

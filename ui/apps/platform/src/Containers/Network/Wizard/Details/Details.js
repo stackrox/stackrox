@@ -5,7 +5,6 @@ import { createStructuredSelector } from 'reselect';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import { types as deploymentTypes } from 'reducers/deployments';
-import { actions as pageActions } from 'reducers/network/page';
 import { selectors } from 'reducers';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as graphActions } from 'reducers/network/graph';
@@ -163,7 +162,6 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = {
-    onClose: pageActions.closeNetworkWizard,
     setWizardStage: wizardActions.setNetworkWizardStage,
     setSelectedNode: graphActions.setSelectedNode,
 };

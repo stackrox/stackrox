@@ -8,7 +8,6 @@ import { capitalize } from 'lodash';
 import { createStructuredSelector } from 'reselect';
 
 import { types as deploymentTypes } from 'reducers/deployments';
-import { actions as pageActions } from 'reducers/network/page';
 import { selectors } from 'reducers';
 import { sortValue } from 'sorters/sorters';
 import { filterModes, filterLabels } from 'constants/networkFilterModes';
@@ -191,8 +190,4 @@ const mapStateToProps = createStructuredSelector({
     filterState: selectors.getNetworkGraphFilterMode,
 });
 
-const mapDispatchToProps = {
-    onClose: pageActions.closeNetworkWizard,
-};
-
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(NamespaceDetails));
+export default withRouter(connect(mapStateToProps)(NamespaceDetails));

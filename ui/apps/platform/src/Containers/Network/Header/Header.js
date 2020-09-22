@@ -8,9 +8,12 @@ import { actions as searchActions } from 'reducers/network/search';
 
 import PageHeader from 'Components/PageHeader';
 import ReduxSearchInput from 'Containers/Search/ReduxSearchInput';
+import FeatureEnabled from 'Containers/FeatureEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import ClusterSelect from './ClusterSelect';
 import SimulatorButton from './SimulatorButton';
 import TimeWindowSelector from './TimeWindowSelector';
+import CIDRFormButton from './CIDRFormButton';
 
 class Header extends Component {
     static propTypes = {
@@ -33,22 +36,33 @@ class Header extends Component {
     render() {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
         return (
-            <PageHeader header="Network Graph" subHeader={subHeader} classes="w-2/3">
-                <ClusterSelect />
-                <ReduxSearchInput
-                    id="network"
-                    className="w-full pl-2"
-                    searchOptions={this.props.searchOptions}
-                    searchModifiers={this.props.searchModifiers}
-                    searchSuggestions={this.props.searchSuggestions}
-                    setSearchOptions={this.props.setSearchOptions}
-                    setSearchModifiers={this.props.setSearchModifiers}
-                    setSearchSuggestions={this.props.setSearchSuggestions}
-                    onSearch={this.onSearch}
-                />
-                <TimeWindowSelector />
-                <SimulatorButton />
-            </PageHeader>
+            <>
+                <PageHeader
+                    header="Network Graph"
+                    subHeader={subHeader}
+                    classes="flex-1 border-none"
+                >
+                    <ClusterSelect />
+                    <ReduxSearchInput
+                        id="network"
+                        className="w-full pl-2"
+                        searchOptions={this.props.searchOptions}
+                        searchModifiers={this.props.searchModifiers}
+                        searchSuggestions={this.props.searchSuggestions}
+                        setSearchOptions={this.props.setSearchOptions}
+                        setSearchModifiers={this.props.setSearchModifiers}
+                        setSearchSuggestions={this.props.setSearchSuggestions}
+                        onSearch={this.onSearch}
+                    />
+                    <TimeWindowSelector />
+                    <SimulatorButton />
+                </PageHeader>
+                <FeatureEnabled featureFlag={knownBackendFlags.ROX_NETWORK_GRAPH_EXTERNAL_SRCS}>
+                    {({ featureEnabled }) => {
+                        return featureEnabled && <CIDRFormButton />;
+                    }}
+                </FeatureEnabled>
+            </>
         );
     }
 }

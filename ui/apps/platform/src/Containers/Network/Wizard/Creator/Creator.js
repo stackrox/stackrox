@@ -2,7 +2,6 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
-import { actions as pageActions } from 'reducers/network/page';
 import PropTypes from 'prop-types';
 import Panel from 'Components/Panel';
 
@@ -46,8 +45,4 @@ const mapStateToProps = createStructuredSelector({
     wizardStage: selectors.getNetworkWizardStage,
 });
 
-const mapDispatchToProps = {
-    onClose: pageActions.closeNetworkWizard,
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(Creator);
+export default connect(mapStateToProps)(Creator);

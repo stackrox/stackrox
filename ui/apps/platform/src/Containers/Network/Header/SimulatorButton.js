@@ -5,6 +5,7 @@ import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
+
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
 import { actions as wizardActions } from 'reducers/network/wizard';
@@ -55,7 +56,8 @@ const getCreatingOrSimulating = createSelector(
     (wizardOpen, wizardStage) =>
         wizardOpen &&
         wizardStage !== wizardStages.details &&
-        wizardStage !== wizardStages.namespaceDetails
+        wizardStage !== wizardStages.namespaceDetails &&
+        wizardStage !== wizardStages.cidrForm
 );
 
 const mapStateToProps = createStructuredSelector({
