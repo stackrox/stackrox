@@ -133,7 +133,7 @@ describe('Network page', () => {
         cy.get(selectors.table.rows).eq(0).click({ force: true });
         cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton, { timeout: 10000 }).click();
 
-        cy.get(networkPageSelectors.panels.detailsPanel).should('be.visible');
+        cy.get(networkPageSelectors.panels.detailsPanel, { timeout: 15000 }).should('be.visible');
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
         cy.get(networkPageSelectors.buttons.generateNetworkPolicies).click();
         cy.get(networkPageSelectors.panels.simulatorPanel, { timeout: 10000 }).should('be.visible');

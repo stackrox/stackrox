@@ -68,6 +68,28 @@ const styles = [
         },
     },
     {
+        selector: '.internet',
+        style: {
+            'background-color': '#fff',
+            'border-width': '1.5px',
+            'border-color': COLORS.inactiveNS,
+            shape: 'cutrectangle',
+            'compound-sizing-wrt-labels': 'include',
+            'font-family': 'stackrox, Open Sans',
+            'text-valign': 'center',
+            'font-size': NS_FONT_SIZE,
+            color: COLORS.label,
+            'font-weight': 700,
+            label: 'External\n  Entities \u2b08',
+            'line-height': 1.2,
+            padding: '16px',
+            'text-transform': 'uppercase',
+            'text-wrap': 'wrap',
+            width: 'label',
+            'z-compound-depth': 'auto',
+        },
+    },
+    {
         selector: 'node.nsHovered',
         style: {
             opacity: 1,

@@ -19,9 +19,18 @@ import { createStructuredSelector } from 'reselect';
 import { actions as graphActions } from 'reducers/network/graph';
 import GraphLoader from 'Containers/Network/Graph/Overlays/GraphLoader';
 import { edgeGridLayout, getParentPositions } from 'Containers/Network/Graph/networkGraphLayouts';
-import { NS_FONT_SIZE, MAX_ZOOM, MIN_ZOOM, ZOOM_STEP, GRAPH_PADDING } from 'constants/networkGraph';
+import {
+    NS_FONT_SIZE,
+    MAX_ZOOM,
+    MIN_ZOOM,
+    ZOOM_STEP,
+    GRAPH_PADDING,
+    OUTER_PADDING,
+    OUTER_SPACING_FACTOR,
+} from 'constants/networkGraph';
 import { filterModes } from 'constants/networkFilterModes';
 import entityTypes from 'constants/entityTypes';
+
 import style from 'Containers/Network/Graph/networkGraphStyles';
 import {
     getLinks,
@@ -31,6 +40,7 @@ import {
     getEdges,
     getNamespaceEdgeNodes,
     getNamespaceList,
+    getInternetNode,
     getDeploymentList,
     getFilteredNodes,
     getNetworkFlows,
@@ -38,6 +48,7 @@ import {
     getIngressPortsAndProtocols,
     getEgressPortsAndProtocols,
     edgeTypes,
+    getNodeHoverable,
 } from 'utils/networkGraphUtils';
 import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 
@@ -127,8 +138,8 @@ const NetworkGraph = ({
     function nodeHoverHandler(ev) {
         const node = ev.target.data();
         const { id, name, parent, listenPorts, side, type } = node;
-        const isDeployment = type === entityTypes.DEPLOYMENT;
-        if (!cyRef || !isDeployment || side) {
+        const isHoverableNode = getNodeHoverable(type);
+        if (!cyRef || !isHoverableNode || side) {
             return;
         }
 
@@ -220,7 +231,7 @@ const NetworkGraph = ({
     }
 
     function nodeMouseOutHandler() {
-        if (hoveredElement?.type === 'DEPLOYMENT') {
+        if (getNodeHoverable(hoveredElement?.type)) {
             mouseOutHandler();
         }
     }
@@ -341,7 +352,7 @@ const NetworkGraph = ({
     }
 
     function getConfigObj() {
-        const hoveredNode = hoveredElement?.type === 'DEPLOYMENT' ? hoveredElement : null;
+        const hoveredNode = getNodeHoverable(hoveredElement?.type) ? hoveredElement : null;
         const hoveredEdge = includes(Object.values(edgeTypes), hoveredElement?.type)
             ? hoveredElement
             : null;
@@ -392,28 +403,32 @@ const NetworkGraph = ({
             });
         });
 
-        const clusterGroup = {
-            classes: 'cluster',
-            data: {
-                id: selectedClusterName,
-                name: selectedClusterName,
-                active: false,
-                type: entityTypes.CLUSTER,
-            },
-        };
-
         const allNodes = [...namespaceList, ...deploymentList, ...namespaceEdgeNodes];
         const allEdges = getEdges(configObj);
 
-        // @TODO: Remove "showClusters" flag when the feature flag "ROX_NETWORK_GRAPH_EXTERNAL_SRCS" is defaulted to true
+        // @TODO: Remove "showExternal" flag when the feature flag "ROX_NETWORK_GRAPH_EXTERNAL_SRCS" is defaulted to true
         //        and don't forget to add `clusterGroup to `allNodes` array above
-        const showCluster = isBackendFeatureFlagEnabled(
+        const showExternal = isBackendFeatureFlagEnabled(
             featureFlags,
             knownBackendFlags.ROX_NETWORK_GRAPH_EXTERNAL_SRCS,
             false
         );
-        if (showCluster) {
+        if (showExternal) {
+            const clusterGroup = {
+                classes: 'cluster',
+                data: {
+                    id: selectedClusterName,
+                    name: selectedClusterName,
+                    active: false,
+                    type: entityTypes.CLUSTER,
+                },
+            };
             allNodes.push(clusterGroup);
+
+            const internetNode = getInternetNode(data, configObj);
+            if (internetNode) {
+                allNodes.push(internetNode);
+            }
         }
         // end of TODO to be removed
 
@@ -659,7 +674,11 @@ const NetworkGraph = ({
             >
                 <CytoscapeComponent
                     elements={normalizedElements}
-                    layout={{ name: 'grid' }}
+                    layout={{
+                        name: 'grid',
+                        padding: OUTER_PADDING,
+                        spacingFactor: OUTER_SPACING_FACTOR,
+                    }}
                     stylesheet={style}
                     cy={configureCY}
                     minZoom={MIN_ZOOM}

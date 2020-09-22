@@ -5,6 +5,8 @@ export const NODE_WIDTH = 8;
 export const NODE_PADDING = 20;
 export const SIDE_NODE_PADDING = 10;
 export const NODE_SOLID_BORDER_WIDTH = 2;
+export const OUTER_PADDING = 12;
+export const OUTER_SPACING_FACTOR = 0.1;
 
 export const GRAPH_PADDING = 50;
 
@@ -57,3 +59,5 @@ export const nodeConnectionKeys = {
     EGRESS_ACTIVE: 'egressActive',
     EGRESS_ALLOWED: 'egressAllowed',
 };
+
+export const EXTERNAL_ENTITIES_TYPE = 'INTERNET';

@@ -3,7 +3,7 @@ import flatMap from 'lodash/flatMap';
 
 import { UIfeatureFlags, isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 import entityTypes from 'constants/entityTypes';
-import { networkTraffic, networkConnections } from 'constants/networkGraph';
+import { networkTraffic, networkConnections, EXTERNAL_ENTITIES_TYPE } from 'constants/networkGraph';
 import { filterModes } from 'constants/networkFilterModes';
 
 export const edgeTypes = {
@@ -734,6 +734,66 @@ export const getEdgesFromNode = ({
 };
 
 /**
+ * Select out the entity representing external connections in the cluster
+ *
+ * @param   {!Object[]} data    list of "deployments", without the external entity filtered out
+ * @param   {!Object} configObj config object of the current network graph state
+ *                              that contains links, filterState, and nodeSideMap,
+ *                              networkNodeMap, hoveredNode, and selectedNode
+ *
+ * @return  {!Object}
+ */
+export const getInternetNode = (data, configObj = {}) => {
+    const { hoveredNode, selectedNode, filterState, networkNodeMap } = configObj;
+
+    const externalNode = data.find((datum) => datum?.entity?.type === EXTERNAL_ENTITIES_TYPE);
+
+    if (!externalNode) {
+        return null;
+    }
+
+    const { entity, ...datumProps } = externalNode;
+    const entityData = networkNodeMap[entity.id];
+    const edges = getEdgesFromNode(configObj);
+
+    const externallyConnected =
+        filterState === filterModes.all
+            ? entityData.active.externallyConnected
+            : externalNode.externallyConnected;
+
+    const isSelected = !!(selectedNode?.id === entity.id);
+    const isHovered = !!(hoveredNode?.id === entity.id);
+    const isBackground = !(!selectedNode && !hoveredNode) && !isHovered && !isSelected;
+    const isNonIsolated = isNonIsolatedNode(externalNode);
+    const isDisallowed =
+        filterState !== filterModes.allowed && edges.some((edge) => edge.data.isDisallowed);
+    const isExternallyConnected = externallyConnected && filterState !== filterModes.allowed;
+    const classes = getClasses({
+        active: externalNode.isActive,
+        selected: isSelected,
+        internet: true,
+        disallowed: isDisallowed,
+        hovered: isHovered,
+        background: isBackground,
+        nonIsolated: isNonIsolated,
+        externallyConnected: isExternallyConnected,
+    });
+
+    return {
+        data: {
+            ...datumProps,
+            ...entity,
+            id: entity?.id,
+            name: 'External\nEntities \u2b08',
+            active: false,
+            type: EXTERNAL_ENTITIES_TYPE,
+            parent: null,
+        },
+        classes,
+    };
+};
+
+/**
  * Iterates through a list of nodes to return a list of deployments with proper styling classes for cytoscape
  *
  * @param {!Object[]} filteredData list of deployments
@@ -1120,4 +1180,15 @@ export function getIngressPortsAndProtocols(networkFlows) {
  */
 export function getEgressPortsAndProtocols(networkFlows) {
     return getPortsAndProtocolsByDirectionality(networkFlows, networkTraffic.EGRESS);
+}
+
+/**
+ * Returns whether the type of element is a hoverable "node" (like deployment or external entities)
+ *
+ * @param   {string}  type  the type of our graph element representation
+ *
+ * @return  {boolean}
+ */
+export function getNodeHoverable(type) {
+    return type === entityTypes.DEPLOYMENT || type === EXTERNAL_ENTITIES_TYPE;
 }
