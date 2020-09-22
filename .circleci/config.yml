@@ -2370,19 +2370,19 @@ jobs:
       - provision-gke-cluster:
           cluster-id: rhel-api-e2e-tests
 
-  provision-gke-kernelmodule-api-e2e-tests:
+  provision-gke-kernel-api-e2e-tests:
     executor: custom
     steps:
       - checkout
       - check-backend-changes
 
       - check-master-or-tag-or-label:
-          label: ci-kernel-module-tests
+          label: ci-kernel-tests
           run-on-master: true
           run-on-tags: true
 
       - provision-gke-cluster:
-          cluster-id: kernelmodule-api-e2e-tests
+          cluster-id: kernel-api-e2e-tests
 
   provision-gke-api-upgrade-tests:
     executor: custom
@@ -3009,7 +3009,7 @@ jobs:
           use-main-rhel: true
           use-websocket: true
 
-  gke-kernelmodule-api-e2e-tests:
+  gke-kernel-api-e2e-tests:
     executor: custom
     environment:
       - LOCAL_PORT: 443
@@ -3028,7 +3028,7 @@ jobs:
 
     steps:
       - run-qa-tests:
-          cluster-id: kernelmodule-api-e2e-tests
+          cluster-id: kernel-api-e2e-tests
           determine-whether-to-run:
             - check-master-or-tag-or-label:
                 label: ci-kernel-module-tests
@@ -4432,14 +4432,14 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-e2e-tests
-      - provision-gke-kernelmodule-api-e2e-tests:
+      - provision-gke-kernel-api-e2e-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
-      - gke-kernelmodule-api-e2e-tests:
+      - gke-kernel-api-e2e-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
             - build-scale-monitoring-and-mock-server
-            - provision-gke-kernelmodule-api-e2e-tests
+            - provision-gke-kernel-api-e2e-tests
       - provision-gke-api-upgrade-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
       - gke-api-upgrade-tests:
