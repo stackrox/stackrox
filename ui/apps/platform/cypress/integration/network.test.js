@@ -281,7 +281,9 @@ describe('Network Flows Table', () => {
         cy.get(networkPageSelectors.networkFlowsSearch.input).type('Ports:{enter}');
         cy.get(networkPageSelectors.networkFlowsSearch.input).type('8443{enter}');
         cy.get(selectors.table.rows).each(($el) => {
-            cy.wrap($el).get(`${selectors.table.cells}:eq(5)`).contains('8443');
+            cy.wrap($el)
+                .get(`${selectors.table.cells}:eq(5)`)
+                .contains(/8443|Multiple/g);
         });
 
         cy.get(networkPageSelectors.networkFlowsSearch.input).clear();

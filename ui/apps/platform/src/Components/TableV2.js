@@ -25,6 +25,7 @@ class TableV2 extends Component {
         setTableRef: PropTypes.func,
         trClassName: PropTypes.string,
         showThead: PropTypes.bool,
+        noHorizontalPadding: PropTypes.bool,
     };
 
     static defaultProps = {
@@ -35,6 +36,7 @@ class TableV2 extends Component {
         setTableRef: null,
         trClassName: '',
         showThead: true,
+        noHorizontalPadding: false,
     };
 
     getTheadProps = () => {
@@ -73,6 +75,22 @@ class TableV2 extends Component {
         };
     };
 
+    getHorizontalPaddingClass = () => {
+        return this.props.noHorizontalPadding ? 'px-0' : 'px-3';
+    };
+
+    getTheadTrProps = () => {
+        return {
+            className: this.getHorizontalPaddingClass(),
+        };
+    };
+
+    getTbodyProps = () => {
+        return {
+            className: this.getHorizontalPaddingClass(),
+        };
+    };
+
     getColumnClassName = (column) => column.className || defaultColumnClassName;
 
     getHeaderClassName = (column) => column.headerClassName || defaultHeaderClassName;
@@ -98,6 +116,8 @@ class TableV2 extends Component {
                 getTrGroupProps={this.getTrGroupProps}
                 getTrProps={this.getTrProps}
                 getTheadProps={this.getTheadProps}
+                getTheadTrProps={this.getTheadTrProps}
+                getTbodyProps={this.getTbodyProps}
                 defaultPageSize={pageSize}
                 className="flex flex-1 overflow-auto border-0 w-full h-full"
                 resizable={false}

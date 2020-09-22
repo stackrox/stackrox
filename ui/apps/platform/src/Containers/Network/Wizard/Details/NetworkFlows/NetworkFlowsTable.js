@@ -5,12 +5,23 @@ import uniqBy from 'lodash/uniqBy';
 
 import { filterModes, filterLabels } from 'constants/networkFilterModes';
 import networkProtocolLabels from 'messages/networkGraph';
-import Table, { Expander, rtTrActionsClassName } from 'Components/Table';
+import Table, {
+    Expander,
+    rtTrActionsClassName,
+    defaultHeaderClassName,
+    defaultColumnClassName,
+} from 'Components/Table';
 import RowActionButton from 'Components/RowActionButton';
 import PortsAndProtocolsTable from './PortsAndProtocolsTable';
 
 function renderPortsAndProtocols({ original }) {
-    return <PortsAndProtocolsTable portsAndProtocols={original.portsAndProtocols} />;
+    const { portsAndProtocols } = original;
+    const uniqProtocols = uniqBy(portsAndProtocols, (datum) => datum.protocol);
+    const uniqPorts = uniqBy(portsAndProtocols, (datum) => datum.port);
+    if (uniqProtocols.length > 1 || uniqPorts.length > 1) {
+        return <PortsAndProtocolsTable portsAndProtocols={portsAndProtocols} />;
+    }
+    return null;
 }
 
 const NetworkFlowsTable = ({
@@ -24,6 +35,8 @@ const NetworkFlowsTable = ({
     const filterStateString = filterState !== filterModes.all ? filterLabels[filterState] : '';
     const columns = [
         {
+            headerClassName: `${defaultHeaderClassName} max-w-10`,
+            className: `${defaultColumnClassName} max-w-10 break-all`,
             expander: true,
             Expander: ({ isExpanded, original }) => {
                 if (original.portsAndProtocols.length <= 1) {
@@ -33,18 +46,26 @@ const NetworkFlowsTable = ({
             },
         },
         {
+            headerClassName: `${defaultHeaderClassName} w-4`,
+            className: `${defaultColumnClassName} w-4 break-all`,
             Header: 'Traffic',
             accessor: 'traffic',
         },
         {
+            headerClassName: `${defaultHeaderClassName} w-10`,
+            className: `${defaultColumnClassName} w-10 break-all`,
             Header: 'Deployment',
             accessor: 'deploymentName',
         },
         {
+            headerClassName: `${defaultHeaderClassName} w-10`,
+            className: `${defaultColumnClassName} w-10 break-all`,
             Header: 'Namespace',
             accessor: 'namespace',
         },
         {
+            headerClassName: `${defaultHeaderClassName} w-4`,
+            className: `${defaultColumnClassName} w-4 break-all`,
             Header: 'Protocols',
             accessor: 'portsAndProtocols',
             // eslint-disable-next-line react/prop-types
@@ -59,6 +80,8 @@ const NetworkFlowsTable = ({
             },
         },
         {
+            headerClassName: `${defaultHeaderClassName} w-4`,
+            className: `${defaultColumnClassName} w-4 break-all`,
             Header: 'Ports',
             accessor: 'portsAndProtocols',
             // eslint-disable-next-line react/prop-types
@@ -66,21 +89,24 @@ const NetworkFlowsTable = ({
                 if (value.length === 0) {
                     return '-';
                 }
-                const ports = uniqBy(value, (datum) => datum.port)
-                    .map((datum) => datum.port)
-                    .join(', ');
-                return ports;
+                const uniquePorts = uniqBy(value, (datum) => datum.port);
+                if (uniquePorts.length > 1) {
+                    return 'Multiple';
+                }
+                return uniquePorts[0].port;
             },
             hidden: !showPortsAndProtocols,
         },
         {
+            headerClassName: `${defaultHeaderClassName} w-4`,
+            className: `${defaultColumnClassName} w-4 break-all`,
             Header: 'Connection',
             accessor: 'connection',
         },
         {
+            headerClassName: `${defaultHeaderClassName} hidden`,
+            className: `${rtTrActionsClassName} w-4 break-all`,
             accessor: 'deploymentId',
-            headerClassName: 'hidden',
-            className: rtTrActionsClassName,
             Cell: ({ value }) => {
                 return (
                     <div className="border-2 border-r-2 border-base-400 bg-base-100 flex">
@@ -110,6 +136,7 @@ const NetworkFlowsTable = ({
             idAttribute="deploymentId"
             selectedRowId={selectedNode?.id}
             SubComponent={showPortsAndProtocols ? renderPortsAndProtocols : null}
+            noHorizontalPadding
         />
     );
 };

@@ -637,7 +637,7 @@ h6 {
     box-shadow: -10px 0 0 var(--base-100), 10px 0 0 var(--base-100),
         0 2px 8px 0 hsla(230, 50%, 70%, 0.25) !important;
 
-    @apply px-3 bg-base-100 !important;
+    @apply bg-base-100 !important;
 }
 
 .theme-dark .ReactTable .rt-thead.-header .rt-tr {
@@ -669,9 +669,6 @@ h6 {
     content: ' ↑';
     position: absolute;
     margin-left: 4px;
-}
-.ReactTable .rt-tbody {
-    @apply px-3 !important;
 }
 
 .ReactTable .rt-tbody .rt-tr {

@@ -35,6 +35,7 @@ class Table extends Component {
         showThead: PropTypes.bool,
         defaultSorted: PropTypes.arrayOf(PropTypes.object),
         pageSize: PropTypes.number,
+        noHorizontalPadding: PropTypes.bool,
     };
 
     static defaultProps = {
@@ -49,6 +50,7 @@ class Table extends Component {
         showThead: true,
         defaultSorted: [],
         pageSize: DEFAULT_PAGE_SIZE,
+        noHorizontalPadding: false,
     };
 
     getTheadProps = () => {
@@ -70,14 +72,16 @@ class Table extends Component {
 
         const classes = [];
         if (rowInfo && rowInfo.original) {
-            classes.push(
-                flattenedRowInfo[this.props.idAttribute] === this.props.selectedRowId
-                    ? 'row-active'
-                    : ''
-            );
-            classes.push(rowInfo.original.disabled ? 'data-test-disabled' : '');
+            if (flattenedRowInfo[this.props.idAttribute] === this.props.selectedRowId) {
+                classes.push('row-active');
+            }
+            if (rowInfo.original.disabled) {
+                classes.push('data-test-disabled');
+            }
         }
-        classes.push(this.props.onRowClick ? '' : 'cursor-default');
+        if (!this.props.onRowClick) {
+            classes.push('cursor-default');
+        }
         return {
             onClick: () => {
                 if (this.props.onRowClick) {
@@ -85,6 +89,22 @@ class Table extends Component {
                 }
             },
             className: classes.join(' '),
+        };
+    };
+
+    getHorizontalPaddingClass = () => {
+        return this.props.noHorizontalPadding ? 'px-0' : 'px-3';
+    };
+
+    getTheadTrProps = () => {
+        return {
+            className: this.getHorizontalPaddingClass(),
+        };
+    };
+
+    getTbodyProps = () => {
+        return {
+            className: this.getHorizontalPaddingClass(),
         };
     };
 
@@ -111,6 +131,8 @@ class Table extends Component {
                 getTrGroupProps={this.getTrGroupProps}
                 getTrProps={this.getTrProps}
                 getTheadProps={this.getTheadProps}
+                getTheadTrProps={this.getTheadTrProps}
+                getTbodyProps={this.getTbodyProps}
                 defaultPageSize={pageSize}
                 defaultSorted={defaultSorted}
                 className={`flex flex-1 overflow-auto border-0 w-full h-full z-0 ${
