@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	networkEntityDS "github.com/stackrox/rox/central/networkflow/datastore/entities"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/generator"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
@@ -64,6 +65,7 @@ type serviceImpl struct {
 	sensorConnMgr   connection.Manager
 	clusterStore    clusterDataStore.DataStore
 	deployments     deploymentDataStore.DataStore
+	externalSrcs    networkEntityDS.EntityDataStore
 	networkPolicies npDS.DataStore
 	notifierStore   notifierDataStore.DataStore
 	graphEvaluator  graph.Evaluator
@@ -137,7 +139,12 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
-		networkPolicies = s.graphEvaluator.GetAppliedPolicies(deployments, networkPolicies)
+
+		extSrcs, err := s.getExternalSrcs(ctx, request.GetClusterId())
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		networkPolicies = s.graphEvaluator.GetAppliedPolicies(deployments, extSrcs, networkPolicies)
 	}
 
 	// Fill in YAML fields where they are not set.
@@ -184,8 +191,13 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetwor
 		return nil, err
 	}
 
+	extSrcs, err := s.getExternalSrcs(ctx, request.GetClusterId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	// Generate the graph.
-	return s.graphEvaluator.GetGraph(request.GetClusterId(), deployments, networkPolicies, request.GetIncludePorts()), nil
+	return s.graphEvaluator.GetGraph(request.GetClusterId(), deployments, extSrcs, networkPolicies, request.GetIncludePorts()), nil
 }
 
 func (s *serviceImpl) GetNetworkGraphEpoch(_ context.Context, req *v1.GetNetworkGraphEpochRequest) (*v1.NetworkGraphEpoch, error) {
@@ -291,7 +303,13 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 			return nil, status.Errorf(codes.Internal, "unhandled policy status %v", policyInSim.GetStatus())
 		}
 	}
-	newGraph := s.graphEvaluator.GetGraph(request.GetClusterId(), deployments, newPolicies, request.GetIncludePorts())
+
+	extSrcs, err := s.getExternalSrcs(ctx, request.GetClusterId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	newGraph := s.graphEvaluator.GetGraph(request.GetClusterId(), deployments, extSrcs, newPolicies, request.GetIncludePorts())
 	result := &v1.SimulateNetworkGraphResponse{
 		SimulatedGraph: newGraph,
 		Policies:       networkPoliciesInSimulation,
@@ -301,7 +319,7 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 		return result, nil
 	}
 
-	oldGraph := s.graphEvaluator.GetGraph(request.GetClusterId(), deployments, oldPolicies, request.GetIncludePorts())
+	oldGraph := s.graphEvaluator.GetGraph(request.GetClusterId(), deployments, extSrcs, oldPolicies, request.GetIncludePorts())
 	removedEdges, addedEdges, err := graph.ComputeDiff(oldGraph, newGraph)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not compute a network graph diff")
@@ -372,6 +390,10 @@ func (s *serviceImpl) GenerateNetworkPolicies(ctx context.Context, req *v1.Gener
 		req.DeleteExisting = v1.GenerateNetworkPoliciesRequest_NONE
 	}
 
+	if req.GetClusterId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Cluster ID must be specified")
+	}
+
 	generated, toDelete, err := s.policyGenerator.Generate(ctx, req)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error generating network policies: %v", err)
@@ -426,6 +448,23 @@ func (s *serviceImpl) getDeployments(ctx context.Context, clusterID, query strin
 
 	deployments, err = s.deployments.SearchRawDeployments(ctx, q)
 	return
+}
+
+func (s *serviceImpl) getExternalSrcs(ctx context.Context, clusterID string) ([]*storage.NetworkEntityInfo, error) {
+	if !features.NetworkGraphExternalSrcs.Enabled() {
+		return nil, nil
+	}
+
+	entities, err := s.externalSrcs.GetAllEntitiesForCluster(ctx, clusterID)
+	if err != nil {
+		return nil, err
+	}
+
+	extSrcs := make([]*storage.NetworkEntityInfo, len(entities))
+	for _, entity := range entities {
+		extSrcs = append(extSrcs, entity.GetInfo())
+	}
+	return extSrcs, nil
 }
 
 func (s *serviceImpl) getNetworkPoliciesInSimulation(ctx context.Context, clusterID string, modification *storage.NetworkPolicyModification) ([]*v1.NetworkPolicyInSimulation, error) {

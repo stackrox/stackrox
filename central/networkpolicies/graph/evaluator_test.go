@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/labels"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,6 +35,22 @@ func init() {
 }
 
 var networkPolicyFixtureYAMLs = []string{
+	`
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-only-egress-to-ipblock
+  namespace: default
+spec:
+  policyTypes:
+  - Egress
+  - Ingress
+  podSelector: {}
+  egress:
+  - to:
+    - ipblock:
+        cidr: 172.17.0.0/16
+`,
 	`
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -100,7 +117,7 @@ spec:
       protocol: UDP
     - port: 53
       protocol: TCP
-  - to:
+    to:
     - namespaceSelector: {}
 `,
 
@@ -630,6 +647,39 @@ func mockNode(node string, namespace string, internetAccess, nonIsolatedIngress,
 	}
 }
 
+func mockExternalNode(node string, cidr string) *v1.NetworkNode {
+	return &v1.NetworkNode{
+		Entity: &storage.NetworkEntityInfo{
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Id:   node,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: cidr,
+					},
+				},
+			},
+		},
+		InternetAccess:     true,
+		NonIsolatedIngress: true,
+		NonIsolatedEgress:  true,
+		OutEdges:           make(map[int32]*v1.NetworkEdgePropertiesBundle),
+	}
+}
+
+func mockInternetNode() *v1.NetworkNode {
+	return &v1.NetworkNode{
+		Entity: &storage.NetworkEntityInfo{
+			Type: storage.NetworkEntityInfo_INTERNET,
+			Id:   networkgraph.InternetExternalSourceID,
+		},
+		InternetAccess:     true,
+		NonIsolatedIngress: true,
+		NonIsolatedEgress:  true,
+		OutEdges:           make(map[int32]*v1.NetworkEdgePropertiesBundle),
+	}
+}
+
 func deploymentLabels(values ...string) map[string]string {
 	if len(values)%2 != 0 {
 		panic("values for deployments labels must be even")
@@ -647,11 +697,12 @@ func TestEvaluateClusters(t *testing.T) {
 	// These are the k8s examples from https://github.com/ahmetb/kubernetes-network-policy-recipes
 	// Seems like a good way to verify that the logic is correct
 	cases := []struct {
-		name        string
-		deployments []*storage.Deployment
-		nps         []*storage.NetworkPolicy
-		edges       []testEdge
-		nodes       []*v1.NetworkNode
+		name         string
+		deployments  []*storage.Deployment
+		externalSrcs []*storage.NetworkEntityInfo
+		nps          []*storage.NetworkPolicy
+		edges        []testEdge
+		nodes        []*v1.NetworkNode
 	}{
 		{
 			name: "No policies - fully connected",
@@ -663,9 +714,24 @@ func TestEvaluateClusters(t *testing.T) {
 					Id: "d2",
 				},
 			},
+			externalSrcs: []*storage.NetworkEntityInfo{
+				{
+					Id:   "es1",
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Desc: &storage.NetworkEntityInfo_ExternalSource_{
+						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+								Cidr: "172.17.0.0/24",
+							},
+						},
+					},
+				},
+			},
 			nodes: []*v1.NetworkNode{
 				mockNode("d1", "", true, true, true),
 				mockNode("d2", "", true, true, true),
+				mockInternetNode(),
+				mockExternalNode("es1", "172.17.0.0/24"),
 			},
 		},
 		{
@@ -695,6 +761,7 @@ func TestEvaluateClusters(t *testing.T) {
 				mockNode("d1", "default", true, false, true, "web-deny-all"),
 				mockNode("d2", "default", true, true, true),
 				mockNode("d3", "default", true, true, true),
+				mockInternetNode(),
 			},
 		},
 		{
@@ -729,6 +796,7 @@ func TestEvaluateClusters(t *testing.T) {
 				mockNode("d1", "default", true, false, true, "limit-traffic"),
 				mockNode("d2", "default", true, true, true),
 				mockNode("d3", "default", true, true, true),
+				mockInternetNode(),
 			},
 		},
 		{
@@ -762,6 +830,7 @@ func TestEvaluateClusters(t *testing.T) {
 				mockNode("d1", "default", true, false, true, "web-allow-all", "web-deny-all"),
 				mockNode("d2", "default", true, true, true),
 				mockNode("d3", "default", true, true, true),
+				mockInternetNode(),
 			},
 		},
 		{
@@ -791,6 +860,7 @@ func TestEvaluateClusters(t *testing.T) {
 				mockNode("d1", "default", true, false, true, "default-deny-all"),
 				mockNode("d2", "default", true, false, true, "default-deny-all"),
 				mockNode("d3", "stackrox", true, true, true),
+				mockInternetNode(),
 			},
 		},
 		{
@@ -822,6 +892,7 @@ func TestEvaluateClusters(t *testing.T) {
 				mockNode("d1", "default", true, false, true, "deny-from-other-namespaces"),
 				mockNode("d2", "default", true, false, true, "deny-from-other-namespaces"),
 				mockNode("d3", "stackrox", true, true, true),
+				mockInternetNode(),
 			},
 		},
 		{
@@ -856,6 +927,7 @@ func TestEvaluateClusters(t *testing.T) {
 				mockNode("d1", "default", true, false, true, "deny-from-other-namespaces", "web-allow-all-namespaces"),
 				mockNode("d2", "default", true, false, true, "deny-from-other-namespaces"),
 				mockNode("d3", "stackrox", true, true, true),
+				mockInternetNode(),
 			},
 		},
 		{
@@ -888,6 +960,7 @@ func TestEvaluateClusters(t *testing.T) {
 				mockNode("d1", "default", true, false, true, "web-allow-stackrox"),
 				mockNode("d2", "other", true, true, true),
 				mockNode("d3", "stackrox", true, true, true),
+				mockInternetNode(),
 			},
 		},
 		{
@@ -929,6 +1002,7 @@ func TestEvaluateClusters(t *testing.T) {
 				mockNode("d2", "default", true, true, true),
 				mockNode("d3", "default", true, true, true),
 				mockNode("d4", "default", true, true, true),
+				mockInternetNode(),
 			},
 		},
 		{
@@ -952,6 +1026,7 @@ func TestEvaluateClusters(t *testing.T) {
 			nodes: []*v1.NetworkNode{
 				mockNode("d1", "default", false, true, false, "web-deny-egress"),
 				mockNode("d2", "default", true, true, true),
+				mockInternetNode(),
 			},
 		},
 		{
@@ -981,6 +1056,7 @@ func TestEvaluateClusters(t *testing.T) {
 				mockNode("d1", "default", false, true, false, "default-deny-all-egress"),
 				mockNode("d2", "default", false, true, false, "default-deny-all-egress"),
 				mockNode("d3", "stackrox", true, true, true),
+				mockInternetNode(),
 			},
 		},
 		{
@@ -1010,9 +1086,10 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("web-deny-external-egress"),
 			},
 			nodes: []*v1.NetworkNode{
-				mockNode("d1", "default", true, true, false, "web-deny-external-egress"),
+				mockNode("d1", "default", false, true, false, "web-deny-external-egress"),
 				mockNode("d2", "default", true, true, true),
 				mockNode("d3", "stackrox", true, true, true),
+				mockInternetNode(),
 			},
 		},
 		{
@@ -1053,6 +1130,7 @@ func TestEvaluateClusters(t *testing.T) {
 				mockNode("d2", "qa", true, false, true, "deny-all-ingress"),
 				mockNode("d3", "stackrox", true, true, true),
 				mockNode("d4", "default", true, true, true),
+				mockInternetNode(),
 			},
 		},
 		{
@@ -1076,6 +1154,40 @@ func TestEvaluateClusters(t *testing.T) {
 				mockNode("d1", "default", false, false, false, "fully-isolate"),
 				mockNode("d2", "default", false, false, false, "fully-isolate"),
 			},
+		},
+		{
+			name: "allow only egress to ipblock",
+			deployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+			},
+			externalSrcs: []*storage.NetworkEntityInfo{
+				{
+					Id:   "es1",
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Desc: &storage.NetworkEntityInfo_ExternalSource_{
+						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+								Cidr: "172.17.0.0/24",
+							},
+						},
+					},
+				},
+			},
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("allow-only-egress-to-ipblock"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "default", true, false, false, "allow-only-egress-to-ipblock"),
+				mockInternetNode(),
+				mockExternalNode("es1", "172.17.0.0/24"),
+			},
+			edges: flattenEdges(
+				egressEdges("d1", "es1", networkgraph.InternetExternalSourceID),
+			),
 		},
 		{
 			name: "ingress and egress combination",
@@ -1108,6 +1220,7 @@ func TestEvaluateClusters(t *testing.T) {
 				mockNode("a", "default", true, false, true, "a-ingress-tcp-8080"),
 				mockNode("b", "default", false, true, false, "b-egress-a-tcp-ports-and-dns"),
 				mockNode("c", "default", false, true, false, "c-egress-a-tcp-8443-and-udp"),
+				mockInternetNode(),
 			},
 			edges: flattenEdges(
 				ingressEdges("a", "b"),
@@ -1118,7 +1231,7 @@ func TestEvaluateClusters(t *testing.T) {
 		testCase := c
 		populateOutEdges(testCase.nodes, testCase.edges)
 		t.Run(c.name, func(t *testing.T) {
-			nodes := g.GetGraph("", testCase.deployments, testCase.nps, false)
+			nodes := g.GetGraph("", testCase.deployments, testCase.externalSrcs, testCase.nps, false)
 			assert.ElementsMatch(t, testCase.nodes, nodes.GetNodes())
 		})
 	}
@@ -1220,7 +1333,7 @@ func TestGetApplicable(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			actual := g.GetAppliedPolicies(c.deployments, c.policies)
+			actual := g.GetAppliedPolicies(c.deployments, nil, c.policies)
 			assert.ElementsMatch(t, c.expected, actual)
 		})
 	}
@@ -1286,6 +1399,7 @@ func TestEvaluateClustersWithPorts(t *testing.T) {
 				mockNode("d1", "default", true, false, true, "api-allow-5000"),
 				mockNode("d2", "default", true, true, true),
 				mockNode("d3", "default", true, true, true),
+				mockInternetNode(),
 			},
 			edges: flattenEdges(
 				ingressEdgesWithPort("d1", portDescs{{l4proto: storage.Protocol_TCP_PROTOCOL, port: 5000}}, "d2"),
@@ -1320,9 +1434,10 @@ func TestEvaluateClustersWithPorts(t *testing.T) {
 				mockNode("d1", "default", true, true, false, "allow-dns-egress-only"),
 				mockNode("d2", "default", true, true, true),
 				mockNode("d3", "kube-system", true, true, true),
+				mockInternetNode(),
 			},
 			edges: flattenEdges(
-				egressEdgesWithPorts("d1", portDescs{{l4proto: storage.Protocol_TCP_PROTOCOL, port: 53}, {l4proto: storage.Protocol_UDP_PROTOCOL, port: 53}}, "d2", "d3"),
+				egressEdgesWithPorts("d1", portDescs{{l4proto: storage.Protocol_TCP_PROTOCOL, port: 53}, {l4proto: storage.Protocol_UDP_PROTOCOL, port: 53}}, "d2", "d3", networkgraph.InternetExternalSourceID),
 			),
 		},
 		{
@@ -1361,6 +1476,7 @@ func TestEvaluateClustersWithPorts(t *testing.T) {
 				mockNode("d1", "default", true, false, true, "api-allow-named-api-port"),
 				mockNode("d2", "default", true, false, true, "api-allow-named-api-port"),
 				mockNode("d3", "default", true, true, true),
+				mockInternetNode(),
 			},
 			edges: flattenEdges(
 				ingressEdgesWithPort("d1", portDescs{{l4proto: storage.Protocol_TCP_PROTOCOL, port: 8443}}, "d3"),
@@ -1397,6 +1513,7 @@ func TestEvaluateClustersWithPorts(t *testing.T) {
 				mockNode("a", "default", true, false, true, "a-ingress-tcp-8080"),
 				mockNode("b", "default", false, true, false, "b-egress-a-tcp-ports-and-dns"),
 				mockNode("c", "default", false, true, false, "c-egress-a-tcp-8443-and-udp"),
+				mockInternetNode(),
 			},
 			edges: flattenEdges(
 				ingressEdgesWithPort("a", portDescs{{l4proto: storage.Protocol_TCP_PROTOCOL, port: 8080}}, "b"),
@@ -1407,7 +1524,7 @@ func TestEvaluateClustersWithPorts(t *testing.T) {
 		testCase := c
 		populateOutEdges(testCase.nodes, testCase.edges)
 		t.Run(c.name, func(t *testing.T) {
-			nodes := g.GetGraph("", testCase.deployments, testCase.nps, true)
+			nodes := g.GetGraph("", testCase.deployments, nil, testCase.nps, true)
 			assert.ElementsMatch(t, testCase.nodes, nodes.GetNodes())
 		})
 	}

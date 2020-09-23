@@ -25,8 +25,8 @@ var (
 // Evaluator implements the interface for the network graph generator
 //go:generate mockgen-wrapper
 type Evaluator interface {
-	GetGraph(clusterID string, deployments []*storage.Deployment, networkPolicies []*storage.NetworkPolicy, includePorts bool) *v1.NetworkGraph
-	GetAppliedPolicies(deployments []*storage.Deployment, networkPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy
+	GetGraph(clusterID string, deployments []*storage.Deployment, externalSrcs []*storage.NetworkEntityInfo, networkPolicies []*storage.NetworkPolicy, includePorts bool) *v1.NetworkGraph
+	GetAppliedPolicies(deployments []*storage.Deployment, externalSrcs []*storage.NetworkEntityInfo, networkPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy
 	IncrementEpoch(clusterID string)
 	Epoch(clusterID string) uint32
 }
@@ -73,10 +73,10 @@ func (g *evaluatorImpl) Epoch(clusterID string) uint32 {
 }
 
 // GetGraph generates a network graph for the input deployments based on the input policies.
-func (g *evaluatorImpl) GetGraph(clusterID string, deployments []*storage.Deployment, networkPolicies []*storage.NetworkPolicy, includePorts bool) *v1.NetworkGraph {
+func (g *evaluatorImpl) GetGraph(clusterID string, deployments []*storage.Deployment, externalSrcs []*storage.NetworkEntityInfo, networkPolicies []*storage.NetworkPolicy, includePorts bool) *v1.NetworkGraph {
 	namespacesByID := g.getNamespacesByID()
 
-	b := newGraphBuilder(deployments, namespacesByID)
+	b := newGraphBuilder(deployments, externalSrcs, namespacesByID)
 	b.AddEdgesForNetworkPolicies(networkPolicies)
 	b.PostProcess()
 	nodes := b.ToProto(includePorts)
@@ -88,8 +88,8 @@ func (g *evaluatorImpl) GetGraph(clusterID string, deployments []*storage.Deploy
 
 // GetAppliedPolicies creates a filtered list of policies from the input network policies, composed of only the policies
 // that apply to one or more of the input deployments.
-func (g *evaluatorImpl) GetAppliedPolicies(deployments []*storage.Deployment, networkPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
-	b := newGraphBuilder(deployments, g.getNamespacesByID())
+func (g *evaluatorImpl) GetAppliedPolicies(deployments []*storage.Deployment, externalSrcs []*storage.NetworkEntityInfo, networkPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
+	b := newGraphBuilder(deployments, externalSrcs, g.getNamespacesByID())
 	applyingPolicies := b.GetApplyingPolicies(networkPolicies)
 	return applyingPolicies
 }

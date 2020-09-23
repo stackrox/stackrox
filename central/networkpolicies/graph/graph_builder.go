@@ -1,27 +1,33 @@
 package graph
 
 import (
+	"net"
 	"sort"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/labels"
+	"github.com/stackrox/rox/pkg/netutil"
+	"github.com/stackrox/rox/pkg/networkgraph"
 )
 
 type graphBuilder struct {
 	namespacesByName map[string]*storage.NamespaceMetadata
 	allDeployments   []*node
+	knownExtSrcs     []*node
+	internetSrc      *node
 	deploymentsByNS  map[*storage.NamespaceMetadata][]*node
 }
 
-func newGraphBuilder(deployments []*storage.Deployment, namespacesByID map[string]*storage.NamespaceMetadata) *graphBuilder {
+func newGraphBuilder(deployments []*storage.Deployment, externalSrcs []*storage.NetworkEntityInfo, namespacesByID map[string]*storage.NamespaceMetadata) *graphBuilder {
 	b := &graphBuilder{}
-	b.init(deployments, namespacesByID)
+	b.init(deployments, externalSrcs, namespacesByID)
 	return b
 }
 
-func (b *graphBuilder) init(deployments []*storage.Deployment, namespacesByID map[string]*storage.NamespaceMetadata) {
+func (b *graphBuilder) init(deployments []*storage.Deployment, externalSrcs []*storage.NetworkEntityInfo, namespacesByID map[string]*storage.NamespaceMetadata) {
 	b.allDeployments = make([]*node, 0, len(deployments))
+	b.knownExtSrcs = make([]*node, 0, len(externalSrcs))
 	b.namespacesByName = make(map[string]*storage.NamespaceMetadata)
 	b.deploymentsByNS = make(map[*storage.NamespaceMetadata][]*node)
 
@@ -46,38 +52,47 @@ func (b *graphBuilder) init(deployments []*storage.Deployment, namespacesByID ma
 		}
 		b.deploymentsByNS[ns] = append(b.deploymentsByNS[ns], node)
 	}
+
+	for _, extSrc := range externalSrcs {
+		node := newExternalSrcNode(extSrc)
+		b.knownExtSrcs = append(b.knownExtSrcs, node)
+	}
+
+	// TODO: Sort external sources in descending order (highest smallest subnet to lowest largest subnet) once #6556 in on master
+
+	b.internetSrc = newExternalSrcNode(networkgraph.InternetEntity().ToProto())
 }
 
 func (b *graphBuilder) evaluatePeers(currentNS *storage.NamespaceMetadata, peers []*storage.NetworkPolicyPeer) ([]*node, bool) {
 	if len(peers) == 0 {
 		// An empty peers list means all possible peers are allowed.
-		return b.allDeployments, true
+		allNodes := make([]*node, 0, len(b.allDeployments)+len(b.knownExtSrcs)+1)
+		allNodes = append(allNodes, b.allDeployments...)
+		allNodes = append(allNodes, b.knownExtSrcs...)
+		allNodes = append(allNodes, b.internetSrc)
+		return allNodes, true
 	}
 
-	allPeerDeployments := make(map[*node]struct{})
+	allPeers := make(map[*node]struct{})
 	internetAccess := false
 	for _, peer := range peers {
 		if peer.GetIpBlock() != nil {
 			internetAccess = true
-			continue
 		}
-		if len(allPeerDeployments) == len(b.allDeployments) {
-			// Can't find more than all peers (but we can't exit early unless we already know
-			// we have internet access, because there might be IP block peers that are relevant
-			// for determining this).
-			if internetAccess {
-				break
-			}
-			continue
+
+		// +1 for INTERNET
+		if len(allPeers) == len(b.allDeployments)+len(b.knownExtSrcs)+1 {
+			break
 		}
+
 		peerDeployments := b.evaluatePeer(currentNS, peer)
 		for _, pd := range peerDeployments {
-			allPeerDeployments[pd] = struct{}{}
+			allPeers[pd] = struct{}{}
 		}
 	}
 
-	allPeerDeploymentsSlice := make([]*node, 0, len(allPeerDeployments))
-	for pd := range allPeerDeployments {
+	allPeerDeploymentsSlice := make([]*node, 0, len(allPeers))
+	for pd := range allPeers {
 		allPeerDeploymentsSlice = append(allPeerDeploymentsSlice, pd)
 	}
 	return allPeerDeploymentsSlice, internetAccess
@@ -85,10 +100,24 @@ func (b *graphBuilder) evaluatePeers(currentNS *storage.NamespaceMetadata, peers
 
 func (b *graphBuilder) evaluatePeer(currentNS *storage.NamespaceMetadata, peer *storage.NetworkPolicyPeer) []*node {
 	if peer.GetIpBlock() != nil {
-		// TODO(ROX-5370): We assume all CIDR blocks always match all deployments. This is probably wrong,
-		// but we don't really have a good way of determining otherwise. Except for maybe look at Pod IPs.
-		// Which we actually could.
-		return b.allDeployments
+		// TODO(ROX-5370): We assume all CIDR blocks always match all deployments and overlapping external CIDRs.
+		//  This is probably wrong, but we don't really have a good way of determining otherwise. Except for maybe
+		//  look at Pod IPs. Which we actually could.
+		allNodes := make([]*node, 0, len(b.allDeployments)+len(b.knownExtSrcs)+1)
+		matches, contained, err := b.evaluateExternalPeer(peer.GetIpBlock())
+		if err != nil {
+			log.Errorf("Failed to parse the IP Block %q: %v", peer.GetIpBlock().GetCidr(), err)
+			return nil
+		}
+		allNodes = append(allNodes, b.allDeployments...)
+		allNodes = append(allNodes, matches...)
+		// We add INTERNET entity only if we do not find one external source that fully contains it. Note: This is still
+		// not perfect, for example, for two consecutive subnets, that fully contain an policy's IPBlock, we would still
+		// add it, but for now this is okay.
+		if !contained {
+			allNodes = append(allNodes, b.internetSrc)
+		}
+		return allNodes
 	}
 
 	var deploymentsInNSs []*node
@@ -132,6 +161,30 @@ func (b *graphBuilder) evaluatePeer(currentNS *storage.NamespaceMetadata, peer *
 	}
 
 	return matchDeployments(deploymentsInNSs, podSel)
+}
+
+func (b *graphBuilder) evaluateExternalPeer(ipBlock *storage.IPBlock) ([]*node, bool, error) {
+	externalPeers := make([]*node, 0, len(b.knownExtSrcs))
+	// We don't handle "except".
+	_, ipNet, err := net.ParseCIDR(ipBlock.GetCidr())
+	if err != nil {
+		return nil, false, err
+	}
+
+	for _, src := range b.knownExtSrcs {
+		// Error is not expected here since all CIDRs are validated before persisting.
+		_, n, _ := net.ParseCIDR(src.extSrc.GetExternalSource().GetCidr())
+		// Since the external sources are sorted, the we return on the first subnet that contains the `ipBlock` fully.
+		// Note: The sorting TODO is dependent on PR#6556, therefore right now this is random.
+		if netutil.IsIPNetSubset(n, ipNet) {
+			return []*node{src}, true, nil
+		}
+
+		if netutil.Overlap(ipNet, n) {
+			externalPeers = append(externalPeers, src)
+		}
+	}
+	return externalPeers, false, nil
 }
 
 func (b *graphBuilder) getOrCreateEdge(src, tgt *node, egress bool) *edge {
@@ -282,9 +335,39 @@ func bundleForPorts(ports portDescs, includePorts bool) *v1.NetworkEdgePropertie
 }
 
 func (b *graphBuilder) ToProto(includePorts bool) []*v1.NetworkNode {
+	// This stores external sources including INTERNET. These nodes are added to final graph only if they exists a connection with them.
+	externalNodes := make(map[*node]*v1.NetworkNode)
+	// Add INTERNET
+	externalNodes[b.internetSrc] = &v1.NetworkNode{
+		Entity:             networkgraph.InternetEntity().ToProto(),
+		InternetAccess:     true,
+		NonIsolatedEgress:  true,
+		NonIsolatedIngress: true,
+		OutEdges:           make(map[int32]*v1.NetworkEdgePropertiesBundle),
+	}
+
+	for _, n := range b.knownExtSrcs {
+		node := &v1.NetworkNode{
+			Entity:             n.extSrc,
+			InternetAccess:     true,
+			NonIsolatedEgress:  true,
+			NonIsolatedIngress: true,
+			OutEdges:           make(map[int32]*v1.NetworkEdgePropertiesBundle),
+		}
+		externalNodes[n] = node
+	}
+
+	// anyNonIsolatedDeps tracks if there are non-isolated deployments in the cluster. This is a helper that
+	// enables adding external sources in cases, such as, no network policies are not defined for a namespace.
+	anyNonIsolatedDeps := false
+
 	nodeMap := make(map[*node]int)
-	allNodes := make([]*v1.NetworkNode, 0, len(b.allDeployments))
+	allNodes := make([]*v1.NetworkNode, 0, len(b.allDeployments)+len(b.knownExtSrcs)+1)
 	for _, d := range b.allDeployments {
+		if !d.isEgressIsolated || !d.isIngressIsolated {
+			anyNonIsolatedDeps = true
+		}
+
 		node := &v1.NetworkNode{
 			Entity:             d.toEntityProto(),
 			InternetAccess:     d.internetAccess || !d.isEgressIsolated,
@@ -293,7 +376,6 @@ func (b *graphBuilder) ToProto(includePorts bool) []*v1.NetworkNode {
 			OutEdges:           make(map[int32]*v1.NetworkEdgePropertiesBundle),
 			PolicyIds:          d.applyingPoliciesIDs,
 		}
-
 		nodeMap[d] = len(allNodes)
 		allNodes = append(allNodes, node)
 	}
@@ -305,6 +387,7 @@ func (b *graphBuilder) ToProto(includePorts bool) []*v1.NetworkNode {
 			if !src.isEgressIsolated && !tgt.isIngressIsolated {
 				continue
 			}
+
 			var portsForEdge portDescs
 			if src.isEgressIsolated && tgt.isIngressIsolated {
 				portsForEdge = intersectNormalized(src.egressEdges[tgt].getPorts(), tgt.ingressEdges[src].getPorts())
@@ -318,7 +401,17 @@ func (b *graphBuilder) ToProto(includePorts bool) []*v1.NetworkNode {
 				continue
 			}
 
-			tgtIdx := nodeMap[tgt]
+			tgtIdx, ok := nodeMap[tgt]
+			// This means that target is an external source that has not been added to graph yet.
+			if !ok {
+				tgtNode, ok := externalNodes[tgt]
+				if !ok {
+					continue
+				}
+				tgtIdx = len(allNodes)
+				nodeMap[tgt] = tgtIdx
+				allNodes = append(allNodes, tgtNode)
+			}
 			if srcNode.OutEdges == nil {
 				srcNode.OutEdges = make(map[int32]*v1.NetworkEdgePropertiesBundle)
 			}
@@ -326,5 +419,40 @@ func (b *graphBuilder) ToProto(includePorts bool) []*v1.NetworkNode {
 		}
 	}
 
+	for _, src := range b.knownExtSrcs {
+		var srcNode *v1.NetworkNode
+		if srcIdx, ok := nodeMap[src]; ok {
+			srcNode = allNodes[srcIdx]
+		} else {
+			srcNode = externalNodes[src]
+		}
+
+		for tgt := range src.adjacentNodes {
+			if !tgt.isIngressIsolated {
+				continue
+			}
+
+			portsForEdge := tgt.ingressEdges[src].getPorts()
+			if len(portsForEdge) == 0 {
+				continue
+			}
+
+			tgtIdx := nodeMap[tgt]
+			if srcNode.OutEdges == nil {
+				srcNode.OutEdges = make(map[int32]*v1.NetworkEdgePropertiesBundle)
+			}
+			srcNode.OutEdges[int32(tgtIdx)] = bundleForPorts(portsForEdge, includePorts)
+		}
+
+		// If the external source has not been added to graph, add it.
+		if _, ok := nodeMap[src]; !ok && anyNonIsolatedDeps {
+			nodeMap[src] = len(allNodes)
+			allNodes = append(allNodes, srcNode)
+		}
+	}
+
+	if _, ok := nodeMap[b.internetSrc]; !ok && anyNonIsolatedDeps {
+		allNodes = append(allNodes, externalNodes[b.internetSrc])
+	}
 	return allNodes
 }

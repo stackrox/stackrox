@@ -30,3 +30,21 @@ func IsIPNetSubset(ipNet *net.IPNet, maybeSubset *net.IPNet) bool {
 	}
 	return true
 }
+
+// Overlap checks if two networks overlap.
+func Overlap(n1, n2 *net.IPNet) bool {
+	if len(n1.Mask) != len(n2.Mask) {
+		return false
+	}
+	return n1.Contains(n2.IP) || n2.Contains(n1.IP)
+}
+
+// AnyOverlap checks if any network in ns overlaps with n1.
+func AnyOverlap(n1 *net.IPNet, ns []*net.IPNet) bool {
+	for _, n := range ns {
+		if Overlap(n1, n) {
+			return true
+		}
+	}
+	return false
+}

@@ -7,6 +7,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
+	networkEntityDS "github.com/stackrox/rox/central/networkflow/datastore/entities"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/generator"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
@@ -31,10 +32,11 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(storage npDS.DataStore, deployments deploymentDataStore.DataStore, graphEvaluator graph.Evaluator, namespacesStore nsDS.DataStore, clusterStore clusterDataStore.DataStore, notifierStore notifierDataStore.DataStore, globalFlowDataStore nfDS.ClusterDataStore, sensorConnMgr connection.Manager) Service {
+func New(storage npDS.DataStore, deployments deploymentDataStore.DataStore, externalSrcs networkEntityDS.EntityDataStore, graphEvaluator graph.Evaluator, namespacesStore nsDS.DataStore, clusterStore clusterDataStore.DataStore, notifierStore notifierDataStore.DataStore, globalFlowDataStore nfDS.ClusterDataStore, sensorConnMgr connection.Manager) Service {
 	return &serviceImpl{
 		sensorConnMgr:   sensorConnMgr,
 		deployments:     deployments,
+		externalSrcs:    externalSrcs,
 		networkPolicies: storage,
 		notifierStore:   notifierStore,
 		clusterStore:    clusterStore,

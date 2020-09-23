@@ -12,69 +12,150 @@ func TestMatchPolicyPeer(t *testing.T) {
 
 	cases := []struct {
 		name            string
-		deployment      *storage.Deployment
+		deployments     []*storage.Deployment
+		extSrcs         []*storage.NetworkEntityInfo
 		peer            *storage.NetworkPolicyPeer
 		policyNamespace string
-		expected        bool
+		expectedMatches int
 	}{
 		{
 			name: "zero peer",
-			deployment: &storage.Deployment{
-				Namespace:   "default",
-				NamespaceId: "default",
+			deployments: []*storage.Deployment{
+				{
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
 			},
 			peer:            &storage.NetworkPolicyPeer{},
 			policyNamespace: "default",
-			expected:        false,
+			expectedMatches: 0,
 		},
 		{
 			name: "match all in same NS peer",
-			deployment: &storage.Deployment{
-				Namespace:   "default",
-				NamespaceId: "default",
+			deployments: []*storage.Deployment{
+				{
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
 			},
 			peer: &storage.NetworkPolicyPeer{
 				PodSelector: &storage.LabelSelector{},
 			},
 			policyNamespace: "default",
-			expected:        true,
+			expectedMatches: 1,
 		},
 		{
 			name: "match all in same NS peer - no match",
-			deployment: &storage.Deployment{
-				Namespace:   "default",
-				NamespaceId: "default",
+			deployments: []*storage.Deployment{
+				{
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
 			},
 			peer: &storage.NetworkPolicyPeer{
 				PodSelector: &storage.LabelSelector{},
 			},
 			policyNamespace: "stackrox",
-			expected:        false,
+			expectedMatches: 0,
 		},
 		{
 			name: "match all in all NS peer",
-			deployment: &storage.Deployment{
-				Namespace:   "default",
-				NamespaceId: "default",
+			deployments: []*storage.Deployment{
+				{
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
 			},
 			peer: &storage.NetworkPolicyPeer{
 				PodSelector:       &storage.LabelSelector{},
 				NamespaceSelector: &storage.LabelSelector{},
 			},
 			policyNamespace: "stackrox",
-			expected:        true,
+			expectedMatches: 1,
 		},
 		{
-			name:       "ip block",
-			deployment: &storage.Deployment{},
-			peer:       &storage.NetworkPolicyPeer{IpBlock: &storage.IPBlock{}},
-			expected:   true,
+			name:            "ip block",
+			deployments:     []*storage.Deployment{},
+			peer:            &storage.NetworkPolicyPeer{IpBlock: &storage.IPBlock{}},
+			expectedMatches: 0,
+		},
+		{
+			name: "ip block - matches external source; fully contained",
+			deployments: []*storage.Deployment{
+				{
+					Namespace: "default",
+				},
+			},
+			extSrcs: []*storage.NetworkEntityInfo{
+				{
+					Desc: &storage.NetworkEntityInfo_ExternalSource_{
+						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+								Cidr: "192.16.0.0/16",
+							},
+						},
+					},
+				},
+			},
+			peer: &storage.NetworkPolicyPeer{
+				IpBlock: &storage.IPBlock{
+					Cidr: "192.16.0.0/24",
+				},
+			},
+			expectedMatches: 2,
+		},
+		{
+			name: "ip block - matches external source; partial overlap",
+			deployments: []*storage.Deployment{
+				{
+					Namespace: "default",
+				},
+			},
+			extSrcs: []*storage.NetworkEntityInfo{
+				{
+					Desc: &storage.NetworkEntityInfo_ExternalSource_{
+						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+								Cidr: "192.16.0.0/32",
+							},
+						},
+					},
+				},
+			},
+			peer: &storage.NetworkPolicyPeer{
+				IpBlock: &storage.IPBlock{
+					Cidr: "192.16.0.0/24",
+				},
+			},
+			expectedMatches: 3,
+		},
+		{
+			name: "ip block - does not match external source; matches INTERNET",
+			extSrcs: []*storage.NetworkEntityInfo{
+				{
+					Desc: &storage.NetworkEntityInfo_ExternalSource_{
+						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+								Cidr: "192.16.0.0/16",
+							},
+						},
+					},
+				},
+			},
+			peer: &storage.NetworkPolicyPeer{
+				IpBlock: &storage.IPBlock{
+					Cidr: "192.0.0.0/24",
+				},
+			},
+			expectedMatches: 1,
 		},
 		{
 			name: "non match pod selector",
-			deployment: &storage.Deployment{
-				PodLabels: map[string]string{
-					"key": "value1",
+			deployments: []*storage.Deployment{
+				{
+					PodLabels: map[string]string{
+						"key": "value1",
+					},
 				},
 			},
 			peer: &storage.NetworkPolicyPeer{
@@ -84,15 +165,17 @@ func TestMatchPolicyPeer(t *testing.T) {
 					},
 				},
 			},
-			expected: false,
+			expectedMatches: 0,
 		},
 		{
 			name: "match pod selector",
-			deployment: &storage.Deployment{
-				Namespace:   "default",
-				NamespaceId: "default",
-				PodLabels: map[string]string{
-					"key": "value",
+			deployments: []*storage.Deployment{
+				{
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels: map[string]string{
+						"key": "value",
+					},
 				},
 			},
 			peer: &storage.NetworkPolicyPeer{
@@ -103,13 +186,15 @@ func TestMatchPolicyPeer(t *testing.T) {
 				},
 			},
 			policyNamespace: "default",
-			expected:        true,
+			expectedMatches: 1,
 		},
 		{
 			name: "match namespace selector",
-			deployment: &storage.Deployment{
-				Namespace:   "default",
-				NamespaceId: "default",
+			deployments: []*storage.Deployment{
+				{
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
 			},
 			peer: &storage.NetworkPolicyPeer{
 				NamespaceSelector: &storage.LabelSelector{
@@ -119,13 +204,15 @@ func TestMatchPolicyPeer(t *testing.T) {
 				},
 			},
 			policyNamespace: "default",
-			expected:        true,
+			expectedMatches: 1,
 		},
 		{
 			name: "non match namespace selector",
-			deployment: &storage.Deployment{
-				Namespace:   "default",
-				NamespaceId: "default",
+			deployments: []*storage.Deployment{
+				{
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
 			},
 			peer: &storage.NetworkPolicyPeer{
 				NamespaceSelector: &storage.LabelSelector{
@@ -135,13 +222,15 @@ func TestMatchPolicyPeer(t *testing.T) {
 				},
 			},
 			policyNamespace: "default",
-			expected:        false,
+			expectedMatches: 0,
 		},
 		{
 			name: "different namespaces",
-			deployment: &storage.Deployment{
-				Namespace:   "default",
-				NamespaceId: "default",
+			deployments: []*storage.Deployment{
+				{
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
 			},
 			peer: &storage.NetworkPolicyPeer{
 				NamespaceSelector: &storage.LabelSelector{
@@ -151,15 +240,17 @@ func TestMatchPolicyPeer(t *testing.T) {
 				},
 			},
 			policyNamespace: "stackrox",
-			expected:        false,
+			expectedMatches: 0,
 		},
 		{
 			name: "match namespace and pod selector",
-			deployment: &storage.Deployment{
-				Namespace:   "default",
-				NamespaceId: "default",
-				PodLabels: map[string]string{
-					"app": "web",
+			deployments: []*storage.Deployment{
+				{
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels: map[string]string{
+						"app": "web",
+					},
 				},
 			},
 			peer: &storage.NetworkPolicyPeer{
@@ -175,15 +266,17 @@ func TestMatchPolicyPeer(t *testing.T) {
 				},
 			},
 			policyNamespace: "default",
-			expected:        true,
+			expectedMatches: 1,
 		},
 		{
 			name: "match namespace but not pod selector",
-			deployment: &storage.Deployment{
-				Namespace:   "default",
-				NamespaceId: "default",
-				PodLabels: map[string]string{
-					"app": "backend",
+			deployments: []*storage.Deployment{
+				{
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels: map[string]string{
+						"app": "backend",
+					},
 				},
 			},
 			peer: &storage.NetworkPolicyPeer{
@@ -199,15 +292,17 @@ func TestMatchPolicyPeer(t *testing.T) {
 				},
 			},
 			policyNamespace: "default",
-			expected:        false,
+			expectedMatches: 0,
 		},
 		{
 			name: "match pod but not namespace selector",
-			deployment: &storage.Deployment{
-				Namespace:   "default",
-				NamespaceId: "default",
-				PodLabels: map[string]string{
-					"app": "web",
+			deployments: []*storage.Deployment{
+				{
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels: map[string]string{
+						"app": "web",
+					},
 				},
 			},
 			peer: &storage.NetworkPolicyPeer{
@@ -223,15 +318,15 @@ func TestMatchPolicyPeer(t *testing.T) {
 				},
 			},
 			policyNamespace: "default",
-			expected:        false,
+			expectedMatches: 0,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			b := newGraphBuilder([]*storage.Deployment{c.deployment}, namespacesByID)
+			b := newGraphBuilder(c.deployments, c.extSrcs, namespacesByID)
 			matches := b.evaluatePeer(namespacesByID[c.policyNamespace], c.peer)
-			assert.Equal(t, c.expected, len(matches) > 0)
+			assert.Len(t, matches, c.expectedMatches)
 		})
 	}
 }
@@ -301,7 +396,7 @@ func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			b := newGraphBuilder([]*storage.Deployment{c.d}, namespacesByID)
+			b := newGraphBuilder([]*storage.Deployment{c.d}, nil, namespacesByID)
 			b.AddEdgesForNetworkPolicies([]*storage.NetworkPolicy{c.np})
 			assert.Equal(t, c.expected, len(b.allDeployments[0].applyingPoliciesIDs) > 0)
 		})

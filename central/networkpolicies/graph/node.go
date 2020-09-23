@@ -12,7 +12,8 @@ type namedPort struct {
 }
 
 type node struct {
-	*storage.Deployment
+	deployment *storage.Deployment
+	extSrc     *storage.NetworkEntityInfo
 
 	isIngressIsolated bool
 	isEgressIsolated  bool
@@ -30,29 +31,48 @@ type node struct {
 
 func newNode(d *storage.Deployment) *node {
 	n := &node{
-		Deployment: d,
+		deployment: d,
 	}
 	n.initNamedPorts()
 
 	return n
 }
 
+func newExternalSrcNode(extSrc *storage.NetworkEntityInfo) *node {
+	n := &node{
+		extSrc: extSrc,
+	}
+	return n
+}
+
 func (d *node) toEntityProto() *storage.NetworkEntityInfo {
+	if d.extSrc == nil && d.deployment == nil {
+		return nil
+	}
+
+	if d.extSrc != nil {
+		return d.extSrc
+	}
+
 	return &storage.NetworkEntityInfo{
 		Type: storage.NetworkEntityInfo_DEPLOYMENT,
-		Id:   d.GetId(),
+		Id:   d.deployment.GetId(),
 		Desc: &storage.NetworkEntityInfo_Deployment_{
 			Deployment: &storage.NetworkEntityInfo_Deployment{
-				Name:      d.GetName(),
-				Namespace: d.GetNamespace(),
+				Name:      d.deployment.GetName(),
+				Namespace: d.deployment.GetNamespace(),
 			},
 		},
 	}
 }
 
 func (d *node) initNamedPorts() {
+	if d.deployment == nil {
+		return
+	}
+
 	d.namedContainerPorts = make(map[namedPort]int32)
-	for _, portConfig := range d.GetPorts() {
+	for _, portConfig := range d.deployment.GetPorts() {
 		name := portConfig.GetName()
 		if name == "" {
 			continue
