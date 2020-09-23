@@ -65,6 +65,15 @@ module.exports = {
                 optionalDependencies: false,
             },
         ],
+
+        'jsx-a11y/label-has-associated-control': [
+            2,
+            {
+                labelAttributes: ['label'],
+                controlComponents: ['Field'],
+                depth: 3,
+            },
+        ],
     },
 
     overrides: [
