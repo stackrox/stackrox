@@ -21,12 +21,11 @@ func init() {
 					AllowNoNodeLimit:              true,
 					AllowNoBuildFlavorRestriction: true,
 					DeploymentEnvironments: []string{
-						"gcp/ultra-current-825",
+						"gcp/srox-temp-dev-test",
 						"azure/66c57ff5-f49f-4510-ae04-e26d3ad2ee63",
-						"aws/051999192406",
-						"aws/880732477823", // k@stackrox.com"
-						"aws/522993616158", // rhama@stackrox.com
-						"aws/598979716678", // akshat@stackrox.com
+						"aws/051999192406", // setup-automation
+						"aws/880732477823", // k@stackrox.com
+						"aws/393282794030", // gavin@stackrox.com
 					},
 				}
 			},
