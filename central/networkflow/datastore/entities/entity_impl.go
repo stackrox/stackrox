@@ -31,7 +31,7 @@ func NewEntityDataStore(storage store.EntityStore) EntityDataStore {
 }
 
 func (ds *entityDataStoreImpl) GetEntity(ctx context.Context, id string) (*storage.NetworkEntity, bool, error) {
-	decodedID, err := sac.GetClusterScopedResourceID(id)
+	decodedID, err := sac.ParseResourceID(id)
 	if err != nil {
 		return nil, false, err
 	}
@@ -71,7 +71,7 @@ func (ds *entityDataStoreImpl) GetAllEntities(ctx context.Context) ([]*storage.N
 
 	ret := make([]*storage.NetworkEntity, 0, len(ids))
 	for _, id := range ids {
-		decodedID, err := sac.GetClusterScopedResourceID(id)
+		decodedID, err := sac.ParseResourceID(id)
 		if err != nil {
 			return nil, err
 		}
@@ -116,7 +116,7 @@ func (ds *entityDataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, 
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, "external network entity cannot be deleted. ID not specified")
 	}
 
-	decodedID, err := sac.GetClusterScopedResourceID(id)
+	decodedID, err := sac.ParseResourceID(id)
 	if err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
@@ -158,7 +158,7 @@ func (ds *entityDataStoreImpl) validateExternalNetworkEntity(entity *storage.Net
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, "network entity ID must be specified")
 	}
 
-	if _, err := sac.GetClusterScopedResourceID(entity.GetInfo().GetId()); err != nil {
+	if _, err := sac.ParseResourceID(entity.GetInfo().GetId()); err != nil {
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 

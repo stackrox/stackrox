@@ -11,6 +11,7 @@ import (
 	pkgRocksDB "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -48,13 +49,13 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	cluster1 := "cluster1"
 	cluster2 := "cluster2"
 
-	entity1ID, _ := sac.NewClusterScopeResourceID(cluster1, "entity1")
-	entity2ID, _ := sac.NewClusterScopeResourceID(cluster1, "entity2")
-	entity3ID, _ := sac.NewClusterScopeResourceID(cluster1, "entity3")
-	entity4ID, _ := sac.NewClusterScopeResourceID(cluster1, "entity4")
-	entity5ID, _ := sac.NewClusterScopeResourceID(cluster1, "entity2DUPLCIATE")
-	entity6ID, _ := sac.NewClusterScopeResourceID(cluster2, "entity1")
-	entity7ID, _ := sac.NewClusterScopeResourceID(cluster2, "entity2")
+	entity1ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
+	entity2ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
+	entity3ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
+	entity4ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
+	entity5ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
+	entity6ID, _ := sac.NewClusterScopeResourceID(cluster2, uuid.NewV4().String())
+	entity7ID, _ := sac.NewClusterScopeResourceID(cluster2, uuid.NewV4().String())
 
 	// Test Add
 	// Valid entity
@@ -263,10 +264,10 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	cluster1 := "cluster1"
 	cluster2 := "cluster2"
 
-	entity1ID, _ := sac.NewClusterScopeResourceID(cluster1, "entity1")
-	entity2ID, _ := sac.NewClusterScopeResourceID(cluster1, "entity2")
-	entity3ID, _ := sac.NewClusterScopeResourceID(cluster2, "entity1")
-	entity4ID, _ := sac.NewClusterScopeResourceID(cluster2, "entity2")
+	entity1ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
+	entity2ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
+	entity3ID, _ := sac.NewClusterScopeResourceID(cluster2, uuid.NewV4().String())
+	entity4ID, _ := sac.NewClusterScopeResourceID(cluster2, uuid.NewV4().String())
 
 	entity1 := &storage.NetworkEntity{
 		Info: &storage.NetworkEntityInfo{

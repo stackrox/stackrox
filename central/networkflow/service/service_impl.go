@@ -105,7 +105,7 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err := s.validateCluster(id.ClusterID); err != nil {
+	if err := s.validateCluster(request.GetClusterId()); err != nil {
 		return nil, err
 	}
 
@@ -133,7 +133,7 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	go s.doPushExternalNetworkEntitiesToSensor(ctx, id.ClusterID)
+	go s.doPushExternalNetworkEntitiesToSensor(ctx, request.GetClusterId())
 	return entity, nil
 }
 
@@ -149,7 +149,7 @@ func (s *serviceImpl) DeleteExternalNetworkEntity(ctx context.Context, request *
 		return nil, err
 	}
 
-	id, err := sac.GetClusterScopedResourceID(request.GetId())
+	id, err := sac.ParseResourceID(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

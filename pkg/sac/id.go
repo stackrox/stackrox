@@ -1,52 +1,86 @@
 package sac
 
 import (
-	"encoding/base64"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
-// clusterScopedResourceID is a ID generated for a cluster scoped resource.
-type clusterScopedResourceID struct {
-	ClusterID  string
-	ResourceID string
+// ResourceID is a composite ID containing SAC scope keys for the resource.
+type ResourceID struct {
+	ClusterID   string
+	NamespaceID string
+	Suffix      string
 }
 
-// NewClusterScopeResourceID returns new instance of clusterScopedResourceID.
-func NewClusterScopeResourceID(clusterID, resourceID string) (clusterScopedResourceID, error) {
+// NewGlobalScopeResourceID returns new ID for global scoped resource.
+func NewGlobalScopeResourceID(suffix string) (ResourceID, error) {
+	if suffix == "" {
+		suffix = uuid.NewV4().String()
+	}
+	return ResourceID{
+		Suffix: suffix,
+	}, nil
+}
+
+// NewClusterScopeResourceID returns new ID for cluster scoped resource.
+func NewClusterScopeResourceID(clusterID, suffix string) (ResourceID, error) {
 	if clusterID == "" {
-		return clusterScopedResourceID{}, errors.New("cluster ID must be specified")
+		return ResourceID{}, errors.New("cluster ID must be specified")
 	}
 
-	if resourceID == "" {
-		return clusterScopedResourceID{}, errors.New("resource ID must be specified")
+	if suffix == "" {
+		suffix = uuid.NewV4().String()
 	}
-	return clusterScopedResourceID{ClusterID: clusterID, ResourceID: resourceID}, nil
+	return ResourceID{
+		ClusterID: clusterID,
+		Suffix:    suffix,
+	}, nil
 }
 
-// GetClusterScopedResourceID reads a clusterScopedResourceID from string form.
-func GetClusterScopedResourceID(str string) (clusterScopedResourceID, error) {
-	clusterIDEncoded, resourceIDEncoded := stringutils.Split2(str, ":")
-	if resourceIDEncoded == "" {
-		return clusterScopedResourceID{}, errors.Errorf("invalid ID: %s", str)
+// NewNamespaceScopeResourceID returns new ID for namespace scoped resource.
+func NewNamespaceScopeResourceID(clusterID, namespaceID, suffix string) (ResourceID, error) {
+	if clusterID == "" {
+		return ResourceID{}, errors.New("cluster ID must be specified")
 	}
 
-	clusterID, err := base64.RawURLEncoding.DecodeString(clusterIDEncoded)
-	if err != nil {
-		return clusterScopedResourceID{}, err
+	if namespaceID == "" {
+		return ResourceID{}, errors.New("namespace ID must be specified")
 	}
 
-	resourceID, err := base64.RawURLEncoding.DecodeString(resourceIDEncoded)
-	if err != nil {
-		return clusterScopedResourceID{}, err
+	if suffix == "" {
+		suffix = uuid.NewV4().String()
 	}
-	return clusterScopedResourceID{ClusterID: string(clusterID), ResourceID: string(resourceID)}, nil
+	return ResourceID{
+		ClusterID:   clusterID,
+		NamespaceID: namespaceID,
+		Suffix:      suffix,
+	}, nil
 }
 
-// ToString serializes the clusterScopedResourceID to a string.
-func (cID clusterScopedResourceID) ToString() string {
-	clusterEncoded := base64.RawURLEncoding.EncodeToString([]byte(cID.ClusterID))
-	resourceEncoded := base64.RawURLEncoding.EncodeToString([]byte(cID.ResourceID))
-	return clusterEncoded + ":" + resourceEncoded
+// ToString serializes the ResourceID to a string.
+func (r ResourceID) ToString() string {
+	return r.ClusterID + "/" + r.NamespaceID + "/" + r.Suffix
+}
+
+// ParseResourceID reads a ResourceID from input ID string.
+func ParseResourceID(str string) (ResourceID, error) {
+	if str == "" {
+		return ResourceID{}, errors.New("ID string must be provided")
+	}
+
+	parts := stringutils.SplitNPadded(str, "/", 3)
+	if parts[2] == "" {
+		return ResourceID{}, errors.Errorf("suffix part not found in ID %q", str)
+	}
+
+	if parts[0] == "" && parts[1] != "" {
+		return ResourceID{}, errors.Errorf("cluster ID not found for namespace scoped resource ID %q", str)
+	}
+
+	return ResourceID{
+		ClusterID:   parts[0],
+		NamespaceID: parts[1],
+		Suffix:      parts[2],
+	}, nil
 }
