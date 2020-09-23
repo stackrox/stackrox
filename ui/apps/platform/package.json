@@ -166,7 +166,7 @@
         "redux-immutable-state-invariant": "^2.1.0",
         "redux-saga-test-plan": "^3.7.0",
         "storybook-addon-themes": "^5.4.1",
-        "tailwindcss": "^1.4.6",
+        "tailwindcss": "^1.8.10",
         "typescript": "^3.9.5"
     },
     "browserslist": [

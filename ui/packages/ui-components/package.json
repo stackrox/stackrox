@@ -85,7 +85,7 @@
         "react": "^16.13.1",
         "react-dom": "^16.13.1",
         "react-is": "^16.13.1",
-        "tailwindcss": "^1.4.6",
+        "tailwindcss": "^1.8.10",
         "ts-jest": "^24.3.0",
         "typescript": "^3.9.5"
     }
