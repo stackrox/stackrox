@@ -2,6 +2,7 @@ package image
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
 	"github.com/stackrox/rox/central/risk/multipliers"
@@ -17,7 +18,7 @@ func TestComponentCountScore(t *testing.T) {
 	components := image.GetScan().GetComponents()
 	for i := 0; i < 14; i++ {
 		components = append(components, &storage.EmbeddedImageScanComponent{
-			Name:    string(i),
+			Name:    strconv.Itoa(i),
 			Version: "1.0",
 		})
 	}

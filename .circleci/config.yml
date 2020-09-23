@@ -496,10 +496,13 @@ getPrometheusMetricParser: &getPrometheusMetricParser
 
 version: 2.1
 
+orbs:
+  win: circleci/windows@2.2.0
+
 executors:
   custom:
     docker:
-      - image: docker.io/stackrox/apollo-ci:0.3.3
+      - image: docker.io/stackrox/apollo-ci:0.3.4
         auth:
           username: $DOCKER_IO_PULL_USERNAME
           password: $DOCKER_IO_PULL_PASSWORD
@@ -3914,7 +3917,9 @@ jobs:
           when: always
 
   roxctl-windows-test:
-    executor: custom
+    executor:
+      name: win/default  # References orbs.win defined above.
+      size: "medium"
 
     steps:
       - checkout
@@ -3922,25 +3927,38 @@ jobs:
           at: /go/src/github.com/stackrox/rox
 
       - run:
-          name: "Install Wine"
+          name: "Generate K8s/OpenShift bundles using roxctl.exe"
+          shell: bash.exe
           command: |
-            sudo apt-get update
-            sudo apt-get install -y wine64
-
-      - run:
-          name: "Generate a K8s/OpenShift bundles using roxctl.exe"
-          command: |
-            wine64 ./bin/windows/roxctl.exe central generate k8s none --output-dir 'Z:\home\circleci\rox-k8s-bundle'
-            wine64 ./bin/windows/roxctl.exe central generate openshift none --output-dir 'Z:\home\circleci\rox-openshift-bundle'
+            # In Windows, the workspace ends up getting attached relative to the current working directory
+            # so we need to do this cd every time.
+            cd go/src/github.com/stackrox/rox
+            ./bin/windows/roxctl.exe central generate k8s none --output-dir rox-k8s-bundle
+            ./bin/windows/roxctl.exe central generate openshift none --output-dir rox-openshift-bundle
 
       - run:
           name: "Verify contents of generated bundles"
+          shell: bash.exe
           command: |
-            ls /home/circleci/rox-k8s-bundle
-            test -f /home/circleci/rox-k8s-bundle/README
+            # In Windows, the workspace ends up getting attached relative to the current working directory
+            # so we need to do this cd every time.
+            cd go/src/github.com/stackrox/rox
+            dir --recursive rox-k8s-bundle
+            test -f rox-k8s-bundle/README
+            dir --recursive rox-openshift-bundle
+            test -f rox-openshift-bundle/README
 
-            ls /home/circleci/rox-openshift-bundle
-            test -f /home/circleci/rox-openshift-bundle/README
+      - run:
+          name: "Verify version"
+          shell: bash.exe
+          command: |
+            # In Windows, the workspace ends up getting attached relative to the current working directory
+            # so we need to do this cd every time.
+            cd go/src/github.com/stackrox/rox
+            version_from_yaml="$(grep -rnw -e 'image.*main' rox-k8s-bundle/central | sed 's/.*main://g')"
+            version_from_roxctl="$(./bin/windows/roxctl.exe version)"
+            echo "Versions: from YAML ${version_from_yaml}; from roxctl ${version_from_roxctl}"
+            test "${version_from_yaml}" = "${version_from_roxctl}"
 
   ###
   # Post-build jobs to handle built artifacts (like tag, scan and publish images)
