@@ -19,6 +19,7 @@ const Button = ({
     disabled,
     isLoading,
     loaderSize,
+    tabIndex,
 }) => {
     const content = (
         <div className="flex items-center">
@@ -40,6 +41,7 @@ const Button = ({
             onClick={onClick}
             disabled={disabled}
             data-testid={dataTestId}
+            tabIndex={tabIndex}
         >
             {isLoading ? <Loader size={loaderSize} /> : content}
         </button>
@@ -57,6 +59,7 @@ Button.propTypes = {
     disabled: PropTypes.bool,
     isLoading: PropTypes.bool,
     loaderSize: PropTypes.number,
+    tabIndex: PropTypes.string,
 };
 
 Button.defaultProps = {
@@ -70,6 +73,7 @@ Button.defaultProps = {
     disabled: false,
     isLoading: false,
     loaderSize: 20,
+    tabIndex: null,
 };
 
 export default Button;

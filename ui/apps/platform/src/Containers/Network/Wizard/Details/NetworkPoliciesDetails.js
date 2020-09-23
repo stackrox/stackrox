@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 
+import Button from 'Components/Button';
 import CollapsibleCard from 'Components/CollapsibleCard';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import download from 'utils/download';
@@ -35,8 +36,7 @@ class NetworkPoliciesDetails extends Component {
                                     {yaml}
                                 </pre>
                                 <div className="flex justify-center p-3 border-t border-base-400">
-                                    <button
-                                        type="button"
+                                    <Button
                                         className="download uppercase text-primary-600 p-2 text-center text-sm border border-solid bg-primary-200 border-primary-300 hover:bg-primary-100"
                                         onClick={this.downloadYamlFile(
                                             `${name}.yaml`,
@@ -44,10 +44,9 @@ class NetworkPoliciesDetails extends Component {
                                             'yaml'
                                         )}
                                         tabIndex="-1"
-                                    >
-                                        <span className="pr-2">Download YAML file</span>
-                                        <Icon.Download className="h-3 w-3" />
-                                    </button>
+                                        icon={<Icon.Download className="h-3 w-3 mr-4" />}
+                                        text="Download YAML file"
+                                    />
                                 </div>
                             </CollapsibleCard>
                         </div>
