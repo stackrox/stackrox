@@ -274,7 +274,7 @@ class NetworkSimulator extends BaseSpecification {
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, centralAppId).size() == 0
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, webAppId, null).size() == 0
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, centralAppId, null).size() == 1
-        assert simulation.simulatedGraph.nodesList.size() == 2
+        assert simulation.simulatedGraph.nodesList.size() == 3
 
         assert simulation.policiesList.find { it.policy.name == "deny-all-traffic" }?.status ==
                 NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.UNCHANGED
