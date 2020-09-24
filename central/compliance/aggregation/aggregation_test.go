@@ -1,6 +1,7 @@
 package aggregation
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -171,6 +172,18 @@ func testName(groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggreg
 
 func TestMaxScopeMatches(t *testing.T) {
 	assert.Equal(t, len(v1.ComplianceAggregation_Scope_name)-1, int(maxScope))
+}
+
+func TestInvalidParameters(t *testing.T) {
+	a := &aggregatorImpl{}
+	_, _, _, err := a.Aggregate(context.TODO(), "", []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NAMESPACE}, v1.ComplianceAggregation_UNKNOWN)
+	assert.Error(t, err)
+
+	_, _, _, err = a.Aggregate(context.TODO(), "", nil, v1.ComplianceAggregation_UNKNOWN)
+	assert.Error(t, err)
+
+	_, _, _, err = a.Aggregate(context.TODO(), "", nil, v1.ComplianceAggregation_CHECK)
+	assert.Error(t, err)
 }
 
 func TestGetAggregatedResults(t *testing.T) {

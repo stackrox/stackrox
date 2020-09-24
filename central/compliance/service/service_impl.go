@@ -111,6 +111,9 @@ func (s *serviceImpl) GetComplianceControlResults(ctx context.Context, query *v1
 }
 
 func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.ComplianceAggregation_Request) (*v1.ComplianceAggregation_Response, error) {
+	if request.GetUnit() == v1.ComplianceAggregation_UNKNOWN {
+		request.Unit = v1.ComplianceAggregation_CHECK
+	}
 	validResults, sources, _, err := s.aggregator.Aggregate(ctx, request.GetWhere().GetQuery(), request.GetGroupBy(), request.GetUnit())
 	if err != nil {
 		return nil, err
