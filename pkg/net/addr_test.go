@@ -100,3 +100,70 @@ func TestIsPublic_False(t *testing.T) {
 		assert.False(t, ip.IsPublic(), "expected IP %s to be private", privateIP)
 	}
 }
+
+func TestFromCIDRString_Valid(t *testing.T) {
+	t.Parallel()
+
+	cidrs := []string{
+		"192.168.0.1/8",
+		"0.0.0.0/0",
+		"::ffff:4.4.4.4/32",
+		"::ffff:4.4.4.4/0",
+		"::1/52",
+	}
+
+	for _, cidr := range cidrs {
+		actual := IPNetworkFromCIDR(cidr)
+		assert.NotEqual(t, IPNetwork{}, actual)
+	}
+}
+
+func TestFromCIDRString_InValid(t *testing.T) {
+	t.Parallel()
+
+	cidrs := []string{
+		"192.168.0.1/64",
+		"0.0.0.0",
+		"::ffff:4.4.4.4/200",
+		"::ffff:.4/0",
+		"::1",
+	}
+
+	for _, cidr := range cidrs {
+		actual := IPNetworkFromCIDR(cidr)
+		assert.Equal(t, IPNetwork{}, actual)
+	}
+}
+
+func TestFromCIDRBytes_Valid(t *testing.T) {
+	t.Parallel()
+
+	cidrs := [][]byte{
+		{192, 168, 0, 1, 8},
+		{0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 4, 4, 4, 4, 0},
+	}
+
+	for _, cidr := range cidrs {
+		actual := IPNetworkFromCIDRBytes(cidr)
+		assert.NotEqual(t, IPNetwork{}, actual)
+	}
+}
+
+func TestFromCIDRBytesInvalid(t *testing.T) {
+	t.Parallel()
+
+	cidrs := [][]byte{
+		{192, 168, 0, 1, 64},
+		{0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 200},
+		{0, 0, 255, 0, 4, 0},
+		{0, 0, 1},
+	}
+
+	for _, cidr := range cidrs {
+		actual := IPNetworkFromCIDRBytes(cidr)
+		assert.Equal(t, IPNetwork{}, actual)
+	}
+}

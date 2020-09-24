@@ -7,7 +7,7 @@ import (
 )
 
 func TestNumericEndpointV4(t *testing.T) {
-	ep := IPPortPair{
+	ep := NetworkPeerID{
 		Address: IPAddress{data: ipv4data{192, 168, 0, 1}},
 		Port:    1234,
 	}
@@ -16,7 +16,7 @@ func TestNumericEndpointV4(t *testing.T) {
 }
 
 func TestNumericEndpointV4NoPort(t *testing.T) {
-	ep := IPPortPair{
+	ep := NetworkPeerID{
 		Address: IPAddress{data: ipv4data{192, 168, 0, 1}},
 	}
 	assert.True(t, ep.IsValid())
@@ -24,7 +24,7 @@ func TestNumericEndpointV4NoPort(t *testing.T) {
 }
 
 func TestNumericEndpointV6(t *testing.T) {
-	ep := IPPortPair{
+	ep := NetworkPeerID{
 		Address: IPAddress{data: ipv6data{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}},
 		Port:    1234,
 	}
@@ -33,7 +33,7 @@ func TestNumericEndpointV6(t *testing.T) {
 }
 
 func TestNumericEndpointV6NoPort(t *testing.T) {
-	ep := IPPortPair{
+	ep := NetworkPeerID{
 		Address: IPAddress{data: ipv6data{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}},
 	}
 	assert.True(t, ep.IsValid())
@@ -42,7 +42,7 @@ func TestNumericEndpointV6NoPort(t *testing.T) {
 
 func TestParseNumericEndpointV4(t *testing.T) {
 	ep := ParseIPPortPair("192.168.0.1:1234")
-	expected := IPPortPair{
+	expected := NetworkPeerID{
 		Address: IPAddress{data: ipv4data{192, 168, 0, 1}},
 		Port:    1234,
 	}
@@ -51,7 +51,7 @@ func TestParseNumericEndpointV4(t *testing.T) {
 
 func TestParseNumericEndpointV4NoPort(t *testing.T) {
 	ep := ParseIPPortPair("192.168.0.1")
-	expected := IPPortPair{
+	expected := NetworkPeerID{
 		Address: IPAddress{data: ipv4data{192, 168, 0, 1}},
 	}
 	assert.Equal(t, expected, ep)
@@ -59,7 +59,7 @@ func TestParseNumericEndpointV4NoPort(t *testing.T) {
 
 func TestParseNumericEndpointV6(t *testing.T) {
 	ep := ParseIPPortPair("[::1]:1234")
-	expected := IPPortPair{
+	expected := NetworkPeerID{
 		Address: IPAddress{data: ipv6data{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}},
 		Port:    1234,
 	}
@@ -68,7 +68,7 @@ func TestParseNumericEndpointV6(t *testing.T) {
 
 func TestParseNumericEndpointV6NoPort(t *testing.T) {
 	ep := ParseIPPortPair("::1")
-	expected := IPPortPair{
+	expected := NetworkPeerID{
 		Address: IPAddress{data: ipv6data{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}},
 	}
 	assert.Equal(t, expected, ep)

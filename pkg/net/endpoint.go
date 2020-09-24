@@ -60,14 +60,14 @@ func L4ProtoFromProtobuf(l4proto storage.L4Protocol) L4Proto {
 
 // NumericEndpoint is an ip:port pair along with an L4 protocol.
 type NumericEndpoint struct {
-	IPAndPort IPPortPair
+	IPAndPort NetworkPeerID
 	L4Proto   L4Proto
 }
 
 // MakeNumericEndpoint returns a numeric endpoint for the given ip, port, and L4 protocol.
 func MakeNumericEndpoint(addr IPAddress, port uint16, proto L4Proto) NumericEndpoint {
 	return NumericEndpoint{
-		IPAndPort: IPPortPair{
+		IPAndPort: NetworkPeerID{
 			Address: addr,
 			Port:    port,
 		},

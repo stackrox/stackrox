@@ -33,14 +33,14 @@ message IPAddressList {
 }
 
 message IPNetworkList {
-    // A list of IPv4 networks, as a sequence of bytes. First four bytes represent IP whereas following byte represent
-    // the network mask ones. Each sequence encoded in correct byte order (i.e., 127.0.0.1/8 is encoded as 0x7f0000018).
+    // A list of IPv4 networks, as a sequence of bytes. First four bytes represent IP followed by the byte representing
+    // the network prefix length. Each sequence encoded in correct byte order (i.e., 127.0.0.1/8 is encoded as 0x7f0000018).
     // On a little-endian system, you must convert to big endian to interpret the value as a binary address.
     // This field must always have an 5x number of values; otherwise it should be discarded.
     bytes ipv4_networks  = 1;
 
-    // A list of IPv6 networks, as a sequence of bytes. First 16 bytes representing IP whereas following byte represent
-    // the network mask ones. Each IP sequence is ordered in network order (big endian, i.e., first high, then low).
+    // A list of IPv6 networks, as a sequence of bytes. First 16 bytes representing IP followed by the byte representing
+    // the network prefix length. Each IP sequence is ordered in network order (big endian, i.e., first high, then low).
     // Each order is encoded in the correct byte order and may need to be converted to big endian on little endian System.
     // This field must always have an 17x number of values; otherwise it should be discarded.
     bytes ipv6_networks  = 2;

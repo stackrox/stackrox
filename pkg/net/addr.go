@@ -241,3 +241,85 @@ func FromNetIP(ip net.IP) IPAddress {
 func ParseIP(str string) IPAddress {
 	return FromNetIP(net.ParseIP(str))
 }
+
+// IPNetwork represents an IP (v4 or v6) network.
+type IPNetwork struct {
+	ip        IPAddress
+	prefixLen byte
+}
+
+// IP returns the network addres.
+func (d IPNetwork) IP() IPAddress {
+	return d.ip
+}
+
+// PrefixLen returns the length of IP network prefix.
+func (d IPNetwork) PrefixLen() byte {
+	return d.prefixLen
+}
+
+// IsValid returns true if this IPNetwork object is valid, else, returns false.
+func (d IPNetwork) IsValid() bool {
+	return d.ip.IsValid()
+}
+
+// Contains returns true if the IP network contains given ip.
+func (d IPNetwork) Contains(ip IPAddress) bool {
+	ipNet := net.IPNet{
+		IP:   d.ip.data.bytes(),
+		Mask: net.CIDRMask(int(d.prefixLen), len(d.ip.data.bytes())*8),
+	}
+	return ipNet.Contains(ip.AsNetIP())
+}
+
+// String returns the IPNetwork in string form.
+func (d IPNetwork) String() string {
+	ipNet := &net.IPNet{
+		IP:   d.ip.data.bytes(),
+		Mask: net.CIDRMask(int(d.prefixLen), len(d.ip.data.bytes())*8),
+	}
+	return ipNet.String()
+}
+
+// IPNetworkFromCIDR converts a CIDR string string to an `IPNetwork`. In case of invalid string, an invalid IPNetwork is returned.
+func IPNetworkFromCIDR(cidr string) IPNetwork {
+	_, ipNet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return IPNetwork{}
+	}
+
+	ones, _ := ipNet.Mask.Size()
+
+	return IPNetwork{
+		ip:        IPFromBytes(ipNet.IP),
+		prefixLen: byte(uint8(ones)),
+	}
+}
+
+// IPNetworkFromIPNet converts a `net.IP` object to an `IPNetwork`. In case of invalid `ipNet`, an invalid IPNetwork is returned.
+func IPNetworkFromIPNet(ipNet net.IPNet) IPNetwork {
+	addr := IPFromBytes(ipNet.IP)
+	ones, bits := ipNet.Mask.Size()
+	if len(addr.data.bytes())*8 != bits {
+		return IPNetwork{}
+	}
+
+	return IPNetwork{
+		ip:        addr,
+		prefixLen: byte(uint8(ones)),
+	}
+}
+
+// IPNetworkFromCIDRBytes converts an IP network, in the form of array of bytes, to an `IPNetwork`. The array length must be 5 bytes
+// for IpV4 and 17 bytes for IPV6, otherwise an invalid IPNetwork is returned.
+func IPNetworkFromCIDRBytes(cidr []byte) IPNetwork {
+	if len(cidr) != 5 && len(cidr) != 17 {
+		return IPNetwork{}
+	}
+
+	n := len(cidr)
+	return IPNetworkFromIPNet(net.IPNet{
+		IP:   cidr[:n-1],
+		Mask: net.CIDRMask(int(cidr[n-1]), (n-1)*8),
+	})
+}

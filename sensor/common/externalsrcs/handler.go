@@ -1,7 +1,6 @@
 package externalsrcs
 
 import (
-	"net"
 	"sort"
 
 	"github.com/pkg/errors"
@@ -11,14 +10,22 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/logging"
+	pkgNet "github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 )
 
+var (
+	log = logging.LoggerForModule()
+)
+
 // Store is a store for network graph external sources.
 type Store interface {
 	ExternalSrcsValueStream() concurrency.ReadOnlyValueStream
+	LookupByNetwork(ipNet pkgNet.IPNetwork) *storage.NetworkEntityInfo
+	LookupByAddress(ip pkgNet.IPAddress) *storage.NetworkEntityInfo
 }
 
 // Handler forwards the external network entities received from Central to Collectors.
@@ -30,11 +37,13 @@ type handlerImpl struct {
 	stopSig   concurrency.Signal
 	updateSig concurrency.Signal
 
-	// `entities` store the CIDR string to network entity mapping.
-	entities         map[string]*storage.NetworkEntityInfo
+	// `entities` stores the IPNetwork to entity object mappings. We allow only unique CIDRs in a cluster, which could
+	// be overlapping or not.
+	entities         map[pkgNet.IPNetwork]*storage.NetworkEntityInfo
 	lastRequestSeqID int64
-	lastSeenList     *sensor.IPNetworkList
-
+	// `lastSeenList` stores the networks in descending order of prefix length. Networks with same prefix length are
+	// ordered descending lexical byte order. This list can be used to lookup the smallest subnet containing an IP address.
+	lastSeenList             *sensor.IPNetworkList
 	ipNetworkListProtoStream *concurrency.ValueStream
 
 	lock sync.Mutex
@@ -80,10 +89,6 @@ func (h *handlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 	return nil
 }
 
-func (h *handlerImpl) ExternalSrcsValueStream() concurrency.ReadOnlyValueStream {
-	return h.ipNetworkListProtoStream
-}
-
 func (h *handlerImpl) run() {
 	for {
 		select {
@@ -96,10 +101,20 @@ func (h *handlerImpl) run() {
 }
 
 func (h *handlerImpl) saveEntitiesNoLock(entities []*storage.NetworkEntityInfo) {
-	// We assume that the network entity validation is already performed by Central.
-	h.entities = make(map[string]*storage.NetworkEntityInfo)
+	// We assume that the network entity object validation is already performed by Central.
+	h.entities = make(map[pkgNet.IPNetwork]*storage.NetworkEntityInfo)
+	var errList errorhelpers.ErrorList
 	for _, entity := range entities {
-		h.entities[entity.GetExternalSource().GetCidr()] = entity
+		ipNet := pkgNet.IPNetworkFromCIDR(entity.GetExternalSource().GetCidr())
+		if !ipNet.IsValid() {
+			errList.AddStringf("%s (cidr=%s) ", entity.GetId(), entity.GetExternalSource().GetCidr())
+			continue
+		}
+		h.entities[ipNet] = entity
+	}
+
+	if err := errList.ToError(); err != nil {
+		log.Errorf("could not process some external sources received from Central: %v", err)
 	}
 }
 
@@ -111,22 +126,13 @@ func (h *handlerImpl) regenerateAndPushExternalSrcsToValueStream() {
 
 	ipNetworkList := &sensor.IPNetworkList{}
 
-	var errList errorhelpers.ErrorList
-	for cidr := range h.entities {
-		_, ipNet, err := net.ParseCIDR(cidr)
-		if err != nil {
-			errList.AddError(err)
-			continue
-		}
-
-		if ipV4 := ipNet.IP.To4(); ipV4 != nil {
-			ones, _ := ipNet.Mask.Size()
+	for ipNet := range h.entities {
+		if ipV4 := ipNet.IP().AsNetIP().To4(); ipV4 != nil {
 			ipNetworkList.Ipv4Networks = append(ipNetworkList.Ipv4Networks, ipV4...)
-			ipNetworkList.Ipv4Networks = append(ipNetworkList.Ipv4Networks, byte(uint8(ones)))
-		} else if ipV6 := ipNet.IP.To16(); ipV6 != nil {
-			ones, _ := ipNet.Mask.Size()
+			ipNetworkList.Ipv4Networks = append(ipNetworkList.Ipv4Networks, ipNet.PrefixLen())
+		} else if ipV6 := ipNet.IP().AsNetIP().To16(); ipV6 != nil {
 			ipNetworkList.Ipv6Networks = append(ipNetworkList.Ipv6Networks, ipV6...)
-			ipNetworkList.Ipv6Networks = append(ipNetworkList.Ipv6Networks, byte(uint8(ones)))
+			ipNetworkList.Ipv6Networks = append(ipNetworkList.Ipv6Networks, ipNet.PrefixLen())
 		}
 	}
 
@@ -148,4 +154,38 @@ func normalizeNetworkList(listProto *sensor.IPNetworkList) {
 func networkListsEqual(a, b *sensor.IPNetworkList) bool {
 	return sliceutils.ByteEqual(a.GetIpv4Networks(), b.GetIpv4Networks()) &&
 		sliceutils.ByteEqual(a.GetIpv6Networks(), b.GetIpv6Networks())
+}
+
+func (h *handlerImpl) ExternalSrcsValueStream() concurrency.ReadOnlyValueStream {
+	return h.ipNetworkListProtoStream
+}
+
+func (h *handlerImpl) LookupByNetwork(ipNet pkgNet.IPNetwork) *storage.NetworkEntityInfo {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
+	return h.entities[ipNet]
+}
+
+func (h *handlerImpl) LookupByAddress(ip pkgNet.IPAddress) *storage.NetworkEntityInfo {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
+	if ip.Family() == pkgNet.IPv4 {
+		for i := 0; i < len(h.lastSeenList.GetIpv4Networks())/5; i++ {
+			network := pkgNet.IPNetworkFromCIDRBytes(h.lastSeenList.Ipv4Networks[5*i : 5*i+5])
+			if network.Contains(ip) {
+				return h.entities[network]
+			}
+		}
+	} else if ip.Family() == pkgNet.IPv6 {
+		for i := 0; i < len(h.lastSeenList.GetIpv4Networks())/17; i++ {
+			network := pkgNet.IPNetworkFromCIDRBytes(h.lastSeenList.Ipv4Networks[17*i : 17*i+17])
+			if network.Contains(ip) {
+				return h.entities[network]
+			}
+		}
+	}
+
+	return nil
 }

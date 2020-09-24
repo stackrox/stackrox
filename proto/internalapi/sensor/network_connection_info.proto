@@ -50,7 +50,11 @@ message NetworkEndpoint {
 }
 
 message NetworkAddress {
-    bytes address_data = 1;  // semantics determined by socket_family of the given connection
-    uint32 port = 2;         // may be 0 if not applicable (e.g., icmp).
+    bytes  address_data = 1;  // semantics determined by socket_family of the given connection
+    uint32 port         = 2;  // may be 0 if not applicable (e.g., icmp).
+    // Represents an IPV4 or IPV6 network. First 4/16 bytes representing network address whereas following byte represents
+    // the length of network prefix. If used, this field must have 5 or 17 bytes; otherwise it should be discarded.
+    // `ip_network` and `address_data` usage should be mutually exclusive.
+    bytes  ip_network   = 3;
 }
 

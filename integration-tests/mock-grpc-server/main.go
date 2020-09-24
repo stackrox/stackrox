@@ -89,7 +89,7 @@ func (s *signalServer) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnect
 }
 
 func getEndpoint(networkAddress *sensorAPI.NetworkAddress) string {
-	ipPortPair := utils.IPPortPair{
+	ipPortPair := utils.NetworkPeerID{
 		Address: utils.IPFromBytes(networkAddress.GetAddressData()),
 		Port:    uint16(networkAddress.GetPort()),
 	}

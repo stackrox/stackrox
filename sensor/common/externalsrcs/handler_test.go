@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/net"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -196,4 +197,82 @@ func TestPublicIPsManager(t *testing.T) {
 	assert.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	assert.Nil(t, vs.TryNext())
 	assert.False(t, handler.updateSig.IsDone())
+}
+
+func TestExternalSourcesLookup(t *testing.T) {
+	handler := newHandler()
+
+	_, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	require.NoError(t, handler.Start())
+
+	vs := handler.ExternalSrcsValueStream().Iterator(true)
+
+	assert.Nil(t, vs.Value())
+	assert.Nil(t, vs.TryNext())
+	assert.False(t, handler.updateSig.IsDone())
+
+	// First message
+	req := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_PushNetworkEntitiesRequest{
+			PushNetworkEntitiesRequest: &central.PushNetworkEntitiesRequest{
+				Entities: []*storage.NetworkEntityInfo{
+					{
+						Id:   "1",
+						Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+						Desc: &storage.NetworkEntityInfo_ExternalSource_{
+							ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+								Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+									Cidr: "192.0.0.0/8",
+								},
+							},
+						},
+					},
+					{
+						Id:   "2",
+						Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+						Desc: &storage.NetworkEntityInfo_ExternalSource_{
+							ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+								Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+									Cidr: "192.10.0.0/16",
+								},
+							},
+						},
+					},
+					{
+						Id:   "3",
+						Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+						Desc: &storage.NetworkEntityInfo_ExternalSource_{
+							ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+								Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+									Cidr: "192.254.0.0/12",
+								},
+							},
+						},
+					},
+					{
+						Id:   "4",
+						Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+						Desc: &storage.NetworkEntityInfo_ExternalSource_{
+							ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+								Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+									Cidr: "10.0.0.0/0",
+								},
+							},
+						},
+					},
+				},
+				SeqID: 1,
+			},
+		},
+	}
+	require.NoError(t, handler.ProcessMessage(req))
+	require.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
+
+	expected := req.GetPushNetworkEntitiesRequest().GetEntities()[1]
+	assert.Equal(t, expected, handler.LookupByAddress(net.IPFromBytes([]byte{192, 10, 10, 10})))
+
+	expected = req.GetPushNetworkEntitiesRequest().GetEntities()[3]
+	assert.Equal(t, expected, handler.LookupByAddress(net.IPFromBytes([]byte{127, 10, 10, 10})))
 }

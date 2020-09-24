@@ -106,7 +106,7 @@ func (i *containerEndpointIndicator) toProto(ts timestamp.MicroTS) *storage.Netw
 
 // connection is an instance of a connection as reported by collector
 type connection struct {
-	local       net.IPPortPair
+	local       net.NetworkPeerID
 	remote      net.NumericEndpoint
 	containerID string
 	incoming    bool
@@ -219,16 +219,6 @@ func (m *networkFlowManager) enrichAndSend() {
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	isFresh := timestamp.Now().ElapsedSince(status.firstSeen) < clusterEntityResolutionWaitPeriod
 
-	isExternal := false
-	if conn.remote.IPAndPort.Address == externalIPv4Addr || conn.remote.IPAndPort.Address == externalIPv6Addr {
-		isExternal = true
-		isFresh = false
-	}
-
-	if !isFresh {
-		status.used = true
-	}
-
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
 	if !ok {
 		flowMetrics.ContainerIDMisses.Inc()
@@ -237,14 +227,36 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	}
 
 	var lookupResults []clusterentities.LookupResult
-	if !isExternal {
+
+	// Check if the remote address represents the de-facto INTERNET entity.
+	if conn.remote.IPAndPort.Address == externalIPv4Addr || conn.remote.IPAndPort.Address == externalIPv6Addr {
+		isFresh = false
+	} else {
+		// Otherwise, check if the remote entity is actually a cluster entity.
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
 	}
 
+	if !isFresh {
+		status.used = true
+	}
+
 	if len(lookupResults) == 0 {
+		var extSrc *storage.NetworkEntityInfo
+		if conn.remote.IPAndPort.Address.IsValid() {
+			extSrc = m.externalSrcs.LookupByAddress(conn.remote.IPAndPort.Address)
+		} else if conn.remote.IPAndPort.IPNetwork.IsValid() {
+			extSrc = m.externalSrcs.LookupByNetwork(conn.remote.IPAndPort.IPNetwork)
+		}
+
+		if extSrc != nil {
+			isFresh = false
+		}
+
+		// If the address is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time before associating it to INTERNET.
 		if isFresh {
 			return
 		}
+
 		flowMetrics.ExternalFlowCounter.Inc()
 
 		var port uint16
@@ -254,15 +266,21 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			port = conn.remote.IPAndPort.Port
 		}
 
-		// Fake a lookup result with an empty deployment ID.
-		lookupResults = []clusterentities.LookupResult{
-			{
-				Entity: networkgraph.Entity{
-					ID:   networkgraph.InternetExternalSourceID,
-					Type: storage.NetworkEntityInfo_INTERNET,
+		if extSrc == nil {
+			// Fake a lookup result.
+			lookupResults = []clusterentities.LookupResult{
+				{
+					Entity:         networkgraph.InternetEntity(),
+					ContainerPorts: []uint16{port},
 				},
-				ContainerPorts: []uint16{port},
-			},
+			}
+		} else {
+			lookupResults = []clusterentities.LookupResult{
+				{
+					Entity:         networkgraph.EntityFromProto(extSrc),
+					ContainerPorts: []uint16{port},
+				},
+			}
 		}
 	} else {
 		status.used = true
@@ -575,11 +593,14 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 	return nil
 }
 
-func getIPAndPort(address *sensor.NetworkAddress) net.IPPortPair {
-	return net.IPPortPair{
-		Address: net.IPFromBytes(address.GetAddressData()),
-		Port:    uint16(address.GetPort()),
+func getIPAndPort(address *sensor.NetworkAddress) net.NetworkPeerID {
+	tuple := net.NetworkPeerID{
+		// If not set, this be invalid i.e. `IPNetwork{}`.
+		IPNetwork: net.IPNetworkFromCIDRBytes(address.GetIpNetwork()),
+		Address:   net.IPFromBytes(address.GetAddressData()),
+		Port:      uint16(address.GetPort()),
 	}
+	return tuple
 }
 
 func getUpdatedConnections(hostname string, networkInfo *sensor.NetworkConnectionInfo) map[connection]timestamp.MicroTS {

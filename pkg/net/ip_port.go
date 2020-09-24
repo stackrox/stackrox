@@ -6,19 +6,23 @@ import (
 	"strconv"
 )
 
-// IPPortPair is a purely numerical representation of an ip:port pair. It can be used as a map key.
-type IPPortPair struct {
+// NetworkPeerID is a purely numerical representation of an ip:port pair. It can be used as a map key.
+// `Address` and `IPNetwork` fields must be used mutually exclusively. `Address` is required to represent an IP address
+// whereas `IPNetwork` is required to represent networks.
+type NetworkPeerID struct {
 	Address IPAddress
 	Port    uint16
+
+	IPNetwork IPNetwork
 }
 
 // IsValid checks if the ip:port pair is valid.
-func (e IPPortPair) IsValid() bool {
+func (e NetworkPeerID) IsValid() bool {
 	return e.Address.IsValid()
 }
 
 // String returns a string representation of this ip:port pair.
-func (e IPPortPair) String() string {
+func (e NetworkPeerID) String() string {
 	if e.Port == 0 {
 		return e.Address.String()
 	}
@@ -31,22 +35,22 @@ func (e IPPortPair) String() string {
 
 // ParseIPPortPair parses a string representation of an ip:port pair. An invalid ip:port pair is returned if the string
 // could not be parsed.
-func ParseIPPortPair(str string) IPPortPair {
+func ParseIPPortPair(str string) NetworkPeerID {
 	host, portStr, err := net.SplitHostPort(str)
 	if err != nil {
-		return IPPortPair{
+		return NetworkPeerID{
 			Address: ParseIP(str),
 		}
 	}
 	port, err := strconv.Atoi(portStr)
 	if err != nil || port <= 0 || port > 65535 {
-		return IPPortPair{}
+		return NetworkPeerID{}
 	}
 	parsedIP := ParseIP(host)
 	if !parsedIP.IsValid() {
-		return IPPortPair{}
+		return NetworkPeerID{}
 	}
-	return IPPortPair{
+	return NetworkPeerID{
 		Address: parsedIP,
 		Port:    uint16(port),
 	}
