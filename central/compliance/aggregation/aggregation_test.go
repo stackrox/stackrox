@@ -182,7 +182,7 @@ func TestInvalidParameters(t *testing.T) {
 	_, _, _, err = a.Aggregate(context.TODO(), "", nil, v1.ComplianceAggregation_UNKNOWN)
 	assert.Error(t, err)
 
-	_, _, _, err = a.Aggregate(context.TODO(), "", nil, v1.ComplianceAggregation_CHECK)
+	_, _, _, err = a.Aggregate(context.TODO(), "", []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_UNKNOWN}, v1.ComplianceAggregation_CHECK)
 	assert.Error(t, err)
 }
 

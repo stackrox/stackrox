@@ -283,11 +283,13 @@ func (a *aggregatorImpl) GetResultsWithEvidence(ctx context.Context, queryString
 
 // Aggregate takes in a search query, groupby scopes and unit scope and returns the results of the aggregation
 func (a *aggregatorImpl) Aggregate(ctx context.Context, queryString string, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) ([]*v1.ComplianceAggregation_Result, []*v1.ComplianceAggregation_Source, map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
-	if len(groupBy) == 0 {
-		return nil, nil, nil, errors.New("group by clause must contain at least one entry")
+	for _, group := range groupBy {
+		if group < minScope {
+			return nil, nil, nil, errors.Errorf("group %s is not a valid scope to run aggregation on", group)
+		}
 	}
 	if unit < minScope {
-		return nil, nil, nil, errors.Errorf("unit %s is not a valid unit to run aggregation on", unit)
+		return nil, nil, nil, errors.Errorf("unit %s is not a valid scope to run aggregation on", unit)
 	}
 
 	validResults, sources, mask, err := a.getResultsAndMask(ctx, queryString, 0)
