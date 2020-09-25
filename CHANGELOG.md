@@ -17,6 +17,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - CVSS3 is used if it exists otherwise CVSS2 is used.
 - Added support for .NET Core runtime CVEs (data from NVD).
   - This affects images with .NET Core and/or ASP.NET Core runtime(s) installed
+- UI: Update the Network Graph when a different cluster is selected (ROX-5662)
 
 ## [49.0]
 - OIDC authentication providers: added support for two rarely-needed configuration options:
