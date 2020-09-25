@@ -21,14 +21,12 @@ import getNetworkFlowValueByCategory from './networkFlowUtils/getNetworkFlowValu
 
 const NetworkFlows = ({
     deploymentEdges,
-    networkGraphRef,
     filterState,
-    onDeploymentClick,
+    onNavigateToDeploymentById,
     featureFlags,
 }) => {
     const { networkFlows } = getNetworkFlows(deploymentEdges, filterState);
 
-    const [selectedNode, setSelectedNode] = useState(null);
     const [page, setPage] = useState(0);
     const [searchOptions, setSearchOptions] = useState([]);
 
@@ -78,35 +76,6 @@ const NetworkFlows = ({
         filteredNetworkFlows.length
     )}`;
 
-    function getNodeDataById(nodeId) {
-        const { getNodeData: getNodeDataFromRef } = networkGraphRef;
-        const node = getNodeDataFromRef(nodeId);
-        return node?.[0]?.data;
-    }
-
-    function onHighlightNode({ deploymentId }) {
-        const node = getNodeDataById(deploymentId);
-        if (node) {
-            if (onDeploymentClick) {
-                onDeploymentClick(node.deploymentId);
-            }
-            networkGraphRef.setSelectedNode(node);
-            setSelectedNode(node);
-        }
-    }
-
-    function onNavigateToNodeById(nodeId) {
-        return function onNavigate() {
-            const { onNodeClick } = networkGraphRef;
-            const node = getNodeDataById(nodeId);
-            if (node) {
-                networkGraphRef.setSelectedNode(node);
-                onNodeClick(node);
-                setSelectedNode(node);
-            }
-        };
-    }
-
     return (
         <div className="w-full h-full">
             <Panel header={subHeaderText} headerComponents={headerComponents} isUpperCase={false}>
@@ -114,10 +83,8 @@ const NetworkFlows = ({
                     <NetworkFlowsTable
                         networkFlows={filteredNetworkFlows}
                         page={page}
-                        selectedNode={selectedNode}
                         filterState={filterState}
-                        onHighlightNode={onHighlightNode}
-                        onNavigateToNodeById={onNavigateToNodeById}
+                        onNavigateToDeploymentById={onNavigateToDeploymentById}
                         showPortsAndProtocols={showPortsAndProtocols}
                     />
                 </div>
@@ -134,14 +101,13 @@ NetworkFlows.propTypes = {
         onNodeClick: PropTypes.func,
     }),
     filterState: PropTypes.number.isRequired,
-    onDeploymentClick: PropTypes.func,
+    onNavigateToDeploymentById: PropTypes.func.isRequired,
     featureFlags: PropTypes.arrayOf(PropTypes.shape),
 };
 
 NetworkFlows.defaultProps = {
     deploymentEdges: [],
     networkGraphRef: null,
-    onDeploymentClick: null,
     featureFlags: [],
 };
 

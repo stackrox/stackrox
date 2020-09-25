@@ -1,6 +1,5 @@
 import { url as networkUrl, selectors as networkPageSelectors } from '../constants/NetworkPage';
 import { url as riskURL, selectors as riskPageSelectors } from '../constants/RiskPage';
-import generalPageSelectors from '../constants/GeneralPage';
 
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
@@ -157,8 +156,7 @@ describe('Network Flows Table', () => {
     withAuth();
 
     it('should let you navigate to a different deployment', () => {
-        cy.visit(networkUrl);
-        cy.get(`${generalPageSelectors.leftNavLinks}:contains('Risk')`).click();
+        cy.visit(riskURL);
         cy.get(`${selectors.table.rows}:contains('central')`).click();
         cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
         cy.get(networkPageSelectors.networkDetailsPanel.header).contains('central');

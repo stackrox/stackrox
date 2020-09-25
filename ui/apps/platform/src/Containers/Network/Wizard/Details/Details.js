@@ -17,7 +17,6 @@ import Loader from 'Components/Loader';
 import TabContent from 'Components/TabContent';
 import PanelButton from 'Components/PanelButton';
 
-import { getEdgesFromNode } from 'utils/networkGraphUtils';
 import NetworkPoliciesDetails from './NetworkPoliciesDetails';
 import NetworkFlows from './NetworkFlows';
 import wizardStages from '../wizardStages';
@@ -40,20 +39,14 @@ function Details(props) {
         { text: 'Network Policies' },
     ];
 
-    let edges = [];
-    const configObj = props.networkGraphRef.getConfigObj();
-    if (configObj?.links.length === 0) {
-        edges = selectedNode.edges;
-    } else {
-        edges = getEdgesFromNode({ ...configObj, selectedNode });
-    }
-
-    const deploymentEdges = edges.filter(
+    const deploymentEdges = selectedNode.edges.filter(
         ({ data }) => data.destNodeNamespace && data.destNodeName && data.source !== data.target
     );
 
-    function onDeploymentClick(id) {
-        props.history.push(`/main/network/${id}`);
+    function onNavigateToDeploymentById(deploymentId) {
+        return function onNavigate() {
+            props.history.push(`/main/network/${deploymentId}`);
+        };
     }
 
     const content = props.isFetchingNode ? (
@@ -64,7 +57,7 @@ function Details(props) {
                 <div className="flex flex-1 flex-col h-full">
                     <NetworkFlows
                         deploymentEdges={deploymentEdges}
-                        onDeploymentClick={onDeploymentClick}
+                        onNavigateToDeploymentById={onNavigateToDeploymentById}
                     />
                 </div>
             </TabContent>
@@ -139,6 +132,7 @@ Details.propTypes = {
     networkGraphRef: PropTypes.shape({
         setSelectedNode: PropTypes.func,
         getConfigObj: PropTypes.func,
+        getNodeData: PropTypes.func,
     }),
     setWizardStage: PropTypes.func.isRequired,
     setSelectedNode: PropTypes.func.isRequired,

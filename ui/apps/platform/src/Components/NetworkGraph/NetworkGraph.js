@@ -604,7 +604,6 @@ const NetworkGraph = ({
             selectedNode,
             getNodeData: getNodeDataFromList,
             onNodeClick,
-            getConfigObj,
         });
     }
 
@@ -654,7 +653,13 @@ const NetworkGraph = ({
 
     useEffect(setWindowResize, []);
     useEffect(setGraphRef, []);
-    useEffect(runLayout, [networkNodeMap, networkEdgeMap, filterState, simulatorOn]);
+    useEffect(runLayout, [
+        networkNodeMap,
+        networkEdgeMap,
+        filterState,
+        simulatorOn,
+        match.params.deploymentId,
+    ]);
     useEffect(grabifyNamespaces);
     useEffect(calculateNodeSideMap);
 

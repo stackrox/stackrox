@@ -26,10 +26,9 @@ function renderPortsAndProtocols({ original }) {
 
 const NetworkFlowsTable = ({
     networkFlows,
-    selectedNode,
     page,
     filterState,
-    onNavigateToNodeById,
+    onNavigateToDeploymentById,
     showPortsAndProtocols,
 }) => {
     const filterStateString = filterState !== filterModes.all ? filterLabels[filterState] : '';
@@ -112,7 +111,7 @@ const NetworkFlowsTable = ({
                     <div className="border-2 border-r-2 border-base-400 bg-base-100 flex">
                         <RowActionButton
                             text="Navigate to Deployment"
-                            onClick={onNavigateToNodeById(value)}
+                            onClick={onNavigateToDeploymentById(value)}
                             icon={<Icon.ArrowUpRight className="my-1 h-4 w-4" />}
                         />
                     </div>
@@ -134,7 +133,6 @@ const NetworkFlowsTable = ({
             noDataText={`No ${filterStateString} deployment flows`}
             page={page}
             idAttribute="deploymentId"
-            selectedRowId={selectedNode?.id}
             SubComponent={showPortsAndProtocols ? renderPortsAndProtocols : null}
             noHorizontalPadding
         />
