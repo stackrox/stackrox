@@ -31,7 +31,7 @@ message S3Config {
     string secret_access_key = 4 [(gogoproto.moretags) = "scrub:\"always\""];
     string region            = 5;
     string object_prefix     = 6;
-    string endpoint          = 7 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string endpoint          = 7 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
 }
 
 message GCSConfig {

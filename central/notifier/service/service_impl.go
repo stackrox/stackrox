@@ -14,6 +14,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/endpoints"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -108,6 +109,9 @@ func validateNotifier(notifier *storage.Notifier) error {
 	}
 	if notifier.GetUiEndpoint() == "" {
 		errorList.AddString("notifier UI endpoint must be defined")
+	}
+	if err := endpoints.ValidateEndpoints(notifier.Config); err != nil {
+		errorList.AddWrap(err, "invalid endpoint")
 	}
 	return errorList.ToError()
 }

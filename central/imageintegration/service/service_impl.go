@@ -13,6 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/endpoints"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -261,6 +262,9 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 		return errors.New("empty integration")
 	}
 	errorList := errorhelpers.NewErrorList("Validation")
+	if err := endpoints.ValidateEndpoints(request.IntegrationConfig); err != nil {
+		errorList.AddWrap(err, "invalid endpoint")
+	}
 	if len(request.GetCategories()) == 0 {
 		errorList.AddStrings("integrations require a category")
 	}

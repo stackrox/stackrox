@@ -480,27 +480,38 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
                 | expectedError          | expectedMessage      | testAspect
 
         new StackroxScannerIntegration() | { [endpoint: "http://127.0.0.1/nowhere",]
-        }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
+        }       | StatusRuntimeException |
+        /invalid endpoint: endpoint cannot reference localhost/ |
+        "invalid endpoint"
 
         new AnchoreScannerIntegration() | { [username: Env.mustGet("ANCHORE_USERNAME") + "WRONG",]
         }       | StatusRuntimeException | /401 UNAUTHORIZED/   | "incorrect user"
         new AnchoreScannerIntegration() | { [password: Env.mustGet("ANCHORE_PASSWORD") + "WRONG",]
         }       | StatusRuntimeException | /401 UNAUTHORIZED/   | "incorrect password"
         new AnchoreScannerIntegration() | { [endpoint: "http://127.0.0.1/nowhere",]
-        }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
+        }       | StatusRuntimeException |
+        /invalid endpoint: endpoint cannot reference localhost/ |
+        "invalid endpoint"
 
         new ClairScannerIntegration()   | { [endpoint: "http://127.0.0.1/nowhere",]
-        }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
+        }       | StatusRuntimeException |
+        /invalid endpoint: endpoint cannot reference localhost/ |
+        "invalid endpoint"
 
         new AzureRegistryIntegration() | { [username: "WRONG",]
         }       | StatusRuntimeException | /UNAUTHORIZED/   | "incorrect user"
         new AzureRegistryIntegration() | { [password: "WRONG",]
         }       | StatusRuntimeException | /UNAUTHORIZED/   | "incorrect password"
         new AzureRegistryIntegration() | { [endpoint: "http://127.0.0.1/nowhere",]
-        }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
+        }       | StatusRuntimeException |
+        /invalid endpoint: endpoint cannot reference localhost/ |
+        "invalid endpoint"
 
         new ECRRegistryIntegration()    | { [endpoint: "http://127.0.0.1/nowhere",]
-        }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
+        }       | StatusRuntimeException |
+        /invalid endpoint: endpoint cannot reference localhost/ |
+        "invalid endpoint"
+
         new ECRRegistryIntegration()    | { [registryId: '0123456789',]
         }       | StatusRuntimeException | /InvalidParameterException/ | "incorrect registry ID"
         new ECRRegistryIntegration()    | { [region: 'nowhere',]
@@ -511,12 +522,18 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         }       | StatusRuntimeException | /InvalidSignatureException/ | "incorrect secret"
 
         new QuayImageIntegration()      | { [endpoint: "http://127.0.0.1/nowhere",]
-        }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
+        }       | StatusRuntimeException |
+        /invalid endpoint: endpoint cannot reference localhost/ |
+        "invalid endpoint"
+        new QuayImageIntegration()      | { [endpoint: "http://169.254.169.254",]
+        }       | StatusRuntimeException |
+        /invalid endpoint: endpoint cannot reference the cluster metadata service/ | "invalid endpoint"
         new QuayImageIntegration()      | { [oauthToken: "EnFzYsRVC4TIBjRenrKt9193KSz9o7vkoWiIGX86",]
         }       | StatusRuntimeException | /Invalid bearer token format/ | "incorrect token"
-
         new GCRImageIntegration() | { [endpoint: "http://127.0.0.1/nowhere",]
-        }       | StatusRuntimeException | /connection refused/ | "incorrect endpoint"
+        }       | StatusRuntimeException |
+        /invalid endpoint: endpoint cannot reference localhost/ |
+        "invalid endpoint"
         new GCRImageIntegration() | { [serviceAccount: Env.mustGet("GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY"),]
         }       | StatusRuntimeException | /PermissionDenied/ | "account without access"
         new GCRImageIntegration() | { [project: "not-a-project",]

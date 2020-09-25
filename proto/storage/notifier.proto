@@ -48,7 +48,7 @@ message CSCC {
 }
 
 message Jira {
-    string url        = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string url        = 1 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
     string username   = 2 [(gogoproto.moretags) = "scrub:\"dependent\""];
     // The password for the integration. The server will mask the value of this credential in responses and logs.
     string password   = 3 [(gogoproto.moretags) = "scrub:\"always\""];
@@ -81,7 +81,7 @@ message Email {
 message Splunk {
     // The HTTP token for the integration. The server will mask the value of this credential in responses and logs.
     string http_token          = 1 [(gogoproto.moretags) = "scrub:\"always\""];
-    string http_endpoint       = 2 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string http_endpoint       = 2 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
     bool insecure              = 3;
     int64 truncate             = 4;
     bool audit_logging_enabled = 5;
@@ -93,7 +93,7 @@ message PagerDuty {
 }
 
 message Generic {
-    string endpoint                    = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string endpoint                    = 1 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
     bool   skipTLSVerify               = 2;
     string ca_cert                     = 3;
     string username                    = 4 [(gogoproto.moretags) = "scrub:\"dependent\""];
@@ -105,6 +105,6 @@ message Generic {
 }
 
 message SumoLogic {
-    string http_source_address = 1;
+    string http_source_address = 1 [(gogoproto.moretags) = "validate:\"nolocalendpoint\""];
     bool   skipTLSVerify       = 2;
 }

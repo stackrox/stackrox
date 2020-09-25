@@ -37,29 +37,29 @@ message ImageIntegration {
 }
 
 message IBMRegistryConfig {
-    string endpoint = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string endpoint = 1 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
     // The API key for the integration. The server will mask the value of this credential in responses and logs.
     string api_key  = 2 [(gogoproto.moretags) = "scrub:\"always\""];
 }
 
 message QuayConfig {
-    string endpoint   = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string endpoint   = 1 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
     // The OAuth token for the integration. The server will mask the value of this credential in responses and logs.
     string oauthToken = 2 [(gogoproto.moretags) = "scrub:\"always\""];
     bool   insecure   = 3;
 }
 
 message ClairConfig {
-    string endpoint = 1;
+    string endpoint = 1 [(gogoproto.moretags) = "validate:\"nolocalendpoint\""];
     bool   insecure = 2;
 }
 
 message ClairifyConfig {
-    string endpoint = 1;
+    string endpoint = 1 [(gogoproto.moretags) = "validate:\"nolocalendpoint\""];
 }
 
 message DockerConfig {
-    string endpoint = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string endpoint = 1 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
     string username = 2 [(gogoproto.moretags) = "scrub:\"dependent\""];
     // The password for the integration. The server will mask the value of this credential in responses and logs.
     string password = 3 [(gogoproto.moretags) = "scrub:\"always\""];
@@ -74,19 +74,19 @@ message ECRConfig {
     string secret_access_key = 3 [(gogoproto.moretags) = "scrub:\"always\""];
     string region            = 4;
     bool   use_iam           = 5;
-    string endpoint          = 6 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string endpoint          = 6 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
 }
 
 message DTRConfig {
     string username = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
     // The password for the integration. The server will mask the value of this credential in responses and logs.
     string password = 2 [(gogoproto.moretags) = "scrub:\"always\""];
-    string endpoint = 3 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string endpoint = 3 [(gogoproto.moretags) = "scrub:\"dependent\", validate:\"nolocalendpoint\""];
     bool  insecure  = 4;
 }
 
 message GoogleConfig {
-    string endpoint        = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string endpoint        = 1 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
     // The service account for the integration. The server will mask the value of this credential in responses and logs.
     string service_account = 2 [(gogoproto.moretags) = "scrub:\"always\""];
     string project         = 3;
@@ -100,7 +100,7 @@ message TenableConfig {
 }
 
 message AnchoreConfig {
-    string endpoint = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string endpoint = 1 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
     string username = 2 [(gogoproto.moretags) = "scrub:\"dependent\""];
     // The password for the integration. The server will mask the value of this credential in responses and logs.
     string password = 3 [(gogoproto.moretags) = "scrub:\"always\""];

@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/endpoints"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -94,6 +95,10 @@ func (s *serviceImpl) GetExternalBackups(ctx context.Context, _ *v1.Empty) (*v1.
 func validateBackup(backup *storage.ExternalBackup) error {
 	errorList := errorhelpers.NewErrorList("external backup validation")
 
+	err := endpoints.ValidateEndpoints(backup.Config)
+	if err != nil {
+		errorList.AddWrap(err, "Invalid endpoint")
+	}
 	if backup.GetName() == "" {
 		errorList.AddString("name field must be specified")
 	}
