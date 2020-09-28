@@ -435,7 +435,7 @@ monitoring-build-context: monitoring/static-bin/save-dir-contents monitoring/sta
 
 .PHONY: monitoring-image
 monitoring-image: monitoring-build-context
-	docker build -t stackrox/monitoring:$(TAG) monitoring
+	scripts/ensure_image.sh stackrox/monitoring:$(shell cat MONITORING_VERSION) monitoring/Dockerfile monitoring/
 
 .PHONY: all-builds
 all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) ui-build

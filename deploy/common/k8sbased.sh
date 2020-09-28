@@ -162,7 +162,7 @@ function launch_central {
         echo "Deploying Monitoring..."
         helm_args=(
           -f "${COMMON_DIR}/monitoring-values.yaml"
-          --set image="$(sed -E 's@(^|/)main($|:)@\1monitoring\2@' <<<"${MAIN_IMAGE}")"
+          --set image="${MONITORING_IMAGE}"
           --set persistence.type="${STORAGE}"
           --set exposure.type="${MONITORING_LOAD_BALANCER}"
         )

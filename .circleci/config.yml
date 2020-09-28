@@ -2445,7 +2445,9 @@ jobs:
 
       - run:
           name: Build images
-          command: make scale-image mock-grpc-server-image monitoring-image
+          command: |
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
+            make scale-image mock-grpc-server-image monitoring-image
 
       - *saveGoBuildCache
 
@@ -2456,7 +2458,7 @@ jobs:
 
             TAG=$(make --quiet tag)
 
-            for img in scale grpc-server monitoring; do
+            for img in scale grpc-server; do
               docker push "docker.io/stackrox/${img}:${TAG}" | cat
             done
 
