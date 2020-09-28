@@ -728,3 +728,51 @@ func (s *NetworkGraphServiceTestSuite) TestDeleteExternalNetworkEntity() {
 	s.NoError(err)
 	s.True(concurrency.WaitWithTimeout(&pushSig, time.Second*1))
 }
+
+func (s *NetworkGraphServiceTestSuite) TestPatchExternalNetworkEntity() {
+	if !features.NetworkGraphExternalSrcs.Enabled() {
+		s.T().Skip()
+	}
+
+	ctx := sac.WithAllAccess(context.Background())
+
+	// Store an entity first.
+	entity := &storage.NetworkEntity{
+		Info: &storage.NetworkEntityInfo{
+			Id: "cidr1",
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Name: "cidr1",
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "192.0.2.0/24",
+					},
+				},
+			},
+		},
+	}
+
+	// Valid request
+	patch := &v1.PatchNetworkEntityRequest{
+		Id:   entity.GetInfo().GetId(),
+		Name: "newcidr",
+	}
+
+	s.entities.EXPECT().GetEntity(ctx, entity.GetInfo().GetId()).Return(entity, true, nil)
+	s.entities.EXPECT().UpsertExternalNetworkEntity(ctx, gomock.Any()).Return(nil)
+	actual, err := s.tested.PatchExternalNetworkEntity(ctx, patch)
+	s.NoError(err)
+	entity.Info.GetExternalSource().Name = "newcidr"
+	s.Equal(entity, actual)
+
+	// Not found
+	s.entities.EXPECT().GetEntity(ctx, entity.GetInfo().GetId()).Return(nil, false, nil)
+	actual, err = s.tested.PatchExternalNetworkEntity(ctx, patch)
+	s.Error(err)
+	s.Nil(actual)
+
+	// Invalid stored entity
+	s.entities.EXPECT().GetEntity(ctx, entity.GetInfo().GetId()).Return(nil, true, nil)
+	actual, err = s.tested.PatchExternalNetworkEntity(ctx, patch)
+	s.Error(err)
+	s.Nil(actual)
+}

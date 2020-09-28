@@ -50,6 +50,11 @@ message CreateNetworkEntityRequest {
     storage.NetworkEntityInfo.ExternalSource entity     = 2;
 }
 
+message PatchNetworkEntityRequest {
+    string id   = 1;
+    string name = 2;
+}
+
 message GetExternalNetworkEntitiesRequest {
     string cluster_id = 1;
 }
@@ -74,6 +79,13 @@ service NetworkGraphService {
     rpc CreateExternalNetworkEntity (CreateNetworkEntityRequest) returns (storage.NetworkEntity) {
         option (google.api.http) = {
             post: "/v1/networkgraph/cluster/{cluster_id}/externalentities"
+            body: "*"
+        };
+    }
+
+    rpc PatchExternalNetworkEntity (PatchNetworkEntityRequest) returns (storage.NetworkEntity) {
+        option (google.api.http) = {
+            patch: "/v1/networkgraph/cluster/externalentities/{id}"
             body: "*"
         };
     }

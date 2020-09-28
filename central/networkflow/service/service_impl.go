@@ -43,6 +43,7 @@ var (
 		user.With(permissions.Modify(resources.NetworkGraph)): {
 			"/v1.NetworkGraphService/CreateExternalNetworkEntity",
 			"/v1.NetworkGraphService/DeleteExternalNetworkEntity",
+			"/v1.NetworkGraphService/PatchExternalNetworkEntity",
 		},
 	})
 
@@ -156,6 +157,38 @@ func (s *serviceImpl) DeleteExternalNetworkEntity(ctx context.Context, request *
 
 	go s.doPushExternalNetworkEntitiesToSensor(ctx, id.ClusterID)
 	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) PatchExternalNetworkEntity(ctx context.Context, request *v1.PatchNetworkEntityRequest) (*storage.NetworkEntity, error) {
+	if !features.NetworkGraphExternalSrcs.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "support for external sources in network graph is not enabled")
+	}
+
+	if request.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "network entity ID must be specified")
+	}
+
+	id := request.GetId()
+	entity, found, err := s.entities.GetEntity(ctx, id)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if !found {
+		return nil, status.Errorf(codes.NotFound, "network entity %q not found", id)
+	}
+	if entity.GetInfo().GetExternalSource() == nil {
+		return nil, status.Errorf(codes.FailedPrecondition, "cannot update network entity %q since the stored entity is invalid. Please delete %q and recreate.", id, id)
+	}
+
+	entity.Info.GetExternalSource().Name = request.GetName()
+
+	if err := s.entities.UpsertExternalNetworkEntity(ctx, entity); err != nil {
+		if errors.Is(err, errorhelpers.ErrInvalidArgs) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		return nil, err
+	}
+	return entity, nil
 }
 
 func (s *serviceImpl) getFlowStore(ctx context.Context, clusterID string) (networkFlowDS.FlowDataStore, error) {
