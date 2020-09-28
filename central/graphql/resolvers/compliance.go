@@ -127,7 +127,7 @@ func (resolver *Resolver) ComplianceNamespaceCount(ctx context.Context, args Raw
 	if err := readCompliance(ctx); err != nil {
 		return 0, err
 	}
-	scope := []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NAMESPACE}
+	scope := []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_NAMESPACE}
 	return resolver.getComplianceEntityCount(ctx, args, scope)
 }
 
@@ -137,7 +137,7 @@ func (resolver *Resolver) ComplianceClusterCount(ctx context.Context, args RawQu
 	if err := readCompliance(ctx); err != nil {
 		return 0, err
 	}
-	scope := []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER}
+	scope := []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER}
 	return resolver.getComplianceEntityCount(ctx, args, scope)
 }
 
@@ -147,7 +147,7 @@ func (resolver *Resolver) ComplianceDeploymentCount(ctx context.Context, args Ra
 	if err := readCompliance(ctx); err != nil {
 		return 0, err
 	}
-	scope := []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_DEPLOYMENT}
+	scope := []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_DEPLOYMENT}
 	return resolver.getComplianceEntityCount(ctx, args, scope)
 }
 
@@ -157,13 +157,13 @@ func (resolver *Resolver) ComplianceNodeCount(ctx context.Context, args RawQuery
 	if err := readCompliance(ctx); err != nil {
 		return 0, err
 	}
-	scope := []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NODE}
+	scope := []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_NODE}
 	return resolver.getComplianceEntityCount(ctx, args, scope)
 }
 
 // ComplianceNamespaceCount returns count of namespaces that have compliance run on them
-func (resolver *Resolver) getComplianceEntityCount(ctx context.Context, args RawQuery, scope []v1.ComplianceAggregation_Scope) (int32, error) {
-	r, _, _, err := resolver.ComplianceAggregator.Aggregate(ctx, args.String(), scope, v1.ComplianceAggregation_CONTROL)
+func (resolver *Resolver) getComplianceEntityCount(ctx context.Context, args RawQuery, scope []storage.ComplianceAggregation_Scope) (int32, error) {
+	r, _, _, err := resolver.ComplianceAggregator.Aggregate(ctx, args.String(), scope, storage.ComplianceAggregation_CONTROL)
 	if err != nil {
 		return 0, err
 	}
@@ -176,8 +176,8 @@ func (resolver *Resolver) ExecutedControls(ctx context.Context, args RawQuery) (
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	scope := []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER, v1.ComplianceAggregation_CONTROL}
-	rs, _, _, err := resolver.ComplianceAggregator.Aggregate(ctx, args.String(), scope, v1.ComplianceAggregation_CONTROL)
+	scope := []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER, storage.ComplianceAggregation_CONTROL}
+	rs, _, _, err := resolver.ComplianceAggregator.Aggregate(ctx, args.String(), scope, storage.ComplianceAggregation_CONTROL)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func (resolver *Resolver) ExecutedControls(ctx context.Context, args RawQuery) (
 	failing := make(map[string]int32)
 	passing := make(map[string]int32)
 	for _, r := range rs {
-		controlID, err := getScopeIDFromAggregationResult(r, v1.ComplianceAggregation_CONTROL)
+		controlID, err := getScopeIDFromAggregationResult(r, storage.ComplianceAggregation_CONTROL)
 		if err != nil {
 			return nil, err
 		}
@@ -212,14 +212,14 @@ func (resolver *Resolver) ExecutedControlCount(ctx context.Context, args RawQuer
 	if err := readCompliance(ctx); err != nil {
 		return 0, err
 	}
-	scope := []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER, v1.ComplianceAggregation_CONTROL}
-	rs, _, _, err := resolver.ComplianceAggregator.Aggregate(ctx, args.String(), scope, v1.ComplianceAggregation_CONTROL)
+	scope := []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER, storage.ComplianceAggregation_CONTROL}
+	rs, _, _, err := resolver.ComplianceAggregator.Aggregate(ctx, args.String(), scope, storage.ComplianceAggregation_CONTROL)
 	if err != nil {
 		return 0, err
 	}
 	controlSet := set.NewStringSet()
 	for _, r := range rs {
-		controlID, err := getScopeIDFromAggregationResult(r, v1.ComplianceAggregation_CONTROL)
+		controlID, err := getScopeIDFromAggregationResult(r, storage.ComplianceAggregation_CONTROL)
 		if err != nil {
 			return 0, err
 		}
@@ -257,7 +257,7 @@ func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregated
 	return &complianceAggregationResponseWithDomainResolver{
 		complianceAggregation_ResponseResolver: complianceAggregation_ResponseResolver{
 			root: resolver,
-			data: &v1.ComplianceAggregation_Response{
+			data: &storage.ComplianceAggregation_Response{
 				Results: validResults,
 				Sources: sources,
 			},
@@ -270,34 +270,34 @@ type complianceDomainKeyResolver struct {
 	wrapped interface{}
 }
 
-func newComplianceDomainKeyResolverWrapped(ctx context.Context, root *Resolver, domain *storage.ComplianceDomain, key *v1.ComplianceAggregation_AggregationKey) interface{} {
+func newComplianceDomainKeyResolverWrapped(ctx context.Context, root *Resolver, domain *storage.ComplianceDomain, key *storage.ComplianceAggregation_AggregationKey) interface{} {
 	switch key.GetScope() {
-	case v1.ComplianceAggregation_CLUSTER:
+	case storage.ComplianceAggregation_CLUSTER:
 		if domain.GetCluster() != nil {
 			return &clusterResolver{ctx, root, domain.GetCluster()}
 		}
-	case v1.ComplianceAggregation_DEPLOYMENT:
+	case storage.ComplianceAggregation_DEPLOYMENT:
 		deployment, found := domain.GetDeployments()[key.GetId()]
 		if found {
 			return &deploymentResolver{ctx, root, deployment, nil}
 		}
-	case v1.ComplianceAggregation_NAMESPACE:
+	case storage.ComplianceAggregation_NAMESPACE:
 		receivedNS, found, err := namespace.ResolveByID(ctx, key.GetId(), root.NamespaceDataStore,
 			root.DeploymentDataStore, root.SecretsDataStore, root.NetworkPoliciesStore)
 		if err == nil && found {
 			return &namespaceResolver{ctx, root, receivedNS}
 		}
-	case v1.ComplianceAggregation_NODE:
+	case storage.ComplianceAggregation_NODE:
 		node, found := domain.GetNodes()[key.GetId()]
 		if found {
 			return &nodeResolver{ctx, root, node}
 		}
-	case v1.ComplianceAggregation_STANDARD:
+	case storage.ComplianceAggregation_STANDARD:
 		standard, found, err := root.ComplianceStandardStore.StandardMetadata(key.GetId())
 		if err == nil && found {
 			return &complianceStandardMetadataResolver{ctx, root, standard}
 		}
-	case v1.ComplianceAggregation_CONTROL:
+	case storage.ComplianceAggregation_CONTROL:
 		controlID := key.GetId()
 		control := root.ComplianceStandardStore.Control(controlID)
 		if control != nil {
@@ -306,7 +306,7 @@ func newComplianceDomainKeyResolverWrapped(ctx context.Context, root *Resolver, 
 				data: control,
 			}
 		}
-	case v1.ComplianceAggregation_CATEGORY:
+	case storage.ComplianceAggregation_CATEGORY:
 		groupID := key.GetId()
 		control := root.ComplianceStandardStore.Group(groupID)
 		if control != nil {
@@ -688,7 +688,7 @@ func (resolver *complianceControlResolver) ComplianceControlPassingNodes(ctx con
 	return ret, nil
 }
 
-func (resolver *complianceControlResolver) getNodeControlAggregationResults(ctx context.Context, clusterID string, standardIDs []string, args RawQuery) ([]*v1.ComplianceAggregation_Result, bool, error) {
+func (resolver *complianceControlResolver) getNodeControlAggregationResults(ctx context.Context, clusterID string, standardIDs []string, args RawQuery) ([]*storage.ComplianceAggregation_Result, bool, error) {
 	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.IsComplianceRunSuccessfulOnCluster(ctx, clusterID, standardIDs)
 	if err != nil || !hasComplianceSuccessfullyRun {
 		return nil, false, err
@@ -701,14 +701,14 @@ func (resolver *complianceControlResolver) getNodeControlAggregationResults(ctx 
 	if args.Query != nil {
 		query = strings.Join([]string{query, *(args.Query)}, "+")
 	}
-	rs, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CONTROL, v1.ComplianceAggregation_NODE}, v1.ComplianceAggregation_NODE)
+	rs, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CONTROL, storage.ComplianceAggregation_NODE}, storage.ComplianceAggregation_NODE)
 	if err != nil {
 		return nil, false, err
 	}
 	return rs, true, nil
 }
 
-func getResultNodesFromAggregationResults(results []*v1.ComplianceAggregation_Result, nodeType resultType, ds datastore.DataStore) ([]*storage.Node, error) {
+func getResultNodesFromAggregationResults(results []*storage.ComplianceAggregation_Result, nodeType resultType, ds datastore.DataStore) ([]*storage.Node, error) {
 	if ds == nil {
 		return nil, errors.Wrap(errors.New("empty node datastore encountered"), "argument ds is nil")
 	}
@@ -717,7 +717,7 @@ func getResultNodesFromAggregationResults(results []*v1.ComplianceAggregation_Re
 		if (nodeType == passing && r.GetNumPassing() == 0) || (nodeType == failing && r.GetNumFailing() == 0) {
 			continue
 		}
-		nodeID, err := getScopeIDFromAggregationResult(r, v1.ComplianceAggregation_NODE)
+		nodeID, err := getScopeIDFromAggregationResult(r, storage.ComplianceAggregation_NODE)
 		if err != nil {
 			continue
 		}
@@ -738,7 +738,7 @@ const (
 	any
 )
 
-func getScopeIDFromAggregationResult(result *v1.ComplianceAggregation_Result, scope v1.ComplianceAggregation_Scope) (string, error) {
+func getScopeIDFromAggregationResult(result *storage.ComplianceAggregation_Result, scope storage.ComplianceAggregation_Scope) (string, error) {
 	if result == nil {
 		return "", errors.New("empty aggregation result encountered: compliance aggregation result is nil")
 	}

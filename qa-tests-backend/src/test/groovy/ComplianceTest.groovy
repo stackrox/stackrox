@@ -37,8 +37,8 @@ import spock.lang.Shared
 import util.Timer
 import v1.ComplianceServiceOuterClass.ComplianceControl
 import v1.ComplianceServiceOuterClass.ComplianceStandard
-import v1.ComplianceServiceOuterClass.ComplianceAggregation.Result
-import v1.ComplianceServiceOuterClass.ComplianceAggregation.Scope
+import io.stackrox.proto.storage.Compliance.ComplianceAggregation.Result
+import io.stackrox.proto.storage.Compliance.ComplianceAggregation.Scope
 import v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
 
 import java.nio.charset.StandardCharsets
@@ -66,7 +66,10 @@ class ComplianceTest extends BaseSpecification {
     private Map<String, String> standardsByName = [:]
     static final private String NONE = "None"
     static final private String COMPLIANCETOKEN = "stackrox-compliance"
+
     def setupSpec() {
+        BaseService.useBasicAuth()
+
         // Get cluster ID
         clusterId = ClusterService.getClusterId()
         assert clusterId
@@ -92,6 +95,7 @@ class ComplianceTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        BaseService.useBasicAuth()
         ImageIntegrationService.deleteImageIntegration(gcrId)
         ImageService.clearImageCaches()
 
@@ -142,11 +146,11 @@ class ComplianceTest extends BaseSpecification {
                 new Control(
                         "CIS_Docker_v1_2_0:2_6",
                         ["Docker daemon is not exposed over TCP"],
-                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.NODE),
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.NODE),
                 new Control(
-                    "NIST_SP_800_53_Rev_4:RA_3",
-                    ["StackRox is installed in cluster \"remote\", and provides continuous risk assessment."],
-                    ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
+                        "NIST_SP_800_53_Rev_4:RA_3",
+                        ["StackRox is installed in cluster \"remote\", and provides continuous risk assessment."],
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
         ]
 
         expect:
@@ -164,7 +168,7 @@ class ComplianceTest extends BaseSpecification {
                         k, v ->
                         assert v.controlResultsMap.get(control.id)?.overallState == control.state
                         assert v.controlResultsMap.get(control.id)?.evidenceList*.message
-                            .containsAll(control.evidenceMessages)
+                                    .containsAll(control.evidenceMessages)
                     }
                     break
                 case Control.ControlType.NODE:
@@ -172,7 +176,7 @@ class ComplianceTest extends BaseSpecification {
                         k, v ->
                         assert v.controlResultsMap.get(control.id)?.overallState == control.state
                         assert v.controlResultsMap.get(control.id)?.evidenceList*.message
-                               .containsAll(control.evidenceMessages)
+                                    .containsAll(control.evidenceMessages)
                     }
                     break
             }
@@ -388,7 +392,7 @@ class ComplianceTest extends BaseSpecification {
             int verifiedRows = 0
 
             Map<String, ComplianceStandard> sDetails = ComplianceService.getComplianceStandards().collectEntries {
-                [(it.id) : ComplianceService.getComplianceStandardDetails(it.id)]
+                [(it.id): ComplianceService.getComplianceStandardDetails(it.id)]
             }
 
             while (csvUserIterator.hasNext()) {
@@ -409,7 +413,7 @@ class ComplianceTest extends BaseSpecification {
                 }
                 if (!control) {
                     println "Couldn't find ${normalizedControlName} (row " +
-                        "was ${row.cluster} ${row.standard} ${row.control}"
+                            "was ${row.cluster} ${row.standard} ${row.control}"
                 }
                 assert control
 
@@ -439,7 +443,7 @@ class ComplianceTest extends BaseSpecification {
                 }
                 if (!value) {
                     println "Control: ${control} StandardId: ${standardId}" +
-                        "Row: ${row.cluster}, ${row.standard}, ${row.objectType}, ${row.control}, ${row.evidence}"
+                            "Row: ${row.cluster}, ${row.standard}, ${row.objectType}, ${row.control}, ${row.evidence}"
                     println result.clusterResults.controlResultsMap.keySet()
                 }
                 assert value
@@ -496,7 +500,7 @@ class ComplianceTest extends BaseSpecification {
             minute++
         } else {
             minute = 0
-            hour ++
+            hour++
         }
         String cron = "${minute} ${hour} * * *"
         ComplianceRunScheduleInfo update = ComplianceManagementService.updateSchedule(
@@ -552,12 +556,12 @@ class ComplianceTest extends BaseSpecification {
                         ComplianceState.COMPLIANCE_STATE_SUCCESS),
                 new Control(
                         "HIPAA_164:314_a_2_i_c",
-                         ["At least one notifier is enabled."],
-                         ComplianceState.COMPLIANCE_STATE_SUCCESS),
+                        ["At least one notifier is enabled."],
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS),
                 new Control(
-                    "NIST_SP_800_53_Rev_4:IR_6_(1)",
-                    ["Policy \"Ubuntu Package Manager Execution\" is a runtime policy, set to send notifications"],
-                    ComplianceState.COMPLIANCE_STATE_SUCCESS),
+                        "NIST_SP_800_53_Rev_4:IR_6_(1)",
+                        ["Policy \"Ubuntu Package Manager Execution\" is a runtime policy, set to send notifications"],
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS),
         ]
 
         given:
@@ -572,7 +576,7 @@ class ComplianceTest extends BaseSpecification {
         def originalUbuntuPackageManagementPolicy = Services.getPolicyByName("Ubuntu Package Manager Execution")
         assert originalUbuntuPackageManagementPolicy
         def updatedPolicy = PolicyOuterClass.Policy.newBuilder(originalUbuntuPackageManagementPolicy).
-            addNotifiers(notifier.id).build()
+                addNotifiers(notifier.id).build()
         Services.updatePolicy(updatedPolicy)
 
         when:
@@ -736,8 +740,8 @@ class ComplianceTest extends BaseSpecification {
         def controls = [
                 new Control(
                         "NIST_800_190:4_1_1",
-                        ["At least one build-stage policy is enabled and enforced that "+
-                            "disallows images with a critical CVSS score",
+                        ["At least one build-stage policy is enabled and enforced that " +
+                                 "disallows images with a critical CVSS score",
                          "At least one policy in lifecycle stage \"BUILD\" is enabled and enforced",
                          "Cluster has an image scanner in use"],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS),
@@ -761,13 +765,13 @@ class ComplianceTest extends BaseSpecification {
                         ["At least one policy in lifecycle stage \"DEPLOY\" is enabled"],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS),
                 new Control(
-                    "NIST_SP_800_53_Rev_4:CM_3",
-                    ["At least one policy in lifecycle stage \"DEPLOY\" is enabled and enforced"],
-                    ComplianceState.COMPLIANCE_STATE_SUCCESS),
+                        "NIST_SP_800_53_Rev_4:CM_3",
+                        ["At least one policy in lifecycle stage \"DEPLOY\" is enabled and enforced"],
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS),
                 new Control(
-                    "NIST_SP_800_53_Rev_4:IR_4_(5)",
-                    ["At least one policy in lifecycle stage \"RUNTIME\" is enabled and enforced"],
-                    ComplianceState.COMPLIANCE_STATE_SUCCESS),
+                        "NIST_SP_800_53_Rev_4:IR_4_(5)",
+                        ["At least one policy in lifecycle stage \"RUNTIME\" is enabled and enforced"],
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS),
 
         ]
         def enforcementPolicies = [
@@ -807,10 +811,10 @@ class ComplianceTest extends BaseSpecification {
                 .setDisabled(false)
                 .setSeverityValue(2)
                 .setFields(PolicyOuterClass.PolicyFields.newBuilder()
-                .setEnv(PolicyOuterClass.KeyValuePolicy.newBuilder()
-                .setKey(".*SECRET.*")
-                .setValue(".*"))
-                .build())
+                        .setEnv(PolicyOuterClass.KeyValuePolicy.newBuilder()
+                                .setKey(".*SECRET.*")
+                                .setValue(".*"))
+                        .build())
                 .build())
 
         when:
@@ -970,6 +974,8 @@ class ComplianceTest extends BaseSpecification {
 
     @Category([SensorBounce])
     def "Verify failed run result"() {
+        // This seems to be using an auth token for some reason.  Explicitly specify basic auth.
+        BaseService.useBasicAuth()
         expect:
         "errors when the sensor is killed during a compliance run"
         def numErrors = 0
@@ -1036,8 +1042,8 @@ class ComplianceTest extends BaseSpecification {
     @Category([BAT])
     def "Verify Docker 5_6, no SSH processes"() {
         def deployment = new Deployment()
-                        .setName ("triggerssh")
-                        .setImage("us.gcr.io/stackrox-ci/qa/fail-compliance/ssh:0.1")
+                .setName("triggerssh")
+                .setImage("us.gcr.io/stackrox-ci/qa/fail-compliance/ssh:0.1")
 
         given:
         "create a deployment which forces the ssh check to fail"
@@ -1173,6 +1179,60 @@ class ComplianceTest extends BaseSpecification {
             assert overalLState == ComplianceState.COMPLIANCE_STATE_NOTE
             assert evidence.message.contains("No evidence was received for this check")
         }
+    }
+
+    @Category([BAT])
+    def "Verify Compliance aggregations with caching"() {
+        given:
+        "get compliance aggregation results"
+        List<Result> aggResults = ComplianceService.getAggregatedResults(Scope.CONTROL, [Scope.CLUSTER, Scope.STANDARD])
+
+        when:
+        "getting the same results again"
+        List<Result> sameAggResults = ComplianceService.getAggregatedResults(
+                Scope.CONTROL,
+                [Scope.CLUSTER, Scope.STANDARD]
+        )
+
+        then:
+        "both result sets should be the same"
+        aggResults.size() == sameAggResults.size()
+        for (int i = 0; i < aggResults.size(); ++i) {
+            def aggResult = aggResults[i]
+            def sameResult = sameAggResults[i]
+            assert aggResult == sameResult
+        }
+    }
+
+    @Category([BAT])
+    def "Verify Compliance aggregation cache cleared after each compliance run"() {
+        // This seems to be using an auth token for some reason.  Explicitly specify basic auth.
+        BaseService.useBasicAuth()
+        given:
+        "get compliance aggregation results"
+        List<Result> aggResults = ComplianceService.getAggregatedResults(Scope.CONTROL, [Scope.CLUSTER, Scope.STANDARD])
+
+        when:
+        "starting a new cluster and re-running compliance"
+        def otherClusterName = "aNewCluster"
+        ClusterService.createCluster(otherClusterName, "stackrox/main:latest", "central.stackrox:443")
+        withRetry(10, 2) {
+            def clusters = ClusterService.getClusters()
+            assert clusters.size() > 1
+        }
+        ComplianceManagementService.triggerComplianceRunsAndWait()
+        List<Result> nextAggResults = ComplianceService.getAggregatedResults(
+                Scope.CONTROL,
+                [Scope.CLUSTER, Scope.STANDARD]
+        )
+
+        then:
+        "the result sets should have different lengths"
+        aggResults.size() != nextAggResults.size()
+
+        cleanup:
+        "delete the extra cluster"
+        ClusterService.deleteCluster(ClusterService.getClusterId(otherClusterName))
     }
 
     @Category([BAT])

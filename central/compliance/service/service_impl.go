@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -110,16 +111,16 @@ func (s *serviceImpl) GetComplianceControlResults(ctx context.Context, query *v1
 	}, nil
 }
 
-func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.ComplianceAggregation_Request) (*v1.ComplianceAggregation_Response, error) {
-	if request.GetUnit() == v1.ComplianceAggregation_UNKNOWN {
-		request.Unit = v1.ComplianceAggregation_CHECK
+func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.ComplianceAggregationRequest) (*storage.ComplianceAggregation_Response, error) {
+	if request.GetUnit() == storage.ComplianceAggregation_UNKNOWN {
+		request.Unit = storage.ComplianceAggregation_CHECK
 	}
 	validResults, sources, _, err := s.aggregator.Aggregate(ctx, request.GetWhere().GetQuery(), request.GetGroupBy(), request.GetUnit())
 	if err != nil {
 		return nil, err
 	}
 
-	return &v1.ComplianceAggregation_Response{
+	return &storage.ComplianceAggregation_Response{
 		Results: validResults,
 		Sources: sources,
 	}, nil

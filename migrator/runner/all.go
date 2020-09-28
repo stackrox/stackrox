@@ -34,4 +34,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_45_to_m_46_imagecveedge"
 	_ "github.com/stackrox/rox/migrator/migrations/m_46_to_m_47_compliance_in_rocksdb"
 	_ "github.com/stackrox/rox/migrator/migrations/m_47_to_m_48_drop_bolt_buckets"
+	_ "github.com/stackrox/rox/migrator/migrations/m_48_to_m_49_externalize_compliance_domains"
 )

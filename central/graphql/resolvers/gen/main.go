@@ -23,7 +23,7 @@ var (
 			reflect.TypeOf((*storage.Comment)(nil)),
 			reflect.TypeOf((*storage.ComplianceControlResult)(nil)),
 			reflect.TypeOf((*v1.ComplianceStandard)(nil)),
-			reflect.TypeOf((*v1.ComplianceAggregation_Response)(nil)),
+			reflect.TypeOf((*storage.ComplianceAggregation_Response)(nil)),
 			reflect.TypeOf((*v1.ComplianceRunScheduleInfo)(nil)),
 			reflect.TypeOf((*storage.Deployment)(nil)),
 			reflect.TypeOf((*storage.ListDeployment)(nil)),

@@ -9,6 +9,14 @@ import (
 func GetMockResult() (*storage.ComplianceRunResults, *storage.ComplianceDomain) {
 	clusterID := "Test cluster ID"
 	domainID := "a very good domain ID"
+
+	domain := &storage.ComplianceDomain{
+		Id: domainID,
+		Cluster: &storage.Cluster{
+			Id: clusterID,
+		},
+	}
+
 	result := &storage.ComplianceRunResults{
 		RunMetadata: &storage.ComplianceRunMetadata{
 			StandardId:      "yeet",
@@ -30,12 +38,7 @@ func GetMockResult() (*storage.ComplianceRunResults, *storage.ComplianceDomain) 
 				},
 			},
 		},
-	}
-	domain := &storage.ComplianceDomain{
-		Id: domainID,
-		Cluster: &storage.Cluster{
-			Id: clusterID,
-		},
+		Domain: domain,
 	}
 	return result, domain
 }

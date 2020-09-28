@@ -8,6 +8,7 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	compliance "github.com/stackrox/rox/central/compliance"
+	datastore "github.com/stackrox/rox/central/compliance/datastore"
 	types "github.com/stackrox/rox/central/compliance/datastore/types"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -125,6 +126,23 @@ func (m *MockDataStore) IsComplianceRunSuccessfulOnCluster(arg0 context.Context,
 func (mr *MockDataStoreMockRecorder) IsComplianceRunSuccessfulOnCluster(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsComplianceRunSuccessfulOnCluster", reflect.TypeOf((*MockDataStore)(nil).IsComplianceRunSuccessfulOnCluster), arg0, arg1, arg2)
+}
+
+// PerformStoredAggregation mocks base method
+func (m *MockDataStore) PerformStoredAggregation(arg0 context.Context, arg1 *datastore.StoredAggregationArgs) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PerformStoredAggregation", arg0, arg1)
+	ret0, _ := ret[0].([]*storage.ComplianceAggregation_Result)
+	ret1, _ := ret[1].([]*storage.ComplianceAggregation_Source)
+	ret2, _ := ret[2].(map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
+}
+
+// PerformStoredAggregation indicates an expected call of PerformStoredAggregation
+func (mr *MockDataStoreMockRecorder) PerformStoredAggregation(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PerformStoredAggregation", reflect.TypeOf((*MockDataStore)(nil).PerformStoredAggregation), arg0, arg1)
 }
 
 // QueryControlResults mocks base method

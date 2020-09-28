@@ -186,7 +186,7 @@ func (c ControlStatus) String() string {
 	return []string{"FAIL", "PASS", "N/A"}[c]
 }
 
-func getControlStatusFromAggregationResult(result *v1.ComplianceAggregation_Result) string {
+func getControlStatusFromAggregationResult(result *storage.ComplianceAggregation_Result) string {
 	return getControlStatus(result.GetNumFailing(), result.GetNumPassing())
 }
 
@@ -202,7 +202,7 @@ func getControlStatus(failing, passing int32) string {
 	return cs.String()
 }
 
-func getComplianceControlNodeCountFromAggregationResults(results []*v1.ComplianceAggregation_Result) *complianceControlNodeCountResolver {
+func getComplianceControlNodeCountFromAggregationResults(results []*storage.ComplianceAggregation_Result) *complianceControlNodeCountResolver {
 	ret := &complianceControlNodeCountResolver{}
 	for _, r := range results {
 		if r.GetNumFailing() != 0 {

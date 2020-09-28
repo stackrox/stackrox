@@ -728,7 +728,7 @@ func (resolver *clusterResolver) ControlStatus(ctx context.Context, args RawQuer
 	if err := readCompliance(ctx); err != nil {
 		return "Fail", err
 	}
-	r, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER}, args)
+	r, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER}, args)
 	if err != nil || r == nil {
 		return "Fail", err
 	}
@@ -744,7 +744,7 @@ func (resolver *clusterResolver) Controls(ctx context.Context, args RawQuery) ([
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	rs, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER, v1.ComplianceAggregation_CONTROL}, args)
+	rs, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER, storage.ComplianceAggregation_CONTROL}, args)
 	if err != nil || rs == nil {
 		return nil, err
 	}
@@ -761,7 +761,7 @@ func (resolver *clusterResolver) PassingControls(ctx context.Context, args RawQu
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	rs, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER, v1.ComplianceAggregation_CONTROL}, args)
+	rs, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER, storage.ComplianceAggregation_CONTROL}, args)
 	if err != nil || rs == nil {
 		return nil, err
 	}
@@ -778,7 +778,7 @@ func (resolver *clusterResolver) FailingControls(ctx context.Context, args RawQu
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	rs, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER, v1.ComplianceAggregation_CONTROL}, args)
+	rs, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER, storage.ComplianceAggregation_CONTROL}, args)
 	if err != nil || rs == nil {
 		return nil, err
 	}
@@ -794,7 +794,7 @@ func (resolver *clusterResolver) ComplianceControlCount(ctx context.Context, arg
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	results, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER, v1.ComplianceAggregation_CONTROL}, args)
+	results, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER, storage.ComplianceAggregation_CONTROL}, args)
 	if err != nil {
 		return nil, err
 	}
@@ -804,7 +804,7 @@ func (resolver *clusterResolver) ComplianceControlCount(ctx context.Context, arg
 	return getComplianceControlCountFromAggregationResults(results), nil
 }
 
-func (resolver *clusterResolver) getLastSuccessfulComplianceRunResult(ctx context.Context, scope []v1.ComplianceAggregation_Scope, args RawQuery) ([]*v1.ComplianceAggregation_Result, error) {
+func (resolver *clusterResolver) getLastSuccessfulComplianceRunResult(ctx context.Context, scope []storage.ComplianceAggregation_Scope, args RawQuery) ([]*storage.ComplianceAggregation_Result, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -823,7 +823,7 @@ func (resolver *clusterResolver) getLastSuccessfulComplianceRunResult(ctx contex
 	if args.Query != nil {
 		query = strings.Join([]string{query, *(args.Query)}, "+")
 	}
-	r, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, scope, v1.ComplianceAggregation_CONTROL)
+	r, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, scope, storage.ComplianceAggregation_CONTROL)
 	if err != nil {
 		return nil, err
 	}

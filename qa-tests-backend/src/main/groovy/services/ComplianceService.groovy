@@ -16,7 +16,7 @@ import util.Env
 import v1.ComplianceServiceGrpc
 import v1.ComplianceServiceOuterClass
 import v1.ComplianceServiceOuterClass.GetComplianceRunResultsResponse
-import v1.ComplianceServiceOuterClass.ComplianceAggregation.Scope
+import io.stackrox.proto.storage.Compliance.ComplianceAggregation.Scope
 import v1.ComplianceServiceOuterClass.ComplianceStandard
 import v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
 
@@ -92,7 +92,7 @@ class ComplianceService extends BaseService {
 
     static getAggregatedResults(Scope unit, List<Scope> groupBy, RawQuery where = RawQuery.newBuilder().build()) {
         return getComplianceClient().getAggregatedResults(
-                ComplianceServiceOuterClass.ComplianceAggregation.Request.newBuilder()
+                ComplianceServiceOuterClass.ComplianceAggregationRequest.newBuilder()
                         .addAllGroupBy(groupBy)
                         .setUnit(unit)
                         .setWhere(where)

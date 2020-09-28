@@ -259,7 +259,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"numSkipped: Int!",
 		"unit: ComplianceAggregation_Scope!",
 	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.ComplianceAggregation_Scope(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ComplianceAggregation_Scope(0)))
 	utils.Must(builder.AddType("ComplianceAggregation_Source", []string{
 		"clusterId: String!",
 		"failedRuns: [ComplianceRunMetadata]!",
@@ -2986,17 +2986,17 @@ func toComparators(values *[]string) []storage.Comparator {
 type complianceAggregation_AggregationKeyResolver struct {
 	ctx  context.Context
 	root *Resolver
-	data *v1.ComplianceAggregation_AggregationKey
+	data *storage.ComplianceAggregation_AggregationKey
 }
 
-func (resolver *Resolver) wrapComplianceAggregation_AggregationKey(value *v1.ComplianceAggregation_AggregationKey, ok bool, err error) (*complianceAggregation_AggregationKeyResolver, error) {
+func (resolver *Resolver) wrapComplianceAggregation_AggregationKey(value *storage.ComplianceAggregation_AggregationKey, ok bool, err error) (*complianceAggregation_AggregationKeyResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &complianceAggregation_AggregationKeyResolver{root: resolver, data: value}, nil
 }
 
-func (resolver *Resolver) wrapComplianceAggregation_AggregationKeies(values []*v1.ComplianceAggregation_AggregationKey, err error) ([]*complianceAggregation_AggregationKeyResolver, error) {
+func (resolver *Resolver) wrapComplianceAggregation_AggregationKeies(values []*storage.ComplianceAggregation_AggregationKey, err error) ([]*complianceAggregation_AggregationKeyResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3020,17 +3020,17 @@ func (resolver *complianceAggregation_AggregationKeyResolver) Scope(ctx context.
 type complianceAggregation_ResponseResolver struct {
 	ctx  context.Context
 	root *Resolver
-	data *v1.ComplianceAggregation_Response
+	data *storage.ComplianceAggregation_Response
 }
 
-func (resolver *Resolver) wrapComplianceAggregation_Response(value *v1.ComplianceAggregation_Response, ok bool, err error) (*complianceAggregation_ResponseResolver, error) {
+func (resolver *Resolver) wrapComplianceAggregation_Response(value *storage.ComplianceAggregation_Response, ok bool, err error) (*complianceAggregation_ResponseResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &complianceAggregation_ResponseResolver{root: resolver, data: value}, nil
 }
 
-func (resolver *Resolver) wrapComplianceAggregation_Responses(values []*v1.ComplianceAggregation_Response, err error) ([]*complianceAggregation_ResponseResolver, error) {
+func (resolver *Resolver) wrapComplianceAggregation_Responses(values []*storage.ComplianceAggregation_Response, err error) ([]*complianceAggregation_ResponseResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3054,17 +3054,17 @@ func (resolver *complianceAggregation_ResponseResolver) Sources(ctx context.Cont
 type complianceAggregation_ResultResolver struct {
 	ctx  context.Context
 	root *Resolver
-	data *v1.ComplianceAggregation_Result
+	data *storage.ComplianceAggregation_Result
 }
 
-func (resolver *Resolver) wrapComplianceAggregation_Result(value *v1.ComplianceAggregation_Result, ok bool, err error) (*complianceAggregation_ResultResolver, error) {
+func (resolver *Resolver) wrapComplianceAggregation_Result(value *storage.ComplianceAggregation_Result, ok bool, err error) (*complianceAggregation_ResultResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &complianceAggregation_ResultResolver{root: resolver, data: value}, nil
 }
 
-func (resolver *Resolver) wrapComplianceAggregation_Results(values []*v1.ComplianceAggregation_Result, err error) ([]*complianceAggregation_ResultResolver, error) {
+func (resolver *Resolver) wrapComplianceAggregation_Results(values []*storage.ComplianceAggregation_Result, err error) ([]*complianceAggregation_ResultResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3100,18 +3100,18 @@ func (resolver *complianceAggregation_ResultResolver) Unit(ctx context.Context) 
 	return value.String()
 }
 
-func toComplianceAggregation_Scope(value *string) v1.ComplianceAggregation_Scope {
+func toComplianceAggregation_Scope(value *string) storage.ComplianceAggregation_Scope {
 	if value != nil {
-		return v1.ComplianceAggregation_Scope(v1.ComplianceAggregation_Scope_value[*value])
+		return storage.ComplianceAggregation_Scope(storage.ComplianceAggregation_Scope_value[*value])
 	}
-	return v1.ComplianceAggregation_Scope(0)
+	return storage.ComplianceAggregation_Scope(0)
 }
 
-func toComplianceAggregation_Scopes(values *[]string) []v1.ComplianceAggregation_Scope {
+func toComplianceAggregation_Scopes(values *[]string) []storage.ComplianceAggregation_Scope {
 	if values == nil {
 		return nil
 	}
-	output := make([]v1.ComplianceAggregation_Scope, len(*values))
+	output := make([]storage.ComplianceAggregation_Scope, len(*values))
 	for i, v := range *values {
 		output[i] = toComplianceAggregation_Scope(&v)
 	}
@@ -3121,17 +3121,17 @@ func toComplianceAggregation_Scopes(values *[]string) []v1.ComplianceAggregation
 type complianceAggregation_SourceResolver struct {
 	ctx  context.Context
 	root *Resolver
-	data *v1.ComplianceAggregation_Source
+	data *storage.ComplianceAggregation_Source
 }
 
-func (resolver *Resolver) wrapComplianceAggregation_Source(value *v1.ComplianceAggregation_Source, ok bool, err error) (*complianceAggregation_SourceResolver, error) {
+func (resolver *Resolver) wrapComplianceAggregation_Source(value *storage.ComplianceAggregation_Source, ok bool, err error) (*complianceAggregation_SourceResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &complianceAggregation_SourceResolver{root: resolver, data: value}, nil
 }
 
-func (resolver *Resolver) wrapComplianceAggregation_Sources(values []*v1.ComplianceAggregation_Source, err error) ([]*complianceAggregation_SourceResolver, error) {
+func (resolver *Resolver) wrapComplianceAggregation_Sources(values []*storage.ComplianceAggregation_Source, err error) ([]*complianceAggregation_SourceResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}

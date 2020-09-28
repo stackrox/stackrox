@@ -151,3 +151,48 @@ func (mr *MockStoreMockRecorder) StoreComplianceDomain(domain interface{}) *gomo
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreComplianceDomain", reflect.TypeOf((*MockStore)(nil).StoreComplianceDomain), domain)
 }
+
+// StoreAggregationResult mocks base method
+func (m *MockStore) StoreAggregationResult(queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope, results []*storage.ComplianceAggregation_Result, sources []*storage.ComplianceAggregation_Source, domains map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StoreAggregationResult", queryString, groupBy, unit, results, sources, domains)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StoreAggregationResult indicates an expected call of StoreAggregationResult
+func (mr *MockStoreMockRecorder) StoreAggregationResult(queryString, groupBy, unit, results, sources, domains interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreAggregationResult", reflect.TypeOf((*MockStore)(nil).StoreAggregationResult), queryString, groupBy, unit, results, sources, domains)
+}
+
+// GetAggregationResult mocks base method
+func (m *MockStore) GetAggregationResult(queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAggregationResult", queryString, groupBy, unit)
+	ret0, _ := ret[0].([]*storage.ComplianceAggregation_Result)
+	ret1, _ := ret[1].([]*storage.ComplianceAggregation_Source)
+	ret2, _ := ret[2].(map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
+}
+
+// GetAggregationResult indicates an expected call of GetAggregationResult
+func (mr *MockStoreMockRecorder) GetAggregationResult(queryString, groupBy, unit interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAggregationResult", reflect.TypeOf((*MockStore)(nil).GetAggregationResult), queryString, groupBy, unit)
+}
+
+// ClearAggregationResults mocks base method
+func (m *MockStore) ClearAggregationResults() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearAggregationResults")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ClearAggregationResults indicates an expected call of ClearAggregationResults
+func (mr *MockStoreMockRecorder) ClearAggregationResults() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearAggregationResults", reflect.TypeOf((*MockStore)(nil).ClearAggregationResults))
+}

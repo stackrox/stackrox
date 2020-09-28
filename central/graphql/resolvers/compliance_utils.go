@@ -3,13 +3,13 @@ package resolvers
 
 import (
 	"context"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
 type complianceAggregationResponseWithDomainResolver struct {
 	complianceAggregation_ResponseResolver
-	domainMap map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain
+	domainMap map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain
 }
 
 func (r *complianceAggregationResponseWithDomainResolver) Results(ctx context.Context) ([]*complianceAggregationResultWithDomainResolver, error) {

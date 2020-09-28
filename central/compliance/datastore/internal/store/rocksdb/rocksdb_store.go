@@ -3,8 +3,10 @@ package rocksdb
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance"
@@ -36,10 +38,11 @@ var (
 
 	resultsBucketName = []byte("compliance-run-results")
 
-	resultsKey  = dbhelper.GetBucketKey(resultsBucketName, []byte("results"))
-	metadataKey = dbhelper.GetBucketKey(resultsBucketName, []byte("metadata"))
-	stringsKey  = dbhelper.GetBucketKey(resultsBucketName, []byte("strings"))
-	domainKey   = dbhelper.GetBucketKey(resultsBucketName, []byte("domain"))
+	resultsKey     = dbhelper.GetBucketKey(resultsBucketName, []byte("results"))
+	metadataKey    = dbhelper.GetBucketKey(resultsBucketName, []byte("metadata"))
+	stringsKey     = dbhelper.GetBucketKey(resultsBucketName, []byte("strings"))
+	domainKey      = dbhelper.GetBucketKey(resultsBucketName, []byte("domain"))
+	aggregationKey = dbhelper.GetBucketKey(resultsBucketName, []byte("aggregation"))
 
 	cacheLock   = concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize)
 	domainCache = expiringcache.NewExpiringCache(domainCacheExpiry, expiringcache.UpdateExpirationOnGets)
@@ -272,11 +275,11 @@ func unmarshalResults(getArgs *getLatestResultsArgs) (*storage.ComplianceRunMeta
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "getting domain")
 	}
-	// Use the externalized domain if we have one, otherwise this is probably legacy data and the domain should already
-	// be in the ComplianceRunResult
-	if domain != nil {
-		results.Domain = domain
+	// All domains should have been externalized in migration
+	if domain == nil {
+		return nil, nil, errors.Errorf("unable to find domain data for %s", string(domainKey))
 	}
+	results.Domain = domain
 
 	if getArgs.flags&(dsTypes.WithMessageStrings|dsTypes.RequireMessageStrings) != 0 {
 		if err := unmarshalMessageStrings(getArgs, stringsKey, &results); err != nil {
@@ -538,4 +541,118 @@ func (r *rocksdbStore) StoreComplianceDomain(domain *storage.ComplianceDomain) e
 	domainKey := getDomainKey(domain.GetCluster().GetId(), domain.GetId())
 	err = r.db.Put(writeOptions, domainKey, serializedDomain)
 	return errors.Wrap(err, "storing domain")
+}
+
+func (r *rocksdbStore) GetAggregationResult(queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
+	key := r.getAggregationKeyForQuery(queryString, groupBy, unit)
+	resSlice, err := r.db.Get(readOptions, key)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	defer resSlice.Free()
+	// No pre-computed result for this key, just return
+	if !resSlice.Exists() {
+		return nil, nil, nil, nil
+	}
+	resBytes := resSlice.Data()
+
+	var res storage.PreComputedComplianceAggregation
+	err = proto.Unmarshal(resBytes, &res)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	if len(res.Results) != len(res.DomainPointers) {
+		return nil, nil, nil, errors.Errorf("invalid pre-computed result for %s has %d results and %d domain pointers", string(key), len(res.Results), len(res.DomainPointers))
+	}
+
+	getArgs := &getLatestResultsArgs{
+		db: r.db,
+	}
+	results := res.GetResults()
+	domains := make(map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain)
+	for i, domainPointer := range res.GetDomainPointers() {
+		if domainPointer == "" {
+			continue
+		}
+		domain, err := getDomain(getArgs, []byte(domainPointer))
+		if err != nil {
+			return nil, nil, nil, errors.Wrapf(err, "getting domain for %s", domainPointer)
+		}
+		resKey := results[i]
+		domains[resKey] = domain
+	}
+
+	return res.GetResults(), res.GetSources(), domains, nil
+}
+
+func (r *rocksdbStore) StoreAggregationResult(queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope, results []*storage.ComplianceAggregation_Result, sources []*storage.ComplianceAggregation_Source, domainMap map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain) error {
+	preComputedResult := &storage.PreComputedComplianceAggregation{
+		Results: results,
+		Sources: sources,
+	}
+
+	metadata := make([]*storage.ComplianceRunMetadata, len(preComputedResult.GetSources()))
+	for i, source := range preComputedResult.GetSources() {
+		metadata[i] = source.GetSuccessfulRun()
+	}
+	key := r.getAggregationKeyForQuery(queryString, groupBy, unit)
+
+	domainPointers := make([]string, len(domainMap))
+	for i, result := range results {
+		// Every result should have a domain but we don't need to assume that here.  Handle the case where a result
+		// doesn't have a domain.
+		domain, ok := domainMap[result]
+		if !ok {
+			domainPointers[i] = ""
+		}
+		domainPointers[i] = string(getDomainKey(domain.GetCluster().GetId(), domain.GetId()))
+	}
+	preComputedResult.DomainPointers = domainPointers
+
+	resBytes, err := preComputedResult.Marshal()
+	if err != nil {
+		return errors.Wrap(err, "serializing pre-computed aggregation result")
+	}
+
+	err = r.db.Put(writeOptions, key, resBytes)
+	return errors.Wrap(err, "storing pre-computed aggregation result")
+}
+
+// Key is QUERY_STRING:GROUP_BY:UNIT
+func (r *rocksdbStore) getAggregationKeyForQuery(queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope) []byte {
+	key := string(aggregationKey) + queryString + ":"
+	key = key + commaSeparatedScopes(groupBy) + fmt.Sprintf(":%d", unit)
+	return []byte(key)
+}
+
+func commaSeparatedScopes(scopes []storage.ComplianceAggregation_Scope) string {
+	stringScopes := make([]string, len(scopes))
+	for i, scope := range scopes {
+		stringScopes[i] = string(scope)
+	}
+	return strings.Join(stringScopes, ",")
+}
+
+func (r *rocksdbStore) ClearAggregationResults() error {
+	if err := r.db.IncRocksDBInProgressOps(); err != nil {
+		return errors.Wrap(err, "communicating with RocksDB")
+	}
+	defer r.db.DecRocksDBInProgressOps()
+
+	batch := gorocksdb.NewWriteBatch()
+	defer batch.Destroy()
+
+	iterator := r.db.NewIterator(readOptions)
+	defer iterator.Close()
+	// Runs are sorted by time so we must iterate over each key to see if it has the correct run ID.
+	for iterator.Seek(aggregationKey); iterator.ValidForPrefix(aggregationKey); iterator.Next() {
+		keySlice := iterator.Key()
+		if !keySlice.Exists() {
+			// I don't think this should ever happen.  It doesn't make sense for the iterator to iterate to a
+			// non-existent key
+			continue
+		}
+		batch.Delete(keySlice.Data())
+	}
+	return r.db.Write(writeOptions, batch)
 }

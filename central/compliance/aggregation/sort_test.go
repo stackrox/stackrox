@@ -3,7 +3,7 @@ package aggregation
 import (
 	"testing"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,23 +29,23 @@ func TestVersionComparator(t *testing.T) {
 
 func TestComparatorWithControlScope(t *testing.T) {
 	// A should be after b because it has the same scopes but a greater id.
-	a := []*v1.ComplianceAggregation_AggregationKey{
+	a := []*storage.ComplianceAggregation_AggregationKey{
 		{
-			Scope: v1.ComplianceAggregation_CONTROL,
+			Scope: storage.ComplianceAggregation_CONTROL,
 			Id:    "1_20_a",
 		},
 		{
-			Scope: v1.ComplianceAggregation_DEPLOYMENT,
+			Scope: storage.ComplianceAggregation_DEPLOYMENT,
 			Id:    "d1",
 		},
 	}
-	b := []*v1.ComplianceAggregation_AggregationKey{
+	b := []*storage.ComplianceAggregation_AggregationKey{
 		{
-			Scope: v1.ComplianceAggregation_CONTROL,
+			Scope: storage.ComplianceAggregation_CONTROL,
 			Id:    "1_2_a",
 		},
 		{
-			Scope: v1.ComplianceAggregation_DEPLOYMENT,
+			Scope: storage.ComplianceAggregation_DEPLOYMENT,
 			Id:    "d1",
 		},
 	}
@@ -54,23 +54,23 @@ func TestComparatorWithControlScope(t *testing.T) {
 
 func TestComparatorWithoutControlScope(t *testing.T) {
 	// A should be before b because it has the same scope, but a lesser ID.
-	a := []*v1.ComplianceAggregation_AggregationKey{
+	a := []*storage.ComplianceAggregation_AggregationKey{
 		{
-			Scope: v1.ComplianceAggregation_CLUSTER,
+			Scope: storage.ComplianceAggregation_CLUSTER,
 			Id:    "c1",
 		},
 		{
-			Scope: v1.ComplianceAggregation_DEPLOYMENT,
+			Scope: storage.ComplianceAggregation_DEPLOYMENT,
 			Id:    "d1",
 		},
 	}
-	b := []*v1.ComplianceAggregation_AggregationKey{
+	b := []*storage.ComplianceAggregation_AggregationKey{
 		{
-			Scope: v1.ComplianceAggregation_CLUSTER,
+			Scope: storage.ComplianceAggregation_CLUSTER,
 			Id:    "c2",
 		},
 		{
-			Scope: v1.ComplianceAggregation_DEPLOYMENT,
+			Scope: storage.ComplianceAggregation_DEPLOYMENT,
 			Id:    "d1",
 		},
 	}
@@ -79,27 +79,27 @@ func TestComparatorWithoutControlScope(t *testing.T) {
 
 func TestDifferentKeyLengthsMatter(t *testing.T) {
 	// A should be after b because it is more scoped.
-	a := []*v1.ComplianceAggregation_AggregationKey{
+	a := []*storage.ComplianceAggregation_AggregationKey{
 		{
-			Scope: v1.ComplianceAggregation_CLUSTER,
+			Scope: storage.ComplianceAggregation_CLUSTER,
 			Id:    "c1",
 		},
 		{
-			Scope: v1.ComplianceAggregation_DEPLOYMENT,
+			Scope: storage.ComplianceAggregation_DEPLOYMENT,
 			Id:    "d1",
 		},
 		{
-			Scope: v1.ComplianceAggregation_NAMESPACE,
+			Scope: storage.ComplianceAggregation_NAMESPACE,
 			Id:    "n1",
 		},
 	}
-	b := []*v1.ComplianceAggregation_AggregationKey{
+	b := []*storage.ComplianceAggregation_AggregationKey{
 		{
-			Scope: v1.ComplianceAggregation_CLUSTER,
+			Scope: storage.ComplianceAggregation_CLUSTER,
 			Id:    "c2",
 		},
 		{
-			Scope: v1.ComplianceAggregation_DEPLOYMENT,
+			Scope: storage.ComplianceAggregation_DEPLOYMENT,
 			Id:    "d1",
 		},
 	}

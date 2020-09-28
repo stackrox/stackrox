@@ -29,8 +29,8 @@ var (
 )
 
 const (
-	minScope  = v1.ComplianceAggregation_STANDARD
-	maxScope  = v1.ComplianceAggregation_CHECK
+	minScope  = storage.ComplianceAggregation_STANDARD
+	maxScope  = storage.ComplianceAggregation_CHECK
 	numScopes = maxScope - minScope + 1
 
 	checkName = "check"
@@ -38,8 +38,8 @@ const (
 
 type flatCheckValues [numScopes]string
 
-func (f *flatCheckValues) get(scope v1.ComplianceAggregation_Scope) string {
-	if scope == v1.ComplianceAggregation_CHECK {
+func (f *flatCheckValues) get(scope storage.ComplianceAggregation_Scope) string {
+	if scope == storage.ComplianceAggregation_CHECK {
 		return checkName
 	}
 	return f[scope-minScope]
@@ -47,21 +47,21 @@ func (f *flatCheckValues) get(scope v1.ComplianceAggregation_Scope) string {
 
 type mask [numScopes]set.StringSet
 
-func (m *mask) set(scope v1.ComplianceAggregation_Scope, s set.StringSet) {
+func (m *mask) set(scope storage.ComplianceAggregation_Scope, s set.StringSet) {
 	if m == nil {
 		return
 	}
 	m[scope-minScope] = s
 }
 
-func (m *mask) get(scope v1.ComplianceAggregation_Scope) set.StringSet {
+func (m *mask) get(scope storage.ComplianceAggregation_Scope) set.StringSet {
 	if m == nil {
 		return nil
 	}
 	return m[scope-minScope]
 }
 
-func (m *mask) matchesValue(scope v1.ComplianceAggregation_Scope, v string) bool {
+func (m *mask) matchesValue(scope storage.ComplianceAggregation_Scope, v string) bool {
 	if m == nil {
 		return true
 	}
@@ -73,7 +73,7 @@ func (m *mask) matchesValue(scope v1.ComplianceAggregation_Scope, v string) bool
 
 // Aggregator does compliance aggregation
 type Aggregator interface {
-	Aggregate(ctx context.Context, query string, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) ([]*v1.ComplianceAggregation_Result, []*v1.ComplianceAggregation_Source, map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain, error)
+	Aggregate(ctx context.Context, query string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error)
 
 	GetResultsWithEvidence(ctx context.Context, queryString string) ([]*storage.ComplianceRunResults, error)
 
@@ -152,7 +152,7 @@ func (c passFailCounts) Reduce() passFailCounts {
 
 type groupByKey [numScopes]string
 
-func (k groupByKey) Get(scope v1.ComplianceAggregation_Scope) string {
+func (k groupByKey) Get(scope storage.ComplianceAggregation_Scope) string {
 	if scope < minScope || scope > maxScope {
 		log.Errorf("Unknown scope: %v", scope)
 		return ""
@@ -160,7 +160,7 @@ func (k groupByKey) Get(scope v1.ComplianceAggregation_Scope) string {
 	return k[scope-minScope]
 }
 
-func (k *groupByKey) Set(scope v1.ComplianceAggregation_Scope, value string) {
+func (k *groupByKey) Set(scope storage.ComplianceAggregation_Scope, value string) {
 	if scope < minScope || scope > maxScope {
 		log.Errorf("Unknown scope: %v", scope)
 		return
@@ -235,7 +235,7 @@ func (a *aggregatorImpl) filterOnRunResult(runResults *storage.ComplianceRunResu
 	}
 }
 
-func (a *aggregatorImpl) getResultsAndMask(ctx context.Context, queryString string, flags complianceDSTypes.GetFlags) ([]*storage.ComplianceRunResults, []*v1.ComplianceAggregation_Source, *mask, error) {
+func (a *aggregatorImpl) getResultsAndMask(ctx context.Context, queryString string, flags complianceDSTypes.GetFlags) ([]*storage.ComplianceRunResults, []*storage.ComplianceAggregation_Source, *mask, error) {
 	query, err := search.ParseQuery(queryString, search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, nil, nil, err
@@ -265,7 +265,7 @@ func (a *aggregatorImpl) getResultsAndMask(ctx context.Context, queryString stri
 	}
 
 	if clusterQueryWasApplicable {
-		mask.set(v1.ComplianceAggregation_CLUSTER, set.NewStringSet(clusterIDs...))
+		mask.set(storage.ComplianceAggregation_CLUSTER, set.NewStringSet(clusterIDs...))
 	}
 	return validResults, sources, mask, err
 }
@@ -282,7 +282,7 @@ func (a *aggregatorImpl) GetResultsWithEvidence(ctx context.Context, queryString
 }
 
 // Aggregate takes in a search query, groupby scopes and unit scope and returns the results of the aggregation
-func (a *aggregatorImpl) Aggregate(ctx context.Context, queryString string, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) ([]*v1.ComplianceAggregation_Result, []*v1.ComplianceAggregation_Source, map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
+func (a *aggregatorImpl) Aggregate(ctx context.Context, queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
 	for _, group := range groupBy {
 		if group < minScope {
 			return nil, nil, nil, errors.Errorf("group %s is not a valid scope to run aggregation on", group)
@@ -292,25 +292,36 @@ func (a *aggregatorImpl) Aggregate(ctx context.Context, queryString string, grou
 		return nil, nil, nil, errors.Errorf("unit %s is not a valid scope to run aggregation on", unit)
 	}
 
-	validResults, sources, mask, err := a.getResultsAndMask(ctx, queryString, 0)
-	if err != nil {
-		return nil, nil, nil, err
+	aggregationFunc := func() ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
+		validResults, sources, mask, err := a.getResultsAndMask(ctx, queryString, 0)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+		results, domainMap := a.getAggregatedResults(groupBy, unit, validResults, mask)
+
+		return results, sources, domainMap, nil
 	}
 
-	results, domainMap := a.getAggregatedResults(groupBy, unit, validResults, mask)
-	return results, sources, domainMap, nil
+	aggArgs := &complianceDS.StoredAggregationArgs{
+		QueryString:     queryString,
+		GroupBy:         groupBy,
+		Unit:            unit,
+		AggregationFunc: aggregationFunc,
+	}
+	return a.compliance.PerformStoredAggregation(ctx, aggArgs)
 }
 
 func newFlatCheck(clusterID, namespaceID, standardID, category, controlID, nodeID, deploymentID string, state storage.ComplianceState) flatCheck {
 	return flatCheck{
 		values: &flatCheckValues{
-			v1.ComplianceAggregation_CLUSTER - minScope:    clusterID,
-			v1.ComplianceAggregation_NAMESPACE - minScope:  namespaceID,
-			v1.ComplianceAggregation_STANDARD - minScope:   standardID,
-			v1.ComplianceAggregation_CATEGORY - minScope:   category,
-			v1.ComplianceAggregation_CONTROL - minScope:    controlID,
-			v1.ComplianceAggregation_NODE - minScope:       nodeID,
-			v1.ComplianceAggregation_DEPLOYMENT - minScope: deploymentID,
+			storage.ComplianceAggregation_CLUSTER - minScope:    clusterID,
+			storage.ComplianceAggregation_NAMESPACE - minScope:  namespaceID,
+			storage.ComplianceAggregation_STANDARD - minScope:   standardID,
+			storage.ComplianceAggregation_CATEGORY - minScope:   category,
+			storage.ComplianceAggregation_CONTROL - minScope:    controlID,
+			storage.ComplianceAggregation_NODE - minScope:       nodeID,
+			storage.ComplianceAggregation_DEPLOYMENT - minScope: deploymentID,
 		},
 		state: state,
 	}
@@ -339,14 +350,14 @@ func isValidCheck(mask *mask, fc flatCheck) bool {
 	return true
 }
 
-func getAggregationKeys(groupByKey groupByKey) []*v1.ComplianceAggregation_AggregationKey {
-	var aggregationKeys []*v1.ComplianceAggregation_AggregationKey
+func getAggregationKeys(groupByKey groupByKey) []*storage.ComplianceAggregation_AggregationKey {
+	var aggregationKeys []*storage.ComplianceAggregation_AggregationKey
 	for i, val := range groupByKey {
 		if val == "" {
 			continue
 		}
-		aggregationKeys = append(aggregationKeys, &v1.ComplianceAggregation_AggregationKey{
-			Scope: v1.ComplianceAggregation_Scope(i + int(minScope)),
+		aggregationKeys = append(aggregationKeys, &storage.ComplianceAggregation_AggregationKey{
+			Scope: storage.ComplianceAggregation_Scope(i + int(minScope)),
 			Id:    val,
 		})
 	}
@@ -365,11 +376,11 @@ func (a *aggregatorImpl) getCategoryID(controlID string) string {
 // DomainFunc will return a valid storage domain for a given key, if it exists. If multiple domains match, only one will be returned.
 type DomainFunc func(i int) *storage.ComplianceDomain
 
-func isValidUnit(unit v1.ComplianceAggregation_Scope, fc flatCheck) bool {
-	return unit == v1.ComplianceAggregation_CHECK || fc.values.get(unit) != ""
+func isValidUnit(unit storage.ComplianceAggregation_Scope, fc flatCheck) bool {
+	return unit == storage.ComplianceAggregation_CHECK || fc.values.get(unit) != ""
 }
 
-func getGroupByKey(groupBy []v1.ComplianceAggregation_Scope, fc flatCheck) (groupByKey, bool) {
+func getGroupByKey(groupBy []storage.ComplianceAggregation_Scope, fc flatCheck) (groupByKey, bool) {
 	var key groupByKey
 	valid := true
 	for _, s := range groupBy {
@@ -404,7 +415,7 @@ func handleResult(groups map[groupByKey]*groupByValue, key groupByKey, unitKey s
 	}
 }
 
-func processFlatCheck(groups map[groupByKey]*groupByValue, fc flatCheck, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope,
+func processFlatCheck(groups map[groupByKey]*groupByValue, fc flatCheck, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope,
 	mask *mask, runResults *storage.ComplianceRunResults, r *storage.ComplianceResultValue) {
 	if !isValidUnit(unit, fc) || !isValidCheck(mask, fc) {
 		return
@@ -417,8 +428,8 @@ func processFlatCheck(groups map[groupByKey]*groupByValue, fc flatCheck, groupBy
 }
 
 func (a *aggregatorImpl) aggregateFromCluster(runResults *storage.ComplianceRunResults, mask *mask, clusterID, standardID string,
-	groups map[groupByKey]*groupByValue, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) {
-	if controlSet := mask.get(v1.ComplianceAggregation_CONTROL); controlSet != nil {
+	groups map[groupByKey]*groupByValue, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope) {
+	if controlSet := mask.get(storage.ComplianceAggregation_CONTROL); controlSet != nil {
 		for control := range controlSet {
 			r := runResults.GetClusterResults().GetControlResults()[control]
 			if r == nil {
@@ -436,8 +447,8 @@ func (a *aggregatorImpl) aggregateFromCluster(runResults *storage.ComplianceRunR
 }
 
 func (a *aggregatorImpl) aggregateFromNodes(runResults *storage.ComplianceRunResults, mask *mask, clusterID, standardID string, groups map[groupByKey]*groupByValue,
-	groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) {
-	if nodeSet := mask.get(v1.ComplianceAggregation_NODE); nodeSet != nil {
+	groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope) {
+	if nodeSet := mask.get(storage.ComplianceAggregation_NODE); nodeSet != nil {
 		for node := range nodeSet {
 			controlResults := runResults.GetNodeResults()[node]
 			for control, r := range controlResults.GetControlResults() {
@@ -456,15 +467,15 @@ func (a *aggregatorImpl) aggregateFromNodes(runResults *storage.ComplianceRunRes
 }
 
 func (a *aggregatorImpl) aggregateFromDeployments(runResults *storage.ComplianceRunResults, mask *mask, clusterID, standardID string,
-	groups map[groupByKey]*groupByValue, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) {
+	groups map[groupByKey]*groupByValue, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope) {
 	domain := runResults.GetDomain()
-	if deploymentSet := mask.get(v1.ComplianceAggregation_DEPLOYMENT); deploymentSet != nil {
+	if deploymentSet := mask.get(storage.ComplianceAggregation_DEPLOYMENT); deploymentSet != nil {
 		for deploymentID := range deploymentSet {
 			deployment := domain.Deployments[deploymentID]
 			if deployment == nil {
 				continue
 			}
-			if !mask.matchesValue(v1.ComplianceAggregation_NAMESPACE, deployment.GetNamespaceId()) {
+			if !mask.matchesValue(storage.ComplianceAggregation_NAMESPACE, deployment.GetNamespaceId()) {
 				continue
 			}
 			for control, r := range runResults.GetDeploymentResults()[deploymentID].GetControlResults() {
@@ -481,7 +492,7 @@ func (a *aggregatorImpl) aggregateFromDeployments(runResults *storage.Compliance
 			log.Errorf("result for deployment %s exists, but it is not included in the domain", d)
 			continue
 		}
-		if !mask.matchesValue(v1.ComplianceAggregation_NAMESPACE, deployment.GetNamespaceId()) {
+		if !mask.matchesValue(storage.ComplianceAggregation_NAMESPACE, deployment.GetNamespaceId()) {
 			continue
 		}
 		for control, r := range controlResults.GetControlResults() {
@@ -491,7 +502,7 @@ func (a *aggregatorImpl) aggregateFromDeployments(runResults *storage.Compliance
 	}
 }
 
-func (a *aggregatorImpl) getAggregatedResults(groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope, runResults []*storage.ComplianceRunResults, mask *mask) ([]*v1.ComplianceAggregation_Result, map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain) {
+func (a *aggregatorImpl) getAggregatedResults(groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope, runResults []*storage.ComplianceRunResults, mask *mask) ([]*storage.ComplianceAggregation_Result, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain) {
 	groups := make(map[groupByKey]*groupByValue)
 	for _, r := range runResults {
 		clusterID := r.GetDomain().GetCluster().GetId()
@@ -502,11 +513,11 @@ func (a *aggregatorImpl) getAggregatedResults(groupBy []v1.ComplianceAggregation
 		a.aggregateFromDeployments(r, mask, clusterID, standardID, groups, groupBy, unit)
 	}
 
-	results := make([]*v1.ComplianceAggregation_Result, 0, len(groups))
-	domainMap := make(map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain)
+	results := make([]*storage.ComplianceAggregation_Result, 0, len(groups))
+	domainMap := make(map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain)
 	for key, groupByValue := range groups {
 		var counts passFailCounts
-		if unit != v1.ComplianceAggregation_CHECK {
+		if unit != storage.ComplianceAggregation_CHECK {
 			for _, u := range groupByValue.unitMap {
 				counts = counts.Add(u.Reduce())
 			}
@@ -516,7 +527,7 @@ func (a *aggregatorImpl) getAggregatedResults(groupBy []v1.ComplianceAggregation
 			counts = *groupByValue.unitMap[checkName]
 		}
 
-		result := &v1.ComplianceAggregation_Result{
+		result := &storage.ComplianceAggregation_Result{
 			AggregationKeys: getAggregationKeys(key),
 			Unit:            unit,
 			NumPassing:      int32(counts.pass),
@@ -541,38 +552,38 @@ func wrapContextLessSearchFunc(f func(*v1.Query) ([]search.Result, error)) func(
 	}
 }
 
-func (a *aggregatorImpl) getSearchFuncs() map[v1.ComplianceAggregation_Scope]searchFuncAndOptionsMap {
+func (a *aggregatorImpl) getSearchFuncs() map[storage.ComplianceAggregation_Scope]searchFuncAndOptionsMap {
 	// Careful: If you modify something here, be sure to also modify the options multimap in
 	// `compliance/search/options.go`.
-	return map[v1.ComplianceAggregation_Scope]searchFuncAndOptionsMap{
-		v1.ComplianceAggregation_STANDARD: {
+	return map[storage.ComplianceAggregation_Scope]searchFuncAndOptionsMap{
+		storage.ComplianceAggregation_STANDARD: {
 			searchFunc: wrapContextLessSearchFunc(a.standards.SearchStandards),
 			optionsMap: standardsIndex.StandardOptions,
 		},
-		v1.ComplianceAggregation_CLUSTER: {
+		storage.ComplianceAggregation_CLUSTER: {
 			searchFunc: a.clusters.Search,
 			optionsMap: clusterMappings.OptionsMap,
 		},
-		v1.ComplianceAggregation_NODE: {
+		storage.ComplianceAggregation_NODE: {
 			searchFunc: a.nodes.Search,
 			optionsMap: nodeMappings.OptionsMap,
 		},
-		v1.ComplianceAggregation_NAMESPACE: {
+		storage.ComplianceAggregation_NAMESPACE: {
 			searchFunc: a.namespaces.Search,
 			optionsMap: namespaceMappings.OptionsMap,
 		},
-		v1.ComplianceAggregation_CONTROL: {
+		storage.ComplianceAggregation_CONTROL: {
 			searchFunc: wrapContextLessSearchFunc(a.standards.SearchControls),
 			optionsMap: standardsIndex.ControlOptions,
 		},
-		v1.ComplianceAggregation_DEPLOYMENT: {
+		storage.ComplianceAggregation_DEPLOYMENT: {
 			searchFunc: a.deployments.Search,
 			optionsMap: deployments.OptionsMap,
 		},
 	}
 }
 
-func (a *aggregatorImpl) getResultsFromScope(ctx context.Context, scope v1.ComplianceAggregation_Scope, query *v1.Query, querySpecifiedFields []string) (results []search.Result, wasApplicable bool, err error) {
+func (a *aggregatorImpl) getResultsFromScope(ctx context.Context, scope storage.ComplianceAggregation_Scope, query *v1.Query, querySpecifiedFields []string) (results []search.Result, wasApplicable bool, err error) {
 	funcAndMap, ok := a.getSearchFuncs()[scope]
 	// Programming error.
 	if !ok {
@@ -587,7 +598,7 @@ func (a *aggregatorImpl) getResultsFromScope(ctx context.Context, scope v1.Compl
 	return
 }
 
-func (a *aggregatorImpl) addSetToMaskIfOptionsApplicable(ctx context.Context, scope v1.ComplianceAggregation_Scope, mask *mask,
+func (a *aggregatorImpl) addSetToMaskIfOptionsApplicable(ctx context.Context, scope storage.ComplianceAggregation_Scope, mask *mask,
 	query *v1.Query, querySpecifiedFields []string) error {
 
 	results, wasApplicable, err := a.getResultsFromScope(ctx, scope, query, querySpecifiedFields)
@@ -607,22 +618,22 @@ func (a *aggregatorImpl) addSetToMaskIfOptionsApplicable(ctx context.Context, sc
 func (a *aggregatorImpl) getCheckMask(ctx context.Context, query *v1.Query, querySpecifiedFields []string) (*mask, error) {
 	var mask mask
 
-	err := a.addSetToMaskIfOptionsApplicable(ctx, v1.ComplianceAggregation_NODE, &mask, query, querySpecifiedFields)
+	err := a.addSetToMaskIfOptionsApplicable(ctx, storage.ComplianceAggregation_NODE, &mask, query, querySpecifiedFields)
 	if err != nil {
 		return nil, err
 	}
 
-	err = a.addSetToMaskIfOptionsApplicable(ctx, v1.ComplianceAggregation_NAMESPACE, &mask, query, querySpecifiedFields)
+	err = a.addSetToMaskIfOptionsApplicable(ctx, storage.ComplianceAggregation_NAMESPACE, &mask, query, querySpecifiedFields)
 	if err != nil {
 		return nil, err
 	}
 
-	err = a.addSetToMaskIfOptionsApplicable(ctx, v1.ComplianceAggregation_CONTROL, &mask, query, querySpecifiedFields)
+	err = a.addSetToMaskIfOptionsApplicable(ctx, storage.ComplianceAggregation_CONTROL, &mask, query, querySpecifiedFields)
 	if err != nil {
 		return nil, err
 	}
 
-	err = a.addSetToMaskIfOptionsApplicable(ctx, v1.ComplianceAggregation_DEPLOYMENT, &mask, query, querySpecifiedFields)
+	err = a.addSetToMaskIfOptionsApplicable(ctx, storage.ComplianceAggregation_DEPLOYMENT, &mask, query, querySpecifiedFields)
 	if err != nil {
 		return nil, err
 	}
@@ -631,7 +642,7 @@ func (a *aggregatorImpl) getCheckMask(ctx context.Context, query *v1.Query, quer
 }
 
 func (a *aggregatorImpl) getStandardsToRun(ctx context.Context, query *v1.Query, querySpecifiedFields []string) ([]string, error) {
-	results, wasApplicable, err := a.getResultsFromScope(ctx, v1.ComplianceAggregation_STANDARD, query, querySpecifiedFields)
+	results, wasApplicable, err := a.getResultsFromScope(ctx, storage.ComplianceAggregation_STANDARD, query, querySpecifiedFields)
 	if err != nil {
 		return nil, err
 	}
@@ -650,7 +661,7 @@ func (a *aggregatorImpl) getStandardsToRun(ctx context.Context, query *v1.Query,
 }
 
 func (a *aggregatorImpl) getClustersToRun(ctx context.Context, query *v1.Query, querySpecifiedFields []string) ([]string, bool, error) {
-	results, wasApplicable, err := a.getResultsFromScope(ctx, v1.ComplianceAggregation_CLUSTER, query, querySpecifiedFields)
+	results, wasApplicable, err := a.getResultsFromScope(ctx, storage.ComplianceAggregation_CLUSTER, query, querySpecifiedFields)
 	if err != nil {
 		return nil, false, err
 	}

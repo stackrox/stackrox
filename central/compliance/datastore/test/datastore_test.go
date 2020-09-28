@@ -151,6 +151,7 @@ func (s *complianceDataStoreTestSuite) TestGetLatestRunResultsFiltered() {
 
 func (s *complianceDataStoreTestSuite) TestStoreRunResults() {
 	rr := &storage.ComplianceRunResults{}
+	s.mockStorage.EXPECT().ClearAggregationResults()
 	s.mockStorage.EXPECT().StoreRunResults(rr).Return(errFake)
 
 	err := s.dataStore.StoreRunResults(s.hasWriteCtx, rr)
@@ -230,4 +231,40 @@ func (s *complianceDataStoreWithSACTestSuite) TestEnforceStoreFailure() {
 	err := s.dataStore.StoreFailure(s.hasReadCtx, &storage.ComplianceRunMetadata{})
 
 	s.EqualError(err, "permission denied")
+}
+
+func (s *complianceDataStoreWithSACTestSuite) TestDoesNotUseStoredAggregationsWithSAC() {
+	ctx := sac.SetContextSACEnabled(context.Background())
+	noop := func() ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
+		return nil, nil, nil, nil
+	}
+	aggArgs := &StoredAggregationArgs{
+		QueryString:     "query",
+		GroupBy:         nil,
+		Unit:            storage.ComplianceAggregation_CLUSTER,
+		AggregationFunc: noop,
+	}
+	_, _, _, err := s.dataStore.PerformStoredAggregation(ctx, aggArgs)
+	s.Require().NoError(err)
+}
+
+func (s *complianceDataStoreWithSACTestSuite) TestUsesStoredAggregationsWithoutSAC() {
+	queryString := "query"
+	testUnit := storage.ComplianceAggregation_CLUSTER
+	results := []*storage.ComplianceAggregation_Result{}
+	sources := []*storage.ComplianceAggregation_Source{}
+	domainMap := map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain{}
+	s.mockStorage.EXPECT().GetAggregationResult(queryString, gomock.Nil(), testUnit).Return(results, sources, domainMap, nil)
+	noop := func() ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
+		s.True(false, "The aggregation method should not be called when we find a stored result")
+		return nil, nil, nil, nil
+	}
+	aggArgs := &StoredAggregationArgs{
+		QueryString:     queryString,
+		GroupBy:         nil,
+		Unit:            testUnit,
+		AggregationFunc: noop,
+	}
+	_, _, _, err := s.dataStore.PerformStoredAggregation(context.Background(), aggArgs)
+	s.Require().NoError(err)
 }

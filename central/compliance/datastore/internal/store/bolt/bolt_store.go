@@ -452,5 +452,17 @@ func (s *boltStore) clear() error {
 }
 
 func (s *boltStore) StoreComplianceDomain(domain *storage.ComplianceDomain) error {
-	panic("Not implemented")
+	return nil
+}
+
+func (s *boltStore) StoreAggregationResult(queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope, results []*storage.ComplianceAggregation_Result, sources []*storage.ComplianceAggregation_Source, domains map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain) error {
+	return nil
+}
+
+func (s *boltStore) GetAggregationResult(queryString string, groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
+	return nil, nil, nil, nil
+}
+
+func (s *boltStore) ClearAggregationResults() error {
+	return nil
 }

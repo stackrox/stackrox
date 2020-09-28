@@ -25,7 +25,20 @@ type DataStore interface {
 	StoreRunResults(ctx context.Context, results *storage.ComplianceRunResults) error
 	StoreFailure(ctx context.Context, metadata *storage.ComplianceRunMetadata) error
 	StoreComplianceDomain(ctx context.Context, domain *storage.ComplianceDomain) error
+
+	PerformStoredAggregation(ctx context.Context, args *StoredAggregationArgs) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error)
 }
+
+// StoredAggregationArgs encapsulates the arguments to the PerformStoredAggregation method
+type StoredAggregationArgs struct {
+	QueryString     string
+	GroupBy         []storage.ComplianceAggregation_Scope
+	Unit            storage.ComplianceAggregation_Scope
+	AggregationFunc AggregationFunc
+}
+
+// AggregationFunc is a function that returns the results of a compliance aggregation
+type AggregationFunc func() ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error)
 
 // NewDataStore returns a new instance of a DataStore.
 func NewDataStore(storage store.Store, filter SacFilter) DataStore {

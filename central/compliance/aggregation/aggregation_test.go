@@ -8,7 +8,6 @@ import (
 
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/set"
@@ -162,7 +161,7 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 	}
 }
 
-func testName(groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) string {
+func testName(groupBy []storage.ComplianceAggregation_Scope, unit storage.ComplianceAggregation_Scope) string {
 	groupBys := make([]string, 0, len(groupBy))
 	for _, g := range groupBy {
 		groupBys = append(groupBys, g.String())
@@ -171,25 +170,25 @@ func testName(groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggreg
 }
 
 func TestMaxScopeMatches(t *testing.T) {
-	assert.Equal(t, len(v1.ComplianceAggregation_Scope_name)-1, int(maxScope))
+	assert.Equal(t, len(storage.ComplianceAggregation_Scope_name)-1, int(maxScope))
 }
 
 func TestInvalidParameters(t *testing.T) {
 	a := &aggregatorImpl{}
-	_, _, _, err := a.Aggregate(context.TODO(), "", []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_NAMESPACE}, v1.ComplianceAggregation_UNKNOWN)
+	_, _, _, err := a.Aggregate(context.TODO(), "", []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_NAMESPACE}, storage.ComplianceAggregation_UNKNOWN)
 	assert.Error(t, err)
 
-	_, _, _, err = a.Aggregate(context.TODO(), "", nil, v1.ComplianceAggregation_UNKNOWN)
+	_, _, _, err = a.Aggregate(context.TODO(), "", nil, storage.ComplianceAggregation_UNKNOWN)
 	assert.Error(t, err)
 
-	_, _, _, err = a.Aggregate(context.TODO(), "", []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_UNKNOWN}, v1.ComplianceAggregation_CHECK)
+	_, _, _, err = a.Aggregate(context.TODO(), "", []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_UNKNOWN}, storage.ComplianceAggregation_CHECK)
 	assert.Error(t, err)
 }
 
 func TestGetAggregatedResults(t *testing.T) {
 	var cases = []struct {
-		groupBy       []v1.ComplianceAggregation_Scope
-		unit          v1.ComplianceAggregation_Scope
+		groupBy       []storage.ComplianceAggregation_Scope
+		unit          storage.ComplianceAggregation_Scope
 		passPerResult int32
 		failPerResult int32
 		skipPerResult int32
@@ -197,113 +196,113 @@ func TestGetAggregatedResults(t *testing.T) {
 		mask          *mask
 	}{
 		{
-			unit:          v1.ComplianceAggregation_CLUSTER,
+			unit:          storage.ComplianceAggregation_CLUSTER,
 			failPerResult: 2,
 			numResults:    1,
 		},
 		{
-			unit:          v1.ComplianceAggregation_NAMESPACE,
+			unit:          storage.ComplianceAggregation_NAMESPACE,
 			failPerResult: 4,
 			skipPerResult: 2,
 			numResults:    1,
 		},
 		{
-			unit:          v1.ComplianceAggregation_NODE,
+			unit:          storage.ComplianceAggregation_NODE,
 			failPerResult: 4,
 			numResults:    1,
 		},
 		{
-			unit:          v1.ComplianceAggregation_DEPLOYMENT,
+			unit:          storage.ComplianceAggregation_DEPLOYMENT,
 			failPerResult: 4,
 			skipPerResult: 2,
 			numResults:    1,
 		},
 		{
-			unit:          v1.ComplianceAggregation_STANDARD,
+			unit:          storage.ComplianceAggregation_STANDARD,
 			failPerResult: 2,
 			numResults:    1,
 		},
 		{
-			unit:          v1.ComplianceAggregation_CONTROL,
+			unit:          storage.ComplianceAggregation_CONTROL,
 			failPerResult: 4,
 			passPerResult: 3,
 			skipPerResult: 1,
 			numResults:    1,
 		},
 		{
-			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER},
-			unit:          v1.ComplianceAggregation_CLUSTER,
+			groupBy:       []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER},
+			unit:          storage.ComplianceAggregation_CLUSTER,
 			failPerResult: 1,
 			numResults:    2,
 		},
 		{
-			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER},
-			unit:          v1.ComplianceAggregation_NAMESPACE,
+			groupBy:       []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER},
+			unit:          storage.ComplianceAggregation_NAMESPACE,
 			failPerResult: 2,
 			skipPerResult: 1,
 			numResults:    2,
 		},
 		{
-			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER},
-			unit:          v1.ComplianceAggregation_NODE,
+			groupBy:       []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER},
+			unit:          storage.ComplianceAggregation_NODE,
 			failPerResult: 2,
 			numResults:    2,
 		},
 		{
-			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER},
-			unit:          v1.ComplianceAggregation_DEPLOYMENT,
+			groupBy:       []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER},
+			unit:          storage.ComplianceAggregation_DEPLOYMENT,
 			failPerResult: 2,
 			skipPerResult: 1,
 			numResults:    2,
 		},
 		{
-			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER},
-			unit:          v1.ComplianceAggregation_STANDARD,
+			groupBy:       []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER},
+			unit:          storage.ComplianceAggregation_STANDARD,
 			failPerResult: 2,
 			numResults:    2,
 		},
 		{
-			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER},
-			unit:          v1.ComplianceAggregation_CONTROL,
+			groupBy:       []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER},
+			unit:          storage.ComplianceAggregation_CONTROL,
 			failPerResult: 4,
 			passPerResult: 3,
 			skipPerResult: 1,
 			numResults:    2,
 		},
 		{
-			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER, v1.ComplianceAggregation_STANDARD},
-			unit:          v1.ComplianceAggregation_CONTROL,
+			groupBy:       []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER, storage.ComplianceAggregation_STANDARD},
+			unit:          storage.ComplianceAggregation_CONTROL,
 			failPerResult: 4,
 			passPerResult: 3,
 			skipPerResult: 1,
 			numResults:    4,
 		},
 		{
-			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER},
-			unit:          v1.ComplianceAggregation_CHECK,
+			groupBy:       []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER},
+			unit:          storage.ComplianceAggregation_CHECK,
 			failPerResult: 12,
 			passPerResult: 14,
 			skipPerResult: 8,
 			numResults:    2,
 		},
 		{
-			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER},
-			unit:          v1.ComplianceAggregation_CHECK,
+			groupBy:       []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER},
+			unit:          storage.ComplianceAggregation_CHECK,
 			failPerResult: 2,
 			passPerResult: 4,
 			numResults:    1,
 			mask: &mask{
-				v1.ComplianceAggregation_NAMESPACE - minScope: set.NewStringSet(qualifiedNamespaceID("cluster1", "namespace1")),
+				storage.ComplianceAggregation_NAMESPACE - minScope: set.NewStringSet(qualifiedNamespaceID("cluster1", "namespace1")),
 			},
 		},
 		{
-			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_DEPLOYMENT},
-			unit:          v1.ComplianceAggregation_CHECK,
+			groupBy:       []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_DEPLOYMENT},
+			unit:          storage.ComplianceAggregation_CHECK,
 			failPerResult: 2,
 			passPerResult: 4,
 			numResults:    1,
 			mask: &mask{
-				v1.ComplianceAggregation_DEPLOYMENT - minScope: set.NewStringSet("cluster1deployment1"),
+				storage.ComplianceAggregation_DEPLOYMENT - minScope: set.NewStringSet("cluster1deployment1"),
 			},
 		},
 	}
@@ -394,8 +393,8 @@ func TestDomainAttribution(t *testing.T) {
 	}
 
 	results, domainMap := ag.getAggregatedResults(
-		[]v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CONTROL, v1.ComplianceAggregation_NODE},
-		v1.ComplianceAggregation_CHECK,
+		[]storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CONTROL, storage.ComplianceAggregation_NODE},
+		storage.ComplianceAggregation_CHECK,
 		complianceRunResults,
 		&mask{},
 	)
@@ -439,21 +438,21 @@ func TestIsValidCheck(t *testing.T) {
 	}
 
 	var cases = []struct {
-		mask   map[v1.ComplianceAggregation_Scope]set.StringSet
+		mask   map[storage.ComplianceAggregation_Scope]set.StringSet
 		checks []check
 	}{
 		{
-			mask: map[v1.ComplianceAggregation_Scope]set.StringSet{
-				v1.ComplianceAggregation_CLUSTER:    set.NewStringSet("A"),
-				v1.ComplianceAggregation_NAMESPACE:  set.NewStringSet("B"),
-				v1.ComplianceAggregation_DEPLOYMENT: set.NewStringSet("C"),
-				v1.ComplianceAggregation_NODE:       set.NewStringSet("D"),
+			mask: map[storage.ComplianceAggregation_Scope]set.StringSet{
+				storage.ComplianceAggregation_CLUSTER:    set.NewStringSet("A"),
+				storage.ComplianceAggregation_NAMESPACE:  set.NewStringSet("B"),
+				storage.ComplianceAggregation_DEPLOYMENT: set.NewStringSet("C"),
+				storage.ComplianceAggregation_NODE:       set.NewStringSet("D"),
 			},
 			checks: []check{
 				{
 					fc: flatCheck{
 						values: &flatCheckValues{
-							v1.ComplianceAggregation_CLUSTER - minScope: "A",
+							storage.ComplianceAggregation_CLUSTER - minScope: "A",
 						},
 					},
 					result: true,
@@ -461,9 +460,9 @@ func TestIsValidCheck(t *testing.T) {
 				{
 					fc: flatCheck{
 						values: &flatCheckValues{
-							v1.ComplianceAggregation_CLUSTER - minScope:    "A",
-							v1.ComplianceAggregation_NAMESPACE - minScope:  "B",
-							v1.ComplianceAggregation_DEPLOYMENT - minScope: "C",
+							storage.ComplianceAggregation_CLUSTER - minScope:    "A",
+							storage.ComplianceAggregation_NAMESPACE - minScope:  "B",
+							storage.ComplianceAggregation_DEPLOYMENT - minScope: "C",
 						},
 					},
 					result: true,
@@ -471,8 +470,8 @@ func TestIsValidCheck(t *testing.T) {
 				{
 					fc: flatCheck{
 						values: &flatCheckValues{
-							v1.ComplianceAggregation_CLUSTER - minScope: "A",
-							v1.ComplianceAggregation_NODE - minScope:    "D",
+							storage.ComplianceAggregation_CLUSTER - minScope: "A",
+							storage.ComplianceAggregation_NODE - minScope:    "D",
 						},
 					},
 					result: true,
@@ -480,15 +479,15 @@ func TestIsValidCheck(t *testing.T) {
 			},
 		},
 		{
-			mask: map[v1.ComplianceAggregation_Scope]set.StringSet{
-				v1.ComplianceAggregation_NAMESPACE:  set.NewStringSet("B"),
-				v1.ComplianceAggregation_DEPLOYMENT: set.NewStringSet("C"),
+			mask: map[storage.ComplianceAggregation_Scope]set.StringSet{
+				storage.ComplianceAggregation_NAMESPACE:  set.NewStringSet("B"),
+				storage.ComplianceAggregation_DEPLOYMENT: set.NewStringSet("C"),
 			},
 			checks: []check{
 				{
 					fc: flatCheck{
 						values: &flatCheckValues{
-							v1.ComplianceAggregation_CLUSTER - minScope: "A",
+							storage.ComplianceAggregation_CLUSTER - minScope: "A",
 						},
 					},
 					result: false,
@@ -496,9 +495,9 @@ func TestIsValidCheck(t *testing.T) {
 				{
 					fc: flatCheck{
 						values: &flatCheckValues{
-							v1.ComplianceAggregation_CLUSTER - minScope:    "A",
-							v1.ComplianceAggregation_NAMESPACE - minScope:  "B",
-							v1.ComplianceAggregation_DEPLOYMENT - minScope: "C",
+							storage.ComplianceAggregation_CLUSTER - minScope:    "A",
+							storage.ComplianceAggregation_NAMESPACE - minScope:  "B",
+							storage.ComplianceAggregation_DEPLOYMENT - minScope: "C",
 						},
 					},
 					result: true,
@@ -506,8 +505,8 @@ func TestIsValidCheck(t *testing.T) {
 				{
 					fc: flatCheck{
 						values: &flatCheckValues{
-							v1.ComplianceAggregation_CLUSTER - minScope: "A",
-							v1.ComplianceAggregation_NODE - minScope:    "D",
+							storage.ComplianceAggregation_CLUSTER - minScope: "A",
+							storage.ComplianceAggregation_NODE - minScope:    "D",
 						},
 					},
 					result: false,
@@ -569,6 +568,6 @@ func BenchmarkAggregatedResults(b *testing.B) {
 		standards: mockStandardsRepo{},
 	}
 	for i := 0; i < b.N; i++ {
-		a.getAggregatedResults(nil, v1.ComplianceAggregation_CHECK, []*storage.ComplianceRunResults{result}, &mask{})
+		a.getAggregatedResults(nil, storage.ComplianceAggregation_CHECK, []*storage.ComplianceRunResults{result}, &mask{})
 	}
 }

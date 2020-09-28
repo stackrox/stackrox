@@ -5,16 +5,16 @@ import (
 	"strconv"
 	"strings"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
-func sortAggregations(results []*v1.ComplianceAggregation_Result) {
+func sortAggregations(results []*storage.ComplianceAggregation_Result) {
 	sort.SliceStable(results, func(a, b int) bool {
 		return aBeforeB(results[a].GetAggregationKeys(), results[b].GetAggregationKeys())
 	})
 }
 
-func aBeforeB(a, b []*v1.ComplianceAggregation_AggregationKey) bool {
+func aBeforeB(a, b []*storage.ComplianceAggregation_AggregationKey) bool {
 	// Get the length of the smallest aggregtion key set.
 	var minLen int
 	if len(a) < len(b) {
@@ -42,7 +42,7 @@ func aBeforeB(a, b []*v1.ComplianceAggregation_AggregationKey) bool {
 	// Same exact scopes, so we have to choose order based on ids.
 	for i := 0; i < minLen; i++ {
 		var cmp int
-		if a[i].GetScope() == v1.ComplianceAggregation_CONTROL {
+		if a[i].GetScope() == storage.ComplianceAggregation_CONTROL {
 			// We want to use version string comparison for control ids (1_20_a > 1_2_a)
 			cmp = versionCompare(a[i].GetId(), b[i].GetId())
 		} else {
