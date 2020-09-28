@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (h helmHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +33,11 @@ func (h helmHandler) post(w http.ResponseWriter, r *http.Request) {
 	// Add the new cluster to db
 	response, err := h.clusterService.PostCluster(r.Context(), helmCluster.Cluster)
 	if err != nil {
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "Adding cluster: %v", err)
+		code := codes.Internal
+		if errStatus, ok := status.FromError(err); ok {
+			code = errStatus.Code()
+		}
+		httputil.WriteGRPCStyleErrorf(w, code, "Adding cluster: %v", err)
 		return
 	}
 	cluster := response.Cluster

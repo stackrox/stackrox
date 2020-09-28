@@ -87,8 +87,12 @@ fi
   certsZipFile="${DIR}/certs-${cluster_name}.zip"
 
  # add cluster, get certs bundle
-  curl --insecure --fail --show-error -sKOJ -H "${auth_header}" -H "Accept-Encoding: zip" -H "Content-Type: application/json" \
-  -X POST --data "${cluster}" -o "${certsZipFile}" "https://${endpoint}/api/helm/cluster/add"
+  status="$(curl --insecure --output /dev/stderr --write-out "%{http_code}" --show-error -sKOJ -H "${auth_header}" -H "Accept-Encoding: zip" -H "Content-Type: application/json" \
+  -X POST --data "${cluster}" "https://${endpoint}/api/helm/cluster/add" 2>"${certsZipFile}")"
+  if [[ "$status" != 200 ]]; then
+    cat "${certsZipFile}"
+    exit 1
+  fi
 
   if [ ! -f "${certsZipFile}" ]; then
     echo "Error: ${certsZipFile} not found."
@@ -100,7 +104,3 @@ fi
   #clean up
   rm -f "${certsZipFile}"
   rm -f "${DIR}/config.sh"
-
-
-
-
