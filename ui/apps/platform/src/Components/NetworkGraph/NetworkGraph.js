@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import Cytoscape from 'cytoscape';
 import CytoscapeComponent from 'react-cytoscapejs';
@@ -13,10 +12,6 @@ configuration of 'tippy.js' instance to position the tooltip. */
 // eslint-disable-next-line no-restricted-imports
 import tippy from 'tippy.js';
 import ReactDOM from 'react-dom';
-
-import { selectors } from 'reducers';
-import { createStructuredSelector } from 'reselect';
-import { actions as graphActions } from 'reducers/network/graph';
 import GraphLoader from 'Containers/Network/Graph/Overlays/GraphLoader';
 import { edgeGridLayout, getParentPositions } from 'Containers/Network/Graph/networkGraphLayouts';
 import {
@@ -76,6 +71,7 @@ const NetworkGraph = ({
     history,
     match,
     featureFlags,
+    lastUpdatedTimestamp,
 }) => {
     const [selectedNode, setSelectedNode] = useState();
     const [hoveredElement, setHoveredElement] = useState();
@@ -658,6 +654,7 @@ const NetworkGraph = ({
         networkEdgeMap,
         filterState,
         simulatorOn,
+        lastUpdatedTimestamp,
         match.params.deploymentId,
     ]);
     useEffect(grabifyNamespaces);
@@ -711,21 +708,14 @@ NetworkGraph.propTypes = {
     simulatorOn: PropTypes.bool.isRequired,
     selectedClusterName: PropTypes.string.isRequired,
     featureFlags: PropTypes.arrayOf(PropTypes.shape),
+    lastUpdatedTimestamp: PropTypes.instanceOf(Date),
 };
 
 NetworkGraph.defaultProps = {
     setSelectedNodeInGraph: null,
     networkEdgeMap: {},
     featureFlags: [],
+    lastUpdatedTimestamp: null,
 };
 
-const mapStateToProps = createStructuredSelector({
-    featureFlags: selectors.getFeatureFlags,
-});
-const mapDispatchToProps = {
-    setNetworkGraphRef: graphActions.setNetworkGraphRef,
-    setSelectedNamespace: graphActions.setSelectedNamespace,
-    setSelectedNodeInGraph: graphActions.setSelectedNode,
-};
-
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(NetworkGraph));
+export default withRouter(NetworkGraph);

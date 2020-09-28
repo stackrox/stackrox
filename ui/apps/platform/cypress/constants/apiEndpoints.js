@@ -97,6 +97,7 @@ export const metadata = 'v1/metadata';
 export const network = {
     networkGraph: '/v1/networkpolicies/cluster/*',
     epoch: '/v1/networkpolicies/graph/epoch',
+    simulate: '/v1/networkpolicies/simulate/*',
 };
 
 export const policies = {

@@ -21,7 +21,9 @@ import Legend from './Overlays/Legend';
 class Graph extends Component {
     static propTypes = {
         wizardOpen: PropTypes.bool.isRequired,
-        filterState: PropTypes.number.isRequired,
+        openWizard: PropTypes.func.isRequired,
+        closeWizard: PropTypes.func.isRequired,
+        setWizardStage: PropTypes.func.isRequired,
         isSimulatorOn: PropTypes.bool.isRequired,
 
         networkNodeMap: PropTypes.shape({}).isRequired,
@@ -30,24 +32,28 @@ class Graph extends Component {
         networkPolicyGraphState: PropTypes.string.isRequired,
         networkFlowGraphUpdateKey: PropTypes.number.isRequired,
         networkFlowGraphState: PropTypes.string.isRequired,
+        fetchNetworkPolicies: PropTypes.func.isRequired,
+
         setSelectedNode: PropTypes.func.isRequired,
         setSelectedNamespace: PropTypes.func.isRequired,
         fetchDeployment: PropTypes.func.isRequired,
-        fetchNetworkPolicies: PropTypes.func.isRequired,
-
-        setWizardStage: PropTypes.func.isRequired,
-        openWizard: PropTypes.func.isRequired,
-        closeWizard: PropTypes.func.isRequired,
-
         clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
         selectedClusterId: PropTypes.string,
 
+        filterState: PropTypes.number.isRequired,
         isLoading: PropTypes.bool.isRequired,
+        featureFlags: PropTypes.arrayOf(PropTypes.shape),
+        setNetworkGraphRef: PropTypes.func.isRequired,
+        setSelectedNodeInGraph: PropTypes.func,
+        lastUpdatedTimestamp: PropTypes.instanceOf(Date),
     };
 
     static defaultProps = {
         networkEdgeMap: null,
         selectedClusterId: '',
+        featureFlags: [],
+        setSelectedNodeInGraph: null,
+        lastUpdatedTimestamp: null,
     };
 
     shouldComponentUpdate(nextProps) {
@@ -101,8 +107,19 @@ class Graph extends Component {
                 <NoResultsMessage message="There are too many deployments to render on the graph. Please refine your search to a set of namespaces or deployments to display." />
             );
         }
-        const { networkFlowGraphUpdateKey, networkEdgeMap } = this.props;
-        const { closeWizard, filterState, clusters, selectedClusterId } = this.props;
+        const {
+            networkFlowGraphUpdateKey,
+            networkEdgeMap,
+            closeWizard,
+            filterState,
+            clusters,
+            selectedClusterId,
+            featureFlags,
+            setNetworkGraphRef,
+            setSelectedNamespace,
+            setSelectedNodeInGraph,
+            lastUpdatedTimestamp,
+        } = this.props;
 
         const selectedClusterName =
             clusters.find((cluster) => cluster.id === selectedClusterId)?.name || 'Unknown cluster';
@@ -118,6 +135,11 @@ class Graph extends Component {
                 filterState={filterState}
                 simulatorOn={simulatorOn}
                 selectedClusterName={selectedClusterName}
+                featureFlags={featureFlags}
+                setNetworkGraphRef={setNetworkGraphRef}
+                setSelectedNamespace={setSelectedNamespace}
+                setSelectedNodeInGraph={setSelectedNodeInGraph}
+                lastUpdatedTimestamp={lastUpdatedTimestamp}
             />
         );
     };
@@ -155,18 +177,18 @@ const mapStateToProps = createStructuredSelector({
     wizardOpen: selectors.getNetworkWizardOpen,
     filterState: selectors.getNetworkGraphFilterMode,
     isSimulatorOn: getIsSimulatorOn,
-
     networkNodeMap: selectors.getNetworkNodeMap,
     networkEdgeMap: selectors.getNetworkEdgeMap,
-
     networkPolicyGraphState: selectors.getNetworkPolicyGraphState,
     networkFlowGraphUpdateKey: selectors.getNetworkFlowGraphUpdateKey,
     networkFlowGraphState: selectors.getNetworkFlowGraphState,
-
     clusters: selectors.getClusters,
     selectedClusterId: selectors.getSelectedNetworkClusterId,
-
     isLoading: selectors.getNetworkGraphLoading,
+    featureFlags: selectors.getFeatureFlags,
+    networkWizardStage: selectors.getNetworkWizardStage,
+    networkPolicyModification: selectors.getNetworkPolicyModification,
+    lastUpdatedTimestamp: selectors.getLastUpdatedTimestamp,
 });
 
 const mapDispatchToProps = {
@@ -174,12 +196,12 @@ const mapDispatchToProps = {
     setSelectedNamespace: graphActions.setSelectedNamespace,
     fetchDeployment: deploymentActions.fetchDeployment.request,
     fetchNetworkPolicies: backendActions.fetchNetworkPolicies.request,
-
     openWizard: pageActions.openNetworkWizard,
     setWizardStage: wizardActions.setNetworkWizardStage,
     setNetworkGraphRef: graphActions.setNetworkGraphRef,
     setNetworkGraphLoading: graphActions.setNetworkGraphLoading,
     closeWizard: pageActions.closeNetworkWizard,
+    setSelectedNodeInGraph: graphActions.setSelectedNode,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(Graph);

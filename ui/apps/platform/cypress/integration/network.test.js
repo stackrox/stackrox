@@ -28,14 +28,6 @@ describe('Network page', () => {
 
         cy.get(networkPageSelectors.network).click();
         cy.get(networkPageSelectors.network).should('have.class', 'bg-primary-700');
-
-        // TODO, use this pattern to more thoroughly test the graph using the cytoscape
-        cy.get('#cytoscapeContainer').then(() => {
-            cy.window().then((win) => {
-                // eslint-disable-next-line no-console
-                console.log('window.cytoscape', win.cytoscape);
-            });
-        });
     });
 
     it('should display a legend', () => {
@@ -149,6 +141,50 @@ describe('Network Deployment Details', () => {
         cy.get(`${selectors.tab.tabs}:contains('Details')`).click();
         cy.get(`[data-testid="exposure"]:contains('ClusterIP')`);
         cy.get(`[data-testid="level"]:contains('ClusterIP')`);
+    });
+});
+
+describe('Network Policy Simulator', () => {
+    withAuth();
+
+    beforeEach(() => {
+        cy.server();
+        cy.route('POST', api.network.simulate).as('simulateGraph');
+    });
+
+    it('should update the graph when generating and simulating network policies', () => {
+        // this will get the deployments for the 'default' and 'docker' namespace
+        function getDeployments(cytoscape) {
+            const deployments = cytoscape.filter((element) => {
+                return (
+                    element.isNode() &&
+                    element.data('type') === 'DEPLOYMENT' &&
+                    (element.data('parent') === 'default' || element.data('parent') === 'docker')
+                );
+            });
+            return deployments;
+        }
+
+        cy.visit(networkUrl);
+        cy.get(networkPageSelectors.buttons.allowedFilter).click();
+        cy.cytoscape('#cytoscapeContainer').then((cytoscape) => {
+            const deployments = getDeployments(cytoscape);
+            // we want to make sure all the deployments from 'default' and 'docker' namespaces are non-isolated
+            deployments.forEach((deployment) => {
+                expect(deployment.hasClass('nonIsolated')).to.equal(true);
+            });
+            cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
+            cy.get(networkPageSelectors.buttons.generateNetworkPolicies).click();
+            // wait for the graph to update with the new data
+            cy.wait('@simulateGraph');
+            cy.cytoscape('#cytoscapeContainer').then((updatedCytoscape) => {
+                const simulatedDeployments = getDeployments(updatedCytoscape);
+                // After the simulated graph, we want to make sure all the deployments from 'default' and 'docker' namespaces are not non-isolated
+                simulatedDeployments.forEach((deployment) => {
+                    expect(deployment.hasClass('nonIsolated')).to.equal(false);
+                });
+            });
+        });
     });
 });
 

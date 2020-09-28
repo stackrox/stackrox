@@ -38,6 +38,9 @@ export const selectors = {
         simulatorButtonOn: '[data-testid="simulator-button-on"]',
         simulatorButtonOff: '[data-testid="simulator-button-off"]',
         generateNetworkPolicies: 'button:contains("Generate and simulate network policies")',
+        activeFilter: 'button:contains("active")',
+        allowedFilter: 'button:contains("allowed")',
+        allFilter: 'button:contains("all")',
     },
     networkFlowsSearch: scopeSelectors(networkPanels.detailsPanel, {
         ...search,

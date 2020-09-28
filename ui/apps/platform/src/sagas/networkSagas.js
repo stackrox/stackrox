@@ -49,9 +49,9 @@ function* getNetworkGraphs(clusterId, query) {
             ),
             call(service.fetchNetworkPolicyGraph, clusterId, query, modification, includePorts),
         ]);
-        yield put(graphNetworkActions.updateNetworkGraphTimestamp(new Date()));
         yield put(graphNetworkActions.setNetworkEdgeMap(flowGraph, policyGraph));
         yield put(graphNetworkActions.setNetworkNodeMap(flowGraph, policyGraph));
+        yield put(graphNetworkActions.updateNetworkGraphTimestamp(new Date()));
         yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
         yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowGraph));
     } catch (error) {
