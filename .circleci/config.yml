@@ -2401,7 +2401,7 @@ jobs:
       - check-backend-changes
 
       - check-master-or-tag-or-label:
-          label: ci-kernel-tests
+          label: ci-kernel-module-tests
           run-on-master: true
           run-on-tags: true
 
