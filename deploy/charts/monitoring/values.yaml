@@ -1,0 +1,21 @@
+image: null
+password: null
+
+resources:
+  requests:
+    memory: "500Mi"
+    cpu: "500m"
+  limits:
+    memory: "1Gi"
+    cpu: "1000m"
+
+exposure:
+  port: 443
+  type: none # route, lb, np
+
+persistence:
+  type: none # pvc, hostpath
+  hostPath: null
+  storageClass: null
+
+nodeSelector: {}

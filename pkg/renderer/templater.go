@@ -7,13 +7,10 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/docker/distribution/reference"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/helmutil"
-	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/zip"
 )
@@ -48,48 +45,9 @@ func (h *HostPathPersistence) WithNodeSelector() bool {
 // Image is an example as it can be parameterized per orchestrator with different defaults so it cannot be placed
 // at the top level
 type CommonConfig struct {
-	MainImage       string
-	ScannerImage    string
-	ScannerDBImage  string
-	MonitoringImage string
-}
-
-// MonitoringType is the enum for the place monitoring is hosted
-type MonitoringType int
-
-// Types of monitoring
-const (
-	None MonitoringType = iota
-	OnPrem
-	StackRoxHosted
-)
-
-// String returns the string form of the enum
-func (m MonitoringType) String() string {
-	switch m {
-	case OnPrem:
-		return "on-prem"
-	case None:
-		return "none"
-	case StackRoxHosted:
-		return "stackrox-hosted"
-	}
-	return "unknown"
-}
-
-// OnPrem is true if the monitoring is hosted on prem
-func (m MonitoringType) OnPrem() bool {
-	return m == OnPrem
-}
-
-// StackRoxHosted is true if the monitoring is hosted by StackRox
-func (m MonitoringType) StackRoxHosted() bool {
-	return m == StackRoxHosted
-}
-
-// None returns true if there is no monitoring solution
-func (m MonitoringType) None() bool {
-	return m == None
+	MainImage      string
+	ScannerImage   string
+	ScannerDBImage string
 }
 
 // PersistenceType describes the type of persistence
@@ -116,20 +74,6 @@ func (m PersistenceType) String() string {
 	return string(m)
 }
 
-// MonitoringConfig encapsulates the monitoring configuration
-type MonitoringConfig struct {
-	Endpoint         string
-	Image            string
-	Type             MonitoringType
-	LoadBalancerType v1.LoadBalancerType
-	Password         string
-	PasswordAuto     bool
-
-	PersistenceType PersistenceType
-	External        *ExternalPersistence
-	HostPath        *HostPathPersistence
-}
-
 // K8sConfig contains k8s fields
 type K8sConfig struct {
 	CommonConfig
@@ -154,8 +98,6 @@ type K8sConfig struct {
 
 	// Command is either oc or kubectl depending on the value of cluster type
 	Command string
-
-	Monitoring MonitoringConfig
 
 	OfflineMode bool
 
@@ -215,23 +157,6 @@ func ExecuteTemplate(temp *template.Template, values interface{}) ([]byte, error
 	return buf.Bytes(), nil
 }
 
-func generateMonitoringImage(mainImage string, monitoringImage string) (string, error) {
-	if monitoringImage != "" {
-		_, err := reference.ParseAnyReference(monitoringImage)
-		if err != nil {
-			return "", err
-		}
-		return monitoringImage, nil
-	}
-	img, err := utils.GenerateImageFromString(mainImage)
-	if err != nil {
-		return "", err
-	}
-	imgName := img.GetName()
-	monitoringImageName := defaultimages.GenerateNamedImageFromMainImage(imgName, imgName.GetTag(), defaultimages.Monitoring)
-	return monitoringImageName.FullName, nil
-}
-
 func generateReadmeFile(c *Config, mode mode) (*zip.File, error) {
 	instructions, err := generateReadme(c, mode)
 	if err != nil {
@@ -253,11 +178,6 @@ func (c Config) WriteInstructions(w io.Writer) error {
 		fmt.Fprintln(w)
 		fmt.Fprintf(w, "Use username '%s' and the following auto-generated password for administrator login (also stored in the 'password' file):\n", basic.DefaultUsername)
 		fmt.Fprintf(w, " %s\n", c.Password)
-	}
-	if c.K8sConfig != nil && c.K8sConfig.Monitoring.PasswordAuto {
-		fmt.Fprintln(w)
-		fmt.Fprintln(w, "Use the following auto-generated password for accessing monitoring (also stored in the 'monitoring/password' file):")
-		fmt.Fprintf(w, " %s\n", c.K8sConfig.Monitoring.Password)
 	}
 	return nil
 }

@@ -26,12 +26,11 @@ import (
 )
 
 const (
-	templatePath          = "templates"
-	sensorChartPrefix     = "helm/sensorchart/"
-	centralChartPrefix    = "helm/centralchart/"
-	scannerChartPrefix    = "helm/scannerchart/"
-	monitoringChartPrefix = "helm/monitoringchart/"
-	chartYamlFile         = "Chart.yaml"
+	templatePath       = "templates"
+	sensorChartPrefix  = "helm/sensorchart/"
+	centralChartPrefix = "helm/centralchart/"
+	scannerChartPrefix = "helm/scannerchart/"
+	chartYamlFile      = "Chart.yaml"
 	// CentralServicesChartPrefix points to the new stackrox-central-services Helm Chart.
 	CentralServicesChartPrefix = "helm/stackrox-central/"
 )
@@ -121,11 +120,6 @@ func GetCentralChart(overrides map[string]func() io.ReadCloser) []*loader.Buffer
 // GetScannerChart returns the Helm chart for the scanner
 func GetScannerChart() []*loader.BufferedFile {
 	return mustGetChart(K8sBox, nil, scannerChartPrefix)
-}
-
-// GetMonitoringChart returns the Helm chart for Monitoring
-func GetMonitoringChart() []*loader.BufferedFile {
-	return mustGetChart(K8sBox, nil, monitoringChartPrefix)
 }
 
 // GetSensorChart returns the Helm chart for sensor

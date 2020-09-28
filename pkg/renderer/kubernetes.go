@@ -13,16 +13,11 @@ import (
 	"github.com/stackrox/rox/image"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/zip"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
-)
-
-const (
-	defaultMonitoringPort = 443
 )
 
 var (
@@ -39,7 +34,7 @@ var (
 type mode int
 
 const (
-	// renderAll renders all objects (central/scanner/monitoring).
+	// renderAll renders all objects (central+scanner).
 	renderAll mode = iota
 	// scannerOnly renders only the scanner.
 	scannerOnly
@@ -134,11 +129,6 @@ func getChartsToProcess(c Config, mode mode, centralOverrides map[string]func() 
 	}
 
 	chartsToProcess := []chartPrefixPair{getCentralChart(centralOverrides), getScannerChart()}
-	if c.K8sConfig.Monitoring.Type.OnPrem() {
-		chartsToProcess = append(chartsToProcess,
-			chartPrefixPair{image.GetMonitoringChart(), "monitoring"},
-		)
-	}
 	return chartsToProcess, nil
 }
 
@@ -196,12 +186,6 @@ func postProcessConfig(c *Config, mode mode) error {
 		if err := injectImageTags(c); err != nil {
 			return err
 		}
-		monitoringImage, err := generateMonitoringImage(c.K8sConfig.MainImage, c.K8sConfig.MonitoringImage)
-		if err != nil {
-			return errors.Wrap(err, "error parsing monitoring image: ")
-		}
-		c.K8sConfig.Monitoring.Image = monitoringImage
-		c.K8sConfig.Monitoring.Endpoint = netutil.WithDefaultPort(c.K8sConfig.Monitoring.Endpoint, defaultMonitoringPort)
 	}
 
 	return nil

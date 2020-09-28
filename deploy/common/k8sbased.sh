@@ -88,13 +88,6 @@ function launch_central {
       echo "Running in local dev mode. Will patch resources down"
     fi
 
-    if [[ "$MONITORING_SUPPORT" == "false" ]]; then
-    	add_args "--monitoring-type=none"
-    else
-        add_args "--monitoring-type=on-prem"
-        add_args "--monitoring-lb-type=$MONITORING_LOAD_BALANCER"
-    fi
-
     if [ -n "${OUTPUT_FORMAT}" ]; then
         add_args "--output-format=${OUTPUT_FORMAT}"
     fi
@@ -121,7 +114,7 @@ function launch_central {
     	add_file_arg "$ROX_DEFAULT_TLS_KEY_FILE"
     fi
 
-    add_args "--monitoring-password=stackrox" -i "${MAIN_IMAGE}" --monitoring-persistence-type="${STORAGE}"
+    add_args -i "${MAIN_IMAGE}"
 
     pkill -f "$ORCH_CMD"'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
     pkill -9 -f "$ORCH_CMD"'.*port-forward.*' || true
@@ -167,13 +160,18 @@ function launch_central {
 
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then
         echo "Deploying Monitoring..."
-        $unzip_dir/monitoring/scripts/setup.sh
-        launch_service $unzip_dir monitoring
-        echo
-
+        helm_args=(
+          -f "${COMMON_DIR}/monitoring-values.yaml"
+          --set image="$(sed -E 's@(^|/)main($|:)@\1monitoring\2@' <<<"${MAIN_IMAGE}")"
+          --set persistence.type="${STORAGE}"
+          --set exposure.type="${MONITORING_LOAD_BALANCER}"
+        )
         if [[ "${is_local_dev}" == "true" ]]; then
-            ${ORCH_CMD} -n stackrox patch deployment monitoring --patch "$(cat "${common_dir}/monitoring-resources-patch.yaml")"
+          helm_args+=(-f "${COMMON_DIR}/monitoring-values-local.yaml")
         fi
+
+        helm install -n stackrox --create-namespace stackrox-monitoring "${COMMON_DIR}/../charts/monitoring" "${helm_args[@]}"
+        echo
     fi
 
 	if [[ -f "${unzip_dir}/password" ]]; then

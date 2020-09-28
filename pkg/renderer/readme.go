@@ -30,11 +30,6 @@ the login page, and log in with username "admin" and the password found in the
 "password" file located in the same directory as this README.
 `
 	helmInstructionTemplate = `
-  {{if not .K8sConfig.Monitoring.Type.None}}
-  - Deploy Monitoring
-    - Run monitoring/scripts/setup.sh
-    - Run helm install --name monitoring ./monitoring
-  {{- end}}
   - Deploy Central
     - Run central/scripts/setup.sh
     - If you are using Helm v2, run helm install --name central ./central
@@ -46,12 +41,7 @@ the login page, and log in with username "admin" and the password found in the
 		- If you are using Helm v3, run helm install scanner ./scanner
 `
 
-	kubectlInstructionTemplate = `{{if not .K8sConfig.Monitoring.Type.None}}
-  - Deploy Monitoring
-    - Run monitoring/scripts/setup.sh
-    - Run {{.K8sConfig.Command}} create -R -f monitoring
-  {{- end}}
-  - Deploy Central
+	kubectlInstructionTemplate = `- Deploy Central
     - Run central/scripts/setup.sh
     - Run {{.K8sConfig.Command}} create -R -f central
 `

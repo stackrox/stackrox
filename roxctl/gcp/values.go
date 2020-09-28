@@ -12,10 +12,9 @@ type Values struct {
 	Name      string `yaml:"name"`
 	Namespace string `yaml:"namespace"`
 
-	MainImage       string `yaml:"main-image"`
-	ScannerImage    string `yaml:"scanner-image"`
-	ScannerDBImage  string `yaml:"scanner-db-image"`
-	MonitoringImage string `yaml:"monitoring-image"`
+	MainImage      string `yaml:"main-image"`
+	ScannerImage   string `yaml:"scanner-image"`
+	ScannerDBImage string `yaml:"scanner-db-image"`
 
 	License            string `yaml:"license"`
 	StackroxIOUsername string `yaml:"stackrox-io-username"`

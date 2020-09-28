@@ -19,7 +19,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: stackrox-monitoring-psp
-  namespace: {{.Values.namespace}}
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: stackrox
     app: monitoring
@@ -30,7 +30,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: monitoring
-    namespace: {{.Values.namespace}}
+    namespace: {{ .Release.Namespace }}
 ---
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
@@ -50,10 +50,10 @@ spec:
     - 'downwardAPI'
     - 'persistentVolumeClaim'
     - 'hostPath'
-  {{if eq .Values.persistence.type "hostpath" -}}
+  {{ if eq .Values.persistence.type "hostpath" -}}
   allowedHostPaths:
-    - pathPrefix: {{.Values.persistence.value.hostPath.path}}
-  {{- end}}
+    - pathPrefix: {{ .Values.persistence.hostPath }}
+  {{- end }}
   hostNetwork: false
   hostIPC: false
   hostPID: false

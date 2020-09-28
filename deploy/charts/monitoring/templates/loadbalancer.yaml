@@ -1,0 +1,39 @@
+{{ if eq .Values.exposure.type "route" }}
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: monitoring-mtls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: stackrox
+spec:
+  host: monitoring.{{ .Release.Namespace }}
+  port:
+    targetPort: https
+  tls:
+    termination: passthrough
+  to:
+    kind: Service
+    name: monitoring
+{{ else if ne .Values.exposure.type "none" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: monitoring-loadbalancer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: stackrox
+spec:
+  ports:
+  - port: {{ .Values.exposure.port }}
+    targetPort: 443
+  selector:
+    app: monitoring
+  {{- if .Values.exposure.type "lb" }}
+  type: LoadBalancer
+  {{ else if .Values.exposure.type "np" }}
+  type: NodePort
+  {{ else }}
+  {{ fail (printf "Invalid exposure type %s" .Values.exposure.type) }}
+  {{ end }}
+{{- end}}

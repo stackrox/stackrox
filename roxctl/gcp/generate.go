@@ -40,10 +40,9 @@ func generate(outputDir string, values *Values) error {
 		K8sConfig: &renderer.K8sConfig{
 			AppName: values.Name,
 			CommonConfig: renderer.CommonConfig{
-				MainImage:       values.MainImage,
-				ScannerImage:    values.ScannerImage,
-				ScannerDBImage:  values.ScannerImage,
-				MonitoringImage: values.MonitoringImage,
+				MainImage:      values.MainImage,
+				ScannerImage:   values.ScannerImage,
+				ScannerDBImage: values.ScannerImage,
 			},
 			ConfigType:       v1.DeploymentFormat_HELM,
 			DeploymentFormat: v1.DeploymentFormat_HELM,

@@ -12,7 +12,6 @@ import (
 func TestReadme(t *testing.T) {
 	cases := []struct {
 		orchCommand      string
-		monitoringType   MonitoringType
 		deploymentFormat v1.DeploymentFormat
 		mode             mode
 
@@ -23,7 +22,6 @@ func TestReadme(t *testing.T) {
 	}{
 		{
 			orchCommand:      "kubectl",
-			monitoringType:   None,
 			deploymentFormat: v1.DeploymentFormat_KUBECTL,
 			mode:             renderAll,
 
@@ -33,17 +31,6 @@ func TestReadme(t *testing.T) {
 		},
 		{
 			orchCommand:      "kubectl",
-			monitoringType:   OnPrem,
-			deploymentFormat: v1.DeploymentFormat_KUBECTL,
-			mode:             renderAll,
-
-			mustContain:                           []string{"kubectl create -R -f scanner", "kubectl create -R -f central", "kubectl create -R -f monitoring"},
-			mustNotContain:                        []string{"helm install"},
-			mustContainInstructionSuffixAndPrefix: true,
-		},
-		{
-			orchCommand:      "kubectl",
-			monitoringType:   None,
 			deploymentFormat: v1.DeploymentFormat_KUBECTL,
 			mode:             scannerOnly,
 
@@ -51,17 +38,7 @@ func TestReadme(t *testing.T) {
 			mustNotContain: []string{"kubectl create -R -f central", "kubectl create -R -f monitoring", "helm install"},
 		},
 		{
-			orchCommand:      "kubectl",
-			monitoringType:   OnPrem,
-			deploymentFormat: v1.DeploymentFormat_KUBECTL,
-			mode:             scannerOnly,
-
-			mustContain:    []string{"kubectl create -R -f scanner", "scanner/scripts/setup.sh"},
-			mustNotContain: []string{"kubectl create -R -f central", "kubectl create -R -f monitoring", "helm install", "kubectl create -R -f scannerv2"},
-		},
-		{
 			orchCommand:      "oc",
-			monitoringType:   None,
 			deploymentFormat: v1.DeploymentFormat_KUBECTL,
 			mode:             scannerOnly,
 
@@ -70,17 +47,15 @@ func TestReadme(t *testing.T) {
 		},
 		{
 			orchCommand:      "kubectl",
-			monitoringType:   OnPrem,
 			deploymentFormat: v1.DeploymentFormat_HELM,
 			mode:             renderAll,
 
-			mustContain:                           []string{"helm install --name central ./central", "helm install --name monitoring ./monitoring", "helm install --name scanner ./scanner", "scanner/scripts/setup.sh"},
-			mustNotContain:                        []string{"kubectl create -R -f central", "kubectl create -R -f monitoring", "kubectl create -R -f scanner"},
+			mustContain:                           []string{"helm install --name central ./central", "helm install --name scanner ./scanner", "scanner/scripts/setup.sh"},
+			mustNotContain:                        []string{"kubectl create -R -f central", "kubectl create -R -f monitoring", "kubectl create -R -f scanner", "helm install --name monitoring ./monitoring"},
 			mustContainInstructionSuffixAndPrefix: true,
 		},
 		{
 			orchCommand:      "kubectl",
-			monitoringType:   OnPrem,
 			deploymentFormat: v1.DeploymentFormat_HELM,
 			mode:             scannerOnly,
 
@@ -89,12 +64,11 @@ func TestReadme(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(fmt.Sprintf("%s/%s/%s/%s", c.orchCommand, c.monitoringType, c.deploymentFormat, c.mode), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%s/%s/%s", c.orchCommand, c.deploymentFormat, c.mode), func(t *testing.T) {
 			a := assert.New(t)
 			config := Config{
 				K8sConfig: &K8sConfig{
 					Command:          c.orchCommand,
-					Monitoring:       MonitoringConfig{Type: c.monitoringType},
 					DeploymentFormat: c.deploymentFormat,
 				},
 			}

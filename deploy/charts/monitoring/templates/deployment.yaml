@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: monitoring
-  namespace: {{.Values.namespace}}
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: stackrox
     app: monitoring
@@ -17,15 +17,15 @@ spec:
       app: monitoring
   template:
     metadata:
-      namespace: {{.Values.namespace}}
+      namespace: {{ .Release.Namespace }}
       labels:
         app.kubernetes.io/name: stackrox
         app: monitoring
     spec:
-      {{if .Values.nodeSelector -}}
+      {{ if .Values.nodeSelector -}}
       nodeSelector:
-{{ toYaml .Values.nodeSelector | indent 8 }}
-      {{else if eq .Values.clusterType "OPENSHIFT_CLUSTER"}}
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      {{ else if .Capabilities.APIVersions.Has "apps.openshift.io/v1" }}
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -54,7 +54,7 @@ spec:
       serviceAccount: monitoring
       containers:
       - name: influxdb
-        image: {{.Values.image}}
+        image: {{ required "An image is required" .Values.image }}
         lifecycle:
           postStart:
             exec:
@@ -62,7 +62,7 @@ spec:
         command:
         - /influxd
         resources:
-{{ toYaml .Values.resources | indent 10 }}
+          {{- toYaml .Values.resources | nindent 10 }}
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
@@ -71,10 +71,10 @@ spec:
           - name: influxdb-config-volume
             mountPath: /etc/influxdb/
             readOnly: true
-          - name: {{.Values.persistence.name}}
+          - name: data-volume
             mountPath: /var/lib/influxdb
       - name: telegraf-proxy
-        image: {{.Values.image}}
+        image: {{ required "An image is required" .Values.image }}
         command:
         - /telegraf
         ports:
@@ -99,7 +99,7 @@ spec:
             mountPath: /etc/telegraf
             readOnly: true
       - name: grafana
-        image: {{.Values.image}}
+        image: {{ required "An image is required" .Values.image }}
         command:
         - /grafana-entrypoint.sh
         - /run.sh
@@ -126,7 +126,7 @@ spec:
           - name: monitoring-password-volume
             mountPath: /run/secrets/stackrox.io/monitoring/secrets/
             readOnly: true
-          - name: {{.Values.persistence.name}}
+          - name: data-volume
             mountPath: /var/lib/grafana
       volumes:
       - name: grafana-config-volume
@@ -161,5 +161,15 @@ spec:
       - name: telegraf-proxy-config-volume
         configMap:
           name: telegraf-proxy
-      - name: {{.Values.persistence.name}}
-{{ toYaml .Values.persistence.value | indent 8 }}
+      - name: data-volume
+        {{- if eq .Values.persistence.type "hostpath" }}
+        hostPath:
+          path: {{ required "A persistence host path must be specified" .Values.persistence.hostPath }}
+        {{ else if eq .Values.persistence.type "pvc" }}
+        persistentVolumeClaim:
+          claimName: stackrox-monitoring
+        {{ else if eq .Values.persistence.type "none" }}
+        emptyDir: {}
+        {{ else }}
+        {{ fail (printf "Invalid persistence type %s" .Values.persistence.type) }}
+        {{ end }}

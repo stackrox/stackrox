@@ -1,0 +1,18 @@
+{{ if eq .Values.persistence.type "pvc" -}}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: stackrox-monitoring
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: stackrox
+spec:
+  {{ if .Values.persistence.storageClass -}}
+  storageClassName: {{ .Values.persistence.storageClass }}
+  {{- end }}
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+{{- end }}

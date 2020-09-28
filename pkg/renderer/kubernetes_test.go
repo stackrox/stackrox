@@ -6,7 +6,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -19,17 +18,11 @@ func getBaseConfig() Config {
 				MainImage:    "stackrox/main:2.2.11.0-57-g392c0f5bed-dirty",
 				ScannerImage: "stackrox.io/scanner:0.4.2",
 			},
-			Monitoring: MonitoringConfig{
-				HostPath: &HostPathPersistence{},
-				External: &ExternalPersistence{},
-			},
 		},
 		SecretsByteMap: map[string][]byte{
-			"ca.pem":                     {1},
-			"ca-key.pem":                 {1},
-			"jwt-key.der":                {1},
-			"monitoring-client-cert.pem": {1},
-			"monitoring-client-key.pem":  {1},
+			"ca.pem":      {1},
+			"ca-key.pem":  {1},
+			"jwt-key.der": {1},
 		},
 	}
 }
@@ -98,8 +91,6 @@ func (suite *renderSuite) TestRenderMultiple() {
 				suite.testWithHostPath(t, conf)
 				suite.testWithPV(t, conf)
 				suite.testWithLoadBalancers(t, conf)
-
-				suite.testWithMonitoring(t, conf)
 			})
 		}
 	}
@@ -109,47 +100,5 @@ func (suite *renderSuite) TestRenderWithBadImage() {
 	conf := getBaseConfig()
 	conf.K8sConfig.ScannerImage = "invalid-image#!@$"
 	_, err := Render(conf)
-	suite.Error(err)
-}
-
-func (suite *renderSuite) testWithMonitoring(t *testing.T, c Config) {
-	_, err := Render(c)
-	suite.NoError(err)
-	suite.Empty(c.K8sConfig.Monitoring.Endpoint)
-
-	defaultMonitoringImage := fmt.Sprintf("docker.io/stackrox/%s:%s", defaultimages.Monitoring, c.K8sConfig.MainImageTag)
-	c.K8sConfig.Monitoring.Type = OnPrem
-	c.K8sConfig.Monitoring.Endpoint = "monitoring.stackrox:443"
-	_, err = Render(c)
-	suite.NoError(err)
-	suite.Equal(defaultMonitoringImage, c.K8sConfig.Monitoring.Image)
-
-	c.K8sConfig.Monitoring.LoadBalancerType = v1.LoadBalancerType_NODE_PORT
-	_, err = Render(c)
-	suite.NoError(err)
-	suite.Equal(defaultMonitoringImage, c.K8sConfig.Monitoring.Image)
-
-	c.K8sConfig.Monitoring.LoadBalancerType = v1.LoadBalancerType_LOAD_BALANCER
-	_, err = Render(c)
-	suite.NoError(err)
-	suite.Equal(defaultMonitoringImage, c.K8sConfig.Monitoring.Image)
-
-	originalMain := c.K8sConfig.MainImage
-	alternateMain := fmt.Sprintf("%s/main:%s", defaultimages.ProdRedHatRegistry, c.K8sConfig.MainImageTag)
-	alternateMonitoring := fmt.Sprintf("%s/monitoring:%s", defaultimages.ProdMainRegistry, c.K8sConfig.MainImageTag)
-	c.K8sConfig.MainImage = alternateMain
-	_, err = Render(c)
-	suite.NoError(err)
-	suite.Equal(alternateMonitoring, c.K8sConfig.Monitoring.Image)
-	c.K8sConfig.MainImage = originalMain
-
-	alternateImage := "some.other.repo/monitoring"
-	c.K8sConfig.MonitoringImage = alternateImage
-	_, err = Render(c)
-	suite.NoError(err)
-	suite.Equal(alternateImage, c.K8sConfig.Monitoring.Image)
-
-	c.K8sConfig.MonitoringImage = "not a valid image"
-	_, err = Render(c)
 	suite.Error(err)
 }
