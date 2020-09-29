@@ -64,7 +64,7 @@ type peers map[*node]struct{}
 
 func (p peers) hasInternetPeer() bool {
 	for node := range p {
-		if node.entity.Type == storage.NetworkEntityInfo_INTERNET {
+		if node.entity.Type == storage.NetworkEntityInfo_INTERNET || node.entity.Type == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
 			return true
 		}
 	}

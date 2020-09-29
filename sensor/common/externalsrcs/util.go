@@ -1,9 +1,8 @@
 package externalsrcs
 
-// `sortableIPv4NetworkSlice` and `sortableIPv6NetworkSlice` allows us to sort the networks in descending order of
-// prefix length. Networks with same prefix length are ordered descending lexical byte order. Since, the host identifier
-// bits (bits not in network prefix) are all set to 0, this gives us smallest to largest subnet ordering.
-// e.g. 127.0.0.0/8, 10.10.0.0/24, 10.0.0.0/24, 10.0.0.0/8...
+// `sortableIPv4NetworkSlice` and `sortableIPv6NetworkSlice` allows us to sort the networks in descending lexical byte
+// order. Since, the host identifier bits (bits not in network prefix) are all set to 0, this gives us highest-smallest
+// to lowest-largest subnet ordering. e.g. 127.0.0.0/8, 10.10.0.0/24, 10.0.0.0/24, 10.0.0.0/8...
 type sortableIPv4NetworkSlice []byte
 
 func (s sortableIPv4NetworkSlice) Len() int {

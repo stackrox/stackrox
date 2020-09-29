@@ -10,11 +10,13 @@ import (
 	"github.com/golang/mock/gomock"
 	dDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	nsDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
+	networkEntityMocks "github.com/stackrox/rox/central/networkflow/datastore/entities/mocks"
 	nfDSMocks "github.com/stackrox/rox/central/networkflow/datastore/mocks"
 	npDSMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sac"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
@@ -31,6 +33,7 @@ type generatorTestSuite struct {
 	mockCtrl                *gomock.Controller
 	mocksNetworkPolicies    *npDSMocks.MockDataStore
 	mockDeployments         *dDSMocks.MockDataStore
+	mockExtSrcs             *networkEntityMocks.MockEntityDataStore
 	mockGlobalFlowDataStore *nfDSMocks.MockClusterDataStore
 	mockNamespaceStore      *nsDSMocks.MockDataStore
 	hasNoneCtx              context.Context
@@ -112,12 +115,14 @@ func (s *generatorTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.mocksNetworkPolicies = npDSMocks.NewMockDataStore(s.mockCtrl)
 	s.mockDeployments = dDSMocks.NewMockDataStore(s.mockCtrl)
+	s.mockExtSrcs = networkEntityMocks.NewMockEntityDataStore(s.mockCtrl)
 	s.mockGlobalFlowDataStore = nfDSMocks.NewMockClusterDataStore(s.mockCtrl)
 	s.mockNamespaceStore = nsDSMocks.NewMockDataStore(s.mockCtrl)
 
 	s.generator = &generator{
 		networkPolicies:     s.mocksNetworkPolicies,
 		deploymentStore:     s.mockDeployments,
+		externalSrcsStore:   s.mockExtSrcs,
 		globalFlowDataStore: s.mockGlobalFlowDataStore,
 		namespacesStore:     s.mockNamespaceStore,
 	}
@@ -258,6 +263,10 @@ func (s *generatorTestSuite) TestGenerate() {
 				},
 			},
 		}, nil)
+
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		s.mockExtSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), "mycluster").Return(nil, nil)
+	}
 
 	s.mockNamespaceStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(
 		[]*storage.NamespaceMetadata{

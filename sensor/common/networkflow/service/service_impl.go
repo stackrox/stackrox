@@ -9,7 +9,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/set"
@@ -24,8 +23,9 @@ import (
 )
 
 const (
-	capMetadataKey     = `rox-collector-capabilities`
-	publicIPsUpdateCap = `public-ips`
+	capMetadataKey         = `rox-collector-capabilities`
+	publicIPsUpdateCap     = `public-ips`
+	networkGraphExtSrcsCap = `network-graph-external-srcs`
 )
 
 type serviceImpl struct {
@@ -88,7 +88,7 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 		}
 	}
 	var externalSrcsIterator concurrency.ValueStreamIter
-	if capsSet.Contains(centralsensor.NetworkGraphExternalSrcsCap.String()) {
+	if capsSet.Contains(networkGraphExtSrcsCap) {
 		// Non-strict allows us to skip to the most recent element using `TryNext()` and this is fine since each element in the stream
 		// is a full network list that we want to monitor.
 		externalSrcsIterator = s.manager.ExternalSrcsValueStream().Iterator(false)

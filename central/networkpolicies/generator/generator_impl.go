@@ -10,10 +10,12 @@ import (
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/networkflow"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
+	networkEntityDS "github.com/stackrox/rox/central/networkflow/datastore/entities"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/objects"
@@ -41,6 +43,7 @@ func isGeneratedPolicy(policy *storage.NetworkPolicy) bool {
 type generator struct {
 	networkPolicies     npDS.DataStore
 	deploymentStore     dDS.DataStore
+	externalSrcsStore   networkEntityDS.EntityDataStore
 	namespacesStore     nsDS.DataStore
 	globalFlowDataStore nfDS.ClusterDataStore
 }
@@ -124,6 +127,18 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 		return nil, errors.Wrapf(err, "could not obtain deployments for cluster %q", clusterID)
 	}
 
+	extSrcs := make(map[string]*storage.NetworkEntityInfo)
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		entities, err := g.externalSrcsStore.GetAllEntitiesForCluster(ctx, clusterID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "could not obtain external sources for cluster %q", clusterID)
+		}
+
+		for _, entity := range entities {
+			extSrcs[entity.GetInfo().GetId()] = entity.GetInfo()
+		}
+	}
+
 	// Filter out only those deployments for which we can see network flows. We cannot reliably generate network
 	// policies for other deployments.
 	networkFlowsChecker := networkFlowsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ClusterID(clusterID)
@@ -147,7 +162,7 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 		return nil, errors.Wrapf(err, "could not obtain network flow information for cluster %q", clusterID)
 	}
 
-	okFlows, missingInfoFlows := networkflow.UpdateFlowsWithEntityDesc(flows, objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments), nil)
+	okFlows, missingInfoFlows := networkflow.UpdateFlowsWithEntityDesc(flows, objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments), extSrcs)
 
 	return g.buildGraph(ctx, clusterID, relevantDeployments, okFlows, missingInfoFlows, includePorts)
 }

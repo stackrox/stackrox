@@ -115,15 +115,8 @@ func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.Resource
 
 func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNetworkPoliciesRequest) (*v1.NetworkPoliciesResponse, error) {
 	// Check the cluster information.
-	if request.GetClusterId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "cluster id is required")
-	}
-	exists, err := s.clusterStore.Exists(ctx, request.GetClusterId())
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	if !exists {
-		return nil, status.Errorf(codes.InvalidArgument, "cluster with id '%s' doesn't exist", request.GetClusterId())
+	if err := s.clusterExists(ctx, request.GetClusterId()); err != nil {
+		return nil, err
 	}
 
 	// Get the policies in the cluster
@@ -166,17 +159,9 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetwor
 		return nil, status.Error(codes.Unimplemented, "support for ports in network policy graph is not enabled")
 	}
 
-	if request.GetClusterId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "cluster ID must be specified")
-	}
-
 	// Check that the cluster exists. If not there is nothing to we can process.
-	exists, err := s.clusterStore.Exists(ctx, request.GetClusterId())
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	if !exists {
-		return nil, status.Errorf(codes.NotFound, "cluster with ID '%s' does not exist", request.GetClusterId())
+	if err := s.clusterExists(ctx, request.GetClusterId()); err != nil {
+		return nil, err
 	}
 
 	// Gather all of the network policies that apply to the cluster and add the addition we are testing if applicable.
@@ -249,17 +234,9 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 		return nil, status.Error(codes.Unimplemented, "support for ports in network policy simulation is not enabled")
 	}
 
-	if request.GetClusterId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Cluster ID must be specified")
-	}
-
 	// Check that the cluster exists. If not there is nothing to we can process.
-	exists, err := s.clusterStore.Exists(ctx, request.GetClusterId())
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	if !exists {
-		return nil, status.Errorf(codes.InvalidArgument, "Cluster with ID '%s' does not exist", request.GetClusterId())
+	if err := s.clusterExists(ctx, request.GetClusterId()); err != nil {
+		return nil, err
 	}
 
 	// Gather all of the network policies that apply to the cluster and add the addition we are testing if applicable.
@@ -620,5 +597,19 @@ func validateNoPolicyDiff(applyPolicy *storage.NetworkPolicy, currPolicy *storag
 		return errors.New("network policies do not match")
 	}
 
+	return nil
+}
+
+func (s *serviceImpl) clusterExists(ctx context.Context, clusterID string) error {
+	if clusterID == "" {
+		return status.Error(codes.InvalidArgument, "cluster ID must be specified")
+	}
+	exists, err := s.clusterStore.Exists(ctx, clusterID)
+	if err != nil {
+		return status.Error(codes.Internal, err.Error())
+	}
+	if !exists {
+		return status.Errorf(codes.NotFound, "cluster with ID %q doesn't exist", clusterID)
+	}
 	return nil
 }
