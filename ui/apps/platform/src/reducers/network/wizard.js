@@ -93,7 +93,7 @@ const networkPolicyModificationState = (state = 'SUCCESS', action) => {
     return state;
 };
 
-const networkPolicyExcludePortsProtocolsState = (state = null, action) => {
+const networkPolicyExcludePortsProtocolsState = (state = false, action) => {
     if (action.type === types.SET_POLICY_EXCLUDE_PORTS_PROTOCOLS_STATE) {
         return action.state;
     }
