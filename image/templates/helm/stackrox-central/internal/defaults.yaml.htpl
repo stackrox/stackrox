@@ -61,11 +61,11 @@ defaults:
 
     dbResources:
       limits:
-        cpu: 2
-        memory: 4Gi
+        cpu: "2000m"
+        memory: "4Gi"
       requests:
-        cpu: 200m
-        memory: 200Mi
+        cpu: "200m"
+        memory: "200Mi"
 
     dbImage:
       name: scanner-db
