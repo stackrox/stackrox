@@ -923,7 +923,7 @@ commands:
             docker run --rm -t \
               -v $PWD/kops:/data \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              stackrox/kops-automation:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
+              gcr.io/stackrox-infra/automation-flavors/kops:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: on_fail
 
   provision-gke-cluster:
@@ -2018,7 +2018,7 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.9
+      - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.0.3
     steps:
       - checkout
@@ -2074,7 +2074,7 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.9
+      - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.0.3
     steps:
       - checkout
@@ -2112,7 +2112,7 @@ jobs:
     working_directory: ~/go/src/github.com/stackrox/rox
     environment:
       - GOPATH: /home/circleci/go
-      - KOPS_AUTOMATION_VERSION: 0.2.9
+      - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.0.3
     resource_class: large
     steps:
@@ -2168,7 +2168,7 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.9
+      - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.0.3
     steps:
       - checkout
@@ -2241,7 +2241,7 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.9
+      - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.0.3
     steps:
       - checkout
@@ -2295,7 +2295,7 @@ jobs:
   build-deployer:
     executor: custom
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.9
+      - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.0.3
     steps:
       - checkout
@@ -2431,7 +2431,7 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.9
+      - KOPS_AUTOMATION_VERSION: 0.0.9
       - EKS_AUTOMATION_VERSION: 0.0.3
     steps:
       - checkout
@@ -2552,7 +2552,7 @@ jobs:
   provision-kops-api-e2e-tests:
     machine: true
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.9
+      - KOPS_AUTOMATION_VERSION: 0.0.9
     steps:
       - checkout
       - check-label-exists-or-skip:
@@ -2574,13 +2574,16 @@ jobs:
           path: kops
           destination: kops
 
+      - *loginToGCR
       - run:
           name: Create Kops cluster
           command: |
             docker run --rm -t \
               -v $PWD/kops:/data \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              stackrox/kops-automation:$KOPS_AUTOMATION_VERSION create "${CIRCLE_WORKFLOW_ID:0:7}"
+              -e TF_VAR_creation_source=CI \
+              gcr.io/stackrox-infra/automation-flavors/kops:$KOPS_AUTOMATION_VERSION create "${CIRCLE_WORKFLOW_ID:0:7}"
+            sudo chown "$USER" kops/id_rsa*
 
       - run:
           name: Add /etc/hosts entry
@@ -2592,7 +2595,6 @@ jobs:
             ls -lh $PWD/kops
             export KUBECONFIG=$PWD/kops/kube.yaml
             sudo chown "$USER" $PWD/kops/kube.yaml
-            sudo chown "$USER" $PWD/kops/id_rsa
             kubectl get nodes
 
       - store_artifacts:
@@ -2612,7 +2614,7 @@ jobs:
             docker run --rm -t \
               -v $PWD/kops:/data \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              stackrox/kops-automation:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
+              gcr.io/stackrox-infra/automation-flavors/kops:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: on_fail
 
   ###
@@ -3773,7 +3775,7 @@ jobs:
   kops-api-e2e-tests:
     executor: custom
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.9
+      - KOPS_AUTOMATION_VERSION: 0.0.9
       - LOCAL_PORT: 8000
       - COLLECTION_METHOD: kernel-module
       - MONITORING_SUPPORT: true
@@ -3869,13 +3871,14 @@ jobs:
             docker cp kops/delete-cluster-$(cat kops/cluster_name).sh kops:/data
           when: always
 
+      - *loginToGCR
       - run:
           name: Destroy Kops cluster
           command: |
             docker run --rm -t \
               --volumes-from kops \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              stackrox/kops-automation:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
+              gcr.io/stackrox-infra/automation-flavors/kops:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: always
 
   roxctl-windows-test:
