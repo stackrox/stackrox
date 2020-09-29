@@ -35,6 +35,42 @@ class CVETest extends BaseSpecification {
     }
     """
 
+    private static final IMAGE_CVE_QUERY = """
+    query getImageCVE(\$id: ID!, \$pagination: Pagination, \$query: String, \$policyQuery: String, \$scopeQuery: String)
+    {
+        result: image(id: \$id) {
+            id
+            vulnCount(query: \$query)
+            vulns(query: \$query, pagination: \$pagination) {
+            ...cveFields
+            __typename
+            }
+            unusedVarSink(query: \$policyQuery)
+            unusedVarSink(query: \$scopeQuery)
+            __typename
+        }
+    }
+
+    fragment cveFields on EmbeddedVulnerability {
+        id: cve
+        cve
+        cvss
+        vulnerabilityType
+        scoreVersion
+        envImpact
+        impactScore
+        summary
+        fixedByVersion
+        isFixable(query: \$scopeQuery)
+        createdAt
+        publishedOn
+        deploymentCount(query: \$query)
+        imageCount(query: \$query)
+        componentCount(query: \$query)
+        __typename
+    }
+    """
+
     static final private String CVE_DEPLOYMENT_NAME = "cve-deployment"
 
     static final private Deployment CVE_DEPLOYMENT = new Deployment()
@@ -45,11 +81,14 @@ class CVETest extends BaseSpecification {
     static final private NGINX_1_10_2_IMAGE = "us.gcr.io/stackrox-ci/nginx:1.10.2"
     static final private RED_HAT_IMAGE =
             "centos:8@sha256:4ec83eee30dfbaba2e93f59d36cc360660d13f73c71af179eeb9456dd95d1798"
+    static final private UBUNTU_IMAGE =
+            "docker.io/library/ubuntu:latest@sha256:ffc76f71dd8be8c9e222d420dc96901a07b61616689a44c7b3ef6a10b7213de4"
 
     def setupSpec() {
         ImageService.scanImage("us.gcr.io/stackrox-ci/nginx:1.9")
         ImageService.scanImage(NGINX_1_10_2_IMAGE)
         ImageService.scanImage(RED_HAT_IMAGE)
+        ImageService.scanImage(UBUNTU_IMAGE)
         orchestrator.createDeployment(CVE_DEPLOYMENT)
     }
 
@@ -108,6 +147,7 @@ class CVETest extends BaseSpecification {
         when:
         "Fetch the CVEs using GraphQL"
         def gqlService = new GraphQLService()
+
         def resultRet = gqlService.Call(GET_CVES_QUERY, [query: "${query}", scopeQuery: ""])
         assert resultRet.getCode() == 200
         println "return code " + resultRet.getCode()
@@ -136,5 +176,35 @@ class CVETest extends BaseSpecification {
         "CVSS:10+CVE:CVE-2005-2541"                                            | "CVE-2005-2541" | false
         "Component:tar+CVE:CVE-2005-2541"                                      | "CVE-2005-2541" | false
         "CVE:CVE-2005-2541"                                                    | "CVE-2005-2541" | false
+    }
+
+    @Unroll
+    @Category(BAT)
+    def "Verify IsFixable when scoped by images"() {
+        when:
+        "Scan two images that have CVE-2019-14866, but have differing CVE status (ubuntu is fixable, centos is not)"
+        def gqlService = new GraphQLService()
+        def centosRet = gqlService.Call(IMAGE_CVE_QUERY, [
+                id: "sha256:4ec83eee30dfbaba2e93f59d36cc360660d13f73c71af179eeb9456dd95d1798",
+                query: "CVE:CVE-2019-14866",
+                scopeQuery: "IMAGE SHA:sha256:4ec83eee30dfbaba2e93f59d36cc360660d13f73c71af179eeb9456dd95d1798",
+        ])
+        assert centosRet.getCode() == 200
+
+        def ubuntuRet = gqlService.Call(IMAGE_CVE_QUERY, [
+                id: "sha256:ffc76f71dd8be8c9e222d420dc96901a07b61616689a44c7b3ef6a10b7213de4",
+                query: "CVE:CVE-2019-14866",
+                scopeQuery: "IMAGE SHA:sha256:ffc76f71dd8be8c9e222d420dc96901a07b61616689a44c7b3ef6a10b7213de4",
+        ])
+
+        assert ubuntuRet.getCode() == 200
+
+        then:
+        "Verify centos is not fixable, but ubuntu is"
+        assert centosRet.value.result.vulns.size() == 1
+        assert !centosRet.value.result.vulns[0].isFixable
+
+        assert ubuntuRet.value.result.vulns.size() == 1
+        assert ubuntuRet.value.result.vulns[0].isFixable
     }
 }

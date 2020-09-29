@@ -138,18 +138,29 @@ func (resolver *cVEResolver) Cve(ctx context.Context) string {
 	return resolver.data.GetId()
 }
 
+func (resolver *cVEResolver) getCVEQuery() *v1.Query {
+	return search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetId()).ProtoQuery()
+}
+
 // IsFixable returns whether vulnerability is fixable by any component.
-func (resolver *cVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
+func (resolver *cVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, error) {
 	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return false, err
 	}
 
-	fixableCVEQuery := search.NewConjunctionQuery(q,
-		search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery(),
-	)
+	conjuncts := []*v1.Query{q, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()}
 
-	results, err := resolver.root.CVEDataStore.Search(resolver.scopeContext(resolver.ctx), fixableCVEQuery)
+	ctx := resolver.ctx
+	if scope, ok := scoped.GetScope(ctx); !ok {
+		ctx = resolver.scopeContext(ctx)
+	} else if scope.Level != v1.SearchCategory_VULNERABILITIES {
+		// If the scope is not set to vulnerabilities then
+		// we need to add a query to scope the search to the current vuln
+		conjuncts = append(conjuncts, resolver.getCVEQuery())
+	}
+
+	results, err := resolver.root.CVEDataStore.Search(ctx, search.NewConjunctionQuery(conjuncts...))
 	if err != nil {
 		return false, err
 	}
