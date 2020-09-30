@@ -54,12 +54,12 @@ func TestPagerDutyAckAlert(t *testing.T) {
 	p := getPagerDuty(t)
 	alert := fixtures.GetAlert()
 	alert.State = storage.ViolationState_SNOOZED
-	assert.NoError(t, p.AckAlert(alert))
+	assert.NoError(t, p.AckAlert(context.Background(), alert))
 }
 
 func TestPagerDutyResolveAlert(t *testing.T) {
 	p := getPagerDuty(t)
 	alert := fixtures.GetAlert()
 	alert.State = storage.ViolationState_RESOLVED
-	assert.NoError(t, p.ResolveAlert(alert))
+	assert.NoError(t, p.ResolveAlert(context.Background(), alert))
 }

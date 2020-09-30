@@ -60,7 +60,7 @@ func categoriesToFindings(categories []string) []*string {
 	return findings
 }
 
-func mapAlertToFinding(account string, arn string, alert *storage.Alert) *securityhub.AwsSecurityFinding {
+func mapAlertToFinding(account string, arn string, alertURL string, alert *storage.Alert) *securityhub.AwsSecurityFinding {
 	severity := float64(alert.GetPolicy().GetSeverity())
 
 	finding := &securityhub.AwsSecurityFinding{
@@ -101,13 +101,8 @@ func mapAlertToFinding(account string, arn string, alert *storage.Alert) *securi
 				},
 			},
 		},
-		UserDefinedFields: map[string]*string{
-			"cluster-name":         aws.String(alert.GetDeployment().GetClusterName()),
-			"deployment-name":      aws.String(alert.GetDeployment().GetName()),
-			"deployment-namespace": aws.String(alert.GetDeployment().GetNamespace()),
-		},
+		SourceUrl: aws.String(alertURL),
 	}
-
 	for _, container := range alert.GetDeployment().GetContainers() {
 		if container.GetImage().GetId() == "" {
 			continue
@@ -146,10 +141,12 @@ func mapAlertToFinding(account string, arn string, alert *storage.Alert) *securi
 		finding.Compliance = &securityhub.Compliance{
 			Status: aws.String(securityhub.ComplianceStatusFailed),
 		}
+		finding.RecordState = aws.String("ACTIVE")
 	case storage.ViolationState_RESOLVED:
 		finding.Compliance = &securityhub.Compliance{
 			Status: aws.String(securityhub.ComplianceStatusPassed),
 		}
+		finding.SetRecordState("ARCHIVED")
 	}
 
 	return finding

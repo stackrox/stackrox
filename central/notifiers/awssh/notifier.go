@@ -45,9 +45,8 @@ var (
 		arnFormatter: func(region string) string {
 			return fmt.Sprintf("arn:aws:securityhub:%s::product/stackrox/kubernetes-security", region)
 		},
-		name: "kubernetes-security",
-		// TODO(tvoss): Bump to proper version once we default the feature to true.
-		version: "0.0.0",
+		name:    "kubernetes-security",
+		version: "1.0.0",
 	}
 )
 
@@ -277,7 +276,7 @@ func (n *notifier) uploadBatchIf(ctx context.Context, predicate func(*notifier) 
 	input := &securityhub.BatchImportFindingsInput{}
 
 	for _, alert := range n.cache {
-		input.Findings = append(input.Findings, mapAlertToFinding(n.account, n.arn, alert))
+		input.Findings = append(input.Findings, mapAlertToFinding(n.account, n.arn, notifiers.AlertLink(n.ProtoNotifier().GetUiEndpoint(), alert.GetId()), alert))
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, n.upstreamTimeout)
@@ -350,7 +349,7 @@ func (n *notifier) Test(ctx context.Context) error {
 
 	_, err = n.SecurityHub.BatchImportFindings(&securityhub.BatchImportFindingsInput{
 		Findings: []*securityhub.AwsSecurityFinding{
-			mapAlertToFinding(n.account, n.arn, &storage.Alert{
+			mapAlertToFinding(n.account, n.arn, notifiers.AlertLink(n.ProtoNotifier().GetUiEndpoint(), "test"), &storage.Alert{
 				Id: uuid.NewV4().String(),
 				Policy: &storage.Policy{
 					Id:          uuid.NewV4().String(),
@@ -400,4 +399,12 @@ func (n *notifier) AlertNotify(ctx context.Context, alert *storage.Alert) error 
 	case <-ctx.Done():
 		return ctx.Err()
 	}
+}
+
+func (n *notifier) AckAlert(_ context.Context, _ *storage.Alert) error {
+	return nil
+}
+
+func (n *notifier) ResolveAlert(ctx context.Context, alert *storage.Alert) error {
+	return n.AlertNotify(ctx, alert)
 }

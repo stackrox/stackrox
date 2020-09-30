@@ -35,17 +35,17 @@ func (m *MockResolvableAlertNotifier) EXPECT() *MockResolvableAlertNotifierMockR
 }
 
 // AckAlert mocks base method
-func (m *MockResolvableAlertNotifier) AckAlert(arg0 *storage.Alert) error {
+func (m *MockResolvableAlertNotifier) AckAlert(arg0 context.Context, arg1 *storage.Alert) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AckAlert", arg0)
+	ret := m.ctrl.Call(m, "AckAlert", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AckAlert indicates an expected call of AckAlert
-func (mr *MockResolvableAlertNotifierMockRecorder) AckAlert(arg0 interface{}) *gomock.Call {
+func (mr *MockResolvableAlertNotifierMockRecorder) AckAlert(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AckAlert", reflect.TypeOf((*MockResolvableAlertNotifier)(nil).AckAlert), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AckAlert", reflect.TypeOf((*MockResolvableAlertNotifier)(nil).AckAlert), arg0, arg1)
 }
 
 // AlertNotify mocks base method
@@ -91,17 +91,17 @@ func (mr *MockResolvableAlertNotifierMockRecorder) ProtoNotifier() *gomock.Call 
 }
 
 // ResolveAlert mocks base method
-func (m *MockResolvableAlertNotifier) ResolveAlert(arg0 *storage.Alert) error {
+func (m *MockResolvableAlertNotifier) ResolveAlert(arg0 context.Context, arg1 *storage.Alert) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveAlert", arg0)
+	ret := m.ctrl.Call(m, "ResolveAlert", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ResolveAlert indicates an expected call of ResolveAlert
-func (mr *MockResolvableAlertNotifierMockRecorder) ResolveAlert(arg0 interface{}) *gomock.Call {
+func (mr *MockResolvableAlertNotifierMockRecorder) ResolveAlert(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveAlert", reflect.TypeOf((*MockResolvableAlertNotifier)(nil).ResolveAlert), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveAlert", reflect.TypeOf((*MockResolvableAlertNotifier)(nil).ResolveAlert), arg0, arg1)
 }
 
 // Test mocks base method

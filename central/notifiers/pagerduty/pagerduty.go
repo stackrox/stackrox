@@ -110,12 +110,12 @@ func (p *pagerDuty) Test(ctx context.Context) error {
 	}, newAlert)
 }
 
-func (p *pagerDuty) AckAlert(alert *storage.Alert) error {
-	return p.postAlert(context.Background(), alert, ackAlert)
+func (p *pagerDuty) AckAlert(ctx context.Context, alert *storage.Alert) error {
+	return p.postAlert(ctx, alert, ackAlert)
 }
 
-func (p *pagerDuty) ResolveAlert(alert *storage.Alert) error {
-	return p.postAlert(context.Background(), alert, resolveAlert)
+func (p *pagerDuty) ResolveAlert(ctx context.Context, alert *storage.Alert) error {
+	return p.postAlert(ctx, alert, resolveAlert)
 }
 
 func (p *pagerDuty) postAlert(ctx context.Context, alert *storage.Alert, eventType string) error {

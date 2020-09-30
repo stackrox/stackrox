@@ -39,9 +39,9 @@ func sendResolvableNotification(notifier notifiers.ResolvableAlertNotifier, aler
 	var err error
 	switch alert.GetState() {
 	case storage.ViolationState_SNOOZED:
-		err = notifier.AckAlert(alert)
+		err = notifier.AckAlert(context.Background(), alert)
 	case storage.ViolationState_RESOLVED:
-		err = notifier.ResolveAlert(alert)
+		err = notifier.ResolveAlert(context.Background(), alert)
 	}
 	if err != nil {
 		logFailure(notifier, alert, err)

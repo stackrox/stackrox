@@ -1,6 +1,8 @@
 package notifiers
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -9,7 +11,7 @@ import (
 type ResolvableAlertNotifier interface {
 	AlertNotifier
 	// AckAlert sends an acknowledgement of an alert.
-	AckAlert(alert *storage.Alert) error
+	AckAlert(ctx context.Context, alert *storage.Alert) error
 	// ResolveAlert resolves an alert.
-	ResolveAlert(alert *storage.Alert) error
+	ResolveAlert(ctx context.Context, alert *storage.Alert) error
 }
