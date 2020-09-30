@@ -1,6 +1,7 @@
 {{- include "srox.init" . -}}
 
 {{- if ._rox.central.persistence._pvcCfg }}
+{{- if ._rox.central.persistence._pvcCfg.storageClass -}}
 {{- if eq ._rox.central.persistence._pvcCfg.storageClass "stackrox-gke-ssd" }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -17,4 +18,5 @@ provisioner: kubernetes.io/gce-pd
 parameters:
   type: pd-ssd
 {{- end }}
+{{- end -}}
 {{- end }}

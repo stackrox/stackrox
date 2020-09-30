@@ -2,10 +2,12 @@ package renderer
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
@@ -21,19 +23,23 @@ func getBaseConfig() Config {
 				ScannerImage: "stackrox.io/scanner:0.4.2",
 			},
 		},
-		SecretsByteMap: map[string][]byte{
-			"ca.pem":      []byte("ca-cert"),
-			"ca-key.pem":  []byte("ca-key"),
-			"jwt-key.der": []byte("jwt-key"),
-		},
 	}
 }
 
 func TestRender(t *testing.T) {
-	ei := testutils.NewEnvIsolator(t)
-	defer ei.RestoreAll()
-	ei.Setenv(features.CentralInstallationExperience.EnvVar(), "false")
-	suite.Run(t, new(renderSuite))
+	for _, experienceVal := range []bool{false, true} {
+		t.Run(fmt.Sprintf("newExperience=%t", experienceVal), func(t *testing.T) {
+			ei := testutils.NewEnvIsolator(t)
+			defer ei.RestoreAll()
+
+			if buildinfo.ReleaseBuild && experienceVal != features.CentralInstallationExperience.Enabled() {
+				t.Skip("cannot set feature flags in release mode")
+			}
+
+			ei.Setenv(features.CentralInstallationExperience.EnvVar(), strconv.FormatBool(experienceVal))
+			suite.Run(t, new(renderSuite))
+		})
+	}
 }
 
 type renderSuite struct {

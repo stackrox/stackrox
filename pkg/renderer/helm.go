@@ -13,8 +13,21 @@ func loadAndMergeValues(valuesFiles []*zip.File) (chartutil.Values, error) {
 		if err != nil {
 			return nil, errors.Wrapf(err, "reading helm values from %s", file.Name)
 		}
+		removeNilEntries(values)
 		mergedValues = chartutil.CoalesceTables(mergedValues, values)
 	}
 
 	return mergedValues, nil
+}
+
+func removeNilEntries(values chartutil.Values) {
+	for k, v := range values {
+		if v == nil {
+			delete(values, k)
+			continue
+		}
+		if vMap, ok := v.(map[string]interface{}); ok {
+			removeNilEntries(vMap)
+		}
+	}
 }

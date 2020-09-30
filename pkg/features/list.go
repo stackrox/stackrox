@@ -39,5 +39,5 @@ var (
 	ComplianceInRocksDB = registerFeature("Switch compliance to using RocksDB", "ROX_COMPLIANCE_IN_ROCKSDB", true)
 
 	// CentralInstallationExperience enables new features related to the new installation experience.
-	CentralInstallationExperience = registerFeature("Enable new installation user experience", "ROX_CENTRAL_INSTALLATION_EXPERIENCE", false)
+	CentralInstallationExperience = registerFeature("Enable new installation user experience", "ROX_CENTRAL_INSTALLATION_EXPERIENCE", true)
 )
