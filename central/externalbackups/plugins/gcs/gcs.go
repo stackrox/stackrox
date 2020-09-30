@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
@@ -62,7 +63,7 @@ func newGCS(integration *storage.ExternalBackup) (*gcs, error) {
 
 	client, err := googleStorage.NewClient(context.Background(), option.WithCredentialsJSON([]byte(conf.GetServiceAccount())))
 	if err != nil {
-		return nil, errors.Wrap(err, "could not create GCS client")
+		return nil, createError("could not create GCS client", err)
 	}
 	return &gcs{
 		bucketHandle:  client.Bucket(conf.GetBucket()),
@@ -163,7 +164,7 @@ func (s *gcs) Backup(reader io.ReadCloser) error {
 
 	log.Infof("Starting GCS Backup for file %v", formattedKey)
 	if err := s.send(backupMaxTimeout, formattedKey, reader); err != nil {
-		return errors.Wrapf(err, "error creating backup in bucket %q with key %q", s.bucket, formattedKey)
+		return createError(fmt.Sprintf("error creating backup in bucket %q with key %q", s.bucket, formattedKey), err)
 	}
 	log.Info("Successfully backed up to GCS")
 	go s.pruneBackupsIfNecessary()
@@ -174,13 +175,23 @@ func (s *gcs) Test() error {
 	formattedKey := s.prefixKey(fmt.Sprintf("%s-test-%s", backupPrefix, formattedTime()))
 	reader := strings.NewReader("This is a test of the StackRox integration with this bucket")
 	if err := s.send(timeout, formattedKey, reader); err != nil {
-		return errors.Wrapf(err, "error creating test object %q in bucket %q", formattedKey, s.bucket)
+		return createError(fmt.Sprintf("error creating test object %q in bucket %q", formattedKey, s.bucket), err)
 	}
 
 	if err := s.delete(formattedKey); err != nil {
-		return errors.Wrap(err, "deleting test object")
+		return createError("deleting test object", err)
 	}
 	return nil
+}
+
+func createError(msg string, err error) error {
+	if gErr, _ := err.(*googleapi.Error); gErr != nil {
+		msg = fmt.Sprintf("%s (code: %d)", msg, gErr.Code)
+	} else {
+		msg = fmt.Sprintf("%s: %v", msg, err)
+	}
+	log.Errorf("GCS backup error: %v", err)
+	return errors.New(msg)
 }
 
 func init() {

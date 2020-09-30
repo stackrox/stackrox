@@ -151,7 +151,16 @@ func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error
 
 // Test tests the current registry and makes sure that it is working properly
 func (r *Registry) Test() error {
-	return r.Client.Ping()
+	err := r.Client.Ping()
+
+	if err != nil {
+		logging.Errorf("error testing docker integration: %v", err)
+		if e, _ := err.(*registry.ClientError); e != nil {
+			return errors.New(fmt.Sprintf(" error testing integration (code: %d).Please check Central logs for full error", e.Code()))
+		}
+		return err
+	}
+	return nil
 }
 
 // Config returns the configuration of the docker registry

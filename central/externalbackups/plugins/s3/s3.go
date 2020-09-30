@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsS3 "github.com/aws/aws-sdk-go/service/s3"
@@ -162,7 +163,9 @@ func (s *s3) Backup(reader io.ReadCloser) error {
 		Body:   reader,
 	}
 	if err := s.send(backupMaxTimeout, ui); err != nil {
-		return errors.Wrapf(err, "error creating backup in bucket %q with key %q", s.integration.GetS3().GetBucket(), formattedKey)
+		return createError(fmt.Sprintf("error creating backup in bucket %q with key %q",
+			s.integration.GetS3().GetBucket(), formattedKey), err)
+
 	}
 	log.Info("Successfully backed up to S3")
 	return s.pruneBackupsIfNecessary()
@@ -176,16 +179,27 @@ func (s *s3) Test() error {
 		Body:   strings.NewReader("This is a test of the StackRox integration with this bucket"),
 	}
 	if err := s.send(testMaxTimeout, ui); err != nil {
-		return errors.Wrapf(err, "error creating test object %q in bucket %q", formattedKey, s.integration.GetS3().GetBucket())
+		return createError(fmt.Sprintf("error creating test object %q in bucket %q",
+			formattedKey, s.integration.GetS3().GetBucket()), err)
+
 	}
 	_, err := s.svc.DeleteObject(&awsS3.DeleteObjectInput{
 		Bucket: aws.String(s.integration.GetS3().GetBucket()),
 		Key:    aws.String(formattedKey),
 	})
 	if err != nil {
-		return errors.Wrapf(err, "failed to remove test object %q from bucket %q", formattedKey, s.integration.GetS3().GetBucket())
+		return createError(fmt.Sprintf("failed to remove test object %q from bucket %q",
+			formattedKey, s.integration.GetS3().GetBucket()), err)
 	}
 	return nil
+}
+
+func createError(msg string, err error) error {
+	if awsErr, _ := err.(awserr.Error); awsErr != nil {
+		msg = fmt.Sprintf("%s (code: %s; message: %s)", msg, awsErr.Code(), awsErr.Message())
+	}
+	log.Errorf("S3 backup error: %v", err)
+	return errors.New(msg)
 }
 
 func init() {

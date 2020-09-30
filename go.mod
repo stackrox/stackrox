@@ -122,7 +122,7 @@ replace (
 
 	// Something pulls in an older version with uppercase OpenAPIv2 package version
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.1
-	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20200409184839-c0893dd603f8
+	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20200930173048-36c5a823baf5
 	github.com/mattn/goveralls => github.com/viswajithiii/goveralls v0.0.3-0.20190917224517-4dd02c532775
 	github.com/nilslice/protolock => github.com/viswajithiii/protolock v0.10.1-0.20190117180626-43bb8a9ba4e8
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc9

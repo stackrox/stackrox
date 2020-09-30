@@ -499,9 +499,9 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         "invalid endpoint"
 
         new AzureRegistryIntegration() | { [username: "WRONG",]
-        }       | StatusRuntimeException | /UNAUTHORIZED/   | "incorrect user"
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/   | "incorrect user"
         new AzureRegistryIntegration() | { [password: "WRONG",]
-        }       | StatusRuntimeException | /UNAUTHORIZED/   | "incorrect password"
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/   | "incorrect password"
         new AzureRegistryIntegration() | { [endpoint: "http://127.0.0.1/nowhere",]
         }       | StatusRuntimeException |
         /invalid endpoint: endpoint cannot reference localhost/ |
@@ -529,7 +529,7 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         }       | StatusRuntimeException |
         /invalid endpoint: endpoint cannot reference the cluster metadata service/ | "invalid endpoint"
         new QuayImageIntegration()      | { [oauthToken: "EnFzYsRVC4TIBjRenrKt9193KSz9o7vkoWiIGX86",]
-        }       | StatusRuntimeException | /Invalid bearer token format/ | "incorrect token"
+        }       | StatusRuntimeException | /INVALID_ARGUMENT/ | "incorrect token"
         new GCRImageIntegration() | { [endpoint: "http://127.0.0.1/nowhere",]
         }       | StatusRuntimeException |
         /invalid endpoint: endpoint cannot reference localhost/ |

@@ -2,8 +2,13 @@ package artifactory
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
+)
+
+var (
+	logger = logging.LoggerForModule()
 )
 
 // Creator provides the type and registries.Creator to add to the registry of image registries.
@@ -28,5 +33,8 @@ func newRegistry(integration *storage.ImageIntegration) (types.Registry, error) 
 // Test implements a valid Test function for Artifactory
 func (r *registry) Test() error {
 	_, err := r.Client.Repositories()
+	if err != nil {
+		logger.Errorf("error testing Artifactory integration: %v", err)
+	}
 	return err
 }

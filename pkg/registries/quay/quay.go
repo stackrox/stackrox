@@ -92,16 +92,18 @@ func (q *Quay) Test() error {
 	}
 	resp, err := client.Get(discoveryURL)
 	if err != nil {
-		return err
+		log.Errorf("Quay error response: %d", resp.StatusCode)
+		return errors.Errorf("received http status code %d from Quay. Check Central logs for full error.", resp.StatusCode)
 	}
+
 	defer utils.IgnoreError(resp.Body.Close)
 	if !httputil.Is2xxOr3xxStatusCode(resp.StatusCode) {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return errors.Errorf("Error reaching quay.io with HTTP code %d", resp.StatusCode)
+			return errors.Errorf("error reaching quay.io with HTTP code %d", resp.StatusCode)
 		}
 		log.Errorf("Quay error response: %d %s", resp.StatusCode, string(body))
-		return errors.Errorf("Received http status code %d from Quay. Check central logs for full error.", resp.StatusCode)
+		return errors.Errorf("received http status code %d from Quay. Check Central logs for full error.", resp.StatusCode)
 	}
 	return nil
 }
