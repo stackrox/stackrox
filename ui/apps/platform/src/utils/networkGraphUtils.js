@@ -1183,12 +1183,12 @@ export function getEgressPortsAndProtocols(networkFlows) {
 }
 
 /**
- * Returns whether the type of element is a hoverable "node" (like deployment or external entities)
+ * Determines if the node is hoverable (like deployment or external entities)
  *
- * @param   {string}  type  the type of our graph element representation
+ * @param {string} type the type of our graph node
  *
- * @return  {boolean}
+ * @return {boolean}
  */
-export function getNodeHoverable(type) {
+export function getIsNodeHoverable(type) {
     return type === entityTypes.DEPLOYMENT || type === EXTERNAL_ENTITIES_TYPE;
 }

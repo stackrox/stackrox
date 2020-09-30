@@ -43,7 +43,7 @@ import {
     getIngressPortsAndProtocols,
     getEgressPortsAndProtocols,
     edgeTypes,
-    getNodeHoverable,
+    getIsNodeHoverable,
 } from 'utils/networkGraphUtils';
 import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 
@@ -134,8 +134,8 @@ const NetworkGraph = ({
     function nodeHoverHandler(ev) {
         const node = ev.target.data();
         const { id, name, parent, listenPorts, side, type } = node;
-        const isHoverableNode = getNodeHoverable(type);
-        if (!cyRef || !isHoverableNode || side) {
+        const isNodeHoverable = getIsNodeHoverable(type);
+        if (!cyRef || !isNodeHoverable || side) {
             return;
         }
 
@@ -224,18 +224,6 @@ const NetworkGraph = ({
     function mouseOutHandler() {
         hideTooltip();
         setHoveredElement();
-    }
-
-    function nodeMouseOutHandler() {
-        if (getNodeHoverable(hoveredElement?.type)) {
-            mouseOutHandler();
-        }
-    }
-
-    function edgeMouseOutHandler() {
-        if (includes(Object.values(edgeTypes), hoveredElement?.type)) {
-            mouseOutHandler();
-        }
     }
 
     function clickHandler(ev) {
@@ -348,7 +336,7 @@ const NetworkGraph = ({
     }
 
     function getConfigObj() {
-        const hoveredNode = getNodeHoverable(hoveredElement?.type) ? hoveredElement : null;
+        const hoveredNode = getIsNodeHoverable(hoveredElement?.type) ? hoveredElement : null;
         const hoveredEdge = includes(Object.values(edgeTypes), hoveredElement?.type)
             ? hoveredElement
             : null;
@@ -556,10 +544,9 @@ const NetworkGraph = ({
         cyRef.current
             .off('click mouseover mouseout mousedown drag')
             .on('click', clickHandler)
-            .on('mouseover', 'node', throttle(nodeHoverHandler, 100))
-            .on('mouseout mousedown', 'node', debounce(nodeMouseOutHandler, 100))
+            .on('mouseover', 'node', debounce(nodeHoverHandler, 200))
             .on('mouseover', 'edge', debounce(edgeHoverHandler, 200))
-            .on('mouseout mousedown', 'edge', debounce(edgeMouseOutHandler, 100))
+            .on('mouseout mousedown', debounce(mouseOutHandler, 100))
             .on('drag', throttle(handleDrag, 100))
             .on('zoom', zoomHandler)
             .ready(() => {
