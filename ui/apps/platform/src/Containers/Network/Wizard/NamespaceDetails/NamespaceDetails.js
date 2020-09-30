@@ -7,6 +7,7 @@ import { withRouter } from 'react-router-dom';
 import { capitalize } from 'lodash';
 import { createStructuredSelector } from 'reselect';
 
+import { actions as graphActions } from 'reducers/network/graph';
 import { types as deploymentTypes } from 'reducers/deployments';
 import { selectors } from 'reducers';
 import { sortValue } from 'sorters/sorters';
@@ -25,6 +26,8 @@ class NamespaceDetails extends Component {
         wizardOpen: PropTypes.bool.isRequired,
         wizardStage: PropTypes.string.isRequired,
         isFetchingNamespace: PropTypes.bool,
+        setSelectedNamespace: PropTypes.func.isRequired,
+        setSelectedNodeInGraph: PropTypes.func.isRequired,
         onClose: PropTypes.func.isRequired,
         namespace: PropTypes.shape({
             id: PropTypes.string,
@@ -99,9 +102,11 @@ class NamespaceDetails extends Component {
     };
 
     onPanelClose = () => {
-        const { onClose, history } = this.props;
-        history.push('/main/network');
+        const { onClose, setSelectedNamespace, setSelectedNodeInGraph, history } = this.props;
         onClose();
+        setSelectedNamespace(null);
+        setSelectedNodeInGraph(null);
+        history.push('/main/network');
     };
 
     renderTable() {
@@ -189,5 +194,9 @@ const mapStateToProps = createStructuredSelector({
     networkGraphRef: selectors.getNetworkGraphRef,
     filterState: selectors.getNetworkGraphFilterMode,
 });
+const mapDispatchToProps = {
+    setSelectedNamespace: graphActions.setSelectedNamespace,
+    setSelectedNodeInGraph: graphActions.setSelectedNode,
+};
 
-export default withRouter(connect(mapStateToProps)(NamespaceDetails));
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(NamespaceDetails));

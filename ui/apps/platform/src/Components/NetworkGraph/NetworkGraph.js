@@ -72,6 +72,7 @@ const NetworkGraph = ({
     match,
     featureFlags,
     lastUpdatedTimestamp,
+    selectedNamespace,
 }) => {
     const [selectedNode, setSelectedNode] = useState();
     const [hoveredElement, setHoveredElement] = useState();
@@ -613,7 +614,11 @@ const NetworkGraph = ({
             setSelectedNode(node[0].data);
             onNodeClick(node[0].data);
         }
-        if (selectedNode && isNamespace(selectedNode)) {
+        if (
+            selectedNode &&
+            isNamespace(selectedNode) &&
+            selectedNode?.id === selectedNamespace?.id
+        ) {
             onNamespaceClick({
                 id: selectedNode.id,
                 deployments: namespacesWithDeployments[selectedNode.id] || [],
@@ -696,6 +701,10 @@ NetworkGraph.propTypes = {
     selectedClusterName: PropTypes.string.isRequired,
     featureFlags: PropTypes.arrayOf(PropTypes.shape),
     lastUpdatedTimestamp: PropTypes.instanceOf(Date),
+    selectedNamespace: PropTypes.shape({
+        id: PropTypes.string,
+        deployments: PropTypes.arrayOf(PropTypes.shape({})),
+    }),
 };
 
 NetworkGraph.defaultProps = {
@@ -703,6 +712,7 @@ NetworkGraph.defaultProps = {
     networkEdgeMap: {},
     featureFlags: [],
     lastUpdatedTimestamp: null,
+    selectedNamespace: null,
 };
 
 export default withRouter(NetworkGraph);

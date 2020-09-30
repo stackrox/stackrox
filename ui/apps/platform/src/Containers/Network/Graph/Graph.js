@@ -36,6 +36,10 @@ class Graph extends Component {
 
         setSelectedNode: PropTypes.func.isRequired,
         setSelectedNamespace: PropTypes.func.isRequired,
+        selectedNamespace: PropTypes.shape({
+            id: PropTypes.string,
+            deployments: PropTypes.arrayOf(PropTypes.shape({})),
+        }),
         fetchDeployment: PropTypes.func.isRequired,
         clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
         selectedClusterId: PropTypes.string,
@@ -54,6 +58,7 @@ class Graph extends Component {
         featureFlags: [],
         setSelectedNodeInGraph: null,
         lastUpdatedTimestamp: null,
+        selectedNamespace: null,
     };
 
     shouldComponentUpdate(nextProps) {
@@ -119,6 +124,7 @@ class Graph extends Component {
             setSelectedNamespace,
             setSelectedNodeInGraph,
             lastUpdatedTimestamp,
+            selectedNamespace,
         } = this.props;
 
         const selectedClusterName =
@@ -140,6 +146,7 @@ class Graph extends Component {
                 setSelectedNamespace={setSelectedNamespace}
                 setSelectedNodeInGraph={setSelectedNodeInGraph}
                 lastUpdatedTimestamp={lastUpdatedTimestamp}
+                selectedNamespace={selectedNamespace}
             />
         );
     };
@@ -189,6 +196,7 @@ const mapStateToProps = createStructuredSelector({
     networkWizardStage: selectors.getNetworkWizardStage,
     networkPolicyModification: selectors.getNetworkPolicyModification,
     lastUpdatedTimestamp: selectors.getLastUpdatedTimestamp,
+    selectedNamespace: selectors.getSelectedNamespace,
 });
 
 const mapDispatchToProps = {
