@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/roxctl/helm/derivelocalvalues"
 	"github.com/stackrox/rox/roxctl/helm/output"
 )
 
@@ -28,6 +29,7 @@ func Command() *cobra.Command {
 	}
 
 	c.AddCommand(output.Command())
+	c.AddCommand(derivelocalvalues.Command())
 
 	return c
 }

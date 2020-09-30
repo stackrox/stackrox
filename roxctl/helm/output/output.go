@@ -5,8 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sort"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -14,31 +12,15 @@ import (
 	"github.com/stackrox/rox/pkg/charts"
 	"github.com/stackrox/rox/pkg/helmtpl"
 	"github.com/stackrox/rox/pkg/helmutil"
+	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
 // These are actually const.
 
-var (
-	chartTemplates = map[string]string{
-		"central-services": image.CentralServicesChartPrefix,
-	}
-	prettyChartNameList string
-)
-
-// Initialize `prettyChartNameList` for usage information.
-func init() {
-	chartTemplateNames := make([]string, 0, len(chartTemplates))
-	for name := range chartTemplates {
-		chartTemplateNames = append(chartTemplateNames, name)
-	}
-	sort.Strings(chartTemplateNames)
-	prettyChartNameList = strings.Join(chartTemplateNames, " | ")
-}
-
 func outputHelmChart(chartName string, outputDir string) error {
 	// Lookup chart template prefix.
-	chartTemplatePathPrefix := chartTemplates[chartName]
+	chartTemplatePathPrefix := common.ChartTemplates[chartName]
 	if chartTemplatePathPrefix == "" {
 		return errors.New("unknown chart, see --help for list of supported chart names")
 	}
@@ -96,7 +78,7 @@ func Command() *cobra.Command {
 	var outputDir string
 
 	c := &cobra.Command{
-		Use: fmt.Sprintf("output <%s>", prettyChartNameList),
+		Use: fmt.Sprintf("output <%s>", common.PrettyChartNameList),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("incorrect number of arguments, see --help for usage information")
