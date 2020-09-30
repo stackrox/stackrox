@@ -17,6 +17,11 @@ function launch_service {
           exit 1
         elif [[ "$helm_version" == v2.* ]]; then
           echo "Detected Helm v2"
+          if [[ -f "$dir/values-public.yaml" ]]; then
+            echo "The new helm chart cannot be deployed with Helm ${helm_version}."
+            echo "Please upgrade to at least Helm v3.1.0"
+            return 1
+          fi
           helm_install() { helm install "$dir/$1" --name "$1" --tiller-connection-timeout 10 ; }
         elif [[ "$helm_version" == v3.* ]]; then
           echo "Detected Helm v3"
@@ -180,44 +185,93 @@ function launch_central {
 	fi
 
     echo "Deploying Central..."
-    $unzip_dir/central/scripts/setup.sh
-    launch_service $unzip_dir central
-    echo
 
-    if [[ "${is_local_dev}" == "true" ]]; then
-        kubectl -n stackrox patch deploy/central --patch '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
-        if [[ "${HOTRELOAD}" == "true" ]]; then
-          hotload_binary central central central
-        fi
+    if [[ -f "$unzip_dir/values-public.yaml" ]]; then
+      $unzip_dir/scripts/setup.sh
+      central_scripts_dir="$unzip_dir/scripts"
+
+      # New helm setup flavor
+      helm_args=(
+        -f "$unzip_dir/values-public.yaml"
+        -f "$unzip_dir/values-private.yaml"
+        --set-string imagePullSecrets.useExisting="stackrox;stackrox-scanner"
+      )
+
+      if [[ "$SCANNER_SUPPORT" != "true" ]]; then
+        helm_args+=(--set scanner.disable=true)
+      fi
+
+      if [[ "${is_local_dev}" == "true" ]]; then
+        helm_args+=(-f "${COMMON_DIR}/local-dev-values.yaml")
+      elif [[ -n "$CI" ]]; then
+        helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
+      fi
+
+      if [[ "${CGO_CHECKS}" == "true" ]]; then
+        echo "CGO_CHECKS set to true. Setting GODEBUG=cgocheck=2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
+        # Extend mutex watchdog timeout because cgochecks hamper performance
+        helm_args+=(
+          --set customize.central.envVars.GODEBUG=cgocheck=2
+          --set customize.central.envVars.MUTEX_WATCHDOG_TIMEOUT_SECS=15
+        )
+      fi
+
+      # set logging options
+      if [[ -n $LOGLEVEL ]]; then
+        helm_args+=(
+          --set customize.central.envVars.LOGLEVEL="${LOGLEVEL}"
+        )
+      fi
+      if [[ -n $MODULE_LOGLEVELS ]]; then
+        helm_args+=(
+          --set customize.central.envVars.MODULE_LOGLEVELS="${MODULE_LOGLEVELS}"
+        )
+      fi
+
+      helm install -n stackrox stackrox-central-services "$unzip_dir/chart" \
+          "${helm_args[@]}"
+    else
+      $unzip_dir/central/scripts/setup.sh
+      central_scripts_dir="$unzip_dir/central/scripts"
+      launch_service $unzip_dir central
+      echo
+
+      if [[ "${is_local_dev}" == "true" ]]; then
+          kubectl -n stackrox patch deploy/central --patch '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
+      fi
+
+      if [[ "${CGO_CHECKS}" == "true" ]]; then
+        echo "CGO_CHECKS set to true. Setting GODEBUG=cgocheck=2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
+        # Extend mutex watchdog timeout because cgochecks hamper performance
+        ${ORCH_CMD} -n stackrox set env deploy/central GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=15
+      fi
+
+      # set logging options
+      if [[ -n $LOGLEVEL ]]; then
+        ${ORCH_CMD} -n stackrox set env deploy/central LOGLEVEL="${LOGLEVEL}"
+      fi
+      if [[ -n $MODULE_LOGLEVELS ]]; then
+        ${ORCH_CMD} -n stackrox set env deploy/central MODULE_LOGLEVELS="${MODULE_LOGLEVELS}"
+      fi
+
+      if [[ "$SCANNER_SUPPORT" == "true" ]]; then
+          echo "Deploying Scanning..."
+          $unzip_dir/scanner/scripts/setup.sh
+          launch_service $unzip_dir scanner
+
+          if [[ -n "$CI" ]]; then
+            ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-patch.yaml")"
+            ${ORCH_CMD} -n stackrox patch hpa scanner --patch "$(cat "${common_dir}/scanner-hpa-patch.yaml")"
+          elif [[ "${is_local_dev}" == "true" ]]; then
+            ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-local-patch.yaml")"
+            ${ORCH_CMD} -n stackrox patch hpa scanner --patch "$(cat "${common_dir}/scanner-hpa-patch.yaml")"
+          fi
+          echo
+      fi
     fi
 
-    if [[ "${CGO_CHECKS}" == "true" ]]; then
-      echo "CGO_CHECKS set to true. Setting GODEBUG=cgocheck=2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
-      # Extend mutex watchdog timeout because cgochecks hamper performance
-      ${ORCH_CMD} -n stackrox set env deploy/central GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=15
-    fi
-
-    # set logging options
-    if [[ -n $LOGLEVEL ]]; then
-      ${ORCH_CMD} -n stackrox set env deploy/central LOGLEVEL="${LOGLEVEL}"
-    fi
-    if [[ -n $MODULE_LOGLEVELS ]]; then
-      ${ORCH_CMD} -n stackrox set env deploy/central MODULE_LOGLEVELS="${MODULE_LOGLEVELS}"
-    fi
-
-    if [[ "$SCANNER_SUPPORT" == "true" ]]; then
-        echo "Deploying Scanning..."
-        $unzip_dir/scanner/scripts/setup.sh
-        launch_service $unzip_dir scanner
-
-        if [[ -n "$CI" ]]; then
-          ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-patch.yaml")"
-          ${ORCH_CMD} -n stackrox patch hpa scanner --patch "$(cat "${common_dir}/scanner-hpa-patch.yaml")"
-        elif [[ "${is_local_dev}" == "true" ]]; then
-          ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-local-patch.yaml")"
-          ${ORCH_CMD} -n stackrox patch hpa scanner --patch "$(cat "${common_dir}/scanner-hpa-patch.yaml")"
-        fi
-        echo
+    if [[ "${is_local_dev}" == "true" && "${HOTRELOAD}" == "true" ]]; then
+      hotload_binary central central central
     fi
 
     # if we have specified that we want to use a load balancer, then use that endpoint instead of localhost
@@ -232,7 +286,7 @@ function launch_central {
         done
         export API_ENDPOINT="${LB_IP}:443"
     else
-        $unzip_dir/central/scripts/port-forward.sh 8000
+        $central_scripts_dir/port-forward.sh 8000
     fi
 
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then

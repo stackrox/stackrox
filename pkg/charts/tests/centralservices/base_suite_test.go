@@ -7,7 +7,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/charts"
 	"github.com/stackrox/rox/pkg/helmutil"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -16,10 +18,13 @@ import (
 )
 
 var (
-	metaValues = map[string]interface{}{
-		"ChartVersion":   "1.0.0",
-		"MainVersion":    "0.0.49.0",
-		"ScannerVersion": "0.0.1",
+	metaValues = &charts.MetaValues{
+		Versions: version.Versions{
+			ChartVersion:   "1.0.0",
+			MainVersion:    "3.0.49.0",
+			ScannerVersion: "1.2.3",
+		},
+		MainRegistry: "stackrox.io",
 	}
 
 	installOpts = helmutil.Options{
@@ -134,7 +139,7 @@ func (s *baseSuite) TestAllGeneratableExplicit() {
 	_, rendered := s.LoadAndRender(allValuesExplicit)
 
 	for k, v := range rendered {
-		if path.Base(k) == "99-generated-values.yaml" {
+		if path.Base(k) == "99-generated-values-secret.yaml" {
 			s.Empty(v, "expected generated values file to be empty when specifying all generatable values")
 		} else {
 			s.NotEmptyf(v, "unexpected empty rendered YAML %s", k)

@@ -1,6 +1,7 @@
 package certgen
 
 import (
+	"encoding/pem"
 	"fmt"
 	"net/http"
 
@@ -52,6 +53,10 @@ func (s *serviceImpl) centralHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	secrets["jwt-key.der"] = jwtKey
+	secrets["jwt-key.pem"] = pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: jwtKey,
+	})
 
 	rendered, err := renderer.RenderCentralTLSSecretOnly(renderer.Config{
 		K8sConfig:      &renderer.K8sConfig{},

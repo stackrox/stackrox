@@ -6,7 +6,7 @@ defaults:
     useFromDefaultServiceAccount: true
 
   image:
-    registry: stackrox.io
+    registry: [< .MainRegistry >]
 
   env:
     offlineMode: false
@@ -17,7 +17,7 @@ defaults:
 
     image:
       name: main
-      tag: [<.MainVersion>]
+      tag: [< .Versions.MainVersion >]
 
     resources:
       requests:
@@ -57,7 +57,7 @@ defaults:
 
     image:
       name: scanner
-      tag: [<.ScannerVersion>]
+      tag: [< .Versions.ScannerVersion >]
 
     dbResources:
       limits:
@@ -69,7 +69,7 @@ defaults:
 
     dbImage:
       name: scanner-db
-      tag: [<.ScannerVersion>]
+      tag: [< .Versions.ScannerVersion >]
 
 pvcDefaults:
   claimName: "stackrox-db"

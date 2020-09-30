@@ -16,7 +16,7 @@ func (f *fileFormatWrapper) String() string {
 }
 
 func (f *fileFormatWrapper) Set(input string) error {
-	val, ok := v1.DeploymentFormat_value[strings.ToUpper(input)]
+	val, ok := v1.DeploymentFormat_value[strings.Replace(strings.ToUpper(input), "-", "_", -1)]
 	if !ok {
 		return fmt.Errorf("%q is not a valid option", input)
 	}

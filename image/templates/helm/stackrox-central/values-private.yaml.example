@@ -33,7 +33,7 @@
 # # the following:
 # # - `imagePullSecrets.allowNone=true`: in case your registry allows pulling images without
 # #   credentials.
-# # - `imagePullSecrets.useExisting=secret1,secret2,...`: in case you have pre-existing image
+# # - `imagePullSecrets.useExisting="secret1;secret2;..."`: in case you have pre-existing image
 # #   pull secrets with the given name already created in the target namespace.
 # # - `imagePullSecrets.useFromDefaultServiceAccount=true`: in case the default service account
 # #   in the target namespace is configured with sufficiently scoped image pull secrets.

@@ -4,14 +4,19 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/zip"
 )
 
@@ -77,7 +82,6 @@ func (m PersistenceType) String() string {
 // K8sConfig contains k8s fields
 type K8sConfig struct {
 	CommonConfig
-	ConfigType v1.DeploymentFormat
 
 	// K8s Application name
 	AppName string
@@ -105,6 +109,8 @@ type K8sConfig struct {
 
 	// IstioVersion is the version of Istio to render for (if any)
 	IstioVersion string
+
+	ImageOverrides map[string]interface{}
 }
 
 // Config configures the deployer for the central service.
@@ -139,7 +145,7 @@ type Config struct {
 }
 
 func executeRawTemplate(raw []byte, c *Config) ([]byte, error) {
-	t, err := template.New("temp").Parse(string(raw))
+	t, err := template.New("temp").Funcs(sprig.TxtFuncMap()).Parse(string(raw))
 	if err != nil {
 		return nil, err
 	}
@@ -182,6 +188,37 @@ func (c Config) WriteInstructions(w io.Writer) error {
 	return nil
 }
 
+// GetConfigOverride retrieves the contents of the config override file `name`.
+func (c Config) GetConfigOverride(name string) (string, error) {
+	tgtFile := c.ConfigFileOverrides[name]
+	if tgtFile == "" {
+		return "", nil
+	}
+
+	f, err := os.Open(tgtFile)
+	if err != nil {
+		return "", errors.Wrapf(err, "opening override file %s for config file %s", tgtFile, name)
+	}
+	defer utils.IgnoreError(f.Close)
+
+	contents, err := ioutil.ReadAll(f)
+	if err != nil {
+		return "", errors.Wrapf(err, "reading contents of file %s", tgtFile)
+	}
+
+	return string(contents), nil
+}
+
 func standardizeWhitespace(instructions string) string {
 	return strings.TrimSpace(instructions) + "\n"
+}
+
+// EnvironmentMap returns the values of Environment in the form of a map[string]interface{}
+// that can be used with sprig template functions.
+func (c Config) EnvironmentMap() map[string]interface{} {
+	result := make(map[string]interface{}, len(c.Environment))
+	for k, v := range c.Environment {
+		result[k] = v
+	}
+	return result
 }

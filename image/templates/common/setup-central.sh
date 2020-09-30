@@ -22,13 +22,6 @@ KUBE_COMMAND=${KUBE_COMMAND:-{{.K8sConfig.Command}}}
 ${KUBE_COMMAND} get namespace stackrox &>/dev/null || ${KUBE_COMMAND} create namespace stackrox
 ${KUBE_COMMAND} -n stackrox annotate namespace/stackrox --overwrite openshift.io/node-selector=""
 
-if ! ${KUBE_COMMAND} get crd/applications.app.k8s.io &>/dev/null; then
-  ${KUBE_COMMAND} create -f "$DIR/app-crd.yaml.txt"
-fi
-while ! ${KUBE_COMMAND} get crd/applications.app.k8s.io &>/dev/null; do
-    sleep 1
-done
-
 if ! ${KUBE_COMMAND} get secret/stackrox -n stackrox > /dev/null; then
   registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.K8sConfig.Registry}}")"
   [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }

@@ -83,3 +83,50 @@ func TestAnnotations(t *testing.T) {
 	SetAnnotation(noAnnotationsMutable, "foo2", "bar2")
 	assertObjEqualsYAML(noAnnotationsMutable, testYAMLTwoAnnotations, t)
 }
+
+func TestUnstructuredFromYAMLMulti(t *testing.T) {
+	const yamlDocs = `
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-cm1
+  namespace: default
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-cm2
+  namespace: default
+---
+apiVersion: v1
+kind: List
+items:
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: test-cm3
+    namespace: default
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: test-cm4
+    namespace: default
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-cm5
+  namespace: default
+---
+`
+	objs, err := UnstructuredFromYAMLMulti(yamlDocs)
+	require.NoError(t, err)
+
+	names := make([]string, 0, len(objs))
+	for _, obj := range objs {
+		names = append(names, obj.GetName())
+	}
+
+	assert.Equal(t, []string{"test-cm1", "test-cm2", "test-cm3", "test-cm4", "test-cm5"}, names)
+}

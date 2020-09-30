@@ -1,0 +1,13 @@
+[< if eq .RenderMode "scannerOnly" >]
+!templates/_*.tpl
+!templates/02-scanner-*.yaml
+templates/*
+[< else if eq .RenderMode "scannerTLSOnly" >]
+!templates/_*.tpl
+!templates/02-scanner-03-tls-secret.yaml
+templates/*
+[< else if eq .RenderMode "centralTLSOnly" >]
+!templates/_*.tpl
+!templates/01-central-05-tls-secret.yaml
+templates/*
+[< end >]

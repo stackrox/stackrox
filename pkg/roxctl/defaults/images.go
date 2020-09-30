@@ -10,12 +10,12 @@ import (
 // ScannerImage is the Docker image name for the scanner image. Image
 // repo changes depending on whether or not this is a release build.
 func ScannerImage() string {
-	return fmt.Sprintf("%s/scanner:%s", getRegistry(), version.GetScannerVersion())
+	return fmt.Sprintf("%s/scanner:%s", MainImageRegistry(), version.GetScannerVersion())
 }
 
 // ScannerDBImage is the Docker image name for the scanner db image
 func ScannerDBImage() string {
-	return fmt.Sprintf("%s/scanner-db:%s", getRegistry(), version.GetScannerVersion())
+	return fmt.Sprintf("%s/scanner-db:%s", MainImageRegistry(), version.GetScannerVersion())
 }
 
 // MainImage is the Docker image name for the "main" image. Image repo
@@ -27,10 +27,11 @@ func MainImage() string {
 // MainImageRepo is the Docker image repo for the "main" image. It
 // changes depending on whether or not this is a release build.
 func MainImageRepo() string {
-	return getRegistry() + "/main"
+	return MainImageRegistry() + "/main"
 }
 
-func getRegistry() string {
+// MainImageRegistry is the Docker image registry for the "main" image.
+func MainImageRegistry() string {
 	if buildinfo.ReleaseBuild {
 		return "stackrox.io"
 	}

@@ -41,6 +41,7 @@ type Versions struct {
 	MainVersion      string    `json:"MainVersion"`
 	Platform         string    `json:"Platform"`
 	ScannerVersion   string    `json:"ScannerVersion"`
+	ChartVersion     string    `json:"ChartVersion"`
 }
 
 // GetAllVersions returns all of the various pieces of version information.
@@ -53,6 +54,7 @@ func GetAllVersions() Versions {
 		MainVersion:      GetMainVersion(),
 		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
 		ScannerVersion:   GetScannerVersion(),
+		ChartVersion:     GetChartVersion(),
 	}
 	return v
 }

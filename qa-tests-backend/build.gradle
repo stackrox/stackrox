@@ -62,7 +62,7 @@ dependencies {
     // Use the latest Groovy version for building this library
     compile 'org.codehaus.groovy:groovy-all:2.4.18'
     testCompile group: 'junit', name: 'junit', version: '4.11'
-    testCompile group: 'org.yaml', name: 'snakeyaml', version: '1.16'
+    testCompile group: 'org.yaml', name: 'snakeyaml', version: '1.27'
     compile group: 'com.jayway.restassured', name: 'rest-assured', version: '2.4.1'
     testCompile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
     testCompile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.6.1'
@@ -104,6 +104,13 @@ dependencies {
     // JAX-B dependencies for JDK 9+
     implementation "jakarta.xml.bind:jakarta.xml.bind-api:2.3.2"
     implementation "org.glassfish.jaxb:jaxb-runtime:2.3.2"
+
+    // Required to make codenarc work with JDK 14.
+    // See https://github.com/gradle/gradle/issues/12646.
+    constraints {
+        "codenarc"("org.codehaus.groovy:groovy:2.5.10")
+        "codenarc"("org.codehaus.groovy:groovy-xml:2.5.10")
+    }
 }
 
 
@@ -139,5 +146,3 @@ task updateTestRail(type: JavaExec) {
     // Set classpath for running the Groovy script.
     classpath = sourceSets.main.runtimeClasspath
 }
-
-

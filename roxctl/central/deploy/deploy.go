@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -16,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -36,7 +38,12 @@ func generateJWTSigningKey(fileMap map[string][]byte) error {
 	if err != nil {
 		return errors.Wrap(err, "couldn't generate private key")
 	}
-	fileMap["jwt-key.der"] = x509.MarshalPKCS1PrivateKey(privateKey)
+	jwtKey := x509.MarshalPKCS1PrivateKey(privateKey)
+	fileMap["jwt-key.der"] = jwtKey
+	fileMap["jwt-key.pem"] = pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: jwtKey,
+	})
 	return nil
 }
 
@@ -93,20 +100,16 @@ func buildConfigFileOverridesMap(filePathMap map[string]string) map[string]func(
 	return fileOverridesMap
 }
 
-// OutputZip renders a deployment bundle. The deployment bundle can either be
-// written directly into a directory, or as a zipfile to STDOUT.
-func OutputZip(config renderer.Config) error {
-	fmt.Fprint(os.Stderr, "Generating deployment bundle... \n")
-
+func createBundle(config renderer.Config) (*zip.Wrapper, error) {
 	wrapper := zip.NewWrapper()
 
 	if config.ClusterType == storage.ClusterType_GENERIC_CLUSTER {
-		return errors.Errorf("invalid cluster type: %s", config.ClusterType)
+		return nil, errors.Errorf("invalid cluster type: %s", config.ClusterType)
 	}
 
 	config.SecretsByteMap = make(map[string][]byte)
 	if err := generateJWTSigningKey(config.SecretsByteMap); err != nil {
-		return err
+		return nil, err
 	}
 
 	if len(config.LicenseData) > 0 {
@@ -119,15 +122,18 @@ func OutputZip(config renderer.Config) error {
 	}
 
 	config.Environment = make(map[string]string)
-	for _, flag := range features.Flags {
-		if value := os.Getenv(flag.EnvVar()); value != "" {
-			config.Environment[flag.EnvVar()] = strconv.FormatBool(flag.Enabled())
+	// Feature flags can only be overridden on release builds.
+	if !buildinfo.ReleaseBuild {
+		for _, flag := range features.Flags {
+			if value := os.Getenv(flag.EnvVar()); value != "" {
+				config.Environment[flag.EnvVar()] = strconv.FormatBool(flag.Enabled())
+			}
 		}
 	}
 
 	htpasswd, err := renderer.GenerateHtpasswd(&config)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, setting := range env.Settings {
@@ -148,14 +154,27 @@ func OutputZip(config renderer.Config) error {
 	wrapper.AddFiles(zip.NewFile("password", []byte(config.Password+"\n"), zip.Sensitive))
 
 	if _, _, err := generateMTLSFiles(config.SecretsByteMap); err != nil {
-		return err
+		return nil, err
 	}
 
 	files, err := renderer.RenderWithOverrides(config, buildConfigFileOverridesMap(config.ConfigFileOverrides))
 	if err != nil {
-		return errors.Wrap(err, "could not render files")
+		return nil, errors.Wrap(err, "could not render files")
 	}
 	wrapper.AddFiles(files...)
+
+	return wrapper, nil
+}
+
+// OutputZip renders a deployment bundle. The deployment bundle can either be
+// written directly into a directory, or as a zipfile to STDOUT.
+func OutputZip(config renderer.Config) error {
+	fmt.Fprint(os.Stderr, "Generating deployment bundle... \n")
+
+	wrapper, err := createBundle(config)
+	if err != nil {
+		return err
+	}
 
 	var outputPath string
 	if roxctl.InMainImage() {

@@ -2638,6 +2638,7 @@ jobs:
       - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
       - ROX_NETWORK_FLOWS_SEARCH_FILTER_UI: true
+      - ROX_CENTRAL_INSTALLATION_EXPERIENCE: true
 
     steps:
       - checkout
@@ -2902,6 +2903,7 @@ jobs:
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
       - ROX_AWS_SECURITY_HUB_INTEGRATION: true
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
+      - ROX_CENTRAL_INSTALLATION_EXPERIENCE: true
 
     steps:
       - checkout
@@ -2968,6 +2970,7 @@ jobs:
       - ROX_AUTH_TEST_MODE_UI: true
       - ROX_NETWORK_GRAPH_PORTS: true
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
+      - ROX_CENTRAL_INSTALLATION_EXPERIENCE: true
 
     steps:
       - run-qa-tests:
@@ -3053,6 +3056,8 @@ jobs:
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
       - ROX_NETWORK_GRAPH_PORTS: true
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
+      - ROX_CENTRAL_INSTALLATION_EXPERIENCE: true
+      - OUTPUT_FORMAT: helm
 
     steps:
       - run-qa-tests:
@@ -3650,6 +3655,7 @@ jobs:
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
+      - ROX_CENTRAL_INSTALLATION_EXPERIENCE: true
 
     steps:
       - run-openshift-tests:
@@ -3672,6 +3678,7 @@ jobs:
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
+      - ROX_CENTRAL_INSTALLATION_EXPERIENCE: true
 
     steps:
       - run-openshift-tests:

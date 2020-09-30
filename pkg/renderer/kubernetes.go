@@ -2,15 +2,14 @@ package renderer
 
 import (
 	"encoding/base64"
-	"fmt"
 	"io"
 	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/set"
@@ -24,8 +23,8 @@ var (
 	assetFileNameMap = NewFileNameMap("docker-auth.sh")
 
 	caSetupScriptsFileNameMap = FileNameMap{
-		"common/ca-setup.sh":  "central/scripts/ca-setup.sh",
-		"common/delete-ca.sh": "central/scripts/delete-ca.sh",
+		"common/ca-setup.sh":  "scripts/ca-setup.sh",
+		"common/delete-ca.sh": "scripts/delete-ca.sh",
 	}
 )
 
@@ -164,6 +163,8 @@ func postProcessConfig(c *Config, mode mode) error {
 		c.K8sConfig.Command = "oc"
 	}
 
+	configureImageOverrides(c)
+
 	var err error
 	if mode == renderAll {
 		c.K8sConfig.Registry, err = kubernetesPkg.GetResolvedRegistry(c.K8sConfig.MainImage)
@@ -235,46 +236,11 @@ func render(c Config, mode mode, centralOverrides map[string]func() io.ReadClose
 		return nil, err
 	}
 
-	var renderedFiles []*zip.File
-	if c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_HELM {
-		if mode != renderAll {
-			return nil, fmt.Errorf("mode %s not supported in helm", mode)
-		}
-		if c.K8sConfig != nil && c.K8sConfig.IstioVersion != "" {
-			return nil, errors.New("setting an istio version is not supported when outputting Helm charts")
-		}
-		renderedFiles, err = renderHelm(c, centralOverrides)
-	} else {
-		renderedFiles, err = renderKubectl(c, mode, centralOverrides)
-	}
-	if err != nil {
-		return nil, err
-	}
-	if mode == centralTLSOnly || mode == scannerTLSOnly {
-		return renderedFiles, nil
+	if !features.CentralInstallationExperience.Enabled() {
+		return renderLegacy(c, mode, centralOverrides)
 	}
 
-	if mode == renderAll {
-		caSetupFiles, err := RenderFiles(caSetupScriptsFileNameMap, c)
-		if err != nil {
-			return nil, err
-		}
-		renderedFiles = append(renderedFiles, caSetupFiles...)
-	}
-
-	assets, err := LoadAssets(assetFileNameMap)
-	if err != nil {
-		return nil, err
-	}
-	renderedFiles = append(renderedFiles, assets...)
-
-	readmeFile, err := generateReadmeFile(&c, mode)
-	if err != nil {
-		return nil, err
-	}
-	renderedFiles = append(renderedFiles, readmeFile)
-
-	return renderedFiles, nil
+	return renderNew(c, mode)
 }
 
 func getTag(imageStr string) (string, error) {

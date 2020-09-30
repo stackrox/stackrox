@@ -44,7 +44,6 @@ func generate(outputDir string, values *Values) error {
 				ScannerImage:   values.ScannerImage,
 				ScannerDBImage: values.ScannerImage,
 			},
-			ConfigType:       v1.DeploymentFormat_HELM,
 			DeploymentFormat: v1.DeploymentFormat_HELM,
 			OfflineMode:      false,
 		},

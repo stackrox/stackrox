@@ -38,7 +38,7 @@
         {{ $expanded := include "srox._expandSingle" (list $ $targetV (join "." $childPath)) }}
         {{ $_ := set $target (printf "_%s" $k) $expanded }}
       {{ end }}
-      {{ unset $target $k }}
+      {{ $_ := unset $target $k }}
     {{ end }}
   {{ end }}
 {{ else if not (kindIs "invalid" $target) }}

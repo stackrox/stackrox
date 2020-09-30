@@ -11,8 +11,9 @@ import "storage/cluster.proto";
 package v1;
 
 enum DeploymentFormat {
-    KUBECTL = 0;
-    HELM    = 1;
+    KUBECTL     = 0;
+    HELM        = 1;
+    HELM_VALUES = 2;
 }
 
 enum LoadBalancerType {

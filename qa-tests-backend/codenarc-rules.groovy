@@ -173,7 +173,7 @@ ruleset {
     BracesForMethod 
     BracesForTryCatchFinally 
     // ClassJavadoc
-    ClosureStatementOnOpeningLineOfMultipleLineClosure 
+    // ClosureStatementOnOpeningLineOfMultipleLineClosure
     ConsecutiveBlankLines 
     FileEndsWithoutNewline 
     Indentation 

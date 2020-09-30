@@ -1,6 +1,11 @@
 package k8sutil
 
 import (
+	"bufio"
+	"bytes"
+	"io"
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/utils"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -23,6 +28,44 @@ func UnstructuredFromYAML(yamlStr string) (*unstructured.Unstructured, error) {
 		return nil, utils.Should(errors.Errorf("obj was not Unstructured (got %T)", obj))
 	}
 	return asUnstructured, nil
+}
+
+// UnstructuredFromYAMLMulti reads a multi-document YAML string and parses each document
+// into an unstructured object. If the document describes a list, the list is flattened,
+// i.e., all its objects are added to the result directly.
+func UnstructuredFromYAMLMulti(yamlDocStr string) ([]unstructured.Unstructured, error) {
+	yamlReader := yaml.NewYAMLReader(bufio.NewReader(strings.NewReader(yamlDocStr)))
+
+	var result []unstructured.Unstructured
+	var yamlDoc []byte
+	var err error
+	for yamlDoc, err = yamlReader.Read(); err == nil; yamlDoc, err = yamlReader.Read() {
+		if len(bytes.TrimSpace(yamlDoc)) == 0 {
+			continue
+		}
+
+		jsonDoc, err := yaml.ToJSON(yamlDoc)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to convert YAML to JSON")
+		}
+
+		obj, _, err := unstructured.UnstructuredJSONScheme.Decode(jsonDoc, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "decoding as unstructured")
+		}
+		switch o := obj.(type) {
+		case *unstructured.Unstructured:
+			result = append(result, *o)
+		case *unstructured.UnstructuredList:
+			result = append(result, o.Items...)
+		default:
+			return nil, errors.Errorf("unexpected type %T after decoding into unstructured", o)
+		}
+	}
+	if err != io.EOF {
+		return nil, err
+	}
+	return result, nil
 }
 
 // DeleteAnnotation deletes the given annotation from the object.

@@ -11,6 +11,7 @@ import services.DirectHTTPService
 import services.SensorUpgradeService
 import util.Cert
 
+import java.nio.charset.Charset
 import java.security.cert.X509Certificate
 
 @Category(BAT)
@@ -53,8 +54,14 @@ class CertRotationTest extends BaseSpecification {
         List<Object> regeneratedSecrets, Secret currentSecret, String certFileName, String keyFileName,
         String principalShouldContain, Long timestampBeforeGeneration
     ){
-        def regeneratedSecretData = (Map<String, Object>) regeneratedSecrets.
-            find { it["metadata"]["name"] == currentSecret.metadata.name } ["data"]
+        def regeneratedSecretObj = regeneratedSecrets.
+            find { it["metadata"]["name"] == currentSecret.metadata.name }
+        assert regeneratedSecretObj
+        Map<String, String> regeneratedSecretData =
+                (Map<String, String>) regeneratedSecretObj["data"] ?:
+                ((Map<String, String>) regeneratedSecretObj["stringData"])?.collectEntries { key, value ->
+            [(key): Base64.encoder.encodeToString(value.getBytes(Charset.defaultCharset()))]
+        }
         assert regeneratedSecretData
         assertSameKeysAndSameValuesExcept(currentSecret.data, regeneratedSecretData,
             [certFileName, keyFileName] as Set<String>)

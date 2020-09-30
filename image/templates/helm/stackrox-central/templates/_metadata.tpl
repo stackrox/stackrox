@@ -54,7 +54,7 @@
 {{- range $k, $v := $envVars -}}
 - name: {{ quote $k }}
   value: {{ quote $v }}
-{{- end -}}
+{{ end -}}
 {{- end -}}
 
 {{/*

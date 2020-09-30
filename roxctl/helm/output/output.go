@@ -11,20 +11,15 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/charts"
 	"github.com/stackrox/rox/pkg/helmtpl"
 	"github.com/stackrox/rox/pkg/helmutil"
-	"github.com/stackrox/rox/pkg/version"
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
 // These are actually const.
 
 var (
-	metaValues = map[string]interface{}{
-		"ChartVersion":   version.GetChartVersion(),
-		"MainVersion":    version.GetMainVersion(),
-		"ScannerVersion": version.GetScannerVersion(),
-	}
 	chartTemplates = map[string]string{
 		"central-services": image.CentralServicesChartPrefix,
 	}
@@ -71,7 +66,7 @@ func outputHelmChart(chartName string, outputDir string) error {
 	}
 
 	// Render template files.
-	renderedChartFiles, err := chartTpl.InstantiateRaw(metaValues)
+	renderedChartFiles, err := chartTpl.InstantiateRaw(charts.DefaultMetaValues())
 	if err != nil {
 		return errors.Wrapf(err, "instantiating %s helmtpl", chartName)
 	}

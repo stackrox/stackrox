@@ -6,6 +6,8 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -20,15 +22,17 @@ func getBaseConfig() Config {
 			},
 		},
 		SecretsByteMap: map[string][]byte{
-			"ca.pem":      {1},
-			"ca-key.pem":  {1},
-			"jwt-key.der": {1},
+			"ca.pem":      []byte("ca-cert"),
+			"ca-key.pem":  []byte("ca-key"),
+			"jwt-key.der": []byte("jwt-key"),
 		},
 	}
 }
 
 func TestRender(t *testing.T) {
-	t.Parallel()
+	ei := testutils.NewEnvIsolator(t)
+	defer ei.RestoreAll()
+	ei.Setenv(features.CentralInstallationExperience.EnvVar(), "false")
 	suite.Run(t, new(renderSuite))
 }
 

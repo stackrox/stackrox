@@ -24,7 +24,7 @@ test_roxctl_cmd() {
   rm -rf "$output_dir" 2>/dev/null || true
   # Verify that if no istio-support flag is specified, no destination rules are created
   if OUTPUT=$("${cmd[@]}" 2>&1); then
-    if ! grep -q -r "DestinationRule" "$output_dir" ; then
+    if ! find "$output_dir" -name helm -prune -false -o -name '*.yaml' | xargs grep -q "DestinationRule" ; then
       echo "[OK] No DestinationRule will be created"
     else
       eecho "[FAIL] DestinationRules found in generated YAMLs"
@@ -40,7 +40,7 @@ test_roxctl_cmd() {
   rm -rf "$output_dir" 2>/dev/null || true
   # Verify that with an istio-support flag, destination rules are created
   if OUTPUT=$("${cmd[@]}" --istio-support=1.5 2>&1); then
-    if grep -q -r "DestinationRule" "$output_dir" ; then
+    if find "$output_dir" -name helm -prune -false -o -name '*.yaml' | xargs grep -q "DestinationRule" ; then
       echo "[OK] DestinationRules found in generated YAMLs".
     else
       eecho "[FAIL] DestinationRules not found in generated YAMLs"
