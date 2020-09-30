@@ -37,6 +37,7 @@ var (
 	allValuesExplicit = `
 licenseKey: "my license key"
 env:
+  platform: gke
   openshift: true
   istio: true
   proxyConfig: "proxy config"

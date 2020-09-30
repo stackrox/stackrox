@@ -1,2 +1,2 @@
 pvcDefaults:
-  storageClass: ssd
+  storageClass: "stackrox-gke-ssd"

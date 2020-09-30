@@ -99,16 +99,18 @@
 
 {{/* Infer GKE, if needed */}}
 {{ if kindIs "invalid" $env.platform }}
+  {{ $platform := "default" }}
   {{ if contains "-gke." $._rox._apiServer.version }}
-    {{ $_ := set $env "platform" "gke" }}
     {{ include "srox.note" (list $ "Based on API server properties, we have inferred that you are deploying into a GKE cluster. Set the `env.platform` property to a concrete value to override the auto-sensed value.") }}
+    {{ $platform = "gke" }}
   {{ end }}
+  {{ $_ := set $env "platform" $platform }}
 {{ end }}
 
 {{/* Apply defaults */}}
 {{ $defaultsCfg := $.Files.Get "internal/defaults.yaml" | fromYaml }}
 {{ $platformCfgFile := dict }}
-{{ include "srox.loadFile" (list $ $platformCfgFile (printf "internal/platforms/%s.yaml" (default "default" $env.platform))) }}
+{{ include "srox.loadFile" (list $ $platformCfgFile (printf "internal/platforms/%s.yaml" $env.platform)) }}
 {{ if not $platformCfgFile.found }}
   {{ include "srox.fail" (printf "Invalid platform %q. Please select a valid platform, or leave this field unset." $env.platform) }}
 {{ end }}
