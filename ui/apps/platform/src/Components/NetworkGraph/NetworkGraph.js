@@ -134,7 +134,7 @@ const NetworkGraph = ({
 
     function nodeHoverHandler(ev) {
         const node = ev.target.data();
-        const { id, name, parent, listenPorts, side, type } = node;
+        const { id, name, listenPorts, side, type } = node;
         const isNodeHoverable = getIsNodeHoverable(type);
         if (!cyRef || !isNodeHoverable || side) {
             return;
@@ -152,7 +152,6 @@ const NetworkGraph = ({
         const egressPortsAndProtocols = getEgressPortsAndProtocols(networkFlows);
 
         const nodeElm = cyRef.current.getElementById(id);
-        const parentElm = cyRef.current.getElementById(parent);
 
         const component = (
             <NodeTooltipOverlay
@@ -167,8 +166,6 @@ const NetworkGraph = ({
         );
 
         showTooltip(nodeElm, component);
-        const children = parentElm.descendants();
-        children.removeClass('background');
     }
 
     function edgeHoverHandler(ev) {

@@ -794,6 +794,17 @@ export const getInternetNode = (data, configObj = {}) => {
 };
 
 /**
+ * Helper function that returns a function to determine whether a given id is in the list
+ *
+ * @param {!string} entityId entity id to match on
+ *
+ * @returns {!Function}
+ */
+const findEntityId = (entityId) => {
+    return ({ data }) => data.targetNodeId === entityId || data.sourceNodeId === entityId;
+};
+
+/**
  * Iterates through a list of nodes to return a list of deployments with proper styling classes for cytoscape
  *
  * @param {!Object[]} filteredData list of deployments
@@ -825,7 +836,12 @@ export const getDeploymentList = (filteredData, configObj = {}) => {
 
         const isSelected = !!(selectedNode?.id === entity.id);
         const isHovered = !!(hoveredNode?.id === entity.id);
-        const isBackground = !(!selectedNode && !hoveredNode) && !isHovered && !isSelected;
+        const isAdjacentToSelected = selectedNode?.edges?.find(findEntityId(entity.id));
+        const isAdjacentToHovered = hoveredNode?.edges?.find(findEntityId(entity.id));
+        const isAdjacent =
+            (!isHovered && isAdjacentToHovered) || (!isSelected && isAdjacentToSelected);
+        const isBackground =
+            !isAdjacent && (selectedNode || hoveredNode) && !isHovered && !isSelected;
         const isNonIsolated = isNonIsolatedNode(datum);
         const isDisallowed =
             filterState !== filterModes.allowed && edges.some((edge) => edge.data.isDisallowed);
@@ -945,16 +961,31 @@ export const getNamespaceList = (
     cluster
 ) => {
     const activeNamespaceList = getActiveNamespaceList(filteredData, deploymentList);
-    return uniq(filteredData.map((datum) => datum.entity.deployment.namespace)).map((namespace) => {
+    const highlightedNamespaces = {};
+    const hoveredNodeEdges = hoveredNode?.edges;
+    const selectedNodeEdges = selectedNode?.edges;
+    const namespaceList = uniq(
+        filteredData.map(({ entity }) => {
+            const { namespace } = entity.deployment;
+            if (!highlightedNamespaces[namespace]) {
+                highlightedNamespaces[namespace] =
+                    hoveredNodeEdges?.find(findEntityId(entity.id)) ||
+                    selectedNodeEdges?.find(findEntityId(entity.id));
+            }
+            return namespace;
+        })
+    ).map((namespace) => {
         const isActive = activeNamespaceList.includes(namespace);
         const isHovered = hoveredNode?.id === namespace || hoveredNode?.parent === namespace;
         const isSelected = selectedNode?.id === namespace || selectedNode?.parent === namespace;
-        const isBackground = !(!selectedNode && !hoveredNode) && !isHovered && !isSelected;
+        const isAdjacent = highlightedNamespaces[namespace];
+        const isBackground =
+            !isAdjacent && (selectedNode || hoveredNode) && !isHovered && !isSelected;
         const classes = getClasses({
             nsGroup: true,
             nsActive: isActive,
             nsSelected: isSelected,
-            nsHovered: isHovered,
+            nsHovered: isAdjacent || isHovered,
             background: isBackground,
         });
 
@@ -969,6 +1000,7 @@ export const getNamespaceList = (
             classes,
         };
     });
+    return namespaceList;
 };
 
 /**

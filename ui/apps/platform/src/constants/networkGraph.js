@@ -34,6 +34,8 @@ export const COLORS = {
     inactiveNS: 'hsla(229, 24%, 80%, 1)',
     hovered: 'hsla(229, 24%, 70%, 1)',
     selected: 'hsla(229, 24%, 60%, 1)',
+    hoveredEdge: '#3C58CC',
+    edge: ' #788CDF',
 };
 
 export const PROTOCOLS = {

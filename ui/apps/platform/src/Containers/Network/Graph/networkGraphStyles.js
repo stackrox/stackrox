@@ -211,6 +211,7 @@ const styles = [
     {
         selector: ':parent > node.background',
         style: {
+            opacity: 0.5,
             ...deploymentStyle,
         },
     },
@@ -235,25 +236,26 @@ const styles = [
         style: {
             width: 1,
             'line-style': 'dashed',
-            'line-color': 'hsla(231, 74%, 82%, 1.00)',
+            'line-color': COLORS.edge,
+            'z-compound-depth': 'top',
         },
     },
     {
         selector: 'edge.namespace',
         style: {
             'curve-style': 'unbundled-bezier',
-            'line-color': COLORS.NSEdge,
+            'line-color': COLORS.edge,
             'edge-distances': 'node-position',
             label: 'data(count)',
             'font-size': '8px',
-            color: COLORS.NSEdge,
+            color: COLORS.edge,
             'font-weight': 500,
             'text-background-opacity': 1,
             'text-background-color': 'white',
             'text-background-shape': 'roundrectangle',
             'text-background-padding': '3px',
             'text-border-opacity': 1,
-            'text-border-color': 'hsla(230, 51%, 75%, 1.00)',
+            'text-border-color': COLORS.edge,
             'text-border-width': 1,
             width: 3,
         },
@@ -276,8 +278,6 @@ const styles = [
             'curve-style': 'haystack',
             'line-style': 'dashed',
             'target-endpoint': 'inside-to-node',
-            'z-index': 1000,
-            'z-index-compare': 'manual',
         },
     },
 
@@ -291,7 +291,7 @@ const styles = [
         selector: 'edge.active',
         style: {
             'line-style': 'solid',
-            'line-color': 'hsla(229, 76%, 87%, 1)',
+            'line-color': COLORS.edge,
             'z-compound-depth': 'top',
         },
     },
@@ -310,8 +310,8 @@ const styles = [
         style: {
             'mid-target-arrow-shape': 'triangle',
             'mid-target-arrow-fill': 'filled',
-            'mid-target-arrow-color': 'hsla(231, 74%, 82%, 1.00)',
-            'arrow-scale': 0.5,
+            'mid-target-arrow-color': COLORS.edge,
+            'arrow-scale': 0.6,
         },
     },
     {
@@ -319,11 +319,11 @@ const styles = [
         style: {
             'mid-source-arrow-shape': 'triangle',
             'mid-source-arrow-fill': 'filled',
-            'mid-source-arrow-color': 'hsla(231, 74%, 82%, 1.00)',
+            'mid-source-arrow-color': COLORS.edge,
             'mid-target-arrow-shape': 'triangle',
             'mid-target-arrow-fill': 'filled',
-            'mid-target-arrow-color': 'hsla(231, 74%, 82%, 1.00)',
-            'arrow-scale': 0.5,
+            'mid-target-arrow-color': COLORS.edge,
+            'arrow-scale': 0.6,
         },
     },
     {
@@ -338,11 +338,11 @@ const styles = [
         style: {
             opacity: 1,
             color: 'hsl(228, 56%, 63%)',
-            'line-color': 'hsl(228, 56%, 63%)',
-            'text-border-color': 'hsl(228, 56%, 63%)',
+            'line-color': COLORS.hoveredEdge,
+            'text-border-color': COLORS.hoveredEdge,
             'overlay-padding': '3px',
-            'mid-source-arrow-color': 'hsl(228, 56%, 63%)',
-            'mid-target-arrow-color': 'hsl(228, 56%, 63%)',
+            'mid-source-arrow-color': COLORS.hoveredEdge,
+            'mid-target-arrow-color': COLORS.hoveredEdge,
         },
     },
     {
