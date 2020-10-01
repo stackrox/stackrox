@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/securityhub"
@@ -344,7 +345,7 @@ func (n *notifier) Test(ctx context.Context) error {
 		MaxResults: aws.Int64(1),
 	})
 	if err != nil {
-		return err
+		return createError("error testing AWS Security Hub integration", err)
 	}
 
 	_, err = n.SecurityHub.BatchImportFindings(&securityhub.BatchImportFindingsInput{
@@ -383,7 +384,11 @@ func (n *notifier) Test(ctx context.Context) error {
 		},
 	})
 
-	return err
+	if err != nil {
+		return createError("error testing AWS Security Hub integration", err)
+	}
+	return nil
+
 }
 
 func (n *notifier) AlertNotify(ctx context.Context, alert *storage.Alert) error {
@@ -407,4 +412,16 @@ func (n *notifier) AckAlert(_ context.Context, _ *storage.Alert) error {
 
 func (n *notifier) ResolveAlert(ctx context.Context, alert *storage.Alert) error {
 	return n.AlertNotify(ctx, alert)
+}
+
+func createError(msg string, err error) error {
+	if awsErr, _ := err.(awserr.Error); awsErr != nil {
+		if awsErr.Message() != "" {
+			msg = fmt.Sprintf("%s (code: %s; message: %s)", msg, awsErr.Code(), awsErr.Message())
+		} else {
+			msg = fmt.Sprintf("%s (code: %s)", msg, awsErr.Code())
+		}
+	}
+	log.Errorf("AWS Security hub error: %v", err)
+	return errors.New(msg)
 }

@@ -196,7 +196,11 @@ func (s *s3) Test() error {
 
 func createError(msg string, err error) error {
 	if awsErr, _ := err.(awserr.Error); awsErr != nil {
-		msg = fmt.Sprintf("%s (code: %s; message: %s)", msg, awsErr.Code(), awsErr.Message())
+		if awsErr.Message() != "" {
+			msg = fmt.Sprintf("%s (code: %s; message: %s)", msg, awsErr.Code(), awsErr.Message())
+		} else {
+			msg = fmt.Sprintf("%s (code: %s)", msg, awsErr.Code())
+		}
 	}
 	log.Errorf("S3 backup error: %v", err)
 	return errors.New(msg)

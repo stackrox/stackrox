@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"net/smtp"
+	"net/textproto"
 	"strconv"
 	"strings"
 	"text/template"
@@ -266,14 +267,12 @@ func (e *email) sendEmail(ctx context.Context, recipient, subject, body string) 
 
 	conn, auth, err := e.connection(ctx)
 	if err != nil {
-		log.Errorf("Connection failed: %v", err)
-		return err
+		return createError("Connection failed", err)
 	}
 
 	client, err := e.createClient(conn)
 	if err != nil {
-		log.Errorf("SMTP client creation failed: %v", err)
-		return err
+		return createError("SMTP client creation failed", err)
 	}
 	defer func() {
 		if err := client.Quit(); err != nil {
@@ -283,36 +282,30 @@ func (e *email) sendEmail(ctx context.Context, recipient, subject, body string) 
 
 	if e.config.GetStartTLSAuthMethod() != storage.Email_DISABLED {
 		if err = client.StartTLS(e.tlsConfig()); err != nil {
-			log.Errorf("SMTP STARTTLS failed: %v", err)
-			return err
+			return createError("SMTP STARTTLS failed", err)
 		}
 	}
 
 	if err = client.Auth(auth); err != nil {
-		log.Errorf("SMTP authentication failed: %v", err)
-		return err
+		return createError("SMTP authentication failed", err)
 	}
 
 	if err = client.Mail(e.config.GetSender()); err != nil {
-		log.Errorf("SMTP MAIL command failed: %v", err)
-		return err
+		return createError("SMTP MAIL command failed", err)
 	}
 	if err = client.Rcpt(recipient); err != nil {
-		log.Errorf("SMTP RCPT command failed: %v", err)
-		return err
+		return createError("SMTP RCPT command failed", err)
 	}
 
 	w, err := client.Data()
 	if err != nil {
-		log.Errorf("SMTP DATA command failed: %v", err)
-		return err
+		return createError("SMTP DATA command failed", err)
 	}
 	defer utils.IgnoreError(w.Close)
 
 	_, err = w.Write(msg.Bytes())
 	if err != nil {
-		log.Errorf("SMTP message writing failed: %v", err)
-		return err
+		return createError("SMTP message writing failed", err)
 	}
 
 	return nil
@@ -410,4 +403,14 @@ func init() {
 		e, err := newEmail(notifier)
 		return e, err
 	})
+}
+
+func createError(msg string, err error) error {
+	if e, _ := err.(*textproto.Error); e != nil {
+		msg = fmt.Sprintf("%s (code: %d)", msg, e.Code)
+	} else {
+		msg = fmt.Sprintf("%s: %v", msg, err)
+	}
+	log.Errorf("%s: %v", msg, err)
+	return errors.New(msg)
 }

@@ -34,8 +34,14 @@ function getFriendlyErrorMessage(type, response) {
             } else if (response?.data?.error?.includes('not subscribed')) {
                 errorMessage =
                     'Chosen region is not subscribed to StackRox Security Hub integration. Please subscribe through AWS Console, or choose a region that is subscribed.';
+            } else if (
+                response?.data?.error?.includes('InvalidSignature') ||
+                response?.data?.error?.includes('UnrecognizedClient')
+            ) {
+                errorMessage = '403 Access Denied. Please check your inputs and try again.';
             } else {
-                errorMessage = response?.data?.error || 'An unknown error has occurred.';
+                errorMessage =
+                    'An error has occurred. Please check the central logs for more information.';
             }
             break;
         }
