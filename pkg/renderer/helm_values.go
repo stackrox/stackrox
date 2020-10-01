@@ -119,7 +119,7 @@ scanner:
   {{- end }}
 
   {{- if .K8sConfig.ImageOverrides.ScannerDB }}
-  image:
+  dbImage:
     {{- if .K8sConfig.ImageOverrides.ScannerDB.Registry }}
     registry: {{ .K8sConfig.ImageOverrides.ScannerDB.Registry }}
     {{- end }}
