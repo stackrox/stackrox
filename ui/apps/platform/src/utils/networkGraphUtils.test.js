@@ -92,13 +92,13 @@ describe('networkGraphUtils', () => {
             const ingressPortsAndProtocols = getIngressPortsAndProtocols(networkFlows);
             expect(ingressPortsAndProtocols).toEqual([
                 {
-                    port: 123,
+                    port: 111,
                     protocol: 'L4_PROTOCOL_TCP',
                     traffic: 'ingress',
                 },
                 {
-                    port: 678,
-                    protocol: 'L4_PROTOCOL_TCP',
+                    port: 444,
+                    protocol: 'L4_PROTOCOL_UDP',
                     traffic: 'ingress',
                 },
             ]);
@@ -111,12 +111,17 @@ describe('networkGraphUtils', () => {
             const egressPortsAndProtocols = getEgressPortsAndProtocols(networkFlows);
             expect(egressPortsAndProtocols).toEqual([
                 {
-                    port: 456,
+                    port: 222,
+                    protocol: 'L4_PROTOCOL_UDP',
+                    traffic: 'egress',
+                },
+                {
+                    port: 333,
                     protocol: 'L4_PROTOCOL_TCP',
                     traffic: 'egress',
                 },
                 {
-                    port: 911,
+                    port: 555,
                     protocol: 'L4_PROTOCOL_TCP',
                     traffic: 'egress',
                 },
@@ -136,7 +141,7 @@ describe('networkGraphUtils', () => {
                     namespace: 'namespace-a',
                     portsAndProtocols: [
                         {
-                            port: 123,
+                            port: 111,
                             protocol: 'L4_PROTOCOL_TCP',
                             traffic: 'ingress',
                         },
@@ -150,7 +155,21 @@ describe('networkGraphUtils', () => {
                     namespace: 'namespace-a',
                     portsAndProtocols: [
                         {
-                            port: 456,
+                            port: 222,
+                            protocol: 'L4_PROTOCOL_UDP',
+                            traffic: 'egress',
+                        },
+                    ],
+                    traffic: 'egress',
+                },
+                {
+                    connection: 'allowed',
+                    deploymentId: '3',
+                    deploymentName: 'node-3',
+                    namespace: 'namespace-a',
+                    portsAndProtocols: [
+                        {
+                            port: 333,
                             protocol: 'L4_PROTOCOL_TCP',
                             traffic: 'egress',
                         },
@@ -159,17 +178,17 @@ describe('networkGraphUtils', () => {
                 },
                 {
                     connection: 'active',
-                    deploymentId: '3',
-                    deploymentName: 'node-3',
+                    deploymentId: '4',
+                    deploymentName: 'node-4',
                     namespace: 'namespace-a',
                     portsAndProtocols: [
                         {
-                            port: 678,
-                            protocol: 'L4_PROTOCOL_TCP',
+                            port: 444,
+                            protocol: 'L4_PROTOCOL_UDP',
                             traffic: 'ingress',
                         },
                         {
-                            port: 911,
+                            port: 555,
                             protocol: 'L4_PROTOCOL_TCP',
                             traffic: 'egress',
                         },
@@ -190,7 +209,7 @@ describe('networkGraphUtils', () => {
                     namespace: 'namespace-a',
                     portsAndProtocols: [
                         {
-                            port: 123,
+                            port: 111,
                             protocol: 'L4_PROTOCOL_TCP',
                             traffic: 'ingress',
                         },
@@ -199,17 +218,17 @@ describe('networkGraphUtils', () => {
                 },
                 {
                     connection: 'active',
-                    deploymentId: '3',
-                    deploymentName: 'node-3',
+                    deploymentId: '4',
+                    deploymentName: 'node-4',
                     namespace: 'namespace-a',
                     portsAndProtocols: [
                         {
-                            port: 678,
-                            protocol: 'L4_PROTOCOL_TCP',
+                            port: 444,
+                            protocol: 'L4_PROTOCOL_UDP',
                             traffic: 'ingress',
                         },
                         {
-                            port: 911,
+                            port: 555,
                             protocol: 'L4_PROTOCOL_TCP',
                             traffic: 'egress',
                         },
@@ -225,17 +244,64 @@ describe('networkGraphUtils', () => {
             expect(networkFlows).toEqual([
                 {
                     connection: 'allowed',
+                    deploymentId: '1',
+                    deploymentName: 'node-1',
+                    namespace: 'namespace-a',
+                    portsAndProtocols: [
+                        {
+                            port: 111,
+                            protocol: 'L4_PROTOCOL_TCP',
+                            traffic: 'ingress',
+                        },
+                    ],
+                    traffic: 'ingress',
+                },
+                {
+                    connection: 'allowed',
                     deploymentId: '2',
                     deploymentName: 'node-2',
                     namespace: 'namespace-a',
                     portsAndProtocols: [
                         {
-                            port: 456,
+                            port: 222,
+                            protocol: 'L4_PROTOCOL_UDP',
+                            traffic: 'egress',
+                        },
+                    ],
+                    traffic: 'egress',
+                },
+                {
+                    connection: 'allowed',
+                    deploymentId: '3',
+                    deploymentName: 'node-3',
+                    namespace: 'namespace-a',
+                    portsAndProtocols: [
+                        {
+                            port: 333,
                             protocol: 'L4_PROTOCOL_TCP',
                             traffic: 'egress',
                         },
                     ],
                     traffic: 'egress',
+                },
+                {
+                    connection: 'allowed',
+                    deploymentId: '4',
+                    deploymentName: 'node-4',
+                    namespace: 'namespace-a',
+                    portsAndProtocols: [
+                        {
+                            port: 444,
+                            protocol: 'L4_PROTOCOL_UDP',
+                            traffic: 'ingress',
+                        },
+                        {
+                            port: 555,
+                            protocol: 'L4_PROTOCOL_TCP',
+                            traffic: 'egress',
+                        },
+                    ],
+                    traffic: 'bidirectional',
                 },
             ]);
         });
@@ -247,7 +313,7 @@ describe('networkGraphUtils', () => {
             );
 
             expect(numIngressFlows).toEqual(2);
-            expect(numEgressFlows).toEqual(2);
+            expect(numEgressFlows).toEqual(3);
         });
     });
     describe('createPortsAndProtocolsSelector', () => {

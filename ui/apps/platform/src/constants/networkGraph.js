@@ -53,6 +53,7 @@ export const networkTraffic = {
 export const networkConnections = {
     ACTIVE: 'active',
     ALLOWED: 'allowed',
+    ACTIVE_AND_ALLOWED: 'active/allowed',
 };
 
 export const nodeConnectionKeys = {

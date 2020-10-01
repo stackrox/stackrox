@@ -1219,7 +1219,7 @@ export const deploymentEdges = [
             isAllowed: true,
             portsAndProtocols: [
                 {
-                    port: 123,
+                    port: 111,
                     protocol: 'L4_PROTOCOL_TCP',
                     traffic: 'ingress',
                 },
@@ -1236,25 +1236,8 @@ export const deploymentEdges = [
             isAllowed: true,
             portsAndProtocols: [
                 {
-                    port: 456,
-                    protocol: 'L4_PROTOCOL_TCP',
-                    traffic: 'egress',
-                },
-            ],
-        },
-    },
-    {
-        data: {
-            destNodeId: '2',
-            destNodeName: 'node-2',
-            destNodeNamespace: 'namespace-a',
-            traffic: 'egress',
-            isActive: false,
-            isAllowed: true,
-            portsAndProtocols: [
-                {
-                    port: 456,
-                    protocol: 'L4_PROTOCOL_TCP',
+                    port: 222,
+                    protocol: 'L4_PROTOCOL_UDP',
                     traffic: 'egress',
                 },
             ],
@@ -1265,17 +1248,34 @@ export const deploymentEdges = [
             destNodeId: '3',
             destNodeName: 'node-3',
             destNodeNamespace: 'namespace-a',
+            traffic: 'egress',
+            isActive: false,
+            isAllowed: true,
+            portsAndProtocols: [
+                {
+                    port: 333,
+                    protocol: 'L4_PROTOCOL_TCP',
+                    traffic: 'egress',
+                },
+            ],
+        },
+    },
+    {
+        data: {
+            destNodeId: '4',
+            destNodeName: 'node-4',
+            destNodeNamespace: 'namespace-a',
             traffic: 'bidirectional',
             isActive: true,
             isAllowed: true,
             portsAndProtocols: [
                 {
-                    port: 678,
-                    protocol: 'L4_PROTOCOL_TCP',
+                    port: 444,
+                    protocol: 'L4_PROTOCOL_UDP',
                     traffic: 'ingress',
                 },
                 {
-                    port: 911,
+                    port: 555,
                     protocol: 'L4_PROTOCOL_TCP',
                     traffic: 'egress',
                 },
