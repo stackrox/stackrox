@@ -41,5 +41,4 @@ class AlertService extends BaseService {
         return getAlertClient().resolveAlert(
                 ResolveAlertRequest.newBuilder().setId(alertID).setWhitelist(whitelist).build())
     }
-
 }

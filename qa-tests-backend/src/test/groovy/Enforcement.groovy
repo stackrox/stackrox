@@ -25,15 +25,15 @@ class Enforcement extends BaseSpecification {
 
     // Test labels - each test has its own unique label space. This is also used to name
     // each tests policy and deployment.
-    private final static String KILL_ENFORCEMENT = "kill-enforcement"
-    private final static String SCALE_DOWN_ENFORCEMENT = "scale-down-enforcement"
+    private final static String KILL_ENFORCEMENT = "kill-enforcement-only"
+    private final static String SCALE_DOWN_ENFORCEMENT = "scale-down-enforcement-only"
     private final static String SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE = "scale-down-enforcement-build-deploy-image"
     private final static String SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_CVSS = "scale-down-enforcement-build-deploy-cvss"
     private final static String NODE_CONSTRAINT_ENFORCEMENT = "node-constraint-enforcement"
-    private final static String FAIL_BUILD_ENFORCEMENT = "fail-build-enforcement"
+    private final static String FAIL_BUILD_ENFORCEMENT = "fail-build-enforcement-only"
     private final static String FAIL_BUILD_ENFORCEMENT_WITH_SCALE_TO_ZERO = "fail-build-enforcement-with-scale-to-zero"
-    private final static String SCALE_DOWN_AND_NODE_CONSTRAINT = "scale-down-and-node-constraint"
-    private final static String SCALE_DOWN_AND_NODE_CONSTRAINT_FOR_DS = "scale-down-and-node-constraint-for-ds"
+    private final static String SCALE_DOWN_AND_NODE_CONSTRAINT = "scale-down-and-node-constraint-deployment"
+    private final static String SCALE_DOWN_AND_NODE_CONSTRAINT_FOR_DS = "scale-down-and-node-constraint-daemonset"
     private final static String ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS =
             "alert-and-kill-enforcement-whitelist-process"
     private final static String NO_ENFORCEMENT_ON_UPDATE = "no-enforcement-on-update"
@@ -484,12 +484,7 @@ class Enforcement extends BaseSpecification {
                 30
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
-        AlertOuterClass.ListAlert scaleToZeroViolation = violations.find {
-            v -> AlertOuterClass.Alert a = AlertService.getViolation(v.id)
-            a.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
-        }
-        assert scaleToZeroViolation
-        AlertOuterClass.Alert alert = AlertService.getViolation(scaleToZeroViolation.id)
+        AlertOuterClass.Alert alert = AlertService.getViolation(violations.get(0).id)
 
         and:
         "check deployment was scaled-down to 0 replicas and node selection was not applied"
