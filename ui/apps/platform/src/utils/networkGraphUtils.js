@@ -257,7 +257,7 @@ export const createPortsAndProtocolsSelector = (
 
     // create a mapping of node edges -> ports and protocols
     nodes.forEach((sourceNode) => {
-        const targetNodeIds = Object.keys(sourceNode.outEdges);
+        const targetNodeIds = Object.keys(sourceNode?.outEdges || {});
         targetNodeIds.forEach((targetNodeId) => {
             if (!networkNodeMap?.[targetNodeId]) {
                 return;
