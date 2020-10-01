@@ -201,6 +201,8 @@ spec:
               readOnly: true
             - name: ssl
               mountPath: /etc/ssl
+            - name: pki
+              mountPath: /etc/pki/ca-trust/
       volumes:
         - name: certs
           secret:
@@ -219,6 +221,8 @@ spec:
         - name: config-store
           emptyDir: {}
         - name: ssl
+          emptyDir: {}
+        - name: pki
           emptyDir: {}
 ---
 apiVersion: networking.k8s.io/v1

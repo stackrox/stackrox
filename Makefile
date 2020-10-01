@@ -293,12 +293,10 @@ build-prep: deps volatile-generated-srcs
 	mkdir -p bin/{darwin,linux,windows}
 
 cli: build-prep
-ifdef CI
 	RACE=0 CGO_ENABLED=0 GOOS=darwin $(GOBUILD) ./roxctl
 	RACE=0 CGO_ENABLED=0 GOOS=linux $(GOBUILD) ./roxctl
+ifdef CI
 	RACE=0 CGO_ENABLED=0 GOOS=windows $(GOBUILD) ./roxctl
-else
-	RACE=0 CGO_ENABLED=0 GOOS=$(HOST_OS) $(GOBUILD) ./roxctl
 endif
 	# Copy the user's specific OS into gopath
 	cp bin/$(HOST_OS)/roxctl $(GOPATH)/bin/roxctl
@@ -351,7 +349,7 @@ ifdef CI
 	docker start -i builder
 	docker cp builder:/go/src/github.com/stackrox/rox/bin/linux bin/
 else
-	docker $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(RHEL_BUILD_IMAGE) make main-build-nodeps
+	docker run $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(RHEL_BUILD_IMAGE) make main-build-nodeps
 endif
 
 .PHONY: main-build-nodeps
@@ -482,7 +480,7 @@ docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 
 $(CURDIR)/image/rhel/bundle.tar.gz:
-	$(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(RHEL_BUILD_IMAGE) $@
+	$(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $(RHEL_BUILD_IMAGE) $(CURDIR)/image/rhel
 
 .PHONY: docker-build-main-image-rhel
 docker-build-main-image-rhel: copy-binaries-to-image-dir docker-build-data-image $(CURDIR)/image/rhel/bundle.tar.gz
@@ -569,6 +567,7 @@ clean-image:
 	git clean -xdf image/ui image/docs
 	git clean -xf integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	rm -f $(CURDIR)/image/rhel/bundle.tar.gz
+	rm -rf $(CURDIR)/image/rhel/scripts
 
 .PHONY: tag
 tag:

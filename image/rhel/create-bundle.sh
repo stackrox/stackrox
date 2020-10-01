@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Creates a tgz bundle of all binary artifacts needed for main-rhel
+# Creates a scripts directory and a tgz bundle of binaries and data files
+# needed for main-rhel
 
 set -euo pipefail
 
@@ -32,12 +33,16 @@ extract_from_image() {
 INPUT_ROOT="$1"
 DATA_IMAGE="$2"
 BUILDER_IMAGE="$3"
-OUTPUT_BUNDLE="$4"
+OUTPUT_DIR="$4"
 
-[[ -n "$INPUT_ROOT" && -n "$DATA_IMAGE" && -n "$OUTPUT_BUNDLE" ]] \
-    || die "Usage: $0 <input-root> <enc-data-image> <output-bundle>"
+[[ -n "$INPUT_ROOT" && -n "$DATA_IMAGE" && -n "$BUILDER_IMAGE" && -n "$OUTPUT_DIR" ]] \
+    || die "Usage: $0 <input-root-directory> <enc-data-image> <builder-image> <output-directory>"
 [[ -d "$INPUT_ROOT" ]] \
     || die "Input root directory doesn't exist or is not a directory."
+[[ -d "$OUTPUT_DIR" ]] \
+    || die "Output directory doesn't exist or is not a directory."
+
+OUTPUT_BUNDLE="${OUTPUT_DIR}/bundle.tar.gz"
 
 # Verify image exists
 image_exists "${DATA_IMAGE}"
@@ -48,12 +53,27 @@ mkdir -p "${bundle_root}"/{assets/downloads/cli,stackrox/bin,ui,usr/local/bin}
 chmod -R 755 "${bundle_root}"
 
 # =============================================================================
+# Copy scripts to image build context directory
 
-# Add files to be included in the Dockerfile here. This includes artifacts that
-# would be otherwise downloaded or included via a COPY command in the
-# Dockerfile.
+# Add scripts a be included in the Dockerfile here. These scripts are copied to
+# the /stackrox directory in the container image.
 
-cp -p "${INPUT_ROOT}/central-entrypoint.sh" "${bundle_root}/stackrox/"
+mkdir -p "${OUTPUT_DIR}/scripts"
+cp "${INPUT_ROOT}/central-entrypoint.sh"               "${OUTPUT_DIR}/scripts"
+cp "${INPUT_ROOT}/static-bin/entrypoint-wrapper.sh"    "${OUTPUT_DIR}/scripts"
+cp "${INPUT_ROOT}/static-bin/import-additional-cas"    "${OUTPUT_DIR}/scripts"
+cp "${INPUT_ROOT}/static-bin/restore-all-dir-contents" "${OUTPUT_DIR}/scripts"
+cp "${INPUT_ROOT}/static-bin/restore-central-db"       "${OUTPUT_DIR}/scripts"
+cp "${INPUT_ROOT}/static-bin/save-dir-contents"        "${OUTPUT_DIR}/scripts"
+cp "${INPUT_ROOT}/static-bin/start-central.sh"         "${OUTPUT_DIR}/scripts"
+
+# =============================================================================
+# Copy binaries and data files into bundle
+
+# Add binaries and data files to be included in the Dockerfile here. This
+# includes artifacts that would be otherwise downloaded or included via a COPY
+# command in the Dockerfile.
+
 cp -p "${INPUT_ROOT}/bin/migrator"          "${bundle_root}/stackrox/bin/"
 cp -p "${INPUT_ROOT}/bin/central"           "${bundle_root}/stackrox/"
 cp -p "${INPUT_ROOT}/bin/compliance"        "${bundle_root}/stackrox/bin/"
@@ -61,7 +81,6 @@ cp -p "${INPUT_ROOT}/bin/roxctl"*           "${bundle_root}/assets/downloads/cli
 cp -p "${INPUT_ROOT}/bin/kubernetes-sensor" "${bundle_root}/stackrox/bin/"
 cp -p "${INPUT_ROOT}/bin/sensor-upgrader"   "${bundle_root}/stackrox/bin/"
 cp -p "${INPUT_ROOT}/bin/admission-control" "${bundle_root}/stackrox/bin/"
-cp -p "${INPUT_ROOT}/static-bin/"*          "${bundle_root}/stackrox/"
 cp -pr "${INPUT_ROOT}/THIRD_PARTY_NOTICES"  "${bundle_root}/"
 cp -pr "${INPUT_ROOT}/ui/build/"*           "${bundle_root}/ui/"
 
@@ -74,10 +93,7 @@ extract_from_image "${BUILDER_IMAGE}" "/usr/local/bin/ldb" "${bundle_root}/usr/l
 rpm_base_url="http://mirror.centos.org/centos/8/BaseOS/x86_64/os/Packages"
 rpm_suffix="el8.x86_64.rpm"
 
-curl -s -f -o "${bundle_root}/lz4.rpm" "${rpm_base_url}/lz4-1.8.1.2-4.${rpm_suffix}"
-curl -s -f -o "${bundle_root}/bzip2.rpm" "${rpm_base_url}/bzip2-1.0.6-26.${rpm_suffix}"
 curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.7-5.${rpm_suffix}"
-curl -s -f -o "${bundle_root}/zlib.rpm" "${rpm_base_url}/zlib-1.2.11-13.${rpm_suffix}"
 
 # =============================================================================
 
