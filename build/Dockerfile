@@ -1,4 +1,4 @@
-FROM golang:1.13.9-alpine3.11 as builder
+FROM alpine:3.11 as builder
 
 ENV ROCKSDB_VERSION="v6.7.3"
 
@@ -29,7 +29,7 @@ RUN cd /tmp/rocksdb && DEBUG_LEVEL=0 make ldb
 RUN wget -O- https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz | tar -xJf -
 RUN upx-3.96-amd64_linux/upx -9 /tmp/rocksdb/ldb
 
-FROM golang:1.13.9-alpine3.11
+FROM golang:1.15.2-alpine
 
 COPY --from=builder /tmp/rocksdb/librocksdb.a /lib/rocksdb/librocksdb.a
 COPY --from=builder /tmp/rocksdb/include /lib/rocksdb/include

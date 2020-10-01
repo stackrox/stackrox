@@ -1077,7 +1077,10 @@ commands:
       - run:
           name: Deploy Webhook server
           command: |
-            ./scripts/ci/create-webhookserver.sh
+            certs_dir="$(mktemp -d)"
+            ./scripts/ci/create-webhookserver.sh "${certs_dir}"
+            GENERIC_WEBHOOK_SERVER_CA_CONTENTS="$(cat "${certs_dir}/ca.crt")"
+            cci-export GENERIC_WEBHOOK_SERVER_CA_CONTENTS "${GENERIC_WEBHOOK_SERVER_CA_CONTENTS}"
 
   deploy-default-psp:
     steps:
@@ -1851,6 +1854,17 @@ commands:
             - v7-rox-npm-deps-{{ checksum "ui/monorepo.lock" }}
             - v7-rox-npm-deps-
 
+  fetch-ui-deps:
+    description: "Fetch UI dependencies"
+    steps:
+      - run:
+          name: Fetch dependencies
+          command: |
+            if [[ -d ui/node_modules && -f ui/monorepo.lock.sha256 && "$(cat ui/monorepo.lock.sha256)" == "$(openssl dgst -r -sha256 ui/monorepo.lock)" ]]; then
+              exit 0  # cache is complete if the above condition matches
+            fi
+            make -C ui deps
+
 jobs:
   ###
   # Jobs independent from build / compilation (like style checks, static code analysis, unit tests)
@@ -2023,13 +2037,7 @@ jobs:
     steps:
       - checkout
       - restore-npm-deps-cache
-      - run:
-          name: Fetch dependencies
-          command: |
-            if [[ -d ui/node_modules && -f ui/monorepo.lock.sha256 && "$(cat ui/monorepo.lock.sha256)" == "$(openssl dgst -r -sha256 ui/monorepo.lock)" ]]; then
-              exit 0  # cache is complete if the above condition matches
-            fi
-            make -C ui deps
+      - fetch-ui-deps
 
       - run:
           name: Prepare UI tree state file
@@ -2094,6 +2102,13 @@ jobs:
               echo "Got unexpected go version ${roxctl_go_version} (wanted ${expected_go_version})"
               exit 1
             fi
+
+            # Ensure that the Go version is up-to-date in go.mod as well.
+            # Note that the patch version is not specified in go.mod.
+            [[ "${expected_go_version}" =~ ^go(1\.[0-9]{2})(\.[0-9]+)?$ ]]
+            go_version="${BASH_REMATCH[1]}"
+            go mod edit -go "${go_version}"
+            git diff --exit-code -- go.mod
       - *saveGoModCache
 
       - *saveGoBuildCache
@@ -2124,12 +2139,13 @@ jobs:
             sudo cp .circleci/bash-wrapper /bin/bash
             sudo cp .circleci/bash.env /etc/bash.env
       - run:
-          name: "Install new golang version"
+          name: Install Go
           command: |
+            # We need to install go here to pull go modules, even though the build itself is dockerized.
             sudo rm -rf /usr/local/go
-            VERSION=1.13.10
-            wget -c "https://storage.googleapis.com/golang/go${VERSION}.linux-amd64.tar.gz"
-            sudo tar -C /usr/local -xvzf go${VERSION}.linux-amd64.tar.gz
+            go_version="$(cat EXPECTED_GO_VERSION)" # This is already prefixed with `go`.
+            wget -c "https://storage.googleapis.com/golang/${go_version}.linux-amd64.tar.gz"
+            sudo tar -C /usr/local -xvzf "${go_version}.linux-amd64.tar.gz"
             cci-export PATH $PATH:$GOPATH/bin
       - *restoreGoModBinaryCache
       - setup-go-build-env
@@ -2247,13 +2263,13 @@ jobs:
       - checkout
       - setup_remote_docker
 
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
       - install-ossls
 
       - *restoreGoModCache
       - setup-go-build-env
+
+      - restore-npm-deps-cache
+      - fetch-ui-deps
 
       - run:
           name: Generate OSS notice
@@ -2288,9 +2304,7 @@ jobs:
           paths:
             - image/rhel/bundle.tar.gz
 
-      # TODO: Add this back -- it was temporarily removed because of stability issues with this build caused by Google
-      # storage.
-      # - cleanup-clusters-on-fail
+      - cleanup-clusters-on-fail
 
   build-deployer:
     executor: custom
@@ -4379,7 +4393,7 @@ workflows:
       - pre-build-cli:
           <<: *runOnAllTagsWithDockerIOPullCtx
       - pre-build-go-binaries:
-          <<: *runOnAllTagsWithDockerIOPullCtx
+          <<: *runOnAllTagsWithDockerIOPushCtx
       - build:
           <<: *runOnAllTagsWithDockerIOPushCtx
           requires:
@@ -4388,10 +4402,6 @@ workflows:
             - pre-build-go-binaries
       - build-rhel:
           <<: *runOnAllTagsWithDockerIOPushCtx
-          requires:
-            - pre-build-ui
-            - pre-build-cli
-            - pre-build-go-binaries
       - build-deployer:
           <<: *runOnAllTagsWithDockerIOPushCtx
           requires:

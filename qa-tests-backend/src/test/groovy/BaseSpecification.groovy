@@ -258,7 +258,7 @@ class BaseSpecification extends Specification {
                 name: "gcr-image-pull-secret",
                 server: "https://us.gcr.io",
                 username: "_json_key",
-                password: Env.mustGet("GOOGLE_CREDENTIALS_GCR_SCANNER"),
+                password: Env.mustGetInCI("GOOGLE_CREDENTIALS_GCR_SCANNER", "{}"),
                 namespace: Constants.ORCHESTRATOR_NAMESPACE
         ))
 

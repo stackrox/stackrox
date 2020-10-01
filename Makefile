@@ -10,8 +10,14 @@ endif
 
 ALPINE_MIRROR_BUILD_ARG := $(ALPINE_MIRROR:%=--build-arg ALPINE_MIRROR=%)
 
-BUILD_IMAGE := stackrox/main:rocksdb-builder-6.7.3-4
-RHEL_BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-6.7.3-4
+# Compute the tag of the build image based on the contents of the tracked files in
+# build. This ensures that we build it if and only if necessary, pulling from DockerHub
+# otherwise.
+# `git ls-files -s build` prints all files in build, along with the SHAs,
+# and `git hash-object` just computes the SHA of that.
+BUILD_DIR_HASH := $(shell git ls-files -s build | git hash-object --stdin)
+BUILD_IMAGE := stackrox/main:rocksdb-builder-$(BUILD_DIR_HASH)
+RHEL_BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 
@@ -309,12 +315,19 @@ bin/%/admission-control: build-prep
 .PHONY: main-builder-image
 main-builder-image:
 	@echo "+ $@"
-	docker build -t $(BUILD_IMAGE) build/
+	scripts/ensure_image.sh $(BUILD_IMAGE) build/Dockerfile build/
+	@# Ensure that the go version in the image matches the expected version
+	# If the next line fails, you need to update the go version in build/Dockerfile.
+	grep -q "$(shell cat EXPECTED_GO_VERSION)" <(docker run --rm "$(BUILD_IMAGE)" go version)
 
 .PHONY: main-builder-image-rhel
 main-builder-image-rhel:
 	@echo "+ $@"
-	docker build -t $(RHEL_BUILD_IMAGE) -f build/Dockerfile_rhel build/
+	scripts/ensure_image.sh $(RHEL_BUILD_IMAGE) build/Dockerfile_rhel build/
+	@# Ensure that the go version in the image matches the expected version
+	# If the next line fails, you need to update the go version in build/Dockerfile_rhel.
+	grep -q "$(shell cat EXPECTED_GO_VERSION)" <(docker run --rm "$(RHEL_BUILD_IMAGE)" go version)
+
 
 .PHONY: main-build
 main-build: build-prep main-build-dockerized
@@ -325,12 +338,12 @@ main-rhel-build: build-prep main-rhel-build-dockerized
 	@echo "+ $@"
 
 .PHONY: main-build-dockerized
-main-build-dockerized:
+main-build-dockerized: main-builder-image
 	@echo "+ $@"
 	docker run -e CI -e CIRCLE_TAG -e GOTAGS $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
 .PHONY: main-rhel-dockerized
-main-rhel-build-dockerized:
+main-rhel-build-dockerized: main-builder-image-rhel
 	@echo "+ $@"
 ifdef CI
 	docker container create -e RACE -e CI -e CIRCLE_TAG -e GOTAGS --name builder $(RHEL_BUILD_IMAGE) make main-build-nodeps
@@ -357,7 +370,7 @@ scale-build: build-prep
 .PHONY: webhookserver-build
 webhookserver-build: build-prep
 	@echo "+ $@"
-	$(GOBUILD) webhookserver
+	CGO_ENABLED=0 $(GOBUILD) webhookserver
 
 .PHONY: mock-grpc-server-build
 mock-grpc-server-build: build-prep
@@ -535,7 +548,7 @@ webhookserver-image: webhookserver-build
 	-mkdir webhookserver/bin
 	cp bin/linux/webhookserver webhookserver/bin/webhookserver
 	chmod +w webhookserver/bin/webhookserver
-	docker build -t stackrox/webhookserver:1.1 -f webhookserver/Dockerfile webhookserver
+	docker build -t stackrox/webhookserver:1.2 -f webhookserver/Dockerfile webhookserver
 
 .PHONY: mock-grpc-server-image
 mock-grpc-server-image: mock-grpc-server-build clean-image

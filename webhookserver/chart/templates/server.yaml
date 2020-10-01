@@ -19,7 +19,7 @@ spec:
       imagePullSecrets:
       - name: stackrox
       containers:
-      - image: stackrox/webhookserver:1.1
+      - image: stackrox/webhookserver:1.2
         name: webhookserver
         command: ["/webhookserver"]
         imagePullPolicy: IfNotPresent
@@ -31,16 +31,17 @@ spec:
             memory: "100Mi"
             cpu: "100m"
         volumeMounts:
-        - name: certtmp
-          mountPath: /tmp/certs/
-          readOnly: false
+        - name: certs
+          mountPath: /tmp/certs
+          readOnly: true
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
           readOnlyRootFilesystem: true
       volumes:
-      - name: certtmp
-        emptyDir: {}
+      - name: certs
+        secret:
+          secretName: webhook-server-certs
 ---
 apiVersion: v1
 kind: Service
@@ -60,3 +61,4 @@ spec:
   selector:
     app: webhookserver
   type: ClusterIP
+---
