@@ -18,6 +18,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Added support for .NET Core runtime CVEs (data from NVD).
   - This affects images with .NET Core and/or ASP.NET Core runtime(s) installed
 - UI: Update the Network Graph when a different cluster is selected (ROX-5662)
+- Support sub-CVEs for RHEAs and RHBAs as well as RHSAs for rhel/centos-based images.
+  - Though it is not specified, it is possible RHEAs and RHBAs to have associated CVEs.
 
 ## [49.0]
 - OIDC authentication providers: added support for two rarely-needed configuration options:

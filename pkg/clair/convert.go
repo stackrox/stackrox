@@ -23,10 +23,11 @@ var (
 	log = logging.LoggerForModule()
 
 	versionFormatsToSource = map[string]storage.SourceType{
-		component.GemSourceType.String():    storage.SourceType_RUBY,
-		component.JavaSourceType.String():   storage.SourceType_JAVA,
-		component.NPMSourceType.String():    storage.SourceType_NODEJS,
-		component.PythonSourceType.String(): storage.SourceType_PYTHON,
+		component.GemSourceType.String():               storage.SourceType_RUBY,
+		component.JavaSourceType.String():              storage.SourceType_JAVA,
+		component.NPMSourceType.String():               storage.SourceType_NODEJS,
+		component.PythonSourceType.String():            storage.SourceType_PYTHON,
+		component.DotNetCoreRuntimeSourceType.String(): storage.SourceType_DOTNETCORERUNTIME,
 	}
 )
 

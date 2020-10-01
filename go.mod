@@ -75,7 +75,7 @@ require (
 	github.com/stackrox/anchore-client v0.0.0-20190929180200-981e05834836
 	github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191029220117-2a73008e51a9
-	github.com/stackrox/scanner v0.0.0-20200917233552-afb797fde7bf
+	github.com/stackrox/scanner v0.0.0-20200930193229-9be8257b3580
 	github.com/stretchr/testify v1.6.1
 	github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222
 	github.com/tkuchiki/go-timezone v0.1.3

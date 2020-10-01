@@ -86,11 +86,12 @@ message EmbeddedImageScanComponent {
 }
 
 enum SourceType {
-    OS     = 0;
-    PYTHON = 1;
-    JAVA   = 2;
-    RUBY   = 3;
-    NODEJS = 4;
+    OS                = 0;
+    PYTHON            = 1;
+    JAVA              = 2;
+    RUBY              = 3;
+    NODEJS            = 4;
+    DOTNETCORERUNTIME = 5;
 }
 
 message License {
