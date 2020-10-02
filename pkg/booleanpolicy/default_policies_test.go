@@ -852,13 +852,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			sampleViolationForMatched: "Image in container '%s' has not been scanned",
 		},
 		{
-			policyName: "Required Label: Email",
-			shouldNotMatch: map[string]struct{}{
-				fixtureDep.GetId(): {},
-			},
-			sampleViolationForMatched: "Required label not found (key = 'email', value = '[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+')",
-		},
-		{
 			policyName: "Required Annotation: Email",
 			shouldNotMatch: map[string]struct{}{
 				depWithGoodEmailAnnotation.GetId(): {},
