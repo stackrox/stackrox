@@ -155,7 +155,6 @@ class BuiltinPoliciesTest extends BaseSpecification {
         "Required Annotation: Email"                                 | TRIGGER_MOST
         "Required Annotation: Owner/Team"                            | TRIGGER_MOST
         "Required Image Label"                                       | TRIGGER_MOST
-        "Required Label: Email"                                      | TRIGGER_MOST
         "Required Label: Owner/Team"                                 | TRIGGER_MOST
         "Secret Mounted as Environment Variable"                     | TRIGGER_MOST
         "Secure Shell (ssh) Port Exposed in Image"                   | TRIGGER_MOST
