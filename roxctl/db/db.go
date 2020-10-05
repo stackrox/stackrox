@@ -39,9 +39,6 @@ func writeOutProfiles(path string) {
 func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use: "db",
-		Run: func(c *cobra.Command, _ []string) {
-			_ = c.Help()
-		},
 		PersistentPreRun: func(_ *cobra.Command, _ []string) {
 			profilingPath := os.Getenv("PROFILING_PATH")
 			if profilingPath == "" {

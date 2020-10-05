@@ -12,9 +12,6 @@ import (
 func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use: "deployment",
-		Run: func(c *cobra.Command, _ []string) {
-			_ = c.Help()
-		},
 	}
 
 	c.AddCommand(check.Command())

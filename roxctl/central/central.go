@@ -15,9 +15,6 @@ import (
 func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use: "central",
-		Run: func(c *cobra.Command, _ []string) {
-			_ = c.Help()
-		},
 	}
 
 	c.AddCommand(

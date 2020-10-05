@@ -23,9 +23,6 @@ func Command() *cobra.Command {
 			}
 			return nil
 		},
-		Run: func(c *cobra.Command, _ []string) {
-			_ = c.Help()
-		},
 	}
 
 	c.AddCommand(output.Command())

@@ -24,9 +24,6 @@ var (
 func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use: "debug",
-		Run: func(c *cobra.Command, _ []string) {
-			_ = c.Help()
-		},
 	}
 	c.AddCommand(LogLevelCommand())
 	c.AddCommand(DumpCommand())

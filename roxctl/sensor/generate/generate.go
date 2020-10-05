@@ -120,9 +120,6 @@ func fullClusterCreation(timeout time.Duration) error {
 func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use: "generate",
-		Run: func(c *cobra.Command, _ []string) {
-			_ = c.Help()
-		},
 	}
 
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "output directory for bundle contents (default: auto-generated directory name inside the current directory)")
