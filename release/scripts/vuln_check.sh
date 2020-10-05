@@ -61,9 +61,6 @@ DOCS_PRERELEASE_TAG=$(cat "$DIR/../../DOCS_VERSION")
 compare_fixable_vulns "main" "$RELEASE_TAG"
 compare_fixable_vulns "main-rhel" "$RELEASE_TAG"
 
-# check monitoring image - skip for now because we don't really care :(
-# compare_fixable_vulns "monitoring" "$RELEASE_TAG"
-
 # check docs image - using the pre-release tag (not the release tag)
 compare_fixable_vulns "docs" "$DOCS_PRERELEASE_TAG"
 

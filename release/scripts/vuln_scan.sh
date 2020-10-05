@@ -38,9 +38,6 @@ function retag_with_rhel {
 RELEASE_TAG=$(git describe --tags)
 retag_with_rhel stackrox/main "$RELEASE_TAG"
 
-# Monitoring images
-retag_without_rhel stackrox/monitoring "$RELEASE_TAG"
-
 # Docs image
 DOCS_PRERELEASE_TAG=$(cat "$DIR/../../DOCS_VERSION")
 retag_without_rhel stackrox/docs "$DOCS_PRERELEASE_TAG"
