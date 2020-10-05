@@ -24,6 +24,7 @@ import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.FeatureFlagService
 import services.NetworkGraphService
+import spock.lang.Stepwise
 import spock.lang.Unroll
 import util.NetworkGraphUtil
 import io.stackrox.proto.storage.NetworkFlowOuterClass.L4Protocol
@@ -31,6 +32,7 @@ import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.Type
 import io.stackrox.proto.api.v1.NetworkGraphOuterClass.NetworkGraph
 import com.jayway.restassured.response.Response
 
+@Stepwise
 class NetworkFlowTest extends BaseSpecification {
 
     static final private NETWORK_FLOW_UPDATE_CADENCE = 30000 // Network flow data is updated every 30 seconds
@@ -182,6 +184,26 @@ class NetworkFlowTest extends BaseSpecification {
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
+    }
+
+    @Category([NetworkFlowVisualization])
+    def "Verify one-time connections show at first, but do not appear again"() {
+        given:
+        "Two deployments, A and B, where B communicates to A a single time during initial deployment"
+        String targetUid = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
+        assert targetUid != null
+        String sourceUid = DEPLOYMENTS.find { it.name == SINGLECONNECTIONSOURCE }?.deploymentUid
+        assert sourceUid != null
+
+        when:
+        "Check for edge in network graph"
+        println "Checking for edge between ${SINGLECONNECTIONSOURCE} and ${NGINXCONNECTIONTARGET}"
+        List<Edge> edges = checkForEdge(sourceUid, targetUid)
+        assert edges
+
+        then:
+        "Wait for collector update and fetch graph again to confirm connection dropped"
+        assert !waitForEdgeUpdate(edges.get(0))
     }
 
     @Category([BAT, RUNTIME, NetworkFlowVisualization])
@@ -391,26 +413,6 @@ class NetworkFlowTest extends BaseSpecification {
         "Assert connection states"
         println "Checking for NO edge between ${NOCONNECTIONSOURCE} and ${NGINXCONNECTIONTARGET}"
         assert !checkForEdge(sourceUid, targetUid, null, 30)
-    }
-
-    @Category([NetworkFlowVisualization])
-    def "Verify one-time connections show at first, but do not appear again"() {
-        given:
-        "Two deployments, A and B, where B communicates to A a single time during initial deployment"
-        String targetUid = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
-        assert targetUid != null
-        String sourceUid = DEPLOYMENTS.find { it.name == SINGLECONNECTIONSOURCE }?.deploymentUid
-        assert sourceUid != null
-
-        when:
-        "Check for edge in network graph"
-        println "Checking for edge between ${SINGLECONNECTIONSOURCE} and ${NGINXCONNECTIONTARGET}"
-        List<Edge> edges = checkForEdge(sourceUid, targetUid)
-        assert edges
-
-        then:
-        "Wait for collector update and fetch graph again to confirm connection dropped"
-        assert !waitForEdgeUpdate(edges.get(0))
     }
 
     @Category([NetworkFlowVisualization])
