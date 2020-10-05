@@ -28,6 +28,10 @@ function remCalc(pixel) {
 }
 
 module.exports = {
+    future: {
+        removeDeprecatedGapUtilities: true,
+        purgeLayersByDefault: true,
+    },
     important: true,
     theme: {
         screens: {
