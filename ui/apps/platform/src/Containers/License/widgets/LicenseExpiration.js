@@ -4,6 +4,7 @@ import { format, distanceInWordsStrict } from 'date-fns';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
+import { getHasReadWritePermission } from 'reducers/roles';
 import {
     createExpirationMessageWithoutLink,
     getExpirationMessageType,
@@ -14,8 +15,8 @@ import Widget from 'Components/Widget';
 import Message from 'Components/Message';
 import UploadLicense from 'Containers/License/UploadLicense';
 
-const LicenseExpiration = ({ expirationDate, shouldHaveReadWritePermission }) => {
-    const canUploadLicense = shouldHaveReadWritePermission('Licenses');
+const LicenseExpiration = ({ expirationDate, userRolePermissions }) => {
+    const canUploadLicense = getHasReadWritePermission('Licenses', userRolePermissions);
     const expirationMessage = createExpirationMessageWithoutLink(expirationDate);
 
     const showTopTimeRemaining = getExpirationMessageType(expirationDate) === 'info';
@@ -50,16 +51,17 @@ const LicenseExpiration = ({ expirationDate, shouldHaveReadWritePermission }) =>
 
 LicenseExpiration.propTypes = {
     expirationDate: PropTypes.string,
-    shouldHaveReadWritePermission: PropTypes.func.isRequired,
+    userRolePermissions: PropTypes.shape({ globalAccess: PropTypes.string.isRequired }),
 };
 
 LicenseExpiration.defaultProps = {
     expirationDate: null,
+    userRolePermissions: null,
 };
 
 const mapStateToProps = createStructuredSelector({
     expirationDate: selectors.getLicenseExpirationDate,
-    shouldHaveReadWritePermission: selectors.shouldHaveReadWritePermission,
+    userRolePermissions: selectors.getUserRolePermissions,
 });
 
 export default connect(mapStateToProps, null)(LicenseExpiration);

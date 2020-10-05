@@ -6,6 +6,7 @@ import { differenceInDays, distanceInWordsStrict, format } from 'date-fns';
 
 import MessageBanner from 'Components/MessageBanner';
 import { selectors } from 'reducers';
+import { getHasReadWritePermission } from 'reducers/roles';
 import Button from '../../Components/Button';
 
 const getExpirationMessageType = (daysLeft) => {
@@ -21,7 +22,7 @@ const getExpirationMessageType = (daysLeft) => {
 const CredentialExpiry = ({
     component,
     expiryFetchFunc,
-    shouldHaveReadWritePermission,
+    userRolePermissions,
     downloadYAMLFunc,
 }) => {
     const [expirationDate, setExpirationDate] = useState(null);
@@ -48,7 +49,10 @@ const CredentialExpiry = ({
     if (type === 'info') {
         return null;
     }
-    const hasServiceIdentityWritePermission = shouldHaveReadWritePermission('ServiceIdentity');
+    const hasServiceIdentityWritePermission = getHasReadWritePermission(
+        'ServiceIdentity',
+        userRolePermissions
+    );
     const message = (
         <span className="flex-1 text-center">
             The {component} certificate expires in {distanceInWordsStrict(expirationDate, now)} on{' '}
@@ -82,12 +86,16 @@ const CredentialExpiry = ({
 CredentialExpiry.propTypes = {
     component: PropTypes.string.isRequired,
     expiryFetchFunc: PropTypes.func.isRequired,
-    shouldHaveReadWritePermission: PropTypes.func.isRequired,
+    userRolePermissions: PropTypes.shape({ globalAccess: PropTypes.string.isRequired }),
     downloadYAMLFunc: PropTypes.func.isRequired,
 };
 
+CredentialExpiry.defaultProps = {
+    userRolePermissions: null,
+};
+
 const mapStateToProps = createStructuredSelector({
-    shouldHaveReadWritePermission: selectors.shouldHaveReadWritePermission,
+    userRolePermissions: selectors.getUserRolePermissions,
 });
 
 export default connect(mapStateToProps, null)(CredentialExpiry);

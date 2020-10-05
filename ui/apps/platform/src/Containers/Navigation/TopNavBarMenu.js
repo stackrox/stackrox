@@ -8,13 +8,14 @@ import { Avatar } from '@stackrox/ui-components';
 
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
+import { getHasReadPermission } from 'reducers/roles';
 import Menu from 'Components/Menu';
 import User from 'utils/User';
 
 const topNavMenuBtnClass =
     'no-underline text-base-600 hover:bg-base-200 items-center cursor-pointer';
 
-function TopNavBarMenu({ logout, shouldHaveReadPermission, userData }) {
+function TopNavBarMenu({ logout, userRolePermissions, userData }) {
     /**
      * TODO: rework the logic for the top-right menu
      * currently starts with the last item and we conditional unshift middle item,
@@ -26,7 +27,7 @@ function TopNavBarMenu({ logout, shouldHaveReadPermission, userData }) {
      */
     const options = [{ label: 'Logout', onClick: () => logout() }];
 
-    if (shouldHaveReadPermission('Licenses')) {
+    if (getHasReadPermission('Licenses', userRolePermissions)) {
         options.unshift({ label: 'Manage Product License', link: '/main/license' });
     }
 
@@ -82,7 +83,7 @@ function TopNavBarMenu({ logout, shouldHaveReadPermission, userData }) {
 
 TopNavBarMenu.propTypes = {
     logout: PropTypes.func.isRequired,
-    shouldHaveReadPermission: PropTypes.func.isRequired,
+    userRolePermissions: PropTypes.shape({ globalAccess: PropTypes.string.isRequired }),
     userData: PropTypes.shape({
         userInfo: PropTypes.shape({
             username: PropTypes.string,
@@ -103,8 +104,12 @@ TopNavBarMenu.propTypes = {
     ).isRequired,
 };
 
+TopNavBarMenu.defaultProps = {
+    userRolePermissions: null,
+};
+
 const mapStateToProps = createStructuredSelector({
-    shouldHaveReadPermission: selectors.shouldHaveReadPermission,
+    userRolePermissions: selectors.getUserRolePermissions,
     userData: selectors.getCurrentUser,
     featureFlags: selectors.getFeatureFlags,
 });

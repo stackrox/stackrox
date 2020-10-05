@@ -7,6 +7,7 @@ import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
 import { AUTH_STATUS } from 'reducers/auth';
+import { getHasReadPermission } from 'reducers/roles';
 import LoadingSection from 'Components/LoadingSection';
 
 class ProtectedRoute extends Component {
@@ -17,13 +18,14 @@ class ProtectedRoute extends Component {
         location: ReactRouterPropTypes.location.isRequired,
         devOnly: PropTypes.bool,
         requiredPermission: PropTypes.string,
-        shouldHaveReadPermission: PropTypes.func.isRequired,
+        userRolePermissions: PropTypes.shape({ globalAccess: PropTypes.string.isRequired }),
         featureFlagEnabled: PropTypes.bool,
     };
 
     static defaultProps = {
         devOnly: false,
         requiredPermission: null,
+        userRolePermissions: null,
         featureFlagEnabled: true,
     };
 
@@ -58,7 +60,7 @@ class ProtectedRoute extends Component {
             authStatus,
             devOnly,
             requiredPermission,
-            shouldHaveReadPermission,
+            userRolePermissions,
             featureFlagEnabled,
             ...rest
         } = this.props;
@@ -66,7 +68,7 @@ class ProtectedRoute extends Component {
         if (
             !featureFlagEnabled ||
             (devOnly && process.env.NODE_ENV !== 'development') ||
-            (requiredPermission && !shouldHaveReadPermission(requiredPermission))
+            (requiredPermission && !getHasReadPermission(requiredPermission, userRolePermissions))
         ) {
             return <Redirect to="/" />;
         }
@@ -77,7 +79,7 @@ class ProtectedRoute extends Component {
 
 const mapStateToProps = createStructuredSelector({
     authStatus: selectors.getAuthStatus,
-    shouldHaveReadPermission: selectors.shouldHaveReadPermission,
+    userRolePermissions: selectors.getUserRolePermissions,
 });
 
 export default connect(mapStateToProps)(ProtectedRoute);

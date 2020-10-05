@@ -80,22 +80,24 @@ const reducer = combineReducers({
 const getRoles = (state) => state.roles;
 const getResources = (state) => state.resources;
 const getSelectedRole = (state) => state.selectedRole;
+const getUserRolePermissions = (state) => state.userRolePermissions;
 
-const getAccessForPermission = (state, permission) => {
-    if (!state.userRolePermissions) {
-        return true;
+const getAccessForPermission = (permission, userRolePermissionsArg) => {
+    if (!userRolePermissionsArg) {
+        return ACCESS_LEVEL.NO_ACCESS;
     }
-    const { globalAccess, resourceToAccess } = state.userRolePermissions;
+    const { globalAccess, resourceToAccess } = userRolePermissionsArg;
     const access = !resourceToAccess ? globalAccess : resourceToAccess[permission];
     return access;
 };
 
-const shouldHaveReadPermission = (state) => (permission) => {
-    const access = getAccessForPermission(state, permission);
+export const getHasReadPermission = (permission, userRolePermissionsArg) => {
+    const access = getAccessForPermission(permission, userRolePermissionsArg);
     return access === ACCESS_LEVEL.READ_WRITE_ACCESS || access === ACCESS_LEVEL.READ_ACCESS;
 };
-const shouldHaveReadWritePermission = (state) => (permission) => {
-    const access = getAccessForPermission(state, permission);
+
+export const getHasReadWritePermission = (permission, userRolePermissionsArg) => {
+    const access = getAccessForPermission(permission, userRolePermissionsArg);
     return access === ACCESS_LEVEL.READ_WRITE_ACCESS;
 };
 
@@ -103,8 +105,7 @@ export const selectors = {
     getRoles,
     getResources,
     getSelectedRole,
-    shouldHaveReadPermission,
-    shouldHaveReadWritePermission,
+    getUserRolePermissions,
 };
 
 export default reducer;
