@@ -502,7 +502,7 @@ orbs:
 executors:
   custom:
     docker:
-      - image: docker.io/stackrox/apollo-ci:0.3.4
+      - image: docker.io/stackrox/apollo-ci:0.3.5
         auth:
           username: $DOCKER_IO_PULL_USERNAME
           password: $DOCKER_IO_PULL_PASSWORD
@@ -4131,6 +4131,49 @@ jobs:
             make render-helm-yamls
             .circleci/publish-helm-charts "/tmp/${MAIN_TAG}"
             rm -rf "/tmp/${MAIN_TAG}"
+
+      - run:
+          name: Push image into ECR for AWS Marketplace
+          command: |
+            ECR_REGISTRY="226581168482.dkr.ecr.us-east-1.amazonaws.com/stackrox"
+            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+            MAIN_TAG=$(make --quiet tag)
+            SCANNER_TAG=$(make --quiet scanner-tag)
+            COLLECTOR_TAG=$(make --quiet collector-tag)
+            DOCS_TAG=$(make --quiet docs-tag)
+
+            # Main was pushed up in a previous step, so just needs to be tagged.
+            docker tag  "stackrox.io/main:$MAIN_TAG" "$ECR_REGISTRY/main:$MAIN_TAG"
+            docker push "$ECR_REGISTRY/main:$MAIN_TAG" | cat
+
+            # Scanner was pushed up in its own repo, so must be pulled back down here.
+            docker pull "stackrox.io/scanner:$SCANNER_TAG" | cat
+            docker tag  "stackrox.io/scanner:$SCANNER_TAG" "$ECR_REGISTRY/scanner:$SCANNER_TAG"
+            docker push "$ECR_REGISTRY/scanner:$SCANNER_TAG" | cat
+
+            # Scanner-db was pushed up in its own repo, so must be pulled back down here.
+            docker pull "stackrox.io/scanner-db:$SCANNER_TAG" | cat
+            docker tag  "stackrox.io/scanner-db:$SCANNER_TAG" "$ECR_REGISTRY/scanner-db:$SCANNER_TAG"
+            docker push "$ECR_REGISTRY/scanner-db:$SCANNER_TAG" | cat
+
+            # Docs was pushed up in its own repo, so must be pulled back down here.
+            docker pull "stackrox.io/docs:$DOCS_TAG" | cat
+            docker tag  "stackrox.io/docs:$DOCS_TAG" "$ECR_REGISTRY/docs:$DOCS_TAG"
+            docker push "$ECR_REGISTRY/docs:$DOCS_TAG" | cat
+
+            # Collector was pushed up in its own repo, so must be pulled back down here.
+            docker pull "collector.stackrox.io/collector:$COLLECTOR_TAG" | cat
+            docker tag  "collector.stackrox.io/collector:$COLLECTOR_TAG" "$ECR_REGISTRY/collector:$COLLECTOR_TAG"
+            docker push "$ECR_REGISTRY/collector:$COLLECTOR_TAG" | cat
+
+            echo ""
+            echo "Images pushed to Marketplace ECR:"
+            echo "MAIN:       $ECR_REGISTRY/main:$MAIN_TAG"
+            echo "SCANNER:    $ECR_REGISTRY/scanner:$SCANNER_TAG"
+            echo "SCANNER-DB: $ECR_REGISTRY/scanner-db:$SCANNER_TAG"
+            echo "COLLECTOR:  $ECR_REGISTRY/collector:$COLLECTOR_TAG"
+            echo "DOCS:       $ECR_REGISTRY/docs:$DOCS_TAG"
 
   scan-images-in-quay:
     executor: custom
