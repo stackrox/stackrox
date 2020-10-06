@@ -8,6 +8,7 @@ import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOp
 
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
+import Message from 'Components/Message';
 import Loader from 'Components/Loader';
 
 import TablePagination from 'Components/TablePagination';
@@ -306,7 +307,7 @@ const ListTable = ({
                             createPDFTable(tableData, entityType, query, pdfId, tableColumns);
                         }
 
-                        contents = isControlList ? (
+                        const tableElement = isControlList ? (
                             <TableGroup
                                 groups={tableData}
                                 totalRows={totalRows}
@@ -332,6 +333,14 @@ const ListTable = ({
                                     },
                                 ]}
                             />
+                        );
+                        contents = (
+                            <>
+                                {data.results.errorMessage && (
+                                    <Message type="guidance" message={data.results.errorMessage} />
+                                )}
+                                {tableElement}
+                            </>
                         );
                     }
                     headerComponent = isControlList ? null : (

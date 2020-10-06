@@ -2,7 +2,12 @@ import { gql } from '@apollo/client';
 
 export const CLUSTERS_QUERY = gql`
     query clustersList($where: String) {
-        results: aggregatedResults(groupBy: [CLUSTER, STANDARD], unit: CHECK, where: $where) {
+        results: aggregatedResults(
+            groupBy: [CLUSTER, STANDARD]
+            unit: CHECK
+            where: $where
+            collapseBy: CLUSTER
+        ) {
             results {
                 aggregationKeys {
                     id
@@ -21,13 +26,19 @@ export const CLUSTERS_QUERY = gql`
                 numFailing
                 numSkipped
             }
+            errorMessage
         }
     }
 `;
 
 export const NAMESPACES_QUERY = gql`
     query namespaceList($where: String) {
-        results: aggregatedResults(groupBy: [NAMESPACE, STANDARD], unit: CHECK, where: $where) {
+        results: aggregatedResults(
+            groupBy: [NAMESPACE, STANDARD]
+            unit: CHECK
+            where: $where
+            collapseBy: NAMESPACE
+        ) {
             results {
                 aggregationKeys {
                     id
@@ -50,13 +61,19 @@ export const NAMESPACES_QUERY = gql`
                 numFailing
                 numSkipped
             }
+            errorMessage
         }
     }
 `;
 
 export const NODES_QUERY = gql`
     query nodesList($where: String) {
-        results: aggregatedResults(groupBy: [NODE, STANDARD], unit: CHECK, where: $where) {
+        results: aggregatedResults(
+            groupBy: [NODE, STANDARD]
+            unit: CHECK
+            where: $where
+            collapseBy: NODE
+        ) {
             results {
                 aggregationKeys {
                     id
@@ -77,13 +94,19 @@ export const NODES_QUERY = gql`
                 numSkipped
                 unit
             }
+            errorMessage
         }
     }
 `;
 
 export const DEPLOYMENTS_QUERY = gql`
     query deploymentsList($where: String) {
-        results: aggregatedResults(groupBy: [DEPLOYMENT, STANDARD], unit: CHECK, where: $where) {
+        results: aggregatedResults(
+            groupBy: [DEPLOYMENT, STANDARD]
+            unit: CHECK
+            where: $where
+            collapseBy: DEPLOYMENT
+        ) {
             results {
                 aggregationKeys {
                     id
@@ -104,6 +127,7 @@ export const DEPLOYMENTS_QUERY = gql`
                 numSkipped
                 unit
             }
+            errorMessage
         }
     }
 `;

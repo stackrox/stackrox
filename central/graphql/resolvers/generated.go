@@ -249,6 +249,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"scope: ComplianceAggregation_Scope!",
 	}))
 	utils.Must(builder.AddType("ComplianceAggregation_Response", []string{
+		"errorMessage: String!",
 		"results: [ComplianceAggregation_Result]!",
 		"sources: [ComplianceAggregation_Source]!",
 	}))
@@ -3039,6 +3040,11 @@ func (resolver *Resolver) wrapComplianceAggregation_Responses(values []*storage.
 		output[i] = &complianceAggregation_ResponseResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *complianceAggregation_ResponseResolver) ErrorMessage(ctx context.Context) string {
+	value := resolver.data.GetErrorMessage()
+	return value
 }
 
 func (resolver *complianceAggregation_ResponseResolver) Results(ctx context.Context) ([]*complianceAggregation_ResultResolver, error) {

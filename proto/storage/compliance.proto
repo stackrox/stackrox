@@ -146,8 +146,9 @@ message ComplianceAggregation {
 
     // Next available tag: 3
     message Response {
-        repeated Result results = 1;
-        repeated Source sources = 2;
+        repeated Result results        = 1;
+        repeated Source sources        = 2;
+        string          error_message  = 3;
     }
 }
 

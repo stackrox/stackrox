@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -18,6 +19,10 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+const (
+	aggregationLimit = 1000
 )
 
 var (
@@ -38,7 +43,7 @@ func InitCompliance() {
 		utils.Must(
 			schema.AddQuery("complianceStandard(id:ID!): ComplianceStandardMetadata"),
 			schema.AddQuery("complianceStandards(query: String): [ComplianceStandardMetadata!]!"),
-			schema.AddQuery("aggregatedResults(groupBy:[ComplianceAggregation_Scope!],unit:ComplianceAggregation_Scope!,where:String): ComplianceAggregation_Response!"),
+			schema.AddQuery("aggregatedResults(groupBy:[ComplianceAggregation_Scope!],unit:ComplianceAggregation_Scope!,where:String,collapseBy:ComplianceAggregation_Scope): ComplianceAggregation_Response!"),
 			schema.AddQuery("complianceControl(id:ID!): ComplianceControl"),
 			schema.AddQuery("complianceControlGroup(id:ID!): ComplianceControlGroup"),
 			schema.AddQuery("complianceNamespaceCount(query: String): Int!"),
@@ -229,9 +234,10 @@ func (resolver *Resolver) ExecutedControlCount(ctx context.Context, args RawQuer
 }
 
 type aggregatedResultQuery struct {
-	GroupBy *[]string
-	Unit    string
-	Where   *string
+	GroupBy    *[]string
+	Unit       string
+	Where      *string
+	CollapseBy *string
 }
 
 // AggregatedResults returns the aggregation of the last runs aggregated by scope, unit and filtered by a query
@@ -248,22 +254,77 @@ func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregated
 
 	groupBy := toComplianceAggregation_Scopes(args.GroupBy)
 	unit := toComplianceAggregation_Scope(&args.Unit)
+	collapseBy := toComplianceAggregation_Scope(args.CollapseBy)
 
 	validResults, sources, domainMap, err := resolver.ComplianceAggregator.Aggregate(ctx, where, groupBy, unit)
 	if err != nil {
 		return nil, err
 	}
 
+	validResults, domainMap, errMsg := truncateResults(validResults, domainMap, collapseBy)
+
 	return &complianceAggregationResponseWithDomainResolver{
 		complianceAggregation_ResponseResolver: complianceAggregation_ResponseResolver{
 			root: resolver,
 			data: &storage.ComplianceAggregation_Response{
-				Results: validResults,
-				Sources: sources,
+				Results:      validResults,
+				Sources:      sources,
+				ErrorMessage: errMsg,
 			},
 		},
 		domainMap: domainMap,
 	}, nil
+}
+
+func truncateResults(results []*storage.ComplianceAggregation_Result, domainMap map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, collapseBy storage.ComplianceAggregation_Scope) ([]*storage.ComplianceAggregation_Result, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, string) {
+	if len(results) == 0 {
+		return results, domainMap, ""
+	}
+	// If the collapseBy is not contained in the result keys do not truncate
+	validCollapseBy, collapseIndex := validateCollapseBy(results[0].GetAggregationKeys(), collapseBy)
+	if !validCollapseBy {
+		return results, domainMap, ""
+	}
+
+	collapsedResults := make(map[string][]*storage.ComplianceAggregation_Result)
+	for _, result := range results {
+		collapsedResults[result.AggregationKeys[collapseIndex].Id] = append(collapsedResults[result.AggregationKeys[collapseIndex].Id], result)
+	}
+
+	if len(collapsedResults) <= aggregationLimit {
+		return results, domainMap, ""
+	}
+
+	var truncatedResults []*storage.ComplianceAggregation_Result
+	numResults := 0
+	for _, collapsedList := range collapsedResults {
+		truncatedResults = append(truncatedResults, collapsedList...)
+		numResults++
+		if numResults == aggregationLimit {
+			break
+		}
+	}
+
+	truncatedDomainMap := make(map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, len(truncatedResults))
+	for _, result := range truncatedResults {
+		truncatedDomainMap[result] = domainMap[result]
+	}
+
+	errMsg := fmt.Sprintf("The following results only contain the first %d of %d %ss. Use search queries to reduce the result set size.", aggregationLimit, len(collapsedResults), strings.ToLower(collapseBy.String()))
+
+	return truncatedResults, truncatedDomainMap, errMsg
+}
+
+func validateCollapseBy(scopes []*storage.ComplianceAggregation_AggregationKey, collapseBy storage.ComplianceAggregation_Scope) (bool, int) {
+	if collapseBy == storage.ComplianceAggregation_UNKNOWN {
+		return false, -1
+	}
+	for i, scope := range scopes {
+		if collapseBy == scope.Scope {
+			return true, i
+		}
+	}
+	return false, -1
 }
 
 type complianceDomainKeyResolver struct {
