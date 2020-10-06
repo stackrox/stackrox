@@ -1,12 +1,4 @@
-import {
-    routerReducer,
-    LOCATION_CHANGE,
-    push,
-    replace,
-    go,
-    goBack,
-    goForward,
-} from 'react-router-redux';
+import { LOCATION_CHANGE, push, replace, go, goBack, goForward } from 'connected-react-router';
 
 // Action Types
 
@@ -23,10 +15,6 @@ export const actions = {
     goBack,
     goForward,
 };
-
-// Reducers
-
-export default routerReducer;
 
 // Selectors
 

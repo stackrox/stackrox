@@ -65,7 +65,7 @@ Form.defaultProps = {
 const validate = (values) => {
     const errors = {};
 
-    if (!values.name.trim()) {
+    if (!values.name?.trim()) {
         errors.name = 'This field is required';
     }
 

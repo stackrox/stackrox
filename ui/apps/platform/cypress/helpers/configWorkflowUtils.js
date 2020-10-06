@@ -138,16 +138,18 @@ export const sidePanelEntityCountMatchesTableRows = (listEntity) => {
 };
 
 export const entityListCountMatchesTableLinkCount = (entities) => {
+    cy.wait(1000); // same wait as in renderListAndSidePanel
     cy.get(configManagementSelectors.tableLinks)
-        .contains(entities)
-        .invoke('text')
-        .then((value) => {
-            const numEntities = parseInt(value, 10);
-            cy.get(configManagementSelectors.tableLinks).contains(entities).click();
+        .contains(entities) // return first match
+        .then(($a) => {
+            const linkText = $a.text();
+            cy.wrap($a).click();
             cy.get('[data-testid="side-panel"] [data-testid="panel-header"]')
                 .invoke('text')
-                .then((panelHeaderText) => {
-                    expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(numEntities, 10));
+                .should((panelHeaderText) => {
+                    // Expect leading numeric digits to match, however entire text might not match;
+                    // for example, '10 Users & Groups' versus '10 users and groups'
+                    expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(linkText, 10));
                 });
         });
 };

@@ -1,11 +1,11 @@
 import { createStore, applyMiddleware, compose } from 'redux';
-import { routerMiddleware } from 'react-router-redux';
+import { routerMiddleware } from 'connected-react-router';
 import createSagaMiddleware from 'redux-saga';
 import createRavenMiddleware from 'raven-for-redux';
 import Raven from 'raven-js';
 
 import rootSaga from 'sagas';
-import rootReducer from 'reducers';
+import createRootReducer from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 import * as AuthService from 'services/AuthService';
 import { actions as serverErrorActions } from 'reducers/serverError';
@@ -34,6 +34,7 @@ export default function configureStore(initialState = {}, history) {
               })
             : compose;
     /* eslint-enable */
+    const rootReducer = createRootReducer(history);
     const store = createStore(rootReducer, initialState, composeEnhancers(...enhancers));
 
     // add auth interceptors before any HTTP request to APIs (i.e. before running sagas)

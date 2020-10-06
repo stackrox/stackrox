@@ -1,5 +1,5 @@
 import { select, call } from 'redux-saga/effects';
-import { push } from 'react-router-redux';
+import { push } from 'connected-react-router';
 import { expectSaga } from 'redux-saga-test-plan';
 import { dynamic, throwError } from 'redux-saga-test-plan/providers';
 

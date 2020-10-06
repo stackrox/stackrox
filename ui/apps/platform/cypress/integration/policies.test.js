@@ -17,10 +17,6 @@ describe('Policies page', () => {
         cy.wait('@metadataOptions');
     });
 
-    const openActionMenu = () => {
-        cy.get(selectors.actionMenuBtn).click();
-    };
-
     const addPolicy = () => {
         cy.get(selectors.newPolicyButton).click();
     };
@@ -224,17 +220,16 @@ describe('Policies page', () => {
                 .should('have.class', selectors.enabledIconColor);
         });
 
-        it('should show action menu when the checkboxes are chosen', () => {
+        it.skip('should show actions menu when the checkboxes are chosen', () => {
             cy.get(selectors.reassessAllButton).should('be.visible');
             cy.get(selectors.newPolicyButton).should('be.visible');
-            cy.get(selectors.checkboxes).eq(1).click({ force: true });
-            cy.get(selectors.actionMenuBtn).should('be.visible');
-            openActionMenu();
-            cy.get(selectors.actionMenu).contains('Delete');
-            cy.get(selectors.actionMenu).contains('Enable');
-            cy.get(selectors.actionMenu).contains('Disable');
-            cy.get(selectors.reassessAllButton).should('not.be.visible');
-            cy.get(selectors.newPolicyButton).should('not.be.visible');
+            cy.get(selectors.checkbox1).click({ force: true });
+            cy.get(selectors.actionsButton).click();
+            cy.get('button[data-testid="Delete Policies"]').should('be.visible');
+            cy.get('button[data-testid="Enable Notification"]').should('be.visible');
+            cy.get('button[data-testid="Disable Notification"]').should('be.visible');
+            cy.get(selectors.reassessAllButton).should('not.exist');
+            cy.get(selectors.newPolicyButton).should('not.exist');
         });
 
         it('should delete a policy when the hover delete policy clicked', () => {

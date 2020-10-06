@@ -1,5 +1,5 @@
 import { all, take, takeEvery, call, fork, put, takeLatest, select } from 'redux-saga/effects';
-import { push } from 'react-router-redux';
+import { push } from 'connected-react-router';
 import Raven from 'raven-js';
 
 import { policiesPath, violationsPath } from 'routePaths';

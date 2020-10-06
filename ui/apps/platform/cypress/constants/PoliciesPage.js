@@ -12,9 +12,9 @@ export const selectors = {
     prevButton: 'button:contains("Previous")',
     cancelButton: 'button[data-testid="cancel"]',
     reassessAllButton: 'button:contains("Reassess")',
-    actionMenuBtn: 'button:contains("Actions")',
-    actionMenu: '[data-testid="menu-list"]',
-    checkboxes: 'input:checkbox',
+    actionsButton: 'button[data-testid="menu-button"]:contains("Actions")',
+    actionsMenuButton: '[data-testid="menu-list"] button',
+    checkbox1: '.rt-thead input:checkbox',
     policies: {
         scanImage: 'div.rt-tr:contains("90-Day")',
         addCapabilities: '.rt-tr:contains("CAP_SYS_ADMIN capability added")',

@@ -24,7 +24,6 @@ const Role = ({ id, entityListType, entityId1, query, entityContext, pagination 
     const searchParam = useContext(searchContext);
 
     const variables = {
-        cacheBuster: new Date().getUTCMilliseconds(),
         id,
         query: queryService.objectToWhereClause(query[searchParam]),
         pagination,
@@ -86,7 +85,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext, pagination 
         `;
     }
     return (
-        <Query query={getQuery()} variables={variables}>
+        <Query query={getQuery()} variables={variables} fetchPolicy="network-only">
             {({ loading, data }) => {
                 if (isGQLLoading(loading, data)) {
                     return <Loader />;

@@ -1,15 +1,10 @@
 import React from 'react';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { render as rtlRender } from '@testing-library/react';
-import { createStore } from 'redux';
 import { Provider } from 'react-redux';
 
-import rootReducer from 'reducers';
-
-function renderWithRedux(
-    ui,
-    { initialState = {}, store = createStore(rootReducer, initialState), ...renderOptions } = {}
-) {
+// The caller is responsible to create a store for the test.
+function renderWithRedux(store, ui, ...renderOptions) {
     function Wrapper({ children }) {
         return <Provider store={store}>{children}</Provider>;
     }

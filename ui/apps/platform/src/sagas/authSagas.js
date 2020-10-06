@@ -1,6 +1,6 @@
 import { all, take, call, fork, put, takeLatest, takeEvery, select } from 'redux-saga/effects';
 import { delay } from 'redux-saga';
-import { push } from 'react-router-redux';
+import { push } from 'connected-react-router';
 import queryString from 'qs';
 import Raven from 'raven-js';
 import { Base64 } from 'js-base64';
@@ -309,8 +309,10 @@ export default function* auth() {
 
     // take the first location change, i.e. the location where user landed first time
     const action = yield take(locationActionTypes.LOCATION_CHANGE);
-    const { payload: location } = action;
-    if (location.pathname && location.pathname.startsWith(authResponsePrefix)) {
+    const {
+        payload: { location },
+    } = action;
+    if (location.pathname?.startsWith(authResponsePrefix)) {
         // if it was a redirect after authentication, handle it properly
         const authType = location.pathname.substr(authResponsePrefix.length);
         yield fork(dispatchAuthResponse, authType, location);

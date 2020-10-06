@@ -26,7 +26,6 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext, p
     const searchParam = useContext(searchContext);
 
     const variables = {
-        cacheBuster: new Date().getUTCMilliseconds(),
         id,
         query: queryService.objectToWhereClause({
             ...query[searchParam],
@@ -99,7 +98,7 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext, p
     }
 
     return (
-        <Query query={getQuery()} variables={variables}>
+        <Query query={getQuery()} variables={variables} fetchPolicy="network-only">
             {({ loading, data }) => {
                 if (isGQLLoading(loading, data)) {
                     return <Loader />;

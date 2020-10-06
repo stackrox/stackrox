@@ -19,7 +19,6 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext, paginati
     const searchParam = useContext(searchContext);
 
     const variables = {
-        cacheBuster: new Date().getUTCMilliseconds(),
         id: decodeURIComponent(id),
         query: queryService.objectToWhereClause(query[searchParam]),
         pagination,
@@ -85,7 +84,7 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext, paginati
     }
 
     return (
-        <Query query={getQuery()} variables={variables} fetchPolicy="no-cache">
+        <Query query={getQuery()} variables={variables} fetchPolicy="network-only">
             {({ loading, data }) => {
                 if (isGQLLoading(loading, data)) {
                     return <Loader />;

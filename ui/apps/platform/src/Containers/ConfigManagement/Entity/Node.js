@@ -33,7 +33,6 @@ const Node = ({ id, entityListType, entityId1, query, entityContext, pagination 
     }
 
     const variables = {
-        cacheBuster: new Date().getUTCMilliseconds(),
         id,
         query: queryService.getEntityWhereClause(queryObject),
         pagination,
@@ -70,7 +69,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext, pagination 
     `;
 
     return (
-        <Query query={QUERY} variables={variables}>
+        <Query query={QUERY} variables={variables} fetchPolicy="network-only">
             {({ loading, data }) => {
                 if (isGQLLoading(loading, data)) {
                     return <Loader />;

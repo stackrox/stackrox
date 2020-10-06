@@ -2,7 +2,7 @@ import Raven from 'raven-js';
 import store from 'store';
 
 import { all, take, fork, put, takeLatest, select, call } from 'redux-saga/effects';
-import { push } from 'react-router-redux';
+import { push } from 'connected-react-router';
 import { licenseStartUpPath, licensePath, authResponsePrefix } from 'routePaths';
 import { takeEveryLocation } from 'utils/sagaEffects';
 import { selectors } from 'reducers';
@@ -117,7 +117,9 @@ export default function* license() {
     yield fork(watchFetchLicense);
     yield fork(watchMetadataLicenseStatus);
     const action = yield take(locationActionTypes.LOCATION_CHANGE);
-    const { payload: location } = action;
+    const {
+        payload: { location },
+    } = action;
     if (location.pathname && !location.pathname.startsWith(authResponsePrefix)) {
         yield fork(checkLicenseStatus, location);
     }

@@ -1,5 +1,6 @@
 import { combineReducers } from 'redux';
 import { reducer as formReducer } from 'redux-form';
+import { connectRouter } from 'connected-react-router';
 
 import bindSelectors from 'utils/bindSelectors';
 import alerts, { selectors as alertSelectors } from './alerts';
@@ -21,7 +22,7 @@ import secrets, { selectors as secretSelectors } from './secrets';
 import metadata, { selectors as metadataSelectors } from './metadata';
 import dashboard, { selectors as dashboardSelectors } from './dashboard';
 import loading, { selectors as loadingSelectors } from './loading';
-import route, { selectors as routeSelectors } from './routes';
+import { selectors as routeSelectors } from './routes';
 import network, { selectors as networkSelectors } from './network/reducer';
 import processes, { selectors as processSelectors } from './processes';
 import groups, { selectors as groupsSelectors } from './groups';
@@ -65,17 +66,19 @@ const appReducer = combineReducers({
     telemetryConfig,
 });
 
-const rootReducer = combineReducers({
-    route,
-    form: formReducer,
-    app: appReducer,
-});
+const createRootReducer = (history) => {
+    return combineReducers({
+        router: connectRouter(history),
+        form: formReducer,
+        app: appReducer,
+    });
+};
 
-export default rootReducer;
+export default createRootReducer;
 
 // Selectors
 
-const getRoute = (state) => state.route;
+const getRoute = (state) => state.router;
 const getApp = (state) => state.app;
 const getAlerts = (state) => getApp(state).alerts;
 const getAPITokens = (state) => getApp(state).apiTokens;

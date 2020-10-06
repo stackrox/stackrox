@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 
@@ -10,7 +10,9 @@ import AuthProviders from 'Containers/AccessControl/AuthProviders/AuthProviders'
 import { actions } from 'reducers/roles';
 
 function Page({ fetchResources }) {
-    fetchResources();
+    useEffect(() => {
+        fetchResources();
+    }, [fetchResources]);
     const tabHeaders = [
         { text: 'Auth Provider Rules', disabled: false },
         { text: 'Roles and Permissions', disabled: false },

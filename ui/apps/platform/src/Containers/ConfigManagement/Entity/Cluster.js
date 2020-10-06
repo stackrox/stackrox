@@ -35,7 +35,6 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
     }
 
     const variables = {
-        cacheBuster: new Date().getUTCMilliseconds(),
         id,
         query: queryService.objectToWhereClause(queryObject),
         pagination,
@@ -104,7 +103,7 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
     }
 
     return (
-        <Query query={getQuery()} variables={variables}>
+        <Query query={getQuery()} variables={variables} fetchPolicy="network-only">
             {({ loading, data }) => {
                 if (isGQLLoading(loading, data)) {
                     return <Loader />;

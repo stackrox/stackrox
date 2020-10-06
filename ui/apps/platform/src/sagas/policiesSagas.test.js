@@ -1,7 +1,7 @@
 import { select, call } from 'redux-saga/effects';
 import { expectSaga } from 'redux-saga-test-plan';
 import { dynamic } from 'redux-saga-test-plan/providers';
-import { push } from 'react-router-redux';
+import { push } from 'connected-react-router';
 
 import { selectors } from 'reducers';
 import { actions as backendActions, types as backendTypes } from 'reducers/policies/backend';
@@ -51,7 +51,11 @@ const dryRun = {
 
 const createLocationChange = (pathname) => ({
     type: locationActionTypes.LOCATION_CHANGE,
-    payload: { pathname },
+    payload: {
+        location: {
+            pathname,
+        },
+    },
 });
 
 describe('Policies Sagas', () => {

@@ -24,7 +24,6 @@ import DeploymentFindings from './DeploymentFindings';
 const Deployment = ({ id, entityContext, entityListType, query, pagination }) => {
     const searchParam = useContext(searchContext);
     const variables = {
-        cacheBuster: new Date().getUTCMilliseconds(),
         id,
         query: queryService.objectToWhereClause(query[searchParam]),
         pagination,
@@ -112,7 +111,7 @@ const Deployment = ({ id, entityContext, entityListType, query, pagination }) =>
     }
 
     return (
-        <Query query={getQuery()} variables={variables}>
+        <Query query={getQuery()} variables={variables} fetchPolicy="network-only">
             {({ loading, data }) => {
                 if (isGQLLoading(loading, data)) {
                     return <Loader />;

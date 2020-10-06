@@ -216,9 +216,10 @@ function* watchLocation() {
     let pollTask = null;
     while (true) {
         const action = yield take(locationActionTypes.LOCATION_CHANGE);
-        const { payload: location } = action;
-        const onNetworkPage =
-            location && location.pathname && location.pathname.startsWith('/main/network');
+        const {
+            payload: { location },
+        } = action;
+        const onNetworkPage = location.pathname?.startsWith('/main/network');
 
         if (onNetworkPage && !pollTask) {
             // start only if it's not already in progress

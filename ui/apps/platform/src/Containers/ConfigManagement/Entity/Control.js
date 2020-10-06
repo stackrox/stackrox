@@ -23,9 +23,6 @@ const QUERY = gql`
             id
             name
             standardId
-        }
-
-        entities: complianceControl(id: $id) {
             complianceControlNodes {
                 name
                 clusterName
@@ -52,12 +49,11 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
         where: queryService.objectToWhereClause({
             ...query[searchParam],
             'Control Id': id,
-            cacheBuster: new Date().getUTCMilliseconds(),
         }),
     };
 
     return (
-        <Query query={QUERY} variables={variables} fetchPolicy="no-cache">
+        <Query query={QUERY} variables={variables} fetchPolicy="network-only">
             {({ loading, data }) => {
                 if (isGQLLoading(loading, data)) {
                     return <Loader />;
@@ -66,8 +62,9 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                 if (!data || !data.results) {
                     return <PageNotFound resourceType={entityTypes.CONTROL} />;
                 }
-                const { results: entity, entities = {} } = data;
-                const { complianceControlNodes } = entities;
+
+                const { results: entity } = data;
+                const { complianceControlNodes } = entity;
 
                 if (entityListType) {
                     return (
@@ -87,20 +84,6 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                     description = '',
                     interpretationText = '',
                 } = entity;
-                const nodes = complianceControlNodes.map((node) => {
-                    const {
-                        id: nodeId,
-                        name: nodeName,
-                        nodeComplianceControlCount,
-                        clusterName,
-                    } = node;
-                    return {
-                        id: nodeId,
-                        name: nodeName,
-                        clusterName,
-                        passing: !nodeComplianceControlCount.failingCount,
-                    };
-                });
 
                 return (
                     <div className="w-full" id="capture-dashboard-stretch">
@@ -125,7 +108,7 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Nodes"
-                                    value={nodes.length}
+                                    value={complianceControlNodes.length}
                                     entityType={entityTypes.NODE}
                                 />
                             </div>

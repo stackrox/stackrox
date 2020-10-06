@@ -1,6 +1,7 @@
 import resolvePath from 'object-resolve-path';
 import set from 'lodash/set';
 import isEmpty from 'lodash/isEmpty';
+import cloneDeep from 'lodash/cloneDeep';
 
 import formDescriptors from 'Containers/Integrations/formDescriptors';
 
@@ -90,7 +91,7 @@ export function setStoredCredentialFields(source, type, initialValues) {
     if (fieldsWithStoredCredentials.length === 0) {
         return initialValues;
     }
-    const newInitialValues = { ...initialValues };
+    const newInitialValues = cloneDeep(initialValues);
     newInitialValues.hasStoredCredentials = true;
     fieldsWithStoredCredentials.forEach((field) => {
         set(newInitialValues, field.jsonpath, '');

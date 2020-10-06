@@ -2,7 +2,7 @@ import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
 import set from 'lodash/set';
 import get from 'lodash/get';
-import { LOCATION_CHANGE } from 'react-router-redux';
+import { LOCATION_CHANGE } from 'connected-react-router';
 
 import { types as backendTypes } from 'reducers/network/backend';
 import { types as searchTypes } from 'reducers/network/search';
@@ -229,7 +229,7 @@ const selectedNetworkClusterId = (state = null, action) => {
 const networkFlowGraphUpdateKey = (state = { key: 0 }, action) => {
     const { type, payload, options } = action;
 
-    if (type === LOCATION_CHANGE && payload.pathname.startsWith('/main/network')) {
+    if (type === LOCATION_CHANGE && payload.location.pathname.startsWith('/main/network')) {
         return { key: state.key + 1 };
     }
     if (type === searchTypes.SET_SEARCH_OPTIONS) {

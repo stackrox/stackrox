@@ -29,7 +29,6 @@ const Image = ({ id, entityListType, entityId1, query, entityContext, pagination
     const safeImageId = decodeURIComponent(id);
 
     const variables = {
-        cacheBuster: new Date().getUTCMilliseconds(),
         id: safeImageId,
         query: queryService.objectToWhereClause({
             ...query[searchParam],
@@ -110,7 +109,7 @@ const Image = ({ id, entityListType, entityId1, query, entityContext, pagination
     }
 
     return (
-        <Query query={getQuery()} variables={variables}>
+        <Query query={getQuery()} variables={variables} fetchPolicy="network-only">
             {({ loading, data }) => {
                 if (isGQLLoading(loading, data)) {
                     return <Loader />;

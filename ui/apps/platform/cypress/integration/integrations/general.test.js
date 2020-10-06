@@ -1,6 +1,10 @@
 import { selectors } from '../../constants/IntegrationsPage';
 import withAuth from '../../helpers/basicAuth';
 
+const toastShouldContain = (message) => {
+    cy.get('.toast-selector').should('contain', message).find('button').click({ force: true });
+};
+
 describe('Integrations page', () => {
     withAuth();
 
@@ -28,15 +32,14 @@ describe('Integrations page', () => {
         cy.get('div.ReactModalPortal');
     });
 
-    it('should test, create, update, and delete an integration with Slack', () => {
+    it.skip('should test, create, update, and delete an integration with Slack', () => {
         cy.get(selectors.slackTile).click();
         cy.get(selectors.buttons.delete).should('not.exist');
         cy.get(selectors.buttons.new).click();
 
         // test that validation error happens when form is incomplete
         cy.get(selectors.buttons.test).click();
-        cy.get('div').contains('error');
-        cy.get(selectors.toast.closeButton).click();
+        toastShouldContain('error');
 
         const nameInput = `Slack Test ${Math.random().toString(36).substring(7)}`;
         const defaultWebhook = 'https://hooks.slack.com/services/EXAMPLE';
@@ -48,33 +51,35 @@ describe('Integrations page', () => {
 
         // the test button should not return an error with valid inputs
         cy.get(selectors.buttons.test).click();
-        cy.get('div').should('not.contain', 'error');
-        cy.get(selectors.toast.closeButton).click();
+        toastShouldContain('Integration test was successful');
 
         // test creating an integration
         cy.get(selectors.buttons.create).click({ force: true });
+        toastShouldContain('Successfully integrated slack');
 
         // test updating an existing integration
-        cy.get(`${selectors.table.rows}:contains('${nameInput}')`).click();
+        cy.get(`${selectors.table.rows}:contains("${nameInput}")`).click();
         cy.get(selectors.buttons.save).click({ force: true });
         cy.get(selectors.buttons.closePanel).click({ force: true });
+        toastShouldContain('Successfully integrated slack');
 
         // test deleting an integration
-        cy.get(`.rt-tr:contains("${nameInput}") .rt-td input[type="checkbox"]`).check();
-        cy.get(selectors.buttons.delete).click({
-            force: true,
-        });
+        cy.get(`${selectors.table.rows}:contains("${nameInput}") input[type="checkbox"]`).check();
+        cy.get(selectors.buttons.delete).click({ force: true });
         cy.get(selectors.buttons.confirm).click();
-        cy.get(`.rt-tr:contains("${nameInput}")`).should('not.exist');
+        toastShouldContain('Successfully deleted 1 integration');
+        cy.get(`${selectors.table.rows}:contains("${nameInput}")`).should('not.exist');
     });
 
-    it('should test, create, update, and delete an integration with DockerHub', () => {
+    it.skip('should test, create, update, and delete an integration with DockerHub', () => {
         cy.get(selectors.dockerRegistryTile).click();
         cy.get(selectors.buttons.delete).should('not.exist');
         cy.get(selectors.buttons.new).click();
 
-        const name = `Docker Registry ${Math.random().toString(36).substring(7)}`;
-        cy.get(selectors.dockerRegistryForm.nameInput).type(name);
+        const nameInput = `Docker Registry ${Math.random().toString(36).substring(7)}`;
+        const endpointInput = 'registry-1.docker.io';
+
+        cy.get(selectors.dockerRegistryForm.nameInput).type(nameInput);
 
         cy.get(
             `${selectors.dockerRegistryForm.typesSelect} .react-select__dropdown-indicator`
@@ -83,23 +88,30 @@ describe('Integrations page', () => {
 
         // test that validation error happens when form is incomplete
         cy.get(selectors.buttons.test).click();
-        cy.get('div').contains('error');
-        cy.get(selectors.toast.closeButton).click();
+        toastShouldContain('error');
 
-        cy.get(selectors.dockerRegistryForm.endpointInput).type('registry-1.docker.io');
+        cy.get(selectors.dockerRegistryForm.endpointInput).type(endpointInput);
 
+        // the test button should not return an error with valid inputs
+        cy.get(selectors.buttons.test).click();
+        toastShouldContain('Integration test was successful');
+
+        // test creating an integration
         cy.get(selectors.buttons.create).click({ force: true });
+        toastShouldContain('Successfully integrated docker');
 
         // test updating an existing integration
-        cy.get(`${selectors.table.rows}:contains('${name}')`).click();
+        cy.get(`${selectors.table.rows}:contains("${nameInput}")`).click();
         cy.get(selectors.buttons.save).click({ force: true });
         cy.get(selectors.buttons.closePanel).click({ force: true });
+        toastShouldContain('Successfully integrated docker');
 
-        // delete the integration after to clean up
-        cy.get(`.rt-tr:contains("${name}") .rt-td input[type="checkbox"]`).check();
+        // test deleting an integration
+        cy.get(`${selectors.table.rows}:contains("${nameInput}") input[type="checkbox"]`).check();
         cy.get(selectors.buttons.delete).click({ force: true });
-        cy.get(selectors.buttons.confirm).click({ force: true });
-        cy.get(`.rt-tr:contains("${name}")`).should('not.exist');
+        cy.get(selectors.buttons.confirm).click();
+        toastShouldContain('Successfully deleted 1 integration');
+        cy.get(`${selectors.table.rows}:contains("${nameInput}")`).should('not.exist');
     });
 });
 
