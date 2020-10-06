@@ -19,12 +19,9 @@ import TablePagination from 'Components/TablePagination';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Table, { rtTrActionsClassName } from 'Components/Table';
 import RowActionButton from 'Components/RowActionButton';
-import wizardStages from '../wizardStages';
 
 class NamespaceDetails extends Component {
     static propTypes = {
-        wizardOpen: PropTypes.bool.isRequired,
-        wizardStage: PropTypes.string.isRequired,
         isFetchingNamespace: PropTypes.bool,
         setSelectedNamespace: PropTypes.func.isRequired,
         setSelectedNodeInGraph: PropTypes.func.isRequired,
@@ -89,18 +86,6 @@ class NamespaceDetails extends Component {
         this.setState({ page: newPage });
     };
 
-    renderRowActionButtons = (node) => {
-        return (
-            <div className="border-2 border-r-2 border-base-400 bg-base-100 flex">
-                <RowActionButton
-                    text="Navigate to Deployment"
-                    onClick={this.navigate(node)}
-                    icon={<Icon.ArrowUpRight className="my-1 h-4 w-4" />}
-                />
-            </div>
-        );
-    };
-
     onPanelClose = () => {
         const { onClose, setSelectedNamespace, setSelectedNodeInGraph, history } = this.props;
         onClose();
@@ -133,7 +118,15 @@ class NamespaceDetails extends Component {
                 accessor: '',
                 headerClassName: 'hidden',
                 className: rtTrActionsClassName,
-                Cell: ({ original }) => this.renderRowActionButtons(original),
+                Cell: ({ original }) => (
+                    <div className="border-2 border-r-2 border-base-400 bg-base-100 flex">
+                        <RowActionButton
+                            text="Navigate to Deployment"
+                            onClick={this.navigate(original)}
+                            icon={<Icon.ArrowUpRight className="my-1 h-4 w-4" />}
+                        />
+                    </div>
+                ),
             },
         ];
         const rows = namespace.deployments;
@@ -154,9 +147,9 @@ class NamespaceDetails extends Component {
     }
 
     render() {
-        const { namespace, wizardOpen, wizardStage, isFetchingNamespace } = this.props;
-        if (!namespace || !wizardOpen || wizardStage !== wizardStages.namespaceDetails) {
-            return null;
+        const { namespace, isFetchingNamespace } = this.props;
+        if (!namespace) {
+            throw new Error('There is no selected namespace.');
         }
         const paginationComponent = (
             <TablePagination
@@ -186,8 +179,6 @@ class NamespaceDetails extends Component {
 }
 
 const mapStateToProps = createStructuredSelector({
-    wizardOpen: selectors.getNetworkWizardOpen,
-    wizardStage: selectors.getNetworkWizardStage,
     namespace: selectors.getSelectedNamespace,
     isFetchingNamespace: (state) =>
         selectors.getLoadingStatus(state, deploymentTypes.FETCH_DEPLOYMENTS),

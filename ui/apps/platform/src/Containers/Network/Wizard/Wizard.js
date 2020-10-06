@@ -5,15 +5,40 @@ import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
+import wizardStages from './wizardStages';
 import Details from './Details/Details';
 import Creator from './Creator/Creator';
 import Simulator from './Simulator/Simulator';
+import CIDRPanel from './CIDRForm/CIDRPanel';
 import NamespaceDetails from './NamespaceDetails/NamespaceDetails';
 import NodesUpdateSection from '../Graph/Overlays/NodesUpdateSection';
 import ZoomButtons from '../Graph/Overlays/ZoomButtons';
 
-function Wizard({ wizardOpen, onClose }) {
+function Wizard({ wizardOpen, wizardStage, onClose }) {
     const width = wizardOpen ? 'md:w-2/3 lg:w-2/5 min-w-120' : 'w-0';
+
+    let panelContent = null;
+    if (wizardOpen) {
+        switch (wizardStage) {
+            case wizardStages.details:
+                panelContent = <Details onClose={onClose} />;
+                break;
+            case wizardStages.simulator:
+                panelContent = <Simulator onClose={onClose} />;
+                break;
+            case wizardStages.creator:
+                panelContent = <Creator onClose={onClose} />;
+                break;
+            case wizardStages.namespaceDetails:
+                panelContent = <NamespaceDetails onClose={onClose} />;
+                break;
+            case wizardStages.cidrForm:
+                panelContent = <CIDRPanel onClose={onClose} />;
+                break;
+            default:
+                return null;
+        }
+    }
 
     return (
         <div
@@ -22,10 +47,7 @@ function Wizard({ wizardOpen, onClose }) {
             <NodesUpdateSection />
             <ZoomButtons />
 
-            <Details onClose={onClose} />
-            <Creator onClose={onClose} />
-            <Simulator onClose={onClose} />
-            <NamespaceDetails onClose={onClose} />
+            {panelContent}
         </div>
     );
 }
@@ -33,10 +55,12 @@ function Wizard({ wizardOpen, onClose }) {
 Wizard.propTypes = {
     wizardOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
+    wizardStage: PropTypes.string.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
     wizardOpen: selectors.getNetworkWizardOpen,
+    wizardStage: selectors.getNetworkWizardStage,
 });
 
 const mapDispatchToProps = {

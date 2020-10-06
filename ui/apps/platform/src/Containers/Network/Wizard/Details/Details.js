@@ -4,34 +4,38 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
+import * as Icon from 'react-feather';
+import isEmpty from 'lodash/isEmpty';
+
 import { types as deploymentTypes } from 'reducers/deployments';
 import { selectors } from 'reducers';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as graphActions } from 'reducers/network/graph';
-import * as Icon from 'react-feather';
-import isEmpty from 'lodash/isEmpty';
-
 import Panel from 'Components/Panel';
 import Tabs from 'Components/Tabs';
 import Loader from 'Components/Loader';
 import TabContent from 'Components/TabContent';
 import PanelButton from 'Components/PanelButton';
-
 import NetworkPoliciesDetails from './NetworkPoliciesDetails';
 import NetworkFlows from './NetworkFlows';
 import wizardStages from '../wizardStages';
 import DeploymentDetails from '../../../Risk/DeploymentDetails';
 
-function Details(props) {
-    if (
-        !props.wizardOpen ||
-        props.wizardStage !== wizardStages.details ||
-        isEmpty(props.deployment)
-    ) {
+function Details({
+    deployment,
+    selectedNode,
+    networkGraphRef,
+    history,
+    isFetchingNode,
+    onClose,
+    selectedNamespace,
+    setWizardStage,
+    setSelectedNode,
+}) {
+    if (isEmpty(deployment)) {
         return null;
     }
 
-    const { deployment, selectedNode } = props;
     const { deployment: curDeployment } = deployment;
     const envGraphPanelTabs = [
         { text: 'Network Flows' },
@@ -45,11 +49,11 @@ function Details(props) {
 
     function onNavigateToDeploymentById(deploymentId) {
         return function onNavigate() {
-            props.history.push(`/main/network/${deploymentId}`);
+            history.push(`/main/network/${deploymentId}`);
         };
     }
 
-    const content = props.isFetchingNode ? (
+    const content = isFetchingNode ? (
         <Loader />
     ) : (
         <Tabs headers={envGraphPanelTabs}>
@@ -75,25 +79,23 @@ function Details(props) {
     );
 
     function closeHandler() {
-        const { onClose, networkGraphRef } = props;
         onClose();
-        props.history.push('/main/network');
+        history.push('/main/network');
         if (networkGraphRef) {
             networkGraphRef.setSelectedNode();
         }
     }
 
     function onBackButtonClick() {
-        const { setWizardStage, networkGraphRef, setSelectedNode } = props;
         setWizardStage(wizardStages.namespaceDetails);
-        props.history.push('/main/network');
+        history.push('/main/network');
         if (networkGraphRef) {
             networkGraphRef.setSelectedNode();
             setSelectedNode(null);
         }
     }
 
-    const leftButtons = props.selectedNamespace ? (
+    const leftButtons = selectedNamespace ? (
         <PanelButton
             icon={<Icon.ArrowLeft className="h-5 w-5" />}
             className="flex pl-3 text-center text-sm items-center"
@@ -115,9 +117,6 @@ function Details(props) {
 }
 
 Details.propTypes = {
-    wizardOpen: PropTypes.bool.isRequired,
-    wizardStage: PropTypes.string.isRequired,
-
     deployment: PropTypes.shape({
         name: PropTypes.string,
         deployment: PropTypes.shape({}),
@@ -146,8 +145,6 @@ Details.defaultProps = {
 };
 
 const mapStateToProps = createStructuredSelector({
-    wizardOpen: selectors.getNetworkWizardOpen,
-    wizardStage: selectors.getNetworkWizardStage,
     deployment: selectors.getNodeDeployment,
     selectedNode: selectors.getSelectedNode,
     selectedNamespace: selectors.getSelectedNamespace,

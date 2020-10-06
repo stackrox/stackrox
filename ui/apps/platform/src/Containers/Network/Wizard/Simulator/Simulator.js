@@ -6,19 +6,14 @@ import { actions as wizardActions } from 'reducers/network/wizard';
 import PropTypes from 'prop-types';
 import Panel from 'Components/Panel';
 
-import wizardStages from '../wizardStages';
 import ProcessingView from './ProcessingView';
 import SuccessView from './SuccessView';
 import ErrorView from './ErrorView';
 
-const Simulator = ({ onClose, setModification, wizardOpen, wizardStage, modificationState }) => {
+const Simulator = ({ onClose, setModification, modificationState }) => {
     function onCloseHandler() {
         onClose();
         setModification(null);
-    }
-
-    if (!wizardOpen || wizardStage !== wizardStages.simulator) {
-        return null;
     }
 
     const colorType = modificationState === 'ERROR' ? 'alert' : 'success';
@@ -44,18 +39,13 @@ const Simulator = ({ onClose, setModification, wizardOpen, wizardStage, modifica
 };
 
 Simulator.propTypes = {
-    wizardOpen: PropTypes.bool.isRequired,
-    wizardStage: PropTypes.string.isRequired,
     onClose: PropTypes.func.isRequired,
     setModification: PropTypes.func.isRequired,
     modificationState: PropTypes.string.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
-    wizardOpen: selectors.getNetworkWizardOpen,
-    wizardStage: selectors.getNetworkWizardStage,
     errorMessage: selectors.getNetworkErrorMessage,
-
     modificationState: selectors.getNetworkPolicyModificationState,
 });
 

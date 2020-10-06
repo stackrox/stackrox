@@ -205,3 +205,40 @@ export function applyNetworkPolicyModification(clusterId, modification) {
         response: response.data,
     }));
 }
+
+/**
+ * Fetches currently configured CIDR blocks.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function fetchCIDRBlocks(clusterId) {
+    return axios
+        .get(`${networkFlowBaseUrl}/cluster/${clusterId}/externalentities`)
+        .then((response) => ({
+            response: response.data,
+        }));
+}
+
+/**
+ * Posts a newly configured CIDR block.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function postCIDRBlock(clusterId, block) {
+    return axios
+        .post(`${networkFlowBaseUrl}/cluster/${clusterId}/externalentities`, block)
+        .then((response) => ({
+            response: response.data,
+        }));
+}
+
+/**
+ * Deletes a previously configured CIDR block.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function deleteCIDRBlock(blockId) {
+    return axios.delete(`${networkFlowBaseUrl}/externalentities/${blockId}`).then((response) => ({
+        response: response.data,
+    }));
+}

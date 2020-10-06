@@ -1,7 +1,4 @@
 import React from 'react';
-import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
-import { selectors } from 'reducers';
 import PropTypes from 'prop-types';
 import Panel from 'Components/Panel';
 
@@ -9,13 +6,7 @@ import DragAndDrop from './Tiles/DragAndDrop';
 import Generate from './Tiles/Generate';
 import ViewActive from './Buttons/ViewActive';
 
-import wizardStages from '../wizardStages';
-
-const Creator = ({ onClose, wizardOpen, wizardStage }) => {
-    if (!wizardOpen || wizardStage !== wizardStages.creator) {
-        return null;
-    }
-
+const Creator = ({ onClose }) => {
     const header = 'SELECT AN OPTION';
     return (
         <div data-testid="network-creator-panel" className="h-full w-full shadow-md bg-base-200">
@@ -35,14 +26,7 @@ const Creator = ({ onClose, wizardOpen, wizardStage }) => {
 };
 
 Creator.propTypes = {
-    wizardOpen: PropTypes.bool.isRequired,
-    wizardStage: PropTypes.string.isRequired,
     onClose: PropTypes.func.isRequired,
 };
 
-const mapStateToProps = createStructuredSelector({
-    wizardOpen: selectors.getNetworkWizardOpen,
-    wizardStage: selectors.getNetworkWizardStage,
-});
-
-export default connect(mapStateToProps)(Creator);
+export default Creator;
