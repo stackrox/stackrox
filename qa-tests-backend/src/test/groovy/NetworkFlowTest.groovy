@@ -125,9 +125,9 @@ class NetworkFlowTest extends BaseSpecification {
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
                                       "do echo \"Hello from ${MULTIPLEPORTSCONNECTION}\" | " +
-                                      "socat -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
+                                      "socat -d -d -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
                                       "echo \"Hello from ${MULTIPLEPORTSCONNECTION}\" | " +
-                                      "socat -s STDIN TCP:${TCPCONNECTIONTARGET}:8080; " +
+                                      "socat -d -d -s STDIN TCP:${TCPCONNECTIONTARGET}:8080; " +
                                       "done" as String,]),
             new Deployment()
                     .setName(EXTERNALDESTINATION)
@@ -247,15 +247,6 @@ class NetworkFlowTest extends BaseSpecification {
         println "Checking for edge between ${sourceDeployment} and ${targetDeployment}"
         List<Edge> edges = checkForEdge(sourceUid, targetUid)
 
-        // Due to flakey tests, adding some debugging logging in the event that we don't find the expected edge
-        if (edges == null) {
-            println "*** SOURCE LOGS ***\n" +
-                    orchestrator.getContainerlogs(DEPLOYMENTS.find { it.name == sourceDeployment })
-            println "*** TARGET LOGS ***\n" +
-                    orchestrator.getContainerlogs(DEPLOYMENTS.find { it.name == targetDeployment })
-            println "*** NETWORK GRAPH ***\n" +
-                    NetworkGraphService.getNetworkGraph()
-        }
         assert edges
         assert edges.get(0).protocol == protocol
         assert DEPLOYMENTS.find { it.name == targetDeployment }?.ports?.keySet()?.contains(edges.get(0).port)

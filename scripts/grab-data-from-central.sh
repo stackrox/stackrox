@@ -34,7 +34,7 @@ main() {
     curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/clusters | jq > ${dest}/clusters.json
     curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/imageintegrations | jq > ${dest}/imageintegrations.json
 
-    for objects in "images" "deployments" "policies" "alerts" "serviceaccounts" "secrets"; do
+    for objects in "images" "deployments" "policies" "alerts" "serviceaccounts" "secrets" "clusters"; do
         echo "Pulling StackRox ${objects}"
         curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/${objects} | jq > ${dest}/${objects}.json
 
@@ -47,6 +47,10 @@ main() {
             id=$(echo ${id} | sed s/\"//g)
             echo "Pulling $id"
             curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/${objects}/${id} | jq > ${dest}/${objects}/${id}.json
+            if [[ "${objects}" == "clusters" ]]; then
+                mkdir -p ${dest}/networkgraph
+                curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/networkgraph/cluster/${id} | jq > ${dest}/networkgraph/${id}.json
+            fi
             echo "Done"
         done
     done
