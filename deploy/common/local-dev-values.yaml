@@ -13,7 +13,7 @@ central:
 scanner:
   replicas: 1
   autoscaling:
-    disabled: true
+    disable: true
 
   resources:
     requests:

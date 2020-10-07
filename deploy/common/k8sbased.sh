@@ -160,7 +160,11 @@ function launch_central {
 
     echo
     if [[ -n "${TRUSTED_CA_FILE}" ]]; then
-        "${unzip_dir}/central/scripts/ca-setup.sh" -f "${TRUSTED_CA_FILE}"
+        if [[ -x "${unzip_dir}/scripts/ca-setup.sh" ]]; then
+          "${unzip_dir}/scripts/ca-setup.sh" -f "${TRUSTED_CA_FILE}"
+        else
+          "${unzip_dir}/central/scripts/ca-setup.sh" -f "${TRUSTED_CA_FILE}"
+        fi
     fi
 
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then

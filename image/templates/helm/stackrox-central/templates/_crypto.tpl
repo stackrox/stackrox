@@ -114,8 +114,8 @@
   {{ $newCfg = $nextCfg }}
 {{ end }}
 {{ $_ := set $newCfg (last $cryptoConfigPathList | printf "_%s") $result }}
-{{ $_ = merge $._rox $newCfgRoot }}
-{{ $_ = merge $._rox._state.generated $newGenerated }}
+{{ $_ = include "srox.mergeInto" (list $._rox $newCfgRoot) }}
+{{ $_ = include "srox.mergeInto" (list $._rox._state.generated $newGenerated) }}
 {{ end }}
 
 
@@ -202,8 +202,8 @@
   {{ $newCfg = $nextCfg }}
 {{ end }}
 {{ $_ := set $newCfg (last $pwConfigPathList | printf "_%s") $result }}
-{{ $_ = merge $._rox $newCfgRoot }}
-{{ $_ = merge $._rox._state.generated $newGenerated }}
+{{ $_ = include "srox.mergeInto" (list $._rox $newCfgRoot) }}
+{{ $_ = include "srox.mergeInto" (list $._rox._state.generated $newGenerated) }}
 {{ end }}
 
 

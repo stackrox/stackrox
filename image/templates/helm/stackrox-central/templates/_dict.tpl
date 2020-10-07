@@ -75,18 +75,18 @@
 {{ end }}
 
 {{/*
-  srox.safeLookup $dict $out $path
+  srox.safeDictLookup $dict $out $path
 
   Looks up $path in $dict, and stores the result (if any) in $out.result.
   $path is a dot-separated list of nested field names. An empty $path causes
   $dict to be stored in $out.result.
 
-  Example: srox.safeLookup $dict $out "a.b.c" stores the value of $dict.a.b.c, if
+  Example: srox.safeDictLookup $dict $out "a.b.c" stores the value of $dict.a.b.c, if
   it exists, in $out.result. Otherwise, it does nothing - in particular, it does
   not fail, as accessing $dict.a.b.c unconditionally would if any of $dict, $dict.a,
   or $dict.a.b was not a dict.
    */}}
-{{ define "srox.safeLookup" }}
+{{ define "srox.safeDictLookup" }}
 {{ $dict := index . 0 }}
 {{ $out := index . 1 }}
 {{ $path := index . 2 }}
@@ -101,5 +101,42 @@
 {{ end }}
 {{ if not (kindIs "invalid" $curr) }}
   {{ $_ := set $out "result" $curr }}
+{{ end }}
+{{ end }}
+
+
+
+{{/*
+  srox.mergeInto $tgt $src1..$srcN
+
+  Recursively merges values from $src1, ..., $srcN into $tgt, giving preference to
+  values in $tgt.
+
+  Unlike Sprig's merge, this does not overwrite falsy values when explicitly defined,
+  with the exception of `null` values (this also sets it apart from Sprig's mergeOverwrite).
+
+  Whenever entire (nested) dicts are merged as-is from one of the sources into $tgt, a deep
+  copy of the respective nested dict is created.
+
+  An empty string is always returned, hence this should be invoked in the form
+    $_ := include "srox.mergeInto" (list $tgt $src1 $src2)
+   */}}
+{{ define "srox.mergeInto" }}
+{{ $tgt := first . }}
+{{ range $src := rest . }}
+  {{ range $k, $srcV := $src }}
+    {{ $tgtV := index $tgt $k }}
+    {{ if kindIs "map" $srcV }}
+      {{ if kindIs "invalid" $tgtV }}
+        {{ $_ := set $tgt $k (deepCopy $srcV) }}
+      {{ else if kindIs "map" $tgtV }}
+        {{ $_ := include "srox.mergeInto" (list $tgtV $srcV) }}
+      {{ else }}
+        {{ fail (printf "Incompatible kinds for key %s: %s vs %s" $k (kindOf $srcV) (kindOf $tgtV)) }}
+      {{ end }}
+    {{ else if and (not (kindIs "invalid" $srcV)) (kindIs "invalid" $tgtV) }}
+      {{ $_ := set $tgt $k $srcV }}
+    {{ end }}
+  {{ end }}
 {{ end }}
 {{ end }}

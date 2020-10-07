@@ -126,6 +126,11 @@ func openshift() *cobra.Command {
 
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (route, lb, np, none)", "central")
 
+	if features.CentralInstallationExperience.Enabled() {
+		validFormats := []string{"kubectl", "helm", "helm-values"}
+		flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", fmt.Sprintf("the deployment tool to use (%s)", strings.Join(validFormats, ", ")), "central")
+	}
+
 	flagWrap.Var(istioSupportWrapper{&k8sConfig.IstioVersion}, "istio-support",
 		fmt.Sprintf(
 			"Generate deployment files supporting the given Istio version. Valid versions: %s",
