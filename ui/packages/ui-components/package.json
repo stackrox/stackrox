@@ -55,7 +55,7 @@
         "@stackrox/tailwind-config": "^0.1.0",
         "@storybook/addon-actions": "^6.0.21",
         "@storybook/addon-essentials": "^6.0.21",
-        "@storybook/addon-links": "^6.0.21",
+        "@storybook/addon-links": "^6.0.26",
         "@storybook/react": "^6.0.21",
         "@testing-library/jest-dom": "^5.11.4",
         "@testing-library/react": "^10.4.9",
