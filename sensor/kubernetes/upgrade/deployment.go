@@ -58,7 +58,7 @@ func (p *process) determineImage() (string, error) {
 	return "", errors.New("no sensor container found in sensor deployment")
 }
 
-func (p *process) createDeployment(serviceAccountName string) (*appsV1.Deployment, error) {
+func (p *process) createDeployment(serviceAccountName string, sensorDeployment *appsV1.Deployment) (*appsV1.Deployment, error) {
 	image, err := p.determineImage()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to determine image")
@@ -190,6 +190,11 @@ func (p *process) createDeployment(serviceAccountName string) (*appsV1.Deploymen
 		Name:  "ROX_UPGRADER_OWNER",
 		Value: fmt.Sprintf("%s:%s:%s/%s", deployment.Kind, deployment.APIVersion, deployment.Namespace, deployment.Name),
 	})
+
+	// These are all nil safe because they are all non-pointers
+	if sensorDeployment != nil {
+		deployment.Spec.Template.Spec.Tolerations = sensorDeployment.Spec.Template.Spec.Tolerations
+	}
 
 	return deployment, nil
 }

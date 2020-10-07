@@ -3401,10 +3401,11 @@ jobs:
             fi
 
       - run:
-          name: Patch resources and add preserve resources annotation
+          name: Patch resources and add preserve resources annotation. Also, check toleration preservation
           command: |
             kubectl -n stackrox annotate deploy/sensor "auto-upgrade.stackrox.io/preserve-resources=true"
             kubectl -n stackrox set resources deploy/sensor -c sensor --requests 'cpu=1.1,memory=1.1Gi'
+            kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"tolerations":[{"effect":"NoSchedule","key":"thekey","operator":"Equal","value":"thevalue"}]}}}}'
 
       - deploy-sensor-via-upgrader-for-upgrade-tests:
           upgrade-process-id: 789c9262-5dd3-4d58-a824-c2a099892bd8
@@ -3416,6 +3417,13 @@ jobs:
             resources="$(kubectl -n stackrox get deploy/sensor -o 'jsonpath=cpu={.spec.template.spec.containers[?(@.name=="sensor")].resources.requests.cpu},memory={.spec.template.spec.containers[?(@.name=="sensor")].resources.requests.memory}')"
             if [[ "$resources" != 'cpu=1100m,memory=1181116006400m' ]]; then
               echo "Resources ($resources) appear patched back!"
+              kubectl -n stackrox get deploy/sensor -o yaml
+              exit 1
+            fi
+            toleration="$(kubectl -n stackrox get deploy/sensor -o json | jq -rc '.spec.template.spec.tolerations[0] | (.effect + "," + .key + "," + .operator + "," + .value)')"
+            echo "Found toleration: $toleration"
+            if [[ "$toleration" != 'NoSchedule,thekey,Equal,thevalue' ]]; then
+              echo "Tolerations were not passed through to new Sensor"
               kubectl -n stackrox get deploy/sensor -o yaml
               exit 1
             fi

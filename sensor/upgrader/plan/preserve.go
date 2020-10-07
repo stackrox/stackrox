@@ -10,6 +10,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+const (
+	collectorName = "collector"
+)
+
 var (
 	deploymentGVK = schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"}
 	daemonSetGVK  = schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "DaemonSet"}
@@ -75,11 +79,7 @@ func getPodSpec(scheme *runtime.Scheme, obj k8sutil.Object) (k8sutil.Object, *v1
 	}
 }
 
-func applyPreservedProperties(scheme *runtime.Scheme, newObj, oldObj k8sutil.Object) (k8sutil.Object, error) {
-	if oldObj.GetAnnotations()[common.PreserveResourcesAnnotationKey] != "true" {
-		return newObj, nil
-	}
-
+func applyPreservedResources(scheme *runtime.Scheme, newObj, oldObj k8sutil.Object) (k8sutil.Object, error) {
 	newAnns := newObj.GetAnnotations()
 	if newAnns == nil {
 		newAnns = make(map[string]string)
@@ -99,4 +99,35 @@ func applyPreservedProperties(scheme *runtime.Scheme, newObj, oldObj k8sutil.Obj
 	applyOldResourcesConfig(newPodSpec, oldPodSpec)
 
 	return newObjWithPodSpec, nil
+}
+
+func applyPreservedTolerations(scheme *runtime.Scheme, newObj, oldObj k8sutil.Object) (k8sutil.Object, error) {
+	_, oldPodSpec, err := getPodSpec(scheme, oldObj)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to extract pod spec from old object")
+	}
+	newObjWithPodSpec, newPodSpec, err := getPodSpec(scheme, newObj)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to extract pod spec from new object")
+	}
+
+	newPodSpec.Tolerations = oldPodSpec.Tolerations
+	return newObjWithPodSpec, nil
+}
+
+func applyPreservedProperties(scheme *runtime.Scheme, newObj, oldObj k8sutil.Object) (k8sutil.Object, error) {
+	if oldObj.GetAnnotations()[common.PreserveResourcesAnnotationKey] == "true" {
+		var err error
+		newObj, err = applyPreservedResources(scheme, newObj, oldObj)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Ignore collector because tolerations are explicitly set
+	if newObj.GetObjectKind().GroupVersionKind() != daemonSetGVK && newObj.GetName() == collectorName {
+		return newObj, nil
+	}
+
+	return applyPreservedTolerations(scheme, newObj, oldObj)
 }
