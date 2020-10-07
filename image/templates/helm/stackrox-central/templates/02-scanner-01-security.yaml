@@ -95,7 +95,19 @@ users:
   - system:serviceaccount:{{ .Release.Namespace }}:scanner
 volumes:
   - '*'
-
+allowHostDirVolumePlugin: false
+allowedCapabilities: []
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+defaultAddCapabilities: []
+fsGroup:
+  type: RunAsAny
+readOnlyRootFilesystem: false
+requiredDropCapabilities: []
 {{ end -}}
 
 {{ end -}}

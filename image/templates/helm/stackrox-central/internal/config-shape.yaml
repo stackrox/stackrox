@@ -125,3 +125,4 @@ meta:
     version: null # string
     overrideAPIResources: null # [string]
     extraAPIResources: null # [string]
+  noCreateStorageClass: null # bool

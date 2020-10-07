@@ -25,9 +25,9 @@
     We ensure that it has the required shape, and then right after merging the user-specified
     $.Values, we apply some bootstrap defaults.
    */}}
-{{ $rox := $.Files.Get "internal/config-shape.yaml" | fromYaml | merge (deepCopy $.Values) }}
-{{ $rox = $.Files.Get "internal/bootstrap-defaults.yaml" | fromYaml | merge $rox }}
-{{ $_ := set $ "_rox" $rox }}
+{{ $rox := deepCopy $.Values }}
+{{ $_ := include "srox.mergeInto" (list $rox ($.Files.Get "internal/config-shape.yaml" | fromYaml) ($.Files.Get "internal/bootstrap-defaults.yaml" | fromYaml)) }}
+{{ $_ = set $ "_rox" $rox }}
 
 {{/* Global state (accessed from sub-templates) */}}
 {{ $generatedName := printf "stackrox-generated-%s" (randAlphaNum 6 | lower) }}
@@ -108,15 +108,15 @@
 {{ end }}
 
 {{/* Apply defaults */}}
-{{ $defaultsCfg := $.Files.Get "internal/defaults.yaml" | fromYaml }}
+{{ $defaultsCfg := dict }}
 {{ $platformCfgFile := dict }}
 {{ include "srox.loadFile" (list $ $platformCfgFile (printf "internal/platforms/%s.yaml" $env.platform)) }}
 {{ if not $platformCfgFile.found }}
   {{ include "srox.fail" (printf "Invalid platform %q. Please select a valid platform, or leave this field unset." $env.platform) }}
 {{ end }}
-{{ $defaultsCfg = mergeOverwrite $defaultsCfg (fromYaml $platformCfgFile.contents) }}
+{{ $_ = include "srox.mergeInto" (list $defaultsCfg (fromYaml $platformCfgFile.contents) ($.Files.Get "internal/defaults.yaml" | fromYaml)) }}
 {{ $_ = set $rox "_defaults" $defaultsCfg }}
-{{ $rox = merge $rox $defaultsCfg.defaults }}
+{{ $_ = include "srox.mergeInto" (list $rox $defaultsCfg.defaults) }}
 
 
 {{/* Expand applicable config values */}}
@@ -149,11 +149,12 @@
 {{ end }}
 
 {{/*
-    Always assume that there is a `stackrox` image pull secret, even if it wasn't specified.
+    Always assume that there are `stackrox` and `stackrox-scanner` image pull secrets,
+    even if they weren't specified.
     This is required for updates anyway, so referencing it on first install will minimize a later
     diff.
    */}}
-{{ $imagePullSecretNames = append $imagePullSecretNames "stackrox" | uniq | sortAlpha }}
+{{ $imagePullSecretNames = concat $imagePullSecretNames (list "stackrox" "stackrox-scanner") | uniq | sortAlpha }}
 {{ $_ = set $imagePullSecrets "_names" $imagePullSecretNames }}
 {{ $_ = set $imagePullSecrets "_creds" $imagePullCreds }}
 
@@ -261,8 +262,8 @@
      or no other persistence backend has been configured yet. */}}
 {{ if or (and $centralCfg.persistence.persistentVolumeClaim (values $centralCfg.persistence.persistentVolumeClaim | compact)) (not $volumeCfg) }}
   {{ $pvcCfg := $centralCfg.persistence.persistentVolumeClaim }}
-  {{ $pvcCfg = merge $pvcCfg $._rox._defaults.pvcDefaults (dict "createClaim" $.Release.IsInstall) }}
-  {{ $_ := set $volumeCfg "persistentVolumeClaim" (dict "claimName" $pvcCfg.claimName) }}
+  {{ $_ := include "srox.mergeInto" (list $pvcCfg $._rox._defaults.pvcDefaults (dict "createClaim" $.Release.IsInstall)) }}
+  {{ $_ = set $volumeCfg "persistentVolumeClaim" (dict "claimName" $pvcCfg.claimName) }}
   {{ if $pvcCfg.createClaim }}
     {{ $_ = set $centralCfg.persistence "_pvcCfg" $pvcCfg }}
   {{ end }}
@@ -295,6 +296,9 @@
   {{ include "srox.note" (list $ "Not exposing StackRox Central, it will only be reachable cluster-internally.") }}
   {{ include "srox.note" (list $ "To enable exposure via LoadBalancer service, use --set central.exposure.loadBalancer.enabled=true.") }}
   {{ include "srox.note" (list $ "To enable exposure via NodePort service, use --set central.exposure.nodePort.enabled=true.") }}
+  {{ if $env.openshift }}
+    {{ include "srox.note" (list $ "To enable exposure via an OpenShift Route, use --set central.exposure.route.enabled=true.") }}
+  {{ end }}
   {{ include "srox.note" (list $ (printf "To acccess StackRox Central via a port-forward on your local port 18443, run: kubectl -n %s port-forward svc/central 18443:443." .Release.Namespace)) }}
 {{ end }}
 

@@ -3,6 +3,9 @@
 {{- if ._rox.central.persistence._pvcCfg }}
 {{- if ._rox.central.persistence._pvcCfg.storageClass -}}
 {{- if eq ._rox.central.persistence._pvcCfg.storageClass "stackrox-gke-ssd" }}
+{{- $lookupOut := dict -}}
+{{- $_ := include "srox.safeLookup" (list . $lookupOut "storage.k8s.io/v1" "StorageClass" "" "stackrox-gke-ssd") -}}
+{{- if and (not $lookupOut.result) (or .Release.IsInstall $lookupOut.reliable) (not ._rox.meta.noCreateStorageClass) -}}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -17,6 +20,7 @@ metadata:
 provisioner: kubernetes.io/gce-pd
 parameters:
   type: pd-ssd
+{{- end -}}
 {{- end }}
 {{- end -}}
 {{- end }}

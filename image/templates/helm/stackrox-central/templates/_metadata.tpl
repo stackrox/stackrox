@@ -174,7 +174,7 @@
   {{ $customizeDict := $._rox.customize }}
   {{ if $dictPath }}
     {{ $resolvedOut := dict }}
-    {{ include "srox.safeLookup" (list $._rox.customize $resolvedOut $dictPath) }}
+    {{ include "srox.safeDictLookup" (list $._rox.customize $resolvedOut $dictPath) }}
     {{ $customizeDict = $resolvedOut.result }}
   {{ end }}
   {{ if $customizeDict }}

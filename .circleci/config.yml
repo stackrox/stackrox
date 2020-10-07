@@ -1631,6 +1631,12 @@ commands:
               docker login -u "$STACKROX_IO_USERNAME" -p "$STACKROX_IO_PASSWORD" collector.stackrox.io
             fi
 
+            if [[ -z "${OUTPUT_FORMAT:-}" ]]; then
+              if .circleci/pr_has_label.sh ci-helm-deploy; then
+                export OUTPUT_FORMAT=helm
+              fi
+            fi
+
             deploy_dir="deploy/<< parameters.orchestrator-flavor >>"
             "${deploy_dir}/central.sh"
 
