@@ -30,6 +30,7 @@ wait_for_pod_count_to_be() {
     while [[ $(count_running_pods) -ne ${pod_count} ]]; do
         tries=$((tries + 1))
         if [[ ${tries} -gt 10 ]]; then
+            kubectl get nodes -o yaml
             echo "Took too long to reach pod count ${pod_count}"
             exit 1
         fi

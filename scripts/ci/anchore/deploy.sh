@@ -30,6 +30,7 @@ wait_for_anchore_to_start() {
     while [[ $(count_running_pods) -ne "6" ]]; do
         tries=$((tries + 1))
         if [[ ${tries} -gt 10 ]]; then
+            kubectl get nodes -o yaml
             echo "Took too long to start"
             exit 1
         fi
