@@ -60,11 +60,14 @@ func TestPod(t *testing.T) {
 		events := getEvents(t, pod)
 		// Expecting 4 processes: nginx, sh, date, sleep
 		require.Len(t, events, 4)
-		eventNames := sliceutils.Map(events, func(event Event) string { return event.Name })
+		eventNames := sliceutils.Map(events, func(event Event) string { return event.Name }).([]string)
 		require.ElementsMatch(t, eventNames, []string{"/bin/date", "/bin/sh", "/usr/sbin/nginx", "/bin/sleep"})
 
 		// Verify the pod's timestamp is no later than the timestamp of the earliest event.
 		require.False(t, pod.Started.After(events[0].Timestamp.Time))
+
+		// Verify risk event timeline csv
+		verifyRiskEventTimelineCSV(t, deploymentID, eventNames)
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

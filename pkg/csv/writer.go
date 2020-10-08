@@ -25,11 +25,14 @@ type Writer interface {
 type GenericWriter struct {
 	header Header
 	values []Value
+	// If set true, will sort before writing out
+	// Sorting is done lexicographically, giving preference to earlier columns
+	sort bool
 }
 
 // NewGenericWriter creates a new CSV Writer using the given header.
-func NewGenericWriter(header Header) *GenericWriter {
-	return &GenericWriter{header: header}
+func NewGenericWriter(header Header, sort bool) *GenericWriter {
+	return &GenericWriter{header: header, sort: sort}
 }
 
 // AddValue adds a CSV value (row) to the CSV file.
@@ -43,25 +46,27 @@ func (c *GenericWriter) Write(w http.ResponseWriter, filename string) {
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.csv"`, filename))
 	w.WriteHeader(http.StatusOK)
 
-	sort.Slice(c.values, func(i, j int) bool {
-		first, second := c.values[i], c.values[j]
-		for len(first) > 0 {
-			// first has more values, so greater
-			if len(second) == 0 {
-				return false
+	if c.sort {
+		sort.Slice(c.values, func(i, j int) bool {
+			first, second := c.values[i], c.values[j]
+			for len(first) > 0 {
+				// first has more values, so greater
+				if len(second) == 0 {
+					return false
+				}
+				if first[0] < second[0] {
+					return true
+				}
+				if first[0] > second[0] {
+					return false
+				}
+				first = first[1:]
+				second = second[1:]
 			}
-			if first[0] < second[0] {
-				return true
-			}
-			if first[0] > second[0] {
-				return false
-			}
-			first = first[1:]
-			second = second[1:]
-		}
-		// second has more values, so first is lesser
-		return len(second) > 0
-	})
+			// second has more values, so first is lesser
+			return len(second) > 0
+		})
+	}
 
 	header := sliceutils.StringClone(c.header)
 	header[0] = "\uFEFF" + header[0]

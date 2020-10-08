@@ -20,16 +20,19 @@ type ContainerNameGroup struct {
 
 func TestContainerInstances(t *testing.T) {
 	// Set up testing environment
-	setupDeploymentFromFile(t, podName, "yamls/multi-container-pod.yaml")
-	defer teardownDeploymentFromFile(t, podName, "yamls/multi-container-pod.yaml")
+	setupDeploymentFromFile(t, deploymentName, "yamls/multi-container-pod.yaml")
+	defer teardownDeploymentFromFile(t, deploymentName, "yamls/multi-container-pod.yaml")
 
 	// Get the test pod.
-	podID := getPodID(t, podName)
+	deploymentID := getDeploymentID(t, deploymentName)
+	pods := getPods(t, deploymentID)
+	require.Len(t, pods, 1)
+	pod := pods[0]
 
 	// Retry to ensure all processes start up.
 	testutils.Retry(t, 20, 3*time.Second, func(t testutils.T) {
 		// Get the container groups.
-		groupedContainers := getGroupedContainerInstances(t, podID)
+		groupedContainers := getGroupedContainerInstances(t, string(pod.ID))
 
 		// Verify the number of containers.
 		require.Len(t, groupedContainers, 2)
@@ -39,37 +42,23 @@ func TestContainerInstances(t *testing.T) {
 		// Verify the events.
 		// Expecting 1 process: nginx
 		require.Len(t, groupedContainers[0].Events, 1)
-		events := sliceutils.Map(groupedContainers[0].Events, func(event Event) string { return event.Name })
-		require.ElementsMatch(t, events, []string{"/usr/sbin/nginx"})
+		firstContainerEvents :=
+			sliceutils.Map(groupedContainers[0].Events, func(event Event) string { return event.Name }).([]string)
+		require.ElementsMatch(t, firstContainerEvents, []string{"/usr/sbin/nginx"})
 		// Expecting 3 processes: sh, date, sleep
 		require.Len(t, groupedContainers[1].Events, 3)
-		events = sliceutils.Map(groupedContainers[1].Events, func(event Event) string { return event.Name })
-		require.ElementsMatch(t, events, []string{"/bin/sh", "/bin/date", "/bin/sleep"})
+		secondContainerEvents :=
+			sliceutils.Map(groupedContainers[1].Events, func(event Event) string { return event.Name }).([]string)
+		require.ElementsMatch(t, secondContainerEvents, []string{"/bin/sh", "/bin/date", "/bin/sleep"})
 
 		// Verify the container group's timestamp is no later than the timestamp of the first event
 		require.False(t, groupedContainers[0].StartTime.After(groupedContainers[0].Events[0].Timestamp.Time))
 		require.False(t, groupedContainers[1].StartTime.After(groupedContainers[1].Events[0].Timestamp.Time))
+
+		// Number of events expected should be the aggregate of the above
+
+		verifyRiskEventTimelineCSV(t, deploymentID, append(firstContainerEvents, secondContainerEvents...))
 	})
-}
-
-func getPodID(t *testing.T, podName string) string {
-	var respData struct {
-		Pods []IDStruct `json:"pods"`
-	}
-
-	makeGraphQLRequest(t, `
-		query pods($query: String) {
-			pods(query: $query) {
-				id
-			}
-		}
-	`, map[string]interface{}{
-		"query": fmt.Sprintf("Pod Name: %s", podName),
-	}, &respData, timeout)
-	log.Info(respData)
-	require.Len(t, respData.Pods, 1)
-
-	return string(respData.Pods[0].ID)
 }
 
 func getGroupedContainerInstances(t testutils.T, podID string) []ContainerNameGroup {

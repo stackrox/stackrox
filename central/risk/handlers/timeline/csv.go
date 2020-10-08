@@ -2,6 +2,7 @@ package timeline
 
 import (
 	"net/http"
+	"sort"
 	"strconv"
 
 	"github.com/stackrox/rox/central/graphql/resolvers"
@@ -21,6 +22,10 @@ var (
 		getter func(*eventRow) string
 	}{
 		{
+			header: "Event Timestamp",
+			getter: func(r *eventRow) string { return r.eventTimestamp },
+		},
+		{
 			header: "Event Type",
 			getter: func(r *eventRow) string { return r.eventType },
 		},
@@ -29,20 +34,8 @@ var (
 			getter: func(r *eventRow) string { return r.eventName },
 		},
 		{
-			header: "Event Timestamp",
-			getter: func(r *eventRow) string { return r.eventTimestamp },
-		},
-		{
 			header: "Process Args",
 			getter: func(r *eventRow) string { return r.processArgs },
-		},
-		{
-			header: "Process UID",
-			getter: func(r *eventRow) string { return r.processUID },
-		},
-		{
-			header: "Process Parent UID",
-			getter: func(r *eventRow) string { return r.processParentUID },
 		},
 		{
 			header: "Process Parent Name",
@@ -51,6 +44,14 @@ var (
 		{
 			header: "Process Baselined",
 			getter: func(r *eventRow) string { return r.processWhitelisted },
+		},
+		{
+			header: "Process UID",
+			getter: func(r *eventRow) string { return r.processUID },
+		},
+		{
+			header: "Process Parent UID",
+			getter: func(r *eventRow) string { return r.processParentUID },
 		},
 		{
 			header: "Container Exit Code",
@@ -95,6 +96,8 @@ var (
 	}
 )
 
+// Ordering here does not matter, as we fill the columns based on above headers
+// and getters
 type eventRow struct {
 	eventType           string
 	eventName           string
@@ -122,7 +125,7 @@ type csvResults struct {
 
 func newCSVResults(header []string) csvResults {
 	return csvResults{
-		GenericWriter: csv.NewGenericWriter(header),
+		GenericWriter: csv.NewGenericWriter(header, false),
 	}
 }
 
@@ -179,7 +182,7 @@ func CSVHandler() http.HandlerFunc {
 		for i, e := range headersAndValueGetters {
 			headers[i] = e.header
 		}
-		output := newCSVResults(headers)
+		var dataRows []eventRow
 		for _, containerResolver := range containerResolvers {
 			containerID := string(containerResolver.ID())
 			containerName := containerResolver.Name()
@@ -241,8 +244,36 @@ func CSVHandler() http.HandlerFunc {
 					dataRow.containerExitReason = terminationEvent.Reason()
 				}
 
-				output.addRow(&dataRow)
+				// Add the row to all the rows
+				dataRows = append(dataRows, dataRow)
 			}
+		}
+
+		// We sort the events by their timestamp (latest first)
+		// and by their event types, and by their event names. If
+		// we exhaust these three then we just sort by process args
+		sort.Slice(dataRows, func(i, j int) bool {
+			// An event is "smaller" if it has a later timestamp,
+			// meaning later events pop up to the front of the slice
+
+			// Compare timestamp. Latest comes first
+			if dataRows[i].eventTimestamp != dataRows[j].eventTimestamp {
+				return dataRows[i].eventTimestamp > dataRows[j].eventTimestamp
+			}
+			// Compare type
+			if dataRows[i].eventType != dataRows[j].eventType {
+				return dataRows[i].eventType < dataRows[j].eventType
+			}
+			// Compare name
+			if dataRows[i].eventName != dataRows[j].eventName {
+				return dataRows[i].eventName < dataRows[j].eventName
+			}
+			// If we exhaust above three, just sort by process args
+			return dataRows[i].processArgs < dataRows[j].processArgs
+		})
+		output := newCSVResults(headers)
+		for _, e := range dataRows {
+			output.addRow(&e)
 		}
 		output.Write(w, "events_export")
 	}

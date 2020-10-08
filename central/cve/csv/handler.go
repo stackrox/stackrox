@@ -90,7 +90,7 @@ type csvResults struct {
 
 func newCSVResults(header []string) csvResults {
 	return csvResults{
-		GenericWriter: csv.NewGenericWriter(header),
+		GenericWriter: csv.NewGenericWriter(header, true),
 	}
 }
 
