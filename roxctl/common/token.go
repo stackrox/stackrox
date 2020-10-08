@@ -41,5 +41,5 @@ func RetrieveAuthToken() (string, error) {
 		apiToken = token
 	}
 
-	return apiToken, nil
+	return strings.TrimSpace(apiToken), nil
 }
