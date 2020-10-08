@@ -243,7 +243,13 @@ func recursivePermissionCheckWithFileExtFunc(path, fileExtension string, permiss
 			return FailListf("File %q could not be found in scraped data", path)
 		}
 		results, _ := CheckRecursivePermissionWithFileExt(f, fileExtension, permissions)
-		return results
+		if len(results) > 0 {
+			return results
+		}
+		if optional {
+			return PassListf("No files with extension %q exist on host with path %q, therefore check is not applicable", fileExtension, path)
+		}
+		return FailListf("No files with extension %q could be found on path %q in scraped data", fileExtension, path)
 	}
 }
 

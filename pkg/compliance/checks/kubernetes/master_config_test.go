@@ -95,6 +95,83 @@ func TestMasterConfigChecks(t *testing.T) {
 			status:     storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 			numResults: 1,
 		},
+
+		{
+			name: "CIS_Kubernetes_v1_5:1_1_21",
+			files: map[string]*compliance.File{
+				"/etc/kubernetes/pki": {},
+			},
+			status:     storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
+			numResults: 1,
+		},
+		{
+			name: "CIS_Kubernetes_v1_5:1_1_21",
+			files: map[string]*compliance.File{
+				"/etc/kubernetes/pki": {
+					Children: []*compliance.File{
+						{
+							Path:        "/etc/kubernetes/pki/valid.key",
+							Permissions: 0600,
+						},
+					},
+				},
+			},
+			status:     storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
+			numResults: 1,
+		},
+		{
+			name: "CIS_Kubernetes_v1_5:1_1_21",
+			files: map[string]*compliance.File{
+				"/etc/kubernetes/pki": {
+					Children: []*compliance.File{
+						{
+							Path:        "/etc/kubernetes/pki/invalid.key",
+							Permissions: 0666,
+						},
+					},
+				},
+			},
+			status:     storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
+			numResults: 1,
+		},
+		{
+			name: "CIS_Kubernetes_v1_5:1_1_21",
+			files: map[string]*compliance.File{
+				"/etc/kubernetes/pki": {
+					Children: []*compliance.File{
+						{
+							Path:        "/etc/kubernetes/pki/valid.key",
+							Permissions: 0600,
+						},
+						{
+							Path:        "/etc/kubernetes/pki/ignored.ignored",
+							Permissions: 0666,
+						},
+					},
+				},
+			},
+			status:     storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
+			numResults: 1,
+		},
+		{
+			name: "CIS_Kubernetes_v1_5:1_1_21",
+			files: map[string]*compliance.File{
+				"/etc/kubernetes/pki": {
+					Children: []*compliance.File{
+						{
+							Path:        "/etc/kubernetes/pki/invalid.key",
+							Permissions: 0666,
+						},
+						{
+							Path:        "/etc/kubernetes/pki/ignored.ignored",
+							Permissions: 0666,
+						},
+					},
+				},
+			},
+			status:     storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
+			numResults: 1,
+		},
 	}
 
 	for _, cIt := range cases {
