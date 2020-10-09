@@ -2338,8 +2338,6 @@ jobs:
             TAG="$(make --quiet tag)"
             docker push "docker.io/stackrox/deployer:${TAG}" | cat
 
-      - cleanup-clusters-on-fail
-
   ###
   # Jobs that build and provision test resources (like cluster provisioning)
   # Recommended naming format: provision-{test_job_name}
