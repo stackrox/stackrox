@@ -4,6 +4,7 @@ import static com.jayway.restassured.RestAssured.given
 import common.Constants
 import orchestratormanager.OrchestratorTypes
 import util.Env
+import util.Helpers
 import util.Timer
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.NetworkGraphOuterClass
@@ -24,6 +25,7 @@ import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.FeatureFlagService
 import services.NetworkGraphService
+import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Unroll
 import util.NetworkGraphUtil
@@ -51,7 +53,11 @@ class NetworkFlowTest extends BaseSpecification {
     static final private String EXTERNALDESTINATION = "external-destination-source"
 
     // Target deployments
-    static final private List<Deployment> TARGETDEPLOYMENTS = [
+    @Shared
+    private List<Deployment> targetDeployments
+
+    def buildTargetDeployments() {
+        return [
             new Deployment()
                     .setName(UDPCONNECTIONTARGET)
                     .setImage("stackrox/qa:socat")
@@ -59,7 +65,7 @@ class NetworkFlowTest extends BaseSpecification {
                     .addLabel("app", UDPCONNECTIONTARGET)
                     .setExposeAsService(true)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["socat -d -d -v UDP-RECV:8080 STDOUT",]),
+                    .setArgs(["socat -dd -v UDP-RECV:8080 STDOUT",]),
             new Deployment()
                     .setName(TCPCONNECTIONTARGET)
                     .setImage("stackrox/qa:socat")
@@ -68,8 +74,8 @@ class NetworkFlowTest extends BaseSpecification {
                     .addLabel("app", TCPCONNECTIONTARGET)
                     .setExposeAsService(true)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["(socat -d -d -v TCP-LISTEN:80,fork STDOUT & " +
-                                      "socat -d -d -v TCP-LISTEN:8080,fork STDOUT)" as String,]),
+                    .setArgs(["(socat -dd -v TCP-LISTEN:80,fork STDOUT & " +
+                                      "socat -dd -v TCP-LISTEN:8080,fork STDOUT)" as String,]),
             new Deployment()
                     .setName(NGINXCONNECTIONTARGET)
                     .setImage("nginx")
@@ -77,10 +83,15 @@ class NetworkFlowTest extends BaseSpecification {
                     .addLabel("app", NGINXCONNECTIONTARGET)
                     .setExposeAsService(true)
                     .setCreateLoadBalancer(true),
-    ]
+        ]
+    }
 
     // Source deployments
-    static final private List<Deployment> SOURCEDEPLOYMENTS = [
+    @Shared
+    private List<Deployment> sourceDeployments
+
+    def buildSourceDeployments() {
+        return [
             new Deployment()
                     .setName(NOCONNECTIONSOURCE)
                     .setImage("nginx")
@@ -107,7 +118,7 @@ class NetworkFlowTest extends BaseSpecification {
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
                                       "do echo \"Hello from ${UDPCONNECTIONSOURCE}\" | " +
-                                      "socat -d -d -d -d -s STDIN UDP:${UDPCONNECTIONTARGET}:8080; " +
+                                      "socat -dddd -s STDIN UDP:${UDPCONNECTIONTARGET}:8080; " +
                                       "done" as String,]),
             new Deployment()
                     .setName(TCPCONNECTIONSOURCE)
@@ -116,7 +127,7 @@ class NetworkFlowTest extends BaseSpecification {
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
                                       "do echo \"Hello from ${TCPCONNECTIONSOURCE}\" | " +
-                                      "socat -d -d -d -d -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
+                                      "socat -dddd -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
                                       "done" as String,]),
             new Deployment()
                     .setName(MULTIPLEPORTSCONNECTION)
@@ -125,9 +136,9 @@ class NetworkFlowTest extends BaseSpecification {
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
                                       "do echo \"Hello from ${MULTIPLEPORTSCONNECTION}\" | " +
-                                      "socat -d -d -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
+                                      "socat -dd -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
                                       "echo \"Hello from ${MULTIPLEPORTSCONNECTION}\" | " +
-                                      "socat -d -d -s STDIN TCP:${TCPCONNECTIONTARGET}:8080; " +
+                                      "socat -dd -s STDIN TCP:${TCPCONNECTIONTARGET}:8080; " +
                                       "done" as String,]),
             new Deployment()
                     .setName(EXTERNALDESTINATION)
@@ -144,23 +155,27 @@ class NetworkFlowTest extends BaseSpecification {
                     .addLabel("app", "${TCPCONNECTIONSOURCE}-qa2")
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
-                                  "do echo \"Hello from ${TCPCONNECTIONSOURCE}-qa2\" | " +
-                                  "socat -d -d -d -d -s STDIN TCP:${TCPCONNECTIONTARGET}.qa.svc.cluster.local:80; " +
-                                  "done" as String,]),
-    ]
+                                      "do echo \"Hello from ${TCPCONNECTIONSOURCE}-qa2\" | " +
+                                      "socat -dddd -s STDIN TCP:${TCPCONNECTIONTARGET}.qa.svc.cluster.local:80; " +
+                                      "done" as String,]),
+        ]
+    }
 
-    static final private List<Deployment> DEPLOYMENTS = SOURCEDEPLOYMENTS + TARGETDEPLOYMENTS
+    @Shared
+    private List<Deployment> deployments
 
-    def setupSpec() {
-        orchestrator.batchCreateDeployments(TARGETDEPLOYMENTS)
-        for (Deployment d : TARGETDEPLOYMENTS) {
+    def createDeployments() {
+        targetDeployments = buildTargetDeployments()
+        orchestrator.batchCreateDeployments(targetDeployments)
+        for (Deployment d : targetDeployments) {
             assert Services.waitForDeployment(d)
         }
-        orchestrator.batchCreateDeployments(SOURCEDEPLOYMENTS)
-        for (Deployment d : SOURCEDEPLOYMENTS) {
+        sourceDeployments = buildSourceDeployments()
+        orchestrator.batchCreateDeployments(sourceDeployments)
+        for (Deployment d : sourceDeployments) {
             assert Services.waitForDeployment(d)
         }
-
+        deployments = sourceDeployments + targetDeployments
         //
         // Commenting out ICMP test setup for now
         // See ROX-635
@@ -180,9 +195,28 @@ class NetworkFlowTest extends BaseSpecification {
         */
     }
 
-    def cleanupSpec() {
-        for (Deployment deployment : DEPLOYMENTS) {
+    def setupSpec() {
+        createDeployments()
+    }
+
+    def destroyDeployments() {
+        for (Deployment deployment : deployments) {
             orchestrator.deleteDeployment(deployment)
+        }
+    }
+
+    def cleanupSpec() {
+        destroyDeployments()
+    }
+
+    def rebuildForRetries() {
+        if (Helpers.getAttemptCount() > 1) {
+            println ">>>> Recreating test deployments prior to retest <<<<<"
+            destroyDeployments()
+            sleep(5000)
+            createDeployments()
+            sleep(5000)
+            println ">>>> Done <<<<<"
         }
     }
 
@@ -190,9 +224,10 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify one-time connections show at first, but do not appear again"() {
         given:
         "Two deployments, A and B, where B communicates to A a single time during initial deployment"
-        String targetUid = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
+        rebuildForRetries()
+        String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
-        String sourceUid = DEPLOYMENTS.find { it.name == SINGLECONNECTIONSOURCE }?.deploymentUid
+        String sourceUid = deployments.find { it.name == SINGLECONNECTIONSOURCE }?.deploymentUid
         assert sourceUid != null
 
         when:
@@ -237,9 +272,10 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify connections can be detected: #protocol"() {
         given:
         "Two deployments, A and B, where B communicates to A via #protocol"
-        String targetUid = DEPLOYMENTS.find { it.name == targetDeployment }?.deploymentUid
+        rebuildForRetries()
+        String targetUid = deployments.find { it.name == targetDeployment }?.deploymentUid
         assert targetUid != null
-        String sourceUid = DEPLOYMENTS.find { it.name == sourceDeployment }?.deploymentUid
+        String sourceUid = deployments.find { it.name == sourceDeployment }?.deploymentUid
         assert sourceUid != null
 
         expect:
@@ -249,7 +285,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         assert edges
         assert edges.get(0).protocol == protocol
-        assert DEPLOYMENTS.find { it.name == targetDeployment }?.ports?.keySet()?.contains(edges.get(0).port)
+        assert deployments.find { it.name == targetDeployment }?.ports?.keySet()?.contains(edges.get(0).port)
 
         where:
         "Data is:"
@@ -269,7 +305,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         and:
         "Deployment with listening port"
-        String targetUid = DEPLOYMENTS.find { it.name == targetDeployment }?.deploymentUid
+        String targetUid = deployments.find { it.name == targetDeployment }?.deploymentUid
         assert targetUid
 
         expect:
@@ -291,10 +327,11 @@ class NetworkFlowTest extends BaseSpecification {
     @Category([NetworkFlowVisualization])
     def "Verify connections with short consistent intervals between 2 deployments"() {
         given:
+        rebuildForRetries()
         "Two deployments, A and B, where B communicates to A in short consistent intervals"
-        String targetUid = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
+        String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
-        String sourceUid = DEPLOYMENTS.find { it.name == SHORTCONSISTENTSOURCE }?.deploymentUid
+        String sourceUid = deployments.find { it.name == SHORTCONSISTENTSOURCE }?.deploymentUid
         assert sourceUid != null
 
         when:
@@ -312,7 +349,7 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify connections to external sources"() {
         given:
         "Deployment A, where A communicates to an external target"
-        String deploymentUid = DEPLOYMENTS.find { it.name == EXTERNALDESTINATION }?.deploymentUid
+        String deploymentUid = deployments.find { it.name == EXTERNALDESTINATION }?.deploymentUid
         assert deploymentUid != null
 
         expect:
@@ -329,9 +366,9 @@ class NetworkFlowTest extends BaseSpecification {
         Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
 
         "Deployment A, where an external source communicates to A"
-        String deploymentUid = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
+        String deploymentUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert deploymentUid != null
-        String deploymentIP = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.loadBalancerIP
+        String deploymentIP = deployments.find { it.name == NGINXCONNECTIONTARGET }?.loadBalancerIP
         assert deploymentIP != null
 
         when:
@@ -362,9 +399,9 @@ class NetworkFlowTest extends BaseSpecification {
         Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
 
         "Deployment A, exposed via LB"
-        String deploymentUid = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
+        String deploymentUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert deploymentUid != null
-        String deploymentIP = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.loadBalancerIP
+        String deploymentIP = deployments.find { it.name == NGINXCONNECTIONTARGET }?.loadBalancerIP
         assert deploymentIP != null
 
         when:
@@ -395,9 +432,9 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify no connections between 2 deployments"() {
         given:
         "Two deployments, A and B, where neither communicates to the other"
-        String targetUid = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
+        String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
-        String sourceUid = DEPLOYMENTS.find { it.name == NOCONNECTIONSOURCE }?.deploymentUid
+        String sourceUid = deployments.find { it.name == NOCONNECTIONSOURCE }?.deploymentUid
         assert sourceUid != null
 
         expect:
@@ -410,9 +447,9 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify connections between two deployments on 2 separate ports shows both edges in the graph"() {
         given:
         "Two deployments, A and B, where B communicates to A on 2 different ports"
-        String targetUid = DEPLOYMENTS.find { it.name == TCPCONNECTIONTARGET }?.deploymentUid
+        String targetUid = deployments.find { it.name == TCPCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
-        String sourceUid = DEPLOYMENTS.find { it.name == MULTIPLEPORTSCONNECTION }?.deploymentUid
+        String sourceUid = deployments.find { it.name == MULTIPLEPORTSCONNECTION }?.deploymentUid
         assert sourceUid != null
 
         when:
@@ -434,9 +471,9 @@ class NetworkFlowTest extends BaseSpecification {
 
         and:
         "Two deployments, A and B, where B communicates to A"
-        String targetUid = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
+        String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
-        String sourceUid = DEPLOYMENTS.find { it.name == SHORTCONSISTENTSOURCE }?.deploymentUid
+        String sourceUid = deployments.find { it.name == SHORTCONSISTENTSOURCE }?.deploymentUid
         assert sourceUid != null
 
         when:
@@ -471,7 +508,7 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify edge timestamps are never in the future, or before start of flow tests"() {
         given:
         "Get current state of edges and current timestamp"
-        def queryString = "Deployment:" + DEPLOYMENTS.name.join(",")
+        def queryString = "Deployment:" + deployments.name.join(",")
         NetworkGraph currentGraph = NetworkGraphService.getNetworkGraph(null, queryString)
         long currentTime = System.currentTimeMillis()
 
@@ -488,11 +525,11 @@ class NetworkFlowTest extends BaseSpecification {
         given:
         "Get current state of network graph"
         NetworkGraph currentGraph = NetworkGraphService.getNetworkGraph()
-        List<String> deployedNamespaces = DEPLOYMENTS*.namespace
+        List<String> deployedNamespaces = deployments*.namespace
 
         and:
         "delete a deployment"
-        Deployment delete = DEPLOYMENTS.find { it.name == NOCONNECTIONSOURCE }
+        Deployment delete = deployments.find { it.name == NOCONNECTIONSOURCE }
         orchestrator.deleteDeployment(delete)
         Services.waitForSRDeletion(delete)
 
@@ -520,7 +557,7 @@ class NetworkFlowTest extends BaseSpecification {
             assert it."metadata"."labels"."network-policy-generator.stackrox.io/generated"
             assert it."metadata"."namespace"
             def index = currentGraph.nodesList.findIndexOf { node -> node.deploymentName == deploymentName }
-            def allowAllIngress = DEPLOYMENTS.find { it.name == deploymentName }?.createLoadBalancer ||
+            def allowAllIngress = deployments.find { it.name == deploymentName }?.createLoadBalancer ||
                     currentGraph.nodesList.find { it.entity.type == Type.INTERNET }.outEdgesMap.containsKey(index)
             List<NetworkGraphOuterClass.NetworkNode> outNodes =  currentGraph.nodesList.findAll { node ->
                 node.outEdgesMap.containsKey(index)

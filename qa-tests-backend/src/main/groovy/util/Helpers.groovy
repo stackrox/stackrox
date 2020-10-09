@@ -36,9 +36,6 @@ class Helpers {
         def willRetry = retryAttempt <= MAX_RETRY_ATTEMTPS
         if (willRetry) {
             println "An exception occurred which will cause a retry: " + failure
-        }
-
-        if (willRetry) {
             println "Test Failed... Attempting Retry #${retryAttempt}"
         }
         return willRetry
