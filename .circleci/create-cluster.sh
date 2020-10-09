@@ -15,6 +15,7 @@ create-cluster() {
   POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
   GKE_RELEASE_CHANNEL="${GKE_RELEASE_CHANNEL:-stable}"
   MACHINE_TYPE="${MACHINE_TYPE:-e2-standard-4}"
+  CLUSTER_VERSION="${CLUSTER_VERSION:-1.15.12-gke.20}"
 
   # this function does not work in strict -e mode
   set +euo pipefail
@@ -35,6 +36,7 @@ create-cluster() {
           --machine-type "${MACHINE_TYPE}" \
           --num-nodes "${NUM_NODES}" \
           --disk-type=pd-standard \
+          --cluster-version "${CLUSTER_VERSION}" \
           --disk-size=20GB \
           --create-subnetwork range=/28 \
           --cluster-ipv4-cidr=/20 \
