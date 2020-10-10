@@ -167,7 +167,7 @@ describe('Network Policy Simulator', () => {
 
         cy.visit(networkUrl);
         cy.get(networkPageSelectors.buttons.allowedFilter).click();
-        cy.cytoscape('#cytoscapeContainer').then((cytoscape) => {
+        cy.getCytoscape('#cytoscapeContainer').then((cytoscape) => {
             const deployments = getDeployments(cytoscape);
             // we want to make sure all the deployments from 'default' and 'docker' namespaces are non-isolated
             deployments.forEach((deployment) => {
@@ -177,7 +177,7 @@ describe('Network Policy Simulator', () => {
             cy.get(networkPageSelectors.buttons.generateNetworkPolicies).click();
             // wait for the graph to update with the new data
             cy.wait('@simulateGraph');
-            cy.cytoscape('#cytoscapeContainer').then((updatedCytoscape) => {
+            cy.getCytoscape('#cytoscapeContainer').then((updatedCytoscape) => {
                 const simulatedDeployments = getDeployments(updatedCytoscape);
                 // After the simulated graph, we want to make sure all the deployments from 'default' and 'docker' namespaces are not non-isolated
                 simulatedDeployments.forEach((deployment) => {
