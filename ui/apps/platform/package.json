@@ -41,7 +41,7 @@
         "jspdf": "^2.1.1",
         "jspdf-autotable": "^3.5.9",
         "lodash": "^4.17.20",
-        "mobx": "^4.15.6",
+        "mobx": "^5.15.7",
         "normalizr": "^3.6.0",
         "object-resolve-path": "^1.1.1",
         "pluralize": "^8.0.0",
