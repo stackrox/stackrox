@@ -15,7 +15,7 @@ function uploadYAMLFile(fileName, selector) {
 function navigateToNetworkGraphWithMockedData() {
     cy.server();
     cy.fixture('network/networkGraph.json').as('networkGraphJson');
-    cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
+    cy.route('GET', api.network.networkPoliciesGraph, '@networkGraphJson').as('networkGraph');
     cy.visit(networkUrl);
     cy.wait('@networkGraph');
 }

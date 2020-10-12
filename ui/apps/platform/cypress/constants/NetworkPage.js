@@ -11,6 +11,7 @@ const networkPanels = {
 };
 
 export const selectors = {
+    cytoscapeContainer: '#cytoscapeContainer',
     network: 'nav.left-navigation li:contains("Network") a',
     simulatorSuccessMessage: 'div:contains("Policies processed")',
     panels: networkPanels,

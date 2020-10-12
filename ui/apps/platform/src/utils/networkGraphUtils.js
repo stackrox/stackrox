@@ -1012,7 +1012,7 @@ export const getNamespaceList = (
         return {
             data: {
                 id: namespace,
-                name: `${isActive ? '\ue901' : ''} ${namespace}`,
+                name: `${isActive ? '\ue901 ' : ''}${namespace}`,
                 active: isActive,
                 type: entityTypes.NAMESPACE,
                 parent: cluster,

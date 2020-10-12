@@ -47,6 +47,14 @@ export function mouseOverEdgeByNames(cytoscape, sourceNode, targetNode) {
 
 // Filter Functions
 
+export function filterDeployments(element) {
+    return element.data('type') === 'DEPLOYMENT';
+}
+
+export function filterNamespaces(element) {
+    return element.data('type') === 'NAMESPACE';
+}
+
 export function filterByNodeName(node) {
     return (element) => {
         return element.data('type') === node.type && element.data('name') === node.name;
