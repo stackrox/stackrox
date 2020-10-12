@@ -66,16 +66,8 @@ func fullClusterCreation(timeout time.Duration) error {
 	// It should only be used when the request to download a bundle does not contain a `slimCollector` setting.
 	if slimCollectorP != nil {
 		cluster.SlimCollector = *slimCollectorP
-		if cluster.SlimCollector && !env.KernelSupportAvailable {
-			fmt.Fprintf(os.Stderr, "%s\n\n", util.WarningSlimCollectorModeWithoutKernelSupport)
-		}
 	} else {
 		cluster.SlimCollector = env.KernelSupportAvailable
-		if cluster.GetSlimCollector() {
-			fmt.Fprintln(os.Stderr, infoDefaultingToSlimCollector)
-		} else {
-			fmt.Fprintln(os.Stderr, infoDefaultingToComprehensiveCollector)
-		}
 	}
 
 	id, err := createCluster(ctx, service)
@@ -112,6 +104,22 @@ func fullClusterCreation(timeout time.Duration) error {
 	}
 	if err := util.GetBundle(params, outputDir, timeout); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
+	}
+
+	if slimCollectorP != nil {
+		if cluster.SlimCollector && !env.KernelSupportAvailable {
+			fmt.Fprintf(os.Stderr, "%s\n\n", util.WarningSlimCollectorModeWithoutKernelSupport)
+		}
+	} else if cluster.GetSlimCollector() {
+		fmt.Fprintln(os.Stderr, infoDefaultingToSlimCollector)
+	} else {
+		fmt.Fprintln(os.Stderr, infoDefaultingToComprehensiveCollector)
+	}
+
+	if env.Error != nil {
+		fmt.Fprintf(os.Stderr, `WARNING: Sensor bundle has been created successfully, but it was not possible to retrieve Central's
+  runtime environment information: %v.
+`, env.Error)
 	}
 	return nil
 }

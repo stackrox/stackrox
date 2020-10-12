@@ -61,13 +61,6 @@ func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, cr
 		}
 	}
 
-	if slimCollector {
-		env := util.RetrieveCentralEnvOrDefault(ctx, service)
-		if !env.KernelSupportAvailable {
-			fmt.Fprintf(os.Stderr, "%s\n\n", util.WarningSlimCollectorModeWithoutKernelSupport)
-		}
-	}
-
 	params := apiparams.ClusterZip{
 		ID:               clusterID,
 		CreateUpgraderSA: &createUpgraderSA,
@@ -78,6 +71,19 @@ func downloadBundle(outputDir, clusterIDOrName string, timeout time.Duration, cr
 	if err := util.GetBundle(params, outputDir, timeout); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
+
+	if slimCollector {
+		env := util.RetrieveCentralEnvOrDefault(ctx, service)
+		if !env.KernelSupportAvailable {
+			fmt.Fprintf(os.Stderr, "%s\n\n", util.WarningSlimCollectorModeWithoutKernelSupport)
+		}
+		if env.Error != nil {
+			fmt.Fprintf(os.Stderr, `WARNING: Sensor bundle has been created successfully, but it was not possible to retrieve Central's
+  runtime environment information: %v.
+`, env.Error)
+		}
+	}
+
 	return nil
 }
 
