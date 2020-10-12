@@ -20,8 +20,8 @@
   populate this section early on to include the testing steps you _intend_ to do, and annotate them with `(TBD)`, or add a task checkbox via `[ ]`,
   to indicate they haven't been done yet. Make sure all `(TBD)`s are removed/all tasks are completed before checking the box and merging the PR.
 - **PR type:** If you are creating a PR primarily to give CI a first shot, and don't intend anyone to review the PR yet, create a [*Draft* PR](https://github.blog/2019-02-14-introducing-draft-pull-requests/)
-  by clicking on the small downward arrow next to the "Create pull request" button, and selecting "Create draft pull request". The
-  `WIP` label is obsolete and should no longer be used when creating new PRs (it might be relevant for walking back on the review readiness, see below).
+  by clicking on the small downward arrow next to the "Create pull request" button, and selecting "Create draft pull request" (if you accidentally
+  created a non-draft PR, you can convert it back to draft, see below for instructions).
 
 ## Working on a PR
 
@@ -62,8 +62,8 @@
 
 ### Metadata
 - Use labels like `blocked`, `on hold`, `needs reviewer` etc. to communicate the state of your PR.
-- If you mistakenly believed a PR was ready for reviewer and turned it from a draft PR to a regular PR, use the `WIP` label to
-  communicate that it is no longer ready for review/under construction.
+- If you mistakenly believed a PR was ready for reviewer and turned it from a draft PR to a regular PR, you can revert
+  it to a draft PR by clicking "Convert to draft" under the list of reviewers in the right sidebar of the Conversation view.
 
 ## Merging a PR
 
