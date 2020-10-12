@@ -861,6 +861,40 @@ const formDescriptors = {
                 placeholder: 'https://scanner.stackrox:8080',
             },
         ],
+        artifactregistry: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'Google Artifact Registry',
+            },
+            {
+                label: 'Types',
+                jsonpath: 'categories',
+                type: 'multiselect',
+                options: [{ value: 'REGISTRY', label: 'Registry' }],
+                placeholder: '',
+            },
+            {
+                label: 'Registry Endpoint',
+                jsonpath: 'google.endpoint',
+                type: 'text',
+                placeholder: 'us-west1-docker.pkg.dev',
+            },
+            {
+                label: 'Project',
+                jsonpath: 'google.project',
+                type: 'text',
+                placeholder: '',
+            },
+            {
+                label: 'Service Account Key (JSON)',
+                jsonpath: 'google.serviceAccount',
+                type: 'text',
+                ...storedCredentialFields,
+            },
+            skipTestIntegration,
+        ],
         google: [
             {
                 label: 'Integration Name',

@@ -222,6 +222,40 @@ class QuayImageIntegration implements ImageIntegration {
     }
 }
 
+class GoogleArtifactRegistry implements ImageIntegration {
+
+    static String name() { "Google Artifact Registry" }
+
+    static Boolean isTestable() {
+        return true
+    }
+
+    static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
+        Map defaultArgs = [
+                name: "google-artifact-registry",
+                project: "stackrox-ci",
+                endpoint: "us-west1-docker.pkg.dev",
+                serviceAccount: Env.mustGet("GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT"),
+                skipTestIntegration: false,
+        ]
+        Map args = defaultArgs + customArgs
+
+        ImageIntegrationOuterClass.GoogleConfig.Builder config =
+                ImageIntegrationOuterClass.GoogleConfig.newBuilder()
+                        .setProject(args.project as String)
+                        .setServiceAccount(args.serviceAccount as String)
+                        .setEndpoint(args.endpoint as String)
+
+        return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+                .setName(args.name as String)
+                .setType("artifactregistry")
+                .clearCategories()
+                .addAllCategories(ImageIntegrationService.getIntegrationCategories(false))
+                .setGoogle(config)
+                .setSkipTestIntegration(args.skipTestIntegration as Boolean)
+    }
+}
+
 class GCRImageIntegration implements ImageIntegration {
 
     static String name() { "GCR Registry+Scanner" }

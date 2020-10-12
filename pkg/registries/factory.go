@@ -3,6 +3,7 @@ package registries
 import (
 	"github.com/stackrox/rox/generated/storage"
 	artifactoryFactory "github.com/stackrox/rox/pkg/registries/artifactory"
+	artifactRegistryFactory "github.com/stackrox/rox/pkg/registries/artifactregistry"
 	azureFactory "github.com/stackrox/rox/pkg/registries/azure"
 	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
 	dtrFactory "github.com/stackrox/rox/pkg/registries/dtr"
@@ -36,6 +37,7 @@ func NewFactory() Factory {
 	// Add registries to factory.
 	//////////////////////////////
 	creatorFuncs := []creatorWrapper{
+		artifactRegistryFactory.Creator,
 		artifactoryFactory.Creator,
 		dockerFactory.Creator,
 		dtrFactory.Creator,

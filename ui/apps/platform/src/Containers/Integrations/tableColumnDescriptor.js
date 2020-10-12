@@ -112,6 +112,11 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'dtr.endpoint', Header: 'Endpoint' },
             { accessor: 'dtr.username', Header: 'Username' },
         ],
+        artifactregistry: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'google.endpoint', Header: 'Endpoint' },
+            { accessor: 'google.project', Header: 'Project' },
+        ],
         artifactory: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'docker.endpoint', Header: 'Endpoint' },
@@ -132,6 +137,7 @@ const tableColumnDescriptor = Object.freeze({
         google: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'google.endpoint', Header: 'Endpoint' },
+            { accessor: 'google.project', Header: 'Project' },
         ],
         ecr: [
             { accessor: 'name', Header: 'Name' },

@@ -61,9 +61,9 @@ describe('Image Integrations Test', () => {
         );
     });
 
-    it('should show a hint about stored credentials for Google Cloud Platform', () => {
-        cy.get(selectors.googleCloudPlatformTile).click();
-        cy.get(`${selectors.table.rows}:contains('Google Cloud Platform Test')`).click();
+    it('should show a hint about stored credentials for Google Container Registry', () => {
+        cy.get(selectors.googleContainerRegistryTile).click();
+        cy.get(`${selectors.table.rows}:contains('Google Container Registry Test')`).click();
         cy.get('div:contains("Service Account Key"):last [alt="help"]').trigger('mouseenter');
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'

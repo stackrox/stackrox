@@ -11,6 +11,7 @@ import objects.Deployment
 import objects.AzureRegistryIntegration
 import objects.ECRRegistryIntegration
 import objects.GCRImageIntegration
+import objects.GoogleArtifactRegistry
 import objects.QuayImageIntegration
 import objects.Secret
 import objects.StackroxScannerIntegration
@@ -26,6 +27,13 @@ import util.Env
 import util.Timer
 
 class ImageScanningTest extends BaseSpecification {
+
+    static final private String RHEL7_IMAGE =
+            "richxsl/rhel7@sha256:8f3aae325d2074d2dc328cb532d6e7aeb0c588e15ddf847347038fe0566364d6"
+    static final private String GCR_IMAGE   = "us.gcr.io/stackrox-ci/qa/registry-image:0.2"
+    static final private String NGINX_IMAGE = "nginx:1.12.1"
+    static final private String AR_IMAGE    = "us-west1-docker.pkg.dev/stackrox-ci/artifact-registry-test1/nginx:1.17"
+
     static final private List<String> POLICIES = [
             "ADD Command used instead of COPY",
             "Secure Shell (ssh) Port Exposed in Image",
@@ -257,10 +265,11 @@ class ImageScanningTest extends BaseSpecification {
         "quay-dupe-invalid"             | "quay" |
                 [{ QuayImageIntegration.createDefaultIntegration() },
                  {
-                     QuayImageIntegration.createCustomIntegration(
+            QuayImageIntegration.createCustomIntegration(
                              name: "quay-duplicate",
                              oauthToken: Env.mustGet("QUAY_SECONDARY_BEARER_TOKEN"),
-                     ) },]                               |
+                     )
+                 },]                               |
                 165 | 184 | 28
 
         "quay-and-other"                | "quay" |
@@ -288,7 +297,7 @@ class ImageScanningTest extends BaseSpecification {
         "gcr-dupe-invalid"              | "gcr"  |
                 [{ GCRImageIntegration.createDefaultIntegration() },
                  {
-                     GCRImageIntegration.createCustomIntegration(
+            GCRImageIntegration.createCustomIntegration(
                              name: "gcr-no-access",
                              serviceAccount: Env.mustGet("GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY"),
                              skipTestIntegration: true,
@@ -306,7 +315,7 @@ class ImageScanningTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT, Integration])
-    def "Verify Image Scan Results - #scanner.name() - #component:#version - #image - #cve - #layerIdx"() {
+    def "Verify Image Scan Results - #scanner.name() - #component:#version - #image - #cve - #idx"() {
         Assume.assumeTrue(scanner.isTestable())
 
         when:
@@ -325,7 +334,7 @@ class ImageScanningTest extends BaseSpecification {
         then:
         ImageOuterClass.EmbeddedImageScanComponent foundComponent =
                 img.scan.componentsList.find {
-                    c -> c.name == component && c.version == version && c.layerIndex == layerIdx
+                    c -> c.name == component && c.version == version && c.layerIndex == idx
                 }
         foundComponent != null
 
@@ -344,21 +353,58 @@ class ImageScanningTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        scanner                          | component      | version            | layerIdx | cve
-        new StackroxScannerIntegration() | "openssl-libs" | "1:1.0.1e-34.el7"  | 1        | "RHSA-2014:1052"
-        new StackroxScannerIntegration() | "openssl-libs" | "1:1.0.1e-34.el7"  | 1        | "CVE-2014-3509"
-        new AnchoreScannerIntegration()  | "openssl"      | "1.0.1t-1+deb8u12" | 0        | "CVE-2010-0928"
-        new AnchoreScannerIntegration()  | "perl"         | "5.20.2-3+deb8u12" | 0        | "CVE-2011-4116"
-        new ClairScannerIntegration()    | "apt"          | "1.4.8"            | 0        | "CVE-2011-3374"
-        new ClairScannerIntegration()    | "bash"         | "4.4-5"            | 0        | "CVE-2019-18276"
+        scanner                          | component      | version            | idx | cve              | image
+        new StackroxScannerIntegration() | "openssl-libs" | "1:1.0.1e-34.el7"  | 1   | "RHSA-2014:1052" | RHEL7_IMAGE
+        new StackroxScannerIntegration() | "openssl-libs" | "1:1.0.1e-34.el7"  | 1   | "CVE-2014-3509"  | RHEL7_IMAGE
+        new AnchoreScannerIntegration()  | "openssl"      | "1.0.1t-1+deb8u12" | 0   | "CVE-2010-0928"  | GCR_IMAGE
+        new AnchoreScannerIntegration()  | "perl"         | "5.20.2-3+deb8u12" | 0   | "CVE-2011-4116"  | GCR_IMAGE
+        new ClairScannerIntegration()    | "apt"          | "1.4.8"            | 0   | "CVE-2011-3374"  | NGINX_IMAGE
+        new ClairScannerIntegration()    | "bash"         | "4.4-5"            | 0   | "CVE-2019-18276" | NGINX_IMAGE
+    }
 
-        image = scanner.name() == "Stackrox Scanner" ?
-                "richxsl/rhel7@sha256:8f3aae325d2074d2dc328cb532d6e7aeb0c588e15ddf847347038fe0566364d6" :
-                scanner.name() == "Anchore Scanner" ?
-                        "us.gcr.io/stackrox-ci/qa/registry-image:0.2" :
-                        scanner.name() == "Clair Scanner" ?
-                                "nginx:1.12.1" :
-                                { throw new RuntimeException("An image is needed to test ${scanner.name()}") }()
+    @Unroll
+    @Category([BAT, Integration])
+    def "Verify Scan Results from Registries - #registry.name() - #component:#version - #image - #cve - #idx"() {
+        ImageIntegrationService.addStackroxScannerIntegration()
+
+        when:
+        "Add scanner"
+        def integrationId = registry.createDefaultIntegration()
+        assert integrationId
+
+        and:
+        "Scan Image and verify results"
+        ImageOuterClass.Image img = Services.scanImage(image)
+        assert img.metadata.dataSource.id != ""
+        assert img.metadata.dataSource.name != ""
+        assert img.scan.dataSource.id != ""
+        assert img.scan.dataSource.name != ""
+
+        then:
+        ImageOuterClass.EmbeddedImageScanComponent foundComponent =
+                img.scan.componentsList.find {
+                    c -> c.name == component && c.version == version && c.layerIndex == idx
+                }
+        foundComponent != null
+
+        ImageOuterClass.EmbeddedVulnerability vuln =
+                foundComponent.vulnsList.find { v -> v.cve == cve }
+
+        vuln != null
+
+        cleanup:
+        "Remove scanner and delete image"
+        integrationId ? ImageIntegrationService.deleteImageIntegration(integrationId) : null
+        ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
+        ImageService.clearImageCaches()
+        ImageService.deleteImagesWithRetry(SearchServiceOuterClass.RawQuery.newBuilder()
+                .setQuery("Image:${image}").build(), true)
+
+        where:
+        "Data inputs are: "
+
+        registry                          | component      | version            | idx | cve              | image
+        new GoogleArtifactRegistry()     | "gcc-8"        | "8.3.0-6"          | 0   | "CVE-2018-12886" | AR_IMAGE
     }
 
     static final private IMAGES_FOR_ERROR_TESTS = [

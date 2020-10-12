@@ -32,8 +32,7 @@ func (g *googleRegistry) Match(image *storage.ImageName) bool {
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
 	return "google", func(integration *storage.ImageIntegration) (types.Registry, error) {
-		reg, err := newRegistry(integration)
-		return reg, err
+		return NewRegistry(integration)
 	}
 }
 
@@ -48,7 +47,9 @@ func validate(google *storage.GoogleConfig) error {
 	return errorList.ToError()
 }
 
-func newRegistry(integration *storage.ImageIntegration) (types.Registry, error) {
+// NewRegistry creates an image integration based on the GoogleConfig that also checks against
+// the specified Google project as a part of the registry
+func NewRegistry(integration *storage.ImageIntegration) (types.Registry, error) {
 	config := integration.GetGoogle()
 	if config == nil {
 		return nil, errors.New("Google configuration required")
