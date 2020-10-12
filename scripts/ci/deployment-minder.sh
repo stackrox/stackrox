@@ -17,14 +17,6 @@ echo "StackRox METADATA_URL is set to ${METADATA_URL}"
 
 set -x
 
-kubectl cluster-info
-
-kubectl config get-contexts
-context=$(kubectl config get-contexts | grep -E '^\*' | tr -s ' ' | cut -d ' ' -f 3)
-echo "Pulled context: ${context}"
-server=$(echo "${context}" | sed -En 's/(.*)\-(\w+)\-ci\-rox\-systems\-.*/\1.\2.ci.rox.systems/p')
-echo "Pulled server: ${server}"
-
 CTL="kubectl"
 CLUSTER_TYPE=""
 if [[ $(kubectl get ns | grep openshift) ]]; then
@@ -34,14 +26,11 @@ fi
 
 while true; do
   date
-  if [[ ! -z "${server}" ]]; then
-    host "${server}"
-  fi
   if [[ ! -z "${CLUSTER_TYPE}" && "${CLUSTER_TYPE}" -eq "openshift" ]]; then
     oc -n openshift-apiserver describe svc/api
     oc -n openshift-apiserver logs svc/api | tail -50
   fi
-  "${CTL}" describe nodes
+  "${CTL}" get nodes -o yaml
   ps axw | grep "port-forward"
   curl --silent --insecure --show-error "${METADATA_URL}" | jq
   sleep 60

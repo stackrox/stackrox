@@ -15,12 +15,18 @@ create-cluster() {
   POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
   GKE_RELEASE_CHANNEL="${GKE_RELEASE_CHANNEL:-stable}"
   MACHINE_TYPE="${MACHINE_TYPE:-e2-standard-4}"
-  CLUSTER_VERSION="${CLUSTER_VERSION:-1.15.12-gke.20}"
 
   # this function does not work in strict -e mode
   set +euo pipefail
 
   echo "Creating ${NUM_NODES} node cluster with image type \"${GCP_IMAGE_TYPE}\""
+
+  VERSION_ARGS=(--release-channel "${GKE_RELEASE_CHANNEL}")
+  get-supported-cluster-version
+  if [[ -n "${CLUSTER_VERSION}" ]]; then
+    echo "using cluster version: ${CLUSTER_VERSION}"
+    VERSION_ARGS=(--cluster-version "${CLUSTER_VERSION}")
+  fi
 
   PSP_ARG=
   if [[ "${POD_SECURITY_POLICIES}" == "true" ]]; then
@@ -36,7 +42,6 @@ create-cluster() {
           --machine-type "${MACHINE_TYPE}" \
           --num-nodes "${NUM_NODES}" \
           --disk-type=pd-standard \
-          --cluster-version "${CLUSTER_VERSION}" \
           --disk-size=20GB \
           --create-subnetwork range=/28 \
           --cluster-ipv4-cidr=/20 \
@@ -44,7 +49,7 @@ create-cluster() {
           --enable-ip-alias \
           --enable-network-policy \
           --enable-autorepair \
-          --release-channel "${GKE_RELEASE_CHANNEL}" \
+          "${VERSION_ARGS[@]}" \
           --image-type ${GCP_IMAGE_TYPE} \
           --tags="stackrox-ci,stackrox-ci-${CIRCLE_JOB}" \
           --labels="stackrox-ci=true,stackrox-ci-job=${CIRCLE_JOB},stackrox-ci-workflow=${CIRCLE_WORKFLOW_ID}" \
@@ -110,4 +115,17 @@ wait-for-cluster() {
     echo "Waiting for ${NUMSTARTING} kube-system containers to be initialized"
     sleep 10
   done
+}
+
+get-supported-cluster-version() {
+  if [[ -n "${CLUSTER_VERSION}" ]]; then
+    match=$(gcloud container get-server-config --format json | jq "[.validMasterVersions | .[] | select(.|test(\"^${CLUSTER_VERSION}\"))][0]")
+    if [[ -z "${match}" || "${match}" == "null" ]]; then
+      echo "A supported version cannot be found that matches ${CLUSTER_VERSION}."
+      echo "Valid master versions are:"
+      gcloud container get-server-config --format json | jq .validMasterVersions
+      exit 1
+    fi
+    CLUSTER_VERSION=$(sed -e 's/^"//' -e 's/"$//' <<<"${match}")
+  fi
 }

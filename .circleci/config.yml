@@ -1614,6 +1614,12 @@ commands:
 
     steps:
       - run:
+          name: Monitor cluster & deployment
+          command: |
+            scripts/ci/deployment-minder.sh
+          background: true
+
+      - run:
           name: Deploy central to remote cluster
           command: |
             # If we're running a race check, then set CGO_CHECK=true so the central script will deploy it with strict checks
@@ -1757,12 +1763,6 @@ commands:
             fi
             <</ parameters.validate-autoupgrade-label >>
             exit 0
-
-      - run:
-          name: Monitor cluster & deployment
-          command: |
-            scripts/ci/deployment-minder.sh
-          background: true
 
   check-backend-changes:
     steps:
@@ -2430,6 +2430,9 @@ jobs:
 
   provision-gke-api-upgrade-tests:
     executor: custom
+    environment:
+      # Use 1.15 to facilitate the upgrade install of 2.4.16.4
+      - CLUSTER_VERSION: 1.15.
     steps:
       - checkout
       - check-backend-changes

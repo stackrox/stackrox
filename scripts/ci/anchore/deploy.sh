@@ -29,7 +29,7 @@ wait_for_anchore_to_start() {
     tries=0
     while [[ $(count_running_pods) -ne "6" ]]; do
         tries=$((tries + 1))
-        if [[ ${tries} -gt 10 ]]; then
+        if (( tries > 20 )); then
             kubectl get nodes -o yaml
             echo "Took too long to start"
             exit 1
@@ -45,7 +45,7 @@ wait_for_anchore_to_stop() {
     tries=0
     while [[ $(count_running_pods) -ne "1" ]]; do
         tries=$((tries + 1))
-        if [[ ${tries} -gt 10 ]]; then
+        if (( tries > 20 )); then
             echo "Took too long to stop"
             exit 1
         fi
@@ -60,7 +60,7 @@ wait_for_anchore_to_stop() {
 
 set -x
 helm version
-helm repo add stable https://kubernetes-charts.storage.googleapis.com
+helm repo add anchore https://charts.anchore.io
 helm repo update
 if kubectl get ns "${namespace}"; then
     kubectl delete ns "${namespace}" # handle CI re-runs
@@ -69,22 +69,22 @@ kubectl create ns "${namespace}"
 kubectl -n "${namespace}" apply -f "${DIR}/psp.yaml"
 
 set +e
-helm install stable/anchore-engine \
+helm install anchore/anchore-engine \
     -n "${app_name}" \
     --namespace "${namespace}" \
     --set "anchoreGlobal.defaultAdminPassword=${ANCHORE_PASSWORD}" \
     --set "postgresql.postgresPassword=${ANCHORE_PASSWORD}" \
     --set "postgresql.postgresUser=${ANCHORE_USERNAME}" \
-    --version 1.6.9
+    --version 1.7.0
 if [[ $? -ne 0 ]]; then
     set -e
     # v3
-    helm install "${app_name}" stable/anchore-engine \
+    helm install "${app_name}" anchore/anchore-engine \
         --namespace "${namespace}" \
         --set "anchoreGlobal.defaultAdminPassword=${ANCHORE_PASSWORD}" \
         --set "postgresql.postgresPassword=${ANCHORE_PASSWORD}" \
         --set "postgresql.postgresUser=${ANCHORE_USERNAME}" \
-        --version 1.6.9
+        --version 1.7.0
 fi
 set -e
 
