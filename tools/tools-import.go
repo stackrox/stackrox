@@ -7,7 +7,7 @@ package tools
 // for an explanation of the approach.
 
 import (
-	// Tool dependencies, not used anywheree in the code.
+	// Tool dependencies, not used anywhere in the code.
 	_ "github.com/gobuffalo/packr/packr"
 	_ "github.com/golang/mock/mockgen"
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
@@ -18,4 +18,5 @@ import (
 	_ "github.com/nilslice/protolock"
 	_ "golang.org/x/tools/cmd/stringer"
 	_ "honnef.co/go/tools/cmd/staticcheck"
+	_ "github.com/ckaznocha/protoc-gen-lint"
 )

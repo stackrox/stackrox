@@ -17,6 +17,7 @@ require (
 	github.com/aws/aws-sdk-go v1.29.17
 	github.com/blevesearch/bleve v0.8.0
 	github.com/cenkalti/backoff/v3 v3.2.2
+	github.com/ckaznocha/protoc-gen-lint v0.2.1
 	github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e
 	github.com/containers/image/v5 v5.5.2
 	github.com/coreos/go-oidc v2.1.0+incompatible
