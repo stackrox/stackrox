@@ -1294,9 +1294,6 @@ commands:
       crio:
         type: boolean
         default: false
-      flavor:
-        type: enum
-        enum: ["lite", "multi"]
       version:
         type: string
 
@@ -1318,21 +1315,11 @@ commands:
             wget https://storage.googleapis.com/kubernetes-release/release/v1.11.2/bin/linux/amd64/kubectl
             sudo install kubectl /usr/bin
 
-      - run:
-          name: Generate ephemeral SSH key
-          command: |
-            mkdir -p openshift/artifacts
-            ssh-keygen -t rsa -f openshift/artifacts/id_rsa -C '' -N ''
-            chmod 0400 openshift/artifacts/id_rsa openshift/artifacts/id_rsa.pub
-            cat openshift/artifacts/id_rsa.pub
-
+      - *loginToGCR
       - run:
           name: Create cloud resources
           command: |
-            echo "suffix: ${CIRCLE_WORKFLOW_ID:0:7}<< parameters.suffix >>" > openshift/configuration.yaml
-            echo "use-crio: '<< parameters.crio >>'" >> openshift/configuration.yaml
-            cat openshift/configuration.yaml
-
+            mkdir -p openshift
             set +e
             try=0
             max_attempts=2
@@ -1341,8 +1328,15 @@ commands:
                 echo "============= Openshift provision try ${try} ============="
                 docker run --rm -t -v "$PWD/openshift:/well-known" \
                   -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
-                  "stackrox/openshift-automation:<< parameters.flavor >>-<< parameters.version >>" \
-                  create 2>&1 | scripts/ci/monitor-output.sh 60
+                  "gcr.io/stackrox-infra/automation-flavors/openshift-multi:<< parameters.version >>" \
+                  create \
+                    --name="${CIRCLE_WORKFLOW_ID:0:7}<< parameters.suffix >>" \
+                    --crio="<< parameters.crio >>" \
+                    --creation-source=ci \
+                    --gcp-project=stackrox-ci \
+                    --dns-project=stackrox-ci \
+                    --dns-zone=openshift-ci-rox-systems \
+                    2>&1 | scripts/ci/monitor-output.sh 60
                 rc=$?
                 if [[ ${rc} == 0 ]]; then
                     echo "============= Openshift provision succeeded ============="
@@ -1352,7 +1346,7 @@ commands:
                 if [[ ${try} -lt ${max_attempts} ]]; then
                     docker run --rm -t -v "$PWD/openshift:/well-known" \
                       -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
-                      "stackrox/openshift-automation:<< parameters.flavor >>-<< parameters.version >>" \
+                      "gcr.io/stackrox-infra/automation-flavors/openshift-multi:<< parameters.version >>" \
                       destroy
                 fi
             done
@@ -1393,14 +1387,10 @@ commands:
 
       - destroy-openshift-cluster:
           when: on_fail
-          flavor: << parameters.flavor >>
           version: << parameters.version >>
 
   destroy-openshift-cluster:
     parameters:
-      flavor:
-        type: enum
-        enum: ["lite", "multi"]
       version:
         type: string
       when:
@@ -1413,9 +1403,9 @@ commands:
           when: << parameters.when >>
           command: |
             docker create -v /well-known --name openshift alpine:3.9 /bin/true
-            docker cp openshift/configuration.yaml openshift:/well-known/configuration.yaml
-            docker cp openshift/artifacts          openshift:/well-known/artifacts
+            docker cp openshift/artifacts openshift:/well-known/artifacts
 
+      - *loginToGCR
       - run:
           name: Destroy Openshift cluster
           when: << parameters.when >>
@@ -1423,7 +1413,7 @@ commands:
             docker run --rm -t \
               --volumes-from openshift \
               -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
-              stackrox/openshift-automation:<< parameters.flavor >>-<< parameters.version >> \
+              gcr.io/stackrox-infra/automation-flavors/openshift-multi:<< parameters.version >> \
               destroy
 
   run-openshift-tests:
@@ -1434,9 +1424,6 @@ commands:
       gate-label:
         type: string
         default: ""
-      flavor:
-        type: enum
-        enum: ["lite", "multi"]
       version:
         type: string
       use-main-rhel:
@@ -1588,7 +1575,6 @@ commands:
 
       - destroy-openshift-cluster:
           when: always
-          flavor: << parameters.flavor >>
           version: << parameters.version >>
 
   deploy-stackrox:
@@ -2395,8 +2381,7 @@ jobs:
       - provision-openshift-cluster:
           crio: false
           suffix: -rhel
-          flavor: multi
-          version: 0.6.5
+          version: 0.1.1
 
   provision-gke-rhel-api-e2e-tests:
     executor: custom
@@ -2504,19 +2489,17 @@ jobs:
     steps:
       - provision-openshift-cluster:
           crio: false
-          flavor: multi
           gate-label: ci-openshift-tests
-          version: 0.6.5
+          version: 0.1.1
 
   provision-openshift-crio-api-e2e-tests:
     machine: true
     steps:
       - provision-openshift-cluster:
           crio: true
-          flavor: multi
           gate-label: ci-openshift-crio-tests
           suffix: -crio
-          version: 0.6.5
+          version: 0.1.1
 
   provision-eks-api-e2e-tests:
     executor: custom
@@ -3029,8 +3012,7 @@ jobs:
           run-on-tags: true
       - run-openshift-tests:
           suffix: -rhel
-          flavor: multi
-          version: 0.6.5
+          version: 0.1.1
           use-main-rhel: true
           sensor-deploy-flavor: helm
 
@@ -3691,8 +3673,7 @@ jobs:
     steps:
       - run-openshift-tests:
           gate-label: ci-openshift-tests
-          flavor: multi
-          version: 0.6.5
+          version: 0.1.1
 
   openshift-crio-api-e2e-tests:
     executor: custom
@@ -3715,8 +3696,7 @@ jobs:
       - run-openshift-tests:
           suffix: "-crio"
           gate-label: ci-openshift-crio-tests
-          flavor: multi
-          version: 0.6.5
+          version: 0.1.1
 
   eks-api-e2e-tests:
     executor: custom
