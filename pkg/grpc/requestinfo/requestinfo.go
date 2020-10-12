@@ -17,10 +17,14 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/devbuild"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
+	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/sync"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
@@ -30,10 +34,18 @@ import (
 
 const (
 	requestInfoMDKey = `rox-requestinfo`
+	refererKey       = "Referer"
+	forwardedKey     = "Forwarded"
+	forwardedForKey  = "X-Forwarded-For"
+	remoteAddr       = "Remote-Addr"
+	host             = "Host"
+	userAgent        = "User-Agent"
 )
 
 var (
-	log = logging.LoggerForModule()
+	log            = logging.LoggerForModule()
+	networkLogInit sync.Once
+	networkLog     bool
 )
 
 type requestInfoKey struct{}
@@ -120,10 +132,14 @@ func extractCertInfoChains(fullCertChains [][]*x509.Certificate) [][]CertInfo {
 
 // Handler takes care of populating the context with a RequestInfo, as well as handling the
 // serialization/deserialization for the HTTP/1.1 gateway.
-type Handler struct{}
+type Handler struct {
+}
 
 // NewRequestInfoHandler creates a new request info handler.
 func NewRequestInfoHandler() *Handler {
+	networkLogInit.Do(func() {
+		networkLog = env.LogNetworkRequest()
+	})
 	return &Handler{}
 }
 
@@ -267,8 +283,30 @@ func (h *Handler) HTTPIntercept(handler http.Handler) http.Handler {
 			ri.VerifiedChains = extractCertInfoChains(r.TLS.VerifiedChains)
 		}
 		newCtx := context.WithValue(r.Context(), requestInfoKey{}, *ri)
+		logRequest(ri)
 		handler.ServeHTTP(w, r.WithContext(newCtx))
 	})
+}
+
+func logRequest(ri *RequestInfo) {
+	if !networkLog || ri.HTTPRequest == nil {
+		return
+	}
+
+	forwardedBy := stringutils.OrDefault(ri.HTTPRequest.Headers.Get(forwardedKey), "N/A")
+	sourceIP := stringutils.FirstNonEmpty(ri.HTTPRequest.Headers.Get(remoteAddr), ri.HTTPRequest.Headers.Get(forwardedForKey), "N/A")
+
+	var referer string
+	if ri.HTTPRequest.Headers.Get(refererKey) != "" {
+		referer = v1.Audit_UI.String()
+	} else {
+		referer = v1.Audit_API.String()
+	}
+	destHost := stringutils.OrDefault(ri.HTTPRequest.Headers.Get(host), "N/A")
+
+	log.Infof(
+		"Source IP: %s, Method: %s, User Agent: %s, Forwarded: %s, Destination Host: %s, Referer: %s",
+		sourceIP, ri.HTTPRequest.Method, ri.HTTPRequest.Headers.Get(userAgent), forwardedBy, destHost, referer)
 }
 
 func sourceAddr(ctx context.Context) net.Addr {

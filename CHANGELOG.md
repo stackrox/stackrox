@@ -5,6 +5,11 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+- A new environment variable for Central ROX_NETWORK_ACCESS_LOG, defaulted to false, is available.
+When set to true, each network request to Central (via API, UI) is logged in the Central logs. 
+Note: When turned on, this environment variable will cause noisy logging, and hence should be turned on only for the
+purpose of debugging network connectivity issues. Once network connectivity is established, we should advise
+to immediately set this to false to stop logging.
 
 ## [50.0]
 - UI: Do not display incomplete process status when Sensor Upgrade is up to date (ROX-5579)
