@@ -5,6 +5,7 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+- UI: fix pagination in Vuln Mmgt so that filtering a list by searching will reset the page number to 1 (ROX-5751)
 - A new environment variable for Central ROX_NETWORK_ACCESS_LOG, defaulted to false, is available.
 When set to true, each network request to Central (via API, UI) is logged in the Central logs. 
 Note: When turned on, this environment variable will cause noisy logging, and hence should be turned on only for the

@@ -172,7 +172,13 @@ const URLSearchInputWithAutocomplete = ({
 
         if (newWorkflowCases.includes(workflowState?.useCase)) {
             // Get the full querystring to redirect to
-            const url = workflowState.setSearch(newSearch).toUrl();
+            //   first, check it we have all complete key/value pairs in the search object
+            const isCompleteSearch = Object.keys(newSearch).every((k) => !!newSearch[k]);
+
+            //   now, if all are complete, reset to first page, too; otherwise don't
+            const url = isCompleteSearch
+                ? workflowState.setPage(0).setSearch(newSearch).toUrl()
+                : workflowState.setSearch(newSearch).toUrl();
             const qsStart = url.indexOf('?');
             if (qsStart === -1) {
                 return '';
