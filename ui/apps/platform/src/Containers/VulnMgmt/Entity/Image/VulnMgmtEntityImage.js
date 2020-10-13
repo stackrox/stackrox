@@ -45,6 +45,7 @@ const VulnMgmtImage = ({
                         }
                     }
                 }
+                notes
                 vulnCount(query: $query)
                 priority
                 topVuln {
@@ -63,6 +64,7 @@ const VulnMgmtImage = ({
                     dataSource {
                         name
                     }
+                    notes
                     components {
                         id
                         priority

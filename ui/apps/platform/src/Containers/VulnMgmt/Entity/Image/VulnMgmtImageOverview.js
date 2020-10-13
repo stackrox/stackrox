@@ -17,6 +17,7 @@ import entityTypes from 'constants/entityTypes';
 import DateTimeField from 'Components/DateTimeField';
 import { entityToColumns } from 'constants/listColumns';
 
+import ScanDataMessage from './ScanDataMessage';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
 import TableWidget from '../TableWidget';
@@ -41,8 +42,8 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
 
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyImage, ...data };
-    const { metadata, scan, topVuln, priority } = safeData;
-    safeData.componentCount = scan && scan.components && scan.components.length;
+    const { metadata, scan, topVuln, priority, notes } = safeData;
+    safeData.componentCount = scan?.components?.length || 0;
 
     const layers = metadata ? cloneDeep(metadata.v1.layers) : [];
     const fixableCves = [];
@@ -70,11 +71,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     const metadataKeyValuePairs = [
         {
             key: 'Created',
-            value:
-                (metadata && metadata.v1 && (
-                    <DateTimeField date={metadata.v1.created} asString />
-                )) ||
-                '-',
+            value: (metadata?.v1 && <DateTimeField date={metadata.v1.created} asString />) || '-',
         },
         {
             key: 'Scanner',
@@ -117,6 +114,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     return (
         <div className="flex h-full">
             <div className="flex flex-col flex-grow min-w-0">
+                <ScanDataMessage imagesNotes={notes} scanNotes={scan?.notes} />
                 <CollapsibleSection title="Image Summary">
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">

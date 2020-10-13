@@ -136,6 +136,7 @@ export const vulnMgmt = {
         getCves: 'getCves',
         getPolicies: 'getPolicies',
         getPolicy: 'getPolicy',
+        getImage: 'getImage',
     },
 };
 

@@ -21,6 +21,9 @@ export const url = {
         policy: `${baseURL}/policy`,
         deployment: `${baseURL}/deployment`,
     },
+    sidepanel: {
+        image: `${baseURL}/images?workflowState[0][t]=IMAGE&workflowState[0][i]=sha256:02382353821b12c21b062c59184e227e001079bb13ebd01f9d3270ba0fcbf1e4`,
+    },
 };
 
 export const vmHomePageSelectors = {
@@ -144,6 +147,7 @@ const sidePanelSelectors = {
         table: tableSelectors,
     }),
     violationTags: violationTagsSelectors,
+    scanDataMessage: '[data-testid="message"].error-message:contains("CVE Data May Be Inaccurate")',
 };
 
 const policySidePanelSelectors = {

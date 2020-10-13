@@ -5,17 +5,13 @@ import * as Icon from 'react-feather';
 import Loader from 'Components/Loader';
 
 function Message(props) {
+    const baseClasses = 'p-4 rounded items-center border leading-normal flex-shrink-0 w-full';
     const messageClasses = {
-        warn:
-            'warn-message p-4 rounded-sm text-warning-800 items-center border border-warning-700 bg-warning-200 leading-normal flex-shrink-0 w-full',
-        error:
-            'error-message p-4 rounded-sm text-alert-800 items-center border border-alert-700 bg-alert-200 leading-normal flex-shrink-0 w-full',
-        info:
-            'info-message p-4 rounded-sm text-success-800 items-center border border-success-700 bg-success-200 leading-normal flex-shrink-0 w-full',
-        guidance:
-            'guidance-message p-4 rounded-sm text-primary-800 items-center border border-primary-700 bg-primary-200 leading-normal flex-shrink-0 w-full',
-        loading:
-            'loading-message p-4 rounded-sm text-primary-800 items-center border border-primary-700 bg-primary-200 leading-normal flex-shrink-0 w-full',
+        warn: `${baseClasses} warn-message text-warning-800 border-warning-700 bg-warning-200`,
+        error: `${baseClasses} error-message text-alert-800 border-alert-700 bg-alert-200`,
+        info: `${baseClasses} info-message text-success-800 border-success-700 bg-success-200`,
+        guidance: `${baseClasses} guidance-message text-primary-800 border-primary-700 bg-primary-200`,
+        loading: `${baseClasses} loading-message text-primary-800 border-primary-700 bg-primary-200`,
     };
 
     const borderColor = {
