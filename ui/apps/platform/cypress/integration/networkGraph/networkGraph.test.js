@@ -21,7 +21,7 @@ describe('Network Deployment Details', () => {
                 type: 'DEPLOYMENT',
                 name: 'central',
             });
-            cy.get(`${networkPageSelectors.networkDetailsPanel.header}:contains("central")`);
+            cy.get(`${networkPageSelectors.detailsPanel.header}:contains("central")`);
         });
     });
 });

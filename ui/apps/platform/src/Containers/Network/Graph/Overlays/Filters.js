@@ -35,6 +35,7 @@ const Filters = ({ setFilterMode, offset, filterMode }) => {
                     }
                 ${filterMode === filterModes.allowed && 'border-r-0'}`}
                     onClick={handleChange(filterModes.active)}
+                    data-testid="network-connections-filter-active"
                 >
                     {`${filterLabels[filterModes.active]}`}
                 </button>
@@ -47,6 +48,7 @@ const Filters = ({ setFilterMode, offset, filterMode }) => {
                             : `${buttonClassName} border-l-0 border-r-0`
                     }`}
                     onClick={handleChange(filterModes.allowed)}
+                    data-testid="network-connections-filter-allowed"
                 >
                     {`${filterLabels[filterModes.allowed]}`}
                 </button>
@@ -58,6 +60,7 @@ const Filters = ({ setFilterMode, offset, filterMode }) => {
                     }
                 ${filterMode === filterModes.allowed && 'border-l-0'}`}
                     onClick={handleChange(filterModes.all)}
+                    data-testid="network-connections-filter-all"
                 >
                     {`${filterLabels[filterModes.all]}`}
                 </button>

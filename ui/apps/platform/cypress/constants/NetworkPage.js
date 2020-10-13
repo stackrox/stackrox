@@ -39,14 +39,17 @@ export const selectors = {
         simulatorButtonOn: '[data-testid="simulator-button-on"]',
         simulatorButtonOff: '[data-testid="simulator-button-off"]',
         generateNetworkPolicies: 'button:contains("Generate and simulate network policies")',
-        activeFilter: 'button:contains("active")',
-        allowedFilter: 'button:contains("allowed")',
-        allFilter: 'button:contains("all")',
+        // Select buttons by data-testid attribute and contains text, because "allowed" and "all" are ambiguous:
+        activeFilter: 'button[data-testid="network-connections-filter-active"]:contains("active")',
+        allowedFilter:
+            'button[data-testid="network-connections-filter-allowed"]:contains("allowed")',
+        allFilter: 'button[data-testid="network-connections-filter-all"]:contains("all")',
     },
-    networkFlowsSearch: scopeSelectors(networkPanels.detailsPanel, {
-        ...search,
-    }),
-    networkDetailsPanel: scopeSelectors(networkPanels.detailsPanel, {
+    detailsPanel: scopeSelectors(networkPanels.detailsPanel, {
         header: '[data-testid="network-details-panel-header"]',
+        search,
+        table: {
+            rows: '.rt-tbody .rt-tr',
+        },
     }),
 };

@@ -195,12 +195,12 @@ describe('Network Flows Table', () => {
         cy.visit(riskURL);
         cy.get(`${selectors.table.rows}:contains('central')`).click();
         cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
-        cy.get(networkPageSelectors.networkDetailsPanel.header).contains('central');
+        cy.get(networkPageSelectors.detailsPanel.header).contains('central');
         cy.wait(1500);
         cy.get(`${selectors.table.rows}:eq(0) .hidden button`)
             .invoke('show')
             .click({ force: true });
-        cy.get(networkPageSelectors.networkDetailsPanel.header).should('not.contain', 'central');
+        cy.get(networkPageSelectors.detailsPanel.header).should('not.contain', 'central');
     });
 
     it('should show the proper table column headers for the network flows table', () => {
@@ -231,42 +231,44 @@ describe('Network Flows Table', () => {
         cy.get(`${selectors.tab.tabs}:contains('Network Flows')`).click();
 
         // check autocomplete results for Traffic
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Traffic:{enter}');
-        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('ingress');
-        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('bidirectional');
-        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('egress');
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Traffic:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.options).contains('ingress');
+        cy.get(networkPageSelectors.detailsPanel.search.options).contains('bidirectional');
+        cy.get(networkPageSelectors.detailsPanel.search.options).contains('egress');
 
         // check autocomplete results for Deployment names
-        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Deployment:{enter}');
-        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('sensor');
-        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('scanner');
-        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('monitoring');
-        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('kube-dns');
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Deployment:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.options).contains('sensor');
+        cy.get(networkPageSelectors.detailsPanel.search.options).contains('scanner');
+        // TODO in CI but not local deployment:
+        // cy.get(networkPageSelectors.detailsPanel.search.options).contains('monitoring');
+        // TODO kube-dns in CI but coredns in local deployment:
+        // cy.get(networkPageSelectors.detailsPanel.search.options).contains('kube-dns');
 
         // check autocomplete results for Namespace names
-        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Namespace:{enter}');
-        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('stackrox');
-        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('kube-system');
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Namespace:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.options).contains('stackrox');
+        cy.get(networkPageSelectors.detailsPanel.search.options).contains('kube-system');
 
         // check autocomplete results for Protocols
-        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Protocols:{enter}');
-        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('L4_PROTOCOL_TCP');
-        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('L4_PROTOCOL_UDP');
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Protocols:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.options).contains('L4_PROTOCOL_TCP');
+        cy.get(networkPageSelectors.detailsPanel.search.options).contains('L4_PROTOCOL_UDP');
 
         // check autocomplete results for Ports
-        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Ports:{enter}');
-        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('8443');
-        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('8080');
-        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('53');
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Ports:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.options).contains('8443');
+        cy.get(networkPageSelectors.detailsPanel.search.options).contains('8080');
+        cy.get(networkPageSelectors.detailsPanel.search.options).contains('53');
 
         // check autocomplete results for Connections
-        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Connection:{enter}');
-        cy.get(networkPageSelectors.networkFlowsSearch.options).contains('active');
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Connection:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.options).contains('active');
     });
 
     // eslint-disable-next-line func-names
@@ -280,50 +282,50 @@ describe('Network Flows Table', () => {
         cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
         cy.get(`${selectors.tab.tabs}:contains('Network Flows')`).click();
 
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Traffic:{enter}');
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('ingress{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Traffic:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('ingress{enter}');
         cy.get(selectors.table.rows).each(($el) => {
             cy.wrap($el).get(`${selectors.table.cells}:eq(1)`).contains('ingress');
         });
 
-        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
-        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Deployment:{enter}');
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('sensor{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Deployment:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('sensor{enter}');
         cy.get(selectors.table.rows).each(($el) => {
             cy.wrap($el).get(`${selectors.table.cells}:eq(2)`).contains('sensor');
         });
 
-        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
-        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Namespace:{enter}');
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('kube-system{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Namespace:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('kube-system{enter}');
         cy.get(selectors.table.rows).each(($el) => {
             cy.wrap($el).get(`${selectors.table.cells}:eq(3)`).contains('kube-system');
         });
 
-        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
-        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Protocols:{enter}');
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('L4_PROTOCOL_TCP{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Protocols:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('L4_PROTOCOL_TCP{enter}');
         cy.get(selectors.table.rows).each(($el) => {
             cy.wrap($el).get(`${selectors.table.cells}:eq(4)`).contains('TCP');
         });
 
-        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
-        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Ports:{enter}');
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('8443{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Ports:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('8443{enter}');
         cy.get(selectors.table.rows).each(($el) => {
             cy.wrap($el)
                 .get(`${selectors.table.cells}:eq(5)`)
                 .contains(/8443|Multiple/g);
         });
 
-        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
-        cy.get(networkPageSelectors.networkFlowsSearch.input).clear();
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('Connection:{enter}');
-        cy.get(networkPageSelectors.networkFlowsSearch.input).type('active{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Connection:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('active{enter}');
         cy.get(selectors.table.rows).each(($el) => {
             cy.wrap($el).get(`${selectors.table.cells}:eq(6)`).contains('active');
         });

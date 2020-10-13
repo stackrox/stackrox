@@ -5,6 +5,7 @@ import panel from './panel';
 import page from './page';
 import tab from './tab';
 import search from './search';
+import tooltip from './tooltip';
 
 export default {
     table,
@@ -14,4 +15,5 @@ export default {
     page,
     tab,
     search,
+    tooltip,
 };
