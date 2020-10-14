@@ -5,11 +5,13 @@ import (
 	"sync/atomic"
 	"time"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/set"
+	"google.golang.org/grpc/connectivity"
 	admission "k8s.io/api/admission/v1beta1"
 )
 
@@ -59,6 +61,32 @@ type fetchImageResult struct {
 	img *storage.Image
 }
 
+func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img *storage.ContainerImage) (*storage.Image, error) {
+	// Talk to central if we know its endpoint (and the client connection is not shutting down), and if we are not
+	// currently connected to sensor.
+	if !m.sensorConnStatus.Get() && s.centralConn != nil && s.centralConn.GetState() != connectivity.Shutdown {
+		// Central route
+		resp, err := v1.NewImageServiceClient(s.centralConn).ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
+			Image:      img,
+			CachedOnly: !s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
+		})
+		if err != nil {
+			return nil, err
+		}
+		return resp.GetImage(), nil
+	}
+
+	// Sensor route
+	resp, err := m.client.GetImage(ctx, &sensor.GetImageRequest{
+		Image:      img,
+		ScanInline: s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetImage(), nil
+}
+
 func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fetchImageResult, pendingCount *int32, idx int, image *storage.ContainerImage) {
 	defer func() {
 		if atomic.AddInt32(pendingCount, -1) == 0 {
@@ -66,10 +94,7 @@ func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fe
 		}
 	}()
 
-	resp, err := m.client.GetImage(ctx, &sensor.GetImageRequest{
-		Image:      image,
-		ScanInline: s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
-	})
+	scannedImg, err := m.getImageFromSensorOrCentral(ctx, s, image)
 	if err != nil {
 		log.Errorf("error fetching image %q: %v", image.GetName().GetFullName(), err)
 		resultChan <- fetchImageResult{
@@ -79,12 +104,11 @@ func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fe
 		return
 	}
 
-	img := resp.GetImage()
-	m.cacheImage(img)
+	m.cacheImage(scannedImg)
 	// resultChan is exactly sized so this will be nonblocking
 	resultChan <- fetchImageResult{
 		idx: idx,
-		img: img,
+		img: scannedImg,
 	}
 }
 

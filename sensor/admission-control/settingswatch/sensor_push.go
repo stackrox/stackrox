@@ -30,18 +30,22 @@ func WatchSensorSettingsPush(mgr manager.Manager, cc *grpc.ClientConn) {
 		ctx:               mgr.Stopped(),
 		mgmtServiceClient: sensor.NewAdmissionControlManagementServiceClient(cc),
 		outC:              mgr.SettingsUpdateC(),
+		sensorConnStatus:  mgr.SensorConnStatusFlag(),
 	}
 	go w.run()
 }
 
 type sensorPushWatch struct {
-	ctx  concurrency.ErrorWaitable
-	outC chan<- *sensor.AdmissionControlSettings
+	ctx              concurrency.ErrorWaitable
+	outC             chan<- *sensor.AdmissionControlSettings
+	sensorConnStatus *concurrency.Flag
 
 	mgmtServiceClient sensor.AdmissionControlManagementServiceClient
 }
 
 func (w *sensorPushWatch) run() {
+	w.sensorConnStatus.Set(false)
+
 	eb := backoff.NewExponentialBackOff()
 	eb.MaxInterval = 1 * time.Minute
 	eb.InitialInterval = 10 * time.Second
@@ -80,6 +84,9 @@ func (w *sensorPushWatch) run() {
 }
 
 func (w *sensorPushWatch) runWithStream(stream sensor.AdmissionControlManagementService_CommunicateClient) error {
+	w.sensorConnStatus.Set(true)
+	defer w.sensorConnStatus.Set(false)
+
 	for {
 		msg, err := stream.Recv()
 		if err != nil {

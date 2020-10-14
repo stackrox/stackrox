@@ -1,6 +1,7 @@
 package orchestratormanager
 
 import io.fabric8.kubernetes.api.model.Pod
+import io.fabric8.kubernetes.client.KubernetesClient
 import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
 import objects.DaemonSet
 import objects.Deployment
@@ -16,6 +17,8 @@ import objects.Service
 interface OrchestratorMain {
     def setup()
     def cleanup()
+
+    KubernetesClient getK8sClient()
 
     // Pods
     List<Pod> getPods(String namespace, String appName)
@@ -61,6 +64,7 @@ interface OrchestratorMain {
     def getContainerlogs(Deployment deployment)
     def getStaticPodCount(String ns)
     def waitForAllPodsToBeRemoved(String ns, Map<String, String>labels, int iterations, int intervalSeconds)
+    def waitForPodsReady(String ns, Map<String, String> labels, int minReady, int iterations, int intervalSeconds)
 
     //Services
     def createService(Deployment deployment)

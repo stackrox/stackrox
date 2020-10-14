@@ -8,10 +8,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/size"
 	"github.com/stackrox/rox/pkg/sizeboundedcache"
@@ -40,6 +42,8 @@ type state struct {
 
 	bypassForUsers, bypassForGroups set.FrozenStringSet
 	enforcedOps                     map[admission.Operation]struct{}
+
+	centralConn *grpc.ClientConn
 }
 
 func (s *state) activeForOperation(op admission.Operation) bool {
@@ -62,6 +66,8 @@ type manager struct {
 	statePtr unsafe.Pointer
 
 	cacheVersion string
+
+	sensorConnStatus concurrency.Flag
 }
 
 func newManager(conn *grpc.ClientConn) *manager {
@@ -165,7 +171,8 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 		enforcedOperations[admission.Update] = struct{}{}
 	}
 
-	newSettingsAndDetector := &state{
+	oldState := m.currentState()
+	newState := &state{
 		AdmissionControlSettings: newSettings,
 		detector:                 detector,
 		bypassForUsers:           allowAlwaysUsers,
@@ -173,12 +180,35 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 		enforcedOps:              enforcedOperations,
 	}
 
+	if oldState != nil && newSettings.GetCentralEndpoint() == oldState.GetCentralEndpoint() {
+		newState.centralConn = oldState.centralConn
+	} else {
+		if oldState != nil && oldState.centralConn != nil {
+			// This *should* be non-blocking, but that's not documented, so move to a goroutine to be on the safe
+			// side.
+			go func() {
+				if err := oldState.centralConn.Close(); err != nil {
+					log.Warnf("Error closing previous connection to Central after change of central endpoint: %v", err)
+				}
+			}()
+		}
+
+		if newSettings.GetCentralEndpoint() != "" {
+			conn, err := clientconn.AuthenticatedGRPCConnection(newSettings.GetCentralEndpoint(), mtls.CentralSubject, clientconn.UseServiceCertToken(true))
+			if err != nil {
+				log.Errorf("Could not create connection to Central: %v", err)
+			} else {
+				newState.centralConn = conn
+			}
+		}
+	}
+
 	if newSettings.GetCacheVersion() != m.cacheVersion {
 		m.imageCache.Purge()
 		m.cacheVersion = newSettings.GetCacheVersion()
 	}
 
-	atomic.StorePointer(&m.statePtr, unsafe.Pointer(newSettingsAndDetector))
+	atomic.StorePointer(&m.statePtr, unsafe.Pointer(newState))
 	if m.lastSettingsUpdate == nil {
 		log.Info("RE-ENABLING admission control service")
 	}
@@ -195,4 +225,8 @@ func (m *manager) HandleReview(req *admission.AdmissionRequest) (*admission.Admi
 		return nil, errors.New("admission controller is disabled, not handling request")
 	}
 	return m.evaluateAdmissionRequest(state, req)
+}
+
+func (m *manager) SensorConnStatusFlag() *concurrency.Flag {
+	return &m.sensorConnStatus
 }

@@ -43,6 +43,7 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 	policiesPath := filepath.Join(dir, admissioncontrol.PoliciesGZDataKey)
 	timestampPath := filepath.Join(dir, admissioncontrol.LastUpdateTimeDataKey)
 	cacheVersionPath := filepath.Join(dir, admissioncontrol.CacheVersionDataKey)
+	centralEndpointPath := filepath.Join(dir, admissioncontrol.CentralEndpointDataKey)
 
 	if noneExists, err := fileutils.NoneExists(configPath, policiesPath, timestampPath); err != nil {
 		return nil, errors.Wrapf(err, "error checking the existence of files in %s", dir)
@@ -93,17 +94,28 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 		return nil, errors.Wrapf(err, "timestamp in file %s is invalid", timestampPath)
 	}
 
+	var cacheVersion string
 	cacheVersionBytes, err := ioutil.ReadFile(cacheVersionPath)
 	if err != nil && !os.IsNotExist(err) {
 		log.Errorf("Failed to read cache version from file %s: %v", cacheVersionPath, err)
+	} else {
+		cacheVersion = string(cacheVersionBytes)
 	}
-	cacheVersion := string(cacheVersionBytes)
+
+	var centralEndpoint string
+	centralEndpointBytes, err := ioutil.ReadFile(centralEndpointPath)
+	if err != nil && !os.IsNotExist(err) {
+		log.Errorf("Failed to read central endpoint from file %s: %v", centralEndpointPath, err)
+	} else {
+		centralEndpoint = string(centralEndpointBytes)
+	}
 
 	return &sensor.AdmissionControlSettings{
 		ClusterConfig:              &clusterConfig,
 		EnforcedDeployTimePolicies: &policyList,
 		Timestamp:                  tsProto,
 		CacheVersion:               cacheVersion,
+		CentralEndpoint:            centralEndpoint,
 	}, nil
 }
 

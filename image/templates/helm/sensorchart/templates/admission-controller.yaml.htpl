@@ -203,6 +203,9 @@ spec:
               mountPath: /etc/ssl
             - name: pki
               mountPath: /etc/pki/ca-trust/
+            - name: additional-cas
+              mountPath: /usr/local/share/ca-certificates/
+              readOnly: true
       volumes:
         - name: certs
           secret:
@@ -224,6 +227,10 @@ spec:
           emptyDir: {}
         - name: pki
           emptyDir: {}
+        - name: additional-cas
+          secret:
+            secretName: additional-ca-sensor
+            optional: true
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

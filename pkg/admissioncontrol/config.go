@@ -19,4 +19,7 @@ const (
 	// CacheVersionDataKey is the key in the config map under which the "cache version" is stored.
 	// A change of this value signals the admission controller to flush its internal caches.
 	CacheVersionDataKey = `cache-version`
+
+	// CentralEndpointDataKey is the key in the config map under which the central endpoint is stored.
+	CentralEndpointDataKey = `central-endpoint`
 )

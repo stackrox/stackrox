@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/enricher"
@@ -39,7 +40,7 @@ var (
 			"/v1.ImageService/CountImages",
 			"/v1.ImageService/ListImages",
 		},
-		idcheck.SensorsOnly(): {
+		or.Or(idcheck.SensorsOnly(), idcheck.AdmissionControlOnly()): {
 			"/v1.ImageService/ScanImageInternal",
 		},
 		user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))): {

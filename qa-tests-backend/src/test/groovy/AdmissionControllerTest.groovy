@@ -1,5 +1,6 @@
 import common.Constants
 import groups.BAT
+import groups.SensorBounce
 import io.fabric8.kubernetes.api.model.Pod
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
@@ -453,7 +454,7 @@ class AdmissionControllerTest extends BaseSpecification {
                         lock.unlock()
                     }
 
-                    admCtrlPods.removeIf { it?.metadata?.deletionTimestamp }
+                    admCtrlPods.removeIf { it?.metadata?.deletionTimestamp as boolean }
 
                     // If there are more than the minimum number of ready replicas, randomly pick some to delete
                     if (admCtrlPods.size() > minReadyReplicas) {
@@ -497,6 +498,52 @@ class AdmissionControllerTest extends BaseSpecification {
                 }
             }
             println "All admission control pod replicas ready"
+        }
+    }
+
+    @Category([SensorBounce])
+    def "Verify admission controller performs image scans if Sensor is Unavailable"() {
+        given:
+        "Admission controller is enabled"
+        AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
+                .setEnabled(true)
+                .setScanInline(true)
+                .setTimeoutSeconds(20)
+                .build()
+
+        assert ClusterService.updateAdmissionController(ac)
+        // Maximum time to wait for propagation to sensor
+        Helpers.sleepWithRetryBackoff(5000)
+
+        and:
+        "Sensor is unavailable"
+        orchestrator.k8sClient.apps().deployments().inNamespace("stackrox").withName("sensor").scale(0)
+        orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"], 30, 1)
+
+        and:
+        "Admission controller is started from scratch w/o cached scans"
+        def admCtrlDeploy = orchestrator.getOrchestratorDeployment("stackrox", "admission-control")
+        def originalAdmCtrlReplicas = admCtrlDeploy.spec.replicas
+        orchestrator.k8sClient.apps().deployments().inNamespace("stackrox").withName("admission-control").scale(0)
+        orchestrator.waitForAllPodsToBeRemoved("stackrox", admCtrlDeploy.spec.selector.matchLabels, 30, 1)
+        orchestrator.k8sClient.apps().deployments().inNamespace("stackrox").withName("admission-control")
+                .scale(originalAdmCtrlReplicas)
+        orchestrator.waitForPodsReady("stackrox", admCtrlDeploy.spec.selector.matchLabels,
+                originalAdmCtrlReplicas, 30, 1)
+
+        when:
+        "A deployment with an image violating a policy is created"
+        def created = orchestrator.createDeploymentNoWait(GCR_NGINX_DEPLOYMENT)
+
+        then:
+        "Creation should fail"
+        assert !created
+
+        cleanup:
+        orchestrator.k8sClient.apps().deployments().inNamespace("stackrox").withName("sensor").scale(1)
+        orchestrator.waitForPodsReady("stackrox", ["app": "sensor"], 1, 30, 1)
+        if (created) {
+            deleteDeploymentWithCaution(GCR_NGINX_DEPLOYMENT)
         }
     }
 }

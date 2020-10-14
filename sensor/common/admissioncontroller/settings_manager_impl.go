@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -15,12 +16,14 @@ type settingsManager struct {
 	settingsStream *concurrency.ValueStream
 
 	hasClusterConfig, hasPolicies bool
+	centralEndpoint               string
 }
 
 // NewSettingsManager creates a new settings manager for admission control settings.
 func NewSettingsManager() SettingsManager {
 	return &settingsManager{
-		settingsStream: concurrency.NewValueStream(nil),
+		settingsStream:  concurrency.NewValueStream(nil),
+		centralEndpoint: env.CentralEndpoint.Setting(),
 	}
 }
 
@@ -29,6 +32,7 @@ func (p *settingsManager) newSettingsNoLock() *sensor.AdmissionControlSettings {
 	if p.currSettings != nil {
 		*settings = *p.currSettings
 	}
+	settings.CentralEndpoint = p.centralEndpoint
 	settings.Timestamp = types.TimestampNow()
 	return settings
 }

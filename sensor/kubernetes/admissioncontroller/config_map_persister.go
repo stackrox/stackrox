@@ -159,8 +159,9 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 			},
 		},
 		Data: map[string]string{
-			admissioncontrol.LastUpdateTimeDataKey: settings.GetTimestamp().String(),
-			admissioncontrol.CacheVersionDataKey:   settings.GetCacheVersion(),
+			admissioncontrol.LastUpdateTimeDataKey:  settings.GetTimestamp().String(),
+			admissioncontrol.CacheVersionDataKey:    settings.GetCacheVersion(),
+			admissioncontrol.CentralEndpointDataKey: settings.GetCentralEndpoint(),
 		},
 		BinaryData: map[string][]byte{
 			admissioncontrol.ConfigGZDataKey:   configBytesGZ,

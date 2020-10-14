@@ -16,6 +16,7 @@ type Manager interface {
 
 	SettingsUpdateC() chan<- *sensor.AdmissionControlSettings
 	SettingsStream() concurrency.ReadOnlyValueStream
+	SensorConnStatusFlag() *concurrency.Flag
 
 	IsReady() bool
 

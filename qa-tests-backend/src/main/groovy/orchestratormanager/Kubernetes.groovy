@@ -150,6 +150,10 @@ class Kubernetes implements OrchestratorMain {
     def cleanup() {
     }
 
+    KubernetesClient getK8sClient() {
+        return this.client
+    }
+
     /*
         Deployment Methods
     */
@@ -205,6 +209,25 @@ class Kubernetes implements OrchestratorMain {
         for (Pod pod : list.getItems()) {
             println "\t- ${pod.metadata.name}"
         }
+        return false
+    }
+
+    def waitForPodsReady(String ns, Map<String, String>labels, int minReady = 1, int retries = 30,
+                         int intervalSeconds = 5) {
+        LabelSelector selector = new LabelSelector()
+        selector.matchLabels = labels
+        Timer t = new Timer(retries, intervalSeconds)
+        while (t.IsValid()) {
+            def list = client.pods().inNamespace(ns).withLabelSelector(selector).list()
+            def numReady = list.items.sum {
+                it.status.containerStatuses.every { it.ready } ? 1 : 0
+            }
+            if (numReady >= minReady) {
+                return true
+            }
+        }
+
+        println "Timed out waiting for pods to become ready"
         return false
     }
 
