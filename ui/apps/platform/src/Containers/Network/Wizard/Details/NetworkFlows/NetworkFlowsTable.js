@@ -2,6 +2,7 @@
 import React from 'react';
 import * as Icon from 'react-feather';
 import uniqBy from 'lodash/uniqBy';
+import uniqWith from 'lodash/uniqWith';
 
 import { filterModes, filterLabels } from 'constants/networkFilterModes';
 import networkProtocolLabels from 'messages/networkGraph';
@@ -38,7 +39,11 @@ const NetworkFlowsTable = ({
             className: `${defaultColumnClassName} max-w-10 break-all`,
             expander: true,
             Expander: ({ isExpanded, original }) => {
-                if (original.portsAndProtocols.length <= 1) {
+                const uniquePortsAndProtocols = uniqWith(
+                    original.portsAndProtocols,
+                    (a, b) => a.port === b.port && a.protocol === b.protocol
+                );
+                if (uniquePortsAndProtocols.length <= 1) {
                     return null;
                 }
                 return <Expander isExpanded={isExpanded} />;
