@@ -41,6 +41,7 @@ var (
 			fieldnames.ImageScanAge:           {{required: set.NewStringSet(search.ImageScanTime.String()), printerFuncKey: printer.ImageScanAgeKey}},
 			fieldnames.ImageTag:               {{required: set.StringSet{}, printerFuncKey: printer.ImageDetailsKey}},
 			fieldnames.MinimumRBACPermissions: {{required: set.NewStringSet(search.ServiceAccountPermissionLevel.String()), printerFuncKey: printer.RbacKey}},
+			fieldnames.Namespace:              {{required: set.NewStringSet(search.Namespace.String()), printerFuncKey: printer.NamespaceKey}},
 			fieldnames.ExposedPort:            {{required: set.NewStringSet(search.Port.String()), printerFuncKey: printer.PortKey}},
 			fieldnames.PortExposure:           {{required: set.NewStringSet(search.ExposureLevel.String()), printerFuncKey: printer.PortExposureKey}},
 			fieldnames.PrivilegedContainer:    {{required: set.NewStringSet(search.Privileged.String()), printerFuncKey: printer.PrivilegedKey}},

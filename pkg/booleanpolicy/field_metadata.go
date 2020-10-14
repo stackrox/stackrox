@@ -115,6 +115,7 @@ func init() {
 	registerFieldMetadata(fieldnames.ImageScanAge, querybuilders.ForDays(search.ImageScanTime), violationmessages.ImageContextFields, integerValueRegex, negationForbidden, operatorsForbidden)
 	registerFieldMetadata(fieldnames.ImageTag, querybuilders.ForFieldLabelRegex(search.ImageTag), violationmessages.ImageContextFields, stringValueRegex)
 	registerFieldMetadata(fieldnames.MinimumRBACPermissions, querybuilders.ForK8sRBAC(), nil, rbacPermissionValueRegex, operatorsForbidden)
+	registerFieldMetadata(fieldnames.Namespace, querybuilders.ForFieldLabelRegex(search.Namespace), nil, stringValueRegex)
 	registerFieldMetadata(fieldnames.ExposedPort, querybuilders.ForFieldLabel(search.Port), violationmessages.PortContextFields, integerValueRegex)
 	registerFieldMetadata(fieldnames.PortExposure, querybuilders.ForFieldLabel(search.ExposureLevel), violationmessages.PortContextFields, portExposureValueRegex)
 	registerFieldMetadata(fieldnames.PrivilegedContainer, querybuilders.ForFieldLabel(search.Privileged), violationmessages.ContainerContextFields, booleanValueRegex, negationForbidden, operatorsForbidden)

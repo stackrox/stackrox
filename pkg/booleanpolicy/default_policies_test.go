@@ -1761,6 +1761,72 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 	}
 }
 
+func (suite *DefaultPoliciesTestSuite) TestNamespace() {
+	var deps []*storage.Deployment
+	for _, namespace := range []string{
+		"dep_staging",
+		"dep_prod0",
+		"dep_prod1",
+		"dep_internal",
+		"external_dep",
+	} {
+		dep := fixtures.GetDeployment().Clone()
+		dep.Namespace = namespace
+		deps = append(deps, dep)
+	}
+
+	for _, testCase := range []struct {
+		value           string
+		expectedMatches []string
+		negate          bool
+	}{
+		{
+			value:           "dep_[a-z0-9]*",
+			expectedMatches: []string{"dep_staging", "dep_prod0", "dep_prod1", "dep_internal"},
+			negate:          false,
+		},
+		{
+			value:           "dep_prod[a-z0-9]*",
+			expectedMatches: []string{"dep_prod0", "dep_prod1"},
+			negate:          false,
+		},
+		{
+			value:           ".*external.*",
+			expectedMatches: []string{"external_dep"},
+			negate:          false,
+		},
+		{
+			value:           "doesnotexist",
+			expectedMatches: nil,
+			negate:          false,
+		},
+		{
+			value:           ".*internal.*",
+			expectedMatches: []string{"dep_staging", "dep_prod0", "dep_prod1", "external_dep"},
+			negate:          true,
+		},
+	} {
+		c := testCase
+
+		suite.T().Run(fmt.Sprintf("DeploymentMatcher %+v", c), func(t *testing.T) {
+			depMatcher, err := booleanpolicy.BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.Namespace, c.value, c.negate))
+			require.NoError(t, err)
+			namespacesMatched := set.NewStringSet()
+			for _, dep := range deps {
+				violations, err := depMatcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+				require.NoError(t, err)
+				// No match in case we are testing for doesnotexist
+				if len(violations.AlertViolations) > 0 {
+					namespacesMatched.Add(dep.Namespace)
+					require.Len(t, violations.AlertViolations, 1)
+					assert.Equal(t, fmt.Sprintf("Namespace has name '%s'", dep.Namespace), violations.AlertViolations[0].GetMessage())
+				}
+			}
+			assert.ElementsMatch(t, namespacesMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", namespacesMatched.AsSlice(), c.value, c.expectedMatches)
+		})
+	}
+}
+
 func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 	testCaps := []string{"SYS_MODULE", "SYS_NICE", "SYS_PTRACE"}
 

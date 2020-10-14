@@ -1,5 +1,7 @@
+
 import static Services.waitForViolation
 
+import common.Constants
 import groups.BAT
 import objects.ConfigMapKeyRef
 import objects.Deployment
@@ -22,37 +24,46 @@ import spock.lang.Unroll
 import util.Env
 
 class PolicyFieldsTest extends BaseSpecification {
+
+    // NOTE: this is populated by registerDeployments call, do not manually
+    // fill this in.
+    static final private List<Deployment> DEPLOYMENTS = []
+
+    // NOTE: this is populated during setPolicyFieldANDValue, do not manually
+    // populate this
+    static final private POLICY_BUILDERS = []
+
     static final private Deployment DEP_A =
-            new Deployment()
-                .setName("deployment-a")
-                .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/more:0.3")
-                .setCapabilities(["NET_ADMIN", "SYSLOG"], ["IPC_LOCK", "WAKE_ALARM"])
-                .addLimits("cpu", "0.5")
-                .addRequest("cpu", "0.25")
-                .addLimits("memory", "500Mi")
-                .addRequest("memory", "250Mi")
-                .addAnnotation("im-a-key", "")
-                .addLabel("im-a-key", "")
-                .setEnv(["ENV_FROM_RAW": "VALUE"])
-                .addEnvValueFromConfigMapKeyRef(
-                        "ENV_FROM_CONFIG_MAP_KEY",
-                        new ConfigMapKeyRef(name: CONFIG_MAP_NAME, key: "some_configuration"))
-                .addEnvValueFromSecretKeyRef(
-                        "ENV_FROM_SECRET_KEY",
-                        new SecretKeyRef(key: "password", name: SECRET_NAME))
-                .addEnvValueFromFieldRef("ENV_FROM_FIELD", "metadata.name")
-                .addEnvValueFromResourceFieldRef("ENV_FROM_RESOURCE_FIELD", "limits.cpu")
-                .addPort(25, "TCP")
-                .setCreateLoadBalancer(true)
-                .setExposeAsService(true)
-                .setPrivilegedFlag(true)
-                .addVolume(
-                        new Volume(
-                                name: "foo-volume",
-                                hostPath: false,
-                                mountPath: "/tmp/foo-volume"
-                        )
-                )
+            createAndRegisterDeployment()
+                    .setName("deployment-a")
+                    .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/more:0.3")
+                    .setCapabilities(["NET_ADMIN", "SYSLOG"], ["IPC_LOCK", "WAKE_ALARM"])
+                    .addLimits("cpu", "0.5")
+                    .addRequest("cpu", "0.25")
+                    .addLimits("memory", "500Mi")
+                    .addRequest("memory", "250Mi")
+                    .addAnnotation("im-a-key", "")
+                    .addLabel("im-a-key", "")
+                    .setEnv(["ENV_FROM_RAW": "VALUE"])
+                    .addEnvValueFromConfigMapKeyRef(
+                            "ENV_FROM_CONFIG_MAP_KEY",
+                            new ConfigMapKeyRef(name: CONFIG_MAP_NAME, key: "some_configuration"))
+                    .addEnvValueFromSecretKeyRef(
+                            "ENV_FROM_SECRET_KEY",
+                            new SecretKeyRef(key: "password", name: SECRET_NAME))
+                    .addEnvValueFromFieldRef("ENV_FROM_FIELD", "metadata.name")
+                    .addEnvValueFromResourceFieldRef("ENV_FROM_RESOURCE_FIELD", "limits.cpu")
+                    .addPort(25, "TCP")
+                    .setCreateLoadBalancer(true)
+                    .setExposeAsService(true)
+                    .setPrivilegedFlag(true)
+                    .addVolume(
+                            new Volume(
+                                    name: "foo-volume",
+                                    hostPath: false,
+                                    mountPath: "/tmp/foo-volume"
+                            )
+                    )
 
     static final private BASED_ON_DEBIAN_7 = DEP_A
     static final private WITH_ADD_CAPS_NET_ADMIN_AND_SYSLOG = DEP_A
@@ -84,34 +95,34 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private WITH_A_RW_FOO_VOLUME = DEP_A
 
     static final private Deployment DEP_B =
-            new Deployment()
-                .setName("deployment-b")
-                .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/most:0.19")
-                .setCapabilities(["NET_ADMIN"], ["IPC_LOCK"])
-                .addLimits("cpu", "1")
-                .addRequest("cpu", "0.5")
-                .addLimits("memory", "1Gi")
-                .addRequest("memory", "0.5Gi")
-                .addAnnotation("im-a-key", "and a value")
-                .addLabel("im-a-key", "and_a_value")
-                .setEnv(["ENV_FROM_RAW": "VALUE DIFFERENT"])
-                .addEnvValueFromConfigMapKeyRef(
-                        "DIFFERENT_ENV_FROM_CONFIG_MAP_KEY",
-                        new ConfigMapKeyRef(name: CONFIG_MAP_NAME, key: "some_configuration"))
-                .addEnvValueFromSecretKeyRef(
-                        "DIFFERENT_ENV_FROM_SECRET_KEY",
-                        new SecretKeyRef(key: "password", name: SECRET_NAME))
-                .addEnvValueFromFieldRef("DIFFERENT_ENV_FROM_FIELD", "metadata.name")
-                .addEnvValueFromResourceFieldRef("DIFFERENT_ENV_FROM_RESOURCE_FIELD", "limits.cpu")
-                .setPrivilegedFlag(false)
-                .addVolume(
-                        new Volume(
-                                name: "bar-volume",
-                                hostPath: true,
-                                mountPath: "/tmp"
-                        ),
-                        true
-                )
+            createAndRegisterDeployment()
+                    .setName("deployment-b")
+                    .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/most:0.19")
+                    .setCapabilities(["NET_ADMIN"], ["IPC_LOCK"])
+                    .addLimits("cpu", "1")
+                    .addRequest("cpu", "0.5")
+                    .addLimits("memory", "1Gi")
+                    .addRequest("memory", "0.5Gi")
+                    .addAnnotation("im-a-key", "and a value")
+                    .addLabel("im-a-key", "and_a_value")
+                    .setEnv(["ENV_FROM_RAW": "VALUE DIFFERENT"])
+                    .addEnvValueFromConfigMapKeyRef(
+                            "DIFFERENT_ENV_FROM_CONFIG_MAP_KEY",
+                            new ConfigMapKeyRef(name: CONFIG_MAP_NAME, key: "some_configuration"))
+                    .addEnvValueFromSecretKeyRef(
+                            "DIFFERENT_ENV_FROM_SECRET_KEY",
+                            new SecretKeyRef(key: "password", name: SECRET_NAME))
+                    .addEnvValueFromFieldRef("DIFFERENT_ENV_FROM_FIELD", "metadata.name")
+                    .addEnvValueFromResourceFieldRef("DIFFERENT_ENV_FROM_RESOURCE_FIELD", "limits.cpu")
+                    .setPrivilegedFlag(false)
+                    .addVolume(
+                            new Volume(
+                                    name: "bar-volume",
+                                    hostPath: true,
+                                    mountPath: "/tmp"
+                            ),
+                            true
+                    )
 
     static final private BASED_ON_CENTOS_8 = DEP_B
     static final private WITH_ADD_CAPS_NET_ADMIN = DEP_B
@@ -146,7 +157,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private SECRET_NAME = "test-secret"
 
     static final private Deployment DEP_C =
-            new Deployment()
+            createAndRegisterDeployment()
                     .setName("deployment-c")
                     .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/alpine:0.6")
                     .addAnnotation("im-a-key", "with a different value")
@@ -154,6 +165,7 @@ class PolicyFieldsTest extends BaseSpecification {
                     .addLabel("im-a-key", "with_a_different_value")
                     .addLabel("another-key", "and_a_value")
                     .setReadOnlyRootFilesystem(true)
+                    .setNamespace("policyfieldstest-c")
 
     static final private BASED_ON_ALPINE = DEP_C
     static final private WITHOUT_ADD_CAPS = DEP_C
@@ -171,17 +183,22 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private WITHOUT_BASH_EXEC = DEP_C
     static final private WITH_RDONLY_ROOT_FS = DEP_C
     static final private WITHOUT_FOO_OR_BAR_VOLUMES = DEP_C
+    static final private WITH_NAMESPACE_POLICYFIELDTEST_C = DEP_C
 
     static final private Deployment DEP_D =
-        new Deployment()
-        .setName("deployment-d")
-        .setImage("docker.io/stackrox/qa:apache-dns")
+            createAndRegisterDeployment()
+                    .setName("deployment-d")
+                    .setImage("docker.io/stackrox/qa:apache-dns")
+                    .setNamespace("policyfieldstest-d")
 
     static final private WITHOUT_ANNOTATIONS = DEP_D
     static final private WITH_COMPONENT_CPIO = DEP_D
     static final private WITHOUT_VERSION_ARG = DEP_D
     static final private USES_DOCKER = DEP_D
+    static final private WITH_NAMESPACE_POLICYFIELDTEST_D = DEP_D
 
+    // We don't register this deployment by default since we are not batch creating this
+    // deployment with other deployments
     static final private Deployment DEP_E =
             new Deployment()
                     .setName("deployment-e")
@@ -196,13 +213,6 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private CENTRAL = new Deployment()
             .setName("central")
             .setNamespace("stackrox")
-
-    static final private List<Deployment> DEPLOYMENTS = [
-            DEP_A,
-            DEP_B,
-            DEP_C,
-            DEP_D,
-    ]
 
     static final private Map<String, String> CONFIG_MAP_DATA = [
             "some_configuration": "a value",
@@ -525,6 +535,20 @@ class PolicyFieldsTest extends BaseSpecification {
             ["ELEVATED_CLUSTER_WIDE"]
     )
 
+    // "Namespace"
+
+    static final private HAS_POLICYFIELDSTEST_IN_NAMESPACE = setPolicyFieldANDValues(
+            BASE_POLICY.clone().setName("AAA_HAS_POLICYFIELDTEST_IN_NAMESPACE"),
+            "Namespace",
+            ["policyfieldstest-.*"]
+    )
+
+    static final private IS_NAMESPACE_OF_DEPLOYMENT_D = setPolicyFieldANDValues(
+            BASE_POLICY.clone().setName("AAA_IS_NAMESPACE_OF_DEPLOYMENT_D"),
+            "Namespace",
+            [".*-d"]
+    )
+
     // Service Account is default
 
     static final private DEFAULT_SERVICE_ACCOUNT_NAME = setPolicyFieldANDValues(
@@ -707,83 +731,13 @@ class PolicyFieldsTest extends BaseSpecification {
             ["true"]
     )
 
-    static final private POLICIES = [
-            NO_ADD_CAPS_NET_ADMIN,
-            NO_ADD_CAPS_SYSLOG,
-            NO_ADD_CAPS_NET_ADMIN_AND_SYSLOG,
-            NO_ADD_CAPS_LEASE,
-            NO_ADD_CAPS_NET_ADMIN_AND_LEASE,
-            EXCLUDE_CVE_2019_5436,
-            EXCLUDE_CVSS_GT_8,
-            CPU_LIMIT_GT_0PT7,
-            CPU_LIMIT_GE_1,
-            CPU_REQUEST_LT_HALF,
-            CPU_REQUEST_GT_HALF,
-            MEMORY_LIMIT_LE_750MI,
-            MEMORY_LIMIT_GE_750MI,
-            MEMORY_REQUEST_EQ_250MI,
-            DISALLOWED_ANNOTATION_KEY_ONLY,
-            DISALLOWED_ANNOTATION_KEY_AND_VALUE,
-            DISALLOWED_IMAGE_LABEL_KEY_ONLY,
-            DISALLOWED_IMAGE_LABEL_KEY_AND_VALUE,
-            DISALLOWED_IMAGE_LABEL_NO_MATCH_I,
-            DISALLOWED_IMAGE_LABEL_NO_MATCH_II,
-            HAS_DROP_CAPS_IPC_LOCK,
-            HAS_DROP_CAPS_WAKE_ALARM,
-            HAS_DROP_CAPS_IPC_LOCK_AND_WAKE_ALARM,
-            HAS_DROP_CAPS_LEASE,
-            HAS_DROP_CAPS_IPC_LOCK_AND_LEASE,
-            HAS_RAW_ENV,
-            HAS_RAW_ENV_AND_VALUE,
-            HAS_ENV_FROM_CONFIG_MAP_KEY,
-            HAS_ENV_FROM_SECRET_KEY,
-            HAS_ENV_FROM_FIELD,
-            HAS_ENV_FROM_RESOURCE_FIELD,
-            IS_GREATER_THAN_1_DAY,
-            IS_GREATER_THAN_10_YEARS,
-            HAS_COMPONENT_CPIO,
-            HAS_COMPONENT_CPIO_WITH_VERSION,
-            HAS_COMPONENT_CPIO_WITH_OTHER_VERSION,
-            IS_BASED_ON_DEBIAN_7,
-            IS_BASED_ON_CENTOS_8,
-            IS_BASED_ON_ALPINE,
-            NO_IMAGE_REGISTRY_USCGR,
-            NO_IMAGE_REMOTE,
-            NO_IMAGE_TAG,
-            NO_OLD_IMAGE_SCANS,
-            MINIMUM_RBAC_CLUSTER_WIDE,
-            DEFAULT_SERVICE_ACCOUNT_NAME,
-            HAS_PORT_25_EXPOSED,
-            HAS_EXTERNAL_EXPOSURE,
-            IS_PRIVILEGED,
-            HAS_BASH_PARENT,
-            HAS_VERSION_ARGS,
-            HAS_BASH_EXEC,
-            HAS_PROCESS_UID_1,
-            HAS_RW_ROOT_FS,
-            REQUIRED_ANNOTATION_KEY_ONLY,
-            REQUIRED_ANNOTATION_KEY_AND_VALUE,
-            REQUIRED_IMAGE_LABEL_KEY_ONLY,
-            REQUIRED_IMAGE_LABEL_KEY_AND_VALUE,
-            REQUIRED_IMAGE_LABEL_NO_MATCH_I,
-            REQUIRED_IMAGE_LABEL_NO_MATCH_II,
-            REQUIRED_LABEL_KEY_ONLY,
-            REQUIRED_LABEL_KEY_AND_VALUE,
-            IMAGES_ARE_UNSCANNED,
-            NO_FOO_VOLUME_DESTINATIONS,
-            NO_FOO_VOLUME_NAME,
-            NO_TMP_VOLUME_SOURCE,
-            NO_HOSTPATH_VOLUME_TYPE,
-            NO_READONLY_HOST_MOUNT,
-            NO_WRITABLE_MOUNTED_VOLUMES,
-    ]*.build()
-
     @Shared
     private List<String> createdPolicyIds
 
     def setupSpec() {
         createdPolicyIds = []
-        for (policy in POLICIES) {
+        for (policyBuilder in POLICY_BUILDERS) {
+            Policy policy = policyBuilder.build()
             String policyID = CreatePolicyService.createNewPolicy(policy)
             assert policyID
             createdPolicyIds.add(policyID)
@@ -804,6 +758,10 @@ class PolicyFieldsTest extends BaseSpecification {
 
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
+            // Delete namespace as well
+            if (deployment.namespace != Constants.ORCHESTRATOR_NAMESPACE) {
+                orchestrator.deleteNamespace(deployment.namespace)
+            }
         }
 
         for (policyID in createdPolicyIds) {
@@ -864,6 +822,9 @@ class PolicyFieldsTest extends BaseSpecification {
         "Image Tag"                 | NO_IMAGE_TAG                         | WITH_IMAGE_TAG_TO_MATCH                | "match"
         //"Image Scan Age"       | NO_OLD_IMAGE_SCANS | UNSCANNED | "match"
         "Minimum RBAC Permissions"  | MINIMUM_RBAC_CLUSTER_WIDE            | SENSOR                                 | "match"
+        "Namespace"                 | HAS_POLICYFIELDSTEST_IN_NAMESPACE    | WITH_NAMESPACE_POLICYFIELDTEST_C       | "match"
+        "Namespace"                 | HAS_POLICYFIELDSTEST_IN_NAMESPACE    | WITH_NAMESPACE_POLICYFIELDTEST_D       | "match"
+        "Namespace"                 | IS_NAMESPACE_OF_DEPLOYMENT_D         | WITH_NAMESPACE_POLICYFIELDTEST_D       | "match"
         "Service Account"           | DEFAULT_SERVICE_ACCOUNT_NAME         | DEP_A                                  | "match"
         "Exposed Port"              | HAS_PORT_25_EXPOSED                  | WITH_PORT_25_EXPOSED                   | "match"
         "Port Exposure Method"      | HAS_EXTERNAL_EXPOSURE                | WITH_LB_SERVICE                        | "match"
@@ -952,6 +913,7 @@ class PolicyFieldsTest extends BaseSpecification {
         "Image Tag"                 | NO_IMAGE_TAG                          | WITH_IMAGE_TAG_TO_NOT_MATCH            | "no match"
         "Image Scan Age"            | NO_OLD_IMAGE_SCANS                    | WITH_RECENT_SCAN_AGE                   | "no match"
         "Minimum RBAC Permissions"  | MINIMUM_RBAC_CLUSTER_WIDE             | CENTRAL                                | "no match"
+        "Namespace"                 | IS_NAMESPACE_OF_DEPLOYMENT_D          | WITH_NAMESPACE_POLICYFIELDTEST_C       | "no match"
         "Service Account"           | DEFAULT_SERVICE_ACCOUNT_NAME          | CENTRAL                                | "no match"
         "Exposed Port"              | HAS_PORT_25_EXPOSED                   | WITHOUT_PORTS_EXPOSED                  | "no match"
         "Port Exposure Method"      | HAS_EXTERNAL_EXPOSURE                 | WITHOUT_SERVICE                        | "no match"
@@ -984,13 +946,23 @@ class PolicyFieldsTest extends BaseSpecification {
         "Writable Mounted Volume"   | NO_WRITABLE_MOUNTED_VOLUMES           | WITHOUT_FOO_OR_BAR_VOLUMES             | "no match II"
     }
 
+    // Note that this also register the policy into the POLICIES field
+    // so that during test setup we create them
     private static setPolicyFieldANDValues(Policy.Builder builder, String fieldName, List<String> values) {
         def policyGroup = PolicyGroup.newBuilder()
                 .setFieldName(fieldName)
                 .setBooleanOperator(PolicyOuterClass.BooleanOperator.AND)
         policyGroup.addAllValues(values.collect { PolicyValue.newBuilder().setValue(it).build() }).build()
-        return builder.clone().addPolicySections(
+        def policyBuilder = builder.clone().addPolicySections(
                 PolicySection.newBuilder().addPolicyGroups(policyGroup.build()).build()
         )
+        POLICY_BUILDERS.add(policyBuilder)
+        return policyBuilder
+    }
+
+    private static createAndRegisterDeployment() {
+        Deployment deployment = new Deployment()
+        DEPLOYMENTS.add(deployment)
+        return deployment
     }
 }

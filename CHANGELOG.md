@@ -12,6 +12,7 @@ When set to true, each network request to Central (via API, UI) is logged in the
 Note: When turned on, this environment variable will cause noisy logging, and hence should be turned on only for the
 purpose of debugging network connectivity issues. Once network connectivity is established, we should advise
 to immediately set this to false to stop logging.
+- Added Namespace as one of the policy criteria
 
 ## [50.0]
 - UI: Do not display incomplete process status when Sensor Upgrade is up to date (ROX-5579)

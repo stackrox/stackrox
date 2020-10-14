@@ -16,6 +16,7 @@ const (
 	ImageScanKey            = "imageScan"
 	ImageScanAgeKey         = "imageScanAge"
 	LineKey                 = "line"
+	NamespaceKey            = "namespace"
 	PortKey                 = "port"
 	PortExposureKey         = "portExposure"
 	PrivilegedKey           = "privileged"
@@ -44,6 +45,7 @@ func init() {
 	registerFunc(ImageScanKey, imageScanPrinter)
 	registerFunc(ImageScanAgeKey, imageScanAgePrinter)
 	registerFunc(LineKey, linePrinter)
+	registerFunc(NamespaceKey, namespacePrinter)
 	registerFunc(PortKey, portPrinter)
 	registerFunc(PortExposureKey, portExposurePrinter)
 	registerFunc(PrivilegedKey, privilegedPrinter)

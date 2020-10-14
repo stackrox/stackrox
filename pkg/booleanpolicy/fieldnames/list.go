@@ -28,6 +28,7 @@ var (
 	ImageScanAge           = newFieldName("Image Scan Age")
 	ImageTag               = newFieldName("Image Tag")
 	MinimumRBACPermissions = newFieldName("Minimum RBAC Permissions")
+	Namespace              = newFieldName("Namespace")
 	ExposedPort            = newFieldName("Exposed Port")
 	PortExposure           = newFieldName("Port Exposure Method")
 	PrivilegedContainer    = newFieldName("Privileged Container")

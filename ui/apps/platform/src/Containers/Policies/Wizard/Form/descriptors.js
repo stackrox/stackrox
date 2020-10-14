@@ -918,6 +918,18 @@ const policyConfigurationDescriptor = [
         default: false,
         canBooleanLogic: true,
     },
+    {
+        label: 'Namespace',
+        name: 'Namespace',
+        longName: 'Namespace',
+        negatedName: `Namespace doesn't match`,
+        category: policyCriteriaCategories.DEPLOYMENT_METADATA,
+        type: 'text',
+        placeholder: 'default',
+        required: false,
+        default: false,
+        canBooleanLogic: true,
+    },
 ];
 
 export const policyStatus = {
