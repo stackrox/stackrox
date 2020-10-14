@@ -28,8 +28,8 @@ import (
 const (
 	templatePath       = "templates"
 	sensorChartPrefix  = "helm/sensorchart/"
-	centralChartPrefix = "helm/centralchart/"
-	scannerChartPrefix = "helm/scannerchart/"
+	centralChartPrefix = "helm/DEPRECATEDcentralchart/"
+	scannerChartPrefix = "helm/DEPRECATEDscannerchart/"
 	chartYamlFile      = "Chart.yaml"
 	// CentralServicesChartPrefix points to the new stackrox-central-services Helm Chart.
 	CentralServicesChartPrefix = "helm/stackrox-central/"
