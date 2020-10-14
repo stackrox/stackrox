@@ -9,7 +9,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +29,6 @@ var (
 )
 
 func TestImportExportPolicies(t *testing.T) {
-	assumeFeatureFlagHasValue(t, features.PolicyImportExport, true)
 	defer tearDownImportExportTest(t)
 	verifyExportNonExistentFails(t)
 	verifyExportExistentSucceeds(t)

@@ -2,7 +2,6 @@ import { selectors, text, url } from '../constants/PoliciesPage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 import DndSimulatorDataTransfer from '../helpers/dndSimulatorDataTransfer';
-import checkFeatureFlag from '../helpers/features';
 
 const NUM_POLICY_CATEGORIES = 8;
 
@@ -268,13 +267,6 @@ describe('Policies page', () => {
     });
 
     describe('policy import and export', () => {
-        before(function beforeHook() {
-            // skip the whole suite if policy import/export isn't enabled
-            if (checkFeatureFlag('ROX_POLICY_IMPORT_EXPORT', false)) {
-                this.skip();
-            }
-        });
-
         describe('policy export', () => {
             it('should start an API call to get the policy in the detail panel', () => {
                 cy.route({

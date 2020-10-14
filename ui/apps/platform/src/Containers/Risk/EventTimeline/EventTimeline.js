@@ -2,9 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import { selectOptionEventTypes, rootTypes } from 'constants/timelineTypes';
-import { knownBackendFlags } from 'utils/featureFlags';
 import NotFoundMessage from 'Components/NotFoundMessage';
-import FeatureEnabled from 'Containers/FeatureEnabled';
 import DeploymentEventTimeline from './DeploymentEventTimeline';
 import PodEventTimeline from './PodEventTimeline';
 
@@ -67,24 +65,18 @@ const EventTimeline = ({ deploymentId }) => {
     }
 
     return (
-        <FeatureEnabled featureFlag={knownBackendFlags.ROX_EVENT_TIMELINE_CLUSTERED_EVENTS_UI}>
-            {({ featureEnabled: showClusteredEvents }) => {
-                return (
-                    <Component
-                        id={currentView.id}
-                        goToNextView={goToNextView}
-                        goToPreviousView={goToPreviousView}
-                        selectedEventType={selectedEventType}
-                        selectEventType={selectEventType}
-                        deploymentId={deploymentId}
-                        currentPage={currentPage}
-                        pageSize={PAGE_SIZE}
-                        onPageChange={setPage}
-                        showClusteredEvents={showClusteredEvents}
-                    />
-                );
-            }}
-        </FeatureEnabled>
+        <Component
+            id={currentView.id}
+            goToNextView={goToNextView}
+            goToPreviousView={goToPreviousView}
+            selectedEventType={selectedEventType}
+            selectEventType={selectEventType}
+            deploymentId={deploymentId}
+            currentPage={currentPage}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+            showClusteredEvents
+        />
     );
 };
 

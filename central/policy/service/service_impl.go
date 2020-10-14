@@ -29,7 +29,6 @@ import (
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -694,10 +693,6 @@ func checkIdentityFromMetadata(ctx context.Context, metadata map[string]interfac
 }
 
 func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoliciesRequest) (*storage.ExportPoliciesResponse, error) {
-	if !features.PolicyImportExport.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "not implemented")
-	}
-
 	// missingIndices and policyErrors should not overlap
 	policyList, missingIndices, policyErrors, err := s.policies.GetPolicies(ctx, request.PolicyIds)
 	if err != nil {
@@ -749,10 +744,6 @@ func (s *serviceImpl) convertAndValidateForImport(p *storage.Policy) error {
 }
 
 func (s *serviceImpl) ImportPolicies(ctx context.Context, request *v1.ImportPoliciesRequest) (*v1.ImportPoliciesResponse, error) {
-	if !features.PolicyImportExport.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "not implemented")
-	}
-
 	responses := make([]*v1.ImportPolicyResponse, 0, len(request.Policies))
 	allValidationSucceeded := true
 	// Validate input policies

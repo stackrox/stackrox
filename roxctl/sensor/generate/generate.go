@@ -155,9 +155,7 @@ func Command() *cobra.Command {
 	}
 
 	c.PersistentFlags().BoolVar(&cluster.AdmissionController, "create-admission-controller", false, "whether or not to use an admission controller for enforcement")
-	if features.AdmissionControlEnforceOnUpdate.Enabled() {
-		c.PersistentFlags().BoolVar(&cluster.AdmissionControllerUpdates, "admission-controller-listen-on-updates", false, "whether or not to configure the admission controller webhook to listen on object updates")
-	}
+	c.PersistentFlags().BoolVar(&cluster.AdmissionControllerUpdates, "admission-controller-listen-on-updates", false, "whether or not to configure the admission controller webhook to listen on object updates")
 
 	// Admission controller config
 	ac := cluster.DynamicConfig.AdmissionControllerConfig
@@ -165,9 +163,7 @@ func Command() *cobra.Command {
 	c.PersistentFlags().Int32Var(&ac.TimeoutSeconds, "admission-controller-timeout", 3, "timeout in seconds for the admission controller")
 	c.PersistentFlags().BoolVar(&ac.ScanInline, "admission-controller-scan-inline", false, "get scans inline when using the admission controller")
 	c.PersistentFlags().BoolVar(&ac.DisableBypass, "admission-controller-disable-bypass", false, "disable the bypass annotations for the admission controller")
-	if features.AdmissionControlEnforceOnUpdate.Enabled() {
-		c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", false, "dynamic enable for enforcing on object updates in the admission controller")
-	}
+	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", false, "dynamic enable for enforcing on object updates in the admission controller")
 
 	c.AddCommand(k8s())
 	c.AddCommand(openshift())

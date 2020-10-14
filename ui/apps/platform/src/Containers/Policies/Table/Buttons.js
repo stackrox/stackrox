@@ -13,8 +13,6 @@ import { createStructuredSelector } from 'reselect';
 import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 import Menu from 'Components/Menu';
 import PanelButton from 'Components/PanelButton';
-import { knownBackendFlags } from 'utils/featureFlags';
-import FeatureEnabled from 'Containers/FeatureEnabled';
 import policyBulkActions from '../policyBulkActions';
 
 // Buttons are the buttons above the table rows.
@@ -107,24 +105,16 @@ class Buttons extends Component {
                 )}
                 {selectionCount === 0 && (
                     <>
-                        <FeatureEnabled featureFlag={knownBackendFlags.ROX_POLICY_IMPORT_EXPORT}>
-                            {({ featureEnabled }) => {
-                                return (
-                                    featureEnabled && (
-                                        <PanelButton
-                                            icon={<Upload className="h-4 w-4 ml-1" />}
-                                            className="btn btn-base mr-2"
-                                            onClick={this.startPolicyImport}
-                                            disabled={buttonsDisabled}
-                                            tooltip="Import a policy"
-                                            dataTestId="import-policy-btn"
-                                        >
-                                            Import Policy
-                                        </PanelButton>
-                                    )
-                                );
-                            }}
-                        </FeatureEnabled>
+                        <PanelButton
+                            icon={<Upload className="h-4 w-4 ml-1" />}
+                            className="btn btn-base mr-2"
+                            onClick={this.startPolicyImport}
+                            disabled={buttonsDisabled}
+                            tooltip="Import a policy"
+                            dataTestId="import-policy-btn"
+                        >
+                            Import Policy
+                        </PanelButton>
                         <PanelButton
                             icon={<Plus className="h-4 w-4 ml-1" />}
                             className="btn btn-base"

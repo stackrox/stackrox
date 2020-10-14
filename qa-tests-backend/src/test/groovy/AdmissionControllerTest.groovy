@@ -257,7 +257,6 @@ class AdmissionControllerTest extends BaseSpecification {
     def "Verify Admission Controller Enforcement on Updates (#desc)"() {
         when:
         Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_ADMISSION_CONTROL_SERVICE"))
-        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE"))
 
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
                 .setEnabled(true)

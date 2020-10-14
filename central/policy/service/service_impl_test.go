@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	detectionMocks "github.com/stackrox/rox/pkg/detection/mocks"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -117,8 +116,6 @@ func makeError(errorID, errorString string) *v1.ExportPolicyError {
 }
 
 func (s *PolicyServiceTestSuite) TestExportInvalidIDFails() {
-	s.envIsolator.Setenv(features.PolicyImportExport.EnvVar(), "true")
-
 	ctx := context.Background()
 	mockErrors := []*v1.ExportPolicyError{
 		makeError(mockRequestOneID.PolicyIds[0], "not found"),
@@ -131,8 +128,6 @@ func (s *PolicyServiceTestSuite) TestExportInvalidIDFails() {
 }
 
 func (s *PolicyServiceTestSuite) TestExportValidIDSucceeds() {
-	s.envIsolator.Setenv(features.PolicyImportExport.EnvVar(), "true")
-
 	ctx := context.Background()
 	mockPolicy := &storage.Policy{
 		Id: mockRequestOneID.PolicyIds[0],
@@ -146,8 +141,6 @@ func (s *PolicyServiceTestSuite) TestExportValidIDSucceeds() {
 }
 
 func (s *PolicyServiceTestSuite) TestExportMixedSuccessAndMissing() {
-	s.envIsolator.Setenv(features.PolicyImportExport.EnvVar(), "true")
-
 	ctx := context.Background()
 	mockPolicy := &storage.Policy{
 		Id: mockRequestTwoIDs.PolicyIds[0],
@@ -163,8 +156,6 @@ func (s *PolicyServiceTestSuite) TestExportMixedSuccessAndMissing() {
 }
 
 func (s *PolicyServiceTestSuite) TestExportMultipleFailures() {
-	s.envIsolator.Setenv(features.PolicyImportExport.EnvVar(), "true")
-
 	ctx := context.Background()
 	errString := "test"
 	storeErrors := []error{errors.New(errString), errors.New("not found")}
@@ -180,8 +171,6 @@ func (s *PolicyServiceTestSuite) TestExportMultipleFailures() {
 }
 
 func (s *PolicyServiceTestSuite) TestExportedPolicyHasNoSortFields() {
-	s.envIsolator.Setenv(features.PolicyImportExport.EnvVar(), "true")
-
 	ctx := context.Background()
 	mockPolicy := &storage.Policy{
 		Id:                 mockRequestOneID.PolicyIds[0],
@@ -235,8 +224,6 @@ func (s *PolicyServiceTestSuite) TestDryRunRuntime() {
 }
 
 func (s *PolicyServiceTestSuite) TestImportPolicy() {
-	s.envIsolator.Setenv(features.PolicyImportExport.EnvVar(), "true")
-
 	mockID := "1"
 	mockName := "legacy policy"
 	mockSeverity := storage.Severity_LOW_SEVERITY
@@ -285,10 +272,6 @@ func (s *PolicyServiceTestSuite) TestImportPolicy() {
 }
 
 func (s *PolicyServiceTestSuite) TestImportAndUpgradePolicy() {
-	envIsolator := testutils.NewEnvIsolator(s.T())
-	envIsolator.Setenv(features.PolicyImportExport.EnvVar(), "true")
-	defer envIsolator.RestoreAll()
-
 	mockID := "1"
 	mockName := "legacy policy"
 	mockSeverity := storage.Severity_LOW_SEVERITY

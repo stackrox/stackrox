@@ -11,8 +11,6 @@ import { actions as wizardActions } from 'reducers/policies/wizard';
 import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 import PanelButton from 'Components/PanelButton';
 import { exportPolicies } from 'services/PoliciesService';
-import { knownBackendFlags } from 'utils/featureFlags';
-import FeatureEnabled from 'Containers/FeatureEnabled';
 
 function DetailsButtons({ wizardPolicy, setWizardStage, setWizardPolicy, addToast, removeToast }) {
     function goToEdit() {
@@ -45,23 +43,15 @@ function DetailsButtons({ wizardPolicy, setWizardStage, setWizardPolicy, addToas
             >
                 Clone
             </PanelButton>
-            <FeatureEnabled featureFlag={knownBackendFlags.ROX_POLICY_IMPORT_EXPORT}>
-                {({ featureEnabled }) => {
-                    return (
-                        featureEnabled && (
-                            <PanelButton
-                                icon={<Download className="h-4 w-4" />}
-                                className="btn btn-base mr-2"
-                                onClick={exportOnePolicy}
-                                tooltip="Export policy"
-                                dataTestId="single-policy-export"
-                            >
-                                Export
-                            </PanelButton>
-                        )
-                    );
-                }}
-            </FeatureEnabled>
+            <PanelButton
+                icon={<Download className="h-4 w-4" />}
+                className="btn btn-base mr-2"
+                onClick={exportOnePolicy}
+                tooltip="Export policy"
+                dataTestId="single-policy-export"
+            >
+                Export
+            </PanelButton>
             <PanelButton
                 icon={<Edit className="h-4 w-4" />}
                 className="btn btn-base mr-2"

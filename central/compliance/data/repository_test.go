@@ -9,8 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/compress"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/suite"
 )
@@ -49,10 +47,6 @@ func compressTestData(toCompress map[string]*compliance.ComplianceStandardResult
 }
 
 func (s *RepositoryTestSuite) TestGetNodeResults() {
-	envIsolator := testutils.NewEnvIsolator(s.T())
-	envIsolator.Setenv(features.PolicyImportExport.EnvVar(), "true")
-	defer envIsolator.RestoreAll()
-
 	testNodeName := "testNodeName"
 
 	testEvidence := map[string]*compliance.ComplianceStandardResult{

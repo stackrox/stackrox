@@ -3,18 +3,8 @@ package features
 //lint:file-ignore U1000 we want to introduce this feature flag unused.
 
 var (
-	// EventTimelineClusteredEventsUI enables the Event Timeline UI for Clustered Events.
-	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
-	EventTimelineClusteredEventsUI = registerFeature("Enable Event Timeline Clustered Events UI", "ROX_EVENT_TIMELINE_CLUSTERED_EVENTS_UI", true)
-
 	// AdmissionControlService enables running admission control as a separate microservice.
 	AdmissionControlService = registerFeature("Separate admission control microservice", "ROX_ADMISSION_CONTROL_SERVICE", true)
-
-	// AdmissionControlEnforceOnUpdate enables support for having the admission controller enforce on updates.
-	AdmissionControlEnforceOnUpdate = registerFeature("Allow admission controller to enforce on update", "ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE", true)
-
-	// PolicyImportExport feature flag enables policy import and export
-	PolicyImportExport = registerFeature("Enable Import/Export for Analyst Workflow", "ROX_POLICY_IMPORT_EXPORT", true)
 
 	// csvExport enables CSV export of search results.
 	csvExport = registerFeature("Enable CSV export of search results", "ROX_CSV_EXPORT", false)

@@ -3,7 +3,6 @@ import { selectors, url } from '../../constants/RiskPage';
 import * as api from '../../constants/apiEndpoints';
 
 import withAuth from '../../helpers/basicAuth';
-import checkFeatureFlag from '../../helpers/features';
 
 function setRoutes() {
     cy.server();
@@ -36,14 +35,6 @@ describe('Risk Page Deployment Event Timeline', () => {
     withAuth();
 
     describe('Clustering Events', () => {
-        // eslint-disable-next-line func-names
-        before(function () {
-            // skip the whole suite if timeline view clustered events ui isn't enabled
-            if (checkFeatureFlag('ROX_EVENT_TIMELINE_CLUSTERED_EVENTS_UI', false)) {
-                this.skip();
-            }
-        });
-
         it('should show the clustered event markers', () => {
             setRoutes();
             // mocking data to thoroughly test the clustering

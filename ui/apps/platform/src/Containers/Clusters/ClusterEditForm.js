@@ -222,37 +222,21 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                                 enabled={selectedCluster.admissionController}
                             />
                         </div>
-                        <FeatureEnabled
-                            featureFlag={knownBackendFlags.ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE}
-                        >
-                            {({ featureEnabled }) => {
-                                return (
-                                    featureEnabled && (
-                                        <div
-                                            className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}
-                                        >
-                                            <label
-                                                htmlFor="admissionControllerUpdates"
-                                                className={labelClassName}
-                                            >
-                                                Configure Admission Controller Webhook to listen on
-                                                updates
-                                            </label>
-                                            <ToggleSwitch
-                                                id="admissionControllerUpdates"
-                                                name="admissionControllerUpdates"
-                                                toggleHandler={handleChange}
-                                                enabled={
-                                                    selectedCluster.admissionController &&
-                                                    selectedCluster.admissionControllerUpdates
-                                                }
-                                                disabled={!selectedCluster.admissionController}
-                                            />
-                                        </div>
-                                    )
-                                );
-                            }}
-                        </FeatureEnabled>
+                        <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
+                            <label htmlFor="admissionControllerUpdates" className={labelClassName}>
+                                Configure Admission Controller Webhook to listen on updates
+                            </label>
+                            <ToggleSwitch
+                                id="admissionControllerUpdates"
+                                name="admissionControllerUpdates"
+                                toggleHandler={handleChange}
+                                enabled={
+                                    selectedCluster.admissionController &&
+                                    selectedCluster.admissionControllerUpdates
+                                }
+                                disabled={!selectedCluster.admissionController}
+                            />
+                        </div>
                         <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
                             <label htmlFor="tolerationsConfig.disabled" className={labelClassName}>
                                 <span>Enable Taint Tolerations</span>
@@ -355,41 +339,28 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                                 }
                             />
                         </div>
-                        <FeatureEnabled
-                            featureFlag={knownBackendFlags.ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE}
-                        >
-                            {({ featureEnabled }) => {
-                                return (
-                                    featureEnabled && (
-                                        <div
-                                            className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}
-                                        >
-                                            <label
-                                                htmlFor="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
-                                                className={labelClassName}
-                                            >
-                                                Enforce on Updates
-                                            </label>
-                                            <ToggleSwitch
-                                                id="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
-                                                name="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
-                                                toggleHandler={handleChange}
-                                                enabled={
-                                                    selectedCluster.dynamicConfig
-                                                        .admissionControllerConfig.enabled &&
-                                                    selectedCluster.dynamicConfig
-                                                        .admissionControllerConfig.enforceOnUpdates
-                                                }
-                                                disabled={
-                                                    !selectedCluster.dynamicConfig
-                                                        .admissionControllerConfig.enabled
-                                                }
-                                            />
-                                        </div>
-                                    )
-                                );
-                            }}
-                        </FeatureEnabled>
+                        <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
+                            <label
+                                htmlFor="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
+                                className={labelClassName}
+                            >
+                                Enforce on Updates
+                            </label>
+                            <ToggleSwitch
+                                id="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
+                                name="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
+                                toggleHandler={handleChange}
+                                enabled={
+                                    selectedCluster.dynamicConfig.admissionControllerConfig
+                                        .enabled &&
+                                    selectedCluster.dynamicConfig.admissionControllerConfig
+                                        .enforceOnUpdates
+                                }
+                                disabled={
+                                    !selectedCluster.dynamicConfig.admissionControllerConfig.enabled
+                                }
+                            />
+                        </div>
                         <div className={`mb-4 pl-2 ${justifyBetweenClassName}`}>
                             <label
                                 htmlFor="dynamicConfig.admissionControllerConfig

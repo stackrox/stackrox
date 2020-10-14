@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/size"
@@ -162,7 +161,7 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 		admission.Create: {},
 	}
 
-	if features.AdmissionControlEnforceOnUpdate.Enabled() && newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates() {
+	if newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates() {
 		enforcedOperations[admission.Update] = struct{}{}
 	}
 
