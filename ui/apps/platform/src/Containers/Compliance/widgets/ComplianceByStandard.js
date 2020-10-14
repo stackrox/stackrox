@@ -43,10 +43,6 @@ const sunburstLegendData = [
 ];
 
 const processSunburstData = (match, location, data, type) => {
-    if (!data || !data.results || !data.results.results.length) {
-        return { sunburstData: [], totalPassing: 0 };
-    }
-
     const groupMapping = {};
     let controlKeyIndex = 0;
     let categoryKeyIndex = 0;
@@ -78,7 +74,7 @@ const processSunburstData = (match, location, data, type) => {
     const groupStatsMapping = data.results.results.reduce(statsReducer, {});
     const controlStatsMapping = data.checks.results.reduce(statsReducer, {});
 
-    const { groups, controls } = data.complianceStandards.filter((datum) => datum.id === type)[0];
+    const { groups, controls } = data.complianceStandards.find((datum) => datum.id === type);
 
     groups.forEach((datum) => {
         const groupStat = groupStatsMapping[datum.id];
@@ -231,19 +227,20 @@ const ComplianceByStandard = ({
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
-                let contents;
+                let contents = null;
                 const titleComponent = getTitleComponent();
                 const headerText = getHeaderText();
                 let viewStandardLink = null;
                 if (isGQLLoading(loading, data)) {
                     contents = <Loader />;
-                } else {
+                } else if (data?.checks?.results?.length && data?.results?.results?.length) {
                     const { sunburstData, totalPassing } = processSunburstData(
                         match,
                         location,
                         data,
                         standardType
                     );
+
                     const url = createURLLink(
                         match,
                         location,
@@ -281,23 +278,24 @@ const ComplianceByStandard = ({
                         </Link>
                     );
 
-                    if (!sunburstData.length) {
-                        contents = (
-                            <div className="flex flex-1 items-center justify-center p-4 leading-loose">
-                                No data available. Please run a scan.
-                            </div>
-                        );
-                    } else {
-                        contents = (
-                            <Sunburst
-                                data={sunburstData}
-                                rootData={sunburstRootData}
-                                legendData={sunburstLegendData}
-                                totalValue={totalPassing}
-                                key={entityId}
-                            />
-                        );
-                    }
+                    contents = (
+                        <Sunburst
+                            data={sunburstData}
+                            rootData={sunburstRootData}
+                            legendData={sunburstLegendData}
+                            totalValue={totalPassing}
+                            key={entityId}
+                        />
+                    );
+                } else if (
+                    data?.checks?.results?.length === 0 &&
+                    data?.results?.results?.length === 0
+                ) {
+                    contents = (
+                        <div className="flex flex-1 items-center justify-center p-4 leading-loose">
+                            No data available. Please run a scan.
+                        </div>
+                    );
                 }
 
                 return (
