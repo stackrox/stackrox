@@ -177,10 +177,18 @@ spec:
         traffic.sidecar.istio.io/excludeInboundPorts: "5432"
         {{- include "srox.podAnnotations" (list . "deployment" "scanner-db") | nindent 8 }}
     spec:
-      {{ if ._rox.env.openshift }}
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
+            # ScannerDB is single-homed, so avoid preemptible nodes.
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/gke-preemptible
+                    operator: NotIn
+                    values:
+                    - "true"
+            {{ if ._rox.env.openshift }}
             - weight: 25
               preference:
                 matchExpressions:
@@ -202,7 +210,7 @@ spec:
                     operator: NotIn
                     values:
                     - "true"
-      {{- end }}
+            {{- end }}
       initContainers:
         - name: init-db
           image: {{ ._rox.scanner.dbImage.fullRef | quote }}

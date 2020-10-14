@@ -93,6 +93,24 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 					},
 				},
 				Spec: v1.PodSpec{
+					Affinity: &v1.Affinity{
+						NodeAffinity: &v1.NodeAffinity{
+							PreferredDuringSchedulingIgnoredDuringExecution: []v1.PreferredSchedulingTerm{
+								{
+									Weight: 100,
+									Preference: v1.NodeSelectorTerm{
+										MatchExpressions: []v1.NodeSelectorRequirement{
+											{
+												Key:      "cloud.google.com/gke-preemptible",
+												Operator: v1.NodeSelectorOpNotIn,
+												Values:   []string{"true"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 					Volumes: []v1.Volume{
 						{
 							Name: "sensor-tls-volume",

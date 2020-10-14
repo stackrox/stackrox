@@ -32,10 +32,18 @@ spec:
       nodeSelector:
         {{- ._rox.central._nodeSelector | nindent 8 }}
       {{- end }}
-      {{- if ._rox.env.openshift }}
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
+            # Central is single-homed, so avoid preemptible nodes.
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/gke-preemptible
+                    operator: NotIn
+                    values:
+                    - "true"
+            {{- if ._rox.env.openshift }}
             - weight: 25
               preference:
                 matchExpressions:
@@ -57,7 +65,7 @@ spec:
                     operator: NotIn
                     values:
                     - "true"
-      {{- end}}
+            {{- end}}
       serviceAccount: central
       securityContext:
         fsGroup: 4000

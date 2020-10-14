@@ -26,10 +26,18 @@ spec:
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443,9443"
     spec:
-      {{if eq .Values.cluster.type "OPENSHIFT_CLUSTER"}}
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
+            # Sensor is single-homed, so avoid preemptible nodes.
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/gke-preemptible
+                    operator: NotIn
+                    values:
+                    - "true"
+            {{if eq .Values.cluster.type "OPENSHIFT_CLUSTER"}}
             - weight: 25
               preference:
                 matchExpressions:
@@ -51,7 +59,7 @@ spec:
                     operator: NotIn
                     values:
                     - "true"
-      {{- end}}
+            {{- end}}
       securityContext:
         runAsUser: 4000
         fsGroup: 4000
