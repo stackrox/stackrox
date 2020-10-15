@@ -3,7 +3,7 @@ import com.opencsv.bean.CsvToBeanBuilder
 import com.opencsv.bean.HeaderColumnNameTranslateMappingStrategy
 import common.Constants
 import groups.BAT
-import groups.SensorBounce
+import groups.SensorBounceNext
 import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunScheduleInfo
@@ -972,7 +972,7 @@ class ComplianceTest extends BaseSpecification {
         }
     }
 
-    @Category([SensorBounce])
+    @Category([SensorBounceNext])
     def "Verify failed run result"() {
         // This seems to be using an auth token for some reason.  Explicitly specify basic auth.
         BaseService.useBasicAuth()

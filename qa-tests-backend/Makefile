@@ -34,7 +34,7 @@ clean-generated-srcs:
 .PHONY: test
 test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=-Upgrade,-SensorBounce
+	gradle test -Dgroups=-Upgrade,-SensorBounce,-SensorBounceNext
 
 .PHONY: bat-test
 bat-test: proto-generated-srcs
@@ -69,7 +69,7 @@ networkpolicy-simulator-test: proto-generated-srcs
 .PHONY: non-bat-test
 non-bat-test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=-BAT,-Upgrade,-SensorBounce
+	gradle test -Dgroups=-BAT,-Upgrade,-SensorBounce,-SensorBounceNext
 
 .PHONY: upgrade-test
 upgrade-test: proto-generated-srcs
@@ -85,6 +85,7 @@ graphql-test: proto-generated-srcs
 sensor-bounce-test: proto-generated-srcs
 	@echo "+ $@"
 	gradle test -Dgroups=SensorBounce
+	gradle test -Dgroups=SensorBounceNext
 
 .PHONY: update-test-rail
 update-test-rail:

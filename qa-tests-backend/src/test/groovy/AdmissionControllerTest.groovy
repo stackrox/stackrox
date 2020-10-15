@@ -1,6 +1,6 @@
 import common.Constants
 import groups.BAT
-import groups.SensorBounce
+import groups.SensorBounceNext
 import io.fabric8.kubernetes.api.model.Pod
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
@@ -501,7 +501,7 @@ class AdmissionControllerTest extends BaseSpecification {
         }
     }
 
-    @Category([SensorBounce])
+    @Category([SensorBounceNext])
     def "Verify admission controller performs image scans if Sensor is Unavailable"() {
         given:
         "Admission controller is enabled"
