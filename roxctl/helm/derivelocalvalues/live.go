@@ -28,7 +28,7 @@ type liveK8sObjectDescription struct {
 	namespace string
 }
 
-func (k liveK8sObjectDescription) get(context context.Context, kind string, name string) (*unstructured.Unstructured, error) {
+func (k liveK8sObjectDescription) get(ctx context.Context, kind string, name string) (*unstructured.Unstructured, error) {
 	var gvr *schema.GroupVersionResource
 
 	switch strings.ToLower(kind) {
@@ -75,7 +75,7 @@ func (k liveK8sObjectDescription) get(context context.Context, kind string, name
 
 	resp, err := resClient.
 		Namespace(k.namespace).
-		Get(context, name, metav1.GetOptions{})
+		Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "retrieving resource %s/%s", kind, name)
 	}

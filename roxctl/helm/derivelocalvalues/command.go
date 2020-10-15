@@ -11,6 +11,7 @@ import (
 
 // Command for deriving local values from existing StackRox Kubernetes resources.
 func Command() *cobra.Command {
+	var outputDir string
 	var output string
 	var input string
 
@@ -21,19 +22,34 @@ func Command() *cobra.Command {
 				return errors.New("incorrect number of arguments, see --help for usage information")
 			}
 			chartName := args[0]
-			if output == "" {
-				fmt.Fprintln(os.Stderr, `No output file specified using "--output".`)
+			if output == "" && outputDir == "" {
+				fmt.Fprintln(os.Stderr, `No output file specified using either "--output" or "--output-dir".`)
 				fmt.Fprintln(os.Stderr, `If the derived Helm configuration should really be written to stdout, please use "--output=-".`)
 				return errors.New("no output file specified")
 			}
+
+			if output != "" && outputDir != "" {
+				fmt.Fprintln(os.Stderr, `Specify either "--output" or "--output-dir" but not both.`)
+				return errors.New("invalid arguments")
+			}
+
 			if output == "-" {
+				// Internally we represent stdout as empty string.
 				output = ""
 			}
-			return deriveLocalValuesForChart("stackrox", chartName, input, output)
+
+			outputPath := output
+			useDirectory := false
+			if outputDir != "" {
+				outputPath = outputDir
+				useDirectory = true
+			}
+			return deriveLocalValuesForChart("stackrox", chartName, input, outputPath, useDirectory)
 
 		},
 	}
 	c.PersistentFlags().StringVar(&output, "output", "", "path to output file")
+	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "path to output directory")
 	c.PersistentFlags().StringVar(&input, "input", "", "path to file or directory containing YAML input")
 
 	return c
