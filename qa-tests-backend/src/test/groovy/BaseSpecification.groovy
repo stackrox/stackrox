@@ -15,7 +15,6 @@ import org.junit.rules.TestName
 import org.junit.rules.Timeout
 import services.BaseService
 import services.ClusterService
-import services.ImageIntegrationService
 import services.MetadataService
 import services.RoleService
 import services.SACService
@@ -93,12 +92,6 @@ class BaseSpecification extends Specification {
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
-
-        if ({ Env.IN_CI && Env.get("CIRCLE_JOB").contains("openshift-rhel") }) {
-            // ROX-5199 - openshift-rhel does not reliably autogenerate an image
-            // integration registry based on the GCR secret.
-            ImageIntegrationService.handleUnreliableGCRAutoGenerate()
-        }
 
         withRetry(10, 1) {
             try {

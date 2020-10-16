@@ -110,7 +110,6 @@ class ImageScanningTest extends BaseSpecification {
     def cleanupSpec() {
         ImageIntegrationService.addStackroxScannerIntegration()
         addGCRImagePullSecret()
-        ImageIntegrationService.handleUnreliableGCRAutoGenerate()
 
         for (String policy : UPDATED_POLICIES) {
             Services.setPolicyDisabled(policy, true)
