@@ -1,66 +1,121 @@
 package sac
 
 import (
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
+const separator = "_"
+
 // ResourceID is a composite ID containing SAC scope keys for the resource.
 type ResourceID struct {
-	ClusterID   string
-	NamespaceID string
-	Suffix      string
+	clusterID   string
+	namespaceID string
+	suffix      string
 }
 
 // NewGlobalScopeResourceID returns new ID for global scoped resource.
 func NewGlobalScopeResourceID(suffix string) (ResourceID, error) {
 	if suffix == "" {
 		suffix = uuid.NewV4().String()
+	} else if err := validateSuffix(suffix); err != nil {
+		return ResourceID{}, err
 	}
+
 	return ResourceID{
-		Suffix: suffix,
+		suffix: suffix,
 	}, nil
 }
 
 // NewClusterScopeResourceID returns new ID for cluster scoped resource.
 func NewClusterScopeResourceID(clusterID, suffix string) (ResourceID, error) {
-	if clusterID == "" {
-		return ResourceID{}, errors.New("cluster ID must be specified")
+	if err := validateClusterID(clusterID); err != nil {
+		return ResourceID{}, err
 	}
 
 	if suffix == "" {
 		suffix = uuid.NewV4().String()
+	} else if err := validateSuffix(suffix); err != nil {
+		return ResourceID{}, err
 	}
+
 	return ResourceID{
-		ClusterID: clusterID,
-		Suffix:    suffix,
+		clusterID: clusterID,
+		suffix:    suffix,
 	}, nil
 }
 
 // NewNamespaceScopeResourceID returns new ID for namespace scoped resource.
 func NewNamespaceScopeResourceID(clusterID, namespaceID, suffix string) (ResourceID, error) {
-	if clusterID == "" {
-		return ResourceID{}, errors.New("cluster ID must be specified")
+	if err := validateClusterID(clusterID); err != nil {
+		return ResourceID{}, err
 	}
 
-	if namespaceID == "" {
-		return ResourceID{}, errors.New("namespace ID must be specified")
+	if err := validateNamespaceID(namespaceID); err != nil {
+		return ResourceID{}, err
 	}
 
 	if suffix == "" {
 		suffix = uuid.NewV4().String()
+	} else if err := validateSuffix(suffix); err != nil {
+		return ResourceID{}, err
 	}
+
 	return ResourceID{
-		ClusterID:   clusterID,
-		NamespaceID: namespaceID,
-		Suffix:      suffix,
+		clusterID:   clusterID,
+		namespaceID: namespaceID,
+		suffix:      suffix,
 	}, nil
+}
+
+func validateClusterID(clusterID string) error {
+	if clusterID == "" {
+		return errors.New("cluster ID must be specified")
+	}
+	if strings.Contains(clusterID, separator) {
+		return errors.Errorf("cluster ID %s must not contain %q", clusterID, separator)
+	}
+	return nil
+}
+
+func validateNamespaceID(namespaceID string) error {
+	if namespaceID == "" {
+		return errors.New("namespace ID must be specified")
+	}
+	if strings.Contains(namespaceID, separator) {
+		return errors.Errorf("namespace ID %s must not contain %q", namespaceID, separator)
+	}
+	return nil
+}
+
+func validateSuffix(suffix string) error {
+	if strings.Contains(suffix, separator) {
+		return errors.Errorf("suffix %s must not contain %q", suffix, separator)
+	}
+	return nil
+}
+
+// ClusterID returns the cluster ID.
+func (r ResourceID) ClusterID() string {
+	return r.clusterID
+}
+
+// NamespaceID returns the namespace ID.
+func (r ResourceID) NamespaceID() string {
+	return r.namespaceID
+}
+
+// Suffix returns the suffix of ResourceID.
+func (r ResourceID) Suffix() string {
+	return r.suffix
 }
 
 // ToString serializes the ResourceID to a string.
 func (r ResourceID) ToString() string {
-	return r.ClusterID + "/" + r.NamespaceID + "/" + r.Suffix
+	return r.clusterID + separator + r.namespaceID + separator + r.suffix
 }
 
 // ParseResourceID reads a ResourceID from input ID string.
@@ -69,7 +124,7 @@ func ParseResourceID(str string) (ResourceID, error) {
 		return ResourceID{}, errors.New("ID string must be provided")
 	}
 
-	parts := stringutils.SplitNPadded(str, "/", 3)
+	parts := stringutils.SplitNPadded(str, separator, 3)
 	if parts[2] == "" {
 		return ResourceID{}, errors.Errorf("suffix part not found in ID %q", str)
 	}
@@ -79,8 +134,8 @@ func ParseResourceID(str string) (ResourceID, error) {
 	}
 
 	return ResourceID{
-		ClusterID:   parts[0],
-		NamespaceID: parts[1],
-		Suffix:      parts[2],
+		clusterID:   parts[0],
+		namespaceID: parts[1],
+		suffix:      parts[2],
 	}, nil
 }

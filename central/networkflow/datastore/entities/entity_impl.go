@@ -36,7 +36,7 @@ func (ds *entityDataStoreImpl) GetEntity(ctx context.Context, id string) (*stora
 		return nil, false, err
 	}
 
-	if ok, err := networkGraphSAC.ReadAllowed(ctx, sac.ClusterScopeKey(decodedID.ClusterID)); err != nil || !ok {
+	if ok, err := networkGraphSAC.ReadAllowed(ctx, sac.ClusterScopeKey(decodedID.ClusterID())); err != nil || !ok {
 		return nil, false, err
 	}
 	return ds.storage.GetEntity(id)
@@ -76,7 +76,7 @@ func (ds *entityDataStoreImpl) GetAllEntities(ctx context.Context) ([]*storage.N
 			return nil, err
 		}
 
-		if ok, err := networkGraphSAC.ReadAllowed(ctx, sac.ClusterScopeKey(decodedID.ClusterID)); err != nil {
+		if ok, err := networkGraphSAC.ReadAllowed(ctx, sac.ClusterScopeKey(decodedID.ClusterID())); err != nil {
 			return nil, err
 		} else if !ok {
 			continue
@@ -121,7 +121,7 @@ func (ds *entityDataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, 
 		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
 	}
 
-	if ok, err := networkGraphSAC.WriteAllowed(ctx, sac.ClusterScopeKey(decodedID.ClusterID)); err != nil {
+	if ok, err := networkGraphSAC.WriteAllowed(ctx, sac.ClusterScopeKey(decodedID.ClusterID())); err != nil {
 		return err
 	} else if !ok {
 		return errors.New("permission denied")

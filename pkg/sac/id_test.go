@@ -15,33 +15,33 @@ func TestGetIDForResource(t *testing.T) {
 		{
 			name: "valid global-scoped id",
 			expected: ResourceID{
-				Suffix: "c",
+				suffix: "c",
 			},
 			fail: false,
 		},
 		{
 			name: "valid global-scoped id: with all parts",
 			expected: ResourceID{
-				ClusterID:   "a",
-				NamespaceID: "b",
-				Suffix:      "c",
+				clusterID:   "a",
+				namespaceID: "b",
+				suffix:      "c",
 			},
 			fail: false,
 		},
 		{
 			name: "valid cluster-scoped id",
 			expected: ResourceID{
-				ClusterID: "a",
-				Suffix:    "c",
+				clusterID: "a",
+				suffix:    "c",
 			},
 			fail: false,
 		},
 		{
 			name: "valid namespace-scoped id",
 			expected: ResourceID{
-				ClusterID:   "a",
-				NamespaceID: "b",
-				Suffix:      "c",
+				clusterID:   "a",
+				namespaceID: "b",
+				suffix:      "c",
 			},
 			fail: false,
 		},
@@ -53,7 +53,7 @@ func TestGetIDForResource(t *testing.T) {
 		{
 			name: "invalid namespace-scoped id: no cluster ID",
 			expected: ResourceID{
-				NamespaceID: "b",
+				namespaceID: "b",
 			},
 			fail: true,
 		},

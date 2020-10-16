@@ -155,7 +155,7 @@ func (s *serviceImpl) DeleteExternalNetworkEntity(ctx context.Context, request *
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	go s.doPushExternalNetworkEntitiesToSensor(ctx, id.ClusterID)
+	go s.doPushExternalNetworkEntitiesToSensor(ctx, id.ClusterID())
 	return &v1.Empty{}, nil
 }
 
