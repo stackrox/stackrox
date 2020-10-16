@@ -506,6 +506,12 @@ docker-build-deployer-image:
 		--build-arg SCANNER_IMAGE_TAG=$(shell cat SCANNER_VERSION) \
 		image/ --file image/Dockerfile_gcp
 
+.PHONY: docker-build-roxctl-image
+docker-build-roxctl-image:
+	cp -f bin/linux/roxctl image/bin/roxctl-linux
+	docker build -t stackrox/roxctl:$(TAG) -f image/roxctl.Dockerfile image/
+
+
 .PHONY: copy-binaries-to-image-dir
 copy-binaries-to-image-dir:
 	cp -r ui/build image/ui/

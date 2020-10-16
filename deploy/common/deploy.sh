@@ -9,6 +9,15 @@ echo "StackRox image tag set to $MAIN_IMAGE_TAG"
 export MAIN_IMAGE="${MAIN_IMAGE_REPO}:${MAIN_IMAGE_TAG}"
 echo "StackRox image set to $MAIN_IMAGE"
 
+export ROXCTL_IMAGE_REPO="${ROXCTL_IMAGE_REPO:-stackrox/roxctl}"
+echo "ROXCTL_IMAGE_REPO set to $ROXCTL_IMAGE_REPO"
+
+export ROXCTL_IMAGE_TAG="${ROXCTL_IMAGE_TAG:-${MAIN_IMAGE_TAG}}"
+echo "StackRox roxctl image tag set to $ROXCTL_IMAGE_TAG"
+
+export ROXCTL_IMAGE="${ROXCTL_IMAGE_REPO}:${ROXCTL_IMAGE_TAG}"
+echo "StackRox roxctl image set to $ROXCTL_IMAGE"
+
 export SCANNER_IMAGE="${SCANNER_IMAGE:-}"
 if [[ -z "${SCANNER_IMAGE}" ]]; then
   SCANNER_IMAGE="stackrox/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"

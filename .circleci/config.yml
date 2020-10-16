@@ -2206,13 +2206,18 @@ jobs:
 
       - run:
           name: Build main image
-          command: make docker-build-main-image
+          command: make docker-build-main-image      
+      
+      - run:
+          name: Build roxctl image
+          command: make docker-build-roxctl-image
 
       - run:
           name: Push new Docker image
           command: |
             docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
             docker push "docker.io/stackrox/main:$(make --quiet tag)" | cat
+            docker push "docker.io/stackrox/roxctl:$(make --quiet tag)" | cat
 
       - run:
           name: Publish new versions of NPM packages if any
@@ -4015,6 +4020,10 @@ jobs:
             docker pull docker.io/stackrox/docs:$MAIN_TAG | cat
             docker tag  docker.io/stackrox/docs:$MAIN_TAG stackrox.io/docs:$MAIN_TAG
             docker push        stackrox.io/docs:$MAIN_TAG | cat
+
+            docker pull docker.io/stackrox/roxctl:$MAIN_TAG | cat
+            docker tag  docker.io/stackrox/roxctl:$MAIN_TAG stackrox.io/roxctl:$MAIN_TAG
+            docker push        stackrox.io/roxctl:$MAIN_TAG | cat
 
             docker pull    docker.io/stackrox/collector:$COLLECTOR_TAG | cat
             docker pull    "docker.io/stackrox/collector:${COLLECTOR_TAG}-latest" | cat
