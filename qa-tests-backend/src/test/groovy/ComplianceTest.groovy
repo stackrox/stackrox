@@ -781,6 +781,7 @@ class ComplianceTest extends BaseSpecification {
                 "Latest tag",
                 "Ubuntu Package Manager Execution",
         ]
+        Map<String, List<PolicyOuterClass.EnforcementAction>> priorEnforcement = [:]
 
         given:
         "update policies"
@@ -799,7 +800,8 @@ class ComplianceTest extends BaseSpecification {
             if (policy.lifecycleStagesList.contains(PolicyOuterClass.LifecycleStage.RUNTIME)) {
                 enforcements.add(PolicyOuterClass.EnforcementAction.KILL_POD_ENFORCEMENT)
             }
-            Services.updatePolicyEnforcement(policyName, enforcements)
+            def prior = Services.updatePolicyEnforcement(policyName, enforcements)
+            priorEnforcement.put(policyName, prior)
         }
         def policyId = CreatePolicyService.createNewPolicy(PolicyOuterClass.Policy.newBuilder()
                 .setName("XYZ Compliance Secrets")
@@ -844,7 +846,7 @@ class ComplianceTest extends BaseSpecification {
         cleanup:
         "undo policy changes"
         for (String policyName : enforcementPolicies) {
-            Services.updatePolicyEnforcement(policyName, [PolicyOuterClass.EnforcementAction.UNSET_ENFORCEMENT])
+            Services.updatePolicyEnforcement(policyName, priorEnforcement.get(policyName))
         }
         Services.updatePolicyLifecycleStage(
                 "Fixable CVSS >= 7",
