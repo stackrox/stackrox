@@ -80,6 +80,10 @@ func (b *flowGraphBuilder) AddFlows(flows []*storage.NetworkFlow) {
 			continue
 		}
 
+		if networkgraph.IsExternal(props.GetSrcEntity()) {
+			srcNode.Entity.Desc = props.GetSrcEntity().GetDesc()
+		}
+
 		if props.GetDstEntity().GetType() == storage.NetworkEntityInfo_LISTEN_ENDPOINT {
 			if deployment := srcNode.Entity.GetDeployment(); deployment != nil {
 				deployment.ListenPorts = append(deployment.ListenPorts, &storage.NetworkEntityInfo_Deployment_ListenPort{
@@ -94,7 +98,7 @@ func (b *flowGraphBuilder) AddFlows(flows []*storage.NetworkFlow) {
 		}
 
 		dstEnt := networkgraph.EntityFromProto(props.GetDstEntity())
-		dstIdx, _, _ := b.getNode(dstEnt, dstEnt.Type != storage.NetworkEntityInfo_DEPLOYMENT)
+		dstIdx, dstNode, _ := b.getNode(dstEnt, dstEnt.Type != storage.NetworkEntityInfo_DEPLOYMENT)
 		// For non-deployment nodes, if the destination deployment is not accessible, remove this source node.
 		if dstIdx == -1 {
 			if added {
@@ -102,6 +106,11 @@ func (b *flowGraphBuilder) AddFlows(flows []*storage.NetworkFlow) {
 			}
 			continue
 		}
+
+		if networkgraph.IsExternal(props.GetDstEntity()) {
+			dstNode.Entity.Desc = props.GetDstEntity().GetDesc()
+		}
+
 		tgtIdx := int32(dstIdx)
 
 		tgtEdgeBundle := srcNode.OutEdges[tgtIdx]
