@@ -7,5 +7,5 @@ class K8sServiceAccount {
     Map<String, String> annotations = [:]
     def automountToken
     def secrets = []
-    def imagePullSecrets = []
+    String[] imagePullSecrets = []
 }

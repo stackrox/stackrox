@@ -68,6 +68,7 @@ class Helpers {
 
     static void collectDebugForFailure(Throwable exception) {
         if (!Env.IN_CI) {
+            println "Won't collect logs when not in CI"
             return
         }
 

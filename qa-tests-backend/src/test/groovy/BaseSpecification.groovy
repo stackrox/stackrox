@@ -1,7 +1,6 @@
 import com.jayway.restassured.RestAssured
 import common.Constants
 import groovy.util.logging.Slf4j
-import io.fabric8.kubernetes.api.model.LocalObjectReference
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.storage.RoleOuterClass
@@ -80,9 +79,9 @@ class BaseSpecification extends Specification {
                 Env.mustGetInCI("REGISTRY_PASSWORD", "fakePassword"), Constants.ORCHESTRATOR_NAMESPACE)
         def sa = new K8sServiceAccount(
                 name: "default",
-                namespace: Constants.ORCHESTRATOR_NAMESPACE)
-
-        sa.imagePullSecrets = [new LocalObjectReference("stackrox")]
+                namespace: Constants.ORCHESTRATOR_NAMESPACE,
+                imagePullSecrets: ["stackrox"]
+        )
         orchestrator.createServiceAccount(sa)
 
         addGCRImagePullSecret()

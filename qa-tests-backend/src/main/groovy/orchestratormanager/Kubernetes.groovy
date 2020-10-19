@@ -592,7 +592,11 @@ class Kubernetes implements OrchestratorMain {
                             type: deployment.createLoadBalancer ? "LoadBalancer" : "ClusterIP"
                     )
             )
-            client.services().inNamespace(deployment.namespace).createOrReplace(service)
+            def created = client.services().inNamespace(deployment.namespace).createOrReplace(service)
+            if (created == null) {
+                println deployment.serviceName ?: deployment.name + " service not created"
+                assert created
+            }
             println(deployment.serviceName ?: deployment.name + " service created")
             if (deployment.createLoadBalancer) {
                 deployment.loadBalancerIP = waitForLoadBalancer(deployment.serviceName ?:
@@ -691,7 +695,7 @@ class Kubernetes implements OrchestratorMain {
             }
         }
         if (loadBalancerIP == null) {
-            println("Could not get loadBalancer IP in ${t.SecondsSince()} and ${iterations}")
+            println("Could not get loadBalancer IP in ${t.SecondsSince()} seconds and ${iterations} iterations")
         }
         return loadBalancerIP
     }
@@ -978,7 +982,8 @@ class Kubernetes implements OrchestratorMain {
                             annotations: serviceAccount.annotations
                     ),
                     secrets: serviceAccount.secrets,
-                    imagePullSecrets: serviceAccount.imagePullSecrets
+                    imagePullSecrets: serviceAccount.imagePullSecrets.collect {
+                        name -> new LocalObjectReference(name) }
             )
             client.serviceAccounts().inNamespace(sa.metadata.namespace).createOrReplace(sa)
         }

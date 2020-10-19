@@ -19,8 +19,10 @@ import groups.NetworkFlowVisualization
 import objects.Deployment
 import objects.DaemonSet
 import objects.Edge
+import objects.K8sServiceAccount
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
+import objects.Service
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.FeatureFlagService
@@ -51,6 +53,9 @@ class NetworkFlowTest extends BaseSpecification {
     static final private String SINGLECONNECTIONSOURCE = "single-connection-source"
     static final private String MULTIPLEPORTSCONNECTION = "two-ports-connect-source"
     static final private String EXTERNALDESTINATION = "external-destination-source"
+
+    // Other namespace
+    static final private String OTHER_NAMESPACE = "qa2"
 
     // Target deployments
     @Shared
@@ -150,7 +155,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "done" as String,]),
             new Deployment()
                     .setName("${TCPCONNECTIONSOURCE}-qa2")
-                    .setNamespace("qa2")
+                    .setNamespace(OTHER_NAMESPACE)
                     .setImage("stackrox/qa:socat")
                     .addLabel("app", "${TCPCONNECTIONSOURCE}-qa2")
                     .setCommand(["/bin/sh", "-c",])
@@ -196,12 +201,32 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     def setupSpec() {
+        orchestrator.createNamespace(OTHER_NAMESPACE)
+        orchestrator.createImagePullSecret(
+                "stackrox",
+                Env.mustGet("REGISTRY_USERNAME"),
+                Env.mustGet("REGISTRY_PASSWORD"),
+                OTHER_NAMESPACE
+        )
+        orchestrator.createServiceAccount(
+                new K8sServiceAccount(
+                        name: "default",
+                        namespace: OTHER_NAMESPACE,
+                        imagePullSecrets: ["stackrox"]
+                )
+        )
+
         createDeployments()
     }
 
     def destroyDeployments() {
         for (Deployment deployment : deployments) {
             orchestrator.deleteDeployment(deployment)
+        }
+        for (Deployment deployment : deployments) {
+            if (deployment.exposeAsService) {
+                orchestrator.waitForServiceDeletion(new Service(deployment.name, deployment.namespace))
+            }
         }
     }
 
