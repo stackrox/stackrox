@@ -3,44 +3,36 @@
 export type ScanMessages = {
     header?: string;
     body?: string;
-    extra?: string;
 };
 
 export const imageScanMessages = {
     missingMetadata: {
-        header: 'Unable to retrieve the metadata from the registry',
+        header: 'Failed to retrieve metadata from the registry.',
         body: 'Couldn’t retrieve metadata from the registry, check registry connection.',
-        extra: '',
     },
     missingScanData: {
-        header: 'There are no scan data available. Please rescan the image.',
+        header: 'Failed to get the base OS information.',
         body:
             'Failed to get the base OS information. Either the integrated scanner can’t find the OS or the base OS is unidentifiable.',
-        extra: '',
     },
     osUnavailable: {
-        header: 'Scanner doesn’t provide OS information',
+        header: 'The scanner doesn’t provide OS information.',
         body:
             'Failed to get the base OS information. Either the integrated scanner can’t find the OS or the base OS is unidentifiable.',
-        extra:
-            'Scanner does not provide OS information for any image scanned by DTR, Google, or Anchore; or base image OS doesn’t exists.',
     },
     languageCvesUnavailable: {
-        header:
-            'Only OS CVE data is available. Unable to retrieve the Language CVE data because it is disabled in a StackRox scanner.',
+        header: 'Unable to retrieve the Language CVE data, only OS CVE data is available.',
         body:
-            'Only showing information about the OS CVEs. Turn on the Language CVE feature to view additional details.',
-        extra: '',
+            'Only showing information about the OS CVEs. Turn on the Language CVE feature in a scanner to view additional details.',
     },
     osCvesUnavailable: {
-        header:
-            'Only Language CVE data is available. Unable to retrieve the OS CVE data because the scanner doesn’t support this OS.',
-        body: 'Unsupported OS. Only Language CVEs are available.',
-        extra: '',
+        header: 'Unable to retrieve the OS CVE data, only Language CVE data is available.',
+        body:
+            'Only showing information about the  Language CVEs. Turn on the OS CVE feature in a scanner to view additional details.',
     },
     osCvesStale: {
-        header: 'The CVE data is no longer being updated.',
-        body: 'Stale OS CVE data. The source no longer provides data updates.',
+        header: 'Stale OS CVE data..',
+        body: 'The source no longer provides data updates.',
         extra: '',
     },
 };

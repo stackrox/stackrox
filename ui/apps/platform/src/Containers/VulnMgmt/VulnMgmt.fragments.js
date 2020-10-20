@@ -143,9 +143,11 @@ export const IMAGE_LIST_FRAGMENT = gql`
             }
         }
         componentCount(query: $query)
+        notes
         scan {
             scanTime
             operatingSystem
+            notes
         }
         vulnCounter {
             all {

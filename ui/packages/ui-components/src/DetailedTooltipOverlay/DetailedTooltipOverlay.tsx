@@ -10,14 +10,17 @@ function DetailedTooltipOverlay({
     subtitle,
     body,
     footer,
+    extraClassName,
 }: DetailedTooltipOverlayProps): ReactElement | null {
     if (!title || !body) {
         return null;
     }
 
     return (
-        <div className="rox-tooltip-overlay min-w-32 max-h-100 flex flex-col flex-1">
-            <div className="text-left flex flex-col border-b border-primary-400 leading-normal py-1 px-2">
+        <div
+            className={`rox-tooltip-overlay min-w-32 max-h-100 flex flex-col flex-1 ${extraClassName}`}
+        >
+            <div className="text-left flex flex-col border-b leading-normal py-1 px-2 detailed-overlay-header">
                 <h1 className="font-700 text-lg" data-testid="tooltip-title">
                     {title}
                 </h1>
@@ -46,11 +49,13 @@ DetailedTooltipOverlay.propTypes = {
     subtitle: PropTypes.string,
     body: PropTypes.node.isRequired,
     footer: PropTypes.node,
+    extraClassName: PropTypes.string,
 };
 
 DetailedTooltipOverlay.defaultProps = {
     subtitle: '',
     footer: '',
+    extraClassName: '',
 };
 
 export type DetailedTooltipOverlayProps = InferProps<typeof DetailedTooltipOverlay.propTypes>;

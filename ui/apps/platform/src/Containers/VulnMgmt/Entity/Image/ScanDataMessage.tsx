@@ -13,12 +13,12 @@ function ScanDataMessage({ imageNotes = [], scanNotes = [] }): ReactElement | nu
                 message={
                     <div className="w-full">
                         <header className="text-lg pb-2 border-b border-alert-300 mb-2 w-full">
-                            <h2 className="mb-1 font-700 uppercase">CVE Data May Be Inaccurate</h2>
+                            <h2 className="mb-1 font-700 tracking-wide uppercase">
+                                CVE Data May Be Inaccurate
+                            </h2>
                             <span>{imageScanMessages.header}</span>
                         </header>
-                        <p>
-                            <span>{imageScanMessages.body}</span> {imageScanMessages.extra}
-                        </p>
+                        <p>{imageScanMessages.body}</p>
                     </div>
                 }
             />
