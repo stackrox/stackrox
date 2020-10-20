@@ -32,11 +32,7 @@ func deriveLocalValuesForChart(namespace, chartName, input, output string, useDi
 
 // Remove nils from the given map, serialize it as YAML and write it to the output stream.
 func writeYamlToStream(values map[string]interface{}, outputHandle *os.File) error {
-	// Modify YAML marshalling: Recursively remove any keys from objects whose associated values are nil
-	// and remove complete objects whose only values are nil.
-	valuesCleaned := mapCopyRemovingNils(values)
-
-	yaml, err := yaml.Marshal(valuesCleaned)
+	yaml, err := yaml.Marshal(values)
 	if err != nil {
 		return errors.Wrap(err, "YAML marshalling")
 	}
@@ -127,7 +123,7 @@ func deriveLocalValuesForCentralServices(ctx context.Context, namespace, input, 
 		k8s = newK8sObjectDescription(k8sLive)
 	} else {
 		// Retrieve K8s resource definitions from local YAML files.
-		k8sLocal, err := newLocalK8sObjectDescription(input)
+		k8sLocal, err := newLocalK8sObjectDescriptionFromPath(input)
 		if err != nil {
 			return errors.Wrapf(err, "retrieving Kubernetes resource definitions from %q", input)
 		}
@@ -165,48 +161,55 @@ func helmValuesForCentralServices(ctx context.Context, namespace string, k8s k8s
 		err = multierror.Append(err, privateErr)
 	}
 
-	return publicValues, privateValues, err
+	// Normalize value maps:
+	// - recursively remove any keys from objects whose associated values are nil,
+	// - remove complete objects whose only values are nil,
+	// - replace string pointers with strings.
+	publicValuesCleaned := normalizeMap(publicValues)
+	privateValuesCleaned := normalizeMap(privateValues)
+
+	return publicValuesCleaned, privateValuesCleaned, err
 
 }
 
 // Implementation for command `helm derive-local-values`.
 func derivePrivateLocalValuesForCentralServices(ctx context.Context, namespace string, k8s k8sObjectDescription) (map[string]interface{}, error) {
 	m := map[string]interface{}{
-		"licenseKey": k8s.evaluateToStringP(ctx, "secret", "central-license", `{.data['license\.lic']}`),
+		"licenseKey": k8s.lookupSecretStringP(ctx, "central-license", "license.lic"),
 		"env": map[string]interface{}{
-			"proxyConfig": k8s.evaluateToBase64DecodedStringP(ctx, "secret", "proxy-config", `{.stringData['config\.yaml']}`),
+			"proxyConfig": k8s.lookupSecretStringP(ctx, "proxy-config", "config.yaml"),
 		},
 		"ca": map[string]interface{}{
-			"cert": k8s.evaluateToBase64DecodedStringP(ctx, "secret", "central-tls", `{.data['ca\.pem']}`),
-			"key":  k8s.evaluateToBase64DecodedStringP(ctx, "secret", "central-tls", `{.data['ca-key\.pem']}`),
+			"cert": k8s.lookupSecretStringP(ctx, "central-tls", "ca.pem"),
+			"key":  k8s.lookupSecretStringP(ctx, "central-tls", "ca-key.pem"),
 		},
 		"central": map[string]interface{}{
 			"jwtSigner": map[string]interface{}{
-				"key": k8s.evaluateToBase64DecodedStringP(ctx, "secret", "central-tls", `{.data['jwt-key\.pem']}`),
+				"key": k8s.lookupSecretStringP(ctx, "central-tls", "jwt-key.pem"),
 			},
 			"serviceTLS": map[string]interface{}{
-				"cert": k8s.evaluateToBase64DecodedStringP(ctx, "secret", "central-tls", `{.data['cert\.pem']}`),
-				"key":  k8s.evaluateToBase64DecodedStringP(ctx, "secret", "central-tls", `{.data['key\.pem']}`),
+				"cert": k8s.lookupSecretStringP(ctx, "central-tls", "cert.pem"),
+				"key":  k8s.lookupSecretStringP(ctx, "central-tls", "key.pem"),
 			},
 			"defaultTLS": map[string]interface{}{
-				"cert": k8s.evaluateToBase64DecodedStringP(ctx, "secret", "central-default-tls-cert", `{.data['tls\.crt']}`),
-				"key":  k8s.evaluateToBase64DecodedStringP(ctx, "secret", "central-default-tls-cert", `{.data['tls\.key']}`),
+				"cert": k8s.lookupSecretStringP(ctx, "central-default-tls-cert", "tls.crt"),
+				"key":  k8s.lookupSecretStringP(ctx, "central-default-tls-cert", "tls.key"),
 			},
 			"adminPassword": map[string]interface{}{
-				"htpasswd": k8s.evaluateToBase64DecodedStringP(ctx, "secret", "central-htpasswd", `{.data.htpasswd}`),
+				"htpasswd": k8s.lookupSecretStringP(ctx, "central-htpasswd", "htpasswd"),
 			},
 		},
 		"scanner": map[string]interface{}{
 			"dbPassword": map[string]interface{}{
-				"value": k8s.evaluateToBase64DecodedStringP(ctx, "secret", "scanner-db-password", `{.data.password}`),
+				"value": k8s.lookupSecretStringP(ctx, "scanner-db-password", "password"),
 			},
 			"serviceTLS": map[string]interface{}{
-				"cert": k8s.evaluateToBase64DecodedStringP(ctx, "secret", "scanner-tls", `{.data['cert\.pem']}`),
-				"key":  k8s.evaluateToBase64DecodedStringP(ctx, "secret", "scanner-tls", `{.data['key\.pem']}`),
+				"cert": k8s.lookupSecretStringP(ctx, "scanner-tls", "cert.pem"),
+				"key":  k8s.lookupSecretStringP(ctx, "scanner-tls", "key.pem"),
 			},
 			"dbServiceTLS": map[string]interface{}{
-				"cert": k8s.evaluateToBase64DecodedStringP(ctx, "secret", "scanner-db-tls", `{.data['cert\.pem']}`),
-				"key":  k8s.evaluateToBase64DecodedStringP(ctx, "secret", "scanner-db-tls", `{.data['key\.pem']}`),
+				"cert": k8s.lookupSecretStringP(ctx, "scanner-db-tls", "cert.pem"),
+				"key":  k8s.lookupSecretStringP(ctx, "scanner-db-tls", "key.pem"),
 			},
 		},
 	}
@@ -309,6 +312,7 @@ func retrieveCustomAnnotations(annotations map[string]interface{}) map[string]in
 		"meta.helm.sh/release-namespace",
 		"owner",
 		"email",
+		"traffic.sidecar.istio.io/excludeInboundPorts",
 	})
 }
 

@@ -39,19 +39,22 @@ func UnstructuredFromYAMLMulti(yamlDocStr string) ([]unstructured.Unstructured, 
 	var result []unstructured.Unstructured
 	var yamlDoc []byte
 	var err error
+	docCounter := 0
+
 	for yamlDoc, err = yamlReader.Read(); err == nil; yamlDoc, err = yamlReader.Read() {
+		docCounter++
 		if len(bytes.TrimSpace(yamlDoc)) == 0 {
 			continue
 		}
 
 		jsonDoc, err := yaml.ToJSON(yamlDoc)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to convert YAML to JSON")
+			return nil, errors.Wrapf(err, "failed to convert YAML document no. %d to JSON", docCounter)
 		}
 
 		obj, _, err := unstructured.UnstructuredJSONScheme.Decode(jsonDoc, nil, nil)
 		if err != nil {
-			return nil, errors.Wrap(err, "decoding as unstructured")
+			return nil, errors.Wrapf(err, "decoding YAML document no. %d as unstructured", docCounter)
 		}
 		switch o := obj.(type) {
 		case *unstructured.Unstructured:
@@ -59,7 +62,7 @@ func UnstructuredFromYAMLMulti(yamlDocStr string) ([]unstructured.Unstructured, 
 		case *unstructured.UnstructuredList:
 			result = append(result, o.Items...)
 		default:
-			return nil, errors.Errorf("unexpected type %T after decoding into unstructured", o)
+			return nil, errors.Errorf("unexpected type %T after decoding YAML document no. %d into unstructured", o, docCounter)
 		}
 	}
 	if err != io.EOF {

@@ -31,45 +31,71 @@ func (k localK8sObjectDescription) get(_ context.Context, kind string, name stri
 	return &resource, nil
 }
 
-func newLocalK8sObjectDescriptionFromFiles(inputFiles []string) (*localK8sObjectDescription, error) {
-	cache := make(map[string](map[string]unstructured.Unstructured))
-	for _, file := range inputFiles {
-		content, err := ioutil.ReadFile(file)
-		if err != nil {
-			return nil, errors.Wrapf(err, "reading input file %q", file)
-		}
-
-		resources, err := k8sutil.UnstructuredFromYAMLMulti(string(content))
-		if err != nil {
-			return nil, errors.Wrapf(err, "reading YAML from file %q", file)
-		}
-		for _, resource := range resources {
-			kind := strings.ToLower(resource.GetKind())
-			name := resource.GetName()
-			if cache[kind] == nil {
-				cache[kind] = make(map[string]unstructured.Unstructured)
-			}
-			cache[kind][name] = resource
-		}
-	}
-	k := localK8sObjectDescription{cache: cache}
-	return &k, nil
+func (k localK8sObjectDescription) getAll(_ context.Context) map[string]map[string]unstructured.Unstructured {
+	return k.cache
 }
 
-func newLocalK8sObjectDescription(input string) (*localK8sObjectDescription, error) {
-	fileInfo, err := os.Stat(input)
+func k8sResourcesFromFile(file string) (map[string](map[string]unstructured.Unstructured), error) {
+	content, err := ioutil.ReadFile(file)
 	if err != nil {
-		return nil, errors.Wrapf(err, "obtaining file info for input file or directory %q", input)
+		return nil, errors.Wrapf(err, "reading input file %q", file)
+	}
+
+	k8sResources, err := k8sResourcesFromString(string(content))
+	if err != nil {
+		return nil, errors.Wrapf(err, "retrieving Kubernetes resource definitions from file %q", file)
+	}
+	return k8sResources, nil
+}
+
+func k8sResourcesFromString(input string) (map[string]map[string]unstructured.Unstructured, error) {
+	cache := make(map[string](map[string]unstructured.Unstructured))
+	resources, err := k8sutil.UnstructuredFromYAMLMulti(input)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing YAML as Unstructured")
+	}
+	for _, resource := range resources {
+		kind := strings.ToLower(resource.GetKind())
+		name := resource.GetName()
+		if cache[kind] == nil {
+			cache[kind] = make(map[string]unstructured.Unstructured)
+		}
+		cache[kind][name] = resource
+	}
+	return cache, nil
+}
+
+func newLocalK8sObjectDescriptionFromPath(inputPath string) (*localK8sObjectDescription, error) {
+	fileInfo, err := os.Stat(inputPath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "obtaining file info for input file or directory %q", inputPath)
 	}
 	var inputFiles []string
 
 	if fileInfo.IsDir() {
-		yamls, _ := filepath.Glob(filepath.Join(input, "*.yaml")) // We can rule out the only possible error value ErrBadPattern here.
-		ymls, _ := filepath.Glob(filepath.Join(input, "*.yml"))
+		yamls, _ := filepath.Glob(filepath.Join(inputPath, "*.yaml")) // We can rule out the only possible error value ErrBadPattern here.
+		ymls, _ := filepath.Glob(filepath.Join(inputPath, "*.yml"))
 		inputFiles = append(yamls, ymls...)
 	} else {
-		inputFiles = []string{input}
+		inputFiles = []string{inputPath}
 	}
 
-	return newLocalK8sObjectDescriptionFromFiles(inputFiles)
+	cache := make(map[string]map[string]unstructured.Unstructured)
+
+	for _, inputFile := range inputFiles {
+		k8sResources, err := k8sResourcesFromFile(inputFile)
+		if err != nil {
+			return nil, err
+		}
+		for kind, resources := range k8sResources {
+			if cache[kind] == nil {
+				cache[kind] = make(map[string]unstructured.Unstructured)
+			}
+			for name, u := range resources {
+				cache[kind][name] = u
+			}
+		}
+	}
+
+	return &localK8sObjectDescription{cache: cache}, err
 }

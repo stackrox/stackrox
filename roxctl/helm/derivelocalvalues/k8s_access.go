@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"unicode/utf8"
 
 	"github.com/stackrox/rox/pkg/set"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -125,25 +124,35 @@ func (k *k8sObjectDescription) evaluateToStringP(ctx context.Context, kind strin
 	return &s
 }
 
-func (k *k8sObjectDescription) evaluateToBase64DecodedStringP(ctx context.Context, kind string, name string, jsonpath string) *string {
-	s := k.evaluateToString(ctx, kind, name, jsonpath, "")
-	if s == "" {
-		return nil
+// This accessor function supports retrieving data from the objects `data` and `stringData`. Base64-decoding
+// is applied when required (i.e., when the requested value was found within `data`).
+func (k *k8sObjectDescription) lookupSecretStringP(ctx context.Context, name string, field string) *string {
+	var secret *string
+
+	if obj := k.evaluateToObject(ctx, "secret", name, "{.stringData}", nil); obj != nil && obj[field] != nil {
+		fieldVal, ok := obj[field].(string)
+		if !ok {
+			k.warn("Unexpected type %T for stringData.%q within the secret %q", obj[field], field, name)
+			return nil
+		}
+		secret = &fieldVal
+	} else if obj := k.evaluateToObject(ctx, "secret", name, "{.data}", nil); obj != nil && obj[field] != nil {
+		fieldVal, ok := obj[field].(string)
+		if !ok {
+			k.warn("Unexpected type %T for data.%q within the secret %q", obj[field], field, name)
+			return nil
+		}
+
+		decoded, err := base64.StdEncoding.DecodeString(fieldVal)
+		if err != nil {
+			k.warn("Failed to base64-decode secret %s/%s: %v", name, field, err)
+		}
+
+		decodedStr := string(decoded)
+		secret = &decodedStr
 	}
 
-	decodedBytes, err := base64.StdEncoding.DecodeString(s)
-	if err != nil {
-		k.warn("Failed to base64-decode bytes at JsonPath %q for resource %s/%s: %v", jsonpath, kind, name, err)
-		return nil
-	}
-
-	if !utf8.Valid(decodedBytes) {
-		k.warn("Invalid UTF8 string at JsonPath %q for resource %s/%s: %v", jsonpath, kind, name, err)
-		return nil
-	}
-	decodedString := string(decodedBytes)
-
-	return &decodedString
+	return secret
 }
 
 func (k *k8sObjectDescription) evaluateToInt64(ctx context.Context, kind string, name string, jsonpath string, def int64) int64 {
