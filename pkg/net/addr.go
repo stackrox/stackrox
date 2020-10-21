@@ -60,6 +60,18 @@ func (f Family) String() string {
 	}
 }
 
+// Bits returns the total bits in addresses represented by the family.
+func (f Family) Bits() int {
+	switch f {
+	case IPv4:
+		return 32
+	case IPv6:
+		return 128
+	default:
+		return 0
+	}
+}
+
 type ipAddrData interface {
 	family() Family
 	bytes() []byte
