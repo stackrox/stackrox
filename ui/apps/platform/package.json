@@ -32,7 +32,7 @@
         "file-saver": "^1.3.8",
         "fontsource-open-sans": "^3.0.9",
         "fontsource-open-sans-condensed": "^3.0.9",
-        "formik": "^2.1.4",
+        "formik": "^2.1.5",
         "framer-motion": "^2.6.13",
         "graphql": "^15.3.0",
         "history": "^4.9.0",

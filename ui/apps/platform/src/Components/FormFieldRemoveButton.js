@@ -21,13 +21,14 @@ function FormFieldRemoveButton({ field, onClick, className, dataTestId }) {
 }
 
 FormFieldRemoveButton.propTypes = {
-    field: PropTypes.string.isRequired,
+    field: PropTypes.string,
     onClick: PropTypes.func.isRequired,
     className: PropTypes.string,
     dataTestId: PropTypes.string,
 };
 
 FormFieldRemoveButton.defaultProps = {
+    field: null,
     dataTestId: 'form-field-remove-btn',
     className:
         'ml-2 p-1 rounded-r-sm text-base-100 uppercase text-alert-700 hover:text-alert-800 bg-alert-200 hover:bg-alert-300 border-alert-300 rounded',

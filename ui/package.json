@@ -44,5 +44,8 @@
     "devDependencies": {
         "chalk-cli": "^4.1.0",
         "lerna": "^3.22.1"
+    },
+    "dependencies": {
+        "@types/lodash.get": "^4.4.6"
     }
 }

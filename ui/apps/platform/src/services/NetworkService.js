@@ -233,6 +233,19 @@ export function postCIDRBlock(clusterId, block) {
 }
 
 /**
+ * Patches an edited CIDR block name.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function patchCIDRBlock(blockId, name) {
+    return axios
+        .patch(`${networkFlowBaseUrl}/cluster/externalentities/${blockId}`, { name })
+        .then((response) => ({
+            response: response.data,
+        }));
+}
+
+/**
  * Deletes a previously configured CIDR block.
  *
  * @returns {Promise<Object, Error>}

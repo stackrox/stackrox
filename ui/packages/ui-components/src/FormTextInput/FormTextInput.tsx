@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import PropTypes, { InferProps } from 'prop-types';
 import { useFormikContext, FormikValues } from 'formik';
+import get from 'lodash.get';
 
 import FormLabel from '../FormLabel';
 import FormErrorMessage from '../FormErrorMessage';
@@ -64,12 +65,13 @@ function FormTextInput({
             handleChange(event);
         }
     }
+    const value = get(values, name);
     return (
         <div>
             <FormLabel label={label} helperText={helperText} isRequired={isRequired}>
                 <TextInput
                     name={name}
-                    value={values[name]}
+                    value={value}
                     placeholder={placeholder}
                     isDisabled={isDisabled}
                     onChange={onChangeHandler}

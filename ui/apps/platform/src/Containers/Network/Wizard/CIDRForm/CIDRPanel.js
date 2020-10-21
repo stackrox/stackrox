@@ -35,7 +35,11 @@ const CIDRPanel = ({ selectedClusterId, onClose }) => {
             bodyClassName="flex flex-col bg-base-100"
             id="network-cidr-form"
         >
-            {CIDRBlocks?.entities?.length >= 0 ? <CIDRForm rows={CIDRBlocks} /> : <Loader />}
+            {CIDRBlocks?.entities?.length >= 0 ? (
+                <CIDRForm rows={CIDRBlocks} clusterId={selectedClusterId} onClose={onClose} />
+            ) : (
+                <Loader />
+            )}
         </Panel>
     );
 };
