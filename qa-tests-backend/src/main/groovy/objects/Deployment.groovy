@@ -254,3 +254,16 @@ class DaemonSet extends Deployment {
         OrchestratorType.orchestrator.deleteDaemonSet(this)
     }
 }
+
+class Job extends Deployment {
+    @Override
+    Job create() {
+        OrchestratorType.orchestrator.createJob(this)
+        return this
+    }
+
+    @Override
+    def delete() {
+        OrchestratorType.orchestrator.deleteJob(this)
+    }
+}

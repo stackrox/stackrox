@@ -4,6 +4,7 @@ import io.fabric8.kubernetes.api.model.Pod
 import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
 import objects.DaemonSet
 import objects.Deployment
+import objects.Job
 import objects.K8sRole
 import objects.K8sRoleBinding
 import objects.K8sServiceAccount
@@ -123,6 +124,8 @@ interface OrchestratorMain {
     def deleteClusterRoleBinding(K8sRoleBinding roleBinding)
 
     //Jobs
+    def createJob(Job job)
+    def deleteJob(Job job)
     def getJobCount()
 
     //ConfigMaps
