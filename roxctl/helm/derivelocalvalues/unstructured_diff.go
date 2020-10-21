@@ -15,7 +15,7 @@ type DiffLeaf struct {
 
 // For the given untyped maps compute a diff in the form of another untyped map.
 // The values in the result map are either of type `map[string]interface{}` or `DiffLeaf`.
-func diff(a map[string]interface{}, b map[string]interface{}) map[string]interface{} {
+func diffGenericMap(a map[string]interface{}, b map[string]interface{}) map[string]interface{} {
 	keys := set.NewStringSet()
 	diffMap := make(map[string]interface{})
 
@@ -36,7 +36,7 @@ func diff(a map[string]interface{}, b map[string]interface{}) map[string]interfa
 		bMap, bOk := bVal.(map[string]interface{})
 		if aOk && bOk {
 			// Compute diffs for the nested maps.
-			subDiff := diff(aMap, bMap)
+			subDiff := diffGenericMap(aMap, bMap)
 			if subDiff != nil {
 				diffMap[k] = subDiff
 			}
@@ -57,5 +57,5 @@ func diff(a map[string]interface{}, b map[string]interface{}) map[string]interfa
 }
 
 func diffUnstructured(a unstructured.Unstructured, b unstructured.Unstructured) map[string]interface{} {
-	return diff(a.UnstructuredContent(), b.UnstructuredContent())
+	return diffGenericMap(a.UnstructuredContent(), b.UnstructuredContent())
 }

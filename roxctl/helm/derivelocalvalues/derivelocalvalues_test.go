@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -49,11 +51,25 @@ type baseSuite struct {
 func TestBase(t *testing.T) {
 	suite.Run(t, new(baseSuite))
 }
-func (s *baseSuite) TestDeriveLocalValuesRoundTrip() {
+
+func (s *baseSuite) TestK8sResourcesRoundTrip() {
+	testDataFiles := []string{
+		"defaults.yaml",
+		"loadBalancer.yaml",
+		"hostPath.yaml",
+		"offlineMode-internalRegistry-nodePortExposure-scannerDisabled.yaml",
+	}
+
+	for _, testDataFile := range testDataFiles {
+		s.DoTestK8sResourcesRoundTrip(filepath.Join("testdata/k8s-resources", testDataFile))
+	}
+}
+
+func (s *baseSuite) DoTestK8sResourcesRoundTrip(testDataFile string) {
 	ctx := context.Background()
 
 	// Retrieve persisted K8s resources.
-	k8sLocal, err := newLocalK8sObjectDescriptionFromPath("testdata/default-install-wo-imagepullsecrets.yaml")
+	k8sLocal, err := newLocalK8sObjectDescriptionFromPath(testDataFile)
 	s.Require().NoError(err, "Failed to retrieve persisted Kubernetes resources")
 	initialK8sResources := k8sLocal.getAll(ctx)
 
@@ -77,14 +93,7 @@ func (s *baseSuite) TestDeriveLocalValuesRoundTrip() {
 	}
 
 	// Combine public and private values into a single configuration.
-	helmVals := chartutil.CoalesceTables(publicValues, privateValues)
-
-	// Marshal and unmarshal the Helm values.
-	helmValsMarshalled, err := yaml.Marshal(helmVals)
-	s.Require().NoError(err, "error converting derived Helm values into YAML")
-	helmValsUnmarshalled := make(map[string]interface{})
-	err = yaml.Unmarshal(helmValsMarshalled, helmValsUnmarshalled)
-	s.Require().NoError(err, "error unmarshalling derived Helm values")
+	helmVals := chartutil.CoalesceTables(yamlRoundTrip(s, publicValues), yamlRoundTrip(s, privateValues))
 
 	// Instantiate central-services Helm chart.
 	tpl, err := image.GetCentralServicesChartTemplate()
@@ -93,7 +102,7 @@ func (s *baseSuite) TestDeriveLocalValuesRoundTrip() {
 	s.Require().NoError(err, "error instantiating chart")
 
 	// Render Helm chart using the retrieved configuration.
-	rendered, err := helmutil.Render(ch, helmValsUnmarshalled, installOpts)
+	rendered, err := helmutil.Render(ch, helmVals, installOpts)
 	s.Require().NoError(err, "failed to render chart")
 
 	// Concatenate freshly rendered resource definitions.
@@ -124,6 +133,95 @@ func (s *baseSuite) TestDeriveLocalValuesRoundTrip() {
 	}
 
 	s.Require().Nil(diff, "Persisted and rendered Kubernetes resources differ")
+}
+
+func yamlRoundTrip(s *baseSuite, v map[string]interface{}) map[string]interface{} {
+	marshalled, err := yaml.Marshal(v)
+	s.Require().NoError(err, "error converting into YAML")
+	unmarshalled := make(map[string]interface{})
+	err = yaml.Unmarshal(marshalled, unmarshalled)
+	s.Require().NoError(err, "error unmarshalling derived Helm values")
+	return unmarshalled
+}
+
+func (s *baseSuite) TestsHelmValuesRoundTrip() {
+	testDataFiles := []string{
+		"defaults.yaml",
+		"loadBalancer.yaml",
+		"hostPath.yaml",
+		"offlineMode-internalRegistry-nodePortExposure-scannerDisabled.yaml",
+	}
+
+	for _, testDataFile := range testDataFiles {
+		s.DoTestsHelmValuesRoundTrip(filepath.Join("testdata/helm-values", testDataFile))
+	}
+}
+
+func (s *baseSuite) DoTestsHelmValuesRoundTrip(helmValuesFile string) {
+	// Read and parse Helm values.
+	valStr, err := ioutil.ReadFile(helmValuesFile)
+	s.Require().NoError(err, "failed to read Helm values from file %q", helmValuesFile)
+	helmVals, err := chartutil.ReadValues([]byte(valStr))
+	s.Require().NoError(err, "failed to parse Helm values in file %q", helmValuesFile)
+	// Doing the roundtrip for all Helm values simplifies the diffing later on, since there might be
+	// diffs due to type mismatches for numeric types (e.g. float64 vs int64) which would vanish when
+	// unmarshalling for normalization purposes.
+	helmVals = yamlRoundTrip(s, helmVals)
+
+	effectiveHelmVals := chartutil.CoalesceTables(map[string]interface{}{
+		"imagePullSecrets": map[string]interface{}{
+			"allowNone": true,
+		},
+	}, helmVals)
+
+	// Instantiate central-services Helm chart.
+	tpl, err := image.GetCentralServicesChartTemplate()
+	s.Require().NoError(err, "error retrieving chart template")
+	ch, err := tpl.InstantiateAndLoad(metaValues)
+	s.Require().NoError(err, "error instantiating chart")
+
+	// Render Helm chart using the retrieved configuration.
+	rendered, err := helmutil.Render(ch, effectiveHelmVals, installOpts)
+	s.Require().NoError(err, "failed to render chart")
+
+	// Concatenate freshly rendered resource definitions.
+	allYamls := ""
+	for name, resource := range rendered {
+		if !strings.HasSuffix(name, ".yaml") {
+			continue
+		}
+		if strings.HasSuffix(name, "99-generated-values-secret.yaml") {
+			continue
+		}
+		allYamls = fmt.Sprintf("%s\n---\n%s", allYamls, resource)
+	}
+
+	ctx := context.Background()
+
+	// Retrieve persisted K8s resources.
+	k8sLocal, err := newLocalK8sObjectDescriptionFromString(allYamls)
+	s.Require().NoError(err, "Failed to retrieve rendered Kubernetes resources")
+
+	// Derive local values.
+	k8sResourceProvider := newK8sObjectDescription(k8sLocal)
+	publicValues, privateValues, err := helmValuesForCentralServices(ctx, namespace, k8sResourceProvider)
+	s.Require().NoError(err, "deriving local Helm values failed")
+
+	// Combine public and private values into a single configuration.
+	newlyDerivedHelmVals := chartutil.CoalesceTables(yamlRoundTrip(s, publicValues), yamlRoundTrip(s, privateValues))
+
+	// And diff it.
+	diff := diffGenericMap(helmVals, newlyDerivedHelmVals)
+
+	if diff != nil {
+		// The K8s resources differ, print a pretty diff.
+		fmt.Fprintln(os.Stderr, "Helm values diff:")
+		prettyDiff, err := json.MarshalIndent(diff, "", "  ")
+		s.Require().NoError(err, "failed to serialize unstructured diff as JSON")
+		fmt.Fprintf(os.Stderr, "%s\n", prettyDiff)
+	}
+
+	s.Require().Nil(diff, "given Helm values and newly derived Helm values differ")
 }
 
 func extractResourceIdentifiers(src map[string]map[string]unstructured.Unstructured, dst map[string]set.StringSet) {

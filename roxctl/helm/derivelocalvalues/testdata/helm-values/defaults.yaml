@@ -1,0 +1,372 @@
+ca:
+    cert: |
+        -----BEGIN CERTIFICATE-----
+        MIIDHjCCAgagAwIBAgIQacbsUWuYhc5gCTb+d3n1RjANBgkqhkiG9w0BAQsFADAp
+        MScwJQYDVQQDEx5TdGFja1JveCBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkwHhcNMjAx
+        MDIxMjA0NjM2WhcNMjUxMDIwMjA0NjM2WjApMScwJQYDVQQDEx5TdGFja1JveCBD
+        ZXJ0aWZpY2F0ZSBBdXRob3JpdHkwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK
+        AoIBAQC+arqp1Je3Gy/JLeAqZl+Gjd51BEzgPZGLYtIp7jRHLIp2rSZbvvmqzRqs
+        s+EY3+7DkSEB0ct5kwk8Yt7qu5Kp4v5cPH4oe3i2O3AdsmPH3Eo3Lo9Fxnz5oSfe
+        ytH0QxI3fPO0MSIvMp8PNunzKcdy4RYdTueQBkg9Sk6EBoDedP9qyZgyVluwpAOP
+        dHB1uoieJR/e8U1TjECPWH4KxZJ4rU9AaVAtXx26tCqVORfnZhLk4RGTomlckLff
+        aEZPp7Juigg15Lk3Fbvmd1AaPDve62PJ9MS0jiAChsbhM6iUHnQPcMN+2jW4Zl/y
+        gXsCvF5pySnl6BDIUkLfbRKPOOxNAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwICpDAd
+        BgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwDwYDVR0TAQH/BAUwAwEB/zAN
+        BgkqhkiG9w0BAQsFAAOCAQEAhd6rN1ZlkiNx2Lsm1UPyI2JnClCdDBVQ3Y6NkykV
+        yyiU+/gYUcACK2BOABWiHjJwtHDVtioDlxcKgQUXldl/HbHc0ZGroX4L91rFQdjQ
+        ifhtzd3n9bRaNWNqLxyE3DdP/cgZudX8Lm4utCGsczphSuWru7yz9scQm5aXaFwz
+        422EX0K0kaG2M+Z5MiTRQEQVymzO9UbV4eDE0uw3eA1NLAcCZ8UuAclEH65OG4cy
+        omdfVekc1ua3NEggsBNDanc9QC6jFUFpnuFCWo+aUNb/jR92MCFDpmpo4jIt/PG4
+        oH/XvO03uzOGufBVkatmK7a//MW+UtNcedDHrnLh3M2dRg==
+        -----END CERTIFICATE-----
+    key: |
+        -----BEGIN RSA PRIVATE KEY-----
+        MIIEpAIBAAKCAQEAvmq6qdSXtxsvyS3gKmZfho3edQRM4D2Ri2LSKe40RyyKdq0m
+        W775qs0arLPhGN/uw5EhAdHLeZMJPGLe6ruSqeL+XDx+KHt4tjtwHbJjx9xKNy6P
+        RcZ8+aEn3srR9EMSN3zztDEiLzKfDzbp8ynHcuEWHU7nkAZIPUpOhAaA3nT/asmY
+        MlZbsKQDj3RwdbqIniUf3vFNU4xAj1h+CsWSeK1PQGlQLV8durQqlTkX52YS5OER
+        k6JpXJC332hGT6eybooINeS5NxW75ndQGjw73utjyfTEtI4gAobG4TOolB50D3DD
+        fto1uGZf8oF7Arxeackp5egQyFJC320SjzjsTQIDAQABAoIBAQCeJscihw/7ZPkr
+        fo7QqHZuqyY4ynmPRZO80Tb83HtPIg9ewjE5wkRbOD8PcddjcZo9lCx19mmpcBYb
+        sYK0M1Z9A6t/sD6YIPUBZhyYjbGSLcT2UBVvPoxOSSt0P8Bhv9NBguZmouhhiwnQ
+        +SsWa3zcTVawwPhTBuS5Ax5zSXN/TvwXceVVZq01SYvWJljIihU4tJ62O3mYx2U0
+        S1tDrezuyrGECg4DJ/tO4SP8omZj5dwuj7RgDXNIZr59U+QYaKyw41AROSlP/zBh
+        rTPVeMgRIQq0FXCzAt4tpHdG5FRGJ6oZVFWvJZZAVAO/fsCPzNvbjAsnyD3/z7lb
+        yxtA9PGBAoGBAMSJsSzrcubT+kq6vYG4QeZSiw1IaFn34rLjd7Q9K7kz7n32oHlx
+        KogM439Z6ujvtja87v89dqEJT2FDUO3rVxHZzctxitnBrFZ8f+Kti7wlcu5+aoxc
+        J5TDDZUc+S2Tq1tgCghFT7KE6pBUSB/gyg51qw8jLka/sTt+6QP20qtzAoGBAPgG
+        9J2Cbg3wbAMHWPNV6fiEvtW8L+5L2u1CTMYe090L5VgRESTu0gO8uzWNJa9QbJYT
+        34vdwz6qbDLFiuwf7ZMQ+QjmBQRJug/tECiiNUBRSCrZT1orAhRtD/jS/4HgHHuP
+        DR0IgBpGZfgpRiXwEWkysDVOTFlFhFDERrH7M5k/AoGARwK0+FTtxAbtFRkZpYfs
+        j4pdYWQ7B96vkxDqzD2Z0aW40txMKPTBeDyn6fiUDqulu2tSMviDJzYU70CCOiRg
+        5js6xvn0QC9g1DLRhhZMOaOSPieA2cvmJTLAcpLwWQ5UyIQPu+NHI2ow0gsRsCro
+        9oZ/Us3UR421PJjjGiKRBY8CgYEAnhV41eerE7FYdrm5JSduQBsDsyEF/8FTYYOv
+        gVtmt+38GJyQK9UYAI/LVr+G9G2zOBikk/YdmpRu8BFekU9sUh8wS06oheoj8ECt
+        2uhAPqVP9Rea7yKYacJ1uqdpeTMJlGtB9W5Uj+qs1XYhIs8XmdBX5THpkcCwK/Ze
+        BNTSN2sCgYBFqUAd24Pf17bfrxnNA7RB3i2NbJ464PlHcqS7d1hvVHxkNbA6Bz25
+        SBOczTViI1K0B+fDT/jtzHF/s1/KLU/LkEPaYyF6sse2hdTZdQOaALUcNTJ0ZApF
+        II9TC9i1A3BZG0757CGRMDjACMmmcAeNEhMKInOeTY/fu+dPcnVUIA==
+        -----END RSA PRIVATE KEY-----
+central:
+    adminPassword:
+        htpasswd: |
+            admin:$2a$10$ri6NMjxrQvTKlesBR08g1elnjxhxf5PiKRDhZPmP4DbnoUuMNG85a
+    config: |
+        maintenance:
+            safeMode: false # When set to true, Central will sleep forever on the next restart
+            compaction:
+                enabled: true
+                bucketFillFraction: .5 # This controls how densely to compact the buckets. Usually not advised to modify
+                freeFractionThreshold: 0.75 # This is the threshold for free bytes / total bytes after which compaction will occur
+    disableTelemetry: false
+    endpointsConfig: |
+        # Sample endpoints.yaml configuration for StackRox Central.
+        #
+        # # CAREFUL: If the following line is uncommented, do not expose the default endpoint on port 8443 by default.
+        # #          This will break normal operation.
+        # disableDefault: true # if true, don't serve on :8443
+        # endpoints:
+        #   # Serve plaintext HTTP only on port 8080
+        #   - listen: ":8080"
+        #     # Backend protocols, possible values are 'http' and 'grpc'. If unset or empty, assume both.
+        #     protocols:
+        #       - http
+        #     tls:
+        #       # Disable TLS. If this is not specified, assume TLS is enabled.
+        #       disable: true
+        #   # Serve HTTP and  gRPC for sensors only on port 8444
+        #   - listen: ":8444"
+        #     tls:
+        #       # Which TLS certificates to serve, possible values are 'service' (StackRox-generated service certificates)
+        #       # and 'default' (user-configured default TLS certificate). If unset or empty, assume both.
+        #       serverCerts:
+        #         - default
+        #         - service
+        #       # Client authentication settings.
+        #       clientAuth:
+        #         # Enforce TLS client authentication. If unset, do not enforce, only request certificates
+        #         # opportunistically.
+        #         required: true
+        #         # Which TLS client CAs to serve, possible values are 'service' (CA for StackRox-generated service
+        #         # certificates) and 'user' (CAs for PKI auth providers). If unset or empty, assume both.
+        #         certAuthorities: # if not set, assume ["user", "service"]
+        #           - service
+    exposure:
+        loadBalancer:
+            enabled: false
+        nodePort:
+            enabled: false
+    image:
+        registry: docker.io/stackrox
+    jwtSigner:
+        key: |
+            -----BEGIN RSA PRIVATE KEY-----
+            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
+            -----END RSA PRIVATE KEY-----
+    persistence:
+        persistentVolumeClaim:
+            claimName: stackrox-db
+    resources:
+        limits:
+            cpu: "1"
+            memory: 4Gi
+        requests:
+            cpu: "1"
+            memory: 1Gi
+    serviceTLS:
+        cert: |
+            -----BEGIN CERTIFICATE-----
+            MIIDbzCCAlegAwIBAgIRAKqmzx8UToSykeJfAmdvA3gwDQYJKoZIhvcNAQELBQAw
+            KTEnMCUGA1UEAxMeU3RhY2tSb3ggQ2VydGlmaWNhdGUgQXV0aG9yaXR5MB4XDTIw
+            MTAyMTIwNDYzNloXDTIxMTAyMTIwNDYzNlowIzEhMB8GA1UEAwwYQ0VOVFJBTF9T
+            RVJWSUNFOiBDZW50cmFsMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA
+            sy/jamP3JTH7VH6D8+dauy+2DZXaejmCzJXYrAAdjAYyvQGLWsVRnyAZcPAklhUW
+            GYTwoDJSJB3K/4Ao8ItbCfsYsJbf6Jr29Jrz7Nladoekvx+Nq+S42kuuBAbVWYYS
+            V52Vj+Uxfk1FRTtVA1zVl5f/0YMp8S8jYTtGg2+9b42aHUkV0aJlW81vK0ojBQMO
+            MoL2ywwbK9p8SN1WaLbLFJ7szkRZN9KJf3jErfCvQXZr0Vb9Eyluk1GEdorBTsWA
+            mmWRGNc2yIcyxKs1rkqZJLsZE7r4y/VQQl2BjVEFv2pExuCaO3e//5Mcc8vr1UD+
+            m7yCVx78vQyMrWDGIMAZtQIDAQABo4GXMIGUMA4GA1UdDwEB/wQEAwIFoDAdBgNV
+            HSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwDAYDVR0TAQH/BAIwADBVBgNVHREE
+            TjBMghBjZW50cmFsLnN0YWNrcm94ghRjZW50cmFsLnN0YWNrcm94LnN2Y4IiY2Vu
+            dHJhbC5zdGFja3JveC5zdmMuY2x1c3Rlci5sb2NhbDANBgkqhkiG9w0BAQsFAAOC
+            AQEADbIn0uzW0A9rxKnzDV+PA6c5FXOzZiYyvsVXGEzwJ+3LOaBRN3Yeg0bonSH4
+            qIyKJg81viHDqWcKoVvTVbRq7iaYtCoi0uEkmJrmKbUilHiqQPuNpSu+ngP9UWcx
+            RmbmAnsShzmiLPuOggPmSWivUFLTk3RHJVkt2MTU9pBMe2fqIGTdoXYgBRP6RS1u
+            ZL79Ukn8CBcPKjVT4ghsGV1VxAeo7f61z0pL17G4+22uORqF9JIKVyWqz4bQ5PhS
+            OQz1uZREQVzqACpiJUNsAsTUsxlALFobkX6aDG66nXFuxqIzIJFEW8YjfD7dXS8F
+            JvZ1vBnlacHWOgBYhN17/Eu2Nw==
+            -----END CERTIFICATE-----
+        key: |
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEowIBAAKCAQEAsy/jamP3JTH7VH6D8+dauy+2DZXaejmCzJXYrAAdjAYyvQGL
+            WsVRnyAZcPAklhUWGYTwoDJSJB3K/4Ao8ItbCfsYsJbf6Jr29Jrz7Nladoekvx+N
+            q+S42kuuBAbVWYYSV52Vj+Uxfk1FRTtVA1zVl5f/0YMp8S8jYTtGg2+9b42aHUkV
+            0aJlW81vK0ojBQMOMoL2ywwbK9p8SN1WaLbLFJ7szkRZN9KJf3jErfCvQXZr0Vb9
+            Eyluk1GEdorBTsWAmmWRGNc2yIcyxKs1rkqZJLsZE7r4y/VQQl2BjVEFv2pExuCa
+            O3e//5Mcc8vr1UD+m7yCVx78vQyMrWDGIMAZtQIDAQABAoIBABbrljxioxdn6E0r
+            jbdiLZHqDXB5baPavWdr93Yw4ZaqqEzS6L9opAMluPtgTF3CPrxu69Sh+y3Rfcjm
+            3NXADZoeO09DTUrUn6g0NeVi/BZTTXiBEb8eF6McsRqkwR+dbbU1XA828vjD64tq
+            hnpSoqOsdrWXAINwUyc5zNA9N88P5+Wgl+2PA5hIVWuUf28U0CNvpaYRyKT/Qlxg
+            oIlfzhNlz90eIXcgWBMsaKFGutECNVmO1/pDy4iIn4SvWdONoI1uim0kgXwB7W0x
+            cTqpkggCbTAhu3WwO/JCiBOt4oaiIbdizXiIjkW7ilJUGZwMkd8G6kKyyZaEhII1
+            PyY3JhUCgYEA5zqK0IIsEcXLDp0H4mN41fQpmRhZRFouRBFTJaL2QbccDpBrrJ2d
+            rrS2vEZ+khhcU/U6HVFkTmgPnNPdkRP0qF3eU/Cl9LWb8yOzE/CHKQuv6bu7Q2K7
+            LENc9dGQwZdXt0h6bdLMrhJEqdE3Od8c1Ceg3PjI0wD5bsG7bfmNHmsCgYEAxmIa
+            LFNfcuithWrtyLDNJvtixOUDEjjdEcfc3AeNEPpzCp2NeM1VOAI7D5cS9GZ7h2wX
+            8Op77qgnLrfvWT7Fmnyf6v0qnLm8RJJ/jg5rnrYtoDHzceDyBWHHJ5fHSKE6Jlnj
+            7uz1QLPPIhxDCdhkTE1M/JD3k/9gj3gY+xb5cF8CgYAt2Huhb83REEh8c0IW7uYM
+            dcaxphQ86yx1LoIv2im9SdL0SEoxBWc4NnhsyAVcbhwQQXTuTy72JMfDrnYlx7Eg
+            mMv2FKay6DctdAyTjYMe7kRIsYIlkDPQSOLrkkuDNsCbhHFRyRPwB4s5qFOs08Hh
+            hqHsbh9TRsQt45eH7IzAVQKBgGjWq1JFdSm6wQjC64qltKUnMJkxFaBpoJqm7pbw
+            /qG8WVOA06TFjoWc2C1y/zddeWalvzk4Eeqbvqk31ytouvDbb3+17vEITvBGI1al
+            VEZ5rD7+ZtMFt6EUfTT1RwGhAqQF2SkI3Msmuw4htWPckZSpPUg0LEJwMU1ggIMh
+            Lw0tAoGBAKt5aGFC5C9j6iI1aiZDobmaJEW4W1AgZ3ML/qe2vqMcsKyrJMosBAkE
+            UKP+TWnYcMdLHJyKPtcRrsvK+M/Ie1IaLOFJljdkAtE8EaPRU5w5UrBhm6Y2nZi6
+            +dSHoZ9FXQaXfwqX8mUpP6PnVfMD17XNz1eG69VD6bziuxWv4srs
+            -----END RSA PRIVATE KEY-----
+env:
+    offlineMode: false
+    proxyConfig: |
+        # # NOTE: Both central and scanner should be restarted if this secret is changed.
+        # # While it is possible that some components will pick up the new proxy configuration
+        # # without a restart, it cannot be guaranteed that this will apply to every possible
+        # # integration etc.
+        # url: http://proxy.name:port
+        # username: username
+        # password: password
+        # # If the following value is set to true, the proxy wil NOT be excluded for the default hosts:
+        # # - *.stackrox, *.stackrox.svc
+        # # - localhost, localhost.localdomain, 127.0.0.0/8, ::1
+        # # - *.local
+        # omitDefaultExcludes: false
+        # excludes:  # hostnames (may include * components) for which not to use a proxy, like in-cluster repositories.
+        # - some.domain
+        # # The following configuration sections allow specifying a different proxy to be used for HTTP(S) connections.
+        # # If they are omitted, the above configuration is used for HTTP(S) connections as well as TCP connections.
+        # # If only the `http` section is given, it will be used for HTTPS connections as well.
+        # # Note: in most cases, a single, global proxy configuration is sufficient.
+        # http:
+        #   url: http://http-proxy.name:port
+        #   username: username
+        #   password: password
+        # https:
+        #   url: http://https-proxy.name:port
+        #   username: username
+        #   password: password
+licenseKey: |
+    CsIBCiRiMzM3MzQxYi01ZTZiLTRhNjktOTIyYi1hYmZlYTNmN2Y1YzQSKDFjY2JhMWQwYmRhMjY5NDM5NWQ5MGUxYWVlOGUwMmJmYTZmMTkyMDAaDAjZmon8BRDVhqzQASIwY2lyY2xlY2ktcm94QHN0YWNrcm94LWNpLmlhbS5nc2VydmljZWFjY291bnQuY29tKjBjaXJjbGVjaS1yb3hAc3RhY2tyb3gtY2kuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20aLwoMCNmaifwFEPKwgJMBEgwI2bSn/QUQ8rCAkwEgASgyOgtkZXZlbG9wbWVudFAB.MEYCIQD54vwPfiNKlHlq7iDI/bbSnYFFWO1HcaNsFYf5bHji5gIhALyEyB/1p46vPtmCo0CG0ObYjlQ0QrncsBi9bO+pJ2cl
+scanner:
+    autoscaling:
+        disable: true
+    dbImage:
+        registry: docker.io/stackrox
+    dbPassword:
+        value: |
+            1TMEkP1hAoZSaBfVL3PIh7cyA9qVxtHP
+    dbResources:
+        limits:
+            cpu: "2"
+            memory: 4Gi
+        requests:
+            cpu: 200m
+            memory: 200Mi
+    dbServiceTLS:
+        cert: |
+            -----BEGIN CERTIFICATE-----
+            MIIDfjCCAmagAwIBAgIRAJT8XTPthFFlaNEmtxhnUm4wDQYJKoZIhvcNAQELBQAw
+            KTEnMCUGA1UEAxMeU3RhY2tSb3ggQ2VydGlmaWNhdGUgQXV0aG9yaXR5MB4XDTIw
+            MTAyMTIwNDYzOVoXDTIxMTAyMTIwNDYzOVowKTEnMCUGA1UEAwweU0NBTk5FUl9E
+            Ql9TRVJWSUNFOiBTY2FubmVyIERCMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB
+            CgKCAQEAx8uW2x4NA8e4c4rpImhMhMEajtGtkN43HfY/AqdoFg+CPd0CHDfvqeHW
+            NuLVNiaJ1ua7BGBj+OIToomXYxz+tniAVZi5iDVmiQbf+n9PtuoZMcgA5dOjC3a5
+            r3M+B7KDjFBxOlMQyDgTJdP9q/9AQGLNVCLsw4rXGOH0avp8niU03DbCcZPEYwqp
+            GoQHCRctxyvNOEzoeN6oT5Ny2CC4Rw0ssL01dtt2QEkADqpdK6/hHfbIS9LFUi2+
+            SRn2sYmkzSmPcg8W121m3xuZAhepb/vGhGGf4LaX74554tepUAfM8DnpsdJkNoXt
+            hVx3O6a+025ISGxEWTDMc8ZZ/YFOXQIDAQABo4GgMIGdMA4GA1UdDwEB/wQEAwIF
+            oDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwDAYDVR0TAQH/BAIwADBe
+            BgNVHREEVzBVghNzY2FubmVyLWRiLnN0YWNrcm94ghdzY2FubmVyLWRiLnN0YWNr
+            cm94LnN2Y4Ilc2Nhbm5lci1kYi5zdGFja3JveC5zdmMuY2x1c3Rlci5sb2NhbDAN
+            BgkqhkiG9w0BAQsFAAOCAQEAdcSnu1xwv6OFq3YtbCRsI2aD8my2f8edOo9rSNEA
+            AYiOJJPzppWO9pX1gqcmORSsyfh2RtDwV2sgRoXjWOAzXNqJhpAQHVUwp7PA5O1o
+            RhTC6Wod842+dA5KGX3WoPbRvrl0qdLSucm4nDqyQZV3+VdeZxHP07xKzoaxA8TI
+            0EKQ8nlF8DKpqZwlOpC2F3iE9mJnrRfD1yze29idjgwhxkbAqmVxFHnvmwSO/4RL
+            yi666OgSVDpjjB5mGalLqbegkjnl+PIb0RoZVRhLORsjkl1QiF8/TUlxCcEa+38B
+            cT0pHEElK8ikb8m/wTK5PQatjtb4pe55h5UQpcUzttAJMg==
+            -----END CERTIFICATE-----
+        key: |
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEpAIBAAKCAQEAx8uW2x4NA8e4c4rpImhMhMEajtGtkN43HfY/AqdoFg+CPd0C
+            HDfvqeHWNuLVNiaJ1ua7BGBj+OIToomXYxz+tniAVZi5iDVmiQbf+n9PtuoZMcgA
+            5dOjC3a5r3M+B7KDjFBxOlMQyDgTJdP9q/9AQGLNVCLsw4rXGOH0avp8niU03DbC
+            cZPEYwqpGoQHCRctxyvNOEzoeN6oT5Ny2CC4Rw0ssL01dtt2QEkADqpdK6/hHfbI
+            S9LFUi2+SRn2sYmkzSmPcg8W121m3xuZAhepb/vGhGGf4LaX74554tepUAfM8Dnp
+            sdJkNoXthVx3O6a+025ISGxEWTDMc8ZZ/YFOXQIDAQABAoIBAEH0AO6AMwembEsn
+            9eG30FqabCvtJ4CE+mjXmuFDZeayY+oMBOBPzrujo1Um9/8SJbpdHCtLrnTAHH8x
+            MFo1fhe6G5MmAUjnZ9uf+1vzntrg2ERIo5M6k737CTzTrAxab3ZoL5hzRzzw1dFM
+            85ZNgmY+t00o4kOCl5LNNCQEYBLL28T81GBCCbPLEeI6q+zUMtiYPsuVaCFtlWEl
+            5wYeVmC08Xrezh57MHq+8bB4tDd/vrZkaZRyPTMEBWWCLN0XijtNdUU4igqolEes
+            +ocTPQcureUXF/rl8j1Ur0kPZRZBPOq7OQ3JMoLIAUptCNwslpP1zr6hC/jGupsU
+            5wOpoYECgYEA8mZZoLYEqf+NZe6YciIn9tYuEJcEbTJfYgYaWgENwpTKKdH2f2JE
+            DsYkmqaSoB3hF7BwD0mCCWzxH0uKSCkjsfuvm7NdZjFqv0cAqNSqwCRy81Q8HMsk
+            E8kSVCZPPFr0GNP964H+ydGNN13WEVxaQwMxz/8K4AxNZkHrx+5ZjhECgYEA0wFM
+            p9ZqX4tDcvZhUgbPyhcIrY53RgQXrUxke0TGjv7Ijwx/FbmaI12nkviwqbdOrYYB
+            +leKV6EoW5IAlwpqvLTwNOP+o22tR1b106iiwFLNtIrxaNaYxjxRciKA6+6WqOqa
+            qUiICFlYXtgAelpk/kGkKvyh8l9E0U+z+CxaH40CgYEAyseWiRxb8H7pofEktK4g
+            Mp1gMd60BEmUg6NJXivtf+8K5EtSY6Qn/RgDPSDGHo6AZFnklNVQpGPvnteJ2e4Y
+            f2dms+Er7DbA7z0Nry8hnNWhGDBKjWffSXH3FFBsDrij5TVLAT5hkCHueffVAfb5
+            R4AfprncNiv0f+v7u+iIIJECgYEAk5+WHNqDI4NQVi8P2Y6Qc6f3100UH3Ufh4wp
+            xKBSdprEgGhSxUVMFLAiXE4Hc0WfEwHtglMao8JJdP9J0GJmWM4SPD7C2V4TXBT3
+            +fRCoWGNL2ICEcIJsq9ioAKJxgbvexBf0k2/dm/jxr9CXle9zrDoBXcoamTCxdoI
+            ZHnLN8UCgYBTFTZOxb+H3MPdkQ03sIDa8aiTnu7JPcopawEmuW1qvcmAh/HJpUFT
+            WBCaRpfDltc/KVY1G297qnTJ7X/woKW1LvC+zMvXfPRMQdaau9vwVFTzRpdGpn8n
+            LReL3zWw5RAaz7l9W9h6mstmZIA0Xa2AsMtXbfNFzn4+gcNW3AiuVQ==
+            -----END RSA PRIVATE KEY-----
+    image:
+        registry: docker.io/stackrox
+    replicas: 1
+    resources:
+        limits:
+            cpu: "2"
+            memory: 2500Mi
+        requests:
+            cpu: 500m
+            memory: 500Mi
+    serviceTLS:
+        cert: |
+            -----BEGIN CERTIFICATE-----
+            MIIDbjCCAlagAwIBAgIQYZiww8SIHRRlsAfqSlP1JTANBgkqhkiG9w0BAQsFADAp
+            MScwJQYDVQQDEx5TdGFja1JveCBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkwHhcNMjAx
+            MDIxMjA0NjM5WhcNMjExMDIxMjA0NjM5WjAjMSEwHwYDVQQDDBhTQ0FOTkVSX1NF
+            UlZJQ0U6IFNjYW5uZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDq
+            b4yMWU393KjB3s/Cg9atv16ojFpiIvIdBCT1WFU/tPUX1qDhmGH8F1vZPrMwQDCS
+            vNHhpB3VkyQ1v+se/csGKNRlRZwTOaDkliwWRxaotLOEQC4LD9ncXvcxMDQ2QCMV
+            dPVe7CXw5FZ3VKvvcuuZNgRwgailCGRlaaWm83pC+05WJ0nAqLZaFt4IcH5W8mYN
+            nKZH2uFeh0Xazi+2ZvoZuG49dCN7VdYZRFRto1MtqtMos7xo2p9M43eT3B5n2ITt
+            aRDG4b+oeE+FC2ynztipoH3UwWs+rQ1ZEj1btdSk50OhVeXM5gjH6TyL/oud8jtm
+            zy1xy+/EEmFlXu5XipLRAgMBAAGjgZcwgZQwDgYDVR0PAQH/BAQDAgWgMB0GA1Ud
+            JQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAMBgNVHRMBAf8EAjAAMFUGA1UdEQRO
+            MEyCEHNjYW5uZXIuc3RhY2tyb3iCFHNjYW5uZXIuc3RhY2tyb3guc3ZjgiJzY2Fu
+            bmVyLnN0YWNrcm94LnN2Yy5jbHVzdGVyLmxvY2FsMA0GCSqGSIb3DQEBCwUAA4IB
+            AQA8h1UDWF69vpnSlOAlj+npprLGCxu3TWPMuVxCYT0IM/9zWvjWytHiWYF8gWGx
+            jobr2NC71JIw8l5JBsWuHxzi3q6dJOqMYefV+MGzfmckQB0ffrb0MREQR0crZpLr
+            C2Fdg2qX6rP1VSE72TDfOxjKNqC0u27ezDdLmKKrQhUKyywy2pWacDH4GoQf8T4R
+            AjYqNJ9ofLA6MsP9Q0zBaWFY7aJxHQweVBQl03oghqwTPgRmkeeOwnGIXzuASLw4
+            B7fpYC4vhUEdJo7VjHylD6M4e6hecsDhPCr9PWIJlDY2PjWD+8loAJx6V9Id1Uez
+            mGMaKt7GSlwrgBlMqB8GDMv3
+            -----END CERTIFICATE-----
+        key: |
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEpAIBAAKCAQEA6m+MjFlN/dyowd7PwoPWrb9eqIxaYiLyHQQk9VhVP7T1F9ag
+            4Zhh/Bdb2T6zMEAwkrzR4aQd1ZMkNb/rHv3LBijUZUWcEzmg5JYsFkcWqLSzhEAu
+            Cw/Z3F73MTA0NkAjFXT1Xuwl8ORWd1Sr73LrmTYEcIGopQhkZWmlpvN6QvtOVidJ
+            wKi2WhbeCHB+VvJmDZymR9rhXodF2s4vtmb6GbhuPXQje1XWGURUbaNTLarTKLO8
+            aNqfTON3k9weZ9iE7WkQxuG/qHhPhQtsp87YqaB91MFrPq0NWRI9W7XUpOdDoVXl
+            zOYIx+k8i/6LnfI7Zs8tccvvxBJhZV7uV4qS0QIDAQABAoIBABhoKqLF/WernGoq
+            r0iZ/zSxksJLcnF7H+fDcbGVU7LBPS8RKkiyW6kqKWbRr0gbtrLgM52hP3XnzsJF
+            y827MHLgt1QfziL2QfjqZYagOgywW2wuXlzKdq0JugSF9zmarcxjE9ShE0YkD5h2
+            2TuhpEOcKxQne45K9GDWgeeCu7zTSA10jxyEs/7dwBco9QJ2WH96qk06dLYAaJCn
+            x8JuqroLGpiVqZb6x8OKItPlkSublHQaB8gEvlGzZX8n7s1bC6MTDdZj+xnOTXxQ
+            taWZOWRqjTR6PdgYDofTxasi/yx2Sm+0aZ8T+LDSsvYUWkxi+aFrKFVBF4r4/1MR
+            DcSXBz0CgYEA+LdXmpoJkWmnGxkWqxSeEW2aHxXRuMuA1fQ8DzQzhQK/V6roL4R+
+            OB/StKDIPqk/mAx82YWTPB9b0Mf0pKELXizLMlT8idFLY0OgdLRqOOWoR9kVJcxm
+            cEmpx3KTqPeNOl6pulut80jZmiJTZi0nKhXpgmMwE37P7CP0b5GLKIcCgYEA8U0k
+            +9bSwLOWoku5RSeQcHi4W+a0U+SW5+zcefLbp318Am+Rdj9kcJm700bRqPpapQqj
+            BhRyteSjjyNY+cjVSyR4Khs7CbmOk69OmtBt2rkg3AI44n4/nIBx5aYsLUX3XKr7
+            9nugn7DV78AHNN8EZdWJ8NQ/wY3ECp7whf2cN+cCgYB64zPAqo1BsL8lL2841nYH
+            TG0TINe/g6VDkWo/ZN5zwNjDuyj/mWo31tln7+0gsMVAHiNt4obN9PyLmtBwqzWP
+            sXgwhTdF7QhfomFcaGv3ctmDrmm5hFW082CUsDLvEGlSRsV706KOCxehBYbJfFPW
+            gn8esl1ltImNNnKm0XW9bwKBgQDnF2aP+VClVFiy3ap1XEqsLDEDcpLItWcAfos4
+            Dynl4ftdqdO5V0Stwc1rraslFX6yCNnP/M1O/cTWVJflwDzlVevvB10nFxpAveed
+            xHcwvZOGoGoyH450J17s/JPaV+NqUCY2DHfr98MrdNByBhOEI1mT1vGoQEi7kzPu
+            Xs+5iQKBgQCUMxMVCoWr2YtilR1DMiTfnX8Ot5yf6Pym4g1xnK7rFCuF9G+CVHxT
+            IOCDd+j3um/VJ5ucm6XUtCx3fKctJK1IGyMYxKfHlDkteclTnvniGRMl5f0k6BhK
+            Y57aUqWlDq176W1bdTmRwXk1nxq8YqxvuhDqM8R4p0g45K/MOGrLng==
+            -----END RSA PRIVATE KEY-----

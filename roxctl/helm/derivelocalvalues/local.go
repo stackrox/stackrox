@@ -99,3 +99,22 @@ func newLocalK8sObjectDescriptionFromPath(inputPath string) (*localK8sObjectDesc
 
 	return &localK8sObjectDescription{cache: cache}, err
 }
+
+func newLocalK8sObjectDescriptionFromString(input string) (*localK8sObjectDescription, error) {
+	cache := make(map[string]map[string]unstructured.Unstructured)
+
+	k8sResources, err := k8sResourcesFromString(input)
+	if err != nil {
+		return nil, err
+	}
+	for kind, resources := range k8sResources {
+		if cache[kind] == nil {
+			cache[kind] = make(map[string]unstructured.Unstructured)
+		}
+		for name, u := range resources {
+			cache[kind][name] = u
+		}
+	}
+
+	return &localK8sObjectDescription{cache: cache}, err
+}

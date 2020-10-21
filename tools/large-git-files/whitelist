@@ -17,4 +17,7 @@ qa-tests-backend/test-images/registry-image/tomcat-files/web.xml
 pkg/fixtures/image.go
 pkg/booleanpolicy/default_policies_test.go
 qa-tests-backend/src/test/groovy/ComplianceTest.groovy
-roxctl/helm/derivelocalvalues/testdata/default-install-wo-imagepullsecrets.yaml
+roxctl/helm/derivelocalvalues/testdata/k8s-resources/defaults.yaml
+roxctl/helm/derivelocalvalues/testdata/k8s-resources/hostPath.yaml
+roxctl/helm/derivelocalvalues/testdata/k8s-resources/loadBalancer.yaml
+roxctl/helm/derivelocalvalues/testdata/k8s-resources/offlineMode-internalRegistry-nodePortExposure-scannerDisabled.yaml
