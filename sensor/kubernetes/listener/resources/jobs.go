@@ -30,17 +30,18 @@ func (d *jobDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action central
 		return nil
 	}
 
-	if job.Status.CompletionTime != nil {
+	// If we have already sent 1 remove for this job, then do not send another
+	if action == central.ResourceAction_REMOVE_RESOURCE && d.removedCached.Remove(string(job.GetUID())) {
+		return nil
+	}
+
+	if job.Status.CompletionTime != nil && action != central.ResourceAction_REMOVE_RESOURCE {
 		// If we have already sent 1 remove for this job, then do not send another
 		if !d.removedCached.Add(string(job.GetUID())) {
 			return nil
 		}
 		log.Debugf("Job %s is completed and is being marked as removed", job.Name)
 		return d.deploymentDispatcher.ProcessEvent(obj, oldObj, central.ResourceAction_REMOVE_RESOURCE)
-	}
-	// If we have already sent 1 remove for this job, then do not send another
-	if action == central.ResourceAction_REMOVE_RESOURCE && d.removedCached.Remove(string(job.GetUID())) {
-		return nil
 	}
 
 	return d.deploymentDispatcher.ProcessEvent(obj, oldObj, action)
