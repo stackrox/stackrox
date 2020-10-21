@@ -6,6 +6,7 @@ option java_package = "io.stackrox.proto.api.v1";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/network_flow.proto";
+import "storage/network_graph_config.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
 
@@ -63,6 +64,10 @@ message GetExternalNetworkEntitiesResponse {
     repeated storage.NetworkEntity entities = 1;
 }
 
+message PutNetworkGraphConfigRequest {
+    storage.NetworkGraphConfig config = 1;
+}
+
 service NetworkGraphService {
     rpc GetNetworkGraph (NetworkGraphRequest) returns (NetworkGraph) {
         option (google.api.http) = {
@@ -93,6 +98,19 @@ service NetworkGraphService {
     rpc DeleteExternalNetworkEntity (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/networkgraph/externalentities/{id}"
+        };
+    }
+
+    rpc GetNetworkGraphConfig(Empty) returns (storage.NetworkGraphConfig) {
+        option (google.api.http) = {
+            get: "/v1/networkgraph/config"
+        };
+    }
+
+    rpc PutNetworkGraphConfig(PutNetworkGraphConfigRequest) returns (storage.NetworkGraphConfig) {
+        option (google.api.http) = {
+            put: "/v1/networkgraph/config"
+            body: "*"
         };
     }
 }

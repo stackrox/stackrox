@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+message NetworkGraphConfig {
+    bool hide_default_external_srcs = 1;
+}

@@ -12,6 +12,7 @@ import (
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	dDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/networkflow"
+	graphConfigDSMocks "github.com/stackrox/rox/central/networkflow/config/datastore/mocks"
 	entityMocks "github.com/stackrox/rox/central/networkflow/datastore/entities/mocks"
 	nfDSMocks "github.com/stackrox/rox/central/networkflow/datastore/mocks"
 	npDSMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
@@ -39,6 +40,7 @@ type NetworkGraphServiceTestSuite struct {
 	entities      *entityMocks.MockEntityDataStore
 	deployments   *dDSMocks.MockDataStore
 	flows         *nfDSMocks.MockClusterDataStore
+	graphConfig   *graphConfigDSMocks.MockDataStore
 	sensorConnMgr *connMocks.MockManager
 	evaluator     *npDSMocks.MockEvaluator
 	tested        *serviceImpl
@@ -53,10 +55,11 @@ func (s *NetworkGraphServiceTestSuite) SetupTest() {
 	s.deployments = dDSMocks.NewMockDataStore(s.mockCtrl)
 	s.entities = entityMocks.NewMockEntityDataStore(s.mockCtrl)
 	s.flows = nfDSMocks.NewMockClusterDataStore(s.mockCtrl)
+	s.graphConfig = graphConfigDSMocks.NewMockDataStore(s.mockCtrl)
 	s.sensorConnMgr = connMocks.NewMockManager(s.mockCtrl)
 	s.evaluator = npDSMocks.NewMockEvaluator(s.mockCtrl)
 
-	s.tested = newService(s.flows, s.entities, s.deployments, s.clusters, s.sensorConnMgr)
+	s.tested = newService(s.flows, s.entities, s.deployments, s.clusters, s.graphConfig, s.sensorConnMgr)
 }
 
 func (s *NetworkGraphServiceTestSuite) TearDownTest() {
@@ -775,4 +778,24 @@ func (s *NetworkGraphServiceTestSuite) TestPatchExternalNetworkEntity() {
 	actual, err = s.tested.PatchExternalNetworkEntity(ctx, patch)
 	s.Error(err)
 	s.Nil(actual)
+}
+
+func (s *NetworkGraphServiceTestSuite) TestNetworkGraphConfiguration() {
+	if !features.NetworkGraphExternalSrcs.Enabled() {
+		s.T().Skip()
+	}
+
+	ctx := sac.WithAllAccess(context.Background())
+
+	s.graphConfig.EXPECT().GetNetworkGraphConfig(ctx).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
+	_, err := s.tested.GetNetworkGraphConfig(ctx, &v1.Empty{})
+	s.NoError(err)
+
+	s.graphConfig.EXPECT().UpdateNetworkGraphConfig(ctx, &storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}).Return(nil)
+	_, err = s.tested.PutNetworkGraphConfig(ctx, &v1.PutNetworkGraphConfigRequest{
+		Config: &storage.NetworkGraphConfig{
+			HideDefaultExternalSrcs: true,
+		},
+	})
+	s.NoError(err)
 }

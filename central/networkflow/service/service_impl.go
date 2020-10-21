@@ -10,6 +10,7 @@ import (
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/networkflow"
+	"github.com/stackrox/rox/central/networkflow/config/datastore"
 	networkFlowDS "github.com/stackrox/rox/central/networkflow/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkflow/datastore/entities"
 	"github.com/stackrox/rox/central/role/resources"
@@ -39,11 +40,13 @@ var (
 		user.With(permissions.View(resources.NetworkGraph)): {
 			"/v1.NetworkGraphService/GetNetworkGraph",
 			"/v1.NetworkGraphService/GetExternalNetworkEntities",
+			"/v1.NetworkGraphService/GetNetworkGraphConfig",
 		},
 		user.With(permissions.Modify(resources.NetworkGraph)): {
 			"/v1.NetworkGraphService/CreateExternalNetworkEntity",
 			"/v1.NetworkGraphService/DeleteExternalNetworkEntity",
 			"/v1.NetworkGraphService/PatchExternalNetworkEntity",
+			"/v1.NetworkGraphService/PutNetworkGraphConfig",
 		},
 	})
 
@@ -58,6 +61,7 @@ type serviceImpl struct {
 	entities     networkEntityDS.EntityDataStore
 	deployments  deploymentDS.DataStore
 	clusters     clusterDS.DataStore
+	graphConfig  datastore.DataStore
 
 	sensorConnMgr connection.Manager
 }
@@ -189,6 +193,35 @@ func (s *serviceImpl) PatchExternalNetworkEntity(ctx context.Context, request *v
 		return nil, err
 	}
 	return entity, nil
+}
+
+// GetNetworkGraphConfig updates Central's network graph config
+func (s *serviceImpl) GetNetworkGraphConfig(ctx context.Context, _ *v1.Empty) (*storage.NetworkGraphConfig, error) {
+	if !features.NetworkGraphExternalSrcs.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "support for external sources in network graph is not enabled")
+	}
+
+	cfg, err := s.graphConfig.GetNetworkGraphConfig(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "could not obtain network graph configuration: %v", err)
+	}
+	return cfg, nil
+}
+
+// PutNetworkGraphConfig updates Central's network graph config
+func (s *serviceImpl) PutNetworkGraphConfig(ctx context.Context, req *v1.PutNetworkGraphConfigRequest) (*storage.NetworkGraphConfig, error) {
+	if !features.NetworkGraphExternalSrcs.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "support for external sources in network graph is not enabled")
+	}
+
+	if req.GetConfig() == nil {
+		return nil, status.Error(codes.InvalidArgument, "network graph config must be specified")
+	}
+
+	if err := s.graphConfig.UpdateNetworkGraphConfig(ctx, req.GetConfig()); err != nil {
+		return nil, status.Errorf(codes.Internal, "could not update network graph configuration: %v", err)
+	}
+	return req.GetConfig(), nil
 }
 
 func (s *serviceImpl) getFlowStore(ctx context.Context, clusterID string) (networkFlowDS.FlowDataStore, error) {

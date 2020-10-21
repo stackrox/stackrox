@@ -5,6 +5,7 @@ import (
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/networkflow/config/datastore"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	"github.com/stackrox/rox/central/networkflow/datastore/entities"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -25,16 +26,19 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(store nfDS.ClusterDataStore, entities entities.EntityDataStore, deployments dDS.DataStore, clusters clusterDS.DataStore, sensorConnMgr connection.Manager) Service {
-	return newService(store, entities, deployments, clusters, sensorConnMgr)
+func New(store nfDS.ClusterDataStore, entities entities.EntityDataStore, deployments dDS.DataStore, clusters clusterDS.DataStore,
+	graphConfigDS datastore.DataStore, sensorConnMgr connection.Manager) Service {
+	return newService(store, entities, deployments, clusters, graphConfigDS, sensorConnMgr)
 }
 
-func newService(store nfDS.ClusterDataStore, entities entities.EntityDataStore, deployments dDS.DataStore, clusters clusterDS.DataStore, sensorConnMgr connection.Manager) *serviceImpl {
+func newService(store nfDS.ClusterDataStore, entities entities.EntityDataStore, deployments dDS.DataStore, clusters clusterDS.DataStore,
+	graphConfigDS datastore.DataStore, sensorConnMgr connection.Manager) *serviceImpl {
 	return &serviceImpl{
 		clusterFlows: store,
 		entities:     entities,
 		deployments:  deployments,
 		clusters:     clusters,
+		graphConfig:  graphConfigDS,
 
 		sensorConnMgr: sensorConnMgr,
 	}
