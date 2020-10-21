@@ -10,11 +10,17 @@ set -eu
 # You can use this script for applying the kubectl commands to the relevant resources directly
 # or let it output the necessary kubectl commands for patching the resources to stdout using:
 #
-#  DRY_RUN=true ./prepare-source-metadata.sh
+#  DRY_RUN=true ./prepare-resource-metadata-for-helm-migration.sh
 #
+# Further configuration options:
+#
+#   * The namespace can be configured using the environment variable NAMESPACE
+#     (note that it defaults to "stackrox" and that is the only supported namespace).
+#
+#   * By default this script uses kubectl to verify the existence of the Kubernetes resources before
+#     patching them. This can be disabled by setting SKIP_EXISTENCE_CHECK=true.
 
 KUBECTL="${KUBECTL:-kubectl}"
-PATCH_KUBECTL="${PATCH_KUBECTL:-$KUBECTL}"
 DRY_RUN="${DRY_RUN:-false}"
 NAMESPACE="${STACKROX_NAMESPACE:-stackrox}"
 SKIP_EXISTENCE_CHECK="${SKIP_EXISTENCE_CHECK:-false}"
@@ -38,18 +44,18 @@ fi
 
 add_label() {
     if [ "$DRY_RUN" == "true" ]; then
-        echo $PATCH_KUBECTL -n $NAMESPACE label "$kind" "$res" --overwrite "$1=$2"
+        echo $KUBECTL -n $NAMESPACE label "$kind" "$res" --overwrite "$1=$2"
     else
-        $PATCH_KUBECTL -n $NAMESPACE label "$kind" "$res" --overwrite "$1=$2"
+        $KUBECTL -n $NAMESPACE label "$kind" "$res" --overwrite "$1=$2"
     fi
     log "  Set label $1=$2"
 }
 
 add_annotation() {
     if [ "$DRY_RUN" == "true" ]; then
-        echo $PATCH_KUBECTL -n $NAMESPACE annotate "$kind" "$res" --overwrite "$1=$2"
+        echo $KUBECTL -n $NAMESPACE annotate "$kind" "$res" --overwrite "$1=$2"
     else
-        $PATCH_KUBECTL -n $NAMESPACE annotate "$kind" "$res" --overwrite "$1=$2"
+        $KUBECTL -n $NAMESPACE annotate "$kind" "$res" --overwrite "$1=$2"
     fi
     log "  Set annotation $1=$2"
 }
