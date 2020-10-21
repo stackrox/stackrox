@@ -13,6 +13,7 @@ Note: When turned on, this environment variable will cause noisy logging, and he
 purpose of debugging network connectivity issues. Once network connectivity is established, we should advise
 to immediately set this to false to stop logging.
 - Added Namespace as one of the policy criteria
+- UI: Display full height of Vulnerability Management side panel in Safari (ROX-5771)
 
 ## [50.0]
 - UI: Do not display incomplete process status when Sensor Upgrade is up to date (ROX-5579)

@@ -68,7 +68,7 @@ const WorkflowListPageLayout = ({ location }) => {
 
     return (
         <workflowStateContext.Provider value={pageState}>
-            <div className="flex flex-col relative min-h-full">
+            <div className="flex flex-col relative h-full">
                 <PageHeader
                     header={header}
                     subHeader="Entity List"
