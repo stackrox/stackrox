@@ -85,6 +85,7 @@ message Splunk {
     bool insecure              = 3;
     int64 truncate             = 4;
     bool audit_logging_enabled = 5;
+    bool derived_source_type   = 6;
 }
 
 message PagerDuty {

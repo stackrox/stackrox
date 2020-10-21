@@ -585,6 +585,12 @@ const formDescriptors = {
                 jsonpath: 'splunk.auditLoggingEnabled',
                 type: 'toggle',
             },
+            {
+                label: 'Derived Source Type (instead of using _json)',
+                jsonpath: 'splunk.derivedSourceType',
+                type: 'toggle',
+                default: true,
+            },
         ],
         sumologic: [
             {

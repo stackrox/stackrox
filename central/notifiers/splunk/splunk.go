@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -21,13 +22,13 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
 	source                    = "stackrox"
-	sourceType                = "_json"
 	splunkHECDefaultDataLimit = 10000
 	splunkHECHealthEndpoint   = "/services/collector/health/1.0"
 	splunkHECEventEndpoint    = "/services/collector/event/1.0"
@@ -92,11 +93,17 @@ func (s *splunk) postAlert(ctx context.Context, alert *storage.Alert) error {
 	)
 }
 
-func getSplunkEvent(msg proto.Message) (*wrapper.SplunkEvent, error) {
+func (s *splunk) getSplunkEvent(msg proto.Message) (*wrapper.SplunkEvent, error) {
 	any, err := protoutils.MarshalAny(msg)
 	if err != nil {
 		return nil, err
 	}
+	sourceType := "_json"
+	if s.conf.GetDerivedSourceType() {
+		_, name := stringutils.Split2(any.GetTypeUrl(), ".")
+		sourceType = "stackrox-" + strings.ToLower(strings.Replace(name, ".", "-", -1))
+	}
+
 	return &wrapper.SplunkEvent{
 		Event:      any,
 		Source:     source,
@@ -131,7 +138,7 @@ func (s *splunk) AuditLoggingEnabled() bool {
 }
 
 func (s *splunk) sendEvent(ctx context.Context, msg proto.Message) error {
-	splunkEvent, err := getSplunkEvent(msg)
+	splunkEvent, err := s.getSplunkEvent(msg)
 	if err != nil {
 		return err
 	}

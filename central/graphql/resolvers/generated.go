@@ -1043,6 +1043,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SourceType(0)))
 	utils.Must(builder.AddType("Splunk", []string{
 		"auditLoggingEnabled: Boolean!",
+		"derivedSourceType: Boolean!",
 		"httpEndpoint: String!",
 		"httpToken: String!",
 		"insecure: Boolean!",
@@ -8960,6 +8961,11 @@ func (resolver *Resolver) wrapSplunks(values []*storage.Splunk, err error) ([]*s
 
 func (resolver *splunkResolver) AuditLoggingEnabled(ctx context.Context) bool {
 	value := resolver.data.GetAuditLoggingEnabled()
+	return value
+}
+
+func (resolver *splunkResolver) DerivedSourceType(ctx context.Context) bool {
+	value := resolver.data.GetDerivedSourceType()
 	return value
 }
 
