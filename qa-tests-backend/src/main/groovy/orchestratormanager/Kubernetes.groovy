@@ -39,15 +39,19 @@ import io.fabric8.kubernetes.api.model.Volume
 import io.fabric8.kubernetes.api.model.VolumeMount
 import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
 import io.fabric8.kubernetes.api.model.apps.DaemonSet as K8sDaemonSet
+import io.fabric8.kubernetes.api.model.batch.Job as K8sJob
 import io.fabric8.kubernetes.api.model.apps.DaemonSetList
 import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
 import io.fabric8.kubernetes.api.model.apps.DeploymentList
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec
 import io.fabric8.kubernetes.api.model.apps.DoneableDaemonSet
 import io.fabric8.kubernetes.api.model.apps.DoneableDeployment
+import io.fabric8.kubernetes.api.model.batch.DoneableJob
 import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList
 import io.fabric8.kubernetes.api.model.apps.StatefulSet as K8sStatefulSet
+import io.fabric8.kubernetes.api.model.batch.JobList
+import io.fabric8.kubernetes.api.model.batch.JobSpec
 import io.fabric8.kubernetes.api.model.policy.HostPortRange
 import io.fabric8.kubernetes.api.model.policy.PodSecurityPolicy
 import io.fabric8.kubernetes.api.model.policy.PodSecurityPolicyBuilder
@@ -77,6 +81,7 @@ import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
 import objects.ConfigMapKeyRef
 import objects.DaemonSet
 import objects.Deployment
+import objects.Job
 import objects.K8sPolicyRule
 import objects.K8sRole
 import objects.K8sRoleBinding
@@ -113,6 +118,9 @@ class Kubernetes implements OrchestratorMain {
     MixedOperation<K8sStatefulSet, StatefulSetList, DoneableStatefulSet,
             ScalableResource<K8sStatefulSet, DoneableStatefulSet>> statefulsets
 
+    MixedOperation<K8sJob, JobList, DoneableJob,
+            ScalableResource<K8sJob, DoneableJob>> jobs
+
     Kubernetes(String ns) {
         this.namespace = ns
         this.client = new DefaultKubernetesClient()
@@ -123,6 +131,7 @@ class Kubernetes implements OrchestratorMain {
         this.deployments = this.client.apps().deployments()
         this.daemonsets = this.client.apps().daemonSets()
         this.statefulsets = this.client.apps().statefulSets()
+        this.jobs = this.client.batch().jobs()
     }
 
     Kubernetes() {
@@ -407,6 +416,45 @@ class Kubernetes implements OrchestratorMain {
     def deleteDaemonSet(DaemonSet daemonSet) {
         this.daemonsets.inNamespace(daemonSet.namespace).withName(daemonSet.name).delete()
         println "${daemonSet.name}: daemonset removed."
+    }
+
+    def createJob(Job job) {
+        ensureNamespaceExists(job.namespace)
+
+        job.getNamespace() != null ?: job.setNamespace(this.namespace)
+
+        K8sJob k8sJob = new K8sJob(
+                metadata: new ObjectMeta(
+                        name: job.name,
+                        namespace: job.namespace,
+                        labels: job.labels
+                ),
+                spec: new JobSpec(
+                        template: new PodTemplateSpec(
+                                metadata: new ObjectMeta(
+                                        name: job.name,
+                                        namespace: job.namespace,
+                                        labels: job.labels
+                                ),
+                                spec: generatePodSpec(job)
+                        )
+                )
+        )
+        // Jobs cannot be Always
+        k8sJob.spec.template.spec.restartPolicy = "Never"
+
+        try {
+            println("Told the orchestrator to create job " + job.getName())
+            return this.jobs.inNamespace(job.namespace).createOrReplace(k8sJob)
+        } catch (Exception e) {
+            println("Error creating k8s job" + e.toString())
+        }
+        return null
+    }
+
+    def deleteJob(Job job) {
+        this.jobs.inNamespace(job.namespace).withName(job.name).delete()
+        println "${job.name}: job removed."
     }
 
     def waitForDaemonSetDeletion(String name, String ns = namespace) {

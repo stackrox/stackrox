@@ -19,6 +19,7 @@ type Dispatcher interface {
 // DispatcherRegistry provides dispatchers to use.
 type DispatcherRegistry interface {
 	ForDeployments(deploymentType string) Dispatcher
+	ForJobs() Dispatcher
 
 	ForNamespaces() Dispatcher
 	ForNetworkPolicies() Dispatcher
@@ -68,6 +69,10 @@ type registryImpl struct {
 
 func (d *registryImpl) ForDeployments(deploymentType string) Dispatcher {
 	return newDeploymentDispatcher(deploymentType, d.deploymentHandler)
+}
+
+func (d *registryImpl) ForJobs() Dispatcher {
+	return newJobDispatcherImpl(d.deploymentHandler)
 }
 
 func (d *registryImpl) ForNamespaces() Dispatcher {

@@ -1,5 +1,6 @@
 import groups.BAT
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
+import objects.Job
 import org.junit.experimental.categories.Category
 import services.DeploymentService
 import services.ImageService
@@ -15,12 +16,36 @@ class DeploymentTest extends BaseSpecification {
             .addLabel("app", "test")
             .setCommand(["sh", "-c", "apt-get -y update && sleep 600"])
 
+    private static final Job JOB = new Job()
+            .setName("test-job-pi")
+            .setImage("perl")
+            .addLabel("app", "test")
+            .setCommand(["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"])
+
     def setupSpec() {
         orchestrator.createDeployment(DEPLOYMENT)
     }
 
     def cleanupSpec() {
         orchestrator.deleteDeployment(DEPLOYMENT)
+    }
+
+    @Unroll
+    @Category([BAT])
+    def "Verify deployment of type Job is deleted once it completes"() {
+        given:
+        def job = orchestrator.createJob(JOB)
+
+        when:
+        "Make sure StackRox finds the Job"
+        assert Services.waitForDeploymentByID(job.getMetadata().getUid(), JOB.name, 20, 2)
+
+        then:
+        "Wait for deletion from StackRox due to completion"
+        assert Services.waitForSRDeletionByID(job.getMetadata().getUid(), JOB.name)
+
+        cleanup:
+        orchestrator.deleteJob(JOB)
     }
 
     @Unroll

@@ -362,11 +362,15 @@ class Services extends BaseService {
     }
 
     static boolean waitForSRDeletion(objects.Deployment deployment) {
+        return waitForSRDeletionByID(deployment.deploymentUid, deployment.name)
+    }
+
+    static boolean waitForSRDeletionByID(String id, String name) {
         // Wait until the deployment disappears from StackRox.
         Timer t = new Timer(60, 1)
         boolean disappearedFromStackRox = false
         while (t.IsValid()) {
-            if (!roxDetectedDeployment(deployment.deploymentUid, deployment.name)) {
+            if (!roxDetectedDeployment(id, name)) {
                 disappearedFromStackRox = true
                 break
             }
@@ -383,16 +387,19 @@ class Services extends BaseService {
                 return false
             }
         }
+        return waitForDeploymentByID(deployment.deploymentUid, deployment.name, retries, interval)
+    }
 
+    static waitForDeploymentByID(String id, String name, int retries = 30, int interval = 2) {
         Timer t = new Timer(retries, interval)
         while (t.IsValid()) {
-            if (roxDetectedDeployment(deployment.deploymentUid, deployment.getName())) {
-                println "SR found deployment ${deployment.name} within ${t.SecondsSince()}s"
+            if (roxDetectedDeployment(id, name)) {
+                println "SR found deployment ${name} within ${t.SecondsSince()}s"
                 return true
             }
-            println "SR has not found deployment ${deployment.name} yet"
+            println "SR has not found deployment ${name} yet"
         }
-        println "SR did not detect the deployment ${deployment.name} in ${t.SecondsSince()} seconds"
+        println "SR did not detect the deployment ${name} in ${t.SecondsSince()} seconds"
         return false
     }
 
