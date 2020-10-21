@@ -3089,136 +3089,67 @@ jobs:
       - attach-gke-cluster:
           cluster-id: upgrade-test
       - remove-existing-stackrox-resources
-      - run:
-          name: Checkout 2.4.16.4
-          command: git checkout 2.4.16.4
 
-      - run:
-          name: Launch Central only
-          command: |
-            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-            ./deploy/k8s/central.sh
-
-            central_image="$(kubectl -n stackrox get deploy/central -o jsonpath='{.spec.template.spec.containers[?(@.name=="central")].image}')"
-            if [ "${central_image}" != "stackrox/main:2.4.16.4" ]; then
-              echo "Unexpected central image!"
-              kubectl -n stackrox describe deploy/central
-              exit 1
-            fi
-
-            source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
-            cci-export ROX_USERNAME "$ROX_USERNAME"
-            cci-export ROX_PASSWORD "$ROX_PASSWORD"
-
-      - run:
-          name: Checkout current commit again
-          command: git reset --hard "${CIRCLE_SHA1}"
-
-      - *waitForAPI
-      - run:
-          name: Restore DB
-          command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore \
-              --timeout 1m \
-              ./qa-tests-backend/artifacts/upgrade-tests/v2.4.16.4/stackrox_db_2019_03_01_03_48_45.zip
-
-      - run:
-          name: Do the upgrade to 2.5.29.x-54-g70655b1846
-          command: |
-            intermediate_image="stackrox/main:2.5.29.x-54-g70655b1846"
-            intermediate_central_patch='[
-              {"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "'"$intermediate_image"'"},
-              {"op": "replace", "path": "/spec/template/spec/containers/0/ports", "value": [{"name": "api", "containerPort": 8443}]}
-            ]'
-            kubectl -n stackrox patch deploy/central --type json -p "$intermediate_central_patch"
-            kubectl -n stackrox describe deploy/central
-
-            network_policy_patch='[
-              {"op": "replace", "path": "/spec/ingress/0/ports/0/port", "value": 8443}
-            ]'
-            kubectl -n stackrox patch networkpolicy/allow-ext-to-central --type json -p "$network_policy_patch"
-
-            service_patch='[
-              {"op": "replace", "path": "/spec/ports/0/targetPort", "value": 8443}
-            ]'
-            kubectl -n stackrox patch service/central --type json -p "$service_patch"
-
-            if [[ "${LOAD_BALANCER}" == "lb" ]]; then
-              lb_patch='[
-                {"op": "replace", "path": "/spec/ports/0/targetPort", "value": "api"}
-              ]'
-              kubectl -n stackrox patch service/central-loadbalancer --type json -p "$lb_patch"
-            fi
-
-      - *waitForAPI
       - *setupGoogleAppCreds
 
       - run:
           name: Setup CI License
           command: |
-            cci-export ROX_LICENSE_KEY "${ROX_PROD_LICENSE}"
-
-            # TODO: reinstate the below once we have a good solution.
-            # echo "Issuing a CI license for testing the build"
-            # ROX_LICENSE_KEY="$(licenses/ci.sh)"
-
-            # cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
+            ROX_LICENSE_KEY="$(licenses/ci.sh)"
+            cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
 
       - run:
-          name: Install license key
+          name: Deploy Central version right after 41.4
           command: |
-            roxctl -e "${API_ENDPOINT}" central license add --license="$ROX_LICENSE_KEY"
-            sleep 3
+            git checkout 309f7d8edc03e9767ddabefad670224e4bd1746f
+            # We explicitly need to set CIRCLE_TAG to empty, as it will otherwise dictate
+            # the output of `make tag`.
+            cci-export MAIN_IMAGE_TAG "$(make --quiet tag CIRCLE_TAG=)"
+            ./deploy/k8s/central.sh
+
+            # Remove the scanner HPA for these tests to avoid resource throttling
+            kubectl -n stackrox delete hpa/scanner
+
+            source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
+            cci-export ROX_USERNAME "$ROX_USERNAME"
+            cci-export ROX_PASSWORD "$ROX_PASSWORD"
 
       - *waitForAPI
 
       - run:
-          name: Do the upgrade
+          name: Deploy and restore DB to version 41.4
           command: |
-            new_image="stackrox/main:$(make --quiet tag)"
+            # Download 41.4 backup
+            gsutil cp gs://stackrox-ci-upgrade-test-dbs/41.4-upgrade-db.zip .
 
-            kubectl -n stackrox set image deploy/central central=${new_image}
-            kubectl -n stackrox describe deploy/central
+            # Restore 41.4 backup to 41.4 based commit
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m 41.4-upgrade-db.zip
 
-            run_as_user_patch='{"spec":{"template":{"spec":{"securityContext":{"fsGroup":4000,"runAsUser":4000}}}}}'
-            kubectl -n stackrox patch deploy/central -p "$run_as_user_patch"
+      - *waitForAPI
 
-            pod_sec_policy_patch='{"spec":{"runAsGroup":{"rule":"MustRunAs", "ranges":[{"min":4000,"max":4000}]}}}'
-            (kubectl -n stackrox get podsecuritypolicy stackrox-central && kubectl -n stackrox patch podsecuritypolicy/stackrox-central -p "$pod_sec_policy_patch") || true
+      - run:
+          name: Checkout current commit again
+          command: git reset --hard "${CIRCLE_SHA1}"
 
-            central_image="$(kubectl -n stackrox get deploy/central -o jsonpath='{.spec.template.spec.containers[?(@.name=="central")].image}')"
-            if [ "${central_image}" != "${new_image}" ]; then
-              echo "Unexpected central image!"
-              exit 1
-            fi
+      - run:
+         name: Do the upgrade
+         command: |
+          central_image="stackrox/main:$(make --quiet tag)"
+          kubectl -n stackrox set image deploy/central central=${central_image}
+
+          scanner_image="stackrox/scanner:$(cat SCANNER_VERSION)"
+          kubectl -n stackrox set image deploy/scanner scanner=${scanner_image}
+
+          scanner_db_image="stackrox/scanner-db:$(cat SCANNER_VERSION)"
+          kubectl -n stackrox set image deploy/scanner-db db=${scanner_db_image}
 
       - *waitForAPI
 
       - validate-upgrade:
-          upgrade-cluster-id: "260e11a3-cbea-464c-95f0-588fa7695b49"
+          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
           desc: "Run upgrade tests on migrated version"
 
       - *restoreGradle
-
-      - run:
-          name: Back up and restore the DB
-          command: |
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db backup \
-              --output /tmp/stackrox-db.zip \
-              --timeout 1m
-
-            ls -lh /tmp/stackrox-db.zip
-
-            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore \
-              --timeout 1m \
-              /tmp/stackrox-db.zip
-            sleep 5
-
-      - *waitForAPI
-
-      - validate-upgrade:
-          upgrade-cluster-id: "260e11a3-cbea-464c-95f0-588fa7695b49"
-          desc: "Run upgrade tests on restored versions"
 
       - *storeQATestResults
       - *storeQASpockReports
@@ -3424,12 +3355,10 @@ jobs:
             cci-export ROX_PASSWORD "$ROX_PASSWORD"
 
       - *waitForAPI
+
       - run:
           name: Deploy and restore DB to version 41.4
           command: |
-            # Download 41.4 backup
-            gsutil cp gs://stackrox-ci-upgrade-test-dbs/41.4-upgrade-db.zip .
-
             # Restore 41.4 backup to 41.4 based commit
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m 41.4-upgrade-db.zip
 
