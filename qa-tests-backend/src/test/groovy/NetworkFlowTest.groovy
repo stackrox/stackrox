@@ -472,6 +472,7 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify connections between two deployments on 2 separate ports shows both edges in the graph"() {
         given:
         "Two deployments, A and B, where B communicates to A on 2 different ports"
+        rebuildForRetries()
         String targetUid = deployments.find { it.name == TCPCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
         String sourceUid = deployments.find { it.name == MULTIPLEPORTSCONNECTION }?.deploymentUid
