@@ -165,6 +165,10 @@ class BaseSpecification extends Specification {
     }
 
     def setupSpec() {
+        def date = new Date()
+        def sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+        println "${sdf.format(date)} Starting testsuite"
+
         testStartTimeMillis = System.currentTimeMillis()
 
         RestAssured.useRelaxedHTTPSValidation()
@@ -212,6 +216,10 @@ class BaseSpecification extends Specification {
     }
 
     def cleanupSpec() {
+        def date = new Date()
+        def sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+        println "${sdf.format(date)} Ending testsuite"
+
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
         try {

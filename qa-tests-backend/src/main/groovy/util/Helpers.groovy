@@ -5,6 +5,8 @@ import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
 import org.junit.AssumptionViolatedException
 import org.spockframework.runtime.SpockAssertionError
 
+import java.text.SimpleDateFormat
+
 // Helpers defines useful helper methods. Is mixed in to every object in order to be visible everywhere.
 class Helpers {
     private static final int MAX_RETRY_ATTEMTPS = 2
@@ -82,15 +84,18 @@ class Helpers {
         }
 
         try {
+            def date = new Date()
+            def sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+
             def debugDir = new File(Constants.FAILURE_DEBUG_DIR)
             if (debugDir.exists() && debugDir.listFiles().size() >= Constants.FAILURE_DEBUG_LIMIT) {
-                println "Debug capture limit reached. Not collecting for this failure."
+                println "${sdf.format(date)} Debug capture limit reached. Not collecting for this failure."
                 return
             }
 
             def collectionDir = debugDir.getAbsolutePath() + "/" + UUID.randomUUID()
 
-            println "Will collect various stackrox logs for this failure under ${collectionDir}/"
+            println "${sdf.format(date)} Will collect various stackrox logs for this failure under ${collectionDir}/"
 
             shellCmd("./scripts/ci/collect-service-logs.sh stackrox ${collectionDir}/stackrox-k8s-logs")
             shellCmd("./scripts/ci/collect-qa-service-logs.sh ${collectionDir}/qa-k8s-logs")
