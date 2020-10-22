@@ -86,6 +86,21 @@ const nonStandardNumberFields = [
     'Container Memory Limit',
 ];
 
+function isCompoundField(fieldName = '') {
+    const compoundValueFields = [
+        'Disallowed Annotation',
+        'Disallowed Image Label',
+        'Dockerfile Line',
+        'Environment Variable',
+        'Image Component',
+        'Required Annotation',
+        'Required Image Label',
+        'Required Label',
+    ];
+
+    return compoundValueFields.includes(fieldName);
+}
+
 const numericCompRe = /^([><=]+)?\D*(?=.)([+-]?([0-9]*)(\.([0-9]+))?)$/;
 
 export function parseNumericComparisons(str) {
@@ -95,6 +110,7 @@ export function parseNumericComparisons(str) {
 export function parseValueStr(value, fieldName) {
     // TODO: work with API to update contract for returning number comparison fields
     //   until that improves, we short-circuit those fields here
+
     if (nonStandardNumberFields.includes(fieldName)) {
         const [comparison, num] = parseNumericComparisons(value);
         return comparison
@@ -107,7 +123,7 @@ export function parseValueStr(value, fieldName) {
                   value: num,
               };
     }
-    if (typeof value === 'string') {
+    if (typeof value === 'string' && isCompoundField(fieldName)) {
         // handle all other string fields
         const valueArr = value.split('=');
         // for nested policy criteria fields
