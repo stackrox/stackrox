@@ -10171,10 +10171,10 @@ cytoscape-cose-bilkent@^4.0.0:
   dependencies:
     cose-base "^1.0.0"
 
-cytoscape-node-html-label@^1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/cytoscape-node-html-label/-/cytoscape-node-html-label-1.2.0.tgz#584bb5a222a3a566348e8958dcde2961bb6967ac"
-  integrity sha512-89gV88cj2fUgzR0sGV/ZWP+KgVusyE8Xb45BusI2vIggWr2V/HZXPeFzupWskLagD/Ky23TcxEgI3fmKQbAyDw==
+cytoscape-node-html-label@^1.2.1:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/cytoscape-node-html-label/-/cytoscape-node-html-label-1.2.1.tgz#f319dbec6eb7024dadddcdbad88d77c57d8ce2f8"
+  integrity sha512-0IB3xmMKLNm9XFb6L3NVArUd+0J8puSwMMhaeN7VUC58MxMF6IYPWeI4LN+A/8AxZwdv1IFyyitMcvtCq060GA==
 
 cytoscape-popper@^1.0.7:
   version "1.0.7"

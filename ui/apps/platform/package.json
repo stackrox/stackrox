@@ -19,7 +19,7 @@
         "core-js": "^3.6.5",
         "cytoscape": "^3.15.2",
         "cytoscape-cose-bilkent": "^4.0.0",
-        "cytoscape-node-html-label": "^1.2.0",
+        "cytoscape-node-html-label": "^1.2.1",
         "cytoscape-popper": "^1.0.7",
         "d3-axis": "^1.0.12",
         "d3-brush": "^1.1.5",
