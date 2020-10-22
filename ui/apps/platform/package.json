@@ -160,7 +160,7 @@
         "postcss-cli": "^7.1.2",
         "prettier": "2.0.5",
         "randomstring": "^1.1.5",
-        "react-scripts": "^3.4.1",
+        "react-scripts": "^3.4.4",
         "react-test-renderer": "^16.13.1",
         "redux-immutable-state-invariant": "^2.1.0",
         "redux-saga-test-plan": "^3.7.0",
