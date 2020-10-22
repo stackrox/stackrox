@@ -12,6 +12,7 @@ var (
 	endpoint   string
 	serverName string
 	directGRPC bool
+	forceHTTP1 bool
 
 	plaintext    bool
 	plaintextSet *bool
@@ -28,6 +29,7 @@ func AddConnectionFlags(c *cobra.Command) {
 	c.PersistentFlags().StringVarP(&endpoint, "endpoint", "e", "localhost:8443", "endpoint for service to contact")
 	c.PersistentFlags().StringVarP(&serverName, "server-name", "s", "", "TLS ServerName to use for SNI (if empty, derived from endpoint)")
 	c.PersistentFlags().BoolVar(&directGRPC, "direct-grpc", false, "Use direct gRPC (advanced; only use if you encounter connection issues)")
+	c.PersistentFlags().BoolVar(&forceHTTP1, "force-http1", false, "Always use HTTP/1 for all connections (advanced; only use if you encounter connection issues)")
 
 	c.PersistentFlags().BoolVar(&plaintext, "plaintext", false, "Use a plaintext (unencrypted) connection; only works in conjunction with --insecure")
 	plaintextSet = &c.PersistentFlags().Lookup("plaintext").Changed
@@ -80,6 +82,11 @@ func ServerName() string {
 // UseDirectGRPC returns whether to use gRPC directly, i.e., without a proxy.
 func UseDirectGRPC() bool {
 	return directGRPC
+}
+
+// ForceHTTP1 indicates that the HTTP/1 should be used for all outgoing connections.
+func ForceHTTP1() bool {
+	return forceHTTP1
 }
 
 // UseInsecure returns whether to use insecure connection behavior.

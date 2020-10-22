@@ -16,6 +16,8 @@ purpose of debugging network connectivity issues. Once network connectivity is e
 to immediately set this to false to stop logging.
 - Added Namespace as one of the policy criteria
 - UI: Display full height of Vulnerability Management side panel in Safari (ROX-5771)
+- Added a `--force-http1` option to `roxctl` that will cause HTTP/2 to be avoided for all outgoing requests.
+  This can be used in case of connectivity issues which are suspected to be due to an ingress or proxy.
 
 ## [50.0]
 - UI: Do not display incomplete process status when Sensor Upgrade is up to date (ROX-5579)

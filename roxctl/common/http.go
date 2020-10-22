@@ -28,10 +28,15 @@ func GetHTTPClient(timeout time.Duration) (*http.Client, error) {
 	transport := &http.Transport{
 		TLSClientConfig: tlsConf,
 	}
-	// There's no reason to not use HTTP/2, but we don't go out of our way to do so.
-	if err := http2.ConfigureTransport(transport); err != nil {
+	if flags.ForceHTTP1() {
 		transport.TLSClientConfig.NextProtos = http1NextProtos
+	} else {
+		// There's no reason to not use HTTP/2, but we don't go out of our way to do so.
+		if err := http2.ConfigureTransport(transport); err != nil {
+			transport.TLSClientConfig.NextProtos = http1NextProtos
+		}
 	}
+
 	client := &http.Client{
 		Timeout:   timeout,
 		Transport: transport,
@@ -108,6 +113,10 @@ func NewHTTPRequestWithAuth(method string, path string, body io.Reader) (*http.R
 	if err != nil {
 		return nil, err
 	}
+	if flags.ForceHTTP1() {
+		req.ProtoMajor, req.ProtoMinor, req.Proto = 1, 1, "HTTP/1.1"
+	}
+
 	if req.URL.Scheme != "https" && !flags.UseInsecure() {
 		return nil, errors.Errorf("URL %v uses insecure scheme %q, use --insecure flags to enable sending credentials", req.URL, req.URL.Scheme)
 	}

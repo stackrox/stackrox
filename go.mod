@@ -90,11 +90,11 @@ require (
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
 	golang.org/x/sys v0.0.0-20200803210538-64077c9b5642
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
-	golang.org/x/tools v0.0.0-20200804011535-6c149bb5ef0d
-	golang.stackrox.io/grpc-http1 v0.2.0
+	golang.org/x/tools v0.0.0-20200806022845-90696ccdc692
+	golang.stackrox.io/grpc-http1 v0.2.1
 	google.golang.org/api v0.30.0
 	google.golang.org/genproto v0.0.0-20200804131852-c06518451d9c
-	google.golang.org/grpc v1.31.0
+	google.golang.org/grpc v1.31.1
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.3.1
 	gopkg.in/yaml.v2 v2.3.0

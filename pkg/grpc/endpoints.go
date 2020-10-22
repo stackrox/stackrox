@@ -99,7 +99,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 	if httpLis != nil {
 		actualHTTPHandler := httpHandler
 		if c.ServeGRPC {
-			actualHTTPHandler = downgradingServer.CreateDowngradingHandler(grpcSrv, actualHTTPHandler)
+			actualHTTPHandler = downgradingServer.CreateDowngradingHandler(grpcSrv, actualHTTPHandler, downgradingServer.PreferGRPCWeb(true))
 		}
 
 		httpSrv := &http.Server{
@@ -110,7 +110,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 		if !c.NoHTTP2 {
 			var h2Srv http2.Server
 			if err := http2.ConfigureServer(httpSrv, &h2Srv); err != nil {
-				log.Warnf("Failed to instantiated endpoint listening at %q for HTTP/2", c.ListenEndpoint)
+				log.Warnf("Failed to instantiate endpoint listening at %q for HTTP/2", c.ListenEndpoint)
 			} else {
 				httpSrv.Handler = h2c.NewHandler(actualHTTPHandler, &h2Srv)
 			}
