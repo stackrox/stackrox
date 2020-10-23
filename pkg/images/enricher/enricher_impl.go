@@ -32,16 +32,30 @@ type enricherImpl struct {
 func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
 	errorList := errorhelpers.NewErrorList("image enrichment")
 
+	imageNoteSet := make(map[storage.Image_Note]struct{}, len(image.Notes))
+	for _, note := range image.Notes {
+		imageNoteSet[note] = struct{}{}
+	}
+
 	updatedMetadata, err := e.enrichWithMetadata(ctx, image)
 	errorList.AddError(err)
 	if image.GetMetadata() == nil {
-		image.Notes = append(image.Notes, storage.Image_MISSING_METADATA)
+		imageNoteSet[storage.Image_MISSING_METADATA] = struct{}{}
+	} else {
+		delete(imageNoteSet, storage.Image_MISSING_METADATA)
 	}
 
 	scanResult, err := e.enrichWithScan(ctx, image)
 	errorList.AddError(err)
 	if scanResult == ScanNotDone && image.GetScan() == nil {
-		image.Notes = append(image.Notes, storage.Image_MISSING_SCAN_DATA)
+		imageNoteSet[storage.Image_MISSING_SCAN_DATA] = struct{}{}
+	} else {
+		delete(imageNoteSet, storage.Image_MISSING_SCAN_DATA)
+	}
+
+	image.Notes = image.Notes[:0]
+	for note := range imageNoteSet {
+		image.Notes = append(image.Notes, note)
 	}
 
 	e.cves.EnrichImageWithSuppressedCVEs(image)
