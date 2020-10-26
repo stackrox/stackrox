@@ -140,6 +140,12 @@ var (
 		{GVK: secretGVK, Name: "collector-tls", Namespace: namespaces.StackRox}:         {},
 		{GVK: secretGVK, Name: "admission-control-tls", Namespace: namespaces.StackRox}: {},
 	}
+	// AdditionalCASensorSecretRef is the object in the sensor bundle that represents additional ca certs.
+	AdditionalCASensorSecretRef = k8sobjects.ObjectRef{
+		GVK:       secretGVK,
+		Name:      "additional-ca-sensor",
+		Namespace: namespaces.StackRox,
+	}
 )
 
 // This block enumerates the files in the various charts that have TLS secrets relevant for mTLS.

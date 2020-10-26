@@ -53,7 +53,7 @@ func createIdentity(wrapper *zip.Wrapper, id string, servicePrefix string, servi
 	return nil
 }
 
-func getAdditionalCAs() ([]*zip.File, error) {
+func getAdditionalCAs(certs *sensor.Certs) ([]*zip.File, error) {
 	certFileInfos, err := ioutil.ReadDir(additionalCAsDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -73,12 +73,14 @@ func getAdditionalCAs() ([]*zip.File, error) {
 			return nil, err
 		}
 		files = append(files, zip.NewFile(path.Join(additionalCAsZipSubdir, fileInfo.Name()), contents, 0))
+		certs.Files[fmt.Sprintf("secrets/%s/%s", additionalCAsZipSubdir, fileInfo.Name())] = contents
 	}
 
 	if caFile, err := getDefaultCertCA(); err != nil {
 		log.Errorf("Error obtaining default CA cert: %v", err)
 	} else if caFile != nil {
 		files = append(files, caFile)
+		certs.Files[fmt.Sprintf("secrets/%s/%s", additionalCAsZipSubdir, centralCA)] = caFile.Content
 	}
 
 	return files, nil
@@ -142,7 +144,7 @@ func GenerateCertsAndAddToZip(wrapper *zip.Wrapper, cluster *storage.Cluster, id
 	}
 
 	if wrapper != nil {
-		additionalCAFiles, err := getAdditionalCAs()
+		additionalCAFiles, err := getAdditionalCAs(&certs)
 		if err != nil {
 			return certs, err
 		}

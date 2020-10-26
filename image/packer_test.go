@@ -18,7 +18,7 @@ func TestNoChartPanic(t *testing.T) {
 }
 
 var (
-	nameRegexp = regexp.MustCompile(`name: (.*)`)
+	nameRegexp = regexp.MustCompile(`(?: +|\t)name: (.*)`)
 )
 
 func TestSensorTLSGVKs(t *testing.T) {
@@ -75,8 +75,8 @@ func TestTLSSecretFiles(t *testing.T) {
 					actualFilesWithSecrets = append(actualFilesWithSecrets, base)
 				}
 			}
-			assert.ElementsMatch(t, actualFilesWithSecrets, c.files.AsSlice(),
-				"If you have added or removed a new TLS secret to %s, please update the relevant constant")
+			assert.ElementsMatchf(t, actualFilesWithSecrets, c.files.AsSlice(),
+				"If you have added or removed a new TLS secret to %s, please update the relevant constant", c.chartPrefix)
 		})
 	}
 

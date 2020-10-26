@@ -42,18 +42,21 @@ func (i *instantiator) Instantiate(bundleContents Contents) ([]k8sutil.Object, e
 	for _, openedFile := range trackedBundleContents.OpenedFiles() {
 		neglectedFiles.Remove(openedFile)
 	}
-	neglectedFiles.RemoveMatching(common.IsWhitelistedBundleFile)
+	neglectedFiles.RemoveMatching(common.IsIgnorelistedBundleFile)
 
 	if neglectedFiles.Cardinality() > 0 {
-		return nil, errors.Errorf("the following non-whitelisted files in the bundle have been neglected: %s", neglectedFiles.ElementsString(", "))
+		return nil, errors.Errorf("the following un-ignored files in the bundle have been neglected: %s", neglectedFiles.ElementsString(", "))
 	}
+
+	// Remove the additional-ca-sensor secret.
+	common.Filter(&allObjects, common.Not(common.AdditionalCASecretPredicate))
 
 	if err := validateMetadata(allObjects); err != nil {
 		return nil, err
 	}
 
 	if i.ctx.InCertRotationMode() {
-		allObjects = common.FilterToOnlyCertObjects(allObjects)
+		common.Filter(&allObjects, common.CertObjectPredicate)
 	}
 	return allObjects, nil
 }
