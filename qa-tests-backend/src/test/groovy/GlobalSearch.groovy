@@ -19,10 +19,10 @@ class GlobalSearch extends BaseSpecification {
             .setCommand(["sleep", "600"])
 
     // https://stack-rox.atlassian.net/browse/ROX-5298 &
-    // https://stack-rox.atlassian.net/browse/ROX-5355
-    // Note: Using an extra long timeout here because Class methods are not @retried
+    // https://stack-rox.atlassian.net/browse/ROX-5355 &
+    // https://stack-rox.atlassian.net/browse/ROX-5789
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
-            Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT ? 300 : 30
+            Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT ? 450 : 30
 
     def setupSpec() {
         orchestrator.createDeployment(DEPLOYMENT)

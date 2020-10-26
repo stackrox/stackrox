@@ -9,6 +9,7 @@ import org.junit.experimental.categories.Category
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass as SSOC
+import orchestratormanager.OrchestratorTypes
 import objects.Deployment
 import services.AlertService
 import services.DeploymentService
@@ -20,6 +21,7 @@ import services.SearchService
 import services.SecretService
 import services.SummaryService
 import spock.lang.Unroll
+import util.Env
 
 @Category(BAT)
 class SACTest extends BaseSpecification {
@@ -53,14 +55,22 @@ class SACTest extends BaseSpecification {
             "stackrox/monitoring -> INTERNET",
     ] as Set
 
+    // https://stack-rox.atlassian.net/browse/ROX-5298 &
+    // https://stack-rox.atlassian.net/browse/ROX-5355 &
+    // https://stack-rox.atlassian.net/browse/ROX-5789
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
+            Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT ? 450 : 60
+
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
         }
         // Make sure each deployment has caused at least one alert
-        assert waitForViolation(DEPLOYMENT_QA1.name, "Secure Shell (ssh) Port Exposed", 60)
-        assert waitForViolation(DEPLOYMENT_QA2.name, "Secure Shell (ssh) Port Exposed", 60)
+        assert waitForViolation(DEPLOYMENT_QA1.name, "Secure Shell (ssh) Port Exposed",
+                WAIT_FOR_VIOLATION_TIMEOUT)
+        assert waitForViolation(DEPLOYMENT_QA2.name, "Secure Shell (ssh) Port Exposed",
+                WAIT_FOR_VIOLATION_TIMEOUT)
     }
 
     def cleanupSpec() {

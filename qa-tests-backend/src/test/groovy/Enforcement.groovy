@@ -12,6 +12,7 @@ import io.stackrox.proto.storage.ProcessWhitelistOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 import objects.DaemonSet
 import objects.Deployment
+import orchestratormanager.OrchestratorTypes
 import org.junit.experimental.categories.Category
 import services.AlertService
 import services.ClusterService
@@ -19,6 +20,7 @@ import services.CreatePolicyService
 import services.ProcessWhitelistService
 import spock.lang.Shared
 import spock.lang.Unroll
+import util.Env
 import util.Timer
 
 class Enforcement extends BaseSpecification {
@@ -225,6 +227,12 @@ class Enforcement extends BaseSpecification {
 
     @Shared
     private static final Map<String, String> CREATED_POLICIES = [:]
+
+    // https://stack-rox.atlassian.net/browse/ROX-5298 &
+    // https://stack-rox.atlassian.net/browse/ROX-5355 &
+    // https://stack-rox.atlassian.net/browse/ROX-5789
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
+            Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT ? 450 : 90
 
     def setupSpec() {
         POLICIES.each {
@@ -679,7 +687,7 @@ class Enforcement extends BaseSpecification {
         assert  lockProcessWhitelists.get(0).getElementsList().
                 find { it.element.processName.equalsIgnoreCase("/usr/sbin/nginx") } != null
         orchestrator.execInContainer(d, "pwd")
-        assert waitForViolation(d.name, ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS, 90)
+        assert waitForViolation(d.name, ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS, WAIT_FOR_VIOLATION_TIMEOUT)
 
         then:
         "check pod was killed"

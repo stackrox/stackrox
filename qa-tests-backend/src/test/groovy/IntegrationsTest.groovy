@@ -49,6 +49,12 @@ class IntegrationsTest extends BaseSpecification {
 
     private static final CA_CERT = Env.mustGetInCI("GENERIC_WEBHOOK_SERVER_CA_CONTENTS")
 
+    // https://stack-rox.atlassian.net/browse/ROX-5298 &
+    // https://stack-rox.atlassian.net/browse/ROX-5355 &
+    // https://stack-rox.atlassian.net/browse/ROX-5789
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
+            Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT ? 450 : 30
+
     def setupSpec() {
         ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
@@ -329,7 +335,7 @@ class IntegrationsTest extends BaseSpecification {
         "create deployment to generate policy violation notification"
         orchestrator.createDeployment(deployment)
         assert Services.waitForDeployment(deployment)
-        assert Services.waitForViolation(deployment.name, policy.name)
+        assert Services.waitForViolation(deployment.name, policy.name, WAIT_FOR_VIOLATION_TIMEOUT)
 
         then:
         "Validate Notification details"

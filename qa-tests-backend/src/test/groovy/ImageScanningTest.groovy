@@ -15,6 +15,7 @@ import objects.GoogleArtifactRegistry
 import objects.QuayImageIntegration
 import objects.Secret
 import objects.StackroxScannerIntegration
+import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ClusterService
@@ -38,6 +39,12 @@ class ImageScanningTest extends BaseSpecification {
             "ADD Command used instead of COPY",
             "Secure Shell (ssh) Port Exposed in Image",
     ]
+
+    // https://stack-rox.atlassian.net/browse/ROX-5298 &
+    // https://stack-rox.atlassian.net/browse/ROX-5355 &
+    // https://stack-rox.atlassian.net/browse/ROX-5789
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
+            Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT ? 450 : 30
 
     static final private Map<String, Deployment> DEPLOYMENTS = [
             "quay": new Deployment()
@@ -162,7 +169,7 @@ class ImageScanningTest extends BaseSpecification {
         and:
         "validate expected violations based on dockerfile"
         for (String policy : POLICIES) {
-            assert Services.waitForViolation(deployment.name, policy)
+            assert Services.waitForViolation(deployment.name, policy, WAIT_FOR_VIOLATION_TIMEOUT)
         }
 
         when:
@@ -508,7 +515,7 @@ class ImageScanningTest extends BaseSpecification {
         and:
         "validate expected violations based on dockerfile"
         for (String policy : POLICIES) {
-            assert Services.waitForViolation(deployment.name, policy)
+            assert Services.waitForViolation(deployment.name, policy, WAIT_FOR_VIOLATION_TIMEOUT)
         }
 
         cleanup:
