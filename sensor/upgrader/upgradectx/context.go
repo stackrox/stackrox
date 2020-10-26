@@ -379,8 +379,12 @@ func (c *UpgradeContext) ListCurrentObjects() ([]k8sutil.Object, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if c.InCertRotationMode() {
-		objects = common.FilterToOnlyCertObjects(objects)
+		common.Filter(&objects, common.CertObjectPredicate)
 	}
+
+	common.Filter(&objects, common.Not(common.AdditionalCASecretPredicate))
+
 	return objects, nil
 }

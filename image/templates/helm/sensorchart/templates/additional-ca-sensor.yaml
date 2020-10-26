@@ -1,12 +1,14 @@
+{{ if and (eq .Values.config.createSecrets true) (gt (len (.Files.Glob "secrets/additional-cas/**")) 0) }}
 apiVersion: v1
-data:
-  {{- range $path, $bytes := .Files.Glob "secrets/additional-cas" }}
-  {{ base $path }}: '{{ b64enc $bytes }}'
-  {{ end }}
+stringData:
+  {{- range $path, $content := .Files.Glob "secrets/additional-cas/**" }}
+  {{ base $path }}: |
+    {{- $content | toString | nindent 4 }}{{ end }}
 kind: Secret
 metadata:
   labels:
-    auto-upgrade.stackrox.io/component: sensor
+    app.kubernetes.io/name: stackrox
   name: additional-ca-sensor
   namespace: stackrox
 type: Opaque
+{{ end }}

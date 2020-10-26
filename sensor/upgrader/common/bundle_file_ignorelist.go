@@ -7,12 +7,13 @@ import (
 )
 
 var (
-	// bundleFileWhitelist is a list of files and directories that are part of the sensor bundle but do not need to be
+	// bundleFileIgnorelist is a list of files and directories that are part of the sensor bundle but do not need to be
 	// considered by the upgrader.
-	bundleFileWhitelist = set.NewFrozenStringSet(
+	bundleFileIgnorelist = set.NewFrozenStringSet(
 		"delete-sensor.sh",
 		"docker-auth.sh",
 		"sensor.sh",
+		"additional-ca-sensor.yaml",
 		"additional-cas/",
 		"ca.pem",
 		"sensor-key.pem",
@@ -26,16 +27,16 @@ var (
 	)
 )
 
-// IsWhitelistedBundleFile checks if the given file is a baselined file, i.e., does not need to be considered by
+// IsIgnorelistedBundleFile checks if the given file is a baselined file, i.e., does not need to be considered by
 // the upgrader.
-func IsWhitelistedBundleFile(file string) bool {
-	if bundleFileWhitelist.Contains(file) {
+func IsIgnorelistedBundleFile(file string) bool {
+	if bundleFileIgnorelist.Contains(file) {
 		return true
 	}
 
 	dir := path.Dir(file)
 	for dir != "" && dir != "." {
-		if bundleFileWhitelist.Contains(dir + "/") {
+		if bundleFileIgnorelist.Contains(dir + "/") {
 			return true
 		}
 		dir = path.Dir(dir)
