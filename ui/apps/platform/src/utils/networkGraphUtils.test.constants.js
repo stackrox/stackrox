@@ -546,12 +546,14 @@ export const nodeSideMap = {
 
 export const configObj = {
     nodes,
+    unfilteredLinks: links,
     links,
     filterState: filterModes.active,
     nodeSideMap,
     hoveredNode: null,
     selectedNode: null,
     networkNodeMap: {},
+    featureFlags: [],
 };
 
 export const namespaceEdges = [

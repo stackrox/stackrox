@@ -3,6 +3,7 @@ const wizardStages = {
     simulator: 'SIMULATOR',
     creator: 'CREATOR',
     namespaceDetails: 'NAMESPACE_DETAILS',
+    externalEntitiesFlows: 'EXTERNAL_ENTITIES_DETAILS',
     cidrForm: 'CIDR_FORM',
 };
 

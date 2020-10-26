@@ -91,6 +91,15 @@ class Graph extends Component {
         this.props.openWizard();
     };
 
+    // eslint-disable-next-line no-unused-vars
+    onExternalEntitiesClick = (externalEntities) => {
+        if (this.props.isSimulatorOn) {
+            return;
+        }
+        this.props.setWizardStage(wizardStages.externalEntitiesFlows);
+        this.props.openWizard();
+    };
+
     onNodeClick = (node) => {
         if (node?.type === entityTypes.CLUSTER || this.props.isSimulatorOn) {
             return;
@@ -137,6 +146,7 @@ class Graph extends Component {
                 networkNodeMap={networkNodeMap}
                 onNodeClick={this.onNodeClick}
                 onNamespaceClick={this.onNamespaceClick}
+                onExternalEntitiesClick={this.onExternalEntitiesClick}
                 onClickOutside={closeWizard}
                 filterState={filterState}
                 simulatorOn={simulatorOn}

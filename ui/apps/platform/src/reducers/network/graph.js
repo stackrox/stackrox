@@ -22,17 +22,15 @@ let networkFlowGraphEnabled = false;
 const setEdgeMapState = (graph, state, property) => {
     const newState = { ...state };
     graph.nodes.forEach((node) => {
-        if (node?.entity?.type !== entityTypes.DEPLOYMENT) {
-            return;
-        }
-        const { id: sourceDeploymentId } = node.entity;
+        let { id: sourceId } = node.entity;
+        const { type: sourceType } = node.entity;
+        sourceId = sourceType === 'INTERNET' ? 'External Entities' : sourceId;
         Object.keys(node.outEdges).forEach((targetIndex) => {
             const targetNode = graph.nodes[targetIndex];
-            if (targetNode?.entity?.type !== entityTypes.DEPLOYMENT) {
-                return;
-            }
-            const { id: targetDeploymentId } = targetNode.entity;
-            const mapKey = getSourceTargetKey(sourceDeploymentId, targetDeploymentId);
+            let { id: targetId } = targetNode.entity;
+            const { type: targetType } = targetNode.entity;
+            targetId = targetType === 'INTERNET' ? 'External Entities' : targetId;
+            const mapKey = getSourceTargetKey(sourceId, targetId);
             if (!newState[mapKey]) {
                 newState[mapKey] = {};
             }
@@ -40,8 +38,8 @@ const setEdgeMapState = (graph, state, property) => {
                 newState[mapKey][property] = [];
             }
             newState[mapKey][property].push({
-                source: sourceDeploymentId,
-                target: targetDeploymentId,
+                source: sourceId,
+                target: targetId,
             });
         });
     });
@@ -52,7 +50,9 @@ const setNodeMapState = (graph, state, propertyConfig) => {
     const newState = { ...state };
     const { ingressKey, egressKey, filterState } = propertyConfig;
     graph.nodes.forEach((node) => {
-        const { id } = node.entity;
+        let { id } = node.entity;
+        const { type } = node.entity;
+        id = type === 'INTERNET' ? 'External Entities' : id;
         if (!newState[id]) {
             newState[id] = {};
         }
@@ -64,20 +64,22 @@ const setNodeMapState = (graph, state, propertyConfig) => {
         newState[id][egressKey] = [];
         Object.keys(node.outEdges).forEach((targetIndex) => {
             const targetNode = graph.nodes[targetIndex];
-            const { id: targetDeploymentId, type: targetDeploymentType } = targetNode.entity;
-            if (!newState[targetDeploymentId]) {
-                newState[targetDeploymentId] = {};
+            let { id: targetEntityId } = targetNode.entity;
+            const { type: targetEntityType } = targetNode.entity;
+            targetEntityId = targetEntityType === 'INTERNET' ? 'External Entities' : targetEntityId;
+            if (!newState[targetEntityId]) {
+                newState[targetEntityId] = {};
             }
-            newState[id][egressKey].push(targetDeploymentId);
-            if (get(newState, [targetDeploymentId, ingressKey])) {
-                newState[targetDeploymentId][ingressKey].push(id);
+            newState[id][egressKey].push(targetEntityId);
+            if (get(newState, [targetEntityId, ingressKey])) {
+                newState[targetEntityId][ingressKey].push(id);
             } else {
-                set(newState, [targetDeploymentId, ingressKey], [id]);
+                set(newState, [targetEntityId, ingressKey], [id]);
             }
-            if (targetDeploymentType !== entityTypes.DEPLOYMENT) {
+            if (targetEntityType !== entityTypes.DEPLOYMENT) {
                 newState[id][filterState].externallyConnected = true;
             }
-            newState[id][filterState].outEdges[targetDeploymentId] = node.outEdges[targetIndex];
+            newState[id][filterState].outEdges[targetEntityId] = node.outEdges[targetIndex];
         });
     });
     return newState;

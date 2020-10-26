@@ -63,4 +63,6 @@ export const nodeConnectionKeys = {
     EGRESS_ALLOWED: 'egressAllowed',
 };
 
-export const EXTERNAL_ENTITIES_TYPE = 'INTERNET';
+export const nodeTypes = {
+    EXTERNAL_ENTITIES: 'INTERNET',
+};

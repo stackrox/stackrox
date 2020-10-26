@@ -55,9 +55,7 @@ const getCreatingOrSimulating = createSelector(
     [selectors.getNetworkWizardOpen, selectors.getNetworkWizardStage],
     (wizardOpen, wizardStage) =>
         wizardOpen &&
-        wizardStage !== wizardStages.details &&
-        wizardStage !== wizardStages.namespaceDetails &&
-        wizardStage !== wizardStages.cidrForm
+        (wizardStage === wizardStages.simulator || wizardStage === wizardStages.creator)
 );
 
 const mapStateToProps = createStructuredSelector({

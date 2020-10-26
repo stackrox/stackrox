@@ -82,7 +82,7 @@ const styles = [
             'font-weight': 700,
             label: 'External\n  Entities \u2b08',
             'line-height': 1.2,
-            padding: '16px',
+            padding: '0px',
             'text-transform': 'uppercase',
             'text-wrap': 'wrap',
             width: 'label',
@@ -224,6 +224,15 @@ const styles = [
     },
     {
         selector: ':parent > node.nsEdge',
+        style: {
+            width: 0.5,
+            height: 0.5,
+            padding: '0px',
+            'background-color': 'white',
+        },
+    },
+    {
+        selector: ':parent > node.externalEntitiesEdge',
         style: {
             width: 0.5,
             height: 0.5,

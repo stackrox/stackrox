@@ -22,20 +22,23 @@ import {
     GRAPH_PADDING,
     OUTER_PADDING,
     OUTER_SPACING_FACTOR,
+    nodeTypes,
 } from 'constants/networkGraph';
 import { filterModes } from 'constants/networkFilterModes';
 import entityTypes from 'constants/entityTypes';
 
 import style from 'Containers/Network/Graph/networkGraphStyles';
+import { getLinks, getFilteredLinks } from 'utils/networkLink.utils';
 import {
-    getLinks,
     isNamespace,
     isNamespaceEdge,
     getNodeData,
     getEdges,
     getNamespaceEdgeNodes,
     getNamespaceList,
-    getInternetNode,
+    getExternalEntitiesEdgeNodes,
+    getExternalEntitiesNode,
+    getClusterNode,
     getDeploymentList,
     getFilteredNodes,
     getNetworkFlows,
@@ -61,6 +64,7 @@ const NetworkGraph = ({
     networkNodeMap,
     onNodeClick,
     onNamespaceClick,
+    onExternalEntitiesClick,
     onClickOutside,
     filterState,
     setNetworkGraphRef,
@@ -91,7 +95,8 @@ const NetworkGraph = ({
         isActive: filterState !== filterModes.active && datum.internetAccess,
     }));
 
-    const links = getLinks(data, networkEdgeMap, networkNodeMap, filterState);
+    const links = getLinks(data, networkEdgeMap, networkNodeMap, filterState, featureFlags);
+    const filteredLinks = getFilteredLinks(links);
 
     // @TODO: Remove "showPortsAndProtocols" when the feature flag "ROX_NETWORK_GRAPH_PORTS" is defaulted to true
     const showPortsAndProtocols = isBackendFeatureFlagEnabled(
@@ -278,8 +283,14 @@ const NetworkGraph = ({
         if (target.isNode()) {
             setSelectedNode(evData);
             setSelectedNodeInGraph(evData);
-            history.push(`/main/network/${id}`);
-            onNodeClick(evData);
+
+            if (type === nodeTypes.EXTERNAL_ENTITIES) {
+                history.push(`/main/network/internet`);
+                onExternalEntitiesClick({ id, deployments: evData?.outEdges || [] });
+            } else {
+                history.push(`/main/network/${id}`);
+                onNodeClick(evData);
+            }
         }
     }
 
@@ -342,7 +353,8 @@ const NetworkGraph = ({
             hoveredNode,
             selectedNode,
             hoveredEdge,
-            links,
+            unfilteredLinks: links,
+            links: filteredLinks,
             nodes,
             filterState,
             nodeSideMap,
@@ -373,6 +385,11 @@ const NetworkGraph = ({
             selectedClusterName
         );
         const namespaceEdgeNodes = getNamespaceEdgeNodes(namespaceList);
+        const showExternal = isBackendFeatureFlagEnabled(
+            featureFlags,
+            knownBackendFlags.ROX_NETWORK_GRAPH_EXTERNAL_SRCS,
+            false
+        );
 
         namespaceList.forEach((namespace) => {
             deploymentList.forEach((deployment) => {
@@ -385,31 +402,20 @@ const NetworkGraph = ({
             });
         });
 
-        const allNodes = [...namespaceList, ...deploymentList, ...namespaceEdgeNodes];
+        let allNodes = [...namespaceList, ...deploymentList, ...namespaceEdgeNodes];
         const allEdges = getEdges(configObj);
 
-        // @TODO: Remove "showExternal" flag when the feature flag "ROX_NETWORK_GRAPH_EXTERNAL_SRCS" is defaulted to true
-        //        and don't forget to add `clusterGroup to `allNodes` array above
-        const showExternal = isBackendFeatureFlagEnabled(
-            featureFlags,
-            knownBackendFlags.ROX_NETWORK_GRAPH_EXTERNAL_SRCS,
-            false
-        );
         if (showExternal) {
-            const clusterGroup = {
-                classes: 'cluster',
-                data: {
-                    id: selectedClusterName,
-                    name: selectedClusterName,
-                    active: false,
-                    type: entityTypes.CLUSTER,
-                },
-            };
-            allNodes.push(clusterGroup);
+            const clusterNode = getClusterNode(selectedClusterName);
+            allNodes.push(clusterNode);
 
-            const internetNode = getInternetNode(data, configObj);
-            if (internetNode) {
-                allNodes.push(internetNode);
+            const externalEntitiesNode = getExternalEntitiesNode(data, configObj);
+            if (externalEntitiesNode) {
+                const externalEntitiesEdgeNodes = getExternalEntitiesEdgeNodes(
+                    externalEntitiesNode
+                );
+
+                allNodes = allNodes.concat(externalEntitiesEdgeNodes, externalEntitiesNode);
             }
         }
         // end of TODO to be removed
@@ -429,11 +435,14 @@ const NetworkGraph = ({
         // Get a map of all the side nodes per namespace
         const groups = cyRef.current.nodes(':parent');
         const namespaces = groups.filter((group) => {
-            const groupData = group.data();
-            return groupData.type !== entityTypes.CLUSTER;
+            return group.data().type === entityTypes.NAMESPACE;
         });
-        const sideNodesPerParent = namespaces.reduce((acc, namespace) => {
-            const { id } = namespace.data(); // to
+        const externalEntities = groups.filter((group) => {
+            return group.data().type === nodeTypes.EXTERNAL_ENTITIES;
+        });
+        const parents = [...namespaces, ...externalEntities];
+        const sideNodesPerParent = parents.reduce((acc, parent) => {
+            const { id } = parent.data(); // to
             if (!id) {
                 return { ...acc };
             }
@@ -467,15 +476,15 @@ const NetworkGraph = ({
             distances[key] = distance;
             return distance;
         }
-        // for each namespace, go through each other namespace
-        namespaces.forEach((sourceNS, i) => {
-            const sourceName = sourceNS.data().id;
+        // for each parent, go through each other parents
+        parents.forEach((source, i) => {
+            const sourceName = source.data().id;
             const sourceSideNodes = sideNodesPerParent[sourceName];
             nodeSideMap[sourceName] = nodeSideMap[sourceName] || {};
             const sourceMap = nodeSideMap[sourceName];
 
-            namespaces.forEach((targetNS, j) => {
-                const targetName = targetNS.data().id;
+            parents.forEach((target, j) => {
+                const targetName = target.data().id;
 
                 if (
                     i === j ||
@@ -686,6 +695,7 @@ NetworkGraph.propTypes = {
     networkEdgeMap: PropTypes.shape({}),
     networkNodeMap: PropTypes.shape({}).isRequired,
     onNamespaceClick: PropTypes.func.isRequired,
+    onExternalEntitiesClick: PropTypes.func.isRequired,
     onNodeClick: PropTypes.func.isRequired,
     onClickOutside: PropTypes.func.isRequired,
     filterState: PropTypes.number.isRequired,

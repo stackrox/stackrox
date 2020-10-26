@@ -2,58 +2,449 @@
     "epoch": 0,
     "nodes": [
         {
-            "id": "1",
-            "cluster": "Kubernetes Cluster 0",
-            "namespace": "namespace-1",
+            "entity": {
+                "type": "DEPLOYMENT",
+                "id": "c7cc3eff-dbc3-11ea-973b-025000000001",
+                "deployment": {
+                    "name": "kube-proxy",
+                    "namespace": "kube-system",
+                    "cluster": "remote",
+                    "listenPorts": []
+                }
+            },
             "internetAccess": false,
             "policyIds": [],
-            "deploymentName": "node-1"
+            "nonIsolatedIngress": false,
+            "nonIsolatedEgress": false,
+            "outEdges": {}
         },
         {
-            "id": "2",
-            "cluster": "Kubernetes Cluster 0",
-            "namespace": "namespace-1",
-            "internetAccess": true,
-            "policyIds": [],
-            "deploymentName": "node-2"
-        },
-        {
-           "id": "3",
-            "cluster": "Kubernetes Cluster 0",
-            "namespace": "namespace-2",
+            "entity": {
+                "type": "DEPLOYMENT",
+                "id": "ee1bb960-fda0-11ea-8db5-025000000001",
+                "deployment": {
+                    "name": "collector",
+                    "namespace": "stackrox",
+                    "cluster": "remote",
+                    "listenPorts": [
+                        { "port": 8080, "l4protocol": "L4_PROTOCOL_TCP" },
+                        { "port": 9090, "l4protocol": "L4_PROTOCOL_TCP" }
+                    ]
+                }
+            },
             "internetAccess": false,
             "policyIds": [],
-            "deploymentName": "node-3"
+            "nonIsolatedIngress": false,
+            "nonIsolatedEgress": false,
+            "outEdges": {
+                "4": {
+                    "properties": [
+                        {
+                            "port": 8443,
+                            "protocol": "L4_PROTOCOL_TCP",
+                            "lastActiveTimestamp": "2020-09-23T17:11:50.111301700Z"
+                        }
+                    ]
+                },
+                "7": {
+                    "properties": [
+                        {
+                            "port": 53,
+                            "protocol": "L4_PROTOCOL_UDP",
+                            "lastActiveTimestamp": "2020-09-23T16:28:38.091239Z"
+                        }
+                    ]
+                }
+            }
         },
         {
-           "id": "4",
-            "cluster": "Kubernetes Cluster 0",
-            "namespace": "namespace-3",
-            "internetAccess": true,
+            "entity": {
+                "type": "DEPLOYMENT",
+                "id": "fa6ca92e-dbc3-11ea-973b-025000000001",
+                "deployment": {
+                    "name": "compose-api",
+                    "namespace": "docker",
+                    "cluster": "remote",
+                    "listenPorts": [{ "port": 9443, "l4protocol": "L4_PROTOCOL_TCP" }]
+                }
+            },
+            "internetAccess": false,
             "policyIds": [],
-            "deploymentName": "node-4"
-        }
-    ],
-    "edges": [
-        {
-            "source": "1",
-            "target": "2"
+            "nonIsolatedIngress": false,
+            "nonIsolatedEgress": false,
+            "outEdges": {
+                "13": {
+                    "properties": [
+                        {
+                            "port": 443,
+                            "protocol": "L4_PROTOCOL_TCP",
+                            "lastActiveTimestamp": "2020-09-23T17:11:50.111319100Z"
+                        }
+                    ]
+                }
+            }
         },
         {
-            "source": "2",
-            "target": "1"
+            "entity": {
+                "type": "DEPLOYMENT",
+                "id": "fa73bda4-dbc3-11ea-973b-025000000001",
+                "deployment": {
+                    "name": "compose",
+                    "namespace": "docker",
+                    "cluster": "remote",
+                    "listenPorts": []
+                }
+            },
+            "internetAccess": false,
+            "policyIds": [],
+            "nonIsolatedIngress": false,
+            "nonIsolatedEgress": false,
+            "outEdges": {
+                "13": {
+                    "properties": [
+                        {
+                            "port": 443,
+                            "protocol": "L4_PROTOCOL_TCP",
+                            "lastActiveTimestamp": "2020-09-23T17:11:50.111336300Z"
+                        }
+                    ]
+                }
+            }
         },
         {
-            "source": "1",
-            "target": "3"
+            "entity": {
+                "type": "DEPLOYMENT",
+                "id": "edfc4e91-fda0-11ea-8db5-025000000001",
+                "deployment": {
+                    "name": "sensor",
+                    "namespace": "stackrox",
+                    "cluster": "remote",
+                    "listenPorts": [
+                        { "port": 8443, "l4protocol": "L4_PROTOCOL_TCP" },
+                        { "port": 9090, "l4protocol": "L4_PROTOCOL_TCP" },
+                        { "port": 9443, "l4protocol": "L4_PROTOCOL_TCP" }
+                    ]
+                }
+            },
+            "internetAccess": false,
+            "policyIds": [],
+            "nonIsolatedIngress": false,
+            "nonIsolatedEgress": false,
+            "outEdges": {
+                "8": {
+                    "properties": [
+                        {
+                            "port": 8443,
+                            "protocol": "L4_PROTOCOL_TCP",
+                            "lastActiveTimestamp": "2020-09-23T17:11:50.111265900Z"
+                        }
+                    ]
+                },
+                "13": {
+                    "properties": [
+                        {
+                            "port": 443,
+                            "protocol": "L4_PROTOCOL_TCP",
+                            "lastActiveTimestamp": "2020-09-23T17:11:50.111282400Z"
+                        }
+                    ]
+                }
+            }
         },
         {
-            "source": "3",
-            "target": "1"
+            "entity": {
+                "type": "DEPLOYMENT",
+                "id": "decddc42-fda0-11ea-8db5-025000000001",
+                "deployment": {
+                    "name": "scanner-db",
+                    "namespace": "stackrox",
+                    "cluster": "remote",
+                    "listenPorts": [{ "port": 5432, "l4protocol": "L4_PROTOCOL_TCP" }]
+                }
+            },
+            "internetAccess": false,
+            "policyIds": [],
+            "nonIsolatedIngress": false,
+            "nonIsolatedEgress": false,
+            "outEdges": {}
         },
         {
-            "source": "3",
-            "target": "4"
+            "entity": {
+                "type": "DEPLOYMENT",
+                "id": "deca76d4-fda0-11ea-8db5-025000000001",
+                "deployment": {
+                    "name": "scanner",
+                    "namespace": "stackrox",
+                    "cluster": "remote",
+                    "listenPorts": [
+                        { "port": 8080, "l4protocol": "L4_PROTOCOL_TCP" },
+                        { "port": 8443, "l4protocol": "L4_PROTOCOL_TCP" }
+                    ]
+                }
+            },
+            "internetAccess": false,
+            "policyIds": [],
+            "nonIsolatedIngress": false,
+            "nonIsolatedEgress": false,
+            "outEdges": {
+                "5": {
+                    "properties": [
+                        {
+                            "port": 5432,
+                            "protocol": "L4_PROTOCOL_TCP",
+                            "lastActiveTimestamp": "2020-09-23T17:11:50.111247500Z"
+                        }
+                    ]
+                },
+                "7": {
+                    "properties": [
+                        {
+                            "port": 53,
+                            "protocol": "L4_PROTOCOL_UDP",
+                            "lastActiveTimestamp": "2020-09-23T17:06:56.137253Z"
+                        }
+                    ]
+                },
+                "8": {
+                    "properties": [
+                        {
+                            "port": 8443,
+                            "protocol": "L4_PROTOCOL_TCP",
+                            "lastActiveTimestamp": "2020-09-23T17:11:50.111230900Z"
+                        }
+                    ]
+                },
+                "13": {
+                    "properties": [
+                        {
+                            "port": 443,
+                            "protocol": "L4_PROTOCOL_TCP",
+                            "lastActiveTimestamp": "2020-09-23T17:08:26.177627Z"
+                        },
+                        {
+                            "port": 9,
+                            "protocol": "L4_PROTOCOL_UDP",
+                            "lastActiveTimestamp": "2020-09-23T17:06:56.138004Z"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "entity": {
+                "type": "DEPLOYMENT",
+                "id": "c7975975-dbc3-11ea-973b-025000000001",
+                "deployment": {
+                    "name": "coredns",
+                    "namespace": "kube-system",
+                    "cluster": "remote",
+                    "listenPorts": [
+                        { "port": 8080, "l4protocol": "L4_PROTOCOL_TCP" },
+                        { "port": 9153, "l4protocol": "L4_PROTOCOL_TCP" },
+                        { "port": 53, "l4protocol": "L4_PROTOCOL_TCP" }
+                    ]
+                }
+            },
+            "internetAccess": false,
+            "policyIds": [],
+            "nonIsolatedIngress": false,
+            "nonIsolatedEgress": false,
+            "outEdges": {
+                "13": {
+                    "properties": [
+                        {
+                            "port": 443,
+                            "protocol": "L4_PROTOCOL_TCP",
+                            "lastActiveTimestamp": "2020-09-23T17:11:50.111190400Z"
+                        },
+                        {
+                            "port": 8080,
+                            "protocol": "L4_PROTOCOL_TCP",
+                            "lastActiveTimestamp": "2020-09-23T17:11:01.729335Z"
+                        },
+                        {
+                            "port": 53,
+                            "protocol": "L4_PROTOCOL_UDP",
+                            "lastActiveTimestamp": "2020-09-23T17:10:47.718845Z"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "entity": {
+                "type": "DEPLOYMENT",
+                "id": "de3fb48c-fda0-11ea-8db5-025000000001",
+                "deployment": {
+                    "name": "central",
+                    "namespace": "stackrox",
+                    "cluster": "remote",
+                    "listenPorts": [
+                        { "port": 8443, "l4protocol": "L4_PROTOCOL_TCP" },
+                        { "port": 9090, "l4protocol": "L4_PROTOCOL_TCP" }
+                    ]
+                }
+            },
+            "internetAccess": false,
+            "policyIds": [],
+            "nonIsolatedIngress": false,
+            "nonIsolatedEgress": false,
+            "outEdges": {
+                "6": {
+                    "properties": [
+                        {
+                            "port": 8080,
+                            "protocol": "L4_PROTOCOL_TCP",
+                            "lastActiveTimestamp": "2020-09-23T17:00:00.484813Z"
+                        }
+                    ]
+                },
+                "7": {
+                    "properties": [
+                        {
+                            "port": 53,
+                            "protocol": "L4_PROTOCOL_UDP",
+                            "lastActiveTimestamp": "2020-09-23T17:10:33.146863Z"
+                        }
+                    ]
+                },
+                "13": {
+                    "properties": [
+                        {
+                            "port": 443,
+                            "protocol": "L4_PROTOCOL_TCP",
+                            "lastActiveTimestamp": "2020-09-23T17:11:50.111211800Z"
+                        },
+                        {
+                            "port": 9,
+                            "protocol": "L4_PROTOCOL_UDP",
+                            "lastActiveTimestamp": "2020-09-23T17:10:33.147548Z"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "entity": {
+                "type": "DEPLOYMENT",
+                "id": "d615168b-e724-5229-b679-ca3a84f8e4c4",
+                "deployment": {
+                    "name": "static-kube-scheduler-pods",
+                    "namespace": "kube-system",
+                    "cluster": "remote",
+                    "listenPorts": []
+                }
+            },
+            "internetAccess": false,
+            "policyIds": [],
+            "nonIsolatedIngress": false,
+            "nonIsolatedEgress": false,
+            "outEdges": {}
+        },
+        {
+            "entity": {
+                "type": "DEPLOYMENT",
+                "id": "8b4f8c14-8cb3-5e2e-b186-cec7b79154c8",
+                "deployment": {
+                    "name": "static-kube-apiserver-pods",
+                    "namespace": "kube-system",
+                    "cluster": "remote",
+                    "listenPorts": []
+                }
+            },
+            "internetAccess": false,
+            "policyIds": [],
+            "nonIsolatedIngress": false,
+            "nonIsolatedEgress": false,
+            "outEdges": {}
+        },
+        {
+            "entity": {
+                "type": "DEPLOYMENT",
+                "id": "0bf8cfa9-5b09-58cd-b260-00f6ef5a3b74",
+                "deployment": {
+                    "name": "static-kube-controller-manager-pods",
+                    "namespace": "kube-system",
+                    "cluster": "remote",
+                    "listenPorts": []
+                }
+            },
+            "internetAccess": false,
+            "policyIds": [],
+            "nonIsolatedIngress": false,
+            "nonIsolatedEgress": false,
+            "outEdges": {}
+        },
+        {
+            "entity": {
+                "type": "DEPLOYMENT",
+                "id": "5da36349-5714-5e04-abe3-315db948dda9",
+                "deployment": {
+                    "name": "static-etcd-pods",
+                    "namespace": "kube-system",
+                    "cluster": "remote",
+                    "listenPorts": []
+                }
+            },
+            "internetAccess": false,
+            "policyIds": [],
+            "nonIsolatedIngress": false,
+            "nonIsolatedEgress": false,
+            "outEdges": {}
+        },
+        {
+            "entity": { "type": "INTERNET", "id": "afa12424-bde3-4313-b810-bb463cbe8f90" },
+            "internetAccess": false,
+            "policyIds": [],
+            "nonIsolatedIngress": false,
+            "nonIsolatedEgress": false,
+            "outEdges": {
+                "2": {
+                    "properties": [
+                        {
+                            "port": 9443,
+                            "protocol": "L4_PROTOCOL_TCP",
+                            "lastActiveTimestamp": "2020-09-23T17:11:50.111354800Z"
+                        }
+                    ]
+                },
+                "4": {
+                    "properties": [
+                        {
+                            "port": 9443,
+                            "protocol": "L4_PROTOCOL_TCP",
+                            "lastActiveTimestamp": "2020-09-23T17:10:52.289680Z"
+                        }
+                    ]
+                },
+                "6": {
+                    "properties": [
+                        {
+                            "port": 8080,
+                            "protocol": "L4_PROTOCOL_TCP",
+                            "lastActiveTimestamp": "2020-09-23T17:11:00.932252Z"
+                        }
+                    ]
+                },
+                "7": {
+                    "properties": [
+                        {
+                            "port": 8080,
+                            "protocol": "L4_PROTOCOL_TCP",
+                            "lastActiveTimestamp": "2020-09-23T17:11:00.081396Z"
+                        }
+                    ]
+                },
+                "8": {
+                    "properties": [
+                        {
+                            "port": 8443,
+                            "protocol": "L4_PROTOCOL_TCP",
+                            "lastActiveTimestamp": "2020-09-23T17:10:58.429059Z"
+                        }
+                    ]
+                }
+            }
         }
     ]
 }

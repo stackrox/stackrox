@@ -3,6 +3,7 @@ import {
     NODE_WIDTH,
     NODE_PADDING,
     SIDE_NODE_PADDING,
+    nodeTypes,
 } from 'constants/networkGraph';
 import entityTypes from 'constants/entityTypes';
 
@@ -31,27 +32,40 @@ function getParentDimensions(nodeCount) {
 
 // Gets positions and dimensions for all parent nodes
 export function getParentPositions(nodes, padding) {
-    const NSNames = nodes
+    const namespaceNames = nodes
         .filter((node) => node.data().type === entityTypes.NAMESPACE)
+        .map((parent) => parent.data().id);
+    const externalEntitiesNames = nodes
+        .filter((node) => node.data().type === nodeTypes.EXTERNAL_ENTITIES)
         .map((parent) => parent.data().id);
 
     // Get namespace dimensions sorted by width
-    const namespaces = NSNames.map((id) => {
-        const nodeCount = nodes.filter((node) => {
-            const data = node.data();
-            return data.parent && !data.side && data.parent === id;
-        }).length;
+    const namespaces = namespaceNames
+        .map((id) => {
+            const nodeCount = nodes.filter((node) => {
+                const data = node.data();
+                return data.parent && !data.side && data.parent === id;
+            }).length;
 
-        return { ...getParentDimensions(nodeCount), id, nodeCount };
-    }).sort((a, b) => b.cols - a.cols);
+            return { ...getParentDimensions(nodeCount), id, nodeCount };
+        })
+        .sort((a, b) => b.cols - a.cols);
+    const externalEntities = externalEntitiesNames
+        .map((id) => {
+            const nodeCount = 1;
+            return { ...getParentDimensions(nodeCount), id, nodeCount };
+        })
+        .sort((a, b) => b.cols - a.cols);
+
+    const parents = [...namespaces, ...externalEntities];
 
     // lay out namespaces
     let y = 0;
     let rowNum = 0;
     let colNum = 0;
     const maxNSWidth = Math.max(...avgNSDimensions.width);
-    const maxRowWidth = Math.floor(Math.sqrt(namespaces.length) + 1) * maxNSWidth;
-    return namespaces.map((NS) => {
+    const maxRowWidth = Math.floor(Math.sqrt(parents.length) + 1) * maxNSWidth;
+    return parents.map((NS) => {
         const { id, width, height } = NS;
         const newX = (maxNSWidth + padding.x) * colNum;
         const result = {
@@ -95,11 +109,10 @@ edgeGridLayout.prototype.run = function () {
     const renderNodes = nodes.not('[side]');
     const sideNodes = eles.nodes('[side]');
 
-    if (!renderNodes.length) {
-        return this;
-    }
+    const isExternalEntities = !renderNodes.length;
+    const numNodes = isExternalEntities ? 1 : renderNodes.length;
 
-    const { width, height, cols } = getParentDimensions(renderNodes.length);
+    const { width, height, cols } = getParentDimensions(numNodes);
 
     // Calculate cell dimensions
     const cellWidth = nodeWidth;
