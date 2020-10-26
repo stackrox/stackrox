@@ -13,7 +13,7 @@ function ToggleSwitch({
     toggleHandler,
     label,
     labelClassName,
-    enabled,
+    enabled: value,
     extraClassNames,
     flipped,
     small,
@@ -35,7 +35,7 @@ function ToggleSwitch({
             >
                 <input
                     type="checkbox"
-                    checked={flipped ? !enabled : !!enabled}
+                    checked={flipped ? !value : !!value}
                     onChange={flipped ? flippedToggleHandler : toggleHandler}
                     name={id}
                     id={id}

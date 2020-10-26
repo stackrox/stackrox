@@ -255,3 +255,27 @@ export function deleteCIDRBlock(blockId) {
         response: response.data,
     }));
 }
+
+/**
+ * Gets the default StackRox generated CIDR blocks toggle state.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function getHideDefaultExternalSrcs() {
+    return axios.get(`${networkFlowBaseUrl}/config`).then((response) => ({
+        response: response.data,
+    }));
+}
+
+/**
+ * Sets the default StackRox generated CIDR blocks to be on or off.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function setHideDefaultExternalSrcs(toggleState) {
+    return axios
+        .put(`${networkFlowBaseUrl}/config`, { config: { hideDefaultExternalSrcs: toggleState } })
+        .then((response) => ({
+            response: response.data,
+        }));
+}

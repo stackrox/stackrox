@@ -6,6 +6,7 @@ import { createStructuredSelector } from 'reselect';
 import { fetchCIDRBlocks } from 'services/NetworkService';
 import Panel from 'Components/Panel';
 import Loader from 'Components/Loader';
+import DefaultCIDRToggle from './DefaultCIDRToggle';
 import CIDRForm from './CIDRForm';
 
 const CIDRPanel = ({ selectedClusterId, onClose }) => {
@@ -35,6 +36,7 @@ const CIDRPanel = ({ selectedClusterId, onClose }) => {
             bodyClassName="flex flex-col bg-base-100"
             id="network-cidr-form"
         >
+            <DefaultCIDRToggle />
             {CIDRBlocks?.entities?.length >= 0 ? (
                 <CIDRForm rows={CIDRBlocks} clusterId={selectedClusterId} onClose={onClose} />
             ) : (
