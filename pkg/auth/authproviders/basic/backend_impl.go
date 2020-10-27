@@ -43,12 +43,12 @@ func (p *backendImpl) OnDisable(provider authproviders.Provider) {
 func (p *backendImpl) ExchangeToken(ctx context.Context, externalRawToken, state string) (*authproviders.AuthResponse, string, error) {
 	urlValues, err := url.ParseQuery(externalRawToken)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "failed to parse credentials form data")
+		return nil, "", authproviders.CreateError("failed to parse credentials form data", err)
 	}
 	username, password := urlValues.Get("username"), urlValues.Get("password")
 	id, err := p.basicAuthMgr.IdentityForCreds(username, password, nil)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "failed to authenticate")
+		return nil, "", authproviders.CreateError("failed to authenticate", err)
 	}
 
 	return &authproviders.AuthResponse{

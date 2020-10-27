@@ -109,7 +109,7 @@ func (p *backendImpl) Config() map[string]string {
 func (p *backendImpl) consumeSAMLResponse(samlResponse string) (*authproviders.AuthResponse, error) {
 	ai, err := p.sp.RetrieveAssertionInfo(samlResponse)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "error in saml response")
 	}
 
 	var expiry time.Time

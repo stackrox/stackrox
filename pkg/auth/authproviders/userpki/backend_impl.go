@@ -91,7 +91,8 @@ func (p *backendImpl) RefreshURL() string {
 func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
 	restPath := strings.TrimPrefix(r.URL.Path, p.pathPrefix)
 	if len(restPath) == len(r.URL.Path) {
-		return nil, utils.Should(httputil.Errorf(http.StatusNotFound, "invalid URL %q, expected sub-path of %q", r.URL.Path, p.pathPrefix))
+		return nil, utils.Should(httputil.Errorf(http.StatusNotFound,
+			"invalid URL %q, expected sub-path of %q", r.URL.Path, p.pathPrefix))
 	}
 
 	if restPath != authenticateHandlerPath {
@@ -100,7 +101,8 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 	}
 
 	if r.Method != http.MethodGet {
-		return nil, httputil.Errorf(http.StatusMethodNotAllowed, "invalid method %q, only GET requests are allowed", r.Method)
+		return nil, httputil.Errorf(http.StatusMethodNotAllowed,
+			"invalid method %q, only GET requests are allowed", r.Method)
 	}
 
 	ri := requestinfo.FromContext(r.Context())
