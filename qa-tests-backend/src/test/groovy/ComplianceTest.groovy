@@ -1,3 +1,4 @@
+import com.google.protobuf.util.Timestamps
 import com.opencsv.bean.CsvToBean
 import com.opencsv.bean.CsvToBeanBuilder
 import com.opencsv.bean.HeaderColumnNameTranslateMappingStrategy
@@ -44,6 +45,9 @@ import v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 class ComplianceTest extends BaseSpecification {
     @Shared
@@ -447,14 +451,16 @@ class ComplianceTest extends BaseSpecification {
                     println result.clusterResults.controlResultsMap.keySet()
                 }
                 assert value
-                assert control
-                if (value.evidenceCount == 1) {
-                    assert convertStringState(row.state) ?
+                assert convertStringState(row.state) ?
                             convertStringState(row.state) == value.overallState :
                             row.state == "Unknown"
-                    verifiedRows++
-                }
+                verifiedRows++
                 assert row.controlDescription == control.description
+                assert row.cluster == result.domain.cluster.name
+                Instant i = Instant.parse(Timestamps.toString(result.runMetadata.finishTimestamp))
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss 'UTC'")
+                        .withZone(ZoneId.of("UTC"))
+                assert row.timestamp == formatter.format(i)
             }
             println "Verified ${verifiedRows} out of ${rowNumber} total rows"
         } catch (Exception e) {
