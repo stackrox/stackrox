@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	graphConfigDS "github.com/stackrox/rox/central/networkflow/config/datastore"
 	"github.com/stackrox/rox/central/networkflow/datastore/internal/store"
 	"github.com/stackrox/rox/pkg/expiringcache"
 )
@@ -11,14 +12,14 @@ import (
 //go:generate mockgen-wrapper
 type ClusterDataStore interface {
 	GetFlowStore(ctx context.Context, clusterID string) (FlowDataStore, error)
-
 	CreateFlowStore(ctx context.Context, clusterID string) (FlowDataStore, error)
 }
 
 // NewClusterDataStore returns a new instance of ClusterDataStore using the input storage underneath.
-func NewClusterDataStore(storage store.ClusterStore, deletedDeploymentsCache expiringcache.Cache) ClusterDataStore {
+func NewClusterDataStore(storage store.ClusterStore, graphConfig graphConfigDS.DataStore, deletedDeploymentsCache expiringcache.Cache) ClusterDataStore {
 	return &clusterDataStoreImpl{
 		storage:                 storage,
+		graphConfig:             graphConfig,
 		deletedDeploymentsCache: deletedDeploymentsCache,
 	}
 }

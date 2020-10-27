@@ -5,29 +5,70 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/networkflow/aggregator"
+	graphConfigDS "github.com/stackrox/rox/central/networkflow/config/datastore"
 	"github.com/stackrox/rox/central/networkflow/datastore/internal/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
 var (
+	log             = logging.LoggerForModule()
 	networkGraphSAC = sac.ForResource(resources.NetworkGraph)
 )
 
 type flowDataStoreImpl struct {
 	storage                 store.FlowStore
+	graphConfig             graphConfigDS.DataStore
+	aggregator              aggregator.NetworkConnsAggregator
 	deletedDeploymentsCache expiringcache.Cache
 }
 
 func (fds *flowDataStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
-	return fds.storage.GetAllFlows(since)
+	flows, ts, err := fds.storage.GetAllFlows(since)
+	if err != nil {
+		return nil, types.Timestamp{}, nil
+	}
+
+	flows, err = fds.adjustFlowsForGraphConfig(ctx, flows)
+	if err != nil {
+		return nil, types.Timestamp{}, err
+	}
+	return flows, ts, nil
 }
 
 func (fds *flowDataStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
-	return fds.storage.GetMatchingFlows(pred, since)
+	flows, ts, err := fds.storage.GetMatchingFlows(pred, since)
+	if err != nil {
+		return nil, types.Timestamp{}, nil
+	}
+
+	flows, err = fds.adjustFlowsForGraphConfig(ctx, flows)
+	if err != nil {
+		return nil, types.Timestamp{}, err
+	}
+	return flows, ts, nil
+}
+
+func (fds *flowDataStoreImpl) adjustFlowsForGraphConfig(ctx context.Context, flows []*storage.NetworkFlow) ([]*storage.NetworkFlow, error) {
+	if !features.NetworkGraphExternalSrcs.Enabled() {
+		return flows, nil
+	}
+
+	config, err := fds.graphConfig.GetNetworkGraphConfig(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to obtain network graph configuration")
+	}
+
+	if config.GetHideDefaultExternalSrcs() {
+		return fds.aggregator.Aggregate(flows), nil
+	}
+	return flows, nil
 }
 
 func (fds *flowDataStoreImpl) isDeletedDeployment(id string) bool {

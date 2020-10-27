@@ -15,6 +15,12 @@ func IsExternal(entity *storage.NetworkEntityInfo) bool {
 	return entity.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE || entity.GetType() == storage.NetworkEntityInfo_INTERNET
 }
 
+// IsKnownDefaultExternal returns true if the network entity is known system-generated network source.
+// Note: INTERNET is not treated as system-generated but rather a fallback when exact data is unavailable.
+func IsKnownDefaultExternal(entity *storage.NetworkEntityInfo) bool {
+	return entity.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE && entity.GetExternalSource().GetDefault()
+}
+
 // AnyExternal returns true if at least one network entity is external to cluster (by type).
 func AnyExternal(src, dst *storage.NetworkEntityInfo) bool {
 	return IsExternal(src) || IsExternal(dst)

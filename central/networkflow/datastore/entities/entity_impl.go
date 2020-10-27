@@ -9,7 +9,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -20,14 +22,39 @@ var (
 )
 
 type entityDataStoreImpl struct {
-	storage store.EntityStore
+	storage               store.EntityStore
+	networkTreesByCluster map[string]*tree.NetworkTreeWrapper
 }
 
 // NewEntityDataStore returns a new instance of EntityDataStore using the input storage underneath.
 func NewEntityDataStore(storage store.EntityStore) EntityDataStore {
-	return &entityDataStoreImpl{
-		storage: storage,
+	ds := &entityDataStoreImpl{
+		storage:               storage,
+		networkTreesByCluster: make(map[string]*tree.NetworkTreeWrapper),
 	}
+
+	if err := ds.initNetworkTree(); err != nil {
+		utils.Should(err)
+	}
+	return ds
+}
+
+func (ds *entityDataStoreImpl) initNetworkTree() error {
+	err := ds.storage.Walk(func(obj *storage.NetworkEntity) error {
+		clusterID := obj.GetScope().GetClusterId()
+		if _, ok := ds.networkTreesByCluster[clusterID]; !ok {
+			networkTree, err := tree.NewDefaultNetworkTreeWrapper()
+			if err != nil {
+				return err
+			}
+			ds.networkTreesByCluster[clusterID] = networkTree
+		}
+		return ds.networkTreesByCluster[clusterID].Insert(obj.GetInfo())
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to initialize network tree")
+	}
+	return nil
 }
 
 func (ds *entityDataStoreImpl) GetEntity(ctx context.Context, id string) (*storage.NetworkEntity, bool, error) {

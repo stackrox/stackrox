@@ -270,6 +270,19 @@ func (d IPNetwork) PrefixLen() byte {
 	return d.prefixLen
 }
 
+// Family returns the IP address family that the network belongs to.
+func (d IPNetwork) Family() Family {
+	return d.ip.Family()
+}
+
+// AsIPNet returns the IP address as `net.IPNet`.
+func (d IPNetwork) AsIPNet() net.IPNet {
+	return net.IPNet{
+		IP:   d.ip.data.bytes(),
+		Mask: net.CIDRMask(int(d.prefixLen), len(d.ip.data.bytes())*8),
+	}
+}
+
 // IsValid returns true if this IPNetwork object is valid, else, returns false.
 func (d IPNetwork) IsValid() bool {
 	return d.ip.IsValid()
@@ -286,6 +299,10 @@ func (d IPNetwork) Contains(ip IPAddress) bool {
 
 // String returns the IPNetwork in string form.
 func (d IPNetwork) String() string {
+	if !d.IsValid() {
+		return ""
+	}
+
 	ipNet := &net.IPNet{
 		IP:   d.ip.data.bytes(),
 		Mask: net.CIDRMask(int(d.prefixLen), len(d.ip.data.bytes())*8),
