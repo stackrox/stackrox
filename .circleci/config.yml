@@ -1676,6 +1676,9 @@ commands:
                 git clone git@github.com:stackrox/helm-charts.git
                 BASE_DIR="/go/src/github.com/stackrox/helm-charts"
                 RENDERED_CHART_DIR="${BASE_DIR}/${MAIN_TAG}"
+                if [[ -d "$RENDERED_CHART_DIR/sensor" ]]; then
+                  RENDERED_CHART_DIR="$RENDERED_CHART_DIR/sensor"
+                fi
                 cd ${RENDERED_CHART_DIR}
                 sed -i -e 's/  name:/  name: remote/g' values.yaml
                 sed -i -e 's/    createService: false/    createService: true/g' values.yaml
@@ -4058,12 +4061,16 @@ jobs:
             gsutil cp image/rhel/bundle.tar.gz "gs://dsop-artifacts.stackrox.io/main-rhel/${TAG}/"
 
       - run:
-          name: Publish Helm charts to public github repository stackrox/helm-charts
+          name: Publish Helm charts to github repository stackrox/release-artifacts and create a PR
           command: |
             MAIN_TAG=$(make --quiet tag)
             make render-helm-yamls
-            .circleci/publish-helm-charts "/tmp/${MAIN_TAG}"
-            rm -rf "/tmp/${MAIN_TAG}"
+            sensor_chart_dir="/tmp/${MAIN_TAG}"
+            central_chart_dir="$(mktemp -d)"
+            rmdir "$central_chart_dir"
+            "./bin/$(uname | tr A-Z a-z)/roxctl" helm output central-services --output-dir "${central_chart_dir}"
+            .circleci/publish-helm-charts "$MAIN_TAG" "${central_chart_dir}" "${sensor_chart_dir}"
+            rm -rf "${sensor_chart_dir}"
 
       - run:
           name: Push image into ECR for AWS Marketplace
