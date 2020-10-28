@@ -54,7 +54,7 @@ const CVEStackedPill = ({
 
     const width = horizontal ? '' : 'min-w-16';
 
-    const imageScanMessages = getImageScanMessages(imageNotes || [], scan?.scanNotes || []);
+    const imageScanMessages = getImageScanMessages(imageNotes || [], scan?.notes || []);
     const hasScanMessages = Object.keys(imageScanMessages).length > 0;
 
     return (
