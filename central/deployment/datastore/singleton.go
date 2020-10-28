@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
+	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/central/processindicator/filter"
 	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/ranking"

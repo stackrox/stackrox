@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/metrics"
-	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
+	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"

@@ -5,8 +5,8 @@ import (
 
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
-	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
-	networkEntityDS "github.com/stackrox/rox/central/networkflow/datastore/entities"
+	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"

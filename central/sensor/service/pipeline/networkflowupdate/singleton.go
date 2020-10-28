@@ -1,7 +1,7 @@
 package networkflowupdate
 
 import (
-	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
+	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/pkg/sync"
 )

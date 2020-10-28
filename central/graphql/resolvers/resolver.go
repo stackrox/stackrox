@@ -27,7 +27,7 @@ import (
 	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentEdgeDataStore "github.com/stackrox/rox/central/imagecomponentedge/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
+	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"

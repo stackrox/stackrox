@@ -7,7 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
-	nfDSMocks "github.com/stackrox/rox/central/networkflow/datastore/mocks"
+	nfDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"

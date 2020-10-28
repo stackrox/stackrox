@@ -22,7 +22,7 @@ import (
 	imageDatastoreMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageIndex "github.com/stackrox/rox/central/image/index"
 	componentsMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
-	networkFlowDatastoreMocks "github.com/stackrox/rox/central/networkflow/datastore/mocks"
+	networkFlowDatastoreMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	processWhitelistDatastoreMocks "github.com/stackrox/rox/central/processwhitelist/datastore/mocks"

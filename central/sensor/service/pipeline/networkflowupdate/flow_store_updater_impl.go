@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/networkflow/datastore"
+	"github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"

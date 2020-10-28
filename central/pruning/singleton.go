@@ -7,7 +7,7 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imagesDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
-	networkFlowsDataStore "github.com/stackrox/rox/central/networkflow/datastore"
+	networkFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	processWhitelistDatastore "github.com/stackrox/rox/central/processwhitelist/datastore"

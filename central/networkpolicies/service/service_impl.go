@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	networkEntityDS "github.com/stackrox/rox/central/networkflow/datastore/entities"
+	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/generator"
 	"github.com/stackrox/rox/central/networkpolicies/graph"

@@ -10,7 +10,7 @@ import (
 	imageStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
-	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
+	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"

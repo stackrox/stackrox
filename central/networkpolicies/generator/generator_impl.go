@@ -8,10 +8,9 @@ import (
 	"github.com/pkg/errors"
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
-	"github.com/stackrox/rox/central/networkflow"
-	"github.com/stackrox/rox/central/networkflow/aggregator"
-	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
-	networkEntityDS "github.com/stackrox/rox/central/networkflow/datastore/entities"
+	"github.com/stackrox/rox/central/networkgraph/aggregator"
+	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -163,7 +162,7 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 		return nil, errors.Wrapf(err, "could not obtain network flow information for cluster %q", clusterID)
 	}
 
-	okFlows, missingInfoFlows := networkflow.UpdateFlowsWithEntityDesc(flows, objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments), extSrcs)
+	okFlows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments), extSrcs)
 	okFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(okFlows)
 	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
 

@@ -8,7 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	cDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	dDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	netEntityDSMocks "github.com/stackrox/rox/central/networkflow/datastore/entities/mocks"
+	netEntityDSMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	npMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	npGraphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
 	nDataStoreMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
