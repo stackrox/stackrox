@@ -50,6 +50,8 @@ spec:
   - to:
     - ipblock:
         cidr: 172.17.0.0/16
+        except: 
+        - 172.17.15.0/22
 `,
 	`
 kind: NetworkPolicy
@@ -731,7 +733,6 @@ func TestEvaluateClusters(t *testing.T) {
 				mockNode("d1", "", true, true, true),
 				mockNode("d2", "", true, true, true),
 				mockInternetNode(),
-				mockExternalNode("es1", "172.17.0.0/24"),
 			},
 		},
 		{
@@ -820,7 +821,7 @@ func TestEvaluateClusters(t *testing.T) {
 				},
 			},
 			edges: flattenEdges(
-				ingressEdges("d1", "d2", "d3"),
+				ingressEdges("d1", "d2", "d3", networkgraph.InternetExternalSourceID),
 			),
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("web-deny-all"),
@@ -1171,7 +1172,18 @@ func TestEvaluateClusters(t *testing.T) {
 					Desc: &storage.NetworkEntityInfo_ExternalSource_{
 						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
 							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-								Cidr: "172.17.0.0/24",
+								Cidr: "172.17.10.0/24",
+							},
+						},
+					},
+				},
+				{
+					Id:   "es2",
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Desc: &storage.NetworkEntityInfo_ExternalSource_{
+						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+								Cidr: "172.17.15.0/24",
 							},
 						},
 					},
@@ -1183,7 +1195,7 @@ func TestEvaluateClusters(t *testing.T) {
 			nodes: []*v1.NetworkNode{
 				mockNode("d1", "default", true, false, false, "allow-only-egress-to-ipblock"),
 				mockInternetNode(),
-				mockExternalNode("es1", "172.17.0.0/24"),
+				mockExternalNode("es1", "172.17.10.0/24"),
 			},
 			edges: flattenEdges(
 				egressEdges("d1", "es1", networkgraph.InternetExternalSourceID),
@@ -1223,7 +1235,7 @@ func TestEvaluateClusters(t *testing.T) {
 				mockInternetNode(),
 			},
 			edges: flattenEdges(
-				ingressEdges("a", "b"),
+				ingressEdges("a", "b", networkgraph.InternetExternalSourceID),
 			),
 		},
 	}
@@ -1516,7 +1528,7 @@ func TestEvaluateClustersWithPorts(t *testing.T) {
 				mockInternetNode(),
 			},
 			edges: flattenEdges(
-				ingressEdgesWithPort("a", portDescs{{l4proto: storage.Protocol_TCP_PROTOCOL, port: 8080}}, "b"),
+				ingressEdgesWithPort("a", portDescs{{l4proto: storage.Protocol_TCP_PROTOCOL, port: 8080}}, "b", networkgraph.InternetExternalSourceID),
 			),
 		},
 	}

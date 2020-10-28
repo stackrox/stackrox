@@ -29,7 +29,7 @@ type node struct {
 	adjacentNodes map[*node]struct{}
 }
 
-func newNode(d *storage.Deployment) *node {
+func newDeploymentNode(d *storage.Deployment) *node {
 	n := &node{
 		deployment: d,
 	}

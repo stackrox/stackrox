@@ -34,7 +34,7 @@ class Constants {
             "authorization-plugin" : ["Latest tag", "90-Day Image Age"],
             "webhookserver" : ["90-Day Image Age"],
     ]
-    static final EXTERNAL_SOURCE_ID = "afa12424-bde3-4313-b810-bb463cbe8f90" // pkg/networkgraph/constants.go
+    static final INTERNET_EXTERNAL_SOURCE_ID = "afa12424-bde3-4313-b810-bb463cbe8f90" // pkg/networkgraph/constants.go
 
     /*
         StackRox Product Feature Flags

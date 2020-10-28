@@ -380,7 +380,7 @@ class NetworkFlowTest extends BaseSpecification {
         expect:
         "Check for edge in network graph"
         println "Checking for edge from ${EXTERNALDESTINATION} to external target"
-        List<Edge> edges = checkForEdge(deploymentUid, Constants.EXTERNAL_SOURCE_ID)
+        List<Edge> edges = checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         assert edges
     }
 
@@ -413,7 +413,7 @@ class NetworkFlowTest extends BaseSpecification {
         then:
         "Check for edge in network graph"
         println "Checking for edge from external target to ${EXTERNALDESTINATION}"
-        List<Edge> edges = checkForEdge(Constants.EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
+        List<Edge> edges = checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
         assert edges
     }
 

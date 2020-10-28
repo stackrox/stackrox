@@ -80,7 +80,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 			expectedMatches: 0,
 		},
 		{
-			name: "ip block - matches external source; fully contained",
+			name: "ip block - external source fully contains ip block; match deployments and external sources",
 			deployments: []*storage.Deployment{
 				{
 					Namespace: "default",
@@ -105,7 +105,27 @@ func TestMatchPolicyPeer(t *testing.T) {
 			expectedMatches: 2,
 		},
 		{
-			name: "ip block - matches external source; partial overlap",
+			name: "ip block - external source fully contains ip block; match only external source",
+			extSrcs: []*storage.NetworkEntityInfo{
+				{
+					Desc: &storage.NetworkEntityInfo_ExternalSource_{
+						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+								Cidr: "192.16.0.0/16",
+							},
+						},
+					},
+				},
+			},
+			peer: &storage.NetworkPolicyPeer{
+				IpBlock: &storage.IPBlock{
+					Cidr: "192.16.0.0/24",
+				},
+			},
+			expectedMatches: 1,
+		},
+		{
+			name: "ip block - ip block fully contains external source; match deployments, external sources and INTERNET",
 			deployments: []*storage.Deployment{
 				{
 					Namespace: "default",
@@ -128,6 +148,38 @@ func TestMatchPolicyPeer(t *testing.T) {
 				},
 			},
 			expectedMatches: 3,
+		},
+		{
+			name: "ip block - ip block fully contains external source; match INTERNET and exclude except networks",
+			extSrcs: []*storage.NetworkEntityInfo{
+				{
+					Id: "1",
+					Desc: &storage.NetworkEntityInfo_ExternalSource_{
+						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+								Cidr: "192.16.10.0/24",
+							},
+						},
+					},
+				},
+				{
+					Id: "2",
+					Desc: &storage.NetworkEntityInfo_ExternalSource_{
+						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+								Cidr: "192.16.15.0/24",
+							},
+						},
+					},
+				},
+			},
+			peer: &storage.NetworkPolicyPeer{
+				IpBlock: &storage.IPBlock{
+					Cidr:   "192.16.0.0/16",
+					Except: []string{"192.16.15.0/22"},
+				},
+			},
+			expectedMatches: 2,
 		},
 		{
 			name: "ip block - does not match external source; matches INTERNET",

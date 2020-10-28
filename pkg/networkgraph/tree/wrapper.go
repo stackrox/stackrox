@@ -115,7 +115,7 @@ func (t *NetworkTreeWrapper) Remove(key string) {
 	}
 }
 
-// GetSupernet returns the direct supernet (predecessor) that fully contains the network for given key, if present.
+// GetSupernet returns the smallest supernet that fully contains the network for given key, if present.
 func (t *NetworkTreeWrapper) GetSupernet(key string) *storage.NetworkEntityInfo {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
@@ -128,7 +128,7 @@ func (t *NetworkTreeWrapper) GetSupernet(key string) *storage.NetworkEntityInfo 
 	return nil
 }
 
-// GetMatchingSupernet returns the direct supernet (predecessor) that fully contains the network for given key and satisfies the predicate.
+// GetMatchingSupernet returns the smallest supernet that fully contains the network for given key and satisfies the predicate.
 func (t *NetworkTreeWrapper) GetMatchingSupernet(key string, pred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
@@ -141,7 +141,33 @@ func (t *NetworkTreeWrapper) GetMatchingSupernet(key string, pred func(entity *s
 	return nil
 }
 
-// GetSubnets returns all the direct subnets (successor) contained by the network for given key, if present.
+// GetSupernetForCIDR returns the smallest supernet that fully contains the network for the given CIDR.
+func (t *NetworkTreeWrapper) GetSupernetForCIDR(cidr string) *storage.NetworkEntityInfo {
+	ipNet := pkgNet.IPNetworkFromCIDR(cidr)
+	if !ipNet.IsValid() {
+		return nil
+	}
+
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+
+	return t.trees[ipNet.Family()].GetSupernetForCIDR(cidr)
+}
+
+// GetMatchingSupernetForCIDR returns the smallest supernet that fully contains the supplied network and satisfies the predicate.
+func (t *NetworkTreeWrapper) GetMatchingSupernetForCIDR(cidr string, supernetPred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
+	ipNet := pkgNet.IPNetworkFromCIDR(cidr)
+	if !ipNet.IsValid() {
+		return nil
+	}
+
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+
+	return t.trees[ipNet.Family()].GetMatchingSupernetForCIDR(cidr, supernetPred)
+}
+
+// GetSubnets returns the largest disjoint subnets contained by the network for given key, if present.
 func (t *NetworkTreeWrapper) GetSubnets(key string) []*storage.NetworkEntityInfo {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
@@ -163,6 +189,19 @@ func (t *NetworkTreeWrapper) GetSubnets(key string) []*storage.NetworkEntityInfo
 		}
 	}
 	return nil
+}
+
+// GetSubnetsForCIDR returns the largest disjoint subnets contained by the given network, if any.
+func (t *NetworkTreeWrapper) GetSubnetsForCIDR(cidr string) []*storage.NetworkEntityInfo {
+	ipNet := pkgNet.IPNetworkFromCIDR(cidr)
+	if !ipNet.IsValid() {
+		return nil
+	}
+
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+
+	return t.trees[ipNet.Family()].GetSubnetsForCIDR(cidr)
 }
 
 // Get returns the network entity for given key, if present, otherwise nil.

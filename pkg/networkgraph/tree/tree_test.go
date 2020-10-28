@@ -104,6 +104,15 @@ func TestNetworkTree(t *testing.T) {
 
 	*/
 	assert.Equal(t, e2, networkTree.GetMatchingSupernet("4", func(e *storage.NetworkEntityInfo) bool { return !e.GetExternalSource().GetDefault() }))
+
+	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3}, networkTree.GetSubnetsForCIDR("35.0.0.0/6"))
+	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e8}, networkTree.GetSubnetsForCIDR("33.0.0.0/5"))
+
+	assert.Equal(t, e6, networkTree.GetSupernetForCIDR("36.188.144.0/28"))
+	assert.Equal(t, e3, networkTree.GetSupernetForCIDR("35.187.144.0/14"))
+
+	// Skip e3
+	assert.Equal(t, e8, networkTree.GetMatchingSupernetForCIDR("35.187.144.0/14", func(e *storage.NetworkEntityInfo) bool { return e.GetId() != e3.GetId() }))
 }
 
 func TestIPNetworkSort(t *testing.T) {

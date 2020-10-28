@@ -269,7 +269,7 @@ func (t *NetworkTree) Get(key string) *storage.NetworkEntityInfo {
 	return nil
 }
 
-// GetSubnets returns all the direct subnets (successor) contained by the network for given key, if present.
+// GetSubnets returns the largest disjoint subnets contained by the network for given key, if present.
 func (t *NetworkTree) GetSubnets(key string) []*storage.NetworkEntityInfo {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
@@ -286,13 +286,42 @@ func (t *NetworkTree) GetSubnets(key string) []*storage.NetworkEntityInfo {
 	return ret
 }
 
-// GetSupernet returns the direct supernet (predecessor) that fully contains the network for given key, if present.
+// GetSubnetsForCIDR returns the largest disjoint subnets contained by the given network, if any.
+func (t *NetworkTree) GetSubnetsForCIDR(cidr string) []*storage.NetworkEntityInfo {
+	_, ipNet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return nil
+	}
+
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+
+	return t.getSubnetForIPNetNoLock(t.root, ipNet)
+}
+
+func (t *NetworkTree) getSubnetForIPNetNoLock(curr *node, queryIPNet *net.IPNet) []*storage.NetworkEntityInfo {
+	if curr == nil {
+		return nil
+	}
+
+	// We are looking for largest subnets that is fully contained by query network.
+	if netutil.IsIPNetSubset(queryIPNet, curr.ipNet) {
+		return []*storage.NetworkEntityInfo{curr.entity.Clone()}
+	}
+
+	var ret []*storage.NetworkEntityInfo
+	for _, child := range curr.children {
+		ret = append(ret, t.getSubnetForIPNetNoLock(child, queryIPNet)...)
+	}
+	return ret
+}
+
+// GetSupernet returns the smallest supernet that fully contains the network for given key, if present.
 func (t *NetworkTree) GetSupernet(key string) *storage.NetworkEntityInfo {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
-	// Supernet of INTERNET is INTERNET.
-	return t.GetMatchingSupernet(key, nil)
+	return t.getMatchingSupernetNoLock(key, nil)
 }
 
 // GetMatchingSupernet returns the smallest supernet that fully contains the network for given key and satisfies the predicate.
@@ -300,6 +329,10 @@ func (t *NetworkTree) GetMatchingSupernet(key string, pred func(entity *storage.
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
+	return t.getMatchingSupernetNoLock(key, pred)
+}
+
+func (t *NetworkTree) getMatchingSupernetNoLock(key string, pred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
 	// Supernet of INTERNET is INTERNET.
 	if t.root.entity.GetId() == key {
 		return t.root.entity.Clone()
@@ -340,6 +373,54 @@ func (t *NetworkTree) getMatchingParentNoLock(curr *node, key string, pred func(
 		}
 	}
 	return nil, nil
+}
+
+// GetSupernetForCIDR returns the smallest supernet that fully contains the given network.
+func (t *NetworkTree) GetSupernetForCIDR(cidr string) *storage.NetworkEntityInfo {
+	_, ipNet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return nil
+	}
+
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+
+	return t.getMatchingSupernetForIPNetNoLock(t.root, ipNet, nil)
+}
+
+// GetMatchingSupernetForCIDR returns the smallest supernet that fully contains the given network and satisfies the predicate.
+func (t *NetworkTree) GetMatchingSupernetForCIDR(cidr string, supernetPred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
+	_, ipNet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return nil
+	}
+
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+
+	return t.getMatchingSupernetForIPNetNoLock(t.root, ipNet, supernetPred)
+}
+
+func (t *NetworkTree) getMatchingSupernetForIPNetNoLock(curr *node, queryIPNet *net.IPNet, supernetPred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
+	if curr == nil {
+		return nil
+	}
+
+	if !netutil.IsIPNetSubset(curr.ipNet, queryIPNet) {
+		return nil
+	}
+
+	var supernetSoFar *storage.NetworkEntityInfo
+	if supernetPred == nil || supernetPred(curr.entity) {
+		supernetSoFar = curr.entity.Clone()
+	}
+
+	for _, child := range curr.children {
+		if supernet := t.getMatchingSupernetForIPNetNoLock(child, queryIPNet, supernetPred); supernet != nil {
+			supernetSoFar = supernet
+		}
+	}
+	return supernetSoFar
 }
 
 // Search return true if the network entity for the given key is found in the tree.

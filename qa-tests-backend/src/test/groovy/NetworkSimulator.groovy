@@ -214,6 +214,10 @@ class NetworkSimulator extends BaseSpecification {
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, clientAppId).size() == 0
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, webAppId, null).size() == 0
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, clientAppId, null).size() == 1
+        // No connections from INTERNET to "qa" namespace; simulated graph is scoped to "qa" namespace.
+        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, Constants.INTERNET_EXTERNAL_SOURCE_ID, null)
+                .size() == 0
+
         assert simulation.simulatedGraph.nodesList.size() == 2
 
         assert simulation.policiesList.find { it.policy.name == "deny-all-traffic" }?.status ==
@@ -271,9 +275,14 @@ class NetworkSimulator extends BaseSpecification {
         then:
         "verify simulation"
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, webAppId).size() == 1
-        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, centralAppId).size() == 0
+        // from INTERNET
+        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, centralAppId).size() == 1
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, webAppId, null).size() == 0
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, centralAppId, null).size() == 1
+        // to Central
+        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, Constants.INTERNET_EXTERNAL_SOURCE_ID, null)
+                .size() == 1
+
         assert simulation.simulatedGraph.nodesList.size() == 3
 
         assert simulation.policiesList.find { it.policy.name == "deny-all-traffic" }?.status ==

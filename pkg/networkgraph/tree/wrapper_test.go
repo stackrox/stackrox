@@ -133,4 +133,8 @@ func TestNetworkTreeWrapper(t *testing.T) {
 	assert.Equal(t, e8, treeWrapper.Get("8"))
 	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e6}, treeWrapper.GetSubnets("8"))
 	assert.Equal(t, networkgraph.InternetEntity().ToProto(), treeWrapper.GetSupernet("8"))
+
+	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3}, treeWrapper.GetSubnetsForCIDR("35.0.0.0/6"))
+
+	assert.Equal(t, e3, treeWrapper.GetSupernetForCIDR("35.187.144.0/14"))
 }
