@@ -10,6 +10,7 @@ import (
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/networkflow"
+	"github.com/stackrox/rox/central/networkflow/aggregator"
 	"github.com/stackrox/rox/central/networkflow/config/datastore"
 	networkFlowDS "github.com/stackrox/rox/central/networkflow/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkflow/datastore/entities"
@@ -116,7 +117,7 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 
 	entity := &storage.NetworkEntity{
 		Info: &storage.NetworkEntityInfo{
-			Id:   id.ToString(),
+			Id:   id.String(),
 			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 			Desc: &storage.NetworkEntityInfo_ExternalSource_{
 				ExternalSource: request.GetEntity(),
@@ -394,6 +395,8 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1
 	}
 
 	flows, missingInfoFlows := networkflow.UpdateFlowsWithEntityDesc(flows, deploymentsMap, externalSrcs)
+	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
+	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
 
 	graphBuilder.AddFlows(flows)
 

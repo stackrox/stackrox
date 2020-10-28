@@ -61,7 +61,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	// Valid entity
 	entity1 := &storage.NetworkEntity{
 		Info: &storage.NetworkEntityInfo{
-			Id:   entity1ID.ToString(),
+			Id:   entity1ID.String(),
 			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 			Desc: &storage.NetworkEntityInfo_ExternalSource_{
 				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
@@ -83,7 +83,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	// Valid entity-no name
 	entity2 := &storage.NetworkEntity{
 		Info: &storage.NetworkEntityInfo{
-			Id:   entity2ID.ToString(),
+			Id:   entity2ID.String(),
 			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 			Desc: &storage.NetworkEntityInfo_ExternalSource_{
 				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
@@ -104,7 +104,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	// Invalid external source-invalid network
 	entity3 := &storage.NetworkEntity{
 		Info: &storage.NetworkEntityInfo{
-			Id:   entity3ID.ToString(),
+			Id:   entity3ID.String(),
 			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 			Desc: &storage.NetworkEntityInfo_ExternalSource_{
 				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
@@ -125,7 +125,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	// Invalid external source-invalid type
 	entity4 := &storage.NetworkEntity{
 		Info: &storage.NetworkEntityInfo{
-			Id:   entity4ID.ToString(),
+			Id:   entity4ID.String(),
 			Type: storage.NetworkEntityInfo_DEPLOYMENT,
 			Desc: &storage.NetworkEntityInfo_ExternalSource_{
 				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
@@ -146,7 +146,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	// Valid entity
 	entity5 := &storage.NetworkEntity{
 		Info: &storage.NetworkEntityInfo{
-			Id:   entity5ID.ToString(),
+			Id:   entity5ID.String(),
 			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 			Desc: &storage.NetworkEntityInfo_ExternalSource_{
 				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
@@ -184,7 +184,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	// Invalid entity-CIDR already exists in cluster
 	entity6 := &storage.NetworkEntity{
 		Info: &storage.NetworkEntityInfo{
-			Id:   entity6ID.ToString(),
+			Id:   entity6ID.String(),
 			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 			Desc: &storage.NetworkEntityInfo_ExternalSource_{
 				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
@@ -204,7 +204,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	// Invalid entity-invalid scope
 	entity7 := &storage.NetworkEntity{
 		Info: &storage.NetworkEntityInfo{
-			Id:   entity7ID.ToString(),
+			Id:   entity7ID.String(),
 			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 			Desc: &storage.NetworkEntityInfo_ExternalSource_{
 				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
@@ -271,7 +271,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 
 	entity1 := &storage.NetworkEntity{
 		Info: &storage.NetworkEntityInfo{
-			Id:   entity1ID.ToString(),
+			Id:   entity1ID.String(),
 			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 			Desc: &storage.NetworkEntityInfo_ExternalSource_{
 				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
@@ -288,7 +288,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 
 	entity2 := &storage.NetworkEntity{
 		Info: &storage.NetworkEntityInfo{
-			Id:   entity2ID.ToString(),
+			Id:   entity2ID.String(),
 			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 			Desc: &storage.NetworkEntityInfo_ExternalSource_{
 				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
@@ -304,11 +304,11 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	}
 
 	entity3 := entity1.Clone()
-	entity3.Info.Id = entity3ID.ToString()
+	entity3.Info.Id = entity3ID.String()
 	entity3.Scope.ClusterId = cluster2
 
 	entity4 := entity2.Clone()
-	entity4.Info.Id = entity4ID.ToString()
+	entity4.Info.Id = entity4ID.String()
 	entity4.Scope.ClusterId = cluster2
 
 	noAccessCtx := sac.WithNoAccess(context.Background())

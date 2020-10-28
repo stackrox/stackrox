@@ -1,21 +1,30 @@
 package networkgraph
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"fmt"
+
+	"github.com/stackrox/rox/generated/storage"
+)
 
 // NetworkConnIndicator provides a medium to uniquely identify network connections.
 type NetworkConnIndicator struct {
-	srcEntity Entity
-	dstEntity Entity
-	dstPort   uint32
-	protocol  storage.L4Protocol
+	SrcEntity Entity
+	DstEntity Entity
+	DstPort   uint32
+	Protocol  storage.L4Protocol
 }
 
 // GetNetworkConnIndicator constructs an indicator for supplied network connection.
 func GetNetworkConnIndicator(conn *storage.NetworkFlow) NetworkConnIndicator {
 	return NetworkConnIndicator{
-		srcEntity: EntityFromProto(conn.GetProps().GetSrcEntity()),
-		dstEntity: EntityFromProto(conn.GetProps().GetDstEntity()),
-		protocol:  conn.GetProps().GetL4Protocol(),
-		dstPort:   conn.GetProps().GetDstPort(),
+		SrcEntity: EntityFromProto(conn.GetProps().GetSrcEntity()),
+		DstEntity: EntityFromProto(conn.GetProps().GetDstEntity()),
+		Protocol:  conn.GetProps().GetL4Protocol(),
+		DstPort:   conn.GetProps().GetDstPort(),
 	}
+}
+
+// String returns the string representation of NetworkConnIndicator.
+func (i NetworkConnIndicator) String() string {
+	return fmt.Sprintf("%x:%s:%x:%s:%x:%x", int32(i.SrcEntity.Type), i.SrcEntity.ID, int32(i.DstEntity.Type), i.DstEntity.ID, i.DstPort, int32(i.Protocol))
 }

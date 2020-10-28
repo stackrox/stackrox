@@ -113,8 +113,8 @@ func (r ResourceID) Suffix() string {
 	return r.suffix
 }
 
-// ToString serializes the ResourceID to a string.
-func (r ResourceID) ToString() string {
+// String serializes the ResourceID to a string.
+func (r ResourceID) String() string {
 	return r.clusterID + separator + r.namespaceID + separator + r.suffix
 }
 

@@ -229,13 +229,40 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 		s.entities.EXPECT().GetAllEntitiesForCluster(ctx, gomock.Any()).Return([]*storage.NetworkEntity{
 			{
 				Info: &storage.NetworkEntityInfo{
-					Id:   "es1",
+					Id:   "mycluster__es1a",
 					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Desc: &storage.NetworkEntityInfo_ExternalSource_{
+						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+							Name: "net1",
+						},
+					},
 				},
 			},
 			{
 				Info: &storage.NetworkEntityInfo{
-					Id:   "es2",
+					Id:   "mycluster__es1b",
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Desc: &storage.NetworkEntityInfo_ExternalSource_{
+						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+							Name: "net1",
+						},
+					},
+				},
+			},
+			{
+				Info: &storage.NetworkEntityInfo{
+					Id:   "mycluster__es1c",
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Desc: &storage.NetworkEntityInfo_ExternalSource_{
+						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+							Name: "net1",
+						},
+					},
+				},
+			},
+			{
+				Info: &storage.NetworkEntityInfo{
+					Id:   "mycluster__es2",
 					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 				},
 			},
@@ -269,8 +296,10 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 					depFlow("depA", "depX"),
 					depFlow("depA", "depY"),
 					depFlow("depA", "depZ"),
-					anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, "es1", storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, "es2", storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+					anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, "mycluster__es1a", storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+					anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, "mycluster__es1b", storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+					anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, "mycluster__es1c", storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+					anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, "mycluster__es2", storage.NetworkEntityInfo_EXTERNAL_SOURCE),
 					depFlow("depB", "depA"),
 					depFlow("depB", "depX"),
 					depFlow("depB", "depW"),
@@ -291,9 +320,9 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 					anyFlow("depQ", storage.NetworkEntityInfo_DEPLOYMENT, "es3", storage.NetworkEntityInfo_EXTERNAL_SOURCE),
 					anyFlow("depX", storage.NetworkEntityInfo_DEPLOYMENT, "es3", storage.NetworkEntityInfo_EXTERNAL_SOURCE),
 					anyFlow("depX", storage.NetworkEntityInfo_DEPLOYMENT, networkgraph.InternetExternalSourceID, storage.NetworkEntityInfo_INTERNET),
-					anyFlow("es1", storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depA", storage.NetworkEntityInfo_DEPLOYMENT),
-					anyFlow("es1", storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
-					anyFlow("es2", storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
+					anyFlow("mycluster__es1a", storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depA", storage.NetworkEntityInfo_DEPLOYMENT),
+					anyFlow("mycluster__es1a", storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
+					anyFlow("mycluster__es2", storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
 					anyFlow("es3", storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
 					anyFlow("es3", storage.NetworkEntityInfo_EXTERNAL_SOURCE, "es1", storage.NetworkEntityInfo_EXTERNAL_SOURCE),
 				}
@@ -378,8 +407,8 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 			"foo/depA <- bar/depE",
 			"foo/depA <- masked namespace #1/masked deployment #1",
 			"foo/depA <- masked namespace #1/masked deployment #2",
-			"foo/depA <- es1",
-			"foo/depA <- es2",
+			"foo/depA <- mycluster__net1",
+			"foo/depA <- mycluster__es2",
 			"foo/depB <- foo/depA",
 			"foo/depB <- masked namespace #1/masked deployment #1",
 			"foo/depB <- masked namespace #2/masked deployment #3",
@@ -388,7 +417,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 			"foo/depC <- " + networkgraph.InternetExternalSourceID,
 			"bar/depD <- foo/depA",
 			"bar/depE <- foo/depB",
-			"es1 <- foo/depA",
+			"mycluster__net1 <- foo/depA",
 		}
 	} else {
 		expected = []string{
@@ -715,7 +744,7 @@ func (s *NetworkGraphServiceTestSuite) TestDeleteExternalNetworkEntity() {
 
 	id, _ := sac.NewClusterScopeResourceID("c1", "id")
 	request := &v1.ResourceByID{
-		Id: id.ToString(),
+		Id: id.String(),
 	}
 
 	s.entities.EXPECT().DeleteExternalNetworkEntity(ctx, gomock.Any()).Return(nil)

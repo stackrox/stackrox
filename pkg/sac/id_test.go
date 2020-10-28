@@ -60,7 +60,7 @@ func TestGetIDForResource(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			actual, err := ParseResourceID(c.expected.ToString())
+			actual, err := ParseResourceID(c.expected.String())
 			if c.fail {
 				assert.Error(t, err)
 			} else {

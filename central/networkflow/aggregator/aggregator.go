@@ -10,10 +10,16 @@ type NetworkConnsAggregator interface {
 	Aggregate(conns []*storage.NetworkFlow) []*storage.NetworkFlow
 }
 
-// NewDefaultToCustomExtSrcAggregator returns NetworkConnsAggregator that aggregates all network connections with default
+// NewDefaultToCustomExtSrcConnAggregator returns a NetworkConnsAggregator that aggregates all network connections with default
 // network connections into immediate non-default (custom) supernet.
-func NewDefaultToCustomExtSrcAggregator(networkTree *tree.NetworkTreeWrapper) NetworkConnsAggregator {
-	return &defaultToCustomExtSrcAggregator{
+func NewDefaultToCustomExtSrcConnAggregator(networkTree *tree.NetworkTreeWrapper) NetworkConnsAggregator {
+	return &aggregateDefaultToCustomExtSrcsImpl{
 		networkTree: networkTree,
 	}
+}
+
+// NewDuplicateNameExtSrcConnAggregator returns a NetworkConnsAggregator that aggregates multiple external network
+// connections with same external endpoint, as determined by name, into a single connection.
+func NewDuplicateNameExtSrcConnAggregator() NetworkConnsAggregator {
+	return &aggregateExternalConnByNameImpl{}
 }

@@ -601,6 +601,10 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 		sac.ClusterScopeKey("mycluster"),
 	})
 
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		s.mockExtSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), "mycluster").Return(nil, nil)
+	}
+
 	s.mockNamespaceStore.EXPECT().SearchNamespaces(gomock.Not(ctxHasAllNamespaceAccessMatcher), gomock.Any()).Return(
 		[]*storage.NamespaceMetadata{
 			{

@@ -9,6 +9,7 @@ import (
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/networkflow"
+	"github.com/stackrox/rox/central/networkflow/aggregator"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkflow/datastore/entities"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
@@ -163,6 +164,8 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	}
 
 	okFlows, missingInfoFlows := networkflow.UpdateFlowsWithEntityDesc(flows, objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments), extSrcs)
+	okFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(okFlows)
+	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
 
 	return g.buildGraph(ctx, clusterID, relevantDeployments, okFlows, missingInfoFlows, includePorts)
 }

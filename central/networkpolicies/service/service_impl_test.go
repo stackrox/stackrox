@@ -14,6 +14,7 @@ import (
 	nDataStoreMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	grpcTestutils "github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/search"
@@ -158,6 +159,10 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		suite.externalSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil, nil)
+	}
+
 	// Mock that we have network policies in effect for the cluster.
 	pols := make([]*storage.NetworkPolicy, 0)
 	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
@@ -190,6 +195,10 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 	deps := make([]*storage.Deployment, 0)
 	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
+
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		suite.externalSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil, nil)
+	}
 
 	// Mock that we have network policies in effect for the cluster.
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML1}.ToRoxNetworkPolicies()
@@ -231,6 +240,10 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		suite.externalSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil, nil)
+	}
+
 	// Mock that we have network policies in effect for the cluster.
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML2}.ToRoxNetworkPolicies()
 	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
@@ -268,6 +281,10 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 	deps := make([]*storage.Deployment, 0)
 	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
+
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		suite.externalSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil, nil)
+	}
 
 	// Mock that we have network policies in effect for the cluster.
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML1}.ToRoxNetworkPolicies()
@@ -308,6 +325,10 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 	deps := make([]*storage.Deployment, 0)
 	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
+
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		suite.externalSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil, nil)
+	}
 
 	// Mock that we have network policies in effect for the cluster.
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML1}.ToRoxNetworkPolicies()
@@ -352,6 +373,10 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame(
 	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		suite.externalSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil, nil)
+	}
+
 	// Mock that we have network policies in effect for the cluster.
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML2}.ToRoxNetworkPolicies()
 	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
@@ -395,6 +420,10 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 	deps := make([]*storage.Deployment, 0)
 	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
+
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		suite.externalSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil, nil)
+	}
 
 	// Mock that we have network policies in effect for the cluster.
 	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").
@@ -470,6 +499,10 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
 		}
 		return matchCount == 2
 	})).Return(deps, nil)
+
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		suite.externalSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil, nil)
+	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedPolicies := make([]*storage.NetworkPolicy, 0)

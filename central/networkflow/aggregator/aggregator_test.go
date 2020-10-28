@@ -113,6 +113,69 @@ func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 
 	expected := []*storage.NetworkFlow{f2, f3, f4x, f7, f8x, f10x}
 
-	actual := NewDefaultToCustomExtSrcAggregator(networkTree).Aggregate(flows)
+	actual := NewDefaultToCustomExtSrcConnAggregator(networkTree).Aggregate(flows)
+	assert.ElementsMatch(t, expected, actual)
+}
+
+func TestAggregateExtConnsByName(t *testing.T) {
+	ts1 := types.TimestampNow()
+	ts2 := ts1.Clone()
+	ts2.Seconds = ts2.Seconds + 1000
+
+	d1 := test.GetDeploymentNetworkEntity("d1", "d1")
+	d2 := test.GetDeploymentNetworkEntity("d2", "d2")
+
+	e1 := test.GetExtSrcNetworkEntity("cluster1__e1", "google", "net1", false)
+	e2 := test.GetExtSrcNetworkEntity("cluster1__e2", "google", "net2", false)
+	e3 := test.GetExtSrcNetworkEntity("cluster1__e3", "google", "net3", false)
+	e4 := test.GetExtSrcNetworkEntity("cluster1__id4", "e4", "", false)
+	e5 := test.GetExtSrcNetworkEntity("cluster1__nameless", "", "", false)
+	e6 := test.GetExtSrcNetworkEntity("cluster1__e6", "extSrc6", "net6", false)
+
+	f1 := test.GetNetworkFlow(d1, e1, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts1)
+	f2 := test.GetNetworkFlow(d1, e2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts2)
+	f3 := test.GetNetworkFlow(d1, e3, 8080, storage.L4Protocol_L4_PROTOCOL_TCP, nil)
+	f4 := test.GetNetworkFlow(d1, d2, 0, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, nil)
+	f5 := test.GetNetworkFlow(e4, d2, 0, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, nil)
+	f6 := test.GetNetworkFlow(e5, d2, 0, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, nil)
+	f7 := f6
+	f8 := test.GetNetworkFlow(e5, d2, 8080, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, nil)
+	f9 := test.GetNetworkFlow(e6, d2, 0, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, nil)
+	f10 := test.GetNetworkFlow(d2, e6, 0, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, nil)
+
+	flows := []*storage.NetworkFlow{f1, f2, f3, f4, f5, f6, f7, f8, f9, f10}
+
+	e2x := &storage.NetworkEntityInfo{
+		Id:   "cluster1__google",
+		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+		Desc: &storage.NetworkEntityInfo_ExternalSource_{
+			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+				Name: "google",
+			},
+		},
+	}
+	e5x := test.GetExtSrcNetworkEntity("cluster1__nameless", "unnamed external source #1", "", false)
+
+	/*
+		f1 -> f2x
+		f2 -> f2x
+		f3 -> f3x
+			  f4
+			  f5
+		f6 -> f6x
+		f7 -> f6x
+		f8 -> f8x
+	*/
+
+	f2x := test.GetNetworkFlow(d1, e2x, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts2)
+	f3x := test.GetNetworkFlow(d1, e2x, 8080, storage.L4Protocol_L4_PROTOCOL_TCP, nil)
+	f6x := test.GetNetworkFlow(e5x, d2, 0, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, nil)
+	f8x := test.GetNetworkFlow(e5x, d2, 8080, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, nil)
+
+	expected := []*storage.NetworkFlow{f2x, f3x, f4, f5, f6x, f8x, f9, f10}
+
+	actual := NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
+
+	assert.Len(t, actual, len(expected))
 	assert.ElementsMatch(t, expected, actual)
 }

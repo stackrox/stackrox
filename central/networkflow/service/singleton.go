@@ -3,7 +3,7 @@ package service
 import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	graphConfigDS "github.com/stackrox/rox/central/networkflow/config/datastore"
+	graphConfigDataStore "github.com/stackrox/rox/central/networkflow/config/datastore"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	entityDataStore "github.com/stackrox/rox/central/networkflow/datastore/entities"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -21,7 +21,7 @@ func initialize() {
 		entityDataStore.Singleton(),
 		deploymentDataStore.Singleton(),
 		clusterDataStore.Singleton(),
-		graphConfigDS.Singleton(),
+		graphConfigDataStore.Singleton(),
 		connection.ManagerSingleton())
 }
 
