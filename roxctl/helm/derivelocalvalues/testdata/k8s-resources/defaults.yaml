@@ -1446,7 +1446,7 @@ spec:
                     operator: NotIn
                     values:
                     - "true"
-      serviceAccount: central
+      serviceAccountName: central
       securityContext:
         fsGroup: 4000
         runAsUser: 4000

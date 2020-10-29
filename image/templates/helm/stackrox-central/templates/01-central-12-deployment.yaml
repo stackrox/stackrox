@@ -66,7 +66,7 @@ spec:
                     values:
                     - "true"
             {{- end}}
-      serviceAccount: central
+      serviceAccountName: central
       securityContext:
         fsGroup: 4000
         runAsUser: 4000
