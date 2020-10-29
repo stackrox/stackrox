@@ -2302,8 +2302,6 @@ jobs:
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
           paths:
-            - bin/linux/roxctl
-            - bin/linux/upgrader
             - image/rhel/bundle.tar.gz
 
       - cleanup-clusters-on-fail
@@ -4484,6 +4482,8 @@ workflows:
             - build-rhel
             - build-scale-monitoring-and-mock-server
             - provision-openshift-rhel-api-e2e-tests
+            - pre-build-cli
+            - pre-build-go-binaries
       - provision-gke-rhel-api-e2e-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
       - gke-rhel-api-e2e-tests:
@@ -4492,6 +4492,8 @@ workflows:
             - build-rhel
             - build-scale-monitoring-and-mock-server
             - provision-gke-rhel-api-e2e-tests
+            - pre-build-cli
+            - pre-build-go-binaries
 
       - push-release:
           <<: *runOnlyOnReleaseBuilds
