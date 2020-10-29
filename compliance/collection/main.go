@@ -110,7 +110,7 @@ func initialClientAndConfig(ctx context.Context, cli sensor.ComplianceServiceCli
 func initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
 	eb := backoff.NewExponentialBackOff()
 	eb.MaxInterval = 30 * time.Second
-	eb.MaxElapsedTime = 10 * time.Minute
+	eb.MaxElapsedTime = 3 * time.Minute
 
 	var client sensor.ComplianceService_CommunicateClient
 	var config *sensor.MsgToCompliance_ScrapeConfig
