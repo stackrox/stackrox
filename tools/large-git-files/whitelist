@@ -4,6 +4,7 @@ ui/apps/platform/src/images/globalSearchEmptyState.svg
 ui/yarn.lock
 central/compliance/standards/metadata/pci_dss_3_2.go
 central/graphql/resolvers/generated.go
+central/networkpolicies/graph/evaluator_test.go
 go.sum
 proto/storage/proto.lock
 pkg/docker/types/types_easyjson.go
