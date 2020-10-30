@@ -4079,7 +4079,6 @@ jobs:
             MAIN_TAG=$(make --quiet tag)
             SCANNER_TAG=$(make --quiet scanner-tag)
             COLLECTOR_TAG=$(make --quiet collector-tag)
-            DOCS_TAG=$(make --quiet docs-tag)
 
             # Main was pushed up in a previous step, so just needs to be tagged.
             docker tag  "stackrox.io/main:$MAIN_TAG" "$ECR_REGISTRY/main:$MAIN_TAG"
@@ -4096,9 +4095,9 @@ jobs:
             docker push "$ECR_REGISTRY/scanner-db:$SCANNER_TAG" | cat
 
             # Docs was pushed up in its own repo, so must be pulled back down here.
-            docker pull "stackrox.io/docs:$DOCS_TAG" | cat
-            docker tag  "stackrox.io/docs:$DOCS_TAG" "$ECR_REGISTRY/docs:$DOCS_TAG"
-            docker push "$ECR_REGISTRY/docs:$DOCS_TAG" | cat
+            docker pull "stackrox.io/docs:$MAIN_TAG" | cat
+            docker tag  "stackrox.io/docs:$MAIN_TAG" "$ECR_REGISTRY/docs:$MAIN_TAG"
+            docker push "$ECR_REGISTRY/docs:$MAIN_TAG" | cat
 
             # Collector was pushed up in its own repo, so must be pulled back down here.
             docker pull "collector.stackrox.io/collector:$COLLECTOR_TAG" | cat
