@@ -53,12 +53,20 @@ const selectors = {
         banner: '[data-testid="login-notice"]',
     },
     dataRetention: {
+        widget: '[data-testid="data-retention-config"]',
         allRuntimeViolationsBox: '[data-testid="number-box"]:contains("All Runtime Violations")',
         deletedRuntimeViolationsBox:
             '[data-testid="number-box"]:contains("Runtime Violations For Deleted Deployments")',
         resolvedDeployViolationsBox:
             '[data-testid="number-box"]:contains("Resolved Deploy-Phase Violations")',
         imagesBox: '[data-testid="number-box"]:contains("Images No Longer Deployed")',
+    },
+    downloadTelemetry: {
+        widget: '[data-testid="download-telemetry"]',
+        filterByClusters: '[data-testid="filter-by-clusters"]',
+        filterByStartingTime: '#filterByStartingTime',
+        startingTimeMessage: '[data-testid="starting-time-message"]',
+        downloadButton: '[data-testid="download-diagnostic-data"]',
     },
 };
 

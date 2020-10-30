@@ -1,6 +1,6 @@
 import selectors, { systemConfigUrl, text } from '../constants/SystemConfigPage';
 import withAuth from '../helpers/basicAuth';
-import * as api from '../constants/apiEndpoints';
+import { system as configApi } from '../constants/apiEndpoints';
 
 function openConfigNav() {
     cy.get(selectors.navLinks.config).click();
@@ -49,12 +49,12 @@ function getRandomNumber() {
     return Math.floor(Math.random() * 100);
 }
 
-describe('System Config', () => {
+describe('System Configuration', () => {
     withAuth();
 
     beforeEach(() => {
         cy.server();
-        cy.route('GET', api.system.config).as('getSystemConfig');
+        cy.route('GET', configApi.config).as('getSystemConfig');
     });
 
     it('should allow the user to set data retention to "never delete"', () => {
@@ -98,26 +98,26 @@ describe('System Config', () => {
         );
     });
 
-    xit('should have link from Config side nav sub-menu', () => {
+    it('should have link from Platform Configuration side nav sub-menu', () => {
         cy.visit('/');
         openConfigNav();
-        cy.get(selectors.navLinks.subnavMenu)
-            .get(selectors.navLinks.systemConfig)
-            .contains('System Config');
+        cy.get(selectors.navLinks.systemConfig).should('have.text', 'System Configuration');
     });
 
-    xit('should go to System Config page', () => {
+    it('should go to page', () => {
         cy.visit('/');
         openConfigNav();
-        cy.get(selectors.navLinks.subnavMenu).get(selectors.navLinks.systemConfig).click();
+        cy.get(selectors.navLinks.systemConfig).click();
         cy.url().should('contain', systemConfigUrl);
         cy.wait('@getSystemConfig');
+        cy.get(selectors.dataRetention.widget).should('exist');
         cy.get(selectors.header.widget).should('exist');
         cy.get(selectors.footer.widget).should('exist');
         cy.get(selectors.loginNotice.widget).should('exist');
+        cy.get(selectors.downloadTelemetry.widget).should('exist');
     });
 
-    xit('should be able to edit and enable header', () => {
+    it('should be able to edit and enable header', () => {
         cy.visit(systemConfigUrl);
         cy.wait('@getSystemConfig');
         editBaseConfig('header');
@@ -129,7 +129,7 @@ describe('System Config', () => {
         cy.get(selectors.header.banner).should('not.exist');
     });
 
-    xit('should be able to edit and enable footer', () => {
+    it('should be able to edit and enable footer', () => {
         cy.visit(systemConfigUrl);
         cy.wait('@getSystemConfig');
         editBaseConfig('footer');
@@ -140,7 +140,7 @@ describe('System Config', () => {
         cy.get(selectors.footer.banner).should('not.exist');
     });
 
-    xit('should be able to edit and enable login notice', () => {
+    it('should be able to edit and enable login notice', () => {
         cy.visit(systemConfigUrl);
         cy.wait('@getSystemConfig');
         editBaseConfig('loginNotice');

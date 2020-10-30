@@ -151,6 +151,10 @@ export const system = {
     config: '/v1/config',
 };
 
+export const extensions = {
+    diagnostics: '/api/extensions/diagnostics',
+};
+
 export const permissions = {
     mypermissions: '/v1/mypermissions',
 };
