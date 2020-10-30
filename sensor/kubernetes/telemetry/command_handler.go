@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/batcher"
@@ -168,7 +169,7 @@ func (h *commandHandler) dispatchRequest(req *central.PullTelemetryDataRequest) 
 	var err error
 	switch req.GetDataType() {
 	case central.PullTelemetryDataRequest_KUBERNETES_INFO:
-		err = h.handleKubernetesInfoRequest(ctx, sendMsg)
+		err = h.handleKubernetesInfoRequest(ctx, sendMsg, req.Since)
 	case central.PullTelemetryDataRequest_CLUSTER_INFO:
 		err = h.handleClusterInfoRequest(ctx, sendMsg)
 	default:
@@ -194,7 +195,9 @@ func (h *commandHandler) dispatchRequest(req *central.PullTelemetryDataRequest) 
 	}
 }
 
-func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context, sendMsgCb func(concurrency.ErrorWaitable, *central.TelemetryResponsePayload) error) error {
+func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context,
+	sendMsgCb func(concurrency.ErrorWaitable, *central.TelemetryResponsePayload) error,
+	since *types.Timestamp) error {
 	restCfg, err := rest.InClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "could not instantiate Kubernetes REST client config")
@@ -220,7 +223,12 @@ func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context, sendMs
 		return sendMsgCb(ctx, payload)
 	}
 
-	return k8sintrospect.Collect(ctx, k8sintrospect.DefaultConfig, restCfg, fileCb)
+	sinceTs, err := types.TimestampFromProto(since)
+	if err != nil {
+		return errors.Wrap(err, "error parsing since timestamp")
+	}
+	return k8sintrospect.Collect(ctx, k8sintrospect.DefaultConfig, restCfg, fileCb, sinceTs)
+
 }
 
 func (h *commandHandler) handleClusterInfoRequest(ctx context.Context, sendMsgCb func(concurrency.ErrorWaitable, *central.TelemetryResponsePayload) error) error {

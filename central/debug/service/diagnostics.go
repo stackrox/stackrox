@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"path"
 	"regexp"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"k8s.io/client-go/rest"
 )
 
@@ -26,7 +28,8 @@ func sanitizeClusterName(rawClusterName string) string {
 	return invalidPathElementChars.ReplaceAllString(rawClusterName, "_")
 }
 
-func pullK8sDiagnosticsFilesFromSensor(ctx context.Context, clusterName string, sensorConn connection.SensorConnection, filesC chan<- k8sintrospect.File, wg *concurrency.WaitGroup) {
+func pullK8sDiagnosticsFilesFromSensor(ctx context.Context, clusterName string, sensorConn connection.SensorConnection,
+	filesC chan<- k8sintrospect.File, wg *concurrency.WaitGroup, since time.Time) {
 	defer wg.Add(-1)
 
 	callback := func(ctx concurrency.ErrorWaitable, k8sInfo *central.TelemetryResponsePayload_KubernetesInfo) error {
@@ -46,7 +49,7 @@ func pullK8sDiagnosticsFilesFromSensor(ctx context.Context, clusterName string, 
 
 	var err error
 	if sensorConn.HasCapability(centralsensor.PullTelemetryDataCap) {
-		err = sensorConn.Telemetry().PullKubernetesInfo(ctx, callback)
+		err = sensorConn.Telemetry().PullKubernetesInfo(ctx, callback, since)
 	} else {
 		err = errors.New("sensor does not support pulling telemetry data")
 	}
@@ -64,13 +67,18 @@ func pullK8sDiagnosticsFilesFromSensor(ctx context.Context, clusterName string, 
 	}
 }
 
-func addMissingClustersInfo(ctx context.Context, remainingClusterNameMap map[string]string, filesC chan<- k8sintrospect.File, wg *concurrency.WaitGroup) {
+func addMissingClustersInfo(ctx context.Context, remainingClusterNameMap map[string]string,
+	filesC chan<- k8sintrospect.File, wg *concurrency.WaitGroup, filterClusters []string) {
 	defer wg.Add(-1)
 
 	var missingClustersFileContents bytes.Buffer
-	fmt.Fprintln(&missingClustersFileContents, "Data from the following clusters is unavailable (no active connection):")
+	fmt.Fprintln(&missingClustersFileContents, "Data from the following clusters is unavailable:")
 	for _, clusterName := range remainingClusterNameMap {
-		fmt.Fprintf(&missingClustersFileContents, "- %s\n", clusterName)
+		if filterClusters != nil && sliceutils.StringFind(filterClusters, clusterName) != -1 {
+			fmt.Fprintf(&missingClustersFileContents, "- %s (not requested by user)\n", clusterName)
+		} else {
+			fmt.Fprintf(&missingClustersFileContents, "- %s (no active connection)\n", clusterName)
+		}
 	}
 
 	missingClustersFile := k8sintrospect.File{
@@ -84,12 +92,12 @@ func addMissingClustersInfo(ctx context.Context, remainingClusterNameMap map[str
 	}
 }
 
-func pullCentralClusterDiagnostics(ctx context.Context, filesC chan<- k8sintrospect.File, wg *concurrency.WaitGroup) {
+func pullCentralClusterDiagnostics(ctx context.Context, filesC chan<- k8sintrospect.File, wg *concurrency.WaitGroup, since time.Time) {
 	defer wg.Add(-1)
 
 	restCfg, err := rest.InClusterConfig()
 	if err == nil {
-		err = k8sintrospect.Collect(ctx, mainClusterConfig, restCfg, k8sintrospect.SendToChan(filesC))
+		err = k8sintrospect.Collect(ctx, mainClusterConfig, restCfg, k8sintrospect.SendToChan(filesC), since)
 	}
 	if err != nil {
 		errFile := k8sintrospect.File{
@@ -103,7 +111,7 @@ func pullCentralClusterDiagnostics(ctx context.Context, filesC chan<- k8sintrosp
 	}
 }
 
-func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zip.Writer) error {
+func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zip.Writer, opts debugDumpOptions) error {
 	subCtx, cancel := context.WithTimeout(ctx, diagnosticsPullTimeout)
 	defer cancel()
 
@@ -127,10 +135,16 @@ func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zip.Writ
 	for _, sensorConn := range s.sensorConnMgr.GetActiveConnections() {
 		clusterID := sensorConn.ClusterID()
 		clusterName := clusterNameMap[clusterID]
+
 		if clusterName == "" {
 			clusterName = fmt.Sprintf("_%s", clusterID)
 		}
 		delete(clusterNameMap, clusterID)
+
+		// if there are no cluster filters, all clusters must be considered.
+		if opts.clusters != nil && sliceutils.StringFind(opts.clusters, clusterName) == -1 {
+			continue
+		}
 
 		// Make sure we use a name that doesn't clash with any other cluster name.
 		clusterName = sanitizeClusterName(clusterName)
@@ -144,20 +158,21 @@ func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zip.Writ
 		clusterName = candidateName
 
 		wg.Add(1)
-		go pullK8sDiagnosticsFilesFromSensor(subCtx, clusterName, sensorConn, filesC, &wg)
+		go pullK8sDiagnosticsFilesFromSensor(subCtx, clusterName, sensorConn, filesC, &wg,
+			opts.since)
 	}
 
 	// Add information about clusters for which we didn't have an active sensor connection.
 	if len(clusterNameMap) > 0 {
 		wg.Add(1)
-		go addMissingClustersInfo(subCtx, clusterNameMap, filesC, &wg)
+		go addMissingClustersInfo(subCtx, clusterNameMap, filesC, &wg, opts.clusters)
 	}
 
 	// Pull data from the central cluster.
 	// TODO: It would be nice if we could add a flag to a sensor connection that indicates whether this sensor is
 	// running colocated with central, so we could skip this.
 	wg.Add(1)
-	go pullCentralClusterDiagnostics(subCtx, filesC, &wg)
+	go pullCentralClusterDiagnostics(subCtx, filesC, &wg, opts.since)
 
 	go func() {
 		select {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -43,7 +44,8 @@ func newController(capabilities centralsensor.SensorCapabilitySet, injector comm
 	return ctrl
 }
 
-func (c *controller) streamingRequest(ctx context.Context, dataType central.PullTelemetryDataRequest_TelemetryDataType, cb telemetryCallback) error {
+func (c *controller) streamingRequest(ctx context.Context, dataType central.PullTelemetryDataRequest_TelemetryDataType,
+	cb telemetryCallback, since time.Time) error {
 	subCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -59,12 +61,17 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 		}
 	}
 
+	sinceTs, err := types.TimestampProto(since)
+	if err != nil {
+		return errors.Wrap(err, "could not convert since timestamp")
+	}
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_TelemetryDataRequest{
 			TelemetryDataRequest: &central.PullTelemetryDataRequest{
 				RequestId: requestID,
 				DataType:  dataType,
 				TimeoutMs: timeoutMs,
+				Since:     sinceTs,
 			},
 		},
 	}
@@ -135,7 +142,7 @@ func (c *controller) sendCancellation(requestID string) {
 	_ = c.injector.InjectMessage(context.Background(), cancelMsg)
 }
 
-func (c *controller) PullKubernetesInfo(ctx context.Context, cb KubernetesInfoChunkCallback) error {
+func (c *controller) PullKubernetesInfo(ctx context.Context, cb KubernetesInfoChunkCallback, since time.Time) error {
 	genericCB := func(ctx concurrency.ErrorWaitable, chunk *central.TelemetryResponsePayload) error {
 		k8sInfo := chunk.GetKubernetesInfo()
 		if k8sInfo == nil {
@@ -145,7 +152,7 @@ func (c *controller) PullKubernetesInfo(ctx context.Context, cb KubernetesInfoCh
 
 		return cb(ctx, k8sInfo)
 	}
-	return c.streamingRequest(ctx, central.PullTelemetryDataRequest_KUBERNETES_INFO, genericCB)
+	return c.streamingRequest(ctx, central.PullTelemetryDataRequest_KUBERNETES_INFO, genericCB, since)
 }
 
 func (c *controller) PullClusterInfo(ctx context.Context, cb ClusterInfoCallback) error {
@@ -158,7 +165,7 @@ func (c *controller) PullClusterInfo(ctx context.Context, cb ClusterInfoCallback
 
 		return cb(ctx, clusterInfo)
 	}
-	return c.streamingRequest(ctx, central.PullTelemetryDataRequest_CLUSTER_INFO, genericCB)
+	return c.streamingRequest(ctx, central.PullTelemetryDataRequest_CLUSTER_INFO, genericCB, time.Now())
 }
 
 func (c *controller) ProcessTelemetryDataResponse(resp *central.PullTelemetryDataResponse) error {

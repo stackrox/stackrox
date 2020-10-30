@@ -2,6 +2,8 @@ syntax = "proto3";
 
 option go_package = "central";
 
+import "google/protobuf/timestamp.proto";
+
 package central;
 
 
@@ -16,9 +18,11 @@ message PullTelemetryDataRequest {
         CLUSTER_INFO    = 2;
     }
 
-    string request_id           = 1;
-    TelemetryDataType data_type = 2;
-    int64 timeout_ms            = 3;
+    string request_id               = 1;
+    TelemetryDataType data_type     = 2;
+    int64 timeout_ms                = 3;
+    google.protobuf.Timestamp since = 4;
+
 }
 
 message TelemetryResponsePayload {

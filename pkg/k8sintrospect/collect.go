@@ -2,6 +2,7 @@ package k8sintrospect
 
 import (
 	"context"
+	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"k8s.io/client-go/rest"
@@ -30,8 +31,8 @@ func SendToChan(filesC chan<- File) FileCallback {
 
 // Collect collects Kubernetes data relevant to the given config. If cb returns an error, processing stops and the error
 // is passed through.
-func Collect(ctx context.Context, collectionCfg Config, k8sClientConfig *rest.Config, cb FileCallback) error {
-	c, err := newCollector(ctx, k8sClientConfig, collectionCfg, cb)
+func Collect(ctx context.Context, collectionCfg Config, k8sClientConfig *rest.Config, cb FileCallback, since time.Time) error {
+	c, err := newCollector(ctx, k8sClientConfig, collectionCfg, cb, since)
 	if err != nil {
 		return err
 	}

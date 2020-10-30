@@ -49,10 +49,12 @@ type collector struct {
 	client        kubernetes.Interface
 	dynamicClient dynamic.Interface
 
+	since  time.Time
 	errors []error
 }
 
-func newCollector(ctx context.Context, k8sRESTConfig *rest.Config, cfg Config, cb FileCallback) (*collector, error) {
+func newCollector(ctx context.Context, k8sRESTConfig *rest.Config, cfg Config, cb FileCallback,
+	since time.Time) (*collector, error) {
 	restConfigShallowCopy := *k8sRESTConfig
 	oldWrapTransport := restConfigShallowCopy.WrapTransport
 	restConfigShallowCopy.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
@@ -77,6 +79,7 @@ func newCollector(ctx context.Context, k8sRESTConfig *rest.Config, cfg Config, c
 		cfg:           cfg,
 		client:        k8sClient,
 		dynamicClient: dynamicClient,
+		since:         since,
 	}, nil
 }
 
@@ -170,11 +173,12 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 		return err
 	}
 
+	sinceSeconds := int64(time.Since(c.since).Seconds())
 	for _, container := range pod.Status.ContainerStatuses {
 		if container.State.Running != nil {
 			podLogOpts := &v1.PodLogOptions{
 				Container:    container.Name,
-				SinceSeconds: &[]int64{int64(logWindow / time.Second)}[0],
+				SinceSeconds: &[]int64{sinceSeconds}[0],
 				TailLines:    &[]int64{maxLogLines}[0],
 			}
 			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw(c.ctx)
@@ -190,12 +194,17 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 		}
 
 		if container.LastTerminationState.Terminated != nil {
-			since := metav1.NewTime(container.LastTerminationState.Terminated.FinishedAt.Add(-logWindow))
+			sinceSeconds := metav1.NewTime(container.LastTerminationState.Terminated.FinishedAt.Add(-logWindow)).Unix()
+			if (container.LastTerminationState.Terminated.StartedAt.Before(&metav1.Time{Time: c.since}) &&
+				container.LastTerminationState.Terminated.FinishedAt.After(c.since)) {
+				sinceSeconds = int64(time.Since(c.since).Seconds())
+			}
+
 			podLogOpts := &v1.PodLogOptions{
-				Container: container.Name,
-				Previous:  true,
-				SinceTime: &since,
-				TailLines: &[]int64{maxLogLines}[0],
+				Container:    container.Name,
+				Previous:     true,
+				SinceSeconds: &[]int64{sinceSeconds}[0],
+				TailLines:    &[]int64{maxLogLines}[0],
 			}
 			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw(c.ctx)
 			if err != nil {

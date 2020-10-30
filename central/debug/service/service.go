@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"runtime/pprof"
 	"strconv"
@@ -52,6 +53,8 @@ const (
 	centralClusterPrefix = "_central-cluster"
 
 	diagnosticsPullTimeout = 10 * time.Second
+	layout                 = "2006-01-02T15:04:05.000Z"
+	logWindow              = 20 * time.Minute
 )
 
 var (
@@ -334,6 +337,8 @@ type debugDumpOptions struct {
 	// 2 - collect telemetry data from sensors and central.
 	telemetryMode  int
 	withCPUProfile bool
+	clusters       []string
+	since          time.Time
 }
 
 func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseWriter, filename string, opts debugDumpOptions) {
@@ -378,7 +383,7 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	}
 
 	if opts.logs == fullK8sIntrospectionData {
-		if err := s.getK8sDiagnostics(ctx, zipWriter); err != nil {
+		if err := s.getK8sDiagnostics(ctx, zipWriter, opts); err != nil {
 			log.Error(err)
 			opts.logs = localLogs // fallback to local logs
 		}
@@ -451,7 +456,6 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
 	filename := time.Now().Format("stackrox_debug_2006_01_02_15_04_05.zip")
 
 	s.writeZippedDebugDump(r.Context(), w, filename, opts)
@@ -466,5 +470,33 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 		withCPUProfile: false,
 	}
 
+	err := getOptionalQueryParams(&opts, r.URL)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, err.Error())
+		return
+	}
+
 	s.writeZippedDebugDump(r.Context(), w, filename, opts)
+}
+
+func getOptionalQueryParams(opts *debugDumpOptions, u *url.URL) error {
+	values := u.Query()
+
+	clusters := values["cluster"]
+	if len(clusters) > 0 {
+		opts.clusters = clusters
+	}
+
+	timeSince := values.Get("since")
+	if timeSince != "" {
+		t, err := time.Parse(layout, timeSince)
+		if err != nil {
+			return errors.Wrapf(err, "invalid timestamp value: %q\n", t)
+		}
+		opts.since = t
+	} else {
+		opts.since = time.Now().Add(-logWindow)
+	}
+	return nil
 }
