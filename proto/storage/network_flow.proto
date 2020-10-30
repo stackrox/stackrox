@@ -69,7 +69,7 @@ message NetworkEntityInfo {
         repeated ListenPort listen_ports = 4;
     }
 
-    // Update normalizeExternalEntity(...) in `pkg/networkgraph/aggregator.go` whenever this message is updated.
+    // Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated.
     message ExternalSource {
         string     name    = 1;
         oneof source {

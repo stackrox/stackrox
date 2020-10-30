@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
+	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
@@ -23,7 +24,7 @@ func Singleton() EntityDataStore {
 	utils.Must(err)
 
 	once.Do(func() {
-		ds = NewEntityDataStore(storage)
+		ds = NewEntityDataStore(storage, graphConfigDS.Singleton())
 	})
 	return ds
 }

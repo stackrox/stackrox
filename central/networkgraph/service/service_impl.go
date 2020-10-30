@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -147,6 +148,10 @@ func (s *serviceImpl) DeleteExternalNetworkEntity(ctx context.Context, request *
 		return nil, status.Error(codes.Unimplemented, "support for external sources in network graph is not enabled")
 	}
 
+	if _, err := s.getEntityAndValidateMutable(ctx, request.GetId()); err != nil {
+		return nil, err
+	}
+
 	if err := s.entities.DeleteExternalNetworkEntity(ctx, request.GetId()); err != nil {
 		if errors.Is(err, errorhelpers.ErrInvalidArgs) {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -173,12 +178,9 @@ func (s *serviceImpl) PatchExternalNetworkEntity(ctx context.Context, request *v
 	}
 
 	id := request.GetId()
-	entity, found, err := s.entities.GetEntity(ctx, id)
+	entity, err := s.getEntityAndValidateMutable(ctx, id)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	if !found {
-		return nil, status.Errorf(codes.NotFound, "network entity %q not found", id)
+		return nil, err
 	}
 	if entity.GetInfo().GetExternalSource() == nil {
 		return nil, status.Errorf(codes.FailedPrecondition, "cannot update network entity %q since the stored entity is invalid. Please delete %q and recreate.", id, id)
@@ -191,6 +193,23 @@ func (s *serviceImpl) PatchExternalNetworkEntity(ctx context.Context, request *v
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
 		return nil, err
+	}
+	return entity, nil
+}
+
+func (s *serviceImpl) getEntityAndValidateMutable(ctx context.Context, id string) (*storage.NetworkEntity, error) {
+	entity, found, err := s.entities.GetEntity(ctx, id)
+	if errors.Is(err, errorhelpers.ErrInvalidArgs) {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("network entity %s not found", id))
+	}
+	if entity.GetInfo().GetExternalSource().GetDefault() {
+		return nil, status.Error(codes.PermissionDenied, "StackRox-generated network entities are immutable")
 	}
 	return entity, nil
 }

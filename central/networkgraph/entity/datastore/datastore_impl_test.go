@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	graphConfigMocks "github.com/stackrox/rox/central/networkgraph/config/datastore/mocks"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
@@ -21,10 +23,12 @@ func TestNetworkEntityDataStore(t *testing.T) {
 
 type NetworkEntityDataStoreTestSuite struct {
 	suite.Suite
+	mockCtrl *gomock.Controller
 
-	db    *pkgRocksDB.RocksDB
-	ds    EntityDataStore
-	store store.EntityStore
+	db          *pkgRocksDB.RocksDB
+	ds          EntityDataStore
+	graphConfig *graphConfigMocks.MockDataStore
+	store       store.EntityStore
 }
 
 func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
@@ -37,10 +41,14 @@ func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 	if err != nil {
 		suite.FailNowf("failed to create network entity store: %+v", err.Error())
 	}
-	suite.ds = NewEntityDataStore(suite.store)
+
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.graphConfig = graphConfigMocks.NewMockDataStore(suite.mockCtrl)
+	suite.ds = NewEntityDataStore(suite.store, suite.graphConfig)
 }
 
 func (suite *NetworkEntityDataStoreTestSuite) TearDownSuite() {
+	suite.mockCtrl.Finish()
 	rocksdbtest.TearDownRocksDB(suite.db)
 }
 
@@ -52,8 +60,8 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	entity1ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
 	entity2ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
 	entity3ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
-	entity4ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
-	entity5ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
+	entity4ID, _ := sac.NewClusterScopeResourceID(cluster2, uuid.NewV4().String())
+	entity5ID, _ := sac.NewClusterScopeResourceID(cluster2, uuid.NewV4().String())
 	entity6ID, _ := sac.NewClusterScopeResourceID(cluster2, uuid.NewV4().String())
 	entity7ID, _ := sac.NewClusterScopeResourceID(cluster2, uuid.NewV4().String())
 
@@ -76,7 +84,6 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 			ClusterId: cluster1,
 		},
 	}
-
 	err := suite.ds.UpsertExternalNetworkEntity(ctx, entity1)
 	suite.NoError(err)
 
@@ -97,7 +104,6 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 			ClusterId: cluster1,
 		},
 	}
-
 	err = suite.ds.UpsertExternalNetworkEntity(ctx, entity2)
 	suite.NoError(err)
 
@@ -255,6 +261,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	suite.NoError(err)
 
 	// Test GetAll
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
 	entities, err := suite.ds.GetAllEntities(ctx)
 	suite.NoError(err)
 	suite.Len(entities, 0)
@@ -359,6 +366,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	suite.False(found)
 
 	// Success-cluster1 permissions used to read cluster1 resource
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
 	actual, found, err := suite.ds.GetEntity(cluster1ReadCtx, entity2.GetInfo().GetId())
 	suite.NoError(err)
 	suite.True(found)
@@ -370,12 +378,14 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	suite.False(found)
 
 	// Only cluster1 resources accessible
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
 	actuals, err := suite.ds.GetAllEntities(cluster1ReadCtx)
 	suite.NoError(err)
 	suite.Len(actuals, 1)
 	suite.Equal(entity2, actuals[0])
 
 	// All resources accessible
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
 	actuals, err = suite.ds.GetAllEntities(allClusterReadCtx)
 	suite.NoError(err)
 	suite.Len(actuals, 3)
@@ -400,4 +410,77 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	entities, err := suite.ds.GetAllEntities(allClusterReadCtx)
 	suite.NoError(err)
 	suite.Len(entities, 0)
+}
+
+func (suite *NetworkEntityDataStoreTestSuite) TestDefaultGraphSetting() {
+	ctx := sac.WithAllAccess(context.Background())
+	cluster1 := "cluster1"
+
+	entity1ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
+	entity2ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
+
+	entity1 := &storage.NetworkEntity{
+		Info: &storage.NetworkEntityInfo{
+			Id:   entity1ID.String(),
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Name: "cidr1",
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "192.0.2.0/24",
+					},
+					Default: true,
+				},
+			},
+		},
+		Scope: &storage.NetworkEntity_Scope{
+			ClusterId: cluster1,
+		},
+	}
+	err := suite.ds.UpsertExternalNetworkEntity(ctx, entity1)
+	suite.NoError(err)
+
+	entity2 := &storage.NetworkEntity{
+		Info: &storage.NetworkEntityInfo{
+			Id:   entity2ID.String(),
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "192.0.2.0/30",
+					},
+				},
+			},
+		},
+		Scope: &storage.NetworkEntity_Scope{
+			ClusterId: cluster1,
+		},
+	}
+	err = suite.ds.UpsertExternalNetworkEntity(ctx, entity2)
+	suite.NoError(err)
+
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+	actual, err := suite.ds.GetAllEntities(ctx)
+	suite.NoError(err)
+	suite.Len(actual, 1)
+
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
+	actual, err = suite.ds.GetAllEntities(ctx)
+	suite.NoError(err)
+	suite.Len(actual, 2)
+
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+	actual, err = suite.ds.GetAllEntitiesForCluster(ctx, cluster1)
+	suite.NoError(err)
+	suite.Len(actual, 1)
+
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
+	actual, err = suite.ds.GetAllEntitiesForCluster(ctx, cluster1)
+	suite.NoError(err)
+	suite.Len(actual, 2)
+
+	err = suite.ds.DeleteExternalNetworkEntitiesForCluster(sac.WithAllAccess(context.Background()), cluster1)
+	suite.NoError(err)
+	err = suite.ds.DeleteExternalNetworkEntitiesForCluster(sac.WithAllAccess(context.Background()), cluster1)
+	suite.NoError(err)
 }

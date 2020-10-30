@@ -207,6 +207,7 @@ func normalizeUnnamedExternalEntities(entity *storage.NetworkEntityInfo, unnamed
 	return true
 }
 
+// Note: Update storage.NetworkEntityInfo.ExternalSource comment if this function is refactored, if necessary.
 func normalizeDupNameExtSrcs(entity *storage.NetworkEntityInfo) {
 	if entity.GetExternalSource() == nil || !networkgraph.IsKnownExternalSrc(entity) {
 		return

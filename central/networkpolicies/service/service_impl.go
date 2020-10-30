@@ -433,7 +433,7 @@ func (s *serviceImpl) getExternalSrcs(ctx context.Context, clusterID string) ([]
 	}
 
 	entities, err := s.externalSrcs.GetAllEntitiesForCluster(ctx, clusterID)
-	if err != nil {
+	if err != nil || len(entities) == 0 {
 		return nil, err
 	}
 

@@ -746,7 +746,8 @@ func (s *NetworkGraphServiceTestSuite) TestDeleteExternalNetworkEntity() {
 		Id: id.String(),
 	}
 
-	s.entities.EXPECT().DeleteExternalNetworkEntity(ctx, gomock.Any()).Return(nil)
+	s.entities.EXPECT().GetEntity(ctx, request.GetId()).Return(&storage.NetworkEntity{}, true, nil)
+	s.entities.EXPECT().DeleteExternalNetworkEntity(ctx, request.GetId()).Return(nil)
 	pushSig := concurrency.NewSignal()
 	s.sensorConnMgr.EXPECT().PushExternalNetworkEntitiesToSensor(ctx, "c1").DoAndReturn(
 		func(ctx context.Context, clusterID string) error {
@@ -758,6 +759,19 @@ func (s *NetworkGraphServiceTestSuite) TestDeleteExternalNetworkEntity() {
 	_, err := s.tested.DeleteExternalNetworkEntity(ctx, request)
 	s.NoError(err)
 	s.True(concurrency.WaitWithTimeout(&pushSig, time.Second*1))
+
+	s.entities.EXPECT().GetEntity(ctx, request.GetId()).Return(&storage.NetworkEntity{
+		Info: &storage.NetworkEntityInfo{
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Name: "any",
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "net",
+					},
+					Default: true,
+				}}}}, true, nil)
+	_, err = s.tested.DeleteExternalNetworkEntity(ctx, request)
+	s.Error(err)
 }
 
 func (s *NetworkGraphServiceTestSuite) TestPatchExternalNetworkEntity() {
