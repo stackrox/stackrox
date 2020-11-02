@@ -38,6 +38,8 @@ import {
     getNamespaceList,
     getExternalEntitiesEdgeNodes,
     getExternalEntitiesNode,
+    getCIDRBlockNodes,
+    getCIDRBlockEdgeNodes,
     getClusterNode,
     getDeploymentList,
     getFilteredNodes,
@@ -417,8 +419,14 @@ const NetworkGraph = ({
 
                 allNodes = allNodes.concat(externalEntitiesEdgeNodes, externalEntitiesNode);
             }
+
+            const cidrBlockNodes = getCIDRBlockNodes(data, configObj);
+            if (cidrBlockNodes?.length) {
+                const cidrBlockEdgeNodes = getCIDRBlockEdgeNodes(cidrBlockNodes);
+
+                allNodes = allNodes.concat(cidrBlockEdgeNodes, cidrBlockNodes);
+            }
         }
-        // end of TODO to be removed
 
         return {
             nodes: allNodes,
@@ -434,13 +442,13 @@ const NetworkGraph = ({
 
         // Get a map of all the side nodes per namespace
         const groups = cyRef.current.nodes(':parent');
-        const namespaces = groups.filter((group) => {
-            return group.data().type === entityTypes.NAMESPACE;
+        const parents = groups.filter((group) => {
+            return (
+                group.data().type === entityTypes.NAMESPACE ||
+                group.data().type === nodeTypes.EXTERNAL_ENTITIES ||
+                group.data().type === nodeTypes.CIDR_BLOCK
+            );
         });
-        const externalEntities = groups.filter((group) => {
-            return group.data().type === nodeTypes.EXTERNAL_ENTITIES;
-        });
-        const parents = [...namespaces, ...externalEntities];
         const sideNodesPerParent = parents.reduce((acc, parent) => {
             const { id } = parent.data(); // to
             if (!id) {

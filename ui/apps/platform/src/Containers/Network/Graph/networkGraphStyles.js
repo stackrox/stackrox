@@ -90,6 +90,32 @@ const styles = [
         },
     },
     {
+        selector: '.cidrBlock',
+        style: {
+            'background-color': '#fff',
+            'border-width': '1.5px',
+            'border-color': COLORS.inactiveNS,
+            shape: 'cutrectangle',
+            'compound-sizing-wrt-labels': 'include',
+            'font-family': 'stackrox, Open Sans',
+            'text-valign': 'center',
+            'font-size': NS_FONT_SIZE,
+            color: COLORS.label,
+            'font-weight': 700,
+            label: (ele) => {
+                const address = ele.data()?.cidr || 'Address error';
+                const name = ele.data()?.name || 'Name error';
+                return `${address}\n${name}`;
+            },
+            'line-height': 1.5,
+            padding: '2px 2px 2px 2px',
+            'text-transform': 'uppercase',
+            'text-wrap': 'wrap',
+            width: 'label',
+            'z-compound-depth': 'auto',
+        },
+    },
+    {
         selector: 'node.nsHovered',
         style: {
             opacity: 1,
@@ -233,6 +259,15 @@ const styles = [
     },
     {
         selector: ':parent > node.externalEntitiesEdge',
+        style: {
+            width: 0.5,
+            height: 0.5,
+            padding: '0px',
+            'background-color': 'white',
+        },
+    },
+    {
+        selector: ':parent > node.cidrBlockEdge',
         style: {
             width: 0.5,
             height: 0.5,

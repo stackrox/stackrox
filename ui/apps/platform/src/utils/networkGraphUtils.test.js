@@ -11,6 +11,11 @@ import {
     getEgressPortsAndProtocols,
     getNetworkFlows,
     createPortsAndProtocolsSelector,
+    getNodeName,
+    getNodeNamespace,
+    getIsNodeHoverable,
+    getExternalEntitiesEdgeNodes,
+    getCIDRBlockEdgeNodes,
 } from './networkGraphUtils';
 import {
     filteredData,
@@ -22,6 +27,12 @@ import {
     namespaceEdgeNodes,
     deploymentEdges,
 } from './networkGraphUtils.test.constants';
+
+const nodeTypes = {
+    DEPLOYMENT: 'DEPLOYMENT',
+    EXTERNAL_ENTITIES: 'INTERNET',
+    CIDR_BLOCK: 'EXTERNAL_SOURCE',
+};
 
 describe('networkGraphUtils', () => {
     describe('getSideMap', () => {
@@ -316,6 +327,7 @@ describe('networkGraphUtils', () => {
             expect(numEgressFlows).toEqual(3);
         });
     });
+
     describe('createPortsAndProtocolsSelector', () => {
         it('should get ports/protocols when it exists in the mapping', () => {
             const nodes = [
@@ -408,6 +420,150 @@ describe('networkGraphUtils', () => {
             expect(getPortsAndProtocolsByLink('1**__**0', isEgress)).toEqual([
                 { port: '*', protocol: 'L4_PROTOCOL_ANY', traffic: 'ingress' },
             ]);
+        });
+    });
+
+    describe('getNodeNamespace', () => {
+        it('should get the namespace value for a deployment node', () => {
+            const node = {
+                entity: {
+                    id: '1234',
+                    type: 'DEPLOYMENT',
+                    deployment: {
+                        namespace: 'N1',
+                    },
+                },
+            };
+            expect(getNodeNamespace(node)).toEqual('N1');
+        });
+
+        it('should get the namespace value for an external entities node', () => {
+            const node = {
+                entity: {
+                    id: '1234',
+                    type: nodeTypes.EXTERNAL_ENTITIES,
+                },
+            };
+            expect(getNodeNamespace(node)).toEqual('External Entities');
+        });
+
+        it('should get the namespace value for a CIDR block node', () => {
+            const node = {
+                entity: {
+                    id: '1234',
+                    type: nodeTypes.CIDR_BLOCK,
+                },
+            };
+            expect(getNodeNamespace(node)).toEqual('1234');
+        });
+    });
+
+    describe('getNodeName', () => {
+        it('should get the name value for a deployment node', () => {
+            const node = {
+                entity: {
+                    id: '1234',
+                    type: 'DEPLOYMENT',
+                    deployment: {
+                        name: 'D1',
+                    },
+                },
+            };
+            expect(getNodeName(node)).toEqual('D1');
+        });
+
+        it('should get the namespace value for an external entities node', () => {
+            const node = {
+                entity: {
+                    id: '1234',
+                    type: nodeTypes.EXTERNAL_ENTITIES,
+                },
+            };
+            expect(getNodeName(node)).toEqual('External Entities');
+        });
+
+        it('should get the namespace value for a CIDR block node', () => {
+            const node = {
+                entity: {
+                    id: '1234',
+                    type: nodeTypes.CIDR_BLOCK,
+                },
+            };
+            expect(getNodeName(node)).toEqual('1234');
+        });
+    });
+
+    describe('getIsNodeHoverable', () => {
+        it('should be a hoverable node', () => {
+            expect(getIsNodeHoverable(nodeTypes.DEPLOYMENT)).toEqual(true);
+            expect(getIsNodeHoverable('INTERNET')).toEqual(true);
+            expect(getIsNodeHoverable(nodeTypes.CIDR_BLOCK)).toEqual(true);
+        });
+
+        it('should not be a hoverable node', () => {
+            expect(getIsNodeHoverable('NAMESPACE')).toEqual(false);
+        });
+    });
+
+    describe('getExternalEntitiesEdgeNodes', () => {
+        it('should get the edge nodes for the external entities node', () => {
+            const externalEntityNode = { data: { id: '1' } };
+            const externalEntityEdgeNodes = [
+                {
+                    data: { id: '1_top', parent: '1', side: 'top' },
+                    classes: 'externalEntitiesEdge',
+                },
+                {
+                    data: { id: '1_left', parent: '1', side: 'left' },
+                    classes: 'externalEntitiesEdge',
+                },
+                {
+                    data: { id: '1_right', parent: '1', side: 'right' },
+                    classes: 'externalEntitiesEdge',
+                },
+                {
+                    data: { id: '1_bottom', parent: '1', side: 'bottom' },
+                    classes: 'externalEntitiesEdge',
+                },
+            ];
+            expect(getExternalEntitiesEdgeNodes(externalEntityNode)).toEqual(
+                externalEntityEdgeNodes
+            );
+        });
+    });
+
+    describe('getCIDRBlockEdgeNodes', () => {
+        it('should get the edge nodes for all CIDR block nodes', () => {
+            const cidrBlockNodes = [{ data: { id: '1' } }, { data: { id: '2' } }];
+            const cidrBlockEdgeNodes = [
+                { data: { id: '1_top', parent: '1', side: 'top' }, classes: 'cidrBlockEdge' },
+                {
+                    data: { id: '1_left', parent: '1', side: 'left' },
+                    classes: 'cidrBlockEdge',
+                },
+                {
+                    data: { id: '1_right', parent: '1', side: 'right' },
+                    classes: 'cidrBlockEdge',
+                },
+                {
+                    data: { id: '1_bottom', parent: '1', side: 'bottom' },
+                    classes: 'cidrBlockEdge',
+                },
+                { data: { id: '2_top', parent: '2', side: 'top' }, classes: 'cidrBlockEdge' },
+                {
+                    data: { id: '2_left', parent: '2', side: 'left' },
+                    classes: 'cidrBlockEdge',
+                },
+                {
+                    data: { id: '2_right', parent: '2', side: 'right' },
+                    classes: 'cidrBlockEdge',
+                },
+                {
+                    data: { id: '2_bottom', parent: '2', side: 'bottom' },
+                    classes: 'cidrBlockEdge',
+                },
+            ];
+            expect(getCIDRBlockEdgeNodes(cidrBlockNodes)).toEqual(cidrBlockEdgeNodes);
         });
     });
 });

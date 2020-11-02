@@ -19,11 +19,69 @@ export const isDeployment = (node) => node?.type === entityTypes.DEPLOYMENT;
 
 export const isNamespace = (node) => node?.type === entityTypes.NAMESPACE;
 
+export const getIsExternalEntities = (type) => type === nodeTypes.EXTERNAL_ENTITIES;
+
+export const getIsCIDRBlockNode = (type) => type === nodeTypes.CIDR_BLOCK;
+
 export const isNamespaceEdge = (edge) => edge?.type === edgeTypes.NAMESPACE_EDGE;
 
 export const isNodeToNodeEdge = (edge) => edge?.type === edgeTypes.NODE_TO_NODE_EDGE;
 
 export const isNodeToNamespaceEdge = (edge) => edge?.type === edgeTypes.NODE_TO_NAMESPACE_EDGE;
+
+export const getIsNodeExternal = (id, nodes) => {
+    // TODO: There seems to be an inconsistency with the id for external entities. We should keep it as the "id"
+    // provided by the backend rather than modifying it to be "External Entities"
+    if (id === 'External Entities') {
+        return true;
+    }
+    const node = nodes.find((datum) => {
+        return datum?.entity?.id === id;
+    });
+    return node?.entity?.type === nodeTypes.CIDR_BLOCK;
+};
+
+/**
+ * Gets the namespace value for a node
+ *
+ * @param {!Object} node
+ *
+ * @returns {!string}
+ *
+ */
+export function getNodeNamespace(node) {
+    const { deployment, id, type } = node.entity;
+    const isExternalEntitiesNode = getIsExternalEntities(type);
+    const isCIDRBlockNode = getIsCIDRBlockNode(type);
+    if (isExternalEntitiesNode) {
+        return 'External Entities';
+    }
+    if (isCIDRBlockNode) {
+        return id;
+    }
+    return deployment.namespace;
+}
+
+/**
+ * Gets the name value for a node
+ *
+ * @param {!Object} node
+ *
+ * @returns {!string}
+ *
+ */
+export function getNodeName(node) {
+    const { deployment, id, type } = node.entity;
+    const isExternalEntitiesNode = getIsExternalEntities(type);
+    const isCIDRBlockNode = getIsCIDRBlockNode(type);
+    if (isExternalEntitiesNode) {
+        return 'External Entities';
+    }
+    if (isCIDRBlockNode) {
+        return id;
+    }
+    return deployment.name;
+}
 
 /**
  * Create a key using a source and target with a delimiter in between
@@ -156,87 +214,6 @@ export const createPortsAndProtocolsSelector = (
 };
 
 /**
- * TODO: possilby flesh out this function to generalize getNamespaceEdges to also handle External Entities and CIDR blocks at same time
- */
-// eslint-disable-next-line no-unused-vars
-const createGroupedEdge = ({ nodes, links, highlightedNodeId, networkNodeMap, filterState }) => {
-    const namespaceLinks = [];
-    const visitedNodeLinks = [];
-    const disallowedGroupLinks = {};
-    const activeGroupLinks = {};
-
-    const getPortsAndProtocolsByLink = createPortsAndProtocolsSelector(
-        nodes,
-        highlightedNodeId,
-        networkNodeMap,
-        filterState
-    );
-
-    links.forEach(({ source, target, sourceNS, targetNS, isActive, isAllowed, isDisallowed }) => {
-        const namespaceLinkKey = getSourceTargetKey(sourceNS, targetNS);
-        const nodeLinkKey = getSourceTargetKey(source, target);
-        const isEgress = source === highlightedNodeId;
-
-        // keep track of which namespace links are active
-        if (isActive) {
-            disallowedGroupLinks[namespaceLinkKey] = true;
-        }
-        // keep track of which namespace links are disallowed
-        if (isDisallowed) {
-            activeGroupLinks[namespaceLinkKey] = true;
-        }
-
-        const portsAndProtocols = getPortsAndProtocolsByLink(nodeLinkKey, isEgress);
-        const isLinkPreviouslyVisited = visitedNodeLinks[nodeLinkKey];
-
-        const namespaceLink = namespaceLinks[namespaceLinkKey] || {
-            portsAndProtocols: [],
-            numBidirectionalLinks: 0,
-            numUnidirectionalLinks: 0,
-            numActiveBidirectionalLinks: 0,
-            numActiveUnidirectionalLinks: 0,
-            numAllowedBidirectionalLinks: 0,
-            numAllowedUnidirectionalLinks: 0,
-        };
-
-        namespaceLink.portsAndProtocols = [
-            ...namespaceLink.portsAndProtocols,
-            ...portsAndProtocols,
-        ];
-
-        if (isLinkPreviouslyVisited) {
-            namespaceLink.numBidirectionalLinks += 1;
-            namespaceLink.numUnidirectionalLinks = namespaceLink.numUnidirectionalLinks
-                ? namespaceLink.numUnidirectionalLinks - 1
-                : 0;
-            if (isActive) {
-                namespaceLink.numActiveBidirectionalLinks += 1;
-                namespaceLink.numActiveUnidirectionalLinks = namespaceLink.numActiveUnidirectionalLinks
-                    ? namespaceLink.numActiveUnidirectionalLinks - 1
-                    : 0;
-            }
-            if (isAllowed) {
-                namespaceLink.numAllowedBidirectionalLinks += 1;
-                namespaceLink.numAllowedUnidirectionalLinks = namespaceLink.numAllowedUnidirectionalLinks
-                    ? namespaceLink.numAllowedUnidirectionalLinks - 1
-                    : 0;
-            }
-        } else {
-            namespaceLink.numUnidirectionalLinks += 1;
-            if (isActive) {
-                namespaceLink.numActiveUnidirectionalLinks += 1;
-            }
-            if (isAllowed) {
-                namespaceLink.numAllowedUnidirectionalLinks += 1;
-            }
-            visitedNodeLinks[nodeLinkKey] = true;
-        }
-
-        namespaceLinks[namespaceLinkKey] = namespaceLink;
-    });
-};
-
-/**
  * Iterates through a list of links and returns bundled edges between namespaces
  *
  * @param {!Object} configObj config object of the current network graph state
@@ -277,6 +254,8 @@ export const getNamespaceEdges = ({
 
     const filteredLinks = linkArray.filter(
         ({ source, target, isActive, sourceNS, targetNS }) =>
+            source &&
+            target &&
             (!highlightedNodeId ||
                 source === highlightedNodeId ||
                 target === highlightedNodeId ||
@@ -496,8 +475,8 @@ export const getEdgesFromNode = ({
                 unidirectional: isRelativeIngress || isRelativeEgress,
             };
             const inSameNamespace = sourceNS === targetNS;
-            const isSourceExternal = source === 'External Entities';
-            const isTargetExternal = target === 'External Entities';
+            const isSourceExternal = getIsNodeExternal(source, nodes);
+            const isTargetExternal = getIsNodeExternal(target, nodes);
             const nodeLinkKey = getSourceTargetKey(source, target);
             const portsAndProtocols = getPortsAndProtocolsByLink(nodeLinkKey, isEgress);
 
@@ -794,6 +773,70 @@ export const getExternalEntitiesNode = (data, configObj = {}) => {
 };
 
 /**
+ * Select out the entities representing external connections to CIDR blocks in the cluster
+ *
+ * @param   {!Object[]} data    list of "deployments", without the external entity filtered out
+ * @param   {!Object} configObj config object of the current network graph state
+ *                              that contains links, filterState, and nodeSideMap,
+ *                              networkNodeMap, hoveredNode, and selectedNode
+ *
+ * @return  {!Object}
+ */
+export const getCIDRBlockNodes = (data, configObj = {}) => {
+    const { hoveredNode, selectedNode, filterState, networkNodeMap } = configObj;
+
+    const cidrBlocks = data.filter((datum) => datum?.entity?.type === nodeTypes.CIDR_BLOCK);
+
+    if (cidrBlocks.length === 0) {
+        return null;
+    }
+
+    const cidrBlockNodes = cidrBlocks.map((cidrBlock) => {
+        const { entity, ...datumProps } = cidrBlock;
+        const entityData = networkNodeMap[entity.id];
+        const edges = getEdgesFromNode(configObj);
+
+        const externallyConnected =
+            filterState === filterModes.all
+                ? entityData?.active?.externallyConnected
+                : cidrBlock?.externallyConnected;
+
+        const isSelected = !!(selectedNode?.id === entity.id);
+        const isHovered = !!(hoveredNode?.id === entity.id);
+        const isBackground = !(!selectedNode && !hoveredNode) && !isHovered && !isSelected;
+        // DEPRECATED: const isNonIsolated = isNonIsolatedNode(externalNode);
+        const isDisallowed =
+            filterState !== filterModes.allowed && edges.some((edge) => edge.data.isDisallowed);
+        const isExternallyConnected = externallyConnected && filterState !== filterModes.allowed;
+        const classes = getClasses({
+            active: false,
+            selected: isSelected,
+            cidrBlock: true,
+            disallowed: isDisallowed,
+            hovered: isHovered,
+            background: isBackground,
+            nonIsolated: false,
+            externallyConnected: isExternallyConnected,
+        });
+
+        return {
+            data: {
+                ...datumProps,
+                ...entity,
+                id: entity.id,
+                cidr: entity.externalSource.cidr,
+                name: entity.externalSource.name,
+                active: false,
+                type: nodeTypes.CIDR_BLOCK,
+                parent: null,
+            },
+            classes,
+        };
+    });
+    return cidrBlockNodes;
+};
+
+/**
  * Helper function that returns a function to determine whether a given id is in the list
  *
  * @param {!string} entityId entity id to match on
@@ -917,7 +960,9 @@ export const getNodeData = (id, deploymentList) => {
  * @returns {!Object[]}
  */
 export const getEdges = (configObj) => {
-    return [...getNamespaceEdges(configObj), ...getEdgesFromNode(configObj)];
+    const namespaceEdges = getNamespaceEdges(configObj);
+    const edgesFromNodes = getEdgesFromNode(configObj);
+    return [...namespaceEdges, ...edgesFromNodes];
 };
 
 /**
@@ -1012,12 +1057,12 @@ export const getNamespaceList = (
  */
 const sides = ['top', 'left', 'right', 'bottom'];
 
-const createEdgeNodes = (name, classes) => {
+const createEdgeNodes = (id, classes) => {
     const edgeNodes = sides.reduce((acc, side) => {
         const node = {
             data: {
-                id: `${name}_${side}`,
-                parent: name,
+                id: `${id}_${side}`,
+                parent: id,
                 side,
             },
             classes,
@@ -1027,6 +1072,15 @@ const createEdgeNodes = (name, classes) => {
     return edgeNodes;
 };
 
+export const getEdgeNodes = (nodeList, classes) => {
+    const totalEdgeNodes = nodeList.reduce((acc, node) => {
+        const { id } = node.data;
+        const edgeNodes = createEdgeNodes(id, classes);
+        return [...acc, ...edgeNodes];
+    }, []);
+    return totalEdgeNodes;
+};
+
 /**
  * Returns a list of nodes that are hidden "namespace" cardinal direction edges
  *
@@ -1034,12 +1088,8 @@ const createEdgeNodes = (name, classes) => {
  *
  * @returns {!Object[]}
  */
-export const getNamespaceEdgeNodes = (namespaceList) => {
-    const namespaceEdgeNodes = namespaceList.reduce((acc, namespace) => {
-        const nsName = namespace.data.id;
-        const edgeNodes = createEdgeNodes(nsName, 'nsEdge');
-        return [...acc, ...edgeNodes];
-    }, []);
+export const getNamespaceEdgeNodes = (namespaces) => {
+    const namespaceEdgeNodes = getEdgeNodes(namespaces, 'nsEdge');
     return namespaceEdgeNodes;
 };
 
@@ -1051,9 +1101,20 @@ export const getNamespaceEdgeNodes = (namespaceList) => {
  * @returns {!Object[]}
  */
 export const getExternalEntitiesEdgeNodes = (externalEntitiesNode) => {
-    const externalEntitiesName = externalEntitiesNode.data.id;
-    const edgeNodes = createEdgeNodes(externalEntitiesName, 'externalEntitiesEdge');
-    return edgeNodes;
+    const externalEntitiesEdgeNodes = getEdgeNodes([externalEntitiesNode], 'externalEntitiesEdge');
+    return externalEntitiesEdgeNodes;
+};
+
+/**
+ * Returns a list of nodes that are hidden "external source" cardinal direction edges
+ *
+ * @param {!Object} cidrBlockNodes
+ *
+ * @returns {!Object[]}
+ */
+export const getCIDRBlockEdgeNodes = (cidrBlockNodes) => {
+    const cidrBlockEdgeNodes = getEdgeNodes(cidrBlockNodes, 'cidrBlockEdge');
+    return cidrBlockEdgeNodes;
 };
 
 /**
@@ -1253,5 +1314,9 @@ export function getEgressPortsAndProtocols(networkFlows) {
  * @return {boolean}
  */
 export function getIsNodeHoverable(type) {
-    return type === entityTypes.DEPLOYMENT || type === nodeTypes.EXTERNAL_ENTITIES;
+    return (
+        type === entityTypes.DEPLOYMENT ||
+        type === nodeTypes.EXTERNAL_ENTITIES ||
+        type === nodeTypes.CIDR_BLOCK
+    );
 }

@@ -8,7 +8,7 @@ import * as Icon from 'react-feather';
 
 import { actions as graphActions } from 'reducers/network/graph';
 
-const NodesUpdateButton = ({ nodeUpdatesCount, networkNodesUpdate }) => {
+const NodesUpdateButton = ({ nodeUpdatesCount, updateNetworkNodes }) => {
     if (Number.isNaN(nodeUpdatesCount) || nodeUpdatesCount <= 0) {
         return null;
     }
@@ -16,7 +16,7 @@ const NodesUpdateButton = ({ nodeUpdatesCount, networkNodesUpdate }) => {
         <button
             type="button"
             className="btn-graph-refresh p-1 bg-primary-300 border-2 border-primary-400 hover:bg-primary-200 rounded-sm text-sm text-primary-700 mt-2 w-full font-700 flex items-center"
-            onClick={networkNodesUpdate}
+            onClick={updateNetworkNodes}
         >
             <Icon.Circle className="h-2 w-2 text-primary-300 border-primary-300" />
             <span className="pl-1">
@@ -28,10 +28,10 @@ const NodesUpdateButton = ({ nodeUpdatesCount, networkNodesUpdate }) => {
 
 NodesUpdateButton.propTypes = {
     nodeUpdatesCount: PropTypes.number.isRequired,
-    networkNodesUpdate: PropTypes.func.isRequired,
+    updateNetworkNodes: PropTypes.func.isRequired,
 };
 
-const NodesUpdateSection = ({ networkNodesUpdate, nodeUpdatesCount, lastUpdatedTimestamp }) => {
+const NodesUpdateSection = ({ updateNetworkNodes, nodeUpdatesCount, lastUpdatedTimestamp }) => {
     if (!lastUpdatedTimestamp) {
         return null;
     }
@@ -43,7 +43,7 @@ const NodesUpdateSection = ({ networkNodesUpdate, nodeUpdatesCount, lastUpdatedT
             )}`}</div>
             <NodesUpdateButton
                 nodeUpdatesCount={nodeUpdatesCount}
-                networkNodesUpdate={networkNodesUpdate}
+                updateNetworkNodes={updateNetworkNodes}
             />
         </div>
     );
@@ -52,7 +52,7 @@ const NodesUpdateSection = ({ networkNodesUpdate, nodeUpdatesCount, lastUpdatedT
 NodesUpdateSection.propTypes = {
     lastUpdatedTimestamp: PropTypes.instanceOf(Date),
     nodeUpdatesCount: PropTypes.number.isRequired,
-    networkNodesUpdate: PropTypes.func.isRequired,
+    updateNetworkNodes: PropTypes.func.isRequired,
 };
 
 NodesUpdateSection.defaultProps = {
@@ -71,7 +71,7 @@ const mapStateToProps = createStructuredSelector({
 
 const mapDispatchToProps = {
     getNodeUpdates: graphActions.setNetworkGraphFilterMode,
-    networkNodesUpdate: graphActions.networkNodesUpdate,
+    updateNetworkNodes: graphActions.updateNetworkNodes,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(NodesUpdateSection);

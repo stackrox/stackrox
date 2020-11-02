@@ -17,8 +17,8 @@ import ZoomButtons from '../Graph/Overlays/ZoomButtons';
 
 function Wizard({ wizardOpen, wizardStage, onClose }) {
     const width = wizardOpen ? 'md:w-2/3 lg:w-2/5 min-w-120' : 'w-0';
-
     let panelContent = null;
+
     if (wizardOpen) {
         switch (wizardStage) {
             case wizardStages.details:

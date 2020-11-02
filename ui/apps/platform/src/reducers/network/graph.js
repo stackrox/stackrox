@@ -136,7 +136,7 @@ export const actions = {
         type: types.UPDATE_NETWORK_GRAPH_TIMESTAMP,
         lastUpdatedTimestamp,
     }),
-    networkNodesUpdate: () => ({
+    updateNetworkNodes: () => ({
         type: types.NETWORK_NODES_UPDATE,
     }),
     setNetworkGraphLoading: (isNetworkGraphLoading) => ({

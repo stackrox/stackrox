@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { selectors } from 'reducers';
 import { createStructuredSelector } from 'reselect';
 
+import { actions as graphActions } from 'reducers/network/graph';
 import { fetchCIDRBlocks } from 'services/NetworkService';
 import Panel from 'Components/Panel';
 import Loader from 'Components/Loader';
 import DefaultCIDRToggle from './DefaultCIDRToggle';
 import CIDRForm from './CIDRForm';
 
-const CIDRPanel = ({ selectedClusterId, onClose }) => {
+const CIDRPanel = ({ selectedClusterId, updateNetworkNodes, onClose }) => {
     const [CIDRBlocks, setCIDRBlocks] = useState();
 
     useEffect(() => {
@@ -38,12 +40,23 @@ const CIDRPanel = ({ selectedClusterId, onClose }) => {
         >
             <DefaultCIDRToggle />
             {CIDRBlocks?.entities?.length >= 0 ? (
-                <CIDRForm rows={CIDRBlocks} clusterId={selectedClusterId} onClose={onClose} />
+                <CIDRForm
+                    rows={CIDRBlocks}
+                    clusterId={selectedClusterId}
+                    onClose={onClose}
+                    updateNetworkNodes={updateNetworkNodes}
+                />
             ) : (
                 <Loader />
             )}
         </Panel>
     );
+};
+
+CIDRPanel.propTypes = {
+    selectedClusterId: PropTypes.string,
+    onClose: PropTypes.func.isRequired,
+    updateNetworkNodes: PropTypes.func.isRequired,
 };
 
 CIDRPanel.defaultProps = {
@@ -54,4 +67,8 @@ const mapStateToProps = createStructuredSelector({
     selectedClusterId: selectors.getSelectedNetworkClusterId,
 });
 
-export default connect(mapStateToProps)(CIDRPanel);
+const mapDispatchToProps = {
+    updateNetworkNodes: graphActions.updateNetworkNodes,
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(CIDRPanel);

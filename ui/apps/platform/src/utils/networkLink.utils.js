@@ -2,7 +2,13 @@ import entityTypes from 'constants/entityTypes';
 import { filterModes } from 'constants/networkFilterModes';
 import { nodeTypes } from 'constants/networkGraph';
 import { UIfeatureFlags, isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
-import { getIsNodeHoverable, getSourceTargetKey } from 'utils/networkGraphUtils';
+import {
+    getIsNodeHoverable,
+    getSourceTargetKey,
+    getNodeNamespace,
+    getNodeName,
+} from 'utils/networkGraphUtils';
+
 /**
  * Iterates through a list of nodes and returns only links in the same namespace
  *
@@ -44,10 +50,9 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
             return;
         }
 
-        const { id: sourceEntityId, deployment: sourceDeployment, type } = node.entity;
-        const isSourceExternal = type === 'INTERNET';
-        const sourceNS = isSourceExternal ? 'External Entities' : sourceDeployment?.namespace;
-        const sourceName = isSourceExternal ? 'External Entities' : sourceDeployment.name;
+        const { id: sourceEntityId, deployment: sourceDeployment } = node.entity;
+        const sourceNS = getNodeNamespace(node);
+        const sourceName = getNodeName(node);
 
         // For nodes that are egress non-isolated, add outgoing edges to ingress non-isolated nodes, as long as the pair
         // of nodes is not fully non-isolated. This is a compromise to make the non-isolation highlight only apply in
@@ -83,14 +88,15 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
 
                 const { deployment: targetDeployment } = targetNode.entity;
                 const targetEntityId = targetDeployment?.id;
-                const targetNS = targetDeployment?.namespace;
+                const targetNS = getNodeNamespace(targetNode);
+                const targetName = getNodeName(targetNode);
                 const edgeKey = getSourceTargetKey(sourceEntityId, targetEntityId);
 
                 const link = {
                     source: sourceEntityId,
                     target: targetEntityId,
-                    sourceName: sourceDeployment?.name,
-                    targetName: targetDeployment?.name,
+                    sourceName,
+                    targetName,
                     sourceNS,
                     targetNS,
                 };
@@ -111,24 +117,14 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
 
         Object.keys(node.outEdges).forEach((targetNodeId) => {
             const targetNode = networkNodeMap[targetNodeId].active;
-            const {
-                id: targetId,
-                deployment: targetDeployment,
-                type: targetNodeType,
-            } = targetNode.entity;
+            const { id: targetId, type: targetNodeType } = targetNode.entity;
             const targetEntityId = targetNodeType === 'INTERNET' ? 'External Entities' : targetId;
             if (targetNode?.entity?.type !== entityTypes.DEPLOYMENT && !showExternalSources) {
                 return;
             }
             const edgeKey = getSourceTargetKey(sourceEntityId, targetEntityId);
-            const targetNS =
-                targetNodeType !== entityTypes.DEPLOYMENT && showExternalSources
-                    ? 'External Entities'
-                    : targetDeployment?.namespace;
-            const targetName =
-                targetNodeType !== entityTypes.DEPLOYMENT && showExternalSources
-                    ? 'External Entities'
-                    : targetDeployment?.name;
+            const targetNS = getNodeNamespace(targetNode);
+            const targetName = getNodeName(targetNode);
 
             const link = {
                 source: sourceEntityId,

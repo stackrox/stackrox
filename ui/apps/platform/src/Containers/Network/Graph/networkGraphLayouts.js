@@ -35,8 +35,12 @@ export function getParentPositions(nodes, padding) {
     const namespaceNames = nodes
         .filter((node) => node.data().type === entityTypes.NAMESPACE)
         .map((parent) => parent.data().id);
-    const externalEntitiesNames = nodes
-        .filter((node) => node.data().type === nodeTypes.EXTERNAL_ENTITIES)
+    const externalEntitiesAndCIDRBlockNames = nodes
+        .filter(
+            (node) =>
+                node.data().type === nodeTypes.EXTERNAL_ENTITIES ||
+                node.data().type === nodeTypes.CIDR_BLOCK
+        )
         .map((parent) => parent.data().id);
 
     // Get namespace dimensions sorted by width
@@ -50,14 +54,14 @@ export function getParentPositions(nodes, padding) {
             return { ...getParentDimensions(nodeCount), id, nodeCount };
         })
         .sort((a, b) => b.cols - a.cols);
-    const externalEntities = externalEntitiesNames
+    const externalEntitiesAndCIDRBlocks = externalEntitiesAndCIDRBlockNames
         .map((id) => {
             const nodeCount = 1;
             return { ...getParentDimensions(nodeCount), id, nodeCount };
         })
         .sort((a, b) => b.cols - a.cols);
 
-    const parents = [...namespaces, ...externalEntities];
+    const parents = [...namespaces, ...externalEntitiesAndCIDRBlocks];
 
     // lay out namespaces
     let y = 0;

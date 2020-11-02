@@ -5,7 +5,7 @@ import { actions as graphActions } from 'reducers/network/graph';
 import ToggleSwitch from 'Components/ToggleSwitch';
 import { getHideDefaultExternalSrcs, setHideDefaultExternalSrcs } from 'services/NetworkService';
 
-const DefaultCIDRToggle = ({ networkNodesUpdate }): ReactElement => {
+const DefaultCIDRToggle = ({ updateNetworkNodes }): ReactElement => {
     const [showDefaultExternalSrcs, setShowDefaultExternalSrcs] = useState<boolean>(false);
     const [errorMessage, setErrorMessage] = useState<string>();
 
@@ -19,7 +19,7 @@ const DefaultCIDRToggle = ({ networkNodesUpdate }): ReactElement => {
         setHideDefaultExternalSrcs(showDefaultExternalSrcs)
             .then(() => {
                 setShowDefaultExternalSrcs(!showDefaultExternalSrcs);
-                networkNodesUpdate();
+                updateNetworkNodes();
             })
             .catch(({ message }) => {
                 setErrorMessage(message);
@@ -40,7 +40,7 @@ const DefaultCIDRToggle = ({ networkNodesUpdate }): ReactElement => {
 };
 
 const mapDispatchToProps = {
-    networkNodesUpdate: graphActions.networkNodesUpdate,
+    updateNetworkNodes: graphActions.updateNetworkNodes,
 };
 
 export default connect(null, mapDispatchToProps)(DefaultCIDRToggle);

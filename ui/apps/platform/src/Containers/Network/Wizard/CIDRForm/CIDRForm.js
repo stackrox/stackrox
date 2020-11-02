@@ -54,7 +54,7 @@ function validateAddress(blocks) {
     };
 }
 
-const CIDRForm = ({ rows, clusterId, onClose }) => {
+const CIDRForm = ({ rows, clusterId, updateNetworkNodes, onClose }) => {
     const [hasErrors, setHasErrors] = useState();
     let blocksToRemove = [];
     const CIDRBlockMap = {};
@@ -106,8 +106,8 @@ const CIDRForm = ({ rows, clusterId, onClose }) => {
 
             Promise.all(allBlockPromises)
                 .then(() => {
-                    // trigger refetch of network graph ?
                     setHasErrors(false);
+                    updateNetworkNodes();
                     setTimeout(onClose, 2000);
                 })
                 .catch(() => {
