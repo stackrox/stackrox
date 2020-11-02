@@ -14,6 +14,7 @@ export const knownBackendFlags = {
     ROX_NETWORK_GRAPH_PORTS: 'ROX_NETWORK_GRAPH_PORTS',
     ROX_NETWORK_FLOWS_SEARCH_FILTER_UI: 'ROX_NETWORK_FLOWS_SEARCH_FILTER_UI',
     ROX_NETWORK_GRAPH_EXTERNAL_SRCS: 'ROX_NETWORK_GRAPH_EXTERNAL_SRCS',
+    ROX_SYSLOG_INTEGRATION: 'ROX_SYSLOG_INTEGRATION',
 };
 
 // isBackendFeatureFlagEnabled returns whether a feature flag retrieved from the backend is enabled.

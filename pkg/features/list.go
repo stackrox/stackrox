@@ -30,4 +30,7 @@ var (
 
 	// CentralInstallationExperience enables new features related to the new installation experience.
 	CentralInstallationExperience = registerFeature("Enable new installation user experience", "ROX_CENTRAL_INSTALLATION_EXPERIENCE", true)
+
+	// SyslogIntegration enables UI for a Syslog integration in the Integrations section.
+	SyslogIntegration = registerFeature("Enable UI for a Syslog integration in the Integrations section", "ROX_SYSLOG_INTEGRATION", true)
 )
