@@ -468,6 +468,119 @@ class ComplianceTest extends BaseSpecification {
         }
     }
 
+    @Category([BAT])
+    def "Verify a subset of the checks in nodes were run in each node"() {
+        expect:
+        "check a subset of the checks run in the compliance pods are present in the results"
+        def dockerResults = BASE_RESULTS.get("CIS_Docker_v1_2_0")
+        for (ComplianceRunResults.EntityResults nodeResults : dockerResults.getNodeResultsMap().values()) {
+            def controlResults = nodeResults.getControlResultsMap()
+            assert controlResults.containsKey("CIS_Docker_v1_2_0:1_1_1")
+            assert controlResults.containsKey("CIS_Docker_v1_2_0:2_1")
+            assert controlResults.containsKey("CIS_Docker_v1_2_0:3_1")
+            assert controlResults.containsKey("CIS_Docker_v1_2_0:4_2")
+            assert controlResults.containsKey("CIS_Docker_v1_2_0:5_1")
+            assert controlResults.containsKey("CIS_Docker_v1_2_0:6_1")
+        }
+
+        def kubernetesResults = BASE_RESULTS.get("CIS_Kubernetes_v1_5")
+        for (ComplianceRunResults.EntityResults nodeResults : kubernetesResults.getNodeResultsMap().values()) {
+            def controlResults = nodeResults.getControlResultsMap()
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:3_1_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:2_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:4_2_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:1_2_5")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:1_1_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_5_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_6_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_3_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_2_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_1_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_4_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:4_1_1")
+        }
+
+        def nistResults = BASE_RESULTS.get("NIST_800_190")
+        for (ComplianceRunResults.EntityResults nodeResults : nistResults.getNodeResultsMap().values()) {
+            def controlResults = nodeResults.getControlResultsMap()
+            assert controlResults.containsKey("NIST_800_190:4_2_1")
+        }
+    }
+
+    @Category([BAT])
+    def "Verify per-node cluster checks generate correct results when there is a master node"() {
+        given:
+        "a control result which should only be returned from a master node"
+        def kubernetesResults = BASE_RESULTS.get("CIS_Kubernetes_v1_5")
+        def clusterResults = kubernetesResults.getClusterResults().getControlResultsMap()
+        // pick any check which should have a result when a master node exists and a note when no master node exists,
+        // for example Kubernetes 1.2.32
+        def controlResult = clusterResults["CIS_Kubernetes_v1_5:1_2_32"]
+
+        expect:
+        "the control result has a pass/fail result when run in an environment with a master node"
+        List<objects.Node> orchNodes = orchestrator.getNodeDetails()
+        def hasMaster = false
+        for (objects.Node node : orchNodes) {
+            for (String label : node.getLabels().keySet()) {
+                if (label == "node-role.kubernetes.io/master") {
+                    hasMaster = true
+                    break
+                }
+            }
+            if (hasMaster) {
+                break
+            }
+        }
+
+        def overalLState = controlResult.getOverallState()
+        assert controlResult.evidenceList.size() == 1
+        def evidence = controlResult.evidenceList[0]
+        if (hasMaster) {
+            if (overalLState == ComplianceState.COMPLIANCE_STATE_NOTE) {
+                // openshift-crio has a master node but does not run the master API process so it should note that the
+                // master API process does not exist.
+                assert evidence.message.contains("not found on host")
+            } else {
+                // kops has a master node and DOES run the master API process so it should succeed or fail
+                assert controlResult.getOverallState() == ComplianceState.COMPLIANCE_STATE_SUCCESS ||
+                        controlResult.getOverallState() == ComplianceState.COMPLIANCE_STATE_FAILURE
+            }
+        } else {
+            // When there is no master node we should make sure the note is the default generated in Central
+            assert overalLState == ComplianceState.COMPLIANCE_STATE_NOTE
+            assert evidence.message.contains("No evidence was received for this check")
+        }
+    }
+
+    @Category([BAT])
+    def "Verify Compliance aggregations with caching"() {
+        given:
+        "get compliance aggregation results"
+        List<Result> aggResults = ComplianceService.getAggregatedResults(Scope.CONTROL, [Scope.CLUSTER, Scope.STANDARD])
+
+        when:
+        "getting the same results again"
+        List<Result> sameAggResults = ComplianceService.getAggregatedResults(
+                Scope.CONTROL,
+                [Scope.CLUSTER, Scope.STANDARD]
+        )
+
+        then:
+        "both result sets should be the same"
+        aggResults.size() == sameAggResults.size()
+        for (int i = 0; i < aggResults.size(); ++i) {
+            def aggResult = aggResults[i]
+            def sameResult = sameAggResults[i]
+            assert aggResult == sameResult
+        }
+    }
+
+    /*
+    **  Remaining tests in the spec trigger new compliance runs. If you are adding tests that do not require a fresh
+    **  compliance run, add them above this comment and use the compliance data in BASE_RESULTS.
+    */
+
     @Category(BAT)
     def "Verify compliance scheduling"() {
         // Schedules are not yet supported, so skipping this test for now.
@@ -1102,114 +1215,6 @@ class ComplianceTest extends BaseSpecification {
         cleanup:
         "remove the deployment we created"
         orchestrator.deleteDeployment(deployment)
-    }
-
-    @Category([BAT])
-    def "Verify a subset of the checks in nodes were run in each node"() {
-        expect:
-        "check a subset of the checks run in the compliance pods are present in the results"
-        def dockerResults = BASE_RESULTS.get("CIS_Docker_v1_2_0")
-        for (ComplianceRunResults.EntityResults nodeResults : dockerResults.getNodeResultsMap().values()) {
-            def controlResults = nodeResults.getControlResultsMap()
-            assert controlResults.containsKey("CIS_Docker_v1_2_0:1_1_1")
-            assert controlResults.containsKey("CIS_Docker_v1_2_0:2_1")
-            assert controlResults.containsKey("CIS_Docker_v1_2_0:3_1")
-            assert controlResults.containsKey("CIS_Docker_v1_2_0:4_2")
-            assert controlResults.containsKey("CIS_Docker_v1_2_0:5_1")
-            assert controlResults.containsKey("CIS_Docker_v1_2_0:6_1")
-        }
-
-        def kubernetesResults = BASE_RESULTS.get("CIS_Kubernetes_v1_5")
-        for (ComplianceRunResults.EntityResults nodeResults : kubernetesResults.getNodeResultsMap().values()) {
-            def controlResults = nodeResults.getControlResultsMap()
-            assert controlResults.containsKey("CIS_Kubernetes_v1_5:3_1_1")
-            assert controlResults.containsKey("CIS_Kubernetes_v1_5:2_1")
-            assert controlResults.containsKey("CIS_Kubernetes_v1_5:4_2_1")
-            assert controlResults.containsKey("CIS_Kubernetes_v1_5:1_2_5")
-            assert controlResults.containsKey("CIS_Kubernetes_v1_5:1_1_1")
-            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_5_1")
-            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_6_1")
-            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_3_1")
-            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_2_1")
-            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_1_1")
-            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_4_1")
-            assert controlResults.containsKey("CIS_Kubernetes_v1_5:4_1_1")
-        }
-
-        def nistResults = BASE_RESULTS.get("NIST_800_190")
-        for (ComplianceRunResults.EntityResults nodeResults : nistResults.getNodeResultsMap().values()) {
-            def controlResults = nodeResults.getControlResultsMap()
-            assert controlResults.containsKey("NIST_800_190:4_2_1")
-        }
-    }
-
-    @Category([BAT])
-    def "Verify per-node cluster checks generate correct results when there is a master node"() {
-        given:
-        "a control result which should only be returned from a master node"
-        def kubernetesResults = BASE_RESULTS.get("CIS_Kubernetes_v1_5")
-        def clusterResults = kubernetesResults.getClusterResults().getControlResultsMap()
-        // pick any check which should have a result when a master node exists and a note when no master node exists,
-        // for example Kubernetes 1.2.32
-        def controlResult = clusterResults["CIS_Kubernetes_v1_5:1_2_32"]
-
-        expect:
-        "the control result has a pass/fail result when run in an environment with a master node"
-        List<objects.Node> orchNodes = orchestrator.getNodeDetails()
-        def hasMaster = false
-        for (objects.Node node : orchNodes) {
-            for (String label : node.getLabels().keySet()) {
-                if (label == "node-role.kubernetes.io/master") {
-                    hasMaster = true
-                    break
-                }
-            }
-            if (hasMaster) {
-                break
-            }
-        }
-
-        def overalLState = controlResult.getOverallState()
-        assert controlResult.evidenceList.size() == 1
-        def evidence = controlResult.evidenceList[0]
-        if (hasMaster) {
-            if (overalLState == ComplianceState.COMPLIANCE_STATE_NOTE) {
-                // openshift-crio has a master node but does not run the master API process so it should note that the
-                // master API process does not exist.
-                assert evidence.message.contains("not found on host")
-            } else {
-                // kops has a master node and DOES run the master API process so it should succeed or fail
-                assert controlResult.getOverallState() == ComplianceState.COMPLIANCE_STATE_SUCCESS ||
-                        controlResult.getOverallState() == ComplianceState.COMPLIANCE_STATE_FAILURE
-            }
-        } else {
-            // When there is no master node we should make sure the note is the default generated in Central
-            assert overalLState == ComplianceState.COMPLIANCE_STATE_NOTE
-            assert evidence.message.contains("No evidence was received for this check")
-        }
-    }
-
-    @Category([BAT])
-    def "Verify Compliance aggregations with caching"() {
-        given:
-        "get compliance aggregation results"
-        List<Result> aggResults = ComplianceService.getAggregatedResults(Scope.CONTROL, [Scope.CLUSTER, Scope.STANDARD])
-
-        when:
-        "getting the same results again"
-        List<Result> sameAggResults = ComplianceService.getAggregatedResults(
-                Scope.CONTROL,
-                [Scope.CLUSTER, Scope.STANDARD]
-        )
-
-        then:
-        "both result sets should be the same"
-        aggResults.size() == sameAggResults.size()
-        for (int i = 0; i < aggResults.size(); ++i) {
-            def aggResult = aggResults[i]
-            def sameResult = sameAggResults[i]
-            assert aggResult == sameResult
-        }
     }
 
     @Category([BAT])
