@@ -100,14 +100,14 @@ require (
 	gopkg.in/yaml.v2 v2.3.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 	gotest.tools v2.2.0+incompatible
-	helm.sh/helm/v3 v3.3.0
+	helm.sh/helm/v3 v3.4.0
 	honnef.co/go/tools v0.0.1-2020.1.5
-	k8s.io/api v0.19.0
-	k8s.io/apimachinery v0.19.0
-	k8s.io/apiserver v0.19.0
-	k8s.io/client-go v11.0.0+incompatible
-	k8s.io/kubectl v0.19.0
-	k8s.io/utils v0.0.0-20200821003339-5e75c0163111
+	k8s.io/api v0.19.2
+	k8s.io/apimachinery v0.19.2
+	k8s.io/apiserver v0.19.2
+	k8s.io/client-go v12.0.0+incompatible
+	k8s.io/kubectl v0.19.2
+	k8s.io/utils v0.0.0-20201027101359-01387209bb0d
 	sigs.k8s.io/yaml v1.2.0
 )
 
@@ -133,11 +133,9 @@ replace (
 	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f
 	golang.org/x/oauth2 => github.com/misberner/oauth2 v0.0.0-20200208204620-d153c71f6b8d
 
-	// Helm needs k8s 0.19.0 deps in order to not screw everything up
-	helm.sh/helm/v3 => github.com/misberner/helm/v3 v3.3.1-0.20200828132258-c3bfeb777bfb
 	honnef.co/go/tools => honnef.co/go/tools v0.0.1-2020.1.5
 
 	// Circular github.com/stackrox/rox sets this to an incompatible version
-	k8s.io/client-go => k8s.io/client-go v0.19.0
+	k8s.io/client-go => k8s.io/client-go v0.19.2
 	vbom.ml/util => github.com/fvbommel/util v0.0.0-20200828041400-c69461e88a36
 )
