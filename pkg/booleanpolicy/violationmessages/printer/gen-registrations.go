@@ -5,6 +5,7 @@ package printer
 const (
 	AddCapabilityKey        = "addCapability"
 	ComponentKey            = "component"
+	ContainerNameKey        = "containerName"
 	CveKey                  = "cve"
 	DisallowedAnnotationKey = "disallowedAnnotation"
 	DisallowedImageLabelKey = "disallowedImageLabel"
@@ -34,6 +35,7 @@ const (
 func init() {
 	registerFunc(AddCapabilityKey, addCapabilityPrinter)
 	registerFunc(ComponentKey, componentPrinter)
+	registerFunc(ContainerNameKey, containerNamePrinter)
 	registerFunc(CveKey, cvePrinter)
 	registerFunc(DisallowedAnnotationKey, disallowedAnnotationPrinter)
 	registerFunc(DisallowedImageLabelKey, disallowedImageLabelPrinter)

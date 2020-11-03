@@ -930,6 +930,18 @@ const policyConfigurationDescriptor = [
         default: false,
         canBooleanLogic: true,
     },
+    {
+        label: 'Container Name',
+        name: 'Container Name',
+        longName: 'Container Name',
+        negatedName: `Container name doesn't match`,
+        category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
+        type: 'text',
+        placeholder: 'default',
+        required: false,
+        default: false,
+        canBooleanLogic: true,
+    },
 ];
 
 export const policyStatus = {

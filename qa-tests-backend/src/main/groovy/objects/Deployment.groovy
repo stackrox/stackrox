@@ -39,6 +39,7 @@ class Deployment {
     String loadBalancerIP = null
     String deploymentUid
     List<Pod> pods = []
+    String containerName = null
     Boolean skipReplicaWait = false
     Boolean exposeAsService = false
     Boolean createLoadBalancer = false
@@ -203,6 +204,11 @@ class Deployment {
                         podIP: podIP
                 )
         )
+        return this
+    }
+
+    Deployment setContainerName(String containerName) {
+        this.containerName = containerName
         return this
     }
 

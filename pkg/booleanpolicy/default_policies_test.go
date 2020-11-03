@@ -1761,6 +1761,76 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 	}
 }
 
+func (suite *DefaultPoliciesTestSuite) TestContainerName() {
+	var deps []*storage.Deployment
+	for _, containerName := range []string{
+		"container_staging",
+		"container_prod0",
+		"container_prod1",
+		"container_internal",
+		"external_container",
+	} {
+		dep := fixtures.GetDeployment().Clone()
+		dep.Containers = []*storage.Container{
+			{
+				Name: containerName,
+			},
+		}
+		deps = append(deps, dep)
+	}
+
+	for _, testCase := range []struct {
+		value           string
+		expectedMatches []string
+		negate          bool
+	}{
+		{
+			value:           "container_[a-z0-9]*",
+			expectedMatches: []string{"container_staging", "container_prod0", "container_prod1", "container_internal"},
+			negate:          false,
+		},
+		{
+			value:           "container_prod[a-z0-9]*",
+			expectedMatches: []string{"container_prod0", "container_prod1"},
+			negate:          false,
+		},
+		{
+			value:           ".*external.*",
+			expectedMatches: []string{"external_container"},
+			negate:          false,
+		},
+		{
+			value:           "doesnotexist",
+			expectedMatches: nil,
+			negate:          false,
+		},
+		{
+			value:           ".*internal.*",
+			expectedMatches: []string{"container_staging", "container_prod0", "container_prod1", "external_container"},
+			negate:          true,
+		},
+	} {
+		c := testCase
+
+		suite.T().Run(fmt.Sprintf("DeploymentMatcher %+v", c), func(t *testing.T) {
+			depMatcher, err := booleanpolicy.BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.ContainerName, c.value, c.negate))
+			require.NoError(t, err)
+			containerNameMatched := set.NewStringSet()
+			for _, dep := range deps {
+				violations, err := depMatcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
+				require.NoError(t, err)
+				// No match in case we are testing for doesnotexist
+				if len(violations.AlertViolations) > 0 {
+					containerNameMatched.Add(dep.Containers[0].GetName())
+					require.Len(t, violations.AlertViolations, 1)
+					assert.Equal(t, fmt.Sprintf("Container has name '%s'", dep.Containers[0].GetName()), violations.AlertViolations[0].GetMessage())
+				}
+			}
+			assert.ElementsMatch(t, containerNameMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", containerNameMatched.AsSlice(), c.value, c.expectedMatches)
+		})
+	}
+}
+
 func (suite *DefaultPoliciesTestSuite) TestNamespace() {
 	var deps []*storage.Deployment
 	for _, namespace := range []string{

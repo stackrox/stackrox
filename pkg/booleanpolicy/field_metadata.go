@@ -92,6 +92,7 @@ func init() {
 	registerFieldMetadata(fieldnames.ContainerCPURequest, querybuilders.ForFieldLabel(search.CPUCoresRequest), violationmessages.ResourceContextFields, comparatorDecimalValueRegex, negationForbidden)
 	registerFieldMetadata(fieldnames.ContainerMemLimit, querybuilders.ForFieldLabel(search.MemoryLimit), violationmessages.ResourceContextFields, comparatorDecimalValueRegex, negationForbidden)
 	registerFieldMetadata(fieldnames.ContainerMemRequest, querybuilders.ForFieldLabel(search.MemoryRequest), violationmessages.ResourceContextFields, comparatorDecimalValueRegex, negationForbidden)
+	registerFieldMetadata(fieldnames.ContainerName, querybuilders.ForFieldLabelRegex(search.ContainerName), violationmessages.ContainerContextFields, stringValueRegex)
 	registerFieldMetadata(fieldnames.DisallowedAnnotation, querybuilders.ForFieldLabelMap(search.Annotation, query.MapShouldContain), nil, keyValueValueRegex, negationForbidden)
 	registerFieldMetadata(fieldnames.DisallowedImageLabel, querybuilders.ForFieldLabelMap(search.ImageLabel, query.MapShouldContain), violationmessages.ImageContextFields, keyValueValueRegex, negationForbidden)
 	registerFieldMetadata(fieldnames.DockerfileLine, querybuilders.ForCompound(augmentedobjs.DockerfileLineCustomTag, 2), violationmessages.ImageContextFields, dockerfileLineValueRegex, negationForbidden)

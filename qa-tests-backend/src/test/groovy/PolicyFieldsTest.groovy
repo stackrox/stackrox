@@ -166,6 +166,7 @@ class PolicyFieldsTest extends BaseSpecification {
                     .addLabel("another-key", "and_a_value")
                     .setReadOnlyRootFilesystem(true)
                     .setNamespace("policyfieldstest-c")
+                    .setContainerName("match-container-name")
 
     static final private BASED_ON_ALPINE = DEP_C
     static final private WITHOUT_ADD_CAPS = DEP_C
@@ -184,6 +185,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private WITH_RDONLY_ROOT_FS = DEP_C
     static final private WITHOUT_FOO_OR_BAR_VOLUMES = DEP_C
     static final private WITH_NAMESPACE_POLICYFIELDTEST_C = DEP_C
+    static final private WITH_CONTAINER_NAME_SET = DEP_C
 
     static final private Deployment DEP_D =
             createAndRegisterDeployment()
@@ -196,6 +198,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private WITHOUT_VERSION_ARG = DEP_D
     static final private USES_DOCKER = DEP_D
     static final private WITH_NAMESPACE_POLICYFIELDTEST_D = DEP_D
+    static final private WITHOUT_CONTAINER_NAME_SET = DEP_D
 
     // We don't register this deployment by default since we are not batch creating this
     // deployment with other deployments
@@ -731,6 +734,20 @@ class PolicyFieldsTest extends BaseSpecification {
             ["true"]
     )
 
+    // "ContainerName"
+
+    static final private NO_CONTAINER_NAME_MATCHED = setPolicyFieldANDValues(
+            BASE_POLICY.clone().setName("AAA_NO_CONTAINER_NAME_MATCHED"),
+            "Container Name",
+            ["no-container-name-matched-.*"]
+    )
+
+    static final private CONTAINER_NAME_MATCHED = setPolicyFieldANDValues(
+            BASE_POLICY.clone().setName("AAA_CONTAINER_NAME_MATCHED"),
+            "Container Name",
+            ["match-container-n.*"]
+    )
+
     @Shared
     private List<String> createdPolicyIds
 
@@ -793,6 +810,7 @@ class PolicyFieldsTest extends BaseSpecification {
         "Container CPU Request"     | CPU_REQUEST_LT_HALF                  | WITH_CPU_REQUEST_QUARTER               | "LT"
         "Container Memory Limit"    | MEMORY_LIMIT_LE_750MI                | WITH_MEMORY_LIMIT_500MI                | "LE"
         "Container Memory Request"  | MEMORY_REQUEST_EQ_250MI              | WITH_MEMORY_REQUEST_250MI              | "EQ"
+        "Container Name"            | CONTAINER_NAME_MATCHED               | WITH_CONTAINER_NAME_SET                | "match"
         "Disallowed Annotation"     | DISALLOWED_ANNOTATION_KEY_ONLY       | WITH_KEY_ONLY_ANNOTATION               | "key only"
         "Disallowed Annotation"     | DISALLOWED_ANNOTATION_KEY_ONLY       | WITH_KEY_AND_VALUE_ANNOTATION          | "key only matches key and value"
         "Disallowed Annotation"     | DISALLOWED_ANNOTATION_KEY_AND_VALUE  | WITH_KEY_AND_VALUE_ANNOTATION          | "key and value"
@@ -882,6 +900,8 @@ class PolicyFieldsTest extends BaseSpecification {
         "Container Memory Limit"    | MEMORY_LIMIT_GE_750MI                 | WITHOUT_MEMORY_LIMIT                   | "missing"
         "Container Memory Request"  | MEMORY_REQUEST_EQ_250MI               | WITH_MEMORY_REQUEST_HALFGI             | "not EQ"
         "Container Memory Request"  | MEMORY_REQUEST_EQ_250MI               | WITHOUT_MEMORY_REQUEST                 | "missing"
+        "Container Name"            | CONTAINER_NAME_MATCHED                | WITHOUT_CONTAINER_NAME_SET             | "no match"
+        "Container Name"            | NO_CONTAINER_NAME_MATCHED             | WITH_CONTAINER_NAME_SET                | "no match"
         "Disallowed Annotation"     | DISALLOWED_ANNOTATION_KEY_AND_VALUE   | WITH_KEY_ONLY_ANNOTATION               | "no key only when value"
         "Disallowed Annotation"     | DISALLOWED_ANNOTATION_KEY_AND_VALUE   | WITH_MISMATCHED_ANNOTATIONS            | "both required"
         "Disallowed Annotation"     | DISALLOWED_ANNOTATION_KEY_ONLY        | WITHOUT_ANNOTATIONS                    | "missing"

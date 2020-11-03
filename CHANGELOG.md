@@ -22,6 +22,7 @@ to immediately set this to false to stop logging.
 - Added a `--force-http1` option to `roxctl` that will cause HTTP/2 to be avoided for all outgoing requests.
   This can be used in case of connectivity issues which are suspected to be due to an ingress or proxy.
 - UI: Fix bug where some policy criteria values, with equal signs, are parsed incorrectly (ROX-5767)
+- Added ContainerName as one of the policy criteria
 
 ## [50.0]
 - UI: Do not display incomplete process status when Sensor Upgrade is up to date (ROX-5579)

@@ -1771,7 +1771,7 @@ class Kubernetes implements OrchestratorMain {
         }
 
         Container container = new Container(
-                name: deployment.name,
+                name: deployment.containerName ? deployment.containerName : deployment.name,
                 image: deployment.image,
                 command: deployment.command,
                 args: deployment.args,

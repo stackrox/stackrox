@@ -13,6 +13,7 @@ var (
 	ContainerCPURequest    = newFieldName("Container CPU Request")
 	ContainerMemLimit      = newFieldName("Container Memory Limit")
 	ContainerMemRequest    = newFieldName("Container Memory Request")
+	ContainerName          = newFieldName("Container Name")
 	DisallowedAnnotation   = newFieldName("Disallowed Annotation")
 	DisallowedImageLabel   = newFieldName("Disallowed Image Label")
 	DockerfileLine         = newFieldName("Dockerfile Line")

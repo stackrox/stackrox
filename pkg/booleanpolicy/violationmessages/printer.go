@@ -27,6 +27,7 @@ var (
 			fieldnames.ContainerCPURequest:    {{required: set.NewStringSet(search.CPUCoresRequest.String()), printerFuncKey: printer.ResourceKey}},
 			fieldnames.ContainerMemLimit:      {{required: set.NewStringSet(search.MemoryLimit.String()), printerFuncKey: printer.ResourceKey}},
 			fieldnames.ContainerMemRequest:    {{required: set.NewStringSet(search.MemoryRequest.String()), printerFuncKey: printer.ResourceKey}},
+			fieldnames.ContainerName:          {{required: set.NewStringSet(search.ContainerName.String()), printerFuncKey: printer.ContainerNameKey}},
 			fieldnames.DisallowedAnnotation:   {{required: set.NewStringSet(search.Annotation.String()), printerFuncKey: printer.DisallowedAnnotationKey}},
 			fieldnames.DisallowedImageLabel:   {{required: set.NewStringSet(search.ImageLabel.String()), printerFuncKey: printer.DisallowedImageLabelKey}},
 			fieldnames.DockerfileLine:         {{required: set.NewStringSet(augmentedobjs.DockerfileLineCustomTag), printerFuncKey: printer.LineKey}},
