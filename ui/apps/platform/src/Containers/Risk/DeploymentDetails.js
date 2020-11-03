@@ -11,10 +11,10 @@ import { portExposureLabels } from 'messages/common';
 import SecurityContext from './SecurityContext';
 import ContainerConfigurations from './ContainerConfigurations';
 
-const formatDeploymentPorts = (ports) => {
+export const formatDeploymentPorts = (ports) => {
     return ports.map(({ exposure, exposureInfos, ...rest }) => {
         const formattedPort = { ...rest };
-        formattedPort.exposure = portExposureLabels[exposure];
+        formattedPort.exposure = portExposureLabels[exposure] || portExposureLabels.UNSET;
         formattedPort.exposureInfos = exposureInfos.map(({ level, ...restInfo }) => {
             return { ...restInfo, level: portExposureLabels[level] };
         });
