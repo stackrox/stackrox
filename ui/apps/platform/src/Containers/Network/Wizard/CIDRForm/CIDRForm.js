@@ -5,6 +5,8 @@ import { PlusCircle } from 'react-feather';
 import { deleteCIDRBlock, postCIDRBlock, patchCIDRBlock } from 'services/NetworkService';
 import Button from 'Components/Button';
 import Message from 'Components/Message';
+import { isValidCidrBlock } from 'utils/urlUtils';
+
 import CIDRFormRow from './CIDRFormRow';
 
 const emptyCIDRBlockRow = {
@@ -39,7 +41,7 @@ function validateAddress(blocks) {
             errorMessage = 'CIDR address is required.';
             return errorMessage;
         }
-        if (!/^([0-9]{1,3}\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$/i.test(value)) {
+        if (!isValidCidrBlock(value)) {
             errorMessage = 'CIDR address format is invalid.';
             return errorMessage;
         }
