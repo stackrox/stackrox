@@ -69,6 +69,7 @@ const common = Object.freeze({
         NODE: 'NodePort',
         HOST: 'HostPort',
         INTERNAL: 'ClusterIP',
+        UNSET: 'Exposure type is not set',
     },
     // For any update to rbacPermissionLabels, please also update policy.proto
     rbacPermissionLabels: {
