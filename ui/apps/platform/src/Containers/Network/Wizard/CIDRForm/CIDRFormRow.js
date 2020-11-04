@@ -27,7 +27,7 @@ const CIDRFormRowErrorMessage = ({ errors, touched, idx }) => {
     );
 };
 
-const CIDRFormRow = ({ idx, onRemoveRow, validateName, validateAddress, errors, touched }) => {
+const CIDRFormRow = ({ idx, onRemoveRow, errors, touched }) => {
     const isFirstRow = idx === 0;
     return (
         <div className="flex flex-col mb-2">
@@ -51,7 +51,6 @@ const CIDRFormRow = ({ idx, onRemoveRow, validateName, validateAddress, errors, 
                         id="cidr-block-name"
                         placeholder="CIDR block"
                         className="border border-base-300 rounded-l h-10 px-2 w-full"
-                        validate={validateName}
                     />
                 </div>
                 <div className="flex flex-1 flex-col">
@@ -73,7 +72,6 @@ const CIDRFormRow = ({ idx, onRemoveRow, validateName, validateAddress, errors, 
                         className="border border-base-300 h-10 px-2 w-full"
                         id="cidr-block-address"
                         placeholder="192.0.0.2/24"
-                        validate={validateAddress}
                     />
                 </div>
                 <FormFieldRemoveButton

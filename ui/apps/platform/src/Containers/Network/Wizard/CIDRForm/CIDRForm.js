@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Formik, Form, FieldArray } from 'formik';
 import { PlusCircle } from 'react-feather';
+import * as Yup from 'yup';
 
 import { deleteCIDRBlock, postCIDRBlock, patchCIDRBlock } from 'services/NetworkService';
 import Button from 'Components/Button';
 import Message from 'Components/Message';
 import { isValidCidrBlock } from 'utils/urlUtils';
-
+import { getHasDuplicateCIDRNames, getHasDuplicateCIDRAddresses } from './cidrFormUtils';
 import CIDRFormRow from './CIDRFormRow';
 
 const emptyCIDRBlockRow = {
@@ -16,48 +17,24 @@ const emptyCIDRBlockRow = {
     },
 };
 
-function validateName(blocks) {
-    return (value) => {
-        let errorMessage;
-        if (!value) {
-            errorMessage = 'CIDR name is required.';
-            return errorMessage;
-        }
-        const numDuplicate = blocks.reduce(
-            (acc, { entity }) => (entity.name === value ? 1 + acc : acc),
-            0
-        );
-        if (numDuplicate > 1) {
-            errorMessage = 'This field contains a duplicate CIDR name.';
-        }
-        return errorMessage;
-    };
-}
-
-function validateAddress(blocks) {
-    return (value) => {
-        let errorMessage;
-        if (!value) {
-            errorMessage = 'CIDR address is required.';
-            return errorMessage;
-        }
-        if (!isValidCidrBlock(value)) {
-            errorMessage = 'CIDR address format is invalid.';
-            return errorMessage;
-        }
-        const numDuplicate = blocks.reduce(
-            (acc, { entity }) => (entity.cidr === value ? 1 + acc : acc),
-            0
-        );
-        if (numDuplicate > 1) {
-            errorMessage = 'This field contains a duplicate CIDR address.';
-        }
-        return errorMessage;
-    };
-}
+const validateSchema = Yup.object().shape({
+    entities: Yup.array().of(
+        Yup.object().shape({
+            entity: Yup.object().shape({
+                name: Yup.string().trim().required('CIDR name is required.'),
+                cidr: Yup.string()
+                    .trim()
+                    .test('valid-cidr-format', 'CIDR address format is invalid.', (value) => {
+                        return isValidCidrBlock(value);
+                    })
+                    .required('CIDR address is required.'),
+            }),
+        })
+    ),
+});
 
 const CIDRForm = ({ rows, clusterId, updateNetworkNodes, onClose }) => {
-    const [hasErrors, setHasErrors] = useState();
+    const [formCallout, setFormCallout] = useState();
     let blocksToRemove = [];
     const CIDRBlockMap = {};
 
@@ -84,6 +61,18 @@ const CIDRForm = ({ rows, clusterId, updateNetworkNodes, onClose }) => {
 
     function updateCIDRBlocksHandler(values, resetForm) {
         return () => {
+            setFormCallout(null);
+
+            const hasDuplicateCIDRNames = getHasDuplicateCIDRNames(values);
+            const hasDuplicateCIDRAddresses = getHasDuplicateCIDRAddresses(values);
+            if (hasDuplicateCIDRNames || hasDuplicateCIDRAddresses) {
+                setFormCallout({
+                    type: 'error',
+                    message: 'CIDR names and addresses must be unique.',
+                });
+                return null;
+            }
+
             const allBlockPromises = [];
             values.entities.forEach((block) => {
                 const { entity } = block;
@@ -108,16 +97,26 @@ const CIDRForm = ({ rows, clusterId, updateNetworkNodes, onClose }) => {
 
             Promise.all(allBlockPromises)
                 .then(() => {
-                    setHasErrors(false);
+                    setFormCallout({
+                        type: 'info',
+                        message:
+                            'CIDR blocks have been successfully configured. This panel will now close.',
+                    });
                     updateNetworkNodes();
                     setTimeout(onClose, 2000);
                 })
                 .catch(() => {
-                    setHasErrors(true);
+                    setFormCallout({
+                        type: 'error',
+                        message:
+                            'There was an issue modifying and/or deleting CIDR blocks. Please check the rows below.',
+                    });
                     // refetch CIDR blocks and reset form ?
                     resetForm({ values });
                     blocksToRemove = [];
                 });
+
+            return null;
         };
     }
 
@@ -129,73 +128,60 @@ const CIDRForm = ({ rows, clusterId, updateNetworkNodes, onClose }) => {
 
     return (
         <div className="flex flex-1 flex-col">
-            {!!hasErrors && (
-                <Message
-                    type="error"
-                    message="There was an issue modifying and/or deleting CIDR blocks. Please check the rows below."
-                />
+            {formCallout && (
+                <div className="mx-4">
+                    <Message type={formCallout.type} message={formCallout.message} />
+                </div>
             )}
-            {!hasErrors && hasErrors !== undefined && (
-                <Message
-                    type="info"
-                    message="CIDR blocks have been successfully configured. This panel will now close."
-                />
-            )}
-            <Formik initialValues={getInitialValues()}>
-                {({ values, dirty, errors, touched, isValid, resetForm }) => (
-                    <Form className="h-full">
-                        <div className="h-full flex flex-col">
-                            <FieldArray name="entities">
-                                {({ push, remove }) => (
-                                    <>
-                                        <div className="flex flex-1 flex-col overflow-auto px-4 pt-4 mb-2">
-                                            {values?.entities?.map(({ entity }, idx) => (
-                                                <CIDRFormRow
-                                                    idx={idx}
-                                                    key={idx}
-                                                    onRemoveRow={removeRowHandler(
-                                                        remove,
-                                                        idx,
-                                                        entity
-                                                    )}
-                                                    validateName={validateName(
-                                                        values.entities,
-                                                        idx
-                                                    )}
-                                                    validateAddress={validateAddress(
-                                                        values.entities,
-                                                        idx
-                                                    )}
-                                                    errors={errors}
-                                                    touched={touched}
-                                                />
-                                            ))}
-                                        </div>
-                                        <div className="flex flex-col pb-4">
-                                            <div className="flex justify-center">
-                                                —
-                                                <Button
-                                                    onClick={addRowHandler(push)}
-                                                    icon={<PlusCircle className="w-5 h-5" />}
-                                                    dataTestId="add-cidr-block-row-btn"
-                                                />
-                                                —
+            <Formik initialValues={getInitialValues()} validationSchema={validateSchema}>
+                {({ values, dirty, errors, touched, isValid, resetForm }) => {
+                    return (
+                        <Form className="h-full">
+                            <div className="h-full flex flex-col">
+                                <FieldArray name="entities">
+                                    {({ push, remove }) => (
+                                        <>
+                                            <div className="flex flex-1 flex-col overflow-auto px-4 pt-4 mb-2">
+                                                {values?.entities?.map(({ entity }, idx) => (
+                                                    <CIDRFormRow
+                                                        idx={idx}
+                                                        key={idx}
+                                                        onRemoveRow={removeRowHandler(
+                                                            remove,
+                                                            idx,
+                                                            entity
+                                                        )}
+                                                        errors={errors}
+                                                        touched={touched}
+                                                    />
+                                                ))}
                                             </div>
-                                        </div>
-                                    </>
-                                )}
-                            </FieldArray>
-                            <div className="flex justify-center p-3 border-t border-base-300">
-                                <Button
-                                    className="bg-success-200 border-2 border-success-500 p-2 rounded text-success-600"
-                                    text="Update Configuration"
-                                    disabled={!dirty || !isValid}
-                                    onClick={updateCIDRBlocksHandler(values, resetForm)}
-                                />
+                                            <div className="flex flex-col pb-4">
+                                                <div className="flex justify-center">
+                                                    —
+                                                    <Button
+                                                        onClick={addRowHandler(push)}
+                                                        icon={<PlusCircle className="w-5 h-5" />}
+                                                        dataTestId="add-cidr-block-row-btn"
+                                                    />
+                                                    —
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </FieldArray>
+                                <div className="flex justify-center p-3 border-t border-base-300">
+                                    <Button
+                                        className="bg-success-200 border-2 border-success-500 p-2 rounded text-success-600"
+                                        text="Update Configuration"
+                                        disabled={!dirty || !isValid}
+                                        onClick={updateCIDRBlocksHandler(values, resetForm)}
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    </Form>
-                )}
+                        </Form>
+                    );
+                }}
             </Formik>
         </div>
     );
