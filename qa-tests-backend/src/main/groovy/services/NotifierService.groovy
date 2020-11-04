@@ -19,6 +19,7 @@ class NotifierService extends BaseService {
             return getNotifierClient().postNotifier(notifier)
         } catch (Exception e) {
             println "Failed to add notifier..."
+            e.printStackTrace()
             throw e
         }
     }
@@ -183,6 +184,37 @@ class NotifierService extends BaseService {
                         .setHttpEndpoint(String.format(
                                 "https://${serviceName}.qa:8088%s",
                                 legacy ? "/services/collector/event" : "")))
+                .build()
+    }
+
+    /**
+     * This function adds a notifier for Syslog.
+     *
+     * @param port Syslog service port number
+     * @param name Syslog Integration name
+     */
+    static NotifierOuterClass.Notifier getSyslogIntegrationConfig(
+            String serviceName,
+            int port,
+            String name)  throws Exception {
+        String syslogIntegration = "syslog-Integration"
+
+        return NotifierOuterClass.Notifier.newBuilder()
+                .setType("syslog")
+                .setName(name)
+                .setLabelKey(syslogIntegration)
+                .setLabelDefault(syslogIntegration)
+                .setEnabled(true)
+                .setUiEndpoint(getStackRoxEndpoint())
+                .setSyslog(NotifierOuterClass.Syslog.newBuilder()
+                        .setTcpConfig(NotifierOuterClass.Syslog.TCPConfig.newBuilder()
+                                .setHostname("${serviceName}.qa")
+                                .setPort(port)
+                                .setSkipTlsVerify(true)
+                                .build()
+                        )
+                        .build()
+                )
                 .build()
     }
 }

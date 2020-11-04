@@ -345,3 +345,31 @@ class SplunkNotifier extends Notifier {
         assert response.find { it.policy.rationale == policy.rationale }
     }
 }
+
+class SyslogNotifier extends Notifier {
+    def splunkPort // Syslog isn't inherently tied to Splunk, we're just going to test with Splunk
+
+    SyslogNotifier(String serviceName, int port, int splunkPort, String integrationName = "Syslog Test") {
+        this.splunkPort = splunkPort
+        notifier = NotifierService.getSyslogIntegrationConfig(serviceName, port, integrationName)
+    }
+
+    def createNotifier() {
+        println "validating splunk deployment is ready to accept events before creating syslog notifier..."
+        withRetry(20, 2) {
+            SplunkUtil.createSearch(splunkPort)
+        }
+        notifier = NotifierService.addNotifier(notifier)
+    }
+
+    void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
+        def response
+        try {
+            response = SplunkUtil.waitForSplunkSyslog(splunkPort, 30)
+        } catch (Exception e) {
+            Assume.assumeNoException("Failed to create new Splunk search. Skipping test!", e)
+        }
+        // We must have received at least one syslog message
+        assert response.size() > 0
+    }
+}

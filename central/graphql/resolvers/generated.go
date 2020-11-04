@@ -728,6 +728,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"Generic",
 		"SumoLogic",
 		"AWSSecurityHub",
+		"Syslog",
 	}))
 	utils.Must(builder.AddType("NumericalPolicy", []string{
 		"op: Comparator!",
@@ -1063,6 +1064,22 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("SumoLogic", []string{
 		"httpSourceAddress: String!",
 		"skipTLSVerify: Boolean!",
+	}))
+	utils.Must(builder.AddType("Syslog", []string{
+		"format: Syslog_Format!",
+		"localFacility: Syslog_LocalFacility!",
+		"endpoint: SyslogEndpoint",
+	}))
+	utils.Must(builder.AddUnionType("SyslogEndpoint", []string{
+		"Syslog_TCPConfig",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Syslog_Format(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Syslog_LocalFacility(0)))
+	utils.Must(builder.AddType("Syslog_TCPConfig", []string{
+		"hostname: String!",
+		"port: Int!",
+		"skipTlsVerify: Boolean!",
+		"useTls: Boolean!",
 	}))
 	utils.Must(builder.AddType("Taint", []string{
 		"key: String!",
@@ -6681,6 +6698,11 @@ func (resolver *notifierResolver) Config() *notifierConfigResolver {
 			resolver: &aWSSecurityHubResolver{root: resolver.root, data: val},
 		}
 	}
+	if val := resolver.data.GetSyslog(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &syslogResolver{root: resolver.root, data: val},
+		}
+	}
 	return nil
 }
 
@@ -6721,6 +6743,11 @@ func (resolver *notifierConfigResolver) ToSumoLogic() (*sumoLogicResolver, bool)
 
 func (resolver *notifierConfigResolver) ToAWSSecurityHub() (*aWSSecurityHubResolver, bool) {
 	res, ok := resolver.resolver.(*aWSSecurityHubResolver)
+	return res, ok
+}
+
+func (resolver *notifierConfigResolver) ToSyslog() (*syslogResolver, bool) {
+	res, ok := resolver.resolver.(*syslogResolver)
 	return res, ok
 }
 
@@ -9104,6 +9131,138 @@ func (resolver *sumoLogicResolver) HttpSourceAddress(ctx context.Context) string
 
 func (resolver *sumoLogicResolver) SkipTLSVerify(ctx context.Context) bool {
 	value := resolver.data.GetSkipTLSVerify()
+	return value
+}
+
+type syslogResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Syslog
+}
+
+func (resolver *Resolver) wrapSyslog(value *storage.Syslog, ok bool, err error) (*syslogResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &syslogResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSyslogs(values []*storage.Syslog, err error) ([]*syslogResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*syslogResolver, len(values))
+	for i, v := range values {
+		output[i] = &syslogResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *syslogResolver) Format(ctx context.Context) string {
+	value := resolver.data.GetFormat()
+	return value.String()
+}
+
+func (resolver *syslogResolver) LocalFacility(ctx context.Context) string {
+	value := resolver.data.GetLocalFacility()
+	return value.String()
+}
+
+type syslogEndpointResolver struct {
+	resolver interface{}
+}
+
+func (resolver *syslogResolver) Endpoint() *syslogEndpointResolver {
+	if val := resolver.data.GetTcpConfig(); val != nil {
+		return &syslogEndpointResolver{
+			resolver: &syslog_TCPConfigResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *syslogEndpointResolver) ToSyslog_TCPConfig() (*syslog_TCPConfigResolver, bool) {
+	res, ok := resolver.resolver.(*syslog_TCPConfigResolver)
+	return res, ok
+}
+
+func toSyslog_Format(value *string) storage.Syslog_Format {
+	if value != nil {
+		return storage.Syslog_Format(storage.Syslog_Format_value[*value])
+	}
+	return storage.Syslog_Format(0)
+}
+
+func toSyslog_Formats(values *[]string) []storage.Syslog_Format {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Syslog_Format, len(*values))
+	for i, v := range *values {
+		output[i] = toSyslog_Format(&v)
+	}
+	return output
+}
+
+func toSyslog_LocalFacility(value *string) storage.Syslog_LocalFacility {
+	if value != nil {
+		return storage.Syslog_LocalFacility(storage.Syslog_LocalFacility_value[*value])
+	}
+	return storage.Syslog_LocalFacility(0)
+}
+
+func toSyslog_LocalFacilities(values *[]string) []storage.Syslog_LocalFacility {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Syslog_LocalFacility, len(*values))
+	for i, v := range *values {
+		output[i] = toSyslog_LocalFacility(&v)
+	}
+	return output
+}
+
+type syslog_TCPConfigResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Syslog_TCPConfig
+}
+
+func (resolver *Resolver) wrapSyslog_TCPConfig(value *storage.Syslog_TCPConfig, ok bool, err error) (*syslog_TCPConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &syslog_TCPConfigResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSyslog_TCPConfigs(values []*storage.Syslog_TCPConfig, err error) ([]*syslog_TCPConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*syslog_TCPConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &syslog_TCPConfigResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *syslog_TCPConfigResolver) Hostname(ctx context.Context) string {
+	value := resolver.data.GetHostname()
+	return value
+}
+
+func (resolver *syslog_TCPConfigResolver) Port(ctx context.Context) int32 {
+	value := resolver.data.GetPort()
+	return value
+}
+
+func (resolver *syslog_TCPConfigResolver) SkipTlsVerify(ctx context.Context) bool {
+	value := resolver.data.GetSkipTlsVerify()
+	return value
+}
+
+func (resolver *syslog_TCPConfigResolver) UseTls(ctx context.Context) bool {
+	value := resolver.data.GetUseTls()
 	return value
 }
 

@@ -26,6 +26,17 @@ class SplunkUtil {
         return returnAlerts
     }
 
+    static List<String> getSplunkSyslogs(int port, String searchId) {
+        Response response = getSearchResults(port, searchId)
+        // Not actually SplunkAlerts, just a list of response strings.
+        SplunkAlerts responseItems = GSON.fromJson(response.asString(), SplunkAlerts)
+        def syslogStrings = []
+        for (SplunkAlertRaw raw : responseItems.results) {
+            syslogStrings.add(raw._raw)
+        }
+        return syslogStrings
+    }
+
     static List<SplunkAlert> waitForSplunkAlerts(int port, int timeoutSeconds) {
         int intervalSeconds = 3
         int iterations = timeoutSeconds / intervalSeconds
@@ -49,6 +60,29 @@ class SplunkUtil {
         return results
     }
 
+    static List<String> waitForSplunkSyslog(int port, int timeoutSeconds) {
+        int intervalSeconds = 3
+        int iterations = timeoutSeconds / intervalSeconds
+        List results = []
+        Exception exception = null
+        Timer t = new Timer(iterations, intervalSeconds)
+        while (results.size() == 0 && t.IsValid()) {
+            def searchId = null
+            try {
+                searchId = createSearch(port, "search source=\"yeet syslogs\"")
+                exception = null
+            } catch (Exception e) {
+                exception = e
+            }
+            results = getSplunkSyslogs(port, searchId)
+        }
+
+        if (exception) {
+            throw exception
+        }
+        return results
+    }
+
     static Response getSearchResults(int port, String searchId) {
         Response response
         try {
@@ -63,12 +97,12 @@ class SplunkUtil {
         return response
     }
 
-    static String createSearch(int port) {
+    static String createSearch(int port, String search = "search") {
         Response response = null
         try {
             withRetry(20, 3) {
                 response = given().auth().basic("admin", "changeme")
-                        .formParam("search", "search")
+                        .formParam("search", search)
                         .param("output_mode", "json")
                         .post("https://127.0.0.1:${port}/services/search/jobs")
             }

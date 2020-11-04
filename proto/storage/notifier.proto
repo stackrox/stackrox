@@ -26,6 +26,7 @@ message Notifier {
         Generic   generic                = 15;
         SumoLogic sumologic              = 16;
         AWSSecurityHub aws_security_hub  = 17;
+        Syslog syslog                    = 18;
     }
 }
 
@@ -108,4 +109,35 @@ message Generic {
 message SumoLogic {
     string http_source_address = 1 [(gogoproto.moretags) = "validate:\"nolocalendpoint\""];
     bool   skipTLSVerify       = 2;
+}
+
+message Syslog {
+    enum Format {
+        CEF  = 0;
+//        LEEF = 1; // May not implement LEEF for MVP
+    }
+    Format format = 1;
+
+    enum LocalFacility {
+        LOCAL0 = 0;
+        LOCAL1 = 1;
+        LOCAL2 = 2;
+        LOCAL3 = 3;
+        LOCAL4 = 4;
+        LOCAL5 = 5;
+        LOCAL6 = 6;
+        LOCAL7 = 7;
+    }
+    LocalFacility local_facility = 2;
+
+    message TCPConfig {
+        string hostname                    = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+        int32  port                        = 2;
+        bool   skip_tls_verify             = 3;
+        bool   use_tls                     = 4;
+    }
+    // Eventually this will support TCP, UDP, and local endpoints
+    oneof endpoint {
+        TCPConfig tcp_config = 3;
+    }
 }

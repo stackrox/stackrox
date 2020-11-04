@@ -22,6 +22,7 @@ import objects.QuayImageIntegration
 import objects.SlackNotifier
 import objects.SplunkNotifier
 import objects.StackroxScannerIntegration
+import objects.SyslogNotifier
 import objects.TeamsNotifier
 import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
@@ -64,6 +65,89 @@ class IntegrationsTest extends BaseSpecification {
     def cleanupSpec() {
         ImageIntegrationService.addStackroxScannerIntegration()
         DEPLOYMENTS.each { orchestrator.deleteDeployment(it) }
+    }
+
+    private static class SplunkParts {
+        UUID uid
+        Service collectorSvc
+        LocalPortForward splunkPortForward
+        Service syslogSvc
+        Service httpSvc
+        Service httpsSvc
+        Deployment deployment
+
+        SplunkParts(UUID uid, Service collectorSvc, LocalPortForward splunkPortForward,
+                    Service syslogSvc, Service httpSvc, Service httpsSvc, Deployment deployment) {
+            this.uid = uid
+            this.collectorSvc = collectorSvc
+            this.splunkPortForward = splunkPortForward
+            this.syslogSvc = syslogSvc
+            this.httpSvc = httpSvc
+            this.httpsSvc = httpsSvc
+            this.deployment = deployment
+        }
+    }
+
+    SplunkParts createSplunk() {
+        def uid = UUID.randomUUID()
+        def deploymentName = "splunk-${uid}"
+        orchestrator.createImagePullSecret("qa-stackrox", Env.mustGetDockerIOUserName(),
+                Env.mustGetDockerIOPassword(), Constants.ORCHESTRATOR_NAMESPACE)
+        Deployment deployment =
+                new Deployment()
+                        .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
+                        .setName(deploymentName)
+                        .setImage("stackrox/splunk-test-repo:6.6.2")
+                        .addPort (8000)
+                        .addPort (8088)
+                        .addPort(8089)
+                        .addPort(514)
+                        .addAnnotation("test", "annotation")
+                        .setEnv([ "SPLUNK_START_ARGS": "--accept-license", "SPLUNK_USER": "root" ])
+                        .addLabel("app", deploymentName)
+                        .setPrivilegedFlag(true)
+                        .addVolume("test", "/tmp")
+                        .addImagePullSecret("qa-stackrox")
+        orchestrator.createDeployment(deployment)
+
+        Service httpSvc = new Service("splunk-http-${uid}", Constants.ORCHESTRATOR_NAMESPACE)
+                .addLabel("app", deploymentName)
+                .addPort(8000, "TCP")
+                .setType(Service.Type.CLUSTERIP)
+        orchestrator.createService(httpSvc)
+
+        Service  collectorSvc = new Service("splunk-collector-${uid}", Constants.ORCHESTRATOR_NAMESPACE)
+                .addLabel("app", deploymentName)
+                .addPort(8088, "TCP")
+                .setType(Service.Type.CLUSTERIP)
+        orchestrator.createService(collectorSvc)
+
+        Service httpsSvc = new Service("splunk-https-${uid}", Constants.ORCHESTRATOR_NAMESPACE)
+                .addLabel("app", deploymentName)
+                .addPort(8089, "TCP")
+                .setType(Service.Type.CLUSTERIP)
+        orchestrator.createService(httpsSvc)
+
+        Service syslogSvc = new Service( "splunk-syslog-${uid}", Constants.ORCHESTRATOR_NAMESPACE)
+                .addLabel("app", deploymentName)
+                .addPort(514, "TCP")
+                .setType(Service.Type.CLUSTERIP)
+        orchestrator.createService(syslogSvc)
+
+        LocalPortForward splunkPortForward = orchestrator.createPortForward(8089, deployment)
+
+        return new SplunkParts(uid, collectorSvc, splunkPortForward, syslogSvc, httpSvc, httpsSvc, deployment)
+    }
+
+    def tearDownSplunk(SplunkParts splunkParts) {
+        if (splunkParts.deployment != null) {
+            orchestrator.deleteDeployment(splunkParts.deployment)
+        }
+        orchestrator.deleteService(splunkParts.syslogSvc.name, splunkParts.syslogSvc.namespace)
+        orchestrator.deleteService(splunkParts.httpSvc.name, splunkParts.httpSvc.namespace)
+        orchestrator.deleteService(splunkParts.collectorSvc.name, splunkParts.collectorSvc.namespace)
+        orchestrator.deleteService(splunkParts.httpsSvc.name, splunkParts.httpsSvc.namespace)
+        orchestrator.deleteSecret("qa-stackrox", Constants.ORCHESTRATOR_NAMESPACE)
     }
 
     @Unroll
@@ -156,49 +240,11 @@ class IntegrationsTest extends BaseSpecification {
 
         and:
         "the integration is tested"
-        def uid = UUID.randomUUID()
-        def deploymentName = "splunk-${uid}"
-        orchestrator.createImagePullSecret("qa-stackrox", Env.mustGetDockerIOUserName(),
-                 Env.mustGetDockerIOPassword(), Constants.ORCHESTRATOR_NAMESPACE)
-        Deployment deployment =
-            new Deployment()
-                .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
-                .setName(deploymentName)
-                .setImage("stackrox/splunk-test-repo:6.6.1")
-                .addPort (8000)
-                .addPort (8088)
-                .addPort(8089)
-                .addAnnotation("test", "annotation")
-                .setEnv([ "SPLUNK_START_ARGS": "--accept-license", "SPLUNK_USER": "root" ])
-                .addLabel("app", deploymentName)
-                .setPrivilegedFlag(true)
-                .addVolume("test", "/tmp")
-                .addImagePullSecret("qa-stackrox")
-        orchestrator.createDeployment(deployment)
-
-        Service httpSvc = new Service("splunk-http-${uid}", Constants.ORCHESTRATOR_NAMESPACE)
-                 .addLabel("app", deploymentName)
-                 .addPort(8000, "TCP")
-                 .setType(Service.Type.CLUSTERIP)
-        orchestrator.createService(httpSvc)
-
-        Service  collectorSvc = new Service("splunk-collector-${uid}", Constants.ORCHESTRATOR_NAMESPACE)
-                .addLabel("app", deploymentName)
-                .addPort(8088, "TCP")
-                .setType(Service.Type.CLUSTERIP)
-        orchestrator.createService(collectorSvc)
-
-        Service httpsSvc = new Service("splunk-https-${uid}", Constants.ORCHESTRATOR_NAMESPACE)
-                .addLabel("app", deploymentName)
-                .addPort(8089, "TCP")
-                .setType(Service.Type.CLUSTERIP)
-        orchestrator.createService(httpsSvc)
-
-        LocalPortForward splunkPortForward = orchestrator.createPortForward(8089, deployment)
+        SplunkParts parts = createSplunk()
 
         when:
         "call the grpc API for the splunk integration."
-        SplunkNotifier notifier = new SplunkNotifier(legacy, collectorSvc.name, splunkPortForward.localPort)
+        SplunkNotifier notifier = new SplunkNotifier(legacy, parts.collectorSvc.name, parts.splunkPortForward.localPort)
         try {
             notifier.createNotifier()
         } catch (Exception e) {
@@ -210,7 +256,7 @@ class IntegrationsTest extends BaseSpecification {
         PolicyOuterClass.Policy.Builder policy = Services.getPolicyByName("Latest tag").toBuilder()
 
         def nginxName = "nginx-spl-violation"
-        policy.setName("${policy.name} ${uid}")
+        policy.setName("${policy.name} ${parts.uid}")
               .setId("") // set ID to empty so that a new policy is created and not overwrite the original latest tag
               .addScope(ScopeOuterClass.Scope.newBuilder()
                 .setLabel(ScopeOuterClass.Scope.Label.newBuilder()
@@ -235,17 +281,13 @@ class IntegrationsTest extends BaseSpecification {
 
         cleanup:
         "remove Deployment and services"
-        if (deployment != null) {
-            orchestrator.deleteDeployment(deployment)
+        if (parts.deployment != null) {
             orchestrator.deleteDeployment(nginxdeployment)
         }
-        orchestrator.deleteService(httpSvc.name, httpSvc.namespace)
-        orchestrator.deleteService(collectorSvc.name, collectorSvc.namespace)
-        orchestrator.deleteService(httpsSvc.name, httpsSvc.namespace)
-        orchestrator.deleteSecret("qa-stackrox", Constants.ORCHESTRATOR_NAMESPACE)
         if (policy != null) {
             CreatePolicyService.deletePolicy(policyId)
         }
+        tearDownSplunk(parts)
         notifier.deleteNotifier()
 
         where:
@@ -524,5 +566,37 @@ class IntegrationsTest extends BaseSpecification {
         }       | StatusRuntimeException | /PermissionDenied/ | "account without access"
         new GCRImageIntegration() | { [project: "not-a-project",]
         }       | StatusRuntimeException | /PermissionDenied/ | "incorrect project"
+    }
+
+    @Category(Integration)
+    def "Verify syslog notifier"() {
+        given:
+        "Assume cluster is not OS"
+        Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
+
+        and:
+        "the some syslog receiver is created"
+        // Change the local port numbers so we don't conflict with any other splunk instances
+        SplunkParts parts = createSplunk()
+
+        when:
+        "call the grpc API for the syslog integration."
+        SyslogNotifier notifier = new SyslogNotifier(parts.syslogSvc.name, 514,
+                parts.splunkPortForward.localPort)
+        try {
+            notifier.createNotifier()
+        } catch (Exception e) {
+            Assume.assumeNoException("Could not create Splunk notifier. Skipping test!", e)
+        }
+
+        then:
+        "Verify the messages are seen in the json"
+        // We should have at least one audit log for the message which created the syslog integration.
+        notifier.validateViolationNotification(null, null, false)
+
+        cleanup:
+        "remove splunk and syslog notifier integration"
+        tearDownSplunk(parts)
+        notifier.deleteNotifier()
     }
 }
