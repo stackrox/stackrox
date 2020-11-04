@@ -18,33 +18,19 @@ type NetworkTreeWrapper struct {
 }
 
 // NewDefaultNetworkTreeWrapper returns a new instance of NetworkTreeWrapper.
-func NewDefaultNetworkTreeWrapper() (*NetworkTreeWrapper, error) {
-	ipv4Tree, err := NewDefaultNetworkTree(pkgNet.IPv4)
-	if err != nil {
-		return nil, err
-	}
-
-	ipv6Tree, err := NewDefaultNetworkTree(pkgNet.IPv6)
-	if err != nil {
-		return nil, err
-	}
-
+func NewDefaultNetworkTreeWrapper() *NetworkTreeWrapper {
 	trees := make(map[pkgNet.Family]*NetworkTree)
-	trees[pkgNet.IPv4] = ipv4Tree
-	trees[pkgNet.IPv6] = ipv6Tree
+	trees[pkgNet.IPv4] = NewDefaultIPv4NetworkTree()
+	trees[pkgNet.IPv6] = NewDefaultIPv6NetworkTree()
 
 	return &NetworkTreeWrapper{
 		trees: trees,
-	}, nil
+	}
 }
 
 // NewNetworkTreeWrapper returns a new instance of NetworkTreeWrapper for the supplied list of network entities.
 func NewNetworkTreeWrapper(entities []*storage.NetworkEntityInfo) (*NetworkTreeWrapper, error) {
-	wrapper, err := NewDefaultNetworkTreeWrapper()
-	if err != nil {
-		return nil, err
-	}
-
+	wrapper := NewDefaultNetworkTreeWrapper()
 	if err := wrapper.build(entities); err != nil {
 		return nil, err
 	}

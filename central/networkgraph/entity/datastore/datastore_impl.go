@@ -47,18 +47,10 @@ func NewEntityDataStore(storage store.EntityStore, graphConfig graphConfigDS.Dat
 
 func (ds *dataStoreImpl) initNetworkTree() error {
 	err := ds.storage.Walk(func(obj *storage.NetworkEntity) error {
-		clusterID := obj.GetScope().GetClusterId()
-		if _, ok := ds.networkTreesByCluster[clusterID]; !ok {
-			networkTree, err := tree.NewDefaultNetworkTreeWrapper()
-			if err != nil {
-				return err
-			}
-			ds.networkTreesByCluster[clusterID] = networkTree
-		}
-		return ds.networkTreesByCluster[clusterID].Insert(obj.GetInfo())
+		return ds.getNetworkTree(obj.GetScope().GetClusterId(), true).Insert(obj.GetInfo())
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to initialize network tree")
+		return errors.Wrap(err, "initializing network tree")
 	}
 	return nil
 }
@@ -164,11 +156,7 @@ func (ds *dataStoreImpl) UpsertExternalNetworkEntity(ctx context.Context, entity
 		return errors.Wrapf(err, "upserting network entity %s from storage", entity.GetInfo().GetId())
 	}
 
-	networkTree, err := ds.getNetworkTree(entity.GetScope().GetClusterId())
-	if err != nil {
-		return err
-	}
-	return networkTree.Insert(entity.GetInfo())
+	return ds.getNetworkTree(entity.GetScope().GetClusterId(), true).Insert(entity.GetInfo())
 }
 
 func (ds *dataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, id string) error {
@@ -194,11 +182,9 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, id str
 		return errors.Wrapf(err, "deleting network entity %s from storage", id)
 	}
 
-	networkTree, err := ds.getNetworkTree(decodedID.ClusterID())
-	if err != nil {
-		return err
+	if networkTree := ds.getNetworkTree(decodedID.ClusterID(), false); networkTree != nil {
+		networkTree.Remove(id)
 	}
-	networkTree.Remove(id)
 	return nil
 }
 
@@ -230,14 +216,9 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 		return errors.Wrapf(err, "deleting network entities for cluster %s from storage", clusterID)
 	}
 
-	networkTree, err := ds.getNetworkTree(clusterID)
-	if err != nil {
-		return err
-	}
-
-	for _, id := range ids {
-		networkTree.Remove(id)
-	}
+	// If we are here, it means all the network entities for the `clusterID` are removed.
+	ds.networkTreesByCluster[clusterID] = nil
+	delete(ds.networkTreesByCluster, clusterID)
 	return nil
 }
 
@@ -273,15 +254,11 @@ func (ds *dataStoreImpl) validateExternalNetworkEntity(entity *storage.NetworkEn
 	return nil
 }
 
-func (ds *dataStoreImpl) getNetworkTree(clusterID string) (*tree.NetworkTreeWrapper, error) {
-	networkTree, ok := ds.networkTreesByCluster[clusterID]
-	if !ok {
-		var err error
-		networkTree, err = tree.NewDefaultNetworkTreeWrapper()
-		if err != nil {
-			return nil, errors.Wrapf(err, "getting network tree for cluster %s", clusterID)
-		}
+func (ds *dataStoreImpl) getNetworkTree(clusterID string, createIfNotFound bool) *tree.NetworkTreeWrapper {
+	networkTree := ds.networkTreesByCluster[clusterID]
+	if networkTree == nil && createIfNotFound {
+		networkTree = tree.NewDefaultNetworkTreeWrapper()
 		ds.networkTreesByCluster[clusterID] = networkTree
 	}
-	return networkTree, nil
+	return networkTree
 }

@@ -35,54 +35,66 @@ type node struct {
 	children map[string]*node
 }
 
-// NewDefaultNetworkTree returns a new instance of NetworkTree for the supplied IP address family.
-func NewDefaultNetworkTree(family pkgNet.Family) (*NetworkTree, error) {
+// NewDefaultIPv4NetworkTree returns a new instance of NetworkTree for IPv4 networks.
+func NewDefaultIPv4NetworkTree() *NetworkTree {
+	_, ipNet, _ := net.ParseCIDR(ipv4InternetCIDR)
+
+	// Root node is not marked as default as it not known external network, instead represents everything unknown.
+	root := &node{
+		ipNet:    ipNet,
+		entity:   networkgraph.InternetEntity().ToProto(),
+		children: make(map[string]*node),
+	}
+
 	tree := &NetworkTree{
-		family: family,
+		family: pkgNet.IPv4,
+		root:   root,
 		nodes:  make(map[string]*node),
 	}
 
-	if err := tree.addRoot(family); err != nil {
-		return nil, err
-	}
+	tree.addToTopLevelNoLock(tree.root)
 
-	return tree, nil
+	return tree
 }
 
-// NewNetworkTree returns a new instance of NetworkTree built with supplied networks for given IP address family.
-func NewNetworkTree(networks []*storage.NetworkEntityInfo, family pkgNet.Family) (*NetworkTree, error) {
-	t, err := NewDefaultNetworkTree(family)
-	if err != nil {
-		return nil, err
+// NewDefaultIPv6NetworkTree returns a new instance of NetworkTree for IPv6 networks.
+func NewDefaultIPv6NetworkTree() *NetworkTree {
+	_, ipNet, _ := net.ParseCIDR(ipv6InternetCIDR)
+
+	// Root node is not marked as default as it not known external network, instead represents everything unknown.
+	root := &node{
+		ipNet:    ipNet,
+		entity:   networkgraph.InternetEntity().ToProto(),
+		children: make(map[string]*node),
 	}
 
+	tree := &NetworkTree{
+		family: pkgNet.IPv6,
+		root:   root,
+		nodes:  make(map[string]*node),
+	}
+
+	tree.addToTopLevelNoLock(tree.root)
+
+	return tree
+}
+
+// NewIPv4NetworkTree returns a new instance of NetworkTree built with supplied IPv4 networks.
+func NewIPv4NetworkTree(networks []*storage.NetworkEntityInfo) (*NetworkTree, error) {
+	t := NewDefaultIPv4NetworkTree()
 	if err := t.build(networks); err != nil {
 		return nil, err
 	}
 	return t, nil
 }
 
-func (t *NetworkTree) addRoot(family pkgNet.Family) error {
-	t.lock.Lock()
-	defer t.lock.Unlock()
-
-	var ipNet *net.IPNet
-	if family == pkgNet.IPv4 {
-		_, ipNet, _ = net.ParseCIDR(ipv4InternetCIDR)
-	} else if family == pkgNet.IPv6 {
-		_, ipNet, _ = net.ParseCIDR(ipv6InternetCIDR)
-	} else {
-		return errors.New("failed to create network tree. Invalid IP address family provided")
+// NewIPv6NetworkTree returns a new instance of NetworkTree built with supplied IPv6 networks.
+func NewIPv6NetworkTree(networks []*storage.NetworkEntityInfo) (*NetworkTree, error) {
+	t := NewDefaultIPv6NetworkTree()
+	if err := t.build(networks); err != nil {
+		return nil, err
 	}
-
-	// Root node is not marked as default as it not known external network, instead represents everything unknown.
-	t.root = &node{
-		ipNet:    ipNet,
-		entity:   networkgraph.InternetEntity().ToProto(),
-		children: make(map[string]*node),
-	}
-	t.addToTopLevelNoLock(t.root)
-	return nil
+	return t, nil
 }
 
 func (t *NetworkTree) addToTopLevelNoLock(node *node) {

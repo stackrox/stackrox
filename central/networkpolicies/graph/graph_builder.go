@@ -64,10 +64,12 @@ func (b *graphBuilder) init(deployments []*storage.Deployment, externalSrcs []*s
 	}
 
 	// We do not return the error since INTERNET gets added anyway i.e. external connections do not get excluded.
-	var err error
-	if b.networkTree, err = tree.NewNetworkTreeWrapper(externalSrcs); err != nil {
+	nTree, err := tree.NewNetworkTreeWrapper(externalSrcs)
+	if err != nil {
 		log.Errorf("failed to create network tree for network policy builder: %v", err)
+		nTree = tree.NewDefaultNetworkTreeWrapper()
 	}
+	b.networkTree = nTree
 
 	b.internetSrc = newExternalSrcNode(networkgraph.InternetEntity().ToProto())
 }

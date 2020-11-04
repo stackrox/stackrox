@@ -429,15 +429,15 @@ func (s *serviceImpl) getDeployments(ctx context.Context, clusterID, query strin
 
 func (s *serviceImpl) getExternalSrcs(ctx context.Context, clusterID string) ([]*storage.NetworkEntityInfo, error) {
 	if !features.NetworkGraphExternalSrcs.Enabled() {
-		return nil, nil
+		return []*storage.NetworkEntityInfo{}, nil
 	}
 
 	entities, err := s.externalSrcs.GetAllEntitiesForCluster(ctx, clusterID)
-	if err != nil || len(entities) == 0 {
+	if err != nil {
 		return nil, err
 	}
 
-	extSrcs := make([]*storage.NetworkEntityInfo, len(entities))
+	extSrcs := make([]*storage.NetworkEntityInfo, 0, len(entities))
 	for _, entity := range entities {
 		extSrcs = append(extSrcs, entity.GetInfo())
 	}

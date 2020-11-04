@@ -32,8 +32,9 @@ func TestNetworkTree(t *testing.T) {
 	e5 := test.GetExtSrcNetworkEntity("5", "5", "36.188.144.0/30", false)
 	e6 := test.GetExtSrcNetworkEntity("6", "6", "36.188.144.0/16", true)
 
-	networkTree, err := NewNetworkTree([]*storage.NetworkEntityInfo{e1, e2, e3, e4, e5, e6}, pkgNet.IPv4)
+	networkTree, err := NewIPv4NetworkTree([]*storage.NetworkEntityInfo{e1, e2, e3, e4, e5, e6})
 	assert.NoError(t, err)
+	assert.NotNil(t, networkTree)
 
 	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e4}, networkTree.GetSubnets("1"))
 	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e2}, networkTree.GetSubnets("3"))
