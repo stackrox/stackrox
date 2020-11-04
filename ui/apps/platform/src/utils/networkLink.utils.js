@@ -75,6 +75,10 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
                         targetNS: 'External Entities',
                     };
 
+                    const edgeKey = getSourceTargetKey(sourceEntityId, 'External Entities');
+                    link.isActive = isActive(edgeKey);
+                    link.isAllowed = isAllowed(edgeKey, link);
+                    link.isDisallowed = isDisallowed(edgeKey, link);
                     filteredLinks.push(link);
                     return;
                 }

@@ -1217,6 +1217,7 @@ export const deploymentEdges = [
             destNodeName: 'node-1',
             destNodeNamespace: 'namespace-a',
             traffic: 'ingress',
+            type: 'deployment',
             isActive: true,
             isAllowed: true,
             portsAndProtocols: [
@@ -1234,6 +1235,7 @@ export const deploymentEdges = [
             destNodeName: 'node-2',
             destNodeNamespace: 'namespace-a',
             traffic: 'egress',
+            type: 'deployment',
             isActive: false,
             isAllowed: true,
             portsAndProtocols: [
@@ -1251,6 +1253,7 @@ export const deploymentEdges = [
             destNodeName: 'node-3',
             destNodeNamespace: 'namespace-a',
             traffic: 'egress',
+            type: 'deployment',
             isActive: false,
             isAllowed: true,
             portsAndProtocols: [
@@ -1268,6 +1271,7 @@ export const deploymentEdges = [
             destNodeName: 'node-4',
             destNodeNamespace: 'namespace-a',
             traffic: 'bidirectional',
+            type: 'deployment',
             isActive: true,
             isAllowed: true,
             portsAndProtocols: [

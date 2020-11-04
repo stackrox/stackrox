@@ -13,8 +13,15 @@ import Panel from 'Components/Panel';
 import NetworkFlows from '../Details/NetworkFlows';
 import wizardStages from '../wizardStages';
 
-function ExternalEntitiesFlows({ history, networkGraphRef, onClose, wizardOpen, wizardStage }) {
-    if (!wizardOpen || wizardStage !== wizardStages.externalEntitiesFlows) {
+function ExternalDetails({
+    history,
+    networkGraphRef,
+    onClose,
+    wizardOpen,
+    selectedNode,
+    wizardStage,
+}) {
+    if (!wizardOpen || wizardStage !== wizardStages.externalDetails || !selectedNode) {
         return null;
     }
 
@@ -25,7 +32,7 @@ function ExternalEntitiesFlows({ history, networkGraphRef, onClose, wizardOpen, 
     }
 
     // TODO: redo this without Redux for External Entities
-    const deploymentEdges = [];
+    const { edges, cidr, name } = selectedNode;
 
     function closeHandler() {
         onClose();
@@ -35,11 +42,14 @@ function ExternalEntitiesFlows({ history, networkGraphRef, onClose, wizardOpen, 
         }
     }
 
+    const headerName = cidr ? `${name} | ${cidr}` : name;
+    const panelId = cidr ? 'cidr-block-detail-panel' : 'external-entities-detail-panel';
+
     return (
-        <Panel header="External Entities" onClose={closeHandler} id="network-details-panel">
+        <Panel header={headerName} onClose={closeHandler} id={panelId}>
             <div className="flex flex-1 flex-col h-full">
                 <NetworkFlows
-                    deploymentEdges={deploymentEdges}
+                    edges={edges}
                     onNavigateToDeploymentById={onNavigateToDeploymentById}
                 />
             </div>
@@ -47,14 +57,11 @@ function ExternalEntitiesFlows({ history, networkGraphRef, onClose, wizardOpen, 
     );
 }
 
-ExternalEntitiesFlows.propTypes = {
+ExternalDetails.propTypes = {
     wizardOpen: PropTypes.bool.isRequired,
     wizardStage: PropTypes.string.isRequired,
 
-    selectedNode: PropTypes.shape({
-        outEdges: PropTypes.arrayOf(PropTypes.shape({})),
-        id: PropTypes.string.isRequired,
-    }),
+    selectedNode: PropTypes.shape(),
     onClose: PropTypes.func.isRequired,
     networkGraphRef: PropTypes.shape({
         setSelectedNode: PropTypes.func,
@@ -65,7 +72,7 @@ ExternalEntitiesFlows.propTypes = {
     history: ReactRouterPropTypes.history.isRequired,
 };
 
-ExternalEntitiesFlows.defaultProps = {
+ExternalDetails.defaultProps = {
     networkGraphRef: null,
     selectedNode: null,
 };
@@ -82,4 +89,4 @@ const mapDispatchToProps = {
     setSelectedNode: graphActions.setSelectedNode,
 };
 
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(ExternalEntitiesFlows));
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(ExternalDetails));

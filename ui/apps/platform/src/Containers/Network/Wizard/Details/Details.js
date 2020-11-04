@@ -60,7 +60,7 @@ function Details({
             <TabContent>
                 <div className="flex flex-1 flex-col h-full">
                     <NetworkFlows
-                        deploymentEdges={deploymentEdges}
+                        edges={deploymentEdges}
                         onNavigateToDeploymentById={onNavigateToDeploymentById}
                     />
                 </div>

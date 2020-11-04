@@ -148,7 +148,7 @@ describe('networkGraphUtils', () => {
                 {
                     connection: 'active',
                     deploymentId: '1',
-                    deploymentName: 'node-1',
+                    entityName: 'node-1',
                     namespace: 'namespace-a',
                     portsAndProtocols: [
                         {
@@ -158,11 +158,12 @@ describe('networkGraphUtils', () => {
                         },
                     ],
                     traffic: 'ingress',
+                    type: 'deployment',
                 },
                 {
                     connection: 'allowed',
                     deploymentId: '2',
-                    deploymentName: 'node-2',
+                    entityName: 'node-2',
                     namespace: 'namespace-a',
                     portsAndProtocols: [
                         {
@@ -172,11 +173,12 @@ describe('networkGraphUtils', () => {
                         },
                     ],
                     traffic: 'egress',
+                    type: 'deployment',
                 },
                 {
                     connection: 'allowed',
                     deploymentId: '3',
-                    deploymentName: 'node-3',
+                    entityName: 'node-3',
                     namespace: 'namespace-a',
                     portsAndProtocols: [
                         {
@@ -186,11 +188,12 @@ describe('networkGraphUtils', () => {
                         },
                     ],
                     traffic: 'egress',
+                    type: 'deployment',
                 },
                 {
                     connection: 'active',
                     deploymentId: '4',
-                    deploymentName: 'node-4',
+                    entityName: 'node-4',
                     namespace: 'namespace-a',
                     portsAndProtocols: [
                         {
@@ -205,6 +208,7 @@ describe('networkGraphUtils', () => {
                         },
                     ],
                     traffic: 'bidirectional',
+                    type: 'deployment',
                 },
             ]);
         });
@@ -216,7 +220,7 @@ describe('networkGraphUtils', () => {
                 {
                     connection: 'active',
                     deploymentId: '1',
-                    deploymentName: 'node-1',
+                    entityName: 'node-1',
                     namespace: 'namespace-a',
                     portsAndProtocols: [
                         {
@@ -226,11 +230,12 @@ describe('networkGraphUtils', () => {
                         },
                     ],
                     traffic: 'ingress',
+                    type: 'deployment',
                 },
                 {
                     connection: 'active',
                     deploymentId: '4',
-                    deploymentName: 'node-4',
+                    entityName: 'node-4',
                     namespace: 'namespace-a',
                     portsAndProtocols: [
                         {
@@ -245,6 +250,7 @@ describe('networkGraphUtils', () => {
                         },
                     ],
                     traffic: 'bidirectional',
+                    type: 'deployment',
                 },
             ]);
         });
@@ -256,7 +262,7 @@ describe('networkGraphUtils', () => {
                 {
                     connection: 'allowed',
                     deploymentId: '1',
-                    deploymentName: 'node-1',
+                    entityName: 'node-1',
                     namespace: 'namespace-a',
                     portsAndProtocols: [
                         {
@@ -266,11 +272,12 @@ describe('networkGraphUtils', () => {
                         },
                     ],
                     traffic: 'ingress',
+                    type: 'deployment',
                 },
                 {
                     connection: 'allowed',
                     deploymentId: '2',
-                    deploymentName: 'node-2',
+                    entityName: 'node-2',
                     namespace: 'namespace-a',
                     portsAndProtocols: [
                         {
@@ -280,11 +287,12 @@ describe('networkGraphUtils', () => {
                         },
                     ],
                     traffic: 'egress',
+                    type: 'deployment',
                 },
                 {
                     connection: 'allowed',
                     deploymentId: '3',
-                    deploymentName: 'node-3',
+                    entityName: 'node-3',
                     namespace: 'namespace-a',
                     portsAndProtocols: [
                         {
@@ -294,11 +302,12 @@ describe('networkGraphUtils', () => {
                         },
                     ],
                     traffic: 'egress',
+                    type: 'deployment',
                 },
                 {
                     connection: 'allowed',
                     deploymentId: '4',
-                    deploymentName: 'node-4',
+                    entityName: 'node-4',
                     namespace: 'namespace-a',
                     portsAndProtocols: [
                         {
@@ -313,6 +322,7 @@ describe('networkGraphUtils', () => {
                         },
                     ],
                     traffic: 'bidirectional',
+                    type: 'deployment',
                 },
             ]);
         });

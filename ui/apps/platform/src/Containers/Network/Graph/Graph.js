@@ -96,7 +96,7 @@ class Graph extends Component {
         if (this.props.isSimulatorOn) {
             return;
         }
-        this.props.setWizardStage(wizardStages.externalEntitiesFlows);
+        this.props.setWizardStage(wizardStages.externalDetails);
         this.props.openWizard();
     };
 

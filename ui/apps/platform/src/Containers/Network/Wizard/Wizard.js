@@ -11,7 +11,7 @@ import Creator from './Creator/Creator';
 import Simulator from './Simulator/Simulator';
 import CIDRPanel from './CIDRForm/CIDRPanel';
 import NamespaceDetails from './NamespaceDetails/NamespaceDetails';
-import ExternalEntitiesDetails from './ExternalEntities/ExternalEntitiesDetails';
+import ExternalDetails from './ExternalDetails/ExternalDetails';
 import NodesUpdateSection from '../Graph/Overlays/NodesUpdateSection';
 import ZoomButtons from '../Graph/Overlays/ZoomButtons';
 
@@ -33,8 +33,8 @@ function Wizard({ wizardOpen, wizardStage, onClose }) {
             case wizardStages.namespaceDetails:
                 panelContent = <NamespaceDetails onClose={onClose} />;
                 break;
-            case wizardStages.externalEntitiesFlows:
-                panelContent = <ExternalEntitiesDetails onClose={onClose} />;
+            case wizardStages.externalDetails:
+                panelContent = <ExternalDetails onClose={onClose} />;
                 break;
             case wizardStages.cidrForm:
                 panelContent = <CIDRPanel onClose={onClose} />;

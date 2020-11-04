@@ -765,6 +765,7 @@ export const getExternalEntitiesNode = (data, configObj = {}) => {
             id: 'External Entities', // also needs to be `entity.id` in hover/select context
             name: 'External Entities',
             active: false,
+            edges,
             type: nodeTypes.EXTERNAL_ENTITIES,
             parent: null,
         },
@@ -826,6 +827,7 @@ export const getCIDRBlockNodes = (data, configObj = {}) => {
                 id: entity.id,
                 cidr: entity.externalSource.cidr,
                 name: entity.externalSource.name,
+                edges,
                 active: false,
                 type: nodeTypes.CIDR_BLOCK,
                 parent: null,
@@ -1166,6 +1168,35 @@ export const getFilteredNodes = (networkNodeMap, filterState) => {
     return getActiveNetworkPolicyNodes(networkNodeMap);
 };
 
+function getConnectionText(filterState, isActive, isAllowed) {
+    let connection = '-';
+    const isActiveOrAll = filterState === filterModes.active || filterState === filterModes.all;
+    const isAllowedOrAll = filterState === filterModes.allowed || filterState === filterModes.all;
+    if (isActiveOrAll && isActive) {
+        connection = networkConnections.ACTIVE;
+    } else if (isAllowedOrAll && isAllowed) {
+        connection = networkConnections.ALLOWED;
+    }
+    return connection;
+}
+
+function DirectionalFlows() {
+    let numIngressFlows = 0;
+    let numEgressFlows = 0;
+    return {
+        incrementFlows: (traffic) => {
+            if (traffic === networkTraffic.INGRESS || traffic === networkTraffic.BIDIRECTIONAL) {
+                numIngressFlows += 1;
+            }
+            if (traffic === networkTraffic.EGRESS || traffic === networkTraffic.BIDIRECTIONAL) {
+                numEgressFlows += 1;
+            }
+        },
+        getNumIngressFlows: () => numIngressFlows,
+        getNumEgressFlows: () => numEgressFlows,
+    };
+}
+
 /**
  * Grabs the deployment-to-deployment edges and filters based on the filter state
  *
@@ -1176,39 +1207,6 @@ export const getFilteredNodes = (networkNodeMap, filterState) => {
 export function getNetworkFlows(edges, filterState) {
     if (!edges) {
         return [];
-    }
-
-    function getConnectionText(isActive, isAllowed) {
-        let connection = '-';
-        const isActiveOrAll = filterState === filterModes.active || filterState === filterModes.all;
-        const isAllowedOrAll =
-            filterState === filterModes.allowed || filterState === filterModes.all;
-        if (isActiveOrAll && isActive) {
-            connection = networkConnections.ACTIVE;
-        } else if (isAllowedOrAll && isAllowed) {
-            connection = networkConnections.ALLOWED;
-        }
-        return connection;
-    }
-
-    function DirectionalFlows() {
-        let numIngressFlows = 0;
-        let numEgressFlows = 0;
-        return {
-            incrementFlows: (traffic) => {
-                if (
-                    traffic === networkTraffic.INGRESS ||
-                    traffic === networkTraffic.BIDIRECTIONAL
-                ) {
-                    numIngressFlows += 1;
-                }
-                if (traffic === networkTraffic.EGRESS || traffic === networkTraffic.BIDIRECTIONAL) {
-                    numEgressFlows += 1;
-                }
-            },
-            getNumIngressFlows: () => numIngressFlows,
-            getNumEgressFlows: () => numEgressFlows,
-        };
     }
 
     let networkFlows;
@@ -1232,15 +1230,16 @@ export function getNetworkFlows(edges, filterState) {
             if (acc[destNodeId]) {
                 return acc;
             }
-            const connection = getConnectionText(isActive, isAllowed);
+            const connection = getConnectionText(filterState, isActive, isAllowed);
             directionalFlows.incrementFlows(traffic);
             return {
                 ...acc,
                 [destNodeId]: {
                     traffic,
                     deploymentId: destNodeId,
-                    deploymentName: destNodeName,
-                    namespace: destNodeNamespace,
+                    entityName: destNodeName,
+                    namespace: destNodeNamespace === 'External Entities' ? '-' : destNodeNamespace,
+                    type: destNodeNamespace === 'External Entities' ? 'external' : 'deployment',
                     connection,
                     portsAndProtocols,
                 },

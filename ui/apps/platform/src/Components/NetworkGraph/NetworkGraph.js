@@ -286,9 +286,8 @@ const NetworkGraph = ({
             setSelectedNode(evData);
             setSelectedNodeInGraph(evData);
 
-            if (type === nodeTypes.EXTERNAL_ENTITIES) {
-                history.push(`/main/network/internet`);
-                onExternalEntitiesClick({ id, deployments: evData?.outEdges || [] });
+            if (type === nodeTypes.EXTERNAL_ENTITIES || type === nodeTypes.CIDR_BLOCK) {
+                onExternalEntitiesClick({ id, deployments: [{ data: evData }] || [] });
             } else {
                 history.push(`/main/network/${id}`);
                 onNodeClick(evData);

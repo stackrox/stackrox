@@ -50,16 +50,22 @@ const NetworkFlowsTable = ({
             },
         },
         {
-            headerClassName: `${defaultHeaderClassName} w-4`,
-            className: `${defaultColumnClassName} w-4 break-all`,
+            headerClassName: `${defaultHeaderClassName} w-2`,
+            className: `${defaultColumnClassName} w-2 break-all`,
             Header: 'Traffic',
             accessor: 'traffic',
         },
         {
             headerClassName: `${defaultHeaderClassName} w-10`,
             className: `${defaultColumnClassName} w-10 break-all`,
-            Header: 'Deployment',
-            accessor: 'deploymentName',
+            Header: 'Entity',
+            accessor: 'entityName',
+        },
+        {
+            headerClassName: `${defaultHeaderClassName} w-3`,
+            className: `${defaultColumnClassName} w-3 break-all`,
+            Header: 'Type',
+            accessor: 'type',
         },
         {
             headerClassName: `${defaultHeaderClassName} w-10`,
@@ -68,24 +74,8 @@ const NetworkFlowsTable = ({
             accessor: 'namespace',
         },
         {
-            headerClassName: `${defaultHeaderClassName} w-4`,
-            className: `${defaultColumnClassName} w-4 break-all`,
-            Header: 'Protocols',
-            accessor: 'portsAndProtocols',
-            // eslint-disable-next-line react/prop-types
-            Cell: ({ value }) => {
-                if (value.length === 0) {
-                    return '-';
-                }
-                const protocols = uniqBy(value, (datum) => datum.protocol)
-                    .map((datum) => networkProtocolLabels[datum.protocol])
-                    .join(', ');
-                return protocols;
-            },
-        },
-        {
-            headerClassName: `${defaultHeaderClassName} w-4`,
-            className: `${defaultColumnClassName} w-4 break-all`,
+            headerClassName: `${defaultHeaderClassName} w-2`,
+            className: `${defaultColumnClassName} w-2 break-all`,
             Header: 'Ports',
             accessor: 'portsAndProtocols',
             // eslint-disable-next-line react/prop-types
@@ -102,8 +92,24 @@ const NetworkFlowsTable = ({
             hidden: !showPortsAndProtocols,
         },
         {
-            headerClassName: `${defaultHeaderClassName} w-4`,
-            className: `${defaultColumnClassName} w-4 break-all`,
+            headerClassName: `${defaultHeaderClassName} w-2`,
+            className: `${defaultColumnClassName} w-2 break-all`,
+            Header: 'Protocols',
+            accessor: 'portsAndProtocols',
+            // eslint-disable-next-line react/prop-types
+            Cell: ({ value }) => {
+                if (value.length === 0) {
+                    return '-';
+                }
+                const protocols = uniqBy(value, (datum) => datum.protocol)
+                    .map((datum) => networkProtocolLabels[datum.protocol])
+                    .join(', ');
+                return protocols;
+            },
+        },
+        {
+            headerClassName: `${defaultHeaderClassName} w-2`,
+            className: `${defaultColumnClassName} w-2 break-all`,
             Header: 'Connection',
             accessor: 'connection',
         },

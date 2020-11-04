@@ -19,13 +19,8 @@ import NetworkFlowsSearch from './NetworkFlowsSearch';
 import NetworkFlowsTable from './NetworkFlowsTable';
 import getNetworkFlowValueByCategory from './networkFlowUtils/getNetworkFlowValueByCategory';
 
-const NetworkFlows = ({
-    deploymentEdges,
-    filterState,
-    onNavigateToDeploymentById,
-    featureFlags,
-}) => {
-    const { networkFlows } = getNetworkFlows(deploymentEdges, filterState);
+const NetworkFlows = ({ edges, filterState, onNavigateToDeploymentById, featureFlags }) => {
+    const { networkFlows } = getNetworkFlows(edges, filterState);
 
     const [page, setPage] = useState(0);
     const [searchOptions, setSearchOptions] = useState([]);
@@ -94,7 +89,7 @@ const NetworkFlows = ({
 };
 
 NetworkFlows.propTypes = {
-    deploymentEdges: PropTypes.arrayOf(PropTypes.shape({})),
+    edges: PropTypes.arrayOf(PropTypes.shape({})),
     networkGraphRef: PropTypes.shape({
         setSelectedNode: PropTypes.func,
         getNodeData: PropTypes.func,
@@ -106,7 +101,7 @@ NetworkFlows.propTypes = {
 };
 
 NetworkFlows.defaultProps = {
-    deploymentEdges: [],
+    edges: [],
     networkGraphRef: null,
     featureFlags: [],
 };

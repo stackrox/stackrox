@@ -7,7 +7,8 @@ import getNetworkFlowValueByCategory from './networkFlowUtils/getNetworkFlowValu
 
 const networkFlowCategories = [
     'Traffic',
-    'Deployment',
+    'Entity',
+    'Type',
     'Namespace',
     'Protocols',
     'Ports',

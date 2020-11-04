@@ -209,8 +209,9 @@ describe('Network Flows Table', () => {
         cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
         cy.get(`${selectors.tab.tabs}:contains('Network Flows')`).click();
         cy.get(`${selectors.table.columnHeaders}:contains('Traffic')`);
-        cy.get(`${selectors.table.columnHeaders}:contains('Deployment')`);
+        cy.get(`${selectors.table.columnHeaders}:contains('Entity')`);
         cy.get(`${selectors.table.columnHeaders}:contains('Namespace')`);
+        cy.get(`${selectors.table.columnHeaders}:contains('Type')`);
         cy.get(`${selectors.table.columnHeaders}:contains('Connection')`);
 
         if (checkFeatureFlag('ROX_NETWORK_GRAPH_PORTS', true)) {
@@ -236,15 +237,20 @@ describe('Network Flows Table', () => {
         cy.get(networkPageSelectors.detailsPanel.search.options).contains('bidirectional');
         cy.get(networkPageSelectors.detailsPanel.search.options).contains('egress');
 
-        // check autocomplete results for Deployment names
+        // check autocomplete results for entity names
         cy.get(networkPageSelectors.detailsPanel.search.input).clear();
-        cy.get(networkPageSelectors.detailsPanel.search.input).type('Deployment:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Entity:{enter}');
         cy.get(networkPageSelectors.detailsPanel.search.options).contains('sensor');
         cy.get(networkPageSelectors.detailsPanel.search.options).contains('scanner');
         // TODO in CI but not local deployment:
         // cy.get(networkPageSelectors.detailsPanel.search.options).contains('monitoring');
         // TODO kube-dns in CI but coredns in local deployment:
-        // cy.get(networkPageSelectors.detailsPanel.search.options).contains('kube-dns');
+        // cy.get(networkPageSelectors.detailsPanel.search.options).contains('kube-dns')
+
+        // check autocomplete results for entity type
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Type:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.options).contains('deployment');
 
         // check autocomplete results for Namespace names
         cy.get(networkPageSelectors.detailsPanel.search.input).clear();
@@ -290,7 +296,7 @@ describe('Network Flows Table', () => {
 
         cy.get(networkPageSelectors.detailsPanel.search.input).clear();
         cy.get(networkPageSelectors.detailsPanel.search.input).clear();
-        cy.get(networkPageSelectors.detailsPanel.search.input).type('Deployment:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Entity:{enter}');
         cy.get(networkPageSelectors.detailsPanel.search.input).type('sensor{enter}');
         cy.get(selectors.table.rows).each(($el) => {
             cy.wrap($el).get(`${selectors.table.cells}:eq(2)`).contains('sensor');
@@ -298,18 +304,18 @@ describe('Network Flows Table', () => {
 
         cy.get(networkPageSelectors.detailsPanel.search.input).clear();
         cy.get(networkPageSelectors.detailsPanel.search.input).clear();
-        cy.get(networkPageSelectors.detailsPanel.search.input).type('Namespace:{enter}');
-        cy.get(networkPageSelectors.detailsPanel.search.input).type('kube-system{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Type:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('deployment{enter}');
         cy.get(selectors.table.rows).each(($el) => {
-            cy.wrap($el).get(`${selectors.table.cells}:eq(3)`).contains('kube-system');
+            cy.wrap($el).get(`${selectors.table.cells}:eq(3)`).contains('deployment');
         });
 
         cy.get(networkPageSelectors.detailsPanel.search.input).clear();
         cy.get(networkPageSelectors.detailsPanel.search.input).clear();
-        cy.get(networkPageSelectors.detailsPanel.search.input).type('Protocols:{enter}');
-        cy.get(networkPageSelectors.detailsPanel.search.input).type('L4_PROTOCOL_TCP{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Namespace:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('kube-system{enter}');
         cy.get(selectors.table.rows).each(($el) => {
-            cy.wrap($el).get(`${selectors.table.cells}:eq(4)`).contains('TCP');
+            cy.wrap($el).get(`${selectors.table.cells}:eq(4)`).contains('kube-system');
         });
 
         cy.get(networkPageSelectors.detailsPanel.search.input).clear();
@@ -324,10 +330,18 @@ describe('Network Flows Table', () => {
 
         cy.get(networkPageSelectors.detailsPanel.search.input).clear();
         cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('Protocols:{enter}');
+        cy.get(networkPageSelectors.detailsPanel.search.input).type('L4_PROTOCOL_TCP{enter}');
+        cy.get(selectors.table.rows).each(($el) => {
+            cy.wrap($el).get(`${selectors.table.cells}:eq(6)`).contains('TCP');
+        });
+
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
+        cy.get(networkPageSelectors.detailsPanel.search.input).clear();
         cy.get(networkPageSelectors.detailsPanel.search.input).type('Connection:{enter}');
         cy.get(networkPageSelectors.detailsPanel.search.input).type('active{enter}');
         cy.get(selectors.table.rows).each(($el) => {
-            cy.wrap($el).get(`${selectors.table.cells}:eq(6)`).contains('active');
+            cy.wrap($el).get(`${selectors.table.cells}:eq(7)`).contains('active');
         });
     });
 });
