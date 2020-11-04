@@ -12,7 +12,7 @@ import "gogoproto/gogo.proto";
 package storage;
 
 // Node represents information about a node in the cluster.
-// next available tag: 16
+// next available tag: 17
 message Node {
     // A unique ID identifying this node.
     string id                              = 1 [(gogoproto.moretags) = "search:\"Node ID,store\""];
@@ -24,6 +24,8 @@ message Node {
     string cluster_name                    = 5 [(gogoproto.moretags) = "search:\"Cluster,store\""];
     map<string, string> labels             = 6 [(gogoproto.moretags) = "search:\"Label\""];
     map<string, string> annotations        = 7 [(gogoproto.moretags) = "search:\"Annotation\""];
+    // When the cluster reported the node was added
+    google.protobuf.Timestamp joined_at    = 13 [(gogoproto.moretags) = "search:\"Node Join Time,store\""];
     // node internal IP addresses
     repeated string internal_ip_addresses  = 8;
     // node external IP addresses
@@ -33,7 +35,6 @@ message Node {
     ContainerRuntimeInfo container_runtime = 14;
     string kernel_version                  = 11;
     string os_image                        = 12 [(gogoproto.moretags) = "search:\"Operating System,store\""];
-    // When the cluster reported the node was added
-    google.protobuf.Timestamp joined_at    = 13 [(gogoproto.moretags) = "search:\"Node Join Time,store\""];
     string kubelet_version                 = 15;
+    string kube_proxy_version              = 16;
 }

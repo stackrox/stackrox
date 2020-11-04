@@ -10,4 +10,6 @@ class Node {
     def containerRuntimeVersion
     def kernelVersion
     def osImage
+    def kubeletVersion
+    def kubeProxyVersion
 }

@@ -702,6 +702,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"internalIpAddresses: [String!]!",
 		"joinedAt: Time",
 		"kernelVersion: String!",
+		"kubeProxyVersion: String!",
 		"kubeletVersion: String!",
 		"labels: [Label!]!",
 		"name: String!",
@@ -6543,6 +6544,11 @@ func (resolver *nodeResolver) JoinedAt(ctx context.Context) (*graphql.Time, erro
 
 func (resolver *nodeResolver) KernelVersion(ctx context.Context) string {
 	value := resolver.data.GetKernelVersion()
+	return value
+}
+
+func (resolver *nodeResolver) KubeProxyVersion(ctx context.Context) string {
+	value := resolver.data.GetKubeProxyVersion()
 	return value
 }
 

@@ -945,7 +945,9 @@ class Kubernetes implements OrchestratorMain {
                         externalIps: it.status.addresses.findAll { it.type == "ExternalIP" }*.address,
                         containerRuntimeVersion: it.status.nodeInfo.containerRuntimeVersion,
                         kernelVersion: it.status.nodeInfo.kernelVersion,
-                        osImage: it.status.nodeInfo.osImage
+                        osImage: it.status.nodeInfo.osImage,
+                        kubeletVersion: it.status.nodeInfo.kubeletVersion,
+                        kubeProxyVersion: it.status.nodeInfo.kubeProxyVersion
                 )
             }
         }

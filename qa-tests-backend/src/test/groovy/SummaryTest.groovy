@@ -60,6 +60,8 @@ class SummaryTest extends BaseSpecification {
             assert node.containerRuntimeVersion == actualNode.containerRuntimeVersion
             assert node.kernelVersion == actualNode.kernelVersion
             assert node.osImage == actualNode.osImage
+            assert node.kubeletVersion == actualNode.kubeletVersion
+            assert node.kubeProxyVersion == actualNode.kubeProxyVersion
         }
     }
 
