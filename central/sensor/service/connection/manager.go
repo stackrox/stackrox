@@ -13,7 +13,11 @@ import (
 //go:generate mockgen-wrapper
 type Manager interface {
 	// Need to register cluster manager to avoid cyclic dependencies with cluster datastore
-	Start(mgr common.ClusterManager, netEntitiesMgr common.NetworkEntityManager, policyMgr common.PolicyManager, whitelistMgr common.ProcessBaselineManager, autoTriggerUpgrades *concurrency.Flag) error
+	Start(mgr common.ClusterManager,
+		netEntitiesMgr common.NetworkEntityManager,
+		policyMgr common.PolicyManager,
+		whitelistMgr common.ProcessBaselineManager,
+		autoTriggerUpgrades *concurrency.Flag) error
 
 	// Connection-related methods.
 	HandleConnection(ctx context.Context, clusterID string, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error

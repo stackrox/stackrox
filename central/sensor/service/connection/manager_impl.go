@@ -86,7 +86,11 @@ func (m *manager) initializeUpgradeControllers() error {
 	return nil
 }
 
-func (m *manager) Start(clusterManager common.ClusterManager, networkEntityManager common.NetworkEntityManager, policyManager common.PolicyManager, whitelistManager common.ProcessBaselineManager, autoTriggerUpgrades *concurrency.Flag) error {
+func (m *manager) Start(clusterManager common.ClusterManager,
+	networkEntityManager common.NetworkEntityManager,
+	policyManager common.PolicyManager,
+	whitelistManager common.ProcessBaselineManager,
+	autoTriggerUpgrades *concurrency.Flag) error {
 	m.clusters = clusterManager
 	m.networkEntities = networkEntityManager
 	m.policies = policyManager

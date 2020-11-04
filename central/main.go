@@ -364,7 +364,13 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 	}
 
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
-	if err := connection.ManagerSingleton().Start(clusterDataStore.Singleton(), networkEntityDataStore.Singleton(), policyDataStore.Singleton(), processWhitelistDataStore.Singleton(), autoTriggerUpgrades); err != nil {
+	if err := connection.ManagerSingleton().Start(
+		clusterDataStore.Singleton(),
+		networkEntityDataStore.Singleton(),
+		policyDataStore.Singleton(),
+		processWhitelistDataStore.Singleton(),
+		autoTriggerUpgrades,
+	); err != nil {
 		log.Panicf("Couldn't start sensor connection manager: %v", err)
 	}
 

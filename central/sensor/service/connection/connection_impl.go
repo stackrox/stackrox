@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/central/sensor/networkentities"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
@@ -51,7 +52,13 @@ type sensorConnection struct {
 	capabilities centralsensor.SensorCapabilitySet
 }
 
-func newConnection(ctx context.Context, clusterID string, eventPipeline pipeline.ClusterPipeline, clusterMgr common.ClusterManager, networkEntityMgr common.NetworkEntityManager, policyMgr common.PolicyManager, whitelistMgr common.ProcessBaselineManager) *sensorConnection {
+func newConnection(ctx context.Context,
+	clusterID string,
+	eventPipeline pipeline.ClusterPipeline,
+	clusterMgr common.ClusterManager,
+	networkEntityMgr common.NetworkEntityManager,
+	policyMgr common.PolicyManager,
+	whitelistMgr common.ProcessBaselineManager) *sensorConnection {
 	conn := &sensorConnection{
 		stopSig:       concurrency.NewErrorSignal(),
 		stoppedSig:    concurrency.NewErrorSignal(),
@@ -72,7 +79,7 @@ func newConnection(ctx context.Context, clusterID string, eventPipeline pipeline
 	conn.sensorEventHandler = newSensorEventHandler(eventPipeline, conn, &conn.stopSig)
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
-	conn.networkEntitiesCtrl = networkentities.NewController(clusterID, networkEntityMgr, conn, &conn.stopSig)
+	conn.networkEntitiesCtrl = networkentities.NewController(clusterID, networkEntityMgr, graph.Singleton(), conn, &conn.stopSig)
 	conn.telemetryCtrl = telemetry.NewController(conn.capabilities, conn, &conn.stopSig)
 
 	return conn

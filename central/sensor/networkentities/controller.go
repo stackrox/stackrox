@@ -3,6 +3,7 @@ package networkentities
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/pkg/concurrency"
 )
@@ -14,6 +15,10 @@ type Controller interface {
 }
 
 // NewController creates and returns a new controller for network graph entities.
-func NewController(clusterID string, netEntityMgr common.NetworkEntityManager, injector common.MessageInjector, stopSig concurrency.ReadOnlyErrorSignal) Controller {
-	return newController(clusterID, netEntityMgr, injector, stopSig)
+func NewController(clusterID string,
+	netEntityMgr common.NetworkEntityManager,
+	graphEvaluator graph.Evaluator,
+	injector common.MessageInjector,
+	stopSig concurrency.ReadOnlyErrorSignal) Controller {
+	return newController(clusterID, netEntityMgr, graphEvaluator, injector, stopSig)
 }

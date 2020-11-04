@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,10 +14,10 @@ import (
 )
 
 type controller struct {
-	clusterID    string
-	netEntityMgr common.NetworkEntityManager
-
-	requestSeqID int64
+	clusterID      string
+	netEntityMgr   common.NetworkEntityManager
+	graphEvaluator graph.Evaluator
+	requestSeqID   int64
 
 	stopSig  concurrency.ReadOnlyErrorSignal
 	injector common.MessageInjector
@@ -24,12 +25,17 @@ type controller struct {
 	lock sync.Mutex
 }
 
-func newController(clusterID string, netEntityMgr common.NetworkEntityManager, injector common.MessageInjector, stopSig concurrency.ReadOnlyErrorSignal) *controller {
+func newController(clusterID string,
+	netEntityMgr common.NetworkEntityManager,
+	graphEvaluator graph.Evaluator,
+	injector common.MessageInjector,
+	stopSig concurrency.ReadOnlyErrorSignal) *controller {
 	return &controller{
-		clusterID:    clusterID,
-		netEntityMgr: netEntityMgr,
-		stopSig:      stopSig,
-		injector:     injector,
+		clusterID:      clusterID,
+		netEntityMgr:   netEntityMgr,
+		graphEvaluator: graphEvaluator,
+		stopSig:        stopSig,
+		injector:       injector,
 	}
 }
 
@@ -47,6 +53,9 @@ func (c *controller) SyncNow(ctx context.Context) error {
 	if err := c.injector.InjectMessage(ctx, msg); err != nil {
 		return errors.Wrap(err, "could not send external network entities")
 	}
+
+	// Increment network policy graph epoch indicating that an update to external sources could have changed the graph.
+	c.graphEvaluator.IncrementEpoch(c.clusterID)
 	return nil
 }
 

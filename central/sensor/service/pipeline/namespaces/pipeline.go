@@ -85,7 +85,7 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.Res
 		return err
 	}
 
-	// Add/Update/Remove the deployment from persistence depending on the event action.
+	// Add/Update/Remove the namespace from persistence depending on the event action.
 	if err := s.persistNamespace(ctx, action, event); err != nil {
 		return err
 	}
