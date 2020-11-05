@@ -42,8 +42,14 @@ describe('urlUtils', () => {
             expect(isValidCidrBlock(testUrl)).toEqual(true);
         });
 
-        it('should return false for invalid IPv4 CIDR block', () => {
+        it('should return false for invalid prefix length IPv4 CIDR block', () => {
             const testUrl = '192.168.0.1/33';
+
+            expect(isValidCidrBlock(testUrl)).toEqual(false);
+        });
+
+        it('should return false for missing prefix length IPv4 CIDR block', () => {
+            const testUrl = '10.0.0.0';
 
             expect(isValidCidrBlock(testUrl)).toEqual(false);
         });
