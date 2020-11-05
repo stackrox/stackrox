@@ -32,7 +32,7 @@ message Deployment {
     repeated Container containers              = 11;
     reserved 12;
     map<string, string> annotations            = 14 [(gogoproto.moretags) = "search:\"Annotation\""];
-    int64 priority                             = 15 [(gogoproto.moretags) = "search:\"Priority\" hash:\"ignore\""];
+    int64 priority                             = 15 [(gogoproto.moretags) = "search:\"Priority,hidden\" hash:\"ignore\""];
     bool inactive                              = 16;
     repeated string image_pull_secrets         = 17 [(gogoproto.moretags) = "search:\"Image Pull Secret\""];
     string service_account                     = 18 [(gogoproto.moretags) = "search:\"Service Account\""];
