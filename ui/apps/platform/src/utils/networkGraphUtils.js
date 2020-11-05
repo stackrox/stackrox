@@ -675,14 +675,17 @@ export const getEdgesFromNode = ({
                         hovered: isInnerTargetEdgeHovered,
                     });
 
-                    // we want to make sure the corresponding inner edge from the other namespace is also updated
-                    nodeLinks[innerSourceEdgeKey].data.isBidirectional = true;
-                    nodeLinks[innerSourceEdgeKey].data.traffic = networkTraffic.BIDIRECTIONAL;
-                    nodeLinks[innerSourceEdgeKey].classes = getClasses({
-                        ...coreClasses,
-                        bidirectional: true,
-                        hovered: isInnerSourceEdgeHovered,
-                    });
+                    // TODO: investigate why object at `innerSourceEdgeKey` is not present for CIDR blocks
+                    if (nodeLinks[innerSourceEdgeKey]?.data) {
+                        // we want to make sure the corresponding inner edge from the other namespace is also updated
+                        nodeLinks[innerSourceEdgeKey].data.isBidirectional = true;
+                        nodeLinks[innerSourceEdgeKey].data.traffic = networkTraffic.BIDIRECTIONAL;
+                        nodeLinks[innerSourceEdgeKey].classes = getClasses({
+                            ...coreClasses,
+                            bidirectional: true,
+                            hovered: isInnerSourceEdgeHovered,
+                        });
+                    }
                 }
             }
         }

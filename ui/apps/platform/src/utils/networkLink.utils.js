@@ -120,7 +120,8 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
         }
 
         Object.keys(node.outEdges).forEach((targetNodeId) => {
-            const targetNode = networkNodeMap[targetNodeId].active;
+            const targetNode =
+                networkNodeMap[targetNodeId].active || networkNodeMap[targetNodeId].allowed;
             const { id: targetId, type: targetNodeType } = targetNode.entity;
             const targetEntityId = targetNodeType === 'INTERNET' ? 'External Entities' : targetId;
             if (targetNode?.entity?.type !== entityTypes.DEPLOYMENT && !showExternalSources) {
