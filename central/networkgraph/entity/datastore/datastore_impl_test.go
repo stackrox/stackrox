@@ -479,8 +479,13 @@ func (suite *NetworkEntityDataStoreTestSuite) TestDefaultGraphSetting() {
 	suite.NoError(err)
 	suite.Len(actual, 2)
 
-	err = suite.ds.DeleteExternalNetworkEntitiesForCluster(sac.WithAllAccess(context.Background()), cluster1)
+	for _, entity := range actual {
+		err := suite.ds.DeleteExternalNetworkEntity(sac.WithAllAccess(context.Background()), entity.GetInfo().GetId())
+		suite.NoError(err)
+	}
+
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
+	entities, err := suite.ds.GetAllEntities(sac.WithAllAccess(context.Background()))
 	suite.NoError(err)
-	err = suite.ds.DeleteExternalNetworkEntitiesForCluster(sac.WithAllAccess(context.Background()), cluster1)
-	suite.NoError(err)
+	suite.Len(entities, 0)
 }

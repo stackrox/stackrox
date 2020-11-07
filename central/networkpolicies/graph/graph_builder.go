@@ -18,7 +18,7 @@ type graphBuilder struct {
 	knownExtSrcs     []*node
 	knownExtSrcsByID map[string]*node
 	internetSrc      *node
-	networkTree      *tree.NetworkTreeWrapper
+	networkTree      tree.NetworkTree
 	deploymentsByNS  map[*storage.NamespaceMetadata][]*node
 }
 

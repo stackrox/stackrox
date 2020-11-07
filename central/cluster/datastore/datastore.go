@@ -94,7 +94,12 @@ func New(
 
 		cache: simplecache.New(),
 	}
+
 	if err := ds.buildIndex(); err != nil {
+		return ds, err
+	}
+
+	if err := ds.registerClusterForNetworkGraphExtSrcs(); err != nil {
 		return ds, err
 	}
 

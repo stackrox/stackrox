@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/networkgraph/tree"
 )
 
 // EntityDataStore stores network graph entities across all clusters.
@@ -13,8 +14,11 @@ type EntityDataStore interface {
 	GetEntity(ctx context.Context, id string) (*storage.NetworkEntity, bool, error)
 	GetAllEntitiesForCluster(ctx context.Context, clusterID string) ([]*storage.NetworkEntity, error)
 	GetAllEntities(ctx context.Context) ([]*storage.NetworkEntity, error)
+	GetNetworkTreeForClusterNoDefaults(ctx context.Context, clusterID string) (tree.ReadOnlyNetworkTree, error)
 
 	UpsertExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity) error
 	DeleteExternalNetworkEntity(ctx context.Context, id string) error
 	DeleteExternalNetworkEntitiesForCluster(ctx context.Context, clusterID string) error
+
+	RegisterCluster(clusterID string)
 }

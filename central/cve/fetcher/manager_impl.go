@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -157,23 +158,34 @@ func (m *k8sIstioCVEManagerImpl) reconcileOnlineModeCVEs(ct converter.CVEType, f
 		return nil
 	}
 
-	remoteCVEChecksum, err := fetchRemote(urls.cveChecksumURL)
+	url, err := addLicenseIDAsQueryParam(urls.cveChecksumURL)
 	if err != nil {
 		return err
 	}
 
+	remoteCVEChecksumBytes, err := httputil.HTTPGet(url)
+	if err != nil {
+		return err
+	}
+
+	remoteCVEChecksum := string(remoteCVEChecksumBytes)
 	// If CVEs have been loaded before and checksums are same, no need to update CVEs
 	if !forceUpdate && localCVEChecksum == remoteCVEChecksum {
 		log.Infof("local and remote CVE checksums are same, skipping download of new %s CVEs", cveTypeToString[ct])
 		return nil
 	}
 
-	data, err := fetchRemote(urls.cveURL)
+	url, err = addLicenseIDAsQueryParam(urls.cveURL)
 	if err != nil {
 		return err
 	}
 
-	if err := overwriteCVEs(paths.persistentCveFile, paths.persistentCveChecksumFile, remoteCVEChecksum, data); err != nil {
+	data, err := httputil.HTTPGet(url)
+	if err != nil {
+		return err
+	}
+
+	if err := overwriteCVEs(paths.persistentCveFile, paths.persistentCveChecksumFile, remoteCVEChecksum, string(data)); err != nil {
 		return err
 	}
 

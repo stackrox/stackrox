@@ -150,6 +150,25 @@ func (ds *datastoreImpl) buildIndex() error {
 	return ds.indexer.AddClusters(clusters)
 }
 
+func (ds *datastoreImpl) registerClusterForNetworkGraphExtSrcs() error {
+	if !features.NetworkGraphExternalSrcs.Enabled() {
+		return nil
+	}
+
+	var clusters []*storage.Cluster
+	if err := ds.clusterStorage.Walk(func(cluster *storage.Cluster) error {
+		clusters = append(clusters, cluster)
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	for _, cluster := range clusters {
+		ds.netEntityDataStore.RegisterCluster(cluster.GetId())
+	}
+	return nil
+}
+
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
 	return ds.searcher.Search(ctx, q)
 }

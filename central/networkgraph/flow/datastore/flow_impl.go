@@ -23,10 +23,10 @@ var (
 )
 
 type flowDataStoreImpl struct {
-	storage                 store.FlowStore
-	graphConfig             graphConfigDS.DataStore
-	aggregator              aggregator.NetworkConnsAggregator
-	deletedDeploymentsCache expiringcache.Cache
+	storage                   store.FlowStore
+	graphConfig               graphConfigDS.DataStore
+	hideDefaultExtSrcsManager aggregator.NetworkConnsAggregator
+	deletedDeploymentsCache   expiringcache.Cache
 }
 
 func (fds *flowDataStoreImpl) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
@@ -66,7 +66,7 @@ func (fds *flowDataStoreImpl) adjustFlowsForGraphConfig(ctx context.Context, flo
 	}
 
 	if config.GetHideDefaultExternalSrcs() {
-		return fds.aggregator.Aggregate(flows), nil
+		return fds.hideDefaultExtSrcsManager.Aggregate(flows), nil
 	}
 	return flows, nil
 }

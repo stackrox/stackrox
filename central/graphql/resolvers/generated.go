@@ -678,7 +678,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("NetworkEntityInfo_ExternalSource", []string{
 		"default: Boolean!",
+		"metadata: NetworkEntityInfo_ExternalSource_Metadata",
 		"name: String!",
+	}))
+	utils.Must(builder.AddType("NetworkEntityInfo_ExternalSource_Metadata", []string{
+		"provider: String!",
+		"region: String!",
+		"service: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NetworkEntityInfo_Type(0)))
 	utils.Must(builder.AddType("NetworkFlow", []string{
@@ -6389,8 +6395,52 @@ func (resolver *networkEntityInfo_ExternalSourceResolver) Default(ctx context.Co
 	return value
 }
 
+func (resolver *networkEntityInfo_ExternalSourceResolver) Metadata(ctx context.Context) (*networkEntityInfo_ExternalSource_MetadataResolver, error) {
+	value := resolver.data.GetMetadata()
+	return resolver.root.wrapNetworkEntityInfo_ExternalSource_Metadata(value, true, nil)
+}
+
 func (resolver *networkEntityInfo_ExternalSourceResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
+	return value
+}
+
+type networkEntityInfo_ExternalSource_MetadataResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NetworkEntityInfo_ExternalSource_Metadata
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_ExternalSource_Metadata(value *storage.NetworkEntityInfo_ExternalSource_Metadata, ok bool, err error) (*networkEntityInfo_ExternalSource_MetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &networkEntityInfo_ExternalSource_MetadataResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_ExternalSource_Metadatas(values []*storage.NetworkEntityInfo_ExternalSource_Metadata, err error) ([]*networkEntityInfo_ExternalSource_MetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*networkEntityInfo_ExternalSource_MetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &networkEntityInfo_ExternalSource_MetadataResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *networkEntityInfo_ExternalSource_MetadataResolver) Provider(ctx context.Context) string {
+	value := resolver.data.GetProvider()
+	return value
+}
+
+func (resolver *networkEntityInfo_ExternalSource_MetadataResolver) Region(ctx context.Context) string {
+	value := resolver.data.GetRegion()
+	return value
+}
+
+func (resolver *networkEntityInfo_ExternalSource_MetadataResolver) Service(ctx context.Context) string {
+	value := resolver.data.GetService()
 	return value
 }
 

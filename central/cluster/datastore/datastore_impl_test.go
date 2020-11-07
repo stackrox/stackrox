@@ -91,6 +91,10 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.mockProvider = graphMocks.NewMockProvider(suite.mockCtrl)
 
 	suite.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)
+		suite.netEntityDataStore.EXPECT().RegisterCluster(gomock.Any()).Return(nil).AnyTimes()
+	}
 
 	suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)
 	suite.healthStatuses.EXPECT().WalkAllWithID(gomock.Any()).Return(nil)

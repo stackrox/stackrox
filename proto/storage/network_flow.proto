@@ -71,12 +71,19 @@ message NetworkEntityInfo {
 
     // Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated.
     message ExternalSource {
-        string     name    = 1;
+        message Metadata {
+            string provider = 1;
+            string region   = 2;
+            string service  = 3;
+        }
+
+        string     name     = 1;
         oneof source {
-            string cidr    = 2;
+            string cidr     = 2;
         }
         // `default` indicates whether the external source is user-generated or system-generated.
-        bool       default = 3;
+        bool       default  = 3;
+        Metadata   metadata = 4;
     }
 
     Type               type            = 1;

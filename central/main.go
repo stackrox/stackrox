@@ -66,6 +66,7 @@ import (
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
 	networkEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/rox/central/networkgraph/entity/gatherer"
 	networkFlowService "github.com/stackrox/rox/central/networkgraph/service"
 	networkPolicyService "github.com/stackrox/rox/central/networkpolicies/service"
 	nodeService "github.com/stackrox/rox/central/node/service"
@@ -125,6 +126,7 @@ import (
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -309,6 +311,10 @@ func (defaultFactory) StartServices() {
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()
+
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		gatherer.Singleton().Start()
+	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -699,6 +705,11 @@ func waitForTerminationSignal() {
 	log.Info("Stopped cve unsuppress loop")
 	pruning.Singleton().Stop()
 	log.Info("Stopped garbage collector")
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		gatherer.Singleton().Stop()
+		log.Info("Stopped network graph default external sources gatherer")
+	}
+
 	globaldb.Close()
 
 	if sig == syscall.SIGHUP {

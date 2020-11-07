@@ -3,9 +3,7 @@ package fetcher
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path"
 	"time"
@@ -14,10 +12,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
 	"github.com/stackrox/rox/central/cve/converter"
-	"github.com/stackrox/rox/central/cve/utils"
 	licenseSingletons "github.com/stackrox/rox/central/license/singleton"
+	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/license"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 const (
@@ -50,52 +50,14 @@ var (
 	}
 )
 
-func fetchRemote(baseURL string) (string, error) {
-	url, err := addLicenseIDAsQueryParam(baseURL)
-	if err != nil {
-		return "", err
-	}
-
-	resp, err := utils.RunHTTPGet(url)
-	if err != nil {
-		return "", err
-	}
-	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
-			log.Error(err)
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		buf, err := utils.ReadNBytesFromResponse(resp, 1024)
-		if err != nil {
-			return "", errors.Wrapf(err, "failed to download from %q, additionally, there was an error reading the response body. status code: %d, status: %s", url, resp.StatusCode, resp.Status)
-		}
-		return "", errors.Errorf("failed to download from %q. status code: %d, status: %s, response body: %s", url, resp.StatusCode, resp.Status, string(buf))
-	}
-
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", errors.Wrapf(err, "got HTTP response %d, but failed to read from response body", resp.StatusCode)
-	}
-	return string(b), nil
-}
-
 func addLicenseIDAsQueryParam(baseURL string) (string, error) {
 	licenseID, err := getCurrentLicenseID()
 	if err != nil {
 		return "", err
 	}
+	params := license.IDAsURLParam(licenseID)
 
-	queryParams := []utils.QueryParam{
-		{
-			Key:   "license_id",
-			Value: licenseID,
-		},
-	}
-
-	url, err := utils.GetURLWithQueryParams(baseURL, queryParams)
+	url, err := urlfmt.FullyQualifiedURL(baseURL, params)
 	if err != nil {
 		return "", err
 	}
@@ -103,8 +65,7 @@ func addLicenseIDAsQueryParam(baseURL string) (string, error) {
 }
 
 func getCurrentLicenseID() (string, error) {
-	licenseMgr := licenseSingletons.ManagerSingleton()
-	license := licenseMgr.GetActiveLicense()
+	license := licenseSingletons.ManagerSingleton().GetActiveLicense()
 
 	if license == nil {
 		return "", errors.New("active license not found")
@@ -165,46 +126,12 @@ func copyCVEsFromPreloadedToPersistentDirIfAbsent(ct converter.CVEType) error {
 		return err
 	}
 
-	if err := copyFileIfAbsent(paths.preloadedCveFile, paths.persistentCveFile); err != nil {
+	if err := fileutils.CopyNoOverwrite(paths.preloadedCveFile, paths.persistentCveFile); err != nil {
 		return err
 	}
 
-	if err := copyFileIfAbsent(paths.preloadedCveChecksumFile, paths.persistentCveChecksumFile); err != nil {
+	if err := fileutils.CopyNoOverwrite(paths.preloadedCveChecksumFile, paths.persistentCveChecksumFile); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func copyFileIfAbsent(src, dst string) error {
-	in, err := os.Open(src)
-	if err != nil {
-		return errors.Wrapf(err, "failed to open src file: %q", src)
-	}
-	defer func() {
-		err := in.Close()
-		if err != nil {
-			log.Error(err)
-		}
-	}()
-
-	out, err := os.OpenFile(dst, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
-	if os.IsExist(err) {
-		return nil
-	}
-	if err != nil {
-		return errors.Wrapf(err, "failed to open dst file: %q", dst)
-	}
-	defer func() {
-		err := out.Close()
-		if err != nil {
-			log.Error(err)
-		}
-	}()
-
-	_, err = io.Copy(out, in)
-	if err != nil {
-		return errors.Wrapf(err, "failed to copy src: %q to dst: %q", src, dst)
 	}
 
 	return nil

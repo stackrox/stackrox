@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -18,12 +19,12 @@ var (
 	ipv6InternetCIDR = "::ffff:0:0/0"
 )
 
-// NetworkTree represents a tree of unique networks where every node's children are fully contained networks,
-// thereby representing supernet-subnet relationship.
-type NetworkTree struct {
+// networkTreeImpl represents a tree unique networks, either IPv4 or IPv6, where every node's children are fully contained
+// networks, thereby representing supernet-subnet relationship.
+type networkTreeImpl struct {
 	root   *node
 	family pkgNet.Family
-	// nodes points to all the nodes in the tree to faciliate O(1) access time.
+	// nodes points to all the nodes in the tree to facilitate O(1) access time.
 	nodes map[string]*node
 
 	lock sync.RWMutex
@@ -36,52 +37,18 @@ type node struct {
 }
 
 // NewDefaultIPv4NetworkTree returns a new instance of NetworkTree for IPv4 networks.
-func NewDefaultIPv4NetworkTree() *NetworkTree {
-	_, ipNet, _ := net.ParseCIDR(ipv4InternetCIDR)
-
-	// Root node is not marked as default as it not known external network, instead represents everything unknown.
-	root := &node{
-		ipNet:    ipNet,
-		entity:   networkgraph.InternetEntity().ToProto(),
-		children: make(map[string]*node),
-	}
-
-	tree := &NetworkTree{
-		family: pkgNet.IPv4,
-		root:   root,
-		nodes:  make(map[string]*node),
-	}
-
-	tree.addToTopLevelNoLock(tree.root)
-
-	return tree
+func NewDefaultIPv4NetworkTree() NetworkTree {
+	return newDefaultNetworkTree(pkgNet.IPv4)
 }
 
 // NewDefaultIPv6NetworkTree returns a new instance of NetworkTree for IPv6 networks.
-func NewDefaultIPv6NetworkTree() *NetworkTree {
-	_, ipNet, _ := net.ParseCIDR(ipv6InternetCIDR)
-
-	// Root node is not marked as default as it not known external network, instead represents everything unknown.
-	root := &node{
-		ipNet:    ipNet,
-		entity:   networkgraph.InternetEntity().ToProto(),
-		children: make(map[string]*node),
-	}
-
-	tree := &NetworkTree{
-		family: pkgNet.IPv6,
-		root:   root,
-		nodes:  make(map[string]*node),
-	}
-
-	tree.addToTopLevelNoLock(tree.root)
-
-	return tree
+func NewDefaultIPv6NetworkTree() NetworkTree {
+	return newDefaultNetworkTree(pkgNet.IPv6)
 }
 
 // NewIPv4NetworkTree returns a new instance of NetworkTree built with supplied IPv4 networks.
-func NewIPv4NetworkTree(networks []*storage.NetworkEntityInfo) (*NetworkTree, error) {
-	t := NewDefaultIPv4NetworkTree()
+func NewIPv4NetworkTree(networks []*storage.NetworkEntityInfo) (NetworkTree, error) {
+	t := newDefaultNetworkTree(pkgNet.IPv4)
 	if err := t.build(networks); err != nil {
 		return nil, err
 	}
@@ -89,23 +56,51 @@ func NewIPv4NetworkTree(networks []*storage.NetworkEntityInfo) (*NetworkTree, er
 }
 
 // NewIPv6NetworkTree returns a new instance of NetworkTree built with supplied IPv6 networks.
-func NewIPv6NetworkTree(networks []*storage.NetworkEntityInfo) (*NetworkTree, error) {
-	t := NewDefaultIPv6NetworkTree()
+func NewIPv6NetworkTree(networks []*storage.NetworkEntityInfo) (NetworkTree, error) {
+	t := newDefaultNetworkTree(pkgNet.IPv6)
 	if err := t.build(networks); err != nil {
 		return nil, err
 	}
 	return t, nil
 }
 
-func (t *NetworkTree) addToTopLevelNoLock(node *node) {
+func newDefaultNetworkTree(family pkgNet.Family) *networkTreeImpl {
+	var ipNet *net.IPNet
+	if family == pkgNet.IPv4 {
+		_, ipNet, _ = net.ParseCIDR(ipv4InternetCIDR)
+	} else if family == pkgNet.IPv6 {
+		_, ipNet, _ = net.ParseCIDR(ipv6InternetCIDR)
+	} else {
+		utils.Should(errors.New("failed to create network tree. Invalid IP address family provided"))
+	}
+
+	// Root node is not marked as default as it not known external network, instead represents everything unknown.
+	root := &node{
+		ipNet:    ipNet,
+		entity:   networkgraph.InternetEntity().ToProto(),
+		children: make(map[string]*node),
+	}
+
+	tree := &networkTreeImpl{
+		family: family,
+		root:   root,
+		nodes:  make(map[string]*node),
+	}
+
+	tree.addToTopLevelNoLock(tree.root)
+
+	return tree
+}
+
+func (t *networkTreeImpl) addToTopLevelNoLock(node *node) {
 	t.nodes[node.entity.GetId()] = node
 }
 
-func (t *NetworkTree) removeFromTopLevelNoLock(key string) {
+func (t *networkTreeImpl) removeFromTopLevelNoLock(key string) {
 	delete(t.nodes, key)
 }
 
-func (t *NetworkTree) build(entities []*storage.NetworkEntityInfo) error {
+func (t *networkTreeImpl) build(entities []*storage.NetworkEntityInfo) error {
 	netSlice := make([]pkgNet.IPNetwork, 0, len(entities))
 	ipNetToEntity := make(map[pkgNet.IPNetwork]*storage.NetworkEntityInfo)
 	for _, entity := range entities {
@@ -139,7 +134,7 @@ func normalizeNetworks(family pkgNet.Family, nets []pkgNet.IPNetwork) {
 
 // Insert add the supplied network entity. If a entity with the same key is already present in the tree,
 // the CIDR of stored entity is updated and the tree is rearranged to maintain the supernet-subnet relationship.
-func (t *NetworkTree) Insert(entity *storage.NetworkEntityInfo) error {
+func (t *networkTreeImpl) Insert(entity *storage.NetworkEntityInfo) error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
@@ -150,7 +145,7 @@ func (t *NetworkTree) Insert(entity *storage.NetworkEntityInfo) error {
 	return t.insertNoValidate(entity, ipNet)
 }
 
-func (t *NetworkTree) validateEntity(entity *storage.NetworkEntityInfo) (*net.IPNet, error) {
+func (t *networkTreeImpl) validateEntity(entity *storage.NetworkEntityInfo) (*net.IPNet, error) {
 	if entity.GetId() == "" {
 		return nil, errors.New("received entity without ID")
 	}
@@ -170,7 +165,7 @@ func (t *NetworkTree) validateEntity(entity *storage.NetworkEntityInfo) (*net.IP
 	return ipNet, nil
 }
 
-func (t *NetworkTree) insertNoValidate(entity *storage.NetworkEntityInfo, ipNet *net.IPNet) error {
+func (t *networkTreeImpl) insertNoValidate(entity *storage.NetworkEntityInfo, ipNet *net.IPNet) error {
 	if oldNode := t.nodes[entity.GetId()]; oldNode != nil {
 		// Skip insert if key-value already present.
 		if oldNode.ipNet.IP.Equal(ipNet.IP) && bytes.Equal(oldNode.ipNet.Mask, ipNet.Mask) {
@@ -192,7 +187,7 @@ func (t *NetworkTree) insertNoValidate(entity *storage.NetworkEntityInfo, ipNet 
 	return nil
 }
 
-func (t *NetworkTree) insertNodeNoLock(curr, newNode *node) (bool, error) {
+func (t *networkTreeImpl) insertNodeNoLock(curr, newNode *node) (bool, error) {
 	// INTERNET (root) would always contain any network if no other network contains it.
 	if !netutil.IsIPNetSubset(curr.ipNet, newNode.ipNet) {
 		return false, nil
@@ -221,7 +216,7 @@ func (t *NetworkTree) insertNodeNoLock(curr, newNode *node) (bool, error) {
 	return true, nil
 }
 
-func (t *NetworkTree) neighborsToChildrenNoLock(curr, parent *node) {
+func (t *networkTreeImpl) neighborsToChildrenNoLock(curr, parent *node) {
 	if curr == nil {
 		return
 	}
@@ -243,14 +238,14 @@ func (t *NetworkTree) neighborsToChildrenNoLock(curr, parent *node) {
 }
 
 // Remove removes the network entity with given key from tree, if present.
-func (t *NetworkTree) Remove(key string) {
+func (t *networkTreeImpl) Remove(key string) {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
 	t.removeNodeNoLock(t.root, key)
 }
 
-func (t *NetworkTree) removeNodeNoLock(curr *node, key string) {
+func (t *networkTreeImpl) removeNodeNoLock(curr *node, key string) {
 	if curr == nil {
 		return
 	}
@@ -271,7 +266,7 @@ func (t *NetworkTree) removeNodeNoLock(curr *node, key string) {
 }
 
 // Get returns the network entity for given key, if present, otherwise nil.
-func (t *NetworkTree) Get(key string) *storage.NetworkEntityInfo {
+func (t *networkTreeImpl) Get(key string) *storage.NetworkEntityInfo {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
@@ -282,7 +277,7 @@ func (t *NetworkTree) Get(key string) *storage.NetworkEntityInfo {
 }
 
 // GetSubnets returns the largest disjoint subnets contained by the network for given key, if present.
-func (t *NetworkTree) GetSubnets(key string) []*storage.NetworkEntityInfo {
+func (t *networkTreeImpl) GetSubnets(key string) []*storage.NetworkEntityInfo {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
@@ -299,7 +294,7 @@ func (t *NetworkTree) GetSubnets(key string) []*storage.NetworkEntityInfo {
 }
 
 // GetSubnetsForCIDR returns the largest disjoint subnets contained by the given network, if any.
-func (t *NetworkTree) GetSubnetsForCIDR(cidr string) []*storage.NetworkEntityInfo {
+func (t *networkTreeImpl) GetSubnetsForCIDR(cidr string) []*storage.NetworkEntityInfo {
 	_, ipNet, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return nil
@@ -311,7 +306,7 @@ func (t *NetworkTree) GetSubnetsForCIDR(cidr string) []*storage.NetworkEntityInf
 	return t.getSubnetForIPNetNoLock(t.root, ipNet)
 }
 
-func (t *NetworkTree) getSubnetForIPNetNoLock(curr *node, queryIPNet *net.IPNet) []*storage.NetworkEntityInfo {
+func (t *networkTreeImpl) getSubnetForIPNetNoLock(curr *node, queryIPNet *net.IPNet) []*storage.NetworkEntityInfo {
 	if curr == nil {
 		return nil
 	}
@@ -329,7 +324,7 @@ func (t *NetworkTree) getSubnetForIPNetNoLock(curr *node, queryIPNet *net.IPNet)
 }
 
 // GetSupernet returns the smallest supernet that fully contains the network for given key, if present.
-func (t *NetworkTree) GetSupernet(key string) *storage.NetworkEntityInfo {
+func (t *networkTreeImpl) GetSupernet(key string) *storage.NetworkEntityInfo {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
@@ -337,14 +332,14 @@ func (t *NetworkTree) GetSupernet(key string) *storage.NetworkEntityInfo {
 }
 
 // GetMatchingSupernet returns the smallest supernet that fully contains the network for given key and satisfies the predicate.
-func (t *NetworkTree) GetMatchingSupernet(key string, pred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
+func (t *networkTreeImpl) GetMatchingSupernet(key string, pred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
 	return t.getMatchingSupernetNoLock(key, pred)
 }
 
-func (t *NetworkTree) getMatchingSupernetNoLock(key string, pred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
+func (t *networkTreeImpl) getMatchingSupernetNoLock(key string, pred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
 	// Supernet of INTERNET is INTERNET.
 	if t.root.entity.GetId() == key {
 		return t.root.entity.Clone()
@@ -361,7 +356,7 @@ func (t *NetworkTree) getMatchingSupernetNoLock(key string, pred func(entity *st
 	return supernet.entity.Clone()
 }
 
-func (t *NetworkTree) getMatchingParentNoLock(curr *node, key string, pred func(entity *storage.NetworkEntityInfo) bool) (*node, *node) {
+func (t *networkTreeImpl) getMatchingParentNoLock(curr *node, key string, pred func(entity *storage.NetworkEntityInfo) bool) (*node, *node) {
 	if curr == nil {
 		return nil, nil
 	}
@@ -388,7 +383,7 @@ func (t *NetworkTree) getMatchingParentNoLock(curr *node, key string, pred func(
 }
 
 // GetSupernetForCIDR returns the smallest supernet that fully contains the given network.
-func (t *NetworkTree) GetSupernetForCIDR(cidr string) *storage.NetworkEntityInfo {
+func (t *networkTreeImpl) GetSupernetForCIDR(cidr string) *storage.NetworkEntityInfo {
 	_, ipNet, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return nil
@@ -401,7 +396,7 @@ func (t *NetworkTree) GetSupernetForCIDR(cidr string) *storage.NetworkEntityInfo
 }
 
 // GetMatchingSupernetForCIDR returns the smallest supernet that fully contains the given network and satisfies the predicate.
-func (t *NetworkTree) GetMatchingSupernetForCIDR(cidr string, supernetPred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
+func (t *networkTreeImpl) GetMatchingSupernetForCIDR(cidr string, supernetPred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
 	_, ipNet, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return nil
@@ -413,7 +408,7 @@ func (t *NetworkTree) GetMatchingSupernetForCIDR(cidr string, supernetPred func(
 	return t.getMatchingSupernetForIPNetNoLock(t.root, ipNet, supernetPred)
 }
 
-func (t *NetworkTree) getMatchingSupernetForIPNetNoLock(curr *node, queryIPNet *net.IPNet, supernetPred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
+func (t *networkTreeImpl) getMatchingSupernetForIPNetNoLock(curr *node, queryIPNet *net.IPNet, supernetPred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
 	if curr == nil {
 		return nil
 	}
@@ -436,7 +431,7 @@ func (t *NetworkTree) getMatchingSupernetForIPNetNoLock(curr *node, queryIPNet *
 }
 
 // Search return true if the network entity for the given key is found in the tree.
-func (t *NetworkTree) Search(key string) bool {
+func (t *networkTreeImpl) Search(key string) bool {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 

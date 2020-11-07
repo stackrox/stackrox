@@ -8,6 +8,7 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	tree "github.com/stackrox/rox/pkg/networkgraph/tree"
 	reflect "reflect"
 )
 
@@ -80,6 +81,21 @@ func (mr *MockEntityDataStoreMockRecorder) GetAllEntities(ctx interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllEntities", reflect.TypeOf((*MockEntityDataStore)(nil).GetAllEntities), ctx)
 }
 
+// GetNetworkTreeForClusterNoDefaults mocks base method
+func (m *MockEntityDataStore) GetNetworkTreeForClusterNoDefaults(ctx context.Context, clusterID string) (tree.ReadOnlyNetworkTree, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNetworkTreeForClusterNoDefaults", ctx, clusterID)
+	ret0, _ := ret[0].(tree.ReadOnlyNetworkTree)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNetworkTreeForClusterNoDefaults indicates an expected call of GetNetworkTreeForClusterNoDefaults
+func (mr *MockEntityDataStoreMockRecorder) GetNetworkTreeForClusterNoDefaults(ctx, clusterID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkTreeForClusterNoDefaults", reflect.TypeOf((*MockEntityDataStore)(nil).GetNetworkTreeForClusterNoDefaults), ctx, clusterID)
+}
+
 // UpsertExternalNetworkEntity mocks base method
 func (m *MockEntityDataStore) UpsertExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity) error {
 	m.ctrl.T.Helper()
@@ -120,4 +136,16 @@ func (m *MockEntityDataStore) DeleteExternalNetworkEntitiesForCluster(ctx contex
 func (mr *MockEntityDataStoreMockRecorder) DeleteExternalNetworkEntitiesForCluster(ctx, clusterID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteExternalNetworkEntitiesForCluster", reflect.TypeOf((*MockEntityDataStore)(nil).DeleteExternalNetworkEntitiesForCluster), ctx, clusterID)
+}
+
+// RegisterCluster mocks base method
+func (m *MockEntityDataStore) RegisterCluster(clusterID string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RegisterCluster", clusterID)
+}
+
+// RegisterCluster indicates an expected call of RegisterCluster
+func (mr *MockEntityDataStoreMockRecorder) RegisterCluster(clusterID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterCluster", reflect.TypeOf((*MockEntityDataStore)(nil).RegisterCluster), clusterID)
 }

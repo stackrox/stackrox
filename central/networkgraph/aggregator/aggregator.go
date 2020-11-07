@@ -12,7 +12,7 @@ type NetworkConnsAggregator interface {
 
 // NewDefaultToCustomExtSrcConnAggregator returns a NetworkConnsAggregator that aggregates all network connections with default
 // network connections into immediate non-default (custom) supernet.
-func NewDefaultToCustomExtSrcConnAggregator(networkTree *tree.NetworkTreeWrapper) NetworkConnsAggregator {
+func NewDefaultToCustomExtSrcConnAggregator(networkTree tree.ReadOnlyNetworkTree) NetworkConnsAggregator {
 	return &aggregateDefaultToCustomExtSrcsImpl{
 		networkTree: networkTree,
 	}
