@@ -133,13 +133,15 @@ func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry re
 	}
 	metadata.DataSource = registry.DataSource()
 	image.Metadata = metadata
-	e.metadataCache.Add(getRef(image), metadata)
+
+	cachedMetadata := metadata.Clone()
+	e.metadataCache.Add(getRef(image), cachedMetadata)
 	if image.GetId() == "" {
 		if digest := image.Metadata.GetV2().GetDigest(); digest != "" {
-			e.metadataCache.Add(digest, metadata)
+			e.metadataCache.Add(digest, cachedMetadata)
 		}
 		if digest := image.Metadata.GetV1().GetDigest(); digest != "" {
-			e.metadataCache.Add(digest, metadata)
+			e.metadataCache.Add(digest, cachedMetadata)
 		}
 	}
 	return true, nil
@@ -238,13 +240,15 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 	image.Scan = scan
 	FillScanStats(image)
 
-	e.scanCache.Add(getRef(image), scan)
+	// Clone the cachedScan because the scan is used within the image leading to race conditions
+	cachedScan := scan.Clone()
+	e.scanCache.Add(getRef(image), cachedScan)
 	if image.GetId() == "" {
 		if digest := image.GetMetadata().GetV2().GetDigest(); digest != "" {
-			e.scanCache.Add(digest, scan)
+			e.scanCache.Add(digest, cachedScan)
 		}
 		if digest := image.GetMetadata().GetV1().GetDigest(); digest != "" {
-			e.scanCache.Add(digest, scan)
+			e.scanCache.Add(digest, cachedScan)
 		}
 	}
 	return ScanSucceeded, nil
