@@ -1,6 +1,5 @@
 import entityTypes from 'constants/entityTypes';
 import { filterModes } from 'constants/networkFilterModes';
-import { nodeTypes } from 'constants/networkGraph';
 import { UIfeatureFlags, isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 import {
     getIsNodeHoverable,
@@ -50,7 +49,7 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
             return;
         }
 
-        const { id: sourceEntityId, deployment: sourceDeployment } = node.entity;
+        const { id: sourceEntityId } = node.entity;
         const sourceNS = getNodeNamespace(node);
         const sourceName = getNodeName(node);
 
@@ -62,24 +61,6 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
         if (node.nonIsolatedEgress) {
             nodes.forEach((targetNode) => {
                 if (Object.is(node, targetNode)) {
-                    return;
-                }
-
-                if (targetNode?.entity?.type === nodeTypes.EXTERNAL_ENTITIES) {
-                    const link = {
-                        source: sourceEntityId,
-                        target: 'External Entities',
-                        sourceName: sourceDeployment?.name,
-                        targetName: 'External Entities',
-                        sourceNS,
-                        targetNS: 'External Entities',
-                    };
-
-                    const edgeKey = getSourceTargetKey(sourceEntityId, 'External Entities');
-                    link.isActive = isActive(edgeKey);
-                    link.isAllowed = isAllowed(edgeKey, link);
-                    link.isDisallowed = isDisallowed(edgeKey, link);
-                    filteredLinks.push(link);
                     return;
                 }
 
