@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/aggregator"
 	"github.com/stackrox/rox/central/networkgraph/config/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/rox/central/networkgraph/entity/mappings"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -28,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/objects"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -51,9 +53,10 @@ var (
 		},
 	})
 
-	defaultSince    = -5 * time.Minute
-	deploymentSAC   = sac.ForResource(resources.Deployment)
-	networkGraphSAC = sac.ForResource(resources.NetworkGraph)
+	defaultSince         = -5 * time.Minute
+	deploymentSAC        = sac.ForResource(resources.Deployment)
+	networkGraphSAC      = sac.ForResource(resources.NetworkGraph)
+	netEntityPredFactory = predicate.NewFactory("networkEntity", &storage.NetworkEntity{})
 )
 
 // serviceImpl provides APIs for alerts.
@@ -87,7 +90,24 @@ func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v
 		return nil, status.Error(codes.Unimplemented, "support for external sources in network graph is not enabled")
 	}
 
-	ret, err := s.entities.GetAllEntitiesForCluster(ctx, request.GetClusterId())
+	query, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	query, _ = search.FilterQueryWithMap(query, mappings.OptionsMap)
+	pred, err := netEntityPredFactory.GeneratePredicate(query)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "failed to parse query %q: %v", query.String(), err.Error())
+	}
+
+	ret, err := s.entities.GetAllMatchingEntities(ctx, func(entity *storage.NetworkEntity) bool {
+		// Do not respect the graph configuration.
+		if entity.GetScope().GetClusterId() == "" || entity.GetScope().GetClusterId() == request.GetClusterId() {
+			return pred.Matches(entity)
+		}
+		return false
+	})
 	if errors.Is(err, errorhelpers.ErrInvalidArgs) {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

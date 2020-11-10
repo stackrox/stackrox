@@ -164,6 +164,38 @@ func (ds *dataStoreImpl) GetAllEntities(ctx context.Context) ([]*storage.Network
 	return ret, nil
 }
 
+func (ds *dataStoreImpl) GetAllMatchingEntities(ctx context.Context, pred func(entity *storage.NetworkEntity) bool) ([]*storage.NetworkEntity, error) {
+	var entities []*storage.NetworkEntity
+	allowed := make(map[string]bool)
+	if err := ds.storage.Walk(func(entity *storage.NetworkEntity) error {
+		if !pred(entity) {
+			return nil
+		}
+
+		id := entity.GetInfo().GetId()
+		ok, found := allowed[id]
+		if !found {
+			var err error
+			ok, err = ds.readAllowed(ctx, id)
+			if err != nil {
+				return err
+			}
+			allowed[id] = ok
+		}
+
+		if !ok {
+			return nil
+		}
+
+		entities = append(entities, entity)
+		return nil
+	}); err != nil {
+		return nil, errors.Wrap(err, "fetching network entities from storage")
+	}
+
+	return entities, nil
+}
+
 func (ds *dataStoreImpl) UpsertExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity) error {
 	if ok, err := ds.writeAllowed(ctx, entity.GetInfo().GetId()); err != nil {
 		return err
@@ -292,35 +324,27 @@ func (ds *dataStoreImpl) getNetworkTree(clusterID string, createIfNotFound bool)
 }
 
 func (ds *dataStoreImpl) readAllowed(ctx context.Context, id string) (bool, error) {
-	decodedID, err := parseAndValidateID(id)
-	if err != nil {
-		return false, err
-	}
-
-	// If cluster part of resource ID is empty, it means the resource must be default one.
-	var scopeKeys [][]sac.ScopeKey
-	if decodedID.ClusterID() == "" {
-		scopeKeys = [][]sac.ScopeKey{sac.ClusterScopeKeys(ds.clusterIDs...)}
-	} else {
-		scopeKeys = [][]sac.ScopeKey{sac.ClusterScopeKeys(decodedID.ClusterID())}
-	}
-	return networkGraphSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).AnyAllowed(ctx, scopeKeys)
+	return ds.allowed(ctx, storage.Access_READ_ACCESS, id)
 }
 
 func (ds *dataStoreImpl) writeAllowed(ctx context.Context, id string) (bool, error) {
-	decodedID, err := parseAndValidateID(id)
+	return ds.allowed(ctx, storage.Access_READ_WRITE_ACCESS, id)
+}
+
+func (ds *dataStoreImpl) allowed(ctx context.Context, access storage.Access, id string) (bool, error) {
+	scopeKeys, err := getScopeKeys(id, ds.getRegisteredClusters())
 	if err != nil {
 		return false, err
 	}
 
-	// If cluster part of resource ID is empty, it means the resource must be default one.
-	var scopeKeys [][]sac.ScopeKey
-	if decodedID.ClusterID() == "" {
-		scopeKeys = [][]sac.ScopeKey{sac.ClusterScopeKeys(ds.clusterIDs...)}
-	} else {
-		scopeKeys = [][]sac.ScopeKey{sac.ClusterScopeKeys(decodedID.ClusterID())}
-	}
-	return networkGraphSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).AnyAllowed(ctx, scopeKeys)
+	return networkGraphSAC.ScopeChecker(ctx, access).AnyAllowed(ctx, scopeKeys)
+}
+
+func (ds *dataStoreImpl) getRegisteredClusters() []string {
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	return ds.clusterIDs
 }
 
 func parseAndValidateID(id string) (sac.ResourceID, error) {
@@ -341,4 +365,23 @@ func parseAndValidateID(id string) (sac.ResourceID, error) {
 
 func excludeEntityForGraphConfig(graphConfig *storage.NetworkGraphConfig, entity *storage.NetworkEntity) bool {
 	return graphConfig.HideDefaultExternalSrcs && entity.GetInfo().GetExternalSource().GetDefault()
+}
+
+func getScopeKeys(id string, clusters []string) ([][]sac.ScopeKey, error) {
+	decodedID, err := sac.ParseResourceID(string(id))
+	if err != nil {
+		return nil, err
+	}
+
+	// If cluster part of resource ID is empty, it means the resource must be default one.
+	if decodedID.ClusterID() != "" {
+		return [][]sac.ScopeKey{sac.ClusterScopeKeys(decodedID.ClusterID())}, nil
+	}
+
+	scopeKeys := make([][]sac.ScopeKey, 0, len(clusters))
+	for _, cluster := range clusters {
+		scopeKeys = append(scopeKeys, sac.ClusterScopeKeys(cluster))
+	}
+
+	return scopeKeys, nil
 }

@@ -18,8 +18,18 @@ func GetDeploymentNetworkEntity(id, name string) *storage.NetworkEntityInfo {
 	}
 }
 
-// GetExtSrcNetworkEntity returns a external source type network entity.
-func GetExtSrcNetworkEntity(id, name, cidr string, isDefault bool) *storage.NetworkEntityInfo {
+// GetExtSrcNetworkEntity returns a external source typed *storage.NetworkEntity object.
+func GetExtSrcNetworkEntity(id, name, cidr string, isDefault bool, clusterID string) *storage.NetworkEntity {
+	return &storage.NetworkEntity{
+		Info: GetExtSrcNetworkEntityInfo(id, name, cidr, isDefault),
+		Scope: &storage.NetworkEntity_Scope{
+			ClusterId: clusterID,
+		},
+	}
+}
+
+// GetExtSrcNetworkEntityInfo returns a external source type network entity.
+func GetExtSrcNetworkEntityInfo(id, name, cidr string, isDefault bool) *storage.NetworkEntityInfo {
 	return &storage.NetworkEntityInfo{
 		Id:   id,
 		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,

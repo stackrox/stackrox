@@ -42,12 +42,12 @@ func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 	*/
 
 	internet := networkgraph.InternetEntity().ToProto()
-	e1 := test.GetExtSrcNetworkEntity("1", "1", "35.187.144.0/20", true)
-	e2 := test.GetExtSrcNetworkEntity("2", "2", "35.187.144.0/16", false)
-	e3 := test.GetExtSrcNetworkEntity("3", "3", "35.187.144.0/8", false)
-	e4 := test.GetExtSrcNetworkEntity("4", "4", "35.187.144.0/23", true)
-	e5 := test.GetExtSrcNetworkEntity("5", "5", "36.188.144.0/30", false)
-	e6 := test.GetExtSrcNetworkEntity("6", "6", "36.188.144.0/16", true)
+	e1 := test.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/20", true)
+	e2 := test.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.0/16", false)
+	e3 := test.GetExtSrcNetworkEntityInfo("3", "3", "35.187.144.0/8", false)
+	e4 := test.GetExtSrcNetworkEntityInfo("4", "4", "35.187.144.0/23", true)
+	e5 := test.GetExtSrcNetworkEntityInfo("5", "5", "36.188.144.0/30", false)
+	e6 := test.GetExtSrcNetworkEntityInfo("6", "6", "36.188.144.0/16", true)
 
 	networkTree, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e1, e2, e3, e4, e5, e6})
 	assert.NoError(t, err)
@@ -125,12 +125,12 @@ func TestAggregateExtConnsByName(t *testing.T) {
 	d1 := test.GetDeploymentNetworkEntity("d1", "d1")
 	d2 := test.GetDeploymentNetworkEntity("d2", "d2")
 
-	e1 := test.GetExtSrcNetworkEntity("cluster1__e1", "google", "net1", false)
-	e2 := test.GetExtSrcNetworkEntity("cluster1__e2", "google", "net2", false)
-	e3 := test.GetExtSrcNetworkEntity("cluster1__e3", "google", "net3", false)
-	e4 := test.GetExtSrcNetworkEntity("cluster1__id4", "e4", "", false)
-	e5 := test.GetExtSrcNetworkEntity("cluster1__nameless", "", "", false)
-	e6 := test.GetExtSrcNetworkEntity("cluster1__e6", "extSrc6", "net6", false)
+	e1 := test.GetExtSrcNetworkEntityInfo("cluster1__e1", "google", "net1", false)
+	e2 := test.GetExtSrcNetworkEntityInfo("cluster1__e2", "google", "net2", false)
+	e3 := test.GetExtSrcNetworkEntityInfo("cluster1__e3", "google", "net3", false)
+	e4 := test.GetExtSrcNetworkEntityInfo("cluster1__id4", "e4", "", false)
+	e5 := test.GetExtSrcNetworkEntityInfo("cluster1__nameless", "", "", false)
+	e6 := test.GetExtSrcNetworkEntityInfo("cluster1__e6", "extSrc6", "net6", false)
 
 	f1 := test.GetNetworkFlow(d1, e1, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts1)
 	f2 := test.GetNetworkFlow(d1, e2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts2)
@@ -154,7 +154,7 @@ func TestAggregateExtConnsByName(t *testing.T) {
 			},
 		},
 	}
-	e5x := test.GetExtSrcNetworkEntity("cluster1__nameless", "unnamed external source #1", "", false)
+	e5x := test.GetExtSrcNetworkEntityInfo("cluster1__nameless", "unnamed external source #1", "", false)
 
 	/*
 		f1 -> f2x

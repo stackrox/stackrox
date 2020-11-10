@@ -4,6 +4,7 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
 
 package storage;
 
@@ -82,7 +83,7 @@ message NetworkEntityInfo {
             string cidr     = 2;
         }
         // `default` indicates whether the external source is user-generated or system-generated.
-        bool       default  = 3;
+        bool       default  = 3 [(gogoproto.moretags) = "search:\"Default External Source,hidden\""];
         Metadata   metadata = 4;
     }
 

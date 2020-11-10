@@ -96,6 +96,21 @@ func (mr *MockEntityDataStoreMockRecorder) GetNetworkTreeForClusterNoDefaults(ct
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkTreeForClusterNoDefaults", reflect.TypeOf((*MockEntityDataStore)(nil).GetNetworkTreeForClusterNoDefaults), ctx, clusterID)
 }
 
+// GetAllMatchingEntities mocks base method
+func (m *MockEntityDataStore) GetAllMatchingEntities(ctx context.Context, pred func(*storage.NetworkEntity) bool) ([]*storage.NetworkEntity, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllMatchingEntities", ctx, pred)
+	ret0, _ := ret[0].([]*storage.NetworkEntity)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllMatchingEntities indicates an expected call of GetAllMatchingEntities
+func (mr *MockEntityDataStoreMockRecorder) GetAllMatchingEntities(ctx, pred interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllMatchingEntities", reflect.TypeOf((*MockEntityDataStore)(nil).GetAllMatchingEntities), ctx, pred)
+}
+
 // UpsertExternalNetworkEntity mocks base method
 func (m *MockEntityDataStore) UpsertExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity) error {
 	m.ctrl.T.Helper()

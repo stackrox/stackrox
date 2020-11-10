@@ -25,12 +25,12 @@ func TestNetworkTreeWrapper(t *testing.T) {
 
 	*/
 
-	e1 := test.GetExtSrcNetworkEntity("1", "1", "35.187.144.0/20", true)
-	e2 := test.GetExtSrcNetworkEntity("2", "2", "35.187.144.0/16", false)
-	e3 := test.GetExtSrcNetworkEntity("3", "3", "35.187.144.0/8", false)
-	e4 := test.GetExtSrcNetworkEntity("4", "4", "35.187.144.0/23", false)
-	e5 := test.GetExtSrcNetworkEntity("5", "5", "::23:ffff:24bc:9000/126", false)
-	e6 := test.GetExtSrcNetworkEntity("6", "6", "::23:ffff:24bc:9000/112", true)
+	e1 := test.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/20", true)
+	e2 := test.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.0/16", false)
+	e3 := test.GetExtSrcNetworkEntityInfo("3", "3", "35.187.144.0/8", false)
+	e4 := test.GetExtSrcNetworkEntityInfo("4", "4", "35.187.144.0/23", false)
+	e5 := test.GetExtSrcNetworkEntityInfo("5", "5", "::23:ffff:24bc:9000/126", false)
+	e6 := test.GetExtSrcNetworkEntityInfo("6", "6", "::23:ffff:24bc:9000/112", true)
 
 	treeWrapper, err := NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e1, e2, e3, e4, e5, e6})
 	assert.NoError(t, err)
@@ -43,8 +43,8 @@ func TestNetworkTreeWrapper(t *testing.T) {
 	assert.Equal(t, e6, treeWrapper.GetSupernet("5"))
 	assert.Equal(t, networkgraph.InternetEntity().ToProto(), treeWrapper.GetSupernet(networkgraph.InternetExternalSourceID))
 
-	e7 := test.GetExtSrcNetworkEntity("7", "7", "::23:ffff:24bc:9000/127", false)
-	e8 := test.GetExtSrcNetworkEntity("8", "8", "35.188.144.0/5", false)
+	e7 := test.GetExtSrcNetworkEntityInfo("7", "7", "::23:ffff:24bc:9000/127", false)
+	e8 := test.GetExtSrcNetworkEntityInfo("8", "8", "35.188.144.0/5", false)
 
 	assert.NoError(t, treeWrapper.Insert(e7))
 	assert.NoError(t, treeWrapper.Insert(e8))
@@ -73,15 +73,15 @@ func TestNetworkTreeWrapper(t *testing.T) {
 	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e6, e8}, treeWrapper.GetSubnets(networkgraph.InternetExternalSourceID))
 
 	// Invalid CIDR
-	assert.Error(t, treeWrapper.Insert(test.GetExtSrcNetworkEntity("9", "9", "0::0:0:0:0:0:ffff:0:0/0", false)))
+	assert.Error(t, treeWrapper.Insert(test.GetExtSrcNetworkEntityInfo("9", "9", "0::0:0:0:0:0:ffff:0:0/0", false)))
 
 	// Update CIDR
-	e4 = test.GetExtSrcNetworkEntity("4", "4", "35.187.144.0/26", false)
+	e4 = test.GetExtSrcNetworkEntityInfo("4", "4", "35.187.144.0/26", false)
 	assert.NoError(t, treeWrapper.Insert(e4))
 	assert.Equal(t, e4, treeWrapper.Get("4"))
 
 	// Existing CIDR
-	assert.Error(t, treeWrapper.Insert(test.GetExtSrcNetworkEntity("88", "88", "35.188.144.0/5", false)))
+	assert.Error(t, treeWrapper.Insert(test.GetExtSrcNetworkEntityInfo("88", "88", "35.188.144.0/5", false)))
 
 	assert.Equal(t, e2, treeWrapper.GetMatchingSupernet("4", func(e *storage.NetworkEntityInfo) bool { return !e.GetExternalSource().GetDefault() }))
 	assert.Equal(t, e1, treeWrapper.GetMatchingSupernet("4", func(e *storage.NetworkEntityInfo) bool { return e.GetExternalSource().GetDefault() }))
@@ -109,7 +109,7 @@ func TestNetworkTreeWrapper(t *testing.T) {
 	assert.Equal(t, e2, treeWrapper.GetMatchingSupernet("4", func(e *storage.NetworkEntityInfo) bool { return !e.GetExternalSource().GetDefault() }))
 
 	// Existing entity different IP address family
-	e8 = test.GetExtSrcNetworkEntity("8", "8", "::23:ffff:24bc:9000/100", false)
+	e8 = test.GetExtSrcNetworkEntityInfo("8", "8", "::23:ffff:24bc:9000/100", false)
 	assert.NoError(t, treeWrapper.Insert(e8))
 
 	/*

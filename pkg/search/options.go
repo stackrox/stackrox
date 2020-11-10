@@ -203,6 +203,8 @@ var (
 	NamespaceCount  = newFieldLabel("Namespace Count")
 	DeploymentCount = newFieldLabel("Deployment Count")
 	ImageCount      = newFieldLabel("Image Count")
+
+	DefaultExternalSource = newFieldLabel("Default External Source")
 )
 
 func newFieldLabel(s string) FieldLabel {

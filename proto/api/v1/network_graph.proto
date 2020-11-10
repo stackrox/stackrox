@@ -58,6 +58,7 @@ message PatchNetworkEntityRequest {
 
 message GetExternalNetworkEntitiesRequest {
     string cluster_id = 1;
+    string query      = 2;
 }
 
 message GetExternalNetworkEntitiesResponse {
@@ -90,7 +91,7 @@ service NetworkGraphService {
 
     rpc PatchExternalNetworkEntity (PatchNetworkEntityRequest) returns (storage.NetworkEntity) {
         option (google.api.http) = {
-            patch: "/v1/networkgraph/cluster/externalentities/{id}"
+            patch: "/v1/networkgraph/externalentities/{id}"
             body: "*"
         };
     }

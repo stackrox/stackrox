@@ -11,10 +11,15 @@ import (
 // Note: Currently only external sources are stored i.e. user-created CIDR blocks
 //go:generate mockgen-wrapper
 type EntityDataStore interface {
+	// This getter does not respect the current graph configuration.
 	GetEntity(ctx context.Context, id string) (*storage.NetworkEntity, bool, error)
+	// This getter respects the current graph configuration.
 	GetAllEntitiesForCluster(ctx context.Context, clusterID string) ([]*storage.NetworkEntity, error)
+	// This getter respects the current graph configuration.
 	GetAllEntities(ctx context.Context) ([]*storage.NetworkEntity, error)
 	GetNetworkTreeForClusterNoDefaults(ctx context.Context, clusterID string) (tree.ReadOnlyNetworkTree, error)
+	// This getter respects only the predicate and not the current graph configuration.
+	GetAllMatchingEntities(ctx context.Context, pred func(entity *storage.NetworkEntity) bool) ([]*storage.NetworkEntity, error)
 
 	UpsertExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity) error
 	DeleteExternalNetworkEntity(ctx context.Context, id string) error
