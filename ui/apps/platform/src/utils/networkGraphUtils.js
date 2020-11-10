@@ -267,7 +267,7 @@ export const getNamespaceEdges = ({
     );
 
     filteredLinks.forEach(
-        ({ source, target, sourceNS, targetNS, isActive, isAllowed, isDisallowed }) => {
+        ({ source, target, sourceNS, targetNS, isActive, isAllowed, isDisallowed, isExternal }) => {
             const namespaceLinkKey = getSourceTargetKey(sourceNS, targetNS);
             const nodeLinkKey = getSourceTargetKey(source, target);
             const isEgress = source === highlightedNodeId;
@@ -292,6 +292,7 @@ export const getNamespaceEdges = ({
                 numActiveUnidirectionalLinks: 0,
                 numAllowedBidirectionalLinks: 0,
                 numAllowedUnidirectionalLinks: 0,
+                isExternal,
             };
 
             namespaceLink.portsAndProtocols = [
@@ -331,7 +332,7 @@ export const getNamespaceEdges = ({
         }
     );
 
-    return Object.keys(namespaceLinks).map((namespaceLinkKey) => {
+    const namespaceEdges = Object.keys(namespaceLinks).map((namespaceLinkKey) => {
         const [sourceNS, targetNS] = getSourceTargetFromKey(namespaceLinkKey);
         const {
             portsAndProtocols,
@@ -341,6 +342,7 @@ export const getNamespaceEdges = ({
             numActiveUnidirectionalLinks,
             numAllowedBidirectionalLinks,
             numAllowedUnidirectionalLinks,
+            isExternal,
         } = namespaceLinks[namespaceLinkKey];
         const isHoveredEdge =
             (hoveredEdge?.sourceNodeNamespace === sourceNS &&
@@ -351,12 +353,17 @@ export const getNamespaceEdges = ({
         const isNamespaceActive = activeNamespaceLinks[namespaceLinkKey];
         const isNamespaceEdgeActive = filterState !== filterModes.allowed && isNamespaceActive;
         const isNamespaceEdgeDisallowed = disallowedNamespaceLinks[namespaceLinkKey];
+        // this is to show the directionality of the external entities/CIDR block edges
+        const isExternalEdge = (hoveredNode || selectedNode) && isExternal;
 
         const classes = getClasses({
             namespace: true,
             active: isNamespaceEdgeActive,
             disallowed: isNamespaceEdgeActive && isNamespaceEdgeDisallowed,
             hovered: isHoveredEdge,
+            unidirectional: numUnidirectionalLinks > 0,
+            bidirectional: numBidirectionalLinks > 0,
+            externalEdge: isExternalEdge,
         });
 
         const { source, target } = getSideMap(sourceNS, targetNS, nodeSideMap) || {
@@ -366,10 +373,12 @@ export const getNamespaceEdges = ({
 
         return {
             data: {
-                source,
-                target,
-                sourceNodeNamespace: sourceNS,
-                targetNodeNamespace: targetNS,
+                // not exactly sure how these got flipped, but just swapped them for now here
+                // TODO: fix NS edge direction at source
+                source: target,
+                target: source,
+                sourceNodeNamespace: targetNS,
+                targetNodeNamespace: sourceNS,
                 numBidirectionalLinks,
                 numUnidirectionalLinks,
                 numActiveBidirectionalLinks,
@@ -383,6 +392,7 @@ export const getNamespaceEdges = ({
             classes,
         };
     });
+    return namespaceEdges;
 };
 
 /**
@@ -749,8 +759,8 @@ export const getExternalEntitiesNode = (data, configObj = {}) => {
             ? entityData?.active?.externallyConnected
             : externalNode?.externallyConnected;
 
-    const isSelected = !!(selectedNode?.id === entity.id);
-    const isHovered = !!(hoveredNode?.id === entity.id);
+    const isSelected = !!(selectedNode?.type === nodeTypes.EXTERNAL_ENTITIES);
+    const isHovered = !!(hoveredNode?.type === nodeTypes.EXTERNAL_ENTITIES);
     const isBackground = !(!selectedNode && !hoveredNode) && !isHovered && !isSelected;
     // DEPRECATED: const isNonIsolated = isNonIsolatedNode(externalNode);
     const isDisallowed =
@@ -758,10 +768,10 @@ export const getExternalEntitiesNode = (data, configObj = {}) => {
     const isExternallyConnected = externallyConnected && filterState !== filterModes.allowed;
     const classes = getClasses({
         active: false, // externalNode.isActive,
-        selected: isSelected,
+        nsSelected: isSelected,
         internet: true,
         disallowed: isDisallowed,
-        hovered: isHovered,
+        nsHovered: isHovered,
         background: isBackground,
         nonIsolated: false,
         externallyConnected: isExternallyConnected,
@@ -820,10 +830,10 @@ export const getCIDRBlockNodes = (data, configObj = {}) => {
         const isExternallyConnected = externallyConnected && filterState !== filterModes.allowed;
         const classes = getClasses({
             active: false,
-            selected: isSelected,
+            nsSelected: isSelected,
             cidrBlock: true,
             disallowed: isDisallowed,
-            hovered: isHovered,
+            nsHovered: isHovered,
             background: isBackground,
             nonIsolated: false,
             externallyConnected: isExternallyConnected,
@@ -890,6 +900,7 @@ export const getDeploymentList = (filteredData, configObj = {}) => {
         const isSelected = !!(selectedNode?.id === entity.id);
         const isHovered = !!(hoveredNode?.id === entity.id);
         const isAdjacentToSelected = selectedNode?.edges?.find(findEntityId(entity.id));
+        // TODO: need to fix isAdjacentToHovered
         const isAdjacentToHovered = hoveredNode?.edges?.find(findEntityId(entity.id));
         const isAdjacent =
             (!isHovered && isAdjacentToHovered) || (!isSelected && isAdjacentToSelected);
@@ -1017,6 +1028,7 @@ export const getNamespaceList = (
 ) => {
     const activeNamespaceList = getActiveNamespaceList(filteredData, deploymentList);
     const highlightedNamespaces = {};
+    // TODO: need to fix hoveredNode edges to highlight adjacent namespaces
     const hoveredNodeEdges = hoveredNode?.edges;
     const selectedNodeEdges = selectedNode?.edges;
     const namespaceList = uniq(

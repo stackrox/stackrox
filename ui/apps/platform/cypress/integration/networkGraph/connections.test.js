@@ -8,8 +8,8 @@ const { cytoscapeContainer } = networkPageSelectors;
 describe('Network Graph connections filter', () => {
     withAuth();
 
-    const sourceNode = { type: 'NAMESPACE', name: 'kube-system' };
-    const targetNode = { type: 'NAMESPACE', name: 'stackrox' };
+    const targetNode = { type: 'NAMESPACE', name: 'kube-system' };
+    const sourceNode = { type: 'NAMESPACE', name: 'stackrox' };
 
     // The text is lowercase but tooltip displays it with capitalize style.
     const activeSubstring = 'active connection';

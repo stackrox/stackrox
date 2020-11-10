@@ -371,6 +371,31 @@ const styles = [
         },
     },
     {
+        selector: 'edge.externalEdge.unidirectional',
+        style: {
+            'target-arrow-shape': 'triangle',
+            'target-arrow-fill': 'filled',
+            'target-arrow-color': COLORS.edge,
+            'mid-source-arrow-shape': 'none',
+            'mid-target-arrow-shape': 'none',
+            'arrow-scale': 1,
+        },
+    },
+    {
+        selector: 'edge.externalEdge.bidirectional',
+        style: {
+            'source-arrow-shape': 'triangle',
+            'source-arrow-fill': 'filled',
+            'source-arrow-color': COLORS.edge,
+            'target-arrow-shape': 'triangle',
+            'target-arrow-fill': 'filled',
+            'target-arrow-color': COLORS.edge,
+            'mid-source-arrow-shape': 'none',
+            'mid-target-arrow-shape': 'none',
+            'arrow-scale': 1,
+        },
+    },
+    {
         selector: 'edge.inner.withinNS',
         style: {
             'mid-target-arrow-shape': 'none',

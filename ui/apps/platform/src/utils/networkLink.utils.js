@@ -49,9 +49,12 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
             return;
         }
 
-        const { id: sourceEntityId, type: sourceType } = node.entity;
+        const { id: sourceEntityId, type: sourceNodeType } = node.entity;
         const sourceNS = getNodeNamespace(node);
         const sourceName = getNodeName(node);
+        const isSourceExternal =
+            sourceNodeType === nodeTypes.EXTERNAL_ENTITIES ||
+            sourceNodeType === nodeTypes.CIDR_BLOCK;
 
         // For nodes that are egress non-isolated, add outgoing edges to ingress non-isolated nodes, as long as the pair
         // of nodes is not fully non-isolated. This is a compromise to make the non-isolation highlight only apply in
@@ -64,29 +67,10 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
                     return;
                 }
 
-                const { id: targetEntityId, type: targetType } = targetNode.entity;
+                const { id: targetEntityId, type: targetNodeType } = targetNode.entity;
                 const targetNS = getNodeNamespace(targetNode);
                 const targetName = getNodeName(targetNode);
                 const edgeKey = getSourceTargetKey(sourceEntityId, targetEntityId);
-
-                if (targetType === nodeTypes.EXTERNAL_ENTITIES) {
-                    const link = {
-                        source: sourceEntityId,
-                        target: targetEntityId,
-                        sourceName,
-                        targetName,
-                        sourceNS,
-                        targetNS,
-                        sourceType,
-                        targetType,
-                    };
-
-                    link.isActive = isActive(edgeKey);
-                    link.isAllowed = isAllowed(edgeKey, link);
-                    link.isDisallowed = isDisallowed(edgeKey, link);
-                    filteredLinks.push(link);
-                    return;
-                }
 
                 if (
                     targetNode?.entity?.type !== entityTypes.DEPLOYMENT ||
@@ -95,6 +79,10 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
                     return;
                 }
 
+                const isTargetExternal =
+                    targetNodeType === nodeTypes.EXTERNAL_ENTITIES ||
+                    targetNodeType === nodeTypes.CIDR_BLOCK;
+
                 const link = {
                     source: sourceEntityId,
                     target: targetEntityId,
@@ -102,8 +90,9 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
                     targetName,
                     sourceNS,
                     targetNS,
-                    sourceType,
-                    targetType,
+                    sourceType: sourceNodeType,
+                    targetType: targetNodeType,
+                    isExternal: isSourceExternal || isTargetExternal,
                 };
 
                 link.isActive = isActive(edgeKey);
@@ -123,13 +112,16 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
         Object.keys(node.outEdges).forEach((targetNodeId) => {
             const targetNode =
                 networkNodeMap[targetNodeId].active || networkNodeMap[targetNodeId].allowed;
-            const { id: targetEntityId, type: targetType } = targetNode.entity;
-            if (targetType !== entityTypes.DEPLOYMENT && !showExternalSources) {
+            const { id: targetEntityId, type: targetNodeType } = targetNode.entity;
+            if (targetNodeType !== entityTypes.DEPLOYMENT && !showExternalSources) {
                 return;
             }
             const edgeKey = getSourceTargetKey(sourceEntityId, targetEntityId);
             const targetNS = getNodeNamespace(targetNode);
             const targetName = getNodeName(targetNode);
+            const isTargetExternal =
+                targetNodeType === nodeTypes.EXTERNAL_ENTITIES ||
+                targetNodeType === nodeTypes.CIDR_BLOCK;
 
             const link = {
                 source: sourceEntityId,
@@ -138,8 +130,9 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
                 targetName,
                 sourceNS,
                 targetNS,
-                sourceType,
-                targetType,
+                sourceType: sourceNodeType,
+                targetType: targetNodeType,
+                isExternal: isSourceExternal || isTargetExternal,
             };
 
             link.isActive = isActive(edgeKey);
