@@ -4043,6 +4043,11 @@ jobs:
             docker tag  stackrox.io/scanner:$SCANNER_TAG gcr.io/stackrox-launcher-project-1/stackrox/scanner:$SCANNER_TAG
             docker push gcr.io/stackrox-launcher-project-1/stackrox/scanner:$SCANNER_TAG | cat
 
+            # Scanner DB was pushed up in its own repo, so must be pulled back down here.
+            docker pull stackrox.io/scanner-db:$SCANNER_TAG | cat
+            docker tag  stackrox.io/scanner-db:$SCANNER_TAG gcr.io/stackrox-launcher-project-1/stackrox/scanner-db:$SCANNER_TAG
+            docker push gcr.io/stackrox-launcher-project-1/stackrox/scanner-db:$SCANNER_TAG | cat
+
       - run:
           name: Push offline image bundles to stackrox.io
           command: |

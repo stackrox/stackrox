@@ -27,19 +27,19 @@ properties:
     x-google-marketplace:
       type: IMAGE
 
-  monitoring-image:
-    type: string
-    title: Monitoring image to use
-    description: Monitoring image to use
-    default: gcr.io/stackrox-launcher-project-1/stackrox/monitoring:$MAIN_IMAGE_TAG
-    x-google-marketplace:
-      type: IMAGE
-
   scanner-image:
     type: string
     title: Stackrox Scanner image name
     description: Name of Stackrox scanner image to use
     default: gcr.io/stackrox-launcher-project-1/stackrox/scanner:$SCANNER_IMAGE_TAG
+    x-google-marketplace:
+      type: IMAGE
+
+  scanner-db-image:
+    type: string
+    title: Stackrox Scanner DB image name
+    description: Name of Stackrox scanner-db image to use
+    default: gcr.io/stackrox-launcher-project-1/stackrox/scanner-db:$SCANNER_IMAGE_TAG
     x-google-marketplace:
       type: IMAGE
 
@@ -128,7 +128,7 @@ required:
 - namespace
 - main-image
 - scanner-image
-- monitoring-image
+- scanner-db-image
 - network
 - pvc-name
 - pvc-storageclass
