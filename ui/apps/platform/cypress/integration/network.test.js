@@ -197,7 +197,8 @@ describe('Network Flows Table', () => {
         cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
         cy.get(networkPageSelectors.detailsPanel.header).contains('central');
         cy.wait(1500);
-        cy.get(`${selectors.table.rows}:eq(0) .hidden button`)
+        // TODO: Technically this isn't working because the implementation of showing the External Entities side panel doesn't use the id in the URL
+        cy.get(`${selectors.table.rows}:eq(1) .hidden button`)
             .invoke('show')
             .click({ force: true });
         cy.get(networkPageSelectors.detailsPanel.header).should('not.contain', 'central');
@@ -235,7 +236,6 @@ describe('Network Flows Table', () => {
         cy.get(networkPageSelectors.detailsPanel.search.input).type('Traffic:{enter}');
         cy.get(networkPageSelectors.detailsPanel.search.options).contains('ingress');
         cy.get(networkPageSelectors.detailsPanel.search.options).contains('bidirectional');
-        cy.get(networkPageSelectors.detailsPanel.search.options).contains('egress');
 
         // check autocomplete results for entity names
         cy.get(networkPageSelectors.detailsPanel.search.input).clear();

@@ -30,15 +30,16 @@ export const isNodeToNodeEdge = (edge) => edge?.type === edgeTypes.NODE_TO_NODE_
 export const isNodeToNamespaceEdge = (edge) => edge?.type === edgeTypes.NODE_TO_NAMESPACE_EDGE;
 
 export const getIsNodeExternal = (id, nodes) => {
-    // TODO: There seems to be an inconsistency with the id for external entities. We should keep it as the "id"
-    // provided by the backend rather than modifying it to be "External Entities"
-    if (id === 'External Entities') {
-        return true;
-    }
     const node = nodes.find((datum) => {
-        return datum?.entity?.id === id;
+        return datum.entity.id === id;
     });
-    return node?.entity?.type === nodeTypes.CIDR_BLOCK;
+    if (!node) {
+        throw Error(`Node with id of (${id}) does not exist`);
+    }
+    return (
+        node.entity.type === nodeTypes.EXTERNAL_ENTITIES ||
+        node.entity.type === nodeTypes.CIDR_BLOCK
+    );
 };
 
 /**
@@ -53,12 +54,11 @@ export function getNodeNamespace(node) {
     const { deployment, id, type } = node.entity;
     const isExternalEntitiesNode = getIsExternalEntities(type);
     const isCIDRBlockNode = getIsCIDRBlockNode(type);
-    if (isExternalEntitiesNode) {
-        return 'External Entities';
-    }
-    if (isCIDRBlockNode) {
+    // since external node's don't have a namespace, we'll utilize their "id"s instead
+    if (isExternalEntitiesNode || isCIDRBlockNode) {
         return id;
     }
+    // TODO: we should only return "deployment.namespace" if the type is DEPLOYMENT and throw an error otherwise
     return deployment.namespace;
 }
 
@@ -74,12 +74,11 @@ export function getNodeName(node) {
     const { deployment, id, type } = node.entity;
     const isExternalEntitiesNode = getIsExternalEntities(type);
     const isCIDRBlockNode = getIsCIDRBlockNode(type);
-    if (isExternalEntitiesNode) {
-        return 'External Entities';
-    }
-    if (isCIDRBlockNode) {
+    // since external node's don't have a unique name, we'll utilize their "id"s instead
+    if (isExternalEntitiesNode || isCIDRBlockNode) {
         return id;
     }
+    // TODO: we should only return "deployment.name" if the type is DEPLOYMENT and throw an error otherwise
     return deployment.name;
 }
 
@@ -435,9 +434,11 @@ export const getEdgesFromNode = ({
             source,
             sourceNS,
             sourceName,
+            sourceType,
             target,
             targetNS,
             targetName,
+            targetType,
             isActive,
             isAllowed,
             isDisallowed,
@@ -454,6 +455,7 @@ export const getEdgesFromNode = ({
         const destNodeId = isSourceNode ? target : source;
         const destNodeName = isSourceNode ? targetName : sourceName;
         const destNodeNamespace = isSourceNode ? targetNS : sourceNS;
+        const destNodeType = isSourceNode ? targetType : sourceType;
         const sourceNodeId = source;
         const sourceNodeName = sourceName;
         const sourceNodeNamespace = sourceNS;
@@ -496,6 +498,7 @@ export const getEdgesFromNode = ({
                             destNodeId,
                             destNodeNamespace,
                             destNodeName,
+                            destNodeType,
                             sourceNodeId,
                             sourceNodeName,
                             sourceNodeNamespace,
@@ -537,12 +540,8 @@ export const getEdgesFromNode = ({
                 const isWithinSourceNS = highlightedNode?.parent === sourceNS;
                 const isWithinTargetNS = highlightedNode?.parent === targetNS;
 
-                const innerSourceEdgeKey = isSourceExternal
-                    ? source
-                    : getSourceTargetKey(source, sourceParentSide);
-                const innerTargetEdgeKey = isTargetExternal
-                    ? target
-                    : getSourceTargetKey(targetParentSide, target);
+                const innerSourceEdgeKey = getSourceTargetKey(source, sourceParentSide);
+                const innerTargetEdgeKey = getSourceTargetKey(targetParentSide, target);
 
                 // if the hovered edge is a namespace edge, it hovers all the edges connected to the namespaces
                 const isInnerNamespaceEdge =
@@ -584,6 +583,7 @@ export const getEdgesFromNode = ({
                             destNodeId,
                             destNodeName,
                             destNodeNamespace,
+                            destNodeType,
                             sourceNodeId,
                             sourceNodeName,
                             sourceNodeNamespace,
@@ -620,6 +620,7 @@ export const getEdgesFromNode = ({
                             destNodeId,
                             destNodeName,
                             destNodeNamespace,
+                            destNodeType,
                             sourceNodeId,
                             sourceNodeName,
                             sourceNodeNamespace,
@@ -646,37 +647,42 @@ export const getEdgesFromNode = ({
                     innerTargetEdgeKey &&
                     nodeLinks[innerTargetEdgeKey]
                 ) {
-                    // if this edge is already in the nodeLinks, it means it's going in the other direction
-                    nodeLinks[innerSourceEdgeKey].data.isBidirectional = true;
-                    nodeLinks[innerSourceEdgeKey].data.traffic = networkTraffic.BIDIRECTIONAL;
-                    nodeLinks[innerSourceEdgeKey].classes = getClasses({
-                        ...coreClasses,
-                        bidirectional: true,
-                        hovered: isInnerSourceEdgeHovered,
-                    });
+                    if (!isSourceExternal) {
+                        // if this edge is already in the nodeLinks, it means it's going in the other direction
+                        nodeLinks[innerSourceEdgeKey].data.isBidirectional = true;
+                        nodeLinks[innerSourceEdgeKey].data.traffic = networkTraffic.BIDIRECTIONAL;
+                        nodeLinks[innerSourceEdgeKey].classes = getClasses({
+                            ...coreClasses,
+                            bidirectional: true,
+                            hovered: isInnerSourceEdgeHovered,
+                        });
+                    }
 
-                    // we want to make sure the corresponding inner edge from the other namespace is also updated
-                    nodeLinks[innerTargetEdgeKey].data.isBidirectional = true;
-                    nodeLinks[innerTargetEdgeKey].data.traffic = networkTraffic.BIDIRECTIONAL;
-                    nodeLinks[innerTargetEdgeKey].classes = getClasses({
-                        ...coreClasses,
-                        bidirectional: true,
-                        hovered: isInnerTargetEdgeHovered,
-                    });
+                    if (!isTargetExternal) {
+                        // we want to make sure the corresponding inner edge from the other namespace is also updated
+                        nodeLinks[innerTargetEdgeKey].data.isBidirectional = true;
+                        nodeLinks[innerTargetEdgeKey].data.traffic = networkTraffic.BIDIRECTIONAL;
+                        nodeLinks[innerTargetEdgeKey].classes = getClasses({
+                            ...coreClasses,
+                            bidirectional: true,
+                            hovered: isInnerTargetEdgeHovered,
+                        });
+                    }
                 }
 
                 if (innerTargetEdge && !innerTargetEdge.data.isBidirectional && !isWithinTargetNS) {
-                    // if this edge is already in the nodeLinks, it means it's going in the other direction
-                    nodeLinks[innerTargetEdgeKey].data.isBidirectional = true;
-                    nodeLinks[innerTargetEdgeKey].data.traffic = networkTraffic.BIDIRECTIONAL;
-                    nodeLinks[innerTargetEdgeKey].classes = getClasses({
-                        ...coreClasses,
-                        bidirectional: true,
-                        hovered: isInnerTargetEdgeHovered,
-                    });
+                    if (!isTargetExternal) {
+                        // if this edge is already in the nodeLinks, it means it's going in the other direction
+                        nodeLinks[innerTargetEdgeKey].data.isBidirectional = true;
+                        nodeLinks[innerTargetEdgeKey].data.traffic = networkTraffic.BIDIRECTIONAL;
+                        nodeLinks[innerTargetEdgeKey].classes = getClasses({
+                            ...coreClasses,
+                            bidirectional: true,
+                            hovered: isInnerTargetEdgeHovered,
+                        });
+                    }
 
-                    // TODO: investigate why object at `innerSourceEdgeKey` is not present for CIDR blocks
-                    if (nodeLinks[innerSourceEdgeKey]?.data) {
+                    if (!isSourceExternal) {
                         // we want to make sure the corresponding inner edge from the other namespace is also updated
                         nodeLinks[innerSourceEdgeKey].data.isBidirectional = true;
                         nodeLinks[innerSourceEdgeKey].data.traffic = networkTraffic.BIDIRECTIONAL;
@@ -765,7 +771,7 @@ export const getExternalEntitiesNode = (data, configObj = {}) => {
         data: {
             ...datumProps,
             ...entity,
-            id: 'External Entities', // also needs to be `entity.id` in hover/select context
+            id: entity.id,
             name: 'External Entities',
             active: false,
             edges,
@@ -1223,6 +1229,7 @@ export function getNetworkFlows(edges, filterState) {
                     traffic,
                     destNodeName,
                     destNodeNamespace,
+                    destNodeType,
                     isActive,
                     isAllowed,
                     portsAndProtocols,
@@ -1233,6 +1240,8 @@ export function getNetworkFlows(edges, filterState) {
             if (acc[destNodeId]) {
                 return acc;
             }
+            const isExternal =
+                getIsExternalEntities(destNodeType) || getIsCIDRBlockNode(destNodeType);
             const connection = getConnectionText(filterState, isActive, isAllowed);
             directionalFlows.incrementFlows(traffic);
             return {
@@ -1240,9 +1249,9 @@ export function getNetworkFlows(edges, filterState) {
                 [destNodeId]: {
                     traffic,
                     deploymentId: destNodeId,
-                    entityName: destNodeName,
-                    namespace: destNodeNamespace === 'External Entities' ? '-' : destNodeNamespace,
-                    type: destNodeNamespace === 'External Entities' ? 'external' : 'deployment',
+                    entityName: isExternal ? 'internet' : destNodeName,
+                    namespace: isExternal ? '-' : destNodeNamespace,
+                    type: isExternal ? 'external' : 'deployment',
                     connection,
                     portsAndProtocols,
                 },

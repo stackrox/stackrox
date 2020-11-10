@@ -454,7 +454,7 @@ describe('networkGraphUtils', () => {
                     type: nodeTypes.EXTERNAL_ENTITIES,
                 },
             };
-            expect(getNodeNamespace(node)).toEqual('External Entities');
+            expect(getNodeNamespace(node)).toEqual('1234');
         });
 
         it('should get the namespace value for a CIDR block node', () => {
@@ -482,17 +482,17 @@ describe('networkGraphUtils', () => {
             expect(getNodeName(node)).toEqual('D1');
         });
 
-        it('should get the namespace value for an external entities node', () => {
+        it('should get the name value for an external entities node', () => {
             const node = {
                 entity: {
                     id: '1234',
                     type: nodeTypes.EXTERNAL_ENTITIES,
                 },
             };
-            expect(getNodeName(node)).toEqual('External Entities');
+            expect(getNodeName(node)).toEqual('1234');
         });
 
-        it('should get the namespace value for a CIDR block node', () => {
+        it('should get the name value for a CIDR block node', () => {
             const node = {
                 entity: {
                     id: '1234',

@@ -1,5 +1,5 @@
 import entityTypes from 'constants/entityTypes';
-import { filterModes } from 'constants/networkFilterModes';
+import { nodeTypes } from 'constants/networkGraph';
 import { UIfeatureFlags, isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 import {
     getIsNodeHoverable,
@@ -49,7 +49,7 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
             return;
         }
 
-        const { id: sourceEntityId } = node.entity;
+        const { id: sourceEntityId, type: sourceType } = node.entity;
         const sourceNS = getNodeNamespace(node);
         const sourceName = getNodeName(node);
 
@@ -64,18 +64,36 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
                     return;
                 }
 
+                const { id: targetEntityId, type: targetType } = targetNode.entity;
+                const targetNS = getNodeNamespace(targetNode);
+                const targetName = getNodeName(targetNode);
+                const edgeKey = getSourceTargetKey(sourceEntityId, targetEntityId);
+
+                if (targetType === nodeTypes.EXTERNAL_ENTITIES) {
+                    const link = {
+                        source: sourceEntityId,
+                        target: targetEntityId,
+                        sourceName,
+                        targetName,
+                        sourceNS,
+                        targetNS,
+                        sourceType,
+                        targetType,
+                    };
+
+                    link.isActive = isActive(edgeKey);
+                    link.isAllowed = isAllowed(edgeKey, link);
+                    link.isDisallowed = isDisallowed(edgeKey, link);
+                    filteredLinks.push(link);
+                    return;
+                }
+
                 if (
                     targetNode?.entity?.type !== entityTypes.DEPLOYMENT ||
                     !targetNode.nonIsolatedIngress // nodes that are ingress-isolated have explicit incoming edges
                 ) {
                     return;
                 }
-
-                const { deployment: targetDeployment } = targetNode.entity;
-                const targetEntityId = targetDeployment?.id;
-                const targetNS = getNodeNamespace(targetNode);
-                const targetName = getNodeName(targetNode);
-                const edgeKey = getSourceTargetKey(sourceEntityId, targetEntityId);
 
                 const link = {
                     source: sourceEntityId,
@@ -84,6 +102,8 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
                     targetName,
                     sourceNS,
                     targetNS,
+                    sourceType,
+                    targetType,
                 };
 
                 link.isActive = isActive(edgeKey);
@@ -103,9 +123,8 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
         Object.keys(node.outEdges).forEach((targetNodeId) => {
             const targetNode =
                 networkNodeMap[targetNodeId].active || networkNodeMap[targetNodeId].allowed;
-            const { id: targetId, type: targetNodeType } = targetNode.entity;
-            const targetEntityId = targetNodeType === 'INTERNET' ? 'External Entities' : targetId;
-            if (targetNode?.entity?.type !== entityTypes.DEPLOYMENT && !showExternalSources) {
+            const { id: targetEntityId, type: targetType } = targetNode.entity;
+            if (targetType !== entityTypes.DEPLOYMENT && !showExternalSources) {
                 return;
             }
             const edgeKey = getSourceTargetKey(sourceEntityId, targetEntityId);
@@ -119,6 +138,8 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
                 targetName,
                 sourceNS,
                 targetNS,
+                sourceType,
+                targetType,
             };
 
             link.isActive = isActive(edgeKey);
@@ -129,49 +150,6 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
             filteredLinks.push(link);
             filteredEdgeHashTable[edgeKey] = true;
         });
-
-        // if in the All filter state, merge active outEdges for each node from networkNodeMap so
-        // we include disallowed edges that are not part of the allowed node set
-        if (filterState === filterModes.all) {
-            // TODO: add active edges from External Entity types of nodes back in
-            Object.keys(networkNodeMap[sourceEntityId]?.active?.outEdges || []).forEach(
-                (targetNodeId) => {
-                    const targetNode = networkNodeMap[targetNodeId];
-                    const isExternal = showExternalSources && !targetNode?.entity;
-                    const { id: targetId, deployment: targetDeployment, type: targetNodeType } =
-                        targetNode.entity || {};
-
-                    const targetEntityId =
-                        targetNodeType === 'INTERNET' ? 'External Entities' : targetId;
-
-                    const targetNS = isExternal ? 'External Entities' : targetDeployment?.namespace;
-                    const targetName = isExternal ? 'External Entities' : targetDeployment?.name;
-                    const edgeKey = getSourceTargetKey(sourceEntityId, targetEntityId);
-                    // to prevent double counting if an edge is also allowed and active
-                    if (!filteredEdgeHashTable[edgeKey]) {
-                        const link = {
-                            source: sourceEntityId,
-                            target: targetEntityId,
-                            sourceName,
-                            targetName,
-                            sourceNS,
-                            targetNS,
-                        };
-
-                        link.isActive = isActive(edgeKey);
-                        link.isBetweenNonIsolated = isBetweenNonIsolated(
-                            sourceEntityId,
-                            targetEntityId
-                        );
-                        link.isAllowed = isAllowed(edgeKey, link);
-                        link.isDisallowed = isDisallowed(edgeKey, link);
-
-                        filteredLinks.push(link);
-                        filteredEdgeHashTable[edgeKey] = true;
-                    }
-                }
-            );
-        }
     });
 
     return filteredLinks;

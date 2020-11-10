@@ -22,14 +22,10 @@ let networkFlowGraphEnabled = false;
 const setEdgeMapState = (graph, state, property) => {
     const newState = { ...state };
     graph.nodes.forEach((node) => {
-        let { id: sourceId } = node.entity;
-        const { type: sourceType } = node.entity;
-        sourceId = sourceType === 'INTERNET' ? 'External Entities' : sourceId;
+        const { id: sourceId } = node.entity;
         Object.keys(node.outEdges).forEach((targetIndex) => {
             const targetNode = graph.nodes[targetIndex];
-            let { id: targetId } = targetNode.entity;
-            const { type: targetType } = targetNode.entity;
-            targetId = targetType === 'INTERNET' ? 'External Entities' : targetId;
+            const { id: targetId } = targetNode.entity;
             const mapKey = getSourceTargetKey(sourceId, targetId);
             if (!newState[mapKey]) {
                 newState[mapKey] = {};
@@ -50,9 +46,7 @@ const setNodeMapState = (graph, state, propertyConfig) => {
     const newState = { ...state };
     const { ingressKey, egressKey, filterState } = propertyConfig;
     graph.nodes.forEach((node) => {
-        let { id } = node.entity;
-        const { type } = node.entity;
-        id = type === 'INTERNET' ? 'External Entities' : id;
+        const { id } = node.entity;
         if (!newState[id]) {
             newState[id] = {};
         }
@@ -64,9 +58,7 @@ const setNodeMapState = (graph, state, propertyConfig) => {
         newState[id][egressKey] = [];
         Object.keys(node.outEdges).forEach((targetIndex) => {
             const targetNode = graph.nodes[targetIndex];
-            let { id: targetEntityId } = targetNode.entity;
-            const { type: targetEntityType } = targetNode.entity;
-            targetEntityId = targetEntityType === 'INTERNET' ? 'External Entities' : targetEntityId;
+            const { id: targetEntityId, type: targetEntityType } = targetNode.entity;
             if (!newState[targetEntityId]) {
                 newState[targetEntityId] = {};
             }

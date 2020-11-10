@@ -16,7 +16,7 @@ import NodesUpdateSection from '../Graph/Overlays/NodesUpdateSection';
 import ZoomButtons from '../Graph/Overlays/ZoomButtons';
 
 function Wizard({ wizardOpen, wizardStage, onClose }) {
-    const width = wizardOpen ? 'md:w-2/3 lg:w-2/5 min-w-120' : 'w-0';
+    const width = wizardOpen ? 'md:w-2/3 lg:w-2/5 min-w-144' : 'w-0';
     let panelContent = null;
 
     if (wizardOpen) {
