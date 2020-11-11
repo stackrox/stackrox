@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/license/manager"
 	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 )
@@ -16,7 +17,8 @@ type NetworkGraphDefaultExtSrcsGatherer interface {
 }
 
 // NewNetworkGraphDefaultExtSrcsGatherer returns an instance of NetworkGraphDefaultExtSrcsGatherer as per the offline mode setting.
-func NewNetworkGraphDefaultExtSrcsGatherer(networkEntityDS entityDataStore.EntityDataStore, licenseMgr manager.LicenseManager) (NetworkGraphDefaultExtSrcsGatherer, error) {
+func NewNetworkGraphDefaultExtSrcsGatherer(networkEntityDS entityDataStore.EntityDataStore,
+	sensorConnMgr connection.Manager, licenseMgr manager.LicenseManager) (NetworkGraphDefaultExtSrcsGatherer, error) {
 	if !features.NetworkGraphExternalSrcs.Enabled() {
 		return nil, nil
 	}
@@ -24,11 +26,13 @@ func NewNetworkGraphDefaultExtSrcsGatherer(networkEntityDS entityDataStore.Entit
 	var mgr NetworkGraphDefaultExtSrcsGatherer
 	if env.OfflineModeEnv.BooleanSetting() {
 		// TODO: support offline mode
-	} else {
-		mgr = &onlineDefaultExtSrcsGathererImpl{
-			licenseMgr:      licenseMgr,
-			networkEntityDS: networkEntityDS,
-		}
+		return nil, errors.New("default external networks are not supported in offline mode")
+	}
+	mgr = &onlineDefaultExtSrcsGathererImpl{
+		licenseMgr:      licenseMgr,
+		networkEntityDS: networkEntityDS,
+		sensorConnMgr:   sensorConnMgr,
+		lastSeenCIDRs:   make(map[string]string),
 	}
 
 	if err := loadBundledData(); err != nil {

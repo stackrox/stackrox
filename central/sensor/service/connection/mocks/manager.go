@@ -190,3 +190,17 @@ func (mr *MockManagerMockRecorder) PushExternalNetworkEntitiesToSensor(ctx, clus
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushExternalNetworkEntitiesToSensor", reflect.TypeOf((*MockManager)(nil).PushExternalNetworkEntitiesToSensor), ctx, clusterID)
 }
+
+// PushExternalNetworkEntitiesToAllSensors mocks base method
+func (m *MockManager) PushExternalNetworkEntitiesToAllSensors(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PushExternalNetworkEntitiesToAllSensors", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PushExternalNetworkEntitiesToAllSensors indicates an expected call of PushExternalNetworkEntitiesToAllSensors
+func (mr *MockManagerMockRecorder) PushExternalNetworkEntitiesToAllSensors(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushExternalNetworkEntitiesToAllSensors", reflect.TypeOf((*MockManager)(nil).PushExternalNetworkEntitiesToAllSensors), ctx)
+}

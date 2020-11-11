@@ -1375,8 +1375,8 @@ github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e h1:t
 github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e/go.mod h1:j8TgcsyLxEaGufGNdkDQg6YG7ySHVNUlOnxI/akj1iY=
 github.com/stackrox/docker-registry-client v0.0.0-20200930173048-36c5a823baf5 h1:NJWRBZ8DRzU8Ocq1ou2caT0mKTmBrvpEpG8EJeJixbU=
 github.com/stackrox/docker-registry-client v0.0.0-20200930173048-36c5a823baf5/go.mod h1:ftVRYPg9kyRYpu5y5rE+8c8P6KtAitUy57PlHhMraL8=
-github.com/stackrox/external-network-pusher v0.0.0-20201105190240-a54ac0060cd7 h1:Z2kxDSoULtidjKx+LwmUW5efQbFtFFJ6RBZ3/99sMSo=
-github.com/stackrox/external-network-pusher v0.0.0-20201105190240-a54ac0060cd7/go.mod h1:4KnobSl3IhzTMLiYpHS3HDnm0WovNxro9JI4/GDhczc=
+github.com/stackrox/external-network-pusher v0.0.0-20201110205918-92f1e4a2b094 h1:X3kHnZl7d0PKTCkmfKsRpN4SSm9COs2eDwnJTkaWQVw=
+github.com/stackrox/external-network-pusher v0.0.0-20201110205918-92f1e4a2b094/go.mod h1:4KnobSl3IhzTMLiYpHS3HDnm0WovNxro9JI4/GDhczc=
 github.com/stackrox/go-pagerduty v0.0.0-20191021101800-15cb77365cca h1:teIgFfrO9MJjja7m3vCWjXeFfYh90/yOLhRNW1BoIfM=
 github.com/stackrox/go-pagerduty v0.0.0-20191021101800-15cb77365cca/go.mod h1:4DO5Bk5QEsgH2AyJowQ/hP+RzfAb9JanP6W3USogT9E=
 github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191029220117-2a73008e51a9 h1:IXESjfBZNfZjU+VuVdxLZvkeiMPlodw94++hjOLORis=

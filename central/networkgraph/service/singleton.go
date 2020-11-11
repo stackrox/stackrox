@@ -6,7 +6,6 @@ import (
 	graphConfigDataStore "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	networkEntityDatastore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -21,8 +20,7 @@ func initialize() {
 		networkEntityDatastore.Singleton(),
 		deploymentDataStore.Singleton(),
 		clusterDataStore.Singleton(),
-		graphConfigDataStore.Singleton(),
-		connection.ManagerSingleton())
+		graphConfigDataStore.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

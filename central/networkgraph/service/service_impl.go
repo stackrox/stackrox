@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/entity/mappings"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -66,8 +65,6 @@ type serviceImpl struct {
 	deployments  deploymentDS.DataStore
 	clusters     clusterDS.DataStore
 	graphConfig  datastore.DataStore
-
-	sensorConnMgr connection.Manager
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -148,7 +145,7 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 		},
 	}
 
-	err = s.entities.UpsertExternalNetworkEntity(ctx, entity)
+	err = s.entities.UpsertExternalNetworkEntity(ctx, entity, false)
 	if errors.Is(err, errorhelpers.ErrInvalidArgs) {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -159,7 +156,6 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	go s.doPushExternalNetworkEntitiesToSensor(ctx, request.GetClusterId())
 	return entity, nil
 }
 
@@ -179,12 +175,6 @@ func (s *serviceImpl) DeleteExternalNetworkEntity(ctx context.Context, request *
 		return nil, err
 	}
 
-	id, err := sac.ParseResourceID(request.GetId())
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	go s.doPushExternalNetworkEntitiesToSensor(ctx, id.ClusterID())
 	return &v1.Empty{}, nil
 }
 
@@ -208,7 +198,7 @@ func (s *serviceImpl) PatchExternalNetworkEntity(ctx context.Context, request *v
 
 	entity.Info.GetExternalSource().Name = request.GetName()
 
-	if err := s.entities.UpsertExternalNetworkEntity(ctx, entity); err != nil {
+	if err := s.entities.UpsertExternalNetworkEntity(ctx, entity, false); err != nil {
 		if errors.Is(err, errorhelpers.ErrInvalidArgs) {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
@@ -287,13 +277,6 @@ func (s *serviceImpl) validateCluster(clusterID string) error {
 		return status.Errorf(codes.NotFound, "cluster %s not found. It may have been deleted", clusterID)
 	}
 	return nil
-}
-
-func (s *serviceImpl) doPushExternalNetworkEntitiesToSensor(ctx context.Context, clusterID string) {
-	if err := s.sensorConnMgr.PushExternalNetworkEntitiesToSensor(ctx, clusterID); err != nil {
-		log.Errorf("failed to sync external sources network flows for cluster: %v", err)
-		return
-	}
 }
 
 func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.NetworkGraphRequest) (*v1.NetworkGraph, error) {

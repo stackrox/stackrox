@@ -51,7 +51,7 @@ func (c *controller) SyncNow(ctx context.Context) error {
 	}
 
 	if err := c.injector.InjectMessage(ctx, msg); err != nil {
-		return errors.Wrap(err, "could not send external network entities")
+		return errors.Wrapf(err, "sending external network entities to cluster %q", c.clusterID)
 	}
 
 	// Increment network policy graph epoch indicating that an update to external sources could have changed the graph.
@@ -67,7 +67,7 @@ func (c *controller) getPushNetworkEntitiesRequestMsg(ctx context.Context) (*cen
 
 	netEntities, err := c.netEntityMgr.GetAllEntitiesForCluster(ctx, c.clusterID)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not obtain external network entities to sync")
+		return nil, errors.Wrapf(err, "obtaining external network entities to sync with cluster %q", c.clusterID)
 	}
 
 	srcs := make([]*storage.NetworkEntityInfo, 0, len(netEntities))

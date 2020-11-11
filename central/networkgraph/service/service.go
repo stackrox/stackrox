@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/config/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -27,19 +26,17 @@ type Service interface {
 
 // New returns a new Service instance using the given DataStore.
 func New(store nfDS.ClusterDataStore, entities networkEntityDS.EntityDataStore, deployments dDS.DataStore, clusters clusterDS.DataStore,
-	graphConfigDS datastore.DataStore, sensorConnMgr connection.Manager) Service {
-	return newService(store, entities, deployments, clusters, graphConfigDS, sensorConnMgr)
+	graphConfigDS datastore.DataStore) Service {
+	return newService(store, entities, deployments, clusters, graphConfigDS)
 }
 
 func newService(store nfDS.ClusterDataStore, entities networkEntityDS.EntityDataStore, deployments dDS.DataStore, clusters clusterDS.DataStore,
-	graphConfigDS datastore.DataStore, sensorConnMgr connection.Manager) *serviceImpl {
+	graphConfigDS datastore.DataStore) *serviceImpl {
 	return &serviceImpl{
 		clusterFlows: store,
 		entities:     entities,
 		deployments:  deployments,
 		clusters:     clusters,
 		graphConfig:  graphConfigDS,
-
-		sensorConnMgr: sensorConnMgr,
 	}
 }

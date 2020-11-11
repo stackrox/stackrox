@@ -277,6 +277,10 @@ func (d IPNetwork) Family() Family {
 
 // AsIPNet returns the IP address as `net.IPNet`.
 func (d IPNetwork) AsIPNet() net.IPNet {
+	if !d.IsValid() {
+		return net.IPNet{}
+	}
+
 	return net.IPNet{
 		IP:   d.ip.data.bytes(),
 		Mask: net.CIDRMask(int(d.prefixLen), len(d.ip.data.bytes())*8),
@@ -290,6 +294,10 @@ func (d IPNetwork) IsValid() bool {
 
 // Contains returns true if the IP network contains given ip.
 func (d IPNetwork) Contains(ip IPAddress) bool {
+	if !d.IsValid() {
+		return false
+	}
+
 	ipNet := net.IPNet{
 		IP:   d.ip.data.bytes(),
 		Mask: net.CIDRMask(int(d.prefixLen), len(d.ip.data.bytes())*8),

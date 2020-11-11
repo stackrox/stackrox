@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkgraph/aggregator"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
-	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
@@ -16,7 +16,7 @@ import (
 
 type clusterDataStoreImpl struct {
 	storage                 store.ClusterStore
-	networkEntities         networkEntityDS.EntityDataStore
+	networkTreeMgr          networktree.Manager
 	graphConfig             graphConfigDS.DataStore
 	deletedDeploymentsCache expiringcache.Cache
 }
@@ -28,10 +28,9 @@ func (cds *clusterDataStoreImpl) GetFlowStore(ctx context.Context, clusterID str
 
 	var networkTree tree.ReadOnlyNetworkTree
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		var err error
-		networkTree, err = cds.networkEntities.GetNetworkTreeForClusterNoDefaults(ctx, clusterID)
-		if err != nil {
-			return nil, err
+		networkTree = cds.networkTreeMgr.GetReadOnlyNetworkTree(clusterID)
+		if networkTree == nil {
+			networkTree = cds.networkTreeMgr.CreateNetworkTree(clusterID)
 		}
 	}
 
@@ -57,10 +56,9 @@ func (cds *clusterDataStoreImpl) CreateFlowStore(ctx context.Context, clusterID 
 
 	var networkTree tree.ReadOnlyNetworkTree
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		var err error
-		networkTree, err = cds.networkEntities.GetNetworkTreeForClusterNoDefaults(ctx, clusterID)
-		if err != nil {
-			return nil, err
+		networkTree = cds.networkTreeMgr.GetReadOnlyNetworkTree(clusterID)
+		if networkTree == nil {
+			networkTree = cds.networkTreeMgr.CreateNetworkTree(clusterID)
 		}
 	}
 

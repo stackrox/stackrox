@@ -20,7 +20,7 @@ func HTTPGet(url string) ([]byte, error) {
 
 	resp, err := client.Get(url)
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting %q", url)
+		return nil, err
 	}
 
 	defer func() {

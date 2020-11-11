@@ -432,7 +432,10 @@ func (s *serviceImpl) getExternalSrcs(ctx context.Context, clusterID string) ([]
 		return []*storage.NetworkEntityInfo{}, nil
 	}
 
-	entities, err := s.externalSrcs.GetAllEntitiesForCluster(ctx, clusterID)
+	entities, err := s.externalSrcs.GetAllMatchingEntities(ctx, func(entity *storage.NetworkEntity) bool {
+		// TODO: Add the default external sources
+		return entity.GetScope().GetClusterId() == clusterID
+	})
 	if err != nil {
 		return nil, err
 	}

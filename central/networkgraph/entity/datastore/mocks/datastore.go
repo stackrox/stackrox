@@ -8,7 +8,6 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	tree "github.com/stackrox/rox/pkg/networkgraph/tree"
 	reflect "reflect"
 )
 
@@ -81,21 +80,6 @@ func (mr *MockEntityDataStoreMockRecorder) GetAllEntities(ctx interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllEntities", reflect.TypeOf((*MockEntityDataStore)(nil).GetAllEntities), ctx)
 }
 
-// GetNetworkTreeForClusterNoDefaults mocks base method
-func (m *MockEntityDataStore) GetNetworkTreeForClusterNoDefaults(ctx context.Context, clusterID string) (tree.ReadOnlyNetworkTree, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNetworkTreeForClusterNoDefaults", ctx, clusterID)
-	ret0, _ := ret[0].(tree.ReadOnlyNetworkTree)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNetworkTreeForClusterNoDefaults indicates an expected call of GetNetworkTreeForClusterNoDefaults
-func (mr *MockEntityDataStoreMockRecorder) GetNetworkTreeForClusterNoDefaults(ctx, clusterID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkTreeForClusterNoDefaults", reflect.TypeOf((*MockEntityDataStore)(nil).GetNetworkTreeForClusterNoDefaults), ctx, clusterID)
-}
-
 // GetAllMatchingEntities mocks base method
 func (m *MockEntityDataStore) GetAllMatchingEntities(ctx context.Context, pred func(*storage.NetworkEntity) bool) ([]*storage.NetworkEntity, error) {
 	m.ctrl.T.Helper()
@@ -112,17 +96,17 @@ func (mr *MockEntityDataStoreMockRecorder) GetAllMatchingEntities(ctx, pred inte
 }
 
 // UpsertExternalNetworkEntity mocks base method
-func (m *MockEntityDataStore) UpsertExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity) error {
+func (m *MockEntityDataStore) UpsertExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity, skipPush bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertExternalNetworkEntity", ctx, entity)
+	ret := m.ctrl.Call(m, "UpsertExternalNetworkEntity", ctx, entity, skipPush)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertExternalNetworkEntity indicates an expected call of UpsertExternalNetworkEntity
-func (mr *MockEntityDataStoreMockRecorder) UpsertExternalNetworkEntity(ctx, entity interface{}) *gomock.Call {
+func (mr *MockEntityDataStoreMockRecorder) UpsertExternalNetworkEntity(ctx, entity, skipPush interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertExternalNetworkEntity", reflect.TypeOf((*MockEntityDataStore)(nil).UpsertExternalNetworkEntity), ctx, entity)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertExternalNetworkEntity", reflect.TypeOf((*MockEntityDataStore)(nil).UpsertExternalNetworkEntity), ctx, entity, skipPush)
 }
 
 // DeleteExternalNetworkEntity mocks base method

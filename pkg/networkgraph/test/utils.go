@@ -28,7 +28,7 @@ func GetExtSrcNetworkEntity(id, name, cidr string, isDefault bool, clusterID str
 	}
 }
 
-// GetExtSrcNetworkEntityInfo returns a external source type network entity.
+// GetExtSrcNetworkEntityInfo returns a external source typed *storage.NetworkEntityInfo object.
 func GetExtSrcNetworkEntityInfo(id, name, cidr string, isDefault bool) *storage.NetworkEntityInfo {
 	return &storage.NetworkEntityInfo{
 		Id:   id,

@@ -33,4 +33,5 @@ type Manager interface {
 	ProcessUpgradeCheckInFromSensor(ctx context.Context, clusterID string, req *central.UpgradeCheckInFromSensorRequest) error
 
 	PushExternalNetworkEntitiesToSensor(ctx context.Context, clusterID string) error
+	PushExternalNetworkEntitiesToAllSensors(ctx context.Context) error
 }

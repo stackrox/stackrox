@@ -59,6 +59,7 @@ func (d *datastoreImpl) GetNetworkGraphConfig(ctx context.Context) (*storage.Net
 	if ok, err := networkGraphSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
+
 	config, found, err := d.store.Get(networkGraphConfigKey)
 	if err != nil {
 		return nil, err

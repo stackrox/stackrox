@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 	"testing"
-	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
@@ -16,10 +15,8 @@ import (
 	nfDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	npDSMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
 	"github.com/stackrox/rox/central/role/resources"
-	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/test"
@@ -36,14 +33,13 @@ func TestNetworkGraph(t *testing.T) {
 type NetworkGraphServiceTestSuite struct {
 	suite.Suite
 
-	clusters      *clusterDSMocks.MockDataStore
-	entities      *entityMocks.MockEntityDataStore
-	deployments   *dDSMocks.MockDataStore
-	flows         *nfDSMocks.MockClusterDataStore
-	graphConfig   *graphConfigDSMocks.MockDataStore
-	sensorConnMgr *connMocks.MockManager
-	evaluator     *npDSMocks.MockEvaluator
-	tested        *serviceImpl
+	clusters    *clusterDSMocks.MockDataStore
+	entities    *entityMocks.MockEntityDataStore
+	deployments *dDSMocks.MockDataStore
+	flows       *nfDSMocks.MockClusterDataStore
+	graphConfig *graphConfigDSMocks.MockDataStore
+	evaluator   *npDSMocks.MockEvaluator
+	tested      *serviceImpl
 
 	mockCtrl *gomock.Controller
 }
@@ -56,10 +52,9 @@ func (s *NetworkGraphServiceTestSuite) SetupTest() {
 	s.entities = entityMocks.NewMockEntityDataStore(s.mockCtrl)
 	s.flows = nfDSMocks.NewMockClusterDataStore(s.mockCtrl)
 	s.graphConfig = graphConfigDSMocks.NewMockDataStore(s.mockCtrl)
-	s.sensorConnMgr = connMocks.NewMockManager(s.mockCtrl)
 	s.evaluator = npDSMocks.NewMockEvaluator(s.mockCtrl)
 
-	s.tested = newService(s.flows, s.entities, s.deployments, s.clusters, s.graphConfig, s.sensorConnMgr)
+	s.tested = newService(s.flows, s.entities, s.deployments, s.clusters, s.graphConfig)
 }
 
 func (s *NetworkGraphServiceTestSuite) TearDownTest() {
@@ -715,19 +710,10 @@ func (s *NetworkGraphServiceTestSuite) TestCreateExternalNetworkEntity() {
 		},
 	}
 
-	s.entities.EXPECT().UpsertExternalNetworkEntity(ctx, gomock.Any()).Return(nil)
+	s.entities.EXPECT().UpsertExternalNetworkEntity(ctx, gomock.Any(), false).Return(nil)
 	s.clusters.EXPECT().Exists(gomock.Any(), "c1").Return(true, nil)
-	pushSig := concurrency.NewSignal()
-	s.sensorConnMgr.EXPECT().PushExternalNetworkEntitiesToSensor(ctx, "c1").DoAndReturn(
-		func(ctx context.Context, clusterID string) error {
-			s.Equal("c1", clusterID)
-			pushSig.Signal()
-			return nil
-		})
-
 	_, err = s.tested.CreateExternalNetworkEntity(ctx, request)
 	s.NoError(err)
-	s.True(concurrency.WaitWithTimeout(&pushSig, time.Second*1))
 
 	// Cluster not found-no flows upserted
 	s.clusters.EXPECT().Exists(gomock.Any(), "c1").Return(false, nil)
@@ -749,17 +735,8 @@ func (s *NetworkGraphServiceTestSuite) TestDeleteExternalNetworkEntity() {
 
 	s.entities.EXPECT().GetEntity(ctx, request.GetId()).Return(&storage.NetworkEntity{}, true, nil)
 	s.entities.EXPECT().DeleteExternalNetworkEntity(ctx, request.GetId()).Return(nil)
-	pushSig := concurrency.NewSignal()
-	s.sensorConnMgr.EXPECT().PushExternalNetworkEntitiesToSensor(ctx, "c1").DoAndReturn(
-		func(ctx context.Context, clusterID string) error {
-			s.Equal("c1", clusterID)
-			pushSig.Signal()
-			return nil
-		})
-
 	_, err := s.tested.DeleteExternalNetworkEntity(ctx, request)
 	s.NoError(err)
-	s.True(concurrency.WaitWithTimeout(&pushSig, time.Second*1))
 
 	s.entities.EXPECT().GetEntity(ctx, request.GetId()).Return(&storage.NetworkEntity{
 		Info: &storage.NetworkEntityInfo{
@@ -804,7 +781,7 @@ func (s *NetworkGraphServiceTestSuite) TestPatchExternalNetworkEntity() {
 	}
 
 	s.entities.EXPECT().GetEntity(ctx, entity.GetInfo().GetId()).Return(entity, true, nil)
-	s.entities.EXPECT().UpsertExternalNetworkEntity(ctx, gomock.Any()).Return(nil)
+	s.entities.EXPECT().UpsertExternalNetworkEntity(ctx, gomock.Any(), false).Return(nil)
 	actual, err := s.tested.PatchExternalNetworkEntity(ctx, patch)
 	s.NoError(err)
 	entity.Info.GetExternalSource().Name = "newcidr"

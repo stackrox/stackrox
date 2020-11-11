@@ -221,7 +221,12 @@ func normalizeDupNameExtSrcs(entity *storage.NetworkEntityInfo) {
 		return
 	}
 
-	id, err := sac.NewClusterScopeResourceID(decodedID.ClusterID(), entity.GetExternalSource().GetName())
+	var id sac.ResourceID
+	if decodedID.ClusterID() == "" {
+		id, err = sac.NewGlobalScopeResourceID(entity.GetExternalSource().GetName())
+	} else {
+		id, err = sac.NewClusterScopeResourceID(decodedID.ClusterID(), entity.GetExternalSource().GetName())
+	}
 	if err != nil {
 		log.Errorf("failed to normalize external sources: %v", err)
 		return
