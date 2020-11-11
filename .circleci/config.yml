@@ -669,8 +669,18 @@ commands:
   check-stackrox-logs:
     parameters:
       collect:
+        # In most jobs the logs are already grabbed by collectK8sLogs
         type: boolean
         default: false
+      exclude-in-restart-check:
+        # A regular expression to filter out logs for the restart check
+        type: string
+        default: "check-them-all"
+      exclude-in-error-check:
+        # A regular expression to filter out logs for the suspicious entry check
+        type: string
+        default: "check-them-all"
+
     description: Checks StackRox logs to ensure all services operated normally
     steps:
       - when:
@@ -684,18 +694,25 @@ commands:
       - run:
           name: Verify that StackRox services did not restart during the runs
           command: |
-            if [[ $(ls /tmp/k8s-service-logs/stackrox/pods/*-previous.log | wc -l) != 0 ]]; then
-              ls /tmp/k8s-service-logs/stackrox/pods/*-previous.log
-              exit 1
+            previous_logs=$(ls /tmp/k8s-service-logs/stackrox/pods/*-previous.log || true)
+            if [[ -n "${previous_logs}" ]]; then
+                filtered=$(ls ${previous_logs} | egrep -v "<< parameters.exclude-in-restart-check >>" || true)
+                if [[ -n "${filtered}" ]]; then
+                    exit 1
+                fi
             fi
           when: always
 
       - run:
           name: Verify that StackRox service logs contain no suspicious entries
           command: |
-            if ! scripts/ci/logcheck/check.sh /tmp/k8s-service-logs/stackrox/pods/*.log; then
-              echo >&2 "Found at least one suspicious log file entry."
-              exit 1
+            logs=$(ls /tmp/k8s-service-logs/stackrox/pods/*.log)
+            filtered=$(ls ${logs} | egrep -v "<< parameters.exclude-in-error-check >>" || true)
+            if [[ -n "${filtered}" ]]; then
+                if ! scripts/ci/logcheck/check.sh ${filtered}; then
+                    echo >&2 "Found at least one suspicious log file entry."
+                    exit 1
+                fi
             fi
           when: always
 
@@ -1569,7 +1586,9 @@ commands:
       - *collectK8sLogs
       - get-and-store-debug-dump
       - pull-stackrox-api-data
-      - check-stackrox-logs
+      - check-stackrox-logs:
+          exclude-in-restart-check: "compliance"
+          exclude-in-error-check: "compliance-previous"
       - *storeK8sLogs
       - *storeQALogs
 
