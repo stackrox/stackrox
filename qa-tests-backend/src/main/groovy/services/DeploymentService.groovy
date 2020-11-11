@@ -16,7 +16,15 @@ class DeploymentService extends BaseService {
         return getDeploymentService().listDeployments(query)
     }
 
+    static listDeploymentsWithProcessInfo(RawQuery query = RawQuery.newBuilder().build()) {
+        return getDeploymentService().listDeploymentsWithProcessInfo(query)
+    }
+
     static getDeployment(String id) {
         return getDeploymentService().getDeployment(getResourceByID(id))
+    }
+
+    static getDeploymentCount(RawQuery query = RawQuery.newBuilder().build()) {
+        return getDeploymentService().countDeployments(query).count
     }
 }

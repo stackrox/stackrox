@@ -12,6 +12,7 @@ class ProcessWhitelistService extends BaseService {
     static getProcessWhitelistService() {
         return ProcessWhitelistServiceGrpc.newBlockingStub(getChannel())
     }
+
     static  ProcessWhitelistOuterClass.ProcessWhitelist getProcessWhitelist(
             String clusterId, Deployment deployment, String containerName = null,
             int retries = 20, int interval = 6) {
@@ -45,19 +46,47 @@ class ProcessWhitelistService extends BaseService {
     }
 
     static List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists(
-            String clusterId, Deployment deployment, String containerName, boolean  lock) {
+            String clusterId, Deployment deployment, String containerName, boolean lock) {
         try {
             String cName = containerName ?: deployment.getName()
+            ProcessWhitelistKey keyToLock = ProcessWhitelistKey
+                    .newBuilder()
+                        .setClusterId(clusterId)
+                        .setNamespace(deployment.getNamespace())
+                        .setDeploymentId(deployment.getDeploymentUid())
+                        .setContainerName(cName)
+                    .build()
+
             ProcessWhitelistServiceOuterClass.LockProcessWhitelistsRequest lockRequest =
-                     ProcessWhitelistServiceOuterClass
-                    .LockProcessWhitelistsRequest.newBuilder()
-                    .addKeys(ProcessWhitelistKey
-                    .newBuilder().setClusterId(clusterId)
-                            .setNamespace(deployment.getNamespace())
-                            .setDeploymentId(deployment.getDeploymentUid())
-                            .setContainerName(cName).build())
-                             .setLocked(lock).build()
-            return getProcessWhitelistService().lockProcessWhitelists(lockRequest).whitelistsList
+                     ProcessWhitelistServiceOuterClass.LockProcessWhitelistsRequest
+                             .newBuilder()
+                               .addKeys(keyToLock)
+                               .setLocked(lock)
+                             .build()
+
+            def fromUpdate = getProcessWhitelistService().lockProcessWhitelists(lockRequest).whitelistsList
+
+            ProcessWhitelistServiceOuterClass.GetProcessWhitelistRequest getRequest =
+                    ProcessWhitelistServiceOuterClass.GetProcessWhitelistRequest
+                            .newBuilder()
+                                .setKey(keyToLock)
+                            .build()
+
+            ProcessWhitelistOuterClass.ProcessWhitelist wl =
+                    getProcessWhitelistService().getProcessWhitelist(getRequest)
+
+            if (wl.hasUserLockedTimestamp()) {
+                if (!lock) {
+                    throw new RuntimeException("Asked to unlock but the lock is still set")
+                }
+            }
+            else {
+                if (lock) {
+                    throw new RuntimeException("Asked to lock but the lock is not set")
+                }
+            }
+
+            return fromUpdate
         } catch (Exception e) {
             println "Error locking process baselines : ${e}"
         }
@@ -95,10 +124,11 @@ class ProcessWhitelistService extends BaseService {
             List<ProcessWhitelistOuterClass.ProcessWhitelist> updatedLst = getProcessWhitelistService()
                 .updateProcessWhitelists(requestBuilder.build()).whitelistsList
             return updatedLst
-    } catch (Exception e) {
+        } catch (Exception e) {
             println "Error updating process baselines: ${e}"
+        }
     }
-    }
+
     static ProcessWhitelistOuterClass.ProcessWhitelist getWhitelistProcesses(
         ProcessWhitelistServiceOuterClass.GetProcessWhitelistRequest request) {
         try {

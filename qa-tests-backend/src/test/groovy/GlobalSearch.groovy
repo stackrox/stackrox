@@ -64,6 +64,9 @@ class GlobalSearch extends BaseSpecification {
         Set<SearchServiceOuterClass.SearchCategory> presentCategories = null
         withRetry(30, 1) {
             searchResponse = getSearchResponse(query, searchCategories)
+            searchResponse.countsList.forEach {
+                count -> println "Category: ${count.category}: ${count.count}"
+            }
             presentCategories = searchResponse.countsList.collectMany {
                 count -> count.count > 0 ? [count.category] : [] } .toSet()
             assert presentCategories.size() >= expectedCategoriesSet.size()

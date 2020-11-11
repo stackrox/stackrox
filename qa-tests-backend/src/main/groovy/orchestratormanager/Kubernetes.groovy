@@ -1416,15 +1416,17 @@ class Kubernetes implements OrchestratorMain {
         // Wait for container 0 to be running first.
         def timer = new Timer(30, 1)
         while (timer.IsValid()) {
-            println "First container in pod ${deployment.pods.get(0).name} not yet running ..."
             def p = client.pods().inNamespace(deployment.namespace).withName(deployment.pods.get(0).name).get()
             if (p == null || p.status.containerStatuses.size() == 0) {
+                println "First container in pod ${deployment.pods.get(0).name} not yet running ..."
                 continue
             }
             def status = p.status.containerStatuses.get(0)
             if (status.state.running != null) {
+                println "First container in pod ${deployment.pods.get(0).name} is running"
                 break
             }
+            println "First container in pod ${deployment.pods.get(0).name} not yet running ..."
         }
 
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(20)
