@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { ArrowRight, ArrowLeft, Rss } from 'react-feather';
+import { Rss } from 'react-feather';
 
 import { DetailedTooltipOverlay } from '@stackrox/ui-components';
 import TooltipCardSection from 'Components/TooltipCardSection';
@@ -25,8 +25,7 @@ const NodeTooltipOverlay = ({
                         <TooltipCardSection
                             header={
                                 <div className="flex items-center">
-                                    <ArrowRight className="h-4 w-4 text-base-600" />
-                                    <span className="ml-1">{numIngressFlows} ingress flows</span>
+                                    {numIngressFlows} ingress flows
                                 </div>
                             }
                         >
@@ -41,8 +40,7 @@ const NodeTooltipOverlay = ({
                         <TooltipCardSection
                             header={
                                 <div className="flex items-center">
-                                    <ArrowLeft className="h-4 w-4 text-base-600" />
-                                    <span className="ml-1">{numEgressFlows} egress flows</span>
+                                    {numEgressFlows} egress flows
                                 </div>
                             }
                         >
