@@ -156,9 +156,11 @@ fast-central: deps
 
 # fast is a dev mode options when using local dev
 # it will automatically restart Central if there are any changes
-# TODO: add sensor
 .PHONY: fast
 fast: fast-central
+
+.PHONY: fast-sensor
+fast-sensor: sensor-build-dockerized
 
 .PHONY: validateimports
 validateimports:
@@ -337,6 +339,16 @@ main-rhel-build: build-prep main-rhel-build-dockerized
 main-build-dockerized: main-builder-image
 	@echo "+ $@"
 	docker run -e CI -e CIRCLE_TAG -e GOTAGS $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
+
+.PHONY: sensor-build-dockerized
+sensor-build-dockerized: main-builder-image
+	@echo "+ $@"
+	docker run -e CI -e CIRCLE_TAG -e GOTAGS $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
+
+.PHONY: sensor-build
+sensor-build:
+	$(GOBUILD) sensor/kubernetes sensor/admission-control
+	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
 
 .PHONY: main-rhel-dockerized
 main-rhel-build-dockerized: main-builder-image-rhel

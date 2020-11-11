@@ -88,8 +88,7 @@ type IssuedCert struct {
 	ID      *storage.ServiceIdentity
 }
 
-// LeafCertificateFromFile reads a tls.Certificate (including private key and cert)
-// from the canonical locations on non-central services.
+// LeafCertificateFromFile reads a tls.Certificate (including private key and cert).
 func LeafCertificateFromFile() (tls.Certificate, error) {
 	return tls.LoadX509KeyPair(certFilePathSetting.Setting(), keyFilePathSetting.Setting())
 }

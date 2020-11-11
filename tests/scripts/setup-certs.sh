@@ -20,8 +20,16 @@ basicConstraints = critical, CA:true, pathlen:0
 keyUsage = critical, digitalSignature, cRLSign, keyCertSign
 '
 
+root_ca_exts="
+  [req]
+  distinguished_name=dn
+  x509_extensions=ext
+  [ dn ]
+  [ ext ]
+  basicConstraints=CA:TRUE,pathlen:1
+  "
 # Root CA
-openssl req -nodes -new -x509 -keyout ca.key -out ca.crt -subj "/CN=Root ${ca_name}"
+openssl req -nodes -config <(echo "$root_ca_exts") -new -x509 -keyout ca.key -out ca.crt -subj "/CN=Root ${ca_name}"
 
 # Intermediate CA
 openssl genrsa -out intermediate.key 2048

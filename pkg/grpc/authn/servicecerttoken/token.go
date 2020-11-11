@@ -1,9 +1,6 @@
 package servicecerttoken
 
 import (
-	"crypto"
-	"crypto/ecdsa"
-	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -15,6 +12,7 @@ import (
 	ctTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/cryptoutils"
 )
 
 // parseToken parses a ServiceCert token and returns the parsed x509 certificate. Note that the returned certificate is
@@ -70,20 +68,6 @@ func parseToken(token string, maxLeeway time.Duration) (*x509.Certificate, error
 	return cert, nil
 }
 
-// derefPrivateKey dereferences a private key if it is a pointer internally. This is necessary as private keys are
-// typically stored as pointers in Go TLS libraries (*ecdsa.PrivateKey, *rsa.PrivateKey), but `CreateSignature` from
-// CT TLS expects a non-pointer object.
-func derefPrivateKey(pk crypto.PrivateKey) crypto.PrivateKey {
-	switch k := pk.(type) {
-	case *ecdsa.PrivateKey:
-		return *k
-	case *rsa.PrivateKey:
-		return *k
-	default:
-		return k
-	}
-}
-
 // createToken creates a ServiceCert token from the given certificate, stamping it with the given current timestamp.
 func createToken(cert *tls.Certificate, currTime time.Time) (string, error) {
 	tsPb, err := types.TimestampProto(currTime)
@@ -101,7 +85,7 @@ func createToken(cert *tls.Certificate, currTime time.Time) (string, error) {
 		return "", errors.Wrap(err, "could not marshal service cert auth structure")
 	}
 
-	ds, err := ctTLS.CreateSignature(derefPrivateKey(cert.PrivateKey), hashAlgo, authBytes)
+	ds, err := ctTLS.CreateSignature(cryptoutils.DerefPrivateKey(cert.PrivateKey), hashAlgo, authBytes)
 	if err != nil {
 		return "", errors.Wrap(err, "could not create signature")
 	}

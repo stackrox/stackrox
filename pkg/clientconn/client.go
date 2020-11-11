@@ -148,6 +148,7 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 type connectionOptions struct {
 	useServiceCertToken bool
 	dialTLSFunc         DialTLSFunc
+	rootCAs             *x509.CertPool
 }
 
 // ConnectionOption allows specifying additional options when establishing GRPC connections.
@@ -159,6 +160,24 @@ type connectOptFunc func(opts *connectionOptions) error
 
 func (f connectOptFunc) apply(opts *connectionOptions) error {
 	return f(opts)
+}
+
+// AddRootCAs adds new root certificates to the root CA cert pool for the gRPC connection
+func AddRootCAs(certs ...*x509.Certificate) ConnectionOption {
+	return connectOptFunc(func(opts *connectionOptions) error {
+		if opts.rootCAs == nil {
+			pool, err := x509.SystemCertPool()
+			if err != nil {
+				return errors.Wrap(err, "Reading system certs")
+			}
+			opts.rootCAs = pool
+		}
+
+		for _, c := range certs {
+			opts.rootCAs.AddCert(c)
+		}
+		return nil
+	})
 }
 
 // UseServiceCertToken specifies whether or not a `ServiceCert` token should be used.
@@ -195,6 +214,7 @@ func OptionsForEndpoint(endpoint string, extraConnOpts ...ConnectionOption) (Opt
 		TLS: TLSConfigOptions{
 			UseClientCert: true,
 			ServerName:    host,
+			RootCAs:       connOpts.rootCAs,
 		},
 		DialTLS: connOpts.dialTLSFunc,
 	}

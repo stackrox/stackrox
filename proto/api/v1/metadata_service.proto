@@ -24,6 +24,26 @@ message Metadata {
     LicenseStatus license_status = 4;
 }
 
+message TrustInfo {
+    // holds the certificate chain hold by central
+    repeated bytes cert_chain = 1;
+    // sensor challenge string
+    string sensor_challenge = 2;
+    // central challenge string
+    string central_challenge = 3;
+}
+
+message TLSChallengeResponse {
+    // signed data which is returned to the caller, is validated against the signature
+    bytes trust_info_serialized = 1;
+    bytes signature = 2;
+}
+
+message TLSChallengeRequest {
+    // generated challenge token by the service asking for TLS certs
+    string challenge_token = 1;
+}
+
 service MetadataService {
 
     rpc GetMetadata(Empty) returns (Metadata) {
@@ -32,4 +52,9 @@ service MetadataService {
         };
     }
 
+    rpc TLSChallenge(TLSChallengeRequest) returns (TLSChallengeResponse) {
+        option(google.api.http) = {
+            get: "/v1/tls-challenge"
+        };
+    }
 }

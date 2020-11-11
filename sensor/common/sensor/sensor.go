@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"context"
+	"crypto/x509"
 	"net/http"
 	"time"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
+	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
@@ -122,8 +124,20 @@ func createKOCacheSource(centralEndpoint string) (probeupload.ProbeSource, error
 func (s *Sensor) Start() {
 	// Start up connections.
 	log.Infof("Connecting to Central server %s", s.centralEndpoint)
+
 	var err error
-	s.centralConnection, err = clientconn.AuthenticatedGRPCConnection(s.centralEndpoint, mtls.CentralSubject, clientconn.UseServiceCertToken(true))
+	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
+
+	//TODO(ROX-5811): Implemented in later release with ticket ROX-5811
+	if false {
+		certs := s.getCentralTLSCerts()
+		if len(certs) != 0 {
+			log.Infof("Add central certs to gRPC connection")
+			opts = append(opts, clientconn.AddRootCAs(certs...))
+		}
+	}
+
+	s.centralConnection, err = clientconn.AuthenticatedGRPCConnection(s.centralEndpoint, mtls.CentralSubject, opts...)
 	if err != nil {
 		log.Fatalf("Error connecting to central: %s", err)
 	}
@@ -206,6 +220,23 @@ func (s *Sensor) Start() {
 	s.waitUntilCentralIsReady(s.centralConnection)
 
 	go s.communicationWithCentral(&centralReachable)
+}
+
+// getCentralTLSCerts only logs errors because this feature should not break
+// sensors start-up.
+func (s *Sensor) getCentralTLSCerts() []*x509.Certificate {
+	centralClient, err := centralclient.NewClient(s.centralEndpoint)
+	if err != nil {
+		log.Warnf("Creating central client: %s", err)
+		return []*x509.Certificate{}
+	}
+
+	certs, err := centralClient.GetTLSTrustedCerts()
+	if err != nil {
+		log.Warnf("Error fetching centrals TLS certs: %s", err)
+		return []*x509.Certificate{}
+	}
+	return certs
 }
 
 // Stop shuts down background tasks.
