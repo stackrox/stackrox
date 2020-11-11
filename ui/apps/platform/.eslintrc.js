@@ -250,6 +250,7 @@ module.exports = {
                 ...commonRules,
 
                 'jest/no-focused-tests': 'error',
+                'no-unused-expressions': 'off', // allows chai-style "expect(x).to.be.true;"
             },
         },
     ],

@@ -1,3 +1,4 @@
 export default (flag, desiredValue) => {
-    return Cypress.env(flag) === desiredValue;
+    const flagToCheck = Cypress.env(flag) || false;
+    return flagToCheck === desiredValue;
 };

@@ -55,6 +55,13 @@ export function filterNamespaces(element) {
     return element.data('type') === 'NAMESPACE';
 }
 
+export function filterClusters(element) {
+    return element.data('type') === 'CLUSTER';
+}
+export function filterInternet(element) {
+    return element.data('type') === 'INTERNET';
+}
+
 export function filterByNodeName(node) {
     return (element) => {
         return element.data('type') === node.type && element.data('name') === node.name;
