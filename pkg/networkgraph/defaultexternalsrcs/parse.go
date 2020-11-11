@@ -6,9 +6,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/external-network-pusher/pkg/common"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // ParseProviderNetworkData parses the provider networks bytes (default network graph external source), into *storage.NetworkEntity.
@@ -64,7 +64,8 @@ func generateEntity(provider, region, service, cidr string) *storage.NetworkEnti
 	}
 
 	// Error is unexpected.
-	id, _ := sac.NewGlobalScopeResourceID(uuid.NewV4().String())
+	id, err := externalsrcs.NewGlobalScopedScopedID(cidr)
+	utils.Should(errors.Wrapf(err, "generating id for network %s/%s/%s", provider, region, cidr))
 
 	return &storage.NetworkEntity{
 		Info: &storage.NetworkEntityInfo{

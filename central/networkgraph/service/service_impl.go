@@ -25,13 +25,13 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/objects"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -123,7 +123,7 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 	}
 
 	// If an error is returned here, it means one of the arguments is invalid.
-	id, err := sac.NewClusterScopeResourceID(request.GetClusterId(), uuid.NewV4().String())
+	id, err := externalsrcs.NewClusterScopedID(request.GetClusterId(), request.GetEntity().GetCidr())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
