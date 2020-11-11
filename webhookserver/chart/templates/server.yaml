@@ -18,6 +18,7 @@ spec:
     spec:
       imagePullSecrets:
       - name: stackrox
+      - name: stackrox-dockerhub
       containers:
       - image: stackrox/webhookserver:1.2
         name: webhookserver

@@ -21,7 +21,15 @@ export RULES_FILE="${DIR}/scopedaccess/config/rules.gval"
 export AUTHZ_PLUGIN_IMAGE="stackrox/default-authz-plugin:${PLUGIN_VERSION}"
 
 "${plugin_dir}/examples/deployment/deploy.sh"
+
+# patch the deployment to allow image pulls in the case where the secret named "stackrox" is
+# a non-standard registry (i.e. something other then docker.io/stackrox or stackrox.io) and
+# a secret named "stackrox-dockerhub" is needed to get access to the authorization-plugin image.
+label_patch='{"op": "add", "path": "/spec/template/metadata/labels/imagepullsecret-added", "value": "true"}'
+pull_secret_patch='{"op": "add", "path": "/spec/template/spec/imagePullSecrets/1", "value": {"name": "stackrox-dockerhub"}}'
+kubectl -n stackrox patch deployment authorization-plugin --type='json' -p="[${label_patch},${pull_secret_patch}]"
+
 sleep 5
-POD=$(kubectl -n stackrox get pod -o jsonpath='{.items[?(@.metadata.labels.app=="authorization-plugin")].metadata.name}')
-echo $POD
+POD=$(kubectl -n stackrox get po -lapp=authorization-plugin -limagepullsecret-added=true -o jsonpath='{.items[0].metadata.name}')
+echo "$POD"
 kubectl -n stackrox wait --for=condition=ready "pod/$POD" --timeout=2m

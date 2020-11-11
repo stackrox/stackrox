@@ -496,6 +496,40 @@ getPrometheusMetricParser: &getPrometheusMetricParser
 
 version: 2.1
 
+parameters:
+  # A block of external parameters used to run qa-backend-tests against an image set
+  # released via a non-standard pipeline. e.g. DSOP images. See: designated-image-tests.
+  run_designated_image_test:
+    type: boolean
+    default: false
+  main_image_tag:
+    type: string
+    default: ""
+  main_image_repo:
+    type: string
+    default: ""
+  registry_username:
+    type: string
+    default: ""
+  roxctl_image_repo:
+    type: string
+    default: ""
+  scanner_image:
+    type: string
+    default: ""
+  registry_password:
+    type: string
+    default: ""
+  collector_image_repo:
+    type: string
+    default: ""
+  scanner_db_image:
+    type: string
+    default: ""
+  rox_license_key:
+    type: string
+    default: ""
+
 orbs:
   win: circleci/windows@2.2.0
 
@@ -956,8 +990,6 @@ commands:
 
     steps:
       - setup-gcp
-      - setup-dep-env:
-          docker-login: false
 
       - run:
           name: Assign environment variables
@@ -1616,6 +1648,9 @@ commands:
       helm-from-repo:
         type: boolean
         default: false
+      validate-sensor-bundle:
+        type: boolean
+        default: true
 
     steps:
       - run:
@@ -1718,22 +1753,26 @@ commands:
               helm install --namespace stackrox -f values.yaml sensor . "${extra_args[@]}"
               rm -rf "${RENDERED_CHART_DIR}"
             fi
-      - run:
-          name: Validate Sensor bundle (upgrader)
-          command: |
-            if [[ "<< parameters.sensor-deploy-flavor >>" == "kubectl" ]]; then
-              kubectl proxy --port 28001 &
-              proxy_pid=$!
-              sleep 5
-              KUBECONFIG="$(pwd)/scripts/ci/kube-api-proxy/config.yml" \
-                bin/linux/upgrader \
-                  -kube-config kubectl \
-                  -local-bundle deploy/<< parameters.orchestrator-flavor >>/sensor-deploy \
-                  -workflow validate-bundle
-              kill "$proxy_pid"
-            else
-              echo "Skipping for helm sensor deploy...  "
-            fi
+
+      - when:
+          condition: << parameters.validate-sensor-bundle >>
+          steps:
+            - run:
+                name: Validate Sensor bundle (upgrader)
+                command: |
+                  if [[ "<< parameters.sensor-deploy-flavor >>" == "kubectl" ]]; then
+                    kubectl proxy --port 28001 &
+                    proxy_pid=$!
+                    sleep 5
+                    KUBECONFIG="$(pwd)/scripts/ci/kube-api-proxy/config.yml" \
+                      bin/linux/upgrader \
+                        -kube-config kubectl \
+                        -local-bundle deploy/<< parameters.orchestrator-flavor >>/sensor-deploy \
+                        -workflow validate-bundle
+                    kill "$proxy_pid"
+                  else
+                    echo "Skipping for helm sensor deploy...  "
+                  fi
 
       - *waitForSensorK8s
 
@@ -2038,6 +2077,139 @@ jobs:
 
       - *saveGoBuildCache
 
+  designated-image-tests:
+
+    ###
+    # This job is intended to run qa-backend-tests against images that are released
+    # without a full rox CI run. e.g. the DSOP images that are repackaged with a
+    # different base image.
+    ##
+
+    # To trigger a run you might do something like:
+    #
+    #   curl -X POST --header 'Content-Type: application/json' \
+    #        --header "Circle-Token: <your CI token>" https://circleci.com/api/v2/project/github/stackrox/rox/pipeline -d '{
+    #     "branch": "3.0.50.x",
+    #     "parameters": {
+    #         "run_designated_image_test": true,
+    #         "main_image_tag": "3.0.50.1",
+    #         "main_image_repo": "registry1.dsop.io/ironbank/stackrox/stackrox/main-rhel",
+    #         "roxctl_image_repo": "registry1.dsop.io/ironbank/stackrox/stackrox/main-rhel",
+    #         "scanner_db_image": "registry1.dsop.io/ironbank/stackrox/stackrox/scanner-db-rhel:2.5.0",
+    #         "scanner_image": "registry1.dsop.io/ironbank/stackrox/stackrox/scanner-rhel:2.5.0",
+    #         "collector_image_repo": "registry1.dsop.io/ironbank/stackrox/stackrox/collector-rhel",
+    #         "registry_username": "<your DSOP registry1 username>",
+    #         "registry_password": "<token from registry1>",
+    #         "rox_license_key": "<a valid ROX license>"
+    #     }
+    # }'
+
+    executor: custom
+    environment:
+      - LOCAL_PORT: 8000
+      - COLLECTION_METHOD: ebpf
+      - GCP_IMAGE_TYPE: "COS"
+      - POD_SECURITY_POLICIES: "true"
+      - MONITORING_SUPPORT: false
+      - SCANNER_SUPPORT: true
+      - ROX_WHITELIST_GENERATION_DURATION: 1m
+      - LOAD_BALANCER: none
+      - ADMISSION_CONTROLLER: true
+      - ADMISSION_CONTROLLER_UPDATES: true
+      - AUTH0_SUPPORT: false
+    steps:
+      - checkout
+
+      - run:
+          name: Parameter check
+          command: |
+            some_missing=0
+
+            function check_and_set() {
+                local name="$1"
+                local value="$2"
+                if [[ -z "${value}" ]]; then
+                    echo "Parameter ${name} is missing"
+                    some_missing=1
+                else
+                    cci-export "$(echo "$name" | tr a-z A-Z)" "${value}"
+                fi
+            }
+
+            check_and_set "main_image_tag" "<< pipeline.parameters.main_image_tag >>"
+            check_and_set "main_image_repo" "<< pipeline.parameters.main_image_repo >>"
+            check_and_set "roxctl_image_repo" "<< pipeline.parameters.roxctl_image_repo >>"
+            check_and_set "scanner_db_image" "<< pipeline.parameters.scanner_db_image >>"
+            check_and_set "scanner_image" "<< pipeline.parameters.scanner_image >>"
+            check_and_set "collector_image_repo" "<< pipeline.parameters.collector_image_repo >>"
+            check_and_set "registry_username" "<< pipeline.parameters.registry_username >>"
+            check_and_set "registry_password" "<< pipeline.parameters.registry_password >>"
+            check_and_set "rox_license_key" "<< pipeline.parameters.rox_license_key >>"
+            
+            if (( some_missing )); then
+                echo "Some required parameters are missing. Exiting."
+                exit 1
+            fi
+          
+      - provision-gke-cluster:
+          cluster-id: "designated-image-tests"
+
+      - setup_remote_docker
+
+      - *setupGoogleAppCreds
+
+      - *setupDefaultTLSCerts
+
+      - run:
+          name: Get roxctl from released artifacts
+          command: |
+            gsutil cp "gs://sr-roxc/${MAIN_IMAGE_TAG}/bin/linux/roxctl" "$GOPATH/bin/roxctl"
+            chmod +x "$GOPATH/bin/roxctl"
+            roxctl version
+
+      - deploy-stackrox:
+          validate-sensor-bundle: false
+          require-cluster-admin: true
+          post-central-deploy-steps:
+            - *setupClientTLSCerts
+
+      - run:
+          name: Create a SR dockerhub secret for test image access
+          command: |
+            kubectl -n stackrox create secret docker-registry stackrox-dockerhub \
+              --docker-server="docker.io" \
+              --docker-username="${DOCKER_IO_PULL_USERNAME}" \
+              --docker-password="${DOCKER_IO_PULL_PASSWORD}" \
+              --docker-email="test@stackrox.com"
+
+      - deploy-default-psp
+      - deploy-webhook-server
+      - deploy-authz-plugin
+
+      - *getECRDockerPullPassword
+      - *restoreGradle
+      - run:
+          name: QA Automation Platform
+          command: |
+            export REGISTRY_USERNAME="${DOCKER_IO_PULL_USERNAME}"
+            export REGISTRY_PASSWORD="${DOCKER_IO_PULL_PASSWORD}"
+            export CLUSTER=K8S
+            export API_HOSTNAME=localhost
+            export API_PORT=${LOCAL_PORT}
+            make -C qa-tests-backend bat-test
+
+      - *storeQATestResults
+      - *storeQASpockReports
+
+      - *collectK8sLogs
+      - *backupDB
+      - *storeDBBackupArtifact
+      - check-stackrox-logs
+      - *storeK8sLogs
+      - *storeQALogs
+
+      # - teardown-gke
+  
   ###
   # Build jobs
   ###
@@ -4378,6 +4550,8 @@ workflows:
   version: 2
 
   build_all:
+    when: 
+      not: << pipeline.parameters.run_designated_image_test >>
     jobs:
       - slack-notify:
           filters:
@@ -4598,3 +4772,9 @@ workflows:
           filters:
             branches:
               only: master
+
+  designated_image_test:
+    when: << pipeline.parameters.run_designated_image_test >>
+    jobs:
+      - designated-image-tests:
+          context: docker-io-pull
