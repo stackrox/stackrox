@@ -13,21 +13,21 @@ export const edgeTypes = {
 };
 const LINK_DELIMITER = '**__**';
 
-export const isNonIsolatedNode = (node) => node.nonIsolatedIngress && node.nonIsolatedEgress;
+export const getIsNonIsolatedNode = (node) => node.nonIsolatedIngress && node.nonIsolatedEgress;
 
-export const isDeployment = (node) => node?.type === entityTypes.DEPLOYMENT;
+export const getIsDeploymentNode = (type) => type === entityTypes.DEPLOYMENT;
 
-export const isNamespace = (node) => node?.type === entityTypes.NAMESPACE;
+export const getIsNamespaceNode = (type) => type === entityTypes.NAMESPACE;
 
-export const getIsExternalEntities = (type) => type === nodeTypes.EXTERNAL_ENTITIES;
+export const getIsExternalEntitiesNode = (type) => type === nodeTypes.EXTERNAL_ENTITIES;
 
 export const getIsCIDRBlockNode = (type) => type === nodeTypes.CIDR_BLOCK;
 
-export const isNamespaceEdge = (edge) => edge?.type === edgeTypes.NAMESPACE_EDGE;
+export const getIsNamespaceEdge = (type) => type === edgeTypes.NAMESPACE_EDGE;
 
-export const isNodeToNodeEdge = (edge) => edge?.type === edgeTypes.NODE_TO_NODE_EDGE;
+export const getIsNodeToNodeEdge = (type) => type === edgeTypes.NODE_TO_NODE_EDGE;
 
-export const isNodeToNamespaceEdge = (edge) => edge?.type === edgeTypes.NODE_TO_NAMESPACE_EDGE;
+export const getIsNodeToNamespaceEdge = (type) => type === edgeTypes.NODE_TO_NAMESPACE_EDGE;
 
 export const getIsNodeExternal = (id, nodes) => {
     const node = nodes.find((datum) => {
@@ -52,14 +52,17 @@ export const getIsNodeExternal = (id, nodes) => {
  */
 export function getNodeNamespace(node) {
     const { deployment, id, type } = node.entity;
-    const isExternalEntitiesNode = getIsExternalEntities(type);
+    const isExternalEntitiesNode = getIsExternalEntitiesNode(type);
     const isCIDRBlockNode = getIsCIDRBlockNode(type);
+    const isDeploymentNode = getIsDeploymentNode(type);
     // since external node's don't have a namespace, we'll utilize their "id"s instead
     if (isExternalEntitiesNode || isCIDRBlockNode) {
         return id;
     }
-    // TODO: we should only return "deployment.namespace" if the type is DEPLOYMENT and throw an error otherwise
-    return deployment.namespace;
+    if (isDeploymentNode) {
+        return deployment.namespace;
+    }
+    throw new Error(`Node with unexpected type (${type}) was supplied to function`);
 }
 
 /**
@@ -72,14 +75,17 @@ export function getNodeNamespace(node) {
  */
 export function getNodeName(node) {
     const { deployment, id, type } = node.entity;
-    const isExternalEntitiesNode = getIsExternalEntities(type);
+    const isExternalEntitiesNode = getIsExternalEntitiesNode(type);
     const isCIDRBlockNode = getIsCIDRBlockNode(type);
+    const isDeploymentNode = getIsDeploymentNode(type);
     // since external node's don't have a unique name, we'll utilize their "id"s instead
     if (isExternalEntitiesNode || isCIDRBlockNode) {
         return id;
     }
-    // TODO: we should only return "deployment.name" if the type is DEPLOYMENT and throw an error otherwise
-    return deployment.name;
+    if (isDeploymentNode) {
+        return deployment.name;
+    }
+    throw new Error(`Node with unexpected type (${type}) was supplied to function`);
 }
 
 /**
@@ -555,7 +561,7 @@ export const getEdgesFromNode = ({
 
                 // if the hovered edge is a namespace edge, it hovers all the edges connected to the namespaces
                 const isInnerNamespaceEdge =
-                    isNamespaceEdge(hoveredEdge) &&
+                    getIsNamespaceEdge(hoveredEdge?.type) &&
                     ((hoveredEdge?.sourceNodeNamespace === sourceNS &&
                         hoveredEdge?.targetNodeNamespace === targetNS) ||
                         (hoveredEdge?.sourceNodeNamespace === targetNS &&
@@ -563,13 +569,13 @@ export const getEdgesFromNode = ({
                 // if this edge is to the source namespace side, it's hovered when the source is the same
                 const isInnerSourceEdgeHovered =
                     isInnerNamespaceEdge ||
-                    (isNodeToNamespaceEdge(hoveredEdge) &&
+                    (getIsNodeToNamespaceEdge(hoveredEdge?.type) &&
                         (hoveredEdge?.sourceNodeId === source ||
                             hoveredEdge?.targetNodeId === source));
                 // if this edge is to the target namespace side, it's hovered when the target is the same
                 const isInnerTargetEdgeHovered =
                     isInnerNamespaceEdge ||
-                    (isNodeToNamespaceEdge(hoveredEdge) &&
+                    (getIsNodeToNamespaceEdge(hoveredEdge?.type) &&
                         (hoveredEdge?.targetNodeId === target ||
                             hoveredEdge?.sourceNodeId === target));
 
@@ -762,7 +768,7 @@ export const getExternalEntitiesNode = (data, configObj = {}) => {
     const isSelected = !!(selectedNode?.type === nodeTypes.EXTERNAL_ENTITIES);
     const isHovered = !!(hoveredNode?.type === nodeTypes.EXTERNAL_ENTITIES);
     const isBackground = !(!selectedNode && !hoveredNode) && !isHovered && !isSelected;
-    // DEPRECATED: const isNonIsolated = isNonIsolatedNode(externalNode);
+    // DEPRECATED: const isNonIsolated = getIsNonIsolatedNode(externalNode);
     const isDisallowed =
         filterState !== filterModes.allowed && edges.some((edge) => edge.data.isDisallowed);
     const isExternallyConnected = externallyConnected && filterState !== filterModes.allowed;
@@ -824,7 +830,7 @@ export const getCIDRBlockNodes = (data, configObj = {}) => {
         const isSelected = !!(selectedNode?.id === entity.id);
         const isHovered = !!(hoveredNode?.id === entity.id);
         const isBackground = !(!selectedNode && !hoveredNode) && !isHovered && !isSelected;
-        // DEPRECATED: const isNonIsolated = isNonIsolatedNode(externalNode);
+        // DEPRECATED: const isNonIsolated = getIsNonIsolatedNode(externalNode);
         const isDisallowed =
             filterState !== filterModes.allowed && edges.some((edge) => edge.data.isDisallowed);
         const isExternallyConnected = externallyConnected && filterState !== filterModes.allowed;
@@ -906,7 +912,7 @@ export const getDeploymentList = (filteredData, configObj = {}) => {
             (!isHovered && isAdjacentToHovered) || (!isSelected && isAdjacentToSelected);
         const isBackground =
             !isAdjacent && (selectedNode || hoveredNode) && !isHovered && !isSelected;
-        const isNonIsolated = isNonIsolatedNode(datum);
+        const isNonIsolated = getIsNonIsolatedNode(datum);
         const isDisallowed =
             filterState !== filterModes.allowed && edges.some((edge) => edge.data.isDisallowed);
         const isExternallyConnected =
@@ -1253,7 +1259,7 @@ export function getNetworkFlows(edges, filterState) {
                 return acc;
             }
             const isExternal =
-                getIsExternalEntities(destNodeType) || getIsCIDRBlockNode(destNodeType);
+                getIsExternalEntitiesNode(destNodeType) || getIsCIDRBlockNode(destNodeType);
             const connection = getConnectionText(filterState, isActive, isAllowed);
             directionalFlows.incrementFlows(traffic);
             return {

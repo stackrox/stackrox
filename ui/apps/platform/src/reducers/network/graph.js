@@ -8,7 +8,7 @@ import { types as backendTypes } from 'reducers/network/backend';
 import { types as searchTypes } from 'reducers/network/search';
 
 import { filterModes } from 'constants/networkFilterModes';
-import { isNonIsolatedNode, getSourceTargetKey } from 'utils/networkGraphUtils';
+import { getIsNonIsolatedNode, getSourceTargetKey } from 'utils/networkGraphUtils';
 import { nodeConnectionKeys } from 'constants/networkGraph';
 import entityTypes from 'constants/entityTypes';
 
@@ -52,7 +52,7 @@ const setNodeMapState = (graph, state, propertyConfig) => {
         }
         // set outEdges to use nodeId instead of index relative to nodes array
         newState[id][filterState] = { ...node, outEdges: {} };
-        if (isNonIsolatedNode(node)) {
+        if (getIsNonIsolatedNode(node)) {
             newState[id].nonIsolated = true;
         }
         newState[id][egressKey] = [];

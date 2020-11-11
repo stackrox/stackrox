@@ -466,6 +466,21 @@ describe('networkGraphUtils', () => {
             };
             expect(getNodeNamespace(node)).toEqual('1234');
         });
+
+        it('should throw an error when an unexpected type is supplied', () => {
+            const node = {
+                entity: {
+                    id: '1234',
+                    type: 'UNKNOWN',
+                },
+            };
+            function getUnknownNodeNamespace() {
+                return getNodeNamespace(node);
+            }
+            expect(getUnknownNodeNamespace).toThrowError(
+                'Node with unexpected type (UNKNOWN) was supplied to function'
+            );
+        });
     });
 
     describe('getNodeName', () => {
@@ -500,6 +515,21 @@ describe('networkGraphUtils', () => {
                 },
             };
             expect(getNodeName(node)).toEqual('1234');
+        });
+
+        it('should throw an error when an unexpected type is supplied', () => {
+            const node = {
+                entity: {
+                    id: '1234',
+                    type: 'UNKNOWN',
+                },
+            };
+            function getUnknownNodeName() {
+                return getNodeName(node);
+            }
+            expect(getUnknownNodeName).toThrowError(
+                'Node with unexpected type (UNKNOWN) was supplied to function'
+            );
         });
     });
 

@@ -30,8 +30,8 @@ import entityTypes from 'constants/entityTypes';
 import style from 'Containers/Network/Graph/networkGraphStyles';
 import { getLinks, getFilteredLinks } from 'utils/networkLink.utils';
 import {
-    isNamespace,
-    isNamespaceEdge,
+    getIsNamespaceNode,
+    getIsNamespaceEdge,
     getNodeData,
     getEdges,
     getNamespaceEdgeNodes,
@@ -177,7 +177,7 @@ const NetworkGraph = ({
 
     function edgeHoverHandler(ev) {
         const edge = ev.target.data();
-        const { id, portsAndProtocols } = edge;
+        const { id, portsAndProtocols, type } = edge;
         const edgeElm = cyRef.current.getElementById(id);
         let component;
         if (
@@ -189,7 +189,7 @@ const NetworkGraph = ({
 
         setHoveredElement(edge);
 
-        if (isNamespaceEdge(edge)) {
+        if (getIsNamespaceEdge(type)) {
             const {
                 numBidirectionalLinks,
                 numUnidirectionalLinks,
@@ -629,7 +629,7 @@ const NetworkGraph = ({
         }
         if (
             selectedNode &&
-            isNamespace(selectedNode) &&
+            getIsNamespaceNode(selectedNode?.type) &&
             selectedNode?.id === selectedNamespace?.id
         ) {
             onNamespaceClick({
