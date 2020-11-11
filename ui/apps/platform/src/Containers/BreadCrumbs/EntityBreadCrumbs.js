@@ -2,6 +2,8 @@ import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { ChevronRight, ArrowLeft } from 'react-feather';
+
+import entityTypes from 'constants/entityTypes';
 import EntityBreadCrumb from 'Containers/BreadCrumbs/EntityBreadCrumb';
 import EntityIcon from 'Components/EntityIcon';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -62,8 +64,10 @@ const BreadCrumbLinks = ({ workflowEntities }) => {
         const url = getUrl(workflowState, length - i);
         const { entityType, entityId } = workflowEntity;
 
+        const extraClasses = entityType === entityTypes.IMAGE ? '' : `${maxWidthClass} truncate`;
+
         return (
-            <div key={`${entityType}-${entityId}`} className={`flex ${maxWidthClass} truncate`}>
+            <div key={`${entityType}-${entityId}`} className={`flex ${extraClasses}`}>
                 <EntityBreadCrumb workflowEntity={workflowEntity} url={url} />
                 <span className="flex items-center">{icon}</span>
             </div>

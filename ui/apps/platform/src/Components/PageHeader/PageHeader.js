@@ -4,8 +4,18 @@ import PropTypes from 'prop-types';
 import { useTheme } from 'Containers/ThemeProvider';
 import SubHeader from 'Components/SubHeader';
 
-const PageHeader = ({ header, subHeader, classes, bgStyle, children, capitalize }) => {
+const PageHeader = ({
+    header,
+    subHeader,
+    classes,
+    bgStyle,
+    children,
+    capitalize,
+    lowercaseTitle,
+}) => {
     const { isDarkMode } = useTheme();
+
+    const extraClasses = lowercaseTitle ? '' : 'uppercase';
     return (
         <div
             className={`flex h-18 px-4 w-full flex-shrink-0 z-10 border-b border-base-400 ${classes} ${
@@ -17,7 +27,7 @@ const PageHeader = ({ header, subHeader, classes, bgStyle, children, capitalize 
             <div className="min-w-max pr-4 self-center">
                 <h1
                     data-testid="header-text"
-                    className="uppercase text-lg tracking-widest font-700 pt-1"
+                    className={`text-lg tracking-widest font-700 pt-1 ${extraClasses}`}
                 >
                     {header}
                 </h1>
@@ -35,6 +45,7 @@ PageHeader.propTypes = {
     bgStyle: PropTypes.shape({}),
     children: PropTypes.oneOfType([PropTypes.element, PropTypes.arrayOf(PropTypes.element)]),
     capitalize: PropTypes.bool,
+    lowercaseTitle: PropTypes.bool,
 };
 
 PageHeader.defaultProps = {
@@ -43,6 +54,7 @@ PageHeader.defaultProps = {
     classes: '',
     bgStyle: null,
     capitalize: true,
+    lowercaseTitle: false,
 };
 
 export default PageHeader;

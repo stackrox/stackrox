@@ -9,6 +9,7 @@ import ExportButton from 'Components/ExportButton';
 import workflowStateContext from 'Containers/workflowStateContext';
 import parseURL from 'utils/URLParser';
 import getSidePanelEntity from 'utils/getSidePanelEntity';
+import entityTypes from 'constants/entityTypes';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import { WorkflowState } from 'utils/WorkflowState';
 import { useCaseEntityMap } from 'utils/entityRelationships';
@@ -71,6 +72,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
     const subheaderText = entityLabels[pageEntityType];
     const { entityName = '' } = useEntityName(pageEntityType, pageEntityId);
     const entityContext = {};
+    const useLowercase = pageEntityType === entityTypes.IMAGE;
 
     const exportFilename = `${useCaseLabels[useCase]} ${startCase(
         subheaderText
@@ -89,6 +91,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
                     header={entityName}
                     subHeader={subheaderText}
                     classes="pr-0 ignore-react-onclickoutside"
+                    lowercaseTitle={useLowercase}
                 >
                     <div className="flex flex-1 justify-end h-full">
                         <div className="flex items-center pr-2">
