@@ -158,7 +158,7 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
 export const getFilteredLinks = (links) => {
     const filteredLinks = [];
     links.forEach((link) => {
-        if (link.targetName !== 'External Entities') {
+        if (link.sourceType !== 'INTERNET' && link.targetType !== 'INTERNET') {
             filteredLinks.push(link);
         }
     });
