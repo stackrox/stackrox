@@ -94,6 +94,20 @@ const tableColumnDescriptor = Object.freeze({
                 Cell: ({ original }) => (original.skipTLSVerify ? 'Yes (Insecure)' : 'No (Secure)'),
             },
         ],
+        syslog: [
+            { accessor: 'name', Header: 'Name' },
+            {
+                accessor: 'syslog.format',
+                Header: 'Log Format',
+                Cell: ({ original }) =>
+                    original.syslog.format === 'LEEF' ? 'LEEF Protocol' : 'CEF Protocol',
+            },
+            { accessor: 'syslog.tcpConfig.hostname', Header: 'Receiver Host' },
+            {
+                Header: 'Skip TLS Certificate Verification',
+                Cell: ({ original }) => (original.skipTLSVerify ? 'Yes (Insecure)' : 'No (Secure)'),
+            },
+        ],
     },
     imageIntegrations: {
         docker: [

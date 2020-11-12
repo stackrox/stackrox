@@ -626,6 +626,117 @@ const formDescriptors = {
                 ...storedCredentialFields,
             },
         ],
+        syslog: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'Syslog Integration',
+                required: true,
+            },
+            {
+                label: 'Log Format',
+                jsonpath: 'syslog.format',
+                type: 'radioGroup',
+                radioButtons: [
+                    {
+                        text: 'CEF protocol',
+                        value: 'CEF',
+                    },
+                    {
+                        text: 'LEEF protocol',
+                        value: 'LEEF',
+                    },
+                ],
+                default: 'CEF',
+                required: true,
+                readonly: true,
+            },
+            {
+                html: (
+                    <div className="flex mt-4 justify-center">
+                        <div className="w-4/5 relative p-1 text-right">
+                            (currently, only CEF protocol is supported)
+                        </div>
+                    </div>
+                ),
+                type: 'html',
+            },
+            {
+                label: 'Logging Facility',
+                jsonpath: 'syslog.localFacility',
+                type: 'select',
+                placeholder: 'Select logging facility',
+                options: [
+                    {
+                        label: 'local0',
+                        value: 'LOCAL0',
+                    },
+                    {
+                        label: 'local1',
+                        value: 'LOCAL1',
+                    },
+                    {
+                        label: 'local2',
+                        value: 'LOCAL2',
+                    },
+                    {
+                        label: 'local3',
+                        value: 'LOCAL3',
+                    },
+                    {
+                        label: 'local4',
+                        value: 'LOCAL4',
+                    },
+                    {
+                        label: 'local5',
+                        value: 'LOCAL5',
+                    },
+                    {
+                        label: 'local6',
+                        value: 'LOCAL6',
+                    },
+                    {
+                        label: 'local7',
+                        value: 'LOCAL7',
+                    },
+                ],
+                default: 'LOCAL0',
+                required: true,
+            },
+            {
+                label: 'Receiver Host',
+                jsonpath: 'syslog.tcpConfig.hostname',
+                type: 'text',
+                placeholder: 'host.example.com',
+                required: true,
+            },
+            {
+                label: 'Receiver Port',
+                jsonpath: 'syslog.tcpConfig.port',
+                type: 'number',
+                placeholder: 514,
+                required: true,
+            },
+            {
+                label: 'Use TLS',
+                jsonpath: 'syslog.tcpConfig.useTls',
+                type: 'toggle',
+                placeholder: '',
+            },
+            {
+                label: 'Disable TLS Certificate Validation (Insecure)',
+                jsonpath: 'syslog.tcpConfig.skipTlsVerify',
+                type: 'toggle',
+                placeholder: '',
+            },
+            {
+                label: 'Integration Active',
+                jsonpath: 'enabled',
+                type: 'toggle',
+                default: true,
+            },
+        ],
     },
     imageIntegrations: {
         tenable: [

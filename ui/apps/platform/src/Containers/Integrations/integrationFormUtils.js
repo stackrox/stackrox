@@ -1,4 +1,5 @@
 import resolvePath from 'object-resolve-path';
+import get from 'lodash/get';
 import set from 'lodash/set';
 import isEmpty from 'lodash/isEmpty';
 import cloneDeep from 'lodash/cloneDeep';
@@ -142,4 +143,36 @@ export function getDefaultValues(source, type) {
         return isEmpty(initialValues) ? null : initialValues;
     }
     return null;
+}
+
+export function checkFormValidity(formFields, formData, isNewIntegration) {
+    const isValid = formFields.every((field) => {
+        // check any required field
+        if (field.required) {
+            // is this a stored credential field on an existing integration item?
+            if (field.checkStoredCredentials && !isNewIntegration) {
+                return true;
+            }
+
+            // does field allow 0 as a valid option?
+            if (field.isZeroValid) {
+                const currentNumber = Number(get(formData, field.jsonpath));
+                if (typeof currentNumber === 'number') {
+                    return true;
+                }
+            }
+
+            // is a required field empty?
+            const currentValue = get(formData, field.jsonpath, '');
+            if (currentValue.length < 1) {
+                // then not valid
+                return false;
+            }
+        }
+
+        // if not require or non-empty, then valid
+        return true;
+    });
+
+    return isValid;
 }

@@ -4,12 +4,15 @@ import { Field } from 'redux-form';
 
 import RadioButtonGroup from 'Components/RadioButtonGroup';
 
-function ReduxRadioButtonGroup({ input, buttons, groupClassName, useBoolean, disabled }) {
+function ReduxRadioButtonGroup({ input, buttons, groupClassName, useBoolean, disabled, readonly }) {
     const { value, onChange } = input;
+    const onChangeEnabled = readonly ? () => {} : onChange;
+
     return (
         <RadioButtonGroup
             buttons={buttons}
-            onClick={onChange}
+            // eslint-disable-next-line react/jsx-no-bind
+            onClick={onChangeEnabled}
             selected={value}
             groupClassName={groupClassName}
             useBoolean={useBoolean}
@@ -18,7 +21,14 @@ function ReduxRadioButtonGroup({ input, buttons, groupClassName, useBoolean, dis
     );
 }
 
-function ReduxRadioButtonGroupField({ name, buttons, groupClassName, useBoolean, disabled }) {
+function ReduxRadioButtonGroupField({
+    name,
+    buttons,
+    groupClassName,
+    useBoolean,
+    disabled,
+    readonly,
+}) {
     return (
         <Field
             key={name}
@@ -29,6 +39,7 @@ function ReduxRadioButtonGroupField({ name, buttons, groupClassName, useBoolean,
             groupClassName={groupClassName}
             useBoolean={useBoolean}
             disabled={disabled}
+            readonly={readonly}
         />
     );
 }
@@ -44,12 +55,14 @@ ReduxRadioButtonGroupField.propTypes = {
     groupClassName: PropTypes.string,
     useBoolean: PropTypes.bool,
     disabled: PropTypes.bool,
+    readonly: PropTypes.bool,
 };
 
 ReduxRadioButtonGroupField.defaultProps = {
     groupClassName: '',
     useBoolean: false,
     disabled: false,
+    readonly: false,
 };
 
 export default ReduxRadioButtonGroupField;

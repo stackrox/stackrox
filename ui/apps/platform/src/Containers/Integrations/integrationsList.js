@@ -19,6 +19,7 @@ import slack from 'images/slack.svg';
 import splunk from 'images/splunk.svg';
 import sumologic from 'images/sumologic.svg';
 import s3 from 'images/s3.svg';
+import syslog from 'images/syslog.svg';
 import teams from 'images/teams.svg';
 import pagerduty from 'images/pagerduty.svg';
 import tenable from 'images/tenable.svg';
@@ -217,6 +218,13 @@ const integrationsList = {
             source: 'notifiers',
             image: awsSecurityHub,
             featureFlagDependency: knownBackendFlags.ROX_AWS_SECURITY_HUB_INTEGRATION,
+        },
+        {
+            label: 'Syslog',
+            type: 'syslog',
+            source: 'notifiers',
+            image: syslog, // TODO: replace with ref to Security Hub image when that becomes available
+            featureFlagDependency: knownBackendFlags.ROX_SYSLOG_INTEGRATION,
         },
     ],
     backups: [

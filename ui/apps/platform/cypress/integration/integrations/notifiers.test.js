@@ -126,4 +126,64 @@ describe('Notifiers Test', () => {
             cy.get(`${selectors.toast.body}:contains("Successfully integrated AWS Security Hub")`);
         });
     });
+
+    describe('Syslog notifier', () => {
+        it('should show the Syslog notifier', () => {
+            cy.get(selectors.syslogTile).click();
+            cy.get(`${selectors.modalHeader}:contains('Configure Syslog plugin')`);
+            cy.get(`${selectors.resultsSection}:contains('No Syslog integrations')`);
+        });
+
+        it('should disable the save button if all the required fields are not filled out', () => {
+            cy.get(selectors.syslogTile).click();
+
+            cy.get(selectors.buttons.new).click();
+            cy.get(selectors.buttons.create).should('be.disabled'); // starts out disabled
+
+            cy.get(selectors.syslogForm.nameInput).type('Test Syslog integration');
+            cy.get(`${selectors.syslogForm.logFormat} button:first`).click();
+            cy.get(selectors.syslogForm.localFacility).click();
+            cy.get(`${selectors.syslogForm.localFacilityListItems}:contains('local7')`).click();
+            cy.get(selectors.syslogForm.receiverHost).type('splunk.default');
+            // not filling out the last required field, Receiver Port
+
+            cy.get(selectors.buttons.create).should('be.disabled'); // still disabled
+
+            cy.get(selectors.buttons.closePanel).click();
+        });
+
+        it('should allow you to configure a new Syslog integration when none exists', () => {
+            cy.route(
+                'POST',
+                api.integrations.notifiers,
+                'fixture:integrations/syslogResponse.json'
+            ).as('saveSyslogNotifier');
+            cy.get(selectors.syslogTile).click();
+
+            cy.get(selectors.buttons.new).click();
+
+            cy.get(selectors.syslogForm.nameInput).type('Test Syslog integration');
+            cy.get(selectors.syslogForm.logFormat).click();
+            cy.get(selectors.syslogForm.localFacility).click();
+            cy.get(`${selectors.syslogForm.localFacilityListItems}:contains('local7')`).click();
+            cy.get(selectors.syslogForm.receiverHost).type('splunk.default');
+            cy.get(selectors.syslogForm.receiverPort).type('514');
+
+            // test toggles, but then turn off again, to avoid actual TLS validation
+            cy.get(selectors.syslogForm.useTls).click({ force: true });
+            cy.get(selectors.syslogForm.disableTlsValidation).click({ force: true });
+            cy.get(selectors.syslogForm.useTls).click({ force: true });
+            cy.get(selectors.syslogForm.disableTlsValidation).click({ force: true });
+
+            cy.get(selectors.syslogForm.active).should('be.checked');
+
+            cy.get(selectors.buttons.create).click();
+
+            cy.wait('@saveSyslogNotifier');
+
+            cy.get(`${selectors.toast.body}:contains("Successfully integrated syslog")`, {
+                timeout: 8000,
+            });
+        });
+    });
 });

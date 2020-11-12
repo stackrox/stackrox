@@ -2839,6 +2839,7 @@ jobs:
       - ROX_NETWORK_FLOWS_SEARCH_FILTER_UI: true
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
       - ROX_CENTRAL_INSTALLATION_EXPERIENCE: true
+      - ROX_SYSLOG_INTEGRATION: true
 
     steps:
       - checkout
@@ -3843,6 +3844,7 @@ jobs:
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
+      - ROX_SYSLOG_INTEGRATION: true
 
     steps:
       - checkout

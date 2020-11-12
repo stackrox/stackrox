@@ -42,6 +42,7 @@ const RadioButtonGroup = ({
     return (
         <div
             className={`text-xs flex flex-col uppercase rounded border-2 h-10 border-base-400 text-center font-condensed text-base-600 font-600 ${groupClassName}`}
+            data-testid="radio-button-group"
         >
             {headerText && (
                 <div className="bg-base-100 border-b-2 border-base-400 px-2 text-base-500">

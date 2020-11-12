@@ -10,6 +10,7 @@ import set from 'lodash/set';
 
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
+import ReduxRadioButtonGroupField from 'Components/forms/ReduxRadioButtonGroupField';
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
 import ReduxTextAreaField from 'Components/forms/ReduxTextAreaField';
@@ -19,7 +20,7 @@ import ReduxMultiSelectField from 'Components/forms/ReduxMultiSelectField';
 import ReduxNumericInputField from 'Components/forms/ReduxNumericInputField';
 import HelpIcon from 'Components/forms/HelpIcon';
 import formDescriptors from 'Containers/Integrations/formDescriptors';
-import { setFormSubmissionOptions } from './integrationFormUtils';
+import { setFormSubmissionOptions, checkFormValidity } from './integrationFormUtils';
 import Schedule from './Schedule';
 
 class Form extends Component {
@@ -78,6 +79,7 @@ class Form extends Component {
 
     addDefaultFormValues = () => {
         const { initialValues, formData } = this.props;
+
         const data = { ...initialValues, ...formData };
         const { location } = window;
         data.uiEndpoint = this.props.source === 'authProviders' ? location.host : location.origin;
@@ -128,6 +130,15 @@ class Form extends Component {
                         disabled={disabled}
                         placeholder={placeholder}
                         value={field.default}
+                    />
+                );
+            case 'radioGroup':
+                return (
+                    <ReduxRadioButtonGroupField
+                        name={field.jsonpath}
+                        buttons={field.radioButtons}
+                        groupClassName="w-full"
+                        readonly={field.readonly}
                     />
                 );
             case 'select':
@@ -228,32 +239,15 @@ class Form extends Component {
         );
     };
 
-    // TODO: generalize this form validation for all integrations
-    //       (currently just checking AWS Security Hub)
-    checkFormValidity = (formData) => {
-        const { isNewIntegration } = this.props;
-        if (
-            formData?.name?.length > 0 &&
-            formData?.awsSecurityHub?.accountId?.length > 0 &&
-            formData?.awsSecurityHub?.region?.length > 0 &&
-            (formData?.awsSecurityHub?.credentials?.accessKeyId?.length > 0 || !isNewIntegration) &&
-            (formData?.awsSecurityHub?.credentials?.secretAccessKey?.length > 0 ||
-                !isNewIntegration)
-        ) {
-            return true;
-        }
-        return false;
-    };
-
     render() {
         const header = this.isEditMode() ? this.props.formData.name : 'New Integration';
 
-        // TODO: generalize this form validation for all integrations
-        //       (currently just checking AWS Security Hub)
-        const isValid =
-            this.props.type === 'awsSecurityHub'
-                ? this.checkFormValidity(this.props.formData)
-                : true;
+        const isValid = checkFormValidity(
+            this.props.formFields,
+            this.props.formData,
+            this.props.isNewIntegration
+        );
+
         const buttons = (
             <>
                 <PanelButton
