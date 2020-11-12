@@ -545,11 +545,12 @@ const NetworkGraph = ({
         }
 
         calculateNodeSideMap(changedNodeId);
-        const configObj = getConfigObj();
-        const newEdges = getEdges(configObj);
+    }
 
-        cyRef.current.remove('edge');
-        cyRef.current.add(newEdges);
+    // This is called once we stop dragging
+    function freeDrag() {
+        // This should update the network graph after we finish dragging
+        setHoveredElement(null);
     }
 
     function configureCY(cyInstance) {
@@ -562,6 +563,7 @@ const NetworkGraph = ({
             .on('mouseover', 'edge', debounce(edgeHoverHandler, 200))
             .on('mouseout mousedown', debounce(mouseOutHandler, 100))
             .on('drag', throttle(handleDrag, 100))
+            .on('free', freeDrag)
             .on('zoom', zoomHandler)
             .ready(() => {
                 if (firstRenderFinished) {
