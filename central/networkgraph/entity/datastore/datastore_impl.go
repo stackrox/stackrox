@@ -80,6 +80,13 @@ func (ds *dataStoreImpl) RegisterCluster(clusterID string) {
 	go ds.doPushExternalNetworkEntitiesToSensor(clusterID)
 }
 
+func (ds *dataStoreImpl) Exists(ctx context.Context, id string) (bool, error) {
+	if ok, err := ds.readAllowed(ctx, id); err != nil || !ok {
+		return false, err
+	}
+	return ds.storage.Exists(id)
+}
+
 func (ds *dataStoreImpl) GetEntity(ctx context.Context, id string) (*storage.NetworkEntity, bool, error) {
 	if ok, err := ds.readAllowed(ctx, id); err != nil || !ok {
 		return nil, false, err

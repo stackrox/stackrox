@@ -12,6 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/fetcher"
+	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/utils"
@@ -59,20 +60,6 @@ func get(w http.ResponseWriter, r *http.Request) {
 func updateK8sIstioCVEs(zipPath string) {
 	mgr := fetcher.SingletonManager()
 	mgr.Update(zipPath, false)
-}
-
-func copyReqBodyToFile(filePath string, r *http.Request) error {
-	file, err := os.Create(filePath)
-	if err != nil {
-		return errors.Wrap(err, "failed to create temp file")
-	}
-	defer utils.IgnoreError(file.Close)
-
-	_, err = io.Copy(file, r.Body)
-	if err != nil {
-		return errors.Wrap(err, "failed to stream response body into file")
-	}
-	return nil
 }
 
 func handleScannerDefsFile(zipF *zip.File) error {
@@ -140,8 +127,8 @@ func post(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	tempFile := filepath.Join(tempDir, "tempfile.zip")
-	if err := copyReqBodyToFile(tempFile, r); err != nil {
-		httputil.WriteGRPCStyleError(w, codes.Internal, err)
+	if err := fileutils.CopySrcToFile(tempFile, r.Body); err != nil {
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrapf(err, "copying HTTP POST body to %s", tempFile))
 		return
 	}
 

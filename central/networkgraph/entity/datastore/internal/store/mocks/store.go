@@ -33,6 +33,21 @@ func (m *MockEntityStore) EXPECT() *MockEntityStoreMockRecorder {
 	return m.recorder
 }
 
+// Exists mocks base method
+func (m *MockEntityStore) Exists(id string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exists", id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exists indicates an expected call of Exists
+func (mr *MockEntityStoreMockRecorder) Exists(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockEntityStore)(nil).Exists), id)
+}
+
 // GetIDs mocks base method
 func (m *MockEntityStore) GetIDs() ([]string, error) {
 	m.ctrl.T.Helper()

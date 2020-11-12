@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/license/manager"
 	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/role/resources"
@@ -14,13 +15,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph/defaultexternalsrcs"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -35,24 +34,37 @@ var (
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 )
 
-type onlineDefaultExtSrcsGathererImpl struct {
-	lastSeenCIDRs   map[string]string
+type defaultExtSrcsGathererImpl struct {
 	licenseMgr      manager.LicenseManager
 	networkEntityDS entityDataStore.EntityDataStore
 	sensorConnMgr   connection.Manager
 	stopSig         concurrency.Signal
-	lock            sync.Mutex
 }
 
-func (g *onlineDefaultExtSrcsGathererImpl) Start() {
-	go g.run()
+// newDefaultExtNetworksGatherer returns an instance of NetworkGraphDefaultExtSrcsGatherer that reaches out internet to fetch the data.
+func newDefaultExtNetworksGatherer(networkEntityDS entityDataStore.EntityDataStore, sensorConnMgr connection.Manager,
+	licenseMgr manager.LicenseManager) NetworkGraphDefaultExtSrcsGatherer {
+	return &defaultExtSrcsGathererImpl{
+		licenseMgr:      licenseMgr,
+		networkEntityDS: networkEntityDS,
+		sensorConnMgr:   sensorConnMgr,
+	}
 }
 
-func (g *onlineDefaultExtSrcsGathererImpl) run() {
-	g.loadStoredCIDRs()
-	// TODO: Remove the following once there is bundled data.
-	g.reconcileDefaultExternalSrcs()
+func (g *defaultExtSrcsGathererImpl) Start() {
+	go func() {
+		if err := loadBundledExternalSrcs(g.networkEntityDS, g.sensorConnMgr); err != nil {
+			log.Errorf("UNEXPECTED: Failed to load pre-bundled external networks data: %v", err)
+		}
+		go g.run()
+	}()
+}
 
+func (g *defaultExtSrcsGathererImpl) run() {
+	// In offline mode, don't try to reconcile.
+	if env.OfflineModeEnv.BooleanSetting() {
+		return
+	}
 	ticker := time.NewTicker(env.ExtNetworkSrcsGatherInterval.DurationSetting())
 	defer ticker.Stop()
 
@@ -61,36 +73,25 @@ func (g *onlineDefaultExtSrcsGathererImpl) run() {
 		case <-g.stopSig.Done():
 			return
 		case <-ticker.C:
-			g.reconcileDefaultExternalSrcs()
+			if err := g.reconcileDefaultExternalSrcs(); err != nil {
+				log.Errorf("Failed to update default external networks: %v", err)
+			}
 		}
 	}
 }
 
-func (g *onlineDefaultExtSrcsGathererImpl) Stop() {
+func (g *defaultExtSrcsGathererImpl) Stop() {
 	g.stopSig.Signal()
 }
 
-func (g *onlineDefaultExtSrcsGathererImpl) loadStoredCIDRs() {
-	g.lock.Lock()
-	defer g.lock.Unlock()
-
-	entities, err := g.networkEntityDS.GetAllMatchingEntities(networkGraphReadCtx, func(entity *storage.NetworkEntity) bool {
-		return entity.GetInfo().GetExternalSource().GetDefault()
-	})
-	if err != nil {
-		log.Errorf("Failed to load stored default external networks: %v", err)
-	}
-
-	for _, entity := range entities {
-		g.lastSeenCIDRs[entity.GetInfo().GetExternalSource().GetCidr()] = entity.GetInfo().GetId()
-	}
+func (g *defaultExtSrcsGathererImpl) Update() error {
+	return g.reconcileDefaultExternalSrcs()
 }
 
-func (g *onlineDefaultExtSrcsGathererImpl) reconcileDefaultExternalSrcs() {
+func (g *defaultExtSrcsGathererImpl) reconcileDefaultExternalSrcs() error {
 	remoteChecksum, err := httputil.HTTPGet(defaultexternalsrcs.RemoteChecksumURL)
 	if err != nil {
-		log.Errorf("Failed to pull remote external networks checksum: %v", err)
-		return
+		return errors.Wrap(err, "pulling remote external networks checksum")
 	}
 
 	var localChecksum []byte
@@ -98,85 +99,49 @@ func (g *onlineDefaultExtSrcsGathererImpl) reconcileDefaultExternalSrcs() {
 	if os.IsExist(err) {
 		localChecksum, err = ioutil.ReadFile(defaultexternalsrcs.LocalChecksumFile)
 		if err != nil {
-			log.Errorf("Failed to read local external networks checksum from %q: %v", defaultexternalsrcs.LocalChecksumFile, err)
-			return
+			return errors.Wrapf(err, "reading local external networks checksum from %q", defaultexternalsrcs.LocalChecksumFile)
 		}
 	}
 
 	if bytes.Equal(localChecksum, remoteChecksum) {
-		return
+		return nil
 	}
 
 	data, err := httputil.HTTPGet(defaultexternalsrcs.RemoteDataURL)
 	if err != nil {
-		log.Errorf("Failed to pull remote external networks data: %v", err)
+		return errors.Wrap(err, "pulling remote external networks data")
 	}
 
 	var entities []*storage.NetworkEntity
 	if entities, err = defaultexternalsrcs.ParseProviderNetworkData(data); err != nil {
-		log.Error(err)
-		return
+		return err
 	}
 
 	log.Infof("Successfully fetched %d external networks", len(entities))
 
-	var errs errorhelpers.ErrorList
-	newCIDRs := set.NewStringSet()
-	for _, entity := range entities {
-		if err := g.updateInStorage(entity); err != nil {
-			errs.AddError(err)
-			continue
-		}
-		newCIDRs.Add(entity.GetInfo().GetExternalSource().GetCidr())
+	lastSeenIDs, err := loadStoredDefaultExtSrcsIDs(g.networkEntityDS)
+	if err != nil {
+		return err
 	}
 
-	if err := errs.ToError(); err != nil {
-		log.Errorf("Failed to update default external networks: %v", err)
-		return
+	if err := updateInStorage(g.networkEntityDS, lastSeenIDs, entities...); err != nil {
+		return errors.Wrap(err, "updating default external networks")
 	}
 
 	go doPushExternalNetworkEntitiesToAllSensor(g.sensorConnMgr)
 
 	// Update checksum only if all the pulled data is successfully written.
 	if err := writeChecksumLocally(remoteChecksum); err != nil {
-		log.Error(err)
-		return
-	}
-
-	if err := g.removeOutdatedNetworks(newCIDRs); err != nil {
-		log.Errorf("Failed to remove outdated default external networks: %v", err)
-		return
-	}
-}
-
-func (g *onlineDefaultExtSrcsGathererImpl) updateInStorage(entity *storage.NetworkEntity) error {
-	g.lock.Lock()
-	defer g.lock.Unlock()
-
-	if id := g.lastSeenCIDRs[entity.GetInfo().GetExternalSource().GetCidr()]; id != "" {
-		return nil
-	}
-
-	if err := g.networkEntityDS.UpsertExternalNetworkEntity(networkGraphWriteCtx, entity, true); err != nil {
 		return err
 	}
 
-	g.lastSeenCIDRs[entity.GetInfo().GetExternalSource().GetCidr()] = entity.GetInfo().GetId()
-	return nil
-}
+	newIDs := set.NewStringSet()
+	for _, entity := range entities {
+		newIDs.Add(entity.GetInfo().GetId())
+	}
 
-func (g *onlineDefaultExtSrcsGathererImpl) removeOutdatedNetworks(newCIDRs set.StringSet) error {
-	g.lock.Lock()
-	defer g.lock.Unlock()
-
-	for cidr, id := range g.lastSeenCIDRs {
-		if newCIDRs.Contains(cidr) {
-			continue
-		}
-
-		if err := g.networkEntityDS.DeleteExternalNetworkEntity(networkGraphWriteCtx, id); err != nil {
-			return err
-		}
+	if err := removeOutdatedNetworks(g.networkEntityDS, lastSeenIDs.Difference(newIDs).AsSlice()...); err != nil {
+		return errors.Wrap(err, "removing outdated default external networks")
 	}
 	return nil
 }

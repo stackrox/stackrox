@@ -10,6 +10,7 @@ import (
 // Note: Currently only external sources are stored i.e. user-created CIDR blocks
 //go:generate mockgen-wrapper
 type EntityDataStore interface {
+	Exists(ctx context.Context, id string) (bool, error)
 	// This getter does not respect the current graph configuration.
 	GetEntity(ctx context.Context, id string) (*storage.NetworkEntity, bool, error)
 	// This getter respects the current graph configuration.

@@ -58,6 +58,13 @@ func (s *storeImpl) GetIDs() ([]string, error) {
 	return s.crud.GetKeys()
 }
 
+// Exists returns if the id exists in the store
+func (s *storeImpl) Exists(id string) (bool, error) {
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Exists, "NetworkEntity")
+
+	return s.crud.Exists(id)
+}
+
 func (s *storeImpl) Get(id string) (*storage.NetworkEntity, bool, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Get, "NetworkEntity")
 

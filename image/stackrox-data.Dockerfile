@@ -11,7 +11,7 @@ RUN echo http://$ALPINE_MIRROR/alpine/v3.11/main > /etc/apk/repositories; \
 
 RUN apk update && \
     apk add --no-cache \
-        openssl \
+        openssl zip \
         && \
     apk --purge del apk-tools \
     ;
@@ -26,6 +26,12 @@ RUN mkdir -p /stackrox-data/cve/k8s && \
     mkdir -p /stackrox-data/cve/istio && \
     wget -O /stackrox-data/cve/istio/checksum "https://definitions.stackrox.io/cve/istio/checksum" && \
     wget -O /stackrox-data/cve/istio/cve-list.json "https://definitions.stackrox.io/cve/istio/cve-list.json"
+
+RUN mkdir -p /stackrox-data/external-networks && \
+    wget -O /stackrox-data/external-networks/checksum "https://definitions.stackrox.io/external-networks/latest/checksum" && \
+    wget -O /stackrox-data/external-networks/networks "https://definitions.stackrox.io/external-networks/latest/networks"
+
+RUN zip -jr /stackrox-data/external-networks/external-networks.zip /stackrox-data/external-networks
 
 COPY ./policies/files /stackrox-data/policies/files
 COPY ./docs/api/v1/swagger.json /stackrox-data/docs/api/v1/swagger.json

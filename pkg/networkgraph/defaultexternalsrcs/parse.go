@@ -13,7 +13,6 @@ import (
 
 // ParseProviderNetworkData parses the provider networks bytes (default network graph external source), into *storage.NetworkEntity.
 func ParseProviderNetworkData(data []byte) ([]*storage.NetworkEntity, error) {
-
 	var networkData *common.ExternalNetworkSources
 	if err := json.Unmarshal(data, &networkData); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling provider networks")
