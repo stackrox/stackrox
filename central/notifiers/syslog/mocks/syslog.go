@@ -47,11 +47,9 @@ func (mr *MocksyslogSenderMockRecorder) SendSyslog(syslogBytes interface{}) *gom
 }
 
 // Cleanup mocks base method
-func (m *MocksyslogSender) Cleanup() error {
+func (m *MocksyslogSender) Cleanup() {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Cleanup")
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Cleanup")
 }
 
 // Cleanup indicates an expected call of Cleanup

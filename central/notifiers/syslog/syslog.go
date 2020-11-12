@@ -89,7 +89,7 @@ func init() {
 //go:generate mockgen-wrapper
 type syslogSender interface {
 	SendSyslog(syslogBytes []byte) error
-	Cleanup() error
+	Cleanup()
 }
 
 type formatMethods struct {
@@ -221,7 +221,8 @@ func (s *syslog) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 }
 
 func (s *syslog) Close(context.Context) error {
-	return s.sender.Cleanup()
+	s.sender.Cleanup()
+	return nil
 }
 
 func (s *syslog) ProtoNotifier() *storage.Notifier {
