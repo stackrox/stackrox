@@ -10,12 +10,10 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
-	"golang.org/x/sync/semaphore"
 )
 
 const (
-	scanTimeout        = 6 * time.Minute
-	maxConcurrentScans = 20
+	scanTimeout = 6 * time.Minute
 )
 
 type scanResult struct {
@@ -39,8 +37,6 @@ type enricher struct {
 
 	imageCache expiringcache.Cache
 	stopSig    concurrency.Signal
-
-	concurrentScanSemaphore *semaphore.Weighted
 }
 
 type cacheValue struct {
@@ -53,15 +49,9 @@ func (c *cacheValue) waitAndGet() *storage.Image {
 	return c.image
 }
 
-func (c *cacheValue) scanAndSet(svc v1.ImageServiceClient, ci *storage.ContainerImage, concurrentScanSemaphore *semaphore.Weighted) {
+func (c *cacheValue) scanAndSet(svc v1.ImageServiceClient, ci *storage.ContainerImage) {
 	defer c.signal.Signal()
 
-	if err := concurrentScanSemaphore.Acquire(concurrency.AsContext(&c.signal), 1); err != nil {
-		log.Errorf("error acquiring scan semaphore: %v", err)
-		c.image = types.ToImage(ci)
-		return
-	}
-	defer concurrentScanSemaphore.Release(1)
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 	scannedImage, err := svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
@@ -78,9 +68,8 @@ func newEnricher(cache expiringcache.Cache) *enricher {
 	return &enricher{
 		scanResultChan: make(chan scanResult),
 
-		concurrentScanSemaphore: semaphore.NewWeighted(maxConcurrentScans),
-		imageCache:              cache,
-		stopSig:                 concurrency.NewSignal(),
+		imageCache: cache,
+		stopSig:    concurrency.NewSignal(),
 	}
 }
 
@@ -129,7 +118,7 @@ func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageCh
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if newValue == value {
-		value.scanAndSet(e.imageSvc, ci, e.concurrentScanSemaphore)
+		value.scanAndSet(e.imageSvc, ci)
 	}
 	return imageChanResult{
 		image:        value.waitAndGet(),

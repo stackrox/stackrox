@@ -977,6 +977,12 @@ const formDescriptors = {
                 type: 'text',
                 placeholder: 'https://scanner.stackrox:8080',
             },
+            {
+                label: 'Max Concurrent Scans (0 for default)',
+                jsonpath: 'clairify.numConcurrentScans',
+                type: 'text',
+                placeholder: '30',
+            },
         ],
         artifactregistry: [
             {

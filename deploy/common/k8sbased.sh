@@ -167,7 +167,10 @@ function launch_central {
         fi
     fi
 
-    if [[ "$MONITORING_SUPPORT" == "true" ]]; then
+
+    # Do not default to running monitoring locally for resource reasons, which can be overridden
+    # with MONITORING_SUPPORT=true, otherwise default it to true on all other systems
+    if [[ "$MONITORING_SUPPORT" == "true" || ( "${is_local_dev}" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
         echo "Deploying Monitoring..."
         helm_args=(
           -f "${COMMON_DIR}/monitoring-values.yaml"

@@ -26,8 +26,8 @@ import (
 const (
 	typeString = "clairify"
 
-	clientTimeout      = 5 * time.Minute
-	maxConcurrentScans = 30
+	clientTimeout             = 5 * time.Minute
+	defaultMaxConcurrentScans = int64(30)
 )
 
 var (
@@ -82,6 +82,11 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 		},
 	}
 
+	numConcurrentScans := defaultMaxConcurrentScans
+	if conf.GetNumConcurrentScans() != 0 {
+		numConcurrentScans = int64(conf.GetNumConcurrentScans())
+	}
+
 	client := client.NewWithClient(endpoint, true, httpClient)
 	scanner := &clairify{
 		client:                client,
@@ -89,7 +94,7 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 		protoImageIntegration: protoImageIntegration,
 		activeRegistries:      activeRegistries,
 
-		ScanSemaphore: scannerTypes.NewSemaphoreWithValue(maxConcurrentScans),
+		ScanSemaphore: scannerTypes.NewSemaphoreWithValue(numConcurrentScans),
 	}
 	return scanner, nil
 }

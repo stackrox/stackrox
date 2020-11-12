@@ -55,7 +55,8 @@ message ClairConfig {
 }
 
 message ClairifyConfig {
-    string endpoint = 1 [(gogoproto.moretags) = "validate:\"nolocalendpoint\""];
+    string endpoint             = 1 [(gogoproto.moretags) = "validate:\"nolocalendpoint\""];
+    int32  num_concurrent_scans = 2;
 }
 
 message DockerConfig {
