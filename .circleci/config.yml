@@ -728,6 +728,10 @@ commands:
       - run:
           name: Verify that StackRox services did not restart during the runs
           command: |
+            if [[ ! -d "/tmp/k8s-service-logs/stackrox/pods" ]]; then
+              echo >&2 "StackRox logs were not collected. (Use collect: true or collectK8sLogs.)"
+              exit 1
+            fi
             previous_logs=$(ls /tmp/k8s-service-logs/stackrox/pods/*-previous.log || true)
             if [[ -n "${previous_logs}" ]]; then
                 filtered=$(ls ${previous_logs} | egrep -v "<< parameters.exclude-in-restart-check >>" || true)
@@ -740,6 +744,10 @@ commands:
       - run:
           name: Verify that StackRox service logs contain no suspicious entries
           command: |
+            if [[ ! -d "/tmp/k8s-service-logs/stackrox/pods" ]]; then
+              echo >&2 "StackRox logs were not collected. (Use collect: true or collectK8sLogs.)"
+              exit 1
+            fi
             logs=$(ls /tmp/k8s-service-logs/stackrox/pods/*.log)
             filtered=$(ls ${logs} | egrep -v "<< parameters.exclude-in-error-check >>" || true)
             if [[ -n "${filtered}" ]]; then
@@ -3758,7 +3766,6 @@ jobs:
             zip -r /tmp/pprof.zip /tmp/pprof
 
       - *storeProfilingResults
-      - check-stackrox-logs
       - *connectToMonitoring
       - *collectMonitoringImages
       - *storeMonitoringImages
