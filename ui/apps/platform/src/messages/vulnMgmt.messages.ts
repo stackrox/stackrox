@@ -27,8 +27,7 @@ export const imageScanMessages = {
     },
     osCvesUnavailable: {
         header: 'Unable to retrieve the OS CVE data, only Language CVE data is available.',
-        body:
-            'Only showing information about the  Language CVEs. Turn on the OS CVE feature in a scanner to view additional details.',
+        body: 'Only showing information about the Language CVEs.',
     },
     osCvesStale: {
         header: 'Stale OS CVE data..',
