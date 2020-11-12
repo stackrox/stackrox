@@ -33,4 +33,7 @@ var (
 
 	// SyslogIntegration enables UI for a Syslog integration in the Integrations section.
 	SyslogIntegration = registerFeature("Enable UI for a Syslog integration in the Integrations section", "ROX_SYSLOG_INTEGRATION", true)
+
+	// SensorInstallationExperience enables new features related to the new installation experience for sensor.
+	SensorInstallationExperience = registerFeature("Enable new installation user experience for Sensor", "ROX_SENSOR_INSTALLATION_EXPERIENCE", false)
 )

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+message BootstrapTokenWithMeta {
+    bytes token        = 1;
+    string id          = 2;
+    string description = 3;
+}

@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/central/cli"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
+	clusterInitService "github.com/stackrox/rox/central/clusterinit/service"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
 	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
 	complianceHandlers "github.com/stackrox/rox/central/compliance/handlers"
@@ -367,6 +368,10 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		telemetryService.Singleton(),
 		userService.Singleton(),
 		cveService.Singleton(),
+	}
+
+	if features.SensorInstallationExperience.Enabled() {
+		servicesToRegister = append(servicesToRegister, clusterInitService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()

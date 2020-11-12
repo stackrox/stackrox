@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-// ClusterService is the struct that manages the cluster API
 type serviceImpl struct{}
 
 // RegisterServiceServer registers this service with the given gRPC Server.
