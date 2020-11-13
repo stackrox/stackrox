@@ -1155,7 +1155,7 @@ func TestRemoveOrphanedExternalNetworkFlows(t *testing.T) {
 
 			if c.expectedAdjustment {
 				mgr.EXPECT().GetReadOnlyNetworkTree("cluster").Return(tree1)
-				mgr.EXPECT().GetReadOnlyNetworkTree("").Return(tree2)
+				mgr.EXPECT().GetDefaultNetworkTree().Return(tree2)
 
 				for _, f := range c.expectedFlows {
 					flows.EXPECT().UpsertFlows(pruningCtx, []*storage.NetworkFlow{f}, timestamp.FromProtobuf(f.GetLastSeenTimestamp())).Return(nil)

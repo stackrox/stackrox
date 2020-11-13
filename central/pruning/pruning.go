@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -363,8 +364,10 @@ func (g *garbageCollectorImpl) adjustOrphanedExternalNetworkFlows() {
 		}
 
 		aggr, err := aggregator.NewSubnetToSupernetConnAggregator(
-			g.networkTreeMgr.GetReadOnlyNetworkTree(c.GetId()),
-			g.networkTreeMgr.GetReadOnlyNetworkTree(""),
+			tree.NewMultiTreeWrapper(
+				g.networkTreeMgr.GetReadOnlyNetworkTree(c.GetId()),
+				g.networkTreeMgr.GetDefaultNetworkTree(),
+			),
 		)
 		if err != nil {
 			log.Error(err)

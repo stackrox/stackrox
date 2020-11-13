@@ -15,22 +15,20 @@ import (
 type graphBuilder struct {
 	namespacesByName map[string]*storage.NamespaceMetadata
 	allDeployments   []*node
-	knownExtSrcs     []*node
 	knownExtSrcsByID map[string]*node
 	internetSrc      *node
-	networkTree      tree.NetworkTree
+	networkTree      tree.ReadOnlyNetworkTree
 	deploymentsByNS  map[*storage.NamespaceMetadata][]*node
 }
 
-func newGraphBuilder(deployments []*storage.Deployment, externalSrcs []*storage.NetworkEntityInfo, namespacesByID map[string]*storage.NamespaceMetadata) *graphBuilder {
+func newGraphBuilder(deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, namespacesByID map[string]*storage.NamespaceMetadata) *graphBuilder {
 	b := &graphBuilder{}
-	b.init(deployments, externalSrcs, namespacesByID)
+	b.init(deployments, networkTree, namespacesByID)
 	return b
 }
 
-func (b *graphBuilder) init(deployments []*storage.Deployment, externalSrcs []*storage.NetworkEntityInfo, namespacesByID map[string]*storage.NamespaceMetadata) {
+func (b *graphBuilder) init(deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, namespacesByID map[string]*storage.NamespaceMetadata) {
 	b.allDeployments = make([]*node, 0, len(deployments))
-	b.knownExtSrcs = make([]*node, 0, len(externalSrcs))
 	b.knownExtSrcsByID = make(map[string]*node)
 	b.namespacesByName = make(map[string]*storage.NamespaceMetadata)
 	b.deploymentsByNS = make(map[*storage.NamespaceMetadata][]*node)
@@ -57,20 +55,11 @@ func (b *graphBuilder) init(deployments []*storage.Deployment, externalSrcs []*s
 		b.deploymentsByNS[ns] = append(b.deploymentsByNS[ns], node)
 	}
 
-	for _, extSrc := range externalSrcs {
-		node := newExternalSrcNode(extSrc)
-		b.knownExtSrcs = append(b.knownExtSrcs, node)
-		b.knownExtSrcsByID[extSrc.GetId()] = node
+	if networkTree == nil {
+		networkTree = tree.NewMultiTreeWrapper()
 	}
 
-	// We do not return the error since INTERNET gets added anyway i.e. external connections do not get excluded.
-	nTree, err := tree.NewNetworkTreeWrapper(externalSrcs)
-	if err != nil {
-		log.Errorf("failed to create network tree for network policy builder: %v", err)
-		nTree = tree.NewDefaultNetworkTreeWrapper()
-	}
-	b.networkTree = nTree
-
+	b.networkTree = networkTree
 	b.internetSrc = newExternalSrcNode(networkgraph.InternetEntity().ToProto())
 }
 
@@ -97,7 +86,7 @@ func (b *graphBuilder) evaluatePeers(currentNS *storage.NamespaceMetadata, peers
 		}
 
 		// +1 for INTERNET
-		if len(allPeers) == len(b.allDeployments)+len(b.knownExtSrcs)+1 {
+		if len(allPeers) == len(b.allDeployments)+b.networkTree.Cardinality()+1 {
 			break
 		}
 
@@ -119,7 +108,7 @@ func (b *graphBuilder) evaluatePeer(currentNS *storage.NamespaceMetadata, peer *
 		// TODO(ROX-5370): We assume all CIDR blocks always match all deployments and overlapping external CIDRs.
 		//  This is probably wrong, but we don't really have a good way of determining otherwise. Except for maybe
 		//  look at Pod IPs. Which we actually could.
-		allNodes := make([]*node, 0, len(b.allDeployments)+len(b.knownExtSrcs)+1)
+		allNodes := make([]*node, 0, len(b.allDeployments)+1)
 		allNodes = append(allNodes, b.allDeployments...)
 
 		if !features.NetworkGraphExternalSrcs.Enabled() {
@@ -185,7 +174,12 @@ func (b *graphBuilder) evaluateExternalPeer(ipBlock *storage.IPBlock) []*node {
 	if extSrc := b.networkTree.GetMatchingSupernetForCIDR(ipBlock.GetCidr(), func(entity *storage.NetworkEntityInfo) bool {
 		return entity.GetId() != networkgraph.InternetExternalSourceID
 	}); extSrc != nil {
-		return []*node{b.knownExtSrcsByID[extSrc.GetId()]}
+		n := b.knownExtSrcsByID[extSrc.GetId()]
+		if n == nil {
+			n = newExternalSrcNode(extSrc)
+			b.knownExtSrcsByID[extSrc.GetId()] = n
+		}
+		return []*node{n}
 	}
 
 	allMatchedPeers := b.networkTree.GetSubnetsForCIDR(ipBlock.GetCidr())
@@ -201,7 +195,12 @@ func (b *graphBuilder) evaluateExternalPeer(ipBlock *storage.IPBlock) []*node {
 	peers = append(peers, b.internetSrc)
 	for _, extSrc := range allMatchedPeers {
 		if !netsToExclude.Contains(extSrc.GetId()) {
-			peers = append(peers, b.knownExtSrcsByID[extSrc.GetId()])
+			n := b.knownExtSrcsByID[extSrc.GetId()]
+			if n == nil {
+				n = newExternalSrcNode(extSrc)
+				b.knownExtSrcsByID[extSrc.GetId()] = n
+			}
+			peers = append(peers, n)
 		}
 	}
 	return peers
@@ -360,9 +359,11 @@ func (b *graphBuilder) ToProto(includePorts bool) []*v1.NetworkNode {
 	// This stores external sources including INTERNET. These nodes are added to final graph only if they exists a connection with them.
 	externalNodes := make(map[*node]*v1.NetworkNode)
 	// Add INTERNET
-	allExternalNodes := make([]*node, 0, len(b.knownExtSrcs)+1)
-	allExternalNodes = append(allExternalNodes, b.knownExtSrcs...)
+	allExternalNodes := make([]*node, 0, len(b.knownExtSrcsByID)+1)
 	allExternalNodes = append(allExternalNodes, b.internetSrc)
+	for _, extSrc := range b.knownExtSrcsByID {
+		allExternalNodes = append(allExternalNodes, extSrc)
+	}
 	for _, n := range allExternalNodes {
 		node := &v1.NetworkNode{
 			Entity:             n.extSrc,
@@ -379,7 +380,7 @@ func (b *graphBuilder) ToProto(includePorts bool) []*v1.NetworkNode {
 	anyNonIsolatedDeps := false
 
 	nodeMap := make(map[*node]int)
-	allNodes := make([]*v1.NetworkNode, 0, len(b.allDeployments)+len(b.knownExtSrcs)+1)
+	allNodes := make([]*v1.NetworkNode, 0, len(b.allDeployments)+len(b.knownExtSrcsByID)+1)
 	for _, d := range b.allDeployments {
 		if !d.isEgressIsolated || !d.isIngressIsolated {
 			anyNonIsolatedDeps = true

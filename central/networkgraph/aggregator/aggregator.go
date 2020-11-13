@@ -15,13 +15,13 @@ type NetworkConnsAggregator interface {
 
 // NewSubnetToSupernetConnAggregator returns a NetworkConnsAggregator that aggregates all network connections into
 // immediate supernet. Atleast one network tree must be specified.
-func NewSubnetToSupernetConnAggregator(trees ...tree.ReadOnlyNetworkTree) (NetworkConnsAggregator, error) {
-	if len(trees) == 0 {
-		return nil, errors.New("at least one network tree must be provided")
+func NewSubnetToSupernetConnAggregator(networkTree tree.ReadOnlyNetworkTree) (NetworkConnsAggregator, error) {
+	if networkTree == nil {
+		return nil, errors.New("network tree must be provided")
 	}
 
 	return &aggregateToSupernetImpl{
-		trees: trees,
+		tree: networkTree,
 	}, nil
 }
 

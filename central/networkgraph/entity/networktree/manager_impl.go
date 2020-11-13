@@ -5,6 +5,10 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+const (
+	defaultNetworksClusterID = ""
+)
+
 type managerImpl struct {
 	trees map[string]tree.NetworkTree
 
@@ -20,6 +24,10 @@ func (f *managerImpl) GetNetworkTree(clusterID string) tree.NetworkTree {
 
 func (f *managerImpl) GetReadOnlyNetworkTree(clusterID string) tree.ReadOnlyNetworkTree {
 	return f.GetNetworkTree(clusterID)
+}
+
+func (f *managerImpl) GetDefaultNetworkTree() tree.ReadOnlyNetworkTree {
+	return f.GetNetworkTree(defaultNetworksClusterID)
 }
 
 func (f *managerImpl) CreateNetworkTree(clusterID string) tree.NetworkTree {

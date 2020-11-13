@@ -9,6 +9,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	tree "github.com/stackrox/rox/pkg/networkgraph/tree"
 	reflect "reflect"
 )
 
@@ -36,31 +37,31 @@ func (m *MockEvaluator) EXPECT() *MockEvaluatorMockRecorder {
 }
 
 // GetGraph mocks base method
-func (m *MockEvaluator) GetGraph(clusterID string, deployments []*storage.Deployment, externalSrcs []*storage.NetworkEntityInfo, networkPolicies []*storage.NetworkPolicy, includePorts bool) *v1.NetworkGraph {
+func (m *MockEvaluator) GetGraph(clusterID string, deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, networkPolicies []*storage.NetworkPolicy, includePorts bool) *v1.NetworkGraph {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetGraph", clusterID, deployments, externalSrcs, networkPolicies, includePorts)
+	ret := m.ctrl.Call(m, "GetGraph", clusterID, deployments, networkTree, networkPolicies, includePorts)
 	ret0, _ := ret[0].(*v1.NetworkGraph)
 	return ret0
 }
 
 // GetGraph indicates an expected call of GetGraph
-func (mr *MockEvaluatorMockRecorder) GetGraph(clusterID, deployments, externalSrcs, networkPolicies, includePorts interface{}) *gomock.Call {
+func (mr *MockEvaluatorMockRecorder) GetGraph(clusterID, deployments, networkTree, networkPolicies, includePorts interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGraph", reflect.TypeOf((*MockEvaluator)(nil).GetGraph), clusterID, deployments, externalSrcs, networkPolicies, includePorts)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGraph", reflect.TypeOf((*MockEvaluator)(nil).GetGraph), clusterID, deployments, networkTree, networkPolicies, includePorts)
 }
 
 // GetAppliedPolicies mocks base method
-func (m *MockEvaluator) GetAppliedPolicies(deployments []*storage.Deployment, externalSrcs []*storage.NetworkEntityInfo, networkPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
+func (m *MockEvaluator) GetAppliedPolicies(deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, networkPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAppliedPolicies", deployments, externalSrcs, networkPolicies)
+	ret := m.ctrl.Call(m, "GetAppliedPolicies", deployments, networkTree, networkPolicies)
 	ret0, _ := ret[0].([]*storage.NetworkPolicy)
 	return ret0
 }
 
 // GetAppliedPolicies indicates an expected call of GetAppliedPolicies
-func (mr *MockEvaluatorMockRecorder) GetAppliedPolicies(deployments, externalSrcs, networkPolicies interface{}) *gomock.Call {
+func (mr *MockEvaluatorMockRecorder) GetAppliedPolicies(deployments, networkTree, networkPolicies interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppliedPolicies", reflect.TypeOf((*MockEvaluator)(nil).GetAppliedPolicies), deployments, externalSrcs, networkPolicies)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppliedPolicies", reflect.TypeOf((*MockEvaluator)(nil).GetAppliedPolicies), deployments, networkTree, networkPolicies)
 }
 
 // IncrementEpoch mocks base method

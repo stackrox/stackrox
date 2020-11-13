@@ -71,6 +71,18 @@ func (t *networkTreeWrapper) build(entities []*storage.NetworkEntityInfo) error 
 	return nil
 }
 
+// Cardinality returns the number of networks in the tree.
+func (t *networkTreeWrapper) Cardinality() int {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+
+	ret := 0
+	for _, t := range t.trees {
+		ret += t.Cardinality()
+	}
+	return ret
+}
+
 // Insert add the supplied network entity. If a entity with the same key is already present in a tree,
 // the CIDR of stored entity is updated and the tree is rearranged to maintain the supernet-subnet relationship.
 func (t *networkTreeWrapper) Insert(entity *storage.NetworkEntityInfo) error {

@@ -111,7 +111,7 @@ func TestSubnetToSupernetAggregator(t *testing.T) {
 
 	expected := []*storage.NetworkFlow{f1x, f2x, f3x, f4x, f5x, f6x, f9x, f10x}
 
-	aggr, err := NewSubnetToSupernetConnAggregator(tree1, tree2)
+	aggr, err := NewSubnetToSupernetConnAggregator(tree.NewMultiTreeWrapper(tree1, tree2))
 	assert.NoError(t, err)
 	actual := aggr.Aggregate(flows)
 	assert.ElementsMatch(t, expected, actual)
@@ -159,7 +159,7 @@ func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, e2, networkTree.GetSupernet("1"))
-	assert.Equal(t, internet, networkTree.GetSupernet("6"))
+	assert.Equal(t, internet.GetId(), networkTree.GetSupernet("6").GetId())
 	/*
 
 		flows without hiding default networks:
