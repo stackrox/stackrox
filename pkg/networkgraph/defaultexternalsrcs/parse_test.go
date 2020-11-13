@@ -60,6 +60,17 @@ var (
                      "ipv6Prefixes":null
                   }
                ]
+            },
+			{
+               "regionName":"us-east-2",
+               "serviceNetworks":[
+                  {
+                     "ipv4Prefixes":[
+                        "35.0.0.0/8"
+                     ],
+                     "ipv6Prefixes":null
+                  }
+               ]
             }
 		 ]
 	  }
@@ -136,11 +147,6 @@ func TestParseNetworkData(t *testing.T) {
 							Cidr: "129.146.0.0/21",
 						},
 						Default: true,
-						Metadata: &storage.NetworkEntityInfo_ExternalSource_Metadata{
-							Provider: "Oracle",
-							Region:   "us-phoenix-1",
-							Service:  "OCI",
-						},
 					},
 				},
 			},
@@ -154,11 +160,6 @@ func TestParseNetworkData(t *testing.T) {
 							Cidr: "129.146.8.0/22",
 						},
 						Default: true,
-						Metadata: &storage.NetworkEntityInfo_ExternalSource_Metadata{
-							Provider: "Oracle",
-							Region:   "us-phoenix-1",
-							Service:  "OCI",
-						},
 					},
 				},
 			},
@@ -172,11 +173,6 @@ func TestParseNetworkData(t *testing.T) {
 							Cidr: "129.146.12.128/25",
 						},
 						Default: true,
-						Metadata: &storage.NetworkEntityInfo_ExternalSource_Metadata{
-							Provider: "Oracle",
-							Region:   "us-phoenix-1",
-							Service:  "OSN",
-						},
 					},
 				},
 			},
@@ -190,11 +186,6 @@ func TestParseNetworkData(t *testing.T) {
 							Cidr: "129.151.32.0/21",
 						},
 						Default: true,
-						Metadata: &storage.NetworkEntityInfo_ExternalSource_Metadata{
-							Provider: "Oracle",
-							Region:   "sa-saopaulo-1",
-							Service:  "OCI",
-						},
 					},
 				},
 			},
@@ -203,15 +194,11 @@ func TestParseNetworkData(t *testing.T) {
 			Info: &storage.NetworkEntityInfo{
 				Desc: &storage.NetworkEntityInfo_ExternalSource_{
 					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Name: "Google/us-east-1",
+						Name: "Google/multi-region",
 						Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
 							Cidr: "35.0.0.0/8",
 						},
 						Default: true,
-						Metadata: &storage.NetworkEntityInfo_ExternalSource_Metadata{
-							Provider: "Google",
-							Region:   "us-east-1",
-						},
 					},
 				},
 			},
@@ -220,9 +207,16 @@ func TestParseNetworkData(t *testing.T) {
 	actual, err := ParseProviderNetworkData([]byte(validData))
 	assert.NoError(t, err)
 	assert.Len(t, actual, len(expected))
-	for i, entity := range actual {
-		assert.Equal(t, entity.GetInfo().GetExternalSource(), expected[i].GetInfo().GetExternalSource())
+
+	var expectedEntities, actualEntities []*storage.NetworkEntityInfo_ExternalSource
+	for _, entity := range expected {
+		expectedEntities = append(expectedEntities, entity.GetInfo().GetExternalSource())
 	}
+
+	for _, entity := range actual {
+		actualEntities = append(actualEntities, entity.GetInfo().GetExternalSource())
+	}
+	assert.ElementsMatch(t, expectedEntities, actualEntities)
 }
 
 func TestParseNetworkDataWithMissingFields(t *testing.T) {
@@ -236,10 +230,6 @@ func TestParseNetworkDataWithMissingFields(t *testing.T) {
 							Cidr: "35.0.0.0/8",
 						},
 						Default: true,
-						Metadata: &storage.NetworkEntityInfo_ExternalSource_Metadata{
-							Provider: "Google",
-							Region:   "us-east-1",
-						},
 					},
 				},
 			},
@@ -249,7 +239,7 @@ func TestParseNetworkDataWithMissingFields(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, actual, len(expected))
 	for i, entity := range actual {
-		assert.Equal(t, entity.GetInfo().GetExternalSource(), expected[i].GetInfo().GetExternalSource())
+		assert.Equal(t, expected[i].GetInfo().GetExternalSource(), entity.GetInfo().GetExternalSource())
 	}
 }
 
