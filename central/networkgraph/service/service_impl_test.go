@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stackrox/rox/pkg/networkgraph/test"
 	"github.com/stackrox/rox/pkg/sac"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
@@ -818,42 +817,4 @@ func (s *NetworkGraphServiceTestSuite) TestNetworkGraphConfiguration() {
 		},
 	})
 	s.NoError(err)
-}
-
-func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkEntity() {
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		s.T().Skip()
-	}
-
-	e1 := test.GetExtSrcNetworkEntity("cluster1__e1", "e1", "", false, "cluster1")
-	e2 := test.GetExtSrcNetworkEntity("cluster1__e2", "e2", "", true, "")
-
-	cases := []struct {
-		req             *v1.GetExternalNetworkEntitiesRequest
-		clusterEntities []*storage.NetworkEntity
-		expected        []*storage.NetworkEntity
-	}{
-		{
-			req: &v1.GetExternalNetworkEntitiesRequest{
-				ClusterId: "cluster1",
-			},
-			clusterEntities: []*storage.NetworkEntity{e1, e2},
-			expected:        []*storage.NetworkEntity{e1, e2},
-		},
-		{
-			req: &v1.GetExternalNetworkEntitiesRequest{
-				ClusterId: "cluster1",
-				Query:     search.DefaultExternalSource.String() + ":false",
-			},
-			clusterEntities: []*storage.NetworkEntity{e1, e2},
-			expected:        []*storage.NetworkEntity{e1},
-		},
-	}
-
-	for _, c := range cases {
-		s.entities.EXPECT().GetAllMatchingEntities(gomock.Any(), gomock.Any()).Return(c.clusterEntities, nil)
-		actual, err := s.tested.GetExternalNetworkEntities(context.Background(), c.req)
-		s.NoError(err)
-		s.ElementsMatch(c.expected, actual.GetEntities())
-	}
 }

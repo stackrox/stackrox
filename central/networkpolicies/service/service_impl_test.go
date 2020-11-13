@@ -166,7 +166,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 		Return(pols, nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.externalSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil, nil)
+		suite.externalSrcs.EXPECT().GetAllMatchingEntities(gomock.Any(), gomock.Any()).Return(nil, nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -207,7 +207,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 		Return(pols, nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.externalSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil, nil)
+		suite.externalSrcs.EXPECT().GetAllMatchingEntities(gomock.Any(), gomock.Any()).Return(nil, nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -249,7 +249,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 		Return(compiledPolicies, nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.externalSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil, nil)
+		suite.externalSrcs.EXPECT().GetAllMatchingEntities(gomock.Any(), gomock.Any()).Return(nil, nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -292,7 +292,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 		Return(compiledPolicies, nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.externalSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil, nil)
+		suite.externalSrcs.EXPECT().GetAllMatchingEntities(gomock.Any(), gomock.Any()).Return(nil, nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -337,7 +337,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 		Return(compiledPolicies, nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.externalSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil, nil)
+		suite.externalSrcs.EXPECT().GetAllMatchingEntities(gomock.Any(), gomock.Any()).Return(nil, nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -385,7 +385,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame(
 		Return(compiledPolicies, nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.externalSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil, nil)
+		suite.externalSrcs.EXPECT().GetAllMatchingEntities(gomock.Any(), gomock.Any()).Return(nil, nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -433,7 +433,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 		Return(nil, nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.externalSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil, nil)
+		suite.externalSrcs.EXPECT().GetAllMatchingEntities(gomock.Any(), gomock.Any()).Return(nil, nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -509,7 +509,7 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
 	})).Return(deps, nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.externalSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil, nil)
+		suite.externalSrcs.EXPECT().GetAllMatchingEntities(gomock.Any(), gomock.Any()).Return(nil, nil)
 	}
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedPolicies := make([]*storage.NetworkPolicy, 0)
