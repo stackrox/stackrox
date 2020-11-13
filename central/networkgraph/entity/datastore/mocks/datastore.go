@@ -49,6 +49,21 @@ func (mr *MockEntityDataStoreMockRecorder) Exists(ctx, id interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockEntityDataStore)(nil).Exists), ctx, id)
 }
 
+// GetIDs mocks base method
+func (m *MockEntityDataStore) GetIDs(ctx context.Context) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIDs", ctx)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetIDs indicates an expected call of GetIDs
+func (mr *MockEntityDataStoreMockRecorder) GetIDs(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIDs", reflect.TypeOf((*MockEntityDataStore)(nil).GetIDs), ctx)
+}
+
 // GetEntity mocks base method
 func (m *MockEntityDataStore) GetEntity(ctx context.Context, id string) (*storage.NetworkEntity, bool, error) {
 	m.ctrl.T.Helper()

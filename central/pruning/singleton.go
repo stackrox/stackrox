@@ -7,6 +7,8 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imagesDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
+	networkEntityDatastore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
@@ -30,7 +32,9 @@ func Singleton() GarbageCollector {
 			podDatastore.Singleton(),
 			processDatastore.Singleton(),
 			processWhitelistDatastore.Singleton(),
+			networkEntityDatastore.Singleton(),
 			networkFlowsDataStore.Singleton(),
+			networktree.Singleton(),
 			configDatastore.Singleton(),
 			imageComponentDatastore.Singleton(),
 			riskDataStore.Singleton())

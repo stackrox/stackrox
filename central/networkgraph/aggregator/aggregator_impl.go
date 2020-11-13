@@ -2,11 +2,14 @@ package aggregator
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	pkgNet "github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
@@ -20,6 +23,115 @@ var (
 	log = logging.LoggerForModule()
 )
 
+type aggregateToSupernetImpl struct {
+	trees []tree.ReadOnlyNetworkTree
+}
+
+// Aggregate aggregates multiple external network connections with same external endpoint,
+// as determined by name, into a single connection.
+func (a *aggregateToSupernetImpl) Aggregate(conns []*storage.NetworkFlow) []*storage.NetworkFlow {
+	normalizedConns := make(map[networkgraph.NetworkConnIndicator]*storage.NetworkFlow)
+	ret := make([]*storage.NetworkFlow, 0, len(conns))
+	supernetCache := make(map[string]*storage.NetworkEntityInfo)
+
+	for _, conn := range conns {
+		srcEntity, dstEntity := conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity()
+		// This is essentially an invalid connection.
+		if srcEntity == nil || dstEntity == nil {
+			utils.Should(errors.Errorf("network conn %s without endpoints is unexpected", networkgraph.GetNetworkConnIndicator(conn).String()))
+			continue
+		}
+
+		if networkgraph.IsExternal(srcEntity) && networkgraph.IsExternal(dstEntity) {
+			utils.Should(errors.Errorf("network conn %s with all external endpoints is unexpected", networkgraph.GetNetworkConnIndicator(conn).String()))
+			continue
+		}
+
+		conn = conn.Clone()
+		srcEntity, dstEntity = conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity()
+
+		// If both endpoints are not external (including INTERNET), skip processing.
+		if !networkgraph.IsExternal(srcEntity) && !networkgraph.IsExternal(dstEntity) {
+			ret = append(ret, conn)
+			continue
+		}
+
+		// Move the connections to supernet.
+		a.mapToSupernet(supernetCache, conn.Props.SrcEntity)
+		a.mapToSupernet(supernetCache, conn.Props.DstEntity)
+
+		connID := networkgraph.GetNetworkConnIndicator(conn)
+		if storedFlow := normalizedConns[connID]; storedFlow != nil {
+			if storedFlow.GetLastSeenTimestamp().Compare(conn.GetLastSeenTimestamp()) < 0 {
+				storedFlow.LastSeenTimestamp = conn.GetLastSeenTimestamp()
+			}
+		} else {
+			normalizedConns[connID] = conn
+		}
+	}
+
+	for _, conn := range normalizedConns {
+		ret = append(ret, conn)
+	}
+	return ret
+}
+
+func (a *aggregateToSupernetImpl) mapToSupernet(supernetCache map[string]*storage.NetworkEntityInfo, entities ...*storage.NetworkEntityInfo) {
+	for _, entity := range entities {
+		if !networkgraph.IsKnownExternalSrc(entity) {
+			continue
+		}
+
+		cidr, err := externalsrcs.CIDRFromID(entity.GetId())
+		if err != nil {
+			utils.Should(errors.Wrapf(err, "getting CIDR from external source ID %s", entity.GetId()))
+			*entity = *networkgraph.InternetEntity().ToProto()
+			continue
+		}
+		*entity = *a.getSupernet(cidr, supernetCache)
+	}
+}
+
+func (a *aggregateToSupernetImpl) getSupernet(cidr string, cache map[string]*storage.NetworkEntityInfo) *storage.NetworkEntityInfo {
+	if supernet := cache[cidr]; supernet != nil {
+		return supernet
+	}
+
+	ret := networkgraph.InternetEntity().ToProto()
+	largestPrefixSoFar := 0
+	for _, t := range a.trees {
+		entity := t.GetMatchingSupernetForCIDR(cidr, func(entity *storage.NetworkEntityInfo) bool {
+			return entity.GetId() != networkgraph.InternetExternalSourceID
+		})
+
+		if entity == nil {
+			continue
+		}
+
+		supernetCIDR, err := externalsrcs.CIDRFromID(entity.GetId())
+		if err != nil {
+			utils.Should(errors.Wrapf(err, "getting CIDR from external source ID %s", entity.GetId()))
+			continue
+		}
+
+		_, ipNet, err := net.ParseCIDR(supernetCIDR)
+		if err != nil {
+			utils.Should(errors.Wrapf(err, "parsing CIDR %s", entity.GetExternalSource().GetCidr()))
+			continue
+		}
+
+		supernet := pkgNet.IPNetworkFromIPNet(*ipNet)
+		if supernet.IsValid() {
+			if int(supernet.PrefixLen()) > largestPrefixSoFar {
+				largestPrefixSoFar = int(supernet.PrefixLen())
+				ret = entity
+			}
+		}
+	}
+
+	return ret
+}
+
 type aggregateDefaultToCustomExtSrcsImpl struct {
 	networkTree tree.ReadOnlyNetworkTree
 }
@@ -32,16 +144,20 @@ func (a *aggregateDefaultToCustomExtSrcsImpl) Aggregate(conns []*storage.Network
 	supernetCache := make(map[string]*storage.NetworkEntityInfo)
 
 	for _, conn := range conns {
-		conn = conn.Clone()
 		srcEntity, dstEntity := conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity()
 		// This is essentially an invalid connection.
 		if srcEntity == nil || dstEntity == nil {
+			utils.Should(errors.Errorf("network conn %s without endpoints is unexpected", networkgraph.GetNetworkConnIndicator(conn).String()))
 			continue
 		}
 
 		if networkgraph.IsExternal(srcEntity) && networkgraph.IsExternal(dstEntity) {
-			utils.Should(errors.Errorf("network conn %s with all external endpoints is unexcepted", networkgraph.GetNetworkConnIndicator(conn).String()))
+			utils.Should(errors.Errorf("network conn %s with all external endpoints is unexpected", networkgraph.GetNetworkConnIndicator(conn).String()))
+			continue
 		}
+
+		conn = conn.Clone()
+		srcEntity, dstEntity = conn.GetProps().GetSrcEntity(), conn.GetProps().GetDstEntity()
 
 		// If both endpoints are not external (including INTERNET), skip processing.
 		if !networkgraph.IsExternal(srcEntity) && !networkgraph.IsExternal(dstEntity) {
@@ -96,16 +212,20 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 	ret := make([]*storage.NetworkFlow, 0, len(flows))
 
 	for _, flow := range flows {
-		flow = flow.Clone()
 		srcEntity, dstEntity := flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity()
 		// This is essentially an invalid connection.
 		if srcEntity == nil || dstEntity == nil {
+			utils.Should(errors.Errorf("network conn %s without endpoints is unexpected", networkgraph.GetNetworkConnIndicator(flow).String()))
 			continue
 		}
 
 		if networkgraph.IsExternal(srcEntity) && networkgraph.IsExternal(dstEntity) {
-			utils.Should(errors.Errorf("network conn %s with all external endpoints is unexcepted", networkgraph.GetNetworkConnIndicator(flow).String()))
+			utils.Should(errors.Errorf("network conn %s with all external endpoints is unexpected", networkgraph.GetNetworkConnIndicator(flow).String()))
+			continue
 		}
+
+		flow = flow.Clone()
+		srcEntity, dstEntity = flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity()
 
 		// If both endpoints are not known external sources, skip processing.
 		if !networkgraph.IsKnownExternalSrc(srcEntity) && !networkgraph.IsKnownExternalSrc(dstEntity) {

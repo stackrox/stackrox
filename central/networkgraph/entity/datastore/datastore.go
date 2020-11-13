@@ -11,6 +11,7 @@ import (
 //go:generate mockgen-wrapper
 type EntityDataStore interface {
 	Exists(ctx context.Context, id string) (bool, error)
+	GetIDs(ctx context.Context) ([]string, error)
 	// This getter does not respect the current graph configuration.
 	GetEntity(ctx context.Context, id string) (*storage.NetworkEntity, bool, error)
 	// This getter respects the current graph configuration.

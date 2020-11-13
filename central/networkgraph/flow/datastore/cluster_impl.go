@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -26,18 +25,24 @@ func (cds *clusterDataStoreImpl) GetFlowStore(ctx context.Context, clusterID str
 		return nil, err
 	}
 
-	var networkTree tree.ReadOnlyNetworkTree
+	var aggr aggregator.NetworkConnsAggregator
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		networkTree = cds.networkTreeMgr.GetReadOnlyNetworkTree(clusterID)
+		networkTree := cds.networkTreeMgr.GetReadOnlyNetworkTree(clusterID)
 		if networkTree == nil {
 			networkTree = cds.networkTreeMgr.CreateNetworkTree(clusterID)
+		}
+
+		var err error
+		aggr, err = aggregator.NewDefaultToCustomExtSrcConnAggregator(networkTree)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating a network conn aggregator")
 		}
 	}
 
 	return &flowDataStoreImpl{
 		storage:                   cds.storage.GetFlowStore(clusterID),
 		graphConfig:               cds.graphConfig,
-		hideDefaultExtSrcsManager: aggregator.NewDefaultToCustomExtSrcConnAggregator(networkTree),
+		hideDefaultExtSrcsManager: aggr,
 		deletedDeploymentsCache:   cds.deletedDeploymentsCache,
 	}, nil
 }
@@ -54,18 +59,22 @@ func (cds *clusterDataStoreImpl) CreateFlowStore(ctx context.Context, clusterID 
 		return nil, err
 	}
 
-	var networkTree tree.ReadOnlyNetworkTree
+	var aggr aggregator.NetworkConnsAggregator
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		networkTree = cds.networkTreeMgr.GetReadOnlyNetworkTree(clusterID)
+		networkTree := cds.networkTreeMgr.GetReadOnlyNetworkTree(clusterID)
 		if networkTree == nil {
 			networkTree = cds.networkTreeMgr.CreateNetworkTree(clusterID)
+		}
+		aggr, err = aggregator.NewDefaultToCustomExtSrcConnAggregator(networkTree)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating a network conn aggregator")
 		}
 	}
 
 	return &flowDataStoreImpl{
 		storage:                   underlying,
 		graphConfig:               cds.graphConfig,
-		hideDefaultExtSrcsManager: aggregator.NewDefaultToCustomExtSrcConnAggregator(networkTree),
+		hideDefaultExtSrcsManager: aggr,
 		deletedDeploymentsCache:   cds.deletedDeploymentsCache,
 	}, nil
 }

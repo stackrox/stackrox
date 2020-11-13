@@ -6,10 +6,116 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/test"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestSubnetToSupernetAggregator(t *testing.T) {
+	d1 := test.GetDeploymentNetworkEntity("d1", "d1")
+	d2 := test.GetDeploymentNetworkEntity("d2", "d2")
+
+	/*
+
+		Network tree from test networks:
+
+		tree1:
+			INTERNET
+			 	|______ 3
+				|		|__ 2
+				|
+				|
+				|______ 5
+
+		tree2:
+			INTERNET
+			 	|______ 1
+				|		|__ 4
+				|
+				|
+				|______ 6
+
+
+	*/
+
+	internet := networkgraph.InternetEntity().ToProto()
+
+	cidr1 := "35.187.144.0/20"
+	cidr2 := "35.187.144.0/16"
+	cidr3 := "35.187.144.0/8"
+	cidr4 := "35.187.144.0/23"
+	cidr5 := "36.188.144.0/30"
+	cidr6 := "36.188.144.0/16"
+
+	id1, _ := externalsrcs.NewClusterScopedID("1", cidr1)
+	id2, _ := externalsrcs.NewClusterScopedID("1", cidr2)
+	id3, _ := externalsrcs.NewClusterScopedID("1", cidr3)
+	id4, _ := externalsrcs.NewClusterScopedID("1", cidr4)
+	id5, _ := externalsrcs.NewClusterScopedID("1", cidr5)
+	id6, _ := externalsrcs.NewClusterScopedID("1", cidr6)
+
+	e1 := test.GetExtSrcNetworkEntityInfo(id1.String(), "1", cidr1, true)  // -> e2
+	e2 := test.GetExtSrcNetworkEntityInfo(id2.String(), "2", cidr2, false) // -> e3
+	e3 := test.GetExtSrcNetworkEntityInfo(id3.String(), "3", cidr3, false) // -> internet
+	e4 := test.GetExtSrcNetworkEntityInfo(id4.String(), "4", cidr4, true)  // -> e1
+	e5 := test.GetExtSrcNetworkEntityInfo(id5.String(), "5", cidr5, false) // -> e6
+	e6 := test.GetExtSrcNetworkEntityInfo(id6.String(), "6", cidr6, true)  // -> internet
+
+	tree1, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e2, e3, e5})
+	assert.NoError(t, err)
+	tree2, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e1, e4, e6})
+	assert.NoError(t, err)
+
+	/*
+
+		flows:
+
+			f1: d1 -> e1:8000/tcp:ts1
+			f2: d1 -> e2:8000/tcp:ts2
+			f3: d1 -> e5:8000/tcp
+			f4: d1 -> e6
+			f5: e6 -> d2
+			f6: e6 -> d2:8000:ts2
+			f7: internet -> d2
+			f8: internet -> d2:8000:ts1
+			f9: d2 -> e4:8000/tcp:ts2
+			f10: d2 -> e4:8000/tcp:ts2
+	*/
+
+	ts1 := types.TimestampNow()
+	ts2 := ts1.Clone()
+	ts2.Seconds = ts2.Seconds + 1000
+
+	f1 := test.GetNetworkFlow(d1, e1, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts1)
+	f2 := test.GetNetworkFlow(d1, e2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts2)
+	f3 := test.GetNetworkFlow(d1, e5, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, nil)
+	f4 := test.GetNetworkFlow(d1, e6, 0, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, nil)
+	f5 := test.GetNetworkFlow(e6, d2, 0, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, nil)
+	f6 := test.GetNetworkFlow(e6, d2, 8000, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, ts2)
+	f7 := test.GetNetworkFlow(internet, d2, 0, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, nil)
+	f8 := test.GetNetworkFlow(internet, d2, 8000, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, ts1)
+	f9 := test.GetNetworkFlow(d1, e4, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts2)
+	f10 := test.GetNetworkFlow(d2, e4, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts2)
+
+	flows := []*storage.NetworkFlow{f1, f2, f3, f4, f5, f6, f7, f8, f9, f10}
+
+	f1x := test.GetNetworkFlow(d1, e2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts1)
+	f2x := test.GetNetworkFlow(d1, e3, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts2)
+	f3x := test.GetNetworkFlow(d1, e6, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, nil)
+	f4x := test.GetNetworkFlow(d1, internet, 0, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, nil)
+	f5x := test.GetNetworkFlow(internet, d2, 0, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, nil)
+	f6x := test.GetNetworkFlow(internet, d2, 8000, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, ts2)
+	f9x := test.GetNetworkFlow(d1, e1, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts2)
+	f10x := test.GetNetworkFlow(d2, e1, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts2)
+
+	expected := []*storage.NetworkFlow{f1x, f2x, f3x, f4x, f5x, f6x, f9x, f10x}
+
+	aggr, err := NewSubnetToSupernetConnAggregator(tree1, tree2)
+	assert.NoError(t, err)
+	actual := aggr.Aggregate(flows)
+	assert.ElementsMatch(t, expected, actual)
+}
 
 func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 	d1 := test.GetDeploymentNetworkEntity("d1", "d1")
@@ -113,7 +219,9 @@ func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 
 	expected := []*storage.NetworkFlow{f2, f3, f4x, f7, f8x, f10x}
 
-	actual := NewDefaultToCustomExtSrcConnAggregator(networkTree).Aggregate(flows)
+	aggr, err := NewDefaultToCustomExtSrcConnAggregator(networkTree)
+	assert.NoError(t, err)
+	actual := aggr.Aggregate(flows)
 	assert.ElementsMatch(t, expected, actual)
 }
 
