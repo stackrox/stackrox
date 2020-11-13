@@ -30,6 +30,12 @@ import entityTypes from 'constants/entityTypes';
 import style from 'Containers/Network/Graph/networkGraphStyles';
 import { getLinks, getFilteredLinks } from 'utils/networkLink.utils';
 import {
+    getExternalEntitiesNode,
+    getCIDRBlockNodes,
+    getClusterNode,
+    getFilteredNodes,
+} from 'utils/networkNode.utils';
+import {
     getIsNamespaceNode,
     getIsNamespaceEdge,
     getNodeData,
@@ -37,12 +43,8 @@ import {
     getNamespaceEdgeNodes,
     getNamespaceList,
     getExternalEntitiesEdgeNodes,
-    getExternalEntitiesNode,
-    getCIDRBlockNodes,
     getCIDRBlockEdgeNodes,
-    getClusterNode,
     getDeploymentList,
-    getFilteredNodes,
     getNetworkFlows,
     getEdgesFromNode,
     getIngressPortsAndProtocols,

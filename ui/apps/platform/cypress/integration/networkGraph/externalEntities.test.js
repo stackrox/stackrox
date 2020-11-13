@@ -45,6 +45,7 @@ describe('External Entities on Network Graph', () => {
         it('should group external connections into a node outside the cluster', () => {
             cy.visit(networkUrl);
             cy.wait('@networkPoliciesGraph');
+            cy.wait(2000); // extending the timeout on the following get is not enough
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 const externalEntities = cytoscape.nodes().filter(filterInternet);
                 expect(externalEntities.size()).to.equal(1);

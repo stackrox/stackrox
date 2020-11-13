@@ -1,3 +1,4 @@
+import * as api from '../../constants/apiEndpoints';
 import { selectors as networkPageSelectors } from '../../constants/NetworkPage';
 import { url as riskURL, selectors as riskPageSelectors } from '../../constants/RiskPage';
 import withAuth from '../../helpers/basicAuth';
@@ -10,9 +11,16 @@ describe('Network Graph tooltip', () => {
     withAuth();
 
     describe('deployment node', () => {
+        beforeEach(() => {
+            cy.server();
+            cy.route('GET', api.risks.riskyDeployments).as('deployments');
+        });
+
         const openSidePanelForDeployment = (name) => {
             cy.visit(riskURL);
-            cy.get(`${selectors.table.rows}:contains("${name}")`).click();
+            cy.wait('@deployments');
+
+            cy.get(`${selectors.table.rows}:contains("${name}")`).first().click();
             cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
         };
 
@@ -84,7 +92,7 @@ describe('Network Graph tooltip', () => {
             const name = 'scanner-db';
             openSidePanelForDeployment(name);
 
-            cy.get(`${networkPageSelectors.detailsPanel.header}:contains("${name}")`);
+            cy.get(`${networkPageSelectors.detailsPanel.header}:contains("${name}")`).first();
             cy.get(networkPageSelectors.detailsPanel.table.rows).then(($trs) => {
                 const nIngressOnly = $trs.has(ingressSelector).length;
                 const nEgressOnly = $trs.has(egressSelector).length;
