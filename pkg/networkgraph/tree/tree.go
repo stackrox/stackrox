@@ -10,6 +10,7 @@ import (
 	pkgNet "github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/networkgraph/sortutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -126,9 +127,9 @@ func (t *networkTreeImpl) build(entities []*storage.NetworkEntityInfo) error {
 
 func normalizeNetworks(family pkgNet.Family, nets []pkgNet.IPNetwork) {
 	if family == pkgNet.IPv4 {
-		sort.Sort(sortableIPv4NetworkSlice(nets))
+		sort.Sort(sortutils.SortableIPv4NetworkSlice(nets))
 	} else if family == pkgNet.IPv6 {
-		sort.Sort(sortableIPv6NetworkSlice(nets))
+		sort.Sort(sortutils.SortableIPv6NetworkSlice(nets))
 	}
 }
 
@@ -193,7 +194,7 @@ func (t *networkTreeImpl) insertNodeNoLock(curr, newNode *node) (bool, error) {
 		return false, nil
 	}
 
-	if curr.ipNet.IP.Equal(newNode.ipNet.IP) && bytes.Equal(curr.ipNet.Mask, newNode.ipNet.Mask) {
+	if ipNetEqual(curr.ipNet, newNode.ipNet) {
 		return false, errors.Errorf("network %s (CIDR=%s) conflicting with existing network %s in the tree",
 			newNode.entity.GetId(), newNode.ipNet.String(), curr.entity.GetId())
 	}
@@ -313,7 +314,9 @@ func (t *networkTreeImpl) getSubnetForIPNetNoLock(curr *node, queryIPNet *net.IP
 
 	// We are looking for largest subnets that is fully contained by query network.
 	if netutil.IsIPNetSubset(queryIPNet, curr.ipNet) {
-		return []*storage.NetworkEntityInfo{curr.entity.Clone()}
+		if !ipNetEqual(curr.ipNet, queryIPNet) {
+			return []*storage.NetworkEntityInfo{curr.entity.Clone()}
+		}
 	}
 
 	var ret []*storage.NetworkEntityInfo
@@ -413,6 +416,10 @@ func (t *networkTreeImpl) getMatchingSupernetForIPNetNoLock(curr *node, queryIPN
 		return nil
 	}
 
+	if ipNetEqual(curr.ipNet, queryIPNet) {
+		return nil
+	}
+
 	if !netutil.IsIPNetSubset(curr.ipNet, queryIPNet) {
 		return nil
 	}
@@ -439,42 +446,6 @@ func (t *networkTreeImpl) Search(key string) bool {
 	return ok
 }
 
-type sortableIPv4NetworkSlice []pkgNet.IPNetwork
-
-func (s sortableIPv4NetworkSlice) Len() int {
-	return len(s)
-}
-
-func (s sortableIPv4NetworkSlice) Less(i, j int) bool {
-	if s[i].PrefixLen() != s[j].PrefixLen() {
-		return s[i].PrefixLen() < s[j].PrefixLen()
-	}
-	if !s[i].IP().AsNetIP().Equal(s[j].IP().AsNetIP()) {
-		return bytes.Compare(s[i].IP().AsNetIP(), s[j].IP().AsNetIP()) > 0
-	}
-	return false
-}
-
-func (s sortableIPv4NetworkSlice) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-
-type sortableIPv6NetworkSlice []pkgNet.IPNetwork
-
-func (s sortableIPv6NetworkSlice) Len() int {
-	return len(s)
-}
-
-func (s sortableIPv6NetworkSlice) Less(i, j int) bool {
-	if s[i].PrefixLen() != s[j].PrefixLen() {
-		return s[i].PrefixLen() < s[j].PrefixLen()
-	}
-	if !s[i].IP().AsNetIP().Equal(s[j].IP().AsNetIP()) {
-		return bytes.Compare(s[i].IP().AsNetIP(), s[j].IP().AsNetIP()) > 0
-	}
-	return false
-}
-
-func (s sortableIPv6NetworkSlice) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
+func ipNetEqual(a, b *net.IPNet) bool {
+	return a.IP.Equal(b.IP) && bytes.Equal(a.Mask, b.Mask)
 }

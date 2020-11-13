@@ -1,11 +1,9 @@
 package tree
 
 import (
-	"sort"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	pkgNet "github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/test"
 	"github.com/stretchr/testify/assert"
@@ -27,10 +25,10 @@ func TestNetworkTree(t *testing.T) {
 
 	e1 := test.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/20", true)
 	e2 := test.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.0/16", false)
-	e3 := test.GetExtSrcNetworkEntityInfo("3", "3", "35.187.144.0/8", false)
+	e3 := test.GetExtSrcNetworkEntityInfo("3", "3", "35.187.144.0/8", false) // 35.0.0.0 - 35.255.255.255
 	e4 := test.GetExtSrcNetworkEntityInfo("4", "4", "35.187.144.0/23", false)
 	e5 := test.GetExtSrcNetworkEntityInfo("5", "5", "36.188.144.0/30", false)
-	e6 := test.GetExtSrcNetworkEntityInfo("6", "6", "36.188.144.0/16", true)
+	e6 := test.GetExtSrcNetworkEntityInfo("6", "6", "36.188.144.0/16", true) // 36.188.0.0 - 36.188.255.255
 
 	networkTree, err := NewIPv4NetworkTree([]*storage.NetworkEntityInfo{e1, e2, e3, e4, e5, e6})
 	assert.NoError(t, err)
@@ -44,7 +42,7 @@ func TestNetworkTree(t *testing.T) {
 	assert.Equal(t, networkgraph.InternetEntity().ToProto(), networkTree.GetSupernet(networkgraph.InternetExternalSourceID))
 
 	e7 := test.GetExtSrcNetworkEntityInfo("7", "7", "36.188.144.0/31", false)
-	e8 := test.GetExtSrcNetworkEntityInfo("8", "8", "35.188.144.0/5", false)
+	e8 := test.GetExtSrcNetworkEntityInfo("8", "8", "35.188.144.0/5", false) // 32.0.0.0 - 39.255.255.255
 
 	assert.NoError(t, networkTree.Insert(e7))
 	assert.NoError(t, networkTree.Insert(e8))
@@ -107,31 +105,11 @@ func TestNetworkTree(t *testing.T) {
 	assert.Equal(t, e2, networkTree.GetMatchingSupernet("4", func(e *storage.NetworkEntityInfo) bool { return !e.GetExternalSource().GetDefault() }))
 
 	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3}, networkTree.GetSubnetsForCIDR("35.0.0.0/6"))
-	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e8}, networkTree.GetSubnetsForCIDR("33.0.0.0/5"))
+	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{e3, e6}, networkTree.GetSubnetsForCIDR("33.0.0.0/5")) // 32.0.0.0 - 39.255.255.255
 
 	assert.Equal(t, e6, networkTree.GetSupernetForCIDR("36.188.144.0/28"))
 	assert.Equal(t, e3, networkTree.GetSupernetForCIDR("35.187.144.0/14"))
 
 	// Skip e3
 	assert.Equal(t, e8, networkTree.GetMatchingSupernetForCIDR("35.187.144.0/14", func(e *storage.NetworkEntityInfo) bool { return e.GetId() != e3.GetId() }))
-}
-
-func TestIPNetworkSort(t *testing.T) {
-	ipv4Slice := []pkgNet.IPNetwork{
-		pkgNet.IPNetworkFromCIDR("120.0.0.0/8"),
-		pkgNet.IPNetworkFromCIDR("192.16.0.0/16"),
-		pkgNet.IPNetworkFromCIDR("192.0.0.0/8"),
-		pkgNet.IPNetworkFromCIDR("192.0.0.0/11"),
-	}
-
-	sort.Sort(sortableIPv4NetworkSlice(ipv4Slice))
-
-	expectedSortedSlice := []pkgNet.IPNetwork{
-		pkgNet.IPNetworkFromCIDR("192.0.0.0/8"),
-		pkgNet.IPNetworkFromCIDR("120.0.0.0/8"),
-		pkgNet.IPNetworkFromCIDR("192.0.0.0/11"),
-		pkgNet.IPNetworkFromCIDR("192.16.0.0/16"),
-	}
-
-	assert.Equal(t, expectedSortedSlice, ipv4Slice)
 }

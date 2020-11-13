@@ -87,6 +87,37 @@ func (ds *dataStoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return ds.storage.Exists(id)
 }
 
+func (ds *dataStoreImpl) GetIDs(ctx context.Context) ([]string, error) {
+	ids, err := ds.storage.GetIDs()
+	if err != nil {
+		return nil, err
+	}
+
+	allowed := make(map[string]bool)
+	ret := make([]string, 0, len(ids))
+	for _, id := range ids {
+		resID, err := sac.ParseResourceID(id)
+		utils.Should(err)
+
+		ok, found := allowed[resID.ClusterID()]
+		if !found {
+			var err error
+			ok, err = ds.readAllowed(ctx, id)
+			if err != nil {
+				return nil, err
+			}
+			allowed[resID.ClusterID()] = ok
+		}
+
+		if !ok {
+			continue
+		}
+
+		ret = append(ret, id)
+	}
+	return ret, nil
+}
+
 func (ds *dataStoreImpl) GetEntity(ctx context.Context, id string) (*storage.NetworkEntity, bool, error) {
 	if ok, err := ds.readAllowed(ctx, id); err != nil || !ok {
 		return nil, false, err
