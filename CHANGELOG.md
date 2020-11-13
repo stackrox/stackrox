@@ -8,6 +8,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [52.0]
 - Added ContainerName as one of the policy criteria
+- Added support for ubuntu:20.10 in Scanner.
+- Added support for distroless images in Scanner.
 
 ## [51.1]
 - UI: fix a browser crash when a port's exposure type is UNSET in the Deployment Details of a Risk side panel (ROX-5864)
