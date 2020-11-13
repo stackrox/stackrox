@@ -18,6 +18,8 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	pkgRocksDB "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -108,7 +110,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	}{
 		{
 			// Valid entity
-			entity: test.GetExtSrcNetworkEntity(entity1ID.String(), "cidr1", "192.0.2.0/24", false, cluster1),
+			entity: test.GetExtSrcNetworkEntity(entity1ID.String(), "cidr1", "192.0.2.0/24", true, cluster1),
 			pass:   true,
 		},
 		{
@@ -202,6 +204,22 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 		}
 	}
 
+	// Test get matching
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+	entities, err := suite.ds.GetAllEntities(suite.globalReadAccessCtx)
+	suite.NoError(err)
+	suite.Len(entities, 3)
+
+	predFactory := predicate.NewFactory("test", &storage.NetworkEntity{})
+	query := search.NewQueryBuilder().AddBools(search.DefaultExternalSource, false).ProtoQuery()
+	pred, err := predFactory.GeneratePredicate(query)
+	suite.NoError(err)
+	entities, err = suite.ds.GetAllMatchingEntities(suite.globalReadAccessCtx, func(entity *storage.NetworkEntity) bool {
+		return pred.Matches(entity)
+	})
+	suite.NoError(err)
+	suite.Len(entities, 3)
+
 	// Test Delete
 	for _, c := range cases {
 		cluster := c.entity.GetScope().GetClusterId()
@@ -225,7 +243,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 
 	// Test GetAll
 	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)
-	entities, err := suite.ds.GetAllEntities(suite.globalReadAccessCtx)
+	entities, err = suite.ds.GetAllEntities(suite.globalReadAccessCtx)
 	suite.NoError(err)
 	suite.Len(entities, 0)
 }

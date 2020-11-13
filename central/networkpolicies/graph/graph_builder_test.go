@@ -417,6 +417,8 @@ func TestMatchPolicyPeerWithExtSrcsFeatureEnabled(t *testing.T) {
 			},
 			extSrcs: []*storage.NetworkEntityInfo{
 				{
+					Id:   "1",
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 					Desc: &storage.NetworkEntityInfo_ExternalSource_{
 						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
 							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
@@ -437,6 +439,8 @@ func TestMatchPolicyPeerWithExtSrcsFeatureEnabled(t *testing.T) {
 			name: "ip block - external source fully contains ip block; match only external source",
 			extSrcs: []*storage.NetworkEntityInfo{
 				{
+					Id:   "1",
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 					Desc: &storage.NetworkEntityInfo_ExternalSource_{
 						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
 							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
@@ -462,6 +466,8 @@ func TestMatchPolicyPeerWithExtSrcsFeatureEnabled(t *testing.T) {
 			},
 			extSrcs: []*storage.NetworkEntityInfo{
 				{
+					Id:   "1",
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 					Desc: &storage.NetworkEntityInfo_ExternalSource_{
 						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
 							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
@@ -482,7 +488,8 @@ func TestMatchPolicyPeerWithExtSrcsFeatureEnabled(t *testing.T) {
 			name: "ip block - ip block fully contains external source; match INTERNET and exclude except networks",
 			extSrcs: []*storage.NetworkEntityInfo{
 				{
-					Id: "1",
+					Id:   "1",
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 					Desc: &storage.NetworkEntityInfo_ExternalSource_{
 						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
 							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
@@ -492,7 +499,8 @@ func TestMatchPolicyPeerWithExtSrcsFeatureEnabled(t *testing.T) {
 					},
 				},
 				{
-					Id: "2",
+					Id:   "2",
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 					Desc: &storage.NetworkEntityInfo_ExternalSource_{
 						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
 							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
@@ -514,6 +522,8 @@ func TestMatchPolicyPeerWithExtSrcsFeatureEnabled(t *testing.T) {
 			name: "ip block - does not match external source; matches INTERNET",
 			extSrcs: []*storage.NetworkEntityInfo{
 				{
+					Id:   "1",
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 					Desc: &storage.NetworkEntityInfo_ExternalSource_{
 						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
 							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
