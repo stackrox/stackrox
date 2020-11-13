@@ -734,8 +734,10 @@ commands:
             fi
             previous_logs=$(ls /tmp/k8s-service-logs/stackrox/pods/*-previous.log || true)
             if [[ -n "${previous_logs}" ]]; then
+                echo >&2 "Previous logs found: ${previous_logs}"
                 filtered=$(ls ${previous_logs} | egrep -v "<< parameters.exclude-in-restart-check >>" || true)
                 if [[ -n "${filtered}" ]]; then
+                    echo >&2 "Reduced to: ${filtered}"
                     exit 1
                 fi
             fi
