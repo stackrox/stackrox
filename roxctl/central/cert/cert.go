@@ -10,6 +10,8 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
+	"github.com/stackrox/rox/pkg/tlsutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -43,7 +45,7 @@ func certs(filename string) error {
 		InsecureSkipVerify: skipTLSValidation(),
 		ServerName:         serverName,
 	}
-	conn, err := tls.Dial("tcp", endpoint, &config)
+	conn, err := tlsutils.DialContext(pkgCommon.Context(), "tcp", endpoint, &config)
 	if err != nil {
 		return err
 	}

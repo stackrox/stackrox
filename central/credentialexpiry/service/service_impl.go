@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/tlsutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -83,12 +84,12 @@ func ensureTLSAndReturnAddr(endpoint string) (string, error) {
 	return fmt.Sprintf("%s:443", server), nil
 }
 
-func (s *serviceImpl) maybeGetExpiryFomScannerAt(endpoint string) (*types.Timestamp, error) {
+func (s *serviceImpl) maybeGetExpiryFomScannerAt(ctx context.Context, endpoint string) (*types.Timestamp, error) {
 	addr, err := ensureTLSAndReturnAddr(endpoint)
 	if err != nil {
 		return nil, err
 	}
-	conn, err := tls.Dial("tcp", addr, s.scannerConfig)
+	conn, err := tlsutils.DialContext(ctx, "tcp", addr, s.scannerConfig)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to contact scanner at %s", endpoint)
 	}
@@ -133,7 +134,7 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 
 	for _, endpoint := range clairifyEndpoints {
 		go func(endpoint string) {
-			expiry, err := s.maybeGetExpiryFomScannerAt(endpoint)
+			expiry, err := s.maybeGetExpiryFomScannerAt(ctx, endpoint)
 			if err != nil {
 				errC <- err
 				return
