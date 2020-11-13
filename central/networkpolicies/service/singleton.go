@@ -4,7 +4,9 @@ import (
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	nsDataStore "github.com/stackrox/rox/central/namespace/datastore"
+	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
@@ -24,6 +26,8 @@ func initialize() {
 		npDS.Singleton(),
 		deploymentDS.Singleton(),
 		networkEntityDS.Singleton(),
+		graphConfigDS.Singleton(),
+		networktree.Singleton(),
 		graph.Singleton(),
 		nsDataStore.Singleton(),
 		clusterDS.Singleton(),

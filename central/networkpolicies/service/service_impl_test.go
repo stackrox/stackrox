@@ -8,7 +8,9 @@ import (
 	"github.com/golang/mock/gomock"
 	cDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	dDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	graphConfigMocks "github.com/stackrox/rox/central/networkgraph/config/datastore/mocks"
 	netEntityDSMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
+	netTreeMgrMocks "github.com/stackrox/rox/central/networkgraph/entity/networktree/mocks"
 	npMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	npGraphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
 	nDataStoreMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
@@ -16,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	grpcTestutils "github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -84,6 +87,8 @@ type ServiceTestSuite struct {
 	clusters        *cDataStoreMocks.MockDataStore
 	deployments     *dDataStoreMocks.MockDataStore
 	externalSrcs    *netEntityDSMocks.MockEntityDataStore
+	graphConfig     *graphConfigMocks.MockDataStore
+	netTreeMgr      *netTreeMgrMocks.MockManager
 	networkPolicies *npMocks.MockDataStore
 	evaluator       *npGraphMocks.MockEvaluator
 	notifiers       *nDataStoreMocks.MockDataStore
@@ -101,9 +106,12 @@ func (suite *ServiceTestSuite) SetupTest() {
 	suite.clusters = cDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.deployments = dDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.externalSrcs = netEntityDSMocks.NewMockEntityDataStore(suite.mockCtrl)
+	suite.graphConfig = graphConfigMocks.NewMockDataStore(suite.mockCtrl)
+	suite.netTreeMgr = netTreeMgrMocks.NewMockManager(suite.mockCtrl)
 	suite.notifiers = nDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 
-	suite.tested = New(suite.networkPolicies, suite.deployments, suite.externalSrcs, suite.evaluator, nil, suite.clusters, suite.notifiers, nil, nil)
+	suite.tested = New(suite.networkPolicies, suite.deployments, suite.externalSrcs, suite.graphConfig, suite.netTreeMgr,
+		suite.evaluator, nil, suite.clusters, suite.notifiers, nil, nil)
 }
 
 func (suite *ServiceTestSuite) TearDownTest() {
@@ -156,7 +164,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*storage.Deployment, 0)
-	extSrcs := make([]*storage.NetworkEntityInfo, 0)
+	var networkTree tree.ReadOnlyNetworkTree
 	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
@@ -166,12 +174,13 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 		Return(pols, nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.externalSrcs.EXPECT().GetAllMatchingEntities(gomock.Any(), gomock.Any()).Return(nil, nil)
+		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(fakeClusterID).Return(nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, extSrcs, pols, false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, pols, false).
 		Return(expectedGraph)
 	expectedResp := &v1.SimulateNetworkGraphResponse{
 		SimulatedGraph: expectedGraph,
@@ -194,7 +203,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*storage.Deployment, 0)
-	extSrcs := make([]*storage.NetworkEntityInfo, 0)
+	var networkTree tree.ReadOnlyNetworkTree
 	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
@@ -207,14 +216,15 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 		Return(pols, nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.externalSrcs.EXPECT().GetAllMatchingEntities(gomock.Any(), gomock.Any()).Return(nil, nil)
+		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(fakeClusterID).Return(nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, extSrcs, checkHasPolicies("first-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("first-policy"), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, extSrcs, checkHasPolicies("first-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("first-policy"), false).
 		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
@@ -239,7 +249,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*storage.Deployment, 0)
-	extSrcs := make([]*storage.NetworkEntityInfo, 0)
+	var networkTree tree.ReadOnlyNetworkTree
 	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
@@ -249,14 +259,15 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 		Return(compiledPolicies, nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.externalSrcs.EXPECT().GetAllMatchingEntities(gomock.Any(), gomock.Any()).Return(nil, nil)
+		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(fakeClusterID).Return(nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, extSrcs, checkHasPolicies("first-policy", "second-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("first-policy", "second-policy"), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, extSrcs, checkHasPolicies("second-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("second-policy"), false).
 		Return(expectedGraph)
 
 	request := &v1.SimulateNetworkGraphRequest{
@@ -282,7 +293,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*storage.Deployment, 0)
-	extSrcs := make([]*storage.NetworkEntityInfo, 0)
+	var networkTree tree.ReadOnlyNetworkTree
 	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
@@ -292,14 +303,15 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 		Return(compiledPolicies, nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.externalSrcs.EXPECT().GetAllMatchingEntities(gomock.Any(), gomock.Any()).Return(nil, nil)
+		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(fakeClusterID).Return(nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, extSrcs, checkHasPolicies("first-policy", "second-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("first-policy", "second-policy"), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, extSrcs, checkHasPolicies("first-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("first-policy"), false).
 		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
@@ -327,7 +339,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*storage.Deployment, 0)
-	extSrcs := make([]*storage.NetworkEntityInfo, 0)
+	var networkTree tree.ReadOnlyNetworkTree
 	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
@@ -337,14 +349,15 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 		Return(compiledPolicies, nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.externalSrcs.EXPECT().GetAllMatchingEntities(gomock.Any(), gomock.Any()).Return(nil, nil)
+		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(fakeClusterID).Return(nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, extSrcs, checkHasPolicies(), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies(), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, extSrcs, checkHasPolicies("first-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("first-policy"), false).
 		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
@@ -375,7 +388,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame(
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*storage.Deployment, 0)
-	extSrcs := make([]*storage.NetworkEntityInfo, 0)
+	var networkTree tree.ReadOnlyNetworkTree
 	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
@@ -385,14 +398,15 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame(
 		Return(compiledPolicies, nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.externalSrcs.EXPECT().GetAllMatchingEntities(gomock.Any(), gomock.Any()).Return(nil, nil)
+		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(fakeClusterID).Return(nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, extSrcs, checkHasPolicies("first-policy", "second-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("first-policy", "second-policy"), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, extSrcs, checkHasPolicies("second-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("second-policy"), false).
 		Return(expectedGraph)
 
 	request := &v1.SimulateNetworkGraphRequest{
@@ -424,7 +438,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*storage.Deployment, 0)
-	extSrcs := make([]*storage.NetworkEntityInfo, 0)
+	var networkTree tree.ReadOnlyNetworkTree
 	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
@@ -433,14 +447,15 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 		Return(nil, nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.externalSrcs.EXPECT().GetAllMatchingEntities(gomock.Any(), gomock.Any()).Return(nil, nil)
+		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(fakeClusterID).Return(nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, extSrcs, checkHasPolicies("first-policy", "second-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("first-policy", "second-policy"), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, extSrcs, checkHasPolicies(), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies(), false).
 		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
@@ -492,7 +507,7 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*storage.Deployment, 0)
-	extSrcs := make([]*storage.NetworkEntityInfo, 0)
+	var networkTree tree.ReadOnlyNetworkTree
 	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), testutils.PredMatcher("deployment search is for cluster", func(query *v1.Query) bool {
 		// Should be a conjunction with cluster and deployment id.
 		conj := query.GetConjunction()
@@ -509,11 +524,12 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
 	})).Return(deps, nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.externalSrcs.EXPECT().GetAllMatchingEntities(gomock.Any(), gomock.Any()).Return(nil, nil)
+		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(fakeClusterID).Return(nil)
 	}
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedPolicies := make([]*storage.NetworkPolicy, 0)
-	suite.evaluator.EXPECT().GetAppliedPolicies(deps, extSrcs, neps).
+	suite.evaluator.EXPECT().GetAppliedPolicies(deps, networkTree, neps).
 		Return(expectedPolicies)
 
 	// Make the request to the service and check that it did not err.

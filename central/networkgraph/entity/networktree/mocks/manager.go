@@ -75,6 +75,20 @@ func (mr *MockManagerMockRecorder) GetReadOnlyNetworkTree(clusterID interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReadOnlyNetworkTree", reflect.TypeOf((*MockManager)(nil).GetReadOnlyNetworkTree), clusterID)
 }
 
+// GetDefaultNetworkTree mocks base method
+func (m *MockManager) GetDefaultNetworkTree() tree.ReadOnlyNetworkTree {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDefaultNetworkTree")
+	ret0, _ := ret[0].(tree.ReadOnlyNetworkTree)
+	return ret0
+}
+
+// GetDefaultNetworkTree indicates an expected call of GetDefaultNetworkTree
+func (mr *MockManagerMockRecorder) GetDefaultNetworkTree() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDefaultNetworkTree", reflect.TypeOf((*MockManager)(nil).GetDefaultNetworkTree))
+}
+
 // DeleteNetworkTree mocks base method
 func (m *MockManager) DeleteNetworkTree(clusterID string) {
 	m.ctrl.T.Helper()

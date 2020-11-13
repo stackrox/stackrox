@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -701,15 +702,56 @@ func TestEvaluateClustersWithExtSrcsFeatureDisabled(t *testing.T) {
 		t.Skip()
 	}
 
+	t1, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
+		{
+			Id:   "es1",
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "172.17.0.0/24",
+					},
+				},
+			},
+		},
+	})
+	assert.NoError(t, err)
+
+	t2, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
+		{
+			Id:   "es1",
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "172.17.10.0/24",
+					},
+				},
+			},
+		},
+		{
+			Id:   "es2",
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "172.17.15.0/24",
+					},
+				},
+			},
+		},
+	})
+	assert.NoError(t, err)
+
 	// These are the k8s examples from https://github.com/ahmetb/kubernetes-network-policy-recipes
 	// Seems like a good way to verify that the logic is correct
 	cases := []struct {
-		name         string
-		deployments  []*storage.Deployment
-		externalSrcs []*storage.NetworkEntityInfo
-		nps          []*storage.NetworkPolicy
-		edges        []testEdge
-		nodes        []*v1.NetworkNode
+		name        string
+		deployments []*storage.Deployment
+		networkTree tree.ReadOnlyNetworkTree
+		nps         []*storage.NetworkPolicy
+		edges       []testEdge
+		nodes       []*v1.NetworkNode
 	}{
 		{
 			name: "No policies - fully connected",
@@ -721,19 +763,7 @@ func TestEvaluateClustersWithExtSrcsFeatureDisabled(t *testing.T) {
 					Id: "d2",
 				},
 			},
-			externalSrcs: []*storage.NetworkEntityInfo{
-				{
-					Id:   "es1",
-					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Desc: &storage.NetworkEntityInfo_ExternalSource_{
-						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-								Cidr: "172.17.0.0/24",
-							},
-						},
-					},
-				},
-			},
+			networkTree: t1,
 			nodes: []*v1.NetworkNode{
 				mockNode("d1", "", true, true, true),
 				mockNode("d2", "", true, true, true),
@@ -1157,30 +1187,7 @@ func TestEvaluateClustersWithExtSrcsFeatureDisabled(t *testing.T) {
 					NamespaceId: "default",
 				},
 			},
-			externalSrcs: []*storage.NetworkEntityInfo{
-				{
-					Id:   "es1",
-					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Desc: &storage.NetworkEntityInfo_ExternalSource_{
-						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-								Cidr: "172.17.10.0/24",
-							},
-						},
-					},
-				},
-				{
-					Id:   "es2",
-					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Desc: &storage.NetworkEntityInfo_ExternalSource_{
-						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-								Cidr: "172.17.15.0/24",
-							},
-						},
-					},
-				},
-			},
+			networkTree: t2,
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("allow-only-egress-to-ipblock"),
 			},
@@ -1229,7 +1236,7 @@ func TestEvaluateClustersWithExtSrcsFeatureDisabled(t *testing.T) {
 		testCase := c
 		populateOutEdges(testCase.nodes, testCase.edges)
 		t.Run(c.name, func(t *testing.T) {
-			nodes := g.GetGraph("", testCase.deployments, testCase.externalSrcs, testCase.nps, false)
+			nodes := g.GetGraph("", testCase.deployments, testCase.networkTree, testCase.nps, false)
 			assert.ElementsMatch(t, testCase.nodes, nodes.GetNodes())
 		})
 	}
@@ -1242,15 +1249,56 @@ func TestEvaluateClustersWithExtSrcsFeatureEnabled(t *testing.T) {
 		t.Skip()
 	}
 
+	t1, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
+		{
+			Id:   "es1",
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "172.17.0.0/24",
+					},
+				},
+			},
+		},
+	})
+	assert.NoError(t, err)
+
+	t2, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
+		{
+			Id:   "es1",
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "172.17.10.0/24",
+					},
+				},
+			},
+		},
+		{
+			Id:   "es2",
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "172.17.15.0/24",
+					},
+				},
+			},
+		},
+	})
+	assert.NoError(t, err)
+
 	// These are the k8s examples from https://github.com/ahmetb/kubernetes-network-policy-recipes
 	// Seems like a good way to verify that the logic is correct
 	cases := []struct {
-		name         string
-		deployments  []*storage.Deployment
-		externalSrcs []*storage.NetworkEntityInfo
-		nps          []*storage.NetworkPolicy
-		edges        []testEdge
-		nodes        []*v1.NetworkNode
+		name        string
+		deployments []*storage.Deployment
+		networkTree tree.ReadOnlyNetworkTree
+		nps         []*storage.NetworkPolicy
+		edges       []testEdge
+		nodes       []*v1.NetworkNode
 	}{
 		{
 			name: "No policies - fully connected",
@@ -1262,19 +1310,7 @@ func TestEvaluateClustersWithExtSrcsFeatureEnabled(t *testing.T) {
 					Id: "d2",
 				},
 			},
-			externalSrcs: []*storage.NetworkEntityInfo{
-				{
-					Id:   "es1",
-					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Desc: &storage.NetworkEntityInfo_ExternalSource_{
-						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-								Cidr: "172.17.0.0/24",
-							},
-						},
-					},
-				},
-			},
+			networkTree: t1,
 			nodes: []*v1.NetworkNode{
 				mockNode("d1", "", true, true, true),
 				mockNode("d2", "", true, true, true),
@@ -1711,30 +1747,7 @@ func TestEvaluateClustersWithExtSrcsFeatureEnabled(t *testing.T) {
 					NamespaceId: "default",
 				},
 			},
-			externalSrcs: []*storage.NetworkEntityInfo{
-				{
-					Id:   "es1",
-					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Desc: &storage.NetworkEntityInfo_ExternalSource_{
-						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-								Cidr: "172.17.10.0/24",
-							},
-						},
-					},
-				},
-				{
-					Id:   "es2",
-					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Desc: &storage.NetworkEntityInfo_ExternalSource_{
-						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-								Cidr: "172.17.15.0/24",
-							},
-						},
-					},
-				},
-			},
+			networkTree: t2,
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("allow-only-egress-to-ipblock"),
 			},
@@ -1789,7 +1802,7 @@ func TestEvaluateClustersWithExtSrcsFeatureEnabled(t *testing.T) {
 		testCase := c
 		populateOutEdges(testCase.nodes, testCase.edges)
 		t.Run(c.name, func(t *testing.T) {
-			nodes := g.GetGraph("", testCase.deployments, testCase.externalSrcs, testCase.nps, false)
+			nodes := g.GetGraph("", testCase.deployments, testCase.networkTree, testCase.nps, false)
 			assert.ElementsMatch(t, testCase.nodes, nodes.GetNodes())
 		})
 	}

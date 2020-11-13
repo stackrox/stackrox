@@ -14,6 +14,7 @@ type NetworkTree interface {
 
 // ReadOnlyNetworkTree provides functionality to read network entities from a network tree.
 type ReadOnlyNetworkTree interface {
+	Cardinality() int
 	GetSupernet(key string) *storage.NetworkEntityInfo
 	GetMatchingSupernet(key string, pred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo
 	GetSupernetForCIDR(cidr string) *storage.NetworkEntityInfo

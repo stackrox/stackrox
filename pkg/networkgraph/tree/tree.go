@@ -67,10 +67,25 @@ func NewIPv6NetworkTree(networks []*storage.NetworkEntityInfo) (NetworkTree, err
 
 func newDefaultNetworkTree(family pkgNet.Family) *networkTreeImpl {
 	var ipNet *net.IPNet
+	entity := networkgraph.InternetEntity().ToProto()
 	if family == pkgNet.IPv4 {
 		_, ipNet, _ = net.ParseCIDR(ipv4InternetCIDR)
+		entity.Desc = &storage.NetworkEntityInfo_ExternalSource_{
+			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+					Cidr: ipv4InternetCIDR,
+				},
+			},
+		}
 	} else if family == pkgNet.IPv6 {
 		_, ipNet, _ = net.ParseCIDR(ipv6InternetCIDR)
+		entity.Desc = &storage.NetworkEntityInfo_ExternalSource_{
+			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+					Cidr: ipv6InternetCIDR,
+				},
+			},
+		}
 	} else {
 		utils.Should(errors.New("failed to create network tree. Invalid IP address family provided"))
 	}
@@ -78,7 +93,7 @@ func newDefaultNetworkTree(family pkgNet.Family) *networkTreeImpl {
 	// Root node is not marked as default as it not known external network, instead represents everything unknown.
 	root := &node{
 		ipNet:    ipNet,
-		entity:   networkgraph.InternetEntity().ToProto(),
+		entity:   entity,
 		children: make(map[string]*node),
 	}
 
@@ -131,6 +146,11 @@ func normalizeNetworks(family pkgNet.Family, nets []pkgNet.IPNetwork) {
 	} else if family == pkgNet.IPv6 {
 		sort.Sort(sortutils.SortableIPv6NetworkSlice(nets))
 	}
+}
+
+// Cardinality returns the number of networks in the tree.
+func (t *networkTreeImpl) Cardinality() int {
+	return len(t.nodes)
 }
 
 // Insert add the supplied network entity. If a entity with the same key is already present in the tree,
@@ -271,10 +291,14 @@ func (t *networkTreeImpl) Get(key string) *storage.NetworkEntityInfo {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
-	if node := t.nodes[key]; node != nil {
-		return node.entity.Clone()
+	node := t.nodes[key]
+	if node == nil {
+		return nil
 	}
-	return nil
+
+	ret := node.entity.Clone()
+	cleanInternetEntity(ret)
+	return ret
 }
 
 // GetSubnets returns the largest disjoint subnets contained by the network for given key, if present.
@@ -345,7 +369,9 @@ func (t *networkTreeImpl) GetMatchingSupernet(key string, pred func(entity *stor
 func (t *networkTreeImpl) getMatchingSupernetNoLock(key string, pred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
 	// Supernet of INTERNET is INTERNET.
 	if t.root.entity.GetId() == key {
-		return t.root.entity.Clone()
+		ret := t.root.entity.Clone()
+		cleanInternetEntity(ret)
+		return ret
 	}
 
 	if node := t.nodes[key]; node == nil {
@@ -356,7 +382,10 @@ func (t *networkTreeImpl) getMatchingSupernetNoLock(key string, pred func(entity
 	if supernet == nil {
 		return nil
 	}
-	return supernet.entity.Clone()
+
+	ret := supernet.entity.Clone()
+	cleanInternetEntity(ret)
+	return ret
 }
 
 func (t *networkTreeImpl) getMatchingParentNoLock(curr *node, key string, pred func(entity *storage.NetworkEntityInfo) bool) (*node, *node) {
@@ -434,6 +463,8 @@ func (t *networkTreeImpl) getMatchingSupernetForIPNetNoLock(curr *node, queryIPN
 			supernetSoFar = supernet
 		}
 	}
+
+	cleanInternetEntity(supernetSoFar)
 	return supernetSoFar
 }
 
@@ -448,4 +479,11 @@ func (t *networkTreeImpl) Search(key string) bool {
 
 func ipNetEqual(a, b *net.IPNet) bool {
 	return a.IP.Equal(b.IP) && bytes.Equal(a.Mask, b.Mask)
+}
+
+func cleanInternetEntity(entity *storage.NetworkEntityInfo) {
+	// Remove the CIDR from internet entity.
+	if entity.GetId() == networkgraph.InternetExternalSourceID {
+		entity.Desc = nil
+	}
 }

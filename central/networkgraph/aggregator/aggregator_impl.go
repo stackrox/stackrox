@@ -2,12 +2,10 @@ package aggregator
 
 import (
 	"fmt"
-	"net"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
-	pkgNet "github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
@@ -24,7 +22,7 @@ var (
 )
 
 type aggregateToSupernetImpl struct {
-	trees []tree.ReadOnlyNetworkTree
+	tree tree.ReadOnlyNetworkTree
 }
 
 // Aggregate aggregates multiple external network connections with same external endpoint,
@@ -93,43 +91,13 @@ func (a *aggregateToSupernetImpl) mapToSupernet(supernetCache map[string]*storag
 }
 
 func (a *aggregateToSupernetImpl) getSupernet(cidr string, cache map[string]*storage.NetworkEntityInfo) *storage.NetworkEntityInfo {
-	if supernet := cache[cidr]; supernet != nil {
-		return supernet
+	supernet := cache[cidr]
+
+	if supernet == nil {
+		supernet = a.tree.GetSupernetForCIDR(cidr)
+		cache[cidr] = supernet
 	}
-
-	ret := networkgraph.InternetEntity().ToProto()
-	largestPrefixSoFar := 0
-	for _, t := range a.trees {
-		entity := t.GetMatchingSupernetForCIDR(cidr, func(entity *storage.NetworkEntityInfo) bool {
-			return entity.GetId() != networkgraph.InternetExternalSourceID
-		})
-
-		if entity == nil {
-			continue
-		}
-
-		supernetCIDR, err := externalsrcs.CIDRFromID(entity.GetId())
-		if err != nil {
-			utils.Should(errors.Wrapf(err, "getting CIDR from external source ID %s", entity.GetId()))
-			continue
-		}
-
-		_, ipNet, err := net.ParseCIDR(supernetCIDR)
-		if err != nil {
-			utils.Should(errors.Wrapf(err, "parsing CIDR %s", entity.GetExternalSource().GetCidr()))
-			continue
-		}
-
-		supernet := pkgNet.IPNetworkFromIPNet(*ipNet)
-		if supernet.IsValid() {
-			if int(supernet.PrefixLen()) > largestPrefixSoFar {
-				largestPrefixSoFar = int(supernet.PrefixLen())
-				ret = entity
-			}
-		}
-	}
-
-	return ret
+	return supernet
 }
 
 type aggregateDefaultToCustomExtSrcsImpl struct {

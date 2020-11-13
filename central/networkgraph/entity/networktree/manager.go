@@ -10,6 +10,7 @@ type Manager interface {
 	CreateNetworkTree(clusterID string) tree.NetworkTree
 	GetNetworkTree(clusterID string) tree.NetworkTree
 	GetReadOnlyNetworkTree(clusterID string) tree.ReadOnlyNetworkTree
+	GetDefaultNetworkTree() tree.ReadOnlyNetworkTree
 	DeleteNetworkTree(clusterID string)
 }
 

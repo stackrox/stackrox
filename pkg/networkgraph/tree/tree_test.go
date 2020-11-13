@@ -22,6 +22,7 @@ func TestNetworkTree(t *testing.T) {
 					|__ 5
 
 	*/
+	internet := networkgraph.InternetEntity().ToProto()
 
 	e1 := test.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/20", true)
 	e2 := test.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.0/16", false)
@@ -39,7 +40,7 @@ func TestNetworkTree(t *testing.T) {
 	assert.ElementsMatch(t, []*storage.NetworkEntityInfo{}, networkTree.GetSubnets("4"))
 	assert.Equal(t, e2, networkTree.GetSupernet("1"))
 	assert.Equal(t, e6, networkTree.GetSupernet("5"))
-	assert.Equal(t, networkgraph.InternetEntity().ToProto(), networkTree.GetSupernet(networkgraph.InternetExternalSourceID))
+	assert.Equal(t, internet, networkTree.GetSupernet(networkgraph.InternetExternalSourceID))
 
 	e7 := test.GetExtSrcNetworkEntityInfo("7", "7", "36.188.144.0/31", false)
 	e8 := test.GetExtSrcNetworkEntityInfo("8", "8", "35.188.144.0/5", false) // 32.0.0.0 - 39.255.255.255

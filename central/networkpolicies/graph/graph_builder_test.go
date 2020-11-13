@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,10 +16,25 @@ func TestMatchPolicyPeerWithExtSrcsFeatureDisabled(t *testing.T) {
 		t.Skip()
 	}
 
+	t1, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
+		{
+			Id:   "1",
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "192.16.0.0/16",
+					},
+				},
+			},
+		},
+	})
+	assert.NoError(t, err)
+
 	cases := []struct {
 		name            string
 		deployments     []*storage.Deployment
-		extSrcs         []*storage.NetworkEntityInfo
+		networkTree     tree.ReadOnlyNetworkTree
 		peer            *storage.NetworkPolicyPeer
 		policyNamespace string
 		expectedMatches int
@@ -85,18 +101,8 @@ func TestMatchPolicyPeerWithExtSrcsFeatureDisabled(t *testing.T) {
 			expectedMatches: 0,
 		},
 		{
-			name: "ip block - no deployments; matches nothing",
-			extSrcs: []*storage.NetworkEntityInfo{
-				{
-					Desc: &storage.NetworkEntityInfo_ExternalSource_{
-						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-								Cidr: "192.16.0.0/16",
-							},
-						},
-					},
-				},
-			},
+			name:        "ip block - no deployments; matches nothing",
+			networkTree: t1,
 			peer: &storage.NetworkPolicyPeer{
 				IpBlock: &storage.IPBlock{
 					Cidr: "192.16.0.0/24",
@@ -111,17 +117,7 @@ func TestMatchPolicyPeerWithExtSrcsFeatureDisabled(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			extSrcs: []*storage.NetworkEntityInfo{
-				{
-					Desc: &storage.NetworkEntityInfo_ExternalSource_{
-						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-								Cidr: "192.16.0.0/16",
-							},
-						},
-					},
-				},
-			},
+			networkTree: t1,
 			peer: &storage.NetworkPolicyPeer{
 				IpBlock: &storage.IPBlock{
 					Cidr: "192.16.0.0/24",
@@ -130,18 +126,8 @@ func TestMatchPolicyPeerWithExtSrcsFeatureDisabled(t *testing.T) {
 			expectedMatches: 1,
 		},
 		{
-			name: "ip block with except - matches nothing",
-			extSrcs: []*storage.NetworkEntityInfo{
-				{
-					Desc: &storage.NetworkEntityInfo_ExternalSource_{
-						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-								Cidr: "192.16.0.0/16",
-							},
-						},
-					},
-				},
-			},
+			name:        "ip block with except - matches nothing",
+			networkTree: t1,
 			peer: &storage.NetworkPolicyPeer{
 				IpBlock: &storage.IPBlock{
 					Cidr:   "192.16.0.0/16",
@@ -325,7 +311,7 @@ func TestMatchPolicyPeerWithExtSrcsFeatureDisabled(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			b := newGraphBuilder(c.deployments, c.extSrcs, namespacesByID)
+			b := newGraphBuilder(c.deployments, c.networkTree, namespacesByID)
 			matches := b.evaluatePeer(namespacesByID[c.policyNamespace], c.peer)
 			assert.Len(t, matches, c.expectedMatches)
 		})
@@ -339,10 +325,64 @@ func TestMatchPolicyPeerWithExtSrcsFeatureEnabled(t *testing.T) {
 		t.Skip()
 	}
 
+	t1, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
+		{
+			Id:   "1",
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "192.16.0.0/16",
+					},
+				},
+			},
+		},
+	})
+	assert.NoError(t, err)
+	t2, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
+		{
+			Id:   "2",
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "192.16.0.0/32",
+					},
+				},
+			},
+		},
+	})
+	assert.NoError(t, err)
+	t3, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
+		{
+			Id:   "1",
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "192.16.10.0/24",
+					},
+				},
+			},
+		},
+		{
+			Id:   "2",
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "192.16.15.0/24",
+					},
+				},
+			},
+		},
+	})
+	assert.NoError(t, err)
+
 	cases := []struct {
 		name            string
 		deployments     []*storage.Deployment
-		extSrcs         []*storage.NetworkEntityInfo
+		networkTree     tree.ReadOnlyNetworkTree
 		peer            *storage.NetworkPolicyPeer
 		policyNamespace string
 		expectedMatches int
@@ -415,19 +455,7 @@ func TestMatchPolicyPeerWithExtSrcsFeatureEnabled(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			extSrcs: []*storage.NetworkEntityInfo{
-				{
-					Id:   "1",
-					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Desc: &storage.NetworkEntityInfo_ExternalSource_{
-						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-								Cidr: "192.16.0.0/16",
-							},
-						},
-					},
-				},
-			},
+			networkTree: t1,
 			peer: &storage.NetworkPolicyPeer{
 				IpBlock: &storage.IPBlock{
 					Cidr: "192.16.0.0/24",
@@ -436,20 +464,8 @@ func TestMatchPolicyPeerWithExtSrcsFeatureEnabled(t *testing.T) {
 			expectedMatches: 2,
 		},
 		{
-			name: "ip block - external source fully contains ip block; match only external source",
-			extSrcs: []*storage.NetworkEntityInfo{
-				{
-					Id:   "1",
-					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Desc: &storage.NetworkEntityInfo_ExternalSource_{
-						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-								Cidr: "192.16.0.0/16",
-							},
-						},
-					},
-				},
-			},
+			name:        "ip block - external source fully contains ip block; match only external source",
+			networkTree: t1,
 			peer: &storage.NetworkPolicyPeer{
 				IpBlock: &storage.IPBlock{
 					Cidr: "192.16.0.0/24",
@@ -464,19 +480,7 @@ func TestMatchPolicyPeerWithExtSrcsFeatureEnabled(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			extSrcs: []*storage.NetworkEntityInfo{
-				{
-					Id:   "1",
-					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Desc: &storage.NetworkEntityInfo_ExternalSource_{
-						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-								Cidr: "192.16.0.0/32",
-							},
-						},
-					},
-				},
-			},
+			networkTree: t2,
 			peer: &storage.NetworkPolicyPeer{
 				IpBlock: &storage.IPBlock{
 					Cidr: "192.16.0.0/24",
@@ -485,31 +489,8 @@ func TestMatchPolicyPeerWithExtSrcsFeatureEnabled(t *testing.T) {
 			expectedMatches: 3,
 		},
 		{
-			name: "ip block - ip block fully contains external source; match INTERNET and exclude except networks",
-			extSrcs: []*storage.NetworkEntityInfo{
-				{
-					Id:   "1",
-					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Desc: &storage.NetworkEntityInfo_ExternalSource_{
-						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-								Cidr: "192.16.10.0/24",
-							},
-						},
-					},
-				},
-				{
-					Id:   "2",
-					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Desc: &storage.NetworkEntityInfo_ExternalSource_{
-						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-								Cidr: "192.16.15.0/24",
-							},
-						},
-					},
-				},
-			},
+			name:        "ip block - ip block fully contains external source; match INTERNET and exclude except networks",
+			networkTree: t3,
 			peer: &storage.NetworkPolicyPeer{
 				IpBlock: &storage.IPBlock{
 					Cidr:   "192.16.0.0/16",
@@ -519,20 +500,8 @@ func TestMatchPolicyPeerWithExtSrcsFeatureEnabled(t *testing.T) {
 			expectedMatches: 2,
 		},
 		{
-			name: "ip block - does not match external source; matches INTERNET",
-			extSrcs: []*storage.NetworkEntityInfo{
-				{
-					Id:   "1",
-					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Desc: &storage.NetworkEntityInfo_ExternalSource_{
-						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-							Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
-								Cidr: "192.16.0.0/16",
-							},
-						},
-					},
-				},
-			},
+			name:        "ip block - does not match external source; matches INTERNET",
+			networkTree: t1,
 			peer: &storage.NetworkPolicyPeer{
 				IpBlock: &storage.IPBlock{
 					Cidr: "192.0.0.0/24",
@@ -715,7 +684,7 @@ func TestMatchPolicyPeerWithExtSrcsFeatureEnabled(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			b := newGraphBuilder(c.deployments, c.extSrcs, namespacesByID)
+			b := newGraphBuilder(c.deployments, c.networkTree, namespacesByID)
 			matches := b.evaluatePeer(namespacesByID[c.policyNamespace], c.peer)
 			assert.Len(t, matches, c.expectedMatches)
 		})
