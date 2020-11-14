@@ -31,17 +31,11 @@ func keyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.NetworkEntity).GetInfo().GetId())
 }
 
-func uniqKeyFunc(msg proto.Message) []byte {
-	entity := msg.(*storage.NetworkEntity)
-	uniqKey := entity.GetScope().GetClusterId() + ":" + entity.GetInfo().GetExternalSource().GetCidr()
-	return []byte(uniqKey)
-}
-
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) (store.EntityStore, error) {
 	globaldb.RegisterBucket(bucket, "NetworkEntity")
-	uniqKeyCrud := generic.NewUniqueKeyCRUD(db, bucket, keyFunc, alloc, uniqKeyFunc, false)
-	cacheCrud, err := mapcache.NewMapCache(uniqKeyCrud, keyFunc)
+	baseCrud := generic.NewCRUD(db, bucket, keyFunc, alloc, false)
+	cacheCrud, err := mapcache.NewMapCache(baseCrud, keyFunc)
 	if err != nil {
 		return nil, err
 	}

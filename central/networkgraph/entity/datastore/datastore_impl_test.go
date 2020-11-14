@@ -177,7 +177,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 				})
 		}
 
-		err := suite.ds.UpsertExternalNetworkEntity(suite.globalWriteAccessCtx, c.entity, false)
+		err := suite.ds.CreateExternalNetworkEntity(suite.globalWriteAccessCtx, c.entity, false)
 
 		if c.pass {
 			suite.NoError(err)
@@ -340,7 +340,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 				})
 		}
 
-		err := suite.ds.UpsertExternalNetworkEntity(c.ctx, c.entity, false)
+		err := suite.ds.CreateExternalNetworkEntity(c.ctx, c.entity, false)
 		if c.pass {
 			suite.NoError(err)
 			suite.True(concurrency.WaitWithTimeout(&pushSig, time.Second*2))
@@ -378,7 +378,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 			pushSig.Signal()
 			return nil
 		})
-	err := suite.ds.UpsertExternalNetworkEntity(suite.globalWriteAccessCtx, defaultEntity, false)
+	err := suite.ds.CreateExternalNetworkEntity(suite.globalWriteAccessCtx, defaultEntity, false)
 	suite.NoError(err)
 	suite.True(concurrency.WaitWithTimeout(&pushSig, time.Second*2))
 
@@ -539,7 +539,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestDefaultGraphSetting() {
 				pushSig.Signal()
 				return nil
 			})
-		suite.NoError(suite.ds.UpsertExternalNetworkEntity(suite.globalWriteAccessCtx, entity, false))
+		suite.NoError(suite.ds.CreateExternalNetworkEntity(suite.globalWriteAccessCtx, entity, false))
 		suite.True(concurrency.WaitWithTimeout(&pushSig, time.Second))
 	}
 

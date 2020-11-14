@@ -125,18 +125,32 @@ func (mr *MockEntityDataStoreMockRecorder) GetAllMatchingEntities(ctx, pred inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllMatchingEntities", reflect.TypeOf((*MockEntityDataStore)(nil).GetAllMatchingEntities), ctx, pred)
 }
 
-// UpsertExternalNetworkEntity mocks base method
-func (m *MockEntityDataStore) UpsertExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity, skipPush bool) error {
+// CreateExternalNetworkEntity mocks base method
+func (m *MockEntityDataStore) CreateExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity, skipPush bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertExternalNetworkEntity", ctx, entity, skipPush)
+	ret := m.ctrl.Call(m, "CreateExternalNetworkEntity", ctx, entity, skipPush)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpsertExternalNetworkEntity indicates an expected call of UpsertExternalNetworkEntity
-func (mr *MockEntityDataStoreMockRecorder) UpsertExternalNetworkEntity(ctx, entity, skipPush interface{}) *gomock.Call {
+// CreateExternalNetworkEntity indicates an expected call of CreateExternalNetworkEntity
+func (mr *MockEntityDataStoreMockRecorder) CreateExternalNetworkEntity(ctx, entity, skipPush interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertExternalNetworkEntity", reflect.TypeOf((*MockEntityDataStore)(nil).UpsertExternalNetworkEntity), ctx, entity, skipPush)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateExternalNetworkEntity", reflect.TypeOf((*MockEntityDataStore)(nil).CreateExternalNetworkEntity), ctx, entity, skipPush)
+}
+
+// UpdateExternalNetworkEntity mocks base method
+func (m *MockEntityDataStore) UpdateExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity, skipPush bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateExternalNetworkEntity", ctx, entity, skipPush)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateExternalNetworkEntity indicates an expected call of UpdateExternalNetworkEntity
+func (mr *MockEntityDataStoreMockRecorder) UpdateExternalNetworkEntity(ctx, entity, skipPush interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateExternalNetworkEntity", reflect.TypeOf((*MockEntityDataStore)(nil).UpdateExternalNetworkEntity), ctx, entity, skipPush)
 }
 
 // DeleteExternalNetworkEntity mocks base method

@@ -145,7 +145,7 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 		},
 	}
 
-	err = s.entities.UpsertExternalNetworkEntity(ctx, entity, false)
+	err = s.entities.CreateExternalNetworkEntity(ctx, entity, false)
 	if errors.Is(err, errorhelpers.ErrInvalidArgs) {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -188,17 +188,18 @@ func (s *serviceImpl) PatchExternalNetworkEntity(ctx context.Context, request *v
 	}
 
 	id := request.GetId()
+	// Disallow updates to default networks through API.
 	entity, err := s.getEntityAndValidateMutable(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	if entity.GetInfo().GetExternalSource() == nil {
-		return nil, status.Errorf(codes.FailedPrecondition, "cannot update network entity %q since the stored entity is invalid. Please delete %q and recreate.", id, id)
+		return nil, status.Errorf(codes.FailedPrecondition, "cannot update network entity %q since the stored entity is invalid. Please delete and recreate.", id)
 	}
 
 	entity.Info.GetExternalSource().Name = request.GetName()
 
-	if err := s.entities.UpsertExternalNetworkEntity(ctx, entity, false); err != nil {
+	if err := s.entities.UpdateExternalNetworkEntity(ctx, entity, false); err != nil {
 		if errors.Is(err, errorhelpers.ErrInvalidArgs) {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
