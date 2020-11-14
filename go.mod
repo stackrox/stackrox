@@ -42,6 +42,7 @@ require (
 	github.com/google/certificate-transparency-go v1.0.21
 	github.com/google/go-cmp v0.5.2
 	github.com/googleapis/gnostic v0.5.1
+	github.com/gookit/color v1.2.5
 	github.com/gorilla/schema v1.1.0
 	github.com/graph-gophers/graphql-go v0.0.0-20190513003547-158e7b876106
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0

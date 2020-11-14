@@ -20,6 +20,7 @@ func Command() *cobra.Command {
 		image          string
 		force          bool
 		includeSnoozed bool
+		format         string
 	)
 	c := &cobra.Command{
 		Use: "scan",
@@ -27,17 +28,22 @@ func Command() *cobra.Command {
 			if image == "" {
 				return errors.New("--image must be set")
 			}
-			return scanImage(image, force, includeSnoozed, flags.Timeout(c))
+			if format != "json" && format != "csv" && format != "pretty" {
+				return errors.New("Unexpected format: " + format)
+
+			}
+			return scanImage(image, force, includeSnoozed, format, flags.Timeout(c))
 		}),
 	}
 
 	c.Flags().StringVarP(&image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
 	c.Flags().BoolVarP(&force, "force", "f", false, "the --force flag ignores Central's cache for the scan and forces a fresh re-pull from Scanner")
 	c.Flags().BoolVarP(&includeSnoozed, "include-snoozed", "a", true, "the --include-snoozed flag returns both snoozed and unsnoozed CVEs if set to false")
+	c.Flags().StringVarP(&format, "format", "", "json", "format of the output. Choose output format from json, csv, and pretty. Default to be json.")
 	return c
 }
 
-func scanImage(image string, force, includeSnoozed bool, timeout time.Duration) error {
+func scanImage(image string, force, includeSnoozed bool, format string, timeout time.Duration) error {
 	// Create the connection to the central detection service.
 	conn, err := common.GetGRPCConnection()
 	if err != nil {
@@ -60,14 +66,21 @@ func scanImage(image string, force, includeSnoozed bool, timeout time.Duration) 
 	if err != nil {
 		return err
 	}
-
-	marshaler := &jsonpb.Marshaler{
-		Indent: "  ",
+	switch format {
+	case "csv":
+		return PrintCSV(imageResult)
+	case "pretty":
+		PrintPretty(imageResult)
+	default:
+		// In json format.
+		marshaler := &jsonpb.Marshaler{
+			Indent: "  ",
+		}
+		jsonResult, err := marshaler.MarshalToString(imageResult)
+		if err != nil {
+			return err
+		}
+		fmt.Println(jsonResult)
 	}
-	result, err := marshaler.MarshalToString(imageResult)
-	if err != nil {
-		return err
-	}
-	fmt.Println(result)
 	return nil
 }
