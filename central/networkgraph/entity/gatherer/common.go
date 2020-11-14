@@ -45,7 +45,7 @@ func updateInStorage(entityDS datastore.EntityDataStore, lastSeenIDs set.StringS
 			continue
 		}
 
-		if err := entityDS.UpsertExternalNetworkEntity(networkGraphWriteCtx, entity, true); err != nil {
+		if err := entityDS.CreateExternalNetworkEntity(networkGraphWriteCtx, entity, true); err != nil {
 			errs.AddError(err)
 		}
 	}

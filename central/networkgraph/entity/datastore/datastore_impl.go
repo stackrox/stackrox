@@ -188,7 +188,36 @@ func (ds *dataStoreImpl) GetAllMatchingEntities(ctx context.Context, pred func(e
 	return entities, nil
 }
 
-func (ds *dataStoreImpl) UpsertExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity, skipPush bool) error {
+func (ds *dataStoreImpl) CreateExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity, skipPush bool) error {
+	if err := ds.validateExternalNetworkEntity(entity); err != nil {
+		return err
+	}
+
+	if ok, err := ds.writeAllowed(ctx, entity.GetInfo().GetId()); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
+	if found, err := ds.storage.Exists(entity.GetInfo().GetId()); err != nil {
+		return err
+	} else if found {
+		return errors.Wrapf(errorhelpers.ErrAlreadyExists, "network entity %s (CIDR=%s) already exists",
+			entity.GetInfo().GetId(), entity.GetInfo().GetExternalSource().GetCidr())
+	}
+
+	if err := ds.storage.Upsert(entity); err != nil {
+		return errors.Wrapf(err, "upserting network entity %s into storage", entity.GetInfo().GetId())
+	}
+
+	if !skipPush {
+		go ds.doPushExternalNetworkEntitiesToSensor(entity.GetScope().GetClusterId())
+	}
+
+	return ds.getNetworkTree(entity.GetScope().GetClusterId(), true).Insert(entity.GetInfo())
+}
+
+func (ds *dataStoreImpl) UpdateExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity, skipPush bool) error {
 	if err := ds.validateExternalNetworkEntity(entity); err != nil {
 		return err
 	}
@@ -212,6 +241,7 @@ func (ds *dataStoreImpl) UpsertExternalNetworkEntity(ctx context.Context, entity
 		go ds.doPushExternalNetworkEntitiesToSensor(entity.GetScope().GetClusterId())
 	}
 
+	ds.getNetworkTree(entity.GetScope().GetClusterId(), true).Remove(entity.GetInfo().GetId())
 	return ds.getNetworkTree(entity.GetScope().GetClusterId(), true).Insert(entity.GetInfo())
 }
 

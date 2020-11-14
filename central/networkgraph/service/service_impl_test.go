@@ -709,7 +709,7 @@ func (s *NetworkGraphServiceTestSuite) TestCreateExternalNetworkEntity() {
 		},
 	}
 
-	s.entities.EXPECT().UpsertExternalNetworkEntity(ctx, gomock.Any(), false).Return(nil)
+	s.entities.EXPECT().CreateExternalNetworkEntity(ctx, gomock.Any(), false).Return(nil)
 	s.clusters.EXPECT().Exists(gomock.Any(), "c1").Return(true, nil)
 	_, err = s.tested.CreateExternalNetworkEntity(ctx, request)
 	s.NoError(err)
@@ -780,7 +780,7 @@ func (s *NetworkGraphServiceTestSuite) TestPatchExternalNetworkEntity() {
 	}
 
 	s.entities.EXPECT().GetEntity(ctx, entity.GetInfo().GetId()).Return(entity, true, nil)
-	s.entities.EXPECT().UpsertExternalNetworkEntity(ctx, gomock.Any(), false).Return(nil)
+	s.entities.EXPECT().UpdateExternalNetworkEntity(ctx, gomock.Any(), false).Return(nil)
 	actual, err := s.tested.PatchExternalNetworkEntity(ctx, patch)
 	s.NoError(err)
 	entity.Info.GetExternalSource().Name = "newcidr"
