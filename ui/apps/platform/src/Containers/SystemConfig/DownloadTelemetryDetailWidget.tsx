@@ -106,6 +106,7 @@ const DownloadTelemetryDetailWidget = (): ReactElement => {
 
         if (trimmedText.length === 0) {
             // This combination represents default starting time.
+            setCurrentTimeObject(null);
             setStartingTimeObject(null);
             setIsStartingTimeValid(true);
         } else if (
@@ -122,6 +123,7 @@ const DownloadTelemetryDetailWidget = (): ReactElement => {
             setIsStartingTimeValid(Number(dateTimeObject) < Number(newTimeObject));
         } else {
             // This combination represents unsuccessfully parsed text.
+            setCurrentTimeObject(null);
             setStartingTimeObject(null);
             setIsStartingTimeValid(false);
         }

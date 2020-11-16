@@ -1,9 +1,15 @@
 import React, { ReactElement } from 'react';
-import PropTypes, { InferProps } from 'prop-types';
 import { AlertTriangle, Check, Info, X } from 'react-feather';
 import { distanceInWordsStrict } from 'date-fns';
 
 import HealthStatus from 'Containers/Clusters/Components/HealthStatus';
+
+type Props = {
+    currentTimeObject: Date | null;
+    isStartingTimeValid: boolean;
+    startingTimeFormat: string;
+    startingTimeObject: Date | null;
+};
 
 // Dislay validation and information in similar format to cluster health.
 const FilterByStartingTimeValidationMessage = ({
@@ -11,12 +17,12 @@ const FilterByStartingTimeValidationMessage = ({
     isStartingTimeValid,
     startingTimeFormat,
     startingTimeObject,
-}): ReactElement => {
+}: Props): ReactElement => {
     let classNameColor = 'text-primary-700';
     let Icon = Info;
     let message = 'default time: 20 minutes ago';
 
-    if (startingTimeObject) {
+    if (currentTimeObject && startingTimeObject) {
         const timeDifference = distanceInWordsStrict(currentTimeObject, startingTimeObject, {
             partialMethod: 'round',
         });
@@ -45,19 +51,4 @@ const FilterByStartingTimeValidationMessage = ({
     );
 };
 
-FilterByStartingTimeValidationMessage.propTypes = {
-    currentTimeObject: PropTypes.instanceOf(Date),
-    isStartingTimeValid: PropTypes.bool.isRequired,
-    startingTimeFormat: PropTypes.string.isRequired,
-    startingTimeObject: PropTypes.instanceOf(Date),
-};
-
-FilterByStartingTimeValidationMessage.defaultProps = {
-    currentTimeObject: null,
-    startingTimeObject: null,
-} as FilterByStartingTimeValidationMessageProps;
-
-export type FilterByStartingTimeValidationMessageProps = InferProps<
-    typeof FilterByStartingTimeValidationMessage.propTypes
->;
 export default FilterByStartingTimeValidationMessage;

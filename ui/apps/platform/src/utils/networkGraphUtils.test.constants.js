@@ -615,7 +615,7 @@ export const deploymentList = [
             nonIsolatedIngress: false,
             nonIsolatedEgress: false,
             outEdges: {
-                '4': {
+                4: {
                     properties: [
                         {
                             port: 8443,
@@ -661,7 +661,7 @@ export const deploymentList = [
             nonIsolatedIngress: false,
             nonIsolatedEgress: false,
             outEdges: {
-                '13': {
+                13: {
                     properties: [
                         {
                             port: 443,
@@ -689,7 +689,7 @@ export const deploymentList = [
             nonIsolatedIngress: false,
             nonIsolatedEgress: false,
             outEdges: {
-                '13': {
+                13: {
                     properties: [
                         {
                             port: 443,
@@ -717,7 +717,7 @@ export const deploymentList = [
             nonIsolatedIngress: false,
             nonIsolatedEgress: false,
             outEdges: {
-                '8': {
+                8: {
                     properties: [
                         {
                             port: 8443,
@@ -726,7 +726,7 @@ export const deploymentList = [
                         },
                     ],
                 },
-                '13': {
+                13: {
                     properties: [
                         {
                             port: 443,
@@ -825,7 +825,7 @@ export const deploymentList = [
             nonIsolatedIngress: false,
             nonIsolatedEgress: false,
             outEdges: {
-                '5': {
+                5: {
                     properties: [
                         {
                             port: 5432,
@@ -834,7 +834,7 @@ export const deploymentList = [
                         },
                     ],
                 },
-                '7': {
+                7: {
                     properties: [
                         {
                             port: 53,
@@ -843,7 +843,7 @@ export const deploymentList = [
                         },
                     ],
                 },
-                '8': {
+                8: {
                     properties: [
                         {
                             port: 8443,
@@ -852,7 +852,7 @@ export const deploymentList = [
                         },
                     ],
                 },
-                '13': {
+                13: {
                     properties: [
                         {
                             port: 443,
@@ -940,7 +940,7 @@ export const deploymentList = [
             nonIsolatedIngress: false,
             nonIsolatedEgress: false,
             outEdges: {
-                '13': {
+                13: {
                     properties: [
                         {
                             port: 443,
@@ -1019,7 +1019,7 @@ export const deploymentList = [
             nonIsolatedIngress: false,
             nonIsolatedEgress: false,
             outEdges: {
-                '7': {
+                7: {
                     properties: [
                         {
                             port: 53,
@@ -1028,7 +1028,7 @@ export const deploymentList = [
                         },
                     ],
                 },
-                '13': {
+                13: {
                     properties: [
                         {
                             port: 443,
