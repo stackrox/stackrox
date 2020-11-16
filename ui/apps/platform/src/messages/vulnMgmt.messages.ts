@@ -30,7 +30,7 @@ export const imageScanMessages = {
         body: 'Only showing information about the Language CVEs.',
     },
     osCvesStale: {
-        header: 'Stale OS CVE data..',
+        header: 'Stale OS CVE data.',
         body: 'The source no longer provides data updates.',
         extra: '',
     },
