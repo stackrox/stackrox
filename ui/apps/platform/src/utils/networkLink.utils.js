@@ -1,5 +1,6 @@
 import entityTypes from 'constants/entityTypes';
 import { nodeTypes } from 'constants/networkGraph';
+import { filterModes } from 'constants/networkFilterModes';
 import { UIfeatureFlags, isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 import {
     getIsNodeHoverable,
@@ -102,7 +103,10 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
 
                 // Do not draw implicit links between fully non-isolated nodes unless the connection is active.
                 const isImplicit = node.nonIsolatedIngress && targetNode.nonIsolatedEgress;
-                if (!isImplicit || link.isActive) {
+                const isCurrentlyActive =
+                    (filterState === filterModes.active || filterState === filterModes.all) &&
+                    link.isActive;
+                if (!isImplicit || isCurrentlyActive) {
                     filteredLinks.push(link);
                     filteredEdgeHashTable[edgeKey] = true;
                 }
