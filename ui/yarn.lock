@@ -13966,10 +13966,10 @@ init-package-json@^1.10.3:
     validate-npm-package-license "^3.0.1"
     validate-npm-package-name "^3.0.0"
 
-initials@^3.1.0:
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/initials/-/initials-3.1.0.tgz#ea8b93a4e2b67944db894e83dad383890da1924b"
-  integrity sha512-kWcyG5epBl4Wxvz49eW8dZAYgexQKI9qu2WP0XogWCu9nzigV7DEKhrkrKzGjYoynguxpEyo22ZCBB+NgHWiGQ==
+initials@^3.1.1:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/initials/-/initials-3.1.1.tgz#a63395b2c46bc56207b4b964a6eb185dbd8458e6"
+  integrity sha512-imRkwIpCUer+w9NB41dTENhJrTQTGOJthRa3URF0O9+L7MOMBPmN8njwkiX4u8YnzxbjEp4Is0ohiW6NSA8ZCw==
 
 inline-source-map@~0.6.0:
   version "0.6.2"
