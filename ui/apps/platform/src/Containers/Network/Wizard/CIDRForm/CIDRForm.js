@@ -35,13 +35,16 @@ const validateSchema = Yup.object().shape({
 
 const CIDRForm = ({ rows, clusterId, updateNetworkNodes, onClose }) => {
     const [formCallout, setFormCallout] = useState();
+    const [CIDRBlockMap, setCIDRBlockMap] = useState({});
     let blocksToRemove = [];
-    const CIDRBlockMap = {};
 
-    function setCIDRBlockMap() {
-        return rows?.entities?.forEach(({ entity }) => {
-            CIDRBlockMap[entity.id] = entity;
-        });
+    function updateCIDRBlockMap() {
+        const newMap = rows?.entities?.reduce((acc, { entity }) => {
+            acc[entity.id] = entity;
+            return acc;
+        }, {});
+
+        setCIDRBlockMap(newMap);
     }
 
     function removeRowHandler(removeRow, idx, entity) {
@@ -124,7 +127,7 @@ const CIDRForm = ({ rows, clusterId, updateNetworkNodes, onClose }) => {
         return rows.entities.length !== 0 ? rows : { entities: [emptyCIDRBlockRow] };
     }
 
-    useEffect(setCIDRBlockMap, [rows]);
+    useEffect(updateCIDRBlockMap, [rows]);
 
     return (
         <div className="flex flex-1 flex-col">
