@@ -3,6 +3,7 @@ import {
     NODE_WIDTH,
     NODE_PADDING,
     SIDE_NODE_PADDING,
+    EXTERNAL_NODE_PADDING,
     nodeTypes,
 } from 'constants/networkGraph';
 import entityTypes from 'constants/entityTypes';
@@ -32,32 +33,32 @@ function getParentDimensions(nodeCount) {
 
 // Gets positions and dimensions for all parent nodes
 export function getParentPositions(nodes, padding) {
-    const namespaceNames = nodes
+    const namespaceItems = nodes
         .filter((node) => node.data().type === entityTypes.NAMESPACE)
-        .map((parent) => parent.data().id);
-    const externalEntitiesAndCIDRBlockNames = nodes
+        .map((parent) => parent.data());
+    const externalEntitiesAndCIDRBlockItems = nodes
         .filter(
             (node) =>
                 node.data().type === nodeTypes.EXTERNAL_ENTITIES ||
                 node.data().type === nodeTypes.CIDR_BLOCK
         )
-        .map((parent) => parent.data().id);
+        .map((parent) => parent.data());
 
     // Get namespace dimensions sorted by width
-    const namespaces = namespaceNames
-        .map((id) => {
+    const namespaces = namespaceItems
+        .map(({ id, type }) => {
             const nodeCount = nodes.filter((node) => {
                 const data = node.data();
                 return data.parent && !data.side && data.parent === id;
             }).length;
 
-            return { ...getParentDimensions(nodeCount), id, nodeCount };
+            return { ...getParentDimensions(nodeCount), id, nodeCount, type };
         })
         .sort((a, b) => b.cols - a.cols);
-    const externalEntitiesAndCIDRBlocks = externalEntitiesAndCIDRBlockNames
-        .map((id) => {
+    const externalEntitiesAndCIDRBlocks = externalEntitiesAndCIDRBlockItems
+        .map(({ id, type }) => {
             const nodeCount = 1;
-            return { ...getParentDimensions(nodeCount), id, nodeCount };
+            return { ...getParentDimensions(nodeCount), id, nodeCount, type };
         })
         .sort((a, b) => b.cols - a.cols);
 
@@ -70,12 +71,16 @@ export function getParentPositions(nodes, padding) {
     const maxNSWidth = Math.max(...avgNSDimensions.width);
     const maxRowWidth = Math.floor(Math.sqrt(parents.length) + 1) * maxNSWidth;
     return parents.map((NS) => {
-        const { id, width, height } = NS;
+        const { id, width, height, type } = NS;
         const newX = (maxNSWidth + padding.x) * colNum;
+        const adjustedY =
+            type === nodeTypes.EXTERNAL_ENTITIES || type === nodeTypes.CIDR_BLOCK
+                ? y + height * 5
+                : y;
         const result = {
             id,
             x: newX,
-            y,
+            y: adjustedY,
             width,
             height,
         };
@@ -147,26 +152,30 @@ edgeGridLayout.prototype.run = function () {
     }
 
     function getSideNodePos(element) {
-        const { side } = element.data();
+        const { side, category } = element.data();
+        const calculatedSideNodePadding =
+            category === nodeTypes.EXTERNAL_ENTITIES || category === nodeTypes.CIDR_BLOCK
+                ? EXTERNAL_NODE_PADDING
+                : SIDE_NODE_PADDING;
         switch (side) {
             case 'top':
                 return {
                     x: midWidth,
-                    y: position.y - parentPadding.top - SIDE_NODE_PADDING,
+                    y: position.y - parentPadding.top - calculatedSideNodePadding,
                 };
             case 'bottom':
                 return {
                     x: midWidth,
-                    y: position.y + height + parentPadding.bottom + SIDE_NODE_PADDING,
+                    y: position.y + height + parentPadding.bottom + calculatedSideNodePadding,
                 };
             case 'left':
                 return {
-                    x: position.x - parentPadding.left - SIDE_NODE_PADDING,
+                    x: position.x - parentPadding.left - calculatedSideNodePadding,
                     y: midHeight,
                 };
             case 'right':
                 return {
-                    x: position.x + width + parentPadding.right + SIDE_NODE_PADDING,
+                    x: position.x + width + parentPadding.right + calculatedSideNodePadding,
                     y: midHeight,
                 };
             default:
