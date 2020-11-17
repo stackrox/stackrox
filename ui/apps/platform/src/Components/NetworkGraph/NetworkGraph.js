@@ -311,7 +311,6 @@ const NetworkGraph = ({
                 NS_FONT_SIZE
             );
         }
-        cyRef.current.nodes(':parent').style('font-size', zoomFontMap[curZoomLevel]);
         cyRef.current.edges('.namespace').style('font-size', zoomFontMap[curZoomLevel]);
     }
 

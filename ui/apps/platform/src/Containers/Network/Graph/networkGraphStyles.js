@@ -77,7 +77,7 @@ const styles = [
             'compound-sizing-wrt-labels': 'include',
             'font-family': 'stackrox, Open Sans',
             'text-valign': 'center',
-            'font-size': NS_FONT_SIZE,
+            'font-size': NS_FONT_SIZE * 1.8,
             color: COLORS.label,
             'font-weight': 700,
             label: 'External\n  Entities \u2b08',
@@ -99,16 +99,16 @@ const styles = [
             'compound-sizing-wrt-labels': 'include',
             'font-family': 'stackrox, Open Sans',
             'text-valign': 'center',
-            'font-size': NS_FONT_SIZE,
+            'font-size': NS_FONT_SIZE * 1.2,
             color: COLORS.label,
             'font-weight': 700,
             label: (ele) => {
-                const address = ele.data()?.cidr || 'Address error';
-                const name = ele.data()?.name || 'Name error';
+                const address = ele.data()?.cidr || '';
+                const name = ele.data()?.name || '';
                 return `${address}\n${name}`;
             },
             'line-height': 1.5,
-            padding: '2px 2px 2px 2px',
+            padding: '0px',
             'text-transform': 'uppercase',
             'text-wrap': 'wrap',
             width: 'label',

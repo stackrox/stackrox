@@ -4,6 +4,7 @@ export const TEXT_MAX_WIDTH = 30;
 export const NODE_WIDTH = 8;
 export const NODE_PADDING = 20;
 export const SIDE_NODE_PADDING = 10;
+export const EXTERNAL_NODE_PADDING = 40;
 export const NODE_SOLID_BORDER_WIDTH = 2;
 export const OUTER_PADDING = 12;
 export const OUTER_SPACING_FACTOR = 0.1;

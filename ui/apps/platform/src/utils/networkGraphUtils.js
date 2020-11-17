@@ -976,13 +976,14 @@ export const getNamespaceList = (
  */
 const sides = ['top', 'left', 'right', 'bottom'];
 
-const createEdgeNodes = (id, classes) => {
+const createEdgeNodes = (id, classes, type) => {
     const edgeNodes = sides.reduce((acc, side) => {
         const node = {
             data: {
                 id: `${id}_${side}`,
                 parent: id,
                 side,
+                category: type,
             },
             classes,
         };
@@ -993,8 +994,8 @@ const createEdgeNodes = (id, classes) => {
 
 export const getEdgeNodes = (nodeList, classes) => {
     const totalEdgeNodes = nodeList.reduce((acc, node) => {
-        const { id } = node.data;
-        const edgeNodes = createEdgeNodes(id, classes);
+        const { id, type } = node.data;
+        const edgeNodes = createEdgeNodes(id, classes, type);
         return [...acc, ...edgeNodes];
     }, []);
     return totalEdgeNodes;

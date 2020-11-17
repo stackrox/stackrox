@@ -1193,21 +1193,94 @@ export const namespaceList = [
 ];
 
 export const namespaceEdgeNodes = [
-    { data: { id: 'kube-system_top', parent: 'kube-system', side: 'top' }, classes: 'nsEdge' },
-    { data: { id: 'kube-system_left', parent: 'kube-system', side: 'left' }, classes: 'nsEdge' },
-    { data: { id: 'kube-system_right', parent: 'kube-system', side: 'right' }, classes: 'nsEdge' },
     {
-        data: { id: 'kube-system_bottom', parent: 'kube-system', side: 'bottom' },
+        data: {
+            id: 'kube-system_top',
+            parent: 'kube-system',
+            side: 'top',
+            category: 'NAMESPACE',
+        },
         classes: 'nsEdge',
     },
-    { data: { id: 'stackrox_top', parent: 'stackrox', side: 'top' }, classes: 'nsEdge' },
-    { data: { id: 'stackrox_left', parent: 'stackrox', side: 'left' }, classes: 'nsEdge' },
-    { data: { id: 'stackrox_right', parent: 'stackrox', side: 'right' }, classes: 'nsEdge' },
-    { data: { id: 'stackrox_bottom', parent: 'stackrox', side: 'bottom' }, classes: 'nsEdge' },
-    { data: { id: 'docker_top', parent: 'docker', side: 'top' }, classes: 'nsEdge' },
-    { data: { id: 'docker_left', parent: 'docker', side: 'left' }, classes: 'nsEdge' },
-    { data: { id: 'docker_right', parent: 'docker', side: 'right' }, classes: 'nsEdge' },
-    { data: { id: 'docker_bottom', parent: 'docker', side: 'bottom' }, classes: 'nsEdge' },
+    {
+        data: {
+            id: 'kube-system_left',
+            parent: 'kube-system',
+            side: 'left',
+            category: 'NAMESPACE',
+        },
+        classes: 'nsEdge',
+    },
+    {
+        data: {
+            id: 'kube-system_right',
+            parent: 'kube-system',
+            side: 'right',
+            category: 'NAMESPACE',
+        },
+        classes: 'nsEdge',
+    },
+    {
+        data: {
+            id: 'kube-system_bottom',
+            parent: 'kube-system',
+            side: 'bottom',
+            category: 'NAMESPACE',
+        },
+        classes: 'nsEdge',
+    },
+    {
+        data: { id: 'stackrox_top', parent: 'stackrox', side: 'top', category: 'NAMESPACE' },
+        classes: 'nsEdge',
+    },
+    {
+        data: {
+            id: 'stackrox_left',
+            parent: 'stackrox',
+            side: 'left',
+            category: 'NAMESPACE',
+        },
+        classes: 'nsEdge',
+    },
+    {
+        data: {
+            id: 'stackrox_right',
+            parent: 'stackrox',
+            side: 'right',
+            category: 'NAMESPACE',
+        },
+        classes: 'nsEdge',
+    },
+    {
+        data: {
+            id: 'stackrox_bottom',
+            parent: 'stackrox',
+            side: 'bottom',
+            category: 'NAMESPACE',
+        },
+        classes: 'nsEdge',
+    },
+    {
+        data: { id: 'docker_top', parent: 'docker', side: 'top', category: 'NAMESPACE' },
+        classes: 'nsEdge',
+    },
+    {
+        data: { id: 'docker_left', parent: 'docker', side: 'left', category: 'NAMESPACE' },
+        classes: 'nsEdge',
+    },
+    {
+        data: { id: 'docker_right', parent: 'docker', side: 'right', category: 'NAMESPACE' },
+        classes: 'nsEdge',
+    },
+    {
+        data: {
+            id: 'docker_bottom',
+            parent: 'docker',
+            side: 'bottom',
+            category: 'NAMESPACE',
+        },
+        classes: 'nsEdge',
+    },
 ];
 
 export const deploymentEdges = [
