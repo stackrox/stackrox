@@ -127,6 +127,9 @@ func (s *tcpSender) reconnect() {
 
 		select {
 		case <-curConn.failed.WaitC():
+			// Senders should wait for the new connection
+			s.available.Reset()
+
 			// Close old connection
 			curConn.Close()
 
