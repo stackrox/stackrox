@@ -118,6 +118,26 @@ func (r ResourceID) String() string {
 	return r.clusterID + separator + r.namespaceID + separator + r.suffix
 }
 
+// IsValid return true if the resource ID is valid, i.e. has scope info and suffix.
+func (r ResourceID) IsValid() bool {
+	return r.Suffix() != "" && (r.GlobalScoped() || r.ClusterScoped() || r.NamespaceScoped())
+}
+
+// GlobalScoped returns true if the resource ID is global-scoped.
+func (r ResourceID) GlobalScoped() bool {
+	return r.ClusterID() == "" && r.NamespaceID() == ""
+}
+
+// ClusterScoped returns true if the resource ID is cluster-scoped.
+func (r ResourceID) ClusterScoped() bool {
+	return r.ClusterID() != "" && r.NamespaceID() == ""
+}
+
+// NamespaceScoped returns true if the resource ID is namespace-scoped.
+func (r ResourceID) NamespaceScoped() bool {
+	return r.ClusterID() != "" && r.NamespaceID() != ""
+}
+
 // ParseResourceID reads a ResourceID from input ID string.
 func ParseResourceID(str string) (ResourceID, error) {
 	if str == "" {

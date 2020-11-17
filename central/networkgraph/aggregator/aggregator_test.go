@@ -62,9 +62,9 @@ func TestSubnetToSupernetAggregator(t *testing.T) {
 	e5 := test.GetExtSrcNetworkEntityInfo(id5.String(), "5", cidr5, false) // -> e6
 	e6 := test.GetExtSrcNetworkEntityInfo(id6.String(), "6", cidr6, true)  // -> internet
 
-	tree1, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e2, e3, e5})
+	tree1, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e2, e3})
 	assert.NoError(t, err)
-	tree2, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e1, e4, e6})
+	tree2, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e1, e6})
 	assert.NoError(t, err)
 
 	/*
@@ -100,16 +100,11 @@ func TestSubnetToSupernetAggregator(t *testing.T) {
 
 	flows := []*storage.NetworkFlow{f1, f2, f3, f4, f5, f6, f7, f8, f9, f10}
 
-	f1x := test.GetNetworkFlow(d1, e2, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts1)
-	f2x := test.GetNetworkFlow(d1, e3, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts2)
 	f3x := test.GetNetworkFlow(d1, e6, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, nil)
-	f4x := test.GetNetworkFlow(d1, internet, 0, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, nil)
-	f5x := test.GetNetworkFlow(internet, d2, 0, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, nil)
-	f6x := test.GetNetworkFlow(internet, d2, 8000, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, ts2)
 	f9x := test.GetNetworkFlow(d1, e1, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts2)
 	f10x := test.GetNetworkFlow(d2, e1, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, ts2)
 
-	expected := []*storage.NetworkFlow{f1x, f2x, f3x, f4x, f5x, f6x, f9x, f10x}
+	expected := []*storage.NetworkFlow{f2, f3x, f4, f5, f6, f7, f8, f9x, f10x}
 
 	aggr, err := NewSubnetToSupernetConnAggregator(tree.NewMultiTreeWrapper(tree1, tree2))
 	assert.NoError(t, err)
@@ -259,6 +254,9 @@ func TestAggregateExtConnsByName(t *testing.T) {
 		Desc: &storage.NetworkEntityInfo_ExternalSource_{
 			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
 				Name: "google",
+				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+					Cidr: canonicalMultiNetworkCIDR,
+				},
 			},
 		},
 	}
