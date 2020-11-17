@@ -334,11 +334,8 @@ describe('Policies page', () => {
                     const expectedPolicyName = json?.policies[0]?.name;
                     const expectedPolicyId = json?.policies[0]?.id;
 
-                    // due to way Cypress handles JSON fixtures, we have to use this workaround to handle JSON file upload
-                    //   https://github.com/abramenal/cypress-file-upload/issues/175#issue-586835434
-                    const fileContent = JSON.stringify(json);
-                    cy.get(selectors.policyImportModal.fileInput).upload({
-                        fileContent,
+                    cy.get(selectors.policyImportModal.fileInput).attachFile({
+                        fileContent: json,
                         fileName,
                         mimeType: 'application/json',
                         encoding: 'utf8',
@@ -393,9 +390,8 @@ describe('Policies page', () => {
                         },
                     ],
                 };
-                const fileContent = JSON.stringify(dummyJson);
-                cy.get(selectors.policyImportModal.fileInput).upload({
-                    fileContent,
+                cy.get(selectors.policyImportModal.fileInput).attachFile({
+                    fileContent: dummyJson,
                     fileName: 'dummy.json',
                     mimeType: 'application/json',
                     encoding: 'utf8',
@@ -460,9 +456,8 @@ describe('Policies page', () => {
                         },
                     ],
                 };
-                const fileContent = JSON.stringify(dummyJson);
-                cy.get(selectors.policyImportModal.fileInput).upload({
-                    fileContent,
+                cy.get(selectors.policyImportModal.fileInput).attachFile({
+                    fileContent: dummyJson,
                     fileName: 'dummy.json',
                     mimeType: 'application/json',
                     encoding: 'utf8',
@@ -526,9 +521,8 @@ describe('Policies page', () => {
                         },
                     ],
                 };
-                const fileContent = JSON.stringify(dummyJson);
-                cy.get(selectors.policyImportModal.fileInput).upload({
-                    fileContent,
+                cy.get(selectors.policyImportModal.fileInput).attachFile({
+                    fileContent: dummyJson,
                     fileName: 'dummy.json',
                     mimeType: 'application/json',
                     encoding: 'utf8',

@@ -8,7 +8,12 @@ import checkFeatureFlag from '../helpers/features';
 
 function uploadYAMLFile(fileName, selector) {
     cy.fixture(fileName).then((fileContent) => {
-        cy.get(selector).upload({ fileContent, fileName, mimeType: 'text/yaml', encoding: 'utf8' });
+        cy.get(selector).attachFile({
+            fileContent,
+            fileName,
+            mimeType: 'text/yaml',
+            encoding: 'utf8',
+        });
     });
 }
 
