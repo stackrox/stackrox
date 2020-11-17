@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	unnamedExtSrcPrefix = "unnamed external source"
+	unnamedExtSrcPrefix       = "unnamed external source"
+	canonicalMultiNetworkCIDR = "multi-network"
 )
 
 var (
@@ -55,8 +56,7 @@ func (a *aggregateToSupernetImpl) Aggregate(conns []*storage.NetworkFlow) []*sto
 		}
 
 		// Move the connections to supernet.
-		a.mapToSupernet(supernetCache, conn.Props.SrcEntity)
-		a.mapToSupernet(supernetCache, conn.Props.DstEntity)
+		a.mapToSupernetIfNotfound(supernetCache, conn.Props.SrcEntity, conn.Props.DstEntity)
 
 		connID := networkgraph.GetNetworkConnIndicator(conn)
 		if storedFlow := normalizedConns[connID]; storedFlow != nil {
@@ -72,6 +72,20 @@ func (a *aggregateToSupernetImpl) Aggregate(conns []*storage.NetworkFlow) []*sto
 		ret = append(ret, conn)
 	}
 	return ret
+}
+
+func (a *aggregateToSupernetImpl) mapToSupernetIfNotfound(supernetCache map[string]*storage.NetworkEntityInfo, entities ...*storage.NetworkEntityInfo) {
+	for _, entity := range entities {
+		if !networkgraph.IsKnownExternalSrc(entity) {
+			continue
+		}
+
+		if a.tree.Search(entity.GetId()) {
+			continue
+		}
+
+		a.mapToSupernet(supernetCache, entity)
+	}
 }
 
 func (a *aggregateToSupernetImpl) mapToSupernet(supernetCache map[string]*storage.NetworkEntityInfo, entities ...*storage.NetworkEntityInfo) {
@@ -310,7 +324,7 @@ func normalizeDupNameExtSrcs(entity *storage.NetworkEntityInfo) {
 	}
 
 	var id sac.ResourceID
-	if decodedID.ClusterID() == "" {
+	if decodedID.GlobalScoped() {
 		id, err = sac.NewGlobalScopeResourceID(entity.GetExternalSource().GetName())
 	} else {
 		id, err = sac.NewClusterScopeResourceID(decodedID.ClusterID(), entity.GetExternalSource().GetName())
@@ -327,7 +341,10 @@ func normalizeDupNameExtSrcs(entity *storage.NetworkEntityInfo) {
 			ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
 				Name:    entity.GetExternalSource().GetName(),
 				Default: entity.GetExternalSource().GetDefault(),
-				// Since many CIDRs are mapped to one endpoint, we clear the CIDR field.
+				// Since many CIDRs are mapped to one endpoint, we use a canonical CIDR string.
+				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+					Cidr: canonicalMultiNetworkCIDR,
+				},
 			},
 		},
 	}

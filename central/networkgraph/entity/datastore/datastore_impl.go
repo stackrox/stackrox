@@ -443,7 +443,7 @@ func parseAndValidateID(id string) (sac.ResourceID, error) {
 		return sac.ResourceID{}, errors.Wrapf(errorhelpers.ErrInvalidArgs, "failed to parse network entity id %s", id)
 	}
 
-	if decodedID.ClusterID() == "" && decodedID.NamespaceID() != "" {
+	if !decodedID.IsValid() || decodedID.NamespaceScoped() {
 		return sac.ResourceID{}, errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid network entity id %s. Must be cluster-scoped or global-scoped", id)
 	}
 	return decodedID, nil
@@ -459,11 +459,11 @@ func getScopeKeys(id string, clusters []string) ([][]sac.ScopeKey, error) {
 		return nil, err
 	}
 
-	// If cluster part of resource ID is empty, it means the resource must be default one.
-	if decodedID.ClusterID() != "" {
+	if decodedID.ClusterScoped() {
 		return [][]sac.ScopeKey{sac.ClusterScopeKeys(decodedID.ClusterID())}, nil
 	}
 
+	// If global-scoped, add all registered clusters as scope key paths.
 	scopeKeys := make([][]sac.ScopeKey, 0, len(clusters))
 	for _, cluster := range clusters {
 		scopeKeys = append(scopeKeys, sac.ClusterScopeKeys(cluster))

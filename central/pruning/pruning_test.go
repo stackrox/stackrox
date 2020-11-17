@@ -947,18 +947,20 @@ func TestRemoveOrphanedExternalNetworkFlows(t *testing.T) {
 	assert.NoError(t, err)
 	e2xID, err := externalsrcs.NewGlobalScopedScopedID("12.10.10.10/8")
 	assert.NoError(t, err)
-	e3xID, err := externalsrcs.NewGlobalScopedScopedID("12.10.10.10/16")
+	e2xxID, err := externalsrcs.NewGlobalScopedScopedID("12.10.10.10/16")
 	assert.NoError(t, err)
 	e4xID, err := externalsrcs.NewClusterScopedID("cluster", "10.10.10.10/20")
 	assert.NoError(t, err)
 	e1x := test.GetExtSrcNetworkEntityInfo(e1xID.String(), "e1x", "10.10.10.10/5", true)
 	e2x := test.GetExtSrcNetworkEntityInfo(e2xID.String(), "e2x", "12.10.10.10/8", false)
-	e3x := test.GetExtSrcNetworkEntityInfo(e3xID.String(), "e3x", "12.10.10.10/16", true)
+	e2xx := test.GetExtSrcNetworkEntityInfo(e2xxID.String(), "e2xx", "12.10.10.10/16", true)
 	e4x := test.GetExtSrcNetworkEntityInfo(e4xID.String(), "e4x", "10.10.10.10/20", false)
 
 	tree1, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e4x, e2x})
 	assert.NoError(t, err)
-	tree2, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e1x, e3x})
+	tree2, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e1x})
+	assert.NoError(t, err)
+	tree3, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e1x, e2xx})
 	assert.NoError(t, err)
 
 	ts1 := timestampNowMinus(20 * time.Minute)
@@ -968,6 +970,8 @@ func TestRemoveOrphanedExternalNetworkFlows(t *testing.T) {
 		name               string
 		flows              []*storage.NetworkFlow
 		externalSrcs       []string
+		clusterTree        tree.ReadOnlyNetworkTree
+		defaultTree        tree.ReadOnlyNetworkTree
 		expectedFlows      []*storage.NetworkFlow
 		expectedAdjustment bool
 	}{
@@ -990,6 +994,8 @@ func TestRemoveOrphanedExternalNetworkFlows(t *testing.T) {
 				},
 			},
 			externalSrcs: []string{},
+			clusterTree:  tree1,
+			defaultTree:  tree2,
 			expectedFlows: []*storage.NetworkFlow{
 				{
 					LastSeenTimestamp: ts2,
@@ -1026,6 +1032,8 @@ func TestRemoveOrphanedExternalNetworkFlows(t *testing.T) {
 				},
 			},
 			externalSrcs:       []string{},
+			clusterTree:        tree1,
+			defaultTree:        tree2,
 			expectedAdjustment: false,
 		},
 		{
@@ -1040,6 +1048,8 @@ func TestRemoveOrphanedExternalNetworkFlows(t *testing.T) {
 				},
 			},
 			externalSrcs: []string{},
+			clusterTree:  tree1,
+			defaultTree:  tree2,
 			expectedFlows: []*storage.NetworkFlow{
 				{
 					LastSeenTimestamp: ts1,
@@ -1066,6 +1076,8 @@ func TestRemoveOrphanedExternalNetworkFlows(t *testing.T) {
 				},
 			},
 			externalSrcs:       []string{e1ID.String(), e2ID.String()},
+			clusterTree:        tree1,
+			defaultTree:        tree2,
 			expectedAdjustment: false,
 		},
 		{
@@ -1080,6 +1092,8 @@ func TestRemoveOrphanedExternalNetworkFlows(t *testing.T) {
 				},
 			},
 			externalSrcs: []string{e2ID.String()},
+			clusterTree:  tree1,
+			defaultTree:  tree2,
 			expectedFlows: []*storage.NetworkFlow{
 				{
 					LastSeenTimestamp: ts2,
@@ -1106,6 +1120,8 @@ func TestRemoveOrphanedExternalNetworkFlows(t *testing.T) {
 				},
 			},
 			externalSrcs: []string{e1ID.String()},
+			clusterTree:  tree1,
+			defaultTree:  tree2,
 			expectedFlows: []*storage.NetworkFlow{
 				{
 					LastSeenTimestamp: ts2,
@@ -1115,6 +1131,31 @@ func TestRemoveOrphanedExternalNetworkFlows(t *testing.T) {
 							Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 							Id:   e2xID.String(),
 						},
+					},
+				},
+			},
+			expectedAdjustment: true,
+		},
+		{
+			name: "some external sources with matching dst - dst added back",
+			flows: []*storage.NetworkFlow{
+				{
+					LastSeenTimestamp: ts2,
+					Props: &storage.NetworkFlowProperties{
+						SrcEntity: d1,
+						DstEntity: e2,
+					},
+				},
+			},
+			externalSrcs: []string{e1ID.String()},
+			clusterTree:  tree1,
+			defaultTree:  tree3,
+			expectedFlows: []*storage.NetworkFlow{
+				{
+					LastSeenTimestamp: ts2,
+					Props: &storage.NetworkFlowProperties{
+						SrcEntity: d1,
+						DstEntity: e2,
 					},
 				},
 			},
@@ -1154,8 +1195,8 @@ func TestRemoveOrphanedExternalNetworkFlows(t *testing.T) {
 				}).Return(filteredFlows, protoTypes.Timestamp{}, nil)
 
 			if c.expectedAdjustment {
-				mgr.EXPECT().GetReadOnlyNetworkTree("cluster").Return(tree1)
-				mgr.EXPECT().GetDefaultNetworkTree().Return(tree2)
+				mgr.EXPECT().GetReadOnlyNetworkTree("cluster").Return(c.clusterTree)
+				mgr.EXPECT().GetDefaultNetworkTree().Return(c.defaultTree)
 
 				for _, f := range c.expectedFlows {
 					flows.EXPECT().UpsertFlows(pruningCtx, []*storage.NetworkFlow{f}, timestamp.FromProtobuf(f.GetLastSeenTimestamp())).Return(nil)

@@ -13,8 +13,9 @@ type NetworkConnsAggregator interface {
 	Aggregate(conns []*storage.NetworkFlow) []*storage.NetworkFlow
 }
 
-// NewSubnetToSupernetConnAggregator returns a NetworkConnsAggregator that aggregates all network connections into
-// immediate supernet. Atleast one network tree must be specified.
+// NewSubnetToSupernetConnAggregator returns a NetworkConnsAggregator that aggregates network connections whose
+// external endpoints are not found in the network tree into conns with supernet endpoints. At least one network tree
+// must be specified.
 func NewSubnetToSupernetConnAggregator(networkTree tree.ReadOnlyNetworkTree) (NetworkConnsAggregator, error) {
 	if networkTree == nil {
 		return nil, errors.New("network tree must be provided")
