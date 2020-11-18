@@ -383,8 +383,10 @@ const NetworkGraph = ({
             filteredData,
             deploymentList,
             configObj,
-            selectedClusterName
+            selectedClusterName,
+            filterState
         );
+
         const namespaceEdgeNodes = getNamespaceEdgeNodes(namespaceList);
         const showExternal = isBackendFeatureFlagEnabled(
             featureFlags,
