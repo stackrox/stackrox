@@ -3,7 +3,12 @@ import flatMap from 'lodash/flatMap';
 import { nodeTypes } from 'constants/networkGraph';
 import entityTypes from 'constants/entityTypes';
 import { filterModes } from 'constants/networkFilterModes';
-import { getEdgesFromNode, getClasses } from './networkGraphUtils';
+import {
+    getEdgesFromNode,
+    getClasses,
+    getIsAdjacentToHighlightedNode,
+    getDirectionalityEdges,
+} from './networkGraphUtils';
 
 /**
  * Create the cluster node for the network graph
@@ -56,7 +61,14 @@ export const getExternalEntitiesNode = (data, configObj = {}) => {
 
     const isSelected = !!(selectedNode?.type === nodeTypes.EXTERNAL_ENTITIES);
     const isHovered = !!(hoveredNode?.type === nodeTypes.EXTERNAL_ENTITIES);
-    const isBackground = !(!selectedNode && !hoveredNode) && !isHovered && !isSelected;
+    const isAdjacent = getIsAdjacentToHighlightedNode({
+        selectedNode,
+        hoveredNode,
+        entityId: entity.id,
+        filterState,
+    });
+    const isBackground =
+        !isAdjacent && !(!selectedNode && !hoveredNode) && !isHovered && !isSelected;
     // DEPRECATED: const isNonIsolated = getIsNonIsolatedNode(externalNode);
     const isDisallowed =
         filterState !== filterModes.allowed && edges.some((edge) => edge.data.isDisallowed);
@@ -72,6 +84,8 @@ export const getExternalEntitiesNode = (data, configObj = {}) => {
         externallyConnected: isExternallyConnected,
     });
 
+    const { ingress, egress } = getDirectionalityEdges(entityData, filterState);
+
     return {
         data: {
             ...datumProps,
@@ -80,6 +94,8 @@ export const getExternalEntitiesNode = (data, configObj = {}) => {
             name: 'External Entities',
             active: false,
             edges,
+            ingress,
+            egress,
             type: nodeTypes.EXTERNAL_ENTITIES,
             parent: null,
         },
@@ -118,7 +134,14 @@ export const getCIDRBlockNodes = (data, configObj = {}) => {
 
         const isSelected = !!(selectedNode?.id === entity.id);
         const isHovered = !!(hoveredNode?.id === entity.id);
-        const isBackground = !(!selectedNode && !hoveredNode) && !isHovered && !isSelected;
+        const isAdjacent = getIsAdjacentToHighlightedNode({
+            selectedNode,
+            hoveredNode,
+            entityId: entity.id,
+            filterState,
+        });
+        const isBackground =
+            !isAdjacent && !(!selectedNode && !hoveredNode) && !isHovered && !isSelected;
         // DEPRECATED: const isNonIsolated = getIsNonIsolatedNode(externalNode);
         const isDisallowed =
             filterState !== filterModes.allowed && edges.some((edge) => edge.data.isDisallowed);
@@ -134,6 +157,8 @@ export const getCIDRBlockNodes = (data, configObj = {}) => {
             externallyConnected: isExternallyConnected,
         });
 
+        const { ingress, egress } = getDirectionalityEdges(entityData, filterState);
+
         return {
             data: {
                 ...datumProps,
@@ -142,6 +167,8 @@ export const getCIDRBlockNodes = (data, configObj = {}) => {
                 cidr: entity.externalSource.cidr,
                 name: entity.externalSource.name,
                 edges,
+                ingress,
+                egress,
                 active: false,
                 type: nodeTypes.CIDR_BLOCK,
                 parent: null,

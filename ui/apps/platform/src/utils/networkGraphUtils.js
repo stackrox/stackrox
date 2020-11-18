@@ -463,9 +463,9 @@ export const getEdgesFromNode = ({
         const isEgress = isSourceNode;
         const isTargetNode = highlightedNode?.id === target;
         // if the currently hovered/selected node is a target for this link (ingress)
-        const isRelativeIngress = highlightedNode?.id === target;
+        const isRelativeIngress = isTargetNode;
         // if the currently hovered/selected node is a source for this link (egress)
-        const isRelativeEgress = highlightedNode?.id === source;
+        const isRelativeEgress = isSourceNode;
         // destination node info needed for network flow tab
         const destNodeId = isSourceNode ? target : source;
         const destNodeName = isSourceNode ? targetName : sourceName;
@@ -753,15 +753,56 @@ export const getEdgesFromNode = ({
     return Object.values(nodeLinks);
 };
 
-/**
- * Helper function that returns a function to determine whether a given id is in the list
- *
- * @param {!string} entityId entity id to match on
- *
- * @returns {!Function}
- */
-const findEntityId = (entityId) => {
-    return ({ data }) => data.targetNodeId === entityId || data.sourceNodeId === entityId;
+function getAdjacentNodeIdsToNode(node, filterState) {
+    if (filterState === filterModes.active) {
+        const egressIds = node?.egress || [];
+        const ingressIds = node?.ingress || [];
+        return [...egressIds, ...ingressIds];
+    }
+    return node?.edges?.reduce((acc, curr) => [...acc, curr.data.destNodeId], []);
+}
+
+function getIsAdjacent(node, entityId, filterState) {
+    const adjacentNodeIdsToNode = getAdjacentNodeIdsToNode(node, filterState);
+    return !!adjacentNodeIdsToNode?.find((id) => entityId === id);
+}
+
+// to determine whether to dim or highlight the current node based on adjacency within the graph
+export const getIsAdjacentToHighlightedNode = ({
+    selectedNode,
+    hoveredNode,
+    entityId,
+    filterState,
+}) => {
+    const isSelected = !!(selectedNode?.id === entityId);
+    const isHovered = !!(hoveredNode?.id === entityId);
+    const isAdjacentToSelected = selectedNode && getIsAdjacent(selectedNode, entityId, filterState);
+    const isAdjacentToHovered = hoveredNode && getIsAdjacent(hoveredNode, entityId, filterState);
+    return (!isHovered && isAdjacentToHovered) || (!isSelected && isAdjacentToSelected);
+};
+
+export const getDirectionalityEdges = (node, filterState) => {
+    let ingress = [];
+    let egress = [];
+    if (node) {
+        const {
+            ingressAllowed = [],
+            ingressActive = [],
+            egressAllowed = [],
+            egressActive = [],
+        } = node;
+        if (filterState === filterModes.allowed) {
+            ingress = ingressAllowed;
+            egress = egressAllowed;
+        } else if (filterState === filterModes.active) {
+            ingress = ingressActive;
+            egress = egressActive;
+        } else {
+            ingress = [...ingressActive, ...ingressAllowed];
+            egress = [...egressActive, ...egressAllowed];
+        }
+    }
+    return { ingress, egress };
 };
 
 /**
@@ -795,13 +836,16 @@ export const getDeploymentList = (filteredData, configObj = {}) => {
 
         const isSelected = !!(selectedNode?.id === entity.id);
         const isHovered = !!(hoveredNode?.id === entity.id);
-        const isAdjacentToSelected = selectedNode?.edges?.find(findEntityId(entity.id));
-        // TODO: need to fix isAdjacentToHovered
-        const isAdjacentToHovered = hoveredNode?.edges?.find(findEntityId(entity.id));
-        const isAdjacent =
-            (!isHovered && isAdjacentToHovered) || (!isSelected && isAdjacentToSelected);
+
+        const isAdjacent = getIsAdjacentToHighlightedNode({
+            selectedNode,
+            hoveredNode,
+            entityId: entity.id,
+            filterState,
+        });
         const isBackground =
             !isAdjacent && (selectedNode || hoveredNode) && !isHovered && !isSelected;
+
         const isNonIsolated = getIsNonIsolatedNode(datum);
         const isDisallowed =
             filterState !== filterModes.allowed && edges.some((edge) => edge.data.isDisallowed);
@@ -818,26 +862,7 @@ export const getDeploymentList = (filteredData, configObj = {}) => {
             externallyConnected: isExternallyConnected,
         });
 
-        let ingress = [];
-        let egress = [];
-        if (entityData) {
-            const {
-                ingressAllowed = [],
-                ingressActive = [],
-                egressAllowed = [],
-                egressActive = [],
-            } = entityData;
-            if (filterState === filterModes.allowed) {
-                ingress = ingressAllowed;
-                egress = egressAllowed;
-            } else if (filterState === filterModes.active) {
-                ingress = ingressActive;
-                egress = egressActive;
-            } else {
-                ingress = [...ingressActive, ...ingressAllowed];
-                egress = [...egressActive, ...egressAllowed];
-            }
-        }
+        const { ingress, egress } = getDirectionalityEdges(entityData, filterState);
 
         const deploymentNode = {
             data: {
@@ -920,20 +945,20 @@ export const getNamespaceList = (
     filteredData,
     deploymentList,
     { hoveredNode, selectedNode },
-    cluster
+    cluster,
+    filterState
 ) => {
     const activeNamespaceList = getActiveNamespaceList(filteredData, deploymentList);
     const highlightedNamespaces = {};
-    // TODO: need to fix hoveredNode edges to highlight adjacent namespaces
-    const hoveredNodeEdges = hoveredNode?.edges;
-    const selectedNodeEdges = selectedNode?.edges;
+    const adjacentNodeIdsToHoveredNode = getAdjacentNodeIdsToNode(hoveredNode, filterState);
+    const adjacentNodeIdsToSelectedNode = getAdjacentNodeIdsToNode(selectedNode, filterState);
     const namespaceList = uniq(
         filteredData.map(({ entity }) => {
             const { namespace } = entity.deployment;
             if (!highlightedNamespaces[namespace]) {
                 highlightedNamespaces[namespace] =
-                    hoveredNodeEdges?.find(findEntityId(entity.id)) ||
-                    selectedNodeEdges?.find(findEntityId(entity.id));
+                    adjacentNodeIdsToHoveredNode?.find((id) => entity.id === id) ||
+                    adjacentNodeIdsToSelectedNode?.find((id) => entity.id === id);
             }
             return namespace;
         })
