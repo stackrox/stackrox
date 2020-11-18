@@ -5,6 +5,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	graphConfigDataStore "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	networkEntityDatastore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -18,6 +19,7 @@ var (
 func initialize() {
 	as = New(nfDS.Singleton(),
 		networkEntityDatastore.Singleton(),
+		networktree.Singleton(),
 		deploymentDataStore.Singleton(),
 		clusterDataStore.Singleton(),
 		graphConfigDataStore.Singleton())

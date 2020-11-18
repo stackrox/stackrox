@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/config/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/mappings"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -26,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
+	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/objects"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -60,11 +62,12 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
-	clusterFlows networkFlowDS.ClusterDataStore
-	entities     networkEntityDS.EntityDataStore
-	deployments  deploymentDS.DataStore
-	clusters     clusterDS.DataStore
-	graphConfig  datastore.DataStore
+	clusterFlows   networkFlowDS.ClusterDataStore
+	entities       networkEntityDS.EntityDataStore
+	networkTreeMgr networktree.Manager
+	deployments    deploymentDS.DataStore
+	clusters       clusterDS.DataStore
+	graphConfig    datastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -315,25 +318,13 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 	builder := newFlowGraphBuilder()
 	builder.AddDeployments(deployments)
 
-	externalSrcs := make(map[string]*storage.NetworkEntityInfo)
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		srcs, err := s.entities.GetAllEntitiesForCluster(ctx, requestClone.GetClusterId())
-		if err != nil {
-			return nil, err
-		}
-
-		for _, src := range srcs {
-			externalSrcs[src.GetInfo().GetId()] = src.GetInfo()
-		}
-	}
-
-	if err := s.addDeploymentFlowsToGraph(ctx, requestClone, withListenPorts, builder, deployments, externalSrcs); err != nil {
+	if err := s.addDeploymentFlowsToGraph(ctx, requestClone, withListenPorts, builder, deployments); err != nil {
 		return nil, err
 	}
 	return builder.Build(), nil
 }
 
-func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1.NetworkGraphRequest, withListenPorts bool, graphBuilder *flowGraphBuilder, deployments []*storage.ListDeployment, externalSrcs map[string]*storage.NetworkEntityInfo) error {
+func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1.NetworkGraphRequest, withListenPorts bool, graphBuilder *flowGraphBuilder, deployments []*storage.ListDeployment) error {
 	// Build a possibly reduced map of only those deployments for which we can see network flows.
 	networkFlowsChecker := networkGraphSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ClusterID(request.GetClusterId())
 	filteredSlice, err := sac.FilterSliceReflect(ctx, networkFlowsChecker, deployments, func(deployment *storage.ListDeployment) sac.ScopePredicate {
@@ -416,10 +407,33 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1
 		return err
 	}
 
-	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, deploymentsMap, externalSrcs)
-	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
-	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
+	var networkTree tree.ReadOnlyNetworkTree
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		networkTree = tree.NewMultiTreeWrapper(
+			s.networkTreeMgr.GetReadOnlyNetworkTree(request.GetClusterId()),
+			s.networkTreeMgr.GetDefaultNetworkTree(),
+		)
 
+		// Aggregate all external conns into supernet conns for which external entities do not exists (as a result of deletion).
+		aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
+		utils.Should(err)
+		flows = aggr.Aggregate(flows)
+	}
+
+	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, deploymentsMap,
+		func(id string) *storage.NetworkEntityInfo {
+			if networkTree == nil {
+				return nil
+			}
+			return networkTree.Get(id)
+		},
+	)
+
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		// Aggregate all external flows by node names to control the number of external nodes.
+		flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
+		missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
+	}
 	graphBuilder.AddFlows(flows)
 
 	filteredFlows, maskedDeployments, err := filterFlowsAndMaskScopeAlienDeployments(ctx, request.GetClusterId(), missingInfoFlows, deploymentsMap, s.deployments, canSeeAllDeploymentsInCluster)
