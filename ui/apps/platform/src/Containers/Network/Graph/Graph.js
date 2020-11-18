@@ -157,6 +157,7 @@ class Graph extends Component {
                 setSelectedNodeInGraph={setSelectedNodeInGraph}
                 lastUpdatedTimestamp={lastUpdatedTimestamp}
                 selectedNamespace={selectedNamespace}
+                selectedClusterId={selectedClusterId}
             />
         );
     };

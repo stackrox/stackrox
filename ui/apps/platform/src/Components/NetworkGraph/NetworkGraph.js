@@ -81,6 +81,7 @@ const NetworkGraph = ({
     featureFlags,
     lastUpdatedTimestamp,
     selectedNamespace,
+    selectedClusterId,
 }) => {
     const [selectedNode, setSelectedNode] = useState();
     const [hoveredElement, setHoveredElement] = useState();
@@ -689,7 +690,6 @@ const NetworkGraph = ({
             <GraphLoader isLoading />
         </div>
     );
-
     return (
         <div className="h-full w-full relative">
             <div
@@ -697,6 +697,7 @@ const NetworkGraph = ({
                 className="w-full h-full cursor-pointer cytoscape-container"
             >
                 <CytoscapeComponent
+                    key={selectedClusterId}
                     elements={normalizedElements}
                     layout={{
                         name: 'grid',
@@ -736,6 +737,7 @@ NetworkGraph.propTypes = {
         id: PropTypes.string,
         deployments: PropTypes.arrayOf(PropTypes.shape({})),
     }),
+    selectedClusterId: PropTypes.string,
 };
 
 NetworkGraph.defaultProps = {
@@ -744,6 +746,7 @@ NetworkGraph.defaultProps = {
     featureFlags: [],
     lastUpdatedTimestamp: null,
     selectedNamespace: null,
+    selectedClusterId: null,
 };
 
 export default withRouter(NetworkGraph);
