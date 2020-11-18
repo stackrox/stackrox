@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import ReactTable from 'react-table';
-import ReactTablePropTypes from 'react-table/lib/propTypes';
+import ReactTable from 'react-table-6';
+import ReactTablePropTypes from 'react-table-6/lib/propTypes';
 import flattenObject from 'utils/flattenObject';
 
 export const defaultHeaderClassName =

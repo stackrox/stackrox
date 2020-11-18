@@ -574,7 +574,7 @@ h6 {
 }
 
 /* React Table overrides. Delete this file once all react Table properties are ported over properly to avoid the use of !important*/
-@import '~react-table/react-table.css';
+@import '~react-table-6/react-table.css';
 
 .ReactTable .rt-table {
     overflow: overlay !important;

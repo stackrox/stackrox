@@ -6314,13 +6314,6 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-table@^6.8.5":
-  version "6.8.7"
-  resolved "https://registry.yarnpkg.com/@types/react-table/-/react-table-6.8.7.tgz#210ffa2862dd3711350676c0bdbbfbff45f14b84"
-  integrity sha512-1U0xl47jk0BzE+HNHgxZYSLvtybSvnlLhOpW9Mfqf9iuRm/fGqgRab3TKivPCY6Tl7WPFM2hWEJ1GnsuSFc9AQ==
-  dependencies:
-    "@types/react" "*"
-
 "@types/react-test-renderer@*":
   version "16.9.2"
   resolved "https://registry.yarnpkg.com/@types/react-test-renderer/-/react-test-renderer-16.9.2.tgz#e1c408831e8183e5ad748fdece02214a7c2ab6c5"
@@ -10198,6 +10191,14 @@ cytoscape-popper@^1.0.7:
   integrity sha512-b/vfoBL2u9GU+J7eceGT9cZ4hctn/ZzV7PXq4w6fk+45qQuOHtlhpP3WxGKpBXNqENhk7Dk0BwlIYROjYQmidQ==
   dependencies:
     popper.js "^1.0.0"
+
+cytoscape@^3.15.1:
+  version "3.17.0"
+  resolved "https://registry.yarnpkg.com/cytoscape/-/cytoscape-3.17.0.tgz#9dc476636a32e2b6f272ee0620177b933427c571"
+  integrity sha512-zPAB2UVV4QWArs+0UEq0ojYn7riFfz8CjivL67wibE/zdnAE8TTvDO5bFxsShSTutmG+1NkCnTXJjOxfosDMwA==
+  dependencies:
+    heap "^0.2.6"
+    lodash.debounce "^4.0.8"
 
 cytoscape@^3.15.2, cytoscape@^3.2.19:
   version "3.15.2"
@@ -20144,14 +20145,17 @@ react-syntax-highlighter@^12.2.1:
     prismjs "^1.8.4"
     refractor "^2.4.1"
 
-react-table@^6.11.5:
-  version "6.11.5"
-  resolved "https://registry.yarnpkg.com/react-table/-/react-table-6.11.5.tgz#84e52885db426a07a6c4ce2c7e942f2cd4e2aa58"
-  integrity sha512-LM+AS9v//7Y7lAlgTWW/cW6Sn5VOb3EsSkKQfQTzOW8FngB1FUskLLNEVkAYsTX9LjOWR3QlGjykJqCE6eXT/g==
+react-table-6@^6.11.0:
+  version "6.11.0"
+  resolved "https://registry.yarnpkg.com/react-table-6/-/react-table-6-6.11.0.tgz#727de5d9f0357a35816a1bbc2e9c9868f8c5b2c4"
+  integrity sha512-zO24J+1Qg2AHxtSNMfHeGW1dxFcmLJQrAeLJyCAENdNdwJt+YolDDtJEBdZlukon7rZeAdB3d5gUH6eb9Dn5Ug==
   dependencies:
-    "@types/react-table" "^6.8.5"
     classnames "^2.2.5"
-    react-is "^16.8.1"
+
+react-table@^7.6.2:
+  version "7.6.2"
+  resolved "https://registry.yarnpkg.com/react-table/-/react-table-7.6.2.tgz#b60932fa6d457c2bca0da49815cd6a8fe9451f77"
+  integrity sha512-urwNZTieb+xg/+BITUIrqdH5jZfJlw7rKVAAq25iXpBPwbQojLCEKJuGycLbVwn8fzU+Ovly3y8HHNaLNrPCvQ==
 
 react-tabs@^3.1.1:
   version "3.1.1"

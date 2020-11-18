@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import ReactTablePropTypes from 'react-table/lib/propTypes';
+import ReactTablePropTypes from 'react-table-6/lib/propTypes';
 import TableV2 from 'Components/TableV2';
 
 class CheckboxTable extends Component {
