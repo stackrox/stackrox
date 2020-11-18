@@ -59,6 +59,7 @@ import (
 	iiDatastore "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
+	integrationHealthService "github.com/stackrox/rox/central/integrationhealth/service"
 	"github.com/stackrox/rox/central/jwt"
 	licenseEnforcer "github.com/stackrox/rox/central/license/enforcer"
 	licenseService "github.com/stackrox/rox/central/license/service"
@@ -368,6 +369,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		telemetryService.Singleton(),
 		userService.Singleton(),
 		cveService.Singleton(),
+		integrationHealthService.Singleton(),
 	}
 
 	if features.SensorInstallationExperience.Enabled() {

@@ -83,12 +83,12 @@ func (suite *clusterRocksDBMigrationTestSuite) TestClusterRocksDBMigration() {
 	ts3.Seconds = ts3.Seconds - 300
 
 	cases := []struct {
-		boltCluster        *storage.Cluster
-		boltStatus         *storage.ClusterStatus
-		boltLastContact    *types.Timestamp
-		rocksDBCluster     *storage.Cluster
-		rocksDBHealth      *storage.ClusterHealthStatus
-		healthShouldExists bool
+		boltCluster       *storage.Cluster
+		boltStatus        *storage.ClusterStatus
+		boltLastContact   *types.Timestamp
+		rocksDBCluster    *storage.Cluster
+		rocksDBHealth     *storage.ClusterHealthStatus
+		healthShouldExist bool
 	}{
 		{
 			boltCluster: &storage.Cluster{
@@ -112,7 +112,7 @@ func (suite *clusterRocksDBMigrationTestSuite) TestClusterRocksDBMigration() {
 				OverallHealthStatus:   storage.ClusterHealthStatus_HEALTHY,
 				LastContact:           ts1,
 			},
-			healthShouldExists: true,
+			healthShouldExist: true,
 		},
 		{
 			boltCluster: &storage.Cluster{
@@ -136,7 +136,7 @@ func (suite *clusterRocksDBMigrationTestSuite) TestClusterRocksDBMigration() {
 				OverallHealthStatus:   storage.ClusterHealthStatus_DEGRADED,
 				LastContact:           ts2,
 			},
-			healthShouldExists: true,
+			healthShouldExist: true,
 		},
 		{
 			boltCluster: &storage.Cluster{
@@ -160,7 +160,7 @@ func (suite *clusterRocksDBMigrationTestSuite) TestClusterRocksDBMigration() {
 				OverallHealthStatus:   storage.ClusterHealthStatus_UNHEALTHY,
 				LastContact:           ts3,
 			},
-			healthShouldExists: true,
+			healthShouldExist: true,
 		},
 		{
 			boltCluster: &storage.Cluster{
@@ -171,7 +171,7 @@ func (suite *clusterRocksDBMigrationTestSuite) TestClusterRocksDBMigration() {
 				Id:   "4",
 				Name: "cluster4",
 			},
-			healthShouldExists: false,
+			healthShouldExist: false,
 		},
 	}
 
@@ -198,7 +198,7 @@ func (suite *clusterRocksDBMigrationTestSuite) TestClusterRocksDBMigration() {
 	for _, c := range cases {
 		health, exists, err := rockshelper.ReadFromRocksDB(suite.databases.RocksDB, readOpts, &storage.ClusterHealthStatus{}, clusterHealthStatusBucketName, []byte(c.boltCluster.GetId()))
 		suite.NoError(err)
-		suite.Equal(c.healthShouldExists, exists)
+		suite.Equal(c.healthShouldExist, exists)
 		if exists {
 			suite.EqualValues(c.rocksDBHealth, health.(*storage.ClusterHealthStatus))
 		}

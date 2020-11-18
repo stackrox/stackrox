@@ -36,4 +36,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_47_to_m_48_drop_bolt_buckets"
 	_ "github.com/stackrox/rox/migrator/migrations/m_48_to_m_49_externalize_compliance_domains"
 	_ "github.com/stackrox/rox/migrator/migrations/m_49_to_m_50_deprecate_email_label_policy"
+	_ "github.com/stackrox/rox/migrator/migrations/m_50_to_m_51_default_integration_health"
 )

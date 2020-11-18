@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+
+package storage;
+
+message IntegrationHealth {
+    enum Status {
+        UNINITIALIZED = 0;
+        UNHEALTHY = 1;
+        HEALTHY = 2;
+    }
+    enum Type {
+        UNKNOWN = 0;
+        IMAGE_INTEGRATION = 1;
+        NOTIFIER = 2;
+        BACKUP = 3;
+    }
+
+    string id                                     = 1;
+    string name                                   = 2;
+    Type type                                     = 3;
+    Status status                                 = 4;
+    string error_message                          = 5;
+
+    // Timestamp when the status was ascertained
+    google.protobuf.Timestamp last_timestamp      = 6;
+}
