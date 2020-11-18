@@ -10,13 +10,12 @@ import (
 	"github.com/golang/mock/gomock"
 	dDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	nsDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	networkEntityMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
+	netTreeMgrMocks "github.com/stackrox/rox/central/networkgraph/entity/networktree/mocks"
 	nfDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	npDSMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sac"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
@@ -33,7 +32,7 @@ type generatorTestSuite struct {
 	mockCtrl                *gomock.Controller
 	mocksNetworkPolicies    *npDSMocks.MockDataStore
 	mockDeployments         *dDSMocks.MockDataStore
-	mockExtSrcs             *networkEntityMocks.MockEntityDataStore
+	mockNetTreeMgr          *netTreeMgrMocks.MockManager
 	mockGlobalFlowDataStore *nfDSMocks.MockClusterDataStore
 	mockNamespaceStore      *nsDSMocks.MockDataStore
 	hasNoneCtx              context.Context
@@ -115,14 +114,14 @@ func (s *generatorTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.mocksNetworkPolicies = npDSMocks.NewMockDataStore(s.mockCtrl)
 	s.mockDeployments = dDSMocks.NewMockDataStore(s.mockCtrl)
-	s.mockExtSrcs = networkEntityMocks.NewMockEntityDataStore(s.mockCtrl)
+	s.mockNetTreeMgr = netTreeMgrMocks.NewMockManager(s.mockCtrl)
 	s.mockGlobalFlowDataStore = nfDSMocks.NewMockClusterDataStore(s.mockCtrl)
 	s.mockNamespaceStore = nsDSMocks.NewMockDataStore(s.mockCtrl)
 
 	s.generator = &generator{
 		networkPolicies:     s.mocksNetworkPolicies,
 		deploymentStore:     s.mockDeployments,
-		externalSrcsStore:   s.mockExtSrcs,
+		networkTreeMgr:      s.mockNetTreeMgr,
 		globalFlowDataStore: s.mockGlobalFlowDataStore,
 		namespacesStore:     s.mockNamespaceStore,
 	}
@@ -264,10 +263,6 @@ func (s *generatorTestSuite) TestGenerate() {
 			},
 		}, nil)
 
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		s.mockExtSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), "mycluster").Return(nil, nil)
-	}
-
 	s.mockNamespaceStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(
 		[]*storage.NamespaceMetadata{
 			{
@@ -384,6 +379,9 @@ func (s *generatorTestSuite) TestGenerate() {
 				},
 			},
 		}, *types.TimestampNow(), nil)
+
+	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any()).Return(nil)
+	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree().Return(nil)
 
 	s.mockGlobalFlowDataStore.EXPECT().GetFlowStore(gomock.Any(), gomock.Eq("mycluster")).Return(mockFlowStore, nil)
 
@@ -601,10 +599,6 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 		sac.ClusterScopeKey("mycluster"),
 	})
 
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		s.mockExtSrcs.EXPECT().GetAllEntitiesForCluster(gomock.Any(), "mycluster").Return(nil, nil)
-	}
-
 	s.mockNamespaceStore.EXPECT().SearchNamespaces(gomock.Not(ctxHasAllNamespaceAccessMatcher), gomock.Any()).Return(
 		[]*storage.NamespaceMetadata{
 			{
@@ -659,6 +653,9 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 			depFlow("depF", "depD"),
 			depFlow("depF", "depG"),
 		}, *types.TimestampNow(), nil)
+
+	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any()).Return(nil)
+	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree().Return(nil)
 
 	s.mockGlobalFlowDataStore.EXPECT().GetFlowStore(gomock.Any(), gomock.Eq("mycluster")).Return(mockFlowStore, nil)
 

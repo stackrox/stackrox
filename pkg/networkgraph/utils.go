@@ -105,19 +105,19 @@ func PopulateDeploymentDesc(entity *storage.NetworkEntityInfo, deploymentsMap ma
 // list of flows. It returns two slices: one containing flows with fully populated information, the other containing
 // flows with partially or completely missing deployment entity information.
 // Note: Missing external sources are marked as INTERNET.
-func UpdateFlowsWithEntityDesc(flows []*storage.NetworkFlow, deployments map[string]*storage.ListDeployment, externalSrcs map[string]*storage.NetworkEntityInfo) (okFlows []*storage.NetworkFlow, missingInfoFlows []*storage.NetworkFlow) {
+func UpdateFlowsWithEntityDesc(flows []*storage.NetworkFlow, deployments map[string]*storage.ListDeployment, extSrcMapper func(id string) *storage.NetworkEntityInfo) (okFlows []*storage.NetworkFlow, missingInfoFlows []*storage.NetworkFlow) {
 	okFlows = flows[:0]
 	for _, flow := range flows {
 		srcOk, dstOk := false, false
 		if IsExternal(flow.GetProps().GetSrcEntity()) {
-			PopulateExternalSrcsDesc(flow.GetProps().GetSrcEntity(), externalSrcs)
+			PopulateExternalSrcsDesc(flow.GetProps().GetSrcEntity(), extSrcMapper)
 			srcOk = true
 		} else {
 			srcOk = PopulateDeploymentDesc(flow.GetProps().GetSrcEntity(), deployments)
 		}
 
 		if IsExternal(flow.GetProps().GetDstEntity()) {
-			PopulateExternalSrcsDesc(flow.GetProps().GetDstEntity(), externalSrcs)
+			PopulateExternalSrcsDesc(flow.GetProps().GetDstEntity(), extSrcMapper)
 			dstOk = true
 		} else {
 			dstOk = PopulateDeploymentDesc(flow.GetProps().GetDstEntity(), deployments)
@@ -136,16 +136,16 @@ func UpdateFlowsWithEntityDesc(flows []*storage.NetworkFlow, deployments map[str
 // PopulateExternalSrcsDesc populates the entity with external source information from the given map. If external source
 // could not be found in the map, it is populated with the de-facto INTERNET entity desc.
 // Note: If entity is not EXTERNAL_SOURCE we return true.
-func PopulateExternalSrcsDesc(entity *storage.NetworkEntityInfo, externalSrcs map[string]*storage.NetworkEntityInfo) {
+func PopulateExternalSrcsDesc(entity *storage.NetworkEntityInfo, extSrcMapper func(id string) *storage.NetworkEntityInfo) {
 	if entity.GetType() != storage.NetworkEntityInfo_EXTERNAL_SOURCE {
 		return
 	}
 
-	src, ok := externalSrcs[entity.GetId()]
-	if ok {
-		entity.Desc = src.GetDesc()
+	src := extSrcMapper(entity.GetId())
+	if src == nil {
+		// If the external source (CIDR block) is not visible, mark this entity as INTERNET.
+		*entity = *InternetEntity().ToProto()
 		return
 	}
-	// If the external source (CIDR block) is not visible, mark this entity as INTERNET.
-	*entity = *InternetEntity().ToProto()
+	entity.Desc = src.GetDesc()
 }
