@@ -92,7 +92,7 @@ class Graph extends Component {
     };
 
     // eslint-disable-next-line no-unused-vars
-    onExternalEntitiesClick = (externalEntities) => {
+    onExternalEntitiesClick = () => {
         if (this.props.isSimulatorOn) {
             return;
         }

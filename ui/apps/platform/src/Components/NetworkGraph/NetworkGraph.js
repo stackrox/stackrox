@@ -289,7 +289,7 @@ const NetworkGraph = ({
             setSelectedNodeInGraph(evData);
 
             if (type === nodeTypes.EXTERNAL_ENTITIES || type === nodeTypes.CIDR_BLOCK) {
-                onExternalEntitiesClick({ id, deployments: [{ data: evData }] || [] });
+                onExternalEntitiesClick();
             } else {
                 history.push(`/main/network/${id}`);
                 onNodeClick(evData);
@@ -624,6 +624,18 @@ const NetworkGraph = ({
             }).run();
         });
         CY.fit(null, GRAPH_PADDING);
+
+        if (match.params.externalType) {
+            const els = getElements();
+            const externalNode = els?.nodes?.find((node) => {
+                return node?.data?.id === match.params.deploymentId;
+            });
+            const { data: externalNodeData } = externalNode;
+            setSelectedNode(externalNodeData);
+            setSelectedNodeInGraph(externalNodeData);
+
+            onExternalEntitiesClick();
+        }
         const node = getNodeDataFromList(match.params.deploymentId);
         if (setSelectedNodeInGraph && node.length) {
             setSelectedNodeInGraph(node[0].data);

@@ -47,8 +47,12 @@ function Details({
         ({ data }) => data.destNodeNamespace && data.destNodeName && data.source !== data.target
     );
 
-    function onNavigateToDeploymentById(deploymentId) {
+    function onNavigateToDeploymentById(deploymentId, type) {
         return function onNavigate() {
+            if (type === 'external' || type === 'cidr') {
+                history.push(`/main/network/${deploymentId}/${type}`);
+                return;
+            }
             history.push(`/main/network/${deploymentId}`);
         };
     }

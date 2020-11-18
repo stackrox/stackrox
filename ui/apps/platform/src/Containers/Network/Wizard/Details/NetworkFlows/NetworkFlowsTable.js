@@ -117,12 +117,13 @@ const NetworkFlowsTable = ({
             headerClassName: `${defaultHeaderClassName} hidden`,
             className: `${rtTrActionsClassName} w-4 break-all`,
             accessor: 'deploymentId',
-            Cell: ({ value }) => {
+            Cell: ({ original }) => {
+                const { deploymentId: id, type } = original;
                 return (
                     <div className="border-2 border-r-2 border-base-400 bg-base-100 flex">
                         <RowActionButton
                             text="Navigate to Deployment"
-                            onClick={onNavigateToDeploymentById(value)}
+                            onClick={onNavigateToDeploymentById(id, type)}
                             icon={<Icon.ArrowUpRight className="my-1 h-4 w-4" />}
                         />
                     </div>
