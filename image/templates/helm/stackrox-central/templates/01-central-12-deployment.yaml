@@ -76,8 +76,7 @@ spec:
         command:
           - /stackrox/central-entrypoint.sh
         ports:
-          - name: api
-            containerPort: 8443
+          {{- toYaml ._rox.central._containerPorts | nindent 10 }}
         readinessProbe:
           httpGet:
             scheme: HTTPS

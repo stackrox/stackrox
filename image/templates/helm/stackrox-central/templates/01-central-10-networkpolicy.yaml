@@ -11,9 +11,7 @@ metadata:
     {{- include "srox.annotations" (list . "networkpolicy" "allow-ext-to-central") | nindent 4 }}
 spec:
   ingress:
-  - ports:
-    - port: 8443
-      protocol: TCP
+    {{- toYaml ._rox.central._netPolIngressRules | nindent 4 }}
   podSelector:
     matchLabels:
       app: central

@@ -19,6 +19,11 @@ type EndpointConfig struct {
 	Optional  bool       `json:"optional,omitempty"` // do not exit with a fatal error if we can't listen on this endpoint
 	Protocols []string   `json:"protocols,omitempty"`
 	TLS       *TLSConfig `json:"tls,omitempty"` // TLS configuration. If unset, assume
+
+	// The following values are not accessed at runtime and only consumed by the Helm chart.
+	Name             string         `json:"name,omitempty"`
+	ServicePort      int            `json:"servicePort,omitempty"`
+	AllowIngressFrom *[]interface{} `json:"allowIngressFrom"`
 }
 
 // Config configures the exposure configuration for Central through various endpoints.

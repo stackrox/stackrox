@@ -275,6 +275,8 @@
 {{ end }}
 {{ $_ = set $centralCfg.persistence "_volumeCfg" $volumeCfg }}
 
+{{/* Endpoint configuration */}}
+{{ include "srox.configureCentralEndpoints" $._rox.central }}
 
 {{/*
     Exposure configuration setup & sanity checks.
