@@ -12,7 +12,7 @@ export const licenseStartUpPath = `/license`;
 export const authResponsePrefix = '/auth/response/';
 
 export const dashboardPath = `${mainPath}/dashboard`;
-export const networkPath = `${mainPath}/network/:deploymentId?`;
+export const networkPath = `${mainPath}/network/:deploymentId?/:externalType?`;
 export const violationsPath = `${mainPath}/violations/:alertId?`;
 export const clustersPath = `${mainPath}/clusters/:clusterId?`;
 export const integrationsPath = `${mainPath}/integrations`;
