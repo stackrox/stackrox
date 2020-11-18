@@ -70,3 +70,26 @@ func (s *clusterInitBackendTestSuite) TestTokenLifecycle() {
 	s.NoError(err)
 	s.Empty(allTokenMetas)
 }
+
+func (s *clusterInitBackendTestSuite) TestTokenCanBeDeactivated() {
+	description := "test description"
+
+	// Issue new token.
+	tokenMeta, err := s.backend.Issue(s.ctx, description)
+	s.NoError(err)
+
+	tokenID := tokenMeta.GetId()
+	s.True(tokenMeta.GetActive())
+
+	err = s.backend.SetActive(s.ctx, tokenID, false)
+	s.NoError(err)
+	tokenMetaRetrieved, err := s.backend.Get(s.ctx, tokenID)
+	s.NoError(err)
+	s.False(tokenMetaRetrieved.GetActive())
+
+	err = s.backend.SetActive(s.ctx, tokenID, true)
+	s.NoError(err)
+	tokenMetaRetrieved, err = s.backend.Get(s.ctx, tokenID)
+	s.NoError(err)
+	s.True(tokenMetaRetrieved.GetActive())
+}

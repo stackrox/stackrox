@@ -57,6 +57,20 @@ func (s *serviceImpl) DeleteBootstrapToken(ctx context.Context, request *v1.Reso
 	return &v1.Empty{}, nil
 }
 
+func (s *serviceImpl) PatchBootstrapToken(ctx context.Context, request *v1.BootstrapTokenPatchRequest) (*v1.Empty, error) {
+	tokenID := request.GetId()
+	if tokenID == "" {
+		return &v1.Empty{}, errors.New("no token ID found in patch request")
+	}
+	if request.GetSetActive() != nil {
+		err := s.backend.SetActive(ctx, tokenID, request.GetActive())
+		if err != nil {
+			return nil, errors.Wrap(err, "patching bootstrap token")
+		}
+	}
+	return &v1.Empty{}, nil
+}
+
 func (s *serviceImpl) PostBootstrapToken(ctx context.Context, request *v1.BootstrapTokenGenRequest) (*v1.BootstrapTokenMetaResponse, error) {
 	tokenMeta, err := s.backend.Issue(ctx, request.Description)
 	if err != nil {

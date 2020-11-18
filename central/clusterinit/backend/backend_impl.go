@@ -2,11 +2,14 @@ package backend
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/clusterinit"
 	"github.com/stackrox/rox/central/clusterinit/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -40,10 +43,35 @@ func (b *backendImpl) tryIssueOnce(ctx context.Context, description string) (*st
 		return nil, err
 	}
 
+	var user *storage.User
+	if ctxIdentity := authn.IdentityFromContext(ctx); ctxIdentity != nil {
+		var providerID string
+		var attributes []*storage.UserAttribute
+
+		if provider := ctxIdentity.ExternalAuthProvider(); provider != nil {
+			providerID = provider.ID()
+		}
+
+		for k, vs := range ctxIdentity.Attributes() {
+			for _, v := range vs {
+				attributes = append(attributes, &storage.UserAttribute{Key: k, Value: v})
+			}
+		}
+
+		user = &storage.User{
+			Id:             ctxIdentity.UID(),
+			AuthProviderId: providerID,
+			Attributes:     attributes,
+		}
+	}
+
 	tokenWithMeta := &storage.BootstrapTokenWithMeta{
 		Token:       []byte(token),
 		Id:          token.ID(),
 		Description: description,
+		CreatedAt:   protoconv.ConvertTimeToTimestamp(time.Now()),
+		CreatedBy:   user,
+		Active:      true,
 	}
 	err = b.tokenStore.Add(ctx, tokenWithMeta)
 	if err != nil {
@@ -69,6 +97,10 @@ func (b *backendImpl) Issue(ctx context.Context, description string) (*storage.B
 	}
 
 	return nil, utils.Should(errors.Errorf("%d consecutive fingerprint collisions when attempting to generate a bootstrap token", nTokenGenerationAttempts))
+}
+
+func (b *backendImpl) SetActive(ctx context.Context, tokenID string, active bool) error {
+	return b.tokenStore.SetActive(ctx, tokenID, active)
 }
 
 // Revoke revokes a token.

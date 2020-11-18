@@ -13,6 +13,7 @@ type Backend interface {
 	Get(ctx context.Context, tokenID string) (*storage.BootstrapTokenWithMeta, error)
 	Issue(ctx context.Context, description string) (*storage.BootstrapTokenWithMeta, error)
 	Revoke(ctx context.Context, tokenID string) error
+	SetActive(ctx context.Context, tokenID string, active bool) error
 }
 
 func newBackend(tokenStore datastore.DataStore) Backend {

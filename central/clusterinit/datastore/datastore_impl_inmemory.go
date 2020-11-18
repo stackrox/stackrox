@@ -21,7 +21,7 @@ func (s *Store) GetAll(ctx context.Context) ([]*storage.BootstrapTokenWithMeta, 
 	defer s.mutex.Unlock()
 
 	for _, tokenMeta := range s.tokens {
-		tokenMetas = append(tokenMetas, tokenMeta)
+		tokenMetas = append(tokenMetas, tokenMeta.Clone())
 	}
 	return tokenMetas, nil
 }
@@ -35,7 +35,7 @@ func (s *Store) Get(ctx context.Context, tokenID string) (*storage.BootstrapToke
 	if !ok {
 		return nil, ErrTokenNotFound
 	}
-	return token, nil
+	return token.Clone(), nil
 }
 
 // Add adds metadata for a new bootstrap token.
@@ -47,7 +47,7 @@ func (s *Store) Add(ctx context.Context, tokenMeta *storage.BootstrapTokenWithMe
 	if existsAlready {
 		return ErrTokenIDCollision
 	}
-	s.tokens[tokenMeta.GetId()] = tokenMeta
+	s.tokens[tokenMeta.GetId()] = tokenMeta.Clone()
 	return nil
 }
 
@@ -61,6 +61,21 @@ func (s *Store) Delete(ctx context.Context, tokenID string) error {
 		return ErrTokenNotFound
 	}
 	delete(s.tokens, tokenID)
+	return nil
+}
+
+// SetActive sets the `active` property of the referenced bootstrap token.
+func (s *Store) SetActive(ctx context.Context, tokenID string, active bool) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	tokenMeta, found := s.tokens[tokenID]
+	if !found {
+		return ErrTokenNotFound
+	}
+
+	tokenMeta.Active = active
+
 	return nil
 }
 

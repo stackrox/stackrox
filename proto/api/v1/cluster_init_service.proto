@@ -27,6 +27,12 @@ message BootstrapTokenGenRequest {
     string description = 1;
 }
 
+message BootstrapTokenPatchRequest {
+    string id = 1;
+    oneof set_active {
+        bool active = 2;
+    };
+}
 
 service ClusterInitService {
     rpc GetBootstrapTokens(Empty) returns (BootstrapTokensResponse) {
@@ -44,6 +50,13 @@ service ClusterInitService {
     rpc PostBootstrapToken(BootstrapTokenGenRequest) returns (BootstrapTokenMetaResponse) {
         option (google.api.http) = {
             post: "/v1/cluster-init/tokens"
+            body: "*"
+        };
+    }
+
+    rpc PatchBootstrapToken(BootstrapTokenPatchRequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/cluster-init/tokens/{id}"
             body: "*"
         };
     }

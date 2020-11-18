@@ -3,10 +3,16 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "google/protobuf/timestamp.proto";
+import "storage/user.proto";
+
 package storage;
 
 message BootstrapTokenWithMeta {
-    bytes token        = 1;
-    string id          = 2;
-    string description = 3;
+    bytes                     token       = 1;
+    string                    id          = 2;
+    string                    description = 3;
+    google.protobuf.Timestamp created_at  = 4;
+    User                      created_by  = 5;
+    bool                      active      = 6;
 }

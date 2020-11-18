@@ -20,4 +20,5 @@ type DataStore interface {
 	Get(ctx context.Context, tokenID string) (*storage.BootstrapTokenWithMeta, error)
 	Add(ctx context.Context, tokenMeta *storage.BootstrapTokenWithMeta) error
 	Delete(ctx context.Context, tokenID string) error
+	SetActive(ctx context.Context, tokenID string, active bool) error
 }
