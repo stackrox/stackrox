@@ -22,7 +22,8 @@ func NewSubnetToSupernetConnAggregator(networkTree tree.ReadOnlyNetworkTree) (Ne
 	}
 
 	return &aggregateToSupernetImpl{
-		tree: networkTree,
+		tree:         networkTree,
+		supernetPred: func(e *storage.NetworkEntityInfo) bool { return true },
 	}, nil
 }
 
@@ -34,7 +35,8 @@ func NewDefaultToCustomExtSrcConnAggregator(networkTree tree.ReadOnlyNetworkTree
 	}
 
 	return &aggregateDefaultToCustomExtSrcsImpl{
-		networkTree: networkTree,
+		networkTree:  networkTree,
+		supernetPred: func(e *storage.NetworkEntityInfo) bool { return !e.GetExternalSource().GetDefault() },
 	}, nil
 }
 

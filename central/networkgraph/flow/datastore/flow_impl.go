@@ -60,7 +60,11 @@ func (fds *flowDataStoreImpl) adjustFlowsForGraphConfig(ctx context.Context, flo
 		return flows, nil
 	}
 
-	config, err := fds.graphConfig.GetNetworkGraphConfig(ctx)
+	graphConfigReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkGraph)))
+
+	config, err := fds.graphConfig.GetNetworkGraphConfig(graphConfigReadCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to obtain network graph configuration")
 	}

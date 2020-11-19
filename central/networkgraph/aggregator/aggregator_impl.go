@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
@@ -23,7 +22,8 @@ var (
 )
 
 type aggregateToSupernetImpl struct {
-	tree tree.ReadOnlyNetworkTree
+	tree         tree.ReadOnlyNetworkTree
+	supernetPred func(e *storage.NetworkEntityInfo) bool
 }
 
 // Aggregate aggregates multiple external network connections with same external endpoint,
@@ -84,38 +84,13 @@ func (a *aggregateToSupernetImpl) mapToSupernetIfNotfound(supernetCache map[stri
 			continue
 		}
 
-		a.mapToSupernet(supernetCache, entity)
+		mapToSupernet(a.tree, supernetCache, a.supernetPred, entity)
 	}
-}
-
-func (a *aggregateToSupernetImpl) mapToSupernet(supernetCache map[string]*storage.NetworkEntityInfo, entities ...*storage.NetworkEntityInfo) {
-	for _, entity := range entities {
-		if !networkgraph.IsKnownExternalSrc(entity) {
-			continue
-		}
-
-		cidr, err := externalsrcs.CIDRFromID(entity.GetId())
-		if err != nil {
-			utils.Should(errors.Wrapf(err, "getting CIDR from external source ID %s", entity.GetId()))
-			*entity = *networkgraph.InternetEntity().ToProto()
-			continue
-		}
-		*entity = *a.getSupernet(cidr, supernetCache)
-	}
-}
-
-func (a *aggregateToSupernetImpl) getSupernet(cidr string, cache map[string]*storage.NetworkEntityInfo) *storage.NetworkEntityInfo {
-	supernet := cache[cidr]
-
-	if supernet == nil {
-		supernet = a.tree.GetSupernetForCIDR(cidr)
-		cache[cidr] = supernet
-	}
-	return supernet
 }
 
 type aggregateDefaultToCustomExtSrcsImpl struct {
-	networkTree tree.ReadOnlyNetworkTree
+	networkTree  tree.ReadOnlyNetworkTree
+	supernetPred func(e *storage.NetworkEntityInfo) bool
 }
 
 // Aggregate aggregates multiple external network connections with same external endpoint,
@@ -148,10 +123,10 @@ func (a *aggregateDefaultToCustomExtSrcsImpl) Aggregate(conns []*storage.Network
 		}
 
 		// Move the connection from default external network to non-default supernet. If none is found, it gets mapped to INTERNET.
-		if networkgraph.IsKnownDefaultExternal(srcEntity) {
-			conn.Props.SrcEntity = a.getSupernet(srcEntity.GetExternalSource().GetCidr(), supernetCache)
-		} else if networkgraph.IsKnownDefaultExternal(dstEntity) {
-			conn.Props.DstEntity = a.getSupernet(dstEntity.GetExternalSource().GetCidr(), supernetCache)
+		if networkgraph.IsKnownDefaultExternal(conn.GetProps().GetSrcEntity()) {
+			mapToSupernet(a.networkTree, supernetCache, a.supernetPred, conn.Props.SrcEntity)
+		} else if networkgraph.IsKnownDefaultExternal(conn.GetProps().GetDstEntity()) {
+			mapToSupernet(a.networkTree, supernetCache, a.supernetPred, conn.Props.DstEntity)
 		}
 
 		connID := networkgraph.GetNetworkConnIndicator(conn)
@@ -168,15 +143,6 @@ func (a *aggregateDefaultToCustomExtSrcsImpl) Aggregate(conns []*storage.Network
 		ret = append(ret, conn)
 	}
 	return ret
-}
-
-func (a *aggregateDefaultToCustomExtSrcsImpl) getSupernet(cidr string, cache map[string]*storage.NetworkEntityInfo) *storage.NetworkEntityInfo {
-	supernet := cache[cidr]
-	if supernet == nil {
-		supernet = a.networkTree.GetMatchingSupernetForCIDR(cidr, func(e *storage.NetworkEntityInfo) bool { return !e.GetExternalSource().GetDefault() })
-		cache[cidr] = supernet
-	}
-	return supernet
 }
 
 type aggregateExternalConnByNameImpl struct{}
