@@ -17,7 +17,7 @@ function IconWithCount({ Icon, count, isLoading }) {
 }
 
 IconWithCount.propTypes = {
-    Icon: PropTypes.element.isRequired,
+    Icon: PropTypes.elementType.isRequired,
     count: PropTypes.number.isRequired,
     isLoading: PropTypes.bool,
 };

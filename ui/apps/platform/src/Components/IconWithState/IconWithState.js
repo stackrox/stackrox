@@ -15,7 +15,7 @@ function IconWithState({ Icon, enabled }) {
 }
 
 IconWithState.propTypes = {
-    Icon: PropTypes.func.isRequired,
+    Icon: PropTypes.elementType.isRequired,
     enabled: PropTypes.bool,
 };
 
