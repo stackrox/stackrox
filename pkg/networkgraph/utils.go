@@ -1,8 +1,11 @@
 package networkgraph
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // IsDeployment returns true if the network entity is a deployment (by type).
@@ -18,7 +21,15 @@ func IsExternal(entity *storage.NetworkEntityInfo) bool {
 // IsKnownDefaultExternal returns true if the network entity is known system-generated network source.
 // Note: INTERNET is not treated as system-generated but rather a fallback when exact data is unavailable.
 func IsKnownDefaultExternal(entity *storage.NetworkEntityInfo) bool {
-	return IsKnownExternalSrc(entity) && entity.GetExternalSource().GetDefault()
+	if !IsKnownExternalSrc(entity) {
+		return false
+	}
+
+	id, err := sac.ParseResourceID(entity.GetId())
+	if err != nil {
+		utils.Should(errors.Wrapf(err, "parsing external source ID %s", entity.GetId()))
+	}
+	return id.GlobalScoped()
 }
 
 // IsKnownExternalSrc returns true if the network entity is known external source.

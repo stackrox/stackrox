@@ -142,19 +142,33 @@ func TestHideDefaultExtSrcsAggregator(t *testing.T) {
 
 	*/
 
+	cidr1 := "35.187.144.0/20"
+	cidr2 := "35.187.144.0/16"
+	cidr3 := "35.187.144.0/8"
+	cidr4 := "35.187.144.0/23"
+	cidr5 := "36.188.144.0/30"
+	cidr6 := "36.188.144.0/16"
+
+	id1, _ := externalsrcs.NewGlobalScopedScopedID(cidr1)
+	id2, _ := externalsrcs.NewClusterScopedID("1", cidr2)
+	id3, _ := externalsrcs.NewClusterScopedID("1", cidr3)
+	id4, _ := externalsrcs.NewGlobalScopedScopedID(cidr4)
+	id5, _ := externalsrcs.NewClusterScopedID("1", cidr5)
+	id6, _ := externalsrcs.NewGlobalScopedScopedID(cidr6)
+
+	e1 := test.GetExtSrcNetworkEntityInfo(id1.String(), "1", cidr1, true)
+	e2 := test.GetExtSrcNetworkEntityInfo(id2.String(), "2", cidr2, false)
+	e3 := test.GetExtSrcNetworkEntityInfo(id3.String(), "3", cidr3, false)
+	e4 := test.GetExtSrcNetworkEntityInfo(id4.String(), "4", cidr4, true)
+	e5 := test.GetExtSrcNetworkEntityInfo(id5.String(), "5", cidr5, false)
+	e6 := test.GetExtSrcNetworkEntityInfo(id6.String(), "6", cidr6, true)
 	internet := networkgraph.InternetEntity().ToProto()
-	e1 := test.GetExtSrcNetworkEntityInfo("1", "1", "35.187.144.0/20", true)
-	e2 := test.GetExtSrcNetworkEntityInfo("2", "2", "35.187.144.0/16", false)
-	e3 := test.GetExtSrcNetworkEntityInfo("3", "3", "35.187.144.0/8", false)
-	e4 := test.GetExtSrcNetworkEntityInfo("4", "4", "35.187.144.0/23", true)
-	e5 := test.GetExtSrcNetworkEntityInfo("5", "5", "36.188.144.0/30", false)
-	e6 := test.GetExtSrcNetworkEntityInfo("6", "6", "36.188.144.0/16", true)
 
 	networkTree, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e1, e2, e3, e4, e5, e6})
 	assert.NoError(t, err)
 
-	assert.Equal(t, e2, networkTree.GetSupernet("1"))
-	assert.Equal(t, internet.GetId(), networkTree.GetSupernet("6").GetId())
+	assert.Equal(t, e2, networkTree.GetSupernet(e1.GetId()))
+	assert.Equal(t, internet.GetId(), networkTree.GetSupernet(e6.GetId()).GetId())
 	/*
 
 		flows without hiding default networks:

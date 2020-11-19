@@ -56,25 +56,24 @@ func (d *datastoreImpl) initDefaultConfig() error {
 }
 
 func (d *datastoreImpl) GetNetworkGraphConfig(ctx context.Context) (*storage.NetworkGraphConfig, error) {
-	if ok, err := networkGraphSAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := networkGraphSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).Allowed(ctx); err != nil {
 		return nil, err
+	} else if !ok {
+		return nil, errors.New("permission denied")
 	}
 
 	config, found, err := d.store.Get(networkGraphConfigKey)
 	if err != nil {
 		return nil, err
+	} else if !found {
+		return nil, errors.New("graph configuration not found")
 	}
 
-	if !found {
-		return &storage.NetworkGraphConfig{
-			HideDefaultExternalSrcs: false,
-		}, nil
-	}
 	return config, nil
 }
 
 func (d *datastoreImpl) UpdateNetworkGraphConfig(ctx context.Context, config *storage.NetworkGraphConfig) error {
-	if ok, err := networkGraphSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := networkGraphSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return errors.New("permission denied")
