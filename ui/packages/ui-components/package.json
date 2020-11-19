@@ -38,8 +38,8 @@
         "storybook": "yarn start:tailwind & start-storybook -p 6006"
     },
     "peerDependencies": {
-        "react": "^16.12.0",
-        "react-dom": "^16.12.0"
+        "react": "^16.12.0 || ^17",
+        "react-dom": "^16.12.0 || ^17"
     },
     "dependencies": {
         "@tippyjs/react": "^4.1.0",
@@ -47,17 +47,17 @@
         "initials": "^3.1.1",
         "lodash.get": "^4.4.2",
         "prop-types": "^15.7.2",
-        "react-feather": "^2.0.8",
+        "react-feather": "^2.0.9",
         "tippy.js": "^6.2.6",
         "yup": "^0.29.3"
     },
     "devDependencies": {
         "@babel/core": "^7.11.1",
         "@stackrox/tailwind-config": "^0.1.0",
-        "@storybook/addon-actions": "^6.0.21",
-        "@storybook/addon-essentials": "^6.0.21",
-        "@storybook/addon-links": "^6.0.26",
-        "@storybook/react": "^6.0.21",
+        "@storybook/addon-actions": "^6.1.0-beta.1",
+        "@storybook/addon-essentials": "^6.1.0-beta.1",
+        "@storybook/addon-links": "^6.1.0-beta.1",
+        "@storybook/react": "^6.1.0-beta.1",
         "@testing-library/jest-dom": "^5.11.4",
         "@testing-library/react": "^10.4.9",
         "@types/lodash": "^4.14.165",
@@ -84,9 +84,9 @@
         "npm-run-all": "^4.1.5",
         "postcss-cli": "^7.1.2",
         "prettier": "^2.1.2",
-        "react": "^16.13.1",
-        "react-dom": "^16.13.1",
-        "react-is": "^16.13.1",
+        "react": "^17.0.1",
+        "react-dom": "^17.0.1",
+        "react-is": "^17.0.1",
         "tailwindcss": "^1.8.10",
         "ts-jest": "^24.3.0",
         "typescript": "^3.9.5"
