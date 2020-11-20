@@ -13,15 +13,45 @@ ALPINE_MIRROR_BUILD_ARG := $(ALPINE_MIRROR:%=--build-arg ALPINE_MIRROR=%)
 # Compute the tag of the build image based on the contents of the tracked files in
 # build. This ensures that we build it if and only if necessary, pulling from DockerHub
 # otherwise.
-# `git ls-files -s build` prints all files in build, along with the SHAs,
-# and `git hash-object` just computes the SHA of that.
-BUILD_DIR_HASH := $(shell git ls-files -s build | git hash-object --stdin)
+# `git ls-files -sm build` prints all files in build (including extra entries for locally
+# modified files), along with the SHAs, and `git hash-object` just computes the SHA of that.
+BUILD_DIR_HASH := $(shell git ls-files -sm build | git hash-object --stdin)
 BUILD_IMAGE := stackrox/main:rocksdb-builder-$(BUILD_DIR_HASH)
 RHEL_BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-$(BUILD_DIR_HASH)
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 
-LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v$(CURDIR)/linux-gocache:/linux-gocache:delegated -v $(GOPATH):/go:delegated
+GOPATH_VOLUME_NAME := stackrox-rox-gopath
+GOCACHE_VOLUME_NAME := stackrox-rox-gocache
+
+
+# Figure out whether to use standalone Docker volume for GOPATH/Go build cache, or bind
+# mount one from the host filesystem.
+# The latter is painfully slow on Mac OS X with Docker Desktop, so we default to using a
+# standalone volume in that case, and to bind mounting otherwise.
+UNAME_S := $(shell uname -s)
+
+ifeq ($(UNAME_S),Darwin)
+BIND_GOCACHE ?= 0
+BIND_GOPATH ?= 0
+else
+BIND_GOCACHE ?= 1
+BIND_GOPATH ?= 1
+endif
+
+ifeq ($(BIND_GOCACHE),1)
+GOCACHE_VOLUME_SRC := $(CURDIR)/linux-gocache
+else
+GOCACHE_VOLUME_SRC := $(GOCACHE_VOLUME_NAME)
+endif
+
+ifeq ($(BIND_GOPATH),1)
+GOPATH_VOLUME_SRC := $(GOPATH)
+else
+GOPATH_VOLUME_SRC := $(GOPATH_VOLUME_NAME)
+endif
+
+LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v $(GOCACHE_VOLUME_SRC):/linux-gocache:delegated -v $(GOPATH_VOLUME_SRC):/go:delegated -v $(HOME)/.ssh:/root/.ssh:ro -v $(HOME)/.gitconfig:/root/.gitconfig:ro
 GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go
 
 null :=
@@ -310,8 +340,13 @@ bin/%/upgrader: build-prep
 bin/%/admission-control: build-prep
 	GOOS=$* $(GOBUILD) ./sensor/admission-control
 
+.PHONY: build-volumes
+build-volumes:
+	@docker volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOPATH_VOLUME_NAME)
+	@docker volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOCACHE_VOLUME_NAME)
+
 .PHONY: main-builder-image
-main-builder-image:
+main-builder-image: build-volumes
 	@echo "+ $@"
 	scripts/ensure_image.sh $(BUILD_IMAGE) build/Dockerfile build/
 	@# Ensure that the go version in the image matches the expected version

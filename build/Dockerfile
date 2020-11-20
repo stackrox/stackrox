@@ -40,7 +40,7 @@ ENV CGO_LDFLAGS="-L/lib/rocksdb -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 
 ENV CGO_ENABLED=1
 ENV GOCACHE="/linux-gocache"
 
-RUN apk add --update --no-cache build-base linux-headers git cmake bash
+RUN apk add --update --no-cache build-base linux-headers git cmake bash openssh-client
 RUN apk add --update --no-cache zlib zlib-dev bzip2 bzip2-dev snappy snappy-dev lz4 lz4-dev zstd zstd-dev perl
 
 WORKDIR /go/src/github.com/stackrox/rox
