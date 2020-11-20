@@ -319,8 +319,10 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 			return networkgraph.FilterFlowsByPredicate(flows, pred), *types.TimestampNow(), nil
 		})
 
-	s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any()).Return(networkTree)
-	s.networkTreeMgr.EXPECT().GetDefaultNetworkTree().Return(networkTree)
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any()).Return(networkTree)
+		s.networkTreeMgr.EXPECT().GetDefaultNetworkTree().Return(networkTree)
+	}
 
 	s.deployments.EXPECT().Search(gomock.Not(ctxHasAllDeploymentsAccessMatcher), gomock.Any()).Return(
 		[]search.Result{
@@ -567,8 +569,10 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 			return networkgraph.FilterFlowsByPredicate(flows, pred), *types.TimestampNow(), nil
 		})
 
-	s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any()).Return(networkTree)
-	s.networkTreeMgr.EXPECT().GetDefaultNetworkTree().Return(networkTree)
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any()).Return(networkTree)
+		s.networkTreeMgr.EXPECT().GetDefaultNetworkTree().Return(networkTree)
+	}
 
 	s.flows.EXPECT().GetFlowStore(ctxHasClusterWideNetworkFlowAccessMatcher, "mycluster").Return(mockFlowStore, nil)
 

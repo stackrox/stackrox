@@ -17,7 +17,7 @@ func mapToSupernet(networkTree tree.ReadOnlyNetworkTree,
 			continue
 		}
 
-		cidr, err := externalsrcs.CIDRFromID(entity.GetId())
+		cidr, err := externalsrcs.NetworkFromID(entity.GetId())
 		if err != nil {
 			utils.Should(errors.Wrapf(err, "getting CIDR from external source ID %s", entity.GetId()))
 			*entity = *networkgraph.InternetEntity().ToProto()

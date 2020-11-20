@@ -125,7 +125,7 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 		return nil, status.Error(codes.Unimplemented, "support for external sources in network graph is not enabled")
 	}
 
-	// If an error is returned here, it means one of the arguments is invalid.
+	// An error here implies one of the arguments is invalid.
 	id, err := externalsrcs.NewClusterScopedID(request.GetClusterId(), request.GetEntity().GetCidr())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())

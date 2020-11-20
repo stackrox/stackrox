@@ -7,6 +7,7 @@ import (
 // Manager provides a centralized location for creating and fetching network trees for clusters.
 //go:generate mockgen-wrapper
 type Manager interface {
+	CreateDefaultNetworkTree() tree.NetworkTree
 	CreateNetworkTree(clusterID string) tree.NetworkTree
 	GetNetworkTree(clusterID string) tree.NetworkTree
 	GetReadOnlyNetworkTree(clusterID string) tree.ReadOnlyNetworkTree

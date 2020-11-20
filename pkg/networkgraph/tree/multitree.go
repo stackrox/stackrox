@@ -34,7 +34,8 @@ func (t *multiReadOnlyTreeWrapper) Cardinality() int {
 	for _, t := range t.trees {
 		ret += t.Cardinality()
 	}
-	return ret
+	// Remove all the extra INTERNETS counted. Duplicate networks across trees are still included.
+	return ret - len(t.trees) + 1
 }
 
 // GetSupernet returns the smallest supernet that fully contains the network for given key, if present.

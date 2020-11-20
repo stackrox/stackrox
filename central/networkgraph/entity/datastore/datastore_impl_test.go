@@ -14,6 +14,7 @@ import (
 	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/test"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	pkgRocksDB "github.com/stackrox/rox/pkg/rocksdb"
@@ -21,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -86,7 +86,7 @@ func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 	suite.treeMgr = treeMocks.NewMockManager(suite.mockCtrl)
 	suite.connMgr = connMocks.NewMockManager(suite.mockCtrl)
 
-	suite.treeMgr.EXPECT().CreateNetworkTree("").Times(1)
+	suite.treeMgr.EXPECT().CreateDefaultNetworkTree()
 	suite.ds = NewEntityDataStore(suite.store, suite.graphConfig, suite.treeMgr, suite.connMgr)
 }
 
@@ -96,12 +96,18 @@ func (suite *NetworkEntityDataStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
-	entity1ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
-	entity2ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
-	entity3ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
-	entity4ID, _ := sac.NewClusterScopeResourceID(cluster2, uuid.NewV4().String())
-	entity5ID, _ := sac.NewClusterScopeResourceID(cluster2, uuid.NewV4().String())
-	entity6ID, _ := sac.NewClusterScopeResourceID(cluster2, uuid.NewV4().String())
+	entity1ID, err := externalsrcs.NewGlobalScopedScopedID("192.0.2.0/24")
+	suite.NoError(err)
+	entity2ID, err := externalsrcs.NewClusterScopedID(cluster1, "192.0.2.0/30")
+	suite.NoError(err)
+	entity3ID, err := externalsrcs.NewClusterScopedID(cluster1, "300.0.2.0/24")
+	suite.Error(err)
+	entity4ID, err := externalsrcs.NewClusterScopedID(cluster2, "192.0.2.0/24")
+	suite.NoError(err)
+	entity5ID, err := externalsrcs.NewClusterScopedID(cluster2, "192.0.2.0/24")
+	suite.NoError(err)
+	entity6ID, err := externalsrcs.NewClusterScopedID(cluster2, "192.0.2.0/29")
+	suite.NoError(err)
 
 	cases := []struct {
 		entity  *storage.NetworkEntity
@@ -110,7 +116,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	}{
 		{
 			// Valid entity
-			entity: test.GetExtSrcNetworkEntity(entity1ID.String(), "cidr1", "192.0.2.0/24", true, cluster1),
+			entity: test.GetExtSrcNetworkEntity(entity1ID.String(), "cidr1", "192.0.2.0/24", true, ""),
 			pass:   true,
 		},
 		{
@@ -142,7 +148,8 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 					ClusterId: cluster2,
 				},
 			},
-			pass: false,
+			pass:    false,
+			skipGet: true,
 		},
 		{
 			// Valid entity
@@ -166,15 +173,22 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	for _, c := range cases {
 		cluster := c.entity.GetScope().GetClusterId()
 		pushSig := concurrency.NewSignal()
-
 		if c.pass {
 			suite.treeMgr.EXPECT().GetNetworkTree(cluster).Return(trees[cluster])
-			suite.connMgr.EXPECT().PushExternalNetworkEntitiesToSensor(suite.elevatedCtx, cluster).DoAndReturn(
-				func(ctx context.Context, clusterID string) error {
-					suite.Equal(cluster, clusterID)
-					pushSig.Signal()
-					return nil
-				})
+			if cluster == "" {
+				suite.connMgr.EXPECT().PushExternalNetworkEntitiesToAllSensors(suite.elevatedCtx).DoAndReturn(
+					func(ctx context.Context) error {
+						pushSig.Signal()
+						return nil
+					})
+			} else {
+				suite.connMgr.EXPECT().PushExternalNetworkEntitiesToSensor(suite.elevatedCtx, cluster).DoAndReturn(
+					func(ctx context.Context, clusterID string) error {
+						suite.Equal(cluster, clusterID)
+						pushSig.Signal()
+						return nil
+					})
+			}
 		}
 
 		err := suite.ds.CreateExternalNetworkEntity(suite.globalWriteAccessCtx, c.entity, false)
@@ -224,8 +238,17 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	for _, c := range cases {
 		cluster := c.entity.GetScope().GetClusterId()
 		pushSig := concurrency.NewSignal()
-		if c.pass {
-			suite.treeMgr.EXPECT().GetNetworkTree(cluster).Return(trees[cluster])
+		if !c.pass {
+			continue
+		}
+		suite.treeMgr.EXPECT().GetNetworkTree(cluster).Return(trees[cluster])
+		if cluster == "" {
+			suite.connMgr.EXPECT().PushExternalNetworkEntitiesToAllSensors(suite.elevatedCtx).DoAndReturn(
+				func(ctx context.Context) error {
+					pushSig.Signal()
+					return nil
+				})
+		} else {
 			suite.connMgr.EXPECT().PushExternalNetworkEntitiesToSensor(suite.elevatedCtx, cluster).DoAndReturn(
 				func(ctx context.Context, clusterID string) error {
 					suite.Equal(cluster, clusterID)
@@ -236,9 +259,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 
 		err := suite.ds.DeleteExternalNetworkEntity(suite.globalWriteAccessCtx, c.entity.GetInfo().GetId())
 		suite.NoError(err)
-		if c.pass {
-			suite.True(concurrency.WaitWithTimeout(&pushSig, time.Second))
-		}
+		suite.True(concurrency.WaitWithTimeout(&pushSig, time.Second))
 	}
 
 	// Test GetAll
@@ -249,11 +270,11 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 }
 
 func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
-	entity1ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
-	entity2ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
-	entity3ID, _ := sac.NewClusterScopeResourceID(cluster2, uuid.NewV4().String())
-	entity4ID, _ := sac.NewClusterScopeResourceID(cluster2, uuid.NewV4().String())
-	defaultEntityID, _ := sac.NewGlobalScopeResourceID(uuid.NewV4().String())
+	entity1ID, _ := externalsrcs.NewClusterScopedID(cluster1, "192.0.2.0/24")
+	entity2ID, _ := externalsrcs.NewClusterScopedID(cluster1, "192.0.2.0/29")
+	entity3ID, _ := externalsrcs.NewClusterScopedID(cluster2, "192.0.2.0/24")
+	entity4ID, _ := externalsrcs.NewClusterScopedID(cluster2, "192.0.2.0/29")
+	defaultEntityID, _ := externalsrcs.NewGlobalScopedScopedID("192.0.2.0/30")
 
 	entity1 := test.GetExtSrcNetworkEntity(entity1ID.String(), "", "192.0.2.0/24", false, cluster1)
 	entity2 := test.GetExtSrcNetworkEntity(entity2ID.String(), "", "192.0.2.0/29", false, cluster1)
@@ -331,7 +352,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 		pushSig := concurrency.NewSignal()
 
 		if c.pass {
-			suite.treeMgr.EXPECT().GetNetworkTree(c.entity.GetScope().GetClusterId()).Return(trees[c.entity.GetScope().GetClusterId()])
+			suite.treeMgr.EXPECT().GetNetworkTree(cluster).Return(trees[cluster])
 			suite.connMgr.EXPECT().PushExternalNetworkEntitiesToSensor(suite.elevatedCtx, cluster).DoAndReturn(
 				func(ctx context.Context, clusterID string) error {
 					suite.Equal(cluster, clusterID)
@@ -522,23 +543,31 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 }
 
 func (suite *NetworkEntityDataStoreTestSuite) TestDefaultGraphSetting() {
-	entity1ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
-	entity2ID, _ := sac.NewClusterScopeResourceID(cluster1, uuid.NewV4().String())
+	entity1ID, _ := externalsrcs.NewGlobalScopedScopedID("192.0.2.0/24")
+	entity2ID, _ := externalsrcs.NewClusterScopedID(cluster1, "192.0.2.0/30")
 
-	entity1 := test.GetExtSrcNetworkEntity(entity1ID.String(), "cidr1", "192.0.2.0/24", true, cluster1)
+	entity1 := test.GetExtSrcNetworkEntity(entity1ID.String(), "cidr1", "192.0.2.0/24", true, "")
 	entity2 := test.GetExtSrcNetworkEntity(entity2ID.String(), "", "192.0.2.0/30", false, cluster1)
 	entities := []*storage.NetworkEntity{entity1, entity2}
 
 	for _, entity := range entities {
 		cluster := entity.GetScope().GetClusterId()
 		pushSig := concurrency.NewSignal()
-		suite.treeMgr.EXPECT().GetNetworkTree(cluster).Return(trees[cluster1])
-		suite.connMgr.EXPECT().PushExternalNetworkEntitiesToSensor(suite.elevatedCtx, cluster).DoAndReturn(
-			func(ctx context.Context, clusterID string) error {
-				suite.Equal(cluster, clusterID)
-				pushSig.Signal()
-				return nil
-			})
+		suite.treeMgr.EXPECT().GetNetworkTree(cluster).Return(trees[cluster])
+		if cluster == "" {
+			suite.connMgr.EXPECT().PushExternalNetworkEntitiesToAllSensors(suite.elevatedCtx).DoAndReturn(
+				func(ctx context.Context) error {
+					pushSig.Signal()
+					return nil
+				})
+		} else {
+			suite.connMgr.EXPECT().PushExternalNetworkEntitiesToSensor(suite.elevatedCtx, cluster).DoAndReturn(
+				func(ctx context.Context, clusterID string) error {
+					suite.Equal(cluster, clusterID)
+					pushSig.Signal()
+					return nil
+				})
+		}
 		suite.NoError(suite.ds.CreateExternalNetworkEntity(suite.globalWriteAccessCtx, entity, false))
 		suite.True(concurrency.WaitWithTimeout(&pushSig, time.Second))
 	}
@@ -573,12 +602,20 @@ func (suite *NetworkEntityDataStoreTestSuite) TestDefaultGraphSetting() {
 		cluster := entity.GetScope().GetClusterId()
 		pushSig := concurrency.NewSignal()
 		suite.treeMgr.EXPECT().GetNetworkTree(cluster).Return(trees[cluster])
-		suite.connMgr.EXPECT().PushExternalNetworkEntitiesToSensor(suite.elevatedCtx, cluster).DoAndReturn(
-			func(ctx context.Context, clusterID string) error {
-				suite.Equal(cluster, clusterID)
-				pushSig.Signal()
-				return nil
-			})
+		if cluster == "" {
+			suite.connMgr.EXPECT().PushExternalNetworkEntitiesToAllSensors(suite.elevatedCtx).DoAndReturn(
+				func(ctx context.Context) error {
+					pushSig.Signal()
+					return nil
+				})
+		} else {
+			suite.connMgr.EXPECT().PushExternalNetworkEntitiesToSensor(suite.elevatedCtx, cluster).DoAndReturn(
+				func(ctx context.Context, clusterID string) error {
+					suite.Equal(cluster, clusterID)
+					pushSig.Signal()
+					return nil
+				})
+		}
 		suite.NoError(suite.ds.DeleteExternalNetworkEntity(suite.globalWriteAccessCtx, entity.GetInfo().GetId()))
 		suite.True(concurrency.WaitWithTimeout(&pushSig, time.Second))
 	}

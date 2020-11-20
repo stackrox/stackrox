@@ -30,6 +30,20 @@ func (f *managerImpl) GetDefaultNetworkTree() tree.ReadOnlyNetworkTree {
 	return f.GetNetworkTree(defaultNetworksClusterID)
 }
 
+func (f *managerImpl) CreateDefaultNetworkTree() tree.NetworkTree {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
+	t := f.trees[defaultNetworksClusterID]
+	if t != nil {
+		return t
+	}
+
+	t = tree.NewDefaultNetworkTreeWrapper()
+	f.trees[defaultNetworksClusterID] = t
+	return t
+}
+
 func (f *managerImpl) CreateNetworkTree(clusterID string) tree.NetworkTree {
 	f.lock.Lock()
 	defer f.lock.Unlock()
