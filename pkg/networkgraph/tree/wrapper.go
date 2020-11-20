@@ -76,7 +76,8 @@ func (t *networkTreeWrapper) Cardinality() int {
 	t.lock.RLock()
 	defer t.lock.RUnlock()
 
-	ret := 0
+	// Since we have IPv4 root and IPv6 root.
+	ret := -1
 	for _, t := range t.trees {
 		ret += t.Cardinality()
 	}

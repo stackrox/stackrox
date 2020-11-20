@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
@@ -41,7 +42,8 @@ type dataStoreImpl struct {
 	treeMgr       networktree.Manager
 	clusterIDs    []string
 
-	lock sync.Mutex
+	netEntityLock    sync.Mutex
+	clusterCacheLock sync.Mutex
 }
 
 // NewEntityDataStore returns a new instance of EntityDataStore using the input storage underneath.
@@ -62,7 +64,7 @@ func NewEntityDataStore(storage store.EntityStore, graphConfig graphConfigDS.Dat
 
 func (ds *dataStoreImpl) initNetworkTrees() error {
 	// Create tree for default ones.
-	ds.treeMgr.CreateNetworkTree("")
+	ds.treeMgr.CreateDefaultNetworkTree()
 
 	// If network tree for a cluster is not found, it means it must orphan which shall be cleaned at next garbage collection.
 	if err := ds.storage.Walk(func(obj *storage.NetworkEntity) error {
@@ -74,7 +76,7 @@ func (ds *dataStoreImpl) initNetworkTrees() error {
 }
 
 func (ds *dataStoreImpl) RegisterCluster(clusterID string) {
-	ds.registerCluster(clusterID)
+	ds.addCluster(clusterID)
 	ds.getNetworkTree(clusterID, true)
 
 	go ds.doPushExternalNetworkEntitiesToSensor(clusterID)
@@ -199,11 +201,22 @@ func (ds *dataStoreImpl) CreateExternalNetworkEntity(ctx context.Context, entity
 		return errors.New("permission denied")
 	}
 
-	if found, err := ds.storage.Exists(entity.GetInfo().GetId()); err != nil {
+	ds.netEntityLock.Lock()
+	defer ds.netEntityLock.Unlock()
+
+	network, err := externalsrcs.NetworkFromID(entity.GetInfo().GetId())
+	if err != nil {
+		return err
+	}
+
+	if stored, found, err := ds.storage.Get(entity.GetInfo().GetId()); err != nil {
 		return err
 	} else if found {
-		return errors.Wrapf(errorhelpers.ErrAlreadyExists, "network entity %s (CIDR=%s) already exists",
-			entity.GetInfo().GetId(), entity.GetInfo().GetExternalSource().GetCidr())
+		return errors.Wrapf(errorhelpers.ErrAlreadyExists,
+			"network %s of entity %s (CIDR=%s) conflicts with network of stored entity %s (CIDR=%s)",
+			network,
+			entity.GetInfo().GetExternalSource().GetName(), entity.GetInfo().GetExternalSource().GetCidr(),
+			stored.GetInfo().GetExternalSource().GetName(), stored.GetInfo().GetExternalSource().GetCidr())
 	}
 
 	if err := ds.storage.Upsert(entity); err != nil {
@@ -227,6 +240,9 @@ func (ds *dataStoreImpl) UpdateExternalNetworkEntity(ctx context.Context, entity
 	} else if !ok {
 		return errors.New("permission denied")
 	}
+
+	ds.netEntityLock.Lock()
+	defer ds.netEntityLock.Unlock()
 
 	_, err := ds.validateNoCIDRUpdate(entity)
 	if err != nil {
@@ -252,12 +268,14 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, id str
 		return errors.New("permission denied")
 	}
 
+	ds.netEntityLock.Lock()
+	defer ds.netEntityLock.Unlock()
+
 	// Check if the entity actually exists to avoid unnecessary push to Sensor.
-	_, found, err := ds.storage.Get(id)
+	found, err := ds.storage.Exists(id)
 	if err != nil {
 		return err
 	}
-
 	if !found {
 		return nil
 	}
@@ -268,13 +286,16 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, id str
 
 	// Error is not expected since it has already been validated.
 	decodedID, err := sac.ParseResourceID(id)
-	utils.Should(err)
+	if err != nil {
+		return err
+	}
 
 	go ds.doPushExternalNetworkEntitiesToSensor(decodedID.ClusterID())
 
 	if networkTree := ds.getNetworkTree(decodedID.ClusterID(), false); networkTree != nil {
 		networkTree.Remove(id)
 	}
+
 	return nil
 }
 
@@ -288,6 +309,9 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 	} else if !ok {
 		return errors.New("permission denied")
 	}
+
+	ds.netEntityLock.Lock()
+	defer ds.netEntityLock.Unlock()
 
 	var ids []string
 	if err := ds.storage.Walk(func(obj *storage.NetworkEntity) error {
@@ -309,7 +333,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 
 	// If we are here, it means all the network entities for the `clusterID` are removed.
 	ds.treeMgr.DeleteNetworkTree(clusterID)
-	ds.unregisterCluster(clusterID)
+	ds.removeCluster(clusterID)
 	go ds.doPushExternalNetworkEntitiesToSensor(clusterID)
 
 	return nil
@@ -355,9 +379,6 @@ func (ds *dataStoreImpl) validateNoCIDRUpdate(newEntity *storage.NetworkEntity) 
 }
 
 func (ds *dataStoreImpl) getNetworkTree(clusterID string, createIfNotFound bool) tree.NetworkTree {
-	ds.lock.Lock()
-	defer ds.lock.Unlock()
-
 	networkTree := ds.treeMgr.GetNetworkTree(clusterID)
 	if networkTree == nil && createIfNotFound {
 		networkTree = ds.treeMgr.CreateNetworkTree(clusterID)
@@ -386,24 +407,24 @@ func (ds *dataStoreImpl) doPushExternalNetworkEntitiesToSensor(clusters ...strin
 }
 
 func (ds *dataStoreImpl) getRegisteredClusters() []string {
-	ds.lock.Lock()
-	defer ds.lock.Unlock()
+	ds.clusterCacheLock.Lock()
+	defer ds.clusterCacheLock.Unlock()
 
 	return ds.clusterIDs
 }
 
-func (ds *dataStoreImpl) registerCluster(cluster string) {
-	ds.lock.Lock()
-	defer ds.lock.Unlock()
+func (ds *dataStoreImpl) addCluster(cluster string) {
+	ds.clusterCacheLock.Lock()
+	defer ds.clusterCacheLock.Unlock()
 
 	clusterSet := set.NewStringSet(ds.clusterIDs...)
 	clusterSet.Add(cluster)
 	ds.clusterIDs = clusterSet.AsSlice()
 }
 
-func (ds *dataStoreImpl) unregisterCluster(cluster string) {
-	ds.lock.Lock()
-	defer ds.lock.Unlock()
+func (ds *dataStoreImpl) removeCluster(cluster string) {
+	ds.clusterCacheLock.Lock()
+	defer ds.clusterCacheLock.Unlock()
 
 	for i, id := range ds.clusterIDs {
 		if id == cluster {

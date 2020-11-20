@@ -33,6 +33,20 @@ func (m *MockManager) EXPECT() *MockManagerMockRecorder {
 	return m.recorder
 }
 
+// CreateDefaultNetworkTree mocks base method
+func (m *MockManager) CreateDefaultNetworkTree() tree.NetworkTree {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateDefaultNetworkTree")
+	ret0, _ := ret[0].(tree.NetworkTree)
+	return ret0
+}
+
+// CreateDefaultNetworkTree indicates an expected call of CreateDefaultNetworkTree
+func (mr *MockManagerMockRecorder) CreateDefaultNetworkTree() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateDefaultNetworkTree", reflect.TypeOf((*MockManager)(nil).CreateDefaultNetworkTree))
+}
+
 // CreateNetworkTree mocks base method
 func (m *MockManager) CreateNetworkTree(clusterID string) tree.NetworkTree {
 	m.ctrl.T.Helper()
