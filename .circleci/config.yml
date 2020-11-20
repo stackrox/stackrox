@@ -3775,10 +3775,6 @@ jobs:
       - *collectK8sLogs
       - get-and-store-debug-dump
       - pull-stackrox-api-data
-      - check-stackrox-logs
-      - *storeK8sLogs
-
-      - teardown-gke
 
       - *getPrometheusMetricParser
       - compare-with-stored-metrics:
@@ -3796,6 +3792,11 @@ jobs:
                 --format=gcp-monitoring --labels='Test=ci-scale-test,ClusterFlavor=gke' \
                 --project-id=stackrox-ci --timestamp=$(date -u +"%s")
             fi
+
+      - check-stackrox-logs
+      - *storeK8sLogs
+
+      - teardown-gke
 
   openshift-api-e2e-tests:
     executor: custom
