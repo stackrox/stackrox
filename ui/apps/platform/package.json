@@ -55,7 +55,7 @@
         "react-dnd": "^10.0.2",
         "react-dnd-html5-backend": "^10.0.2",
         "react-dom": "^17.0.1",
-        "react-dropzone": "^10.2.1",
+        "react-dropzone": "^11.2.4",
         "react-feather": "^2.0.9",
         "react-modal": "^3.11.2",
         "react-numeric-input": "^2.2.3",
