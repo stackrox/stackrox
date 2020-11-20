@@ -112,12 +112,6 @@ message SumoLogic {
 }
 
 message Syslog {
-    enum Format {
-        CEF  = 0;
-//        LEEF = 1; // May not implement LEEF for MVP
-    }
-    Format format = 1;
-
     enum LocalFacility {
         LOCAL0 = 0;
         LOCAL1 = 1;
@@ -128,7 +122,7 @@ message Syslog {
         LOCAL6 = 6;
         LOCAL7 = 7;
     }
-    LocalFacility local_facility = 2;
+    LocalFacility local_facility = 1;
 
     message TCPConfig {
         string hostname                    = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
@@ -138,6 +132,6 @@ message Syslog {
     }
     // Eventually this will support TCP, UDP, and local endpoints
     oneof endpoint {
-        TCPConfig tcp_config = 3;
+        TCPConfig tcp_config = 2;
     }
 }

@@ -68,13 +68,6 @@ var (
 		storage.Severity_HIGH_SEVERITY:     7, // high
 		storage.Severity_CRITICAL_SEVERITY: 9, // very high
 	}
-
-	messageFormats = map[storage.Syslog_Format]*formatMethods{
-		storage.Syslog_CEF: {
-			formatAlert:    alertToCEF,
-			formatAuditLog: auditLogToCEF,
-		},
-	}
 )
 
 func init() {
@@ -92,16 +85,10 @@ type syslogSender interface {
 	Cleanup()
 }
 
-type formatMethods struct {
-	formatAlert    func(alert *storage.Alert) string
-	formatAuditLog func(auditLog *v1.Audit_Message) string
-}
-
 type syslog struct {
 	*storage.Notifier
 
 	sender   syslogSender
-	format   storage.Syslog_Format
 	pid      int
 	facility int
 }
@@ -210,8 +197,7 @@ func (s *syslog) wrapSyslogUnstructuredData(severity int, timestamp time.Time, m
 }
 
 func (s *syslog) AlertNotify(ctx context.Context, alert *storage.Alert) error {
-	formatters := messageFormats[s.format]
-	unstructuredData := formatters.formatAlert(alert)
+	unstructuredData := alertToCEF(alert)
 	severity := alertToSyslogSeverityMap[alert.GetPolicy().GetSeverity()]
 	timestamp, err := types.TimestampFromProto(alert.GetTime())
 	if err != nil {
@@ -235,8 +221,7 @@ func (s *syslog) Test(context.Context) error {
 }
 
 func (s *syslog) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) error {
-	formatters := messageFormats[s.format]
-	unstructuredData := formatters.formatAuditLog(msg)
+	unstructuredData := auditLogToCEF(msg)
 	timestamp, err := types.TimestampFromProto(msg.GetTime())
 	if err != nil {
 		return err

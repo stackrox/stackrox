@@ -40,7 +40,6 @@ func (s *SyslogNotifierTestSuite) makeSyslog(notifier *storage.Notifier) *syslog
 	return &syslog{
 		Notifier: notifier,
 		sender:   s.mockSender,
-		format:   notifier.GetSyslog().GetFormat(),
 		pid:      1,
 		facility: (int(notifier.GetSyslog().GetLocalFacility()) + 16) * 8,
 	}
@@ -125,14 +124,4 @@ func (s *SyslogNotifierTestSuite) TestSendAuditLog() {
 	s.mockSender.EXPECT().SendSyslog(gomock.Any()).Return(nil)
 	err := syslog.SendAuditMessage(context.Background(), testAuditMessage)
 	s.Require().NoError(err)
-}
-
-func (s *SyslogNotifierTestSuite) TestGetFormatters() {
-	for _, format := range storage.Syslog_Format_value {
-		formatters, ok := messageFormats[storage.Syslog_Format(format)]
-		s.Require().True(ok)
-		s.Require().NotNil(formatters)
-		s.NotNil(formatters.formatAlert)
-		s.NotNil(formatters.formatAuditLog)
-	}
 }

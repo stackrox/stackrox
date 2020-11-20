@@ -635,34 +635,6 @@ const formDescriptors = {
                 required: true,
             },
             {
-                label: 'Log Format',
-                jsonpath: 'syslog.format',
-                type: 'radioGroup',
-                radioButtons: [
-                    {
-                        text: 'CEF protocol',
-                        value: 'CEF',
-                    },
-                    {
-                        text: 'LEEF protocol',
-                        value: 'LEEF',
-                    },
-                ],
-                default: 'CEF',
-                required: true,
-                readonly: true,
-            },
-            {
-                html: (
-                    <div className="flex mt-4 justify-center">
-                        <div className="w-4/5 relative p-1 text-right">
-                            (currently, only CEF protocol is supported)
-                        </div>
-                    </div>
-                ),
-                type: 'html',
-            },
-            {
                 label: 'Logging Facility',
                 jsonpath: 'syslog.localFacility',
                 type: 'select',
