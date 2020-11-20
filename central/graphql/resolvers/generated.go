@@ -1066,14 +1066,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"skipTLSVerify: Boolean!",
 	}))
 	utils.Must(builder.AddType("Syslog", []string{
-		"format: Syslog_Format!",
 		"localFacility: Syslog_LocalFacility!",
 		"endpoint: SyslogEndpoint",
 	}))
 	utils.Must(builder.AddUnionType("SyslogEndpoint", []string{
 		"Syslog_TCPConfig",
 	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Syslog_Format(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Syslog_LocalFacility(0)))
 	utils.Must(builder.AddType("Syslog_TCPConfig", []string{
 		"hostname: String!",
@@ -9158,11 +9156,6 @@ func (resolver *Resolver) wrapSyslogs(values []*storage.Syslog, err error) ([]*s
 	return output, nil
 }
 
-func (resolver *syslogResolver) Format(ctx context.Context) string {
-	value := resolver.data.GetFormat()
-	return value.String()
-}
-
 func (resolver *syslogResolver) LocalFacility(ctx context.Context) string {
 	value := resolver.data.GetLocalFacility()
 	return value.String()
@@ -9184,24 +9177,6 @@ func (resolver *syslogResolver) Endpoint() *syslogEndpointResolver {
 func (resolver *syslogEndpointResolver) ToSyslog_TCPConfig() (*syslog_TCPConfigResolver, bool) {
 	res, ok := resolver.resolver.(*syslog_TCPConfigResolver)
 	return res, ok
-}
-
-func toSyslog_Format(value *string) storage.Syslog_Format {
-	if value != nil {
-		return storage.Syslog_Format(storage.Syslog_Format_value[*value])
-	}
-	return storage.Syslog_Format(0)
-}
-
-func toSyslog_Formats(values *[]string) []storage.Syslog_Format {
-	if values == nil {
-		return nil
-	}
-	output := make([]storage.Syslog_Format, len(*values))
-	for i, v := range *values {
-		output[i] = toSyslog_Format(&v)
-	}
-	return output
 }
 
 func toSyslog_LocalFacility(value *string) storage.Syslog_LocalFacility {

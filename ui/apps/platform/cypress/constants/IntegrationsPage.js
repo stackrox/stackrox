@@ -85,7 +85,6 @@ export const selectors = {
     syslogForm: {
         nameInput: "form input[name='name']",
         active: "form input[name='enabled']",
-        logFormat: "form [data-testid='radio-button-group']",
         localFacility: 'form .react-select__control',
         localFacilityListItems: '.react-select__menu-list > div',
         receiverHost: "form input[name='syslog.tcpConfig.hostname']",

@@ -141,7 +141,6 @@ describe('Notifiers Test', () => {
             cy.get(selectors.buttons.create).should('be.disabled'); // starts out disabled
 
             cy.get(selectors.syslogForm.nameInput).type('Test Syslog integration');
-            cy.get(`${selectors.syslogForm.logFormat} button:first`).click();
             cy.get(selectors.syslogForm.localFacility).click();
             cy.get(`${selectors.syslogForm.localFacilityListItems}:contains('local7')`).click();
             cy.get(selectors.syslogForm.receiverHost).type('splunk.default');
@@ -163,7 +162,6 @@ describe('Notifiers Test', () => {
             cy.get(selectors.buttons.new).click();
 
             cy.get(selectors.syslogForm.nameInput).type('Test Syslog integration');
-            cy.get(selectors.syslogForm.logFormat).click();
             cy.get(selectors.syslogForm.localFacility).click();
             cy.get(`${selectors.syslogForm.localFacilityListItems}:contains('local7')`).click();
             cy.get(selectors.syslogForm.receiverHost).type('splunk.default');
