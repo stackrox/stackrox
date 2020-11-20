@@ -22,8 +22,6 @@ import (
 	imageDatastoreMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageIndex "github.com/stackrox/rox/central/image/index"
 	componentsMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
-	networkEntityDatastoreMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
-	networkTreeMgrMocks "github.com/stackrox/rox/central/networkgraph/entity/networktree/mocks"
 	networkFlowDatastoreMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
@@ -39,9 +37,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/images/types"
-	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
-	"github.com/stackrox/rox/pkg/networkgraph/test"
-	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -50,7 +45,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
-	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -379,7 +373,7 @@ func TestImagePruning(t *testing.T) {
 			// So to test need to update them separately
 			alerts, config, images, deployments, pods, indexQ := generateImageDataStructures(ctx, t)
 
-			gc := newGarbageCollector(alerts, images, nil, deployments, pods, nil, nil, nil, nil, nil, config, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, images, nil, deployments, pods, nil, nil, nil, config, nil, nil).(*garbageCollectorImpl)
 
 			// Add images, deployments, and pods into the datastores
 			if c.deployment != nil {
@@ -498,7 +492,7 @@ func TestAlertPruning(t *testing.T) {
 			// So to test need to update them separately
 			alerts, config, images, deployments := generateAlertDataStructures(ctx, t)
 
-			gc := newGarbageCollector(alerts, images, nil, deployments, nil, nil, nil, nil, nil, nil, config, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, images, nil, deployments, nil, nil, nil, nil, config, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {
@@ -914,315 +908,6 @@ func TestRemoveOrphanedNetworkFlows(t *testing.T) {
 				networkflows: clusterFlows,
 			}
 			gci.removeOrphanedNetworkFlows(c.deployments)
-		})
-	}
-}
-
-func TestRemoveOrphanedExternalNetworkFlows(t *testing.T) {
-	e1ID, err := externalsrcs.NewClusterScopedID("cluster", "10.10.10.10/8") // -> e1xID
-	assert.NoError(t, err)
-	e2ID, err := externalsrcs.NewGlobalScopedScopedID("12.10.10.10/16") // -> e2xID
-	assert.NoError(t, err)
-
-	// DO NOT CHANGE. DO NOT add metadata to following entities.
-	d1 := &storage.NetworkEntityInfo{
-		Type: storage.NetworkEntityInfo_DEPLOYMENT,
-		Id:   "d1",
-	}
-	d2 := &storage.NetworkEntityInfo{
-		Type: storage.NetworkEntityInfo_DEPLOYMENT,
-		Id:   "d2",
-	}
-	e1 := &storage.NetworkEntityInfo{
-		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-		Id:   e1ID.String(),
-	}
-	e2 := &storage.NetworkEntityInfo{
-		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-		Id:   e2ID.String(),
-	}
-
-	// Tree contents
-	e1xID, err := externalsrcs.NewClusterScopedID("cluster", "10.10.10.10/5")
-	assert.NoError(t, err)
-	e2xID, err := externalsrcs.NewGlobalScopedScopedID("12.10.10.10/8")
-	assert.NoError(t, err)
-	e2xxID, err := externalsrcs.NewGlobalScopedScopedID("12.10.10.10/16")
-	assert.NoError(t, err)
-	e4xID, err := externalsrcs.NewClusterScopedID("cluster", "10.10.10.10/20")
-	assert.NoError(t, err)
-	e1x := test.GetExtSrcNetworkEntityInfo(e1xID.String(), "e1x", "10.10.10.10/5", true)
-	e2x := test.GetExtSrcNetworkEntityInfo(e2xID.String(), "e2x", "12.10.10.10/8", false)
-	e2xx := test.GetExtSrcNetworkEntityInfo(e2xxID.String(), "e2xx", "12.10.10.10/16", true)
-	e4x := test.GetExtSrcNetworkEntityInfo(e4xID.String(), "e4x", "10.10.10.10/20", false)
-
-	tree1, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e4x, e2x})
-	assert.NoError(t, err)
-	tree2, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e1x})
-	assert.NoError(t, err)
-	tree3, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{e1x, e2xx})
-	assert.NoError(t, err)
-
-	ts1 := timestampNowMinus(20 * time.Minute)
-	ts2 := timestampNowMinus(1 * time.Hour)
-
-	cases := []struct {
-		name               string
-		flows              []*storage.NetworkFlow
-		externalSrcs       []string
-		clusterTree        tree.ReadOnlyNetworkTree
-		defaultTree        tree.ReadOnlyNetworkTree
-		expectedFlows      []*storage.NetworkFlow
-		expectedAdjustment bool
-	}{
-		{
-			name: "no external sources - adjust all flows",
-			flows: []*storage.NetworkFlow{
-				{
-					LastSeenTimestamp: ts2,
-					Props: &storage.NetworkFlowProperties{
-						SrcEntity: d1,
-						DstEntity: e1,
-					},
-				},
-				{
-					LastSeenTimestamp: ts2,
-					Props: &storage.NetworkFlowProperties{
-						SrcEntity: d1,
-						DstEntity: e2,
-					},
-				},
-			},
-			externalSrcs: []string{},
-			clusterTree:  tree1,
-			defaultTree:  tree2,
-			expectedFlows: []*storage.NetworkFlow{
-				{
-					LastSeenTimestamp: ts2,
-					Props: &storage.NetworkFlowProperties{
-						SrcEntity: d1,
-						DstEntity: &storage.NetworkEntityInfo{
-							Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-							Id:   e1xID.String(),
-						},
-					},
-				},
-				{
-					LastSeenTimestamp: ts2,
-					Props: &storage.NetworkFlowProperties{
-						SrcEntity: d1,
-						DstEntity: &storage.NetworkEntityInfo{
-							Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-							Id:   e2xID.String(),
-						},
-					},
-				},
-			},
-			expectedAdjustment: true,
-		},
-		{
-			name: "no external sources - but no flows with external sources",
-			flows: []*storage.NetworkFlow{
-				{
-					LastSeenTimestamp: timestampNowMinus(1 * time.Hour),
-					Props: &storage.NetworkFlowProperties{
-						SrcEntity: d1,
-						DstEntity: d2,
-					},
-				},
-			},
-			externalSrcs:       []string{},
-			clusterTree:        tree1,
-			defaultTree:        tree2,
-			expectedAdjustment: false,
-		},
-		{
-			name: "no external sources - but flows too recent (doesn't matter)",
-			flows: []*storage.NetworkFlow{
-				{
-					LastSeenTimestamp: ts1,
-					Props: &storage.NetworkFlowProperties{
-						SrcEntity: d1,
-						DstEntity: e2,
-					},
-				},
-			},
-			externalSrcs: []string{},
-			clusterTree:  tree1,
-			defaultTree:  tree2,
-			expectedFlows: []*storage.NetworkFlow{
-				{
-					LastSeenTimestamp: ts1,
-					Props: &storage.NetworkFlowProperties{
-						SrcEntity: d1,
-						DstEntity: &storage.NetworkEntityInfo{
-							Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-							Id:   e2xID.String(),
-						},
-					},
-				},
-			},
-			expectedAdjustment: true,
-		},
-		{
-			name: "some external sources with matching flows",
-			flows: []*storage.NetworkFlow{
-				{
-					LastSeenTimestamp: ts2,
-					Props: &storage.NetworkFlowProperties{
-						SrcEntity: d1,
-						DstEntity: e2,
-					},
-				},
-			},
-			externalSrcs:       []string{e1ID.String(), e2ID.String()},
-			clusterTree:        tree1,
-			defaultTree:        tree2,
-			expectedAdjustment: false,
-		},
-		{
-			name: "some external sources with matching src",
-			flows: []*storage.NetworkFlow{
-				{
-					LastSeenTimestamp: ts2,
-					Props: &storage.NetworkFlowProperties{
-						SrcEntity: e1,
-						DstEntity: d2,
-					},
-				},
-			},
-			externalSrcs: []string{e2ID.String()},
-			clusterTree:  tree1,
-			defaultTree:  tree2,
-			expectedFlows: []*storage.NetworkFlow{
-				{
-					LastSeenTimestamp: ts2,
-					Props: &storage.NetworkFlowProperties{
-						SrcEntity: &storage.NetworkEntityInfo{
-							Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-							Id:   e1xID.String(),
-						},
-						DstEntity: d2,
-					},
-				},
-			},
-			expectedAdjustment: true,
-		},
-		{
-			name: "some external sources with matching dst",
-			flows: []*storage.NetworkFlow{
-				{
-					LastSeenTimestamp: ts2,
-					Props: &storage.NetworkFlowProperties{
-						SrcEntity: d1,
-						DstEntity: e2,
-					},
-				},
-			},
-			externalSrcs: []string{e1ID.String()},
-			clusterTree:  tree1,
-			defaultTree:  tree2,
-			expectedFlows: []*storage.NetworkFlow{
-				{
-					LastSeenTimestamp: ts2,
-					Props: &storage.NetworkFlowProperties{
-						SrcEntity: d1,
-						DstEntity: &storage.NetworkEntityInfo{
-							Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-							Id:   e2xID.String(),
-						},
-					},
-				},
-			},
-			expectedAdjustment: true,
-		},
-		{
-			name: "some external sources with matching dst - dst added back",
-			flows: []*storage.NetworkFlow{
-				{
-					LastSeenTimestamp: ts2,
-					Props: &storage.NetworkFlowProperties{
-						SrcEntity: d1,
-						DstEntity: e2,
-					},
-				},
-			},
-			externalSrcs: []string{e1ID.String()},
-			clusterTree:  tree1,
-			defaultTree:  tree3,
-			expectedFlows: []*storage.NetworkFlow{
-				{
-					LastSeenTimestamp: ts2,
-					Props: &storage.NetworkFlowProperties{
-						SrcEntity: d1,
-						DstEntity: e2,
-					},
-				},
-			},
-			expectedAdjustment: true,
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			clusters := clusterDatastoreMocks.NewMockDataStore(ctrl)
-			clusterFlows := networkFlowDatastoreMocks.NewMockClusterDataStore(ctrl)
-			entities := networkEntityDatastoreMocks.NewMockEntityDataStore(ctrl)
-			mgr := networkTreeMgrMocks.NewMockManager(ctrl)
-			flows := networkFlowDatastoreMocks.NewMockFlowDataStore(ctrl)
-
-			clusters.EXPECT().GetClusters(pruningCtx).Return([]*storage.Cluster{{Id: "cluster"}}, nil)
-			entities.EXPECT().GetIDs(pruningCtx).Return(c.externalSrcs, nil)
-			clusterFlows.EXPECT().GetFlowStore(pruningCtx, "cluster").Return(flows, nil)
-
-			var filteredFlows []*storage.NetworkFlow
-			if c.expectedAdjustment {
-				filteredFlows = c.flows
-			}
-
-			flows.EXPECT().GetMatchingFlows(pruningCtx, gomock.Any(), gomock.Any()).DoAndReturn(
-				func(ctx context.Context, pred func(props *storage.NetworkFlowProperties) bool, since *protoTypes.Timestamp) ([]*storage.NetworkFlow, protoTypes.Timestamp, error) {
-					var ret []*storage.NetworkFlow
-					for _, f := range c.flows {
-						if pred(f.Props) {
-							ret = append(ret, f)
-						}
-					}
-
-					assert.ElementsMatch(t, filteredFlows, ret)
-					return ret, protoTypes.Timestamp{}, nil
-				}).Return(filteredFlows, protoTypes.Timestamp{}, nil)
-
-			if c.expectedAdjustment {
-				mgr.EXPECT().GetReadOnlyNetworkTree("cluster").Return(c.clusterTree)
-				mgr.EXPECT().GetDefaultNetworkTree().Return(c.defaultTree)
-
-				for _, f := range c.expectedFlows {
-					flows.EXPECT().UpsertFlows(pruningCtx, []*storage.NetworkFlow{f}, timestamp.FromProtobuf(f.GetLastSeenTimestamp())).Return(nil)
-				}
-
-				flows.EXPECT().RemoveMatchingFlows(pruningCtx, gomock.Any(), gomock.Any()).DoAndReturn(
-					func(ctx context.Context, keyFn func(props *storage.NetworkFlowProperties) bool, valueFn func(flow *storage.NetworkFlow) bool) error {
-						var deleted bool
-						for _, f := range c.flows {
-							if !keyFn(f.Props) {
-								continue
-							}
-							deleted = true
-						}
-						assert.Equal(t, c.expectedAdjustment, deleted)
-						return nil
-					})
-			}
-
-			gci := &garbageCollectorImpl{
-				clusters:       clusters,
-				networkflows:   clusterFlows,
-				externalSrcs:   entities,
-				networkTreeMgr: mgr,
-			}
-			gci.adjustOrphanedExternalNetworkFlows()
 		})
 	}
 }

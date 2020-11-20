@@ -12,9 +12,6 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
-	"github.com/stackrox/rox/central/networkgraph/aggregator"
-	networkEntityDatastore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
-	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDatastore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
@@ -23,15 +20,11 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -44,8 +37,6 @@ const (
 var (
 	log        = logging.LoggerForModule()
 	pruningCtx = sac.WithAllAccess(context.Background())
-	// Nov 15, 2020
-	pruneExtSrcConnSince = &types.Timestamp{Seconds: 1605398400}
 )
 
 // GarbageCollector implements a generic garbage collection mechanism
@@ -61,9 +52,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	pods podDatastore.DataStore,
 	processes processDatastore.DataStore,
 	processwhitelist processWhitelistDatastore.DataStore,
-	externalSrcs networkEntityDatastore.EntityDataStore,
 	networkflows networkFlowDatastore.ClusterDataStore,
-	networkTreeMgr networktree.Manager,
 	config configDatastore.DataStore,
 	imageComponents imageComponentDatastore.DataStore,
 	risks riskDataStore.DataStore) GarbageCollector {
@@ -76,9 +65,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		pods:             pods,
 		processes:        processes,
 		processwhitelist: processwhitelist,
-		externalSrcs:     externalSrcs,
 		networkflows:     networkflows,
-		networkTreeMgr:   networkTreeMgr,
 		config:           config,
 		risks:            risks,
 		stopSig:          concurrency.NewSignal(),
@@ -95,9 +82,7 @@ type garbageCollectorImpl struct {
 	pods             podDatastore.DataStore
 	processes        processDatastore.DataStore
 	processwhitelist processWhitelistDatastore.DataStore
-	externalSrcs     networkEntityDatastore.EntityDataStore
 	networkflows     networkFlowDatastore.ClusterDataStore
-	networkTreeMgr   networktree.Manager
 	config           configDatastore.DataStore
 	risks            riskDataStore.DataStore
 	stopSig          concurrency.Signal
@@ -159,7 +144,6 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	g.removeOrphanedProcessWhitelists(deploymentSet)
 	g.markOrphanedAlertsAsResolved(deploymentSet)
 	g.removeOrphanedNetworkFlows(deploymentSet)
-	g.adjustOrphanedExternalNetworkFlows()
 }
 
 func (g *garbageCollectorImpl) removeOrphanedProcesses(deploymentIDs, podIDs set.FrozenStringSet) {
@@ -310,89 +294,6 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(deployments set.Frozen
 		err = store.RemoveMatchingFlows(pruningCtx, keyMatchFn, valueMatchFn)
 		if err != nil {
 			log.Errorf("error removing orphaned flows for cluster %q: %v", c.GetName(), err)
-		}
-	}
-}
-
-func isOrphanedExtSrc(extSrcs set.FrozenStringSet, info *storage.NetworkEntityInfo) bool {
-	return info.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE && !extSrcs.Contains(info.GetId())
-}
-
-func (g *garbageCollectorImpl) adjustOrphanedExternalNetworkFlows() {
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		return
-	}
-
-	clusters, err := g.clusters.GetClusters(pruningCtx)
-	if err != nil {
-		utils.Should(errors.Wrap(err, "could not fetch clusters for orphaned network flows"))
-		return
-	}
-
-	externalSrcIDs, err := g.externalSrcs.GetIDs(pruningCtx)
-	if err != nil {
-		log.Error(err, "unable to fetch network entity IDs in pruning")
-		return
-	}
-	externalSrcSet := set.NewFrozenStringSet(externalSrcIDs...)
-
-	for _, c := range clusters {
-		store, err := g.networkflows.GetFlowStore(pruningCtx, c.GetId())
-		if err != nil {
-			log.Errorf("error getting flow store for cluster %q: %v", c.GetId(), err)
-			continue
-		} else if store == nil {
-			// We do not need to worry about external connections for non-existent clusters, as they are removed during
-			// deployment network flow pruning.
-			continue
-		}
-
-		keyMatchFn := func(props *storage.NetworkFlowProperties) bool {
-			return isOrphanedExtSrc(externalSrcSet, props.GetSrcEntity()) ||
-				isOrphanedExtSrc(externalSrcSet, props.GetDstEntity())
-		}
-
-		// We keep external sources network flows to an entity only as long as they exist, otherwise, we remap them to parent.
-		flows, _, err := store.GetMatchingFlows(pruningCtx, keyMatchFn, pruneExtSrcConnSince)
-		if err != nil {
-			log.Errorf("error reading orphaned external flows for cluster %q: %v", c.GetName(), err)
-			continue
-		}
-
-		if len(flows) == 0 {
-			continue
-		}
-
-		aggr, err := aggregator.NewSubnetToSupernetConnAggregator(
-			tree.NewMultiTreeWrapper(
-				g.networkTreeMgr.GetReadOnlyNetworkTree(c.GetId()),
-				g.networkTreeMgr.GetDefaultNetworkTree(),
-			),
-		)
-		if err != nil {
-			log.Error(err)
-			continue
-		}
-		adjustedFlows := aggr.Aggregate(flows)
-
-		var errs errorhelpers.ErrorList
-		for _, flow := range adjustedFlows {
-			// Flush out the metadata portion.
-			flow.Props.SrcEntity.Desc, flow.Props.DstEntity.Desc = nil, nil
-			// Ensure that the flows goes to correct buckets. Since this is not really update from Collector,
-			// we cannot use current TS as lastUpdatedTS.
-			if err := store.UpsertFlows(pruningCtx, []*storage.NetworkFlow{flow}, timestamp.FromProtobuf(flow.GetLastSeenTimestamp())); err != nil {
-				errs.AddError(err)
-			}
-		}
-		if err := errs.ToError(); err != nil {
-			log.Errorf("error storing adjusted external connections in pruning: %v", err)
-			continue
-		}
-
-		err = store.RemoveMatchingFlows(pruningCtx, keyMatchFn, nil)
-		if err != nil {
-			log.Errorf("error removing orphaned external flows for cluster %q: %v", c.GetName(), err)
 		}
 	}
 }
