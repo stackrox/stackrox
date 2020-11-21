@@ -2,11 +2,12 @@ package plugins
 
 import (
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
+	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-type creator func(backup *storage.ExternalBackup) (types.ExternalBackup, error)
+type creator func(backup *storage.ExternalBackup, reporter reporter.IntegrationHealthReporter) (types.ExternalBackup, error)
 
 var (
 	// Registry holds a map from name of the external backup to a creator of that type

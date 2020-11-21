@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/plugins"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/central/externalbackups/scheduler"
+	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -57,7 +58,7 @@ func renderExternalBackupFromProto(backup *storage.ExternalBackup) (types.Extern
 		return nil, fmt.Errorf("external backup with type %q is not implemented", backup.GetType())
 	}
 
-	backupInterface, err := creator(backup)
+	backupInterface, err := creator(backup, reporter.Singleton())
 	if err != nil {
 		return nil, err
 	}
