@@ -36,4 +36,7 @@ var (
 
 	// SensorInstallationExperience enables new features related to the new installation experience for sensor.
 	SensorInstallationExperience = registerFeature("Enable new installation user experience for Sensor", "ROX_SENSOR_INSTALLATION_EXPERIENCE", false)
+
+	// NetworkDetection enables new features related to the new network detection experience.
+	NetworkDetection = registerFeature("Enable new network detection experience", "ROX_NETWORK_DETECTION", false)
 )
