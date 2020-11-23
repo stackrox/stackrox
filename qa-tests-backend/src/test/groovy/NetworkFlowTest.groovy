@@ -12,7 +12,6 @@ import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPo
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
 import org.yaml.snakeyaml.Yaml
 import services.NetworkPolicyService
-import com.google.protobuf.Timestamp
 import groups.BAT
 import groups.RUNTIME
 import groups.NetworkFlowVisualization
@@ -38,8 +37,6 @@ import com.jayway.restassured.response.Response
 
 @Stepwise
 class NetworkFlowTest extends BaseSpecification {
-
-    static final private NETWORK_FLOW_UPDATE_CADENCE = 30000 // Network flow data is updated every 30 seconds
 
     // Deployment names
     static final private String UDPCONNECTIONTARGET = "udp-connection-target"
@@ -106,7 +103,7 @@ class NetworkFlowTest extends BaseSpecification {
                     .setImage("nginx:1.15.4-alpine")
                     .addLabel("app", SHORTCONSISTENTSOURCE)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["while sleep ${NETWORK_FLOW_UPDATE_CADENCE / 1000}; " +
+                    .setArgs(["while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
                                       "do wget -S http://${NGINXCONNECTIONTARGET}; " +
                                       "done" as String,]),
             new Deployment()
@@ -150,7 +147,7 @@ class NetworkFlowTest extends BaseSpecification {
                     .setImage("nginx:1.15.4-alpine")
                     .addLabel("app", EXTERNALDESTINATION)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["while sleep ${NETWORK_FLOW_UPDATE_CADENCE / 1000}; " +
+                    .setArgs(["while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
                                       "do wget -S http://www.google.com; " +
                                       "done" as String,]),
             new Deployment()
@@ -258,7 +255,7 @@ class NetworkFlowTest extends BaseSpecification {
         when:
         "Check for edge in network graph"
         println "Checking for edge between ${SINGLECONNECTIONSOURCE} and ${NGINXCONNECTIONTARGET}"
-        List<Edge> edges = checkForEdge(sourceUid, targetUid)
+        List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
         assert edges
 
         then:
@@ -280,14 +277,14 @@ class NetworkFlowTest extends BaseSpecification {
         then:
         "Check for edge between sensor and central"
         println "Checking for edge between sensor and central"
-        List<Edge> edges = checkForEdge(sensorUid, centralUid)
+        List<Edge> edges = NetworkGraphUtil.checkForEdge(sensorUid, centralUid)
         assert edges
 
         then:
         "Check for edge between collector and sensor, if collector is installed"
         if (collectorUid != null) {
             println "Checking for edge between collector and sensor"
-            edges = checkForEdge(collectorUid, sensorUid)
+            edges = NetworkGraphUtil.checkForEdge(collectorUid, sensorUid)
             assert edges
         }
     }
@@ -306,7 +303,7 @@ class NetworkFlowTest extends BaseSpecification {
         expect:
         "Check for edge in network graph"
         println "Checking for edge between ${sourceDeployment} and ${targetDeployment}"
-        List<Edge> edges = checkForEdge(sourceUid, targetUid)
+        List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
 
         assert edges
         assert edges.get(0).protocol == protocol
@@ -362,7 +359,7 @@ class NetworkFlowTest extends BaseSpecification {
         when:
         "Check for edge in network graph"
         println "Checking for edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
-        List<Edge> edges = checkForEdge(sourceUid, targetUid)
+        List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
         assert edges
 
         then:
@@ -380,7 +377,7 @@ class NetworkFlowTest extends BaseSpecification {
         expect:
         "Check for edge in network graph"
         println "Checking for edge from ${EXTERNALDESTINATION} to external target"
-        List<Edge> edges = checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
+        List<Edge> edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         assert edges
     }
 
@@ -413,7 +410,8 @@ class NetworkFlowTest extends BaseSpecification {
         then:
         "Check for edge in network graph"
         println "Checking for edge from external target to ${EXTERNALDESTINATION}"
-        List<Edge> edges = checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
+        List<Edge> edges =
+                NetworkGraphUtil.checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
         assert edges
     }
 
@@ -443,7 +441,7 @@ class NetworkFlowTest extends BaseSpecification {
         then:
         "Check for edge in network graph"
         println "Checking for edge from external target to ${EXTERNALDESTINATION}"
-        List<Edge> edges = checkForEdge(newDeployment.deploymentUid, deploymentUid, null, 180)
+        List<Edge> edges = NetworkGraphUtil.checkForEdge(newDeployment.deploymentUid, deploymentUid, null, 180)
         assert edges
 
         cleanup:
@@ -465,7 +463,7 @@ class NetworkFlowTest extends BaseSpecification {
         expect:
         "Assert connection states"
         println "Checking for NO edge between ${NOCONNECTIONSOURCE} and ${NGINXCONNECTIONTARGET}"
-        assert !checkForEdge(sourceUid, targetUid, null, 30)
+        assert !NetworkGraphUtil.checkForEdge(sourceUid, targetUid, null, 30)
     }
 
     @Category([NetworkFlowVisualization])
@@ -480,7 +478,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         when:
         "Check for edge in entwork graph"
-        List<Edge> edges = checkForEdge(sourceUid, targetUid)
+        List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
         assert edges
 
         then:
@@ -515,7 +513,7 @@ class NetworkFlowTest extends BaseSpecification {
         and:
         "Check for original edge in network graph"
         println "Checking for edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
-        List<Edge> edges = checkForEdge(sourceUid, targetUid)
+        List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
         assert edges
 
         then:
@@ -777,26 +775,6 @@ class NetworkFlowTest extends BaseSpecification {
         }
 
         return match
-    }
-
-    private static checkForEdge(String sourceId, String targetId, Timestamp since = null, int timeoutSeconds = 90) {
-        int intervalSeconds = 1
-        int waitTime
-        def startTime = System.currentTimeMillis()
-        for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
-            if (waitTime > 0) {
-                sleep intervalSeconds * 1000
-            }
-
-            def graph = NetworkGraphService.getNetworkGraph(since)
-            def edges = NetworkGraphUtil.findEdges(graph, sourceId, targetId)
-            if (edges != null && edges.size() > 0) {
-                println "Found source -> target in graph after ${(System.currentTimeMillis() - startTime) / 1000}s"
-                return edges
-            }
-        }
-        println "SR did not detect the edge in Network Flow graph"
-        return null
     }
 
     private waitForEdgeUpdate(Edge edge, int timeoutSeconds = 60, int addSecondsToEdgeTimestamp = 0) {
