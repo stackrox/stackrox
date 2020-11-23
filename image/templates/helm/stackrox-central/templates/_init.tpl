@@ -39,7 +39,7 @@
    */}}
 {{ if ne $.Release.Namespace "stackrox" }}
   {{ if $._rox.allowNonstandardNamespace }}
-    {{ include "srox.warn" (list $ "You have chosen to deploy to a namespace other than 'stackrox'. This might work, but is unsupported. Use with caution.") }}
+    {{ include "srox.note" (list $ (printf "You have chosen to deploy to namespace '%s'." $.Release.Namespace)) }}
   {{ else }}
     {{ include "srox.fail" (printf "You have chosen to deploy to namespace '%s', not 'stackrox'. If this was accidental, please re-run helm with the '-n stackrox' option. Otherwise, if you need to deploy into this namespace, set the 'allowNonstandardNamespace' configuration value to true." $.Release.Namespace) }}
   {{ end }}
@@ -51,6 +51,21 @@
   {{ else }}
     {{ include "srox.fail" (printf "You have chosen a release name of '%s', not '%s'. We strongly recommend using the standard release name. If you must use a different name, set the 'allowNonstandardReleaseName' configuration option to true." $.Release.Name $.Chart.Name) }}
   {{ end }}
+{{ end }}
+
+{{/*
+    Set prefix for global resources.
+   */}}
+{{ if kindIs "invalid" $._rox.globalPrefix }}
+  {{ if eq $.Release.Namespace "stackrox" }}
+    {{ $_ := set $._rox "globalPrefix" "stackrox" }}
+  {{ else }}
+    {{ $_ := set $._rox "globalPrefix" (printf "stackrox-%s" (trimPrefix "stackrox-" $.Release.Namespace)) }}
+  {{ end }}
+{{ end }}
+
+{{ if ne $._rox.globalPrefix "stackrox" }}
+  {{ include "srox.note" (list $ (printf "Global Kubernetes resources are prefixed with '%s'." $._rox.globalPrefix)) }}
 {{ end }}
 
 {{/*
@@ -366,4 +381,5 @@
 {{ end }}
 
 {{ end }}
+
 {{ end }}

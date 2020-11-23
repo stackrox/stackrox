@@ -185,3 +185,16 @@
   {{ end }}
 {{ end }}
 {{ end }}
+
+{{/* Add namespace specific prefixes for global resources to avoid resource name clashes for multi-namespace deployments. */}}
+{{- define "srox.globalResourceName" -}}
+{{- $ := index . 0 -}}
+{{- $name := index . 1 -}}
+{{- if eq $.Release.Namespace "stackrox" -}}
+  {{- /* Standard namespace, use resource name as is. */ -}}
+  {{- $name -}}
+{{- else -}}
+  {{- /* Add global prefix to resource name. */ -}}
+  {{- printf "%s-%s" $._rox.globalPrefix (trimPrefix "stackrox-" $name) -}}
+{{- end -}}
+{{- end -}}

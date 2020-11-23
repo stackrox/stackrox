@@ -8,6 +8,9 @@
 # Configuration file for scanner.
 
 scanner:
+  {{- if ne .Release.Namespace "stackrox" }}
+  centralEndpoint: https://central.{{ .Release.Namespace }}
+  {{- end }}
   database:
     # Database driver
     type: pgsql

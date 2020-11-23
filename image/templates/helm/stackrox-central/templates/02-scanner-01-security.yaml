@@ -5,7 +5,7 @@
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: stackrox-scanner-psp
+  name: {{ include "srox.globalResourceName" (list . "stackrox-scanner-psp") }}
   labels:
     {{- include "srox.labels" (list . "clusterrole" "stackrox-scanner-psp") | nindent 4 }}
   annotations:
@@ -16,7 +16,7 @@ rules:
   resources:
   - podsecuritypolicies
   resourceNames:
-  - stackrox-scanner
+  - {{ include "srox.globalResourceName" (list . "stackrox-scanner") }}
   verbs:
   - use
 
@@ -34,7 +34,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: stackrox-scanner-psp
+  name: {{ include "srox.globalResourceName" (list . "stackrox-scanner-psp") }}
 subjects:
   - kind: ServiceAccount
     name: scanner
@@ -45,7 +45,7 @@ subjects:
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
-  name: stackrox-scanner
+  name: {{ include "srox.globalResourceName" (list . "stackrox-scanner") }}
   labels:
     {{- include "srox.labels" (list . "podsecuritypolicy" "stackrox-scanner") | nindent 4 }}
   annotations:
@@ -78,7 +78,7 @@ spec:
 kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1
 metadata:
-  name: scanner
+  name: {{ include "srox.globalResourceName" (list . "scanner") }}
   labels:
     {{- include "srox.labels" (list . "securitycontextconstraints" "scanner") | nindent 4 }}
   annotations:

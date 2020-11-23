@@ -127,3 +127,4 @@ meta:
     overrideAPIResources: null # [string]
     extraAPIResources: null # [string]
   noCreateStorageClass: null # bool
+globalPrefix: null # string

@@ -86,7 +86,7 @@ func TestBase(t *testing.T) {
 	suite.Run(t, new(baseSuite))
 }
 
-func (s *baseSuite) LoadAndRender(valStrs ...string) (*chart.Chart, map[string]string) {
+func (s *baseSuite) LoadAndRenderWithNamespace(namespace string, valStrs ...string) (*chart.Chart, map[string]string) {
 	var helmVals chartutil.Values
 	for _, valStr := range valStrs {
 		extraVals, err := chartutil.ReadValues([]byte(valStr))
@@ -101,7 +101,11 @@ func (s *baseSuite) LoadAndRender(valStrs ...string) (*chart.Chart, map[string]s
 	ch, err := tpl.InstantiateAndLoad(metaValues)
 	s.Require().NoError(err, "error instantiating chart")
 
-	rendered, err := helmutil.Render(ch, helmVals, installOpts)
+	effectiveInstallOpts := installOpts
+	if namespace != "" {
+		effectiveInstallOpts.ReleaseOptions.Namespace = namespace
+	}
+	rendered, err := helmutil.Render(ch, helmVals, effectiveInstallOpts)
 	s.Require().NoError(err, "failed to render chart")
 
 	for k, v := range rendered {
@@ -109,6 +113,10 @@ func (s *baseSuite) LoadAndRender(valStrs ...string) (*chart.Chart, map[string]s
 	}
 
 	return ch, rendered
+}
+
+func (s *baseSuite) LoadAndRender(valStrs ...string) (*chart.Chart, map[string]string) {
+	return s.LoadAndRenderWithNamespace("", valStrs...)
 }
 
 func (s *baseSuite) ParseObjects(objYAMLs map[string]string) []unstructured.Unstructured {

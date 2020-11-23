@@ -16,7 +16,11 @@ metadata:
     "helm.sh/hook-delete-policy": never
 spec:
   {{- if ._rox.central.persistence._pvcCfg.storageClass }}
+  {{- if eq ._rox.central.persistence._pvcCfg.storageClass "stackrox-gke-ssd" }}
+  storageClassName: {{ include "srox.globalResourceName" (list . "stackrox-gke-ssd") }}
+  {{- else }}
   storageClassName: {{ ._rox.central.persistence._pvcCfg.storageClass }}
+  {{- end}}
   {{- end}}
   accessModes:
     - ReadWriteOnce
