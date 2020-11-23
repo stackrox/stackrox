@@ -169,6 +169,7 @@
 #    loadBalancer:
 #      enabled: null
 #      port: null
+#      ip: null
 #
 #    # NodePort configuration.
 #    # Disabled by default.

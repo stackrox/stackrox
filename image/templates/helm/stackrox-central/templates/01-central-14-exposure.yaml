@@ -82,5 +82,8 @@ spec:
     targetPort: api
   selector:
     app: central
+{{- if ._rox.central.exposure.loadBalancer.ip }}
+  loadBalancerIP: {{ ._rox.central.exposure.loadBalancer.ip }}
+{{- end }}
 ---
 {{- end}}

@@ -181,6 +181,8 @@
 #       enabled: true
 #       # The port on which to expose StackRox Central. Defaults to 443.
 #       port: 443
+#       # The static IP to assign to the load balancer. Defaults to dynamic.
+#       ip: 10.0.0.0
 #
 #     # Exposure via a Kubernetes NodePort service.
 #     nodePort:

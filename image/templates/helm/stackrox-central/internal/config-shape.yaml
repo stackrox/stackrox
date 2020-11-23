@@ -54,6 +54,7 @@ central:
     loadBalancer:
       enabled: null # bool
       port: null # int
+      ip: null # string
     nodePort:
       enabled: null # bool
       port: null # int
