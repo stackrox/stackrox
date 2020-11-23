@@ -99,8 +99,33 @@ class Deployment {
         return this
     }
 
-    Deployment addSecretName(String v, String s) {
-        this.secretNames.put(v, s)
+    Deployment addVolumeFromConfigMap(ConfigMap configMap, String mountPath) {
+        String volumeName = "${configMap.name}-volume"
+        this.volumes.add(new Volume(name: volumeName,
+            configMap: configMap))
+        this.volumeMounts.add(new VolumeMount(
+            mountPath: mountPath,
+            name: volumeName,
+            readOnly: true,
+        ))
+        return this
+    }
+
+    Deployment addSecretName(String volumeName, String secretName) {
+        this.secretNames.put(volumeName, secretName)
+        return this
+    }
+
+    Deployment addVolumeFromSecret(Secret secret, String mountPath) {
+        String volumeName = "${secret.name}-volume"
+        this.volumes.add(new Volume(name: volumeName,
+                secret: secret))
+        this.volumeMounts.add(new VolumeMount(
+                name: volumeName,
+                mountPath: mountPath,
+                readOnly: true,
+        ))
+        this.addSecretName(volumeName, secret.name)
         return this
     }
 

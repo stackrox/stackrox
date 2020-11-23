@@ -1,9 +1,11 @@
 package objects
 
 class Secret {
-    def name
-    def namespace
-    def username
-    def password
-    def server
+    String name
+    String namespace
+    String username
+    String password
+    String server
+    Map<String, String> data
+    String type
 }

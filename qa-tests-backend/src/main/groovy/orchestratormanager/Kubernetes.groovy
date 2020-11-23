@@ -2,9 +2,9 @@ package orchestratormanager
 
 import common.YamlGenerator
 import io.fabric8.kubernetes.api.model.Capabilities
-import io.fabric8.kubernetes.api.model.ConfigMap
 import io.fabric8.kubernetes.api.model.ConfigMapEnvSource
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder
+import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource
 import io.fabric8.kubernetes.api.model.Container
 import io.fabric8.kubernetes.api.model.ContainerPort
 import io.fabric8.kubernetes.api.model.ContainerStatus
@@ -26,7 +26,6 @@ import io.fabric8.kubernetes.api.model.PodTemplateSpec
 import io.fabric8.kubernetes.api.model.Quantity
 import io.fabric8.kubernetes.api.model.ResourceFieldSelectorBuilder
 import io.fabric8.kubernetes.api.model.ResourceRequirements
-import io.fabric8.kubernetes.api.model.Secret
 import io.fabric8.kubernetes.api.model.SecretEnvSource
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder
 import io.fabric8.kubernetes.api.model.SecretVolumeSource
@@ -40,6 +39,8 @@ import io.fabric8.kubernetes.api.model.VolumeMount
 import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
 import io.fabric8.kubernetes.api.model.apps.DaemonSet as K8sDaemonSet
 import io.fabric8.kubernetes.api.model.batch.Job as K8sJob
+import io.fabric8.kubernetes.api.model.ConfigMap as K8sConfigMap
+import io.fabric8.kubernetes.api.model.Secret as K8sSecret
 import io.fabric8.kubernetes.api.model.apps.DaemonSetList
 import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
 import io.fabric8.kubernetes.api.model.apps.DeploymentList
@@ -78,6 +79,7 @@ import io.fabric8.kubernetes.client.dsl.Resource
 import io.fabric8.kubernetes.client.dsl.ScalableResource
 import io.fabric8.kubernetes.client.utils.BlockingInputStreamPumper
 import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
+import objects.ConfigMap
 import objects.ConfigMapKeyRef
 import objects.DaemonSet
 import objects.Deployment
@@ -90,6 +92,7 @@ import objects.K8sSubject
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Node
+import objects.Secret
 import objects.SecretKeyRef
 import okhttp3.Response
 import util.Timer
@@ -444,10 +447,10 @@ class Kubernetes implements OrchestratorMain {
         k8sJob.spec.template.spec.restartPolicy = "Never"
 
         try {
-            println("Told the orchestrator to create job " + job.getName())
+            println "Told the orchestrator to create job " + job.getName()
             return this.jobs.inNamespace(job.namespace).createOrReplace(k8sJob)
         } catch (Exception e) {
-            println("Error creating k8s job" + e.toString())
+            println "Error creating k8s job" + e.toString()
         }
         return null
     }
@@ -645,7 +648,7 @@ class Kubernetes implements OrchestratorMain {
                 println deployment.serviceName ?: deployment.name + " service not created"
                 assert created
             }
-            println(deployment.serviceName ?: deployment.name + " service created")
+            println deployment.serviceName ?: deployment.name + " service created"
             if (deployment.createLoadBalancer) {
                 deployment.loadBalancerIP = waitForLoadBalancer(deployment.serviceName ?:
                         deployment.name, deployment.namespace)
@@ -730,7 +733,7 @@ class Kubernetes implements OrchestratorMain {
     String waitForLoadBalancer(String serviceName, String namespace) {
         Service service
         String loadBalancerIP
-        int iterations = lbWaitTimeSeconds/intervalTime
+        int iterations = lbWaitTimeSeconds / intervalTime
         println "Waiting for LB external IP for " + serviceName
         Timer t = new Timer(iterations, intervalTime)
         while (t.IsValid()) {
@@ -743,7 +746,7 @@ class Kubernetes implements OrchestratorMain {
             }
         }
         if (loadBalancerIP == null) {
-            println("Could not get loadBalancer IP in ${t.SecondsSince()} seconds and ${iterations} iterations")
+            println "Could not get loadBalancer IP in ${t.SecondsSince()} seconds and ${iterations} iterations"
         }
         return loadBalancerIP
     }
@@ -754,7 +757,7 @@ class Kubernetes implements OrchestratorMain {
         int retries = maxWaitTimeSeconds / sleepDurationSeconds
         Timer t = new Timer(retries, sleepDurationSeconds)
         while (t.IsValid()) {
-            Secret secret = client.secrets().inNamespace(namespace).withName(secretName).get()
+            K8sSecret secret = client.secrets().inNamespace(namespace).withName(secretName).get()
             if (secret != null) {
                 println secretName + ": secret created."
                 return secret
@@ -764,7 +767,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     String createImagePullSecret(String name, String username, String password, String namespace = this.namespace) {
-        return createImagePullSecret(new objects.Secret(
+        return createImagePullSecret(new Secret(
             name: name,
             server: "https://docker.io",
             username: username,
@@ -773,7 +776,7 @@ class Kubernetes implements OrchestratorMain {
         ))
     }
 
-    String createImagePullSecret(objects.Secret secret) {
+    String createImagePullSecret(Secret secret) {
         if (!secret.username || !secret.password) {
             throw new RuntimeException("Secret requires a username and password: " +
                     "username provided: ${secret.username}, " +
@@ -787,7 +790,7 @@ class Kubernetes implements OrchestratorMain {
         Map<String, String> data = new HashMap<String, String>()
         data.put(".dockerconfigjson", Base64.getEncoder().encodeToString(dockerConfigJSON.getBytes()))
 
-        Secret k8sSecret = new Secret(
+        K8sSecret k8sSecret = new K8sSecret(
                 apiVersion: "v1",
                 kind: "Secret",
                 type: "kubernetes.io/dockerconfigjson",
@@ -798,12 +801,27 @@ class Kubernetes implements OrchestratorMain {
                 )
         )
 
-        Secret createdSecret = client.secrets().inNamespace(namespace).createOrReplace(k8sSecret)
+        K8sSecret createdSecret = client.secrets().inNamespace(namespace).createOrReplace(k8sSecret)
         if (createdSecret != null) {
             createdSecret = waitForSecretCreation(secret.name, namespace)
             return createdSecret.metadata.uid
         }
         throw new RuntimeException("Couldn't create secret")
+    }
+
+    String createSecret(Secret secret) {
+        K8sSecret k8sSecret = new K8sSecret(
+                apiVersion: "v1",
+                kind: "Secret",
+                data: secret.data,
+                type: secret.type,
+                metadata: new ObjectMeta(
+                        name: secret.name,
+                )
+        )
+
+        def sec = client.secrets().inNamespace(secret.namespace).createOrReplace(k8sSecret)
+        return sec.metadata.uid
     }
 
     String createSecret(String name, String namespace = this.namespace) {
@@ -812,7 +830,7 @@ class Kubernetes implements OrchestratorMain {
             data.put("username", "YWRtaW4=")
             data.put("password", "MWYyZDFlMmU2N2Rm")
 
-            Secret secret = new Secret(
+            K8sSecret secret = new K8sSecret(
                     apiVersion: "v1",
                     kind: "Secret",
                     type: "Opaque",
@@ -823,19 +841,19 @@ class Kubernetes implements OrchestratorMain {
             )
 
             try {
-                Secret createdSecret = client.secrets().inNamespace(namespace).createOrReplace(secret)
+                K8sSecret createdSecret = client.secrets().inNamespace(namespace).createOrReplace(secret)
                 if (createdSecret != null) {
                     createdSecret = waitForSecretCreation(name, namespace)
                     return createdSecret.metadata.uid
                 }
             } catch (Exception e) {
-                println("Error creating secret" + e.toString())
+                println "Error creating secret" + e.toString()
             }
             return null
         }
     }
 
-    String updateSecret(Secret secret) {
+    String updateSecret(K8sSecret secret) {
         return withRetry(2, 3) {
             client.secrets().inNamespace(secret.metadata.namespace).createOrReplace(secret)
         }
@@ -857,7 +875,7 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
-    Secret getSecret(String name, String namespace) {
+    K8sSecret getSecret(String name, String namespace) {
         return evaluateWithRetry(2, 3) {
             return client.secrets().inNamespace(namespace).withName(name).get()
         }
@@ -1382,8 +1400,16 @@ class Kubernetes implements OrchestratorMain {
         ConfigMaps
     */
 
+    def createConfigMap(ConfigMap configMap) {
+        createConfigMap(
+                configMap.getName(),
+                configMap.getData(),
+                configMap.getNamespace()
+        )
+    }
+
     def createConfigMap(String name, Map<String,String> data, String namespace = this.namespace) {
-        ConfigMap configMap = new ConfigMap(
+        K8sConfigMap configMap = new K8sConfigMap(
                 apiVersion: "v1",
                 kind: "ConfigMap",
                 data: data,
@@ -1392,19 +1418,18 @@ class Kubernetes implements OrchestratorMain {
                 )
         )
 
-        try {
-            client.configMaps().inNamespace(namespace).createOrReplace(configMap)
-            Timer t = new Timer(20, 3)
-            while (t.IsValid()) {
-                ConfigMap foundAfterCreate = client.configMaps().inNamespace(namespace).withName(name).get()
-                if (foundAfterCreate != null) {
-                    println name + ": config map created."
-                    return foundAfterCreate
-                }
-            }
-            throw new RuntimeException("Config map not found after create")
-        } catch (Exception e) {
-            println("Error creating configMap: " + e.toString())
+        def config = client.configMaps().inNamespace(namespace).createOrReplace(configMap)
+        return config.metadata.uid
+    }
+
+    ConfigMap getConfigMap(String name, String namespace) {
+        return evaluateWithRetry(2, 3) {
+            K8sConfigMap conf = client.configMaps().inNamespace(namespace).withName(name).get()
+            return new ConfigMap(
+                    name: conf.metadata.name,
+                    namespace: conf.metadata.namespace,
+                    data: conf.data
+            )
         }
     }
 
@@ -1548,13 +1573,13 @@ class Kubernetes implements OrchestratorMain {
 
         try {
             client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
-            println("Told the orchestrator to create " + deployment.name)
+            println "Told the orchestrator to create " + deployment.name
             if (deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)
             }
             return true
         } catch (Exception e) {
-            println("Error creating k8s deployment: " + e.toString())
+            println "Error creating k8s deployment: " + e.toString()
             return false
         }
     }
@@ -1568,7 +1593,7 @@ class Kubernetes implements OrchestratorMain {
             )
             updateDeploymentDetails(deployment)
         } catch (Exception e) {
-            println("Error while waiting for deployment/populating deployment info: " + e.toString())
+            println "Error while waiting for deployment/populating deployment info: " + e.toString()
         }
     }
 
@@ -1624,9 +1649,9 @@ class Kubernetes implements OrchestratorMain {
 
         try {
             this.daemonsets.inNamespace(daemonSet.namespace).createOrReplace(ds)
-            println("Told the orchestrator to create " + daemonSet.getName())
+            println "Told the orchestrator to create " + daemonSet.getName()
         } catch (Exception e) {
-            println("Error creating k8s deployment" + e.toString())
+            println "Error creating k8s deployment" + e.toString()
         }
     }
 
@@ -1639,7 +1664,7 @@ class Kubernetes implements OrchestratorMain {
             )
             updateDeploymentDetails(daemonSet)
         } catch (Exception e) {
-            println("Error while waiting for daemonset/populating daemonset info: " + e.toString())
+            println "Error while waiting for daemonset/populating daemonset info: " + e.toString()
         }
     }
 
@@ -1741,6 +1766,10 @@ class Kubernetes implements OrchestratorMain {
         deployment.volumes.each {
             v -> Volume vol = new Volume(
                     name: v.name,
+                    configMap: v.configMap ? new ConfigMapVolumeSource(
+                            name: v.configMap.name
+                        ) :
+                        null,
                     hostPath: v.hostPath ? new HostPathVolumeSource(
                             path: v.mountPath,
                             type: "Directory") :

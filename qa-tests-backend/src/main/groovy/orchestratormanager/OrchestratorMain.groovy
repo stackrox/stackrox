@@ -3,6 +3,7 @@ package orchestratormanager
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
+import objects.ConfigMap
 import objects.DaemonSet
 import objects.Deployment
 import objects.Job
@@ -74,6 +75,7 @@ interface OrchestratorMain {
     def waitForServiceDeletion(Service service)
 
     //Secrets
+    def createSecret(Secret secret)
     def createSecret(String name, String namespace)
     def createImagePullSecret(String name, String username, String password, String namespace)
     def createImagePullSecret(Secret secret)
@@ -133,7 +135,9 @@ interface OrchestratorMain {
     def getJobCount()
 
     //ConfigMaps
+    def createConfigMap(ConfigMap configMap)
     def createConfigMap(String name, Map<String,String> data, String namespace)
+    ConfigMap getConfigMap(String name, String namespace)
 
     //Misc
     def execInContainer(Deployment deployment, String cmd)
