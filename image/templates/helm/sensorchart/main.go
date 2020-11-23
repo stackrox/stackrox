@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helmutil"
+	"github.com/stackrox/rox/pkg/version"
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
@@ -34,6 +35,7 @@ func mainCmd(args []string) error {
 
 	metaValues := map[string]interface{}{
 		"ImageTag":          imageTag,
+		"ChartVersion":      version.DeriveChartVersion(imageTag),
 		"CollectorImageTag": collectorImageTag,
 		"KubectlOutput":     false,
 	}

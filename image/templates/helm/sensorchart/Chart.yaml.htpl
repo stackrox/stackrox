@@ -1,7 +1,7 @@
 apiVersion: v1
 name: sensor
 description: StackRox Sensor
-version: [<.ImageTag>]
+version: [<.ChartVersion>]
 appVersion: [<.ImageTag>]
 maintainers:
   - name: stackrox
