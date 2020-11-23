@@ -1,11 +1,15 @@
 package util
 
+import com.google.protobuf.Timestamp
 import io.stackrox.proto.storage.NetworkFlowOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo
 import objects.Edge
 import io.stackrox.proto.api.v1.NetworkGraphOuterClass
+import services.NetworkGraphService
 
 class NetworkGraphUtil {
+
+    static final NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS = 30 // Network flow data is updated every 30 seconds
 
     static int edgeCount(NetworkGraphOuterClass.NetworkGraph graph) {
         int numEdges = 0
@@ -101,5 +105,24 @@ class NetworkGraphUtil {
         }
     }
 
+    static checkForEdge(String sourceId, String targetId, Timestamp since = null, int timeoutSeconds = 90) {
+        int intervalSeconds = 1
+        int waitTime
+        def startTime = System.currentTimeMillis()
+        for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
+            if (waitTime > 0) {
+                sleep intervalSeconds * 1000
+            }
+
+            def graph = NetworkGraphService.getNetworkGraph(since)
+            def edges = NetworkGraphUtil.findEdges(graph, sourceId, targetId)
+            if (edges != null && edges.size() > 0) {
+                println "Found source -> target in graph after ${(System.currentTimeMillis() - startTime) / 1000}s"
+                return edges
+            }
+        }
+        println "SR did not detect the edge in Network Flow graph"
+        return null
+    }
 }
 
