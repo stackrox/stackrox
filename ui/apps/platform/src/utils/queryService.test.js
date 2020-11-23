@@ -21,4 +21,19 @@ describe('queryService.', () => {
             expect(queryStr).toEqual('cve:CVE-2005-2541,CVE-2017-12424,CVE-2018-16402');
         });
     });
+
+    describe('entityContextToQueryObject', () => {
+        it('returns the query object for a Component', () => {
+            const entityContext = {
+                COMPONENT: 'cHl0aG9uMy40:My40LjMtMXVidW50dTF-MTQuMDQuNw',
+            };
+
+            const queryObject = queryService.entityContextToQueryObject(entityContext);
+
+            expect(queryObject).toEqual({
+                'COMPONENT NAME': 'cHl0aG9uMy40',
+                'COMPONENT VERSION': 'My40LjMtMXVidW50dTF-MTQuMDQuNw',
+            });
+        });
+    });
 });
