@@ -22,6 +22,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	clusterInitService "github.com/stackrox/rox/central/clusterinit/service"
+	clustersHelmConfig "github.com/stackrox/rox/central/clusters/helmconfig"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
 	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
 	complianceHandlers "github.com/stackrox/rox/central/compliance/handlers"
@@ -636,6 +637,15 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
 			ServerHandler: backupRestoreService.Singleton().ResumeRestoreHandler(),
 		},
+	}
+
+	if features.SensorInstallationExperience.Enabled() {
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/extensions/clusters/helm-config.yaml",
+			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster))),
+			ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
+			Compression:   true,
+		})
 	}
 
 	logImbueRoute := "/api/logimbue"

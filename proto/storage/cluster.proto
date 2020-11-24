@@ -68,9 +68,28 @@ message TolerationsConfig {
         bool  disabled  = 1;
 }
 
+message StaticClusterConfig {
+    ClusterType               type                         = 1;
+    string                    main_image                   = 2;
+    string                    central_api_endpoint         = 3;
+    CollectionMethod          collection_method            = 4;
+    string                    collector_image              = 5;
+    bool                      admission_controller         = 6;
+    bool                      admission_controller_updates = 7;
+    TolerationsConfig         tolerations_config           = 8;
+    bool                      slim_collector               = 9;
+}
+
 message DynamicClusterConfig {
     AdmissionControllerConfig admission_controller_config = 1;
     string registry_override = 2;
+}
+
+// Encodes a complete cluster configuration minus ID/Name identifiers
+// including static and dynamic settings.
+message CompleteClusterConfig {
+    DynamicClusterConfig dynamic_config = 1;
+    StaticClusterConfig  static_config  = 2;
 }
 
 message Cluster {
@@ -96,6 +115,7 @@ message Cluster {
     int64                     priority                         = 20;
     ClusterHealthStatus       health_status                    = 22;
     bool                      slim_collector                   = 23;
+    CompleteClusterConfig     helm_config                      = 24;
 }
 
 message ClusterCertExpiryStatus {

@@ -176,6 +176,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"collectorImage: String!",
 		"dynamicConfig: DynamicClusterConfig",
 		"healthStatus: ClusterHealthStatus",
+		"helmConfig: CompleteClusterConfig",
 		"id: ID!",
 		"mainImage: String!",
 		"name: String!",
@@ -244,6 +245,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Comparator(0)))
+	utils.Must(builder.AddType("CompleteClusterConfig", []string{
+		"dynamicConfig: DynamicClusterConfig",
+		"staticConfig: StaticClusterConfig",
+	}))
 	utils.Must(builder.AddType("ComplianceAggregation_AggregationKey", []string{
 		"id: ID!",
 		"scope: ComplianceAggregation_Scope!",
@@ -1051,6 +1056,17 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"httpToken: String!",
 		"insecure: Boolean!",
 		"truncate: Int!",
+	}))
+	utils.Must(builder.AddType("StaticClusterConfig", []string{
+		"admissionController: Boolean!",
+		"admissionControllerUpdates: Boolean!",
+		"centralApiEndpoint: String!",
+		"collectionMethod: CollectionMethod!",
+		"collectorImage: String!",
+		"mainImage: String!",
+		"slimCollector: Boolean!",
+		"tolerationsConfig: TolerationsConfig",
+		"type: ClusterType!",
 	}))
 	utils.Must(builder.AddType("Subject", []string{
 		"clusterId: String!",
@@ -2477,6 +2493,11 @@ func (resolver *clusterResolver) HealthStatus(ctx context.Context) (*clusterHeal
 	return resolver.root.wrapClusterHealthStatus(value, true, nil)
 }
 
+func (resolver *clusterResolver) HelmConfig(ctx context.Context) (*completeClusterConfigResolver, error) {
+	value := resolver.data.GetHelmConfig()
+	return resolver.root.wrapCompleteClusterConfig(value, true, nil)
+}
+
 func (resolver *clusterResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
@@ -3000,6 +3021,40 @@ func toComparators(values *[]string) []storage.Comparator {
 		output[i] = toComparator(&v)
 	}
 	return output
+}
+
+type completeClusterConfigResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.CompleteClusterConfig
+}
+
+func (resolver *Resolver) wrapCompleteClusterConfig(value *storage.CompleteClusterConfig, ok bool, err error) (*completeClusterConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &completeClusterConfigResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCompleteClusterConfigs(values []*storage.CompleteClusterConfig, err error) ([]*completeClusterConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*completeClusterConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &completeClusterConfigResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *completeClusterConfigResolver) DynamicConfig(ctx context.Context) (*dynamicClusterConfigResolver, error) {
+	value := resolver.data.GetDynamicConfig()
+	return resolver.root.wrapDynamicClusterConfig(value, true, nil)
+}
+
+func (resolver *completeClusterConfigResolver) StaticConfig(ctx context.Context) (*staticClusterConfigResolver, error) {
+	value := resolver.data.GetStaticConfig()
+	return resolver.root.wrapStaticClusterConfig(value, true, nil)
 }
 
 type complianceAggregation_AggregationKeyResolver struct {
@@ -9024,6 +9079,75 @@ func (resolver *splunkResolver) Insecure(ctx context.Context) bool {
 func (resolver *splunkResolver) Truncate(ctx context.Context) int32 {
 	value := resolver.data.GetTruncate()
 	return int32(value)
+}
+
+type staticClusterConfigResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.StaticClusterConfig
+}
+
+func (resolver *Resolver) wrapStaticClusterConfig(value *storage.StaticClusterConfig, ok bool, err error) (*staticClusterConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &staticClusterConfigResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapStaticClusterConfigs(values []*storage.StaticClusterConfig, err error) ([]*staticClusterConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*staticClusterConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &staticClusterConfigResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *staticClusterConfigResolver) AdmissionController(ctx context.Context) bool {
+	value := resolver.data.GetAdmissionController()
+	return value
+}
+
+func (resolver *staticClusterConfigResolver) AdmissionControllerUpdates(ctx context.Context) bool {
+	value := resolver.data.GetAdmissionControllerUpdates()
+	return value
+}
+
+func (resolver *staticClusterConfigResolver) CentralApiEndpoint(ctx context.Context) string {
+	value := resolver.data.GetCentralApiEndpoint()
+	return value
+}
+
+func (resolver *staticClusterConfigResolver) CollectionMethod(ctx context.Context) string {
+	value := resolver.data.GetCollectionMethod()
+	return value.String()
+}
+
+func (resolver *staticClusterConfigResolver) CollectorImage(ctx context.Context) string {
+	value := resolver.data.GetCollectorImage()
+	return value
+}
+
+func (resolver *staticClusterConfigResolver) MainImage(ctx context.Context) string {
+	value := resolver.data.GetMainImage()
+	return value
+}
+
+func (resolver *staticClusterConfigResolver) SlimCollector(ctx context.Context) bool {
+	value := resolver.data.GetSlimCollector()
+	return value
+}
+
+func (resolver *staticClusterConfigResolver) TolerationsConfig(ctx context.Context) (*tolerationsConfigResolver, error) {
+	value := resolver.data.GetTolerationsConfig()
+	return resolver.root.wrapTolerationsConfig(value, true, nil)
+}
+
+func (resolver *staticClusterConfigResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
 }
 
 type subjectResolver struct {
