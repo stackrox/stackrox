@@ -73,13 +73,16 @@ export function getNodeNamespace(node) {
  *
  */
 export function getNodeName(node) {
-    const { deployment, id, type } = node.entity;
+    const { deployment, type } = node.entity;
     const isExternalEntitiesNode = getIsExternalEntitiesNode(type);
     const isCIDRBlockNode = getIsCIDRBlockNode(type);
     const isDeploymentNode = getIsDeploymentNode(type);
     // since external node's don't have a unique name, we'll utilize their "id"s instead
-    if (isExternalEntitiesNode || isCIDRBlockNode) {
-        return id;
+    if (isExternalEntitiesNode) {
+        return 'External Entities';
+    }
+    if (isCIDRBlockNode) {
+        return `${node.entity?.externalSource?.cidr} / ${node.entity?.externalSource?.name}`;
     }
     if (isDeploymentNode) {
         return deployment.name;
@@ -1134,7 +1137,7 @@ export function getNetworkFlows(edges, filterState) {
                 [destNodeId]: {
                     traffic,
                     deploymentId: destNodeId,
-                    entityName: isExternal ? 'internet' : destNodeName,
+                    entityName: destNodeName,
                     namespace: isExternal ? '-' : destNodeNamespace,
                     type: isExternal ? 'external' : 'deployment',
                     connection,
