@@ -504,7 +504,7 @@ describe('networkGraphUtils', () => {
                     type: nodeTypes.EXTERNAL_ENTITIES,
                 },
             };
-            expect(getNodeName(node)).toEqual('1234');
+            expect(getNodeName(node)).toEqual('External Entities');
         });
 
         it('should get the name value for a CIDR block node', () => {
@@ -512,9 +512,15 @@ describe('networkGraphUtils', () => {
                 entity: {
                     id: '1234',
                     type: nodeTypes.CIDR_BLOCK,
+                    externalSource: {
+                        name: 'Amazon us-east-1',
+                        cidr: '10.10.0.1/24',
+                    },
                 },
             };
-            expect(getNodeName(node)).toEqual('1234');
+            expect(getNodeName(node)).toEqual(
+                `${node.entity.externalSource.cidr} / ${node.entity.externalSource.name}`
+            );
         });
 
         it('should throw an error when an unexpected type is supplied', () => {
