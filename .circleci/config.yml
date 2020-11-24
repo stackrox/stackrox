@@ -2851,6 +2851,7 @@ jobs:
       - ROX_CENTRAL_INSTALLATION_EXPERIENCE: true
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_DETECTION: true      
+      - ROX_HOST_SCANNING: true
 
     steps:
       - checkout
@@ -3128,6 +3129,7 @@ jobs:
       - ROX_CENTRAL_INSTALLATION_EXPERIENCE: true
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_DETECTION: true
+      - ROX_HOST_SCANNING: true
 
     steps:
       - checkout
@@ -3196,6 +3198,7 @@ jobs:
       - ROX_CENTRAL_INSTALLATION_EXPERIENCE: true
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_DETECTION: true
+      - ROX_HOST_SCANNING: true
 
     steps:
       - run-qa-tests:
@@ -3222,6 +3225,7 @@ jobs:
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_DETECTION: true
+      - ROX_HOST_SCANNING: true
 
     steps:
       - checkout
@@ -3253,6 +3257,7 @@ jobs:
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_DETECTION: true
+      - ROX_HOST_SCANNING: true
 
     steps:
       - run-qa-tests:
@@ -3285,6 +3290,7 @@ jobs:
       - OUTPUT_FORMAT: helm
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_DETECTION: true
+      - ROX_HOST_SCANNING: true
 
     steps:
       - run-qa-tests:
@@ -3821,6 +3827,7 @@ jobs:
       - ROX_CENTRAL_INSTALLATION_EXPERIENCE: true
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_DETECTION: true
+      - ROX_HOST_SCANNING: true
 
     steps:
       - run-openshift-tests:
@@ -3844,6 +3851,7 @@ jobs:
       - ROX_CENTRAL_INSTALLATION_EXPERIENCE: true
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_DETECTION: true
+      - ROX_HOST_SCANNING: true
 
     steps:
       - run-openshift-tests:
@@ -3864,6 +3872,7 @@ jobs:
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_NETWORK_DETECTION: true
+      - ROX_HOST_SCANNING: true
 
     steps:
       - checkout

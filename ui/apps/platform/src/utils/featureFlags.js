@@ -16,6 +16,7 @@ export const knownBackendFlags = {
     ROX_NETWORK_GRAPH_EXTERNAL_SRCS: 'ROX_NETWORK_GRAPH_EXTERNAL_SRCS',
     ROX_SYSLOG_INTEGRATION: 'ROX_SYSLOG_INTEGRATION',
     ROX_NETWORK_DETECTION: 'ROX_NETWORK_DETECTION',
+    ROX_HOST_SCANNING: 'ROX_HOST_SCANNING',
 };
 
 // isBackendFeatureFlagEnabled returns whether a feature flag retrieved from the backend is enabled.

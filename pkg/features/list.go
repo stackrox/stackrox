@@ -39,4 +39,7 @@ var (
 
 	// NetworkDetection enables new features related to the new network detection experience.
 	NetworkDetection = registerFeature("Enable new network detection experience", "ROX_NETWORK_DETECTION", false)
+
+	// HostScanning enables new features related to the new host scanning experience in VM.
+	HostScanning = registerFeature("Enable new host scanning experience", "ROX_HOST_SCANNING", false)
 )
