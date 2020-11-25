@@ -1904,8 +1904,8 @@ golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8T
 golang.stackrox.io/grpc-http1 v0.1.0/go.mod h1:g/9JsegPH7myCdQiSfWDcj6Len5p5mfc3cJsEwdoLNA=
 golang.stackrox.io/grpc-http1 v0.2.0 h1:rViCwCRAw59S43PsFrsiNzHCO1szwGfk9yQSIBmJgDo=
 golang.stackrox.io/grpc-http1 v0.2.0/go.mod h1:UgxRk4iCQJup9Ok+kqp9Gw7/tvqFfhVsiajwXv+wRA4=
-golang.stackrox.io/grpc-http1 v0.2.1 h1:fQLAZTvLJKS1cCS1DsnB8bD9z0bUY24dox/non6m1xY=
-golang.stackrox.io/grpc-http1 v0.2.1/go.mod h1:9Y8vORQvLafxYtz+1lq0SrxkbKYL8KLrb6XHngagVpg=
+golang.stackrox.io/grpc-http1 v0.2.2 h1:vO9YQb5VRQ9dI+TydK44etJIuzJTM4MTlTddB+p3GK0=
+golang.stackrox.io/grpc-http1 v0.2.2/go.mod h1:9Y8vORQvLafxYtz+1lq0SrxkbKYL8KLrb6XHngagVpg=
 gonum.org/v1/gonum v0.0.0-20190331200053-3d26580ed485/go.mod h1:2ltnJ7xHfj0zHS40VVPYEAAMTa3ZGguvHGBSJeRWqE0=
 gonum.org/v1/netlib v0.0.0-20190313105609-8cb42192e0e0/go.mod h1:wa6Ws7BG/ESfp6dHfk7C6KdzKA7wR7u/rKwOGE66zvw=
 gonum.org/v1/netlib v0.0.0-20190331212654-76723241ea4e/go.mod h1:kS+toOQn6AQKjmKJ7gzohV1XkqsFehRA2FbsbkopSuQ=
