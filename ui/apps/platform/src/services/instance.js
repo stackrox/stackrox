@@ -12,10 +12,18 @@ export default axios.create({
 // CONSOLE ERRORS.
 /*
 export default {
-    get: url => console.log('GET CALLED WITH', url),
-    post: (url, data) =>  console.log('POST CALLED WITH', url, data),
+    get: (url) => console.log('GET CALLED WITH', url),
+    post: (url, data) => console.log('POST CALLED WITH', url, data),
     put: (url, data) => console.log('PUT CALLED WITH', url, data),
     patch: (url, data) => console.log('PATCH CALLED WITH', url, data),
-    delete: url => console.log('DELETE CALLED WITH', url)
+    delete: (url) => console.log('DELETE CALLED WITH', url),
+    interceptors: {
+        request: {
+            use: (args) => console.log('interceptors.request.use called with', args),
+        },
+        response: {
+            use: (args) => console.log('interceptors.response.use called with', args),
+        },
+    },
 };
 */
