@@ -319,7 +319,8 @@ func retrieveCustomAnnotations(annotations map[string]interface{}) map[string]in
 func retrieveCustomLabels(labels map[string]interface{}) map[string]interface{} {
 	return filterMap(labels, []string{
 		"app",
-		"app.kubernets.io/component",
+		"app.kubernets.io/component", // typo that existed in old versions
+		"app.kubernetes.io/component",
 		"app.kubernetes.io/instance",
 		"app.kubernetes.io/managed-by",
 		"app.kubernetes.io/part-of",

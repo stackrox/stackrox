@@ -10,7 +10,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: central
+    app.kubernetes.io/component: central
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -36,7 +36,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: central
+    app.kubernetes.io/component: central
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -62,7 +62,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: central
+    app.kubernetes.io/component: central
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -240,7 +240,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: scanner
+    app.kubernetes.io/component: scanner
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -266,7 +266,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: scanner
+    app.kubernetes.io/component: scanner
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -362,7 +362,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: scanner
+    app.kubernetes.io/component: scanner
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -747,7 +747,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: central
+    app.kubernetes.io/component: central
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -777,7 +777,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: central
+    app.kubernetes.io/component: central
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -807,7 +807,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: scanner
+    app.kubernetes.io/component: scanner
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -843,7 +843,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: scanner
+    app.kubernetes.io/component: scanner
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -876,7 +876,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: central
+    app.kubernetes.io/component: central
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -924,7 +924,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: scanner
+    app.kubernetes.io/component: scanner
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -965,7 +965,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: central
+    app.kubernetes.io/component: central
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -989,7 +989,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: scanner
+    app.kubernetes.io/component: scanner
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -1013,7 +1013,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: central
+    app.kubernetes.io/component: central
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -1041,7 +1041,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: central
+    app.kubernetes.io/component: central
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -1094,7 +1094,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: scanner
+    app.kubernetes.io/component: scanner
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -1144,7 +1144,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: central
+    app.kubernetes.io/component: central
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -1172,7 +1172,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: scanner
+    app.kubernetes.io/component: scanner
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -1201,7 +1201,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: central
+    app.kubernetes.io/component: central
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -1229,7 +1229,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: central
+    app.kubernetes.io/component: central
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -1257,7 +1257,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: central
+    app.kubernetes.io/component: central
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -1285,7 +1285,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: scanner
+    app.kubernetes.io/component: scanner
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -1313,7 +1313,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: central
+    app.kubernetes.io/component: central
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -1341,7 +1341,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: scanner
+    app.kubernetes.io/component: scanner
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -1372,7 +1372,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: scanner
+    app.kubernetes.io/component: scanner
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -1400,7 +1400,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: central
+    app.kubernetes.io/component: central
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
     app: central
   annotations:
@@ -1426,7 +1426,7 @@ spec:
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
         app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-        app.kubernets.io/component: central
+        app.kubernetes.io/component: central
         helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443"
@@ -1583,7 +1583,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: scanner
+    app.kubernetes.io/component: scanner
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -1608,7 +1608,7 @@ spec:
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
         app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-        app.kubernets.io/component: scanner
+        app.kubernetes.io/component: scanner
         helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
@@ -1727,7 +1727,7 @@ metadata:
     app.kubernetes.io/name: stackrox
     app.kubernetes.io/part-of: stackrox-central-services
     app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-    app.kubernets.io/component: scanner
+    app.kubernetes.io/component: scanner
     helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
   annotations:
     email: support@stackrox.com
@@ -1752,7 +1752,7 @@ spec:
         app.kubernetes.io/name: stackrox
         app.kubernetes.io/part-of: stackrox-central-services
         app.kubernetes.io/version: 3.0.50.x-60-gac5d043be8
-        app.kubernets.io/component: scanner
+        app.kubernetes.io/component: scanner
         helm.sh/chart: stackrox-central-services-50.0.60-gac5d043be8
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "5432"

@@ -78,9 +78,11 @@
   {{ end }}
   {{ if $generate }}
     {{ if $spec.ca }}
-      {{ $result = genCA $spec.CN 1825 }}
+      {{ $out := dict }}
+      {{ $_ := tpl "{{ $_ := set .out \"ca\" (genCA .cn 1825) }}" (dict "Template" $.Template "cn" $spec.CN "out" $out) }}
+      {{ $result = $out.ca }}
     {{ else if $spec.keyOnly }}
-      {{ $key := genPrivateKey $spec.keyOnly }}
+      {{ $key := tpl "{{ genPrivateKey .algo }}" (dict "Template" $.Template "algo" $spec.keyOnly) }}
       {{ $_ := set $genCfg "key" $key }}
       {{ $_ = set $result "Key" $key }}
     {{ else }}
@@ -91,9 +93,13 @@
       {{ include "srox.computeSANs" (list $ $sans $spec.dnsBase) }}
       {{ $ca := $._rox._ca }}
       {{ if kindIs "map" $ca }}
-        {{ $ca = buildCustomCert (b64enc $ca.Cert) (b64enc $ca.Key) }}
+        {{ $out := dict }}
+        {{ $_ := tpl "{{ $_ := set .out \"ca\" (buildCustomCert (b64enc .ca.Cert) (b64enc .ca.Key)) }}" (dict "Template" $.Template "ca" $ca "out" $out) }}
+        {{ $ca = $out.ca }}
       {{ end }}
-      {{ $result = genSignedCert $spec.CN nil $sans.result 365 $ca }}
+      {{ $out := dict }}
+      {{ $_ := tpl "{{ $_ := set .out \"cert\" (genSignedCert .cn nil .sans 365 .ca) }}" (dict "Template" $.Template "cn" $spec.CN "sans" $sans.result "ca" $ca "out" $out) }}
+      {{ $result = $out.cert }}
       {{ $_ := set $genCfg "cert" $result.Cert }}
       {{ $_ = set $genCfg "key" $result.Key }}
     {{ end }}
@@ -188,7 +194,7 @@
     {{ $_ := set $result "value" $pw }}
   {{ end }}
   {{ if and $htpasswdUser $pw }}
-    {{ $htpasswd := htpasswd $htpasswdUser $pw }}
+    {{ $htpasswd := tpl "{{ htpasswd .user .pw }}" (dict "Template" $.Template "user" $htpasswdUser "pw" $pw)  }}
     {{ $_ := set $result "htpasswd" $htpasswd }}
   {{ end }}
 {{ else if $cfg.value }}

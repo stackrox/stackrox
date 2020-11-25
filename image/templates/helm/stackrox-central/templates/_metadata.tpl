@@ -80,7 +80,7 @@
 {{ $_ = set $labels "app.kubernetes.io/part-of" "stackrox-central-services" }}
 {{ $component := regexReplaceAll "^.*/\\d{2}-([a-z]+)-\\d{2}-[^/]+\\.yaml" $.Template.Name "${1}" }}
 {{ if not (contains "/" $component) }}
-  {{ $_ = set $labels "app.kubernets.io/component" $component }}
+  {{ $_ = set $labels "app.kubernetes.io/component" $component }}
 {{ end }}
 {{ $metadataNames := list "labels" }}
 {{ if $forPod }}

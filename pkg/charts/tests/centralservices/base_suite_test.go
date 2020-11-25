@@ -76,6 +76,24 @@ scanner:
     cert: "scanner-db tls cert pem"
     key: "scanner-db tls key pem"
 `
+	autogenerateAll = `
+licenseKey: "my license key"
+env:
+  platform: gke
+  openshift: true
+  istio: true
+  proxyConfig: "proxy config"
+imagePullSecrets:
+  username: myuser
+  password: mypass
+central:
+  defaultTLS:
+    cert: "central default tls cert pem"
+    key: "central default tls key pem"
+  exposure:
+    loadBalancer:
+      enabled: true
+`
 )
 
 type baseSuite struct {
@@ -140,9 +158,17 @@ func (s *baseSuite) ParseObjects(objYAMLs map[string]string) []unstructured.Unst
 	return objs
 }
 
+func (s *baseSuite) TestAllGeneratableGenerated() {
+	_, rendered := s.LoadAndRender(autogenerateAll)
+
+	for k, v := range rendered {
+		s.NotEmptyf(v, "unexpected empty rendered YAML %s", k)
+	}
+}
+
 func (s *baseSuite) TestAllGeneratableExplicit() {
-	// Ensures that allValuesExplicit causes all templates to be rendered non-empty, except
-	// for the one containing generated values.
+	// Ensures that allValuesExplicit causes all templates to be rendered non-empty, including the one
+	// containing generated values.
 
 	_, rendered := s.LoadAndRender(allValuesExplicit)
 
