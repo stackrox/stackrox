@@ -100,10 +100,10 @@
 #   endpointsConfig: |
 #     endpoints:
 #     - listen: ":8080"
-#     protocols:
-#     - http
-#     tls:
-#       disable: true
+#       protocols:
+#       - http
+#       tls:
+#         disable: true
 #
 #   # If you want to enforce StackRox Central to only run on certain nodes, you can specify
 #   # a node selector here to make sure Central can only be scheduled on Nodes with the
