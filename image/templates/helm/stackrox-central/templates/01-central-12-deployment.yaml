@@ -133,6 +133,10 @@ spec:
         - name: endpoints-config-volume
           mountPath: /etc/stackrox.d/endpoints/
           readOnly: true
+        {{- range $extraMount := (default list ._rox.central.extraMounts) }}
+        - name: {{ $extraMount.name }}
+          {{- $extraMount.mount | toYaml | nindent 10 }}
+        {{- end }}
       volumes:
       - name: varlog
         emptyDir: {}
@@ -182,3 +186,7 @@ spec:
           name: central-endpoints
       - name: stackrox-db
         {{- toYaml ._rox.central.persistence._volumeCfg | nindent 8 }}
+      {{- range $extraMount := (default list ._rox.central.extraMounts) }}
+      - name: {{ $extraMount.name }}
+        {{- $extraMount.source | toYaml | nindent 8 }}
+      {{- end }}

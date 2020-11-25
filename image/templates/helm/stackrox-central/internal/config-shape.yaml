@@ -60,6 +60,7 @@ central:
       port: null # int
     route:
       enabled: null # bool
+  extraMounts: null # [dict]
 
 scanner:
   disable: null # bool

@@ -195,6 +195,19 @@
 #     route:
 #       enabled: true
 #
+#     # Additional volume mounts for the Central container. Only few people will require this.
+#     extraMounts:
+#     - name: my-configmap  # the name of the volume
+#       # The source of the volume. This will be embedded as-is in the `volume:` section of the
+#       # pod spec.
+#       source:
+#         configMap:
+#           name: my-configmap
+#       # The mount point of the volume. This will be embedded as-is in the `volumeMounts:` section
+#       # of the pod spec.
+#       mount:
+#         mountPath: /etc/my-config-data
+#
 # # Public configuration options for the StackRox Scanner.
 # scanner:
 #   # disable=true will cause the StackRox Kubernetes Security Platform to be
