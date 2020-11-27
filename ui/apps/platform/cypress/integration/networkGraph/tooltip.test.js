@@ -10,10 +10,25 @@ describe('Network Graph tooltip', () => {
     withAuth();
 
     describe('deployment node', () => {
+        beforeEach(() => {
+            cy.server();
+            cy.route('GET', api.risks.riskyDeployments).as('deployments');
+
+            cy.fixture('network/networkGraph.json').as('networkGraphJson');
+            cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
+
+            cy.fixture('network/networkPolicies.json').as('networkPoliciesJson');
+            cy.route('GET', api.network.networkPoliciesGraph, '@networkPoliciesJson').as(
+                'networkPolicies'
+            );
+        });
+
         const openSidePanelForDeployment = (name) => {
             cy.visit(riskURL);
             cy.get(`${selectors.table.rows}:contains("${name}")`).click();
             cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
+            cy.wait('@networkGraph');
+            cy.wait('@networkPolicies');
         };
 
         const {
@@ -84,7 +99,8 @@ describe('Network Graph tooltip', () => {
             const name = 'scanner-db';
             openSidePanelForDeployment(name);
 
-            cy.get(`${networkPageSelectors.detailsPanel.header}:contains("${name}")`);
+            cy.get(`${networkPageSelectors.detailsPanel.header}:contains("${name}")`).first();
+
             cy.get(networkPageSelectors.detailsPanel.table.rows).then(($trs) => {
                 const nIngressOnly = $trs.has(ingressSelector).length;
                 const nEgressOnly = $trs.has(egressSelector).length;
@@ -112,6 +128,7 @@ describe('Network Graph tooltip', () => {
             openSidePanelForDeployment(name);
 
             cy.get(`${networkPageSelectors.detailsPanel.header}:contains("${name}")`);
+
             cy.get(networkPageSelectors.detailsPanel.table.rows).then(($trs) => {
                 const nIngressOnly = $trs.has(ingressSelector).length;
                 const nEgressOnly = $trs.has(egressSelector).length;
