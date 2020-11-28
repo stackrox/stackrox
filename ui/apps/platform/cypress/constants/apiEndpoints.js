@@ -99,6 +99,7 @@ export const network = {
     networkGraph: '/v1/networkgraph/cluster/*',
     epoch: '/v1/networkpolicies/graph/epoch',
     simulate: '/v1/networkpolicies/simulate/*',
+    deployment: 'v1/deployments/*',
 };
 
 export const policies = {

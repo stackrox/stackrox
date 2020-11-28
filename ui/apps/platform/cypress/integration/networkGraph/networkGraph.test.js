@@ -19,6 +19,9 @@ describe('Network Deployment Details', () => {
             'networkPolicies'
         );
 
+        cy.fixture('network/centralDeployment.json').as('centralDeploymentJson');
+        cy.route('GET', api.network.deployment, '@centralDeploymentJson').as('centralDeployment');
+
         cy.visit(networkUrl);
         cy.wait('@networkGraph');
         cy.wait('@networkPolicies');
@@ -30,6 +33,7 @@ describe('Network Deployment Details', () => {
                 type: 'DEPLOYMENT',
                 name: 'central',
             });
+            cy.wait('@centralDeployment');
             cy.get(`${networkPageSelectors.detailsPanel.header}:contains("central")`);
         });
     });
