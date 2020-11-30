@@ -26,7 +26,8 @@
     $.Values, we apply some bootstrap defaults.
    */}}
 {{ $rox := deepCopy $.Values }}
-{{ $_ := include "srox.mergeInto" (list $rox ($.Files.Get "internal/config-shape.yaml" | fromYaml) ($.Files.Get "internal/bootstrap-defaults.yaml" | fromYaml)) }}
+{{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
+{{ $_ := include "srox.mergeInto" (list $rox $configShape ($.Files.Get "internal/bootstrap-defaults.yaml" | fromYaml)) }}
 {{ $_ = set $ "_rox" $rox }}
 
 {{/* Global state (accessed from sub-templates) */}}
@@ -273,9 +274,9 @@
   {{ end }}
   {{ $_ := set $volumeCfg "hostPath" (dict "path" $centralCfg.persistence.hostPath) }}
 {{ end }}
-{{/* Configure PVC if either any of the settings in `central.persistence.persistentVolumeClaim` are non-zero,
+{{/* Configure PVC if either any of the settings in `central.persistence.persistentVolumeClaim` are provided,
      or no other persistence backend has been configured yet. */}}
-{{ if or (and $centralCfg.persistence.persistentVolumeClaim (values $centralCfg.persistence.persistentVolumeClaim | compact)) (not $volumeCfg) }}
+{{ if or (not (deepEqual $configShape.central.persistence.persistentVolumeClaim $centralCfg.persistence.persistentVolumeClaim)) (not $volumeCfg) }}
   {{ $pvcCfg := $centralCfg.persistence.persistentVolumeClaim }}
   {{ $_ := include "srox.mergeInto" (list $pvcCfg $._rox._defaults.pvcDefaults (dict "createClaim" $.Release.IsInstall)) }}
   {{ $_ = set $volumeCfg "persistentVolumeClaim" (dict "claimName" $pvcCfg.claimName) }}

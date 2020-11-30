@@ -171,6 +171,16 @@
 #       # explicit unit, such as "1Ti"). Defaults to 100Gi.
 #       size: 100
 #
+#       # If you want to bind a preexisting persistent volume, you can specify it here.
+#       volume:
+#         volumeSpec:
+#           # The section includes volume type specific config, the volume type can be:
+#           # gcePersistentDisk, hostpath, filestore(nfs) etc.
+#           gcePersistentDisk:
+#             # Type specific parameters. The specified persistent volume should have
+#             # been created.
+#             pdName: gke-pv
+#
 #   # Configuration for exposing the StackRox Central deployment for external access.
 #   # Generally, only ONE of the nested values should be specified. If none is specified,
 #   # the Central deployment will not be exposed, and you must either manually expose it,

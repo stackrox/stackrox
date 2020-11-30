@@ -49,6 +49,8 @@ central:
       createClaim: null # bool
       storageClass: null # string
       size: null # int | string
+      volume:
+        volumeSpec: null # dict
     none: null # bool
   exposure:
     loadBalancer:
