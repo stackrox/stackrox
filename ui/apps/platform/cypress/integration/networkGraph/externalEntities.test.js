@@ -21,15 +21,24 @@ describe('External Entities on Network Graph', () => {
 
     withAuth();
 
-    describe('Baseline state', () => {
-        beforeEach(() => {
-            cy.server();
-            cy.route('GET', api.network.networkPoliciesGraph).as('networkPoliciesGraph');
-        });
+    beforeEach(() => {
+        cy.server();
 
+        cy.fixture('network/networkGraph.json').as('networkGraphJson');
+        cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
+
+        cy.fixture('network/networkPolicies.json').as('networkPoliciesJson');
+        cy.route('GET', api.network.networkPoliciesGraph, '@networkPoliciesJson').as(
+            'networkPolicies'
+        );
+
+        cy.visit(networkUrl);
+        cy.wait('@networkGraph');
+        cy.wait('@networkPolicies');
+    });
+
+    describe('Baseline state', () => {
         it('should group the namespaces into a cluster wrapper', () => {
-            cy.visit(networkUrl);
-            cy.wait('@networkPoliciesGraph');
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 const clusters = cytoscape.nodes().filter(filterClusters);
                 expect(clusters.size()).to.equal(1);
@@ -43,9 +52,6 @@ describe('External Entities on Network Graph', () => {
         });
 
         it('should group external connections into a node outside the cluster', () => {
-            cy.visit(networkUrl);
-            cy.wait('@networkPoliciesGraph');
-            cy.wait(2000); // extending the timeout on the following get is not enough
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 const externalEntities = cytoscape.nodes().filter(filterInternet);
                 expect(externalEntities.size()).to.equal(1);

@@ -10,17 +10,30 @@ describe('Network Deployment Details', () => {
 
     beforeEach(() => {
         cy.server();
-        cy.route('GET', api.network.networkPoliciesGraph).as('networkPoliciesGraph');
+
+        cy.fixture('network/networkGraph.json').as('networkGraphJson');
+        cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
+
+        cy.fixture('network/networkPolicies.json').as('networkPoliciesJson');
+        cy.route('GET', api.network.networkPoliciesGraph, '@networkPoliciesJson').as(
+            'networkPolicies'
+        );
+
+        cy.fixture('network/centralDeployment.json').as('centralDeploymentJson');
+        cy.route('GET', api.network.deployment, '@centralDeploymentJson').as('centralDeployment');
+
+        cy.visit(networkUrl);
+        cy.wait('@networkGraph');
+        cy.wait('@networkPolicies');
     });
 
     it('should open up the Deployments Side Panel when a deployment is clicked', () => {
-        cy.visit(networkUrl);
-        cy.wait('@networkPoliciesGraph');
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
             clickOnNodeByName(cytoscape, {
                 type: 'DEPLOYMENT',
                 name: 'central',
             });
+            cy.wait('@centralDeployment');
             cy.get(`${networkPageSelectors.detailsPanel.header}:contains("central")`);
         });
     });
