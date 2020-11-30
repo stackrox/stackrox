@@ -49,7 +49,13 @@ main() {
             kubectl describe "${object}" "${item}" -n "${namespace}" > "${log_dir}/${object}/${item}_describe.log"
             for ctr in $(kubectl -n "${namespace}" get "${object}" "${item}" -o jsonpath='{.status.containerStatuses[*].name}'); do
                 kubectl -n "${namespace}" logs "${object}/${item}" -c "${ctr}" > "${log_dir}/${object}/${item}-${ctr}.log"
-                kubectl -n "${namespace}" logs "${object}/${item}" -p -c "${ctr}" > "${log_dir}/${object}/${item}-${ctr}-previous.log"
+                prev_log_file="${log_dir}/${object}/${item}-${ctr}-previous.log"
+                if kubectl -n "${namespace}" logs "${object}/${item}" -p -c "${ctr}" > "${prev_log_file}"; then
+                  exit_code="$(kubectl -n "${namespace}" get "${object}/${item}" -o jsonpath='{.status.containerStatuses}' | jq --arg ctr "$ctr" '.[] | select(.name == $ctr) | .lastState.terminated.exitCode')"
+                  if [ "$exit_code" -eq "0" ]; then
+                    mv "${prev_log_file}" "${log_dir}/${object}/${item}-${ctr}-prev-success.log"
+                  fi
+                fi
             done
         done
     done
