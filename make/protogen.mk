@@ -66,12 +66,20 @@ PROTOC_INCLUDES := $(PROTOC_DIR)/include/google
 
 PROTOC_GEN_GO_BIN := $(GOBIN)/protoc-gen-gofast
 
-$(PROTOC_GEN_GO_BIN):
+MODFILE_DIR := $(PROTO_PRIVATE_DIR)/modules
+
+$(MODFILE_DIR)/%/UPDATE_CHECK: go.sum
+	@echo "+ Checking if $* is up-to-date"
+	@mkdir -p $(dir $@)
+	@go list -m -json $* | jq '.Dir' >"$@.tmp"
+	@(cmp -s "$@.tmp" "$@" && rm "$@.tmp") || mv "$@.tmp" "$@"
+
+$(PROTOC_GEN_GO_BIN): $(MODFILE_DIR)/github.com/gogo/protobuf/UPDATE_CHECK
 	@echo "+ $@"
 	@go install github.com/gogo/protobuf/$(notdir $@)
 
 PROTOC_GEN_LINT := $(GOBIN)/protoc-gen-lint
-$(PROTOC_GEN_LINT):
+$(PROTOC_GEN_LINT): $(MODFILE_DIR)/github.com/ckaznocha/protoc-gen-lint/UPDATE_CHECK
 	@echo "+ $@"
 	@go install github.com/ckaznocha/protoc-gen-lint
 
@@ -152,13 +160,13 @@ printprotos:
 
 PROTOC_GEN_GRPC_GATEWAY := $(GOBIN)/protoc-gen-grpc-gateway
 
-$(PROTOC_GEN_GRPC_GATEWAY):
+$(PROTOC_GEN_GRPC_GATEWAY): $(MODFILE_DIR)/github.com/grpc-ecosystem/grpc-gateway/UPDATE_CHECK
 	@echo "+ $@"
 	@go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
 
 PROTOC_GEN_SWAGGER := $(GOBIN)/protoc-gen-swagger
 
-$(PROTOC_GEN_SWAGGER):
+$(PROTOC_GEN_SWAGGER): $(MODFILE_DIR)/github.com/grpc-ecosystem/grpc-gateway/UPDATE_CHECK
 	@echo "+ $@"
 	@go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
 
