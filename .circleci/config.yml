@@ -3128,7 +3128,7 @@ jobs:
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
       - ROX_CENTRAL_INSTALLATION_EXPERIENCE: true
       - ROX_SYSLOG_INTEGRATION: true
-      - ROX_NETWORK_DETECTION: true
+      - ROX_NETWORK_DETECTION: false
       - ROX_HOST_SCANNING: true
 
     steps:

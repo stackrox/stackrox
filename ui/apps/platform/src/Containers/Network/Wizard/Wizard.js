@@ -5,7 +5,10 @@ import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
+import { knownBackendFlags } from 'utils/featureFlags';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import wizardStages from './wizardStages';
+import NetworkDeploymentPanel from './NetworkDeploymentPanel';
 import Details from './Details/Details';
 import Creator from './Creator/Creator';
 import Simulator from './Simulator/Simulator';
@@ -16,6 +19,22 @@ import NodesUpdateSection from '../Graph/Overlays/NodesUpdateSection';
 import ZoomButtons from '../Graph/Overlays/ZoomButtons';
 
 function Wizard({ wizardOpen, wizardStage, onClose }) {
+    const networkDetectionEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_NETWORK_DETECTION);
+
+    if (networkDetectionEnabled && wizardOpen && wizardStage === wizardStages.details) {
+        return (
+            <div>
+                <div className="h-full absolute right-0 network-panel">
+                    <ZoomButtons />
+                </div>
+                <div className="absolute right-0 network-panel">
+                    <NodesUpdateSection />
+                    <NetworkDeploymentPanel onClose={onClose} />
+                </div>
+            </div>
+        );
+    }
+
     const width = wizardOpen ? 'md:w-2/3 lg:w-2/5 min-w-144' : 'w-0';
     let panelContent = null;
 
@@ -49,7 +68,7 @@ function Wizard({ wizardOpen, wizardStage, onClose }) {
             className={`${width} h-full absolute right-0 bg-primary-200 shadow-lg theme-light network-panel`}
         >
             <NodesUpdateSection />
-            <ZoomButtons />
+            <ZoomButtons pinnedLeft />
 
             {panelContent}
         </div>

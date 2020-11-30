@@ -497,7 +497,7 @@ h6 {
 /* Network Graph CSS Classes */
 
 .pin-network-zoom-buttons-left {
-    left: -70px !important;
+    left: -150px !important;
 }
 
 .pin-network-update-label-left {
