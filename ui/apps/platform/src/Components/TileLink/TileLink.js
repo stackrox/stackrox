@@ -48,7 +48,7 @@ const TileLink = ({
         />
     );
     let classes = '';
-    const positionClasses = `w-full flex flex-col items-center justify-center py-2 border-2 rounded-sm min-w-24 px-2 lg:px-4`;
+    const positionClasses = `w-full flex flex-col items-center justify-center py-2 border-2 rounded-sm min-w-24 px-2`;
     const colors = 'text-base-600 hover:bg-base-200 border-base-400 bg-base-100';
     const darkModeColors = 'text-base-600 bg-base-100 border-base-400 hover:bg-base-200';
     const errorColors = 'text-alert-700 bg-alert-200 hover:bg-alert-300 border-alert-400';
