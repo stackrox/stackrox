@@ -38,12 +38,12 @@ require (
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/mock v1.4.4
 	github.com/golang/protobuf v1.4.3
-	github.com/golangci/golangci-lint v1.32.0
+	github.com/golangci/golangci-lint v1.33.0
 	github.com/google/certificate-transparency-go v1.0.21
 	github.com/google/go-cmp v0.5.2
 	github.com/google/martian v2.1.0+incompatible
 	github.com/googleapis/gnostic v0.5.1
-	github.com/gookit/color v1.2.5
+	github.com/gookit/color v1.3.1
 	github.com/gorilla/schema v1.1.0
 	github.com/graph-gophers/graphql-go v0.0.0-20190513003547-158e7b876106
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
@@ -77,7 +77,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stackrox/anchore-client v0.0.0-20190929180200-981e05834836
 	github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e
-	github.com/stackrox/external-network-pusher v0.0.0-20201110205918-92f1e4a2b094
+	github.com/stackrox/external-network-pusher v0.0.0-20201201000949-ec60e0486e7a
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191029220117-2a73008e51a9
 	github.com/stackrox/scanner v0.0.0-20200930193229-9be8257b3580
 	github.com/stretchr/testify v1.6.1

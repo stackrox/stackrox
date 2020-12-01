@@ -89,7 +89,12 @@ func (g *defaultExtSrcsGathererImpl) Update() error {
 }
 
 func (g *defaultExtSrcsGathererImpl) reconcileDefaultExternalSrcs() error {
-	remoteChecksum, err := httputil.HTTPGet(defaultexternalsrcs.RemoteChecksumURL)
+	remoteDataURL, remoteCksumURL, err := defaultexternalsrcs.GetRemoteDataAndCksumURLs()
+	if err != nil {
+		return errors.Wrap(err, "getting remote data and checksum URLs")
+	}
+
+	remoteChecksum, err := httputil.HTTPGet(remoteCksumURL)
 	if err != nil {
 		return errors.Wrap(err, "pulling remote external networks checksum")
 	}
@@ -107,7 +112,7 @@ func (g *defaultExtSrcsGathererImpl) reconcileDefaultExternalSrcs() error {
 		return nil
 	}
 
-	data, err := httputil.HTTPGet(defaultexternalsrcs.RemoteDataURL)
+	data, err := httputil.HTTPGet(remoteDataURL)
 	if err != nil {
 		return errors.Wrap(err, "pulling remote external networks data")
 	}

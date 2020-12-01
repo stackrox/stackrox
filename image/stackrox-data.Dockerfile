@@ -27,11 +27,13 @@ RUN mkdir -p /stackrox-data/cve/k8s && \
     wget -O /stackrox-data/cve/istio/checksum "https://definitions.stackrox.io/cve/istio/checksum" && \
     wget -O /stackrox-data/cve/istio/cve-list.json "https://definitions.stackrox.io/cve/istio/cve-list.json"
 
-# RUN mkdir -p /stackrox-data/external-networks && \
-#     wget -O /stackrox-data/external-networks/checksum "https://definitions.stackrox.io/external-networks/latest/checksum" && \
-#     wget -O /stackrox-data/external-networks/networks "https://definitions.stackrox.io/external-networks/latest/networks"
+RUN mkdir -p /stackrox-data/external-networks && \
+    latest_prefix="$(wget -q https://definitions.stackrox.io/external-networks/latest_prefix -O -)" && \
+    wget -O /stackrox-data/external-networks/checksum "https://definitions.stackrox.io/${latest_prefix}/checksum" && \
+    wget -O /stackrox-data/external-networks/networks "https://definitions.stackrox.io/${latest_prefix}/networks" && \
+    test -s /stackrox-data/external-networks/checksum && test -s /stackrox-data/external-networks/networks
 
-# RUN zip -jr /stackrox-data/external-networks/external-networks.zip /stackrox-data/external-networks
+RUN zip -jr /stackrox-data/external-networks/external-networks.zip /stackrox-data/external-networks
 
 COPY ./policies/files /stackrox-data/policies/files
 COPY ./docs/api/v1/swagger.json /stackrox-data/docs/api/v1/swagger.json
