@@ -1,0 +1,50 @@
+import React, { useState, useEffect } from 'react';
+
+/**
+ * This hook enables the behavior of selecting between different tabs and seeing a new view
+ *
+ * @param {ReactComponent[]} children - contains the child components to render. It should contain components with the type provided in the second param
+ * @param {ReactComponent} Tab - the child tab component used
+ *
+ * Example: check out useTabs.test.js to see how to use the hook
+ *
+ */
+function useTabs(children, Tab) {
+    const [activeTabIndex, selectActiveTabIndex] = useState(0);
+
+    useEffect(() => {
+        // If the child tabs are dynamically modified, we want to reset the active tab
+        selectActiveTabIndex(0);
+    }, [children]);
+
+    const tabHeaders = React.Children.toArray(children).map((child, i) => {
+        const {
+            type,
+            props: { title },
+        } = child;
+
+        if (type !== Tab) {
+            throw Error(
+                `The "useTabs" hook can only take children of type (${Tab.name}). A child of type (${type}) was provided.`
+            );
+        }
+        if (!title) {
+            throw Error(
+                `The "useTabs" hook must include children of type (${Tab.name}) that have a (title) prop`
+            );
+        }
+
+        const isActive = activeTabIndex === i;
+        function onSelectTab() {
+            selectActiveTabIndex(i);
+        }
+
+        return { title, isActive, onSelectTab };
+    });
+
+    const activeTabContent = React.Children.toArray(children)[activeTabIndex];
+
+    return { tabHeaders, activeTabContent };
+}
+
+export default useTabs;
