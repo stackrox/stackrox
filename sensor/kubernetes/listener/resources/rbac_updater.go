@@ -3,6 +3,7 @@ package resources
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sync"
 	v1 "k8s.io/api/rbac/v1"
@@ -30,9 +31,10 @@ type namespacedRoleRef struct {
 	namespace string
 }
 
-func newRBACUpdater() rbacUpdater {
+func newRBACUpdater(syncedFlag *concurrency.Flag) rbacUpdater {
 	return &rbacUpdaterImpl{
-		roles: make(map[namespacedRoleRef]*storage.K8SRole),
+		syncedFlag: syncedFlag,
+		roles:      make(map[namespacedRoleRef]*storage.K8SRole),
 
 		bindingsByID:       make(map[string]*storage.K8SRoleBinding),
 		bindingIDToRoleRef: make(map[string]namespacedRoleRef),
@@ -44,7 +46,9 @@ func newRBACUpdater() rbacUpdater {
 }
 
 type rbacUpdaterImpl struct {
-	lock sync.RWMutex
+	lock                  sync.RWMutex
+	hasBuiltInitialBucket bool
+	syncedFlag            *concurrency.Flag
 
 	roles              map[namespacedRoleRef]*storage.K8SRole
 	bindingsByID       map[string]*storage.K8SRoleBinding
@@ -54,7 +58,10 @@ type rbacUpdaterImpl struct {
 	bucketEvaluator *bucketEvaluator
 }
 
-func (rs *rbacUpdaterImpl) rebuildEvaluatorBucketsNoLock() {
+func (rs *rbacUpdaterImpl) rebuildEvaluatorBucketsNoLock() bool {
+	if !rs.syncedFlag.Get() {
+		return false
+	}
 	roles := make([]*storage.K8SRole, 0, len(rs.roles))
 	for _, r := range rs.roles {
 		roles = append(roles, r)
@@ -64,6 +71,7 @@ func (rs *rbacUpdaterImpl) rebuildEvaluatorBucketsNoLock() {
 		bindings = append(bindings, b)
 	}
 	rs.bucketEvaluator = newBucketEvaluator(roles, bindings)
+	return true
 }
 
 func (rs *rbacUpdaterImpl) updateBindingNoLock(roleID string, ref namespacedRoleRef, binding *storage.K8SRoleBinding) {

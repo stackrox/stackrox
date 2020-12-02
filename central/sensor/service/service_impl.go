@@ -70,7 +70,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 	// Fetch the cluster metadata, then process the stream.
 	clusterID := svc.GetId()
-	_, exists, err := s.clusters.GetCluster(clusterDSSAC, clusterID)
+	cluster, exists, err := s.clusters.GetCluster(clusterDSSAC, clusterID)
 	if err != nil {
 		return status.Errorf(codes.Internal, "couldn't look-up cluster %q: %v", clusterID, err)
 	}
@@ -94,6 +94,8 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	if err != nil {
 		return status.Errorf(codes.Internal, "unable to generate a pipeline for cluster %q", clusterID)
 	}
+
+	log.Infof("Cluster %s (%s) has successfully connected to Central", cluster.GetName(), cluster.GetId())
 
 	return s.manager.HandleConnection(server.Context(), clusterID, eventPipeline, server)
 }

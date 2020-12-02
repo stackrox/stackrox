@@ -22,9 +22,11 @@ func handleAllEvents(sif, resyncingSif informers.SharedInformerFactory, osf exte
 	var treatCreatesAsUpdates concurrency.Flag
 	treatCreatesAsUpdates.Set(true)
 
+	var syncedRBAC concurrency.Flag
+
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
 	podInformer := resyncingSif.Core().V1().Pods()
-	dispatchers := resources.NewDispatcherRegistry(podInformer.Lister(), clusterentities.StoreInstance(), processfilter.Singleton(), config, detector)
+	dispatchers := resources.NewDispatcherRegistry(&syncedRBAC, podInformer.Lister(), clusterentities.StoreInstance(), processfilter.Singleton(), config, detector)
 
 	namespaceInformer := sif.Core().V1().Namespaces().Informer()
 	secretInformer := sif.Core().V1().Secrets().Informer()
@@ -58,6 +60,8 @@ func handleAllEvents(sif, resyncingSif informers.SharedInformerFactory, osf exte
 	if !concurrency.WaitInContext(prePodWaitGroup, stopSignal) {
 		return
 	}
+	syncedRBAC.Set(true)
+	log.Info("Successfully synced namespaces, secrets, service accounts, roles and role bindings")
 
 	// Wait for the pod informer to sync before processing other types.
 	// This is required because the PodLister is used to populate the image ids of deployments.
@@ -67,6 +71,7 @@ func handleAllEvents(sif, resyncingSif informers.SharedInformerFactory, osf exte
 	if !cache.WaitForCacheSync(stopSignal.Done(), podInformer.Informer().HasSynced) {
 		return
 	}
+	log.Info("Successfully synced k8s pod cache")
 
 	preTopLevelDeploymentWaitGroup := &concurrency.WaitGroup{}
 
@@ -86,6 +91,8 @@ func handleAllEvents(sif, resyncingSif informers.SharedInformerFactory, osf exte
 	if !concurrency.WaitInContext(preTopLevelDeploymentWaitGroup, stopSignal) {
 		return
 	}
+
+	log.Info("Successfully synced network policies, nodes, services, jobs, replica sets, and replication controllers")
 
 	wg := &concurrency.WaitGroup{}
 
@@ -112,6 +119,8 @@ func handleAllEvents(sif, resyncingSif informers.SharedInformerFactory, osf exte
 		return
 	}
 
+	log.Info("Successfully synced daemonsets, deployments, stateful sets and cronjobs")
+
 	// Finally, run the pod informer, and process pod events.
 	podWaitGroup := &concurrency.WaitGroup{}
 	handle(podInformer.Informer(), dispatchers.ForDeployments(kubernetes.Pod), output, &treatCreatesAsUpdates, podWaitGroup, stopSignal, &eventLock)
@@ -120,6 +129,8 @@ func handleAllEvents(sif, resyncingSif informers.SharedInformerFactory, osf exte
 	if !concurrency.WaitInContext(podWaitGroup, stopSignal) {
 		return
 	}
+
+	log.Info("Successfully synced pods")
 
 	// Set the flag that all objects present at start up have been consumed.
 	treatCreatesAsUpdates.Set(false)
