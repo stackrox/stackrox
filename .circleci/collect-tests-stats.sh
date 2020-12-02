@@ -6,7 +6,7 @@
 # The script expects all "-tests" jobs to be completed, otherwise it fails (see ./wait-for-jobs-completion.sh).
 
 usage() {
-  echo "Usage: $0 <GCP_PROJECT_ID> <BQ_DATASET_TABLE>"
+  echo "Usage: $0 <GCP_PROJECT_ID> <BQ_DATASET_TABLE> <BQ_TESTDATA_TABLE>"
   exit 2
 }
 
@@ -20,8 +20,9 @@ fi
 
 GCP_PROJECT_ID=$1
 BQ_DATASET_TABLE=$2
+BQ_TESTDATA_TABLE=$3
 
-if [[ -z "${GCP_PROJECT_ID}" || -z "${BQ_DATASET_TABLE}" ]]; then
+if [[ -z "${GCP_PROJECT_ID}" || -z "${BQ_DATASET_TABLE}" || -z "${BQ_TESTDATA_TABLE}" ]]; then
   usage
 fi
 
@@ -41,12 +42,13 @@ WF_JOBS=$(echo "${WF_JOBS_DATA}" | jq '.items')
 WF_JOBS_LENGTH=$(echo "${WF_JOBS}" | jq length)
 
 QUERY_VALUES=()
+QUERY_FAILED_TEST_VALUES=()
 
 BRANCH_VALUE=$([ -n "${CIRCLE_BRANCH}" ] && echo "'${CIRCLE_BRANCH}'" || echo "NULL")
 TAG_VALUE=$([ -n "${CIRCLE_TAG}" ] && echo "'${CIRCLE_TAG}'" || echo "NULL")  
 
-for (( i = 0; i < "${WF_JOBS_LENGTH}"; i++ )); do 
-  data=$(echo "${WF_JOBS}" | jq ".[$i]")
+for (( job = 0; job < "${WF_JOBS_LENGTH}"; job++ )); do
+  data=$(echo "${WF_JOBS}" | jq ".[$job]")
   id=$(echo "${data}" | jq -r '.id')
   number=$(echo "${data}" | jq -r '.job_number // empty')
   name=$(echo "${data}" | jq -r '.name')
@@ -63,6 +65,24 @@ for (( i = 0; i < "${WF_JOBS_LENGTH}"; i++ )); do
     echo >&2 "It's expected that all test jobs are complete, yet found ${name} with status \"${status}\".";
     echo >&2 "Skipping stats collection for this incomplete job.";
     continue
+  fi
+
+  if [[ "${status}" == "failed" ]]; then
+    # fetch test details
+    JOB_TEST_DETAILS_URL="https://circleci.com/api/v2/project/gh/stackrox/rox/${number}/tests?circle-token=${CIRCLE_TOKEN}"
+    JOB_TEST_DETAILS=$(curl -s "${JOB_TEST_DETAILS_URL}")
+    FAILED_TESTS=$(echo "${JOB_TEST_DETAILS}" | jq '[ .items[] | select( .result == "failure" ) ]')
+    FAILED_TESTS_LENGTH=$(echo "${FAILED_TESTS}" | jq '. | length')
+    for (( test = 0; test < "${FAILED_TESTS_LENGTH}"; test++ )); do
+      test=$(echo "${FAILED_TESTS}" | jq ".[$test]")
+      test_name=$(echo "${test}" | jq -r '.name' | sed "s/'/\'/g")
+      test_classname=$(echo "${test}" | jq -r '.classname')
+      test_message=$(echo "${test}" | jq -r '.message | gsub("[\\n\\t]"; "")' | sed "s/'//g")
+
+      # (test_name, test_classname, test_message, test_started, job_number, job_name, workflow_id, git_branch, git_tag)
+      test_values="(\"${test_name}\", '${test_classname}', '${test_message}', ${started_at:-NULL}, ${number:-NULL}, '${name}', '${CIRCLE_WORKFLOW_ID}', ${BRANCH_VALUE}, ${TAG_VALUE})"
+      QUERY_FAILED_TEST_VALUES+=("${test_values}")
+    done
   fi
 
   # (job_id, job_number, job_name, job_status, job_started_at, job_stopped_at, workflow_id, git_branch, git_tag)
@@ -87,3 +107,16 @@ echo "Executing query:"
 echo "  ${query}"
 
 bq query --headless --project_id="${GCP_PROJECT_ID}" --use_legacy_sql=false "${query}"
+
+if [ "${#QUERY_FAILED_TEST_VALUES[@]}" -gt 0 ]; then
+  echo "Some tests failed - updating failed test details"
+  values=$(printf ",%s" "${QUERY_FAILED_TEST_VALUES[@]}")
+  values="${values:1}"
+  query="INSERT ${BQ_TESTDATA_TABLE} (test_name, test_classname, test_message, test_started, job_number, job_name, workflow_id, git_branch, git_tag)\
+  VALUES ${values}"
+
+  echo "Executing test details query:"
+  echo "  ${query}"
+
+  bq query --headless --project_id="${GCP_PROJECT_ID}" --use_legacy_sql=false "${query}"
+fi

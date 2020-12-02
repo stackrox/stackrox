@@ -4574,7 +4574,7 @@ jobs:
 
       - run:
           name: Collect and send test jobs stats
-          command: CIRCLE_TOKEN="$CIRCLE_TOKEN_ROXBOT" .circleci/collect-tests-stats.sh "stackrox-ci" "ci_metrics.rox_jobs_stats"
+          command: CIRCLE_TOKEN="$CIRCLE_TOKEN_ROXBOT" .circleci/collect-tests-stats.sh "stackrox-ci" "ci_metrics.rox_jobs_stats" "ci_metrics.rox_failed_tests"
 
 workflows:
   version: 2
