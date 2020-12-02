@@ -1,4 +1,4 @@
-FROM gcr.io/cloud-marketplace-tools/k8s/deployer_helm:0.7.9
+FROM gcr.io/cloud-marketplace-tools/k8s/deployer_helm:0.10.9
 
 RUN apt-get -y update \
  && apt-get install -y --no-install-recommends curl unzip \

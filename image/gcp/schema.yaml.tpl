@@ -104,10 +104,10 @@ properties:
   svcacct:
     type: string
     title: (REQUIRED) Temporary service account to be used when installing StackRox
-    description: This is the temporary service account that will be used to install StackRox
     x-google-marketplace:
       type: SERVICE_ACCOUNT
       serviceAccount:
+        description: This is the temporary service account that will be used to install StackRox
         roles:
         - type: ClusterRole
           rulesType: CUSTOM

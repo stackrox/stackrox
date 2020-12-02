@@ -251,18 +251,29 @@ app_api_version=$(kubectl get "applications.app.k8s.io/$NAME" \
 
 /bin/expand_config.py --values_mode raw --app_uid "$app_uid"
 
+# Get the API versions from the API server.
+api_version_args=()
+
+while IFS='' read -r line || [[ -n "$line" ]]; do
+  [[ -n "$line" ]] || continue
+  api_version_args+=(-a "$line")
+done < <({ kubectl get --raw /apis | jq -r '.groups[].versions[].groupVersion | ("/apis/" + .)' ; echo /api/v1 ; } | xargs -n 1 kubectl get --raw | jq '([.groupVersion, (.groupVersion | sub("/.*$"; ""))] | unique) + [.groupVersion + "/" + .resources[].kind] | .[]' -r)
+
 # Generate installation bundles for both Central and Scanner.
 roxctl gcp generate --values-file /data/final_values.yaml --output-dir /tmp/stackrox
 mkdir -p /tmp/stackrox/rendered
-helm template /tmp/stackrox/central > /tmp/stackrox/rendered/central-rendered.yaml
-helm template /tmp/stackrox/scanner > /tmp/stackrox/rendered/scanner-rendered.yaml
+helm template -n stackrox stackrox-central-services /tmp/stackrox/chart/ \
+  -f /tmp/stackrox/values-public.yaml -f /tmp/stackrox/values-private.yaml \
+  --set imagePullSecrets.allowNone=true \
+  "${api_version_args[@]}" \
+  >/tmp/stackrox/rendered/resources.yaml
 
 ## Assign owner references for the resources.
 /bin/set_ownership.py \
   --app_name "$NAME" \
   --app_uid "$app_uid" \
   --app_api_version "$app_api_version" \
-  --manifests /tmp/stackrox/rendered/ \
+  --manifests /tmp/stackrox/rendered/resources.yaml \
   --dest /data/resources.yaml
 
 # Ensure assembly phase is "Pending", until successful kubectl apply.
