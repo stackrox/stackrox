@@ -17,6 +17,7 @@ export const knownBackendFlags = {
     ROX_SYSLOG_INTEGRATION: 'ROX_SYSLOG_INTEGRATION',
     ROX_NETWORK_DETECTION: 'ROX_NETWORK_DETECTION',
     ROX_HOST_SCANNING: 'ROX_HOST_SCANNING',
+    ROX_DISCOVERED_AT_IMAGE: 'ROX_DISCOVERED_AT_IMAGE',
 };
 
 // isBackendFeatureFlagEnabled returns whether a feature flag retrieved from the backend is enabled.

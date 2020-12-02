@@ -42,4 +42,7 @@ var (
 
 	// HostScanning enables new features related to the new host scanning experience in VM.
 	HostScanning = registerFeature("Enable new host scanning experience", "ROX_HOST_SCANNING", false)
+
+	// DiscoveredAtImage enables discoveredAtImage graphQL field for CVE entity in VM.
+	DiscoveredAtImage = registerFeature("Enable discoveredAtImage graphQL field for CVE entity", "ROX_DISCOVERED_AT_IMAGE", false)
 )
