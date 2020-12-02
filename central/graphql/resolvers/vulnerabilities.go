@@ -26,7 +26,8 @@ func init() {
 			"fixedByVersion: String!",
 			"isFixable(query: String): Boolean!",
 			"lastScanned: Time",
-			"createdAt: Time",
+			"createdAt: Time", // Discovered At System
+			"discoveredAtImage: Time",
 			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
 			"componentCount(query: String): Int!",
 			"images(query: String, pagination: Pagination): [Image!]!",
@@ -69,6 +70,7 @@ type VulnerabilityResolver interface {
 	IsFixable(ctx context.Context, args RawQuery) (bool, error)
 	PublishedOn(ctx context.Context) (*graphql.Time, error)
 	CreatedAt(ctx context.Context) (*graphql.Time, error)
+	DiscoveredAtImage(ctx context.Context) (*graphql.Time, error)
 	LastScanned(ctx context.Context) (*graphql.Time, error)
 	LastModified(ctx context.Context) (*graphql.Time, error)
 	Vectors() *EmbeddedVulnerabilityVectorsResolver

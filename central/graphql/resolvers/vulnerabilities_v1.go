@@ -120,6 +120,11 @@ func (evr *EmbeddedVulnerabilityResolver) CreatedAt(ctx context.Context) (*graph
 	return timestamp(evr.lastScanned)
 }
 
+// DiscoveredAtImage is the first time the vulnerability was discovered in the parent image.
+func (evr *EmbeddedVulnerabilityResolver) DiscoveredAtImage(ctx context.Context) (*graphql.Time, error) {
+	return timestamp(evr.data.FirstImageOccurrence)
+}
+
 // VulnerabilityType returns the type of vulnerability
 func (evr *EmbeddedVulnerabilityResolver) VulnerabilityType() string {
 	return evr.data.VulnerabilityType.String()

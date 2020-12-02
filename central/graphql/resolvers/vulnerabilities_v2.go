@@ -421,3 +421,7 @@ func (resolver *cVEResolver) getClusterFixedByVersion(_ context.Context) (string
 	}
 	return edge.GetFixedBy(), nil
 }
+
+func (resolver *cVEResolver) DiscoveredAtImage(ctx context.Context) (*graphql.Time, error) {
+	return nil, nil
+}
