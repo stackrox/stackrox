@@ -62,55 +62,60 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
         // the case when there are neither ingress nor egress policies (the data sent from the backend is optimized to
         // treat both phenomena separately and omit edges from a egress non-isolated to an ingress non-isolated
         // deployment, but that would be too confusing in the UI).
-        if (node.nonIsolatedEgress) {
-            nodes.forEach((targetNode) => {
-                if (Object.is(node, targetNode)) {
-                    return;
-                }
+        if (filterState !== filterModes.active) {
+            if (node.nonIsolatedEgress) {
+                nodes.forEach((targetNode) => {
+                    if (Object.is(node, targetNode)) {
+                        return;
+                    }
 
-                const { id: targetEntityId, type: targetNodeType } = targetNode.entity;
-                const targetNS = getNodeNamespace(targetNode);
-                const targetName = getNodeName(targetNode);
-                const edgeKey = getSourceTargetKey(sourceEntityId, targetEntityId);
+                    const { id: targetEntityId, type: targetNodeType } = targetNode.entity;
+                    const targetNS = getNodeNamespace(targetNode);
+                    const targetName = getNodeName(targetNode);
+                    const edgeKey = getSourceTargetKey(sourceEntityId, targetEntityId);
 
-                if (
-                    targetNode?.entity?.type !== entityTypes.DEPLOYMENT ||
-                    !targetNode.nonIsolatedIngress // nodes that are ingress-isolated have explicit incoming edges
-                ) {
-                    return;
-                }
+                    if (
+                        targetNode?.entity?.type !== entityTypes.DEPLOYMENT ||
+                        !targetNode.nonIsolatedIngress // nodes that are ingress-isolated have explicit incoming edges
+                    ) {
+                        return;
+                    }
 
-                const isTargetExternal =
-                    targetNodeType === nodeTypes.EXTERNAL_ENTITIES ||
-                    targetNodeType === nodeTypes.CIDR_BLOCK;
+                    const isTargetExternal =
+                        targetNodeType === nodeTypes.EXTERNAL_ENTITIES ||
+                        targetNodeType === nodeTypes.CIDR_BLOCK;
 
-                const link = {
-                    source: sourceEntityId,
-                    target: targetEntityId,
-                    sourceName,
-                    targetName,
-                    sourceNS,
-                    targetNS,
-                    sourceType: sourceNodeType,
-                    targetType: targetNodeType,
-                    isExternal: isSourceExternal || isTargetExternal,
-                };
+                    const link = {
+                        source: sourceEntityId,
+                        target: targetEntityId,
+                        sourceName,
+                        targetName,
+                        sourceNS,
+                        targetNS,
+                        sourceType: sourceNodeType,
+                        targetType: targetNodeType,
+                        isExternal: isSourceExternal || isTargetExternal,
+                    };
 
-                link.isActive = isActive(edgeKey);
-                link.isBetweenNonIsolated = isBetweenNonIsolated(sourceEntityId, targetEntityId);
-                link.isAllowed = isAllowed(edgeKey, link);
-                link.isDisallowed = isDisallowed(edgeKey, link);
+                    link.isActive = isActive(edgeKey);
+                    link.isBetweenNonIsolated = isBetweenNonIsolated(
+                        sourceEntityId,
+                        targetEntityId
+                    );
+                    link.isAllowed = isAllowed(edgeKey, link);
+                    link.isDisallowed = isDisallowed(edgeKey, link);
 
-                // Do not draw implicit links between fully non-isolated nodes unless the connection is active.
-                const isImplicit = node.nonIsolatedIngress && targetNode.nonIsolatedEgress;
-                const isCurrentlyActive =
-                    (filterState === filterModes.active || filterState === filterModes.all) &&
-                    link.isActive;
-                if (!isImplicit || isCurrentlyActive) {
-                    filteredLinks.push(link);
-                    filteredEdgeHashTable[edgeKey] = true;
-                }
-            });
+                    // Do not draw implicit links between fully non-isolated nodes unless the connection is active.
+                    const isImplicit = node.nonIsolatedIngress && targetNode.nonIsolatedEgress;
+                    const isCurrentlyActive =
+                        (filterState === filterModes.active || filterState === filterModes.all) &&
+                        link.isActive;
+                    if (!isImplicit || isCurrentlyActive) {
+                        filteredLinks.push(link);
+                        filteredEdgeHashTable[edgeKey] = true;
+                    }
+                });
+            }
         }
 
         Object.keys(node.outEdges).forEach((targetNodeId) => {

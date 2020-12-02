@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 import PropTypes from 'prop-types';
 import isEmpty from 'lodash/isEmpty';
+import cloneDeep from 'lodash/cloneDeep';
 
 import { selectors } from 'reducers';
 import { actions as backendActions } from 'reducers/network/backend';
@@ -13,6 +14,7 @@ import { actions as deploymentActions } from 'reducers/deployments';
 import NetworkGraph from 'Components/NetworkGraph';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { filterModes } from 'constants/networkFilterModes';
+import { nodeTypes } from 'constants/networkGraph';
 import entityTypes from 'constants/entityTypes';
 import wizardStages from '../Wizard/wizardStages';
 import Filters from './Overlays/Filters';
@@ -139,11 +141,14 @@ class Graph extends Component {
         const selectedClusterName =
             clusters.find((cluster) => cluster.id === selectedClusterId)?.name || 'Unknown cluster';
 
+        const augmentedNetworkNodeMap =
+            filterState === filterModes.all ? augmentCidrs(networkNodeMap) : networkNodeMap;
+
         return (
             <NetworkGraph
                 updateKey={networkFlowGraphUpdateKey}
                 networkEdgeMap={networkEdgeMap}
-                networkNodeMap={networkNodeMap}
+                networkNodeMap={augmentedNetworkNodeMap}
                 onNodeClick={this.onNodeClick}
                 onNamespaceClick={this.onNamespaceClick}
                 onExternalEntitiesClick={this.onExternalEntitiesClick}
@@ -224,3 +229,17 @@ const mapDispatchToProps = {
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(Graph);
+
+function augmentCidrs(originalNodeMap) {
+    const clonedMap = cloneDeep(originalNodeMap);
+
+    Object.keys(clonedMap).forEach((id) => {
+        if (
+            clonedMap[id]?.active?.entity?.type === nodeTypes.CIDR_BLOCK &&
+            !clonedMap[id]?.allowed
+        ) {
+            clonedMap[id].allowed = cloneDeep(originalNodeMap[id].active);
+        }
+    });
+    return clonedMap;
+}

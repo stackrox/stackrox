@@ -1,5 +1,3 @@
-import flatMap from 'lodash/flatMap';
-
 import { nodeTypes } from 'constants/networkGraph';
 import entityTypes from 'constants/entityTypes';
 import { filterModes } from 'constants/networkFilterModes';
@@ -180,50 +178,57 @@ export const getCIDRBlockNodes = (data, configObj = {}) => {
 };
 
 /**
- * Iterates through a list of active nodes and returns nodes with active network policies
+ * Iterates through the networkNodeMap and returns the relevant list of nodes;
  *
  * @param {!Object} networkNodeMap map of nodes by nodeId
- * @returns {!Object[]}
- */
-const getActiveNetworkPolicyNodes = (networkNodeMap) => {
-    const nodes = [];
-    Object.keys(networkNodeMap).forEach((nodeId) => {
-        const { active: activeNode, allowed: allowedNode } = networkNodeMap[nodeId];
-        const node = { ...activeNode };
-        if (allowedNode) {
-            node.policyIds = flatMap(allowedNode.policyIds);
-        }
-        nodes.push(node);
-    });
-    return nodes;
-};
-
-/**
- * Iterates through a list of nodes and returns only links in the same namespace
- *
- * @param {!Object} networkNodeMap map of nodes by nodeId
- * @param {string} filterState current filter state of the network graph
+ * @param {number} filterState current filter state of the network graph
  * @returns {!Object[]}
  */
 export const getFilteredNodes = (networkNodeMap, filterState) => {
-    const activeNodes = [];
-    const allowedNodes = [];
-    Object.keys(networkNodeMap).forEach((id) => {
-        if (networkNodeMap[id].active) {
-            activeNodes.push(networkNodeMap[id].active);
+    const nodes = [];
+    Object.keys(networkNodeMap).forEach((nodeId) => {
+        const { active: activeNode, allowed: allowedNode } = networkNodeMap[nodeId];
+        if (filterState === filterModes.allowed) {
+            if (allowedNode) {
+                nodes.push(allowedNode);
+            }
+            return;
         }
-        if (networkNodeMap[id].allowed) {
-            allowedNodes.push(networkNodeMap[id].allowed);
+        if (filterState === filterModes.active) {
+            if (activeNode) {
+                nodes.push(activeNode);
+            }
+            return;
         }
+
+        // "all" mode
+        // We always expect an active node for the given entity,
+        // but the allowed node may not be there for certain external entities.
+        // We want to keep outEdges from both, but rely on the activeNode for
+        // properties like policyIds, nonIsolatedIngress, nonIsolatedEgress.
+        if (!activeNode) {
+            return;
+        }
+        // No allowed node, so just use the active node directly.
+        if (!allowedNode) {
+            nodes.push(activeNode);
+            return;
+        }
+        const compositeNode = { ...allowedNode };
+        // Merge outEdges from active into allowed.
+        // like policyIds, nonIsolatedEgress etc from the allowed.
+        Object.keys(activeNode.outEdges).forEach((targetEntityId) => {
+            if (compositeNode.outEdges[targetEntityId]?.properties) {
+                compositeNode.outEdges[targetEntityId].properties.push(
+                    ...activeNode.outEdges[targetEntityId].properties
+                );
+            } else {
+                compositeNode.outEdges[targetEntityId] = {
+                    properties: activeNode.outEdges[targetEntityId].properties,
+                };
+            }
+        });
+        nodes.push(compositeNode);
     });
-    if (filterState !== filterModes.active) {
-        return allowedNodes;
-    }
-
-    // return as is
-    if (!allowedNodes || !activeNodes) {
-        return activeNodes;
-    }
-
-    return getActiveNetworkPolicyNodes(networkNodeMap);
+    return nodes;
 };
