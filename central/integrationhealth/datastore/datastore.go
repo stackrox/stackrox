@@ -21,6 +21,7 @@ type DataStore interface {
 
 	UpdateIntegrationHealth(ctx context.Context, integrationHealth *storage.IntegrationHealth) error
 	RemoveIntegrationHealth(ctx context.Context, id string) error
+	GetIntegrationHealth(ctx context.Context, id string) (*storage.IntegrationHealth, bool, error)
 }
 
 // New returns an instance of DataStore.

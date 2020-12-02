@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/externalbackups/datastore"
 	"github.com/stackrox/rox/central/externalbackups/manager"
+	integrationHealthDS "github.com/stackrox/rox/central/integrationhealth/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
@@ -18,7 +19,7 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton(), initializeManager())
+	as = New(datastore.Singleton(), integrationHealthDS.Singleton(), initializeManager())
 }
 
 func initializeManager() manager.Manager {

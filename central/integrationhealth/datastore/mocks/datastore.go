@@ -106,3 +106,19 @@ func (mr *MockDataStoreMockRecorder) RemoveIntegrationHealth(ctx, id interface{}
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveIntegrationHealth", reflect.TypeOf((*MockDataStore)(nil).RemoveIntegrationHealth), ctx, id)
 }
+
+// GetIntegrationHealth mocks base method
+func (m *MockDataStore) GetIntegrationHealth(ctx context.Context, id string) (*storage.IntegrationHealth, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIntegrationHealth", ctx, id)
+	ret0, _ := ret[0].(*storage.IntegrationHealth)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetIntegrationHealth indicates an expected call of GetIntegrationHealth
+func (mr *MockDataStoreMockRecorder) GetIntegrationHealth(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIntegrationHealth", reflect.TypeOf((*MockDataStore)(nil).GetIntegrationHealth), ctx, id)
+}

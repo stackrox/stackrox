@@ -2,7 +2,10 @@ package processor
 
 import (
 	"context"
+	"fmt"
 
+	timestamp "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,7 +20,8 @@ var (
 
 // Processor takes in alerts and sends the notifications tied to that alert
 type processorImpl struct {
-	ns NotifierSet
+	ns       NotifierSet
+	reporter reporter.IntegrationHealthReporter
 }
 
 func (p *processorImpl) HasNotifiers() bool {
@@ -46,7 +50,10 @@ func (p *processorImpl) ProcessAlert(ctx context.Context, alert *storage.Alert) 
 			go func() {
 				err := tryToAlert(ctx, notifier, alert)
 				if err != nil {
+					p.UpdateNotifierHealthStatus(notifier, storage.IntegrationHealth_UNHEALTHY, err.Error())
 					failures.Add(alert)
+				} else {
+					p.UpdateNotifierHealthStatus(notifier, storage.IntegrationHealth_HEALTHY, "")
 				}
 			}()
 		}
@@ -59,8 +66,31 @@ func (p *processorImpl) ProcessAuditMessage(ctx context.Context, msg *v1.Audit_M
 	// With that, we wouldn't have to fan out n go routines (n = # notifiers in p.ns) and ensure ordering
 	// of audit messages.
 	p.ns.ForEach(ctx, func(_ context.Context, notifier notifiers.Notifier, _ AlertSet) {
-		go tryToSendAudit(ctxBackground, notifier, msg)
+		go p.tryToSendAudit(ctxBackground, notifier, msg)
 	})
+}
+
+func (p *processorImpl) UpdateNotifierHealthStatus(notifier notifiers.Notifier, healthStatus storage.IntegrationHealth_Status, errMessage string) {
+	p.reporter.UpdateIntegrationHealth(&storage.IntegrationHealth{
+		Id:            notifier.ProtoNotifier().Id,
+		Name:          notifier.ProtoNotifier().Id,
+		Type:          storage.IntegrationHealth_NOTIFIER,
+		Status:        healthStatus,
+		LastTimestamp: timestamp.TimestampNow(),
+		ErrorMessage:  errMessage,
+	})
+}
+
+func (p *processorImpl) tryToSendAudit(ctx context.Context, notifier notifiers.Notifier, msg *v1.Audit_Message) {
+	auditNotifier, ok := notifier.(notifiers.AuditNotifier)
+	if ok {
+		if err := auditNotifier.SendAuditMessage(ctx, msg); err != nil {
+			protoNotifier := notifier.ProtoNotifier()
+			log.Errorf("Unable to send audit msg to %s (%s): %v", protoNotifier.GetName(), protoNotifier.GetType(), err)
+			p.UpdateNotifierHealthStatus(notifier, storage.IntegrationHealth_UNHEALTHY, fmt.Sprintf("Unable to send audit msg: %v", err))
+		}
+		p.UpdateNotifierHealthStatus(notifier, storage.IntegrationHealth_HEALTHY, "")
+	}
 }
 
 // Used for testing.

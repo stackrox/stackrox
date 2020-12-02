@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+import "google/protobuf/timestamp.proto";
 import weak "google/api/annotations.proto";
 import "storage/integration_health.proto";
 import "api/v1/empty.proto";
@@ -13,15 +14,19 @@ message GetIntegrationHealthResponse {
     repeated storage.IntegrationHealth integrationHealth = 1;
 }
 
+message GetVulnDefinitionsInfoResponse {
+    google.protobuf.Timestamp last_updated_timestamp      = 1;
+}
+
 service IntegrationHealthService {
 
-    rpc GetRegistriesAndScanners(Empty) returns (GetIntegrationHealthResponse) {
+    rpc GetImageIntegrations(Empty) returns (GetIntegrationHealthResponse) {
         option (google.api.http) = {
             get: "/v1/integrationhealth/imageintegrations"
         };
     }
 
-    rpc GetNotifierPlugins(Empty) returns (GetIntegrationHealthResponse) {
+    rpc GetNotifiers(Empty) returns (GetIntegrationHealthResponse) {
         option (google.api.http) = {
             get: "/v1/integrationhealth/notifiers"
         };
@@ -30,6 +35,12 @@ service IntegrationHealthService {
     rpc GetBackupPlugins(Empty) returns (GetIntegrationHealthResponse) {
         option (google.api.http) = {
             get: "/v1/integrationhealth/externalbackups"
+        };
+    }
+
+    rpc GetVulnDefinitionsInfo(Empty) returns (GetVulnDefinitionsInfoResponse) {
+        option (google.api.http) = {
+            get: "/v1/integrationhealth/vulndefinitions"
         };
     }
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -22,54 +23,96 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) GetRegistriesAndScanners(ctx context.Context) ([]*storage.IntegrationHealth, error) {
-	if ok, err := imageSAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := imageSAC.ReadAllowed(ctx); err != nil {
 		return nil,
 			status.Errorf(codes.Internal, "Failed to retrieve health for registries and scanners: %v", err)
+	} else if !ok {
+		return nil, nil
 	}
 	return ds.getIntegrationsOfType(storage.IntegrationHealth_IMAGE_INTEGRATION)
-
 }
 
 func (ds *datastoreImpl) GetNotifierPlugins(ctx context.Context) ([]*storage.IntegrationHealth, error) {
-	if ok, err := notifierSAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := notifierSAC.ReadAllowed(ctx); err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to retrieve health for notifiers: %v", err)
+	} else if !ok {
+		return nil, nil
 	}
 	return ds.getIntegrationsOfType(storage.IntegrationHealth_NOTIFIER)
 }
 
 func (ds *datastoreImpl) GetBackupPlugins(ctx context.Context) ([]*storage.IntegrationHealth, error) {
-	if ok, err := backupSAC.ReadAllowed(ctx); err != nil || !ok {
+	if ok, err := backupSAC.ReadAllowed(ctx); err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to retrieve health for backup plugins: %v", err)
+	} else if !ok {
+		return nil, nil
 	}
 	return ds.getIntegrationsOfType(storage.IntegrationHealth_BACKUP)
 }
 
 func (ds *datastoreImpl) UpdateIntegrationHealth(ctx context.Context, integrationHealth *storage.IntegrationHealth) error {
-	if err := writeAllowed(ctx); err != nil {
+	if ok, err := writeAllowed(ctx, integrationHealth.GetType()); err != nil {
 		return status.Errorf(codes.Internal, "Failed to update health for integration %s: %v",
 			integrationHealth.Id, err)
+	} else if !ok {
+		return nil
 	}
 	return ds.store.Upsert(integrationHealth)
 }
 
 func (ds *datastoreImpl) RemoveIntegrationHealth(ctx context.Context, id string) error {
-	if err := writeAllowed(ctx); err != nil {
+	currentHealth, exists, err := ds.GetIntegrationHealth(ctx, id)
+	if err != nil {
+		return status.Errorf(codes.Internal, "unable to find integration health for integration %s", id)
+	}
+	if !exists {
+		return nil
+	}
+	if ok, err := writeAllowed(ctx, currentHealth.GetType()); err != nil {
 		return status.Errorf(codes.Internal, "Failed to remove health for integration %s: %v", id, err)
+	} else if !ok {
+		return nil
 	}
 	return ds.store.Delete(id)
 }
 
-func writeAllowed(ctx context.Context) error {
-	if ok, err := imageSAC.WriteAllowed(ctx); err != nil || !ok {
-		return status.Error(codes.Internal, "Permission denied")
+func (ds *datastoreImpl) GetIntegrationHealth(ctx context.Context, id string) (*storage.IntegrationHealth, bool, error) {
+	health, found, err := ds.store.Get(id)
+	if !found || err != nil {
+		return nil, false, err
 	}
-	if ok, err := notifierSAC.WriteAllowed(ctx); err != nil || !ok {
-		return status.Error(codes.Internal, "Permission denied")
+	if ok, err := readAllowed(ctx, health.GetType()); err != nil {
+		return nil, false, status.Errorf(codes.Internal, "Failed to get health for integration %s: %v", id, err)
+	} else if !ok {
+		return nil, false, nil
 	}
-	if ok, err := backupSAC.WriteAllowed(ctx); err != nil || !ok {
-		return status.Error(codes.Internal, "Permission denied")
+	return health, found, err
+}
+
+func writeAllowed(ctx context.Context, typ storage.IntegrationHealth_Type) (bool, error) {
+	switch typ {
+	case storage.IntegrationHealth_IMAGE_INTEGRATION:
+		return imageSAC.WriteAllowed(ctx)
+	case storage.IntegrationHealth_NOTIFIER:
+		return notifierSAC.WriteAllowed(ctx)
+	case storage.IntegrationHealth_BACKUP:
+		return backupSAC.WriteAllowed(ctx)
+	default:
+		return false, utils.Should(status.Error(codes.Internal, "Unknown integration type"))
 	}
-	return nil
+}
+
+func readAllowed(ctx context.Context, typ storage.IntegrationHealth_Type) (bool, error) {
+	switch typ {
+	case storage.IntegrationHealth_IMAGE_INTEGRATION:
+		return imageSAC.ReadAllowed(ctx)
+	case storage.IntegrationHealth_NOTIFIER:
+		return notifierSAC.ReadAllowed(ctx)
+	case storage.IntegrationHealth_BACKUP:
+		return backupSAC.ReadAllowed(ctx)
+	default:
+		return false, utils.Should(status.Error(codes.Internal, "Unknown integration type"))
+	}
 }
 
 func (ds *datastoreImpl) getIntegrationsOfType(integrationType storage.IntegrationHealth_Type) ([]*storage.IntegrationHealth, error) {

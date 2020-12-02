@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/role/resources"
@@ -33,7 +34,7 @@ func initialize() {
 	ns = NewNotifierSet()
 
 	// When alerts are generated, we will want to notify.
-	pr = New(ns)
+	pr = New(ns, reporter.Singleton())
 	protoNotifiers, err := datastore.Singleton().GetNotifiers(ctx, &v1.GetNotifiersRequest{})
 	if err != nil {
 		log.Panicf("unable to fetch notifiers: %v", err)

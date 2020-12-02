@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/notifiers"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -52,21 +51,4 @@ func sendResolvableNotification(notifier notifiers.ResolvableAlertNotifier, aler
 func logFailure(notifier notifiers.Notifier, alert *storage.Alert, err error) {
 	protoNotifier := notifier.ProtoNotifier()
 	log.Errorf("Unable to send %s notification to %s (%s) for alert %s: %v", alert.GetState().String(), protoNotifier.GetName(), protoNotifier.GetType(), alert.GetId(), err)
-}
-
-// Sending Audit Messages.
-//////////////////////////
-
-func tryToSendAudit(ctx context.Context, notifier notifiers.Notifier, msg *v1.Audit_Message) {
-	auditNotifier, ok := notifier.(notifiers.AuditNotifier)
-	if ok {
-		sendAuditMessage(ctx, auditNotifier, msg)
-	}
-}
-
-func sendAuditMessage(ctx context.Context, notifier notifiers.AuditNotifier, msg *v1.Audit_Message) {
-	if err := notifier.SendAuditMessage(ctx, msg); err != nil {
-		protoNotifier := notifier.ProtoNotifier()
-		log.Errorf("Unable to send audit msg to %s (%s): %v", protoNotifier.GetName(), protoNotifier.GetType(), err)
-	}
 }

@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -24,11 +25,13 @@ type Processor interface {
 
 	UpdateNotifier(ctx context.Context, notifier notifiers.Notifier)
 	RemoveNotifier(ctx context.Context, id string)
+	UpdateNotifierHealthStatus(notifier notifiers.Notifier, healthStatus storage.IntegrationHealth_Status, errMessage string)
 }
 
 // New returns a new Processor
-func New(ns NotifierSet) Processor {
+func New(ns NotifierSet, reporter reporter.IntegrationHealthReporter) Processor {
 	return &processorImpl{
-		ns: ns,
+		ns:       ns,
+		reporter: reporter,
 	}
 }

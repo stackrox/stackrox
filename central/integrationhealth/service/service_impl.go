@@ -12,18 +12,23 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.ImageIntegration)): {
-			"/v1.IntegrationHealthService/GetRegistries",
+			"/v1.IntegrationHealthService/GetImageIntegrations",
 		},
 		user.With(permissions.View(resources.Notifier)): {
 			"/v1.IntegrationHealthService/GetNotifiers",
 		},
 		user.With(permissions.View(resources.BackupPlugins)): {
 			"/v1.IntegrationHealthService/GetExternalBackups",
+		},
+		user.With(permissions.View(resources.ScannerDefinitions)): {
+			"/v1.IntegrationHealthService/GetVulnDefinitionsInfo",
 		},
 	})
 )
@@ -48,8 +53,8 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-// GetRegistries returns the health status for all configured registries and scanners.
-func (s *serviceImpl) GetRegistriesAndScanners(ctx context.Context, empty *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
+// GetImageIntegrations returns the health status for all configured registries and scanners.
+func (s *serviceImpl) GetImageIntegrations(ctx context.Context, empty *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
 	healthData, err := s.datastore.GetRegistriesAndScanners(ctx)
 	if err != nil {
 		return nil, err
@@ -60,7 +65,7 @@ func (s *serviceImpl) GetRegistriesAndScanners(ctx context.Context, empty *v1.Em
 }
 
 // GetNotifiers returns the health status for all configured notifiers.
-func (s *serviceImpl) GetNotifierPlugins(ctx context.Context, empty *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
+func (s *serviceImpl) GetNotifiers(ctx context.Context, empty *v1.Empty) (*v1.GetIntegrationHealthResponse, error) {
 	healthData, err := s.datastore.GetNotifierPlugins(ctx)
 	if err != nil {
 		return nil, err
@@ -79,4 +84,8 @@ func (s *serviceImpl) GetBackupPlugins(ctx context.Context, empty *v1.Empty) (*v
 	return &v1.GetIntegrationHealthResponse{
 		IntegrationHealth: healthData,
 	}, nil
+}
+
+func (s *serviceImpl) GetVulnDefinitionsInfo(ctx context.Context, empty *v1.Empty) (*v1.GetVulnDefinitionsInfoResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method not implemented")
 }

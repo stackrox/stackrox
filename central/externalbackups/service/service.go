@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/externalbackups/datastore"
 	"github.com/stackrox/rox/central/externalbackups/manager"
+	integrationHealthDS "github.com/stackrox/rox/central/integrationhealth/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -24,9 +25,10 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(dataStore datastore.DataStore, manager manager.Manager) Service {
+func New(dataStore datastore.DataStore, healthDS integrationHealthDS.DataStore, manager manager.Manager) Service {
 	return &serviceImpl{
-		dataStore: dataStore,
-		manager:   manager,
+		dataStore:       dataStore,
+		healthDatastore: healthDS,
+		manager:         manager,
 	}
 }

@@ -111,3 +111,15 @@ func (mr *MockProcessorMockRecorder) RemoveNotifier(ctx, id interface{}) *gomock
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveNotifier", reflect.TypeOf((*MockProcessor)(nil).RemoveNotifier), ctx, id)
 }
+
+// UpdateNotifierHealthStatus mocks base method
+func (m *MockProcessor) UpdateNotifierHealthStatus(notifier notifiers.Notifier, healthStatus storage.IntegrationHealth_Status, errMessage string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateNotifierHealthStatus", notifier, healthStatus, errMessage)
+}
+
+// UpdateNotifierHealthStatus indicates an expected call of UpdateNotifierHealthStatus
+func (mr *MockProcessorMockRecorder) UpdateNotifierHealthStatus(notifier, healthStatus, errMessage interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNotifierHealthStatus", reflect.TypeOf((*MockProcessor)(nil).UpdateNotifierHealthStatus), notifier, healthStatus, errMessage)
+}

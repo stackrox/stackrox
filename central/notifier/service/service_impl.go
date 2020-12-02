@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/detection"
+	healthDatastore "github.com/stackrox/rox/central/integrationhealth/datastore"
 	"github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/notifiers"
@@ -45,8 +47,9 @@ var (
 
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
-	storage   datastore.DataStore
-	processor processor.Processor
+	storage         datastore.DataStore
+	processor       processor.Processor
+	healthDatastore healthDatastore.DataStore
 
 	buildTimePolicies  detection.PolicySet
 	deployTimePolicies detection.PolicySet
@@ -141,6 +144,21 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	s.processor.UpdateNotifier(ctx, notifier)
+	currentHealth, found, err := s.healthDatastore.GetIntegrationHealth(ctx, request.GetNotifier().Id)
+
+	if !found || err != nil {
+		errMsg := fmt.Sprintf("unable to get integration health for integration %s.", request.GetNotifier().Id)
+		if err != nil {
+			errMsg = fmt.Sprintf("%s Error: %+v", errMsg, err)
+		}
+		return nil, status.Error(codes.Internal, errMsg)
+	}
+
+	newHealth := currentHealth.Clone()
+	newHealth.Name = request.GetNotifier().GetName()
+	if err := s.healthDatastore.UpdateIntegrationHealth(ctx, newHealth); err != nil {
+		return nil, err
+	}
 	return &v1.Empty{}, nil
 }
 
@@ -162,6 +180,18 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 	}
 	request.Id = id
 	s.processor.UpdateNotifier(ctx, notifier)
+
+	if err := s.healthDatastore.UpdateIntegrationHealth(ctx, &storage.IntegrationHealth{
+		Id:            request.Id,
+		Name:          request.Name,
+		Type:          storage.IntegrationHealth_NOTIFIER,
+		Status:        storage.IntegrationHealth_UNINITIALIZED,
+		ErrorMessage:  "",
+		LastTimestamp: timestamp.TimestampNow(),
+	}); err != nil {
+		return nil, err
+	}
+
 	return request, nil
 }
 
@@ -216,6 +246,9 @@ func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNoti
 	}
 
 	s.processor.RemoveNotifier(ctx, request.GetId())
+	if err := s.healthDatastore.RemoveIntegrationHealth(ctx, request.GetId()); err != nil {
+		return nil, err
+	}
 	return &v1.Empty{}, nil
 }
 

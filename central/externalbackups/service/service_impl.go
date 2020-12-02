@@ -2,10 +2,13 @@ package service
 
 import (
 	"context"
+	"fmt"
 
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/externalbackups/datastore"
 	"github.com/stackrox/rox/central/externalbackups/manager"
+	healthDS "github.com/stackrox/rox/central/integrationhealth/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -43,8 +46,9 @@ var (
 
 // serviceImpl is the struct that manages the external backups API
 type serviceImpl struct {
-	manager   manager.Manager
-	dataStore datastore.DataStore
+	manager         manager.Manager
+	healthDatastore healthDS.DataStore
+	dataStore       datastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -175,6 +179,23 @@ func (s *serviceImpl) UpdateExternalBackup(ctx context.Context, request *v1.Upda
 	if err := s.upsertExternalBackup(ctx, request.GetExternalBackup()); err != nil {
 		return nil, err
 	}
+
+	currentHealth, found, err := s.healthDatastore.GetIntegrationHealth(ctx, request.GetExternalBackup().Id)
+
+	if !found || err != nil {
+		errMsg := fmt.Sprintf("unable to get integration health for integration %s.", request.GetExternalBackup().Id)
+		if err != nil {
+			errMsg = fmt.Sprintf("%s Error: %+v", errMsg, err)
+		}
+		return nil, status.Error(codes.Internal, errMsg)
+	}
+
+	newHealth := currentHealth.Clone()
+	newHealth.Name = request.GetExternalBackup().GetName()
+	if err := s.healthDatastore.UpdateIntegrationHealth(ctx, newHealth); err != nil {
+		return nil, err
+	}
+
 	return request.GetExternalBackup(), nil
 }
 
@@ -190,6 +211,16 @@ func (s *serviceImpl) PostExternalBackup(ctx context.Context, request *storage.E
 	if err := s.upsertExternalBackup(ctx, request); err != nil {
 		return nil, err
 	}
+	if err := s.healthDatastore.UpdateIntegrationHealth(ctx, &storage.IntegrationHealth{
+		Id:            request.Id,
+		Name:          request.Name,
+		Type:          storage.IntegrationHealth_BACKUP,
+		Status:        storage.IntegrationHealth_UNINITIALIZED,
+		ErrorMessage:  "",
+		LastTimestamp: timestamp.TimestampNow(),
+	}); err != nil {
+		return nil, err
+	}
 	return request, nil
 }
 
@@ -201,6 +232,10 @@ func (s *serviceImpl) DeleteExternalBackup(ctx context.Context, request *v1.Reso
 	if err := s.dataStore.RemoveBackup(ctx, request.GetId()); err != nil {
 		return nil, err
 	}
+	if err := s.healthDatastore.RemoveIntegrationHealth(ctx, request.GetId()); err != nil {
+		return nil, err
+	}
+
 	s.manager.Remove(ctx, request.GetId())
 
 	return &v1.Empty{}, nil

@@ -26,7 +26,7 @@ var (
 type Manager interface {
 	Upsert(ctx context.Context, backup *storage.ExternalBackup) error
 	Test(ctx context.Context, backup *storage.ExternalBackup) error
-	Remove(ctx context.Context, d string)
+	Remove(ctx context.Context, id string)
 
 	Backup(ctx context.Context, id string) error
 }
