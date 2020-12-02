@@ -1,11 +1,14 @@
 package resources
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -84,7 +87,9 @@ func TestRBACUpdater(t *testing.T) {
 		},
 	}
 
-	tested := newRBACUpdater().(*rbacUpdaterImpl)
+	var flag concurrency.Flag
+	flag.Set(true)
+	tested := newRBACUpdater(&flag).(*rbacUpdaterImpl)
 
 	// Add a binding with no role, should get a binding update with no role id.
 	event := tested.upsertBinding(bindings[0])
@@ -340,4 +345,43 @@ func TestRBACUpdater(t *testing.T) {
 			"b3": clusterRoleBinding0,
 		},
 	}, tested.roleRefToBindings)
+}
+
+func runRBACBenchmark(b *testing.B, updater rbacUpdater) {
+	for n := 0; n < b.N; n++ {
+		for i := 0; i < 700; i++ {
+			updater.upsertRole(&v1.Role{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      fmt.Sprintf("role%d", i),
+					Namespace: fmt.Sprintf("namespace%d", i%10),
+					UID:       types.UID(uuid.NewV4().String()),
+				},
+			})
+		}
+		for i := 0; i < 11572; i++ {
+			updater.upsertBinding(&v1.RoleBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      fmt.Sprintf("role%d", i),
+					Namespace: fmt.Sprintf("namespace%d", i%10),
+					UID:       types.UID(uuid.NewV4().String()),
+				},
+				RoleRef: v1.RoleRef{
+					Name: fmt.Sprintf("role%d", i%700),
+				},
+			})
+		}
+	}
+}
+
+func BenchmarkRBACUpdater(b *testing.B) {
+	var flag concurrency.Flag
+
+	b.Run("flag-off", func(b *testing.B) {
+		runRBACBenchmark(b, newRBACUpdater(&flag))
+	})
+	flag.Set(true)
+
+	b.Run("flag-on", func(b *testing.B) {
+		runRBACBenchmark(b, newRBACUpdater(&flag))
+	})
 }

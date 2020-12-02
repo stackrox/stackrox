@@ -1,8 +1,11 @@
 package resources
 
 import (
+	"errors"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func (rs *rbacUpdaterImpl) assignPermissionLevelToDeployment(wrap *deploymentWrap) {
@@ -14,6 +17,12 @@ func (rs *rbacUpdaterImpl) assignPermissionLevelToDeployment(wrap *deploymentWra
 
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
+	if !rs.hasBuiltInitialBucket {
+		rs.hasBuiltInitialBucket = rs.rebuildEvaluatorBucketsNoLock()
+		if !rs.hasBuiltInitialBucket {
+			utils.Should(errors.New("deployment permissions should not be evaluated if rbac has not been synced"))
+		}
+	}
 	wrap.ServiceAccountPermissionLevel = rs.bucketEvaluator.getBucketNoLock(subject)
 }
 
