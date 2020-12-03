@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/x509utils"
 )
 
 const (
@@ -44,7 +45,7 @@ func GetAdditionalCAs() ([][]byte, error) {
 			return nil, errors.Wrap(err, "reading additional CAs cert")
 		}
 
-		certDER, err := mtls.ConvertPEMToDERs(content)
+		certDER, err := x509utils.ConvertPEMToDERs(content)
 		if err != nil {
 			return nil, errors.Wrap(err, "converting additional CA cert to DER")
 		}
@@ -66,7 +67,7 @@ func GetDefaultCertChain() ([][]byte, error) {
 		return nil, errors.Wrap(err, "reading default cert file")
 	}
 
-	certDERsFromFile, err := mtls.ConvertPEMToDERs(content)
+	certDERsFromFile, err := x509utils.ConvertPEMToDERs(content)
 	if err != nil {
 		return nil, errors.Wrap(err, "converting additional CA cert to DER")
 	}

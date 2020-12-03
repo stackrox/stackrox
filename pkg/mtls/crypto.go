@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/x509utils"
 )
 
 const (
@@ -93,29 +94,6 @@ func LeafCertificateFromFile() (tls.Certificate, error) {
 	return tls.LoadX509KeyPair(certFilePathSetting.Setting(), keyFilePathSetting.Setting())
 }
 
-// ConvertPEMToDERs converts the given certBytes to DER.
-// Returns multiple DERs if multiple PEMs were passed.
-func ConvertPEMToDERs(certBytes []byte) ([][]byte, error) {
-	var result [][]byte
-
-	restBytes := certBytes
-	for {
-		var decoded *pem.Block
-		decoded, restBytes = pem.Decode(restBytes)
-
-		if decoded == nil && len(result) == 0 {
-			return nil, errors.New("invalid PEM")
-		} else if decoded == nil {
-			return result, nil
-		}
-
-		result = append(result, decoded.Bytes)
-		if len(restBytes) == 0 {
-			return result, nil
-		}
-	}
-}
-
 // CACertPEM returns the PEM-encoded CA certificate.
 func CACertPEM() ([]byte, error) {
 	_, caDER, err := CACert()
@@ -148,7 +126,7 @@ func readCA() (*x509.Certificate, []byte, []byte, error) {
 			return
 		}
 
-		der, err := ConvertPEMToDERs(caBytes)
+		der, err := x509utils.ConvertPEMToDERs(caBytes)
 		if err != nil {
 			caCertErr = errors.Wrap(err, "CA cert could not be decoded")
 			return
