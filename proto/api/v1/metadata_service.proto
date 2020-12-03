@@ -31,6 +31,8 @@ message TrustInfo {
     string sensor_challenge = 2;
     // central challenge string
     string central_challenge = 3;
+    // additional CA certs configured in central in DER format
+    repeated bytes additional_cas = 4;
 }
 
 message TLSChallengeResponse {

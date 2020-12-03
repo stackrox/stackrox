@@ -45,7 +45,7 @@ main() {
 
         mkdir -p "${log_dir}/${object}"
 
-        for item in $(kubectl -n "${namespace}" get "${object}" | tail -n +2 | awk '{print $1}'); do
+        for item in $(kubectl -n "${namespace}" get "${object}" -o jsonpath='{.items}' | jq -r '.[] | select(.metadata.deletionTimestamp | not) | .metadata.name'); do
             kubectl describe "${object}" "${item}" -n "${namespace}" > "${log_dir}/${object}/${item}_describe.log"
             for ctr in $(kubectl -n "${namespace}" get "${object}" "${item}" -o jsonpath='{.status.containerStatuses[*].name}'); do
                 kubectl -n "${namespace}" logs "${object}/${item}" -c "${ctr}" > "${log_dir}/${object}/${item}-${ctr}.log"

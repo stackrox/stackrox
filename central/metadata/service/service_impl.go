@@ -8,6 +8,7 @@ import (
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/license/manager"
+	"github.com/stackrox/rox/central/tlsconfig"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -94,6 +95,20 @@ func (s *serviceImpl) TLSChallenge(ctx context.Context, req *v1.TLSChallengeRequ
 		return nil, status.Errorf(codes.Internal, "Could not load leaf certificate: %s", err)
 	}
 
+	additionalCAs, err := tlsconfig.GetAdditionalCAs()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "reading additional CAs: %s", err)
+	}
+
+	// add default leaf cert to additional CAs
+	defaultCertChain, err := tlsconfig.GetDefaultCertChain()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "could not read default CA cert: %s", err)
+	}
+	if len(defaultCertChain) > 0 {
+		additionalCAs = append(additionalCAs, defaultCertChain[0])
+	}
+
 	// Write trust info to proto struct
 	trustInfo := &v1.TrustInfo{
 		CentralChallenge: centralChallenge,
@@ -102,6 +117,7 @@ func (s *serviceImpl) TLSChallenge(ctx context.Context, req *v1.TLSChallengeRequ
 			leafCert.Certificate[0],
 			caCertDERBytes,
 		},
+		AdditionalCas: additionalCAs,
 	}
 	trustInfoBytes, err := proto.Marshal(trustInfo)
 	if err != nil {

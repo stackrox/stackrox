@@ -162,6 +162,7 @@ class Kubernetes implements OrchestratorMain {
     def cleanup() {
     }
 
+    @Deprecated
     KubernetesClient getK8sClient() {
         return this.client
     }
@@ -224,7 +225,7 @@ class Kubernetes implements OrchestratorMain {
         return false
     }
 
-    def waitForPodsReady(String ns, Map<String, String>labels, int minReady = 1, int retries = 30,
+    def waitForPodsReady(String ns, Map<String, String> labels, int minReady = 1, int retries = 30,
                          int intervalSeconds = 5) {
         LabelSelector selector = new LabelSelector()
         selector.matchLabels = labels
@@ -243,25 +244,74 @@ class Kubernetes implements OrchestratorMain {
         return false
     }
 
-    List<Pod> getPods(String namespace, String appName) {
-        return getPodsByLabel(namespace, ["app": appName])
+    // waitForPodRestart waits until the restartCount is greater then the given prevRestartCount
+    def waitForPodRestart(String ns, String name, int prevRestartCount, int retries, int intervalSeconds) {
+        Timer t = new Timer(retries, intervalSeconds)
+        while (t.IsValid()) {
+            def pod = client.pods().inNamespace(ns).withName(name).get()
+            if (pod.status.containerStatuses.get(0).restartCount > prevRestartCount) {
+                println "Restarted container ${ns}/${name}"
+                return true
+            }
+        }
+        throw new OrchestratorManagerException("Timed out waiting killing pod ${ns}/${name}")
     }
 
-    List<Pod> getPodsByLabel(String namespace, Map<String, String> label) {
+    List<Pod> getPods(String ns, String appName) {
+        return getPodsByLabel(ns, ["app": appName])
+    }
+
+    List<Pod> getPodsByLabel(String ns, Map<String, String> label) {
         def selector = new LabelSelector()
         selector.matchLabels = label
         PodList list = evaluateWithRetry(2, 3) {
-            return client.pods().inNamespace(namespace).withLabelSelector(selector).list()
+            return client.pods().inNamespace(ns).withLabelSelector(selector).list()
         }
         return list.getItems()
     }
 
-    Boolean deletePod(String namespace, String podName, Long gracePeriodSecs) {
-        Deletable<Boolean> podClient = client.pods().inNamespace(namespace).withName(podName)
+    Boolean deletePod(String ns, String podName, Long gracePeriodSecs) {
+        Deletable<Boolean> podClient = client.pods().inNamespace(ns).withName(podName)
         if (gracePeriodSecs != null) {
             podClient = podClient.withGracePeriod(gracePeriodSecs)
         }
         return podClient.delete()
+    }
+
+    def deleteAllPods(String ns, Map<String, String> labels) {
+        println "Delete all pods in ${ns} with labels ${labels}"
+        client.pods().inNamespace(ns).withLabels(labels).delete()
+    }
+
+    Boolean deletePodAndWait(String ns, String name, int retries, int intervalSeconds) {
+        deletePod(ns, name, null)
+        println "Deleting pod ${name}"
+
+        Timer t = new Timer(retries, intervalSeconds)
+        while (t.IsValid()) {
+            println "Waiting for pod deletion ${name}"
+            def pod = client.pods().inNamespace(ns).withName(name).get()
+            if (pod == null) {
+                println "Deleted pod ${name}"
+                return true
+            }
+        }
+        throw new OrchestratorManagerException("Could not delete pod ${ns}/${name}")
+    }
+
+    Boolean restartPodByLabelWithExecKill(String ns, Map<String, String> labels) {
+        Pod pod = getPodsByLabel(ns, labels).get(0)
+        int prevRestartCount = pod.status.containerStatuses.get(0).restartCount
+        execInContainerByPodName(pod.metadata.name, pod.metadata.namespace, "kill 1 &")
+        println "Killed pod ${pod.metadata.name}"
+        return waitForPodRestart(pod.metadata.namespace, pod.metadata.name, prevRestartCount, 25, 5)
+    }
+
+    def restartPodByLabels(String ns, Map<String, String> labels, int retries, int intervalSecond) {
+        Pod pod = getPodsByLabel(ns, labels).get(0)
+
+        deletePodAndWait(ns, pod.metadata.name, retries, intervalSecond)
+        return waitForPodsReady(ns, labels, 1, retries, intervalSecond)
     }
 
     def getAndPrintPods(String ns, String name) {
@@ -272,6 +322,12 @@ class Kubernetes implements OrchestratorMain {
                 println "\t  Container status: ${status.state}"
             }
         }
+    }
+
+    String getPodLog(String ns, String name) {
+        println "reading logs from ${ns}/${name}"
+        return client.pods().inNamespace(ns)
+                .withName(name).getLog()
     }
 
     def waitForDeploymentDeletion(Deployment deploy, int retries = 30, int intervalSeconds = 5) {
@@ -406,6 +462,42 @@ class Kubernetes implements OrchestratorMain {
                         .portForward(port)
     }
 
+    EnvVar getDeploymentEnv(String ns, String name, String key) {
+        List<EnvVar> envVars = client.apps().deployments().inNamespace(ns).withName(name).get().spec.template
+                .spec.containers.get(0).env
+        int index = envVars.findIndexOf { it.name == key }
+        if (index < 0) {
+            throw new OrchestratorManagerException("Did not find env variable ${key} in ${ns}/${name}")
+        }
+        return envVars.get(index)
+    }
+
+    def updateDeploymentEnv(String ns, String name, String key, String value) {
+        println "Update env var in ${ns}/${name}: ${key} = ${value}"
+        List<EnvVar> envVars = client.apps().deployments().inNamespace(ns).withName(name).get().spec.template
+                .spec.containers.get(0).env
+
+        int index = envVars.findIndexOf { it.name == key }
+        if (index < 0) {
+            throw new OrchestratorManagerException(
+                    "Could not update env var, did not find env variable ${key} in ${ns}/${name}")
+        }
+        envVars.get(index).value = value
+
+        client.apps().deployments().inNamespace(ns).withName(name)
+                .edit()
+                .editSpec()
+                .editTemplate()
+                .editSpec()
+                .editContainer(0)
+                .withEnv(envVars)
+                .endContainer()
+                .endSpec()
+                .endTemplate()
+                .endSpec()
+                .done()
+    }
+
     /*
         DaemonSet Methods
     */
@@ -419,6 +511,20 @@ class Kubernetes implements OrchestratorMain {
     def deleteDaemonSet(DaemonSet daemonSet) {
         this.daemonsets.inNamespace(daemonSet.namespace).withName(daemonSet.name).delete()
         println "${daemonSet.name}: daemonset removed."
+    }
+
+    def waitForDaemonSetReady(String ns, String name, int retries, int intervalSeconds) {
+        println "Waiting for daemonset ${ns}/${name} being ready"
+        Timer t = new Timer(retries, intervalSeconds)
+        while (t.IsValid()) {
+            def daemonSet = client.apps().daemonSets().inNamespace(ns).withName(name).get()
+            def numReady = daemonSet.status.numberReady
+            if (numReady >= daemonSet.status.desiredNumberScheduled) {
+                return true
+            }
+            println "Waiting for daemonset ${ns}/${name} being ready, retrying..."
+        }
+        return false
     }
 
     def createJob(Job job) {
@@ -1437,29 +1543,28 @@ class Kubernetes implements OrchestratorMain {
         Misc/Helper Methods
     */
 
-    def execInContainer(Deployment deployment, String cmd) {
+    def execInContainerByPodName(String name, String namespace, String cmd, int retries = 1) {
         // Wait for container 0 to be running first.
-        def timer = new Timer(30, 1)
+        def timer = new Timer(retries, 1)
         while (timer.IsValid()) {
-            def p = client.pods().inNamespace(deployment.namespace).withName(deployment.pods.get(0).name).get()
+            def p = client.pods().inNamespace(namespace).withName(name).get()
             if (p == null || p.status.containerStatuses.size() == 0) {
-                println "First container in pod ${deployment.pods.get(0).name} not yet running ..."
+                println "First container in pod ${name} not yet running ..."
                 continue
             }
             def status = p.status.containerStatuses.get(0)
             if (status.state.running != null) {
-                println "First container in pod ${deployment.pods.get(0).name} is running"
+                println "First container in pod ${name} is running"
                 break
             }
-            println "First container in pod ${deployment.pods.get(0).name} not yet running ..."
+            println "First container in pod ${name} not yet running ..."
         }
 
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(20)
         try {
             CountDownLatch latch = new CountDownLatch(1)
-            ExecWatch watch =
-                    client.pods().inNamespace(deployment.namespace).withName(deployment.pods.get(0).name)
-                            .redirectingOutput().usingListener(new ExecListener() {
+            ExecWatch watch = client.pods().inNamespace(namespace).withName(name)
+                    .redirectingOutput().usingListener(new ExecListener() {
                 @Override
                 void onOpen(Response response) {
                 }
@@ -1487,6 +1592,10 @@ class Kubernetes implements OrchestratorMain {
         }
         executorService.shutdown()
         return true
+    }
+
+    def execInContainer(Deployment deployment, String cmd) {
+        return execInContainerByPodName(deployment.pods.get(0).name, deployment.namespace, cmd, 30)
     }
 
     String generateYaml(Object orchestratorObject) {

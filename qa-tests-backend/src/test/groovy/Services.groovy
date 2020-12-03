@@ -1,7 +1,9 @@
+import io.stackrox.proto.api.v1.ClustersServiceGrpc
 import io.stackrox.proto.api.v1.DeploymentServiceOuterClass
 import io.stackrox.proto.api.v1.ImageServiceGrpc
 import io.stackrox.proto.api.v1.ImageServiceOuterClass
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass.BuildDetectionRequest
+import io.stackrox.proto.api.v1.MetadataServiceGrpc
 import io.stackrox.proto.storage.DeploymentOuterClass.Pod
 import io.stackrox.proto.storage.DeploymentOuterClass.ContainerImage
 import io.stackrox.proto.storage.RiskOuterClass
@@ -36,6 +38,14 @@ class Services extends BaseService {
 
     static ResourceByID getResourceByID(String id) {
         return ResourceByID.newBuilder().setId(id).build()
+    }
+
+    static getMetadataClient() {
+        return MetadataServiceGrpc.newBlockingStub(getChannel())
+    }
+
+    static getClusterClient() {
+        return ClustersServiceGrpc.newBlockingStub(getChannel())
     }
 
     static getImageClient() {

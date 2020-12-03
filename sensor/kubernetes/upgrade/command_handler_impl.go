@@ -10,12 +10,14 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralclient"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -37,6 +39,29 @@ type commandHandler struct {
 
 // NewCommandHandler returns a new upgrade command handler for Kubernetes.
 func NewCommandHandler() (common.SensorComponent, error) {
+	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
+
+	if features.SensorTLSChallenge.Enabled() {
+		//TODO(ROX-5859): Reuse existing sensor connection to central
+		//Currently it tries to fetch trust info from central, if it fails it does not break sensors start up
+		centralClient, err := centralclient.NewClient(env.CentralEndpoint.Setting())
+		if err != nil {
+			log.Warnf("Creating central client in CommandHandler: %s", err)
+		}
+
+		certs, err := centralClient.GetTLSTrustedCerts()
+		if err != nil {
+			log.Errorf("Creating UpgradeCommandHandler: %s", err)
+		}
+
+		if len(certs) != 0 {
+			log.Infof("Add central CA certs to CommandHandler gRPC connection")
+			opts = append(opts, clientconn.AddRootCAs(certs...))
+		} else {
+			log.Infof("Did not did add central CA cert to CommandHandler gRPC connection")
+		}
+	}
+
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining in-cluster Kubernetes config")
@@ -46,7 +71,7 @@ func NewCommandHandler() (common.SensorComponent, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "create Kubernetes clientset")
 	}
-	conn, err := clientconn.AuthenticatedGRPCConnection(env.CentralEndpoint.Setting(), mtls.CentralSubject, clientconn.UseServiceCertToken(true))
+	conn, err := clientconn.AuthenticatedGRPCConnection(env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, "establishing central gRPC connection")
 	}

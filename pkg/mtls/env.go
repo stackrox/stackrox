@@ -14,7 +14,7 @@ func CertFilePath() string {
 	return certFilePathSetting.Setting()
 }
 
-// KeyFilePath rteurns the path where the key is stored.
+// KeyFilePath returns the path where the key is stored.
 func KeyFilePath() string {
 	return keyFilePathSetting.Setting()
 }

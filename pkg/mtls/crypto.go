@@ -93,13 +93,27 @@ func LeafCertificateFromFile() (tls.Certificate, error) {
 	return tls.LoadX509KeyPair(certFilePathSetting.Setting(), keyFilePathSetting.Setting())
 }
 
-// convertToDER converts the given certBytes to DER.
-func convertToDER(certBytes []byte) ([]byte, error) {
-	decoded, _ := pem.Decode(certBytes)
-	if decoded == nil {
-		return nil, errors.New("invalid PEM")
+// ConvertPEMToDERs converts the given certBytes to DER.
+// Returns multiple DERs if multiple PEMs were passed.
+func ConvertPEMToDERs(certBytes []byte) ([][]byte, error) {
+	var result [][]byte
+
+	restBytes := certBytes
+	for {
+		var decoded *pem.Block
+		decoded, restBytes = pem.Decode(restBytes)
+
+		if decoded == nil && len(result) == 0 {
+			return nil, errors.New("invalid PEM")
+		} else if decoded == nil {
+			return result, nil
+		}
+
+		result = append(result, decoded.Bytes)
+		if len(restBytes) == 0 {
+			return result, nil
+		}
 	}
-	return decoded.Bytes, nil
 }
 
 // CACertPEM returns the PEM-encoded CA certificate.
@@ -134,19 +148,24 @@ func readCA() (*x509.Certificate, []byte, []byte, error) {
 			return
 		}
 
-		der, err := convertToDER(caBytes)
+		der, err := ConvertPEMToDERs(caBytes)
 		if err != nil {
 			caCertErr = errors.Wrap(err, "CA cert could not be decoded")
 			return
 		}
-		cert, err := x509.ParseCertificate(der)
+		if len(der) == 0 {
+			caCertErr = errors.New("reading CA file failed")
+			return
+		}
+
+		cert, err := x509.ParseCertificate(der[0])
 		if err != nil {
 			caCertErr = errors.Wrap(err, "CA cert could not be parsed")
 			return
 		}
 		caCertFileContents = caBytes
 		caCert = cert
-		caCertDER = der
+		caCertDER = der[0]
 	})
 	return caCert, caCertFileContents, caCertDER, caCertErr
 }

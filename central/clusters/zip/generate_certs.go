@@ -24,7 +24,6 @@ import (
 )
 
 const (
-	additionalCAsDir       = "/usr/local/share/ca-certificates"
 	additionalCAsZipSubdir = "additional-cas"
 	centralCA              = "default-central-ca.crt"
 )
@@ -54,7 +53,7 @@ func createIdentity(wrapper *zip.Wrapper, id string, servicePrefix string, servi
 }
 
 func getAdditionalCAs(certs *sensor.Certs) ([]*zip.File, error) {
-	certFileInfos, err := ioutil.ReadDir(additionalCAsDir)
+	certFileInfos, err := ioutil.ReadDir(tlsconfig.AdditionalCACertsDirPath())
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -67,7 +66,7 @@ func getAdditionalCAs(certs *sensor.Certs) ([]*zip.File, error) {
 		if fileInfo.IsDir() || filepath.Ext(fileInfo.Name()) != ".crt" {
 			continue
 		}
-		fullPath := path.Join(additionalCAsDir, fileInfo.Name())
+		fullPath := path.Join(tlsconfig.AdditionalCACertsDirPath(), fileInfo.Name())
 		contents, err := ioutil.ReadFile(fullPath)
 		if err != nil {
 			return nil, err

@@ -86,12 +86,21 @@ func (c *Client) GetTLSTrustedCerts() ([]*x509.Certificate, error) {
 		return nil, errors.Wrap(err, "connecting to central")
 	}
 
-	_, err = c.parseTLSChallengeResponse(resp)
+	trustInfo, err := c.parseTLSChallengeResponse(resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "verifying tls challenge")
 	}
 
-	return []*x509.Certificate{}, nil
+	var certs []*x509.Certificate
+	for _, ca := range trustInfo.GetAdditionalCas() {
+		cert, err := x509.ParseCertificate(ca)
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing additional CA")
+		}
+		certs = append(certs, cert)
+	}
+
+	return certs, nil
 }
 
 func (c *Client) parseTLSChallengeResponse(challenge *v1.TLSChallengeResponse) (*v1.TrustInfo, error) {

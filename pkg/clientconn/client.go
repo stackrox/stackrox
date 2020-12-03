@@ -166,7 +166,7 @@ func (f connectOptFunc) apply(opts *connectionOptions) error {
 func AddRootCAs(certs ...*x509.Certificate) ConnectionOption {
 	return connectOptFunc(func(opts *connectionOptions) error {
 		if opts.rootCAs == nil {
-			pool, err := x509.SystemCertPool()
+			pool, err := verifier.TrustedCertPool()
 			if err != nil {
 				return errors.Wrap(err, "Reading system certs")
 			}

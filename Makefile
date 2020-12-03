@@ -193,6 +193,9 @@ fast: fast-central
 .PHONY: fast-sensor
 fast-sensor: sensor-build-dockerized
 
+.PHONY: fast-sensor-kubernetes
+fast-sensor-kubernetes: sensor-kubernetes-build-dockerized
+
 .PHONY: validateimports
 validateimports:
 	@echo "+ $@"
@@ -394,10 +397,19 @@ sensor-build-dockerized: main-builder-image
 	@echo "+ $@"
 	docker run --rm -e CI -e CIRCLE_TAG -e GOTAGS $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
 
+.PHONY: sensor-kubernetes-build-dockerized
+sensor-kubernetes-build-dockerized: main-builder-image
+	@echo "+ $@"
+	docker run -e CI -e CIRCLE_TAG -e GOTAGS $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
+
 .PHONY: sensor-build
 sensor-build:
 	$(GOBUILD) sensor/kubernetes sensor/admission-control
 	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
+
+.PHONY: sensor-kubernetes-build
+sensor-kubernetes-build:
+	$(GOBUILD) sensor/kubernetes
 
 .PHONY: main-rhel-dockerized
 main-rhel-build-dockerized: main-builder-image-rhel

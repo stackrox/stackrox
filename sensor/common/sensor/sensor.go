@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	serviceAuthn "github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -125,18 +126,22 @@ func (s *Sensor) Start() {
 	// Start up connections.
 	log.Infof("Connecting to Central server %s", s.centralEndpoint)
 
-	var err error
 	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
 
-	//TODO(ROX-5811): Implemented in later release with ticket ROX-5811
-	if false {
+	if features.SensorTLSChallenge.Enabled() {
 		certs := s.getCentralTLSCerts()
 		if len(certs) != 0 {
-			log.Infof("Add central certs to gRPC connection")
+			log.Infof("Add %d central CA certs to gRPC connection", len(certs))
+			for _, c := range certs {
+				log.Infof("Add central CA cert with CommonName: '%s'", c.Subject.CommonName)
+			}
 			opts = append(opts, clientconn.AddRootCAs(certs...))
+		} else {
+			log.Infof("Did not did add central CA cert to gRPC connection")
 		}
 	}
 
+	var err error
 	s.centralConnection, err = clientconn.AuthenticatedGRPCConnection(s.centralEndpoint, mtls.CentralSubject, opts...)
 	if err != nil {
 		log.Fatalf("Error connecting to central: %s", err)

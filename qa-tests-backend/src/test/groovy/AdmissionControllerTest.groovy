@@ -517,16 +517,16 @@ class AdmissionControllerTest extends BaseSpecification {
 
         and:
         "Sensor is unavailable"
-        orchestrator.k8sClient.apps().deployments().inNamespace("stackrox").withName("sensor").scale(0)
+        orchestrator.getK8sClient().apps().deployments().inNamespace("stackrox").withName("sensor").scale(0)
         orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"], 30, 1)
 
         and:
         "Admission controller is started from scratch w/o cached scans"
         def admCtrlDeploy = orchestrator.getOrchestratorDeployment("stackrox", "admission-control")
         def originalAdmCtrlReplicas = admCtrlDeploy.spec.replicas
-        orchestrator.k8sClient.apps().deployments().inNamespace("stackrox").withName("admission-control").scale(0)
+        orchestrator.getK8sClient().apps().deployments().inNamespace("stackrox").withName("admission-control").scale(0)
         orchestrator.waitForAllPodsToBeRemoved("stackrox", admCtrlDeploy.spec.selector.matchLabels, 30, 1)
-        orchestrator.k8sClient.apps().deployments().inNamespace("stackrox").withName("admission-control")
+        orchestrator.getK8sClient().apps().deployments().inNamespace("stackrox").withName("admission-control")
                 .scale(originalAdmCtrlReplicas)
         orchestrator.waitForPodsReady("stackrox", admCtrlDeploy.spec.selector.matchLabels,
                 originalAdmCtrlReplicas, 30, 1)

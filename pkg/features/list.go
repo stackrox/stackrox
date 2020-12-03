@@ -45,4 +45,7 @@ var (
 
 	// DiscoveredAtImage enables discoveredAtImage graphQL field for CVE entity in VM.
 	DiscoveredAtImage = registerFeature("Enable discoveredAtImage graphQL field for CVE entity", "ROX_DISCOVERED_AT_IMAGE", false)
+
+	// SensorTLSChallenge enables Sensor to receive Centrals configured additional-ca an default certs.
+	SensorTLSChallenge = registerFeature("Enable Sensor to receive default and additional CA certificates from Central", "ROX_SENSOR_TLS_CHALLENGE", false)
 )
