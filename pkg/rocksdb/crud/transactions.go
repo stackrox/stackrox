@@ -34,13 +34,16 @@ type txnHelper struct {
 
 // addKeysToIndex adds the keys not yet indexed to the DB
 func (b *txnHelper) addKeysToIndex(batch *gorocksdb.WriteBatch, keys ...[]byte) {
+	if !b.trackIndex {
+		return
+	}
 	for _, k := range keys {
 		batch.Put(dbhelper.GetBucketKey(b.prefix, k), []byte{0})
 	}
 }
 
-// AddStringKeysToIndex is a wrapper around addKeysToIndex but with a string slice instead of a []byte slice
-func (b *txnHelper) AddStringKeysToIndex(batch *gorocksdb.WriteBatch, keys ...string) {
+// addStringKeysToIndex is a wrapper around addKeysToIndex but with a string slice instead of a []byte slice
+func (b *txnHelper) addStringKeysToIndex(batch *gorocksdb.WriteBatch, keys ...string) {
 	if !b.trackIndex {
 		return
 	}

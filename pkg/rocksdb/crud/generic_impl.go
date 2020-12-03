@@ -234,7 +234,7 @@ func (c *crudImpl) Delete(id string) error {
 	defer batch.Destroy()
 
 	// Include keys to index within this transaction to avoid creating a new txn
-	c.AddStringKeysToIndex(batch, id)
+	c.addStringKeysToIndex(batch, id)
 	batch.Delete(c.getPrefixedKey(id))
 
 	if err := c.db.Write(defaultWriteOptions, batch); err != nil {
@@ -253,7 +253,7 @@ func (c *crudImpl) DeleteMany(ids []string) error {
 	defer batch.Destroy()
 
 	for _, id := range ids {
-		c.AddStringKeysToIndex(batch, id)
+		c.addStringKeysToIndex(batch, id)
 		batch.Delete(c.getPrefixedKey(id))
 	}
 
