@@ -403,6 +403,12 @@ const styles = [
         },
     },
     {
+        selector: 'edge.inner.hidden',
+        style: {
+            display: 'none',
+        },
+    },
+    {
         selector: 'edge.hovered',
         style: {
             opacity: 1,

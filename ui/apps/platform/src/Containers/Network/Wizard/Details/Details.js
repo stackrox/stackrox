@@ -11,6 +11,7 @@ import { types as deploymentTypes } from 'reducers/deployments';
 import { selectors } from 'reducers';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as graphActions } from 'reducers/network/graph';
+import { nodeTypes } from 'constants/networkGraph';
 import Panel from 'Components/Panel';
 import Tabs from 'Components/Tabs';
 import Loader from 'Components/Loader';
@@ -44,7 +45,10 @@ function Details({
     ];
 
     const deploymentEdges = selectedNode.edges.filter(
-        ({ data }) => data.destNodeNamespace && data.destNodeName && data.source !== data.target
+        ({ data: { destNodeName, destNodeNamespace, source, target, destNodeType } }) =>
+            destNodeNamespace &&
+            destNodeName &&
+            (source !== target || destNodeType !== nodeTypes.DEPLOYMENT)
     );
 
     function onNavigateToDeploymentById(deploymentId, type) {

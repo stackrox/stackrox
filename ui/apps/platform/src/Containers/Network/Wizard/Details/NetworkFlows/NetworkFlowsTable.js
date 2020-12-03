@@ -57,7 +57,7 @@ const NetworkFlowsTable = ({
         },
         {
             headerClassName: `${defaultHeaderClassName} w-10`,
-            className: `${defaultColumnClassName} w-10 break-all`,
+            className: `${defaultColumnClassName} w-10 break-normal`,
             Header: 'Entity',
             accessor: 'entityName',
         },
