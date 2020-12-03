@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	"go.etcd.io/bbolt"
 )
@@ -28,7 +29,7 @@ func TestManager(t *testing.T) {
 type managerSuite struct {
 	suite.Suite
 
-	envIsolator *testutils.EnvIsolator
+	envIsolator *envisolator.EnvIsolator
 
 	runCtx       context.Context
 	runCtxCancel context.CancelFunc
@@ -42,7 +43,7 @@ func (s *managerSuite) createManager(ctx context.Context) *manager {
 }
 
 func (s *managerSuite) SetupTest() {
-	s.envIsolator = testutils.NewEnvIsolator(s.T())
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.envIsolator.Setenv(env.OfflineModeEnv.EnvVar(), "true")
 
 	s.runCtx, s.runCtxCancel = context.WithCancel(sac.WithAllAccess(context.Background()))

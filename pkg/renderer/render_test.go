@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,7 +35,7 @@ func TestRenderTLSSecretsOnly(t *testing.T) {
 	for _, flagValue := range []bool{false, true} {
 		for _, renderMode := range []mode{centralTLSOnly, scannerTLSOnly} {
 			t.Run(fmt.Sprintf("newExperience=%t,mode=%s", flagValue, renderMode), func(t *testing.T) {
-				env := testutils.NewEnvIsolator(t)
+				env := envisolator.NewEnvIsolator(t)
 				defer env.RestoreAll()
 
 				env.Setenv(features.CentralInstallationExperience.EnvVar(), strconv.FormatBool(flagValue))
@@ -76,7 +76,7 @@ func TestRenderScannerOnly(t *testing.T) {
 
 	for _, flagValue := range []bool{false, true} {
 		t.Run(fmt.Sprintf("newExperience=%t", flagValue), func(t *testing.T) {
-			env := testutils.NewEnvIsolator(t)
+			env := envisolator.NewEnvIsolator(t)
 			defer env.RestoreAll()
 
 			env.Setenv(features.CentralInstallationExperience.EnvVar(), strconv.FormatBool(flagValue))

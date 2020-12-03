@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -15,11 +15,11 @@ func TestTlsConfig(t *testing.T) {
 
 type tlsConfigTestSuite struct {
 	suite.Suite
-	envIsolator *testutils.EnvIsolator
+	envIsolator *envisolator.EnvIsolator
 }
 
 func (s *tlsConfigTestSuite) SetupSuite() {
-	s.envIsolator = testutils.NewEnvIsolator(s.T())
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
 func (s *tlsConfigTestSuite) TearDownTest() {

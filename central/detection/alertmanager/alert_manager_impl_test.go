@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -58,7 +59,7 @@ type AlertManagerTestSuite struct {
 	mockCtrl *gomock.Controller
 	ctx      context.Context
 
-	envIsolator *testutils.EnvIsolator
+	envIsolator *envisolator.EnvIsolator
 }
 
 func (suite *AlertManagerTestSuite) SetupTest() {
@@ -68,7 +69,7 @@ func (suite *AlertManagerTestSuite) SetupTest() {
 	suite.notifierMock = notifierMocks.NewMockProcessor(suite.mockCtrl)
 
 	suite.alertManager = New(suite.notifierMock, suite.alertsMock, nil)
-	suite.envIsolator = testutils.NewEnvIsolator(suite.T())
+	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
 }
 
 func (suite *AlertManagerTestSuite) TearDownTest() {

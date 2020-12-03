@@ -19,7 +19,7 @@ import (
 	detectionMocks "github.com/stackrox/rox/pkg/detection/mocks"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc/status"
 )
@@ -54,13 +54,13 @@ type PolicyServiceTestSuite struct {
 	mockConnectionManager *connectionMocks.MockManager
 	tested                Service
 
-	envIsolator *testutils.EnvIsolator
+	envIsolator *envisolator.EnvIsolator
 
 	mockCtrl *gomock.Controller
 }
 
 func (s *PolicyServiceTestSuite) SetupTest() {
-	s.envIsolator = testutils.NewEnvIsolator(s.T())
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 
 	s.mockCtrl = gomock.NewController(s.T())
 

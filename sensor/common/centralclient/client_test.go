@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -34,11 +34,11 @@ func TestServiceImpl(t *testing.T) {
 
 type ClientTestSuite struct {
 	suite.Suite
-	envIsolator *testutils.EnvIsolator
+	envIsolator *envisolator.EnvIsolator
 }
 
 func (t *ClientTestSuite) SetupSuite() {
-	t.envIsolator = testutils.NewEnvIsolator(t.T())
+	t.envIsolator = envisolator.NewEnvIsolator(t.T())
 }
 
 func (t *ClientTestSuite) SetupTest() {

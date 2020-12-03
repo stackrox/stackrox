@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -81,7 +81,7 @@ func makeIndicator() (*storage.ProcessWhitelistKey, *storage.ProcessIndicator) {
 }
 
 func (suite *ManagerTestSuite) TestWhitelistNotFound() {
-	envIsolator := testutils.NewEnvIsolator(suite.T())
+	envIsolator := envisolator.NewEnvIsolator(suite.T())
 	defer envIsolator.RestoreAll()
 
 	envIsolator.Setenv(env.WhitelistGenerationDuration.EnvVar(), time.Millisecond.String())

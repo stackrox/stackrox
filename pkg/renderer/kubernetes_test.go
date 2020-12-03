@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -29,7 +29,7 @@ func getBaseConfig() Config {
 func TestRender(t *testing.T) {
 	for _, experienceVal := range []bool{false, true} {
 		t.Run(fmt.Sprintf("newExperience=%t", experienceVal), func(t *testing.T) {
-			ei := testutils.NewEnvIsolator(t)
+			ei := envisolator.NewEnvIsolator(t)
 			defer ei.RestoreAll()
 
 			if buildinfo.ReleaseBuild && experienceVal != features.CentralInstallationExperience.Enabled() {

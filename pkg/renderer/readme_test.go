@@ -9,7 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -86,7 +86,7 @@ func TestReadme(t *testing.T) {
 		}
 		for _, experienceVal := range experienceVals {
 			t.Run(fmt.Sprintf("%s/%s/%s/newExperience=%t", c.orchCommand, c.deploymentFormat, c.mode, experienceVal), func(t *testing.T) {
-				env := testutils.NewEnvIsolator(t)
+				env := envisolator.NewEnvIsolator(t)
 				defer env.RestoreAll()
 
 				if buildinfo.ReleaseBuild && experienceVal != features.CentralInstallationExperience.Enabled() {

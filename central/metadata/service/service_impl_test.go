@@ -11,7 +11,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -26,11 +26,11 @@ func TestServiceImpl(t *testing.T) {
 
 type serviceImplTestSuite struct {
 	suite.Suite
-	envIsolator *testutils.EnvIsolator
+	envIsolator *envisolator.EnvIsolator
 }
 
 func (s *serviceImplTestSuite) SetupSuite() {
-	s.envIsolator = testutils.NewEnvIsolator(s.T())
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
 func (s *serviceImplTestSuite) TearDownTest() {

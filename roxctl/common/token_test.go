@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -20,11 +20,11 @@ func TestToken(t *testing.T) {
 type tokenSuite struct {
 	suite.Suite
 
-	envIsolator *testutils.EnvIsolator
+	envIsolator *envisolator.EnvIsolator
 }
 
 func (s *tokenSuite) SetupTest() {
-	s.envIsolator = testutils.NewEnvIsolator(s.T())
+	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
 func (s *tokenSuite) TearDownTest() {
