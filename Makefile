@@ -231,10 +231,14 @@ else
 	@git grep --cached -Il '' | xargs $(BASE_DIR)/tools/check-newlines.sh --fix
 endif
 
+.PHONY: init-githooks
+init-githooks:
+	@echo "+ $@"
+	ln -sf $(PWD)/tools/githooks/pre-commit $(PWD)/.git/hooks/pre-commit
+
 .PHONY: dev
 dev: install-dev-tools
 	@echo "+ $@"
-
 
 #####################################
 ## Generated Code and Dependencies ##

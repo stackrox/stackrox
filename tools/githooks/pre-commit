@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+if [[ ! -x "$(command -v "quickstyle")" ]]; then
+    echo >&2 "quickstyle not found, visit https://github.com/stackrox/workflow for installation instructions"
+    exit 1
+fi
+
+echo >&2 "Checking style, if you want to skip pre-commit hooks use --no-verify"
+quickstyle || exit 1
+
+if git status -s | grep -q ".groovy"; then
+    echo >&2 "Checking style for groovy"
+    make -C qa-tests-backend style || exit 1
+fi
