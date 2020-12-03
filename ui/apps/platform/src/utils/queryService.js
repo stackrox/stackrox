@@ -2,6 +2,7 @@ import pluralize from 'pluralize';
 
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
+import decodeBase64 from 'utils/decodeBase64/decodeBase64';
 import { NODE_FRAGMENT } from 'queries/node';
 import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
 import { NAMESPACE_FRAGMENT, CONFIG_NAMESPACE_FRAGMENT } from 'queries/namespace';
@@ -57,7 +58,7 @@ function entityContextToQueryObject(entityContext) {
         if (key === entityTypes.IMAGE) {
             entityQueryObj[`${key} SHA`] = entityContext[key];
         } else if (key === entityTypes.COMPONENT) {
-            const parsedComponentID = entityContext[key].split(':');
+            const parsedComponentID = entityContext[key].split(':').map(decodeBase64);
             [entityQueryObj[`${key} NAME`], entityQueryObj[`${key} VERSION`]] = parsedComponentID;
         } else if (key === entityTypes.CVE) {
             entityQueryObj[key] = entityContext[key];
