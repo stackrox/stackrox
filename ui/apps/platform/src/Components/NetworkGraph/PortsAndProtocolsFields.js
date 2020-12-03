@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import uniq from 'lodash/uniq';
 
-import networkProtocolLabels from 'messages/networkGraph';
+import { networkProtocolLabels } from 'messages/network';
 import TooltipFieldValue from 'Components/TooltipFieldValue';
 
 /**

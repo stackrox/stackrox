@@ -6,7 +6,7 @@ import { selectors } from 'reducers';
 
 import Message from 'Components/Message';
 import Tabs from 'Components/Tabs';
-import TabContent from 'Components/TabContent';
+import Tab from 'Components/Tab';
 import UsageButtons from './UsageButtons';
 import Download from './Icons/Download';
 import Generate from './Icons/Generate';
@@ -41,13 +41,13 @@ const SuccessViewTabs = ({ modificationName, modification }) => {
 
     return (
         <Tabs headers={tabs}>
-            <TabContent>
+            <Tab>
                 <div className="flex flex-col bg-base-100 overflow-auto h-full">
                     <pre className="p-3 pt-4 leading-tight whitespace-pre-wrap word-break">
                         {displayYaml}
                     </pre>
                 </div>
-            </TabContent>
+            </Tab>
         </Tabs>
     );
 };

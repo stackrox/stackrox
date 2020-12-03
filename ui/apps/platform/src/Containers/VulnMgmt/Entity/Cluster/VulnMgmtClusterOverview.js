@@ -7,7 +7,7 @@ import Metadata from 'Components/Metadata';
 import RiskScore from 'Components/RiskScore';
 import StatusChip from 'Components/StatusChip';
 import Tabs from 'Components/Tabs';
-import TabContent from 'Components/TabContent';
+import Tab from 'Components/Tab';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
 import entityTypes from 'constants/entityTypes';
@@ -145,7 +145,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                             hasTabSpacing
                             headers={[{ text: 'Policies' }, { text: 'Fixable CVEs' }]}
                         >
-                            <TabContent>
+                            <Tab>
                                 <TableWidget
                                     header={`${failingPolicies.length} failing ${pluralize(
                                         entityTypes.POLICY,
@@ -158,8 +158,8 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                                     columns={getPolicyTableColumns(workflowState)}
                                     idAttribute="id"
                                 />
-                            </TabContent>
-                            <TabContent>
+                            </Tab>
+                            <Tab>
                                 <TableWidgetFixableCves
                                     workflowState={workflowState}
                                     entityContext={entityContext}
@@ -167,7 +167,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                                     name={safeData?.name}
                                     id={safeData?.id}
                                 />
-                            </TabContent>
+                            </Tab>
                         </Tabs>
                     </div>
                 </CollapsibleSection>

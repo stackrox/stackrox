@@ -1,7 +1,7 @@
 /* eslint-disable react/display-name */
 import React from 'react';
 
-import networkProtocolLabels from 'messages/networkGraph';
+import { networkProtocolLabels } from 'messages/network';
 import Table, { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 
 const PortsAndProtocolsTable = ({ portsAndProtocols }) => {

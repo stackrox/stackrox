@@ -7,7 +7,7 @@ import Metadata from 'Components/Metadata';
 import RiskScore from 'Components/RiskScore';
 import StatusChip from 'Components/StatusChip';
 import Tabs from 'Components/Tabs';
-import TabContent from 'Components/TabContent';
+import Tab from 'Components/Tab';
 import entityTypes from 'constants/entityTypes';
 import PolicyViolationsBySeverity from 'Containers/VulnMgmt/widgets/PolicyViolationsBySeverity';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
@@ -107,7 +107,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         deploymentFindingsContent = (
             <div className="flex pdf-page pdf-stretch pdf-new shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
                 <Tabs hasTabSpacing headers={[{ text: 'Policies' }, { text: 'Fixable CVEs' }]}>
-                    <TabContent>
+                    <Tab>
                         <TableWidget
                             header={`${failingPolicies.length} failing ${pluralize(
                                 entityTypes.POLICY,
@@ -119,8 +119,8 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                             className="bg-base-100"
                             columns={getPolicyTableColumns(workflowState)}
                         />
-                    </TabContent>
-                    <TabContent>
+                    </Tab>
+                    <Tab>
                         <TableWidgetFixableCves
                             workflowState={workflowState}
                             entityContext={entityContext}
@@ -128,7 +128,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                             name={safeData?.name}
                             id={safeData?.id}
                         />
-                    </TabContent>
+                    </Tab>
                 </Tabs>
             </div>
         );

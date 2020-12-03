@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-import TabContent from 'Components/TabContent';
+import Tab from 'Components/Tab';
 
 class Tabs extends Component {
     static defaultProps = {
@@ -30,9 +30,9 @@ class Tabs extends Component {
             const prop = props[propName];
             let error = null;
             React.Children.forEach(prop, (child) => {
-                if (child.type !== TabContent) {
+                if (child.type !== Tab) {
                     error = new Error(
-                        `'${componentName}' children should be of type 'TabContent', but got '${child.type}'.`
+                        `'${componentName}' children should be of type ${Tab.name}, but got '${child.type}'.`
                     );
                 }
             });

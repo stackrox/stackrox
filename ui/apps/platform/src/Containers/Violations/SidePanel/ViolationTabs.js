@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import Tabs from 'Components/Tabs';
-import TabContent from 'Components/TabContent';
+import Tab from 'Components/Tab';
 import EnforcementDetails from 'Containers/Violations/Enforcement/Details';
 import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
 import DeploymentDetails from '../../Risk/DeploymentDetails';
@@ -20,7 +20,7 @@ function ViolationTabs({ alert }) {
     const initialValuesForPolicy = preFormatPolicyFields(alert.policy);
     return (
         <Tabs headers={riskPanelTabs}>
-            <TabContent extraClasses="bg-base-0">
+            <Tab extraClasses="bg-base-0">
                 <div className="flex flex-1 flex-col">
                     <ViolationsDetails
                         violationId={alert.id}
@@ -28,22 +28,22 @@ function ViolationTabs({ alert }) {
                         processViolation={alert.processViolation}
                     />
                 </div>
-            </TabContent>
-            <TabContent extraClasses="bg-base-0">
+            </Tab>
+            <Tab extraClasses="bg-base-0">
                 <div className="flex flex-1 flex-col">
                     <EnforcementDetails alert={alert} />
                 </div>
-            </TabContent>
-            <TabContent extraClasses="bg-base-0">
+            </Tab>
+            <Tab extraClasses="bg-base-0">
                 <div className="flex flex-1 flex-col">
                     <DeploymentDetails deployment={alert.deployment} />
                 </div>
-            </TabContent>
-            <TabContent extraClasses="bg-base-0">
+            </Tab>
+            <Tab extraClasses="bg-base-0">
                 <div className="flex flex-1 flex-col">
                     <PolicyDetails policy={initialValuesForPolicy} />
                 </div>
-            </TabContent>
+            </Tab>
         </Tabs>
     );
 }

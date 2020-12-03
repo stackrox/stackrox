@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 
 import Tabs from 'Components/Tabs';
+import Tab from 'Components/Tab';
 import Loader from 'Components/Loader';
-import TabContent from 'Components/TabContent';
 import Message from 'Components/Message';
 
 import RiskDetails from './RiskDetails';
@@ -41,7 +41,7 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
     ];
     return (
         <Tabs headers={riskPanelTabs}>
-            <TabContent>
+            <Tab>
                 <div className="flex flex-col pb-5">
                     <Link
                         className="btn btn-base h-10 no-underline mt-4 ml-3 mr-3"
@@ -56,15 +56,15 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
                         <RiskDetails risk={deploymentRisk} />
                     )}
                 </div>
-            </TabContent>
-            <TabContent>
+            </Tab>
+            <Tab>
                 <div className="flex flex-1 flex-col relative">
                     <div className="absolute w-full">
                         <DeploymentDetails deployment={selectedDeployment} />
                     </div>
                 </div>
-            </TabContent>
-            <TabContent>
+            </Tab>
+            <Tab>
                 <div className="flex flex-1 flex-col relative">
                     {!processGroup || !processGroup.groups || processGroup.groups.length === 0 ? (
                         <RiskSidePanelErrorContent message={processErrMsg} />
@@ -75,7 +75,7 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
                         />
                     )}
                 </div>
-            </TabContent>
+            </Tab>
         </Tabs>
     );
 }

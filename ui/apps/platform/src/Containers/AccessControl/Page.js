@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 
 import Tabs from 'Components/Tabs';
-import TabContent from 'Components/TabContent';
+import Tab from 'Components/Tab';
 import PageHeader from 'Components/PageHeader';
 import Roles from 'Containers/AccessControl/Roles/Roles';
 import AuthProviders from 'Containers/AccessControl/AuthProviders/AuthProviders';
@@ -24,12 +24,12 @@ function Page({ fetchResources }) {
             </div>
             <div className="flex h-full flex-1">
                 <Tabs headers={tabHeaders}>
-                    <TabContent>
+                    <Tab>
                         <AuthProviders />
-                    </TabContent>
-                    <TabContent>
+                    </Tab>
+                    <Tab>
                         <Roles />
-                    </TabContent>
+                    </Tab>
                 </Tabs>
             </div>
         </section>

@@ -5,7 +5,7 @@ import cloneDeep from 'lodash/cloneDeep';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
 import Tabs from 'Components/Tabs';
-import TabContent from 'Components/TabContent';
+import Tab from 'Components/Tab';
 import RiskScore from 'Components/RiskScore';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import CVETable from 'Containers/Images/CVETable';
@@ -143,7 +143,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                             hasTabSpacing
                             headers={[{ text: 'Fixable CVEs' }, { text: 'Dockerfile' }]}
                         >
-                            <TabContent>
+                            <Tab>
                                 <TableWidgetFixableCves
                                     workflowState={workflowState}
                                     entityContext={entityContext}
@@ -151,8 +151,8 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                     name={safeData?.name?.fullName}
                                     id={safeData?.id}
                                 />
-                            </TabContent>
-                            <TabContent>
+                            </Tab>
+                            <Tab>
                                 <TableWidget
                                     header={`${layers.length} ${pluralize(
                                         'layer',
@@ -165,7 +165,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                     SubComponent={renderCVEsTable}
                                     idAttribute="id"
                                 />
-                            </TabContent>
+                            </Tab>
                         </Tabs>
                     </div>
                 </CollapsibleSection>

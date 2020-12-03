@@ -15,7 +15,7 @@ import { nodeTypes } from 'constants/networkGraph';
 import Panel from 'Components/Panel';
 import Tabs from 'Components/Tabs';
 import Loader from 'Components/Loader';
-import TabContent from 'Components/TabContent';
+import Tab from 'Components/Tab';
 import PanelButton from 'Components/PanelButton';
 import NetworkPoliciesDetails from './NetworkPoliciesDetails';
 import NetworkFlows from './NetworkFlows';
@@ -65,24 +65,24 @@ function Details({
         <Loader />
     ) : (
         <Tabs headers={envGraphPanelTabs}>
-            <TabContent>
+            <Tab>
                 <div className="flex flex-1 flex-col h-full">
                     <NetworkFlows
                         edges={deploymentEdges}
                         onNavigateToDeploymentById={onNavigateToDeploymentById}
                     />
                 </div>
-            </TabContent>
-            <TabContent>
+            </Tab>
+            <Tab>
                 <div className="flex flex-1 flex-col h-full">
                     {curDeployment.id && <DeploymentDetails deployment={curDeployment} />}
                 </div>
-            </TabContent>
-            <TabContent>
+            </Tab>
+            <Tab>
                 <div className="flex flex-1 flex-col h-full">
                     <NetworkPoliciesDetails />
                 </div>
-            </TabContent>
+            </Tab>
         </Tabs>
     );
 

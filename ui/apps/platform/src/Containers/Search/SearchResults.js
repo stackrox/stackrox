@@ -12,7 +12,7 @@ import { actions as globalSearchActions } from 'reducers/globalSearch';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Table from 'Components/Table';
 import Tabs from 'Components/Tabs';
-import TabContent from 'Components/TabContent';
+import Tab from 'Components/Tab';
 import LabelChip from 'Components/LabelChip';
 
 const defaultTabs = [
@@ -137,11 +137,11 @@ class SearchResults extends Component {
                         tabContentBgColor="bg-base-100"
                     >
                         {tabs.map((tab) => (
-                            <TabContent key={tab.text}>
+                            <Tab key={tab.text}>
                                 <div className="flex flex-1 w-full h-full pl-3 pr-3 pt-3 rounded-sm">
                                     {this.renderTable()}
                                 </div>
-                            </TabContent>
+                            </Tab>
                         ))}
                     </Tabs>
                 </div>

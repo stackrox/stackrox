@@ -8,7 +8,7 @@ import { actions as pageActions } from 'reducers/network/page';
 import { knownBackendFlags } from 'utils/featureFlags';
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import wizardStages from './wizardStages';
-import NetworkDeploymentPanel from './NetworkDeploymentPanel';
+import NetworkDeploymentOverlay from './NetworkDeploymentOverlay';
 import Details from './Details/Details';
 import Creator from './Creator/Creator';
 import Simulator from './Simulator/Simulator';
@@ -27,9 +27,9 @@ function Wizard({ wizardOpen, wizardStage, onClose }) {
                 <div className="h-full absolute right-0 network-panel">
                     <ZoomButtons />
                 </div>
-                <div className="absolute right-0 network-panel">
+                <div className="absolute flex flex-1 max-h-full network-panel overflow-auto right-0">
                     <NodesUpdateSection />
-                    <NetworkDeploymentPanel onClose={onClose} />
+                    <NetworkDeploymentOverlay onClose={onClose} />
                 </div>
             </div>
         );

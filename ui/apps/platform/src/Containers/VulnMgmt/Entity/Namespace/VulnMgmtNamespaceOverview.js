@@ -7,7 +7,7 @@ import StatusChip from 'Components/StatusChip';
 import RiskScore from 'Components/RiskScore';
 import Metadata from 'Components/Metadata';
 import Tabs from 'Components/Tabs';
-import TabContent from 'Components/TabContent';
+import Tab from 'Components/Tab';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import TopRiskyEntitiesByVulnerabilities from 'Containers/VulnMgmt/widgets/TopRiskyEntitiesByVulnerabilities';
@@ -120,7 +120,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                             hasTabSpacing
                             headers={[{ text: 'Policies' }, { text: 'Fixable CVEs' }]}
                         >
-                            <TabContent>
+                            <Tab>
                                 <TableWidget
                                     header={`${failingPolicies.length} failing ${pluralize(
                                         entityTypes.POLICY,
@@ -133,8 +133,8 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                                     columns={getPolicyTableColumns(workflowState)}
                                     idAttribute="id"
                                 />
-                            </TabContent>
-                            <TabContent>
+                            </Tab>
+                            <Tab>
                                 <TableWidgetFixableCves
                                     workflowState={workflowState}
                                     entityContext={entityContext}
@@ -142,7 +142,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                                     name={safeData?.metadata?.name}
                                     id={safeData?.metadata?.id}
                                 />
-                            </TabContent>
+                            </Tab>
                         </Tabs>
                     </div>
                 </CollapsibleSection>

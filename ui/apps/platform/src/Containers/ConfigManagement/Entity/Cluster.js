@@ -8,7 +8,7 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
 import Tabs from 'Components/Tabs';
-import TabContent from 'Components/TabContent';
+import Tab from 'Components/Tab';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
@@ -239,7 +239,7 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
                                     hasTabSpacing
                                     headers={[{ text: 'Policies' }, { text: 'CIS Controls' }]}
                                 >
-                                    <TabContent>
+                                    <Tab>
                                         <DeploymentsWithFailedPolicies
                                             query={queryService.objectToWhereClause({
                                                 Cluster: name,
@@ -250,8 +250,8 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
                                                 [entityTypes.CLUSTER]: id,
                                             }}
                                         />
-                                    </TabContent>
-                                    <TabContent>
+                                    </Tab>
+                                    <Tab>
                                         <NodesWithFailedControls
                                             entityType={entityTypes.CLUSTER}
                                             entityContext={{
@@ -259,7 +259,7 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
                                                 [entityTypes.CLUSTER]: id,
                                             }}
                                         />
-                                    </TabContent>
+                                    </Tab>
                                 </Tabs>
                             </div>
                         </CollapsibleSection>

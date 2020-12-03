@@ -5,7 +5,7 @@ import uniqBy from 'lodash/uniqBy';
 import uniqWith from 'lodash/uniqWith';
 
 import { filterModes, filterLabels } from 'constants/networkFilterModes';
-import networkProtocolLabels from 'messages/networkGraph';
+import { networkProtocolLabels } from 'messages/network';
 import Table, {
     Expander,
     rtTrActionsClassName,
