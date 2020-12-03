@@ -33,7 +33,9 @@ Cluster (forwards) Namespaces (forwards) Deployments (forwards) Images (forwards
 And one direct from the cluster to the CVEs:
 Cluster (fowards) CVEs
 
-A thing to note is that the CVEs pointed to by components, and those pointed to by clusters, are likey disjoint sets.
+Note:
+- The CVEs pointed to by components, and those pointed to by clusters, are likely disjoint sets.
+- Direct links between Image and CVEs bypass the graph (for performance reasons).
 */
 
 var (
@@ -52,6 +54,7 @@ var (
 		v1.SearchCategory_NAMESPACES:           NamespaceTransformations,
 		v1.SearchCategory_DEPLOYMENTS:          DeploymentTransformations,
 		v1.SearchCategory_IMAGES:               ImageTransformations,
+		v1.SearchCategory_IMAGE_VULN_EDGE:      ImageCVEEdgeTransformations,
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE: ImageComponentEdgeTransformations,
 		v1.SearchCategory_IMAGE_COMPONENTS:     ComponentTransformations,
 		v1.SearchCategory_COMPONENT_VULN_EDGE:  ComponentCVEEdgeTransformations,

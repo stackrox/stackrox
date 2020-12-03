@@ -44,6 +44,29 @@ var (
 
 		// Combine ( { k1, k2 }
 		//          Cluster (forwards) Namespaces (forwards) Deployments (forwards) Images,
+		//          Image (forwards) Components (forwards) CVEs,
+		//          )
+		v1.SearchCategory_IMAGE_VULN_EDGE: transformation.ForwardEdgeKeys(
+			transformation.AddPrefix(clusterDackBox.Bucket).
+				ThenMapToMany(transformation.ForwardFromContext()).
+				Then(transformation.HasPrefix(nsDackBox.Bucket)).
+				ThenMapEachToMany(transformation.ForwardFromContext()).
+				Then(transformation.HasPrefix(deploymentDackBox.Bucket)).
+				ThenMapEachToMany(transformation.ForwardFromContext()).
+				Then(transformation.Dedupe()).
+				Then(transformation.HasPrefix(imageDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefix(imageDackBox.Bucket)),
+			transformation.AddPrefix(imageDackBox.Bucket).
+				ThenMapToMany(transformation.ForwardFromContext()).
+				Then(transformation.HasPrefix(componentDackBox.Bucket)).
+				ThenMapEachToMany(transformation.ForwardFromContext()).
+				Then(transformation.Dedupe()).
+				Then(transformation.HasPrefix(cveDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket)),
+		),
+
+		// Combine ( { k1, k2 }
+		//          Cluster (forwards) Namespaces (forwards) Deployments (forwards) Images,
 		//          Images (forwards) Components,
 		//          )
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE: transformation.ForwardEdgeKeys(

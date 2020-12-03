@@ -50,6 +50,23 @@ var (
 			ThenMapEachToOne(transformation.Decode()).
 			Then(transformation.AtIndex(0)),
 
+		// Combine ( { k1, k2 }
+		//          Edge (parse first key in pair) Image,
+		//          Components (forwards) CVEs,
+		//          )
+		v1.SearchCategory_IMAGE_VULN_EDGE: transformation.ForwardEdgeKeys(
+			transformation.Split([]byte(":")).
+				ThenMapEachToOne(transformation.Decode()).
+				Then(transformation.AtIndex(0)),
+			transformation.AddPrefix(imageDackBox.Bucket).
+				ThenMapToMany(transformation.ForwardFromContext()).
+				Then(transformation.HasPrefix(componentDackBox.Bucket)).
+				ThenMapEachToMany(transformation.ForwardFromContext()).
+				Then(transformation.Dedupe()).
+				Then(transformation.HasPrefix(cveDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket)),
+		),
+
 		// Edge
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE: DoNothing,
 

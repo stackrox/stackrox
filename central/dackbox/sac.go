@@ -28,6 +28,9 @@ var (
 	// ImageComponentEdgeSACTransform transforms image:component edge ids into their SAC scopes.
 	ImageComponentEdgeSACTransform = namespaceScoped(ImageComponentEdgeTransformations[v1.SearchCategory_NAMESPACES])
 
+	// ImageCVEEdgeSACTransform transforms image:cve edge ids into their SAC scopes.
+	ImageCVEEdgeSACTransform = namespaceScoped(ImageCVEEdgeTransformations[v1.SearchCategory_NAMESPACES])
+
 	// ComponentSACTransform transforms component ids into their SAC scopes.
 	ComponentSACTransform = namespaceScoped(ComponentTransformations[v1.SearchCategory_NAMESPACES])
 

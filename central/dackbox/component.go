@@ -56,6 +56,24 @@ var (
 			Then(transformation.HasPrefix(imageDackBox.Bucket)).
 			ThenMapEachToOne(transformation.StripPrefix(imageDackBox.Bucket)),
 
+		// Combine ( { k2, k1 }
+		//          Components (backwards) Images,
+		//          Images (forward) Components (forwards) CVEs,
+		//          )
+		v1.SearchCategory_IMAGE_VULN_EDGE: transformation.ForwardEdgeKeys(
+			transformation.AddPrefix(componentDackBox.Bucket).
+				ThenMapToMany(transformation.BackwardFromContext()).
+				Then(transformation.HasPrefix(imageDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefix(imageDackBox.Bucket)),
+			transformation.AddPrefix(imageDackBox.Bucket).
+				ThenMapToMany(transformation.ForwardFromContext()).
+				Then(transformation.HasPrefix(componentDackBox.Bucket)).
+				ThenMapEachToMany(transformation.ForwardFromContext()).
+				Then(transformation.Dedupe()).
+				Then(transformation.HasPrefix(cveDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefix(cveDackBox.Bucket)),
+		),
+
 		// CombineReversed ( { k2, k1 }
 		//          Components,
 		//          Components (backwards) Images,

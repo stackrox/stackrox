@@ -9,7 +9,7 @@ import "api/v1/pagination.proto";
 
 package v1;
 
-// Next available tag: 27
+// Next available tag: 28
 enum SearchCategory {
     SEARCH_UNSET             = 0;
     ALERTS                   = 1;
@@ -38,6 +38,7 @@ enum SearchCategory {
     IMAGE_COMPONENT_EDGE     = 23;
     CLUSTER_VULN_EDGE        = 24;
     NETWORK_ENTITY           = 26;
+    IMAGE_VULN_EDGE          = 27;
 }
 
 enum SearchDataType {

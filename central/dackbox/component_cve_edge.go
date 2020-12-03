@@ -2,6 +2,7 @@ package dackbox
 
 import (
 	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
+	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
 	imageDackBox "github.com/stackrox/rox/central/image/dackbox"
 	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
@@ -65,6 +66,23 @@ var (
 			ThenMapEachToMany(transformation.BackwardFromContext()).
 			Then(transformation.HasPrefix(imageDackBox.Bucket)).
 			ThenMapEachToOne(transformation.StripPrefix(imageDackBox.Bucket)),
+
+		// CombineReversed ( { k2, k1 }
+		//          Edge (parse second key in pair) CVE,
+		//          CVE (backwards) Components (backwards) Images,
+		//          )
+		v1.SearchCategory_IMAGE_VULN_EDGE: transformation.ReverseEdgeKeys(
+			transformation.Split([]byte(":")).
+				ThenMapEachToOne(transformation.Decode()).
+				Then(transformation.AtIndex(1)),
+			transformation.AddPrefix(cveDackBox.Bucket).
+				ThenMapToMany(transformation.BackwardFromContext()).
+				Then(transformation.HasPrefix(componentDackBox.Bucket)).
+				ThenMapEachToMany(transformation.BackwardFromContext()).
+				Then(transformation.Dedupe()).
+				Then(transformation.HasPrefix(imageDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefix(imageDackBox.Bucket)),
+		),
 
 		// CombineReversed ( { k2, k1 }
 		//          Edge (parse first key in pair) Component,

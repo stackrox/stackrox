@@ -79,6 +79,22 @@ var (
 			Then(transformation.Dedupe()).
 			ThenMapEachToOne(transformation.StripPrefix(imageDackBox.Bucket)),
 
+		// CombineReversed ( { k1, k2 }
+		//          CVEs,
+		//          CVE (backwards) Components(backwards) Image,
+		//          )
+		v1.SearchCategory_IMAGE_VULN_EDGE: transformation.ReverseEdgeKeys(
+			DoNothing,
+			transformation.AddPrefix(cveDackBox.Bucket).
+				ThenMapToMany(transformation.BackwardFromContext()).
+				Then(transformation.HasPrefix(componentDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefix(componentDackBox.Bucket)).
+				ThenMapEachToMany(transformation.BackwardFromContext()).
+				Then(transformation.HasPrefix(imageDackBox.Bucket)).
+				Then(transformation.Dedupe()).
+				ThenMapEachToOne(transformation.StripPrefix(imageDackBox.Bucket)),
+		),
+
 		// CombineReversed ( { k2, k1 }
 		//          CVE (backwards) Components,
 		//          Component (backwards) Images,
