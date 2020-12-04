@@ -42,6 +42,7 @@ class CVETest extends BaseSpecification {
     {
         result: image(id: \$id) {
             id
+            lastUpdated
             vulnCount(query: \$query)
             vulns(query: \$query, pagination: \$pagination) {
             ...cveFields
@@ -90,7 +91,6 @@ class CVETest extends BaseSpecification {
     def setupSpec() {
         ImageService.scanImage("us.gcr.io/stackrox-ci/nginx:1.9")
         ImageService.scanImage(NGINX_1_10_2_IMAGE)
-        // DO NOT CHANGE THE ORDER
         ImageService.scanImage(RED_HAT_IMAGE)
         ImageService.scanImage(UBUNTU_IMAGE)
         orchestrator.createDeployment(CVE_DEPLOYMENT)
@@ -232,16 +232,22 @@ class CVETest extends BaseSpecification {
         assert ubuntuRet.getCode() == 200
         assert ubuntuRet.value.result.vulns.size() == 1
 
+        def centosCVECreatedAt = Timestamps.parse(centosRet.value.result.vulns[0].createdAt)
+        def ubuntuCVECreatedAt = Timestamps.parse(ubuntuRet.value.result.vulns[0].createdAt)
+        def centoCVEDiscovery = Timestamps.parse(centosRet.value.result.vulns[0].discoveredAtImage)
+        def ubuntuCVEDiscovery = Timestamps.parse(ubuntuRet.value.result.vulns[0].discoveredAtImage)
+
         then:
         "Verify CVE discovery time (System) is same"
-        assert centosRet.value.result.vulns[0].createdAt == ubuntuRet.value.result.vulns[0].createdAt
+        assert Timestamps.compare(centosCVECreatedAt, ubuntuCVECreatedAt) == 0
 
         and:
-        "Verify CVE discovery time (Image) for centos image is earlier than ubuntu image"
-        // Following check is dependant on the order in which images are scanned during test setup.
-        assert Timestamps.compare(
-                Timestamps.parse(centosRet.value.result.vulns[0].discoveredAtImage),
-                Timestamps.parse(ubuntuRet.value.result.vulns[0].discoveredAtImage)) < 0
+        "Verify CVE discovery time (Image) for centos and ubuntu image is not the same"
+        assert Timestamps.compare(centoCVEDiscovery, ubuntuCVEDiscovery) != 0
+        assert Timestamps.compare(centosCVECreatedAt, centoCVEDiscovery) <= 0 &&
+                Timestamps.compare(centoCVEDiscovery, Timestamps.parse(centosRet.value.result.lastUpdated)) <= 0
+        assert Timestamps.compare(ubuntuCVECreatedAt, ubuntuCVEDiscovery) <= 0 &&
+                Timestamps.compare(ubuntuCVEDiscovery, Timestamps.parse(ubuntuRet.value.result.lastUpdated)) <= 0
     }
 
     @Unroll
