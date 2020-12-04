@@ -100,7 +100,7 @@ const NetworkGraph = ({
     ]);
 
     const data = useMemo(() => {
-        nodes.map((datum) => ({
+        return nodes.map((datum) => ({
             ...datum,
             isActive: filterState !== filterModes.active && datum.internetAccess,
         }));
