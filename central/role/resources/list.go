@@ -36,6 +36,7 @@ var (
 	Namespace             = newResourceMetadata("Namespace", permissions.NamespaceScope)
 	Node                  = newResourceMetadata("Node", permissions.ClusterScope)
 	Notifier              = newResourceMetadata("Notifier", permissions.GlobalScope)
+	NetworkBaseline       = newResourceMetadata("NetworkBaseline", permissions.NamespaceScope)
 	NetworkPolicy         = newResourceMetadata("NetworkPolicy", permissions.NamespaceScope)
 	NetworkGraph          = newResourceMetadata("NetworkGraph", permissions.NamespaceScope)
 	NetworkGraphConfig    = newResourceMetadata("NetworkGraphConfig", permissions.GlobalScope)
