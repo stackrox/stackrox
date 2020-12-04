@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
@@ -94,14 +94,23 @@ const NetworkGraph = ({
     const tippyRef = useRef();
     const namespacesWithDeployments = {};
 
-    const nodes = getFilteredNodes(networkNodeMap, filterState);
-    const data = nodes.map((datum) => ({
-        ...datum,
-        isActive: filterState !== filterModes.active && datum.internetAccess,
-    }));
+    const nodes = useMemo(() => getFilteredNodes(networkNodeMap, filterState), [
+        networkNodeMap,
+        filterState,
+    ]);
 
-    const links = getLinks(data, networkEdgeMap, networkNodeMap, filterState, featureFlags);
-    const filteredLinks = getFilteredLinks(links);
+    const data = useMemo(() => {
+        return nodes.map((datum) => ({
+            ...datum,
+            isActive: filterState !== filterModes.active && datum.internetAccess,
+        }));
+    }, [nodes, filterState]);
+
+    const links = useMemo(
+        () => getLinks(data, networkEdgeMap, networkNodeMap, filterState, featureFlags),
+        [data, networkEdgeMap, networkNodeMap, filterState, featureFlags]
+    );
+    const filteredLinks = useMemo(() => getFilteredLinks(links), [links]);
 
     // @TODO: Remove "showPortsAndProtocols" when the feature flag "ROX_NETWORK_GRAPH_PORTS" is defaulted to true
     const showPortsAndProtocols = isBackendFeatureFlagEnabled(
