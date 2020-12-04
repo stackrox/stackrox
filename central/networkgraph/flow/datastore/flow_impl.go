@@ -62,7 +62,7 @@ func (fds *flowDataStoreImpl) adjustFlowsForGraphConfig(ctx context.Context, flo
 
 	graphConfigReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkGraph)))
+			sac.ResourceScopeKeys(resources.NetworkGraphConfig)))
 
 	config, err := fds.graphConfig.GetNetworkGraphConfig(graphConfigReadCtx)
 	if err != nil {

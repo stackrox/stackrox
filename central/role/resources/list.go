@@ -38,6 +38,7 @@ var (
 	Notifier              = newResourceMetadata("Notifier", permissions.GlobalScope)
 	NetworkPolicy         = newResourceMetadata("NetworkPolicy", permissions.NamespaceScope)
 	NetworkGraph          = newResourceMetadata("NetworkGraph", permissions.NamespaceScope)
+	NetworkGraphConfig    = newResourceMetadata("NetworkGraphConfig", permissions.GlobalScope)
 	Policy                = newResourceMetadata("Policy", permissions.GlobalScope)
 	ProcessWhitelist      = newResourceMetadata("ProcessWhitelist", permissions.NamespaceScope)
 	Role                  = newResourceMetadata("Role", permissions.GlobalScope)

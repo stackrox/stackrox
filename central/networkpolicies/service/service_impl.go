@@ -439,7 +439,7 @@ func (s *serviceImpl) getNetworkTree(clusterID string) (tree.ReadOnlyNetworkTree
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkGraph)))
+			sac.ResourceScopeKeys(resources.NetworkGraphConfig)))
 
 	cfg, err := s.graphConfig.GetNetworkGraphConfig(ctx)
 	if err != nil {
