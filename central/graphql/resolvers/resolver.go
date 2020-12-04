@@ -26,6 +26,7 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentEdgeDataStore "github.com/stackrox/rox/central/imagecomponentedge/datastore"
+	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
@@ -66,6 +67,7 @@ type Resolver struct {
 	ImageDataStore              imageDatastore.DataStore
 	ImageComponentDataStore     imageComponentDataStore.DataStore
 	ImageComponentEdgeDataStore imageComponentEdgeDataStore.DataStore
+	ImageCVEEdgeDataStore       imageCVEEdgeDataStore.DataStore
 	GroupDataStore              groupDataStore.DataStore
 	NamespaceDataStore          namespaceDataStore.DataStore
 	NetworkFlowDataStore        nfDS.ClusterDataStore
@@ -105,6 +107,7 @@ func New() *Resolver {
 		ImageDataStore:              imageDatastore.Singleton(),
 		ImageComponentDataStore:     imageComponentDataStore.Singleton(),
 		ImageComponentEdgeDataStore: imageComponentEdgeDataStore.Singleton(),
+		ImageCVEEdgeDataStore:       imageCVEEdgeDataStore.Singleton(),
 		GroupDataStore:              groupDataStore.Singleton(),
 		NamespaceDataStore:          namespaceDataStore.Singleton(),
 		NetworkPoliciesStore:        npDS.Singleton(),

@@ -1,3 +1,4 @@
+import com.google.protobuf.util.Timestamps
 import groups.BAT
 import objects.Deployment
 import org.junit.experimental.categories.Category
@@ -25,6 +26,7 @@ class CVETest extends BaseSpecification {
         summary
         fixedByVersion
         createdAt
+        discoveredAtImage
         envImpact
         publishedOn
         isFixable(query: \$scopeQuery)
@@ -63,6 +65,7 @@ class CVETest extends BaseSpecification {
         fixedByVersion
         isFixable(query: \$scopeQuery)
         createdAt
+        discoveredAtImage
         publishedOn
         deploymentCount(query: \$query)
         imageCount(query: \$query)
@@ -87,6 +90,7 @@ class CVETest extends BaseSpecification {
     def setupSpec() {
         ImageService.scanImage("us.gcr.io/stackrox-ci/nginx:1.9")
         ImageService.scanImage(NGINX_1_10_2_IMAGE)
+        // DO NOT CHANGE THE ORDER
         ImageService.scanImage(RED_HAT_IMAGE)
         ImageService.scanImage(UBUNTU_IMAGE)
         orchestrator.createDeployment(CVE_DEPLOYMENT)
@@ -206,5 +210,65 @@ class CVETest extends BaseSpecification {
 
         assert ubuntuRet.value.result.vulns.size() == 1
         assert ubuntuRet.value.result.vulns[0].isFixable
+    }
+
+    @Unroll
+    @Category(BAT)
+    def "Verify CreatedAt(DiscoveredAtSystem) and DiscoveredAtImage when scoped by images"() {
+        when:
+        "Scan two images having same CVE but different scan time"
+        def gqlService = new GraphQLService()
+        def centosRet = gqlService.Call(IMAGE_CVE_QUERY, [
+                id: "sha256:4ec83eee30dfbaba2e93f59d36cc360660d13f73c71af179eeb9456dd95d1798",
+                query: "CVE:CVE-2019-14866",
+        ])
+        assert centosRet.getCode() == 200
+        assert centosRet.value.result.vulns.size() == 1
+
+        def ubuntuRet = gqlService.Call(IMAGE_CVE_QUERY, [
+                id: "sha256:ffc76f71dd8be8c9e222d420dc96901a07b61616689a44c7b3ef6a10b7213de4",
+                query: "CVE:CVE-2019-14866",
+        ])
+        assert ubuntuRet.getCode() == 200
+        assert ubuntuRet.value.result.vulns.size() == 1
+
+        then:
+        "Verify CVE discovery time (System) is same"
+        assert centosRet.value.result.vulns[0].createdAt == ubuntuRet.value.result.vulns[0].createdAt
+
+        and:
+        "Verify CVE discovery time (Image) for centos image is earlier than ubuntu image"
+        // Following check is dependant on the order in which images are scanned during test setup.
+        assert Timestamps.compare(
+                Timestamps.parse(centosRet.value.result.vulns[0].discoveredAtImage),
+                Timestamps.parse(ubuntuRet.value.result.vulns[0].discoveredAtImage)) < 0
+    }
+
+    @Unroll
+    @Category(BAT)
+    def "Verify CreatedAt(DiscoveredAtSystem) and DiscoveredAtImage when not scoped by images"() {
+        when:
+        "Scan two images having same CVE but different scan time"
+        def gqlService = new GraphQLService()
+        def ret = gqlService.Call(GET_CVES_QUERY, [
+                query: "CVE:CVE-2019-14866",
+        ])
+        assert ret.getCode() == 200
+        assert ret.value.results.size() == 1
+
+        def centosRet = gqlService.Call(IMAGE_CVE_QUERY, [
+                id: "sha256:4ec83eee30dfbaba2e93f59d36cc360660d13f73c71af179eeb9456dd95d1798",
+                query: "CVE:CVE-2019-14866",
+        ])
+        assert centosRet.getCode() == 200
+        assert centosRet.value.result.vulns.size() == 1
+
+        then:
+        "Verify CVE discovery time (System) is same as image scoped query response"
+        assert ret.value.results[0].createdAt == centosRet.value.result.vulns[0].createdAt
+
+        and:
+        "Verify CVE discovery time (Image) is null"
+        assert !ret.value.results[0].discoveredAtImage
     }
 }

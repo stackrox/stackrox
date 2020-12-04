@@ -423,5 +423,26 @@ func (resolver *cVEResolver) getClusterFixedByVersion(_ context.Context) (string
 }
 
 func (resolver *cVEResolver) DiscoveredAtImage(ctx context.Context) (*graphql.Time, error) {
-	return nil, nil
+	if resolver.data.GetType() != storage.CVE_IMAGE_CVE {
+		return nil, nil
+	}
+
+	scope, hasScope := scoped.GetScope(resolver.ctx)
+	if !hasScope {
+		return nil, nil
+	}
+	if scope.Level != v1.SearchCategory_IMAGES {
+		return nil, nil
+	}
+
+	edgeID := edges.EdgeID{
+		ParentID: scope.ID,
+		ChildID:  resolver.data.GetId(),
+	}.ToString()
+
+	edge, found, err := resolver.root.ImageCVEEdgeDataStore.Get(resolver.ctx, edgeID)
+	if err != nil || !found {
+		return nil, err
+	}
+	return timestamp(edge.GetFirstImageOccurrence())
 }
