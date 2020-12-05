@@ -18,6 +18,8 @@ RUN apk update && \
     apk add --no-cache \
         ca-certificates \
         su-exec \
+        && \
+    apk add --no-cache --upgrade \
         musl \
         && \
     apk --purge del apk-tools \
