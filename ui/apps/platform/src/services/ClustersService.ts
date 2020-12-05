@@ -12,6 +12,10 @@ const upgradesUrl = '/v1/sensorupgrades';
 const autoUpgradeConfigUrl = `${upgradesUrl}/config`;
 const manualUpgradeUrl = `${upgradesUrl}/cluster`;
 
+export type Cluster = {
+    name: string;
+};
+
 // @TODO, We may not need this API function after we migrate to a standalone Clusters page
 //        Check to see if fetchClusters and fletchClustersByArray can be collapsed
 //        into one function
@@ -31,7 +35,7 @@ export function fetchClusters() {
  *
  * @returns {Promise<Object, Error>} fulfilled with normalized list of clusters
  */
-export function fetchClustersAsArray(options) {
+export function fetchClustersAsArray(options?: unknown[]): Promise<Array<Cluster>> {
     let params;
     if (options) {
         const query = searchOptionsToQuery(options);
@@ -43,7 +47,7 @@ export function fetchClustersAsArray(options) {
         );
     }
     return axios.get(`${clustersUrl}?${params}`).then((response) => {
-        return (response.data && response.data.clusters) || [];
+        return response?.data?.clusters || [];
     });
 }
 
@@ -58,14 +62,18 @@ export function getClusterById(id) {
     });
 }
 
+export type AutoUpgradeConfig = {
+    enableAutoUpgrade?: boolean;
+};
+
 /**
  * Gets the cluster autoupgrade config.
  *
  * @returns {Promise<Object, Error>} fulfilled with autoupgrade config object
  */
-export function getAutoUpgradeConfig() {
+export function getAutoUpgradeConfig(): Promise<AutoUpgradeConfig> {
     return axios.get(autoUpgradeConfigUrl).then((response) => {
-        return (response.data && response.data.config) || {};
+        return response?.data?.config || {};
     });
 }
 
@@ -74,7 +82,7 @@ export function getAutoUpgradeConfig() {
  *
  * @returns {Promise<Object, Error>} whose only value is resolved or rejected
  */
-export function saveAutoUpgradeConfig(config) {
+export function saveAutoUpgradeConfig(config: AutoUpgradeConfig): Promise<AutoUpgradeConfig> {
     const wrappedObject = { config };
     return axios.post(autoUpgradeConfigUrl, wrappedObject);
 }

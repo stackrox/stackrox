@@ -20157,6 +20157,13 @@ react-router-dom@^5.2.0:
     tiny-invariant "^1.0.2"
     tiny-warning "^1.0.0"
 
+react-router-hash-link@^2.2.2:
+  version "2.2.2"
+  resolved "https://registry.yarnpkg.com/react-router-hash-link/-/react-router-hash-link-2.2.2.tgz#df8cccc57014a5fb9e7defe5bb28292370bb8681"
+  integrity sha512-+8u5aAiRVWAFutH2Zwcm7UiuHmfed3Yn+d6aMVP8WGclMSv2ySAbGx836UifZO/+5o5QVhOS71soYHy0NVJN5g==
+  dependencies:
+    prop-types "^15.7.2"
+
 react-router-prop-types@^1.0.5:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/react-router-prop-types/-/react-router-prop-types-1.0.5.tgz#2e671d8412a793106bf70dc15c9ecc83ea4bc15b"

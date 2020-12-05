@@ -7,7 +7,7 @@ import axios from './instance';
 /**
  * Common download service to download different types of files.
  */
-export function saveFile({ method, url, data, name }) {
+export function saveFile({ method, url, data, name = '' }) {
     const options = {
         method,
         url,

@@ -16,6 +16,8 @@ import Panel from 'Components/Panel';
 import { searchParams } from 'constants/searchParams';
 import workflowStateContext from 'Containers/workflowStateContext';
 import useInterval from 'hooks/useInterval';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import { selectors } from 'reducers';
 import {
     fetchClustersAsArray,
@@ -26,6 +28,7 @@ import {
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import { filterAllowedSearch, convertToRestSearch } from 'utils/searchUtils';
 
+import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
 
@@ -38,6 +41,10 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     const [pollingCount, setPollingCount] = useState(0);
     const [tableRef, setTableRef] = useState(null);
     const [showDialog, setShowDialog] = useState(false);
+
+    const newSensorInstallationExperience = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_SENSOR_INSTALLATION_EXPERIENCE
+    );
 
     // Handle changes to applied search options.
     const [isViewFiltered, setIsViewFiltered] = useState(false);
@@ -161,6 +168,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
 
     const headerActions = (
         <>
+            {newSensorInstallationExperience && <AutoUpgradeToggle />}
             <PanelButton
                 icon={<DownloadCloud className="h-4 w-4 ml-1" />}
                 tooltip={`Upgrade (${upgradableClusters.length})`}

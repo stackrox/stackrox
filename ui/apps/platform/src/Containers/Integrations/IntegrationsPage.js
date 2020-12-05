@@ -199,7 +199,7 @@ class IntegrationsPage extends Component {
                     <PageHeader header="Integrations" subHeader="Setup & Configuration" />
                 </div>
                 <div className="w-full h-full overflow-auto">
-                    <section className="mb-6">
+                    <section className="mb-6" id="image-integrations">
                         <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
                             Images
                         </h2>
@@ -210,7 +210,7 @@ class IntegrationsPage extends Component {
                         </div>
                     </section>
 
-                    <section className="mb-6">
+                    <section className="mb-6" id="plugin-integrations">
                         <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
                             Plugins
                         </h2>
@@ -219,7 +219,7 @@ class IntegrationsPage extends Component {
                         </div>
                     </section>
 
-                    <section className="mb-6">
+                    <section className="mb-6" id="backup-integrations">
                         <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
                             External Backups
                         </h2>
@@ -228,7 +228,7 @@ class IntegrationsPage extends Component {
                         </div>
                     </section>
 
-                    <section className="mb-6">
+                    <section className="mb-6" id="token-integrations">
                         <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
                             Authentication Tokens
                         </h2>
@@ -237,7 +237,7 @@ class IntegrationsPage extends Component {
                         </div>
                     </section>
 
-                    <section className="mb-6">
+                    <section className="mb-6" id="auth-integrations">
                         <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
                             Authorization Plugins
                         </h2>

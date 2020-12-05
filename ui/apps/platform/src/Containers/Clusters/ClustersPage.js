@@ -1,26 +1,26 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { generatePath } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { useQuery } from '@apollo/client';
+import { HashLink } from 'react-router-hash-link';
 
 import PageHeader from 'Components/PageHeader';
-import ToggleSwitch from 'Components/ToggleSwitch';
 import URLSearchInput from 'Components/URLSearchInput';
 import entityTypes, { searchCategories } from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import { actions as clustersActions } from 'reducers/clusters';
 import { selectors } from 'reducers';
-import { clustersPath } from 'routePaths';
-import { getAutoUpgradeConfig, saveAutoUpgradeConfig } from 'services/ClustersService';
+import { clustersPath, integrationsPath } from 'routePaths';
 import parseURL from 'utils/URLParser';
 
 import ClustersTablePanel from './ClustersTablePanel';
 import ClustersSidePanel from './ClustersSidePanel';
-// @TODO, refactor these helper utilities to this folder,
-//        when retiring clusters in Integrations section
+import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 
 const ClustersPage = ({
     history,
@@ -30,8 +30,9 @@ const ClustersPage = ({
     },
 }) => {
     const workflowState = parseURL({ pathname, search });
-
-    const [autoUpgradeConfig, setAutoUpgradeConfig] = useState({});
+    const newSensorInstallationExperience = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_SENSOR_INSTALLATION_EXPERIENCE
+    );
 
     // Handle changes to the currently selected deployment.
     const setSelectedClusterId = useCallback(
@@ -57,16 +58,6 @@ const ClustersPage = ({
     const searchOptions = (searchData && searchData.searchOptions) || [];
     const autoFocusSearchInput = !selectedClusterId;
 
-    function fetchConfig() {
-        getAutoUpgradeConfig().then((config) => {
-            setAutoUpgradeConfig(config);
-        });
-    }
-
-    useEffect(() => {
-        fetchConfig();
-    }, []);
-
     // When the selected cluster changes, update the URL.
     useEffect(() => {
         const newPath = selectedClusterId
@@ -77,29 +68,6 @@ const ClustersPage = ({
             search,
         });
     }, [history, search, selectedClusterId]);
-
-    function toggleAutoUpgrade() {
-        // @TODO, wrap this settings change in a confirmation prompt of some sort
-        const previousValue = autoUpgradeConfig.enableAutoUpgrade;
-        const newConfig = {
-            ...autoUpgradeConfig,
-            enableAutoUpgrade: !previousValue,
-        };
-
-        setAutoUpgradeConfig(newConfig); // optimistically set value before API call
-
-        saveAutoUpgradeConfig(newConfig).catch(() => {
-            // reverse the optimistic update of the control in the UI
-            const rollbackConfig = {
-                ...autoUpgradeConfig,
-                enableAutoUpgrade: previousValue,
-            };
-            setAutoUpgradeConfig(rollbackConfig);
-
-            // also, re-fetch the data from the server, just in case it did update but we didn't get the network response
-            fetchConfig();
-        });
-    }
     const headerText = 'Clusters';
     const subHeaderText = 'Resource list';
 
@@ -113,13 +81,16 @@ const ClustersPage = ({
                     placeholder="Add one or more filters"
                     autoFocus={autoFocusSearchInput}
                 />
-                <div className="flex items-center min-w-64 ml-4">
-                    <ToggleSwitch
-                        id="enableAutoUpgrade"
-                        toggleHandler={toggleAutoUpgrade}
-                        label="Automatically upgrade secured clusters"
-                        enabled={autoUpgradeConfig.enableAutoUpgrade}
-                    />
+                <div className="flex items-center ml-4 mr-3">
+                    {newSensorInstallationExperience && (
+                        <HashLink
+                            to={`${integrationsPath}#token-integrations`}
+                            className="no-underline btn btn-base flex-shrink-0"
+                        >
+                            Manage Tokens
+                        </HashLink>
+                    )}
+                    {!newSensorInstallationExperience && <AutoUpgradeToggle />}
                 </div>
             </div>
         </PageHeader>

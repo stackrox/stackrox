@@ -64,6 +64,7 @@
         "react-redux": "^7.2.2",
         "react-responsive": "^8.1.1",
         "react-router-dom": "^5.2.0",
+        "react-router-hash-link": "^2.2.2",
         "react-router-prop-types": "^1.0.5",
         "react-select": "^2.0.0",
         "react-slick": "^0.21.0",
