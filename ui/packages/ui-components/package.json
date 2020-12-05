@@ -1,6 +1,6 @@
 {
     "name": "@stackrox/ui-components",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "StackRox library of UI (React) components",
     "main": "lib/index.js",
     "types": "lib/index.d.ts",

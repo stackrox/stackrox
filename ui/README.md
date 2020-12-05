@@ -92,13 +92,9 @@ yarn lerna add @stackrox/package-a --scope @stackrox/package-b
 
 #### Publishing a New Package Version
 
-The overall flow:
-
--   Create a branch you'll use to create a PR with new versions defined in
-    `package.json` files.
--   Run `yarn lerna:version` that will ask you to pick / define new versions for
-    the packages.
--   Commit the changes to the `package.json` files and create a PR.
+-   Create a new branch you'll use to create a PR for versions bump.
+-   Run `yarn lerna:version` that will ask you to pick new versions for the packages.
+-   Commit the changes to the `package.json` files, push the branch and create a PR.
 -   Once the PR is merged, CI will automatically publish new versions to GitHub
     Packages NPM registry.
 
