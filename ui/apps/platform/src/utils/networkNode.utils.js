@@ -1,5 +1,4 @@
 import { nodeTypes } from 'constants/networkGraph';
-import entityTypes from 'constants/entityTypes';
 import { filterModes } from 'constants/networkFilterModes';
 import {
     getEdgesFromNode,
@@ -7,26 +6,6 @@ import {
     getIsAdjacentToHighlightedNode,
     getDirectionalityEdges,
 } from './networkGraphUtils';
-
-/**
- * Create the cluster node for the network graph
- *
- * @param   {!String} clusterName
- *
- * @return  {!Object}
- */
-export const getClusterNode = (clusterName) => {
-    const clusterNode = {
-        classes: 'cluster',
-        data: {
-            id: clusterName,
-            name: clusterName,
-            active: false,
-            type: entityTypes.CLUSTER,
-        },
-    };
-    return clusterNode;
-};
 
 /**
  * Select out the entity representing external connections in the cluster

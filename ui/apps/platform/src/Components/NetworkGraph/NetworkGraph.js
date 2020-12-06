@@ -32,9 +32,9 @@ import { getLinks, getFilteredLinks } from 'utils/networkLink.utils';
 import {
     getExternalEntitiesNode,
     getCIDRBlockNodes,
-    getClusterNode,
     getFilteredNodes,
 } from 'utils/networkNode.utils';
+import { getClusterNode } from 'utils/networkUtils';
 import {
     getIsNamespaceNode,
     getIsNamespaceEdge,

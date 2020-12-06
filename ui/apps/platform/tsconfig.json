@@ -23,7 +23,7 @@
     "jsx": "react"
   },
   "include": [
-    "src",
+    "src/**/*",
     "setupTests.js"
   ]
 }
