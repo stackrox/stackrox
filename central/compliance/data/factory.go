@@ -10,6 +10,7 @@ import (
 	imageStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
+	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
@@ -37,6 +38,7 @@ type factory struct {
 	imageIntegrationsSet  integration.Set
 	processIndicatorStore processIndicatorStore.DataStore
 	networkFlowDataStore  nfDS.ClusterDataStore
+	netTreeMgr            networktree.Manager
 	notifierDataStore     notifierDataStore.DataStore
 	complianceStore       complianceDS.DataStore
 	standardsRepo         standards.Repository
@@ -56,6 +58,7 @@ func NewDefaultFactory() RepositoryFactory {
 		imageIntegrationsSet:  imageintegration.Set(),
 		processIndicatorStore: processIndicatorStore.Singleton(),
 		networkFlowDataStore:  nfDS.Singleton(),
+		netTreeMgr:            networktree.Singleton(),
 		notifierDataStore:     notifierDataStore.Singleton(),
 		complianceStore:       complianceDS.Singleton(),
 		standardsRepo:         standards.RegistrySingleton(),

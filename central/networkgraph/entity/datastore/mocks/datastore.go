@@ -182,13 +182,13 @@ func (mr *MockEntityDataStoreMockRecorder) DeleteExternalNetworkEntitiesForClust
 }
 
 // RegisterCluster mocks base method
-func (m *MockEntityDataStore) RegisterCluster(clusterID string) {
+func (m *MockEntityDataStore) RegisterCluster(ctx context.Context, clusterID string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RegisterCluster", clusterID)
+	m.ctrl.Call(m, "RegisterCluster", ctx, clusterID)
 }
 
 // RegisterCluster indicates an expected call of RegisterCluster
-func (mr *MockEntityDataStoreMockRecorder) RegisterCluster(clusterID interface{}) *gomock.Call {
+func (mr *MockEntityDataStoreMockRecorder) RegisterCluster(ctx, clusterID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterCluster", reflect.TypeOf((*MockEntityDataStore)(nil).RegisterCluster), clusterID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterCluster", reflect.TypeOf((*MockEntityDataStore)(nil).RegisterCluster), ctx, clusterID)
 }

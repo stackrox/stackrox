@@ -447,10 +447,13 @@ func (s *serviceImpl) getNetworkTree(clusterID string) (tree.ReadOnlyNetworkTree
 	}
 
 	if cfg.HideDefaultExternalSrcs {
-		return s.networkTreeMgr.GetReadOnlyNetworkTree(clusterID), nil
+		return s.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterID), nil
 	}
 
-	return tree.NewMultiTreeWrapper(s.networkTreeMgr.GetReadOnlyNetworkTree(clusterID), s.networkTreeMgr.GetDefaultNetworkTree()), nil
+	return tree.NewMultiTreeWrapper(
+		s.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterID),
+		s.networkTreeMgr.GetDefaultNetworkTree(ctx),
+	), nil
 }
 
 func (s *serviceImpl) getNetworkPoliciesInSimulation(ctx context.Context, clusterID string, modification *storage.NetworkPolicyModification) ([]*v1.NetworkPolicyInSimulation, error) {

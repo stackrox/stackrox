@@ -214,8 +214,11 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	}
 	r.networkPolicies = networkPoliciesByID(networkPolicies)
 
-	// Leaving compliance undisturbed, excluding external source nodes should make no difference.
-	r.networkGraph = f.networkGraphEvaluator.GetGraph(clusterID, deployments, nil, networkPolicies, false)
+	networkTree := f.netTreeMgr.GetNetworkTree(ctx, clusterID)
+	if networkTree == nil {
+		networkTree = f.netTreeMgr.CreateNetworkTree(ctx, clusterID)
+	}
+	r.networkGraph = f.networkGraphEvaluator.GetGraph(clusterID, deployments, networkTree, networkPolicies, false)
 
 	policies, err := f.policyStore.GetAllPolicies(ctx)
 	if err != nil {

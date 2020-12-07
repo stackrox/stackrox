@@ -175,7 +175,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
 		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
-		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(fakeClusterID).Return(nil)
+		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -217,7 +217,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
 		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
-		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(fakeClusterID).Return(nil)
+		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -260,7 +260,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
 		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
-		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(fakeClusterID).Return(nil)
+		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -304,7 +304,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
 		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
-		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(fakeClusterID).Return(nil)
+		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -350,7 +350,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
 		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
-		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(fakeClusterID).Return(nil)
+		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -399,7 +399,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame(
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
 		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
-		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(fakeClusterID).Return(nil)
+		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -448,7 +448,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
 		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
-		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(fakeClusterID).Return(nil)
+		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
 	}
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -525,7 +525,7 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
 		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
-		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(fakeClusterID).Return(nil)
+		suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
 	}
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedPolicies := make([]*storage.NetworkPolicy, 0)

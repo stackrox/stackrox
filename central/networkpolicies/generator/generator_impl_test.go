@@ -382,8 +382,8 @@ func (s *generatorTestSuite) TestGenerate() {
 		}, *types.TimestampNow(), nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any()).Return(nil)
-		s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree().Return(nil)
+		s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
+		s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)
 	}
 
 	s.mockGlobalFlowDataStore.EXPECT().GetFlowStore(gomock.Any(), gomock.Eq("mycluster")).Return(mockFlowStore, nil)
@@ -658,8 +658,8 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 		}, *types.TimestampNow(), nil)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
-		s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any()).Return(nil)
-		s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree().Return(nil)
+		s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
+		s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)
 	}
 
 	s.mockGlobalFlowDataStore.EXPECT().GetFlowStore(gomock.Any(), gomock.Eq("mycluster")).Return(mockFlowStore, nil)

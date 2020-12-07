@@ -93,7 +93,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	if features.NetworkGraphExternalSrcs.Enabled() {
 		suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)
-		suite.netEntityDataStore.EXPECT().RegisterCluster(gomock.Any()).AnyTimes()
+		suite.netEntityDataStore.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
 	}
 
 	suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)

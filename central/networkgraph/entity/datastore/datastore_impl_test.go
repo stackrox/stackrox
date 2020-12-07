@@ -86,7 +86,7 @@ func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 	suite.treeMgr = treeMocks.NewMockManager(suite.mockCtrl)
 	suite.connMgr = connMocks.NewMockManager(suite.mockCtrl)
 
-	suite.treeMgr.EXPECT().CreateDefaultNetworkTree()
+	suite.treeMgr.EXPECT().Initialize(gomock.Any())
 	suite.ds = NewEntityDataStore(suite.store, suite.graphConfig, suite.treeMgr, suite.connMgr)
 }
 
@@ -174,7 +174,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 		cluster := c.entity.GetScope().GetClusterId()
 		pushSig := concurrency.NewSignal()
 		if c.pass {
-			suite.treeMgr.EXPECT().GetNetworkTree(cluster).Return(trees[cluster])
+			suite.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), cluster).Return(trees[cluster])
 			if cluster == "" {
 				suite.connMgr.EXPECT().PushExternalNetworkEntitiesToAllSensors(suite.elevatedCtx).DoAndReturn(
 					func(ctx context.Context) error {
@@ -241,7 +241,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 		if !c.pass {
 			continue
 		}
-		suite.treeMgr.EXPECT().GetNetworkTree(cluster).Return(trees[cluster])
+		suite.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), cluster).Return(trees[cluster])
 		if cluster == "" {
 			suite.connMgr.EXPECT().PushExternalNetworkEntitiesToAllSensors(suite.elevatedCtx).DoAndReturn(
 				func(ctx context.Context) error {
@@ -352,7 +352,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 		pushSig := concurrency.NewSignal()
 
 		if c.pass {
-			suite.treeMgr.EXPECT().GetNetworkTree(cluster).Return(trees[cluster])
+			suite.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), cluster).Return(trees[cluster])
 			suite.connMgr.EXPECT().PushExternalNetworkEntitiesToSensor(suite.elevatedCtx, cluster).DoAndReturn(
 				func(ctx context.Context, clusterID string) error {
 					suite.Equal(cluster, clusterID)
@@ -371,7 +371,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	}
 
 	// Register clusters to test default entity permissions.
-	suite.treeMgr.EXPECT().GetNetworkTree(cluster1).Return(trees[cluster1])
+	suite.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), cluster1).Return(trees[cluster1])
 	pushSig := concurrency.NewSignal()
 	suite.connMgr.EXPECT().PushExternalNetworkEntitiesToSensor(suite.elevatedCtx, cluster1).DoAndReturn(
 		func(ctx context.Context, clusterID string) error {
@@ -379,9 +379,9 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 			pushSig.Signal()
 			return nil
 		})
-	suite.ds.RegisterCluster(cluster1)
+	suite.ds.RegisterCluster(context.Background(), cluster1)
 
-	suite.treeMgr.EXPECT().GetNetworkTree(cluster2).Return(trees[cluster2])
+	suite.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), cluster2).Return(trees[cluster2])
 	pushSig.Reset()
 	suite.connMgr.EXPECT().PushExternalNetworkEntitiesToSensor(suite.elevatedCtx, cluster2).DoAndReturn(
 		func(ctx context.Context, clusterID string) error {
@@ -389,10 +389,10 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 			pushSig.Signal()
 			return nil
 		})
-	suite.ds.RegisterCluster(cluster2)
+	suite.ds.RegisterCluster(context.Background(), cluster2)
 
 	// Success-upsert default
-	suite.treeMgr.EXPECT().GetNetworkTree("").Return(trees[""])
+	suite.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), "").Return(trees[""])
 	pushSig.Reset()
 	suite.connMgr.EXPECT().PushExternalNetworkEntitiesToAllSensors(suite.elevatedCtx).DoAndReturn(
 		func(ctx context.Context) error {
@@ -488,7 +488,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 		pushSig := concurrency.NewSignal()
 
 		if c.pass {
-			suite.treeMgr.EXPECT().GetNetworkTree(cluster).Return(trees[cluster])
+			suite.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), cluster).Return(trees[cluster])
 			suite.connMgr.EXPECT().PushExternalNetworkEntitiesToSensor(suite.elevatedCtx, cluster).DoAndReturn(
 				func(ctx context.Context, clusterID string) error {
 					suite.Equal(cluster, clusterID)
@@ -507,7 +507,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	}
 
 	// Success-deleting all cluster entities skips default.
-	suite.treeMgr.EXPECT().DeleteNetworkTree(cluster1)
+	suite.treeMgr.EXPECT().DeleteNetworkTree(gomock.Any(), cluster1)
 	pushSig.Reset()
 	suite.connMgr.EXPECT().PushExternalNetworkEntitiesToSensor(suite.elevatedCtx, cluster1).DoAndReturn(
 		func(ctx context.Context, clusterID string) error {
@@ -525,7 +525,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	suite.Error(suite.ds.DeleteExternalNetworkEntity(cluster1WriteCtx, defaultEntityID.String()))
 
 	// Success
-	suite.treeMgr.EXPECT().GetNetworkTree("").Return(trees[""])
+	suite.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), "").Return(trees[""])
 	pushSig.Reset()
 	suite.connMgr.EXPECT().PushExternalNetworkEntitiesToAllSensors(suite.elevatedCtx).DoAndReturn(
 		func(ctx context.Context) error {
@@ -553,7 +553,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestDefaultGraphSetting() {
 	for _, entity := range entities {
 		cluster := entity.GetScope().GetClusterId()
 		pushSig := concurrency.NewSignal()
-		suite.treeMgr.EXPECT().GetNetworkTree(cluster).Return(trees[cluster])
+		suite.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), cluster).Return(trees[cluster])
 		if cluster == "" {
 			suite.connMgr.EXPECT().PushExternalNetworkEntitiesToAllSensors(suite.elevatedCtx).DoAndReturn(
 				func(ctx context.Context) error {
@@ -601,7 +601,7 @@ func (suite *NetworkEntityDataStoreTestSuite) TestDefaultGraphSetting() {
 	for _, entity := range entities {
 		cluster := entity.GetScope().GetClusterId()
 		pushSig := concurrency.NewSignal()
-		suite.treeMgr.EXPECT().GetNetworkTree(cluster).Return(trees[cluster])
+		suite.treeMgr.EXPECT().GetNetworkTree(gomock.Any(), cluster).Return(trees[cluster])
 		if cluster == "" {
 			suite.connMgr.EXPECT().PushExternalNetworkEntitiesToAllSensors(suite.elevatedCtx).DoAndReturn(
 				func(ctx context.Context) error {
