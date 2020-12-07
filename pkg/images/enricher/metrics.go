@@ -84,8 +84,8 @@ func newMetrics(subsystem pkgMetrics.Subsystem) metrics {
 			Namespace: pkgMetrics.PrometheusNamespace,
 			Subsystem: subsystem.String(),
 			Name:      "scan_duration",
-			Help:      "Amount of time it's taken to scan an image",
-			Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
+			Help:      "Amount of time it's taken to scan an image in ms",
+			Buckets:   prometheus.ExponentialBuckets(4, 2, 16),
 		}, []string{"Scanner", "Error"}),
 	}
 
