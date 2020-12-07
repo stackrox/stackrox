@@ -1,0 +1,8 @@
+[<- if .FeatureFlags >]
+envVars:
+[<- $featureFlags := .FeatureFlags >]
+[<- range $flagName := keys $featureFlags | sortAlpha >]
+- name: [< $flagName >]
+  value: [< index $featureFlags $flagName | quote >]
+[<- end >]
+[<- end >]

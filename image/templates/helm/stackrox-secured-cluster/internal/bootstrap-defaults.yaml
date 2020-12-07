@@ -1,0 +1,10 @@
+# This file contains defaults that need to be merged into our config struct before we can
+# execute the "normal" defaulting logic. As a result, none of these values can be overridden
+# by defaults specified in defaults.yaml and platforms/*.yaml - that is okay.
+
+allowNonstandardNamespace: false
+allowNonstandardReleaseName: false
+
+meta:
+  useLookup: true
+  fileOverrides: {}

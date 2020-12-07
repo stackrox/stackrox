@@ -1,0 +1,339 @@
+{{- include "srox.init" . -}}
+
+{{- if ._rox.admissionControl.enable }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admission-control
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "serviceaccount" "admission-control") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "serviceaccount" "admission-control") | nindent 4 }}
+imagePullSecrets:
+  - name: stackrox
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: watch-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "role" "watch-config") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "role" "watch-config") | nindent 4 }}
+rules:
+  - apiGroups: ['']
+    resources: ['configmaps']
+    verbs: ['get', 'list', 'watch']
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: stackrox-admission-control
+  labels:
+    {{- include "srox.labels" (list . "podsecuritypolicy" "stackrox-admission-control") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "podsecuritypolicy" "stackrox-admission-control") | nindent 4 }}
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'secret'
+    - 'downwardAPI'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 4000
+        max: 4000
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 4000
+        max: 4000
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox-admission-control-psp
+  labels:
+    {{- include "srox.labels" (list . "clusterrole" "stackrox-admission-control-psp") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrole" "stackrox-admission-control-psp") | nindent 4 }}
+rules:
+  - apiGroups:
+      - policy
+    resources:
+      - podsecuritypolicies
+    resourceNames:
+      - stackrox-admission-control
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-admission-control-psp
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "stackrox-admission-control-psp") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "stackrox-admission-control-psp") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: stackrox-admission-control-psp
+subjects:
+  - kind: ServiceAccount
+    name: admission-control
+    namespace: {{ .Release.Namespace }}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: admission-control-watch-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "admission-control-watch-config") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "admission-control-watch-config") | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: admission-control
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: watch-config
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admission-control
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "deployment" "admission-control") | nindent 4 }}
+    app: admission-control
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "deployment" "admission-control") | nindent 4 }}
+spec:
+  replicas: 3
+  minReadySeconds: 0
+  selector:
+    matchLabels:
+      app: admission-control
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: admission-control
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "8443"
+    spec:
+      # Attempt to schedule these on master nodes
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: In
+                    values:
+                      - "true"
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 60
+              podAffinityTerm:
+                namespaces: ["stackrox"]
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchLabels:
+                    app: admission-control
+      securityContext:
+          runAsUser: 4000
+          fsGroup: 4000
+      serviceAccount: admission-control
+      containers:
+        - image: {{ printf "%s/%s:%s" ._rox.admissionControl.image.registry ._rox.admissionControl.image.name ._rox.admissionControl.image.tag }}
+          name: admission-control
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /ready
+              port: 8443
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 1
+          ports:
+            - containerPort: 8443
+              name: webhook
+          command:
+            - admission-control
+          resources:
+            requests:
+              memory: "100Mi"
+              cpu: "50m"
+            limits:
+              memory: "500Mi"
+              cpu: "500m"
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+          env:
+          - name: ROX_SENSOR_ENDPOINT
+            value: {{ ._rox.sensor.endpoint }}
+          {{- include "srox.envVars" (list . "deployment" "admission-controller" "admission-controller") | nindent 10 }}
+          volumeMounts:
+            - name: config
+              mountPath: /run/config/stackrox.io/admission-control/config/
+              readOnly: true
+            - name: config-store
+              mountPath: /var/lib/stackrox/admission-control/
+            - name: certs
+              mountPath: /run/secrets/stackrox.io/certs/
+              readOnly: true
+            - name: ssl
+              mountPath: /etc/ssl
+            - name: pki
+              mountPath: /etc/pki/ca-trust/
+            - name: additional-cas
+              mountPath: /usr/local/share/ca-certificates/
+              readOnly: true
+      volumes:
+        - name: certs
+          secret:
+            secretName: admission-control-tls
+            items:
+              - key: admission-control-cert.pem
+                path: cert.pem
+              - key: admission-control-key.pem
+                path: key.pem
+              - key: ca.pem
+                path: ca.pem
+        - name: config
+          configMap:
+            name: admission-control
+            optional: true
+        - name: config-store
+          emptyDir: {}
+        - name: ssl
+          emptyDir: {}
+        - name: pki
+          emptyDir: {}
+        - name: additional-cas
+          secret:
+            secretName: additional-ca-sensor
+            optional: true
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: admission-control-no-ingress
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "admission-control-no-ingress") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "admission-control-no-ingress") | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: admission-control
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 8443
+  policyTypes:
+    - Ingress
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admission-control
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "service" "admission-control") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "service" "admission-control") | nindent 4 }}
+spec:
+  ports:
+    - name: https
+      port: 443
+      targetPort: webhook
+      protocol: TCP
+  selector:
+    app: admission-control
+  type: ClusterIP
+  sessionAffinity: None
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: stackrox
+  labels:
+    {{- include "srox.labels" (list . "validatingwebhookconfiguration" "stackrox") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "validatingwebhookconfiguration" "stackrox") | nindent 4 }}
+webhooks:
+  - name: policyeval.stackrox.io
+    rules:
+      - apiGroups:
+        - '*'
+        apiVersions:
+        - '*'
+        operations:
+        - CREATE
+        {{- if ._rox.admissionControl.listenOnUpdates }}
+        - UPDATE
+        {{- end }}
+        resources:
+          - pods
+          - deployments
+          - replicasets
+          - replicationcontrollers
+          - statefulsets
+          - daemonsets
+          {{- if ._rox.env.openshift }}
+          - deploymentconfigs
+          {{- end }}
+    namespaceSelector:
+      matchExpressions:
+      - key: namespace.metadata.stackrox.io/name
+        operator: NotIn
+        values:
+          - stackrox
+          - kube-system
+          - kube-public
+          - istio-system
+    failurePolicy: Ignore
+    clientConfig:
+      caBundle: {{ .Files.Get "secrets/ca.pem" | b64enc }}
+      service:
+        namespace: {{ .Release.Namespace }}
+        {{- if ._rox.admissionControl.enable }}
+        name: admission-control
+        path: /validate
+        {{- else }}
+        name: sensor-webhook
+        path: /admissioncontroller
+        {{- end }}
+{{- end }}

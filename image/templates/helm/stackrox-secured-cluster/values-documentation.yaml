@@ -1,0 +1,192 @@
+## StackRox Secured Cluster chart default settings file.
+##
+## This file includes the default settings for the StackRox Secured Cluster chart.
+## It serves as a form of documentation what all the possible settings that are
+## user can override are. HOWEVER, if you want to override some settings, DO NOT
+## create a copy of this file to be used as a baseline, or modify it in place.
+## Instead, create a file that contains only those settings you want to override,
+## and pass it to helm or roxctl via the `-f` parameter.
+##
+#
+## Configure the cluster name.
+#clusterName: null
+#initToken: null
+#centralEndpoint: central.{{ .Release.Namespace }}:443
+#createUpgraderServiceAccount: false
+#additionalCAs: null
+#
+## 
+## Configuration for image pull secrets.
+## These should usually be set via the command line when running `helm install`, e.g.,
+## helm install --set imagePullSecrets.username=myuser --set imagePullSecrets.password=mypass,
+## or be stored in a separate YAML-encoded secrets file.
+#imagePullSecrets:
+#  # Username and password to be used for pulling images.
+#  # These should usually be set via the command line when running `helm install`, e.g.,
+#  # helm install --set imagePullSecrets.username=myuser --set imagePullSecrets.password=mypass,
+#  # or be stored in a separate YAML-encoded secrets file.
+#  username: null
+#  password: null
+#
+#  # If no image pull secrets are provided, an installation would usually fail. In order to
+#  # prevent it from failing, this option must explicitly be set to true.
+#  allowNone: false
+#
+#  # If there exist available image pull secrets in the cluster that are managed separately,
+#  # set this value to the list of the respective secret names. While it is recommended to
+#  # record the secret names in a persisted YAML file, providing a single string containing
+#  # a comma-delimited list of secret names is also supported, for easier interaction with
+#  # --set.
+#  useExisting: []
+#
+#  # Whether to import any secrets from the default service account existing in the StackRox
+#  # namespace. The default service account often contains "standard" image pull secrets that
+#  # should be used by default for image pulls, hence this defaults to true. Only has an effect
+#  # if server-side lookups are enabled.
+#  useFromDefaultServiceAccount: true
+#
+## Common settings for all image properties
+#image:
+#  # The image registry to use. Unless overridden in the more specific configs, this
+#  # determines the base registry for each image referenced in this config file.
+#  registry: stackrox.io
+#
+## Settings regarding the installation environment
+#env:
+#  # Treat the environment as an OpenShift cluster. Leave this unset to use auto-detection
+#  # based on available API resources on the server.
+#  # Possible values: null, false, true
+#  openshift: null
+#
+#  # Treat the environment as Istio-enabled. Leave this unset to use auto-detection based on
+#  # available API resources on the server.
+#  # Possible values: null, false, true
+#  istio: null
+#
+## PEM-encoded StackRox Service CA certificate.
+#ca:
+#  cert: null
+#
+#sensor:
+#
+#  image:
+#    registry: null
+#    name: main
+#    tag: 3.0.48.x-121-g337915cd3d
+#    fullRef: null
+#
+#  resources:
+#    requests:
+#      memory: "1Gi"
+#      cpu: "1"
+#    limits:
+#      memory: "4Gi"
+#      cpu: "2"
+#
+#  # Settings for the internal service-to-service TLS certificate used by Sensor.
+#  serviceTLS:
+#    cert: null
+#    key: null
+#
+#  # Rarely needs to be changed.
+#  endpoint: sensor.{{ .Release.Namespace }}.443
+#
+#
+## Configuration options relating to StackRox Admission Controller.
+#admissionControl:
+#
+#  enable: false
+#  listenOnUpdates: false
+#  enforceOnUpdates: false
+#
+#  dynamic:
+#    enforce: false
+#    scanInline: false
+#    disableBypass: false
+#    timeout: 3
+#
+#  image:
+#    registry: null
+#    name: main
+#    tag: 3.0.48.x-121-g337915cd3d
+#    fullRef: null
+#
+#  resources:
+#    requests:
+#      memory: "100Mi"
+#      cpu: "50m"
+#    limits:
+#      memory: "500Mi"
+#      cpu: "500m"
+#
+#  # Settings for the internal service-to-service TLS certificate used by Admission Controller.
+#  serviceTLS:
+#    cert: null
+#    key: null
+#
+## Configuration options relating to StackRox Collector.
+#collector:
+#
+#  collectionMethod: KERNEL_MODULE
+#  disableTaintTolerations: false
+#  slimMode: false
+#
+#  image:
+#    registry: null
+#    name: collector
+#    tag: 2.3.2
+#    fullRef: null
+#
+#  resources:
+#    requests:
+#      memory: "320Mi"
+#      cpu: "50m"
+#    limits:
+#      memory: "1Gi"
+#      cpu: "750m"
+#
+#  complianceResources:
+#    requests:
+#      memory: "10Mi"
+#      cpu: "10m"
+#    limits:
+#      memory: "2Gi"
+#      cpu: "1"
+#
+#
+#  # Settings for the internal service-to-service TLS certificate used by Collector.
+#  serviceTLS:
+#    cert: null
+#    key: null
+#
+## EXPERT SETTINGS. You usually do not need to touch those.
+#
+## If set to true, allow deploying in a namespace other than "stackrox". This is unsupported, so
+## use at your own risk.
+#allowNonstandardNamespace: false
+#
+## If set to true, allow a release name other than "stackrox-secured-cluster-services". There are no issues
+## with that, but for streamlining purposes, we want to encourage all users to stick with the
+## default name, and make it a little harder to deviate from that.
+#allowNonstandardReleaseName: false
+#
+#
+#meta:
+#  # This is a dictionary from file names to contents that can be used to inject files that
+#  # would usually be included via .Files.Get into the chart rendering.
+#  fileOverrides: {}
+#
+#  # This configuration section allows overriding settings that would be inferred from the
+#  # running API server.
+#  apiServer:
+#    # The Kubernetes version running on the API server. This is used for auto-detection
+#    # of the platform.
+#    version: null
+#    # The list of available API resources on the server, in the form of "apps/v1" or
+#    # "apps/v1/Deployment". This is used to detect environment capabilities.
+#    overrideAPIResources: null
+#    # A list of extra API resources that should be assumed to exist on the API server. This
+#    # can be used in conjunction with both data obtained from the API server, or data set
+#    # via `overrideAPIResources`.
+#    extraAPIResources: []
+#

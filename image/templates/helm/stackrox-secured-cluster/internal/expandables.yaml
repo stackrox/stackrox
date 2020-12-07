@@ -1,0 +1,22 @@
+initToken: true
+imagePullSecrets:
+  username: true
+  password: true
+ca:
+  cert: true
+sensor:
+  serviceTLS:
+    cert: true
+    key: true
+  resources: true
+admissionControl:
+  serviceTLS:
+    cert: true
+    key: true
+  resources: true
+collector:
+  serviceTLS:
+    cert: true
+    key: true
+  resources: true
+  complianceResources: true

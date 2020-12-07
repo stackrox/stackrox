@@ -1,0 +1,12 @@
+[<- if .KubectlOutput >]
+scripts/
+/README.md
+/.helmignore
+[<- end >]
+[<- if .CertsOnly >]
+scripts/
+!/*.yaml
+!templates/*-secret.yaml
+!templates/_*.tpl
+templates/*
+[<- end >]

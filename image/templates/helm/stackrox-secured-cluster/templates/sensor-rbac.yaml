@@ -1,0 +1,263 @@
+{{- include "srox.init" . -}}
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sensor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "serviceaccount" "sensor") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "serviceaccount" "sensor") | nindent 4 }}
+imagePullSecrets:
+- name: stackrox
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: collector
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "serviceaccount" "collector") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "serviceaccount" "collector") | nindent 4 }}
+imagePullSecrets:
+- name: stackrox
+{{- if ne ._rox.collector.collectionMethod "NO_COLLECTION" }}
+- name: collector-stackrox
+{{- end}}
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:view-cluster
+  labels:
+    {{- include "srox.labels" (list . "clusterrole" "stackrox:view-cluster") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrole" "stackrox:view-cluster") | nindent 4 }}
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - get
+  - watch
+  - list
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:monitor-cluster
+  labels:
+    {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:monitor-cluster") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrolebinding" "stackrox:monitor-cluster") | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: stackrox:view-cluster
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: edit
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "role" "edit") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "role" "edit") | nindent 4 }}
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - '*'
+  verbs:
+  - '*'
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: manage-namespace
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "manage-namespace") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "manage-namespace") | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: edit
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:edit-workloads
+  labels:
+    {{- include "srox.labels" (list . "clusterrole" "stackrox:edit-workloads") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrole" "stackrox:edit-workloads") | nindent 4 }}
+rules:
+- resources:
+  - cronjobs
+  - jobs
+  - daemonsets
+  - deployments
+  - deployments/scale
+  - deploymentconfigs
+  - pods
+  - replicasets
+  - replicationcontrollers
+  - services
+  - statefulsets
+  apiGroups:
+  - '*'
+  verbs:
+  - update
+  - patch
+  - delete
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:enforce-policies
+  labels:
+    {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:enforce-policies") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrolebinding" "stackrox:enforce-policies") | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: stackrox:edit-workloads
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:network-policies
+  labels:
+    {{- include "srox.labels" (list . "clusterrole" "stackrox:network-policies") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrole" "stackrox:network-policies") | nindent 4 }}
+rules:
+- resources:
+  - 'networkpolicies'
+  apiGroups:
+  - networking.k8s.io
+  - extensions
+  verbs:
+  - get
+  - watch
+  - list
+  - create
+  - update
+  - patch
+  - delete
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:network-policies-binding
+  labels:
+    {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:network-policies-binding") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrolebinding" "stackrox:network-policies-binding") | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: stackrox:network-policies
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:update-namespaces
+  labels:
+    {{- include "srox.labels" (list . "clusterrole" "stackrox:update-namespaces") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrole" "stackrox:update-namespaces") | nindent 4 }}
+rules:
+- resources:
+  - namespaces
+  apiGroups: [""]
+  verbs:
+  - update
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:update-namespaces-binding
+  labels:
+    {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:update-namespaces-binding") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrolebinding" "stackrox:update-namespaces-binding") | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: stackrox:update-namespaces
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:create-events
+  labels:
+    {{- include "srox.labels" (list . "clusterrole" "stackrox:create-events") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrole" "stackrox:create-events") | nindent 4 }}
+rules:
+- resources:
+  - events
+  apiGroups: [""]
+  verbs:
+  - create
+  - patch
+  - list
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:create-events-binding
+  labels:
+    {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:create-events-binding") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrolebinding" "stackrox:create-events-binding") | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: stackrox:create-events
+  apiGroup: rbac.authorization.k8s.io

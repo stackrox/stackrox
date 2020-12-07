@@ -1,0 +1,34 @@
+cluster:
+  name: null # string
+  type: null # string
+
+endpoint:
+  central: null # string
+  advertised: null # string
+
+image:
+  repository:
+    main: null # string
+    collector: null # string
+  registry:
+    main: null # string
+    collector: null # string
+
+config:
+  collectionMethod: null # string
+  admissionControl:
+    createService: null # bool
+    listenOnUpdates: null # bool
+    enableService: null # bool
+    enforceOnUpdates: null # bool
+    scanInline: null # bool
+    disableBypass: null # bool
+    timeout: null # number
+  registryOverride: null # string
+  disableTaintTolerations: null # bool
+  createUpgraderServiceAccount: null # bool
+  createSecrets: null # bool
+  offlineMode: null # bool
+  slimCollector: null # bool
+
+envVars: null # [obj]

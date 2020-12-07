@@ -1,0 +1,94 @@
+clusterName: null # string
+initToken: null # string
+centralEndpoint: null # string
+createUpgraderServiceAccount: null # string
+additionalCAs: null # [obj]
+imagePullSecrets:
+  username: null # string
+  password: null # string
+  allowNone: null # bool
+  useExisting: null # string | [string]
+  useFromDefaultServiceAccount: null # bool
+image:
+  registry: null # string
+env:
+  openshift: null # bool
+  istio: null # bool
+ca:
+  cert: null # string
+sensor:
+  image:
+    registry: null # string
+    name: null # string
+    tag: null # string
+    fullRef: null # string
+  resources: null # string | dict
+  serviceTLS:
+    cert: null # string
+    key: null # string
+admissionControl:
+  enable: null # bool
+  listenOnUpdates: null # bool
+  enforceOnUpdates: null # bool
+  dynamic:
+    enforce: null # bool
+    scanInline: null # bool
+    disableBypass: null # bool
+    timeout: null # natural number
+  image:
+    registry: null # string
+    name: null # string
+    tag: null # string
+    fullRef: null # string
+  resources: null # string | dict
+  serviceTLS:
+    cert: null # string
+    key: null # string
+collector:
+  collectionMethod: null # string
+  disableTaintTolerations: null # bool
+  slimMode: null # bool
+  image:
+    registry: null # string
+    name: null # string
+    tag: null # string
+    fullRef: null # string
+  resources: null # string | dict
+  complianceResources: null # string | dict
+  serviceTLS:
+    cert: null # string
+    key: null # string
+customize:
+  labels: {} # dict
+  annotations: {} # dict
+  podLabels: {} # dict
+  podAnnotations: {} # dict
+  envVars: {} # dict
+  sensor:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  "admission-control":
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  collector:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
+  other: {} # dict
+allowNonstandardNamespace: null # bool
+allowNonstandardReleaseName: null # bool
+meta:
+  useLookup: null # bool
+  fileOverrides: {} # dict
+  apiServer:
+    version: null # string
+    overrideAPIResources: null # [string]
+    extraAPIResources: null # [string]

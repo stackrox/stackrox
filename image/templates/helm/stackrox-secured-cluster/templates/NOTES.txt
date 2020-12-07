@@ -1,0 +1,29 @@
+{{- $_ := include "srox.init" . -}}
+
+StackRox Secured Cluster {{.Chart.AppVersion}} has been installed.
+
+{{ if ._rox._state.notes -}}
+Please take note of the following:
+{{ range ._rox._state.notes }}
+- {{ . | wrapWith 98 "\n  " -}}
+{{ end }}
+
+{{ end -}}
+
+{{ if ._rox._state.warnings -}}
+During installation, the following warnings were encountered:
+{{ range ._rox._state.warnings }}
+- WARNING: {{ . | wrapWith 98 "\n  " -}}
+{{ end }}
+
+{{ end -}}
+
+{{ if ._rox.env.openshift -}}
+IMPORTANT: You have deployed into an OpenShift-enabled cluster. If you see that your pods
+           are not scheduling, run
+
+             oc annotate namespace/stackrox --overwrite openshift.io/node-selector=""
+
+{{ end -}}
+
+Thank you for using StackRox!

@@ -1,0 +1,81 @@
+defaults:
+
+  clusterName: ""
+  clusterType: "KUBERNETES_CLUSTER"
+  centralEndpoint: "central.{{ .Release.Namespace }}:443"
+  createUpgraderServiceAccount: false
+
+  imagePullSecrets:
+    allowNone: false
+    useExisting: []
+    useFromDefaultServiceAccount: true
+
+  env:
+    openshift: false
+    istio: false
+
+  sensor:
+    image:
+      registry: [< default "stackrox.io" .MainRegistry >]
+      name: [< default "main" .ImageRemote >]
+      tag: [< .Versions.MainVersion >]
+
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "1"
+      limits:
+        memory: "4Gi"
+        cpu: "2"
+
+    endpoint: "sensor.{{ .Release.Namespace }}:443"
+
+  admissionControl:
+    image:
+      registry: [< default "stackrox.io" .MainRegistry >]
+      name: [< default "main" .ImageRemote >]
+      tag: [< .Versions.MainVersion >]
+
+    resources:
+      requests:
+        memory: "100Mi"
+        cpu: "50m"
+      limits:
+        memory: "500Mi"
+        cpu: "500m"
+
+    enable: false
+    listenOnUpdates: false
+    enforceOnUpdates: false
+
+    dynamic:
+      enforce: false
+      scanInline: false
+      disableBypass: false
+      timeout: 3
+
+  collector:
+    collectionMethod: "KERNEL_MODULE"
+    disableTaintTolerations: false
+    slimMode: false
+
+    image:
+      registry: [< default "collector.stackrox.io" .CollectorRegistry >]
+      name: [< default "collector" .CollectorImageRemote >]
+      tag: [< .Versions.CollectorVersion >]
+
+    resources:
+      requests:
+        memory: "320Mi"
+        cpu: "50m"
+      limits:
+        memory: "1Gi"
+        cpu: "750m"
+
+    complianceResources:
+      requests:
+        memory: "10Mi"
+        cpu: "10m"
+      limits:
+        memory: "2Gi"
+        cpu: "1"

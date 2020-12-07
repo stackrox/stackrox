@@ -1,0 +1,135 @@
+{{- include "srox.init" . -}}
+
+{{- if ._rox.env.openshift }}
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    kubernetes.io/description: sensor is the security constraint for the sensor
+  name: sensor
+  labels:
+    {{- include "srox.labels" (list . "securitycontextconstraints" "sensor") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "securitycontextconstraints" "sensor") | nindent 4 }}
+users:
+  - system:serviceaccount:stackrox:sensor
+  - system:serviceaccount:stackrox:sensor-upgrader
+priority: 0
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - '*'
+supplementalGroups:
+  type: RunAsAny
+fsGroup:
+  type: RunAsAny
+groups: []
+readOnlyRootFilesystem: true
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: false
+allowedCapabilities: []
+defaultAddCapabilities: []
+requiredDropCapabilities: []
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - secret
+{{- if ne ._rox.collector.collectionMethod "NO_COLLECTION" }}
+---
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    kubernetes.io/description: This SCC is based on privileged, hostaccess, and hostmount-anyuid
+  name: collector
+  labels:
+    {{- include "srox.labels" (list . "securitycontextconstraint" "collector") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "securitycontextconstraint" "collector") | nindent 4 }}
+users:
+  - system:serviceaccount:stackrox:collector
+allowHostDirVolumePlugin: true
+allowPrivilegedContainer: true
+fsGroup:
+  type: RunAsAny
+groups: []
+priority: 0
+readOnlyRootFilesystem: true
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - '*'
+supplementalGroups:
+  type: RunAsAny
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: true
+allowedCapabilities: []
+defaultAddCapabilities: []
+requiredDropCapabilities: []
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - hostPath
+  - secret
+{{- end }}
+{{- if ._rox.admissionControl.enable }}
+---
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    kubernetes.io/description: admission-control is the security constraint for the admission controller
+  name: admission-control
+  labels:
+    {{- include "srox.labels" (list . "securitycontextconstraints" "admission-control") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "securitycontextconstraints" "admission-control") | nindent 4 }}
+users:
+  - system:serviceaccount:stackrox:admission-control
+priority: 0
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - '*'
+supplementalGroups:
+  type: RunAsAny
+fsGroup:
+  type: RunAsAny
+groups: []
+readOnlyRootFilesystem: true
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+allowedCapabilities: []
+defaultAddCapabilities: []
+requiredDropCapabilities: []
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - secret
+{{- end }}
+{{- end }}
