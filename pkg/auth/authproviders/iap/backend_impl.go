@@ -117,14 +117,14 @@ func (p *backendImpl) Validate(ctx context.Context, roxClaims *tokens.Claims) er
 	return nil
 }
 
-func (p *backendImpl) RefreshAccessToken(ctx context.Context, refreshToken string) (*authproviders.AuthResponse, error) {
+func (p *backendImpl) RefreshAccessToken(ctx context.Context, _ authproviders.RefreshTokenData) (*authproviders.AuthResponse, error) {
 	ri := requestinfo.FromContext(ctx)
 	token := ri.HTTPRequest.Headers.Get(jwtAssertion)
 
 	return p.getAuthResponse(token)
 }
 
-func (p *backendImpl) RevokeRefreshToken(ctx context.Context, refreshToken string) error {
+func (p *backendImpl) RevokeRefreshToken(ctx context.Context, _ authproviders.RefreshTokenData) error {
 	// Not required to be implemented for this provider
 	return nil
 }
@@ -150,8 +150,10 @@ func (p *backendImpl) getAuthResponse(token string) (*authproviders.AuthResponse
 				"access_levels": extraClaims.Google.AccessLevels,
 			},
 		},
-		Expiration:   claims.Expiry.Time(),
-		RefreshToken: refreshToken,
+		Expiration: claims.Expiry.Time(),
+		RefreshTokenData: authproviders.RefreshTokenData{
+			RefreshToken: refreshToken,
+		},
 	}
 	return authResp, nil
 }

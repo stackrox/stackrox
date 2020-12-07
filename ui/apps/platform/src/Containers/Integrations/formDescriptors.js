@@ -48,10 +48,12 @@ const formDescriptors = {
                 jsonpath: 'config.mode',
                 type: 'select',
                 options: [
+                    { value: 'auto', label: 'Auto-select (recommended)' },
                     { value: 'fragment', label: 'Fragment' },
                     { value: 'post', label: 'HTTP POST' },
+                    { value: 'query', label: 'Query' },
                 ],
-                default: 'fragment',
+                default: 'auto',
                 immutable: true,
             },
         ],

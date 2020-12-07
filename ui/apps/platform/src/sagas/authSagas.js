@@ -121,8 +121,9 @@ function* handleOidcResponse(location) {
     }
 
     try {
-        const { id_token: idToken, state } = hash;
-        const result = yield call(AuthService.exchangeAuthToken, idToken, 'oidc', state);
+        const { state, ...otherFields } = hash;
+        const pseudoToken = `#${queryString.stringify({ ...otherFields })}`;
+        const result = yield call(AuthService.exchangeAuthToken, pseudoToken, 'oidc', state);
         return result;
     } catch (error) {
         if (error.response) {

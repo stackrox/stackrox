@@ -37,7 +37,7 @@ describe('Access Control Page', () => {
                 'Create New OpenID Connect Auth Provider'
             );
 
-            // client secret should be marked as required as HTTP POST should be default callback
+            // client secret should be marked as required as Auto-select should be default callback
             cy.get(selectors.authProviders.clientSecretLabel).should((p) => {
                 expect(p.text()).to.contain('(required)');
             });

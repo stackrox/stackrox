@@ -13,7 +13,30 @@ func TestRefreshTokenCookieData_EncodeDecodeRoundTrip(t *testing.T) {
 	data := refreshTokenCookieData{
 		ProviderType: "myProvider",
 		ProviderID:   "myProviderID",
-		RefreshToken: "refreshToken%WithSome:Special??Characterß",
+		RefreshTokenData: RefreshTokenData{
+			RefreshToken: "refreshToken%WithSome:Special??Characterß",
+		},
+	}
+
+	encoded, err := data.Encode()
+	require.NoError(t, err)
+
+	var decoded refreshTokenCookieData
+	require.NoError(t, decoded.Decode(encoded))
+
+	assert.Equal(t, data, decoded)
+}
+
+func TestRefreshTokenCookieData_EncodeDecodeRoundTrip_WithType(t *testing.T) {
+	t.Parallel()
+
+	data := refreshTokenCookieData{
+		ProviderType: "myProvider",
+		ProviderID:   "myProviderID",
+		RefreshTokenData: RefreshTokenData{
+			RefreshToken:     "refreshToken%WithSome:Special??Characterß",
+			RefreshTokenType: "access_token",
+		},
 	}
 
 	encoded, err := data.Encode()
@@ -31,7 +54,9 @@ func TestRefreshTokenCookieData_TestEncode(t *testing.T) {
 	data := refreshTokenCookieData{
 		ProviderType: "myProvider",
 		ProviderID:   "myProviderID",
-		RefreshToken: "MyToken",
+		RefreshTokenData: RefreshTokenData{
+			RefreshToken: "MyToken",
+		},
 	}
 
 	encoded, err := data.Encode()
@@ -59,7 +84,28 @@ func TestRefreshTokenCookieData_TestDecode(t *testing.T) {
 	expected := refreshTokenCookieData{
 		ProviderType: "myProvider",
 		ProviderID:   "myProviderID",
-		RefreshToken: "My Token",
+		RefreshTokenData: RefreshTokenData{
+			RefreshToken: "My Token",
+		},
+	}
+
+	assert.Equal(t, expected, decoded)
+}
+
+func TestRefreshTokenCookieData_TestDecode_WithType(t *testing.T) {
+	t.Parallel()
+
+	encoded := "providerType=myProvider&refreshTokenType=access_token&providerId=myProviderID&refreshToken=My%20Token"
+	var decoded refreshTokenCookieData
+	require.NoError(t, decoded.Decode(encoded))
+
+	expected := refreshTokenCookieData{
+		ProviderType: "myProvider",
+		ProviderID:   "myProviderID",
+		RefreshTokenData: RefreshTokenData{
+			RefreshToken:     "My Token",
+			RefreshTokenType: "access_token",
+		},
 	}
 
 	assert.Equal(t, expected, decoded)

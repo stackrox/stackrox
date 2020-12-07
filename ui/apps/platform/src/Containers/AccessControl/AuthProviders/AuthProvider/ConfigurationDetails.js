@@ -1,5 +1,6 @@
 import React from 'react';
 import Labeled from 'Components/Labeled';
+import { oidcCallbackValues } from 'constants/accessControl';
 
 const CommonDetails = ({ name }) => (
     <>
@@ -8,10 +9,6 @@ const CommonDetails = ({ name }) => (
 );
 
 const OidcDetails = ({ authProvider: { name, config } }) => {
-    const oidcCallbackValues = {
-        post: 'HTTP POST',
-        fragment: 'Fragment',
-    };
     const callbackModeValue = oidcCallbackValues[config.mode];
     if (!callbackModeValue) {
         throw new Error(`Unknown callback mode "${config.mode}"`);
