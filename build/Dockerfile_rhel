@@ -3,7 +3,7 @@ FROM centos:8 as builder
 ENV ROCKSDB_VERSION="v6.7.3"
 ENV ZSTD_VERSION="1.4.4"
 
-RUN yum update -y && yum install -y epel-release dnf-plugins-core && yum config-manager --set-enabled PowerTools
+RUN yum update -y && yum install -y epel-release dnf-plugins-core && yum config-manager --set-enabled powertools
 
 RUN yum -y groupinstall "Development Tools"
 RUN yum install -y gflags snappy-devel zlib-devel bzip2-devel lz4-devel cmake which
@@ -29,7 +29,7 @@ FROM centos:8
 
 ARG GOLANG_VERSION=1.15.2
 
-RUN yum update -y && yum install -y epel-release dnf-plugins-core && yum config-manager --set-enabled PowerTools
+RUN yum update -y && yum install -y epel-release dnf-plugins-core && yum config-manager --set-enabled powertools
 RUN yum -y groupinstall "Development Tools"
 RUN yum install -y snappy-devel zlib-devel bzip2-devel lz4-devel
 
