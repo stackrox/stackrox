@@ -25,18 +25,9 @@ func (cds *clusterDataStoreImpl) GetFlowStore(ctx context.Context, clusterID str
 		return nil, err
 	}
 
-	var aggr aggregator.NetworkConnsAggregator
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		networkTree := cds.networkTreeMgr.GetReadOnlyNetworkTree(clusterID)
-		if networkTree == nil {
-			networkTree = cds.networkTreeMgr.CreateNetworkTree(clusterID)
-		}
-
-		var err error
-		aggr, err = aggregator.NewDefaultToCustomExtSrcConnAggregator(networkTree)
-		if err != nil {
-			return nil, errors.Wrap(err, "creating a network conn aggregator")
-		}
+	aggr, err := cds.getAggregator(ctx, clusterID)
+	if err != nil {
+		return nil, err
 	}
 
 	return &flowDataStoreImpl{
@@ -59,16 +50,9 @@ func (cds *clusterDataStoreImpl) CreateFlowStore(ctx context.Context, clusterID 
 		return nil, err
 	}
 
-	var aggr aggregator.NetworkConnsAggregator
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		networkTree := cds.networkTreeMgr.GetReadOnlyNetworkTree(clusterID)
-		if networkTree == nil {
-			networkTree = cds.networkTreeMgr.CreateNetworkTree(clusterID)
-		}
-		aggr, err = aggregator.NewDefaultToCustomExtSrcConnAggregator(networkTree)
-		if err != nil {
-			return nil, errors.Wrap(err, "creating a network conn aggregator")
-		}
+	aggr, err := cds.getAggregator(ctx, clusterID)
+	if err != nil {
+		return nil, err
 	}
 
 	return &flowDataStoreImpl{
@@ -77,4 +61,21 @@ func (cds *clusterDataStoreImpl) CreateFlowStore(ctx context.Context, clusterID 
 		hideDefaultExtSrcsManager: aggr,
 		deletedDeploymentsCache:   cds.deletedDeploymentsCache,
 	}, nil
+}
+
+func (cds *clusterDataStoreImpl) getAggregator(ctx context.Context, clusterID string) (aggregator.NetworkConnsAggregator, error) {
+	if !features.NetworkGraphExternalSrcs.Enabled() {
+		return nil, nil
+	}
+
+	networkTree := cds.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterID)
+	if networkTree == nil {
+		networkTree = cds.networkTreeMgr.CreateNetworkTree(ctx, clusterID)
+	}
+
+	aggr, err := aggregator.NewDefaultToCustomExtSrcConnAggregator(networkTree)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating a hide default networks manager")
+	}
+	return aggr, nil
 }

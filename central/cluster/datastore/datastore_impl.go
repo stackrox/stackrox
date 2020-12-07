@@ -163,8 +163,13 @@ func (ds *datastoreImpl) registerClusterForNetworkGraphExtSrcs() error {
 		return err
 	}
 
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Node, resources.NetworkGraph)))
+
 	for _, cluster := range clusters {
-		ds.netEntityDataStore.RegisterCluster(cluster.GetId())
+		ds.netEntityDataStore.RegisterCluster(ctx, cluster.GetId())
 	}
 	return nil
 }

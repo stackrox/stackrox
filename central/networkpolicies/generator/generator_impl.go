@@ -155,8 +155,8 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	var networkTree tree.ReadOnlyNetworkTree
 	if features.NetworkGraphExternalSrcs.Enabled() {
 		networkTree := tree.NewMultiTreeWrapper(
-			g.networkTreeMgr.GetReadOnlyNetworkTree(clusterID),
-			g.networkTreeMgr.GetDefaultNetworkTree(),
+			g.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterID),
+			g.networkTreeMgr.GetDefaultNetworkTree(ctx),
 		)
 
 		// Aggregate all external conns into supernet conns for which external entities do not exists (as a result of deletion).

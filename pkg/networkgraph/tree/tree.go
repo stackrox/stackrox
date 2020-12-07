@@ -133,7 +133,7 @@ func (t *networkTreeImpl) build(entities []*storage.NetworkEntityInfo) error {
 	normalizeNetworks(t.family, netSlice)
 
 	for _, ipNet := range netSlice {
-		if err := t.Insert(ipNetToEntity[ipNet]); err != nil {
+		if err := t.insertNoLock(ipNetToEntity[ipNet]); err != nil {
 			return err
 		}
 	}
@@ -159,6 +159,10 @@ func (t *networkTreeImpl) Insert(entity *storage.NetworkEntityInfo) error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 
+	return t.insertNoLock(entity)
+}
+
+func (t *networkTreeImpl) insertNoLock(entity *storage.NetworkEntityInfo) error {
 	ipNet, err := t.validateEntity(entity)
 	if err != nil {
 		return errors.Wrapf(err, "failed to insert entity %s", entity.GetId())

@@ -410,8 +410,8 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1
 	var networkTree tree.ReadOnlyNetworkTree
 	if features.NetworkGraphExternalSrcs.Enabled() {
 		networkTree = tree.NewMultiTreeWrapper(
-			s.networkTreeMgr.GetReadOnlyNetworkTree(request.GetClusterId()),
-			s.networkTreeMgr.GetDefaultNetworkTree(),
+			s.networkTreeMgr.GetReadOnlyNetworkTree(ctx, request.GetClusterId()),
+			s.networkTreeMgr.GetDefaultNetworkTree(ctx),
 		)
 
 		// Aggregate all external conns into supernet conns for which external entities do not exists (as a result of deletion).

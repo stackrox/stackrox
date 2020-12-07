@@ -56,7 +56,7 @@ func (b *graphBuilder) init(deployments []*storage.Deployment, networkTree tree.
 	}
 
 	if networkTree == nil {
-		networkTree = tree.NewMultiTreeWrapper()
+		networkTree = tree.NewMultiTreeWrapper(tree.NewDefaultNetworkTreeWrapper())
 	}
 
 	b.networkTree = networkTree

@@ -22,53 +22,40 @@ func NewDefaultNetworkTreeWrapper() NetworkTree {
 
 // NewNetworkTreeWrapper returns a new instance of networkTreeWrapper for the supplied list of network entities.
 func NewNetworkTreeWrapper(entities []*storage.NetworkEntityInfo) (NetworkTree, error) {
-	wrapper := newDefaultNetworkTreeWrapper()
-	if err := wrapper.build(entities); err != nil {
-		return nil, err
-	}
-	return wrapper, nil
-}
-
-func newDefaultNetworkTreeWrapper() *networkTreeWrapper {
-	trees := make(map[pkgNet.Family]NetworkTree)
-	trees[pkgNet.IPv4] = newDefaultNetworkTree(pkgNet.IPv4)
-	trees[pkgNet.IPv6] = newDefaultNetworkTree(pkgNet.IPv6)
-
-	return &networkTreeWrapper{
-		trees: trees,
-	}
-}
-
-func (t *networkTreeWrapper) build(entities []*storage.NetworkEntityInfo) error {
-	t.lock.Lock()
-	defer t.lock.Unlock()
-
-	netSliceByFamily := make(map[pkgNet.Family][]pkgNet.IPNetwork)
-	ipNetToEntity := make(map[pkgNet.IPNetwork]*storage.NetworkEntityInfo)
-
+	entitiesByAddrFamily := make(map[pkgNet.Family][]*storage.NetworkEntityInfo)
 	for _, entity := range entities {
 		ipNet := pkgNet.IPNetworkFromCIDR(entity.GetExternalSource().GetCidr())
 		if !ipNet.IsValid() {
-			return errors.Errorf("received invalid CIDR %s to insert", entity.GetExternalSource().GetCidr())
+			return nil, errors.Errorf("received invalid CIDR %s to insert", entity.GetExternalSource().GetCidr())
 		}
-
-		ipNetToEntity[ipNet] = entity
-		netSliceByFamily[ipNet.Family()] = append(netSliceByFamily[ipNet.Family()], ipNet)
+		entitiesByAddrFamily[ipNet.Family()] = append(entitiesByAddrFamily[ipNet.Family()], entity)
 	}
 
-	// Sort the network by prefix length to reduce the tree re-arrangement.
-	for family, netSlice := range netSliceByFamily {
-		normalizeNetworks(family, netSlice)
+	trees := make(map[pkgNet.Family]NetworkTree)
+	tree, err := NewIPv4NetworkTree(entitiesByAddrFamily[pkgNet.IPv4])
+	if err != nil {
+		return nil, err
 	}
+	trees[pkgNet.IPv4] = tree
 
-	for family, netSlice := range netSliceByFamily {
-		for _, ipNet := range netSlice {
-			if err := t.trees[family].Insert(ipNetToEntity[ipNet]); err != nil {
-				return err
-			}
-		}
+	tree, err = NewIPv6NetworkTree(entitiesByAddrFamily[pkgNet.IPv6])
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	trees[pkgNet.IPv6] = tree
+
+	return &networkTreeWrapper{
+		trees: trees,
+	}, nil
+}
+
+func newDefaultNetworkTreeWrapper() *networkTreeWrapper {
+	return &networkTreeWrapper{
+		trees: map[pkgNet.Family]NetworkTree{
+			pkgNet.IPv4: NewDefaultIPv4NetworkTree(),
+			pkgNet.IPv6: NewDefaultIPv6NetworkTree(),
+		},
+	}
 }
 
 // Cardinality returns the number of networks in the tree.

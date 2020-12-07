@@ -20,8 +20,20 @@ type multiReadOnlyTreeWrapper struct {
 
 // NewMultiTreeWrapper returns a new instance of multiReadOnlyTreeWrapper for the supplied list of network trees.
 func NewMultiTreeWrapper(trees ...ReadOnlyNetworkTree) ReadOnlyNetworkTree {
+	filtered := make([]ReadOnlyNetworkTree, 0, len(trees))
+	for _, t := range trees {
+		if t != nil {
+			filtered = append(filtered, t)
+		}
+	}
+
+	// If no valid tree is supplied create a default tree which contains INTERNET node only.
+	if len(filtered) == 0 {
+		filtered = append(filtered, NewDefaultNetworkTreeWrapper())
+	}
+
 	return &multiReadOnlyTreeWrapper{
-		trees: trees,
+		trees: filtered,
 	}
 }
 

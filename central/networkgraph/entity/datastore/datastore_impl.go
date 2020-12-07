@@ -55,29 +55,30 @@ func NewEntityDataStore(storage store.EntityStore, graphConfig graphConfigDS.Dat
 		sensorConnMgr: sensorConnMgr,
 	}
 
-	// DO NOT change the order
-	if err := ds.initNetworkTrees(); err != nil {
-		utils.Must(err)
-	}
+	go ds.initNetworkTrees()
 	return ds
 }
 
-func (ds *dataStoreImpl) initNetworkTrees() error {
+func (ds *dataStoreImpl) initNetworkTrees() {
 	// Create tree for default ones.
-	ds.treeMgr.CreateDefaultNetworkTree()
-
+	entitiesByCluster := make(map[string][]*storage.NetworkEntityInfo)
 	// If network tree for a cluster is not found, it means it must orphan which shall be cleaned at next garbage collection.
 	if err := ds.storage.Walk(func(obj *storage.NetworkEntity) error {
-		return ds.getNetworkTree(obj.GetScope().GetClusterId(), true).Insert(obj.GetInfo())
+		entitiesByCluster[obj.GetScope().GetClusterId()] = append(entitiesByCluster[obj.GetScope().GetClusterId()], obj.GetInfo())
+		return nil
 	}); err != nil {
-		return errors.Wrap(err, "initializing network tree")
+		log.Errorf("Failed to initialize network tree: %v", err)
 	}
-	return nil
+
+	if err := ds.treeMgr.Initialize(entitiesByCluster); err != nil {
+		log.Errorf("Failed to initialize network trees for stored entities. "+
+			"Some known external network entities may be excluded from network graph: %v", err)
+	}
 }
 
-func (ds *dataStoreImpl) RegisterCluster(clusterID string) {
+func (ds *dataStoreImpl) RegisterCluster(ctx context.Context, clusterID string) {
 	ds.addCluster(clusterID)
-	ds.getNetworkTree(clusterID, true)
+	ds.getNetworkTree(ctx, clusterID, true)
 
 	go ds.doPushExternalNetworkEntitiesToSensor(clusterID)
 }
@@ -227,7 +228,7 @@ func (ds *dataStoreImpl) CreateExternalNetworkEntity(ctx context.Context, entity
 		go ds.doPushExternalNetworkEntitiesToSensor(entity.GetScope().GetClusterId())
 	}
 
-	return ds.getNetworkTree(entity.GetScope().GetClusterId(), true).Insert(entity.GetInfo())
+	return ds.getNetworkTree(ctx, entity.GetScope().GetClusterId(), true).Insert(entity.GetInfo())
 }
 
 func (ds *dataStoreImpl) UpdateExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity, skipPush bool) error {
@@ -257,8 +258,9 @@ func (ds *dataStoreImpl) UpdateExternalNetworkEntity(ctx context.Context, entity
 		go ds.doPushExternalNetworkEntitiesToSensor(entity.GetScope().GetClusterId())
 	}
 
-	ds.getNetworkTree(entity.GetScope().GetClusterId(), true).Remove(entity.GetInfo().GetId())
-	return ds.getNetworkTree(entity.GetScope().GetClusterId(), true).Insert(entity.GetInfo())
+	t := ds.getNetworkTree(ctx, entity.GetScope().GetClusterId(), true)
+	t.Remove(entity.GetInfo().GetId())
+	return t.Insert(entity.GetInfo())
 }
 
 func (ds *dataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, id string) error {
@@ -292,10 +294,9 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, id str
 
 	go ds.doPushExternalNetworkEntitiesToSensor(decodedID.ClusterID())
 
-	if networkTree := ds.getNetworkTree(decodedID.ClusterID(), false); networkTree != nil {
+	if networkTree := ds.getNetworkTree(ctx, decodedID.ClusterID(), false); networkTree != nil {
 		networkTree.Remove(id)
 	}
-
 	return nil
 }
 
@@ -332,7 +333,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 	}
 
 	// If we are here, it means all the network entities for the `clusterID` are removed.
-	ds.treeMgr.DeleteNetworkTree(clusterID)
+	ds.treeMgr.DeleteNetworkTree(ctx, clusterID)
 	ds.removeCluster(clusterID)
 	go ds.doPushExternalNetworkEntitiesToSensor(clusterID)
 
@@ -378,10 +379,10 @@ func (ds *dataStoreImpl) validateNoCIDRUpdate(newEntity *storage.NetworkEntity) 
 	return true, nil
 }
 
-func (ds *dataStoreImpl) getNetworkTree(clusterID string, createIfNotFound bool) tree.NetworkTree {
-	networkTree := ds.treeMgr.GetNetworkTree(clusterID)
+func (ds *dataStoreImpl) getNetworkTree(ctx context.Context, clusterID string, createIfNotFound bool) tree.NetworkTree {
+	networkTree := ds.treeMgr.GetNetworkTree(ctx, clusterID)
 	if networkTree == nil && createIfNotFound {
-		networkTree = ds.treeMgr.CreateNetworkTree(clusterID)
+		networkTree = ds.treeMgr.CreateNetworkTree(ctx, clusterID)
 	}
 	return networkTree
 }
