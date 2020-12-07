@@ -237,7 +237,7 @@ endif
 .PHONY: init-githooks
 init-githooks:
 	@echo "+ $@"
-	ln -sf $(PWD)/tools/githooks/pre-commit $(PWD)/.git/hooks/pre-commit
+	./tools/githooks/install-hooks.sh
 
 .PHONY: dev
 dev: install-dev-tools

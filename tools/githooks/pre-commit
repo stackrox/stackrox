@@ -1,5 +1,18 @@
 #!/usr/bin/env bash
 
+function check_git_conflicts {
+    if git rev-parse --verify HEAD >/dev/null 2>&1
+    then
+        against=HEAD
+    else
+        # Initial commit: diff against an empty tree object
+        against="$(git hash-object -t tree /dev/null)"
+    fi
+
+    # If there are whitespace errors or conflict errors, print the offending file names and fail.
+    git diff-index --check --cached "${against}" --
+}
+
 if [[ ! -x "$(command -v "quickstyle")" ]]; then
     echo >&2 "quickstyle not found, visit https://github.com/stackrox/workflow for installation instructions"
     exit 1
@@ -7,6 +20,8 @@ fi
 
 echo >&2 "Checking style, if you want to skip pre-commit hooks use --no-verify"
 quickstyle || exit 1
+
+check_git_conflicts
 
 if git status -s | grep -q ".groovy"; then
     echo >&2 "Checking style for groovy"
