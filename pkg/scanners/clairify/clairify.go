@@ -87,9 +87,8 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 		numConcurrentScans = int64(conf.GetNumConcurrentScans())
 	}
 
-	client := client.NewWithClient(endpoint, true, httpClient)
 	scanner := &clairify{
-		client:                client,
+		client:                client.NewWithClient(endpoint, httpClient),
 		conf:                  conf,
 		protoImageIntegration: protoImageIntegration,
 		activeRegistries:      activeRegistries,

@@ -29,7 +29,7 @@ require (
 	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0
-	github.com/facebookincubator/nvdtools v0.1.4-0.20191024132624-1cb041402875
+	github.com/facebookincubator/nvdtools v0.1.4
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gobuffalo/packd v0.3.0
@@ -51,7 +51,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.11.4-0.20191004150533-c677e419aa5c
 	github.com/hako/durafmt v0.0.0-20180520121703-7b7ae1e72ead
 	github.com/hashicorp/go-multierror v1.0.0
-	github.com/hashicorp/go-version v1.2.0
+	github.com/hashicorp/go-version v1.2.1
 	github.com/hashicorp/golang-lru v0.5.3
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jstemmer/go-junit-report v0.9.1
@@ -79,7 +79,7 @@ require (
 	github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e
 	github.com/stackrox/external-network-pusher v0.0.0-20201201000949-ec60e0486e7a
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191029220117-2a73008e51a9
-	github.com/stackrox/scanner v0.0.0-20200930193229-9be8257b3580
+	github.com/stackrox/scanner v0.0.0-20201206195833-89487a3e251b
 	github.com/stretchr/testify v1.6.1
 	github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222
 	github.com/tkuchiki/go-timezone v0.1.3
