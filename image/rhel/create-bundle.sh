@@ -93,7 +93,7 @@ extract_from_image "${BUILDER_IMAGE}" "/usr/local/bin/ldb" "${bundle_root}/usr/l
 rpm_base_url="http://mirror.centos.org/centos/8/BaseOS/x86_64/os/Packages"
 rpm_suffix="el8.x86_64.rpm"
 
-curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.7-5.${rpm_suffix}"
+curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.8-3.${rpm_suffix}"
 
 # =============================================================================
 
