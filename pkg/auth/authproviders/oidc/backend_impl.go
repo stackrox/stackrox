@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
@@ -36,6 +37,8 @@ const (
 	clientSecretConfigKey        = "client_secret"
 	dontUseClientSecretConfigKey = "do_not_use_client_secret"
 	modeConfigKey                = "mode"
+
+	userInfoExpiration = 5 * time.Minute
 )
 
 type nonceVerificationSetting int
@@ -56,7 +59,9 @@ type backendImpl struct {
 	baseRedirectURL url.URL
 	baseOauthConfig oauth2.Config
 	baseOptions     []oauth2.AuthCodeOption
-	formPostMode    bool
+
+	responseMode  string
+	responseTypes set.FrozenStringSet
 
 	config map[string]string
 
@@ -70,16 +75,36 @@ func (p *backendImpl) OnDisable(provider authproviders.Provider) {
 }
 
 func (p *backendImpl) ExchangeToken(ctx context.Context, token, state string) (*authproviders.AuthResponse, string, error) {
-	responseValues := make(url.Values, 2)
+	var responseValues url.Values
+	if strings.HasPrefix(token, "#") {
+		var err error
+		responseValues, err = url.ParseQuery(token[1:])
+		if err != nil {
+			return nil, "", errors.Wrap(err, "parsing key/value pairs from token")
+		}
+	} else {
+		responseValues = make(url.Values, 2)
+		responseValues.Set("id_token", token)
+	}
 	responseValues.Set("state", state)
-	responseValues.Set("id_token", token)
 
 	_, clientState := idputil.SplitState(state)
 	authResp, err := p.processIDPResponse(ctx, responseValues)
 	return authResp, clientState, err
 }
 
-func (p *backendImpl) RefreshAccessToken(ctx context.Context, refreshToken string) (*authproviders.AuthResponse, error) {
+func (p *backendImpl) RefreshAccessToken(ctx context.Context, refreshTokenData authproviders.RefreshTokenData) (*authproviders.AuthResponse, error) {
+	switch t := refreshTokenData.Type(); t {
+	case "refresh_token":
+		return p.refreshWithRefreshToken(ctx, refreshTokenData.RefreshToken)
+	case "access_token":
+		return p.refreshWithAccessToken(ctx, refreshTokenData.RefreshToken)
+	default:
+		return nil, errors.Errorf("invalid refresh token type %q", t)
+	}
+}
+
+func (p *backendImpl) refreshWithRefreshToken(ctx context.Context, refreshToken string) (*authproviders.AuthResponse, error) {
 	token, err := p.baseOauthConfig.TokenSource(p.injectHTTPClient(ctx), &oauth2.Token{
 		RefreshToken: refreshToken,
 	}).Token()
@@ -95,14 +120,18 @@ func (p *backendImpl) RefreshAccessToken(ctx context.Context, refreshToken strin
 	return p.verifyIDToken(ctx, rawIDToken, dontVerifyNonce)
 }
 
-func (p *backendImpl) RevokeRefreshToken(ctx context.Context, refreshToken string) error {
+func (p *backendImpl) refreshWithAccessToken(ctx context.Context, accessToken string) (*authproviders.AuthResponse, error) {
+	return p.fetchUserInfo(ctx, accessToken)
+}
+
+func (p *backendImpl) RevokeRefreshToken(ctx context.Context, refreshTokenData authproviders.RefreshTokenData) error {
 	if p.provider.RevocationEndpoint == "" {
 		return errors.New("provider does not expose a token revocation endpoint")
 	}
 
 	revokeTokenData := url.Values{
-		"token":           []string{refreshToken},
-		"token_type_hint": []string{"refresh_token"},
+		"token":           []string{refreshTokenData.RefreshToken},
+		"token_type_hint": []string{refreshTokenData.Type()},
 	}
 	resp, err := p.baseOauthConfig.PostRawRequest(ctx, p.provider.RevocationEndpoint, revokeTokenData)
 	if err != nil {
@@ -145,10 +174,30 @@ func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, nonc
 		return nil, err
 	}
 
-	claim := userInfoToExternalClaims(&userInfo)
+	externalClaims := userInfoToExternalClaims(&userInfo)
 	return &authproviders.AuthResponse{
-		Claims:     claim,
+		Claims:     externalClaims,
 		Expiration: idToken.Expiry,
+	}, nil
+}
+
+func (p *backendImpl) fetchUserInfo(ctx context.Context, rawAccessToken string) (*authproviders.AuthResponse, error) {
+	userInfoFromEndpoint, err := p.provider.UserInfo(p.injectHTTPClient(ctx), oauth2.StaticTokenSource(&oauth2.Token{
+		AccessToken: rawAccessToken,
+	}))
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching updated userinfo")
+	}
+
+	var userInfo userInfoType
+	if err := userInfo.PopulateFromUserInfo(userInfoFromEndpoint); err != nil {
+		return nil, errors.Wrap(err, "parsing userinfo")
+	}
+
+	externalClaims := userInfoToExternalClaims(&userInfo)
+	return &authproviders.AuthResponse{
+		Claims:     externalClaims,
+		Expiration: time.Now().Add(userInfoExpiration),
 	}, nil
 }
 
@@ -217,30 +266,55 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		Scheme: "https",
 	}
 
+	clientSecret := config[clientSecretConfigKey]
+
 	mode := strings.ToLower(config[modeConfigKey])
+	if mode == "auto" {
+		mode, err = provider.SelectResponseMode(clientSecret != "")
+		if err != nil {
+			return nil, errors.Wrap(err, "automatically determining response mode")
+		}
+		// Nasty back-and-forth between our value and the one used by OIDC.
+		if mode == "form_post" {
+			mode = "post"
+		}
+	} else if mode == "" {
+		mode = "fragment" // legacy setting
+	}
+
+	if clientSecret == "" && config[dontUseClientSecretConfigKey] == "false" {
+		if mode == "query" {
+			return nil, errors.New("query response mode can only be used with a client secret")
+		}
+		return nil, errors.New("please specify a client secret, or explicitly opt-out of client secret usage")
+	}
+
+	var responseMode string
 	switch mode {
-	case "", "fragment":
-		mode = "fragment"
+	case "fragment":
 		p.baseRedirectURL.Path = fragmentCallbackURLPath
-		p.baseOptions = append(p.baseOptions, oauth2.SetAuthURLParam("response_mode", "fragment"))
+		responseMode = "fragment"
+	case "query":
+		p.baseRedirectURL.Path = callbackURLPath
+		responseMode = "query"
 	case "post":
 		p.baseRedirectURL.Path = callbackURLPath
-		p.baseOptions = append(p.baseOptions, oauth2.SetAuthURLParam("response_mode", "form_post"))
-		p.formPostMode = true
+		responseMode = "form_post"
 	default:
 		return nil, errors.Errorf("invalid mode %q", mode)
 	}
 
-	responseType := "id_token"
-	clientSecret := config[clientSecretConfigKey]
-	if clientSecret != "" {
-		if mode != "post" {
-			return nil, errors.Errorf("mode %q cannot be used with a client secret", mode)
-		}
-		responseType = "code"
-	} else if config[dontUseClientSecretConfigKey] == "false" {
-		return nil, errors.New("please specify a client secret, or explicitly opt-out of client secret usage")
+	if !provider.SupportsResponseMode(responseMode) {
+		return nil, errors.Errorf("invalid response mode %q, supported modes: %s", responseMode, strings.Join(provider.ResponseModesSupported, ", "))
 	}
+	p.baseOptions = append(p.baseOptions, oauth2.SetAuthURLParam("response_mode", responseMode))
+	p.responseMode = responseMode
+
+	responseType, err := provider.SelectResponseType(responseMode, clientSecret != "")
+	if err != nil {
+		return nil, errors.Wrap(err, "determining response type")
+	}
+	p.responseTypes = set.NewFrozenStringSet(strings.Split(responseType, " ")...)
 
 	p.baseOptions = append(p.baseOptions, oauth2.SetAuthURLParam("response_type", responseType))
 
@@ -282,10 +356,6 @@ func (p *backendImpl) Config() map[string]string {
 	return p.config
 }
 
-func (p *backendImpl) useCodeFlow() bool {
-	return p.baseOauthConfig.ClientSecret != "" && p.formPostMode
-}
-
 func (p *backendImpl) oauthCfgForRequest(ri *requestinfo.RequestInfo) *oauth2.Config {
 	redirectURL := p.baseRedirectURL
 	if p.allowedUIEndpoints.Contains(ri.Hostname) {
@@ -305,16 +375,21 @@ func (p *backendImpl) oauthCfgForRequest(ri *requestinfo.RequestInfo) *oauth2.Co
 }
 
 func (p *backendImpl) loginURL(clientState string, ri *requestinfo.RequestInfo) string {
-	nonce, err := p.noncePool.IssueNonce()
-	if err != nil {
-		log.Error("UNEXPECTED: could not issue nonce")
-		return ""
-	}
-
 	state := idputil.MakeState(p.id, clientState)
-	options := make([]oauth2.AuthCodeOption, len(p.baseOptions)+1)
+	options := make([]oauth2.AuthCodeOption, len(p.baseOptions), len(p.baseOptions)+1)
 	copy(options, p.baseOptions)
-	options[len(p.baseOptions)] = oidc.Nonce(nonce)
+
+	if p.responseTypes.Contains("code") || p.responseTypes.Contains("id_token") {
+		// A nonce parameter may only be specified if we can hope to get an id_token (either through
+		// code flow, or through implicit flow with id_tokens).
+		nonce, err := p.noncePool.IssueNonce()
+		if err != nil {
+			log.Error("UNEXPECTED: could not issue nonce")
+			return ""
+		}
+
+		options = append(options, oidc.Nonce(nonce))
+	}
 
 	redirectURL := p.baseRedirectURL
 	if p.allowedUIEndpoints.Contains(ri.Hostname) {
@@ -330,10 +405,10 @@ func (p *backendImpl) loginURL(clientState string, ri *requestinfo.RequestInfo) 
 	return p.oauthCfgForRequest(ri).AuthCodeURL(state, options...)
 }
 
-func (p *backendImpl) processIDPResponseForImplicitFlow(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, error) {
+func (p *backendImpl) processIDPResponseForImplicitFlowWithIDToken(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, error) {
 	rawIDToken := responseData.Get("id_token")
 	if rawIDToken == "" {
-		return nil, errors.New("required form fields not found")
+		return nil, errors.New("no id_token field found in response")
 	}
 
 	authResp, err := p.verifyIDToken(ctx, rawIDToken, verifyNonce)
@@ -344,11 +419,30 @@ func (p *backendImpl) processIDPResponseForImplicitFlow(ctx context.Context, res
 	return authResp, nil
 }
 
+func (p *backendImpl) processIDPResponseForImplicitFlowWithAccessToken(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, error) {
+	rawToken := responseData.Get("access_token")
+	if rawToken == "" {
+		return nil, errors.New("no access_token field found in response")
+	}
+
+	authResp, err := p.fetchUserInfo(ctx, rawToken)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching user info with access token")
+	}
+
+	authResp.RefreshTokenData = authproviders.RefreshTokenData{
+		RefreshTokenType: "access_token",
+		RefreshToken:     rawToken,
+	}
+
+	return authResp, nil
+}
+
 func (p *backendImpl) processIDPResponseForCodeFlow(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, error) {
 	code := responseData.Get("code")
 	if code == "" {
 		log.Debugf("Failed to locate 'code' field in IdP response. Response data: %+v", responseData)
-		return nil, errors.New("required form fields not found")
+		return nil, errors.New("'code' field not found in response data")
 	}
 
 	ri := requestinfo.FromContext(ctx)
@@ -369,21 +463,75 @@ func (p *backendImpl) processIDPResponseForCodeFlow(ctx context.Context, respons
 		return nil, errors.Wrap(err, "ID token verification failed")
 	}
 
-	authResp.RefreshToken = token.RefreshToken
+	if token.RefreshToken != "" {
+		// we received a proper refresh token
+		authResp.RefreshTokenData = authproviders.RefreshTokenData{
+			RefreshToken:     token.RefreshToken,
+			RefreshTokenType: "refresh_token",
+		}
+	} else {
+		authResp.RefreshTokenData = authproviders.RefreshTokenData{
+			RefreshToken:     token.AccessToken,
+			RefreshTokenType: "access_token",
+		}
+	}
 
 	return authResp, nil
 }
 
 func (p *backendImpl) processIDPResponse(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, error) {
-	if p.useCodeFlow() {
-		return p.processIDPResponseForCodeFlow(ctx, responseData)
+	var combinedErr error
+	if p.responseTypes.Contains("code") {
+		authResp, err := p.processIDPResponseForCodeFlow(ctx, responseData)
+		if err != nil {
+			combinedErr = multierror.Append(combinedErr, err)
+		} else {
+			return authResp, nil
+		}
 	}
-	return p.processIDPResponseForImplicitFlow(ctx, responseData)
+	if p.responseTypes.Contains("token") {
+		authResp, err := p.processIDPResponseForImplicitFlowWithAccessToken(ctx, responseData)
+		if err != nil {
+			combinedErr = multierror.Append(combinedErr, err)
+		} else {
+			return authResp, nil
+		}
+	}
+	if p.responseTypes.Contains("id_token") {
+		authResp, err := p.processIDPResponseForImplicitFlowWithIDToken(ctx, responseData)
+		if err != nil {
+			combinedErr = multierror.Append(combinedErr, err)
+		} else {
+			return authResp, nil
+		}
+	}
+
+	if combinedErr == nil {
+		combinedErr = errors.Errorf("no supported response type: %s", p.responseTypes.ElementsString(", "))
+	}
+
+	return nil, combinedErr
 }
 
 func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
-	// Form data is guaranteed to be parsed thanks to factory.ProcessHTTPRequest
-	return p.processIDPResponse(r.Context(), r.Form)
+	var values url.Values
+	switch r.Method {
+	case http.MethodGet:
+		if p.responseMode != "query" {
+			return nil, errors.Errorf("this URL should only be accessed with method %s when using the 'query' response mode, but requested response mode was %q", r.Method, p.responseMode)
+		}
+		values = r.URL.Query()
+	case http.MethodPost:
+		if p.responseMode != "form_post" {
+			return nil, errors.Errorf("this URL should only be accessed with method %s when using the 'form_post' response mode, but requested response mode was %q", r.Method, p.responseMode)
+		}
+		// Form data is guaranteed to be parsed thanks to factory.ProcessHTTPRequest
+		values = r.Form
+	default:
+		return nil, errors.Errorf("method %s not allowed for this URL", r.Method)
+	}
+
+	return p.processIDPResponse(r.Context(), values)
 }
 
 func (p *backendImpl) Validate(ctx context.Context, claims *tokens.Claims) error {
@@ -399,6 +547,14 @@ type userInfoType struct {
 	EMail  string   `json:"email"`
 	UID    string   `json:"sub"`
 	Groups []string `json:"groups"`
+}
+
+func (u *userInfoType) PopulateFromIDToken(idToken *oidc.IDToken) error {
+	return idToken.Claims(u)
+}
+
+func (u *userInfoType) PopulateFromUserInfo(userInfo *oidc.UserInfo) error {
+	return userInfo.Claims(u)
 }
 
 func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim {

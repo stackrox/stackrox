@@ -15,7 +15,7 @@ type AuthResponse struct {
 	Expiration time.Time
 	ExtraOpts  []tokens.Option
 
-	RefreshToken string
+	RefreshTokenData
 }
 
 // Backend is a backend for an authentication provider.
@@ -50,8 +50,8 @@ type RefreshTokenEnabledBackend interface {
 	Backend
 
 	// RefreshAccessToken issues a new access token, using the given refresh token.
-	RefreshAccessToken(ctx context.Context, refreshToken string) (*AuthResponse, error)
+	RefreshAccessToken(ctx context.Context, refreshTokenData RefreshTokenData) (*AuthResponse, error)
 
 	// RevokeRefreshToken revokes an issued refresh token.
-	RevokeRefreshToken(ctx context.Context, refreshToken string) error
+	RevokeRefreshToken(ctx context.Context, refreshTokenData RefreshTokenData) error
 }

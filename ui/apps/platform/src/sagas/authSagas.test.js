@@ -146,7 +146,7 @@ describe('Auth Sagas', () => {
                 ...createStateSelectors(),
                 [call(AuthService.fetchLoginAuthProviders), { response: [] }],
                 [
-                    call(AuthService.exchangeAuthToken, token, 'oidc', serverState),
+                    call(AuthService.exchangeAuthToken, `#id_token=${token}`, 'oidc', serverState),
                     { token: exchangedToken },
                 ],
                 [call(AuthService.storeAccessToken, exchangedToken), dynamic(storeAccessTokenMock)],

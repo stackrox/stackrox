@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -49,15 +50,20 @@ func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (st
 		return "", "", httputil.NewError(http.StatusNotFound, "Not Found")
 	}
 
-	if r.Method != http.MethodPost {
+	var values url.Values
+	switch r.Method {
+	case http.MethodGet:
+		values = r.URL.Query()
+	case http.MethodPost:
+		if err := r.ParseForm(); err != nil {
+			return "", "", httputil.Errorf(http.StatusBadRequest, "could not parse form data: %v", err)
+		}
+		values = r.Form
+	default:
 		return "", "", httputil.Errorf(http.StatusMethodNotAllowed, "method %s is not supported for this URL", r.Method)
 	}
 
-	if err := r.ParseForm(); err != nil {
-		return "", "", httputil.Errorf(http.StatusBadRequest, "could not parse form data: %v", err)
-	}
-
-	return f.ResolveProviderAndClientState(r.FormValue("state"))
+	return f.ResolveProviderAndClientState(values.Get("state"))
 }
 
 func (f *factory) ResolveProviderAndClientState(state string) (string, string, error) {

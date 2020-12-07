@@ -2,6 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { formValues } from 'redux-form';
 
+import { oidcCallbackValues } from 'constants/accessControl';
+
 import Labeled from 'Components/Labeled';
 import FormFieldLabel from 'Components/forms/FormFieldLabel';
 import ReduxTextField from 'Components/forms/ReduxTextField';
@@ -40,9 +42,12 @@ const Note = ({ header, children }) => (
 
 const OidcFormFields = ({ disabled, configValues, change }) => {
     function onModeChange(event, newValue) {
-        // client secret is supported only with HTTP POST
-        change('config.do_not_use_client_secret', newValue !== 'post');
-        change('config.client_secret', '');
+        // client secret is not supported with Fragment
+        const noClientSecret = newValue === 'fragment';
+        change('config.do_not_use_client_secret', noClientSecret);
+        if (noClientSecret) {
+            change('config.client_secret', '');
+        }
     }
 
     function onDoNotUseClientSecretChange(event, newValue) {
@@ -51,12 +56,13 @@ const OidcFormFields = ({ disabled, configValues, change }) => {
         }
     }
 
-    const clientSecretSupported = configValues.mode === 'post';
+    const clientSecretSupported = configValues.mode !== 'fragment';
+    const clientSecretMandatory = configValues.mode === 'query';
 
     // use client secret placeholder as an explanation text
     let clientSecretPlaceholder = 'Client Secret provided by your IdP';
     if (!clientSecretSupported) {
-        clientSecretPlaceholder = 'Client Secret is only supported with HTTP POST callback mode';
+        clientSecretPlaceholder = 'Client Secret is not supported with Fragment callback mode';
     } else if (configValues.clientOnly?.clientSecretStored) {
         clientSecretPlaceholder = configValues.do_not_use_client_secret
             ? 'Disabled, the currently stored secret will be removed'
@@ -72,7 +78,8 @@ const OidcFormFields = ({ disabled, configValues, change }) => {
         <FormFieldLabel text="Client Secret" required={clientSecretRequired} />
     );
 
-    const doNotUseClientSecretDisabled = disabled || !clientSecretSupported;
+    const doNotUseClientSecretDisabled =
+        disabled || !clientSecretSupported || clientSecretMandatory;
     const clientSecret = (
         <>
             <Labeled label={clientSecretLabel}>
@@ -98,12 +105,33 @@ const OidcFormFields = ({ disabled, configValues, change }) => {
             </Labeled>
         </>
     );
+    const callbackURLs = [];
+    if (configValues.mode === 'auto' || configValues.mode === 'fragment') {
+        callbackURLs.push(oidcFragmentCallbackURL);
+    }
+    if (
+        configValues.mode === 'auto' ||
+        configValues.mode === 'post' ||
+        configValues.mode === 'query'
+    ) {
+        callbackURLs.push(oidcPostCallbackURL);
+    }
     return (
         <>
             <CommonFields disabled={disabled} />
             <Labeled label={<FormFieldLabel text="Callback Mode" required />}>
                 <div className="flex">
-                    <label htmlFor="post-radio" className="flex items-center">
+                    <label htmlFor="auto-radio" className="flex items-center">
+                        <ReduxRadioField
+                            name="config.mode"
+                            value="auto"
+                            id="auto-radio"
+                            disabled={disabled}
+                            onChange={onModeChange}
+                        />
+                        <span className="ml-1">Auto-select (recommended)</span>
+                    </label>
+                    <label htmlFor="post-radio" className="flex items-center ml-6">
                         <ReduxRadioField
                             name="config.mode"
                             value="post"
@@ -123,6 +151,16 @@ const OidcFormFields = ({ disabled, configValues, change }) => {
                         />
                         <span className="ml-1">Fragment</span>
                     </label>
+                    <label htmlFor="query-radio" className="flex items-center ml-6">
+                        <ReduxRadioField
+                            name="config.mode"
+                            value="query"
+                            id="query-radio"
+                            disabled={disabled}
+                            onChange={onModeChange}
+                        />
+                        <span className="ml-1">Query</span>
+                    </label>
                 </div>
             </Labeled>
             <Labeled label={<FormFieldLabel text="Issuer" required />}>
@@ -138,26 +176,25 @@ const OidcFormFields = ({ disabled, configValues, change }) => {
             {clientSecret}
             <Note
                 header={
-                    <span>
-                        if required by your IdP, use the following callback URL for{' '}
-                        <span className="font-700">
-                            {configValues.mode === 'fragment' ? 'Fragment' : 'HTTP POST'}
-                        </span>{' '}
-                        mode:
-                    </span>
+                    configValues.mode === 'auto' ? (
+                        <span>if required by your IdP, allow the following callback URLs:</span>
+                    ) : (
+                        <span>
+                            if required by your IdP, allow the following callback URL for{' '}
+                            <span className="font-700">
+                                {oidcCallbackValues[configValues.mode]}
+                            </span>{' '}
+                            mode:
+                        </span>
+                    )
                 }
             >
                 <ul className="pl-4 mt-2 leading-loose">
-                    {configValues.mode === 'fragment' && (
-                        <li>
-                            <span className="text-tertiary-800">{oidcFragmentCallbackURL}</span>
+                    {callbackURLs.map((url) => (
+                        <li key={url}>
+                            <span className="text-tertiary-800">{url}</span>
                         </li>
-                    )}
-                    {configValues.mode === 'post' && (
-                        <li>
-                            <span className="text-tertiary-800">{oidcPostCallbackURL}</span>
-                        </li>
-                    )}
+                    ))}
                 </ul>
             </Note>
         </>

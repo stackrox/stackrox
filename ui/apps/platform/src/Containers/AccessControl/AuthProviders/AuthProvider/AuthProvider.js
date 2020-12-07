@@ -37,7 +37,7 @@ class AuthProvider extends Component {
         newInitialValues.uiEndpoint = window.location.host;
         newInitialValues.enabled = true;
         if (initialValues.type === 'oidc') {
-            newInitialValues.config = { mode: 'post', do_not_use_client_secret: false };
+            newInitialValues.config = { mode: 'auto', do_not_use_client_secret: false };
         }
         return newInitialValues;
     };

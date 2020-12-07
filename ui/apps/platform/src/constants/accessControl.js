@@ -35,6 +35,13 @@ export const availableAuthProviders = [
     },
 ];
 
+export const oidcCallbackValues = {
+    auto: 'Auto-select (recommended)',
+    post: 'HTTP POST',
+    fragment: 'Fragment',
+    query: 'Query',
+};
+
 export function getAuthProviderLabelByValue(value) {
     return availableAuthProviders.find((e) => e.value === value).label;
 }

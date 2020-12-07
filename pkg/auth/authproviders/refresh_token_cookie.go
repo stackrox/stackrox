@@ -17,10 +17,24 @@ var (
 	schemaDecoder = schema.NewDecoder()
 )
 
+// RefreshTokenData encapsulates data relevant to refresh tokens.
+type RefreshTokenData struct {
+	RefreshToken     string `schema:"refreshToken,required"`
+	RefreshTokenType string `schema:"refreshTokenType,omitempty"`
+}
+
+// Type returns the inferred type of the refresh token stored in this type.
+func (d *RefreshTokenData) Type() string {
+	if d.RefreshTokenType != "" {
+		return d.RefreshTokenType
+	}
+	return "refresh_token"
+}
+
 type refreshTokenCookieData struct {
 	ProviderType string `schema:"providerType,required"`
 	ProviderID   string `schema:"providerId,required"`
-	RefreshToken string `schema:"refreshToken,required"`
+	RefreshTokenData
 }
 
 func cookieDataFromRequest(req *http.Request) (*refreshTokenCookieData, error) {

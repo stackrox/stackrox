@@ -179,7 +179,7 @@ func (r *registryImpl) tokenRefreshEndpoint(req *http.Request) (interface{}, err
 		return nil, httputil.Errorf(http.StatusBadRequest, "auth provider backend of type %q does not support refresh tokens", provider.Type())
 	}
 
-	authResp, err := refreshTokenEnabledBackend.RefreshAccessToken(req.Context(), cookieData.RefreshToken)
+	authResp, err := refreshTokenEnabledBackend.RefreshAccessToken(req.Context(), cookieData.RefreshTokenData)
 	if err != nil {
 		return nil, httputil.Errorf(http.StatusInternalServerError, "failed to obtain new access token for refresh token: %v", err)
 	}
@@ -264,14 +264,14 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	}
 
 	var tokenInfo *tokens.TokenInfo
-	var refreshToken string
+	var refreshTokenData *RefreshTokenData
 	if authResp != nil {
 		tokenInfo, err = issueTokenForResponse(req.Context(), provider, authResp)
 		if err != nil {
 			r.error(w, err, typ, clientState, testMode)
 			return
 		}
-		refreshToken = authResp.RefreshToken
+		refreshTokenData = &authResp.RefreshTokenData
 	}
 
 	if tokenInfo == nil {
@@ -280,11 +280,11 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	}
 
 	w.Header().Set("Location", r.tokenURL(tokenInfo.Token, typ, clientState).String())
-	if refreshToken != "" {
+	if refreshTokenData != nil {
 		cookieData := refreshTokenCookieData{
-			ProviderType: typ,
-			ProviderID:   providerID,
-			RefreshToken: refreshToken,
+			ProviderType:     typ,
+			ProviderID:       providerID,
+			RefreshTokenData: *refreshTokenData,
 		}
 		if encodedData, err := cookieData.Encode(); err != nil {
 			log.Errorf("failed to encode refresh token cookie data: %v", err)
@@ -340,7 +340,7 @@ func (r *registryImpl) logoutEndpoint(req *http.Request) (interface{}, error) {
 		return nil, httputil.Errorf(http.StatusBadRequest, "Failed to revoke refresh token: provider %s of type %s does not support refresh tokens", provider.Name(), provider.Type())
 	}
 
-	if err := backendWithRefreshTokens.RevokeRefreshToken(req.Context(), cookieData.RefreshToken); err != nil {
+	if err := backendWithRefreshTokens.RevokeRefreshToken(req.Context(), cookieData.RefreshTokenData); err != nil {
 		return nil, httputil.Errorf(http.StatusInternalServerError, "Failed to revoke refresh token of %s auth provider %s: %v", provider.Type(), provider.Name(), err)
 	}
 	return nil, nil
