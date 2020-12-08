@@ -14,10 +14,28 @@ the product formerly known as Prevent, which itself was called Mitigate and
 Apollo.  You may find references to these previous names in code or
 documentation.
 
-## Development
-**Note**: if you want to develop only StackRox UI, please refer to [ui/README.md](./ui/README.md).
+## Table of contents
 
-### Build Tooling
+* [Development](#development)
+    + [Quickstart](#quickstart)
+      - [Build Tooling](#build-tooling)
+      - [Clone StackRox](#clone-stackrox)
+      - [Local development](#local-development)
+      - [Common Makefile Targets](#common-makefile-targets)
+      - [Productivity](#productivity)
+    + [How to Deploy](#how-to-deploy)
+* [Deploying for Customer](#deploying-for-customer)
+* [How to Release a New Version](#how-to-release-a-new-version)
+
+## Development
+**UI Dev Docs**: please refer to [ui/README.md](./ui/README.md)
+
+**E2E Dev Docs**: please refer to [qa-tests-backend/README.md](./qa-tests-backend/README.md)
+
+### Quickstart
+
+#### Build Tooling
+
 The following tools are necessary to build image(s):
 
  * [Make](https://www.gnu.org/software/make/)
@@ -25,51 +43,159 @@ The following tools are necessary to build image(s):
    * Get the version specified in [EXPECTED_GO_VERSION](./EXPECTED_GO_VERSION).
  * Various Go linters and RocksDB dependencies that can be installed using `make reinstall-dev-tools`.
  * UI build tooling as specified in [ui/README.md](ui/README.md#Build-Tooling).
+ * Docker
+ * rocksdb
+ * xcode command line tools (macOS only)
 
-### How to Build
+##### xcode - macOS only
+<details><summary>Click to expand</summary>
+ Usually you would have these already installed by brew.
+ However if you get an error when building the golang x/tools,
+ try first making sure the EULA is agreed by:
+ 
+ 1. starting XCode
+ 2. building a new blank app project
+ 3. starting the blank project app in the emulator
+ 4. close both the emulator and the XCode, then
+ 5. run the following commands:
+ 
+ ```
+ xcode-select --install
+ sudo xcode-select --switch /Library/Developer/CommandLineTools # Enable command line tools
+ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+ ```
+ 
+ For more info, see https://github.com/nodejs/node-gyp/issues/569
+ </details>
+ 
+#### Clone StackRox
+
+```
+# Create a GOPATH: this is the location of your Go "workspace".
+# (Note that it is not – and must not – be the same as the path Go is installed to.)
+# The default is to have it in ~/go/, or ~/development, but anything you prefer goes.
+# Whatever you decide, create the directory, and add a line in your ~/.bash_profile
+# exporting the env variable:
+export GOPATH=$HOME/go # Change this if you choose to use a different workspace.
+export PATH=$PATH:$GOPATH/bin
+source ~/.bash_profile
+
+$ cd $GOPATH
+$ mkdir bin pkg src
+
+# Replace https git-urls with ssh, required to fetch go dependencies.
+$ git config --global --add url.git@github.com:.insteadof https://github.com/
+
+# Instruct Go to bypass the Go package proxy for our private dependencies
+$ go env -w GOPRIVATE=github.com/stackrox
+
+$ cd $GOPATH
+$ mkdir -p src/github.com/stackrox
+$ cd src/github.com/stackrox
+$ git clone git@github.com:stackrox/rox.git
+```
+
+#### Local development
+
+Development can either happen in GCP or locally with
+[Docker Desktop](https://docs.docker.com/docker-for-mac/#kubernetes) or [Minikube](https://minikube.sigs.k8s.io/docs/start/).  
+To sweeten your experience, install [the workflow scripts](#productivity) beforehand.
+
+```
+# Install rocksdb, central's main database
+# It is necessary because of several CGO bindings
+$ brew install rocksdb
+
+$ cd $GOPATH/src/github.com/stackrox
+$ make install-dev-tools
+$ make image
+
+# To mount local StackRox binaries into your pods, enable hotreload:
+$ export HOTRELOAD=true
+
+# To keep the StackRox central's rocksdb state between restarts, set:
+$ export STORAGE=pvc
+
+# When you deploy locally make sure your kube context points to the desired kubernetes cluster,
+# for example Docker Desktop.
+# To check the current context you can call a workflow script:
+$ roxkubectx
+
+# To deploy locally, call:
+$ ./deploy/k8s/deploy-local.sh
+
+# Now you can access StackRox dashboard at https://localhost:8000
+# or simply call another workflow script:
+$ logmein
+```
+
+See the [deployment guide](#how-to-deploy) for further reading.
+
+
+#### Common Makefile Targets
+
 ```bash
-make image
+# Build image, this will create `stackrox/main` with a tag defined by `make tag`.
+$ make image
+
+# Compile all binaries
+$ make main-build-dockerized
+
+# Displays the docker image tag which would be generated
+$ make tag
+
+# Note: there are integration tests in some components, and we currently 
+# run those manually. They will be re-enabled at some point.
+$ make test
+
+# Apply and check style standards in Go and JavaScript
+$ make style
+
+# enable pre-commit hooks for style checks
+$ make init-githooks
+
+# Compile and restart only central
+$ make fast-central
+
+# Compile only sensor
+$ make fast-sensor
+
+# Only compile protobuf
+$ make proto-generated-srcs
+
+# Update files embedded in binaries, useful when working on the Helm charts, for instance.
+$ make go-packr-srcs
 ```
 
-This will create `stackrox/main` with a tag defined by `make tag`.
+#### Productivity
 
-### Possible OS/X complications:
-If you are on OS/X and get an error when building the golang x/tools,
-try first making sure the EULA is agreed by:
-
-1. starting XCode
-2. building a new blank app project
-3. starting the blank project app in the emulator
-4. close both the emulator and the XCode, then
-5. run the following commands:
+The [workflow repository](https://github.com/stackrox/workflow) contains some helper scripts 
+which support our development workflow. Explore more commands with `roxhelp --list-all`.
 
 ```
-xcode-select --install
-sudo xcode-select --switch /Library/Developer/CommandLineTools # Enable command line tools
-sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+# Change directory to rox root
+$ cdrox
+
+# Handy curl shortcut for your StackRox central instance
+# Uses https://localhost:8000 by default or ROX_BASE_URL env variable
+# Also uses the admin credentials from your last deployment via deploy.sh
+$ roxcurl /v1/metadata
+
+# Run quickstyle checks, faster than roxs' "make style"
+$ quickstyle
+
+# The workflow repository includes some tools for supporting 
+# working with multiple inter-dependent branches.
+# Examples:
+$ smart-branch <branch-name>    # create new branch
+    ... work on branch...
+$ smart-rebase                  # rebase from parent branch
+    ... continue working on branch...
+$ smart-diff                    # check diff relative to parent branch
+    ... git push, etc.
 ```
 
-For more info, see https://github.com/nodejs/node-gyp/issues/569
-
-### Test the base configuration
-This is the only image required to run the base configuration of StackRox.
-Runtime collection and system monitoring require additional images.
-
-### How to Test
-```bash
-make test
-```
-
-Note: there are integration tests in some components, and we currently
-run those manually. They will be re-enabled at some point.
-
-### How to Apply or Check Style Standards
-```bash
-make style
-```
-
-This will check Go and Javascript code for conformance with standard style
-guidelines, and rewrite the relevant code if possible.
+---
 
 ### How to Deploy
 Deployment configurations are under the `deploy/` directory, organized
@@ -78,8 +204,8 @@ per orchestrator.
 The deploy script will:
 
  1. Launch Central.
- 1. Create a cluster configuration and a service identity, then
- deploy the cluster sensor using that configuration and those credentials.
+ 1. Create a cluster configuration and a service identity
+ 1. Deploy the cluster sensor using that configuration and those credentials
 
 You can set the environment variable `MAIN_IMAGE_TAG` in your shell to
 ensure that you get the version you want.
