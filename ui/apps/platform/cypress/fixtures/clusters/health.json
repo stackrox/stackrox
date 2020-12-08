@@ -42,7 +42,10 @@
                 "lastContact": null,
                 "healthInfoComplete": false
             },
-            "slimCollector":true
+            "slimCollector": true,
+            "helmConfig": {
+                "name": "test-helm-config"
+            }
         },
         {
             "id": "f342ca31-9271-081c-c40d-4e4cd442707a",
@@ -102,7 +105,8 @@
                 "lastContact": "2020-08-31T12:01:00Z",
                 "healthInfoComplete": true
             },
-            "slimCollector":false
+            "slimCollector": false,
+            "helmConfig": null
         },
         {
             "id": "2a226ad1-9f7a-eb6d-b0e5-a0db4ad68161",
@@ -162,7 +166,8 @@
                 "lastContact": "2020-08-31T13:00:59Z",
                 "healthInfoComplete": true
             },
-            "slimCollector": false
+            "slimCollector": false,
+            "helmConfig": null
         },
         {
             "id": "e3a8407f-db07-3d01-5371-aeb7159779dd",
@@ -223,7 +228,8 @@
                 "lastContact": "2020-08-31T12:59:00Z",
                 "healthInfoComplete": true
             },
-            "slimCollector": false
+            "slimCollector": false,
+            "helmConfig": null
         },
         {
             "id": "4dd3f266-f78c-2cff-788e-4b0e26d5f585",
@@ -291,7 +297,8 @@
                 "lastContact": "2020-08-31T13:00:59Z",
                 "healthInfoComplete": true
             },
-            "slimCollector": false
+            "slimCollector": false,
+            "helmConfig": null
         },
         {
             "id": "196eab32-b03a-972a-938e-2cbf265b7490",
@@ -347,7 +354,8 @@
                 "lastContact": "2020-08-31T13:00:59Z",
                 "healthInfoComplete": false
             },
-            "slimCollector": false
+            "slimCollector": false,
+            "helmConfig": null
         },
         {
             "id": "8996128e-e999-ce19-bd68-8eda43ef1d8b",
@@ -414,7 +422,8 @@
                 "lastContact": "2020-08-31T13:00:59Z",
                 "healthInfoComplete": true
             },
-            "slimCollector": false
+            "slimCollector": false,
+            "helmConfig": null
         }
     ]
 }

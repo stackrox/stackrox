@@ -2854,6 +2854,7 @@ jobs:
       - ROX_NETWORK_DETECTION: true
       - ROX_HOST_SCANNING: true
       - ROX_DISCOVERED_AT_IMAGE: true
+      - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
 
     steps:
       - checkout
@@ -3134,6 +3135,7 @@ jobs:
       - ROX_NETWORK_DETECTION: false
       - ROX_HOST_SCANNING: true
       - ROX_DISCOVERED_AT_IMAGE: true
+      - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
 
     steps:
       - checkout
@@ -3205,6 +3207,7 @@ jobs:
       - ROX_HOST_SCANNING: true
       - ROX_SENSOR_TLS_CHALLENGE: true
       - ROX_DISCOVERED_AT_IMAGE: true
+      - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
 
     steps:
       - run-qa-tests:
@@ -3234,6 +3237,7 @@ jobs:
       - ROX_HOST_SCANNING: true
       - ROX_DISCOVERED_AT_IMAGE: true
       - ROX_SENSOR_TLS_CHALLENGE: true
+      - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
 
     steps:
       - checkout
@@ -3268,6 +3272,7 @@ jobs:
       - ROX_NETWORK_DETECTION: true
       - ROX_HOST_SCANNING: true
       - ROX_DISCOVERED_AT_IMAGE: true
+      - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
 
     steps:
       - run-qa-tests:
@@ -3303,6 +3308,7 @@ jobs:
       - ROX_NETWORK_DETECTION: true
       - ROX_HOST_SCANNING: true
       - ROX_DISCOVERED_AT_IMAGE: true
+      - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
 
     steps:
       - run-qa-tests:
@@ -3842,6 +3848,7 @@ jobs:
       - ROX_NETWORK_DETECTION: true
       - ROX_HOST_SCANNING: true
       - ROX_DISCOVERED_AT_IMAGE: true
+      - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
 
     steps:
       - run-openshift-tests:
@@ -3868,6 +3875,7 @@ jobs:
       - ROX_NETWORK_DETECTION: true
       - ROX_HOST_SCANNING: true
       - ROX_DISCOVERED_AT_IMAGE: true
+      - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
 
     steps:
       - run-openshift-tests:
@@ -3891,6 +3899,7 @@ jobs:
       - ROX_NETWORK_DETECTION: true
       - ROX_HOST_SCANNING: true
       - ROX_DISCOVERED_AT_IMAGE: true
+      - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
 
     steps:
       - checkout

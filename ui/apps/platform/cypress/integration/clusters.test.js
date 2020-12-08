@@ -271,6 +271,31 @@ describe('Cluster Creation Flow', () => {
     });
 });
 
+describe('Cluster with Helm management', () => {
+    withAuth();
+
+    beforeEach(() => {
+        cy.server();
+        cy.fixture('clusters/health.json').as('clusters');
+        cy.route('GET', clustersApi.list, '@clusters').as('GetClusters');
+
+        cy.visit(clustersUrl);
+        cy.wait(['@GetClusters']);
+    });
+
+    it('should indicate which clusters are managed by Helm', () => {
+        cy.get(`${selectors.clusters.tableDataCell} [data-testid="cluster-name"]`).each(
+            ($nameCell, index) => {
+                if (index === 0) {
+                    cy.wrap($nameCell.children()).get('img[alt="Managed by Helm"]');
+                } else {
+                    cy.wrap($nameCell.children()).should('have.length', 0);
+                }
+            }
+        );
+    });
+});
+
 describe('Cluster Health', () => {
     withAuth();
 

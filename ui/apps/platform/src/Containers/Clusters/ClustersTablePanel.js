@@ -237,6 +237,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
             onDeleteHandler,
             upgradeSingleCluster,
         },
+        newSensorInstallationExperience,
     };
     const clusterColumns = getColumnsForClusters(columnOptions);
 

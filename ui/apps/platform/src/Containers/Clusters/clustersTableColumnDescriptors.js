@@ -15,8 +15,9 @@ import CollectorStatus from './Components/CollectorStatus';
 import CredentialExpiration from './Components/CredentialExpiration';
 import SensorStatus from './Components/SensorStatus';
 import SensorUpgrade from './Components/SensorUpgrade';
+import HelmIndicator from './Components/HelmIndicator';
 
-export function getColumnsForClusters({ metadata, rowActions }) {
+export function getColumnsForClusters({ metadata, rowActions, newSensorInstallationExperience }) {
     function renderRowActionButtons(cluster) {
         return (
             <div className="border-2 border-r-2 border-base-400 bg-base-100">
@@ -38,6 +39,16 @@ export function getColumnsForClusters({ metadata, rowActions }) {
             Header: 'Name',
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
+            Cell: ({ original }) => (
+                <span className="flex items-center" data-testid="cluster-name">
+                    {original.name}
+                    {newSensorInstallationExperience && !!original.helmConfig && (
+                        <span className="pl-2">
+                            <HelmIndicator />
+                        </span>
+                    )}
+                </span>
+            ),
         },
         {
             Header: 'Cloud Provider',
