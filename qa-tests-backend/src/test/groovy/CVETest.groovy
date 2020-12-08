@@ -26,13 +26,46 @@ class CVETest extends BaseSpecification {
         summary
         fixedByVersion
         createdAt
-        discoveredAtImage
+        discoveredAtImage(query: \$scopeQuery)
         envImpact
         publishedOn
         isFixable(query: \$scopeQuery)
         deploymentCount(query: \$query)
         imageCount(query: \$query)
         componentCount(query: \$query)
+        __typename
+    }
+    """
+
+    private static final COMPONENT_CVE_QUERY = """
+    query getComponentCVE(\$id: ID!, \$pagination: Pagination, \$query: String, \$scopeQuery: String)
+    {
+        result: component(id: \$id) {
+            id
+            name
+            version
+            vulns(query: \$query, pagination: \$pagination) {
+            ...cveFields
+            __typename
+            }
+            unusedVarSink(query: \$scopeQuery)
+            __typename
+        }
+    }
+
+    fragment cveFields on EmbeddedVulnerability {
+        id: cve
+        cve
+        cvss
+        vulnerabilityType
+        scoreVersion
+        envImpact
+        impactScore
+        summary
+        fixedByVersion
+        isFixable(query: \$scopeQuery)
+        createdAt
+        discoveredAtImage(query: \$scopeQuery)
         __typename
     }
     """
@@ -66,7 +99,7 @@ class CVETest extends BaseSpecification {
         fixedByVersion
         isFixable(query: \$scopeQuery)
         createdAt
-        discoveredAtImage
+        discoveredAtImage(query: \$scopeQuery)
         publishedOn
         deploymentCount(query: \$query)
         imageCount(query: \$query)
@@ -216,7 +249,7 @@ class CVETest extends BaseSpecification {
     @Category(BAT)
     def "Verify CreatedAt(DiscoveredAtSystem) and DiscoveredAtImage when scoped by images"() {
         when:
-        "Scan two images having same CVE but different scan time"
+        "Scan two images having same CVE but different scan time and CVE is queried nested through image resolver"
         def gqlService = new GraphQLService()
         def centosRet = gqlService.Call(IMAGE_CVE_QUERY, [
                 id: "sha256:4ec83eee30dfbaba2e93f59d36cc360660d13f73c71af179eeb9456dd95d1798",
@@ -254,7 +287,7 @@ class CVETest extends BaseSpecification {
     @Category(BAT)
     def "Verify CreatedAt(DiscoveredAtSystem) and DiscoveredAtImage when not scoped by images"() {
         when:
-        "Scan two images having same CVE but different scan time"
+        "Scan centos image and CVE is queried directly using vulnerability resolver"
         def gqlService = new GraphQLService()
         def ret = gqlService.Call(GET_CVES_QUERY, [
                 query: "CVE:CVE-2019-14866",
@@ -276,5 +309,35 @@ class CVETest extends BaseSpecification {
         and:
         "Verify CVE discovery time (Image) is null"
         assert !ret.value.results[0].discoveredAtImage
+    }
+
+    @Unroll
+    @Category(BAT)
+    def "Verify CreatedAt(DiscoveredAtSystem) and DiscoveredAtImage when scoped by resources other than images"() {
+        when:
+        "Scan centos image and CVE is queried nested through image component resolver"
+        def gqlService = new GraphQLService()
+        def ret = gqlService.Call(COMPONENT_CVE_QUERY, [
+                id: "Y3Bpbw:Mi4xMi04LmVsOA", // cpio 2.12-8.el8
+                query: "CVE:CVE-2019-14866",
+                scopeQuery: "IMAGE SHA:sha256:4ec83eee30dfbaba2e93f59d36cc360660d13f73c71af179eeb9456dd95d1798",
+        ])
+        assert ret.getCode() == 200
+        assert ret.value.result.vulns.size() == 1
+
+        def centosRet = gqlService.Call(IMAGE_CVE_QUERY, [
+                id: "sha256:4ec83eee30dfbaba2e93f59d36cc360660d13f73c71af179eeb9456dd95d1798",
+                query: "CVE:CVE-2019-14866",
+        ])
+        assert centosRet.getCode() == 200
+        assert centosRet.value.result.vulns.size() == 1
+
+        then:
+        "Verify CVE discovery time (System) of component-cve query is same as image-cve query"
+        assert ret.value.result.vulns[0].createdAt == centosRet.value.result.vulns[0].createdAt
+
+        and:
+        "Verify CVE discovery time (Image) of component-cve query is same as image-cve query"
+        assert ret.value.result.vulns[0].discoveredAtImage == centosRet.value.result.vulns[0].discoveredAtImage
     }
 }

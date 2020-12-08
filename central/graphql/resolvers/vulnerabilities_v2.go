@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -422,7 +423,7 @@ func (resolver *cVEResolver) getClusterFixedByVersion(_ context.Context) (string
 	return edge.GetFixedBy(), nil
 }
 
-func (resolver *cVEResolver) DiscoveredAtImage(ctx context.Context) (*graphql.Time, error) {
+func (resolver *cVEResolver) DiscoveredAtImage(ctx context.Context, args RawQuery) (*graphql.Time, error) {
 	if resolver.data.GetType() != storage.CVE_IMAGE_CVE {
 		return nil, nil
 	}
@@ -431,12 +432,44 @@ func (resolver *cVEResolver) DiscoveredAtImage(ctx context.Context) (*graphql.Ti
 	if !hasScope {
 		return nil, nil
 	}
+
+	imageID := scope.ID
+
 	if scope.Level != v1.SearchCategory_IMAGES {
-		return nil, nil
+		query, err := args.AsV1QueryOrEmpty()
+		if err != nil {
+			return nil, err
+		}
+
+		query, filtered := search.FilterQuery(query, func(bq *v1.BaseQuery) bool {
+			matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+			if ok {
+				if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), search.ImageSHA.String()) {
+					return true
+				}
+			}
+			return false
+		})
+
+		if !filtered || query == search.EmptyQuery() {
+			return nil, nil
+		}
+
+		res, err := resolver.root.ImageDataStore.SearchImages(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+		if len(res) != 1 {
+			return nil, errors.Errorf(
+				"received %d images in query response when 1 image was expected. Please check the query",
+				len(res))
+		}
+
+		imageID = res[0].Id
 	}
 
 	edgeID := edges.EdgeID{
-		ParentID: scope.ID,
+		ParentID: imageID,
 		ChildID:  resolver.data.GetId(),
 	}.ToString()
 

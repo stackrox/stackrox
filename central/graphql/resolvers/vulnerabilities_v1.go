@@ -121,7 +121,7 @@ func (evr *EmbeddedVulnerabilityResolver) CreatedAt(ctx context.Context) (*graph
 }
 
 // DiscoveredAtImage is the first time the vulnerability was discovered in the parent image.
-func (evr *EmbeddedVulnerabilityResolver) DiscoveredAtImage(ctx context.Context) (*graphql.Time, error) {
+func (evr *EmbeddedVulnerabilityResolver) DiscoveredAtImage(ctx context.Context, _ RawQuery) (*graphql.Time, error) {
 	return timestamp(evr.data.FirstImageOccurrence)
 }
 
