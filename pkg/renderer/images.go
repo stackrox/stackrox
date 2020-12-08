@@ -1,6 +1,8 @@
 package renderer
 
 import (
+	"strings"
+
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/version"
@@ -12,12 +14,28 @@ import (
 // example, only the tag is different, a map containing only the non-default "Tag" is returned
 // etc.
 func computeImageOverrides(fullImageRef, defRegistry, defName, defTag string) map[string]string {
-	overrides := map[string]string{}
+	var remoteAndRepo, tag string
 
 	// See the goal of the override computation explained in the `configureImageOverrides`
-	// comment below. This somewhat creative approach is the reason why we are not using
-	// the existing image ref parsing functions.
-	remoteAndRepo, tag := stringutils.Split2(fullImageRef, ":")
+	// comment below. This somewhat creative approach is one of the reasons why we are not
+	// directly using the existing image ref parsing functions above. Another reason is
+	// avoiding validation and parsing failures. See grammar definition at
+	//		https://github.com/docker/distribution/blob/master/reference/reference.go.
+
+	// Cut off digest because it contains ':' and hence can interfere with tag detection.
+	noDigestImageRef, digest := stringutils.Split2(fullImageRef, "@")
+
+	// If present, port's ':' and tag's ':' are always separated by at least one '/'.
+	parts := strings.SplitN(noDigestImageRef, "/", 2)
+	parts[len(parts)-1], tag = stringutils.Split2(parts[len(parts)-1], ":")
+
+	remoteAndRepo = strings.Join(parts, "/")
+	if digest != "" {
+		tag += "@" + digest
+	}
+
+	overrides := map[string]string{}
+
 	if tag == "" {
 		tag = "latest"
 	}
