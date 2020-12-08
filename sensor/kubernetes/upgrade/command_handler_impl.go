@@ -7,24 +7,22 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/centralclient"
+	"google.golang.org/grpc"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
 var (
-	log = logging.LoggerForModule()
+	log                             = logging.LoggerForModule()
+	_   common.CentralGRPCConnAware = (*commandHandler)(nil)
+	_   common.SensorComponent      = (*commandHandler)(nil)
 )
 
 type commandHandler struct {
@@ -39,29 +37,6 @@ type commandHandler struct {
 
 // NewCommandHandler returns a new upgrade command handler for Kubernetes.
 func NewCommandHandler() (common.SensorComponent, error) {
-	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
-
-	if features.SensorTLSChallenge.Enabled() {
-		//TODO(ROX-5859): Reuse existing sensor connection to central
-		//Currently it tries to fetch trust info from central, if it fails it does not break sensors start up
-		centralClient, err := centralclient.NewClient(env.CentralEndpoint.Setting())
-		if err != nil {
-			log.Warnf("Creating central client in CommandHandler: %s", err)
-		}
-
-		certs, err := centralClient.GetTLSTrustedCerts()
-		if err != nil {
-			log.Errorf("Creating UpgradeCommandHandler: %s", err)
-		}
-
-		if len(certs) != 0 {
-			log.Infof("Add central CA certs to CommandHandler gRPC connection")
-			opts = append(opts, clientconn.AddRootCAs(certs...))
-		} else {
-			log.Infof("Did not did add central CA cert to CommandHandler gRPC connection")
-		}
-	}
-
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining in-cluster Kubernetes config")
@@ -71,16 +46,16 @@ func NewCommandHandler() (common.SensorComponent, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "create Kubernetes clientset")
 	}
-	conn, err := clientconn.AuthenticatedGRPCConnection(env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
-	if err != nil {
-		return nil, errors.Wrap(err, "establishing central gRPC connection")
-	}
 
 	return &commandHandler{
 		baseK8sRESTConfig: config,
 		k8sClient:         k8sClientSet,
-		checkInClient:     central.NewSensorUpgradeControlServiceClient(conn),
 	}, nil
+}
+
+// SetCentralGRPCClient sets the central gRPC connection
+func (h *commandHandler) SetCentralGRPCClient(cc grpc.ClientConnInterface) {
+	h.checkInClient = central.NewSensorUpgradeControlServiceClient(cc)
 }
 
 func (h *commandHandler) Start() error {

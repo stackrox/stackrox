@@ -65,7 +65,7 @@ type DynamicConfigProvider interface {
 }
 
 // NewHandler returns a handler that proxies admission controllers to Central
-func NewHandler(conn *grpc.ClientConn, centralReachable *concurrency.Flag, configProvider DynamicConfigProvider) http.Handler {
+func NewHandler(conn grpc.ClientConnInterface, centralReachable *concurrency.Flag, configProvider DynamicConfigProvider) http.Handler {
 	return &handlerImpl{
 		client:           v1.NewDetectionServiceClient(conn),
 		centralReachable: centralReachable,

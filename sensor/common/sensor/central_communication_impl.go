@@ -27,7 +27,7 @@ type centralCommunicationImpl struct {
 	stoppedC concurrency.ErrorSignal
 }
 
-func (s *centralCommunicationImpl) Start(conn *grpc.ClientConn, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
+func (s *centralCommunicationImpl) Start(conn grpc.ClientConnInterface, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
 	go s.sendEvents(central.NewSensorServiceClient(conn), centralReachable, configHandler, detector, s.receiver.Stop, s.sender.Stop)
 }
 

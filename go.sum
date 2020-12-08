@@ -256,8 +256,8 @@ github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e/go.mod h1:yMWuSON
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
 github.com/cockroachdb/datadriven v0.0.0-20190809214429-80d97fb3cbaa/go.mod h1:zn76sxSg3SzpJ0PPJaLDCu+Bu0Lg3sKTORVIj19EIF8=
 github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd/go.mod h1:sE/e/2PUdi/liOCUjSTXgM1o87ZssimdTWN964YiIeI=
-github.com/connorgorman/protobuf v1.2.2-0.20200827223713-3c42fc2eb426 h1:PZTw1VXHeczJ7fQB5cTV6GdrudaOPH6WbYKRKIIy2Z0=
-github.com/connorgorman/protobuf v1.2.2-0.20200827223713-3c42fc2eb426/go.mod h1:IM6KDdGJXA/hVoKrpDslREWDi75ZUQxR60o4icSO2NM=
+github.com/connorgorman/protobuf v1.2.2-0.20201113151318-22295c28f27c h1:8a5aUbpjceyQiWL8MkVNzW5xzL5Ieo6+EYUdrRWxM/I=
+github.com/connorgorman/protobuf v1.2.2-0.20201113151318-22295c28f27c/go.mod h1:IM6KDdGJXA/hVoKrpDslREWDi75ZUQxR60o4icSO2NM=
 github.com/containerd/cgroups v0.0.0-20190919134610-bf292b21730f h1:tSNMc+rJDfmYntojat8lljbt1mgKNpTxUZJsSzJ9Y1s=
 github.com/containerd/cgroups v0.0.0-20190919134610-bf292b21730f/go.mod h1:OApqhQ4XNSNC13gXIwDjhOQxjWa/NxkwZXJ1EvqT0ko=
 github.com/containerd/console v0.0.0-20180822173158-c12b1e7919c1/go.mod h1:Tj/on1eG8kiEhd0+fhSDzsPAFESxzBBvdyEgyryXffw=
@@ -289,6 +289,7 @@ github.com/containers/storage v1.20.2 h1:tw/uKRPDnmVrluIzer3dawTFG/bTJLP8IEUyHFh
 github.com/containers/storage v1.20.2/go.mod h1:oOB9Ie8OVPojvoaKWEGSEtHbXUAs+tSyr7RO7ZGteMc=
 github.com/coreos/bbolt v1.3.2/go.mod h1:iRUV2dpdMOn7Bo10OQBFzIJO9kkE559Wcmn+qkEiiKk=
 github.com/coreos/bbolt v1.3.3/go.mod h1:iRUV2dpdMOn7Bo10OQBFzIJO9kkE559Wcmn+qkEiiKk=
+github.com/coreos/clair v2.0.8+incompatible h1:MgLazOCxgOu/LWHoqitz/ZTb2cLAe/Y6G4NznmmyJwA=
 github.com/coreos/clair v2.0.8+incompatible/go.mod h1:uXhHPWAoRqw0jJc2f8RrPCwRhIo9otQ8OEWUFtpCiwA=
 github.com/coreos/etcd v3.3.10+incompatible/go.mod h1:uF7uidLiAD3TWHmW31ZFd/JWoc32PjwdhPthX9715RE=
 github.com/coreos/etcd v3.3.13+incompatible/go.mod h1:uF7uidLiAD3TWHmW31ZFd/JWoc32PjwdhPthX9715RE=
@@ -310,6 +311,7 @@ github.com/coreos/go-systemd/v22 v22.0.0/go.mod h1:xO0FLkIi5MaZafQlIrOotqXZ90ih+
 github.com/coreos/pkg v0.0.0-20160727233714-3ac0863d7acf/go.mod h1:E3G3o1h8I7cfcXa63jLwjI0eiQQMgzzUDFVpN/nH/eA=
 github.com/coreos/pkg v0.0.0-20180108230652-97fdf19511ea h1:n2Ltr3SrfQlf/9nOna1DoGKxLx3qTSI8Ttl6Xrqp6mw=
 github.com/coreos/pkg v0.0.0-20180108230652-97fdf19511ea/go.mod h1:E3G3o1h8I7cfcXa63jLwjI0eiQQMgzzUDFVpN/nH/eA=
+github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f h1:lBNOc5arjvs8E5mO2tbpBpLoyyu8B6e44T7hJy6potg=
 github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f/go.mod h1:E3G3o1h8I7cfcXa63jLwjI0eiQQMgzzUDFVpN/nH/eA=
 github.com/couchbase/ghistogram v0.0.1-0.20170308220240-d910dd063dd6 h1:yKF3b1Xs9o2SIu2eOdJddvOvDSDWlNn5vCSt5Qb7fnM=
 github.com/couchbase/ghistogram v0.0.1-0.20170308220240-d910dd063dd6/go.mod h1:s1Jhy76zqfEecpNWJfWUiKZookAFaiGOEoyzgHt9i7k=
@@ -439,6 +441,7 @@ github.com/fatih/structs v1.0.0 h1:BrX964Rv5uQ3wwS+KRUAJCBBw5PQmgJfJ6v4yly5QwU=
 github.com/fatih/structs v1.0.0/go.mod h1:9NiDSp5zOcgEDl+j00MP/WkGVPOlPRLejGD8Ga6PJ7M=
 github.com/fatih/structs v1.1.0 h1:Q7juDM0QtcnhCpeyLGQKyg4TOIghuNXrkL32pHAUMxo=
 github.com/fatih/structs v1.1.0/go.mod h1:9NiDSp5zOcgEDl+j00MP/WkGVPOlPRLejGD8Ga6PJ7M=
+github.com/fernet/fernet-go v0.0.0-20180830025343-9eac43b88a5e h1:P10tZmVD2XclAaT9l7OduMH1OLFzTa1wUuUqHZnEdI0=
 github.com/fernet/fernet-go v0.0.0-20180830025343-9eac43b88a5e/go.mod h1:2H9hjfbpSMHwY503FclkV/lZTBh2YlOmLLSda12uL8c=
 github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 h1:BHsljHzVlRcyQhjrss6TZTdY2VfCqZPbv5k3iBFa2ZQ=
 github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568/go.mod h1:xEzjJPgXI435gkrCt3MPfRiAkVrwSbHsst4LCFVfpJc=
@@ -922,6 +925,7 @@ github.com/jstemmer/go-junit-report v0.9.1 h1:6QPYqodiu3GuPL+7mfx+NwDdp2eTkp9IfE
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
 github.com/jtolds/gls v4.20.0+incompatible h1:xdiiI2gbIgH/gLH7ADydsJ1uDOEzR8yvV7C0MuV77Wo=
 github.com/jtolds/gls v4.20.0+incompatible/go.mod h1:QJZ7F/aHp+rZTRtaJ1ow/lLfFfVYBRgL+9YlvaHOwJU=
+github.com/julienschmidt/httprouter v1.2.0 h1:TDTW5Yz1mjftljbcKqRcrYhd4XeOoI98t+9HbQbYf7g=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/karrick/godirwalk v1.10.12 h1:BqUm+LuJcXjGv1d2mj3gBiQyrQ57a0rYoAmhvJQ7RDU=
 github.com/karrick/godirwalk v1.10.12/go.mod h1:RoGL9dQei4vP9ilrpETWE8CLOZ1kiN0LhBygSwrAsHA=
@@ -1198,6 +1202,7 @@ github.com/ostreedev/ostree-go v0.0.0-20190702140239-759a8c1ac913/go.mod h1:J6OG
 github.com/pact-foundation/pact-go v1.0.4/go.mod h1:uExwJY4kCzNPcHRj+hCR/HBbOOIwwtUjcrb0b5/5kLM=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pborman/uuid v0.0.0-20180906182336-adf5a7427709/go.mod h1:VyrYX9gd7irzKovcSS6BIIEwPRkP2Wm2m9ufcdFSJ34=
+github.com/pborman/uuid v1.2.0 h1:J7Q5mO4ysT1dv8hyrUGHb9+ooztCXu1D8MY8DZYsu3g=
 github.com/pborman/uuid v1.2.0/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=
 github.com/pelletier/go-toml v1.2.0 h1:T5zMGML61Wp+FlcbWjRDT7yAxhJNAiPPLOFECq181zc=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
@@ -1407,6 +1412,7 @@ github.com/stackrox/badger v1.6.1-0.20200807170638-4177b4beb2ed h1:mHrWLgWsm/1On
 github.com/stackrox/badger v1.6.1-0.20200807170638-4177b4beb2ed/go.mod h1:y1nZD3keFxUdiITUM142GQourZqVQbjkC1HdIUT9JvU=
 github.com/stackrox/bleve v0.0.0-20200807170555-6c4fa9f5e726 h1:mgY/2FQz67/zbDEkfr8YcMMyhAl4n83F2I9ffAgo5FU=
 github.com/stackrox/bleve v0.0.0-20200807170555-6c4fa9f5e726/go.mod h1:iEpZccUqBH5f0BOF0uH78s8+dUaG/OWu4xuYMXBOdGs=
+github.com/stackrox/clairify v0.0.0-20190226172255-52856608eab5 h1:rxb7uVQNtqO6D9s6cz7Il6dZ32tQDDjzg5d9qnnInhk=
 github.com/stackrox/clairify v0.0.0-20190226172255-52856608eab5/go.mod h1:WEQ9k54XQ6lpPUwqpIuLYjZN6P28o56QIxp6K5PWP30=
 github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e h1:tehRH8Wf03sV5pnp17+WNNHzkUgX30p2bxMOv9hFHb8=
 github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e/go.mod h1:j8TgcsyLxEaGufGNdkDQg6YG7ySHVNUlOnxI/akj1iY=
@@ -2067,6 +2073,7 @@ google.golang.org/grpc v1.31.1/go.mod h1:N36X2cJ7JwdamYAgDz+s+rVMFjt3numwzf/HckM
 google.golang.org/grpc v1.32.0/go.mod h1:N36X2cJ7JwdamYAgDz+s+rVMFjt3numwzf/HckM8pak=
 google.golang.org/grpc v1.33.0 h1:IBKSUNL2uBS2DkJBncPP+TwT0sp9tgA8A75NjHt6umg=
 google.golang.org/grpc v1.33.0/go.mod h1:fr5YgcSWrqhRRxogOsw7RzIpsmvOZ6IcH4kBYTpR3n0=
+google.golang.org/grpc/examples v0.0.0-20200731180010-8bec2f5d898f h1:HNNmM2dnxUknBEJDvuCRZcUzhGbhkz00ckV2ha2gFJY=
 google.golang.org/grpc/examples v0.0.0-20200731180010-8bec2f5d898f/go.mod h1:TGiSRL2BBv2WqzfsFNWYp/pkWdtf5kbZS/DQ9Ee3mWk=
 google.golang.org/protobuf v0.0.0-20200109180630-ec00e32a8dfd/go.mod h1:DFci5gLYBciE7Vtevhsrf46CRTquxDuWsQurQQe4oz8=
 google.golang.org/protobuf v0.0.0-20200221191635-4d8936d0db64/go.mod h1:kwYJMbMJ01Woi6D6+Kah6886xMZcty6N08ah7+eCXa0=

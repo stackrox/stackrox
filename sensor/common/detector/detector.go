@@ -28,7 +28,7 @@ type Detector interface {
 
 	ProcessDeployment(deployment *storage.Deployment, action central.ResourceAction)
 	ProcessIndicator(indicator *storage.ProcessIndicator)
-	SetClient(conn *grpc.ClientConn)
+	SetClient(conn grpc.ClientConnInterface)
 }
 
 // New returns a new detector
@@ -301,7 +301,7 @@ func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, a
 	}
 }
 
-func (d *detectorImpl) SetClient(conn *grpc.ClientConn) {
+func (d *detectorImpl) SetClient(conn grpc.ClientConnInterface) {
 	d.enricher.imageSvc = v1.NewImageServiceClient(conn)
 }
 

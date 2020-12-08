@@ -1,6 +1,7 @@
 package centralclient
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"path"
 	"testing"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -52,9 +54,33 @@ func (t *ClientTestSuite) TearDownTest() {
 	t.envIsolator.RestoreAll()
 }
 
+func (t *ClientTestSuite) TestGetMetadata() {
+	const centralResp = `{"version":"3.0.51.x-47-g15440b8be2","buildFlavor":"development","releaseBuild":false,"licenseStatus":"VALID"}`
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Equal(metadataRoute, r.URL.Path)
+
+		_, err := w.Write([]byte(centralResp))
+		t.NoError(err)
+	}))
+	defer ts.Close()
+
+	c, err := NewClient(ts.URL)
+	t.Require().NoError(err)
+
+	metadata, err := c.GetMetadata(context.Background())
+	t.Require().NoError(err)
+
+	t.Equal("3.0.51.x-47-g15440b8be2", metadata.GetVersion())
+	t.Equal(v1.Metadata_LicenseStatus(4), metadata.GetLicenseStatus())
+	t.False(metadata.GetReleaseBuild())
+}
+
 func (t *ClientTestSuite) TestGetTLSTrustedCerts_GetCertificate() {
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sensorChallengeToken := r.URL.Query().Get("challengeToken")
+		t.Contains(r.URL.String(), "/v1/tls-challenge?challengeToken=")
+
+		sensorChallengeToken := r.URL.Query().Get(challengeTokenParamName)
+		fmt.Println(sensorChallengeToken)
 		sensorChallengeTokenBytes, err := base64.URLEncoding.DecodeString(sensorChallengeToken)
 		t.Require().NoError(err)
 		t.Assert().Len(sensorChallengeTokenBytes, centralsensor.ChallengeTokenLength)
@@ -67,7 +93,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_GetCertificate() {
 	c, err := NewClient(ts.URL)
 	t.Require().NoError(err)
 
-	certs, err := c.GetTLSTrustedCerts()
+	certs, err := c.GetTLSTrustedCerts(context.Background())
 	t.Require().NoError(err)
 
 	t.Require().Len(certs, 1)
@@ -84,7 +110,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithSignatureSignedByAnotherPri
 	c, err := NewClient(ts.URL)
 	t.Require().NoError(err)
 
-	_, err = c.GetTLSTrustedCerts()
+	_, err = c.GetTLSTrustedCerts(context.Background())
 	t.Require().Error(err)
 	t.Equal("verifying tls challenge: verifying central trust info signature: failed to verify ECDSA signature", err.Error())
 }
@@ -99,7 +125,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithInvalidTrustInfo() {
 	c, err := NewClient(ts.URL)
 	t.Require().NoError(err)
 
-	_, err = c.GetTLSTrustedCerts()
+	_, err = c.GetTLSTrustedCerts(context.Background())
 	t.Require().Error(err)
 	t.True(errors.Is(err, io.ErrUnexpectedEOF))
 }
@@ -114,7 +140,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithInvalidSignature() {
 	c, err := NewClient(ts.URL)
 	t.Require().NoError(err)
 
-	_, err = c.GetTLSTrustedCerts()
+	_, err = c.GetTLSTrustedCerts(context.Background())
 	t.Require().Error(err)
 	t.Contains(err.Error(), "verifying tls challenge: verifying central trust info signature: failed to unmarshal ECDSA signature")
 }
@@ -123,17 +149,17 @@ func (t *ClientTestSuite) Test_NewClientReplacesProtocols() {
 	// By default HTTPS will be prepended
 	c, err := NewClient(endpoint)
 	t.Require().NoError(err)
-	t.Equal(fmt.Sprintf("https://%s", endpoint), c.endpoint)
+	t.Equal(fmt.Sprintf("https://%s", endpoint), c.endpoint.String())
 
 	// HTTPS is accepted
 	c, err = NewClient(fmt.Sprintf("https://%s", endpoint))
 	t.Require().NoError(err)
-	t.Equal(fmt.Sprintf("https://%s", endpoint), c.endpoint)
+	t.Equal(fmt.Sprintf("https://%s", endpoint), c.endpoint.String())
 
 	// WebSockets are converted to HTTPS
 	c, err = NewClient(fmt.Sprintf("wss://%s", endpoint))
 	t.Require().NoError(err)
-	t.Equal(fmt.Sprintf("https://%s", endpoint), c.endpoint)
+	t.Equal(fmt.Sprintf("https://%s", endpoint), c.endpoint.String())
 
 	// HTTP is not accepted
 	_, err = NewClient(fmt.Sprintf("http://%s", endpoint))

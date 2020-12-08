@@ -6,8 +6,11 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
+	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
@@ -30,10 +33,15 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
+	"github.com/stackrox/rox/sensor/kubernetes/upgrade"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // CreateSensor takes in a client interface and returns a sensor instantiation
-func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager, extraComponents ...common.SensorComponent) *sensor.Sensor {
+func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager) *sensor.Sensor {
 	var admCtrlSettingsMgr admissioncontroller.SettingsManager
 	if features.AdmissionControlService.Enabled() {
 		admCtrlSettingsMgr = admissioncontroller.NewSettingsManager()
@@ -45,6 +53,9 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, imageCache)
 	listener := listener.New(client, configHandler, policyDetector)
+
+	upgradeCmdHandler, err := upgrade.NewCommandHandler()
+	utils.Must(err)
 
 	o := orchestrator.New(client.Kubernetes())
 	complianceService := compliance.NewService(o)
@@ -65,8 +76,8 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		complianceCommandHandler,
 		processSignals,
 		telemetry.NewCommandHandler(client.Kubernetes()),
+		upgradeCmdHandler,
 	}
-	components = append(components, extraComponents...)
 
 	if features.NetworkGraphExternalSrcs.Enabled() {
 		components = append(components, externalsrcs.Singleton())
@@ -76,10 +87,16 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(client.Kubernetes(), admCtrlSettingsMgr))
 	}
 
+	centralClient, err := centralclient.NewClient(env.CentralEndpoint.Setting())
+	if err != nil {
+		log.Fatalf("Creating sensor %s", err)
+	}
+
 	s := sensor.NewSensor(
 		configHandler,
 		policyDetector,
 		imageService,
+		centralClient,
 		components...,
 	)
 

@@ -19,7 +19,7 @@ type Service interface {
 	sensor.ImageServiceServer
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	SetClient(conn *grpc.ClientConn)
+	SetClient(conn grpc.ClientConnInterface)
 }
 
 // NewService returns the ComplianceServiceServer API for Sensor to use, outputs any received ComplianceReturns
@@ -35,7 +35,7 @@ type serviceImpl struct {
 	imageCache    expiringcache.Cache
 }
 
-func (s *serviceImpl) SetClient(conn *grpc.ClientConn) {
+func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {
 	s.centralClient = v1.NewImageServiceClient(conn)
 }
 

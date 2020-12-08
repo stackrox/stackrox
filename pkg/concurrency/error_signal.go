@@ -5,6 +5,8 @@ import (
 	"sync/atomic"
 	"time"
 	"unsafe"
+
+	"github.com/pkg/errors"
 )
 
 //lint:file-ignore ST1008 We do want to return errors as the first value here.
@@ -194,6 +196,16 @@ func (s *ErrorSignal) ErrorAndReset() (Error, bool) {
 // Signal triggers the signal, storing a `nil` error.
 func (s *ErrorSignal) Signal() bool {
 	return s.SignalWithError(nil)
+}
+
+// SignalWithErrorWrap is a wrapper around SignalWithError and errors.Wrap.
+func (s *ErrorSignal) SignalWithErrorWrap(err error, message string) bool {
+	return s.SignalWithError(errors.Wrap(err, message))
+}
+
+// SignalWithErrorWrapf is a wrapper around SignalWithError and errors.Wrapf.
+func (s *ErrorSignal) SignalWithErrorWrapf(err error, format string, args ...interface{}) bool {
+	return s.SignalWithError(errors.Wrapf(err, format, args...))
 }
 
 // SignalWithErrorf is a wrapper around SignalWithError and fmt.Errorf.

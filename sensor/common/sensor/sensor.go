@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	grpcUtil "github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/kocache"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -32,7 +33,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -64,23 +64,26 @@ type Sensor struct {
 	server          pkgGRPC.API
 	profilingServer *http.Server
 
-	centralConnection    *grpc.ClientConn
+	centralConnection    *grpcUtil.LazyClientConn
 	centralCommunication CentralCommunication
+	centralRestClient    *centralclient.Client
 
 	stoppedSig concurrency.ErrorSignal
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
-func NewSensor(configHandler config.Handler, detector detector.Detector, imageService image.Service, components ...common.SensorComponent) *Sensor {
+func NewSensor(configHandler config.Handler, detector detector.Detector, imageService image.Service, centralClient *centralclient.Client, components ...common.SensorComponent) *Sensor {
 	return &Sensor{
 		clusterID:          clusterid.Get(),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 
-		configHandler: configHandler,
-		detector:      detector,
-		imageService:  imageService,
-		components:    append(components, detector, configHandler), // Explicitly add the config handler
+		configHandler:     configHandler,
+		detector:          detector,
+		imageService:      imageService,
+		components:        append(components, detector, configHandler), // Explicitly add the config handler
+		centralRestClient: centralClient,
+		centralConnection: grpcUtil.NewLazyClientConn(),
 
 		stoppedSig: concurrency.NewErrorSignal(),
 	}
@@ -126,29 +129,18 @@ func (s *Sensor) Start() {
 	// Start up connections.
 	log.Infof("Connecting to Central server %s", s.centralEndpoint)
 
-	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
+	centralConnSignal := concurrency.NewSignal()
+	go s.gRPCConnectToCentralWithRetries(&centralConnSignal)
 
-	if features.SensorTLSChallenge.Enabled() {
-		certs := s.getCentralTLSCerts()
-		if len(certs) != 0 {
-			log.Infof("Add %d central CA certs to gRPC connection", len(certs))
-			for _, c := range certs {
-				log.Infof("Add central CA cert with CommonName: '%s'", c.Subject.CommonName)
-			}
-			opts = append(opts, clientconn.AddRootCAs(certs...))
-		} else {
-			log.Infof("Did not did add central CA cert to gRPC connection")
+	for _, c := range s.components {
+		switch v := c.(type) {
+		case common.CentralGRPCConnAware:
+			v.SetCentralGRPCClient(s.centralConnection)
 		}
 	}
 
-	var err error
-	s.centralConnection, err = clientconn.AuthenticatedGRPCConnection(s.centralEndpoint, mtls.CentralSubject, opts...)
-	if err != nil {
-		log.Fatalf("Error connecting to central: %s", err)
-	}
 	s.detector.SetClient(s.centralConnection)
 	s.imageService.SetClient(s.centralConnection)
-
 	s.profilingServer = s.startProfilingServer()
 
 	var centralReachable concurrency.Flag
@@ -182,7 +174,7 @@ func (s *Sensor) Start() {
 		log.Panicf("Error creating mTLS-based service identity extractor: %v", err)
 	}
 
-	config := pkgGRPC.Config{
+	conf := pkgGRPC.Config{
 		CustomRoutes:       customRoutes,
 		IdentityExtractors: []authn.IdentityExtractor{mtlsServiceIDExtractor},
 		Endpoints: []*pkgGRPC.EndpointConfig{
@@ -194,7 +186,7 @@ func (s *Sensor) Start() {
 			},
 		},
 	}
-	s.server = pkgGRPC.NewAPI(config)
+	s.server = pkgGRPC.NewAPI(conf)
 
 	s.server.Register(s.apiServices...)
 	log.Info("API services registered")
@@ -221,22 +213,47 @@ func (s *Sensor) Start() {
 		}
 	}
 
-	// Wait for central so we can initiate our GRPC connection to send sensor events.
-	s.waitUntilCentralIsReady(s.centralConnection)
-
+	select {
+	case <-centralConnSignal.Done():
+	case <-s.stoppedSig.Done():
+		return
+	}
 	go s.communicationWithCentral(&centralReachable)
+}
+
+func (s *Sensor) gRPCConnectToCentralWithRetries(signal *concurrency.Signal) {
+	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
+
+	// waits until central is ready and has a valid license, otherwise it kills sensor by sending a signal
+	s.waitUntilCentralIsReady()
+
+	if features.SensorTLSChallenge.Enabled() {
+		certs := s.getCentralTLSCerts()
+		if len(certs) != 0 {
+			log.Infof("Add %d central CA certs to gRPC connection", len(certs))
+			for _, c := range certs {
+				log.Infof("Add central CA cert with CommonName: '%s'", c.Subject.CommonName)
+			}
+			opts = append(opts, clientconn.AddRootCAs(certs...))
+		} else {
+			log.Infof("Did not add central CA cert to gRPC connection")
+		}
+	}
+
+	centralConnection, err := clientconn.AuthenticatedGRPCConnection(s.centralEndpoint, mtls.CentralSubject, opts...)
+	if err != nil {
+		s.stoppedSig.SignalWithErrorWrap(err, "Error connecting to central")
+		return
+	}
+	s.centralConnection.Set(centralConnection)
+
+	signal.Signal()
 }
 
 // getCentralTLSCerts only logs errors because this feature should not break
 // sensors start-up.
 func (s *Sensor) getCentralTLSCerts() []*x509.Certificate {
-	centralClient, err := centralclient.NewClient(s.centralEndpoint)
-	if err != nil {
-		log.Warnf("Creating central client: %s", err)
-		return []*x509.Certificate{}
-	}
-
-	certs, err := centralClient.GetTLSTrustedCerts()
+	certs, err := s.centralRestClient.GetTLSTrustedCerts(context.Background())
 	if err != nil {
 		log.Warnf("Error fetching centrals TLS certs: %s", err)
 		return []*x509.Certificate{}
@@ -267,11 +284,10 @@ func (s *Sensor) Stop() {
 // waitUntilCentralIsReady blocks until central responds with a valid license status on its metadata API,
 // or until the retry budget is exhausted (in which case the sensor is marked as stopped and the program
 // will exit).
-func (s *Sensor) waitUntilCentralIsReady(conn *grpc.ClientConn) {
+func (s *Sensor) waitUntilCentralIsReady() {
 	const maxRetries = 15
-	metadataService := v1.NewMetadataServiceClient(conn)
 	err := retry.WithRetry(func() error {
-		return pollMetadataWithTimeout(metadataService)
+		return s.pollMetadata()
 	},
 		retry.Tries(maxRetries),
 		retry.OnFailedAttempts(func(err error) {
@@ -279,15 +295,16 @@ func (s *Sensor) waitUntilCentralIsReady(conn *grpc.ClientConn) {
 			time.Sleep(2 * time.Second)
 		}))
 	if err != nil {
-		s.stoppedSig.SignalWithErrorf("checking central status failed after %d retries: %v", maxRetries, err)
+		s.stoppedSig.SignalWithErrorWrapf(err, "checking central status failed after %d retries", maxRetries)
 	}
 }
 
 // Ping a service with a timeout of 10 seconds.
-func pollMetadataWithTimeout(svc v1.MetadataServiceClient) error {
+func (s *Sensor) pollMetadata() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	md, err := svc.GetMetadata(ctx, &v1.Empty{})
+	md, err := s.centralRestClient.GetMetadata(ctx)
+
 	if err != nil {
 		return err
 	}

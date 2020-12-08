@@ -1,13 +1,14 @@
 package centralclient
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"path"
 	"strings"
 	"time"
 
@@ -31,13 +32,15 @@ var (
 )
 
 const (
-	requestTimeout = 10 * time.Second
-	trustInfoRoute = "/v1/tls-challenge"
+	requestTimeout          = 10 * time.Second
+	tlsChallengeRoute       = "/v1/tls-challenge"
+	metadataRoute           = "/v1/metadata"
+	challengeTokenParamName = "challengeToken"
 )
 
 // Client is a client which provides functions to call rest routes in central
 type Client struct {
-	endpoint   string
+	endpoint   *url.URL
 	httpClient *http.Client
 }
 
@@ -61,6 +64,11 @@ func NewClient(endpoint string) (*Client, error) {
 		return nil, errors.Errorf("creating client unsupported scheme %s", parts[0])
 	}
 
+	endpointURL, err := url.Parse(endpoint)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing endpoint url")
+	}
+
 	tlsConf := &tls.Config{InsecureSkipVerify: true}
 	httpClient := &http.Client{
 		Transport: &http.Transport{TLSClientConfig: tlsConf},
@@ -69,21 +77,38 @@ func NewClient(endpoint string) (*Client, error) {
 
 	return &Client{
 		httpClient: httpClient,
-		endpoint:   endpoint,
+		endpoint:   endpointURL,
 	}, nil
+}
+
+// GetMetadata returns centrals metadata
+func (c *Client) GetMetadata(ctx context.Context) (*v1.Metadata, error) {
+	resp, err := c.doHTTPRequest(ctx, http.MethodGet, metadataRoute, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "receiving central metadata")
+	}
+	defer utils.IgnoreError(resp.Body.Close)
+
+	var metadata v1.Metadata
+	err = jsonpb.Unmarshal(resp.Body, &metadata)
+	if err != nil {
+		return nil, errors.Wrapf(err, "parsing central %s response with status code %d", metadataRoute, resp.StatusCode)
+	}
+
+	return &metadata, nil
 }
 
 // GetTLSTrustedCerts returns all certificates which are trusted by central and its leaf certificates.
 // Sensor validates the identity of central by verifying the given signature against centrals public key presented by its leaf cert.
-func (c *Client) GetTLSTrustedCerts() ([]*x509.Certificate, error) {
+func (c *Client) GetTLSTrustedCerts(ctx context.Context) ([]*x509.Certificate, error) {
 	token, err := c.generateChallengeToken()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating challenge token")
 	}
 
-	resp, err := c.doTLSChallengeRequest(&v1.TLSChallengeRequest{ChallengeToken: token})
+	resp, err := c.doTLSChallengeRequest(ctx, &v1.TLSChallengeRequest{ChallengeToken: token})
 	if err != nil {
-		return nil, errors.Wrap(err, "connecting to central")
+		return nil, err
 	}
 
 	trustInfo, err := c.parseTLSChallengeResponse(resp)
@@ -104,8 +129,8 @@ func (c *Client) GetTLSTrustedCerts() ([]*x509.Certificate, error) {
 }
 
 func (c *Client) parseTLSChallengeResponse(challenge *v1.TLSChallengeResponse) (*v1.TrustInfo, error) {
-	trustInfo := &v1.TrustInfo{}
-	err := proto.Unmarshal(challenge.GetTrustInfoSerialized(), trustInfo)
+	var trustInfo v1.TrustInfo
+	err := proto.Unmarshal(challenge.GetTrustInfoSerialized(), &trustInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing TrustInfo proto")
 	}
@@ -139,7 +164,7 @@ func (c *Client) parseTLSChallengeResponse(challenge *v1.TLSChallengeResponse) (
 		return nil, errors.Wrap(err, "verifying central trust info signature")
 	}
 
-	return trustInfo, nil
+	return &trustInfo, nil
 }
 
 func (c *Client) verifyCertificateChain(certChain [][]byte, rootCAs *x509.CertPool) ([]*x509.Certificate, error) {
@@ -160,20 +185,14 @@ func (c *Client) verifyCertificateChain(certChain [][]byte, rootCAs *x509.CertPo
 }
 
 // doTLSChallengeRequest send the HTTP request to central and receives the trust info.
-func (c *Client) doTLSChallengeRequest(req *v1.TLSChallengeRequest) (*v1.TLSChallengeResponse, error) {
-	resp, err := c.doTLSChallenge(req.GetChallengeToken())
+func (c *Client) doTLSChallengeRequest(ctx context.Context, req *v1.TLSChallengeRequest) (*v1.TLSChallengeResponse, error) {
+	params := url.Values{challengeTokenParamName: []string{req.GetChallengeToken()}}
+
+	resp, err := c.doHTTPRequest(ctx, http.MethodGet, tlsChallengeRoute, params, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "receiving centrals trust info")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
-	if !httputil.Is2xxStatusCode(resp.StatusCode) {
-		body, err := ioutil.ReadAll(resp.Body)
-
-		if err != nil {
-			return nil, errors.Wrapf(err, "reading response body with HTTP status code '%s'", resp.Status)
-		}
-		return nil, errors.Errorf("TLS challenge %s with status code '%s', body: %s", c.endpoint, resp.Status, body)
-	}
 
 	tlsChallengeResp := &v1.TLSChallengeResponse{}
 	err = jsonpb.Unmarshal(resp.Body, tlsChallengeResp)
@@ -183,24 +202,27 @@ func (c *Client) doTLSChallengeRequest(req *v1.TLSChallengeRequest) (*v1.TLSChal
 	return tlsChallengeResp, nil
 }
 
-func (c *Client) doTLSChallenge(challengeToken string) (*http.Response, error) {
-	u, err := url.Parse(c.endpoint)
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing central endpoint")
-	}
-	u.Path = path.Join(u.Path, trustInfoRoute)
-	v := u.Query()
-	v.Set("challengeToken", challengeToken)
-	u.RawQuery = v.Encode()
+func (c *Client) doHTTPRequest(ctx context.Context, method, route string, params url.Values, body io.Reader) (*http.Response, error) {
+	u := *c.endpoint
+	u.Path = route
+	u.RawQuery = params.Encode()
 
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating request")
+		return nil, errors.Wrap(err, "creating tls-challenge request")
 	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, errors.Wrapf(err, "calling %s", u.String())
+	}
+	if !httputil.Is2xxStatusCode(resp.StatusCode) {
+		body, err := ioutil.ReadAll(resp.Body)
+
+		if err != nil {
+			return nil, errors.Wrapf(err, "reading response body with HTTP status code '%s'", resp.Status)
+		}
+		return nil, errors.Errorf("HTTP request %s%s with code '%s', body: %s", c.endpoint, tlsChallengeRoute, resp.Status, body)
 	}
 	return resp, nil
 }

@@ -98,6 +98,7 @@ require (
 	google.golang.org/api v0.33.0
 	google.golang.org/genproto v0.0.0-20201019141844-1ed22bb0c154
 	google.golang.org/grpc v1.33.0
+	google.golang.org/grpc/examples v0.0.0-20200731180010-8bec2f5d898f
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.3.1
 	gopkg.in/yaml.v2 v2.3.0
@@ -123,7 +124,7 @@ replace (
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20200903060121-ccc2b5ea9f6f
 	github.com/fullsailor/pkcs7 => github.com/misberner/pkcs7 v0.0.0-20190417093538-a48bf0f78dea
 	github.com/go-resty/resty => gopkg.in/resty.v1 v1.11.0
-	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20200827223713-3c42fc2eb426
+	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20201113151318-22295c28f27c
 
 	// Something pulls in an older version with uppercase OpenAPIv2 package version
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.1
