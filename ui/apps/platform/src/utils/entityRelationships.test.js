@@ -1,7 +1,8 @@
+import { intersection } from 'lodash';
+
 import entityTypes from 'constants/entityTypes';
 import relationshipTypes from 'constants/relationshipTypes';
 import useCaseTypes from 'constants/useCaseTypes';
-import { intersection } from 'lodash';
 import entityRelationships, {
     entityGroupMap,
     getEntityTypesByRelationship,

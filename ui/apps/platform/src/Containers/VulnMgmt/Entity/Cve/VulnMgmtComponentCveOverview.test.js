@@ -1,7 +1,20 @@
 import React from 'react';
+import { Provider } from 'react-redux';
+import { createBrowserHistory as createHistory } from 'history';
 
 import renderWithRouter from 'test-utils/renderWithRouter';
+import configureStore from 'store/configureStore';
 import VulnMgmtCveOverview from './VulnMgmtCveOverview';
+
+const history = createHistory();
+
+const initialStore = {
+    app: {
+        featureFlags: {
+            featureFlags: [{ name: 'DISABLED', envVar: 'ROX_HOST_SCANNING', enabled: false }],
+        },
+    },
+};
 
 describe('VulnMgmtComponentCveOverview', () => {
     it('renders an external link to more info about the CVE', () => {
@@ -27,10 +40,16 @@ describe('VulnMgmtComponentCveOverview', () => {
             isFixable: false,
         };
 
+        const store = configureStore(initialStore, history);
         // act
-        const { getByTestId } = renderWithRouter(<VulnMgmtCveOverview data={data} />, {
-            route: `/cve/${data.cve}`,
-        });
+        const { getByTestId } = renderWithRouter(
+            <Provider store={store}>
+                <VulnMgmtCveOverview data={data} />
+            </Provider>,
+            {
+                route: `/cve/${data.cve}`,
+            }
+        );
 
         // assert
         const el = getByTestId('more-info-link');

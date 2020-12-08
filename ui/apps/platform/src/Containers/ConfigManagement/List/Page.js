@@ -3,6 +3,8 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import pluralize from 'pluralize';
 import startCase from 'lodash/startCase';
 
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import SidePanelAnimatedDiv from 'Components/animations/SidePanelAnimatedDiv';
 import PageHeader from 'Components/PageHeader';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
@@ -17,12 +19,18 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import entityLabels from 'messages/entity';
 import parseURL from 'utils/URLParser';
 import URLService from 'utils/URLService';
-import { useCaseEntityMap } from 'utils/entityRelationships';
+import { getUseCaseEntityMap } from 'utils/entityRelationships';
 import { WorkflowState } from 'utils/WorkflowState';
 import EntityList from './EntityList';
 import SidePanel from '../SidePanel/SidePanel';
 
 const ListPage = ({ match, location, history }) => {
+    const hostScanningEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_HOST_SCANNING);
+    const featureFlags = {
+        [knownBackendFlags.ROX_HOST_SCANNING]: hostScanningEnabled,
+    };
+    const useCaseEntityMap = getUseCaseEntityMap(featureFlags);
+
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;
     const pageState = new WorkflowState(

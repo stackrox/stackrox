@@ -3,10 +3,11 @@
 // note: the relationships are directional!
 // changing direction may change relationship type between entities!!
 
+import { uniq } from 'lodash';
 import entityTypes from 'constants/entityTypes';
 import relationshipTypes from 'constants/relationshipTypes';
 import useCaseTypes from 'constants/useCaseTypes';
-import { uniq } from 'lodash';
+import { knownBackendFlags } from 'utils/featureFlags';
 
 // base k8s entities to be used across all use cases
 const baseEntities = [entityTypes.CLUSTER, entityTypes.NAMESPACE, entityTypes.DEPLOYMENT];
@@ -32,6 +33,16 @@ export const useCaseEntityMap = {
         entityTypes.IMAGE,
         entityTypes.COMPONENT,
     ],
+};
+
+// to add featureFlag logic to the useCaseEntityMap
+export const getUseCaseEntityMap = (featureFlags) => {
+    const entityMap = { ...useCaseEntityMap };
+    if (featureFlags[knownBackendFlags.ROX_HOST_SCANNING]) {
+        entityMap[useCaseTypes.VULN_MANAGEMENT].push(entityTypes.NODE);
+        return entityMap;
+    }
+    return entityMap;
 };
 
 export const entityGroups = {
@@ -84,12 +95,14 @@ const entityRelationshipMap = {
         children: [entityTypes.NODE, entityTypes.NAMESPACE, entityTypes.ROLE],
         parents: [],
         matches: [entityTypes.CONTROL],
+        // TODO: add CVE entity type and filter by k8s accordingly
+        // matches: [entityTypes.CONTROL, entityTypes.CVE],
         // extendedMatches: [entityTypes.POLICY]
     },
     [entityTypes.NODE]: {
         children: [],
         parents: [entityTypes.CLUSTER],
-        matches: [entityTypes.CONTROL],
+        matches: [entityTypes.CONTROL, entityTypes.CVE],
     },
     [entityTypes.NAMESPACE]: {
         children: [entityTypes.DEPLOYMENT, entityTypes.SERVICE_ACCOUNT, entityTypes.SECRET],
@@ -113,15 +126,16 @@ const entityRelationshipMap = {
         matches: [entityTypes.DEPLOYMENT],
     },
     [entityTypes.COMPONENT]: {
-        children: [entityTypes.CVE],
+        children: [],
         parents: [],
-        matches: [entityTypes.IMAGE],
+        matches: [entityTypes.IMAGE, entityTypes.CVE],
         extendedMatches: [entityTypes.DEPLOYMENT],
     },
+    // technically this CVE entity type encompasses node CVEs, image/component CVEs, k8s CVEs (for clusters)
     [entityTypes.CVE]: {
         children: [],
         parents: [],
-        matches: [entityTypes.COMPONENT],
+        matches: [entityTypes.COMPONENT, entityTypes.CLUSTER, entityTypes.NODE],
         extendedMatches: [entityTypes.IMAGE, entityTypes.DEPLOYMENT],
     },
     [entityTypes.CONTROL]: {
@@ -199,7 +213,13 @@ const isContainedInferred = (entityType1, entityType2) =>
 // e.g.
 // f(type, relationship, useCase)
 // f(cluster, contains, config management), f(deployment, parents, config management)
-export const getEntityTypesByRelationship = (entityType, relationship, useCase) => {
+export const getEntityTypesByRelationship = (
+    entityType,
+    relationship,
+    useCase,
+    featureFlags = {}
+) => {
+    const entityMap = getUseCaseEntityMap(featureFlags);
     let entities = [];
     if (relationship === relationshipTypes.CONTAINS) {
         entities = getContains(entityType);
@@ -210,7 +230,7 @@ export const getEntityTypesByRelationship = (entityType, relationship, useCase) 
     } else if (relationship === relationshipTypes.CHILDREN) {
         entities = getChildren(entityType);
     }
-    return entities.filter((entity) => useCaseEntityMap[useCase].includes(entity));
+    return entities.filter((entity) => entityMap[useCase].includes(entity));
 };
 
 export default {

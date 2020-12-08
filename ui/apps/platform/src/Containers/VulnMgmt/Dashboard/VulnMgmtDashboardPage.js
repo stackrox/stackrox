@@ -4,6 +4,8 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 
 import entityTypes from 'constants/entityTypes';
 import { createOptions } from 'utils/workflowUtils';
+import { knownBackendFlags } from 'utils/featureFlags';
+import FeatureEnabled from 'Containers/FeatureEnabled';
 import DashboardLayout from 'Components/DashboardLayout';
 import ExportButton from 'Components/ExportButton';
 import RadioButtonGroup from 'Components/RadioButtonGroup';
@@ -13,6 +15,7 @@ import DashboardMenu from 'Components/DashboardMenu';
 import PoliciesCountTile from '../Components/PoliciesCountTile';
 import CvesCountTile from '../Components/CvesCountTile';
 import ImagesCountTile from '../Components/ImagesCountTile';
+import NodesCountTile from '../Components/NodesCountTile';
 import TopRiskyEntitiesByVulnerabilities from '../widgets/TopRiskyEntitiesByVulnerabilities';
 import TopRiskiestImagesAndComponents from '../widgets/TopRiskiestImagesAndComponents';
 import FrequentlyViolatedPolicies from '../widgets/FrequentlyViolatedPolicies';
@@ -71,6 +74,9 @@ const VulnDashboardPage = ({ history }) => {
                     <PoliciesCountTile />
                     <CvesCountTile />
                     <ImagesCountTile />
+                    <FeatureEnabled featureFlag={knownBackendFlags.ROX_HOST_SCANNING}>
+                        {({ featureEnabled }) => featureEnabled && <NodesCountTile />}
+                    </FeatureEnabled>
                     <div className="flex w-32">
                         <DashboardMenu
                             text="Application & Infrastructure"

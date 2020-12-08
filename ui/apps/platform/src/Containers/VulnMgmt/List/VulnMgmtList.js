@@ -9,6 +9,7 @@ import VulnMgmtListCves from './Cves/VulnMgmtListCves';
 import VulnMgmtListClusters from './Clusters/VulnMgmtListClusters';
 import VulnMgmtListNamespaces from './Namespaces/VulnMgmtListNamespaces';
 import VulnMgmtListPolicies from './Policies/VulnMgmtListPolicies';
+import VulnMgmtListNodes from './Nodes/VulnMgmtListNodes';
 
 const entityComponentMap = {
     [entityTypes.DEPLOYMENT]: VulnMgmtListDeployments,
@@ -18,6 +19,7 @@ const entityComponentMap = {
     [entityTypes.CLUSTER]: VulnMgmtListClusters,
     [entityTypes.NAMESPACE]: VulnMgmtListNamespaces,
     [entityTypes.POLICY]: VulnMgmtListPolicies,
+    [entityTypes.NODE]: VulnMgmtListNodes,
 };
 
 const VulnMgmtEntityList = (props) => {

@@ -2,15 +2,22 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import startCase from 'lodash/startCase';
 
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import PageHeader from 'Components/PageHeader';
 import ExportButton from 'Components/ExportButton';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import useCaseTypes from 'constants/useCaseTypes';
 import useEntityName from 'hooks/useEntityName';
 import entityLabels from 'messages/entity';
-import { useCaseEntityMap } from 'utils/entityRelationships';
+import { getUseCaseEntityMap } from 'utils/entityRelationships';
 
 const EntityPageHeader = ({ entityType, entityId, urlParams }) => {
+    const hostScanningEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_HOST_SCANNING);
+    const featureFlags = {
+        [knownBackendFlags.ROX_HOST_SCANNING]: hostScanningEnabled,
+    };
+    const useCaseEntityMap = getUseCaseEntityMap(featureFlags);
     const safeEntityId = decodeURIComponent(entityId); // fix bug  ROX-4543-fix-bad-encoding-in-config-mgt-API-request
     const { entityName } = useEntityName(entityType, safeEntityId);
 

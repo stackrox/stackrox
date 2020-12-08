@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import pluralize from 'pluralize';
 import startCase from 'lodash/startCase';
 
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import PageHeader from 'Components/PageHeader';
 import { useTheme } from 'Containers/ThemeProvider';
@@ -13,13 +15,17 @@ import getSidePanelEntity from 'utils/getSidePanelEntity';
 import parseURL from 'utils/URLParser';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { WorkflowState } from 'utils/WorkflowState';
-import { useCaseEntityMap } from 'utils/entityRelationships';
+import { getUseCaseEntityMap } from 'utils/entityRelationships';
 import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
-
 import WorkflowSidePanel from './WorkflowSidePanel';
 import { EntityComponentMap, ListComponentMap } from './UseCaseComponentMaps';
 
 const WorkflowListPageLayout = ({ location }) => {
+    const hostScanningEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_HOST_SCANNING);
+    const featureFlags = {
+        [knownBackendFlags.ROX_HOST_SCANNING]: hostScanningEnabled,
+    };
+    const useCaseEntityMap = getUseCaseEntityMap(featureFlags);
     const { isDarkMode } = useTheme();
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;

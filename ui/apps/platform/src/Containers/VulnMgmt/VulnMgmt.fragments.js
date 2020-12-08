@@ -125,6 +125,22 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
     }
 `;
 
+export const NODE_LIST_FRAGMENT = gql`
+    fragment nodeFields on Node {
+        id
+        name
+        # vulnCounter
+        # topVuln
+        # scanTime
+        osImage
+        # runtime
+        # nodeStatus
+        clusterName
+        clusterId
+        # priority
+    }
+`;
+
 export const IMAGE_LIST_FRAGMENT = gql`
     fragment imageFields on Image {
         id

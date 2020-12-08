@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { withRouter } from 'react-router-dom';
 import startCase from 'lodash/startCase';
 
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import PageHeader from 'Components/PageHeader';
 import EntityTabs from 'Components/workflow/EntityTabs';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
@@ -12,16 +14,21 @@ import getSidePanelEntity from 'utils/getSidePanelEntity';
 import entityTypes from 'constants/entityTypes';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import { WorkflowState } from 'utils/WorkflowState';
-import { useCaseEntityMap } from 'utils/entityRelationships';
+import { getUseCaseEntityMap } from 'utils/entityRelationships';
 import entityLabels from 'messages/entity';
 import useCaseLabels from 'messages/useCase';
 import useEntityName from 'hooks/useEntityName';
 import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
-
 import WorkflowSidePanel from './WorkflowSidePanel';
 import { EntityComponentMap } from './UseCaseComponentMaps';
 
 const WorkflowEntityPageLayout = ({ location }) => {
+    const hostScanningEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_HOST_SCANNING);
+    const featureFlags = {
+        [knownBackendFlags.ROX_HOST_SCANNING]: hostScanningEnabled,
+    };
+    const useCaseEntityMap = getUseCaseEntityMap(featureFlags);
+
     const workflowState = parseURL(location);
     const { stateStack, useCase, search } = workflowState;
     const pageState = new WorkflowState(useCase, workflowState.getPageStack(), search);
