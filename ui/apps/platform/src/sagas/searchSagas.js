@@ -2,7 +2,7 @@ import { all, put, call } from 'redux-saga/effects';
 
 import {
     mainPath,
-    clustersPath,
+    clustersPathWithParam,
     dashboardPath,
     violationsPath,
     riskPath,
@@ -98,7 +98,7 @@ export default function* searches() {
             `categories=ALERTS`
         ),
         takeEveryNewlyMatchedLocation(
-            clustersPath,
+            clustersPathWithParam,
             getSearchOptions,
             clustersActions.setClustersSearchModifiers,
             clustersActions.setClustersSearchSuggestions,

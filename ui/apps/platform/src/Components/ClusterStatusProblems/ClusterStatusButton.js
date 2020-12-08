@@ -104,7 +104,7 @@ const ClusterStatusButton = ({ degraded, unhealthy, history }) => {
 
     const onClick = () => {
         history.push({
-            pathname: clustersPath.replace('/:clusterId?', ''),
+            pathname: clustersPath,
             search: '',
             // TODO after ClustersPage sets search filter according to search query string in URL:
             // If any clusters have problems, then Clusters list has search filter.

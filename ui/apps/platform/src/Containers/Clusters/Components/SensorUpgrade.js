@@ -1,48 +1,12 @@
 /* eslint-disable react/jsx-no-bind */
 import React from 'react';
 import PropTypes from 'prop-types';
-import { AlertTriangle, Check, DownloadCloud, Loader, X } from 'react-feather';
 
 import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 import HealthStatus from './HealthStatus';
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
-import { findUpgradeState, formatSensorVersion } from '../cluster.helpers';
-
-const typeStyles = {
-    /*
-    info: {
-        icon: Info,
-        bgColor: 'bg-base-200',
-        fgColor: 'text-base-600',
-    },
-    */
-    current: {
-        Icon: Check,
-        bgColor: 'bg-success-200',
-        fgColor: 'text-success-700',
-    },
-    download: {
-        Icon: DownloadCloud,
-        bgColor: 'bg-tertiary-200',
-        fgColor: 'text-tertiary-700',
-    },
-    progress: {
-        Icon: Loader,
-        bgColor: 'bg-tertiary-200',
-        fgColor: 'text-tertiary-700',
-    },
-    failure: {
-        Icon: X,
-        bgColor: 'bg-alert-200',
-        fgColor: 'text-alert-700',
-    },
-    intervention: {
-        Icon: AlertTriangle,
-        bgColor: 'bg-warning-200',
-        fgColor: 'text-warning-700',
-    },
-};
+import { findUpgradeState, formatSensorVersion, sensorUpgradeStyles } from '../cluster.helpers';
 
 const trClassName = 'align-top leading-normal';
 const thClassName = 'font-600 pl-0 pr-1 py-0 text-left';
@@ -65,12 +29,12 @@ const SensorUpgrade = ({ upgradeStatus, centralVersion, sensorVersion, isList, a
             let actionElement = null;
 
             if (displayValue) {
-                const { bgColor, fgColor } = typeStyles[type];
+                const { bgColor, fgColor } = sensorUpgradeStyles[type];
                 displayElement = <span className={`${bgColor} ${fgColor}`}>{displayValue}</span>;
             }
 
             if (actionText) {
-                const actionStyle = typeStyles.download;
+                const actionStyle = sensorUpgradeStyles.download;
                 if (actionProps) {
                     const { clusterId, upgradeSingleCluster } = actionProps;
                     const onClick = (event) => {
@@ -104,7 +68,7 @@ const SensorUpgrade = ({ upgradeStatus, centralVersion, sensorVersion, isList, a
                 </div>
             );
 
-            const { Icon, bgColor, fgColor } = typeStyles[type];
+            const { Icon, bgColor, fgColor } = sensorUpgradeStyles[type];
 
             // Use table instead of TooltipFieldValue to align version numbers.
             const versionNumbers = (

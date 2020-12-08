@@ -9,7 +9,7 @@ import {
     nestedPaths as workflowPaths,
     urlEntityListTypes,
     urlEntityTypes,
-    clustersPath,
+    clustersPathWithParam,
     riskPath,
 } from '../routePaths';
 
@@ -108,7 +108,7 @@ function parseURL(location) {
         exact: true,
     });
     const matchedClustersParams = matchPath(pathname, {
-        path: clustersPath,
+        path: clustersPathWithParam,
         exact: true,
     });
     const legacyParams = matchedRiskParams

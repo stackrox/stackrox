@@ -7,6 +7,7 @@ import useCases from 'constants/useCaseTypes';
 import {
     nestedPaths as workflowPaths,
     clustersPath,
+    clustersPathWithParam,
     riskPath,
     secretsPath,
     urlEntityListTypes,
@@ -22,9 +23,9 @@ const defaultPathMap = {
 
 const legacyPathMap = {
     [useCases.CLUSTERS]: {
-        [pageTypes.ENTITY]: clustersPath,
-        [pageTypes.LIST]: '/main/clusters',
-        [pageTypes.DASHBOARD]: '/main/clusters',
+        [pageTypes.ENTITY]: clustersPathWithParam,
+        [pageTypes.LIST]: clustersPath,
+        [pageTypes.DASHBOARD]: clustersPath,
     },
     [useCases.RISK]: {
         [pageTypes.ENTITY]: riskPath,

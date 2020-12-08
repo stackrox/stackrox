@@ -1,6 +1,16 @@
+import React from 'react';
 import { differenceInDays, distanceInWordsStrict } from 'date-fns';
 import get from 'lodash/get';
-import { AlertCircle, AlertTriangle, Check, Info, Minus, X } from 'react-feather';
+import {
+    AlertCircle,
+    CheckCircle,
+    Circle,
+    DownloadCloud,
+    Info,
+    Loader,
+    MinusCircle,
+    XCircle,
+} from 'react-feather';
 
 import { getDate } from 'utils/dateUtils';
 
@@ -75,34 +85,46 @@ export const centralEnvDefault = {
     kernelSupportAvailable: false,
 };
 
+const MinusCircleRotate45 = ({ className }) => (
+    <MinusCircle className={`${className} transform rotate-45`} />
+);
+
+export const styleUninitialized = {
+    Icon: MinusCircleRotate45,
+    bgColor: 'bg-base-200',
+    fgColor: 'text-base-700',
+};
+
+export const styleHealthy = {
+    Icon: CheckCircle,
+    bgColor: 'bg-success-200',
+    fgColor: 'text-success-700',
+};
+
+export const styleDegraded = {
+    Icon: AlertCircle,
+    bgColor: 'bg-warning-200',
+    fgColor: 'text-warning-700',
+};
+
+export const styleUnhealthy = {
+    Icon: XCircle,
+    bgColor: 'bg-alert-200',
+    fgColor: 'text-alert-700',
+};
+
 // Styles for ClusterStatus, SensorStatus, CollectorStatus.
 // Colors are similar to LabelChip, but fgColor is slightly lighter 700 instead of 800.
 export const healthStatusStyles = {
-    UNINITIALIZED: {
-        Icon: Minus,
-        bgColor: 'bg-base-200',
-        fgColor: 'text-base-700',
-    },
+    UNINITIALIZED: styleUninitialized,
     UNAVAILABLE: {
-        Icon: AlertCircle,
+        Icon: Circle,
         bgColor: 'bg-secondary-200',
         fgColor: 'text-secondary-700',
     },
-    UNHEALTHY: {
-        Icon: X,
-        bgColor: 'bg-alert-200',
-        fgColor: 'text-alert-700',
-    },
-    DEGRADED: {
-        Icon: AlertTriangle,
-        bgColor: 'bg-warning-200',
-        fgColor: 'text-warning-700',
-    },
-    HEALTHY: {
-        Icon: Check,
-        bgColor: 'bg-success-200',
-        fgColor: 'text-success-700',
-    },
+    UNHEALTHY: styleUnhealthy,
+    DEGRADED: styleDegraded,
+    HEALTHY: styleHealthy,
 };
 
 // Special case for Collector when Sensor is UNHEALTHY or DELAYED.
@@ -110,6 +132,22 @@ export const delayedCollectorStatusStyle = {
     Icon: Info,
     bgColor: 'bg-base-200',
     fgColor: 'text-base-700',
+};
+
+export const sensorUpgradeStyles = {
+    current: styleHealthy,
+    progress: {
+        Icon: Loader,
+        bgColor: 'bg-tertiary-200',
+        fgColor: 'text-tertiary-700',
+    },
+    download: {
+        Icon: DownloadCloud,
+        bgColor: 'bg-tertiary-200',
+        fgColor: 'text-tertiary-700',
+    },
+    intervention: styleDegraded,
+    failure: styleUnhealthy,
 };
 
 // @TODO: add optional button text and func

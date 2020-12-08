@@ -11,7 +11,7 @@ import {
     networkPath,
     violationsPath,
     compliancePath,
-    clustersPath,
+    clustersPathWithParam,
     integrationsPath,
     policiesPath,
     riskPath,
@@ -20,6 +20,7 @@ import {
     licensePath,
     userPath,
     systemConfigPath,
+    systemHealthPath,
     vulnManagementPath,
     configManagementPath,
 } from 'routePaths';
@@ -59,6 +60,7 @@ const AsyncUserPage = asyncComponent(() => import('Containers/User/UserPage'));
 const AsyncSystemConfigPage = asyncComponent(() => import('Containers/SystemConfig/Page'));
 const AsyncConfigManagementPage = asyncComponent(() => import('Containers/ConfigManagement/Page'));
 const AsyncVulnMgmtPage = asyncComponent(() => import('Containers/Workflow/WorkflowLayout'));
+const AsyncSystemHealthPage = asyncComponent(() => import('Containers/SystemHealth/DashboardPage'));
 
 class MainPage extends Component {
     static propTypes = {
@@ -134,7 +136,8 @@ class MainPage extends Component {
                         path={configManagementPath}
                         component={AsyncConfigManagementPage}
                     />
-                    <ProtectedRoute path={clustersPath} component={AsyncClustersPage} />
+                    <ProtectedRoute path={clustersPathWithParam} component={AsyncClustersPage} />
+                    <ProtectedRoute path={systemHealthPath} component={AsyncSystemHealthPage} />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
             </ErrorBoundary>

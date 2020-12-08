@@ -11,13 +11,14 @@ import {
     integrationsPath,
     accessControlPath,
     systemConfigPath,
+    systemHealthPath,
 } from 'routePaths';
 import { filterLinksByFeatureFlag } from './navHelpers';
 
 export const configureLinks = [
     {
         text: 'Clusters',
-        to: clustersPath.replace('/:clusterId?', ''),
+        to: clustersPath,
     },
     {
         text: 'System Policies',
@@ -35,6 +36,10 @@ export const configureLinks = [
         text: 'System Configuration',
         to: systemConfigPath,
         data: 'system-config',
+    },
+    {
+        text: 'System Health',
+        to: systemHealthPath,
     },
 ];
 

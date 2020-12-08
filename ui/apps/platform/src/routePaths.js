@@ -14,7 +14,8 @@ export const authResponsePrefix = '/auth/response/';
 export const dashboardPath = `${mainPath}/dashboard`;
 export const networkPath = `${mainPath}/network/:deploymentId?/:externalType?`;
 export const violationsPath = `${mainPath}/violations/:alertId?`;
-export const clustersPath = `${mainPath}/clusters/:clusterId?`;
+export const clustersPath = `${mainPath}/clusters`;
+export const clustersPathWithParam = `${clustersPath}/:clusterId?`;
 export const integrationsPath = `${mainPath}/integrations`;
 export const policiesListPath = `${mainPath}/policies`;
 export const policiesPath = `${policiesListPath}/:policyId?/:command?`;
@@ -30,6 +31,7 @@ export const compliancePath = `${mainPath}/:context(compliance)`;
 export const configManagementPath = `${mainPath}/configmanagement`;
 export const vulnManagementPath = `${mainPath}/vulnerability-management`;
 export const dataRetentionPath = `${mainPath}/retention`;
+export const systemHealthPath = `${mainPath}/system-health`;
 
 /**
  * New Framwork-related route paths
