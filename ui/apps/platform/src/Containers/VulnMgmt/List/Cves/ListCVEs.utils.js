@@ -1,12 +1,35 @@
 import entityTypes from 'constants/entityTypes';
 
 export function getFilteredCVEColumns(columns, workflowState) {
-    const shouldRemoveColumns =
+    const shouldRemoveFixedByColumn =
         !workflowState.isPreceding(entityTypes.COMPONENT) &&
         !workflowState.isCurrentSingle(entityTypes.COMPONENT);
-    return shouldRemoveColumns
-        ? columns.filter((col) => col.accessor !== 'fixedByVersion')
-        : columns;
+
+    const shouldRemoveDiscoveredAtImageColumn =
+        !workflowState.isPreceding(entityTypes.IMAGE) &&
+        !workflowState.isCurrentSingle(entityTypes.IMAGE) &&
+        !workflowState.isCurrentSingle(entityTypes.COMPONENT);
+
+    return columns.filter((col) => {
+        switch (col.accessor) {
+            case 'fixedByVersion': {
+                if (shouldRemoveFixedByColumn) {
+                    return false;
+                }
+                break;
+            }
+            case 'discoveredAtImage': {
+                if (shouldRemoveDiscoveredAtImageColumn) {
+                    return false;
+                }
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+        return true;
+    });
 }
 
 export default {

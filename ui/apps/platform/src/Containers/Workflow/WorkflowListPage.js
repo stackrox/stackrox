@@ -1,6 +1,8 @@
 import React, { useContext, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useQuery } from '@apollo/client';
+import { withRouter } from 'react-router-dom';
+import ReactRouterPropTypes from 'react-router-prop-types';
 
 import PageNotFound from 'Components/PageNotFound';
 import Loader from 'Components/Loader';
@@ -8,8 +10,8 @@ import EntityList from 'Components/EntityList';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
-import { withRouter } from 'react-router-dom';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 
 export function getDefaultExpandedRows(results) {
     return results
@@ -41,6 +43,8 @@ const WorkflowListPage = ({
 }) => {
     const workflowState = useContext(workflowStateContext);
     const [sortFields, setSortFields] = useState({});
+
+    const discoveredAtImage = useFeatureFlagEnabled(knownBackendFlags.ROX_DISCOVERED_AT_IMAGE);
 
     const searchCategories = [searchCategoryTypes[entityListType]];
     const searchQueryOptions = {
@@ -79,7 +83,10 @@ const WorkflowListPage = ({
         count = ownQueryData.count;
     }
 
-    const tableColumns = getTableColumns(workflowState);
+    const tableColumnOptions = {
+        discoveredAtImage,
+    };
+    const tableColumns = getTableColumns(workflowState, tableColumnOptions);
     const defaultExpandedRows = showSubrows ? getDefaultExpandedRows(displayData) : null;
 
     function onSortedChange(newSort, column) {

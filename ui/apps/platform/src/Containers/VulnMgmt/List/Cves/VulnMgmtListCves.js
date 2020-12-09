@@ -45,9 +45,10 @@ export const defaultCveSort = [
     },
 ];
 
-export function getCveTableColumns(workflowState) {
+export function getCveTableColumns(workflowState, tableColumnOptions = {}) {
     // to determine whether to show the counts as links in the table when not in pure CVE state
     const inFindingsSection = workflowState.getCurrentEntity().entityType !== entityTypes.CVE;
+
     const tableColumns = [
         {
             expander: true,
@@ -104,8 +105,8 @@ export function getCveTableColumns(workflowState) {
         },
         {
             Header: `Fixed in`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 word-break-all ${defaultColumnClassName}`,
+            headerClassName: `w-1/12 ${defaultHeaderClassName}`,
+            className: `w-1/12 word-break-all ${defaultColumnClassName}`,
             Cell: ({ original }) => original.fixedByVersion || '-',
             id: cveSortFields.FIXEDIN,
             accessor: 'fixedByVersion',
@@ -219,10 +220,24 @@ export function getCveTableColumns(workflowState) {
             accessor: 'createdAt',
             sortField: cveSortFields.CVE_CREATED_TIME,
         },
+        // TODO: remove this feature flag check after the flag is turned on for good
+        tableColumnOptions.discoveredAtImage
+            ? {
+                  Header: `Discovered in Image`,
+                  headerClassName: `w-1/10 text-left ${nonSortableHeaderClassName}`,
+                  className: `w-1/10 ${defaultColumnClassName}`,
+                  Cell: ({ original, pdf }) => (
+                      <DateTimeField date={original.discoveredAtImage} asString={pdf} />
+                  ),
+                  id: cveSortFields.CVE_DISCOVERED_AT_IMAGE_TIME,
+                  accessor: 'discoveredAtImage',
+                  sortable: false,
+              }
+            : null,
         {
             Header: `Published`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
+            headerClassName: `w-1/12 ${defaultHeaderClassName}`,
+            className: `w-1/12 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => (
                 <DateTimeField date={original.publishedOn} asString={pdf} />
             ),
@@ -232,7 +247,10 @@ export function getCveTableColumns(workflowState) {
         },
     ];
 
-    const cveColumnsBasedOnContext = getFilteredCVEColumns(tableColumns, workflowState);
+    // TODO: remove this feature flag check after the flag is turned on for good
+    const nonNullTableColumns = tableColumns.filter((col) => col);
+
+    const cveColumnsBasedOnContext = getFilteredCVEColumns(nonNullTableColumns, workflowState);
 
     return removeEntityContextColumns(cveColumnsBasedOnContext, workflowState);
 }

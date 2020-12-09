@@ -11,6 +11,8 @@ import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import entityTypes from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
 import queryService from 'utils/queryService';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 
 import FixableCveExportButton from '../VulnMgmtComponents/FixableCveExportButton';
 import TableWidget from './TableWidget';
@@ -19,6 +21,9 @@ import { getScopeQuery } from './VulnMgmtPolicyQueryUtil';
 const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, name, id }) => {
     const [fixableCvesPage, setFixableCvesPage] = useState(0);
     const [cveSort, setCveSort] = useState(defaultCveSort);
+
+    const discoveredAtImage = useFeatureFlagEnabled(knownBackendFlags.ROX_DISCOVERED_AT_IMAGE);
+    const tableColumnOptions = { discoveredAtImage };
 
     const displayedEntityType = resourceLabels[entityType];
     const idFieldName = 'id';
@@ -108,7 +113,7 @@ const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, name
                     entityType={entityTypes.CVE}
                     noDataText={`No fixable CVEs available in this ${displayedEntityType}`}
                     className="bg-base-100"
-                    columns={getCveTableColumns(workflowState)}
+                    columns={getCveTableColumns(workflowState, tableColumnOptions)}
                     idAttribute="cve"
                     pageSize={LIST_PAGE_SIZE}
                     parentPageState={fixableCveState}

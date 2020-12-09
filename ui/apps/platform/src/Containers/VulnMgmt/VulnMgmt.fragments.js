@@ -68,6 +68,7 @@ export const VULN_CVE_LIST_FRAGMENT = gql`
         fixedByVersion
         isFixable(query: $scopeQuery)
         createdAt
+        discoveredAtImage(query: $scopeQuery)
         publishedOn
         deploymentCount(query: $query)
         imageCount(query: $query)

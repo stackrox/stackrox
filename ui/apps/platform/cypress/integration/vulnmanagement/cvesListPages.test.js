@@ -41,6 +41,31 @@ describe('CVEs list Page and its entity detail page,sub list  validations ', () 
             });
     });
 
+    it('should display Discovered in Image time column when appropriate', () => {
+        cy.visit(url.list.cves);
+        cy.get(`${selectors.tableColumn}`)
+            .invoke('text')
+            .then((text) => {
+                expect(text).not.to.include('Discovered in Image');
+            });
+
+        cy.visit(url.list.images);
+        cy.get(`${selectors.allCVEColumnLink}:eq(0)`).click({ force: true });
+        cy.get(`[data-testid="side-panel"] ${selectors.tableColumn}`)
+            .invoke('text')
+            .then((text) => {
+                expect(text).to.include('Discovered in Image');
+            });
+
+        cy.visit(url.list.components);
+        cy.get(`${selectors.allCVEColumnLink}:eq(0)`).click({ force: true });
+        cy.get(`[data-testid="side-panel"] ${selectors.tableColumn}`)
+            .invoke('text')
+            .then((text) => {
+                expect(text).not.to.include('Discovered in Image');
+            });
+    });
+
     it('should display correct CVE type', () => {
         cy.visit(url.list.cves);
 
