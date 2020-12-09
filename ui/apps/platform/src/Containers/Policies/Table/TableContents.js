@@ -21,13 +21,14 @@ import {
     rtTrActionsClassName,
 } from 'Components/Table';
 import { lifecycleStageLabels } from 'messages/common';
-import { sortAscii, sortSeverity, sortLifecycle } from 'sorters/sorters';
+import { sortSeverity, sortLifecycle, sortAsciiCaseInsensitive } from 'sorters/sorters';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 
 // TableContents are the policy rows.
 class TableContents extends Component {
     static propTypes = {
         page: PropTypes.number.isRequired,
+        pageSize: PropTypes.number.isRequired,
         policies: PropTypes.arrayOf(PropTypes.object).isRequired,
         selectedPolicyId: PropTypes.string.isRequired,
         selectedPolicyIds: PropTypes.arrayOf(PropTypes.string).isRequired,
@@ -133,7 +134,7 @@ class TableContents extends Component {
                         </div>
                     </div>
                 ),
-                sortMethod: sortAscii,
+                sortMethod: sortAsciiCaseInsensitive,
                 className: `w-1/5 left-checkbox-offset ${wrapClassName} ${defaultColumnClassName}`,
                 headerClassName: `w-1/5 left-checkbox-offset ${defaultHeaderClassName}`,
             },
@@ -190,6 +191,7 @@ class TableContents extends Component {
                     columns={columns}
                     onRowClick={this.setSelectedPolicy}
                     toggleRow={this.toggleRow}
+                    pageSize={this.props.pageSize}
                     toggleSelectAll={this.toggleSelectAll}
                     selection={this.props.selectedPolicyIds}
                     selectedRowId={id}

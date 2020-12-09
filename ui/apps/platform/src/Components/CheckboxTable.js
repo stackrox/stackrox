@@ -13,6 +13,7 @@ class CheckboxTable extends Component {
         toggleSelectAll: PropTypes.func.isRequired,
         selection: PropTypes.arrayOf(PropTypes.string),
         page: PropTypes.number,
+        pageSize: PropTypes.number,
         renderRowActionButtons: PropTypes.func,
         manual: PropTypes.bool,
         idAttribute: PropTypes.string,
@@ -23,6 +24,7 @@ class CheckboxTable extends Component {
         onRowClick: null,
         selection: [],
         page: 0,
+        pageSize: undefined, // Defer to the default in the child component, if this is not specified.
         renderRowActionButtons: null,
         manual: false,
         idAttribute: 'id',

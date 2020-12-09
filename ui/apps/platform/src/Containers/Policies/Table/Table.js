@@ -18,6 +18,8 @@ import Buttons from 'Containers/Policies/Table/Buttons';
 import TableContents from 'Containers/Policies/Table/TableContents';
 import PolicyImportDialogue from 'Containers/Policies/Table/PolicyImportDialogue';
 
+const POLICIES_TABLE_PAGE_SIZE = 150;
+
 // Table is the heading line with options to reasses and add a policy, as well as the underlying policy
 // rows.
 class Table extends Component {
@@ -66,7 +68,14 @@ class Table extends Component {
 
     pagination = (policies, page) => {
         const { length } = policies;
-        return <TablePagination page={page} dataLength={length} setPage={this.props.setPage} />;
+        return (
+            <TablePagination
+                pageSize={POLICIES_TABLE_PAGE_SIZE}
+                page={page}
+                dataLength={length}
+                setPage={this.props.setPage}
+            />
+        );
     };
 
     getTableHeaderText = () => {
@@ -96,7 +105,10 @@ class Table extends Component {
 
         return (
             <Panel header={this.getTableHeaderText()} headerComponents={headerComponents}>
-                <TableContents setSelectedPolicy={this.setSelectedPolicy} />
+                <TableContents
+                    pageSize={POLICIES_TABLE_PAGE_SIZE}
+                    setSelectedPolicy={this.setSelectedPolicy}
+                />
             </Panel>
         );
     }

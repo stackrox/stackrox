@@ -208,6 +208,22 @@ function sortAscii(a, b) {
     return 0;
 }
 
+/**
+ * Case insensitive version of sortAscii
+ */
+
+/**
+ * [sortAsciiCaseInsensitive description]
+ *
+ * @param   {string}   a  first item to compare
+ * @param   {string}  b  second item to compare
+ *
+ * @return  {number}     negative if a sorts before b, positive if b sorts before a, 0 if equal
+ */
+function sortAsciiCaseInsensitive(a, b) {
+    return a.localeCompare(b, 'en', { sensitivity: 'base' });
+}
+
 export {
     sortSeverity,
     sortValue,
@@ -218,4 +234,5 @@ export {
     sortDate,
     sortValueByLength,
     sortAscii,
+    sortAsciiCaseInsensitive,
 };
