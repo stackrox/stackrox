@@ -28,6 +28,11 @@ export const selectors = {
         },
     },
     integrations: {
+        errorMessage: '[data-testid="error-message"]',
+        healthyText: '[data-testid="healthy-text"]',
+        integrationName: '[data-testid="integration-name"]',
+        integrationLabel: '[data-testid="integration-label"]',
+        lastContact: '[data-testid="last-contact"]',
         viewAllButton: 'a:contains("View All")',
         widgets: {
             imageIntegrations: '[data-testid="image-integrations"]',

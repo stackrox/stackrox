@@ -12,18 +12,23 @@ interface IdNameInterface {
 }
 
 export interface IntegrationHealthItem extends IdNameInterface {
-    // this type differs from the type of an integration item: too bad, so sad :(
+    type: string; // differs from type of an integration item: too bad, so sad :(
     status: string;
     errorMessage: string;
     lastTimestamp: string;
 }
 
 export interface IntegrationMergedItem extends IntegrationHealthItem {
-    type: string;
+    label: string;
 }
 
 export interface Integration extends IdNameInterface {
     type: string;
+}
+
+interface IntegrationsListItem {
+    type: string;
+    label: string;
 }
 
 export type IntegrationStatus = 'HEALTHY' | 'UNINITIALIZED' | 'UNHEALTHY';
@@ -41,20 +46,26 @@ export const integrationStyleMap: Record<IntegrationStatus, CategoryStyle> = {
 };
 
 /*
- * Replace integration health type with integration type.
+ * Replace integration health type with integration type and add corresponding label.
  */
 export const mergeIntegrationResponses = (
     integrationsHealth: IntegrationHealthItem[],
-    integrations: Integration[]
+    integrations: Integration[],
+    integrationsList: IntegrationsListItem[]
 ): IntegrationMergedItem[] => {
-    const integrationTypeMap: Record<string, string> = {};
+    const typeMap: Record<string, string> = {};
+    const labelMap: Record<string, string> = {};
 
     integrations.forEach(({ id, type }) => {
-        integrationTypeMap[id] = type;
+        typeMap[id] = type;
+    });
+    integrationsList.forEach(({ type, label }) => {
+        labelMap[type] = label;
     });
 
-    return integrationsHealth.map((integrationHealthItem) => ({
-        ...integrationHealthItem,
-        type: integrationTypeMap[integrationHealthItem.id] ?? '',
-    }));
+    return integrationsHealth.map((integrationHealthItem) => {
+        const type = typeMap[integrationHealthItem.id] ?? '';
+        const label = labelMap[type] ?? '';
+        return { ...integrationHealthItem, type, label };
+    });
 };

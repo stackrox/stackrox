@@ -141,8 +141,14 @@ export const vulnMgmt = {
     },
 };
 
+export const integrationHealth = {
+    imageIntegrations: '/v1/integrationhealth/imageintegrations',
+    notifiers: '/v1/integrationhealth/notifiers',
+    externalBackups: '/v1/integrationhealth/externalbackups',
+};
+
 export const integrations = {
-    images: '/v1/imageintegrations',
+    imageIntegrations: '/v1/imageintegrations',
     notifiers: '/v1/notifiers',
     externalBackups: '/v1/externalbackups',
     authPlugins: '/v1/scopedaccessctrl/configs',

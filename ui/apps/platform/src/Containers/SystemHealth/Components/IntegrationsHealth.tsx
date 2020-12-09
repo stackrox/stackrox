@@ -34,7 +34,7 @@ const IntegrationsHealth = ({ healthyText, integrationsMerged }: Props): ReactEl
         const { Icon, fgColor } = styleUnhealthy;
         return (
             <ul className="leading-normal pt-1 w-full">
-                {integrationsFiltered.map(({ id, name, type, errorMessage, lastTimestamp }) => (
+                {integrationsFiltered.map(({ id, name, label, errorMessage, lastTimestamp }) => (
                     <li className="border-b border-base-300 px-2 py-1" key={id}>
                         <div className="flex w-full">
                             <div className={`flex-shrink-0 ${fgColor}`}>
@@ -42,18 +42,28 @@ const IntegrationsHealth = ({ healthyText, integrationsMerged }: Props): ReactEl
                             </div>
                             <div className="ml-2 flex-grow">
                                 <div className="flex justify-between">
-                                    <span className="font-700">{name}</span>
-                                    <span className="italic text-base-500">{type}</span>
+                                    <span className="font-700" data-testid="integration-name">
+                                        {name}
+                                    </span>
+                                    <span
+                                        className="italic text-base-500"
+                                        data-testid="integration-label"
+                                    >
+                                        {label}
+                                    </span>
                                 </div>
                                 {errorMessage && (
                                     <div>
-                                        <span>Error message:</span> <span>{errorMessage}</span>
+                                        <span>Error message:</span>{' '}
+                                        <span data-testid="error-message">{errorMessage}</span>
                                     </div>
                                 )}
                                 {lastTimestamp && (
                                     <div>
                                         <span>Last contact:</span>{' '}
-                                        <span>{getDateTime(lastTimestamp)}</span>
+                                        <span data-testid="last-contact">
+                                            {getDateTime(lastTimestamp)}
+                                        </span>
                                     </div>
                                 )}
                             </div>
@@ -72,7 +82,9 @@ const IntegrationsHealth = ({ healthyText, integrationsMerged }: Props): ReactEl
             <div className="flex justify-center mb-2">
                 <Icon className="h-6 w-6" />
             </div>
-            <div className="leading-normal px-2 text-center">{text}</div>
+            <div className="leading-normal px-2 text-center" data-testid="healthy-text">
+                {text}
+            </div>
         </div>
     );
 };

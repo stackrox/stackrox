@@ -4,12 +4,13 @@ import { HashLink } from 'react-router-hash-link';
 
 import PageHeader from 'Components/PageHeader';
 import Widget from 'Components/Widget';
+import integrationsList from 'Containers/Integrations/integrationsList';
 import useInterval from 'hooks/useInterval';
 import { clustersPath, integrationsPath } from 'routePaths';
 import { fetchClustersAsArray } from 'services/ClustersService';
 import {
-    // fetchBackupIntegrationsHealth,
-    // fetchImageIntegrationsHealth,
+    fetchBackupIntegrationsHealth,
+    fetchImageIntegrationsHealth,
     fetchPluginIntegrationsHealth,
 } from 'services/IntegrationHealthService';
 import { fetchIntegration } from 'services/IntegrationsService';
@@ -30,8 +31,8 @@ const SystemHealthDashboardPage = () => {
     const [pollingCount, setPollingCount] = useState(0);
     const [currentDatetime, setCurrentDatetime] = useState(null);
     const [clusters, setClusters] = useState([]);
-    // const [backupIntegrationsMerged, setBackupIntegrationsMerged] = useState([]);
-    // const [imageIntegrationsMerged, setImageIntegrationsMerged] = useState([]);
+    const [backupIntegrationsMerged, setBackupIntegrationsMerged] = useState([]);
+    const [imageIntegrationsMerged, setImageIntegrationsMerged] = useState([]);
     const [pluginIntegrationsMerged, setPluginIntegrationsMerged] = useState([]);
 
     useEffect(() => {
@@ -40,27 +41,36 @@ const SystemHealthDashboardPage = () => {
             setClusters(array);
         });
         // TODO catch
-        /*
         Promise.all([fetchBackupIntegrationsHealth(), fetchIntegration('backups')]).then(
-            ([integrationsHealth, integrations]) => {
+            ([integrationsHealth, { response }]) => {
                 setBackupIntegrationsMerged(
-                    mergeIntegrationResponses(integrationsHealth, response.externalBackups)
+                    mergeIntegrationResponses(
+                        integrationsHealth,
+                        response.externalBackups,
+                        integrationsList.backups
+                    )
                 );
             }
         );
-        */
-        /*
         Promise.all([fetchImageIntegrationsHealth(), fetchIntegration('imageIntegrations')]).then(
             ([integrationsHealth, { response }]) => {
                 setImageIntegrationsMerged(
-                    mergeIntegrationResponses(integrationsHealth, reponse.integrations)
+                    mergeIntegrationResponses(
+                        integrationsHealth,
+                        response.integrations,
+                        integrationsList.imageIntegrations
+                    )
                 );
-        });
-        */
+            }
+        );
         Promise.all([fetchPluginIntegrationsHealth(), fetchIntegration('notifiers')]).then(
             ([integrationsHealth, { response }]) => {
                 setPluginIntegrationsMerged(
-                    mergeIntegrationResponses(integrationsHealth, response.notifiers)
+                    mergeIntegrationResponses(
+                        integrationsHealth,
+                        response.notifiers,
+                        integrationsList.plugins
+                    )
                 );
             }
         );
@@ -144,7 +154,13 @@ const SystemHealthDashboardPage = () => {
                         }
                         id="image-integrations"
                     >
-                        <div />
+                        <IntegrationsHealth
+                            healthyText={{
+                                plural: 'image integrations are healthy',
+                                singular: 'image integration is healthy',
+                            }}
+                            integrationsMerged={imageIntegrationsMerged}
+                        />
                     </Widget>
                     <Widget
                         header="Plugin Integrations"
@@ -178,7 +194,13 @@ const SystemHealthDashboardPage = () => {
                         }
                         id="backup-integrations"
                     >
-                        <div />
+                        <IntegrationsHealth
+                            healthyText={{
+                                plural: 'backup integrations are healthy',
+                                singular: 'backup integration is healthy',
+                            }}
+                            integrationsMerged={backupIntegrationsMerged}
+                        />
                     </Widget>
                 </div>
             </div>
