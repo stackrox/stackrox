@@ -8,7 +8,7 @@ export function getFilteredCVEColumns(columns, workflowState) {
     const shouldRemoveDiscoveredAtImageColumn =
         !workflowState.isPreceding(entityTypes.IMAGE) &&
         !workflowState.isCurrentSingle(entityTypes.IMAGE) &&
-        !workflowState.isCurrentSingle(entityTypes.COMPONENT);
+        !workflowState.getSingleAncestorOfType(entityTypes.IMAGE);
 
     return columns.filter((col) => {
         switch (col.accessor) {

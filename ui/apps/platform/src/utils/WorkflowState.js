@@ -461,7 +461,7 @@ export class WorkflowState {
     isCurrentSingle(entityType) {
         return (
             this.stateStack &&
-            this.stateStack.length > 1 &&
+            this.stateStack.length > 0 &&
             this.stateStack[this.stateStack.length - 1].t === entityType &&
             this.stateStack[this.stateStack.length - 1].i
         );

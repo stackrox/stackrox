@@ -224,8 +224,8 @@ export function getCveTableColumns(workflowState, tableColumnOptions = {}) {
         tableColumnOptions.discoveredAtImage
             ? {
                   Header: `Discovered in Image`,
-                  headerClassName: `w-1/10 text-left ${nonSortableHeaderClassName}`,
-                  className: `w-1/10 ${defaultColumnClassName}`,
+                  headerClassName: `w-1/9 text-left ${nonSortableHeaderClassName}`,
+                  className: `w-1/9 ${defaultColumnClassName}`,
                   Cell: ({ original, pdf }) => (
                       <DateTimeField date={original.discoveredAtImage} asString={pdf} />
                   ),
