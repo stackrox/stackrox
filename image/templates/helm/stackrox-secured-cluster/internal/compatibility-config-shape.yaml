@@ -13,6 +13,12 @@ image:
   registry:
     main: null # string
     collector: null # string
+  pullPolicy:
+    main: null # string
+    collector: null # string
+  tag:
+    main: null # string
+    collector: null # string
 
 config:
   collectionMethod: null # string
@@ -30,5 +36,9 @@ config:
   createSecrets: null # bool
   offlineMode: null # bool
   slimCollector: null # bool
+  sensorResources: null # dict
+  admissionControlResources: null # dict
+  collectorResources: null # dict
+  complianceResources: null # dict
 
 envVars: null # [obj]

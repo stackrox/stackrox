@@ -22,6 +22,7 @@ sensor:
     name: null # string
     tag: null # string
     fullRef: null # string
+    pullPolicy: null # string
   resources: null # string | dict
   serviceTLS:
     cert: null # string
@@ -40,6 +41,7 @@ admissionControl:
     name: null # string
     tag: null # string
     fullRef: null # string
+    pullPolicy: null # string
   resources: null # string | dict
   serviceTLS:
     cert: null # string
@@ -51,8 +53,10 @@ collector:
   image:
     registry: null # string
     name: null # string
+    version: null # string
     tag: null # string
     fullRef: null # string
+    pullPolicy: null # string
   resources: null # string | dict
   complianceResources: null # string | dict
   serviceTLS:

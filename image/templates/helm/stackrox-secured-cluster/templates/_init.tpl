@@ -50,6 +50,8 @@
 {{ $_mainImage := dict }}
 {{ $_ := set $_mainImage "registry" $_values.image.registry.main }}
 {{ $_ := set $_mainImage "name" $_values.image.repository.main }}
+{{ $_ := set $_mainImage "pullPolicy" $_values.image.pullPolicy.main }}
+{{ $_ := set $_mainImage "tag" $_values.image.tag.main }}
 
 {{/* Sensor config. */}}
 {{ $_sensor := dict }}
@@ -62,7 +64,7 @@
   {{ $_ := set $_sensorServiceTLS "_key" "" }}
 {{ end }}
 {{ $_ := set $_sensor "image" $_mainImage }}
-
+{{ $_ := set $_sensor "resources" $_values.config.sensorResources }}
 {{ $_ := set $_sensor "serviceTLS" $_sensorServiceTLS }}
 {{ if not (kindIs "invalid" $_values.endpoint.advertised) }}
   {{ $_ := set $_sensor "endpoint" $_values.endpoint.advertised }}
@@ -83,13 +85,18 @@
 {{ $_ := set $_admissionControl "enforceOnUpdates" $_values.config.admissionControl.enforceOnUpdates }}
 {{ $_ := set $_admissionControl "dynamic" (dict "enforce" $_values.config.admissionControl.enableService "scanInline" $_values.config.admissionControl.scanInline "disableBypass" $_values.config.admissionControl.disableBypass "timeout" $_values.config.admissionControl.timeout) }}
 {{ $_ := set $_admissionControl "image" $_mainImage }}
+{{ $_ := set $_admissionControl "resources" $_values.config.admissionControlResources }}
 {{ $_ := set $_admissionControl "serviceTLS" $_admissionControlServiceTLS }}
 
-{{/* Collector config. */}}
-{{ $_collector := dict }}
+{{/* Collector Image. */}}
 {{ $_collectorImage := dict }}
 {{ $_ := set $_collectorImage "registry" $_values.image.registry.collector }}
 {{ $_ := set $_collectorImage "name" $_values.image.repository.collector }}
+{{ $_ := set $_collectorImage "pullPolicy" $_values.image.pullPolicy.collector }}
+{{ $_ := set $_collectorImage "tag" $_values.image.tag.collector }}
+
+{{/* Collector config. */}}
+{{ $_collector := dict }}
 {{ $_collectorServiceTLS := dict }}
 {{ if $_values.config.createSecrets }}
   {{ $_ := set $_collectorServiceTLS "cert" "@?secrets/collector-cert.pem" }}
@@ -99,6 +106,8 @@
   {{ $_ := set $_collectorServiceTLS "_key" "" }}
 {{ end }}
 {{ $_ := set $_collector "image" $_collectorImage }}
+{{ $_ := set $_collector "resources" $_values.config.collectorResources }}
+{{ $_ := set $_collector "complianceResources" $_values.config.complianceResources }}
 {{ $_ := set $_collector "collectionMethod" $_values.config.collectionMethod }}
 {{ $_ := set $_collector "disableTaintTolerations" $_values.config.disableTaintTolerations }}
 {{ $_ := set $_collector "slimMode" $_values.config.slimCollector }}

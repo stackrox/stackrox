@@ -71,6 +71,7 @@ spec:
       serviceAccount: sensor
       containers:
       - image: {{ printf "%s/%s:%s" ._rox.sensor.image.registry ._rox.sensor.image.name ._rox.sensor.image.tag }}
+        imagePullPolicy: {{ ._rox.sensor.image.pullPolicy }}
         name: sensor
         readinessProbe:
           httpGet:
@@ -85,12 +86,7 @@ spec:
         command:
           - kubernetes-sensor
         resources:
-          requests:
-            memory: "1Gi"
-            cpu: "1"
-          limits:
-            memory: "4Gi"
-            cpu: "2"
+          {{- ._rox.sensor._resources | nindent 10 }}
         securityContext:
           runAsNonRoot: true
           readOnlyRootFilesystem: true
@@ -233,12 +229,17 @@ spec:
       containers:
       {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}
       - name: collector
+        {{- if kindIs "invalid" ._rox.collector.image.tag }}
+        {{/* No custom tag set, use standard image selection logic. */}}
         {{- if ._rox.collector.slimMode }}
-        image: {{ printf "%s/%s:%s-slim" ._rox.collector.image.registry ._rox.collector.image.name ._rox.collector.image.tag }}
+        image: {{ printf "%s/%s:%s-slim" ._rox.collector.image.registry ._rox.collector.image.name ._rox.collector.image.version }}
         {{- else }}
-        image: {{ printf "%s/%s:%s-latest" ._rox.collector.image.registry ._rox.collector.image.name ._rox.collector.image.tag }}
+        image: {{ printf "%s/%s:%s-latest" ._rox.collector.image.registry ._rox.collector.image.name ._rox.collector.image.version }}
         {{- end }}
-        imagePullPolicy: Always
+        {{- else }}
+        image: {{ printf "%s/%s:%s" ._rox.collector.image.registry ._rox.collector.image.name ._rox.collector.image.tag }}
+        {{- end }}
+        imagePullPolicy: {{ ._rox.collector.image.pullPolicy }}
         env:
         - name: COLLECTOR_CONFIG
           value: '{"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"}}'
@@ -248,12 +249,7 @@ spec:
           value: {{ ._rox.sensor.endpoint }}
         {{- include "srox.envVars" (list . "daemonset" "collector" "collector") | nindent 8 }}
         resources:
-          limits:
-            cpu: 750m
-            memory: 1Gi
-          requests:
-            cpu: 50m
-            memory: 320Mi
+          {{- ._rox.collector._resources | nindent 10 }}
         securityContext:
           capabilities:
             drop:
@@ -296,15 +292,10 @@ spec:
         - name: ROX_ADVERTISED_ENDPOINT
           value: {{ ._rox.sensor.endpoint | quote }}
         image: {{ printf "%s/%s:%s" ._rox.sensor.image.registry ._rox.sensor.image.name ._rox.sensor.image.tag }}
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: {{ ._rox.sensor.image.pullPolicy }}
         name: compliance
         resources:
-          limits:
-            cpu: "1"
-            memory: 2Gi
-          requests:
-            cpu: 10m
-            memory: 10Mi
+          {{- ._rox.collector._complianceResources | nindent 10 }}
         securityContext:
           runAsUser: 0
           readOnlyRootFilesystem: true
