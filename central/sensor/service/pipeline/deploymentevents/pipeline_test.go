@@ -9,6 +9,7 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
+	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/datastore/mocks"
 	graphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -24,12 +25,13 @@ func TestPipeline(t *testing.T) {
 type PipelineTestSuite struct {
 	suite.Suite
 
-	clusters       *clusterMocks.MockDataStore
-	deployments    *deploymentMocks.MockDataStore
-	images         *imageMocks.MockDataStore
-	manager        *lifecycleMocks.MockManager
-	graphEvaluator *graphMocks.MockEvaluator
-	pipeline       *pipelineImpl
+	clusters         *clusterMocks.MockDataStore
+	deployments      *deploymentMocks.MockDataStore
+	images           *imageMocks.MockDataStore
+	networkBaselines *networkBaselineMocks.MockDataStore
+	manager          *lifecycleMocks.MockManager
+	graphEvaluator   *graphMocks.MockEvaluator
+	pipeline         *pipelineImpl
 
 	mockCtrl *gomock.Controller
 }
@@ -40,9 +42,18 @@ func (suite *PipelineTestSuite) SetupTest() {
 	suite.clusters = clusterMocks.NewMockDataStore(suite.mockCtrl)
 	suite.deployments = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.images = imageMocks.NewMockDataStore(suite.mockCtrl)
+	suite.networkBaselines = networkBaselineMocks.NewMockDataStore(suite.mockCtrl)
 	suite.manager = lifecycleMocks.NewMockManager(suite.mockCtrl)
 	suite.graphEvaluator = graphMocks.NewMockEvaluator(suite.mockCtrl)
-	suite.pipeline = NewPipeline(suite.clusters, suite.deployments, suite.images, suite.manager, suite.graphEvaluator, nil).(*pipelineImpl)
+	suite.pipeline =
+		NewPipeline(
+			suite.clusters,
+			suite.deployments,
+			suite.images,
+			suite.manager,
+			suite.graphEvaluator,
+			nil,
+			suite.networkBaselines).(*pipelineImpl)
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
@@ -67,6 +78,30 @@ func (suite *PipelineTestSuite) TestDeploymentRemovePipeline() {
 		},
 	}, nil)
 	suite.NoError(err)
+}
+
+func (suite *PipelineTestSuite) TestCreateNetworkBaseline() {
+	deployment := fixtures.GetDeployment()
+
+	suite.clusters.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("cluster-name", true, nil)
+	suite.deployments.EXPECT().GetDeployment(gomock.Any(), gomock.Any()).Return(deployment, true, nil)
+
+	err := suite.pipeline.Run(
+		context.Background(),
+		deployment.GetClusterId(),
+		&central.MsgFromSensor{
+			Msg: &central.MsgFromSensor_Event{
+				Event: &central.SensorEvent{
+					Id:     deployment.GetId(),
+					Action: central.ResourceAction_CREATE_RESOURCE,
+					Resource: &central.SensorEvent_Deployment{
+						Deployment: deployment,
+					},
+				},
+			},
+		},
+		nil)
+	suite.Nil(err)
 }
 
 func (suite *PipelineTestSuite) TestAlertRemovalOnReconciliation() {

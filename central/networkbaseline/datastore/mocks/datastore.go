@@ -65,18 +65,32 @@ func (mr *MockDataStoreMockRecorder) GetNetworkBaseline(ctx, deploymentID interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkBaseline", reflect.TypeOf((*MockDataStore)(nil).GetNetworkBaseline), ctx, deploymentID)
 }
 
-// UpsertNetworkBaseline mocks base method
-func (m *MockDataStore) UpsertNetworkBaseline(ctx context.Context, baseline *storage.NetworkBaseline) error {
+// CreateNetworkBaselineIfNotExists mocks base method
+func (m *MockDataStore) CreateNetworkBaselineIfNotExists(ctx context.Context, deploymentID, clusterID, namespace string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertNetworkBaseline", ctx, baseline)
+	ret := m.ctrl.Call(m, "CreateNetworkBaselineIfNotExists", ctx, deploymentID, clusterID, namespace)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpsertNetworkBaseline indicates an expected call of UpsertNetworkBaseline
-func (mr *MockDataStoreMockRecorder) UpsertNetworkBaseline(ctx, baseline interface{}) *gomock.Call {
+// CreateNetworkBaselineIfNotExists indicates an expected call of CreateNetworkBaselineIfNotExists
+func (mr *MockDataStoreMockRecorder) CreateNetworkBaselineIfNotExists(ctx, deploymentID, clusterID, namespace interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertNetworkBaseline", reflect.TypeOf((*MockDataStore)(nil).UpsertNetworkBaseline), ctx, baseline)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNetworkBaselineIfNotExists", reflect.TypeOf((*MockDataStore)(nil).CreateNetworkBaselineIfNotExists), ctx, deploymentID, clusterID, namespace)
+}
+
+// UpdateNetworkBaseline mocks base method
+func (m *MockDataStore) UpdateNetworkBaseline(ctx context.Context, baseline *storage.NetworkBaseline) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateNetworkBaseline", ctx, baseline)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateNetworkBaseline indicates an expected call of UpdateNetworkBaseline
+func (mr *MockDataStoreMockRecorder) UpdateNetworkBaseline(ctx, baseline interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNetworkBaseline", reflect.TypeOf((*MockDataStore)(nil).UpdateNetworkBaseline), ctx, baseline)
 }
 
 // DeleteNetworkBaseline mocks base method

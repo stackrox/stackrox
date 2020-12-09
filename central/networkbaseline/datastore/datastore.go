@@ -12,6 +12,7 @@ type DataStore interface {
 	Exists(ctx context.Context, deploymentID string) (bool, error)
 	GetNetworkBaseline(ctx context.Context, deploymentID string) (*storage.NetworkBaseline, bool, error)
 
-	UpsertNetworkBaseline(ctx context.Context, baseline *storage.NetworkBaseline) error
+	CreateNetworkBaselineIfNotExists(ctx context.Context, deploymentID, clusterID, namespace string) error
+	UpdateNetworkBaseline(ctx context.Context, baseline *storage.NetworkBaseline) error
 	DeleteNetworkBaseline(ctx context.Context, deploymentID string) error
 }

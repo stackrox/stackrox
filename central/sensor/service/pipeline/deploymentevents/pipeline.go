@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
+	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -35,22 +36,30 @@ func GetPipeline() pipeline.Fragment {
 		imageDataStore.Singleton(),
 		lifecycle.SingletonManager(),
 		graph.Singleton(),
-		reprocessor.Singleton())
+		reprocessor.Singleton(),
+		networkBaselineDataStore.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentDataStore.DataStore,
-	images imageDataStore.DataStore, manager lifecycle.Manager,
-	graphEvaluator graph.Evaluator, reprocessor reprocessor.Loop) pipeline.Fragment {
+func NewPipeline(
+	clusters clusterDataStore.DataStore,
+	deployments deploymentDataStore.DataStore,
+	images imageDataStore.DataStore,
+	manager lifecycle.Manager,
+	graphEvaluator graph.Evaluator,
+	reprocessor reprocessor.Loop,
+	networkBaselines networkBaselineDataStore.DataStore,
+) pipeline.Fragment {
 	return &pipelineImpl{
 		validateInput:     newValidateInput(),
 		clusterEnrichment: newClusterEnrichment(clusters),
 		updateImages:      newUpdateImages(images),
 		lifecycleManager:  manager,
 
-		graphEvaluator: graphEvaluator,
-		deployments:    deployments,
-		clusters:       clusters,
+		graphEvaluator:   graphEvaluator,
+		deployments:      deployments,
+		clusters:         clusters,
+		networkBaselines: networkBaselines,
 
 		reprocessor: reprocessor,
 	}
@@ -63,9 +72,10 @@ type pipelineImpl struct {
 	updateImages      *updateImagesImpl
 	lifecycleManager  lifecycle.Manager
 
-	deployments deploymentDataStore.DataStore
-	clusters    clusterDataStore.DataStore
-	reprocessor reprocessor.Loop
+	deployments      deploymentDataStore.DataStore
+	clusters         clusterDataStore.DataStore
+	networkBaselines networkBaselineDataStore.DataStore
+	reprocessor      reprocessor.Loop
 
 	graphEvaluator graph.Evaluator
 }
@@ -179,6 +189,16 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 
 	// Add/Update the deployment from persistence depending on the deployment action.
 	if err := s.deployments.UpsertDeployment(ctx, deployment); err != nil {
+		return err
+	}
+
+	// Add network baseline for this deployment if it does not exist yet
+	if err := s.networkBaselines.CreateNetworkBaselineIfNotExists(
+		ctx,
+		deployment.GetId(),
+		deployment.GetClusterId(),
+		deployment.GetNamespace(),
+	); err != nil {
 		return err
 	}
 
