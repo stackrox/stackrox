@@ -1,6 +1,7 @@
 package services
 
 import io.stackrox.proto.api.v1.FeatureFlagServiceGrpc
+import util.E2ETestException
 
 class FeatureFlagService extends BaseService {
     static getFeatureFlagServiceClient() {
@@ -11,7 +12,11 @@ class FeatureFlagService extends BaseService {
         return getFeatureFlagServiceClient().getFeatureFlags().featureFlagsList
     }
 
-    static isFeatureFlagEnabled(String envVar) {
-        return getFeatureFlags().find { it.envVar == envVar }?.enabled
+    static boolean isFeatureFlagEnabled(String envVar) {
+        def flag = getFeatureFlags().find { it.envVar == envVar }
+        if (!flag) {
+            throw new E2ETestException("Could not find ${envVar}, maybe the feature flag was removed?")
+        }
+        return flag.enabled
     }
 }

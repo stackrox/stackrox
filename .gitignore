@@ -35,6 +35,7 @@ combined_coverage.dat
 *.tokens
 .idea/
 /vendor/
+/.gradle/
 
 # Mac OS hidden file
 .DS_Store
