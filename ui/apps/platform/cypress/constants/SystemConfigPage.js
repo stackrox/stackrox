@@ -62,11 +62,7 @@ const selectors = {
         imagesBox: '[data-testid="number-box"]:contains("Images No Longer Deployed")',
     },
     downloadTelemetry: {
-        widget: '[data-testid="download-telemetry"]',
-        filterByClusters: '[data-testid="filter-by-clusters"]',
-        filterByStartingTime: '#filterByStartingTime',
-        startingTimeMessage: '[data-testid="starting-time-message"]',
-        downloadButton: '[data-testid="download-diagnostic-data"]',
+        link: '[data-testid="download-telemetry"] a:contains("System Health")',
     },
 };
 

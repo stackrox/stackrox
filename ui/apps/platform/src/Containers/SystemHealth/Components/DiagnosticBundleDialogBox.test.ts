@@ -1,6 +1,6 @@
-import { getQueryString, startingTimeRegExp } from './DownloadTelemetryDetailWidget';
+import { getQueryString, startingTimeRegExp } from './DiagnosticBundleDialogBox';
 
-describe('Download Diagnostic Data', () => {
+describe('Diagnostic Bundle dialog box', () => {
     describe('query string', () => {
         it('should not have params for initial defaults', () => {
             const expected = '';

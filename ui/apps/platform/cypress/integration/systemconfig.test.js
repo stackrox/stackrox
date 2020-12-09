@@ -114,7 +114,6 @@ describe('System Configuration', () => {
         cy.get(selectors.header.widget).should('exist');
         cy.get(selectors.footer.widget).should('exist');
         cy.get(selectors.loginNotice.widget).should('exist');
-        cy.get(selectors.downloadTelemetry.widget).should('exist');
     });
 
     it('should be able to edit and enable header', () => {
@@ -148,5 +147,12 @@ describe('System Configuration', () => {
         openTopNav();
         cy.get(selectors.navLinks.logout).click();
         cy.get(selectors.loginNotice.banner).should('exist');
+    });
+
+    it('should have link to System Health for diagnostic bundle', () => {
+        cy.visit(systemConfigUrl);
+        cy.wait('@getSystemConfig');
+        cy.get(selectors.downloadTelemetry.link).click();
+        cy.get('[data-testid="header-text"]').should('have.text', 'System Health');
     });
 });

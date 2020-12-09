@@ -156,7 +156,7 @@ const DiagnosticBundleDialogBox = (): ReactElement => {
                 </div>
                 <div className="pb-4">
                     <div className="pb-2">
-                        <label htmlFor="filterByStartingTime">
+                        <label htmlFor="filter-by-starting-time">
                             <span className="font-700">Filter by starting time</span>{' '}
                             <span>(seconds are optional but UTC is required)</span>
                         </label>
@@ -164,7 +164,7 @@ const DiagnosticBundleDialogBox = (): ReactElement => {
                     <div className="flex flex-row items-center">
                         <input
                             type="text"
-                            id="filterByStartingTime"
+                            id="filter-by-starting-time"
                             name="filterByStartingTime"
                             onChange={onChangeStartingTime}
                             placeholder={startingTimeFormat}

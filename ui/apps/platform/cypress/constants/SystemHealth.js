@@ -5,6 +5,13 @@ export const url = {
 };
 
 export const selectors = {
+    bundle: {
+        generateDiagnosticBundleButton: 'button:contains("Generate Diagnostic Bundle")',
+        filterByClusters: '[data-testid="filter-by-clusters"]',
+        filterByStartingTime: '#filter-by-starting-time',
+        startingTimeMessage: '[data-testid="starting-time-message"]',
+        downloadDiagnosticBundleButton: 'button:contains("Download Diagnostic Bundle")',
+    },
     clusters: {
         categoryCount: '[data-testid="count"]',
         categoryLabel: '[data-testid="label"]',
