@@ -4,10 +4,13 @@ import (
 	"context"
 	"io"
 
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globaldb/export"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"gopkg.in/robfig/cron.v2"
@@ -19,26 +22,27 @@ var (
 
 // Scheduler maintains the schedules for backups
 type Scheduler interface {
-	UpsertBackup(id, spec string, backup types.ExternalBackup) error
+	UpsertBackup(id, spec string, backup types.ExternalBackup, plugin *storage.ExternalBackup) error
 	RemoveBackup(id string)
 
-	RunBackup(backup types.ExternalBackup) error
+	RunBackup(backup types.ExternalBackup, plugin *storage.ExternalBackup) error
 }
 
 type scheduler struct {
-	lock sync.Mutex
-
+	lock              sync.Mutex
 	cron              *cron.Cron
+	reporter          integrationhealth.Reporter
 	pluginsToEntryIDs map[string]cron.EntryID
 }
 
 // New instantiates a new cron scheduler and accounts for adding and removing external backups
-func New() Scheduler {
+func New(reporter integrationhealth.Reporter) Scheduler {
 	cronScheduler := cron.New()
 	cronScheduler.Start()
 	return &scheduler{
 		pluginsToEntryIDs: make(map[string]cron.EntryID),
 		cron:              cronScheduler,
+		reporter:          reporter,
 	}
 }
 
@@ -63,26 +67,45 @@ func (s *scheduler) send(r io.ReadCloser, backup types.ExternalBackup) error {
 	return nil
 }
 
-func (s *scheduler) RunBackup(backup types.ExternalBackup) error {
+func (s *scheduler) RunBackup(backup types.ExternalBackup, plugin *storage.ExternalBackup) error {
 	pr, pw := io.Pipe()
 	go s.backup(pw)
-	if err := s.send(pr, backup); err != nil {
+
+	err := s.send(pr, backup)
+
+	if err != nil {
+		s.reporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
+			Id:            plugin.Id,
+			Name:          plugin.Name,
+			Type:          storage.IntegrationHealth_BACKUP,
+			Status:        storage.IntegrationHealth_UNHEALTHY,
+			LastTimestamp: timestamp.TimestampNow(),
+			ErrorMessage:  err.Error(),
+		})
 		return err
 	}
+	s.reporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
+		Id:            plugin.Id,
+		Name:          plugin.Name,
+		Type:          storage.IntegrationHealth_BACKUP,
+		Status:        storage.IntegrationHealth_HEALTHY,
+		LastTimestamp: timestamp.TimestampNow(),
+		ErrorMessage:  "",
+	})
 	log.Infof("Successfully ran backup to %T", backup)
 	return nil
 }
 
-func (s *scheduler) backupClosure(backup types.ExternalBackup) func() {
+func (s *scheduler) backupClosure(backup types.ExternalBackup, plugin *storage.ExternalBackup) func() {
 	return func() {
-		if err := s.RunBackup(backup); err != nil {
+		if err := s.RunBackup(backup, plugin); err != nil {
 			log.Error(err)
 		}
 	}
 }
 
-func (s *scheduler) UpsertBackup(id string, spec string, backup types.ExternalBackup) error {
-	entryID, err := s.cron.AddFunc(spec, s.backupClosure(backup))
+func (s *scheduler) UpsertBackup(id string, spec string, backup types.ExternalBackup, plugin *storage.ExternalBackup) error {
+	entryID, err := s.cron.AddFunc(spec, s.backupClosure(backup, plugin))
 	if err != nil {
 		return err
 	}

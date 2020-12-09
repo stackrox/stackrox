@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/externalbackups/datastore"
 	"github.com/stackrox/rox/central/externalbackups/manager"
-	integrationHealthDS "github.com/stackrox/rox/central/integrationhealth/datastore"
+	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
@@ -19,7 +19,7 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton(), integrationHealthDS.Singleton(), initializeManager())
+	as = New(datastore.Singleton(), reporter.Singleton(), initializeManager())
 }
 
 func initializeManager() manager.Manager {
@@ -32,7 +32,7 @@ func initializeManager() manager.Manager {
 	if err != nil {
 		panic(err)
 	}
-	mgr := manager.New()
+	mgr := manager.New(reporter.Singleton())
 	for _, b := range backups {
 		if err := mgr.Upsert(ctx, b); err != nil {
 			log.Errorf("error initializing backup: %v", err)

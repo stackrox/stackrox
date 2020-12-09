@@ -4,7 +4,7 @@ import (
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
 	runTimeDetection "github.com/stackrox/rox/central/detection/runtime"
-	healthDatastore "github.com/stackrox/rox/central/integrationhealth/datastore"
+	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/pkg/sync"
@@ -23,7 +23,7 @@ func initialize() {
 		buildTimeDetection.SingletonPolicySet(),
 		deployTimeDetection.SingletonPolicySet(),
 		runTimeDetection.SingletonPolicySet(),
-		healthDatastore.Singleton(),
+		reporter.Singleton(),
 	)
 }
 

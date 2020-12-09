@@ -8,11 +8,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/integration/mocks"
+	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	mocks2 "github.com/stackrox/rox/pkg/registries/mocks"
 	"github.com/stackrox/rox/pkg/registries/types"
 	mocks3 "github.com/stackrox/rox/pkg/scanners/mocks"
-	types2 "github.com/stackrox/rox/pkg/scanners/types"
+	scannertypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/semaphore"
@@ -287,17 +288,23 @@ func TestEnricherFlow(t *testing.T) {
 			scannerSet := mocks3.NewMockSet(ctrl)
 			if !c.shortCircuitScanner {
 				scannerSet.EXPECT().IsEmpty().Return(false)
-				scannerSet.EXPECT().GetAll().Return([]types2.ImageScanner{fsr})
+				scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{fsr})
 				set.EXPECT().ScannerSet().Return(scannerSet)
 			}
 
+			mockReporter := reporterMocks.NewMockReporter(ctrl)
+			mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
+
 			enricherImpl := &enricherImpl{
-				cves:            &fakeCVESuppressor{},
-				integrations:    set,
-				metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
-				metadataCache:   expiringcache.NewExpiringCache(1 * time.Minute),
-				scanCache:       expiringcache.NewExpiringCache(1 * time.Minute),
-				metrics:         newMetrics(pkgMetrics.CentralSubsystem),
+				cves:                      &fakeCVESuppressor{},
+				integrations:              set,
+				errorsPerScanner:          map[scannertypes.ImageScanner]int32{fsr: 0},
+				errorsPerRegistry:         map[types.ImageRegistry]int32{fsr: 0},
+				integrationHealthReporter: mockReporter,
+				metadataLimiter:           rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
+				metadataCache:             expiringcache.NewExpiringCache(1 * time.Minute),
+				scanCache:                 expiringcache.NewExpiringCache(1 * time.Minute),
+				metrics:                   newMetrics(pkgMetrics.CentralSubsystem),
 			}
 
 			if c.inMetadataCache {
@@ -328,19 +335,25 @@ func TestCVESuppression(t *testing.T) {
 
 	scannerSet := mocks3.NewMockSet(ctrl)
 	scannerSet.EXPECT().IsEmpty().Return(false)
-	scannerSet.EXPECT().GetAll().Return([]types2.ImageScanner{fsr})
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{fsr})
 
 	set := mocks.NewMockSet(ctrl)
 	set.EXPECT().RegistrySet().Return(registrySet)
 	set.EXPECT().ScannerSet().Return(scannerSet)
 
+	mockReporter := reporterMocks.NewMockReporter(ctrl)
+	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
+
 	enricherImpl := &enricherImpl{
-		cves:            &fakeCVESuppressor{},
-		integrations:    set,
-		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
-		metadataCache:   expiringcache.NewExpiringCache(1 * time.Minute),
-		scanCache:       expiringcache.NewExpiringCache(1 * time.Minute),
-		metrics:         newMetrics(pkgMetrics.CentralSubsystem),
+		cves:                      &fakeCVESuppressor{},
+		integrations:              set,
+		errorsPerScanner:          map[scannertypes.ImageScanner]int32{fsr: 0},
+		errorsPerRegistry:         map[types.ImageRegistry]int32{fsr: 0},
+		integrationHealthReporter: mockReporter,
+		metadataLimiter:           rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
+		metadataCache:             expiringcache.NewExpiringCache(1 * time.Minute),
+		scanCache:                 expiringcache.NewExpiringCache(1 * time.Minute),
+		metrics:                   newMetrics(pkgMetrics.CentralSubsystem),
 	}
 
 	img := &storage.Image{Id: "id"}
@@ -356,22 +369,22 @@ func TestZeroIntegrations(t *testing.T) {
 
 	registrySet := mocks2.NewMockSet(ctrl)
 	registrySet.EXPECT().IsEmpty().Return(true)
+	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{}).AnyTimes()
 
 	scannerSet := mocks3.NewMockSet(ctrl)
 	scannerSet.EXPECT().IsEmpty().Return(true)
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{}).AnyTimes()
 
 	set := mocks.NewMockSet(ctrl)
-	set.EXPECT().RegistrySet().Return(registrySet)
-	set.EXPECT().ScannerSet().Return(scannerSet)
+	set.EXPECT().RegistrySet().Return(registrySet).AnyTimes()
+	set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
 
-	enricherImpl := &enricherImpl{
-		cves:            &fakeCVESuppressor{},
-		integrations:    set,
-		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
-		metadataCache:   expiringcache.NewExpiringCache(1 * time.Minute),
-		scanCache:       expiringcache.NewExpiringCache(1 * time.Minute),
-		metrics:         newMetrics(pkgMetrics.CentralSubsystem),
-	}
+	mockReporter := reporterMocks.NewMockReporter(ctrl)
+
+	enricherImpl := New(&fakeCVESuppressor{}, set, pkgMetrics.CentralSubsystem,
+		expiringcache.NewExpiringCache(1*time.Minute),
+		expiringcache.NewExpiringCache(1*time.Minute),
+		mockReporter)
 
 	img := &storage.Image{Id: "id"}
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
@@ -387,23 +400,21 @@ func TestZeroIntegrationsInternal(t *testing.T) {
 	defer ctrl.Finish()
 
 	registrySet := mocks2.NewMockSet(ctrl)
-	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{})
+	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{}).AnyTimes()
 
 	scannerSet := mocks3.NewMockSet(ctrl)
-	scannerSet.EXPECT().GetAll().Return([]types2.ImageScanner{})
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{}).AnyTimes()
 
 	set := mocks.NewMockSet(ctrl)
-	set.EXPECT().RegistrySet().Return(registrySet)
-	set.EXPECT().ScannerSet().Return(scannerSet)
+	set.EXPECT().RegistrySet().Return(registrySet).AnyTimes()
+	set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
 
-	enricherImpl := &enricherImpl{
-		cves:            &fakeCVESuppressor{},
-		integrations:    set,
-		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
-		metadataCache:   expiringcache.NewExpiringCache(1 * time.Minute),
-		scanCache:       expiringcache.NewExpiringCache(1 * time.Minute),
-		metrics:         newMetrics(pkgMetrics.CentralSubsystem),
-	}
+	mockReporter := reporterMocks.NewMockReporter(ctrl)
+
+	enricherImpl := New(&fakeCVESuppressor{}, set, pkgMetrics.CentralSubsystem,
+		expiringcache.NewExpiringCache(1*time.Minute),
+		expiringcache.NewExpiringCache(1*time.Minute),
+		mockReporter)
 
 	img := &storage.Image{Id: "id"}
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{Internal: true}, img)
@@ -418,24 +429,24 @@ func TestZeroRegistryIntegrations(t *testing.T) {
 
 	registrySet := mocks2.NewMockSet(ctrl)
 	registrySet.EXPECT().IsEmpty().Return(true)
+	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{}).AnyTimes()
 
 	fsr := &fakeRegistryScanner{}
 	scannerSet := mocks3.NewMockSet(ctrl)
 	scannerSet.EXPECT().IsEmpty().Return(false)
-	scannerSet.EXPECT().GetAll().Return([]types2.ImageScanner{fsr})
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{fsr}).AnyTimes()
 
 	set := mocks.NewMockSet(ctrl)
-	set.EXPECT().RegistrySet().Return(registrySet)
-	set.EXPECT().ScannerSet().Return(scannerSet)
+	set.EXPECT().RegistrySet().Return(registrySet).AnyTimes()
+	set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
 
-	enricherImpl := &enricherImpl{
-		cves:            &fakeCVESuppressor{},
-		integrations:    set,
-		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
-		metadataCache:   expiringcache.NewExpiringCache(1 * time.Minute),
-		scanCache:       expiringcache.NewExpiringCache(1 * time.Minute),
-		metrics:         newMetrics(pkgMetrics.CentralSubsystem),
-	}
+	mockReporter := reporterMocks.NewMockReporter(ctrl)
+	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
+
+	enricherImpl := New(&fakeCVESuppressor{}, set, pkgMetrics.CentralSubsystem,
+		expiringcache.NewExpiringCache(1*time.Minute),
+		expiringcache.NewExpiringCache(1*time.Minute),
+		mockReporter)
 
 	img := &storage.Image{Id: "id"}
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
@@ -455,24 +466,22 @@ func TestNoMatchingRegistryIntegration(t *testing.T) {
 	}
 	registrySet := mocks2.NewMockSet(ctrl)
 	registrySet.EXPECT().IsEmpty().Return(false)
-	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr})
+	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr}).AnyTimes()
 
 	scannerSet := mocks3.NewMockSet(ctrl)
 	scannerSet.EXPECT().IsEmpty().Return(false)
-	scannerSet.EXPECT().GetAll().Return([]types2.ImageScanner{fsr})
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{fsr}).AnyTimes()
 
 	set := mocks.NewMockSet(ctrl)
-	set.EXPECT().RegistrySet().Return(registrySet)
-	set.EXPECT().ScannerSet().Return(scannerSet)
+	set.EXPECT().RegistrySet().Return(registrySet).AnyTimes()
+	set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
 
-	enricherImpl := &enricherImpl{
-		cves:            &fakeCVESuppressor{},
-		integrations:    set,
-		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
-		metadataCache:   expiringcache.NewExpiringCache(1 * time.Minute),
-		scanCache:       expiringcache.NewExpiringCache(1 * time.Minute),
-		metrics:         newMetrics(pkgMetrics.CentralSubsystem),
-	}
+	mockReporter := reporterMocks.NewMockReporter(ctrl)
+	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
+	enricherImpl := New(&fakeCVESuppressor{}, set, pkgMetrics.CentralSubsystem,
+		expiringcache.NewExpiringCache(1*time.Minute),
+		expiringcache.NewExpiringCache(1*time.Minute),
+		mockReporter)
 
 	img := &storage.Image{Id: "id"}
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
@@ -489,24 +498,23 @@ func TestZeroScannerIntegrations(t *testing.T) {
 
 	fsr := &fakeRegistryScanner{}
 	registrySet := mocks2.NewMockSet(ctrl)
+	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr}).AnyTimes()
 	registrySet.EXPECT().IsEmpty().Return(false)
-	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr})
 
 	scannerSet := mocks3.NewMockSet(ctrl)
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScanner{}).AnyTimes()
 	scannerSet.EXPECT().IsEmpty().Return(true)
 
 	set := mocks.NewMockSet(ctrl)
-	set.EXPECT().RegistrySet().Return(registrySet)
-	set.EXPECT().ScannerSet().Return(scannerSet)
+	set.EXPECT().RegistrySet().Return(registrySet).AnyTimes()
+	set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
 
-	enricherImpl := &enricherImpl{
-		cves:            &fakeCVESuppressor{},
-		integrations:    set,
-		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
-		metadataCache:   expiringcache.NewExpiringCache(1 * time.Minute),
-		scanCache:       expiringcache.NewExpiringCache(1 * time.Minute),
-		metrics:         newMetrics(pkgMetrics.CentralSubsystem),
-	}
+	mockReporter := reporterMocks.NewMockReporter(ctrl)
+	mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
+	enricherImpl := New(&fakeCVESuppressor{}, set, pkgMetrics.CentralSubsystem,
+		expiringcache.NewExpiringCache(1*time.Minute),
+		expiringcache.NewExpiringCache(1*time.Minute),
+		mockReporter)
 
 	img := &storage.Image{Id: "id"}
 	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)

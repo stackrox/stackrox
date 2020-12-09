@@ -48,10 +48,9 @@ var (
 
 // ImageIntegrationService is the struct that manages the ImageIntegration API
 type serviceImpl struct {
-	registryFactory registries.Factory
-	scannerFactory  scanners.Factory
-	toNotify        integration.ToNotify
-
+	registryFactory  registries.Factory
+	scannerFactory   scanners.Factory
+	toNotify         integration.ToNotify
 	datastore        datastore.DataStore
 	clusterDatastore clusterDatastore.DataStore
 	reprocessorLoop  reprocessor.Loop
@@ -154,13 +153,12 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	request.Id = id
 
+	request.Id = id
 	if err := s.toNotify.NotifyUpdated(request); err != nil {
 		_ = s.datastore.RemoveImageIntegration(ctx, request.GetId())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-
 	s.reprocessorLoop.ShortCircuit()
 	return request, nil
 }
@@ -173,6 +171,7 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 	if err := s.datastore.RemoveImageIntegration(ctx, request.GetId()); err != nil {
 		return nil, err
 	}
+
 	if err := s.toNotify.NotifyRemoved(request.GetId()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -193,6 +192,7 @@ func (s *serviceImpl) UpdateImageIntegration(ctx context.Context, request *v1.Up
 	if err := s.datastore.UpdateImageIntegration(ctx, request.GetConfig()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
 	if err := s.toNotify.NotifyUpdated(request.GetConfig()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

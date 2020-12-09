@@ -8,10 +8,10 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/plugins"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/central/externalbackups/scheduler"
-	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/sac"
@@ -31,11 +31,16 @@ type Manager interface {
 	Backup(ctx context.Context, id string) error
 }
 
+type backupInfo struct {
+	plugin *storage.ExternalBackup
+	backup types.ExternalBackup
+}
+
 // New returns a new external backup manager
-func New() Manager {
+func New(reporter integrationhealth.Reporter) Manager {
 	return &managerImpl{
-		scheduler:            scheduler.New(),
-		idsToExternalBackups: make(map[string]types.ExternalBackup),
+		scheduler:            scheduler.New(reporter),
+		idsToExternalBackups: make(map[string]*backupInfo),
 	}
 }
 
@@ -44,12 +49,11 @@ var (
 )
 
 type managerImpl struct {
-	scheduler scheduler.Scheduler
-
+	scheduler  scheduler.Scheduler
 	lock       sync.Mutex
 	inProgress concurrency.Flag
 
-	idsToExternalBackups map[string]types.ExternalBackup
+	idsToExternalBackups map[string]*backupInfo
 }
 
 func renderExternalBackupFromProto(backup *storage.ExternalBackup) (types.ExternalBackup, error) {
@@ -58,7 +62,7 @@ func renderExternalBackupFromProto(backup *storage.ExternalBackup) (types.Extern
 		return nil, fmt.Errorf("external backup with type %q is not implemented", backup.GetType())
 	}
 
-	backupInterface, err := creator(backup, reporter.Singleton())
+	backupInterface, err := creator(backup)
 	if err != nil {
 		return nil, err
 	}
@@ -81,14 +85,13 @@ func (m *managerImpl) Upsert(ctx context.Context, backup *storage.ExternalBackup
 	if err != nil {
 		return err
 	}
-
-	if err := m.scheduler.UpsertBackup(backup.GetId(), cronTab, backupInterface); err != nil {
+	if err := m.scheduler.UpsertBackup(backup.GetId(), cronTab, backupInterface, backup); err != nil {
 		return err
 	}
 
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	m.idsToExternalBackups[backup.GetId()] = backupInterface
+	m.idsToExternalBackups[backup.GetId()] = &backupInfo{backup, backupInterface}
 
 	return nil
 }
@@ -107,15 +110,15 @@ func (m *managerImpl) Test(ctx context.Context, backup *storage.ExternalBackup) 
 	return backupInterface.Test()
 }
 
-func (m *managerImpl) getBackup(id string) (types.ExternalBackup, error) {
+func (m *managerImpl) getBackup(id string) (*backupInfo, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	backup, ok := m.idsToExternalBackups[id]
+	backupInfo, ok := m.idsToExternalBackups[id]
 	if !ok {
 		return nil, fmt.Errorf("backup with id %q does not exist", id)
 	}
-	return backup, nil
+	return backupInfo, nil
 }
 
 func (m *managerImpl) Backup(ctx context.Context, id string) error {
@@ -125,21 +128,19 @@ func (m *managerImpl) Backup(ctx context.Context, id string) error {
 		return errors.New("permission denied")
 	}
 
-	backup, err := m.getBackup(id)
-	if err != nil {
-		return err
-	}
-
 	if m.inProgress.TestAndSet(true) {
 		return errors.New("backup already in progress")
 	}
 
 	defer m.inProgress.Set(false)
 
-	if err := m.scheduler.RunBackup(backup); err != nil {
+	bInfo, err := m.getBackup(id)
+	if err != nil {
+		log.Errorf("unable to run backup: corresponding backup plugin %s not found", id)
 		return err
 	}
-	return nil
+
+	return m.scheduler.RunBackup(bInfo.backup, bInfo.plugin)
 }
 
 func (m *managerImpl) Remove(ctx context.Context, id string) {

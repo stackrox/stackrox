@@ -105,6 +105,7 @@ func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) 
 	if err != nil {
 		return err
 	}
+
 	e.lock.Lock()
 	defer e.lock.Unlock()
 

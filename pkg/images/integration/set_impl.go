@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners"
 )
@@ -15,6 +16,8 @@ type setImpl struct {
 
 	registrySet registries.Set
 	scannerSet  scanners.Set
+
+	reporter integrationhealth.Reporter
 }
 
 func (e *setImpl) RegistryFactory() registries.Factory {
@@ -58,6 +61,11 @@ func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) 
 			err = fmt.Errorf("Source category '%s' has not been implemented", category)
 		}
 	}
+
+	rErr := e.reporter.Register(integration.GetId(), integration.GetName(), storage.IntegrationHealth_IMAGE_INTEGRATION)
+	if rErr != nil {
+		log.Errorf("Error registering health for integration %s: %s", integration.GetId(), integration.GetName())
+	}
 	return
 }
 
@@ -68,6 +76,11 @@ func (e *setImpl) RemoveImageIntegration(id string) (err error) {
 		return
 	}
 	err = e.scannerSet.RemoveImageIntegration(id)
+	if err != nil {
+		return
+	}
+
+	err = e.reporter.RemoveIntegrationHealth(id)
 	return
 }
 

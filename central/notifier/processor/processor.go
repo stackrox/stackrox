@@ -3,10 +3,10 @@ package processor
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -29,7 +29,7 @@ type Processor interface {
 }
 
 // New returns a new Processor
-func New(ns NotifierSet, reporter reporter.IntegrationHealthReporter) Processor {
+func New(ns NotifierSet, reporter integrationhealth.Reporter) Processor {
 	return &processorImpl{
 		ns:       ns,
 		reporter: reporter,

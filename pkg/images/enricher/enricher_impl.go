@@ -5,19 +5,35 @@ import (
 	"fmt"
 	"time"
 
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/integration"
+	"github.com/stackrox/rox/pkg/integrationhealth"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/time/rate"
+)
+
+const (
+	// The number of consecutive errors for a scanner or registry that cause its health status to be UNHEALTHY
+	consecutiveErrorThreshold = 3
 )
 
 type enricherImpl struct {
 	cves         cveSuppressor
 	integrations integration.Set
+
+	errorsPerRegistry  map[registryTypes.ImageRegistry]int32
+	registryErrorsLock sync.RWMutex
+	errorsPerScanner   map[scannerTypes.ImageScanner]int32
+	scannerErrorsLock  sync.RWMutex
+
+	integrationHealthReporter integrationhealth.Reporter ``
 
 	metadataLimiter *rate.Limiter
 	metadataCache   expiringcache.Cache
@@ -95,10 +111,46 @@ func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.
 	for _, registry := range registries.GetAll() {
 		updated, err := e.enrichImageWithRegistry(image, registry)
 		if err != nil {
+			var currentRegistryErrors int32
+			concurrency.WithLock(&e.registryErrorsLock, func() {
+				currentRegistryErrors = e.errorsPerRegistry[registry] + 1
+				e.errorsPerRegistry[registry] = currentRegistryErrors
+			})
+
+			if currentRegistryErrors >= consecutiveErrorThreshold { // update health
+				e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
+					Id:            registry.DataSource().Id,
+					Name:          registry.DataSource().Name,
+					Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
+					Status:        storage.IntegrationHealth_UNHEALTHY,
+					LastTimestamp: timestamp.TimestampNow(),
+					ErrorMessage:  err.Error(),
+				})
+			}
 			errorList.AddError(err)
 			continue
 		}
 		if updated {
+			var currentRegistryErrors int32
+			concurrency.WithRLock(&e.registryErrorsLock, func() {
+				currentRegistryErrors = e.errorsPerRegistry[registry]
+			})
+			if currentRegistryErrors > 0 {
+				concurrency.WithLock(&e.registryErrorsLock, func() {
+					if e.errorsPerRegistry[registry] != currentRegistryErrors {
+						return
+					}
+					e.errorsPerRegistry[registry] = 0
+				})
+			}
+			e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
+				Id:            registry.DataSource().Id,
+				Name:          registry.DataSource().Name,
+				Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
+				Status:        storage.IntegrationHealth_HEALTHY,
+				LastTimestamp: timestamp.TimestampNow(),
+				ErrorMessage:  "",
+			})
 			return true, nil
 		}
 	}
@@ -169,10 +221,45 @@ func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Imag
 	for _, scanner := range scanners.GetAll() {
 		result, err := e.enrichImageWithScanner(ctx, image, scanner)
 		if err != nil {
+			var currentScannerErrors int32
+			concurrency.WithLock(&e.scannerErrorsLock, func() {
+				currentScannerErrors = e.errorsPerScanner[scanner] + 1
+				e.errorsPerScanner[scanner] = currentScannerErrors
+			})
+			if currentScannerErrors >= consecutiveErrorThreshold { // update health
+				e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
+					Id:            scanner.DataSource().Id,
+					Name:          scanner.DataSource().Name,
+					Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
+					Status:        storage.IntegrationHealth_UNHEALTHY,
+					LastTimestamp: timestamp.TimestampNow(),
+					ErrorMessage:  err.Error(),
+				})
+			}
 			errorList.AddError(err)
 			continue
 		}
 		if result != ScanNotDone {
+			var currentScannerErrors int32
+			concurrency.WithRLock(&e.scannerErrorsLock, func() {
+				currentScannerErrors = e.errorsPerScanner[scanner]
+			})
+			if currentScannerErrors > 0 {
+				concurrency.WithLock(&e.scannerErrorsLock, func() {
+					if e.errorsPerScanner[scanner] != currentScannerErrors {
+						return
+					}
+					e.errorsPerScanner[scanner] = 0
+				})
+			}
+			e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
+				Id:            scanner.DataSource().Id,
+				Name:          scanner.DataSource().Name,
+				Type:          storage.IntegrationHealth_IMAGE_INTEGRATION,
+				Status:        storage.IntegrationHealth_HEALTHY,
+				LastTimestamp: timestamp.TimestampNow(),
+				ErrorMessage:  "",
+			})
 			return result, nil
 		}
 	}

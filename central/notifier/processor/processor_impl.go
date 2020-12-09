@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	timestamp "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -21,7 +21,7 @@ var (
 // Processor takes in alerts and sends the notifications tied to that alert
 type processorImpl struct {
 	ns       NotifierSet
-	reporter reporter.IntegrationHealthReporter
+	reporter integrationhealth.Reporter
 }
 
 func (p *processorImpl) HasNotifiers() bool {
@@ -71,7 +71,7 @@ func (p *processorImpl) ProcessAuditMessage(ctx context.Context, msg *v1.Audit_M
 }
 
 func (p *processorImpl) UpdateNotifierHealthStatus(notifier notifiers.Notifier, healthStatus storage.IntegrationHealth_Status, errMessage string) {
-	p.reporter.UpdateIntegrationHealth(&storage.IntegrationHealth{
+	p.reporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
 		Id:            notifier.ProtoNotifier().Id,
 		Name:          notifier.ProtoNotifier().Id,
 		Type:          storage.IntegrationHealth_NOTIFIER,

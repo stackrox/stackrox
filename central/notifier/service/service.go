@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/detection"
-	healthDatastore "github.com/stackrox/rox/central/integrationhealth/datastore"
 	"github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -31,13 +31,13 @@ func New(storage datastore.DataStore,
 	buildTimePolicies detection.PolicySet,
 	deployTimePolicies detection.PolicySet,
 	runTimePolicies detection.PolicySet,
-	healthDatastore healthDatastore.DataStore) Service {
+	reporter integrationhealth.Reporter) Service {
 	return &serviceImpl{
 		storage:            storage,
 		processor:          processor,
 		buildTimePolicies:  buildTimePolicies,
 		deployTimePolicies: deployTimePolicies,
 		runTimePolicies:    runTimePolicies,
-		healthDatastore:    healthDatastore,
+		reporter:           reporter,
 	}
 }

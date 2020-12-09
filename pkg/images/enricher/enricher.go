@@ -6,8 +6,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/integration"
+	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"golang.org/x/time/rate"
 )
 
@@ -91,10 +94,16 @@ type cveSuppressor interface {
 
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
-func New(cves cveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache, scanCache expiringcache.Cache) ImageEnricher {
-	return &enricherImpl{
+func New(cves cveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache,
+	scanCache expiringcache.Cache, healthReporter integrationhealth.Reporter) ImageEnricher {
+	enricher := &enricherImpl{
 		cves:         cves,
 		integrations: is,
+
+		// number of consecutive errors per registry or scanner to ascertain health of the integration
+		errorsPerRegistry:         make(map[registryTypes.ImageRegistry]int32, len(is.RegistrySet().GetAll())),
+		errorsPerScanner:          make(map[scannerTypes.ImageScanner]int32, len(is.ScannerSet().GetAll())),
+		integrationHealthReporter: healthReporter,
 
 		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 		metadataCache:   metadataCache,
@@ -104,4 +113,5 @@ func New(cves cveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem,
 
 		metrics: newMetrics(subsystem),
 	}
+	return enricher
 }

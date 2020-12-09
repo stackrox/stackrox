@@ -25,7 +25,7 @@ var (
 			"/v1.IntegrationHealthService/GetNotifiers",
 		},
 		user.With(permissions.View(resources.BackupPlugins)): {
-			"/v1.IntegrationHealthService/GetExternalBackups",
+			"/v1.IntegrationHealthService/GetBackupPlugins",
 		},
 		user.With(permissions.View(resources.ScannerDefinitions)): {
 			"/v1.IntegrationHealthService/GetVulnDefinitionsInfo",

@@ -10,11 +10,9 @@ import (
 	"time"
 
 	googleStorage "cloud.google.com/go/storage"
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/externalbackups/plugins"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
-	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -42,8 +40,6 @@ type gcs struct {
 	backupsToKeep int
 	bucket        string
 	objectPrefix  string
-
-	healthReporter reporter.IntegrationHealthReporter
 }
 
 func validate(conf *storage.GCSConfig) error {
@@ -57,7 +53,7 @@ func validate(conf *storage.GCSConfig) error {
 	return errorList.ToError()
 }
 
-func newGCS(integration *storage.ExternalBackup, reporter reporter.IntegrationHealthReporter) (*gcs, error) {
+func newGCS(integration *storage.ExternalBackup) (*gcs, error) {
 	conf := integration.GetGcs()
 	if conf == nil {
 		return nil, errors.New("GCS configuration required")
@@ -71,12 +67,11 @@ func newGCS(integration *storage.ExternalBackup, reporter reporter.IntegrationHe
 		return nil, errors.Wrap(err, "could not create GCS client")
 	}
 	return &gcs{
-		integration:    integration,
-		bucketHandle:   client.Bucket(conf.GetBucket()),
-		bucket:         conf.GetBucket(),
-		backupsToKeep:  int(integration.GetBackupsToKeep()),
-		objectPrefix:   conf.GetObjectPrefix(),
-		healthReporter: reporter,
+		integration:   integration,
+		bucketHandle:  client.Bucket(conf.GetBucket()),
+		bucket:        conf.GetBucket(),
+		backupsToKeep: int(integration.GetBackupsToKeep()),
+		objectPrefix:  conf.GetObjectPrefix(),
 	}, nil
 }
 
@@ -174,7 +169,6 @@ func (s *gcs) Backup(reader io.ReadCloser) error {
 		return s.createError(fmt.Sprintf("error creating backup in bucket %q with key %q", s.bucket, formattedKey), err)
 	}
 	log.Info("Successfully backed up to GCS")
-	s.updateIntegrationHealth(storage.IntegrationHealth_HEALTHY, "")
 	go s.pruneBackupsIfNecessary()
 	return nil
 }
@@ -189,7 +183,6 @@ func (s *gcs) Test() error {
 	if err := s.delete(formattedKey); err != nil {
 		return s.createError("deleting test object", err)
 	}
-	s.updateIntegrationHealth(storage.IntegrationHealth_HEALTHY, "")
 	return nil
 }
 
@@ -200,24 +193,11 @@ func (s *gcs) createError(msg string, err error) error {
 		msg = fmt.Sprintf("%s: %v", msg, err)
 	}
 	log.Errorf("GCS backup error: %v", err)
-	s.updateIntegrationHealth(storage.IntegrationHealth_UNHEALTHY, msg)
 	return errors.New(msg)
 }
 
 func init() {
-	plugins.Add("gcs", func(backup *storage.ExternalBackup, healthReporter reporter.IntegrationHealthReporter) (types.ExternalBackup, error) {
-		return newGCS(backup, healthReporter)
-	})
-}
-
-func (s *gcs) updateIntegrationHealth(healthStatus storage.IntegrationHealth_Status, errMessage string) {
-	//Update health
-	s.healthReporter.UpdateIntegrationHealth(&storage.IntegrationHealth{
-		Id:            s.integration.Id,
-		Name:          s.integration.Name,
-		Type:          storage.IntegrationHealth_BACKUP,
-		Status:        healthStatus,
-		LastTimestamp: timestamp.TimestampNow(),
-		ErrorMessage:  errMessage,
+	plugins.Add("gcs", func(backup *storage.ExternalBackup) (types.ExternalBackup, error) {
+		return newGCS(backup)
 	})
 }

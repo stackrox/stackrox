@@ -4,14 +4,13 @@ import (
 	"context"
 	"testing"
 
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	healthDatastoreMocks "github.com/stackrox/rox/central/integrationhealth/datastore/mocks"
 	storageMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/central/notifier/processor/mocks"
 	_ "github.com/stackrox/rox/central/notifiers/all"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stretchr/testify/suite"
@@ -27,10 +26,10 @@ func TestNotifierService(t *testing.T) {
 type notifierServiceTestSuite struct {
 	suite.Suite
 
-	ctrl            *gomock.Controller
-	datastore       *storageMocks.MockDataStore
-	processor       *mocks.MockProcessor
-	healthDatastore *healthDatastoreMocks.MockDataStore
+	ctrl      *gomock.Controller
+	datastore *storageMocks.MockDataStore
+	processor *mocks.MockProcessor
+	reporter  *reporterMocks.MockReporter
 
 	ctx context.Context
 }
@@ -39,16 +38,16 @@ func (s *notifierServiceTestSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
 	s.datastore = storageMocks.NewMockDataStore(s.ctrl)
 	s.processor = mocks.NewMockProcessor(s.ctrl)
-	s.healthDatastore = healthDatastoreMocks.NewMockDataStore(s.ctrl)
+	s.reporter = reporterMocks.NewMockReporter(s.ctrl)
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 
 }
 
 func (s *notifierServiceTestSuite) getSvc() Service {
 	return &serviceImpl{
-		storage:         s.datastore,
-		processor:       s.processor,
-		healthDatastore: s.healthDatastore,
+		storage:   s.datastore,
+		processor: s.processor,
+		reporter:  s.reporter,
 	}
 }
 
@@ -76,15 +75,6 @@ func createUpdateNotifierRequest() *v1.UpdateNotifierRequest {
 func (s *notifierServiceTestSuite) TestPutNotifier() {
 	s.datastore.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Return(nil)
 	s.processor.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Return()
-	s.healthDatastore.EXPECT().UpdateIntegrationHealth(gomock.Any(), gomock.Any()).Return(nil)
-	s.healthDatastore.EXPECT().GetIntegrationHealth(gomock.Any(), createNotifier().GetId()).Return(&storage.IntegrationHealth{
-		Id:            createNotifier().GetId(),
-		Name:          createNotifier().GetName(),
-		Status:        storage.IntegrationHealth_HEALTHY,
-		Type:          storage.IntegrationHealth_NOTIFIER,
-		ErrorMessage:  "",
-		LastTimestamp: timestamp.TimestampNow(),
-	}, true, nil)
 	_, err := s.getSvc().PutNotifier(s.ctx, &storage.Notifier{})
 	s.Error(err)
 
@@ -96,16 +86,6 @@ func (s *notifierServiceTestSuite) TestUpdateNotifier() {
 	s.datastore.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Return(nil).Times(4)
 	s.processor.EXPECT().UpdateNotifier(gomock.Any(), gomock.Any()).Return().Times(4)
 
-	s.healthDatastore.EXPECT().GetIntegrationHealth(gomock.Any(), createUpdateNotifierRequest().GetNotifier().GetId()).Return(&storage.IntegrationHealth{
-		Id:            createUpdateNotifierRequest().GetNotifier().GetId(),
-		Name:          createUpdateNotifierRequest().GetNotifier().GetName(),
-		Status:        storage.IntegrationHealth_HEALTHY,
-		Type:          storage.IntegrationHealth_NOTIFIER,
-		ErrorMessage:  "",
-		LastTimestamp: timestamp.TimestampNow(),
-	}, true, nil).AnyTimes()
-
-	s.healthDatastore.EXPECT().UpdateIntegrationHealth(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	s.datastore.EXPECT().GetNotifier(gomock.Any(),
 		createUpdateNotifierRequest().GetNotifier().GetId()).Return(
 		createUpdateNotifierRequest().GetNotifier(), true, nil).AnyTimes()

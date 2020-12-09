@@ -15,11 +15,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsS3 "github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/externalbackups/plugins"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
-	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -38,8 +36,6 @@ type s3 struct {
 	integration *storage.ExternalBackup
 	uploader    *s3manager.Uploader
 	svc         *awsS3.S3
-
-	healthReporter reporter.IntegrationHealthReporter
 }
 
 func validate(conf *storage.S3Config) error {
@@ -63,7 +59,7 @@ func validate(conf *storage.S3Config) error {
 	return errorList.ToError()
 }
 
-func newS3(integration *storage.ExternalBackup, reporter reporter.IntegrationHealthReporter) (*s3, error) {
+func newS3(integration *storage.ExternalBackup) (*s3, error) {
 	s3Config, ok := integration.Config.(*storage.ExternalBackup_S3)
 	if !ok {
 		return nil, errors.New("S3 configuration required")
@@ -91,10 +87,9 @@ func newS3(integration *storage.ExternalBackup, reporter reporter.IntegrationHea
 		return nil, err
 	}
 	return &s3{
-		integration:    integration,
-		uploader:       s3manager.NewUploader(sess),
-		svc:            awsS3.New(sess),
-		healthReporter: reporter,
+		integration: integration,
+		uploader:    s3manager.NewUploader(sess),
+		svc:         awsS3.New(sess),
 	}, nil
 }
 
@@ -173,7 +168,6 @@ func (s *s3) Backup(reader io.ReadCloser) error {
 
 	}
 	log.Info("Successfully backed up to S3")
-	s.updateIntegrationHealth(storage.IntegrationHealth_HEALTHY, "")
 	return s.pruneBackupsIfNecessary()
 }
 
@@ -197,7 +191,6 @@ func (s *s3) Test() error {
 		return s.createError(fmt.Sprintf("failed to remove test object %q from bucket %q",
 			formattedKey, s.integration.GetS3().GetBucket()), err)
 	}
-	s.updateIntegrationHealth(storage.IntegrationHealth_HEALTHY, "")
 	return nil
 }
 
@@ -210,24 +203,11 @@ func (s *s3) createError(msg string, err error) error {
 		}
 	}
 	log.Errorf("S3 backup error: %v", err)
-	s.updateIntegrationHealth(storage.IntegrationHealth_UNHEALTHY, msg)
 	return errors.New(msg)
 }
 
 func init() {
-	plugins.Add("s3", func(backup *storage.ExternalBackup, healthReporter reporter.IntegrationHealthReporter) (types.ExternalBackup, error) {
-		return newS3(backup, healthReporter)
-	})
-}
-
-func (s *s3) updateIntegrationHealth(healthStatus storage.IntegrationHealth_Status, errMessage string) {
-	//Update health
-	s.healthReporter.UpdateIntegrationHealth(&storage.IntegrationHealth{
-		Id:            s.integration.Id,
-		Name:          s.integration.Name,
-		Type:          storage.IntegrationHealth_BACKUP,
-		Status:        healthStatus,
-		LastTimestamp: timestamp.TimestampNow(),
-		ErrorMessage:  errMessage,
+	plugins.Add("s3", func(backup *storage.ExternalBackup) (types.ExternalBackup, error) {
+		return newS3(backup)
 	})
 }

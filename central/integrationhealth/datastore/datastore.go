@@ -29,4 +29,5 @@ func New(storage rocksdb.Store) DataStore {
 	return &datastoreImpl{
 		store: storage,
 	}
+
 }

@@ -2,6 +2,7 @@ package integration
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners"
 )
@@ -21,7 +22,7 @@ type Set interface {
 }
 
 // NewSet returns a new Set instance.
-func NewSet() Set {
+func NewSet(reporter integrationhealth.Reporter) Set {
 	registryFactory := registries.NewFactory()
 	registrySet := registries.NewSet(registryFactory)
 
@@ -34,5 +35,6 @@ func NewSet() Set {
 
 		registrySet: registrySet,
 		scannerSet:  scannerSet,
+		reporter:    reporter,
 	}
 }
