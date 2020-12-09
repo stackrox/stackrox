@@ -20,6 +20,15 @@ image:
     main: null # string
     collector: null # string
 
+imagePullSecrets:
+  useExisting: null # string | [string]
+
+mainImagePullSecrets:
+  useExisting: null # string | [string]
+
+collectorImagePullSecrets:
+  useExisting: null # string | [string]
+
 config:
   collectionMethod: null # string
   admissionControl:

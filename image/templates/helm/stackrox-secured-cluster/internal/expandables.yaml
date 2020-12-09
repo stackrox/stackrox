@@ -1,7 +1,4 @@
 initToken: true
-imagePullSecrets:
-  username: true
-  password: true
 ca:
   cert: true
 sensor:

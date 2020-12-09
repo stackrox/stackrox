@@ -12,7 +12,9 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "serviceaccount" "admission-control") | nindent 4 }}
 imagePullSecrets:
-  - name: stackrox
+{{- range $secretName := ._rox.mainImagePullSecrets._names }}
+- name: {{ quote $secretName }}
+{{- end }}
 ---
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1

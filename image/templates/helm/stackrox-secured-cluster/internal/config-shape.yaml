@@ -9,6 +9,16 @@ imagePullSecrets:
   allowNone: null # bool
   useExisting: null # string | [string]
   useFromDefaultServiceAccount: null # bool
+mainImagePullSecrets:
+  username: null # string
+  password: null # string
+  useExisting: null # string | [string]
+  useFromDefaultServiceAccount: null # bool
+collectorImagePullSecrets:
+  username: null # string
+  password: null # string
+  useExisting: null # string | [string]
+  useFromDefaultServiceAccount: null # bool
 image:
   registry: null # string
 env:

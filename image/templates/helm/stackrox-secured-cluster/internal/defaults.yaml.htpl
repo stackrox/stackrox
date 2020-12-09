@@ -64,7 +64,6 @@ defaults:
       registry: [< default "collector.stackrox.io" .CollectorRegistry >]
       name: [< default "collector" .CollectorImageRemote >]
       version: [< .Versions.CollectorVersion >]
-      pullPolicy: IfNotPresent
 
     resources:
       requests:

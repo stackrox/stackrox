@@ -24,10 +24,16 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "serviceaccount" "collector") | nindent 4 }}
 imagePullSecrets:
-- name: stackrox
-{{- if ne ._rox.collector.collectionMethod "NO_COLLECTION" }}
-- name: collector-stackrox
-{{- end}}
+{{- range $secretName := ._rox.collectorImagePullSecrets._names }}
+  {{- if eq $secretName "collector-stackrox" }}
+    {{- /* Preserve behaviour: Only include this secret reference if collectionMethod does not equal "NO_COLLECTION" */}}
+    {{- if ne $._rox.collector.collectionMethod "NO_COLLECTION" }}
+- name: {{ quote $secretName }}
+    {{- end}}
+  {{- else }}
+- name: {{ quote $secretName }}
+  {{- end }}
+{{- end }}
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1

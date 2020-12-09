@@ -31,8 +31,19 @@
 {{ $_values := dict }}
 {{ $_ := include "srox.mergeInto" (list $_values (deepCopy .Values) ($.Files.Get "internal/compatibility-config-shape.yaml" | fromYaml)) }}
 
-{{/* ImagePullSecrets config. */}}
-{{ $_imagePullSecrets := dict "allowNone" true }}
+{{/* ImagePullSecrets config (for main and collector images). */}}
+{{ $_mainImagePullSecrets := dict }}
+{{ $_ := include "srox.mergeInto" (list $_mainImagePullSecrets (deepCopy $_values.mainImagePullSecrets) (deepCopy $_values.imagePullSecrets)) }}
+{{ if and (kindIs "invalid" $_mainImagePullSecrets.allowNone) (kindIs "invalid" $_mainImagePullSecrets.useExisting) }}
+  {{ $_ := set $_mainImagePullSecrets "allowNone" true }}
+{{ end }}
+
+{{ $_collectorImagePullSecrets := dict }}
+{{ $_ := include "srox.mergeInto" (list $_collectorImagePullSecrets (deepCopy $_values.collectorImagePullSecrets) (deepCopy $_values.imagePullSecrets)) }}
+{{ if and (kindIs "invalid" $_collectorImagePullSecrets.allowNone) (kindIs "invalid" $_collectorImagePullSecrets.useExisting) }}
+  {{ $_ := set $_collectorImagePullSecrets "allowNone" true }}
+{{ end }}
+
 {{ $_env := dict }}
 {{ if not (kindIs "invalid" $_values.cluster.type) }}
   {{ $_ := set $_env "openshift" (eq $_values.cluster.type "OPENSHIFT_CLUSTER") }}
@@ -92,7 +103,15 @@
 {{ $_collectorImage := dict }}
 {{ $_ := set $_collectorImage "registry" $_values.image.registry.collector }}
 {{ $_ := set $_collectorImage "name" $_values.image.repository.collector }}
-{{ $_ := set $_collectorImage "pullPolicy" $_values.image.pullPolicy.collector }}
+{{ if kindIs "invalid" $_values.image.pullPolicy.collector }}
+  {{ if $_values.config.slimCollector }}
+    {{ $_ := set $_collectorImage "pullPolicy" "IfNotPresent" }}
+  {{ else }}
+    {{ $_ := set $_collectorImage "pullPolicy" "Always" }}
+  {{ end }}
+{{ else }}
+  {{ $_ := set $_collectorImage "pullPolicy" $_values.image.pullPolicy.collector }}
+{{ end }}
 {{ $_ := set $_collectorImage "tag" $_values.image.tag.collector }}
 
 {{/* Collector config. */}}
@@ -135,7 +154,8 @@
 {{ $newValues := dict }}
 {{ $_ := set $newValues "clusterName" $_values.cluster.name }}
 {{ $_ := set $newValues "centralEndpoint" $_values.endpoint.central }}
-{{ $_ := set $newValues "imagePullSecrets" $_imagePullSecrets }}
+{{ $_ := set $newValues "mainImagePullSecrets" $_mainImagePullSecrets }}
+{{ $_ := set $newValues "collectorImagePullSecrets" $_collectorImagePullSecrets }}
 {{ $_ := set $newValues "ca" $_ca }}
 {{ $_ := set $newValues "additionalCAs" $_additionalCAs }}
 {{ $_ := set $newValues "env" $_env }}
@@ -185,6 +205,11 @@
   {{ end }}
 {{ end }}
 
+{{ end }}
+
+{{ if and $._rox.collector.slimMode (not (kindIs "invalid" $._rox.collector.image.tag)) }}
+  {{ $msg := "You have enabled slimMode for collecter and overriden the collector image tag. Make sure that the referenced image is a slim collector image." }}
+  {{ include "srox.warn" (list $ $msg) }}
 {{ end }}
 
 {{/*
@@ -255,40 +280,9 @@
 {{ include "srox.expandAll" (list $ $rox $expandables) }}
 
 
-{{/* Image pull secret setup. */}}
-{{ $imagePullSecrets := $._rox.imagePullSecrets }}
-{{ $imagePullSecretNames := default list $imagePullSecrets.useExisting }}
-{{ if not (kindIs "slice" $imagePullSecretNames) }}
-  {{ $imagePullSecretNames = regexSplit "\\s*,\\s*" (trim $imagePullSecretNames) -1 }}
-{{ end }}
-{{ if $imagePullSecrets.useFromDefaultServiceAccount }}
-  {{ $defaultSA := dict }}
-  {{ include "srox.safeLookup" (list $ $defaultSA "v1" "ServiceAccount" $.Release.Namespace "default") }}
-  {{ if $defaultSA.result }}
-    {{ $imagePullSecretNames = concat $imagePullSecretNames (default list $defaultSA.result.imagePullSecrets) }}
-  {{ end }}
-{{ end }}
-{{ $imagePullCreds := dict }}
-{{ if $imagePullSecrets._username }}
-  {{ $imagePullCreds = dict "username" $imagePullSecrets._username "password" $imagePullSecrets._password }}
-  {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox" }}
-{{ else if $imagePullSecrets._password }}
-  {{ include "srox.fail" "Whenever an image pull password is specified, a username must be specified as well "}}
-{{ end }}
-{{ if and $.Release.IsInstall (not $imagePullSecretNames) (not $imagePullSecrets.allowNone) }}
-  {{ include "srox.fail" "You have not specified any image pull secrets, and no existing image pull secrets were automatically inferred. If your registry does not need image pull credentials, explicitly set the 'imagePullSecrets.allowNone' option to 'true'" }}
-{{ end }}
-
-{{/*
-    Always assume that there are `stackrox` and `stackrox-scanner` image pull secrets,
-    even if they weren't specified.
-    This is required for updates anyway, so referencing it on first install will minimize a later
-    diff.
-   */}}
-{{ $imagePullSecretNames = concat $imagePullSecretNames (list "stackrox") | uniq | sortAlpha }}
-{{ $_ = set $imagePullSecrets "_names" $imagePullSecretNames }}
-{{ $_ = set $imagePullSecrets "_creds" $imagePullCreds }}
-
+{{/* Initial image pull secret setup. */}}
+{{ include "srox.configureImagePullSecrets" (list $ "mainImagePullSecrets" $._rox.mainImagePullSecrets (list "stackrox")) }}
+{{ include "srox.configureImagePullSecrets" (list $ "collectorImagePullSecrets" $._rox.collectorImagePullSecrets (list "stackrox" "collector-stackrox")) }}
 
 {{/*
     Sensor setup.
@@ -306,29 +300,8 @@
     Post-processing steps.
    */}}
 
-
-{{/* Setup Image Pull Secrets for Docker Registry.
-     Note: This must happen afterwards, as we rely on "srox.configureImage" to collect the
-     set of all referenced images first. */}}
-{{ if $imagePullSecrets._username }}
-  {{ $dockerAuths := dict }}
-  {{ range $image := keys $._rox._state.referencedImages }}
-    {{ $registry := splitList "/" $image | first }}
-    {{ if eq $registry "docker.io" }}
-      {{/* Special case docker.io */}}
-      {{ $registry = "https://index.docker.io/v1/" }}
-    {{ else }}
-      {{ $registry = printf "https://%s" $registry }}
-    {{ end }}
-    {{ $_ := set $dockerAuths $registry dict }}
-  {{ end }}
-  {{ $authToken := printf "%s:%s" $imagePullSecrets._username $imagePullSecrets._password | b64enc }}
-  {{ range $regSettings := values $dockerAuths }}
-    {{ $_ := set $regSettings "auth" $authToken }}
-  {{ end }}
-
-  {{ $_ := set $imagePullSecrets "_dockerAuths" $dockerAuths }}
-{{ end }}
+{{ include "srox.configureImagePullSecretsForDockerRegistry" (list $ ._rox.mainImagePullSecrets) }}
+{{ include "srox.configureImagePullSecretsForDockerRegistry" (list $ ._rox.collectorImagePullSecrets) }}
 
 {{ end }}
 
