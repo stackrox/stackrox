@@ -29,6 +29,7 @@ defaults:
         cpu: "2"
 
     endpoint: "sensor.{{ .Release.Namespace }}:443"
+    exposeMonitoring: false
 
   admissionControl:
     image:

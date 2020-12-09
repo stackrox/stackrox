@@ -80,6 +80,7 @@
 {{ if not (kindIs "invalid" $_values.endpoint.advertised) }}
   {{ $_ := set $_sensor "endpoint" $_values.endpoint.advertised }}
 {{ end }}
+{{ $_ := set $_sensor "exposeMonitoring" $_values.config.exposeMonitoring }}
 
 {{/* AdmissionControl config. */}}
 {{ $_admissionControl := dict }}
@@ -98,6 +99,7 @@
 {{ $_ := set $_admissionControl "image" $_mainImage }}
 {{ $_ := set $_admissionControl "resources" $_values.config.admissionControlResources }}
 {{ $_ := set $_admissionControl "serviceTLS" $_admissionControlServiceTLS }}
+{{ $_ := set $_admissionControl "exposeMonitoring" $_values.config.exposeMonitoring }}
 
 {{/* Collector Image. */}}
 {{ $_collectorImage := dict }}
@@ -131,6 +133,7 @@
 {{ $_ := set $_collector "disableTaintTolerations" $_values.config.disableTaintTolerations }}
 {{ $_ := set $_collector "slimMode" $_values.config.slimCollector }}
 {{ $_ := set $_collector "serviceTLS" $_collectorServiceTLS }}
+{{ $_ := set $_collector "exposeMonitoring" $_values.config.exposeMonitoring }}
 
 {{/* Additional CAs. */}}
 {{ $_additionalCAs := dict }}

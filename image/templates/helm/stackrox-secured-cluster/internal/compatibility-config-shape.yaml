@@ -49,5 +49,6 @@ config:
   admissionControlResources: null # dict
   collectorResources: null # dict
   complianceResources: null # dict
+  exposeMonitoring: null # bool
 
 envVars: null # [obj]

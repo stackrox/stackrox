@@ -153,6 +153,12 @@ spec:
     port: 443
     targetPort: api
     protocol: TCP
+  {{- if ._rox.sensor.exposeMonitoring }}
+  - name: monitoring
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  {{- end }}
   selector:
     app: sensor
   type: ClusterIP

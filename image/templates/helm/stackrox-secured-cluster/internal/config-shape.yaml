@@ -37,6 +37,7 @@ sensor:
   serviceTLS:
     cert: null # string
     key: null # string
+  exposeMonitoring: null # bool
 admissionControl:
   enable: null # bool
   listenOnUpdates: null # bool
