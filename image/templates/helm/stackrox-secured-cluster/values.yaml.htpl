@@ -1,4 +1,3 @@
-[<- if .PreconfiguredChart >]
 cluster:
   name: [< default "" .ClusterName >]
   type: [< default "KUBERNETES_CLUSTER" .ClusterType >]
@@ -39,6 +38,3 @@ envVars: [< if empty .EnvVars >] []
      value: [< quote $value >]
   [< end  >]
   [< end  >]
-[<- else >]
-# See the documentation.
-[<- end >]

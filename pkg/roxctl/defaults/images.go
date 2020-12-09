@@ -37,3 +37,11 @@ func MainImageRegistry() string {
 	}
 	return "docker.io/stackrox"
 }
+
+// CollectorImageRegistry is the Docker image registry for the "collector" image.
+func CollectorImageRegistry() string {
+	if buildinfo.ReleaseBuild {
+		return "collector.stackrox.io"
+	}
+	return "docker.io/stackrox"
+}

@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/charts"
 	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/version"
@@ -24,13 +23,14 @@ import (
 const namespace string = "stackrox"
 
 var (
-	metaValues = &charts.MetaValues{
-		Versions: version.Versions{
+	metaValues = map[string]interface{}{
+		"Versions": version.Versions{
 			ChartVersion:   "50.0.60-gac5d043be8",
 			MainVersion:    "3.0.50.x-60-gac5d043be8",
 			ScannerVersion: "2.5.0",
 		},
-		MainRegistry: "docker.io/stackrox",
+		"MainRegistry": "docker.io/stackrox",
+		"RenderMode":   "",
 	}
 
 	installOpts = helmutil.Options{

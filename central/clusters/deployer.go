@@ -102,6 +102,8 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		"SlimCollector": opts.SlimCollector,
 
 		"KubectlOutput": true,
+
+		"Versions": version.GetAllVersions(),
 	}
 
 	if features.AdmissionControlService.Enabled() && c.AdmissionController {

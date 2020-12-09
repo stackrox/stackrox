@@ -10,7 +10,8 @@ import (
 var (
 	// ChartTemplates contains the list of currently supported chart names for helm related commands.
 	ChartTemplates = map[string]string{
-		ChartCentralServices: image.CentralServicesChartPrefix,
+		ChartCentralServices:        image.CentralServicesChartPrefix,
+		ChartSecuredClusterServices: image.SecuredClusterServicesChartPrefix,
 	}
 	// PrettyChartNameList contains the list of currently supported chart names for helm relateld
 	// commands suitable for inline display.
@@ -20,6 +21,8 @@ var (
 const (
 	// ChartCentralServices is the shortname for the StackRox Central Services Helm chart.
 	ChartCentralServices string = "central-services"
+	// ChartSecuredClusterServices is the shortname for the StackRox Secured Cluster Services Helm chart.
+	ChartSecuredClusterServices string = "secured-cluster-services"
 )
 
 // Initialize `prettyChartNameList` for usage information.

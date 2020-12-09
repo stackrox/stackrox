@@ -24,6 +24,7 @@ var (
 		"admission-control-key.pem",
 		"ca-setup-sensor.sh",
 		"delete-ca-sensor.sh",
+		"NOTES.txt",
 	)
 )
 

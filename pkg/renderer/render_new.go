@@ -88,7 +88,7 @@ func renderNewBasicFiles(c Config, mode mode) ([]*zip.File, error) {
 	}
 
 	metaVals := charts.DefaultMetaValues()
-	metaVals.RenderMode = mode.String()
+	metaVals["RenderMode"] = mode.String()
 
 	chartFiles, err := chTpl.InstantiateRaw(metaVals)
 	if err != nil {

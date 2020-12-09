@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
+	"helm.sh/helm/v3/pkg/chartutil"
 )
 
 var (
@@ -49,7 +50,13 @@ func renderBaseFiles(cluster *storage.Cluster, renderOpts clusters.RenderOptions
 		return nil, errors.Wrap(err, "unable to get required cluster information")
 	}
 
-	var opts helmutil.Options
+	opts := helmutil.Options{
+		ReleaseOptions: chartutil.ReleaseOptions{
+			Name:      "stackrox-secured-cluster-services",
+			Namespace: "stackrox",
+			IsInstall: true,
+		},
+	}
 	if renderOpts.IstioVersion != "" {
 		istioAPIResources, err := istioutils.GetAPIResourcesByVersion(renderOpts.IstioVersion)
 		if err != nil {

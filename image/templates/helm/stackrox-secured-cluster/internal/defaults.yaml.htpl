@@ -1,7 +1,6 @@
 defaults:
 
   clusterName: ""
-  clusterType: "KUBERNETES_CLUSTER"
   centralEndpoint: "central.{{ .Release.Namespace }}:443"
   createUpgraderServiceAccount: false
 

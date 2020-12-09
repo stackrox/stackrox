@@ -70,7 +70,7 @@ customize:
     podLabels: {} # dict
     podAnnotations: {} # dict
     envVars: {} # dict
-  "admission-control":
+  admission-control:
     labels: {} # dict
     annotations: {} # dict
     podLabels: {} # dict

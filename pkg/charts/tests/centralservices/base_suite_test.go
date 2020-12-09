@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/charts"
 	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/suite"
@@ -18,13 +17,14 @@ import (
 )
 
 var (
-	metaValues = &charts.MetaValues{
-		Versions: version.Versions{
+	metaValues = map[string]interface{}{
+		"Versions": version.Versions{
 			ChartVersion:   "1.0.0",
 			MainVersion:    "3.0.49.0",
 			ScannerVersion: "1.2.3",
 		},
-		MainRegistry: "stackrox.io",
+		"MainRegistry": "stackrox.io",
+		"RenderMode":   "",
 	}
 
 	installOpts = helmutil.Options{

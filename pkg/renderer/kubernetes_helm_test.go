@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"helm.sh/helm/v3/pkg/chartutil"
 )
 
 func TestRenderSensorHelm(t *testing.T) {
@@ -76,7 +77,13 @@ func TestRenderSensorHelm(t *testing.T) {
 				"admission-control-key.pem":  []byte("stu"),
 			}}
 
-			var opts helmutil.Options
+			opts := helmutil.Options{
+				ReleaseOptions: chartutil.ReleaseOptions{
+					Name:      "stackrox-secured-cluster-services",
+					Namespace: "stackrox",
+					IsInstall: true,
+				},
+			}
 
 			if c.istioVersion != "" {
 				istioAPIResources, err := istioutils.GetAPIResourcesByVersion(c.istioVersion)
