@@ -13,6 +13,7 @@ import (
 	"github.com/antihax/optional"
 	"github.com/pkg/errors"
 	anchoreClient "github.com/stackrox/anchore-client/client"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -336,4 +337,8 @@ func (a *anchore) Type() string {
 
 func (a *anchore) Name() string {
 	return a.protoImageIntegration.GetName()
+}
+
+func (a *anchore) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
+	return nil, nil
 }

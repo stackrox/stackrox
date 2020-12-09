@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/integration/mocks"
@@ -79,6 +80,10 @@ func (f *fakeRegistryScanner) DataSource() *storage.DataSource {
 		Id:   "id",
 		Name: f.Name(),
 	}
+}
+
+func (f *fakeRegistryScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
+	return &v1.VulnDefinitionsInfo{}, nil
 }
 
 type fakeCVESuppressor struct{}

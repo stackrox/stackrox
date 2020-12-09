@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scanners/mocks"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -49,6 +50,10 @@ func (f *fakeScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
 
 func (f *fakeScanner) DataSource() *storage.DataSource {
 	return nil
+}
+
+func (f *fakeScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
+	return &v1.VulnDefinitionsInfo{}, nil
 }
 
 func TestSetOrdering(t *testing.T) {

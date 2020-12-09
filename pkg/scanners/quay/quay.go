@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
@@ -152,4 +153,8 @@ func (q *quay) Type() string {
 
 func (q *quay) Name() string {
 	return q.protoImageIntegration.GetName()
+}
+
+func (q *quay) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
+	return nil, nil
 }

@@ -9,6 +9,7 @@ import (
 
 	dockerRegistry "github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -176,4 +177,8 @@ func (d *tenable) Type() string {
 
 func (d *tenable) Name() string {
 	return d.integration.GetName()
+}
+
+func (d *tenable) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
+	return nil, nil
 }

@@ -14,8 +14,8 @@ message GetIntegrationHealthResponse {
     repeated storage.IntegrationHealth integrationHealth = 1;
 }
 
-message GetVulnDefinitionsInfoResponse {
-    google.protobuf.Timestamp last_updated_timestamp      = 1;
+message VulnDefinitionsInfo {
+    google.protobuf.Timestamp last_updated_timestamp = 1;
 }
 
 service IntegrationHealthService {
@@ -38,7 +38,7 @@ service IntegrationHealthService {
         };
     }
 
-    rpc GetVulnDefinitionsInfo(Empty) returns (GetVulnDefinitionsInfoResponse) {
+    rpc GetVulnDefinitionsInfo(Empty) returns (VulnDefinitionsInfo) {
         option (google.api.http) = {
             get: "/v1/integrationhealth/vulndefinitions"
         };

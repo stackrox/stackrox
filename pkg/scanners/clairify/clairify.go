@@ -7,6 +7,7 @@ import (
 
 	gogoProto "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	clairConv "github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -221,4 +222,15 @@ func (c *clairify) Type() string {
 
 func (c *clairify) Name() string {
 	return c.protoImageIntegration.GetName()
+}
+
+func (c *clairify) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
+	info, err := c.client.GetVulnDefsMetadata()
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.VulnDefinitionsInfo{
+		LastUpdatedTimestamp: info.GetLastUpdatedTime(),
+	}, nil
 }

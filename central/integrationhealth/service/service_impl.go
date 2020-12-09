@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/scanners"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -35,7 +36,8 @@ var (
 
 // ImageIntegrationService is the struct that manages the ImageIntegration API
 type serviceImpl struct {
-	datastore datastore.DataStore
+	datastore            datastore.DataStore
+	vulnDefsInfoProvider scanners.VulnDefsInfoProvider
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -86,6 +88,10 @@ func (s *serviceImpl) GetBackupPlugins(ctx context.Context, empty *v1.Empty) (*v
 	}, nil
 }
 
-func (s *serviceImpl) GetVulnDefinitionsInfo(ctx context.Context, empty *v1.Empty) (*v1.GetVulnDefinitionsInfoResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method not implemented")
+func (s *serviceImpl) GetVulnDefinitionsInfo(ctx context.Context, empty *v1.Empty) (*v1.VulnDefinitionsInfo, error) {
+	info, err := s.vulnDefsInfoProvider.GetVulnDefsInfo()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to obtain vulnerability definitions information: %v", err)
+	}
+	return info, nil
 }
