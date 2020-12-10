@@ -108,11 +108,12 @@ const CIDRForm = ({ rows, clusterId, updateNetworkNodes, onClose }) => {
                     updateNetworkNodes();
                     setTimeout(onClose, 2000);
                 })
-                .catch(() => {
+                .catch((error) => {
                     setFormCallout({
                         type: 'error',
-                        message:
-                            'There was an issue modifying and/or deleting CIDR blocks. Please check the rows below.',
+                        message: `There was an issue modifying and/or deleting CIDR blocks. Please check the rows below. The server responded: ${
+                            error?.message || '(no response)'
+                        }`,
                     });
                     // refetch CIDR blocks and reset form ?
                     resetForm({ values });
