@@ -6,6 +6,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+## [53.0]
+- No Changes to note
+
 ## [52.0]
 - Added ContainerName as one of the policy criteria
 - Added support for ubuntu:20.10 in Scanner.
