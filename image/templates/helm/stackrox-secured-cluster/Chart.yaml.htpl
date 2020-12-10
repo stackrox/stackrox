@@ -1,5 +1,5 @@
 apiVersion: v2 [</* Can probably be generalized to v1 later. TODO(ROX-5502). */>]
-name: stackrox-secured-cluster-services
+name: sensor
 icon: https://www.stackrox.com/img/logo.svg
 description: Helm Chart for StackRox Secured Clusters
 type: application
