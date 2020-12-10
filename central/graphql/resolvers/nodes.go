@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
@@ -32,6 +33,14 @@ func init() {
 		schema.AddExtraResolver("Node", "passingControls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Node", "controls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Node", "cluster: Cluster!"),
+
+		schema.AddExtraResolver("Node", "nodeStatus(query: String): String!"),
+		schema.AddExtraResolver("Node", "topVuln(query: String): EmbeddedVulnerability"),
+		schema.AddExtraResolver("Node", "vulnCount(query: String): Int!"),
+		schema.AddExtraResolver("Node", "vulnCounter(query: String): VulnerabilityCounter!"),
+		schema.AddExtraResolver("Node", "priority: Int!"),
+		schema.AddExtraResolver("Node", "scanTime: Time"),
+		schema.AddExtraResolver("Node", "plottedVulns(query: String): PlottedVulnerabilities!"),
 	)
 }
 
@@ -298,4 +307,106 @@ func (resolver *complianceControlCountResolver) PassingCount() int32 {
 
 func (resolver *complianceControlCountResolver) UnknownCount() int32 {
 	return resolver.unknownCount
+}
+
+func (resolver *nodeResolver) NodeStatus(ctx context.Context, args RawQuery) (string, error) {
+	return "active", nil
+}
+
+// TopVuln returns the first vulnerability with the top CVSS score.
+func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "TopVulnerability")
+	return &cVEResolver{
+		root: resolver.root,
+		data: &storage.CVE{
+			Id:           "CVE-2020-0",
+			Cvss:         9.9,
+			ImpactScore:  6.0,
+			Type:         storage.CVE_NODE_CVE,
+			Summary:      "The Kubelet and kube-proxy components in versions 1.1.0-1.16.10, 1.17.0-1.17.6, and 1.18.0-1.18.3 were found to contain a security issue which allows adjacent hosts to reach TCP and UDP services bound to 127.0.0.1 running on the node or in the node's network namespace. Such a service is generally thought to be reachable only by other processes on the same host, but due to this defeect, could be reachable by other hosts on the same LAN as the node, or by containers running on the same node as the service.",
+			Link:         "https://github.com/kubernetes/kubernetes/issues/92315",
+			ScoreVersion: storage.CVE_V3,
+			CvssV2: &storage.CVSSV2{
+				Vector:              "AV:A/AC:L/Au:N/C:P/I:P/A:P",
+				AttackVector:        storage.CVSSV2_ATTACK_ADJACENT,
+				AccessComplexity:    storage.CVSSV2_ACCESS_LOW,
+				Authentication:      storage.CVSSV2_AUTH_NONE,
+				Confidentiality:     storage.CVSSV2_IMPACT_PARTIAL,
+				Integrity:           storage.CVSSV2_IMPACT_PARTIAL,
+				Availability:        storage.CVSSV2_IMPACT_PARTIAL,
+				ExploitabilityScore: 6.5,
+				ImpactScore:         6.4,
+				Score:               5.8,
+				Severity:            storage.CVSSV2_MEDIUM,
+			},
+			CvssV3: &storage.CVSSV3{
+				Vector:              "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H",
+				ExploitabilityScore: 3.1,
+				ImpactScore:         6.0,
+				AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
+				AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+				PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_LOW,
+				UserInteraction:     storage.CVSSV3_UI_NONE,
+				Scope:               storage.CVSSV3_CHANGED,
+				Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
+				Integrity:           storage.CVSSV3_IMPACT_HIGH,
+				Availability:        storage.CVSSV3_IMPACT_HIGH,
+				Score:               9.9,
+				Severity:            storage.CVSSV3_CRITICAL,
+			},
+		},
+	}, nil
+}
+
+// VulnCount returns the number of vulnerabilities the node has.
+func (resolver *nodeResolver) VulnCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "VulnerabilityCount")
+
+	return 10, nil
+}
+
+// VulnCounter resolves the number of different types of vulnerabilities contained in a node.
+func (resolver *nodeResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	return &VulnerabilityCounterResolver{
+		all: &VulnerabilityFixableCounterResolver{
+			total:   10,
+			fixable: 3,
+		},
+		low: &VulnerabilityFixableCounterResolver{
+			total:   4,
+			fixable: 0,
+		},
+		medium: &VulnerabilityFixableCounterResolver{
+			total:   2,
+			fixable: 1,
+		},
+		high: &VulnerabilityFixableCounterResolver{
+			total:   1,
+			fixable: 0,
+		},
+		critical: &VulnerabilityFixableCounterResolver{
+			total:   3,
+			fixable: 2,
+		},
+	}, nil
+}
+
+// Priority is here for mocking purposes only. The real implementation will add a priority field to the node proto.
+func (resolver *nodeResolver) Priority(ctx context.Context) (int32, error) {
+	return 1, nil
+}
+
+// ScanTime is here for mocking purposes only. The real implementation will add a scanTime field to the node proto.
+func (resolver *nodeResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
+	return timestamp(types.TimestampNow())
+}
+
+// PlottedVulns returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
+func (resolver *nodeResolver) PlottedVulns(_ context.Context, _ RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+	return &PlottedVulnerabilitiesResolver{
+		root:    resolver.root,
+		all:     []string{"CVE-2020-0", "CVE-2020-1", "CVE-2020-2", "CVE-2020-3", "CVE-2020-4", "CVE-2020-5", "CVE-2020-6", "CVE-2020-7", "CVE-2020-8", "CVE-2020-9"},
+		fixable: []string{"CVE-2020-0", "CVE-2020-2", "CVE-2020-4"},
+		mock:    true,
+	}, nil
 }

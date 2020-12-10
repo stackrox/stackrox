@@ -20,6 +20,7 @@ message CVE {
         IMAGE_CVE   = 1;
         K8S_CVE     = 2;
         ISTIO_CVE   = 3;
+        NODE_CVE    = 4;
     }
 
     message Reference {
