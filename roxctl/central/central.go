@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/roxctl/central/cert"
 	"github.com/stackrox/rox/roxctl/central/db"
 	"github.com/stackrox/rox/roxctl/central/debug"
-	"github.com/stackrox/rox/roxctl/central/deploy"
+	"github.com/stackrox/rox/roxctl/central/generate"
 	"github.com/stackrox/rox/roxctl/central/license"
 	"github.com/stackrox/rox/roxctl/central/userpki"
 	"github.com/stackrox/rox/roxctl/central/whoami"
@@ -19,7 +19,7 @@ func Command() *cobra.Command {
 
 	c.AddCommand(
 		cert.Command(),
-		deploy.Command(),
+		generate.Command(),
 		db.Command(),
 		debug.Command(),
 		license.Command(),

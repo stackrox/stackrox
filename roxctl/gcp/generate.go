@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/version"
-	"github.com/stackrox/rox/roxctl/central/deploy"
+	centralgenerate "github.com/stackrox/rox/roxctl/central/generate"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
@@ -64,5 +64,5 @@ func generate(outputDir string, values *Values) error {
 		config.K8sConfig.LoadBalancerType = v1.LoadBalancerType_NONE
 	}
 
-	return deploy.OutputZip(config)
+	return centralgenerate.OutputZip(config)
 }
