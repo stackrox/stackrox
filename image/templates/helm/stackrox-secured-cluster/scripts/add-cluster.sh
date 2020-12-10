@@ -26,11 +26,15 @@ fi
 
 "${KUBE_COMMAND}" get namespace stackrox &>/dev/null || ${KUBE_COMMAND} create namespace stackrox
 
-#setup docker auth for image registries
-if ! "${KUBE_COMMAND}" get secret/stackrox -n stackrox &>/dev/null; then
-  registry_auth="$("${DIR}/docker-auth.sh" -m k8s "${image_registry_main}")"
-  [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
-  "${KUBE_COMMAND}" create --namespace "stackrox" -f - <<EOF
+if [ "${ROX_NO_IMAGE_PULL_SECRETS}" != "true" ]; then
+
+  echo "Creating image pull secrets..."
+
+  #setup docker auth for image registries
+  if ! "${KUBE_COMMAND}" get secret/stackrox -n stackrox &>/dev/null; then
+    registry_auth="$("${DIR}/docker-auth.sh" -m k8s "${image_registry_main}")"
+    [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
+    "${KUBE_COMMAND}" create --namespace "stackrox" -f - <<EOF
 apiVersion: v1
 data:
   .dockerconfigjson: ${registry_auth}
@@ -40,13 +44,13 @@ metadata:
   namespace: stackrox
 type: kubernetes.io/dockerconfigjson
 EOF
-fi
+  fi
 
-if [ "${config_collectionMethod}" != "NO_COLLECTION" ]; then
-  if ! ${KUBE_COMMAND} get secret/collector-stackrox -n stackrox &>/dev/null; then
-    registry_auth="$("${DIR}/docker-auth.sh" -m k8s "${image_registry_collector}")"
-    [[ -n "${registry_auth}" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
-    ${KUBE_COMMAND} create --namespace "stackrox" -f - <<EOF
+  if [ "${config_collectionMethod}" != "NO_COLLECTION" ]; then
+    if ! ${KUBE_COMMAND} get secret/collector-stackrox -n stackrox &>/dev/null; then
+      registry_auth="$("${DIR}/docker-auth.sh" -m k8s "${image_registry_collector}")"
+      [[ -n "${registry_auth}" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
+      ${KUBE_COMMAND} create --namespace "stackrox" -f - <<EOF
 apiVersion: v1
 data:
   .dockerconfigjson: ${registry_auth}
@@ -56,7 +60,13 @@ metadata:
   namespace: stackrox
 type: kubernetes.io/dockerconfigjson
 EOF
+    fi
   fi
+
+else
+  echo "Creation of image pull secrets is disabled."
+  echo "Make sure to reference existing image pull secrets in your Helm chart configuration (e.g. imagePullSecrets.useExisting)."
+  echo "Unset ROX_NO_IMAGE_PULL_SECRETS in the environment if image pull secrets shall be created."
 fi
 
 # add cluster

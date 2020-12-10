@@ -47,12 +47,6 @@
   {{ include "srox.fail" $msg }}
 {{ end }}
 
-{{/*
-    Always assume that there are `stackrox` and `stackrox-scanner` image pull secrets,
-    even if they weren't specified.
-    This is required for updates anyway, so referencing it on first install will minimize a later
-    diff.
-   */}}
 {{ $imagePullSecretNames = concat $imagePullSecretNames $defaultSecretNames | uniq | sortAlpha }}
 {{ $_ := set $imagePullSecrets "_names" $imagePullSecretNames }}
 {{ $_ := set $imagePullSecrets "_creds" $imagePullCreds }}

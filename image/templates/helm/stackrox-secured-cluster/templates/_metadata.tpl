@@ -166,7 +166,7 @@
 {{ $metadataNames := index . 4 }}
 
 {{ $overrideDictPaths := list "" (printf "other.%s/*" $objType) (printf "other.%s/%s" $objType $objName) }}
-{{ if eq $objType "deployment" }}
+{{ if has $objType (list "deployment" "daemonset")  }}
   {{ $overrideDictPaths = append $overrideDictPaths $objName }}
 {{ end }}
 
