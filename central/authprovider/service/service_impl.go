@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -236,10 +237,15 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 	}
 
 	// We need all access for retrieving roles.
-	token, err := s.registry.IssueToken(ctx, provider, authResponse)
+	token, refreshCookie, err := s.registry.IssueToken(ctx, provider, authResponse)
 	if err != nil {
 		return nil, err
 	}
 	response.Token = token
+	if refreshCookie != nil {
+		if err := grpc.SetHeader(ctx, metadata.Pairs("Set-Cookie", refreshCookie.String())); err != nil {
+			log.Errorf("Failed to set cookie in gRPC response: %v", err)
+		}
+	}
 	return response, nil
 }

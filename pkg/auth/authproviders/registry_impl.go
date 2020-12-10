@@ -264,12 +264,12 @@ func (r *registryImpl) GetExternalUserClaim(ctx context.Context, externalToken, 
 	return authResp, clientState, nil
 }
 
-func (r *registryImpl) IssueToken(ctx context.Context, provider Provider, authResponse *AuthResponse) (string, error) {
-	token, err := issueTokenForResponse(ctx, provider, authResponse)
+func (r *registryImpl) IssueToken(ctx context.Context, provider Provider, authResponse *AuthResponse) (string, *http.Cookie, error) {
+	token, refreshCookie, err := r.issueTokenForResponse(ctx, provider, authResponse)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
-	return token.Token, nil
+	return token.Token, refreshCookie, nil
 }
 
 func (r *registryImpl) addProvider(provider Provider) {
@@ -322,9 +322,9 @@ func (r *registryImpl) resolveProviderAndBackend(ctx context.Context, providerTy
 	return provider, backend, nil
 }
 
-func issueTokenForResponse(ctx context.Context, provider Provider, authResp *AuthResponse) (*tokens.TokenInfo, error) {
+func (r *registryImpl) issueTokenForResponse(ctx context.Context, provider Provider, authResp *AuthResponse) (*tokens.TokenInfo, *http.Cookie, error) {
 	if authResp == nil {
-		return nil, errors.New("nil authentication response")
+		return nil, nil, errors.New("nil authentication response")
 	}
 
 	tokenOpts := make([]tokens.Option, 0, len(authResp.ExtraOpts)+1)
@@ -332,5 +332,30 @@ func issueTokenForResponse(ctx context.Context, provider Provider, authResp *Aut
 		tokenOpts = append(tokenOpts, tokens.WithExpiry(authResp.Expiration))
 	}
 	tokenOpts = append(tokenOpts, authResp.ExtraOpts...)
-	return provider.Issuer().Issue(ctx, tokens.RoxClaims{ExternalUser: authResp.Claims}, tokenOpts...)
+	token, err := provider.Issuer().Issue(ctx, tokens.RoxClaims{ExternalUser: authResp.Claims}, tokenOpts...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var refreshCookie *http.Cookie
+	if authResp.RefreshToken != "" {
+		cookieData := refreshTokenCookieData{
+			ProviderType:     provider.Type(),
+			ProviderID:       provider.ID(),
+			RefreshTokenData: authResp.RefreshTokenData,
+		}
+		if encodedData, err := cookieData.Encode(); err != nil {
+			log.Errorf("failed to encode refresh token cookie data: %v", err)
+		} else {
+			refreshCookie = &http.Cookie{
+				Name:     refreshTokenCookieName,
+				Value:    encodedData,
+				Path:     r.sessionURLPrefix(),
+				HttpOnly: true,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+			}
+		}
+	}
+	return token, refreshCookie, nil
 }

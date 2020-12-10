@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -480,6 +481,8 @@ func (p *backendImpl) processIDPResponseForCodeFlow(ctx context.Context, respons
 }
 
 func (p *backendImpl) processIDPResponse(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, error) {
+	now := time.Now()
+
 	var combinedErr error
 	if p.responseTypes.Contains("code") {
 		authResp, err := p.processIDPResponseForCodeFlow(ctx, responseData)
@@ -489,21 +492,50 @@ func (p *backendImpl) processIDPResponse(ctx context.Context, responseData url.V
 			return authResp, nil
 		}
 	}
+
+	// Try to authenticate with both the access and the ID token, such that if necessary, we can select the one
+	// that is valid for longer.
+	var authRespToken, authRespIDToken *authproviders.AuthResponse
 	if p.responseTypes.Contains("token") {
-		authResp, err := p.processIDPResponseForImplicitFlowWithAccessToken(ctx, responseData)
+		var err error
+		authRespToken, err = p.processIDPResponseForImplicitFlowWithAccessToken(ctx, responseData)
 		if err != nil {
 			combinedErr = multierror.Append(combinedErr, err)
-		} else {
-			return authResp, nil
 		}
 	}
 	if p.responseTypes.Contains("id_token") {
-		authResp, err := p.processIDPResponseForImplicitFlowWithIDToken(ctx, responseData)
+		var err error
+		authRespIDToken, err = p.processIDPResponseForImplicitFlowWithIDToken(ctx, responseData)
 		if err != nil {
 			combinedErr = multierror.Append(combinedErr, err)
-		} else {
-			return authResp, nil
 		}
+	}
+
+	// If we got both a token and ID token response, choose the one that lasts for longer (if the server did
+	// not give us an expiration time for the access token, assume it lasts at least as long as the ID token).
+	if authRespToken != nil && authRespIDToken != nil {
+		expiresInStr := responseData.Get("expires_in")
+		if expiresInStr == "" {
+			// No expiration for access token, trust it will be valid for long enough.
+			return authRespToken, nil
+		}
+		expiresInSecs, err := strconv.Atoi(expiresInStr)
+		if err != nil {
+			log.Warnf("unparseable expires_in time %q returned by authentication server", expiresInStr)
+			return authRespToken, nil
+		}
+
+		accessTokenExpiry := now.Add(time.Second * time.Duration(expiresInSecs))
+		// expiration of the AuthResponse will match exp claim of the ID token
+		if accessTokenExpiry.Before(authRespIDToken.Expiration) {
+			// prefer ID token only if it expires later.
+			return authRespIDToken, nil
+		}
+		return authRespToken, nil
+	} else if authRespToken != nil {
+		return authRespToken, nil
+	} else if authRespIDToken != nil {
+		return authRespIDToken, nil
 	}
 
 	if combinedErr == nil {

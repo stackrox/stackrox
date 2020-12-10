@@ -2,9 +2,11 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/NYTimes/gziphandler"
@@ -232,6 +234,15 @@ func allowPrettyQueryParameter(h http.Handler) http.Handler {
 	})
 }
 
+// allowCookiesHeaderMatcher is a header matcher that allows cookies to be returned to the client through the gRPC
+// gateway.
+func allowCookiesHeaderMatcher(key string) (string, bool) {
+	if strings.ToLower(key) == "set-cookie" {
+		return "Set-Cookie", true
+	}
+	return fmt.Sprintf("%s%s", runtime.MetadataHeaderPrefix, key), true
+}
+
 func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	contextUpdaters := []contextutil.ContextUpdater{authn.ContextUpdater(a.config.IdentityExtractors...)}
 	contextUpdaters = append(contextUpdaters, a.config.PreAuthContextEnrichers...)
@@ -271,6 +282,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	gwMux := runtime.NewServeMux(
 		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{EmitDefaults: true}),
 		runtime.WithMetadata(a.requestInfoHandler.AnnotateMD),
+		runtime.WithOutgoingHeaderMatcher(allowCookiesHeaderMatcher),
 		runtime.WithMarshalerOption(
 			"application/json+pretty",
 			&runtime.JSONPb{

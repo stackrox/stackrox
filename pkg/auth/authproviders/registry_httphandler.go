@@ -184,7 +184,7 @@ func (r *registryImpl) tokenRefreshEndpoint(req *http.Request) (interface{}, err
 		return nil, httputil.Errorf(http.StatusInternalServerError, "failed to obtain new access token for refresh token: %v", err)
 	}
 
-	token, err := issueTokenForResponse(req.Context(), provider, authResp)
+	token, _, err := r.issueTokenForResponse(req.Context(), provider, authResp)
 	if err != nil {
 		return nil, httputil.Errorf(http.StatusInternalServerError, "failed to issue Rox token: %v", err)
 	}
@@ -264,14 +264,13 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	}
 
 	var tokenInfo *tokens.TokenInfo
-	var refreshTokenData *RefreshTokenData
+	var refreshCookie *http.Cookie
 	if authResp != nil {
-		tokenInfo, err = issueTokenForResponse(req.Context(), provider, authResp)
+		tokenInfo, refreshCookie, err = r.issueTokenForResponse(req.Context(), provider, authResp)
 		if err != nil {
 			r.error(w, err, typ, clientState, testMode)
 			return
 		}
-		refreshTokenData = &authResp.RefreshTokenData
 	}
 
 	if tokenInfo == nil {
@@ -280,25 +279,8 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	}
 
 	w.Header().Set("Location", r.tokenURL(tokenInfo.Token, typ, clientState).String())
-	if refreshTokenData != nil {
-		cookieData := refreshTokenCookieData{
-			ProviderType:     typ,
-			ProviderID:       providerID,
-			RefreshTokenData: *refreshTokenData,
-		}
-		if encodedData, err := cookieData.Encode(); err != nil {
-			log.Errorf("failed to encode refresh token cookie data: %v", err)
-		} else {
-			refreshTokenCookie := &http.Cookie{
-				Name:     refreshTokenCookieName,
-				Value:    encodedData,
-				Path:     r.sessionURLPrefix(),
-				HttpOnly: true,
-				Secure:   true,
-				SameSite: http.SameSiteStrictMode,
-			}
-			http.SetCookie(w, refreshTokenCookie)
-		}
+	if refreshCookie != nil {
+		http.SetCookie(w, refreshCookie)
 	}
 
 	w.WriteHeader(http.StatusSeeOther)

@@ -33,5 +33,5 @@ type Registry interface {
 	RegisterBackendFactory(ctx context.Context, typ string, factoryCreator BackendFactoryCreator) error
 
 	GetExternalUserClaim(ctx context.Context, externalToken, typ, state string) (*AuthResponse, string, error)
-	IssueToken(ctx context.Context, provider Provider, authResponse *AuthResponse) (string, error)
+	IssueToken(ctx context.Context, provider Provider, authResponse *AuthResponse) (string, *http.Cookie, error)
 }
