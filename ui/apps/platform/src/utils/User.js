@@ -18,7 +18,7 @@ export default class User {
     }
 
     get name() {
-        return this.attributesMap.name;
+        return this.attributesMap.name || this.username;
     }
 
     get email() {
@@ -26,7 +26,11 @@ export default class User {
     }
 
     get username() {
-        return this.userData.userInfo?.username || this.attributesMap.username;
+        return this.userData.userInfo?.username || this.attributesMap.username || this.email;
+    }
+
+    get displayName() {
+        return this.userData.userInfo?.friendlyName || this.name;
     }
 
     get roles() {

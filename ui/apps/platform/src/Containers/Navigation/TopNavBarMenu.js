@@ -36,18 +36,19 @@ function TopNavBarMenu({ logout, userRolePermissions, userData }) {
     const buttonTextClassName = 'border rounded-full mx-3 p-3 text-xl border-base-400';
 
     const user = new User(userData);
+    const { displayName } = user;
+    let displayEmail = user.email;
+    if (displayEmail === displayName) {
+        displayEmail = null;
+    }
     const menuOptionComponent = (
         <div className="flex flex-col pl-2">
-            <div
-                // TODO: Ideally we display both name and username as-is w/o capitalization, yet Menu component is too smart
-                className={`font-700 ${!user.name && 'lowercase'}`}
-                data-testid="menu-user-name"
-            >
-                {user.name || user.username}
+            <div className="font-700 normal-case" data-testid="menu-user-name">
+                {displayName}
             </div>
-            {user.email && (
+            {displayEmail && (
                 <div className="lowercase text-base-500 italic pt-px" data-testid="menu-user-email">
-                    {user.email}
+                    {displayEmail}
                 </div>
             )}
             <div className="pt-1" data-testid="menu-user-roles">
@@ -87,6 +88,7 @@ TopNavBarMenu.propTypes = {
     userData: PropTypes.shape({
         userInfo: PropTypes.shape({
             username: PropTypes.string,
+            friendlyName: PropTypes.string,
             roles: PropTypes.arrayOf(
                 PropTypes.shape({
                     name: PropTypes.string,

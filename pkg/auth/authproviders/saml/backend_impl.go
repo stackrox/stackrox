@@ -163,9 +163,54 @@ func (p *backendImpl) Validate(ctx context.Context, claims *tokens.Claims) error
 // Helpers
 //////////
 
+func getAttribute(assertionInfo *saml2.AssertionInfo, keys ...string) string {
+	for _, key := range keys {
+		if val := assertionInfo.Values.Get(key); val != "" {
+			return val
+		}
+	}
+	return ""
+}
+
+var emailAttributes = []string{
+	"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+	"urn:oid:0.9.2342.19200300.100.1.3",
+	"email",
+	"Email",
+	"emailaddress",
+	"mail",
+}
+
+var fullNameAttributes = []string{
+	"http://schemas.microsoft.com/identity/claims/displayname",
+	"urn:oid:2.16.840.1.113730.3.1.241",
+	"displayName",
+	"urn:oid:2.5.4.3",
+	"commonName",
+}
+
+var givenNameAttributes = []string{
+	"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
+	"urn:oid:2.5.4.42",
+	"givenName",
+}
+
+var surnameAttributes = []string{
+	"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname",
+	"urn:oid:2.5.4.4",
+	"surname",
+}
+
 func saml2AssertionInfoToExternalClaim(assertionInfo *saml2.AssertionInfo) *tokens.ExternalUserClaim {
 	claim := &tokens.ExternalUserClaim{
 		UserID: assertionInfo.NameID,
+		Email:  getAttribute(assertionInfo, emailAttributes...),
+		FullName: stringutils.FirstNonEmpty(
+			getAttribute(assertionInfo, fullNameAttributes...),
+			stringutils.JoinNonEmpty(
+				" ",
+				getAttribute(assertionInfo, givenNameAttributes...),
+				getAttribute(assertionInfo, surnameAttributes...))),
 	}
 	claim.Attributes = make(map[string][]string)
 	claim.Attributes["userid"] = []string{claim.UserID}
