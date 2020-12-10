@@ -145,6 +145,7 @@ export const integrationHealth = {
     imageIntegrations: '/v1/integrationhealth/imageintegrations',
     notifiers: '/v1/integrationhealth/notifiers',
     externalBackups: '/v1/integrationhealth/externalbackups',
+    vulnDefinitions: '/v1/integrationhealth/vulndefinitions',
 };
 
 export const integrations = {

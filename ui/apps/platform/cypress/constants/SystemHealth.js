@@ -1,3 +1,5 @@
+import scopeSelectors from '../helpers/scopeSelectors';
+
 const baseURL = '/main/system-health';
 
 export const url = {
@@ -40,4 +42,8 @@ export const selectors = {
             backupIntegrations: '[data-testid="backup-integrations"]',
         },
     },
+    vulnDefinitions: scopeSelectors('[data-testid="vulnerability-definitions"]', {
+        header: '[data-testid="widget-header"]',
+        text: '[data-testid="text"]',
+    }),
 };

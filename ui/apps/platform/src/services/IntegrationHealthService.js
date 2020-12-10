@@ -20,3 +20,6 @@ export const fetchPluginIntegrationsHealth = () =>
     axios
         .get('/v1/integrationhealth/notifiers')
         .then((response) => response?.data?.integrationHealth ?? []);
+
+export const fetchVulnerabilityDefinitionsInfo = () =>
+    axios.get('/v1/integrationhealth/vulndefinitions').then((response) => response?.data ?? {});

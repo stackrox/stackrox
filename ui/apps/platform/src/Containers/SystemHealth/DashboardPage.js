@@ -12,6 +12,7 @@ import {
     fetchBackupIntegrationsHealth,
     fetchImageIntegrationsHealth,
     fetchPluginIntegrationsHealth,
+    fetchVulnerabilityDefinitionsInfo,
 } from 'services/IntegrationHealthService';
 import { fetchIntegration } from 'services/IntegrationsService';
 
@@ -22,18 +23,21 @@ import GenerateDiagnosticBundleButton from './Components/GenerateDiagnosticBundl
 import IntegrationsHealth from './Components/IntegrationsHealth';
 import SensorStatus from './Components/SensorStatus';
 import SensorUpgrade from './Components/SensorUpgrade';
+import VulnerabilityDefinitions from './Components/VulnerabilityDefinitions';
 
 import { mergeIntegrationResponses } from './utils/integrations';
 
 const smallButtonClassName = 'btn-sm btn-base flex-shrink-0 no-underline whitespace-no-wrap';
 
 const SystemHealthDashboardPage = () => {
-    const [pollingCount, setPollingCount] = useState(0);
+    const [pollingCountFaster, setPollingCountFaster] = useState(0);
+    const [pollingCountSlower, setPollingCountSlower] = useState(0);
     const [currentDatetime, setCurrentDatetime] = useState(null);
     const [clusters, setClusters] = useState([]);
     const [backupIntegrationsMerged, setBackupIntegrationsMerged] = useState([]);
     const [imageIntegrationsMerged, setImageIntegrationsMerged] = useState([]);
     const [pluginIntegrationsMerged, setPluginIntegrationsMerged] = useState([]);
+    const [vulnerabilityDefinitionsInfo, setVulnerabilityDefinitionsInfo] = useState(null);
 
     useEffect(() => {
         setCurrentDatetime(new Date());
@@ -74,11 +78,22 @@ const SystemHealthDashboardPage = () => {
                 );
             }
         );
-    }, [pollingCount]);
+    }, [pollingCountFaster]);
+
+    useEffect(() => {
+        // TODO catch
+        fetchVulnerabilityDefinitionsInfo().then((info) => {
+            setVulnerabilityDefinitionsInfo(info);
+        });
+    }, [pollingCountSlower]);
 
     useInterval(() => {
-        setPollingCount(pollingCount + 1);
-    }, 30000); // same interval as Cluster Status Problems in top navigation
+        setPollingCountFaster(pollingCountFaster + 1);
+    }, 30000); // 30 seconds is same as for Cluster Status Problems in top navigation
+
+    useInterval(() => {
+        setPollingCountSlower(pollingCountSlower + 1);
+    }, 300000); // 5 minutes is enough for Vulnerability Definitions
 
     return (
         <section className="bg-primary-200 flex flex-col h-full relative">
@@ -139,6 +154,16 @@ const SystemHealthDashboardPage = () => {
                                 />
                             </Widget>
                         </div>
+                    </Widget>
+                    <Widget
+                        className="h-48 text-center"
+                        header="Vulnerability Definitions"
+                        id="vulnerability-definitions"
+                    >
+                        <VulnerabilityDefinitions
+                            currentDatetime={currentDatetime}
+                            vulnerabilityDefinitionsInfo={vulnerabilityDefinitionsInfo}
+                        />
                     </Widget>
                 </div>
                 <div className="grid grid-columns-1 md:grid-columns-3 grid-gap-4 py-2 w-full">
