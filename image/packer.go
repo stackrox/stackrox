@@ -134,6 +134,11 @@ func GetCentralServicesChartTemplate() (*helmtpl.ChartTemplate, error) {
 	return getChartTemplate(CentralServicesChartPrefix)
 }
 
+// GetSecuredClusterServicesChartTemplate retrieves the StackRox Secured Cluster Services Helm chart template.
+func GetSecuredClusterServicesChartTemplate() (*helmtpl.ChartTemplate, error) {
+	return getChartTemplate(SecuredClusterServicesChartPrefix)
+}
+
 var (
 	secretGVK = schema.GroupVersionKind{Version: "v1", Kind: "Secret"}
 	// SensorCertObjectRefs are the objects in the sensor bundle that represents tls certs.

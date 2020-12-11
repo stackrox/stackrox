@@ -24,8 +24,10 @@ spec:
       namespace: {{ .Release.Namespace }}
       labels:
         app: sensor
+        {{- include "srox.podLabels" (list . "deployment" "sensor") | nindent 8 }}
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443,9443"
+        {{- include "srox.podAnnotations" (list . "deployment" "sensor") | nindent 8 }}
     spec:
       affinity:
         nodeAffinity:
@@ -224,10 +226,13 @@ spec:
       service: collector
   template:
     metadata:
+      namespace: {{ .Release.Namespace }}
       labels:
         service: collector
         app: collector
-      namespace: {{ .Release.Namespace }}
+        {{- include "srox.podLabels" (list . "daemonset" "collector") | nindent 8 }}
+      annotations:
+        {{- include "srox.podAnnotations" (list . "daemonset" "collector") | nindent 8 }}
     spec:
       {{- if not ._rox.collector.disableTaintTolerations }}
       tolerations:

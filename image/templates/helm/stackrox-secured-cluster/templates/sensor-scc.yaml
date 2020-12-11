@@ -52,10 +52,10 @@ metadata:
     kubernetes.io/description: This SCC is based on privileged, hostaccess, and hostmount-anyuid
   name: collector
   labels:
-    {{- include "srox.labels" (list . "securitycontextconstraint" "collector") | nindent 4 }}
+    {{- include "srox.labels" (list . "securitycontextconstraints" "collector") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
-    {{- include "srox.annotations" (list . "securitycontextconstraint" "collector") | nindent 4 }}
+    {{- include "srox.annotations" (list . "securitycontextconstraints" "collector") | nindent 4 }}
 users:
   - system:serviceaccount:stackrox:collector
 allowHostDirVolumePlugin: true
