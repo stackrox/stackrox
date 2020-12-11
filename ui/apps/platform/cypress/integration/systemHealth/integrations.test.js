@@ -95,7 +95,7 @@ describe('System Health Integrations fixtures', () => {
     it('should have counts in healthy text', () => {
         cy.server();
 
-        // 2 image integrations are healthy
+        // 2 / 3 healthy integrations
         cy.route('GET', integrationHealthApi.imageIntegrations, {
             integrationHealth: [
                 {
@@ -144,7 +144,7 @@ describe('System Health Integrations fixtures', () => {
             ],
         }).as('GetImageIntegrations');
 
-        // 1 plugin integration is healthy
+        // 1 healthy integration
         cy.route('GET', integrationHealthApi.notifiers, {
             integrationHealth: [
                 {
@@ -178,9 +178,9 @@ describe('System Health Integrations fixtures', () => {
         const { healthyText, widgets } = selectors.integrations;
 
         Object.entries({
-            imageIntegrations: '2 image integrations are healthy',
-            pluginIntegrations: '1 plugin integration is healthy',
-            backupIntegrations: '0 backup integrations are healthy',
+            imageIntegrations: '2 / 3 healthy integrations',
+            pluginIntegrations: '1 healthy integration',
+            backupIntegrations: 'No configured integrations',
         }).forEach(([key, text]) => {
             cy.get(`${widgets[key]} ${healthyText}`).should('have.text', text);
         });
@@ -222,14 +222,10 @@ describe('System Health Integrations fixtures', () => {
                 errorMessage:
                     'Error scanning "docker.io/library/nginx:latest" with scanner "Stackrox Scanner": dial tcp 10.0.1.229:5432: connect: connection refused',
             },
-        ].forEach(({ name, label, errorMessage }, i) => {
+        ].forEach(({ name }, i) => {
             const itemSelector = `${widgetSelector} li:nth-child(${i + 1})`;
             cy.get(`${itemSelector} ${integrations.integrationName}`).should('have.text', name);
-            cy.get(`${itemSelector} ${integrations.integrationLabel}`).should('have.text', label);
-            cy.get(`${itemSelector} ${integrations.errorMessage}`).should(
-                'have.text',
-                errorMessage
-            );
+            cy.get(`${itemSelector} ${integrations.integrationLabel}`).should('not.exist'); // because redundant
         });
     });
 });
