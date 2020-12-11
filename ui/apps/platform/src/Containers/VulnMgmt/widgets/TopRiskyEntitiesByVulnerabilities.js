@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 import { gql, useQuery } from '@apollo/client';
 
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import queryService from 'utils/queryService';
 import workflowStateContext from 'Containers/workflowStateContext';
 import Loader from 'Components/Loader';
@@ -35,9 +37,14 @@ const TopRiskyEntitiesByVulnerabilities = ({
     small,
 }) => {
     const workflowState = useContext(workflowStateContext);
+    const hostScanningEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_HOST_SCANNING);
+    const typesToUse = hostScanningEnabled
+        ? riskEntityTypes.concat(entityTypes.NODE)
+        : riskEntityTypes;
+
     // Entity Type selection
     const [selectedEntityType, setEntityType] = useState(defaultSelection);
-    const entityOptions = riskEntityTypes.map((entityType) => ({
+    const entityOptions = typesToUse.map((entityType) => ({
         label: `Top risky ${pluralize(entityLabels[entityType])} by CVE count & CVSS score`,
         value: entityType,
     }));
@@ -85,6 +92,34 @@ const TopRiskyEntitiesByVulnerabilities = ({
                 name
                 clusterName
                 namespaceName: namespace
+                priority
+                plottedVulns(query: $vulnQuery) {
+                    basicVulnCounter {
+                        all {
+                            total
+                            fixable
+                        }
+                    }
+                    vulns(pagination: $vulnPagination) {
+                        ...vulnFields
+                    }
+                }
+            }
+        }
+        ${VULN_FRAGMENT}
+    `;
+
+    const NODE_QUERY = gql`
+        query topRiskyNodes(
+            $query: String
+            $vulnQuery: String
+            $entityPagination: Pagination
+            $vulnPagination: Pagination
+        ) {
+            results: nodes(query: $query, pagination: $entityPagination) {
+                id
+                name
+                clusterName
                 priority
                 plottedVulns(query: $vulnQuery) {
                     basicVulnCounter {
@@ -221,6 +256,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
         [entityTypes.CLUSTER]: CLUSTER_QUERY,
         [entityTypes.COMPONENT]: COMPONENT_QUERY,
         [entityTypes.IMAGE]: IMAGE_QUERY,
+        [entityTypes.NODE]: NODE_QUERY,
     };
     const query = queryMap[selectedEntityType];
 
