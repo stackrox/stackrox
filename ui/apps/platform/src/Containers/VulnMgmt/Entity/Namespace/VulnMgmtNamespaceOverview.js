@@ -12,7 +12,7 @@ import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import TopRiskyEntitiesByVulnerabilities from 'Containers/VulnMgmt/widgets/TopRiskyEntitiesByVulnerabilities';
 import RecentlyDetectedVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedVulnerabilities';
-import TopRiskiestImagesAndComponents from 'Containers/VulnMgmt/widgets/TopRiskiestImagesAndComponents';
+import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
 import DeploymentsWithMostSeverePolicyViolations from 'Containers/VulnMgmt/widgets/DeploymentsWithMostSeverePolicyViolations';
 import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
@@ -105,7 +105,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                             <RecentlyDetectedVulnerabilities entityContext={currentEntity} />
                         </div>
                         <div className="s-1">
-                            <TopRiskiestImagesAndComponents entityContext={currentEntity} />
+                            <TopRiskiestEntities entityContext={currentEntity} />
                         </div>
                         <div className="s-1">
                             <DeploymentsWithMostSeverePolicyViolations

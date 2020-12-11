@@ -16,7 +16,7 @@ import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntity
 
 import TopRiskyEntitiesByVulnerabilities from '../../widgets/TopRiskyEntitiesByVulnerabilities';
 import RecentlyDetectedVulnerabilities from '../../widgets/RecentlyDetectedVulnerabilities';
-import TopRiskiestImagesAndComponents from '../../widgets/TopRiskiestImagesAndComponents';
+import TopRiskiestEntities from '../../widgets/TopRiskiestEntities';
 import DeploymentsWithMostSeverePolicyViolations from '../../widgets/DeploymentsWithMostSeverePolicyViolations';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
@@ -125,7 +125,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                             />
                         </div>
                         <div className="s-1">
-                            <TopRiskiestImagesAndComponents
+                            <TopRiskiestEntities
                                 limit={OVERVIEW_LIMIT}
                                 entityContext={currentEntity}
                             />

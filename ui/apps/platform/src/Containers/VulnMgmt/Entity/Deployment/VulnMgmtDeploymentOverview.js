@@ -13,7 +13,7 @@ import PolicyViolationsBySeverity from 'Containers/VulnMgmt/widgets/PolicyViolat
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import RecentlyDetectedVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedVulnerabilities';
 import MostCommonVulnerabiltiesInDeployment from 'Containers/VulnMgmt/widgets/MostCommonVulnerabiltiesInDeployment';
-import TopRiskiestImagesAndComponents from 'Containers/VulnMgmt/widgets/TopRiskiestImagesAndComponents';
+import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
@@ -163,10 +163,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                             <MostCommonVulnerabiltiesInDeployment deploymentId={id} />
                         </div>
                         <div className="s-1">
-                            <TopRiskiestImagesAndComponents
-                                limit={5}
-                                entityContext={currentEntity}
-                            />
+                            <TopRiskiestEntities limit={5} entityContext={currentEntity} />
                         </div>
                     </div>
                 </CollapsibleSection>

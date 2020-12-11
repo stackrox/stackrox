@@ -2,10 +2,10 @@ import React, { useContext } from 'react';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import entityTypes from 'constants/entityTypes';
 import { createOptions } from 'utils/workflowUtils';
 import { knownBackendFlags } from 'utils/featureFlags';
-import FeatureEnabled from 'Containers/FeatureEnabled';
 import DashboardLayout from 'Components/DashboardLayout';
 import ExportButton from 'Components/ExportButton';
 import RadioButtonGroup from 'Components/RadioButtonGroup';
@@ -17,7 +17,7 @@ import CvesCountTile from '../Components/CvesCountTile';
 import ImagesCountTile from '../Components/ImagesCountTile';
 import NodesCountTile from '../Components/NodesCountTile';
 import TopRiskyEntitiesByVulnerabilities from '../widgets/TopRiskyEntitiesByVulnerabilities';
-import TopRiskiestImagesAndComponents from '../widgets/TopRiskiestImagesAndComponents';
+import TopRiskiestEntities from '../widgets/TopRiskiestEntities';
 import FrequentlyViolatedPolicies from '../widgets/FrequentlyViolatedPolicies';
 import RecentlyDetectedVulnerabilities from '../widgets/RecentlyDetectedVulnerabilities';
 import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
@@ -32,6 +32,7 @@ const entityMenuTypes = [
 ];
 
 const VulnDashboardPage = ({ history }) => {
+    const hostScanningEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_HOST_SCANNING);
     const workflowState = useContext(workflowStateContext);
     const searchState = workflowState.getCurrentSearchState();
 
@@ -73,10 +74,8 @@ const VulnDashboardPage = ({ history }) => {
                 <div className="flex h-full mr-3 pr-3 border-r-2 border-base-400">
                     <PoliciesCountTile />
                     <CvesCountTile />
+                    {hostScanningEnabled && <NodesCountTile />}
                     <ImagesCountTile />
-                    <FeatureEnabled featureFlag={knownBackendFlags.ROX_HOST_SCANNING}>
-                        {({ featureEnabled }) => featureEnabled && <NodesCountTile />}
-                    </FeatureEnabled>
                     <div className="flex w-32">
                         <DashboardMenu
                             text="Application & Infrastructure"
@@ -107,7 +106,7 @@ const VulnDashboardPage = ({ history }) => {
                 />
             </div>
             <div className="s-2 xxxl:sx-2">
-                <TopRiskiestImagesAndComponents limit={DASHBOARD_LIMIT} />
+                <TopRiskiestEntities limit={DASHBOARD_LIMIT} />
             </div>
             <div className="s-2 xxxl:sx-2">
                 <FrequentlyViolatedPolicies />

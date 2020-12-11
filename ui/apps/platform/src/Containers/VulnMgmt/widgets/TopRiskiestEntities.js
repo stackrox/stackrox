@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import { gql, useQuery } from '@apollo/client';
 import { format } from 'date-fns';
 
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import workflowStateContext from 'Containers/workflowStateContext';
 import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
@@ -17,6 +19,7 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 import { entitySortFieldsMap } from 'constants/sortFields';
+import { resourceLabels } from 'messages/common';
 
 const TOP_RISKIEST_IMAGES = gql`
     query topRiskiestImages($query: String, $pagination: Pagination) {
@@ -89,8 +92,43 @@ const TOP_RISKIEST_COMPONENTS = gql`
     }
 `;
 
+const TOP_RISKIEST_NODES = gql`
+    query topRiskiestNodes($query: String, $pagination: Pagination) {
+        results: nodes(query: $query, pagination: $pagination) {
+            id
+            name
+            vulnCounter {
+                all {
+                    total
+                    fixable
+                }
+                low {
+                    total
+                    fixable
+                }
+                medium {
+                    total
+                    fixable
+                }
+                high {
+                    total
+                    fixable
+                }
+                critical {
+                    total
+                    fixable
+                }
+            }
+            priority
+            scanTime
+        }
+    }
+`;
+
 const getTextByEntityType = (entityType, data) => {
     switch (entityType) {
+        case entityTypes.NODE:
+            return data.name;
         case entityTypes.COMPONENT:
             return `${data.name}:${data.version}`;
         case entityTypes.IMAGE:
@@ -188,13 +226,15 @@ const getQueryBySelectedEntity = (entityType) => {
     switch (entityType) {
         case entityTypes.COMPONENT:
             return TOP_RISKIEST_COMPONENTS;
+        case entityTypes.NODE:
+            return TOP_RISKIEST_NODES;
         case entityTypes.IMAGE:
         default:
             return TOP_RISKIEST_IMAGES;
     }
 };
 
-const getEntitiesByContext = (entityContext) => {
+const getEntitiesByContext = (entityContext, hostScanningEnabled) => {
     const entities = [];
     if (entityContext === {} || !entityContext[entityTypes.COMPONENT]) {
         entities.push({ label: 'Top Riskiest Components', value: entityTypes.COMPONENT });
@@ -203,12 +243,15 @@ const getEntitiesByContext = (entityContext) => {
         // unshift so it sits at the front of the list (in case both entity types are added, image should come first)
         entities.unshift({ label: 'Top Riskiest Images', value: entityTypes.IMAGE });
     }
+    if (hostScanningEnabled && (entityContext === {} || !entityContext[entityTypes.NODE])) {
+        entities.push({ label: 'Top Riskiest Nodes', value: entityTypes.NODE });
+    }
     return entities;
 };
 
-const TopRiskiestImagesAndComponents = ({ entityContext, limit }) => {
-    const entities = getEntitiesByContext(entityContext);
-
+const TopRiskiestEntities = ({ entityContext, limit }) => {
+    const hostScanningEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_HOST_SCANNING);
+    const entities = getEntitiesByContext(entityContext, hostScanningEnabled);
     const [selectedEntity, setSelectedEntity] = useState(entities[0].value);
 
     function onEntityChange(value) {
@@ -242,10 +285,9 @@ const TopRiskiestImagesAndComponents = ({ entityContext, limit }) => {
 
     if (!loading) {
         if (error) {
-            const entityText = selectedEntity === entityTypes.COMPONENT ? 'components' : 'images';
             content = (
                 <NoResultsMessage
-                    message={`An error occurred in retrieving ${entityText}. Please refresh the page. If this problem continues, please contact support.`}
+                    message={`An error occurred in retrieving ${resourceLabels[selectedEntity]}s. Please refresh the page. If this problem continues, please contact support.`}
                     className="p-3"
                     icon="warn"
                 />
@@ -282,14 +324,14 @@ const TopRiskiestImagesAndComponents = ({ entityContext, limit }) => {
     );
 };
 
-TopRiskiestImagesAndComponents.propTypes = {
+TopRiskiestEntities.propTypes = {
     entityContext: PropTypes.shape({}),
     limit: PropTypes.number,
 };
 
-TopRiskiestImagesAndComponents.defaultProps = {
+TopRiskiestEntities.defaultProps = {
     entityContext: {},
     limit: 5,
 };
 
-export default TopRiskiestImagesAndComponents;
+export default TopRiskiestEntities;

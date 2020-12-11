@@ -1,27 +1,23 @@
+/* eslint-disable react/display-name */
 import React from 'react';
 import { gql } from '@apollo/client';
 
 import queryService from 'utils/queryService';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import TableCellLink from 'Components/TableCellLink';
-import StatusChip from 'Components/StatusChip';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import DateTimeField from 'Components/DateTimeField';
-import {
-    defaultHeaderClassName,
-    nonSortableHeaderClassName,
-    defaultColumnClassName,
-} from 'Components/Table';
+import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { NODE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
-import { nodeSortFields, imageSortFields } from 'constants/sortFields';
+import { nodeSortFields } from 'constants/sortFields';
 
 // TODO: need to get default node sort
-export const defaultImageSort = [
+export const defaultNodeSort = [
     {
         id: nodeSortFields.NODE,
         desc: false,
@@ -69,9 +65,9 @@ export function getImageTableColumns(workflowState) {
                     />
                 );
             },
-            id: imageSortFields.CVE_COUNT,
+            id: nodeSortFields.CVE_COUNT,
             accessor: 'vulnCounter.all.total',
-            sortField: imageSortFields.CVE_COUNT,
+            sortField: nodeSortFields.CVE_COUNT,
         },
         {
             Header: `Top CVSS`,
@@ -89,68 +85,9 @@ export function getImageTableColumns(workflowState) {
                 const { cvss, scoreVersion } = topVuln;
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
             },
-            id: imageSortFields.TOP_CVSS,
+            id: nodeSortFields.TOP_CVSS,
             accessor: 'topVuln.cvss',
-            sortField: imageSortFields.TOP_CVSS,
-        },
-        {
-            Header: `Scan Time`,
-            headerClassName: `w-1/12 ${defaultHeaderClassName}`,
-            className: `w-1/12 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
-                const { scan } = original;
-                if (!scan) {
-                    return '–';
-                }
-                return <DateTimeField date={scan.scanTime} asString={pdf} />;
-            },
-            id: imageSortFields.SCAN_TIME,
-            accessor: 'scan.scanTime',
-            sortField: imageSortFields.SCAN_TIME,
-        },
-        {
-            Header: `OS`,
-            headerClassName: `w-1/12 ${defaultHeaderClassName}`,
-            className: `w-1/12 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                const { scan } = original;
-                if (!scan?.operatingSystem) {
-                    return '–';
-                }
-                return <span>{scan.operatingSystem}</span>;
-            },
-            id: imageSortFields.IMAGE_OS,
-            accessor: 'osImage',
-            sortField: imageSortFields.IMAGE_OS,
-        },
-        {
-            Header: `Runtime`,
-            headerClassName: `w-1/12 ${defaultHeaderClassName}`,
-            className: `w-1/12 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
-                const { scan } = original;
-                if (!scan) {
-                    return '–';
-                }
-                return <DateTimeField date={scan.scanTime} asString={pdf} />;
-            },
-            id: imageSortFields.SCAN_TIME,
-            accessor: 'scan.scanTime',
-            sortField: imageSortFields.SCAN_TIME,
-        },
-        {
-            Header: 'Node Status',
-            headerClassName: `w-1/12 ${nonSortableHeaderClassName}`,
-            className: `w-1/12 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
-                const { deploymentCount } = original;
-                const imageStatus = deploymentCount === 0 ? 'inactive' : 'active';
-                return <StatusChip status={imageStatus} asString={pdf} />;
-            },
-            id: imageSortFields.IMAGE_STATUS,
-            accessor: 'deploymentCount',
-            sortField: imageSortFields.IMAGE_STATUS,
-            sortable: false,
+            sortField: nodeSortFields.TOP_CVSS,
         },
         {
             Header: `Cluster`,
@@ -170,12 +107,73 @@ export function getImageTableColumns(workflowState) {
             sortField: nodeSortFields.CLUSTER,
         },
         {
+            Header: `Operating System`,
+            headerClassName: `w-1/12 ${defaultHeaderClassName}`,
+            className: `w-1/12 ${defaultColumnClassName}`,
+            id: nodeSortFields.OPERATING_SYSTEM,
+            accessor: 'osImage',
+            sortField: nodeSortFields.OPERATING_SYSTEM,
+        },
+
+        {
+            Header: `Container Runtime`,
+            headerClassName: `w-1/12 ${defaultHeaderClassName}`,
+            className: `w-1/12 ${defaultColumnClassName}`,
+            id: nodeSortFields.CONTAINER_RUNTIME,
+            accessor: 'containerRuntimeVersion',
+            sortField: nodeSortFields.CONTAINER_RUNTIME,
+        },
+        // {
+        //     Header: 'Node Status',
+        //     headerClassName: `w-1/12 ${nonSortableHeaderClassName}`,
+        //     className: `w-1/12 ${defaultColumnClassName}`,
+        //     Cell: ({ original, pdf }) => {
+        //         const { deploymentCount } = original;
+        //         const imageStatus = deploymentCount === 0 ? 'inactive' : 'active';
+        //         return <StatusChip status={imageStatus} asString={pdf} />;
+        //     },
+        //     id: imageSortFields.IMAGE_STATUS,
+        //     accessor: 'deploymentCount',
+        //     sortField: imageSortFields.IMAGE_STATUS,
+        //     sortable: false,
+        // },
+        {
+            Header: `Join Time`,
+            headerClassName: `w-1/12 ${defaultHeaderClassName}`,
+            className: `w-1/12 ${defaultColumnClassName}`,
+            Cell: ({ original, pdf }) => {
+                const { joinedAt } = original;
+                if (!joinedAt) {
+                    return '–';
+                }
+                return <DateTimeField date={joinedAt} asString={pdf} />;
+            },
+            id: nodeSortFields.NODE_JOIN_TIME,
+            accessor: 'joinedAt',
+            sortField: nodeSortFields.NODE_JOIN_TIME,
+        },
+        {
+            Header: `Scan Time`,
+            headerClassName: `w-1/12 ${defaultHeaderClassName}`,
+            className: `w-1/12 ${defaultColumnClassName}`,
+            Cell: ({ original, pdf }) => {
+                const { scan } = original;
+                if (!scan) {
+                    return '–';
+                }
+                return <DateTimeField date={scan.scanTime} asString={pdf} />;
+            },
+            id: nodeSortFields.SCAN_TIME,
+            accessor: 'scan.scanTime',
+            sortField: nodeSortFields.SCAN_TIME,
+        },
+        {
             Header: `Risk Priority`,
             headerClassName: `w-1/12 ${defaultHeaderClassName}`,
             className: `w-1/12 ${defaultColumnClassName}`,
-            id: imageSortFields.PRIORITY,
+            id: nodeSortFields.PRIORITY,
             accessor: 'priority',
-            sortField: imageSortFields.PRIORITY,
+            sortField: nodeSortFields.PRIORITY,
         },
     ];
     return removeEntityContextColumns(tableColumns, workflowState);
@@ -193,7 +191,7 @@ const VulnMgmtNodes = ({ selectedRowId, search, sort, page, data, totalResults }
         ${NODE_LIST_FRAGMENT}
     `;
 
-    const tableSort = sort || defaultImageSort;
+    const tableSort = sort || defaultNodeSort;
     const queryOptions = {
         variables: {
             query: queryService.objectToWhereClause(search),

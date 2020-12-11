@@ -10,7 +10,7 @@ import RiskScore from 'Components/RiskScore';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import CVETable from 'Containers/Images/CVETable';
 import workflowStateContext from 'Containers/workflowStateContext';
-import TopRiskiestImagesAndComponents from 'Containers/VulnMgmt/widgets/TopRiskiestImagesAndComponents';
+import TopRiskiestEntities from 'Containers/VulnMgmt/widgets/TopRiskiestEntities';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import entityTypes from 'constants/entityTypes';
@@ -130,10 +130,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                             <CvesByCvssScore entityContext={currentEntity} />
                         </div>
                         <div className="s-1">
-                            <TopRiskiestImagesAndComponents
-                                limit={5}
-                                entityContext={currentEntity}
-                            />
+                            <TopRiskiestEntities limit={5} entityContext={currentEntity} />
                         </div>
                     </div>
                 </CollapsibleSection>

@@ -123,6 +123,11 @@ export const nodeSortFields = {
     NODE: 'Node',
     NODE_JOIN_TIME: 'Node Join Time',
     OPERATING_SYSTEM: 'Operating System',
+    CVE_COUNT: 'CVE Count',
+    PRIORITY: 'Priority',
+    TOP_CVSS: 'Node Top CVSS',
+    IMAGE_OS: 'Image OS',
+    SCAN_TIME: 'Node Scan Time',
 };
 
 /**
@@ -269,4 +274,5 @@ export const entitySortFieldsMap = {
     [entityTypes.COMPONENT]: componentSortFields,
     [entityTypes.CVE]: cveSortFields,
     [entityTypes.POLICY]: policySortFields,
+    [entityTypes.NODE]: nodeSortFields,
 };

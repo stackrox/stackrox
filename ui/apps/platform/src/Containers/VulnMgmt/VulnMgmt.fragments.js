@@ -134,10 +134,11 @@ export const NODE_LIST_FRAGMENT = gql`
         # topVuln
         # scanTime
         osImage
-        # runtime
+        containerRuntimeVersion
         # nodeStatus
         clusterName
         clusterId
+        joinedAt
         # priority
     }
 `;
