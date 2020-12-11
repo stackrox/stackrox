@@ -75,7 +75,7 @@ class RuleGroups extends Component {
     );
 
     getFilteredValueOptions = (valueOptions, idx) => {
-        const { key } = this.props.groups[idx].props;
+        const { key } = this.props?.initialValues?.groups[idx]?.props ?? {};
         const result = valueOptions
             .filter((option) => option.key === key)
             .map((option) => ({ label: option.label, value: option.value }));
