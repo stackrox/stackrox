@@ -145,8 +145,10 @@ spec:
       namespace: {{ .Release.Namespace }}
       labels:
         app: admission-control
+        {{- include "srox.podLabels" (list . "deployment" "admission-control") | nindent 8 }}
       annotations:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443"
+        {{- include "srox.podAnnotations" (list . "deployment" "admission-control") | nindent 8 }}
     spec:
       # Attempt to schedule these on master nodes
       affinity:

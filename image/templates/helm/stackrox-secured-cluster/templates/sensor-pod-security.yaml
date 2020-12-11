@@ -25,10 +25,10 @@ metadata:
   name: stackrox-sensor-psp
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "clusterrole" "stackrox-sensor-psp") | nindent 4 }}
+    {{- include "srox.labels" (list . "rolebinding" "stackrox-sensor-psp") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
-    {{- include "srox.annotations" (list . "clusterrole" "stackrox-sensor-psp") | nindent 4 }}
+    {{- include "srox.annotations" (list . "rolebinding" "stackrox-sensor-psp") | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
