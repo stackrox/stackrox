@@ -96,7 +96,7 @@ const SystemHealthDashboardPage = () => {
     }, 300000); // 5 minutes is enough for Vulnerability Definitions
 
     return (
-        <section className="bg-primary-200 flex flex-col h-full relative">
+        <section className="bg-primary-200 flex flex-col h-full overflow-auto relative">
             <PageHeader header="System Health" subHeader="Dashboard">
                 <div className="flex flex-1 items-center justify-end">
                     <GenerateDiagnosticBundleButton />
@@ -179,13 +179,7 @@ const SystemHealthDashboardPage = () => {
                         }
                         id="image-integrations"
                     >
-                        <IntegrationsHealth
-                            healthyText={{
-                                plural: 'image integrations are healthy',
-                                singular: 'image integration is healthy',
-                            }}
-                            integrationsMerged={imageIntegrationsMerged}
-                        />
+                        <IntegrationsHealth integrationsMerged={imageIntegrationsMerged} />
                     </Widget>
                     <Widget
                         header="Plugin Integrations"
@@ -199,13 +193,7 @@ const SystemHealthDashboardPage = () => {
                         }
                         id="plugin-integrations"
                     >
-                        <IntegrationsHealth
-                            healthyText={{
-                                plural: 'plugin integrations are healthy',
-                                singular: 'plugin integration is healthy',
-                            }}
-                            integrationsMerged={pluginIntegrationsMerged}
-                        />
+                        <IntegrationsHealth integrationsMerged={pluginIntegrationsMerged} />
                     </Widget>
                     <Widget
                         header="Backup Integrations"
@@ -219,13 +207,7 @@ const SystemHealthDashboardPage = () => {
                         }
                         id="backup-integrations"
                     >
-                        <IntegrationsHealth
-                            healthyText={{
-                                plural: 'backup integrations are healthy',
-                                singular: 'backup integration is healthy',
-                            }}
-                            integrationsMerged={backupIntegrationsMerged}
-                        />
+                        <IntegrationsHealth integrationsMerged={backupIntegrationsMerged} />
                     </Widget>
                 </div>
             </div>
