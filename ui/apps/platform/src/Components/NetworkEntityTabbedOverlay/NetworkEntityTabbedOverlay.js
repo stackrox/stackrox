@@ -4,11 +4,10 @@ import PropTypes from 'prop-types';
 import useTabs from 'hooks/useTabs';
 import { networkEntities } from 'messages/network';
 
-import Tab from 'Components/Tab';
 import NetworkEntityTabHeader from './NetworkEntityTabHeader';
 
 function NetworkEntityTabbedOverlay({ entityName, entityType, children }) {
-    const { tabHeaders, activeTabContent } = useTabs(children, Tab);
+    const { tabHeaders, activeTabContent } = useTabs(children);
 
     const tabHeaderComponents = tabHeaders.map(({ title, isActive, onSelectTab }) => {
         return (
@@ -34,9 +33,7 @@ function NetworkEntityTabbedOverlay({ entityName, entityType, children }) {
                     {tabHeaderComponents}
                 </ul>
             </div>
-            <div className="flex-1 m-2 max-w-120 overflow-auto shadow-md rounded">
-                {activeTabContent}
-            </div>
+            <div className="flex-1 m-2 max-w-120 overflow-auto rounded">{activeTabContent}</div>
         </>
     );
 }

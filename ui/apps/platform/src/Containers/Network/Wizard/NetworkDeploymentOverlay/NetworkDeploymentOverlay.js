@@ -8,6 +8,7 @@ import { selectors } from 'reducers';
 
 import Tab from 'Components/Tab';
 import NetworkEntityTabbedOverlay from 'Components/NetworkEntityTabbedOverlay';
+import NetworkFlowsTabs from './NetworkFlowsTabs';
 
 function NetworkDeploymentOverlay({ selectedDeployment }) {
     const { name, type } = selectedDeployment;
@@ -16,7 +17,7 @@ function NetworkDeploymentOverlay({ selectedDeployment }) {
         <div className="flex flex-1 flex-col">
             <NetworkEntityTabbedOverlay entityName={name} entityType={type}>
                 <Tab title="Flows">
-                    <div className="p-4 bg-primary-100">Add Flows here...</div>
+                    <NetworkFlowsTabs />
                 </Tab>
                 <Tab title="Policies">
                     <div className="p-4 bg-primary-100">Add Policies here...</div>

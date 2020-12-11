@@ -4,7 +4,7 @@ import cloneDeep from 'lodash/cloneDeep';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
-import Tabs from 'Components/Tabs';
+import BinderTabs from 'Components/BinderTabs';
 import Tab from 'Components/Tab';
 import RiskScore from 'Components/RiskScore';
 import TopCvssLabel from 'Components/TopCvssLabel';
@@ -135,12 +135,9 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Image Findings">
-                    <div className="flex pdf-page pdf-stretch pdf-new shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
-                        <Tabs
-                            hasTabSpacing
-                            headers={[{ text: 'Fixable CVEs' }, { text: 'Dockerfile' }]}
-                        >
-                            <Tab>
+                    <div className="flex pdf-page pdf-stretch pdf-new rounded relative rounded mb-4 ml-4 mr-4">
+                        <BinderTabs>
+                            <Tab title="Fixable CVEs">
                                 <TableWidgetFixableCves
                                     workflowState={workflowState}
                                     entityContext={entityContext}
@@ -149,7 +146,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                     id={safeData?.id}
                                 />
                             </Tab>
-                            <Tab>
+                            <Tab title="Dockerfile">
                                 <TableWidget
                                     header={`${layers.length} ${pluralize(
                                         'layer',
@@ -163,7 +160,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                     idAttribute="id"
                                 />
                             </Tab>
-                        </Tabs>
+                        </BinderTabs>
                     </div>
                 </CollapsibleSection>
             </div>

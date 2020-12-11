@@ -3,10 +3,7 @@ import { render } from '@testing-library/react';
 import { renderHook, act } from '@testing-library/react-hooks';
 
 import useTabs from './useTabs';
-
-const Tab = ({ children }) => {
-    return children;
-};
+import Tab from '../Components/Tab';
 
 const initialProps = {
     children: [
@@ -21,7 +18,7 @@ const initialProps = {
 
 describe('useTabs', () => {
     it('should get the tab headers', () => {
-        const { result } = renderHook(({ children }) => useTabs(children, Tab), {
+        const { result } = renderHook(({ children }) => useTabs(children), {
             initialProps,
         });
 
@@ -32,7 +29,7 @@ describe('useTabs', () => {
     });
 
     it('should get the active tab content', async () => {
-        const { result } = renderHook(({ children }) => useTabs(children, Tab), {
+        const { result } = renderHook(({ children }) => useTabs(children), {
             initialProps,
         });
 
@@ -46,7 +43,7 @@ describe('useTabs', () => {
     });
 
     it("should select the second tab and see the second tab's content", async () => {
-        const { result } = renderHook(({ children }) => useTabs(children, Tab), {
+        const { result } = renderHook(({ children }) => useTabs(children), {
             initialProps,
         });
 

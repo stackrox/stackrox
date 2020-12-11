@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
+import Tab from 'Components/Tab';
+
 /**
  * This hook enables the behavior of selecting between different tabs and seeing a new view
  *
@@ -9,7 +11,7 @@ import React, { useState, useEffect } from 'react';
  * Example: check out useTabs.test.js to see how to use the hook
  *
  */
-function useTabs(children, Tab) {
+function useTabs(children) {
     const [activeTabIndex, selectActiveTabIndex] = useState(0);
 
     useEffect(() => {

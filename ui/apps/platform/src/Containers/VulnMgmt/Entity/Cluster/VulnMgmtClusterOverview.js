@@ -6,7 +6,7 @@ import DateTimeField from 'Components/DateTimeField';
 import Metadata from 'Components/Metadata';
 import RiskScore from 'Components/RiskScore';
 import StatusChip from 'Components/StatusChip';
-import Tabs from 'Components/Tabs';
+import BinderTabs from 'Components/BinderTabs';
 import Tab from 'Components/Tab';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
@@ -141,11 +141,8 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
 
                 <CollapsibleSection title="Cluster Findings">
                     <div className="pdf-page pdf-stretch pdf-new flex relative rounded mb-4 ml-4 mr-4">
-                        <Tabs
-                            hasTabSpacing
-                            headers={[{ text: 'Policies' }, { text: 'Fixable CVEs' }]}
-                        >
-                            <Tab>
+                        <BinderTabs>
+                            <Tab title="Policies">
                                 <TableWidget
                                     header={`${failingPolicies.length} failing ${pluralize(
                                         entityTypes.POLICY,
@@ -159,7 +156,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                                     idAttribute="id"
                                 />
                             </Tab>
-                            <Tab>
+                            <Tab title="Fixable CVEs">
                                 <TableWidgetFixableCves
                                     workflowState={workflowState}
                                     entityContext={entityContext}
@@ -168,7 +165,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                                     id={safeData?.id}
                                 />
                             </Tab>
-                        </Tabs>
+                        </BinderTabs>
                     </div>
                 </CollapsibleSection>
             </div>

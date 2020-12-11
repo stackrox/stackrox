@@ -6,7 +6,7 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import StatusChip from 'Components/StatusChip';
 import RiskScore from 'Components/RiskScore';
 import Metadata from 'Components/Metadata';
-import Tabs from 'Components/Tabs';
+import BinderTabs from 'Components/BinderTabs';
 import Tab from 'Components/Tab';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -115,12 +115,9 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Namespace findings">
-                    <div className="flex pdf-page pdf-stretch pdf-new shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
-                        <Tabs
-                            hasTabSpacing
-                            headers={[{ text: 'Policies' }, { text: 'Fixable CVEs' }]}
-                        >
-                            <Tab>
+                    <div className="flex pdf-page pdf-stretch pdf-new rounded relative rounded mb-4 ml-4 mr-4">
+                        <BinderTabs>
+                            <Tab title="Policies">
                                 <TableWidget
                                     header={`${failingPolicies.length} failing ${pluralize(
                                         entityTypes.POLICY,
@@ -134,7 +131,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                                     idAttribute="id"
                                 />
                             </Tab>
-                            <Tab>
+                            <Tab title="Fixable CVEs">
                                 <TableWidgetFixableCves
                                     workflowState={workflowState}
                                     entityContext={entityContext}
@@ -143,7 +140,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                                     id={safeData?.metadata?.id}
                                 />
                             </Tab>
-                        </Tabs>
+                        </BinderTabs>
                     </div>
                 </CollapsibleSection>
             </div>

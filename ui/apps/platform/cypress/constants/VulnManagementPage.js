@@ -80,7 +80,7 @@ export const sidePanelListEntityPageSelectors = {
     deploymentTileLink: "[data-testid='DEPLOYMENT-tile-link']",
     policyTileLink: "[data-testid='POLICY-tile-link']",
     cveTileLink: '[data-testid="CVE-tile-link"]',
-    tabButton: '[data-testid="tab"]',
+    tabButton: '[data-testid="tabs"] button',
     getSidePanelTabHeader: (title) => {
         return `[data-testid="widget-header"] > .w-full:contains('${title}')`;
     },

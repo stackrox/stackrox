@@ -7,7 +7,7 @@ import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
-import Tabs from 'Components/Tabs';
+import BinderTabs from 'Components/BinderTabs';
 import Tab from 'Components/Tab';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
@@ -235,11 +235,8 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
                         </CollapsibleSection>
                         <CollapsibleSection title="Cluster Findings">
                             <div className="flex pdf-page pdf-stretch relative rounded mb-4 ml-4 mr-4">
-                                <Tabs
-                                    hasTabSpacing
-                                    headers={[{ text: 'Policies' }, { text: 'CIS Controls' }]}
-                                >
-                                    <Tab>
+                                <BinderTabs>
+                                    <Tab title="Policies">
                                         <DeploymentsWithFailedPolicies
                                             query={queryService.objectToWhereClause({
                                                 Cluster: name,
@@ -251,7 +248,7 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
                                             }}
                                         />
                                     </Tab>
-                                    <Tab>
+                                    <Tab title="CIS Controls">
                                         <NodesWithFailedControls
                                             entityType={entityTypes.CLUSTER}
                                             entityContext={{
@@ -260,7 +257,7 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
                                             }}
                                         />
                                     </Tab>
-                                </Tabs>
+                                </BinderTabs>
                             </div>
                         </CollapsibleSection>
                     </div>
