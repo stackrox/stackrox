@@ -312,6 +312,8 @@ webhooks:
           - replicationcontrollers
           - statefulsets
           - daemonsets
+          - cronjobs
+          - jobs
           {{- if ._rox.env.openshift }}
           - deploymentconfigs
           {{- end }}
