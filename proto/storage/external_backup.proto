@@ -24,7 +24,7 @@ message ExternalBackup {
 
 message S3Config {
     string bucket            = 1;
-    bool   use_iam           = 2;
+    bool   use_iam           = 2 [(gogoproto.moretags) = "scrub:\"dependent\""];
     // The access key ID for the storage integration. The server will mask the value of this credential in responses and logs.
     string access_key_id     = 3 [(gogoproto.moretags) = "scrub:\"always\""];
     // The secret access key for the storage integration. The server will mask the value of this credential in responses and logs.

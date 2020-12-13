@@ -132,14 +132,13 @@ func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
 		return nil, err
 	}
 
-	endpoint := conf.GetEndpoint()
-	if endpoint == "" {
-		endpoint = fmt.Sprintf("ecr.%s.amazonaws.com", conf.GetRegion())
+	awsConfig := &aws.Config{
+		Region: aws.String(conf.GetRegion()),
 	}
 
-	awsConfig := &aws.Config{
-		Endpoint: aws.String(endpoint),
-		Region:   aws.String(conf.GetRegion()),
+	endpoint := conf.GetEndpoint()
+	if endpoint != "" {
+		awsConfig.Endpoint = aws.String(endpoint)
 	}
 
 	if !conf.GetUseIam() {

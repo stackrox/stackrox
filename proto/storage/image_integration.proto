@@ -74,7 +74,7 @@ message ECRConfig {
     // The secret access key for the integration. The server will mask the value of this credential in responses and logs.
     string secret_access_key = 3 [(gogoproto.moretags) = "scrub:\"always\""];
     string region            = 4;
-    bool   use_iam           = 5;
+    bool   use_iam           = 5 [(gogoproto.moretags) = "scrub:\"dependent\""];
     string endpoint          = 6 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
 }
 
