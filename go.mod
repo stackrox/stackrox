@@ -14,7 +14,7 @@ require (
 	github.com/VividCortex/ewma v1.1.1
 	github.com/andygrunwald/go-jira v1.10.0
 	github.com/antihax/optional v0.0.0-20180407024304-ca021399b1a6
-	github.com/aws/aws-sdk-go v1.29.17
+	github.com/aws/aws-sdk-go v1.35.25
 	github.com/blevesearch/bleve v0.8.0
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/ckaznocha/protoc-gen-lint v0.2.1
