@@ -28,8 +28,8 @@ const (
 )
 
 // BackupDB is a handler that writes a consistent view of the databases to the HTTP response.
-func BackupDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB) http.Handler {
-	return serializeDB(boltDB, rocksDB)
+func BackupDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, includeCerts bool) http.Handler {
+	return serializeDB(boltDB, rocksDB, includeCerts)
 }
 
 func logAndWriteErrorMsg(w http.ResponseWriter, code int, t string, args ...interface{}) {
@@ -93,7 +93,7 @@ func RestoreDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB) http.Handler {
 	})
 }
 
-func serializeDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB) http.HandlerFunc {
+func serializeDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, includeCerts bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		log.Info("Starting DB backup ...")
 		filename := time.Now().Format(dbFileFormat)
@@ -101,7 +101,7 @@ func serializeDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/zip")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 
-		if err := export.Backup(req.Context(), boltDB, rocksDB, w); err != nil {
+		if err := export.Backup(req.Context(), boltDB, rocksDB, includeCerts, w); err != nil {
 			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not create database backup: %v", err)
 			return
 		}

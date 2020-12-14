@@ -3369,6 +3369,11 @@
                 "id": 6,
                 "name": "s3",
                 "type": "S3Config"
+              },
+              {
+                "id": 8,
+                "name": "include_certificates",
+                "type": "bool"
               }
             ]
           },

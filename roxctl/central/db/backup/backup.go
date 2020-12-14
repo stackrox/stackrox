@@ -29,11 +29,12 @@ const (
 // Command defines the db backup command
 func Command() *cobra.Command {
 	var output string
+	var full bool
 	c := &cobra.Command{
 		Use:          "backup",
 		SilenceUsage: true,
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			return getBackup(flags.Timeout(c), output)
+			return getBackup(flags.Timeout(c), output, full)
 		}),
 	}
 
@@ -41,6 +42,7 @@ func Command() *cobra.Command {
 If the provided path is a file path, the backup will be written to the file, overwriting it if it exists already. (The directory MUST exist.)
 If the provided path is a directory, the backup will be saved in that directory with the server-provided filename.
 If this argument is omitted, the backup will be saved in the current working directory with the server-provided filename.`)
+	c.Flags().BoolVarP(&full, "full", "", false, "Create backup with certificates. User admin required.")
 	return c
 }
 
@@ -110,10 +112,17 @@ func getFilePath(respHeader http.Header, userProvidedOutput string) (string, err
 	return finalLocation, nil
 }
 
-func getBackup(timeout time.Duration, userProvidedOutput string) error {
+func getBackup(timeout time.Duration, userProvidedOutput string, full bool) error {
 	deadline := time.Now().Add(timeout)
 
-	req, err := common.NewHTTPRequestWithAuth(http.MethodGet, "/db/backup", nil)
+	var endpoint string
+	if full {
+		endpoint = "/db/backup/full"
+	} else {
+		endpoint = "/db/backup"
+	}
+
+	req, err := common.NewHTTPRequestWithAuth(http.MethodGet, endpoint, nil)
 	if err != nil {
 		return err
 	}

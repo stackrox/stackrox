@@ -46,8 +46,8 @@ func New(reporter integrationhealth.Reporter) Scheduler {
 	}
 }
 
-func (s *scheduler) backup(w *io.PipeWriter) {
-	err := export.Backup(context.Background(), globaldb.GetGlobalDB(), globaldb.GetRocksDB(), w)
+func (s *scheduler) backup(w *io.PipeWriter, includeCerts bool) {
+	err := export.Backup(context.Background(), globaldb.GetGlobalDB(), globaldb.GetRocksDB(), includeCerts, w)
 	if err != nil {
 		log.Errorf("Failed to write backup to io.writer: %v", err)
 		if err := w.CloseWithError(err); err != nil {
@@ -69,7 +69,7 @@ func (s *scheduler) send(r io.ReadCloser, backup types.ExternalBackup) error {
 
 func (s *scheduler) RunBackup(backup types.ExternalBackup, plugin *storage.ExternalBackup) error {
 	pr, pw := io.Pipe()
-	go s.backup(pw)
+	go s.backup(pw, plugin.GetIncludeCertificates())
 
 	err := s.send(pr, backup)
 

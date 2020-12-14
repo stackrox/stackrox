@@ -2,9 +2,12 @@ package tests
 
 import (
 	"archive/zip"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/tar"
@@ -23,14 +26,27 @@ func TestBackup(t *testing.T) {
 
 	waitForDeployment(t, nginxDeploymentName)
 
-	out, err := os.Create("backup.zip")
+	for _, includeCerts := range []bool{false, true} {
+		t.Run(fmt.Sprintf("includeCerts=%t", includeCerts), func(t *testing.T) {
+			doTestBackup(t, includeCerts)
+		})
+	}
+}
+
+func doTestBackup(t *testing.T, includeCerts bool) {
+	tmpZipDir, err := ioutil.TempDir("", scratchPath)
 	require.NoError(t, err)
-	defer func() {
-		_ = os.Remove("backup.zip")
-	}()
+	zipFilePath := filepath.Join(tmpZipDir, "backup.zip")
+	out, err := os.Create(zipFilePath)
+	require.NoError(t, err)
+	defer func() { _ = os.RemoveAll(tmpZipDir) }()
 
 	client := testutils.HTTPClientForCentral(t)
-	resp, err := client.Get("/db/backup")
+	endpoint := "/db/backup"
+	if includeCerts {
+		endpoint = path.Join(endpoint, "full")
+	}
+	resp, err := client.Get(endpoint)
 	require.NoError(t, err)
 	defer utils.IgnoreError(resp.Body.Close)
 	_, err = io.Copy(out, resp.Body)
@@ -38,11 +54,28 @@ func TestBackup(t *testing.T) {
 
 	defer utils.IgnoreError(out.Close)
 
-	zipFile, err := zip.OpenReader("backup.zip")
+	zipFile, err := zip.OpenReader(zipFilePath)
 	require.NoError(t, err)
 	defer utils.IgnoreError(zipFile.Close)
 
 	checkZipForRocks(t, zipFile)
+	checkZipForCerts(t, zipFile, includeCerts)
+}
+
+func checkZipForCerts(t *testing.T, zipFile *zip.ReadCloser, includeCerts bool) {
+	files := getFilesInDir(zipFile, "keys")
+	if !includeCerts {
+		require.Empty(t, files)
+		return
+	}
+	require.NotEmpty(t, files)
+
+	require.Equal(t, len(files), 3)
+	for _, f := range files {
+		info := f.FileInfo()
+		require.NotZero(t, info.Size())
+		require.Equal(t, filepath.Ext(f.Name), ".pem")
+	}
 }
 
 func checkZipForRocks(t *testing.T, zipFile *zip.ReadCloser) {
@@ -55,7 +88,7 @@ func checkZipForRocks(t *testing.T, zipFile *zip.ReadCloser) {
 	// Dump the untar'd rocks file to a scratch directory.
 	tmpBackupDir, err := ioutil.TempDir("", scratchPath)
 	require.NoError(t, err)
-	defer utils.IgnoreError(func() error { return os.RemoveAll(tmpBackupDir) })
+	defer func() { _ = os.RemoveAll(tmpBackupDir) }()
 
 	err = tar.ToPath(tmpBackupDir, rocksFile)
 	require.NoError(t, err)
@@ -69,7 +102,7 @@ func checkZipForRocks(t *testing.T, zipFile *zip.ReadCloser) {
 	// Restore the db to another temp directory
 	tmpDBDir, err := ioutil.TempDir("", scratchPath)
 	require.NoError(t, err)
-	defer utils.IgnoreError(func() error { return os.RemoveAll(tmpDBDir) })
+	defer func() { _ = os.RemoveAll(tmpDBDir) }()
 	err = backupEngine.RestoreDBFromLatestBackup(tmpDBDir, tmpDBDir, gorocksdb.NewRestoreOptions())
 	require.NoError(t, err)
 
@@ -87,4 +120,14 @@ func getFileWithName(zipFile *zip.ReadCloser, name string) *zip.File {
 		}
 	}
 	return ret
+}
+
+func getFilesInDir(zipFile *zip.ReadCloser, dir string) []*zip.File {
+	var files []*zip.File
+	for _, f := range zipFile.File {
+		if path.Dir(f.Name) == dir {
+			files = append(files, f)
+		}
+	}
+	return files
 }

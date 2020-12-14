@@ -9,12 +9,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 )
 
 const testBasePathIn = "tarTestIn"
 const testTarHolder = "tar"
-const testTarName = "test.tar"
+const testTarName = "test_path.tar"
 const testBasePathOut = "tarTestOut"
 
 const testFileContents = "test file"
@@ -26,31 +27,54 @@ var testStructure = []string{
 	"f2",
 }
 
-func TestTarUntar(t *testing.T) {
+func TestFromRelativePathTarUntar(t *testing.T) {
+	doTestTarUntar(t, func(dirIn string, tWriter *tar.Writer) {
+		testMap := make(map[string]string)
+		for _, p := range testStructure {
+			testMap[p] = filepath.Join(dirIn, p)
+		}
+		err := FromPathMap(testMap, tWriter)
+		assert.NoError(t, err)
+	})
+}
+
+func TestFromPathTarUntar(t *testing.T) {
+	doTestTarUntar(t, func(dirIn string, tWriter *tar.Writer) {
+		err := FromPath(dirIn, tWriter)
+		assert.NoError(t, err)
+	})
+}
+
+func doTestTarUntar(t *testing.T, tarFunc func(string, *tar.Writer)) {
 	tmpDirIn, err := ioutil.TempDir("", testBasePathIn)
 	assert.NoError(t, err)
+	defer func() { _ = os.RemoveAll(tmpDirIn) }()
 
 	err = createTarDir(t, tmpDirIn)
 	assert.NoError(t, err)
 
 	tmpDir, err := ioutil.TempDir("", testTarHolder)
 	assert.NoError(t, err)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
-	f, err := os.OpenFile(tmpDir+testTarName, os.O_CREATE|os.O_RDWR, os.ModePerm)
+	f, err := os.OpenFile(filepath.Join(tmpDir, testTarName), os.O_CREATE|os.O_RDWR, os.ModePerm)
+	defer utils.IgnoreError(f.Close)
 	assert.NoError(t, err)
 
 	tWriter := tar.NewWriter(f)
-	err = FromPath(tmpDirIn, tWriter)
-	assert.NoError(t, err)
+	defer utils.IgnoreError(tWriter.Close)
+	tarFunc(tmpDirIn, tWriter)
 	err = tWriter.Close()
 	assert.NoError(t, err)
 	err = f.Close()
 	assert.NoError(t, err)
 
 	tmpDirOut, err := ioutil.TempDir("", testBasePathOut)
+	defer func() { _ = os.RemoveAll(tmpDirOut) }()
 	assert.NoError(t, err)
 
-	f, err = os.OpenFile(tmpDir+testTarName, os.O_RDONLY, os.ModePerm)
+	f, err = os.OpenFile(filepath.Join(tmpDir, testTarName), os.O_RDONLY, os.ModePerm)
+	defer utils.IgnoreError(f.Close)
 	assert.NoError(t, err)
 	err = ToPath(tmpDirOut, f)
 	assert.NoError(t, err)

@@ -11,9 +11,30 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
+// FromPathMap writes the contents of files to a tar. The pathMap contains the map from the relative path in tar to the path of the source file/directory.
+func FromPathMap(pathMap map[string]string, to *tar.Writer) error {
+	for toPath, fromPath := range pathMap {
+		err := createOrAddPathWithBase(fromPath, toPath, to)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // FromPath writes the contents of a file path to a tar using relative file paths.
-func FromPath(tarTo string, to *tar.Writer) error {
-	return filepath.Walk(tarTo, func(filePath string, info os.FileInfo, err error) error {
+func FromPath(srcPath string, to *tar.Writer) error {
+	return createOrAddPathWithBase(srcPath, ".", to)
+}
+
+func createOrAddPathWithBase(fromPath string, toPath string, to *tar.Writer) error {
+	// fromPath may contain symbolic links.
+	resolvedFromPath, err := filepath.EvalSymlinks(fromPath)
+	if err != nil {
+		return errors.Wrapf(err, "cannot resolve path %s", fromPath)
+	}
+
+	return filepath.Walk(resolvedFromPath, func(filePath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return errors.Wrapf(err, "unexpected error traversing backup file path %s", filePath)
 		}
@@ -28,8 +49,8 @@ func FromPath(tarTo string, to *tar.Writer) error {
 		}
 
 		// update the name to correctly reflect the desired destination when untaring
-		relPath := strings.TrimPrefix(filePath, tarTo)
-		header.Name = relPath
+		relPath := strings.TrimPrefix(filePath, resolvedFromPath)
+		header.Name = filepath.Join(toPath, relPath)
 
 		// write the header
 		if err := to.WriteHeader(header); err != nil {

@@ -20,6 +20,7 @@ message ExternalBackup {
         S3Config       s3       = 6;
         GCSConfig      gcs      = 7;
     }
+    bool include_certificates         = 8;
 }
 
 message S3Config {
