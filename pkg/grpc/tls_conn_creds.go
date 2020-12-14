@@ -37,6 +37,7 @@ func (c credsFromConn) ServerHandshake(rawConn net.Conn) (net.Conn, credentials.
 		return rawConn, nil, nil
 	}
 	if err := tlsConn.Handshake(); err != nil {
+		log.Debugf("TLS handshake error from %q: %v", rawConn.RemoteAddr(), err)
 		return nil, nil, err
 	}
 	return tlsConn, credentials.TLSInfo{State: tlsConn.ConnectionState()}, nil

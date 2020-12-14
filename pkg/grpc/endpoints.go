@@ -3,6 +3,7 @@ package grpc
 import (
 	"crypto/tls"
 	"fmt"
+	"io"
 	golog "log"
 	"net"
 	"net/http"
@@ -51,6 +52,32 @@ func (c *EndpointConfig) Kind() string {
 	return sb.String()
 }
 
+func tlsHandshakeErrorHandler(conn net.Conn, e error) {
+	recordHdrErr, ok := e.(tls.RecordHeaderError)
+	if !ok || recordHdrErr.Conn == nil {
+		log.Debugf("TLS handshake error from %q: %v", conn.RemoteAddr(), e)
+		return
+	}
+
+	// If the handshake failed due to the client not speaking TLS, assume they're speaking
+	// plain HTTP/1 or HTTP/2 and write back either a `400` response or a `GOAWAY` frame.
+	//
+	// TODO(ROX-6114): Consider replying with `301` or `308`, at least for HTTP/1. For
+	//   this to work, we need to get more than just the first 5 bytes of the request.
+	switch string(recordHdrErr.RecordHeader[:]) {
+	case "DELET", "GET /", "HEAD ", "OPTIO", "PATCH", "POST ", "PUT /", "TRACE":
+		_, _ = io.WriteString(recordHdrErr.Conn,
+			"HTTP/1.0 400 Bad Request\r\n\r\nClient sent an HTTP request to an HTTPS server.\n")
+	case "PRI *":
+		framer := http2.NewFramer(recordHdrErr.Conn, recordHdrErr.Conn)
+		_ = framer.WriteSettingsAck()
+		_ = framer.WriteGoAway(0, http2.ErrCodeInadequateSecurity, []byte("Client sent an HTTP request to an HTTPS server.\n"))
+	}
+
+	log.Debugf("TLS record header '%s ...' from %q is invalid: %v", recordHdrErr.RecordHeader, conn.RemoteAddr(), e)
+	_ = recordHdrErr.Conn.Close()
+}
+
 func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Server) (net.Addr, []serverAndListener, error) {
 	lis, err := net.Listen("tcp", asEndpoint(c.ListenEndpoint))
 	if err != nil {
@@ -85,7 +112,8 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 				alpn.PureGRPCALPNString: &grpcLis,
 				"":                      &httpLis,
 			}
-			tlsutils.ALPNDemux(lis, protoMap, tlsutils.ALPNDemuxConfig{})
+
+			tlsutils.ALPNDemux(lis, protoMap, tlsutils.ALPNDemuxConfig{OnHandshakeError: tlsHandshakeErrorHandler})
 		}
 	}
 
