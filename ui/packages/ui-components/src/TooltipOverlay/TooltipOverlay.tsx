@@ -1,25 +1,19 @@
-import React, { ReactElement } from 'react';
-import PropTypes, { InferProps } from 'prop-types';
+import React, { ReactElement, ReactNode } from 'react';
 
 /**
  * Tooltip overlay container that provides default styling for any tooltip content.
  *
  * @see {@link Tooltip}
  */
-function TooltipOverlay({ extraClassName, children }: TooltipOverlayProps): ReactElement {
+function TooltipOverlay({ extraClassName = '', children }: TooltipOverlayProps): ReactElement {
     return <div className={`rox-tooltip-overlay p-2 ${extraClassName}`}>{children}</div>;
 }
 
-TooltipOverlay.propTypes = {
+export type TooltipOverlayProps = {
     /** CSS classes to add to the top level HTML element */
-    extraClassName: PropTypes.string,
+    extraClassName?: string;
     /** tooltip content */
-    children: PropTypes.node.isRequired,
+    children: ReactNode;
 };
 
-TooltipOverlay.defaultProps = {
-    extraClassName: '',
-};
-
-export type TooltipOverlayProps = InferProps<typeof TooltipOverlay.propTypes>;
 export default TooltipOverlay;

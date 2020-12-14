@@ -1,11 +1,10 @@
 import React, { ReactElement } from 'react';
-import PropTypes, { InferProps } from 'prop-types';
 import { find as createInitials } from 'initials';
 
 /**
  * User avatar showing either provided image or person's initials.
  */
-function Avatar({ imageSrc, name, extraClassName }: AvatarProps): ReactElement {
+function Avatar({ imageSrc, name, extraClassName = '' }: AvatarProps): ReactElement {
     const finalClassName = `border border-base-400 rounded-full ${extraClassName}`;
 
     const initials = name ? createInitials(name) : '--';
@@ -17,20 +16,13 @@ function Avatar({ imageSrc, name, extraClassName }: AvatarProps): ReactElement {
     );
 }
 
-Avatar.propTypes = {
+export type AvatarProps = {
     /* URL to the avatar image */
-    imageSrc: PropTypes.string,
+    imageSrc?: string;
     /* person's full name to use for showing initials when image isn't available */
-    name: PropTypes.string,
+    name?: string;
     /* additional CSS classes for the top DOM element */
-    extraClassName: PropTypes.string,
+    extraClassName?: string;
 };
 
-Avatar.defaultProps = {
-    imageSrc: undefined,
-    name: undefined,
-    extraClassName: '',
-};
-
-export type AvatarProps = InferProps<typeof Avatar.propTypes>;
 export default Avatar;

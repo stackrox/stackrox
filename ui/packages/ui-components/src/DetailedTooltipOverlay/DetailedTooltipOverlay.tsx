@@ -1,5 +1,4 @@
-import React, { ReactElement } from 'react';
-import PropTypes, { InferProps } from 'prop-types';
+import React, { ReactElement, ReactNode } from 'react';
 
 /**
  * Alternative to {@link TooltipOverlay} that provides layout for complex tooltip content with
@@ -10,7 +9,7 @@ function DetailedTooltipOverlay({
     subtitle,
     body,
     footer,
-    extraClassName,
+    extraClassName = '',
 }: DetailedTooltipOverlayProps): ReactElement | null {
     if (!title || !body) {
         return null;
@@ -44,19 +43,12 @@ function DetailedTooltipOverlay({
     );
 }
 
-DetailedTooltipOverlay.propTypes = {
-    title: PropTypes.string.isRequired,
-    subtitle: PropTypes.string,
-    body: PropTypes.node.isRequired,
-    footer: PropTypes.node,
-    extraClassName: PropTypes.string,
+export type DetailedTooltipOverlayProps = {
+    title: string;
+    subtitle?: string;
+    body: ReactNode;
+    footer?: ReactNode;
+    extraClassName?: string;
 };
 
-DetailedTooltipOverlay.defaultProps = {
-    subtitle: '',
-    footer: '',
-    extraClassName: '',
-};
-
-export type DetailedTooltipOverlayProps = InferProps<typeof DetailedTooltipOverlay.propTypes>;
 export default DetailedTooltipOverlay;

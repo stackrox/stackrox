@@ -1,6 +1,5 @@
-import { useRef, useEffect, ReactElement } from 'react';
+import { useRef, useEffect, ReactElement, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import PropTypes, { InferProps } from 'prop-types';
 import tippy from 'tippy.js';
 
 import { defaultTippyTooltipProps } from '../Tooltip';
@@ -47,12 +46,11 @@ function HoverHint({ target, children, ...props }: HoverHintProps): ReactElement
     return createPortal(children, elRef.current);
 }
 
-HoverHint.propTypes = {
+export type HoverHintProps = {
     /** target DOM element */
-    target: PropTypes.instanceOf(Element).isRequired,
+    target: Element;
     /** content to render when hint appears */
-    children: PropTypes.node.isRequired,
+    children: ReactNode;
 };
 
-export type HoverHintProps = InferProps<typeof HoverHint.propTypes>;
 export default HoverHint;

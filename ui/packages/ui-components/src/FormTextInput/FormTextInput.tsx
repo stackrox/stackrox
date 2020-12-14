@@ -1,5 +1,4 @@
 import React, { ReactElement } from 'react';
-import PropTypes, { InferProps } from 'prop-types';
 import { useFormikContext, FormikValues } from 'formik';
 import get from 'lodash.get';
 
@@ -29,23 +28,13 @@ function TextInput({
     );
 }
 
-TextInput.propTypes = {
-    name: PropTypes.string.isRequired,
-    value: PropTypes.string,
-    placeholder: PropTypes.string,
-    isDisabled: PropTypes.bool,
-    onChange: PropTypes.func.isRequired,
-    onBlur: PropTypes.func.isRequired,
-};
-
-TextInput.defaultProps = {
-    value: '',
-    placeholder: '',
-    isDisabled: false,
-} as TextInputProps;
-
-type TextInputProps = Omit<InferProps<typeof TextInput.propTypes>, 'onChange'> & {
+type TextInputProps = {
+    name: string;
+    value?: string;
+    placeholder?: string;
+    isDisabled?: boolean;
     onChange: React.ChangeEventHandler<HTMLInputElement>;
+    onBlur: React.FocusEventHandler<HTMLInputElement>;
 };
 
 function FormTextInput({
@@ -83,32 +72,20 @@ function FormTextInput({
     );
 }
 
-FormTextInput.propTypes = {
-    label: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    helperText: PropTypes.string,
-    placeholder: PropTypes.string,
-    isDisabled: PropTypes.bool,
-    isRequired: PropTypes.bool,
-    onChange: PropTypes.func,
+export type FormTextInputProps = {
+    label: string;
+    name: string;
+    helperText?: string;
+    placeholder?: string;
+    isDisabled?: boolean;
+    isRequired?: boolean;
+    onChange?: OnChangeHandler;
 };
-
-FormTextInput.defaultProps = {
-    helperText: null,
-    placeholder: null,
-    isDisabled: false,
-    isRequired: false,
-    onChange: null,
-} as FormTextInputProps;
 
 export type OnChangeHandler = (callbackData: {
     name: string;
     event: React.ChangeEvent<HTMLInputElement>;
     handleChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }) => void;
-
-export type FormTextInputProps = Omit<InferProps<typeof FormTextInput.propTypes>, 'onChange'> & {
-    onChange?: OnChangeHandler | null;
-};
 
 export default FormTextInput;

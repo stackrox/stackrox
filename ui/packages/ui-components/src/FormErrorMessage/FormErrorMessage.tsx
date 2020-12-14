@@ -1,5 +1,4 @@
 import React, { ReactElement } from 'react';
-import PropTypes, { InferProps } from 'prop-types';
 import { ErrorMessage } from 'formik';
 
 function FormErrorMessage({ name }: FormErrorMessageProps): ReactElement {
@@ -12,11 +11,8 @@ function FormErrorMessage({ name }: FormErrorMessageProps): ReactElement {
     );
 }
 
-FormErrorMessage.propTypes = {
-    name: PropTypes.string.isRequired,
+export type FormErrorMessageProps = {
+    name: string;
 };
 
-FormErrorMessage.defaultProps = {};
-
-export type FormErrorMessageProps = InferProps<typeof FormErrorMessage.propTypes>;
 export default FormErrorMessage;

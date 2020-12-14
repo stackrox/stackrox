@@ -1,5 +1,4 @@
-import React, { ReactElement } from 'react';
-import PropTypes, { InferProps } from 'prop-types';
+import React, { ReactElement, ReactNode } from 'react';
 
 function FormLabel({ label, helperText, isRequired, children }: FormLabelProps): ReactElement {
     return (
@@ -21,17 +20,11 @@ function FormLabel({ label, helperText, isRequired, children }: FormLabelProps):
     );
 }
 
-FormLabel.propTypes = {
-    label: PropTypes.string.isRequired,
-    helperText: PropTypes.string,
-    isRequired: PropTypes.bool,
-    children: PropTypes.node.isRequired,
+export type FormLabelProps = {
+    label: string;
+    helperText?: string;
+    isRequired?: boolean;
+    children: ReactNode;
 };
 
-FormLabel.defaultProps = {
-    helperText: null,
-    isRequired: false,
-} as FormLabelProps;
-
-export type FormLabelProps = InferProps<typeof FormLabel.propTypes>;
 export default FormLabel;
