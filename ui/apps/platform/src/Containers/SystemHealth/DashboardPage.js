@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { HashLink } from 'react-router-hash-link';
 
+import Message from 'Components/Message';
 import PageHeader from 'Components/PageHeader';
 import Widget from 'Components/Widget';
 import integrationsList from 'Containers/Integrations/integrationsList';
@@ -38,6 +39,7 @@ const SystemHealthDashboardPage = () => {
     const [imageIntegrationsMerged, setImageIntegrationsMerged] = useState([]);
     const [pluginIntegrationsMerged, setPluginIntegrationsMerged] = useState([]);
     const [vulnerabilityDefinitionsInfo, setVulnerabilityDefinitionsInfo] = useState(null);
+    const [vulnerabilityDefinitionsHasError, setVulnerabilityDefinitionsHasError] = useState(false);
 
     useEffect(() => {
         setCurrentDatetime(new Date());
@@ -81,10 +83,15 @@ const SystemHealthDashboardPage = () => {
     }, [pollingCountFaster]);
 
     useEffect(() => {
-        // TODO catch
-        fetchVulnerabilityDefinitionsInfo().then((info) => {
-            setVulnerabilityDefinitionsInfo(info);
-        });
+        fetchVulnerabilityDefinitionsInfo()
+            .then((info) => {
+                setVulnerabilityDefinitionsInfo(info);
+                setVulnerabilityDefinitionsHasError(false);
+            })
+            .catch(() => {
+                setVulnerabilityDefinitionsInfo(null);
+                setVulnerabilityDefinitionsHasError(true);
+            });
     }, [pollingCountSlower]);
 
     useInterval(() => {
@@ -160,10 +167,19 @@ const SystemHealthDashboardPage = () => {
                         header="Vulnerability Definitions"
                         id="vulnerability-definitions"
                     >
-                        <VulnerabilityDefinitions
-                            currentDatetime={currentDatetime}
-                            vulnerabilityDefinitionsInfo={vulnerabilityDefinitionsInfo}
-                        />
+                        {vulnerabilityDefinitionsHasError ? (
+                            <div className="p-2 w-full">
+                                <Message
+                                    type="error"
+                                    message="An error occurred requesting Vulnerability Definitions"
+                                />
+                            </div>
+                        ) : (
+                            <VulnerabilityDefinitions
+                                currentDatetime={currentDatetime}
+                                vulnerabilityDefinitionsInfo={vulnerabilityDefinitionsInfo}
+                            />
+                        )}
                     </Widget>
                 </div>
                 <div className="grid grid-columns-1 md:grid-columns-3 grid-gap-4 py-2 w-full">
