@@ -1928,6 +1928,17 @@ commands:
             fi
             make -C ui deps
 
+  store-test-results-and-artifacts:
+    description: "Store test results"
+    parameters:
+      path:
+        type: string
+    steps:
+      - store_test_results:
+          path: << parameters.path >>
+      - store_artifacts:
+          path: << parameters.path >>
+
 jobs:
   ###
   # Jobs independent from build / compilation (like style checks, static code analysis, unit tests)
@@ -1979,12 +1990,8 @@ jobs:
           command: make generate-junit-reports
           when: always
 
-      - store_test_results:
+      - store-test-results-and-artifacts:
           path: junit-reports
-
-      - store_artifacts:
-          path: junit-reports
-          destination: junit-reports
 
       - run:
           name: Run UI unit tests
@@ -2957,6 +2964,9 @@ jobs:
             CA="${SERVICE_CA_FILE}" ./tests/yamls/roxctl_verification.sh
             make -C tests
 
+      - store-test-results-and-artifacts:
+          path: tests/all-tests-results
+
       - run:
           name: Deploy NGINX proxies
           command: |
@@ -3101,10 +3111,16 @@ jobs:
           command: |
             make -C tests external-backup-tests
 
+      - store-test-results-and-artifacts:
+          path: tests/external-backup-tests-results
+
       - run:
           name: Destructive API tests
           command: |
             make -C tests destructive-tests
+
+      - store-test-results-and-artifacts:
+          path: tests/destructive-tests-results
 
       - run:
           name: Collect final stackrox logs

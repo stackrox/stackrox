@@ -8,18 +8,18 @@ TOPLEVEL=$(CURDIR)/..
 .PHONY: all
 all: test
 	@echo "+ $@"
-	@$(MAKE) report
+	@$(MAKE) report JUNIT_OUT=all-tests-results
 
 .PHONY: destructive-tests
 destructive-tests:
 	@echo "+ $@"
-	@GOTAGS=$(GOTAGS),test,destructive ../scripts/go-test.sh -cover -run TestClusterDeletion 2>&1 | tee test.log
-	@$(MAKE) report
+	@GOTAGS=$(GOTAGS),test,destructive ../scripts/go-test.sh -cover -v -run TestClusterDeletion 2>&1 | tee test.log
+	@$(MAKE) report JUNIT_OUT=destructive-tests-results
 
 .PHONY: external-backup-tests
 external-backup-tests:
 	@echo "+ $@"
-	@GOTAGS=$(GOTAGS),test,externalbackups ../scripts/go-test.sh -cover -run TestGCSExternalBackup 2>&1 | tee test.log
-	@$(MAKE) report
+	@GOTAGS=$(GOTAGS),test,externalbackups ../scripts/go-test.sh -cover -v -run TestGCSExternalBackup 2>&1 | tee test.log
+	@$(MAKE) report JUNIT_OUT=external-backup-tests-results
 
 include ../make/stackrox.mk

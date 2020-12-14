@@ -54,6 +54,8 @@ $(GO_JUNIT_REPORT_BIN):
 report: $(GO_JUNIT_REPORT_BIN)
 	@echo "+ $@"
 	@cat test.log | go-junit-report > report.xml
+	@mkdir -p $(JUNIT_OUT)
+	@cp test.log report.xml $(JUNIT_OUT)
 	@echo
 	@echo "Test coverage summary:"
 	@grep "^coverage: " -A1 test.log | grep -v -e '--' | paste -d " "  - -
