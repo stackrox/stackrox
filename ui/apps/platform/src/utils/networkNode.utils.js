@@ -175,6 +175,7 @@ export const getFilteredNodes = (networkNodeMap, filterState) => {
         }
         if (filterState === filterModes.active) {
             if (activeNode) {
+                activeNode.policyIds = allowedNode?.policyIds?.flat() || [];
                 nodes.push(activeNode);
             }
             return;
@@ -183,7 +184,7 @@ export const getFilteredNodes = (networkNodeMap, filterState) => {
         // "all" mode
         // We always expect an active node for the given entity,
         // but the allowed node may not be there for certain external entities.
-        // We want to keep outEdges from both, but rely on the activeNode for
+        // We want to keep outEdges from both, but rely on the allowedNode for
         // properties like policyIds, nonIsolatedIngress, nonIsolatedEgress.
         if (!activeNode) {
             return;
