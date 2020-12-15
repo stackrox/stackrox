@@ -1,5 +1,5 @@
 import React from 'react';
-import { mount } from 'enzyme';
+import { fireEvent, getNodeText, render } from '@testing-library/react';
 
 import Select from 'Components/Select';
 
@@ -20,10 +20,9 @@ describe('Component:Select', () => {
     ];
     const initialPlaceholder = 'Select a service';
 
-    // TODO Remove skip here and following when enzyme-adapter-react-17 becomes available.
-    it.skip('shows show the placeholder as the first option', () => {
+    it('should show the placeholder as the first option', () => {
         // arrange
-        const select = mount(
+        const { getAllByRole } = render(
             <Select
                 options={initialOptions}
                 placeholder={initialPlaceholder}
@@ -32,15 +31,16 @@ describe('Component:Select', () => {
         );
 
         // act
-        const firstOption = select.find('option').first();
+        const firstOption = getAllByRole('option')[0];
 
         // assert
-        expect(firstOption.text()).toEqual(initialPlaceholder);
+        expect(firstOption).toBeDefined();
+        expect(getNodeText(firstOption)).toEqual(initialPlaceholder);
     });
 
-    it.skip('should have option elements for every option object, plus the placeholder', () => {
+    it('should have option elements for every option object, plus the placeholder', () => {
         // arrange
-        const select = mount(
+        const { getAllByRole } = render(
             <Select
                 options={initialOptions}
                 placeholder={initialPlaceholder}
@@ -49,16 +49,17 @@ describe('Component:Select', () => {
         );
 
         // act
-        const optionElements = select.find('option');
+        const optionElements = getAllByRole('option');
 
         // assert
         expect(optionElements.length).toEqual(initialOptions.length + 1);
     });
 
-    it.skip('should pass the option clicked on to its provided handler', () => {
+    it('should pass the option clicked on to its provided handler', () => {
         // arrange
+        const selectedOptionObject = initialOptions[1];
         const onChangeSpy = jest.fn();
-        const select = mount(
+        const { getByRole } = render(
             <Select
                 options={initialOptions}
                 placeholder={initialPlaceholder}
@@ -68,11 +69,11 @@ describe('Component:Select', () => {
 
         // act
         const mockChangeEvent = {
-            target: { value: initialOptions[1].value },
+            target: { value: selectedOptionObject.value },
         };
-        select.instance().onClick(mockChangeEvent);
+        fireEvent.change(getByRole('combobox'), mockChangeEvent);
 
         // assert
-        expect(onChangeSpy).toHaveBeenCalledWith(initialOptions[1]);
+        expect(onChangeSpy).toHaveBeenCalledWith(selectedOptionObject);
     });
 });

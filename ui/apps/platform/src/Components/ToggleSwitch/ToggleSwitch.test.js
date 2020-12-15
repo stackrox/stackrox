@@ -1,74 +1,86 @@
 import React from 'react';
-import { mount } from 'enzyme';
+import { fireEvent, render } from '@testing-library/react';
 
 import ToggleSwitch from 'Components/ToggleSwitch';
 
-describe('Component:Select', () => {
-    const initialProps = {
-        id: 'enableAutoUpgrade',
-        label: 'Automatically upgrade secured clusters',
-        toggleHandler: () => {},
-    };
+describe('ToggleSwitch', () => {
+    const id = 'enableAutoUpgrade';
+    const label = 'Automatically upgrade secured clusters';
 
-    // TODO Remove skip here and following when enzyme-adapter-react-17 becomes available.
-    it.skip('should show its label in a leading <label> element', () => {
+    it('should have a label', () => {
         // arrange
-        const toggleSwitch = mount(<ToggleSwitch {...initialProps} />);
+        const toggleHandler = jest.fn();
+        const { getByLabelText } = render(
+            <ToggleSwitch id={id} toggleHandler={toggleHandler} label={label} />
+        );
 
         // act
-        const labelElement = toggleSwitch.find('label').first(); // second label for custom UI
+        const inputElement = getByLabelText(label);
 
         // assert
-        expect(labelElement.text()).toEqual(initialProps.label);
+        expect(inputElement).toHaveAttribute('type', 'checkbox');
     });
 
-    it.skip('should add any given extra classes to its root element', () => {
+    it('should add any given extra classes to its root element', () => {
         // arrange
+        const toggleHandler = jest.fn();
         const extraClassNames = 'toggle-switch-alert';
-        const modifiedProps = { ...initialProps, extraClassNames };
-        const toggleSwitch = mount(<ToggleSwitch {...modifiedProps} />);
+        const { container } = render(
+            <ToggleSwitch
+                id={id}
+                toggleHandler={toggleHandler}
+                label={label}
+                extraClassNames={extraClassNames}
+            />
+        );
 
         // act
-        const wrapperElement = toggleSwitch.find('.toggle-switch-wrapper');
+        const rootElement = container.firstChild;
 
         // assert
-        expect(wrapperElement.hasClass(extraClassNames)).toBe(true);
+        expect(rootElement).toHaveClass('toggle-switch-wrapper');
+        expect(rootElement).toHaveClass(extraClassNames);
     });
 
-    it.skip('should should set its <checkbox> to false if not passed an `enabled` prop', () => {
+    it('should set its `checked` prop to false if it does not have an `enabled` prop', () => {
         // arrange
-        const toggleSwitch = mount(<ToggleSwitch {...initialProps} />);
+        const toggleHandler = jest.fn();
+        const { getByRole } = render(
+            <ToggleSwitch id={id} toggleHandler={toggleHandler} label={label} />
+        );
 
         // act
-        const checkboxElement = toggleSwitch.find('input');
+        const inputElement = getByRole('checkbox');
 
         // assert
-        expect(checkboxElement.prop('checked')).toEqual(false);
+        expect(inputElement).not.toBeChecked();
     });
 
-    it.skip('should should set its <checkbox> to the given `enabled` prop', () => {
+    it('should set its `checked` prop to true it has an `enabled` prop', () => {
         // arrange
-        const modifiedProps = { ...initialProps, enabled: true };
-        const toggleSwitch = mount(<ToggleSwitch {...modifiedProps} />);
+        const toggleHandler = jest.fn();
+        const { getByRole } = render(
+            <ToggleSwitch id={id} toggleHandler={toggleHandler} label={label} enabled />
+        );
 
         // act
-        const checkboxElement = toggleSwitch.find('input');
+        const inputElement = getByRole('checkbox');
 
         // assert
-        expect(checkboxElement.prop('checked')).toEqual(modifiedProps.enabled);
+        expect(inputElement).toBeChecked();
     });
 
-    it.skip('should call its `toggleHandler` prop on change', () => {
+    it('should call its `toggleHandler` prop when the checkbox is clicked', () => {
         // arrange
-        const onChangeSpy = jest.fn();
-        const modifiedProps = { ...initialProps, toggleHandler: onChangeSpy };
-        const toggleSwitch = mount(<ToggleSwitch {...modifiedProps} />);
+        const toggleHandler = jest.fn();
+        const { getByLabelText } = render(
+            <ToggleSwitch id={id} toggleHandler={toggleHandler} label={label} />
+        );
 
         // act
-        const checkboxElement = toggleSwitch.find('input');
-        checkboxElement.simulate('change', true);
+        fireEvent.click(getByLabelText(label));
 
         // assert
-        expect(onChangeSpy).toHaveBeenCalled();
+        expect(toggleHandler).toHaveBeenCalled();
     });
 });
