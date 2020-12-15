@@ -146,11 +146,17 @@ try_install_sensor() {
     wait_for_central_pod
     wait_for_central_api
 
+    main_image="$(cat /data/values/main-image)"
+    gcp_version=""
+    if [[ $main_image =~ [0-9]*\.[0-9]*$ ]]; then
+        gcp_version=":$BASH_REMATCH"
+    fi
+
     roxctl --endpoint central.stackrox:443 --password "$(cat /tmp/stackrox/password)" sensor generate k8s \
     --central central.stackrox:443 \
     --collection-method "$collection_method" \
     --collector-image-repository "$collector_image" \
-    --main-image-repository "$(cat /data/values/main-image | sed 's/[:@].*//')" \
+    --main-image-repository "$(echo $main_image | sed "s,[:@].*,$gcp_version,")" \
     --name "$cluster_name"
 
     if [[ "$?" -ne 0 ]]; then
