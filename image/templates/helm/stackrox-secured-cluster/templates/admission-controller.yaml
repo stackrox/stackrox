@@ -173,7 +173,7 @@ spec:
       securityContext:
           runAsUser: 4000
           fsGroup: 4000
-      serviceAccount: admission-control
+      serviceAccountName: admission-control
       containers:
         - image: {{ printf "%s/%s:%s" ._rox.admissionControl.image.registry ._rox.admissionControl.image.name ._rox.admissionControl.image.tag }}
           imagePullPolicy: {{ ._rox.admissionControl.image.pullPolicy }}

@@ -159,9 +159,9 @@ func (s *baseSuite) TestsHelmValuesRoundTrip() {
 
 func (s *baseSuite) DoTestsHelmValuesRoundTrip(helmValuesFile string) {
 	// Read and parse Helm values.
-	valStr, err := ioutil.ReadFile(helmValuesFile)
+	valBytes, err := ioutil.ReadFile(helmValuesFile)
 	s.Require().NoError(err, "failed to read Helm values from file %q", helmValuesFile)
-	helmVals, err := chartutil.ReadValues([]byte(valStr))
+	helmVals, err := chartutil.ReadValues(valBytes)
 	s.Require().NoError(err, "failed to parse Helm values in file %q", helmValuesFile)
 	// Doing the roundtrip for all Helm values simplifies the diffing later on, since there might be
 	// diffs due to type mismatches for numeric types (e.g. float64 vs int64) which would vanish when

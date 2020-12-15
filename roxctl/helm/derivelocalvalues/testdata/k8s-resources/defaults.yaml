@@ -1687,7 +1687,7 @@ spec:
           readOnly: true
         - name: scanner-db-password
           mountPath: /run/secrets/stackrox.io/secrets
-      serviceAccount: scanner
+      serviceAccountName: scanner
       volumes:
       - name: additional-ca-volume
         secret:
@@ -1814,7 +1814,7 @@ spec:
             mountPath: /run/secrets/stackrox.io/certs
           - name: scanner-db-password
             mountPath: /run/secrets/stackrox.io/secrets
-      serviceAccount: scanner
+      serviceAccountName: scanner
       securityContext:
         fsGroup: 70
       volumes:

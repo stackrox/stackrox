@@ -72,7 +72,7 @@ spec:
       - name: {{ quote $secretName }}
       {{- end }}
       {{- end }}
-      serviceAccount: sensor
+      serviceAccountName: sensor
       containers:
       - image: {{ printf "%s/%s:%s" ._rox.sensor.image.registry ._rox.sensor.image.name ._rox.sensor.image.tag }}
         imagePullPolicy: {{ ._rox.sensor.image.pullPolicy }}
@@ -238,7 +238,7 @@ spec:
       tolerations:
       - operator: "Exists"
       {{- end}}
-      serviceAccount: collector
+      serviceAccountName: collector
       containers:
       {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}
       - name: collector
