@@ -10,7 +10,7 @@ function check_git_conflicts {
     fi
 
     # If there are whitespace errors or conflict errors, print the offending file names and fail.
-    git diff-index --check --cached "${against}" --
+    git diff-index --check --cached "${against}" -- || exit 1
 }
 
 if [[ ! -x "$(command -v "quickstyle")" ]]; then
