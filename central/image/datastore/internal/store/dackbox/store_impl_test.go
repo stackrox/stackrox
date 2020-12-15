@@ -3,6 +3,7 @@ package dackbox
 import (
 	"testing"
 
+	"github.com/gogo/protobuf/types"
 	cveStore "github.com/stackrox/rox/central/cve/store"
 	cveDackBoxStore "github.com/stackrox/rox/central/cve/store/dackbox"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
@@ -69,7 +70,13 @@ func (suite *ImageStoreTestSuite) TestImages() {
 			Name: &storage.ImageName{
 				FullName: "name1",
 			},
+			Metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Created: types.TimestampNow(),
+				},
+			},
 			Scan: &storage.ImageScan{
+				ScanTime: types.TimestampNow(),
 				Components: []*storage.EmbeddedImageScanComponent{
 					{
 						Name:    "comp1",
@@ -121,6 +128,7 @@ func (suite *ImageStoreTestSuite) TestImages() {
 					},
 				},
 			},
+			RiskScore: 30,
 		},
 		{
 			Id: "sha256:sha2",
@@ -196,6 +204,39 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	suite.NoError(err)
 	suite.Equal(len(images), count)
 
+	// Test no update
+	cloned := images[0].Clone()
+	cloned.Metadata.V1.Created.Seconds = cloned.Metadata.V1.Created.Seconds - 500
+	cloned.Scan.ScanTime.Seconds = cloned.Scan.ScanTime.Seconds - 500
+	cloned.Name.FullName = "newname"
+	suite.NoError(suite.store.Upsert(cloned))
+	got, exists, err := suite.store.GetImage(cloned.GetId())
+	suite.NoError(err)
+	suite.True(exists)
+	suite.Equal(images[0].GetName().GetFullName(), got.GetName().GetFullName())
+
+	// Test no components and cve update, only image bucket update
+	cloned = images[0].Clone()
+	cloned.Scan.ScanTime.Seconds = cloned.Scan.ScanTime.Seconds - 500
+	cloned.Name.FullName = "newname"
+	cloned.Scan.Components = nil
+	cloned.RiskScore = 100
+	suite.NoError(suite.store.Upsert(cloned))
+	got, exists, err = suite.store.GetImage(cloned.GetId())
+	suite.NoError(err)
+	suite.True(exists)
+	// Since the metadata is not outdated, image update goes through.
+	suite.Equal("newname", got.GetName().GetFullName())
+	// The image in store should still have components since it has fresher scan.
+	suite.Len(got.GetScan().GetComponents(), len(images[0].GetScan().GetComponents()))
+	// Risk score of stored image should be picked up.
+	suite.Equal(images[0].GetRiskScore(), got.GetRiskScore())
+
+	// Since imags[0] is updated in store, update the "expected" object
+	images[0].LastUpdated = got.GetLastUpdated()
+	images[0].Scan.ScanTime.Seconds = cloned.Scan.ScanTime.Seconds
+	images[0].Name.FullName = "newname"
+
 	// Test first image occurrence of CVE that is already discovered in system.
 	images[1].Scan = &storage.ImageScan{
 		Components: []*storage.EmbeddedImageScanComponent{
@@ -217,7 +258,7 @@ func (suite *ImageStoreTestSuite) TestImages() {
 
 	suite.NoError(suite.store.Upsert(images[1]))
 
-	got, exists, err := suite.store.GetImage(images[1].GetId())
+	got, exists, err = suite.store.GetImage(images[1].GetId())
 	suite.NoError(err)
 	suite.True(exists)
 	images[1].GetScan().GetComponents()[0].GetVulns()[0].FirstSystemOccurrence = images[0].GetScan().GetComponents()[1].GetVulns()[0].FirstSystemOccurrence

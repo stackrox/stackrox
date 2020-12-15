@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	"github.com/stackrox/rox/central/image/index"
 	pkgImgComponent "github.com/stackrox/rox/central/imagecomponent"
-	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -38,23 +37,20 @@ type datastoreImpl struct {
 	indexer  index.Indexer
 	searcher search.Searcher
 
-	components imageComponentDS.DataStore
-	risks      riskDS.DataStore
+	risks riskDS.DataStore
 
 	imageRanker          *ranking.Ranker
 	imageComponentRanker *ranking.Ranker
 }
 
-func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher search.Searcher,
-	imageComponents imageComponentDS.DataStore, risks riskDS.DataStore,
+func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher search.Searcher, risks riskDS.DataStore,
 	imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) (*datastoreImpl, error) {
 	ds := &datastoreImpl{
 		storage:  storage,
 		indexer:  indexer,
 		searcher: searcher,
 
-		components: imageComponents,
-		risks:      risks,
+		risks: risks,
 
 		imageRanker:          imageRanker,
 		imageComponentRanker: imageComponentRanker,
@@ -206,24 +202,14 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 	ds.keyedMutex.Lock(image.GetId())
 	defer ds.keyedMutex.Unlock(image.GetId())
 
-	oldImage, exists, err := ds.storage.GetImage(image.GetId())
-	if err != nil {
-		return err
-	}
-
-	// Update image with latest risk score
-	image.RiskScore = ds.imageRanker.GetScoreForID(image.GetId())
-	// If the merge causes no changes, then no reason to save
-	if exists && !merge(image, oldImage) {
-		return nil
-	}
-
 	ds.updateComponentRisk(image)
 	enricher.FillScanStats(image)
 
-	if err = ds.storage.Upsert(image); err != nil {
+	if err := ds.storage.Upsert(image); err != nil {
 		return err
 	}
+	// If the image in db is latest, this image object will be carrying it's risk score
+	ds.imageRanker.Add(image.GetId(), image.GetRiskScore())
 	return nil
 }
 
@@ -260,26 +246,6 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, err
 	}
 	return ds.storage.Exists(id)
-}
-
-// merge adds the most up to date data from the two inputs to the first input.
-func merge(mergeTo *storage.Image, mergeWith *storage.Image) (updated bool) {
-	// If the image currently in the DB has more up to date info, swap it out.
-	if mergeWith.GetRiskScore() != mergeTo.GetRiskScore() {
-		updated = true
-	}
-	if mergeWith.GetMetadata().GetV1().GetCreated().Compare(mergeTo.GetMetadata().GetV1().GetCreated()) > 0 {
-		mergeTo.Metadata = mergeWith.GetMetadata()
-	} else {
-		updated = true
-	}
-	if mergeWith.GetScan().GetScanTime().Compare(mergeTo.GetScan().GetScanTime()) > 0 {
-		mergeTo.Scan = mergeWith.GetScan()
-	} else {
-		updated = true
-	}
-
-	return
 }
 
 func (ds *datastoreImpl) initializeRankers() {

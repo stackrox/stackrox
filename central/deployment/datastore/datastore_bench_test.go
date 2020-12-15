@@ -54,7 +54,7 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 	deploymentsIndexer := index.New(bleveIndex, bleveIndex)
 	deploymentsSearcher := search.New(storage, dacky, nil, nil, nil, nil, nil, deploymentsIndexer)
 
-	imageDS, err := imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, false, nil, nil, ranking.NewRanker(), ranking.NewRanker())
+	imageDS, err := imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, false, nil, ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(b, err)
 
 	deploymentsDatastore, err := newDatastoreImpl(storage, nil, deploymentsIndexer, deploymentsSearcher, imageDS, nil, nil, nil, nil,

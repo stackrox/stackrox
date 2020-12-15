@@ -179,7 +179,7 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	registry.RegisterWrapper(imageDackBox.Bucket, imageIndex.Wrapper{})
 
 	// Initialize real datastore
-	images, err := imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, true, mockComponentDatastore, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker())
+	images, err := imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, true, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)

@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	dackBoxStore "github.com/stackrox/rox/central/image/datastore/internal/store/dackbox"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
-	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
 	"github.com/stackrox/rox/central/ranking"
@@ -43,8 +42,7 @@ type DataStore interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
-func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.Index, noUpdateTimestamps bool,
-	imageComponents imageComponentDS.DataStore, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) (DataStore, error) {
+func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) (DataStore, error) {
 	indexer := imageIndexer.New(bleveIndex)
 
 	searcher := search.New(storage,
@@ -56,7 +54,7 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 		imageIndexer.New(bleveIndex),
 		deploymentIndexer.New(bleveIndex, nil),
 	)
-	ds, err := newDatastoreImpl(storage, indexer, searcher, imageComponents, risks, imageRanker, imageComponentRanker)
+	ds, err := newDatastoreImpl(storage, indexer, searcher, risks, imageRanker, imageComponentRanker)
 	if err != nil {
 		return nil, err
 	}
@@ -68,11 +66,10 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
 // noUpdateTimestamps controls whether timestamps are automatically updated when upserting images.
 // This should be set to `false` except for some tests.
-func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, noUpdateTimestamps bool,
-	imageComponents imageComponentDS.DataStore, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) (DataStore, error) {
+func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) (DataStore, error) {
 	storage, err := dackBoxStore.New(dacky, keyFence, noUpdateTimestamps)
 	if err != nil {
 		return nil, err
 	}
-	return newDatastore(dacky, storage, bleveIndex, noUpdateTimestamps, imageComponents, risks, imageRanker, imageComponentRanker)
+	return newDatastore(dacky, storage, bleveIndex, noUpdateTimestamps, risks, imageRanker, imageComponentRanker)
 }

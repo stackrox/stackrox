@@ -38,6 +38,7 @@ func BenchmarkWalk(b *testing.B) {
 	}
 	db, err := rocksdb.NewTemp(b.Name())
 	require.NoError(b, err)
+	defer rocksdbtest.TearDownRocksDB(db)
 
 	keyFunc := func(msg proto.Message) []byte {
 		return []byte(msg.(*storage.Cluster).GetId())
@@ -63,6 +64,4 @@ func BenchmarkWalk(b *testing.B) {
 		})
 		require.NoError(b, err)
 	})
-
-	rocksdbtest.TearDownRocksDB(db)
 }

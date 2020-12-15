@@ -172,12 +172,70 @@ func (b *storeImpl) Upsert(image *storage.Image) error {
 	if !b.noUpdateTimestamps {
 		image.LastUpdated = iTime
 	}
+
+	metadataUpdated, scanUpdated, err := b.isUpdated(image)
+	if err != nil {
+		return err
+	}
+	if !metadataUpdated && !scanUpdated {
+		return nil
+	}
+
+	// If the image scan is not updated, skip updating that part in DB, i.e. rewriting components and cves.
+	if !scanUpdated {
+		image.Scan.Components = nil
+	}
+
 	parts := Split(image)
 
 	keysToUpdate := gatherKeysForImageParts(&parts)
 	return b.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keysToUpdate...), func() error {
-		return b.writeImageParts(&parts, iTime)
+		return b.writeImageParts(&parts, iTime, scanUpdated)
 	})
+}
+
+func (b *storeImpl) isUpdated(image *storage.Image) (bool, bool, error) {
+	txn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return false, false, err
+	}
+	defer txn.Discard()
+
+	msg, err := imageDackBox.Reader.ReadIn(imageDackBox.BucketHandler.GetKey(image.GetId()), txn)
+	if err != nil {
+		return false, false, err
+	}
+	// No image for given ID found, hence mark new image as latest
+	if msg == nil {
+		return true, true, nil
+	}
+
+	oldImage := msg.(*storage.Image)
+
+	metadataUpdated := false
+	scanUpdated := false
+	if oldImage.GetMetadata().GetV1().GetCreated().Compare(image.GetMetadata().GetV1().GetCreated()) > 0 {
+		image.Metadata = oldImage.GetMetadata()
+	} else {
+		metadataUpdated = true
+	}
+
+	// We skip rewriting components and cves if scan is not newer, hence we do not need to merge.
+	if oldImage.GetScan().GetScanTime().Compare(image.GetScan().GetScanTime()) > 0 {
+		fullOldImage, err := b.readImage(txn, image.GetId())
+		if err != nil {
+			return false, false, err
+		}
+		image.Scan = fullOldImage.Scan
+	} else {
+		scanUpdated = true
+	}
+
+	// If the image in the DB is latest, then use it's risk score
+	if !scanUpdated {
+		image.RiskScore = oldImage.GetRiskScore()
+	}
+	return metadataUpdated, scanUpdated, nil
 }
 
 // DeleteImage deletes an image and all it's data.
@@ -223,7 +281,7 @@ func gatherKeysForImageParts(parts *ImageParts) [][]byte {
 	return allKeys
 }
 
-func (b *storeImpl) writeImageParts(parts *ImageParts, iTime *protoTypes.Timestamp) error {
+func (b *storeImpl) writeImageParts(parts *ImageParts, iTime *protoTypes.Timestamp, scanUpdated bool) error {
 	dackTxn, err := b.dacky.NewTransaction()
 	if err != nil {
 		return err
@@ -231,16 +289,21 @@ func (b *storeImpl) writeImageParts(parts *ImageParts, iTime *protoTypes.Timesta
 	defer dackTxn.Discard()
 
 	var componentKeys [][]byte
-	for _, componentData := range parts.children {
-		componentKey, err := b.writeComponentParts(dackTxn, &componentData, iTime)
-		if err != nil {
+	// Update the image components and cves iff the image upsert has updated scan.
+	// Note: In such cases, the loops in following block will not be entered anyways since len(parts.children) and len(parts.imageCVEEdges) is 0.
+	// This is more for good readability amidst the complex code.
+	if scanUpdated {
+		for _, componentData := range parts.children {
+			componentKey, err := b.writeComponentParts(dackTxn, &componentData, iTime)
+			if err != nil {
+				return err
+			}
+			componentKeys = append(componentKeys, componentKey)
+		}
+
+		if err := b.writeImageCVEEdges(dackTxn, parts.imageCVEEdges, iTime); err != nil {
 			return err
 		}
-		componentKeys = append(componentKeys, componentKey)
-	}
-
-	if err := b.writeImageCVEEdges(dackTxn, parts.imageCVEEdges, iTime); err != nil {
-		return err
 	}
 
 	if err := imageDackBox.Upserter.UpsertIn(nil, parts.image, dackTxn); err != nil {
@@ -250,8 +313,11 @@ func (b *storeImpl) writeImageParts(parts *ImageParts, iTime *protoTypes.Timesta
 		return err
 	}
 
-	if err := dackTxn.Graph().SetRefs(imageDackBox.KeyFunc(parts.image), componentKeys); err != nil {
-		return err
+	// Update the image links in the graph iff the image upsert has updated scan.
+	if scanUpdated {
+		if err := dackTxn.Graph().SetRefs(imageDackBox.KeyFunc(parts.image), componentKeys); err != nil {
+			return err
+		}
 	}
 	return dackTxn.Commit()
 }

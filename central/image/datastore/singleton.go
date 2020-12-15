@@ -2,9 +2,8 @@ package datastore
 
 import (
 	"github.com/pkg/errors"
-	dackbox "github.com/stackrox/rox/central/globaldb/dackbox"
+	"github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
-	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/pkg/sync"
@@ -23,7 +22,6 @@ func initialize() {
 		dackbox.GetKeyFence(),
 		globalindex.GetGlobalIndex(),
 		false,
-		imageComponentDS.Singleton(),
 		riskDS.Singleton(),
 		ranking.ImageRanker(),
 		ranking.ImageComponentRanker())
