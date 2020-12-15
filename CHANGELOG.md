@@ -8,7 +8,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Added option to backup certificates for central.
 
 ## [53.0]
-- No Changes to note
+- [Security Advisory] Scanner was not validating Central client certificates allowing for intra-cluster unauthenticated users
+  to initiate or get scans. This only affects environments without NetworkPolicy enforcement.
 
 ## [52.0]
 - Added ContainerName as one of the policy criteria
