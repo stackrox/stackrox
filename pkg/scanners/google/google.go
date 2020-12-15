@@ -187,7 +187,7 @@ func getPackageAndVersion(installation *_package.Installation) packageAndVersion
 	pv := packageAndVersion{
 		name: installation.GetName(),
 	}
-	if len(installation.GetLocation()) != 0 {
+	if len(installation.GetLocation()) > 0 {
 		pv.version = installation.GetLocation()[0].GetVersion().GetName()
 	}
 	return pv

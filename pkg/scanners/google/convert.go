@@ -1,6 +1,7 @@
 package google
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -67,14 +68,16 @@ func (c *googleScanner) convertVulnsFromOccurrence(occurrence *grafeas.Occurrenc
 	}
 	pkgIssue := packageIssues[0]
 
-	var link string
-	if len(vulnerability.RelatedUrls) != 0 {
-		link = vulnerability.GetRelatedUrls()[0].GetUrl()
-	}
-
 	cveName := getCVEName(occurrence)
 	if cveName == "" {
 		return nil
+	}
+
+	var link string
+	if len(vulnerability.RelatedUrls) > 0 {
+		link = vulnerability.GetRelatedUrls()[0].GetUrl()
+	} else {
+		link = fmt.Sprintf("https://nvd.nist.gov/vuln/detail/%s", cveName)
 	}
 
 	vuln := &storage.EmbeddedVulnerability{
