@@ -68,6 +68,28 @@ func (s *serviceImpl) GetNetworkBaselineStatusForFlows(
 	return &v1.NetworkBaselineStatusResponse{Statuses: statuses}, nil
 }
 
+func (s *serviceImpl) GetNetworkBaseline(
+	ctx context.Context,
+	request *v1.ResourceByID,
+) (*storage.NetworkBaseline, error) {
+	if !features.NetworkDetection.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "support for network baseline is not enabled")
+	}
+
+	if request.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Network baseline id must be provided")
+	}
+	baseline, found, err := s.datastore.GetNetworkBaseline(ctx, request.GetId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if !found {
+		return nil, status.Errorf(codes.NotFound, "network baseline with id %q does not exist", request.GetId())
+	}
+
+	return baseline, nil
+}
+
 func (s *serviceImpl) getStatusesForPeers(
 	baseline *storage.NetworkBaseline,
 	examinedPeers []*v1.NetworkBaselinePeer,

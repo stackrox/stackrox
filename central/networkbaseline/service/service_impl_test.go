@@ -45,7 +45,7 @@ func (s *NetworkBaselineServiceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
-func (s *NetworkBaselineServiceTestSuite) getBaselineWithSampleFlow(
+func (s *NetworkBaselineServiceTestSuite) getBaselineWithCustomFlow(
 	entityID, entityClusterID string,
 	entityType storage.NetworkEntityInfo_Type,
 	flowIsIngress bool,
@@ -75,13 +75,19 @@ func (s *NetworkBaselineServiceTestSuite) getBaselineWithSampleFlow(
 	return baseline
 }
 
-func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForFlows() {
+func (s *NetworkBaselineServiceTestSuite) getBaselineWithSampleFlow() *storage.NetworkBaseline {
 	entityID, entityClusterID := "entity-id", "another-cluster"
 	entityType := storage.NetworkEntityInfo_DEPLOYMENT
 	flowIsIngress := true
 	flowPort := uint32(8080)
+	return s.getBaselineWithCustomFlow(entityID, entityClusterID, entityType, flowIsIngress, flowPort)
+}
 
-	baseline := s.getBaselineWithSampleFlow(entityID, entityClusterID, entityType, flowIsIngress, flowPort)
+func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForFlows() {
+	baseline := s.getBaselineWithSampleFlow()
+	peer := baseline.GetPeers()[0]
+	port, isIngress := peer.GetProperties()[0].GetPort(), peer.GetProperties()[0].GetIngress()
+	entityID := peer.GetEntity().GetInfo().GetId()
 	request := &v1.NetworkBaselineStatusRequest{
 		DeploymentId: baseline.GetDeploymentId(),
 		Peers: []*v1.NetworkBaselinePeer{
@@ -90,9 +96,9 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForFlows()
 					Id:   entityID,
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
 				},
-				Port:     flowPort,
+				Port:     port,
 				Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-				Ingress:  flowIsIngress,
+				Ingress:  isIngress,
 			},
 		},
 	}
@@ -110,10 +116,30 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForFlows()
 	s.Equal(v1.NetworkBaselinePeerStatus_BASELINE, rsp.Statuses[0].Status)
 
 	// If we change some baseline details, then the flow should be marked as anomaly
-	baseline = s.getBaselineWithSampleFlow(entityID, entityClusterID, entityType, !flowIsIngress, flowPort)
+	baseline =
+		s.getBaselineWithCustomFlow(
+			entityID,
+			baseline.GetClusterId(),
+			peer.GetEntity().GetInfo().GetType(),
+			!isIngress,
+			port)
 	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(baseline, true, nil)
 	rsp, err = s.service.GetNetworkBaselineStatusForFlows(allAllowedCtx, request)
 	s.Nil(err)
 	s.Equal(1, len(rsp.Statuses))
 	s.Equal(v1.NetworkBaselinePeerStatus_ANOMALOUS, rsp.Statuses[0].Status)
+}
+
+func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaseline() {
+	baseline := s.getBaselineWithSampleFlow()
+
+	// When no baseline, expect error
+	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(nil, false, nil)
+	_, err := s.service.GetNetworkBaseline(allAllowedCtx, &v1.ResourceByID{Id: baseline.GetDeploymentId()})
+	s.Error(err, "network baseline for the deployment does not exist")
+
+	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(baseline, true, nil)
+	rsp, err := s.service.GetNetworkBaseline(allAllowedCtx, &v1.ResourceByID{Id: baseline.GetDeploymentId()})
+	s.Nil(err)
+	s.Equal(rsp, baseline, "network baselines do not match")
 }
