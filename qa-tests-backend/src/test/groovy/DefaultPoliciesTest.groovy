@@ -21,6 +21,11 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
 import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
 import io.stackrox.proto.storage.RiskOuterClass
 import io.stackrox.proto.storage.RiskOuterClass.Risk.Result
+import io.stackrox.proto.storage.DeploymentOuterClass
+import io.stackrox.proto.storage.ImageOuterClass
+import services.DeploymentService
+import services.ImageService
+import util.SlackUtil
 
 import org.junit.Assume
 
@@ -199,7 +204,34 @@ class DefaultPoliciesTest extends BaseSpecification {
             !Constants.VIOLATIONS_WHITELIST.containsKey(deploymentName) ||
                     !Constants.VIOLATIONS_WHITELIST.get(deploymentName).contains(policyName)
         }
-        unexpectedViolations == []
+        if (!unexpectedViolations.isEmpty()) {
+            String slackPayload = ":rotating_light: Fixable Vulnerabilities found in StackRox Images! :rotating_light:"
+
+            Map<String, Set<String>> imageVulnMap = [:]
+            unexpectedViolations.each {
+                DeploymentOuterClass.Deployment dep = DeploymentService.getDeployment(it.deployment.id)
+                dep.containersList.each {
+                    ImageOuterClass.Image image = ImageService.getImage(it.image.id)
+                    Set<String> fixables = []
+                    image.scan.componentsList*.vulnsList*.each {
+                        if (it.fixedBy != null && it.fixedBy != "") {
+                            fixables.add(it.cve)
+                        }
+                    }
+                    if (!fixables.isEmpty()) {
+                        imageVulnMap.containsKey(image.name.fullName) ?
+                                imageVulnMap.get(image.name.fullName).addAll(fixables) :
+                                imageVulnMap.putIfAbsent(image.name.fullName, fixables)
+                    }
+                }
+            }
+            if (!imageVulnMap.isEmpty()) {
+                imageVulnMap.each { k, v ->
+                    slackPayload += "\n${k}: ${v}"
+                }
+                SlackUtil.sendMessage(slackPayload)
+            }
+        }
     }
 
     @Unroll

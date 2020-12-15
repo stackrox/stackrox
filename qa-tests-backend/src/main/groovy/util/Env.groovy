@@ -249,5 +249,9 @@ class Env {
     static String mustGetPagerdutyToken() {
         return mustGet("PAGERDUTY_TOKEN")
     }
+
+    static String mustGetSlackFixableVulnsChannel() {
+        return mustGet("SLACK_FIXABLE_VULNS_CHANNEL")
+    }
 }
 
