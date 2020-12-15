@@ -14,6 +14,7 @@ type Store interface {
 	GetMany(ids []string) ([]*storage.NetworkBaseline, []int, error)
 
 	Upsert(baseline *storage.NetworkBaseline) error
+	UpsertMany(baselines []*storage.NetworkBaseline) error
 	Delete(id string) error
 	DeleteMany(ids []string) error
 

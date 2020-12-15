@@ -30,4 +30,6 @@ func TestElapsedSince(t *testing.T) {
 	ts1 := MicroTS(1000000)
 	ts2 := MicroTS(20000000)
 	assert.Equal(t, 19*time.Second, ts2.ElapsedSince(ts1))
+	assert.True(t, ts2.After(ts1))
+	assert.False(t, ts1.After(ts2))
 }

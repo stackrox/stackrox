@@ -34,21 +34,6 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// Exists mocks base method
-func (m *MockDataStore) Exists(ctx context.Context, deploymentID string) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Exists", ctx, deploymentID)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Exists indicates an expected call of Exists
-func (mr *MockDataStoreMockRecorder) Exists(ctx, deploymentID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockDataStore)(nil).Exists), ctx, deploymentID)
-}
-
 // GetNetworkBaseline mocks base method
 func (m *MockDataStore) GetNetworkBaseline(ctx context.Context, deploymentID string) (*storage.NetworkBaseline, bool, error) {
 	m.ctrl.T.Helper()
@@ -65,32 +50,32 @@ func (mr *MockDataStoreMockRecorder) GetNetworkBaseline(ctx, deploymentID interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkBaseline", reflect.TypeOf((*MockDataStore)(nil).GetNetworkBaseline), ctx, deploymentID)
 }
 
-// CreateNetworkBaselineIfNotExists mocks base method
-func (m *MockDataStore) CreateNetworkBaselineIfNotExists(ctx context.Context, deploymentID, clusterID, namespace string) error {
+// Walk mocks base method
+func (m *MockDataStore) Walk(ctx context.Context, f func(*storage.NetworkBaseline) error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateNetworkBaselineIfNotExists", ctx, deploymentID, clusterID, namespace)
+	ret := m.ctrl.Call(m, "Walk", ctx, f)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// CreateNetworkBaselineIfNotExists indicates an expected call of CreateNetworkBaselineIfNotExists
-func (mr *MockDataStoreMockRecorder) CreateNetworkBaselineIfNotExists(ctx, deploymentID, clusterID, namespace interface{}) *gomock.Call {
+// Walk indicates an expected call of Walk
+func (mr *MockDataStoreMockRecorder) Walk(ctx, f interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNetworkBaselineIfNotExists", reflect.TypeOf((*MockDataStore)(nil).CreateNetworkBaselineIfNotExists), ctx, deploymentID, clusterID, namespace)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockDataStore)(nil).Walk), ctx, f)
 }
 
-// UpdateNetworkBaseline mocks base method
-func (m *MockDataStore) UpdateNetworkBaseline(ctx context.Context, baseline *storage.NetworkBaseline) error {
+// UpsertNetworkBaselines mocks base method
+func (m *MockDataStore) UpsertNetworkBaselines(ctx context.Context, baselines []*storage.NetworkBaseline) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateNetworkBaseline", ctx, baseline)
+	ret := m.ctrl.Call(m, "UpsertNetworkBaselines", ctx, baselines)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateNetworkBaseline indicates an expected call of UpdateNetworkBaseline
-func (mr *MockDataStoreMockRecorder) UpdateNetworkBaseline(ctx, baseline interface{}) *gomock.Call {
+// UpsertNetworkBaselines indicates an expected call of UpsertNetworkBaselines
+func (mr *MockDataStoreMockRecorder) UpsertNetworkBaselines(ctx, baselines interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNetworkBaseline", reflect.TypeOf((*MockDataStore)(nil).UpdateNetworkBaseline), ctx, baseline)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertNetworkBaselines", reflect.TypeOf((*MockDataStore)(nil).UpsertNetworkBaselines), ctx, baselines)
 }
 
 // DeleteNetworkBaseline mocks base method

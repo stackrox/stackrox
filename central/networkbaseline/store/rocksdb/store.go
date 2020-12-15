@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/db"
-	"github.com/stackrox/rox/pkg/db/mapcache"
+	
 	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 )
@@ -51,16 +51,11 @@ func keyFunc(msg proto.Message) []byte {
 }
 
 // New returns a new Store instance using the provided rocksdb instance.
-func New(db *rocksdb.RocksDB) (Store, error) {
+func New(db *rocksdb.RocksDB) Store {
 	globaldb.RegisterBucket(bucket, "NetworkBaseline")
-	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc, false)
-	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, keyFunc)
-	if err != nil {
-		return nil, err
-	}
 	return &storeImpl{
-		crud: cacheCRUD,
-	}, nil
+		crud: generic.NewCRUD(db, bucket, keyFunc, alloc, false),
+	}
 }
 
 // Count returns the number of objects in the store

@@ -27,7 +27,7 @@ func TestNetworkBaselineDatastoreSuite(t *testing.T) {
 type NetworkBaselineDataStoreTestSuite struct {
 	suite.Suite
 
-	datastore DataStore
+	datastore *dataStoreImpl
 	storage   store.Store
 
 	mockCtrl *gomock.Controller
@@ -37,49 +37,32 @@ func (suite *NetworkBaselineDataStoreTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(suite.T())
 	suite.mockCtrl = mockCtrl
 	db, err := pkgRocksDB.NewTemp(suite.T().Name())
-	if err != nil {
-		suite.FailNowf("failed to create DB: %+v", err.Error())
-	}
-	suite.storage, err = rocksdb.New(db)
-	if err != nil {
-		suite.FailNowf("failed to create network baseline store: %+v", err.Error())
-	}
-
-	suite.datastore = newNetworkBaselineDataStore(suite.storage)
+	suite.Require().NoError(err)
+	suite.storage = rocksdb.New(db)
+	suite.datastore = newNetworkBaselineDataStore(suite.storage).(*dataStoreImpl)
 }
 
 func (suite *NetworkBaselineDataStoreTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 }
 
+func (suite *NetworkBaselineDataStoreTestSuite) mustGetBaseline(ctx context.Context, deploymentID string) (*storage.NetworkBaseline, bool) {
+	baseline, found, err := suite.datastore.GetNetworkBaseline(ctx, deploymentID)
+	suite.Require().NoError(err)
+	return baseline, found
+}
+
 func (suite *NetworkBaselineDataStoreTestSuite) TestNoAccessAllowed() {
 	// First create a baseline in datastore to make sure when we return false on get
 	// we are indeed hitting permission issue
-	suite.Nil(
-		suite.datastore.CreateNetworkBaselineIfNotExists(
-			allAllowedCtx,
-			expectedBaseline.GetDeploymentId(),
-			expectedBaseline.GetClusterId(),
-			expectedBaseline.GetNamespace()))
+	suite.Nil(suite.datastore.UpsertNetworkBaselines(allAllowedCtx, []*storage.NetworkBaseline{expectedBaseline}))
 
 	ctx := sac.WithNoAccess(context.Background())
 
-	_, ok, _ := suite.datastore.GetNetworkBaseline(ctx, expectedBaseline.GetDeploymentId())
+	_, ok := suite.mustGetBaseline(ctx, expectedBaseline.GetDeploymentId())
 	suite.False(ok)
 
-	ok, _ = suite.datastore.Exists(ctx, expectedBaseline.GetDeploymentId())
-	suite.False(ok)
-
-	suite.Error(
-		suite.datastore.CreateNetworkBaselineIfNotExists(
-			ctx,
-			expectedBaseline.GetDeploymentId(),
-			expectedBaseline.GetClusterId(),
-			expectedBaseline.GetNamespace(),
-		),
-		"permission denied")
-
-	suite.Error(suite.datastore.UpdateNetworkBaseline(ctx, expectedBaseline), "permission denied")
+	suite.Error(suite.datastore.UpsertNetworkBaselines(ctx, []*storage.NetworkBaseline{expectedBaseline}), "permission denied")
 
 	suite.Error(suite.datastore.DeleteNetworkBaseline(ctx, expectedBaseline.GetDeploymentId()), "permission denied")
 	// BTW if we try to delete non-existent/already deleted baseline, it should just return nil
@@ -89,20 +72,9 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestNoAccessAllowed() {
 func (suite *NetworkBaselineDataStoreTestSuite) TestNetworkBaselines() {
 	// With all allowed access, we should be able to perform all ops on datastore
 	// Create
-	suite.Nil(
-		suite.datastore.CreateNetworkBaselineIfNotExists(
-			allAllowedCtx,
-			expectedBaseline.GetDeploymentId(),
-			expectedBaseline.GetClusterId(),
-			expectedBaseline.GetNamespace()))
+	suite.Nil(suite.datastore.UpsertNetworkBaselines(allAllowedCtx, []*storage.NetworkBaseline{expectedBaseline}))
 
-	// Check exist and get
-	ok, err := suite.datastore.Exists(allAllowedCtx, expectedBaseline.GetDeploymentId())
-	suite.Nil(err)
-	suite.True(ok)
-
-	baseline, ok, err := suite.datastore.GetNetworkBaseline(allAllowedCtx, expectedBaseline.GetDeploymentId())
-	suite.Nil(err)
+	baseline, ok := suite.mustGetBaseline(allAllowedCtx, expectedBaseline.GetDeploymentId())
 	suite.True(ok)
 	suite.Equal(expectedBaseline.GetClusterId(), baseline.GetClusterId())
 	suite.Equal(expectedBaseline.GetNamespace(), baseline.GetNamespace())
@@ -111,10 +83,9 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestNetworkBaselines() {
 	// Update
 	originalBaselineLocked := expectedBaseline.GetLocked()
 	expectedBaseline.Locked = !expectedBaseline.GetLocked()
-	suite.Nil(suite.datastore.UpdateNetworkBaseline(allAllowedCtx, expectedBaseline))
+	suite.Nil(suite.datastore.UpsertNetworkBaselines(allAllowedCtx, []*storage.NetworkBaseline{expectedBaseline}))
 	// Check update
-	baseline, ok, err = suite.datastore.GetNetworkBaseline(allAllowedCtx, expectedBaseline.GetDeploymentId())
-	suite.Nil(err)
+	baseline, ok = suite.mustGetBaseline(allAllowedCtx, expectedBaseline.GetDeploymentId())
 	suite.True(ok)
 	suite.NotEqual(originalBaselineLocked, baseline.GetLocked())
 	suite.Equal(baseline.GetLocked(), expectedBaseline.GetLocked())
@@ -123,47 +94,8 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestNetworkBaselines() {
 	suite.Nil(suite.datastore.DeleteNetworkBaseline(allAllowedCtx, expectedBaseline.GetDeploymentId()))
 
 	// Verify deletion
-	ok, err = suite.datastore.Exists(allAllowedCtx, expectedBaseline.GetDeploymentId())
-	suite.Nil(err)
+	_, ok = suite.mustGetBaseline(allAllowedCtx, expectedBaseline.GetDeploymentId())
 	suite.False(ok)
-}
-
-func (suite *NetworkBaselineDataStoreTestSuite) TestRepeatedCreate() {
-	suite.Nil(
-		suite.datastore.CreateNetworkBaselineIfNotExists(
-			allAllowedCtx,
-			expectedBaseline.GetDeploymentId(),
-			expectedBaseline.GetClusterId(),
-			expectedBaseline.GetNamespace()))
-
-	// If I tried to do create again, it should just return without error
-	suite.Nil(
-		suite.datastore.CreateNetworkBaselineIfNotExists(
-			allAllowedCtx,
-			expectedBaseline.GetDeploymentId(),
-			expectedBaseline.GetClusterId(),
-			expectedBaseline.GetNamespace()))
-
-	// If I tried to create a baseline with different cluster ID/Namespace, it should throw error
-	suite.Error(
-		suite.datastore.CreateNetworkBaselineIfNotExists(
-			allAllowedCtx,
-			expectedBaseline.GetDeploymentId(),
-			"some-other-cluster-id",
-			expectedBaseline.GetNamespace()))
-}
-
-func (suite *NetworkBaselineDataStoreTestSuite) TestNotFoundUpdate() {
-	// Make sure does not exist
-	found, err := suite.datastore.Exists(allAllowedCtx, expectedBaseline.GetDeploymentId())
-	suite.Nil(err)
-	suite.False(found)
-
-	// Update should fail
-	suite.Errorf(
-		suite.datastore.UpdateNetworkBaseline(allAllowedCtx, expectedBaseline),
-		"updateing a baseline that does not exist: %s",
-		expectedBaseline.GetDeploymentId())
 }
 
 func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
@@ -201,51 +133,28 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 				sac.ClusterScopeKeys(expectedBaseline.GetClusterId()),
 				sac.NamespaceScopeKeys(expectedBaseline.GetNamespace())))
 
-	// Test Create
-	{
-		d, c, n := expectedBaseline.GetDeploymentId(), expectedBaseline.GetClusterId(), expectedBaseline.GetNamespace()
-		suite.Error(suite.datastore.CreateNetworkBaselineIfNotExists(ctxWithWrongClusterReadAccess, d, c, n), "permission denied")
-		suite.Error(suite.datastore.CreateNetworkBaselineIfNotExists(ctxWithReadAccess, d, c, n), "permission denied")
-		suite.Error(suite.datastore.CreateNetworkBaselineIfNotExists(ctxWithWrongClusterWriteAccess, d, c, n), "permission denied")
-		suite.Nil(suite.datastore.CreateNetworkBaselineIfNotExists(ctxWithWriteAccess, d, c, n))
-	}
-
 	// Test Update
 	{
 		expectedBaseline.Locked = !expectedBaseline.Locked
-		suite.Error(suite.datastore.UpdateNetworkBaseline(ctxWithWrongClusterReadAccess, expectedBaseline), "permission denied")
-		suite.Error(suite.datastore.UpdateNetworkBaseline(ctxWithReadAccess, expectedBaseline), "permission denied")
-		suite.Error(suite.datastore.UpdateNetworkBaseline(ctxWithWrongClusterWriteAccess, expectedBaseline), "permission denied")
-		suite.Nil(suite.datastore.UpdateNetworkBaseline(ctxWithWriteAccess, expectedBaseline))
+		suite.Error(suite.datastore.UpsertNetworkBaselines(ctxWithWrongClusterReadAccess, []*storage.NetworkBaseline{expectedBaseline}), "permission denied")
+		suite.Error(suite.datastore.UpsertNetworkBaselines(ctxWithReadAccess, []*storage.NetworkBaseline{expectedBaseline}), "permission denied")
+		suite.Error(suite.datastore.UpsertNetworkBaselines(ctxWithWrongClusterWriteAccess, []*storage.NetworkBaseline{expectedBaseline}), "permission denied")
+		suite.Nil(suite.datastore.UpsertNetworkBaselines(ctxWithWriteAccess, []*storage.NetworkBaseline{expectedBaseline}))
 		// Check updated value
-		result, found, err := suite.datastore.GetNetworkBaseline(allAllowedCtx, expectedBaseline.GetDeploymentId())
-		suite.Nil(err)
+		result, found := suite.mustGetBaseline(allAllowedCtx, expectedBaseline.GetDeploymentId())
 		suite.True(found)
 		suite.Equal(expectedBaseline.Locked, result.Locked)
 	}
 
-	// Test Exists. This should be tested after create so that when permissions are correct, we should be able to
-	// actually get something.
-	{
-		ok, _ := suite.datastore.Exists(ctxWithWrongClusterReadAccess, expectedBaseline.GetDeploymentId())
-		suite.False(ok)
-		ok, _ = suite.datastore.Exists(ctxWithReadAccess, expectedBaseline.GetDeploymentId())
-		suite.True(ok)
-		ok, _ = suite.datastore.Exists(ctxWithWrongClusterWriteAccess, expectedBaseline.GetDeploymentId())
-		suite.False(ok)
-		ok, _ = suite.datastore.Exists(ctxWithWriteAccess, expectedBaseline.GetDeploymentId())
-		suite.False(ok)
-	}
-
 	// Test Get
 	{
-		_, ok, _ := suite.datastore.GetNetworkBaseline(ctxWithWrongClusterReadAccess, expectedBaseline.GetDeploymentId())
+		_, ok := suite.mustGetBaseline(ctxWithWrongClusterReadAccess, expectedBaseline.GetDeploymentId())
 		suite.False(ok)
-		_, ok, _ = suite.datastore.GetNetworkBaseline(ctxWithReadAccess, expectedBaseline.GetDeploymentId())
+		_, ok = suite.mustGetBaseline(ctxWithReadAccess, expectedBaseline.GetDeploymentId())
 		suite.True(ok)
-		_, ok, _ = suite.datastore.GetNetworkBaseline(ctxWithWrongClusterWriteAccess, expectedBaseline.GetDeploymentId())
+		_, ok = suite.mustGetBaseline(ctxWithWrongClusterWriteAccess, expectedBaseline.GetDeploymentId())
 		suite.False(ok)
-		_, ok, _ = suite.datastore.GetNetworkBaseline(ctxWithWriteAccess, expectedBaseline.GetDeploymentId())
+		_, ok = suite.mustGetBaseline(ctxWithWriteAccess, expectedBaseline.GetDeploymentId())
 		suite.False(ok)
 	}
 

@@ -109,6 +109,20 @@ func (mr *MockStoreMockRecorder) Upsert(baseline interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), baseline)
 }
 
+// UpsertMany mocks base method
+func (m *MockStore) UpsertMany(baselines []*storage.NetworkBaseline) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertMany", baselines)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertMany indicates an expected call of UpsertMany
+func (mr *MockStoreMockRecorder) UpsertMany(baselines interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockStore)(nil).UpsertMany), baselines)
+}
+
 // Delete mocks base method
 func (m *MockStore) Delete(id string) error {
 	m.ctrl.T.Helper()

@@ -4,34 +4,46 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
+	flowDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
-type flowStoreUpdaterImpl struct {
-	flowStore datastore.FlowDataStore
-	isFirst   bool
+type flowPersisterImpl struct {
+	seenBaselineRelevantFlows map[networkgraph.NetworkConnIndicator]struct{}
+
+	baselines       networkBaselineManager.Manager
+	flowStore       flowDataStore.FlowDataStore
+	firstUpdateSeen bool
 }
 
 // update updates the FlowStore with the given network flow updates.
-func (s *flowStoreUpdaterImpl) update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *types.Timestamp) error {
-	updatedFlows := make(map[networkFlowProperties]timestamp.MicroTS, len(newFlows))
+func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *types.Timestamp) error {
+	now := timestamp.Now()
+	updateMicroTS := timestamp.FromProtobuf(updateTS)
 
-	// Add existing unterminated flows from the store if this is the first run.
-	if s.isFirst {
-		if err := s.addExistingNonTerminatedFlows(ctx, updatedFlows); err != nil {
+	flowsByIndicator := getFlowsByIndicator(newFlows, updateMicroTS, now)
+	if features.NetworkDetection.Enabled() {
+		if err := s.baselines.ProcessFlowUpdate(flowsByIndicator); err != nil {
 			return err
 		}
-		s.isFirst = false
 	}
-	addNewFlows(updatedFlows, newFlows, updateTS)
 
-	return s.flowStore.UpsertFlows(ctx, convertToFlows(updatedFlows), timestamp.Now())
+	// Add existing unterminated flows from the store if this is the first run this time round.
+	if !s.firstUpdateSeen {
+		if err := s.markExistingFlowsAsTerminatedIfNotSeen(ctx, flowsByIndicator); err != nil {
+			return err
+		}
+		s.firstUpdateSeen = true
+	}
+
+	return s.flowStore.UpsertFlows(ctx, convertToFlows(flowsByIndicator), now)
 }
 
-func (s *flowStoreUpdaterImpl) addExistingNonTerminatedFlows(ctx context.Context, updatedFlows map[networkFlowProperties]timestamp.MicroTS) error {
+func (s *flowPersisterImpl) markExistingFlowsAsTerminatedIfNotSeen(ctx context.Context, currentFlows map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) error {
 	existingFlows, lastUpdateTS, err := s.flowStore.GetAllFlows(ctx, nil)
 	if err != nil {
 		return err
@@ -42,32 +54,39 @@ func (s *flowStoreUpdaterImpl) addExistingNonTerminatedFlows(ctx context.Context
 		closeTS = timestamp.Now()
 	}
 
-	// Add non-terminated flows with the latest time in the store.
-	// This will terminate the flow if it is not present in the incoming newFlows.
+	// If there are flows in the store that are not terminated, and which are NOT present in the currentFlows,
+	// then we need to mark them as terminated, with a timestamp of closeTS.
 	for _, flow := range existingFlows {
+		// An empty last seen timestamp means the flow had not been terminated
+		// the last time we wrote it.
 		if flow.GetLastSeenTimestamp() == nil {
-			updatedFlows[fromProto(flow.GetProps())] = closeTS
+			indicator := networkgraph.GetNetworkConnIndicator(flow)
+			if _, stillExists := currentFlows[indicator]; !stillExists {
+				currentFlows[indicator] = closeTS
+			}
 		}
 	}
 	return nil
 }
 
-func addNewFlows(updatedFlows map[networkFlowProperties]timestamp.MicroTS, newFlows []*storage.NetworkFlow, updateTS *types.Timestamp) {
-	tsOffset := timestamp.Now() - timestamp.FromProtobuf(updateTS)
+func getFlowsByIndicator(newFlows []*storage.NetworkFlow, updateTS, now timestamp.MicroTS) map[networkgraph.NetworkConnIndicator]timestamp.MicroTS {
+	out := make(map[networkgraph.NetworkConnIndicator]timestamp.MicroTS, len(newFlows))
+	tsOffset := now - updateTS
 	for _, newFlow := range newFlows {
 		t := timestamp.FromProtobuf(newFlow.LastSeenTimestamp)
 		if newFlow.LastSeenTimestamp != nil {
 			t = t + tsOffset
 		}
-		updatedFlows[fromProto(newFlow.GetProps())] = t
+		out[networkgraph.GetNetworkConnIndicator(newFlow)] = t
 	}
+	return out
 }
 
-func convertToFlows(updatedFlows map[networkFlowProperties]timestamp.MicroTS) []*storage.NetworkFlow {
+func convertToFlows(updatedFlows map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) []*storage.NetworkFlow {
 	flowsToBeUpserted := make([]*storage.NetworkFlow, 0, len(updatedFlows))
-	for props, ts := range updatedFlows {
+	for indicator, ts := range updatedFlows {
 		toBeUpserted := &storage.NetworkFlow{
-			Props:             props.toProto(),
+			Props:             indicator.ToNetworkFlowPropertiesProto(),
 			LastSeenTimestamp: convertTS(ts),
 		}
 		flowsToBeUpserted = append(flowsToBeUpserted, toBeUpserted)
@@ -80,32 +99,4 @@ func convertTS(ts timestamp.MicroTS) *types.Timestamp {
 		return nil
 	}
 	return ts.GogoProtobuf()
-}
-
-// Helper class.
-////////////////
-
-type networkFlowProperties struct {
-	srcEntity networkgraph.Entity
-	dstEntity networkgraph.Entity
-	dstPort   uint32
-	protocol  storage.L4Protocol
-}
-
-func fromProto(protoProps *storage.NetworkFlowProperties) networkFlowProperties {
-	return networkFlowProperties{
-		srcEntity: networkgraph.EntityFromProto(protoProps.SrcEntity),
-		dstEntity: networkgraph.EntityFromProto(protoProps.DstEntity),
-		dstPort:   protoProps.DstPort,
-		protocol:  protoProps.L4Protocol,
-	}
-}
-
-func (n *networkFlowProperties) toProto() *storage.NetworkFlowProperties {
-	return &storage.NetworkFlowProperties{
-		SrcEntity:  n.srcEntity.ToProto(),
-		DstEntity:  n.dstEntity.ToProto(),
-		DstPort:    n.dstPort,
-		L4Protocol: n.protocol,
-	}
 }

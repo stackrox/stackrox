@@ -23,7 +23,7 @@ var (
 //////////////////////////////////////////////////////////////////////////////////////
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(clusterID string, storeUpdater flowStoreUpdater) pipeline.Fragment {
+func NewPipeline(clusterID string, storeUpdater flowPersister) pipeline.Fragment {
 	return &pipelineImpl{
 		clusterID:    clusterID,
 		storeUpdater: storeUpdater,
@@ -32,7 +32,7 @@ func NewPipeline(clusterID string, storeUpdater flowStoreUpdater) pipeline.Fragm
 
 type pipelineImpl struct {
 	clusterID    string
-	storeUpdater flowStoreUpdater
+	storeUpdater flowPersister
 }
 
 func (s *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {

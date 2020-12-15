@@ -150,6 +150,7 @@ import (
 	"github.com/stackrox/rox/pkg/osutils"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
 )
 
@@ -722,21 +723,41 @@ func debugRoutes() []routes.CustomRoute {
 	return customRoutes
 }
 
+type stoppable interface {
+	Stop()
+}
+
+type stoppableWithName struct {
+	obj  stoppable
+	name string
+}
+
 func waitForTerminationSignal() {
 	signalsC := make(chan os.Signal, 1)
 	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	sig := <-signalsC
 	log.Infof("Caught %s signal", sig)
-	reprocessor.Singleton().Stop()
-	log.Info("Stopped reprocessor loop")
-	suppress.Singleton().Stop()
-	log.Info("Stopped cve unsuppress loop")
-	pruning.Singleton().Stop()
-	log.Info("Stopped garbage collector")
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		gatherer.Singleton().Stop()
-		log.Info("Stopped network graph default external sources gatherer")
+
+	stoppables := []stoppableWithName{
+		{reprocessor.Singleton(), "reprocessor loop"},
+		{suppress.Singleton(), "cve unsuppress loop"},
+		{pruning.Singleton(), "gargage collector"},
 	}
+
+	if features.NetworkGraphExternalSrcs.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{gatherer.Singleton(), "network graph default external sources gatherer"})
+	}
+
+	var wg sync.WaitGroup
+	for _, stoppable := range stoppables {
+		wg.Add(1)
+		go func(s stoppableWithName) {
+			defer wg.Done()
+			s.obj.Stop()
+			log.Infof("Stopped %s", s.name)
+		}(stoppable)
+	}
+	wg.Wait()
 
 	globaldb.Close()
 

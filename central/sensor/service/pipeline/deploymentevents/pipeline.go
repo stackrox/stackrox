@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
-	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
+	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -38,7 +38,7 @@ func GetPipeline() pipeline.Fragment {
 		lifecycle.SingletonManager(),
 		graph.Singleton(),
 		reprocessor.Singleton(),
-		networkBaselineDataStore.Singleton())
+		networkBaselineManager.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
@@ -49,7 +49,7 @@ func NewPipeline(
 	manager lifecycle.Manager,
 	graphEvaluator graph.Evaluator,
 	reprocessor reprocessor.Loop,
-	networkBaselines networkBaselineDataStore.DataStore,
+	networkBaselines networkBaselineManager.Manager,
 ) pipeline.Fragment {
 	return &pipelineImpl{
 		validateInput:     newValidateInput(),
@@ -75,7 +75,7 @@ type pipelineImpl struct {
 
 	deployments      deploymentDataStore.DataStore
 	clusters         clusterDataStore.DataStore
-	networkBaselines networkBaselineDataStore.DataStore
+	networkBaselines networkBaselineManager.Manager
 	reprocessor      reprocessor.Loop
 
 	graphEvaluator graph.Evaluator
@@ -195,8 +195,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 
 	// Add network baseline for this deployment if it does not exist yet
 	if features.NetworkDetection.Enabled() {
-		if err := s.networkBaselines.CreateNetworkBaselineIfNotExists(
-			ctx,
+		if err := s.networkBaselines.ProcessDeploymentCreate(
 			deployment.GetId(),
 			deployment.GetClusterId(),
 			deployment.GetNamespace(),

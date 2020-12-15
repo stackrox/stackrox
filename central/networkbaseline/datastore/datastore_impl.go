@@ -2,14 +2,11 @@ package datastore
 
 import (
 	"context"
-	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkbaseline/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -29,14 +26,6 @@ func newNetworkBaselineDataStore(storage store.Store) DataStore {
 	return ds
 }
 
-func (ds *dataStoreImpl) Exists(ctx context.Context, deploymentID string) (bool, error) {
-	_, ok, err := ds.GetNetworkBaseline(ctx, deploymentID)
-	if err != nil {
-		return false, err
-	}
-	return ok, nil
-}
-
 func (ds *dataStoreImpl) GetNetworkBaseline(
 	ctx context.Context,
 	deploymentID string,
@@ -52,35 +41,28 @@ func (ds *dataStoreImpl) GetNetworkBaseline(
 	return baseline, true, nil
 }
 
-func (ds *dataStoreImpl) CreateNetworkBaselineIfNotExists(
-	ctx context.Context,
-	deploymentID, clusterID, namespace string,
-) error {
-	observationPeriodEnd := time.Now().Add(env.NetworkBaselineObservationPeriod.DurationSetting())
-	baseline, err := ds.createEmptyBaseline(deploymentID, clusterID, namespace, observationPeriodEnd)
-	if err != nil {
-		return err
-	}
-	if ok, err := ds.writeAllowed(ctx, baseline); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrPermissionDenied
+type clusterIDNSPair struct {
+	clusterID string
+	namespace string
+}
+
+func (ds *dataStoreImpl) UpsertNetworkBaselines(ctx context.Context, baselines []*storage.NetworkBaseline) error {
+	// For simplicity, do nothing and return an error unless the context can write all baselines that are passed in.
+	allowedScopes := make(map[clusterIDNSPair]struct{})
+	for _, baseline := range baselines {
+		pair := clusterIDNSPair{clusterID: baseline.GetClusterId(), namespace: baseline.GetNamespace()}
+		if _, allowed := allowedScopes[pair]; allowed {
+			continue
+		}
+		if ok, err := ds.writeAllowed(ctx, baseline); err != nil {
+			return err
+		} else if !ok {
+			return sac.ErrPermissionDenied
+		}
+		allowedScopes[pair] = struct{}{}
 	}
 
-	// Validate that the baseline does not exist. If it exists, return
-	found, err := ds.validateClusterAndNamespaceAgainstExistingBaseline(baseline)
-	if err != nil {
-		return errors.Wrapf(err, "creating network baseline %s", baseline.GetDeploymentId())
-	}
-	if found {
-		return nil
-	}
-
-	if err := ds.storage.Upsert(baseline); err != nil {
-		return errors.Wrapf(err, "creating network baseline %s into storage", baseline.GetDeploymentId())
-	}
-
-	return nil
+	return ds.storage.UpsertMany(baselines)
 }
 
 func (ds *dataStoreImpl) UpdateNetworkBaseline(ctx context.Context, baseline *storage.NetworkBaseline) error {
@@ -144,25 +126,6 @@ func (ds *dataStoreImpl) DeleteNetworkBaseline(ctx context.Context, deploymentID
 	return nil
 }
 
-func (ds *dataStoreImpl) createEmptyBaseline(
-	deploymentID, clusterID, namespace string,
-	observationPeriodEnd time.Time,
-) (*storage.NetworkBaseline, error) {
-	convertedPeriod, err := types.TimestampProto(observationPeriodEnd)
-	if err != nil {
-		return nil, err
-	}
-	return &storage.NetworkBaseline{
-		DeploymentId:         deploymentID,
-		ClusterId:            clusterID,
-		Namespace:            namespace,
-		Peers:                nil,
-		ForbiddenPeers:       nil,
-		ObservationPeriodEnd: convertedPeriod,
-		Locked:               false,
-	}, nil
-}
-
 func (ds *dataStoreImpl) readAllowed(ctx context.Context, baseline *storage.NetworkBaseline) (bool, error) {
 	return ds.allowed(ctx, storage.Access_READ_ACCESS, baseline)
 }
@@ -177,4 +140,15 @@ func (ds *dataStoreImpl) allowed(
 	baseline *storage.NetworkBaseline,
 ) (bool, error) {
 	return networkBaselineSAC.ScopeChecker(ctx, access).ForNamespaceScopedObject(baseline).Allowed(ctx)
+}
+
+func (ds *dataStoreImpl) Walk(ctx context.Context, f func(baseline *storage.NetworkBaseline) error) error {
+	if ok, err := networkBaselineSAC.ReadAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return nil
+	}
+
+	return ds.storage.Walk(f)
+
 }

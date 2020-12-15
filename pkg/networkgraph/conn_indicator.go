@@ -28,3 +28,14 @@ func GetNetworkConnIndicator(conn *storage.NetworkFlow) NetworkConnIndicator {
 func (i NetworkConnIndicator) String() string {
 	return fmt.Sprintf("%x:%s:%x:%s:%x:%x", int32(i.SrcEntity.Type), i.SrcEntity.ID, int32(i.DstEntity.Type), i.DstEntity.ID, i.DstPort, int32(i.Protocol))
 }
+
+// ToNetworkFlowPropertiesProto converts the proto to a network flow properties.
+func (i *NetworkConnIndicator) ToNetworkFlowPropertiesProto() *storage.NetworkFlowProperties {
+	return &storage.NetworkFlowProperties{
+		SrcEntity:  i.SrcEntity.ToProto(),
+		DstEntity:  i.DstEntity.ToProto(),
+		DstPort:    i.DstPort,
+		L4Protocol: i.Protocol,
+	}
+
+}

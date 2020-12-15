@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/networkbaseline/store/rocksdb"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -15,10 +14,7 @@ var (
 // Singleton provides the instance of NetworkBaselineDataStore to use.
 func Singleton() DataStore {
 	once.Do(func() {
-		storage, err := rocksdb.New(globaldb.GetRocksDB())
-		utils.Must(err)
-
-		ds = newNetworkBaselineDataStore(storage)
+		ds = newNetworkBaselineDataStore(rocksdb.New(globaldb.GetRocksDB()))
 	})
 	return ds
 }

@@ -56,6 +56,11 @@ func (ts MicroTS) UnixNanos() int64 {
 	return int64(ts) * nanosecondsPerMicrosecond
 }
 
+// After returns whether the timestamp is after otherTS.
+func (ts MicroTS) After(otherTS MicroTS) bool {
+	return ts > otherTS
+}
+
 // UnixNanosFraction returns the number of nanoseconds since the last full second.
 func (ts MicroTS) UnixNanosFraction() int32 {
 	return int32(ts%microsecondsPerSecond) * nanosecondsPerMicrosecond

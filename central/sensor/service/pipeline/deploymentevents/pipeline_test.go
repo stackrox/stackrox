@@ -9,7 +9,7 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
-	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/datastore/mocks"
+	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
 	graphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,7 +28,7 @@ type PipelineTestSuite struct {
 	clusters         *clusterMocks.MockDataStore
 	deployments      *deploymentMocks.MockDataStore
 	images           *imageMocks.MockDataStore
-	networkBaselines *networkBaselineMocks.MockDataStore
+	networkBaselines *networkBaselineMocks.MockManager
 	manager          *lifecycleMocks.MockManager
 	graphEvaluator   *graphMocks.MockEvaluator
 	pipeline         *pipelineImpl
@@ -42,7 +42,7 @@ func (suite *PipelineTestSuite) SetupTest() {
 	suite.clusters = clusterMocks.NewMockDataStore(suite.mockCtrl)
 	suite.deployments = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.images = imageMocks.NewMockDataStore(suite.mockCtrl)
-	suite.networkBaselines = networkBaselineMocks.NewMockDataStore(suite.mockCtrl)
+	suite.networkBaselines = networkBaselineMocks.NewMockManager(suite.mockCtrl)
 	suite.manager = lifecycleMocks.NewMockManager(suite.mockCtrl)
 	suite.graphEvaluator = graphMocks.NewMockEvaluator(suite.mockCtrl)
 	suite.pipeline =
