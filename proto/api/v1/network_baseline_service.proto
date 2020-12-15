@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "storage/network_flow.proto";
+
+package v1;
+
+message NetworkBaselinePeerEntity {
+    string id                           = 1;
+    storage.NetworkEntityInfo.Type type = 2;
+}
+
+message NetworkBaselinePeer {
+    // The peer entity of the connection. This can be constructed from the
+    // entity object of the networkgraph API. Only the ID and type are required.
+    NetworkBaselinePeerEntity entity = 1;
+    // The port and protocol of the destination of the given connection.
+    uint32 port                      = 2;
+    storage.L4Protocol protocol      = 3;
+
+    // A boolean representing whether the query is for an ingress or egress
+    // connection. This is defined with respect to the current deployment.
+    // Thus:
+    //   - If the connection in question is in the outEdges of the current deployment,
+    //     this should be false.
+    //   - If it is in the outEdges of the peer deployment, this
+    //     should be true.
+    bool ingress                     = 4;
+}
+
+message NetworkBaselinePeerStatus {
+    // Status of this peer connection. As of now we only have two statuses:
+    //   - BASELINE: the connection is in the current deployment baseline
+    //   - ANOMALOUS: the connection is not recognized by the current deployment baseline
+    enum Status {
+      BASELINE       = 0;
+      ANOMALOUS      = 1;
+    }
+
+    NetworkBaselinePeer peer = 1;
+    Status status            = 2;
+}
+
+message NetworkBaselineStatusRequest {
+    string deployment_id               = 1;
+    repeated NetworkBaselinePeer peers = 2;
+}
+
+
+
+message NetworkBaselineStatusResponse {
+    repeated NetworkBaselinePeerStatus statuses = 1;
+}
+
+service NetworkBaselineService {
+    rpc GetNetworkBaselineStatusForFlows (NetworkBaselineStatusRequest) returns (NetworkBaselineStatusResponse) {
+        option (google.api.http) = {
+            get: "/v1/networkbaseline/{deployment_id}/status"
+        };
+    }
+}

@@ -68,6 +68,7 @@ import (
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
+	networkBaselineService "github.com/stackrox/rox/central/networkbaseline/service"
 	networkEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/gatherer"
 	networkFlowService "github.com/stackrox/rox/central/networkgraph/service"
@@ -371,6 +372,10 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		userService.Singleton(),
 		cveService.Singleton(),
 		integrationHealthService.Singleton(),
+	}
+
+	if features.NetworkDetection.Enabled() {
+		servicesToRegister = append(servicesToRegister, networkBaselineService.Singleton())
 	}
 
 	if features.SensorInstallationExperience.Enabled() {
