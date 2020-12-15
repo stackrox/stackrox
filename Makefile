@@ -486,6 +486,13 @@ go-unit-tests: build-prep test-prep
 		done; \
 	done
 
+.PHONY: shell-unit-tests
+shell-unit-tests:
+	@echo "+ $@"
+	@mkdir -p shell-test-output
+	set -o pipefail ; \
+	bats -t $(shell git ls-files -- '*_test.bats') | tee shell-test-output/test.log
+
 .PHONY: ui-build
 ui-build:
 ifdef SKIP_UI_BUILD
@@ -499,7 +506,7 @@ ui-test:
 	make -C ui test
 
 .PHONY: test
-test: go-unit-tests ui-test
+test: go-unit-tests ui-test shell-unit-tests
 
 .PHONY: integration-unit-tests
 integration-unit-tests: build-prep

@@ -536,7 +536,7 @@ orbs:
 executors:
   custom:
     docker:
-      - image: docker.io/stackrox/apollo-ci:0.3.5
+      - image: docker.io/stackrox/apollo-ci:0.3.6
         auth:
           username: $DOCKER_IO_PULL_USERNAME
           password: $DOCKER_IO_PULL_PASSWORD
@@ -706,14 +706,6 @@ commands:
         # In most jobs the logs are already grabbed by collectK8sLogs
         type: boolean
         default: false
-      exclude-in-restart-check:
-        # A regular expression to filter out logs for the restart check
-        type: string
-        default: "check-them-all"
-      exclude-in-error-check:
-        # A regular expression to filter out logs for the suspicious entry check
-        type: string
-        default: "check-them-all"
 
     description: Checks StackRox logs to ensure all services operated normally
     steps:
@@ -734,10 +726,8 @@ commands:
             fi
             previous_logs=$(ls /tmp/k8s-service-logs/stackrox/pods/*-previous.log || true)
             if [[ -n "${previous_logs}" ]]; then
-                echo >&2 "Previous logs found: ${previous_logs}"
-                filtered=$(ls ${previous_logs} | egrep -v "<< parameters.exclude-in-restart-check >>" || true)
-                if [[ -n "${filtered}" ]]; then
-                    echo >&2 "Reduced to: ${filtered}"
+                echo >&2 "Previous logs found"
+                if ! scripts/ci/logcheck/check-restart-logs.sh "${CIRCLE_JOB}" ${previous_logs}; then
                     exit 1
                 fi
             fi
@@ -751,7 +741,7 @@ commands:
               exit 1
             fi
             logs=$(ls /tmp/k8s-service-logs/stackrox/pods/*.log)
-            filtered=$(ls ${logs} | egrep -v "<< parameters.exclude-in-error-check >>" || true)
+            filtered=$(ls ${logs} | grep -v "previous.log" || true)
             if [[ -n "${filtered}" ]]; then
                 if ! scripts/ci/logcheck/check.sh ${filtered}; then
                     echo >&2 "Found at least one suspicious log file entry."
@@ -1628,9 +1618,7 @@ commands:
       - *collectK8sLogs
       - get-and-store-debug-dump
       - pull-stackrox-api-data
-      - check-stackrox-logs:
-          exclude-in-restart-check: "compliance"
-          exclude-in-error-check: "compliance-previous"
+      - check-stackrox-logs
       - *storeK8sLogs
       - *storeQALogs
 
@@ -1992,6 +1980,22 @@ jobs:
 
       - store-test-results-and-artifacts:
           path: junit-reports
+
+      - run:
+          name: Run Shell unit tests
+          command: make shell-unit-tests
+
+      - run:
+          name: Generate Shell unit test JUnit report
+          command: tap-junit < shell-test-output/test.log > shell-test-output/report.xml
+          when: always
+
+      - store_test_results:
+          path: shell-test-output
+
+      - store_artifacts:
+          path: shell-test-output
+          destination: shell-test-output
 
       - run:
           name: Run UI unit tests

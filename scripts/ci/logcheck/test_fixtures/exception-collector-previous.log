@@ -1,0 +1,23 @@
+Collector Version: 3.1.8
+Hostname: collector-6gdjh
+OS: CentOS Linux 7 (Core)
+Kernel Version: 3.10.0-1127.13.1.el7.x86_64
+Module Version: b6745d795b8497aaf387843dc8aa07463c944d3ad67288389b754daaebea4b62
+Error: CentOS Linux 7 (Core) 3.10.0-1127.13.1.el7.x86_64 does not support ebpf based collection.
+Warning: Switching to kernel module based collection, please configure RUNTIME_SUPPORT=kernel-module
+Didn't find kernel module collector-3.10.0-1127.13.1.el7.x86_64.ko built-in.
+Attempting to download from https://sensor.stackrox:443/kernel-objects/b6745d795b8497aaf387843dc8aa07463c944d3ad67288389b754daaebea4b62/collector-3.10.0-1127.13.1.el7.x86_64.ko.gz...
+curl: (28) Connection timed out after 2000 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (7) Failed to connect to sensor.stackrox port 443: No route to host
+Failed to download kernel module.
+All attempts to download the kernel module have failed.
+The kernel module may not have been compiled for version 3.10.0-1127.13.1.el7.x86_64.
+Error: Failed to find kernel module for kernel version 3.10.0-1127.13.1.el7.x86_64.
+
+Please provide this complete error message to StackRox support.
+This program will now exit and retry when it is next restarted.
+
+HTTP Status Code 000
