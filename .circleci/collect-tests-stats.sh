@@ -77,7 +77,7 @@ for (( job = 0; job < "${WF_JOBS_LENGTH}"; job++ )); do
       failed_test=$(echo "${FAILED_TESTS}" | jq ".[$test]")
       test_name=$(echo "${failed_test}" | jq -r '.name' | sed "s/'/\'/g")
       test_classname=$(echo "${failed_test}" | jq -r '.classname')
-      test_message=$(echo "${failed_test}" | jq -r '.message | gsub("[\\n\\t]"; "")' | sed "s/'//g")
+      test_message=$(echo "${failed_test}" | jq -r '.message | gsub("[\\n\\t]"; "")' | sed 's/\\/\\\\/g' | sed "s/'//g")
 
       # (test_name, test_classname, test_message, test_started, job_number, job_name, workflow_id, git_branch, git_tag)
       test_values="(\"${test_name}\", '${test_classname}', '${test_message}', ${started_at:-NULL}, ${number:-NULL}, '${name}', '${CIRCLE_WORKFLOW_ID}', ${BRANCH_VALUE}, ${TAG_VALUE})"
@@ -85,8 +85,21 @@ for (( job = 0; job < "${WF_JOBS_LENGTH}"; job++ )); do
     done
   fi
 
-  # (job_id, job_number, job_name, job_status, job_started_at, job_stopped_at, workflow_id, git_branch, git_tag)
-  values="('${id}', ${number:-NULL}, '${name}', '${status}', ${started_at:-NULL}, ${stopped_at:-NULL}, '${CIRCLE_WORKFLOW_ID}', ${BRANCH_VALUE}, ${TAG_VALUE})"
+  step_that_failed=""
+  if [[ "${status}" == "failed" ]]; then
+    # fetch step details
+    JOB_STEP_DETAILS_URL="https://circleci.com/api/v1.1/project/gh/stackrox/rox/${number}?circle-token=${CIRCLE_TOKEN}"
+    JOB_STEPS=$(curl -s "${JOB_STEP_DETAILS_URL}" | jq '.steps')
+    if [[ "${JOB_STEPS}" != "null" ]]; then
+      FIRST_FAILURE=$(echo "${JOB_STEPS}" | jq 'map(select( .actions[0].status != "success" and .actions[0].status != "canceled" ))[0]')
+      if [[ "${FIRST_FAILURE}" != "null" ]]; then
+        step_that_failed=$(echo "${FIRST_FAILURE}" | jq -r '.name' | sed "s/'/\'/g")
+      fi
+    fi
+  fi
+
+  # (job_id, job_number, job_name, job_status, job_started_at, job_stopped_at, workflow_id, git_branch, git_tag, step_that_failed)
+  values="('${id}', ${number:-NULL}, '${name}', '${status}', ${started_at:-NULL}, ${stopped_at:-NULL}, '${CIRCLE_WORKFLOW_ID}', ${BRANCH_VALUE}, ${TAG_VALUE}, '${step_that_failed}')"
   echo "BigQuery values for the job ${name}:"
   echo "  ${values}"
 
@@ -100,7 +113,7 @@ fi
 
 values=$(printf ",%s" "${QUERY_VALUES[@]}")
 values="${values:1}"
-query="INSERT ${BQ_DATASET_TABLE} (job_id, job_number, job_name, job_status, job_started_at, job_stopped_at, workflow_id, git_branch, git_tag)\
+query="INSERT ${BQ_DATASET_TABLE} (job_id, job_number, job_name, job_status, job_started_at, job_stopped_at, workflow_id, git_branch, git_tag, step_that_failed)\
   VALUES ${values}"
 
 echo "Executing query:"
