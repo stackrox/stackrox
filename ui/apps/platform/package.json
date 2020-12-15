@@ -166,7 +166,7 @@
         "react-test-renderer": "^17.0.1",
         "redux-immutable-state-invariant": "^2.1.0",
         "redux-saga-test-plan": "^3.7.0",
-        "storybook-addon-themes": "^5.4.1",
+        "storybook-addon-themes": "^5.5.0",
         "tailwindcss": "^1.8.10",
         "typescript": "^3.9.5"
     },
