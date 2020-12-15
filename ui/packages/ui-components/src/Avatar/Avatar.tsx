@@ -1,6 +1,15 @@
 import React, { ReactElement } from 'react';
 import { find as createInitials } from 'initials';
 
+export type AvatarProps = {
+    /* URL to the avatar image */
+    imageSrc?: string;
+    /* person's full name to use for showing initials when image isn't available */
+    name?: string;
+    /* additional CSS classes for the top DOM element */
+    extraClassName?: string;
+};
+
 /**
  * User avatar showing either provided image or person's initials.
  */
@@ -15,14 +24,5 @@ function Avatar({ imageSrc, name, extraClassName = '' }: AvatarProps): ReactElem
         <span className={`text-xl ${finalClassName}`}>{initials}</span>
     );
 }
-
-export type AvatarProps = {
-    /* URL to the avatar image */
-    imageSrc?: string;
-    /* person's full name to use for showing initials when image isn't available */
-    name?: string;
-    /* additional CSS classes for the top DOM element */
-    extraClassName?: string;
-};
 
 export default Avatar;

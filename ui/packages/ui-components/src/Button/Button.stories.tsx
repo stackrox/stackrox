@@ -21,7 +21,7 @@ export const SubmitButton: Story<{}> = () => {
     function onClick(): void {}
     return (
         <Button type="submit" onClick={onClick}>
-            Click me
+            Submit me
         </Button>
     );
 };

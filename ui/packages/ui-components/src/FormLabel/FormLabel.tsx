@@ -1,5 +1,12 @@
 import React, { ReactElement, ReactNode } from 'react';
 
+export type FormLabelProps = {
+    label: string;
+    helperText?: string;
+    isRequired?: boolean;
+    children: ReactNode;
+};
+
 function FormLabel({ label, helperText, isRequired, children }: FormLabelProps): ReactElement {
     return (
         <label className="flex flex-col">
@@ -19,12 +26,5 @@ function FormLabel({ label, helperText, isRequired, children }: FormLabelProps):
         </label>
     );
 }
-
-export type FormLabelProps = {
-    label: string;
-    helperText?: string;
-    isRequired?: boolean;
-    children: ReactNode;
-};
 
 export default FormLabel;

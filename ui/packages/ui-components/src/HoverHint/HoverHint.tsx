@@ -4,6 +4,13 @@ import tippy from 'tippy.js';
 
 import { defaultTippyTooltipProps } from '../Tooltip';
 
+export type HoverHintProps = {
+    /** target DOM element */
+    target: Element;
+    /** content to render when hint appears */
+    children: ReactNode;
+};
+
 /**
  * This component is supposed to be used only in case a hover hint / tooltip
  * needs to be created for a DOM element directly. That usually comes in handy
@@ -45,12 +52,5 @@ function HoverHint({ target, children, ...props }: HoverHintProps): ReactElement
 
     return createPortal(children, elRef.current);
 }
-
-export type HoverHintProps = {
-    /** target DOM element */
-    target: Element;
-    /** content to render when hint appears */
-    children: ReactNode;
-};
 
 export default HoverHint;

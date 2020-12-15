@@ -5,11 +5,20 @@ import get from 'lodash.get';
 import FormLabel from '../FormLabel';
 import FormErrorMessage from '../FormErrorMessage';
 
+type TextInputProps = {
+    name: string;
+    value?: string;
+    placeholder?: string;
+    isDisabled?: boolean;
+    onChange: React.ChangeEventHandler<HTMLInputElement>;
+    onBlur: React.FocusEventHandler<HTMLInputElement>;
+};
+
 function TextInput({
     name,
-    value,
+    value = '',
     placeholder,
-    isDisabled,
+    isDisabled = false,
     onChange,
     onBlur,
 }: TextInputProps): ReactElement {
@@ -19,8 +28,8 @@ function TextInput({
             className={`form-input mt-3 ${isDisabled ? 'bg-base-200' : ''}`}
             id={name}
             name={name}
-            value={value || ''}
-            disabled={isDisabled || false}
+            value={value}
+            disabled={isDisabled}
             placeholder={placeholder || undefined}
             onChange={onChange}
             onBlur={onBlur}
@@ -28,14 +37,21 @@ function TextInput({
     );
 }
 
-type TextInputProps = {
+export type FormTextInputProps = {
+    label: string;
     name: string;
-    value?: string;
+    helperText?: string;
     placeholder?: string;
     isDisabled?: boolean;
-    onChange: React.ChangeEventHandler<HTMLInputElement>;
-    onBlur: React.FocusEventHandler<HTMLInputElement>;
+    isRequired?: boolean;
+    onChange?: OnChangeHandler;
 };
+
+export type OnChangeHandler = (callbackData: {
+    name: string;
+    event: React.ChangeEvent<HTMLInputElement>;
+    handleChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+}) => void;
 
 function FormTextInput({
     label,
@@ -71,21 +87,5 @@ function FormTextInput({
         </div>
     );
 }
-
-export type FormTextInputProps = {
-    label: string;
-    name: string;
-    helperText?: string;
-    placeholder?: string;
-    isDisabled?: boolean;
-    isRequired?: boolean;
-    onChange?: OnChangeHandler;
-};
-
-export type OnChangeHandler = (callbackData: {
-    name: string;
-    event: React.ChangeEvent<HTMLInputElement>;
-    handleChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-}) => void;
 
 export default FormTextInput;

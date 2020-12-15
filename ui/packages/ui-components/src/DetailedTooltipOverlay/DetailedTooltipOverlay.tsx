@@ -1,5 +1,13 @@
 import React, { ReactElement, ReactNode } from 'react';
 
+export type DetailedTooltipOverlayProps = {
+    title: string;
+    subtitle?: string;
+    body: ReactNode;
+    footer?: ReactNode;
+    extraClassName?: string;
+};
+
 /**
  * Alternative to {@link TooltipOverlay} that provides layout for complex tooltip content with
  * title, subtitle and footer in addition to the main body.
@@ -42,13 +50,5 @@ function DetailedTooltipOverlay({
         </div>
     );
 }
-
-export type DetailedTooltipOverlayProps = {
-    title: string;
-    subtitle?: string;
-    body: ReactNode;
-    footer?: ReactNode;
-    extraClassName?: string;
-};
 
 export default DetailedTooltipOverlay;

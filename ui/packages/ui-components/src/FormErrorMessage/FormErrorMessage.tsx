@@ -1,6 +1,10 @@
 import React, { ReactElement } from 'react';
 import { ErrorMessage } from 'formik';
 
+export type FormErrorMessageProps = {
+    name: string;
+};
+
 function FormErrorMessage({ name }: FormErrorMessageProps): ReactElement {
     return (
         <ErrorMessage name={name}>
@@ -10,9 +14,5 @@ function FormErrorMessage({ name }: FormErrorMessageProps): ReactElement {
         </ErrorMessage>
     );
 }
-
-export type FormErrorMessageProps = {
-    name: string;
-};
 
 export default FormErrorMessage;
