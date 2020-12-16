@@ -1,9 +1,9 @@
 import React, { useContext } from 'react';
-import entityTypes from 'constants/entityTypes';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { gql } from '@apollo/client';
 import { format } from 'date-fns';
 
+import entityTypes from 'constants/entityTypes';
+import dateTimeFormat from 'constants/dateTimeFormat';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';

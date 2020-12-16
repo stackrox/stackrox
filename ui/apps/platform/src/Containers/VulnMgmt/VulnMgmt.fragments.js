@@ -130,16 +130,40 @@ export const NODE_LIST_FRAGMENT = gql`
     fragment nodeFields on Node {
         id
         name
-        # vulnCounter
-        # topVuln
-        # scanTime
+        vulnCounter {
+            all {
+                total
+                fixable
+            }
+            low {
+                total
+                fixable
+            }
+            medium {
+                total
+                fixable
+            }
+            high {
+                total
+                fixable
+            }
+            critical {
+                total
+                fixable
+            }
+        }
+        topVuln {
+            cvss
+            scoreVersion
+        }
+        scanTime
         osImage
         containerRuntimeVersion
-        # nodeStatus
+        nodeStatus
         clusterName
         clusterId
         joinedAt
-        # priority
+        priority
     }
 `;
 

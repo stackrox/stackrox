@@ -9,6 +9,7 @@ import VulnMgmtEntityCve from './Cve/VulnMgmtEntityCve';
 import VulnMgmtEntityCluster from './Cluster/VulnMgmtEntityCluster';
 import VulnMgmtEntityNamespace from './Namespace/VulnMgmtEntityNamespace';
 import VulnMgmtEntityPolicy from './Policy/VulnMgmtEntityPolicy';
+import VulnMgmtEntityNode from './Node/VulnMgmtEntityNode';
 
 const entityComponentMap = {
     [entityTypes.DEPLOYMENT]: VulnMgmtEntityDeployment,
@@ -18,6 +19,7 @@ const entityComponentMap = {
     [entityTypes.CLUSTER]: VulnMgmtEntityCluster,
     [entityTypes.NAMESPACE]: VulnMgmtEntityNamespace,
     [entityTypes.POLICY]: VulnMgmtEntityPolicy,
+    [entityTypes.NODE]: VulnMgmtEntityNode,
 };
 
 const VulnMgmtEntity = (props) => {
