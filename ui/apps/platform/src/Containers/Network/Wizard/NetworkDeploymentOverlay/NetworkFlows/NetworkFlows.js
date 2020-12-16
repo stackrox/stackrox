@@ -3,9 +3,12 @@ import pluralize from 'pluralize';
 
 import { getNetworkFlows } from 'utils/networkGraphUtils';
 import { filterModes } from 'constants/networkFilterModes';
+import useSearchFilteredData from 'hooks/useSearchFilteredData';
+import baselineStatusesData from 'mockData/baselineStatuses';
 
 import Panel from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
+import NetworkFlowsSearch, { getNetworkFlowValueByCategory } from './NetworkFlowsSearch';
 import NetworkFlowsTable from './NetworkFlowsTable';
 
 function getPanelId(filterState) {
@@ -30,20 +33,43 @@ function getPanelHeaderText(networkFlows, filterState) {
     }
 }
 
-function NetworkFlows({ edges, filterState, onNavigateToDeploymentById }) {
+function useFetchBaselineStatuses(edges, filterState) {
+    // get the network flows for the edges
+    // eslint-disable-next-line no-unused-vars
     const { networkFlows } = getNetworkFlows(edges, filterState);
+    // TODO: Do the API call to get network flows with baseline statuses
+    // return result
+    return baselineStatusesData;
+}
+
+function NetworkFlows({ edges, filterState, onNavigateToDeploymentById }) {
+    const networkFlows = useFetchBaselineStatuses(edges, filterState);
     const [page, setPage] = useState(0);
+    const [searchOptions, setSearchOptions] = useState([]);
+
+    const filteredNetworkFlows = useSearchFilteredData(
+        networkFlows,
+        searchOptions,
+        getNetworkFlowValueByCategory
+    );
 
     const panelId = getPanelId(filterState);
-    const panelHeader = getPanelHeaderText(networkFlows, filterState);
+    const panelHeader = getPanelHeaderText(filteredNetworkFlows, filterState);
     const headerComponents = (
-        <TablePagination page={page} dataLength={networkFlows.length} setPage={setPage} />
+        <TablePagination page={page} dataLength={filteredNetworkFlows.length} setPage={setPage} />
     );
 
     return (
         <Panel id={panelId} header={panelHeader} headerComponents={headerComponents}>
+            <div className="p-2 border-b border-base-300">
+                <NetworkFlowsSearch
+                    networkFlows={networkFlows}
+                    searchOptions={searchOptions}
+                    setSearchOptions={setSearchOptions}
+                />
+            </div>
             <NetworkFlowsTable
-                networkFlows={networkFlows}
+                networkFlows={filteredNetworkFlows}
                 page={page}
                 filterState={filterState}
                 onNavigateToDeploymentById={onNavigateToDeploymentById}

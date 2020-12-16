@@ -46,7 +46,9 @@ function BinderTabs({ children }: BinderTabsProps): ReactElement {
             <ul className="flex font-700 items-center text-sm uppercase" data-testid="tabs">
                 {tabHeaderComponents}
             </ul>
-            <div className="bg-primary-100 rounded-b rounded-tr-lg shadow">{activeTabContent}</div>
+            <div className="bg-primary-100 rounded-b rounded-tr-lg shadow flex flex-1">
+                {activeTabContent}
+            </div>
         </div>
     );
 }

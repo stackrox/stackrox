@@ -33,7 +33,9 @@ function NetworkEntityTabbedOverlay({ entityName, entityType, children }) {
                     {tabHeaderComponents}
                 </ul>
             </div>
-            <div className="flex-1 m-2 max-w-120 overflow-auto rounded">{activeTabContent}</div>
+            <div className="flex flex-1 m-2 max-w-120 overflow-auto rounded">
+                {activeTabContent}
+            </div>
         </>
     );
 }

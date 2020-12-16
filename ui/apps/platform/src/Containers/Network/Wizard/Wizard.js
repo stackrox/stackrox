@@ -27,7 +27,7 @@ function Wizard({ wizardOpen, wizardStage, onClose }) {
                 <div className="h-full absolute right-0 network-panel">
                     <ZoomButtons />
                 </div>
-                <div className="absolute flex flex-1 max-h-full network-panel overflow-auto right-0">
+                <div className="absolute flex flex-1 max-h-full network-panel right-0">
                     <NodesUpdateSection />
                     <NetworkDeploymentOverlay onClose={onClose} />
                 </div>

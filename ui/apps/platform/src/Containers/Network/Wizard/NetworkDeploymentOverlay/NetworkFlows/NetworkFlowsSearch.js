@@ -1,0 +1,84 @@
+import React from 'react';
+import PropTypes from 'prop-types';
+
+import useAutoCompleteResults from 'hooks/useAutoCompleteResults';
+import { networkFlowStatus } from 'constants/networkGraph';
+
+import SearchInput, { createSearchModifiers } from 'Components/SearchInput';
+
+export const searchCategories = [
+    'Status',
+    'Entity',
+    'Traffic',
+    'Type',
+    'Namespace',
+    'Port',
+    'Protocol',
+    'State',
+];
+
+const dataResolversByCategory = {
+    Status: (datum) => datum.status,
+    Entity: (datum) => datum.peer.entity.name,
+    Traffic: (datum) => (datum.peer.ingress ? 'ingress' : 'egress'),
+    Type: (datum) => datum.peer.entity.type,
+    Namespace: (datum) => datum.peer.entity.namespace,
+    Port: (datum) => datum.peer.port,
+    Protocol: (datum) => datum.peer.protocol,
+    State: (datum) => datum.peer.state,
+};
+
+export function getNetworkFlowValueByCategory(datum, category) {
+    return dataResolversByCategory[category]?.(datum);
+}
+
+const networkFlowSearchModifiers = createSearchModifiers(searchCategories);
+
+function NetworkFlowsSearch({ networkFlows, searchOptions, setSearchOptions }) {
+    const autoCompleteResults = useAutoCompleteResults(
+        networkFlows,
+        searchOptions,
+        searchCategories,
+        getNetworkFlowValueByCategory
+    );
+
+    return (
+        <SearchInput
+            className="w-full"
+            searchOptions={searchOptions}
+            searchModifiers={networkFlowSearchModifiers}
+            setSearchOptions={setSearchOptions}
+            autoCompleteResults={autoCompleteResults}
+            placeholder="Add one or more resource filters"
+        />
+    );
+}
+
+NetworkFlowsSearch.propTypes = {
+    networkFlows: PropTypes.arrayOf(
+        PropTypes.shape({
+            peer: PropTypes.shape({
+                entity: PropTypes.shape({
+                    id: PropTypes.string.isRequired,
+                    type: PropTypes.string.isRequired,
+                    name: PropTypes.bool,
+                    namespace: PropTypes.string,
+                }),
+                port: PropTypes.string.isRequired,
+                protocol: PropTypes.string.isRequired,
+                ingress: PropTypes.bool.isRequired,
+                state: PropTypes.string.isRequired,
+            }),
+            status: PropTypes.oneOf(Object.values(networkFlowStatus)).isRequired,
+        })
+    ),
+    searchOptions: PropTypes.arrayOf(PropTypes.shape),
+    setSearchOptions: PropTypes.func.isRequired,
+};
+
+NetworkFlowsSearch.defaultProps = {
+    networkFlows: [],
+    searchOptions: [],
+};
+
+export default NetworkFlowsSearch;

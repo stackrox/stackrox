@@ -68,3 +68,8 @@ export const nodeTypes = {
     EXTERNAL_ENTITIES: 'INTERNET',
     CIDR_BLOCK: 'EXTERNAL_SOURCE',
 };
+
+export const networkFlowStatus = {
+    ANOMALOUS: 'ANOMALOUS',
+    BASELINE: 'BASELINE',
+};
