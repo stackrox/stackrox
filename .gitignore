@@ -36,6 +36,8 @@ combined_coverage.dat
 .idea/
 /vendor/
 /.gradle/
+/stackrox-central-services-chart/
+/stackrox-secured-cluster-services-chart/
 
 # Mac OS hidden file
 .DS_Store

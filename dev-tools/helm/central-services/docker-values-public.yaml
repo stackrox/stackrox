@@ -1,0 +1,19 @@
+env:
+  offlineMode: true  # run in offline mode
+
+central:
+  # Use custom resource overrides for central
+  resources:
+    requests:
+      cpu: 1
+      memory: "1Gi"
+
+# Expose central via a NodePort service
+#  exposure:
+#    nodePort:
+#      enabled: true
+#      port: 32000
+
+scanner:
+  # Run without StackRox Scanner (NOT RECOMMENDED)
+  disable: true
