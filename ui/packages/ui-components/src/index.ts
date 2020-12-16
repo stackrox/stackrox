@@ -3,9 +3,10 @@
  */
 
 export { default as Avatar } from './Avatar';
+export { default as Button } from './Button';
 export { default as DetailedTooltipOverlay } from './DetailedTooltipOverlay';
+export { default as FormTextInput } from './FormTextInput';
 export { default as HoverHint } from './HoverHint';
+export { default as Message } from './Message';
 export { default as Tooltip } from './Tooltip';
 export { default as TooltipOverlay } from './TooltipOverlay';
-export { default as FormTextInput } from './FormTextInput';
-export { default as Button } from './Button';
