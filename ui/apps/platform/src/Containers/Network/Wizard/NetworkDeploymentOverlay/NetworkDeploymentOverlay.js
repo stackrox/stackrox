@@ -2,22 +2,64 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { withRouter } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 
 import { selectors } from 'reducers';
+import { nodeTypes } from 'constants/networkGraph';
 
 import Tab from 'Components/Tab';
 import NetworkEntityTabbedOverlay from 'Components/NetworkEntityTabbedOverlay';
-import NetworkFlowsTabs from './NetworkFlowsTabs';
+import BinderTabs from 'Components/BinderTabs';
+import NetworkFlows from './NetworkFlows';
+import BaselineSettings from './BaselineSettings';
 
-function NetworkDeploymentOverlay({ selectedDeployment }) {
-    const { name, type } = selectedDeployment;
+function getDeploymentEdges(deployment) {
+    const edges = deployment.edges.filter(
+        ({ data: { destNodeName, destNodeNamespace, source, target, destNodeType } }) =>
+            destNodeNamespace &&
+            destNodeName &&
+            (source !== target || destNodeType !== nodeTypes.DEPLOYMENT)
+    );
+    return edges;
+}
+
+function useNavigateToDeployment() {
+    const history = useHistory();
+    return function onNavigateToDeploymentById(deploymentId, type) {
+        return function onNavigate() {
+            if (type === 'external' || type === 'cidr') {
+                history.push(`/main/network/${deploymentId}/${type}`);
+                return;
+            }
+            history.push(`/main/network/${deploymentId}`);
+        };
+    };
+}
+
+function NetworkDeploymentOverlay({ selectedDeployment, filterState }) {
+    const onNavigateToDeploymentById = useNavigateToDeployment();
+
+    const edges = getDeploymentEdges(selectedDeployment);
 
     return (
-        <div className="flex flex-1 flex-col">
-            <NetworkEntityTabbedOverlay entityName={name} entityType={type}>
+        <div className="flex flex-1 flex-col text-sm">
+            <NetworkEntityTabbedOverlay
+                entityName={selectedDeployment.name}
+                entityType={selectedDeployment.type}
+            >
                 <Tab title="Flows">
-                    <NetworkFlowsTabs />
+                    <BinderTabs>
+                        <Tab title="Network Flows">
+                            <NetworkFlows
+                                edges={edges}
+                                filterState={filterState}
+                                onNavigateToDeploymentById={onNavigateToDeploymentById}
+                            />
+                        </Tab>
+                        <Tab title="Baseline Settings">
+                            <BaselineSettings />
+                        </Tab>
+                    </BinderTabs>
                 </Tab>
                 <Tab title="Policies">
                     <div className="p-4 bg-primary-100">Add Policies here...</div>
@@ -37,10 +79,12 @@ NetworkDeploymentOverlay.propTypes = {
         type: PropTypes.string.isRequired,
         edges: PropTypes.arrayOf(PropTypes.shape({})),
     }).isRequired,
+    filterState: PropTypes.number.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
     selectedDeployment: selectors.getSelectedNode,
+    filterState: selectors.getNetworkGraphFilterMode,
 });
 
-export default withRouter(connect(mapStateToProps, null)(NetworkDeploymentOverlay));
+export default connect(mapStateToProps, null)(NetworkDeploymentOverlay);
