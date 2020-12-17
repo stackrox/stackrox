@@ -1,3 +1,4 @@
+[<- if .RenderAsLegacyChart ->]
 cluster:
   name: [< default "" .ClusterName >]
   type: [< default "KUBERNETES_CLUSTER" .ClusterType >]
@@ -38,3 +39,301 @@ envVars: [< if empty .EnvVars >] []
      value: [< quote $value >]
   [< end  >]
   [< end  >]
+[<- else ->]
+## StackRox Secured Cluster Services chart default settings file.
+##
+## This file includes the default settings for the StackRox Secured Cluster Services chart.
+## It serves as a form of documentation for all the possible settings that a
+## user can override are. HOWEVER, if you want to override some settings, DO NOT
+## create a copy of this file to be used as a baseline, or modify it in place.
+## Instead, create a file that contains only those settings you want to override,
+## and pass it to `helm` via the `-f` parameter.
+##
+## For example, if you want to enable the deployment of Admission Control, create a file
+## `values-override.yaml` (or any name you choose) with the following contents:
+##
+##  admissionControl:
+##    enable: true
+##
+## and then invoke helm by passing `-f values-override.yaml` to
+## `helm install`/`helm upgrade`.
+##
+## Alternatively, if you want to override just a few values, you can set them directly
+## via the `--set` command, e.g.,
+##  $ helm install --set admissionControl.enable=true ...
+##
+## Note that an arbitrary number of `-f` and `--set` parameters can be combined. It is
+## generally a good practice to store secret data such as an cluster initialization token
+## separate from non-sensitive configuration data.
+##
+##
+## The cluster name.
+#clusterName: null
+## The cluster initialization token to be used for cluster initialization.
+#initToken: null
+## The gRPC endpoint for accessing StackRox Central.
+#centralEndpoint: central.stackrox:443
+## A dictionary of additional CA certificates to include (PEM encoded).
+## For example:
+##   additionalCAs:
+##     acme-labs-ca.pem: |
+##       -----BEGIN CERTIFICATE-----
+##       [...]
+##       -----END CERTIFICATE-----
+#
+#additionalCAs: null
+#
+## Whether to create the `sensor-upgrader` service account.
+## This account is highly privileged but is only used during upgrades. If you do not create
+## this account, you will have to complete future upgrades manually if the Sensor does not
+## have enough permissions.
+#createUpgraderServiceAccount: false
+#
+## Configuration of image pull secrets for `main` images.
+## These should usually be set via the command line when running `helm install`, e.g.,
+## helm install --set imagePullSecrets.username=myuser --set imagePullSecrets.password=mypass,
+## or be stored in a separate YAML-encoded secrets file.
+#mainImagePullSecrets:
+#  # Username and password to be used for pulling images.
+#  # These should usually be set via the command line when running `helm install`, e.g.,
+#  # helm install --set imagePullSecrets.username=myuser --set imagePullSecrets.password=mypass,
+#  # or be stored in a separate YAML-encoded secrets file.
+#  username: null
+#  password: null
+#
+#  # If no image pull secrets are provided, an installation would usually fail. In order to
+#  # prevent it from failing, this option must explicitly be set to true.
+#  allowNone: false
+#
+#  # If there exist available image pull secrets in the cluster that are managed separately,
+#  # set this value to the list of the respective secret names. While it is recommended to
+#  # record the secret names in a persisted YAML file, providing a single string containing
+#  # a semicolon-delimited list of secret names is also supported, for easier interaction with
+#  # --set.
+#  useExisting: []
+#
+#  # Whether to import any secrets from the default service account existing in the StackRox
+#  # namespace. The default service account often contains "standard" image pull secrets that
+#  # should be used by default for image pulls, hence this defaults to true. Only has an effect
+#  # if server-side lookups are enabled.
+#  useFromDefaultServiceAccount: true
+#
+## Configuration of image pull secrets for `collector` images.
+## These should usually be set via the command line when running `helm install`, e.g.,
+## helm install --set imagePullSecrets.username=myuser --set imagePullSecrets.password=mypass,
+## or be stored in a separate YAML-encoded secrets file.
+#collectorImagePullSecrets:
+#  # Username and password to be used for pulling images.
+#  # These should usually be set via the command line when running `helm install`, e.g.,
+#  # helm install --set imagePullSecrets.username=myuser --set imagePullSecrets.password=mypass,
+#  # or be stored in a separate YAML-encoded secrets file.
+#  username: null
+#  password: null
+#
+#  # If no image pull secrets are provided, an installation would usually fail. In order to
+#  # prevent it from failing, this option must explicitly be set to true.
+#  allowNone: false
+#
+#  # If there exist available image pull secrets in the cluster that are managed separately,
+#  # set this value to the list of the respective secret names. While it is recommended to
+#  # record the secret names in a persisted YAML file, providing a single string containing
+#  # a semicolon-delimited list of secret names is also supported, for easier interaction with
+#  # --set.
+#  useExisting: []
+#
+#  # Whether to import any secrets from the default service account existing in the StackRox
+#  # namespace. The default service account often contains "standard" image pull secrets that
+#  # should be used by default for image pulls, hence this defaults to true. Only has an effect
+#  # if server-side lookups are enabled.
+#  useFromDefaultServiceAccount: true
+#
+## Common settings for all image properties
+#image:
+#  # The image registry to use. Unless overridden in the more specific configs, this
+#  # determines the base registry for each image referenced in this config file.
+#  registry: custom-image-registry
+#
+## Settings regarding the installation environment
+#env:
+#  # Treat the environment as an OpenShift cluster. Leave this unset to use auto-detection
+#  # based on available API resources on the server.
+#  # Possible values: null, false, true
+#  openshift: null
+#
+#  # Treat the environment as Istio-enabled. Leave this unset to use auto-detection based on
+#  # available API resources on the server.
+#  # Possible values: null, false, true
+#  istio: null
+#
+## PEM-encoded StackRox Service CA certificate.
+#ca:
+#  cert: null
+#
+## Sensor specific configuration.
+#sensor:
+#
+#  # Image configuration for Sensor Deployment.
+#  image:
+#    registry: null
+#    name: main
+#    tag: 3.0.48.x-121-g337915cd3d
+#    fullRef: null
+#
+#  # Resource configuration for the sensor container.
+#  resources:
+#    requests:
+#      memory: "1Gi"
+#      cpu: "1"
+#    limits:
+#      memory: "4Gi"
+#      cpu: "2"
+#
+#  # Settings for the internal service-to-service TLS certificate used by Sensor.
+#  # Specifying this is not needed when providing a cluster init token with `initToken`.
+#  serviceTLS:
+#    cert: null
+#    key: null
+#
+#  # Rarely needs to be changed.
+#  endpoint: sensor.stackrox.443
+#
+#
+## Admission Control specific configuration.
+#admissionControl:
+#
+#  # Set to `true` to enable the creation of Admission Control related Kubernetes resources.
+#  enable: false
+#
+#  # Whether to listen for object update events emitted by the Kubernetes API server.
+#  # When you keep it as `false`, the `ValidatingWebhookConfiguration` is configured such that
+#  # the Kubernetes API server does not to send object update events.
+#  # This limits the load on the Admission Control service, since the volume of object updates
+#  # is usually higher than the volume of object creates.
+#  listenOnUpdates: false
+#
+#  # Dynamic part of the configuration which is retrieved from Central and can be modified through
+#  # the frontend.
+#  dynamic:
+#    # Controls whether the StackRox Kubernetes Security Platform evaluates policies.
+#    # If disabled, all AdmissionReview requests are automatically accepted.
+#    enforce: false
+#    # When set to true, the admission controller will attempt to initiate a scan for a previously
+#    # unseen image. This can prevent images violating the security policies from ever being deployed
+#    # in the cluster, at the cost of increased latency.
+#    scanInline: false
+#    # If enabled, bypassing the Admission Controller is disabled.
+#    disableBypass: false
+#    # The maximum time in seconds, the StackRox Kubernetes Security Platform should wait while
+#    # evaluating admission review requests. Use it to set request timeouts when you enable image scanning.
+#    # If the image scan runs longer than the specified time, the StackRox Kubernetes Security Platform
+#    # accepts the request. Other enforcement options, such as scaling the deployment to zero replicas,
+#    # are still applied later if the image violates applicable policies.
+#    timeout: 3
+#    # Requires `listenOnUpdates` to be enabled.
+#    enforceOnUpdates: false
+#
+#
+#  # Image configuration for Admission Control Deployment.
+#  image:
+#    registry: null
+#    name: main
+#    tag: 3.0.48.x-121-g337915cd3d
+#    fullRef: null
+#
+#  # Resource configuration for the Admission Control container.
+#  resources:
+#    requests:
+#      memory: "100Mi"
+#      cpu: "50m"
+#    limits:
+#      memory: "500Mi"
+#      cpu: "500m"
+#
+#  # Settings for the internal service-to-service TLS certificate used by Admission Control.
+#  # Specifying this is not needed when providing a cluster init token with `initToken`.
+#  serviceTLS:
+#    cert: null
+#    key: null
+#
+## Collector specific configuration.
+#collector:
+#
+#  # Collection method to use. Can be one of:
+#  #   - EBPF
+#  #   - KERNEL_MODULE
+#  #   - NO_COLLECTION
+#  collectionMethod: KERNEL_MODULE
+#  # Configure usage of taint tolerations. If `false`, tolerations are applied to collector, 
+#  # and the collector pods can schedule onto all nodes with taints. If `true`, no tolerations
+#  # are applied, and the collector pods won't scheduled onto nodes with taints.
+#  disableTaintTolerations: false
+#  # Configure whether slim Collector images should be used or not. Using slim Collector images
+#  # requires Central to provide the matching kernel module or eBPF probe. If you are running
+#  # the StackRox Kubernetes Security Platform in offline mode, you must download a kernel support
+#  # package from [stackrox.io](https://install.stackrox.io/collector/support-packages/index.html)
+#  # and upload it to Central for slim Collectors to function. Otherwise, you must ensure that
+#  # Central can access the online probe repository hosted at https://collector-modules.stackrox.io/.
+#  slimMode: false
+#
+#  # Image configuration for Collector Daemon Set.
+#  image:
+#    registry: null
+#    name: collector
+#    tag: 2.3.2
+#    fullRef: null
+#
+#  # Resource configuration for the Collector container.
+#  resources:
+#    requests:
+#      memory: "320Mi"
+#      cpu: "50m"
+#    limits:
+#      memory: "1Gi"
+#      cpu: "750m"
+#
+#  # Resource configuration for the Compliance container.
+#  complianceResources:
+#    requests:
+#      memory: "10Mi"
+#      cpu: "10m"
+#    limits:
+#      memory: "2Gi"
+#      cpu: "1"
+#
+#
+#  # Settings for the internal service-to-service TLS certificate used by Collector.
+#  # Specifying this is not needed when providing a cluster init token with `initToken`.
+#  serviceTLS:
+#    cert: null
+#    key: null
+#
+## EXPERT SETTINGS. You usually do not need to touch those.
+#
+## If set to true, allow deploying in a namespace other than "stackrox". This is unsupported, so
+## use at your own risk.
+#allowNonstandardNamespace: false
+#
+## If set to true, allow a release name other than "stackrox-secured-cluster-services". There are no issues
+## with that, but for streamlining purposes, we want to encourage all users to stick with the
+## default name, and make it a little harder to deviate from that.
+#allowNonstandardReleaseName: false
+#
+#meta:
+#  # This is a dictionary from file names to contents that can be used to inject files that
+#  # would usually be included via .Files.Get into the chart rendering.
+#  fileOverrides: {}
+#
+#  # This configuration section allows overriding settings that would be inferred from the
+#  # running API server.
+#  apiServer:
+#    # The Kubernetes version running on the API server. This is used for auto-detection
+#    # of the platform.
+#    version: null
+#    # The list of available API resources on the server, in the form of "apps/v1" or
+#    # "apps/v1/Deployment". This is used to detect environment capabilities.
+#    overrideAPIResources: null
+#    # A list of extra API resources that should be assumed to exist on the API server. This
+#    # can be used in conjunction with both data obtained from the API server, or data set
+#    # via `overrideAPIResources`.
+#    extraAPIResources: []
+[<- end >]

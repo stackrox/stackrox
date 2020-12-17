@@ -13,6 +13,9 @@ defaults:
     openshift: false
     istio: false
 
+  ca:
+    cert: ""
+
   sensor:
     image:
       registry: [< default "stackrox.io" .MainRegistry >]
@@ -27,6 +30,10 @@ defaults:
       limits:
         memory: "4Gi"
         cpu: "2"
+
+    serviceTLS:
+      cert: ""
+      key: ""
 
     endpoint: "sensor.{{ .Release.Namespace }}:443"
     exposeMonitoring: false
@@ -48,13 +55,17 @@ defaults:
 
     enable: false
     listenOnUpdates: false
-    enforceOnUpdates: false
 
     dynamic:
       enforce: false
       scanInline: false
       disableBypass: false
       timeout: 3
+      enforceOnUpdates: false
+
+    serviceTLS:
+      cert: ""
+      key: ""
 
   collector:
     collectionMethod: "KERNEL_MODULE"
@@ -81,3 +92,7 @@ defaults:
       limits:
         memory: "2Gi"
         cpu: "1"
+
+    serviceTLS:
+      cert: ""
+      key: ""

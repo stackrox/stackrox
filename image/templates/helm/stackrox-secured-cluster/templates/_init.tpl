@@ -25,9 +25,13 @@
     Here we do the necessary transformation.
    */}}
 
-{{/* BEGIN: LEGACY FORMAT -> NEW FORMAT TRANSFORMATION. */}}
 
-{{ $_compatibilityMode := true }}
+{{ $_compatibilityMode := false }}
+
+{{ if kindIs "invalid" .Values.initToken }}
+
+{{/* BEGIN: LEGACY FORMAT -> NEW FORMAT TRANSFORMATION. */}}
+{{ $_compatibilityMode = true }}
 {{ $_values := dict }}
 {{ $_ := include "srox.mergeInto" (list $_values (deepCopy .Values) ($.Files.Get "internal/compatibility-config-shape.yaml" | fromYaml)) }}
 
@@ -84,6 +88,7 @@
 
 {{/* AdmissionControl config. */}}
 {{ $_admissionControl := dict }}
+
 {{ $_admissionControlServiceTLS := dict }}
 {{ if $_values.config.createSecrets }}
   {{ $_ := set $_admissionControlServiceTLS "cert" "@?secrets/admission-control-cert.pem" }}
@@ -92,14 +97,22 @@
   {{ $_ := set $_admissionControlServiceTLS "_cert" "" }}
   {{ $_ := set $_admissionControlServiceTLS "_key" "" }}
 {{ end }}
+
+{{ $_admissionControlDynamic := dict }}
+{{ $_ := set $_admissionControlDynamic "enforce" $_values.config.admissionControl.enableService }}
+{{ $_ := set $_admissionControlDynamic "scanInline" $_values.config.admissionControl.scanInline }}
+{{ $_ := set $_admissionControlDynamic "disableBypass" $_values.config.admissionControl.disableBypass }}
+{{ $_ := set $_admissionControlDynamic "timeout" $_values.config.admissionControl.timeout }}
+{{ $_ := set $_admissionControlDynamic "enforceOnUpdates" $_values.config.admissionControl.enforceOnUpdates }}
+
 {{ $_ := set $_admissionControl "enable" $_values.config.admissionControl.createService }}
 {{ $_ := set $_admissionControl "listenOnUpdates" $_values.config.admissionControl.listenOnUpdates }}
 {{ $_ := set $_admissionControl "enforceOnUpdates" $_values.config.admissionControl.enforceOnUpdates }}
-{{ $_ := set $_admissionControl "dynamic" (dict "enforce" $_values.config.admissionControl.enableService "scanInline" $_values.config.admissionControl.scanInline "disableBypass" $_values.config.admissionControl.disableBypass "timeout" $_values.config.admissionControl.timeout) }}
 {{ $_ := set $_admissionControl "image" $_mainImage }}
 {{ $_ := set $_admissionControl "resources" $_values.config.admissionControlResources }}
 {{ $_ := set $_admissionControl "serviceTLS" $_admissionControlServiceTLS }}
 {{ $_ := set $_admissionControl "exposeMonitoring" $_values.config.exposeMonitoring }}
+{{ $_ := set $_admissionControl "dynamic" $_admissionControlDynamic }}
 
 {{/* Collector Image. */}}
 {{ $_collectorImage := dict }}
@@ -172,6 +185,7 @@
 {{ $_ := set $ "Values" $newValues }}
 
 {{/* END: LEGACY FORMAT -> NEW FORMAT TRANSFORMATION. */}}
+{{ end }}
 
 {{/*
     $rox / ._rox is the dictionary in which _all_ data that is modified by the init logic
@@ -188,8 +202,13 @@
 {{ $_ = set $._rox "_state" $state }}
 
 {{/*
-    General validation.
+    General validation (before merging in defaults).
    */}}
+
+{{ if kindIs "invalid" .Values.initToken }}
+  {{ include "srox.note" (list $ "No cluster init token specified using the parameter 'initToken', executing chart in compatibility mode.") }}
+{{ end }}
+
 {{ if not $_compatibilityMode }}
 
 {{ if ne $.Release.Namespace "stackrox" }}
@@ -206,6 +225,10 @@
   {{ else }}
     {{ include "srox.fail" (printf "You have chosen a release name of '%s', not '%s'. We strongly recommend using the standard release name. If you must use a different name, set the 'allowNonstandardReleaseName' configuration option to true." $.Release.Name $.Chart.Name) }}
   {{ end }}
+{{ end }}
+
+{{ if and $._rox.admissionControl.dynamic.enforceOnUpdates (not $._rox.admissionControl.listenOnUpdates) }}
+  {{ include "srox.warn" (list $ "Incompatible settings: 'admissionControl.dynamic.enforceOnUpdates' is set to true, while `admissionControl.listenOnUpdates` is set to false. For the feature to be active, enable both settings by setting them to true.") }}
 {{ end }}
 
 {{ end }}
@@ -273,7 +296,7 @@
 {{ if not $platformCfgFile.found }}
   {{ include "srox.fail" (printf "Invalid platform %q. Please select a valid platform, or leave this field unset." $env.platform) }}
 {{ end }}
-{{ $_ = include "srox.mergeInto" (list $defaultsCfg (fromYaml $platformCfgFile.contents) ($.Files.Get "internal/defaults.yaml" | fromYaml)) }}
+{{ $_ = include "srox.mergeInto" (list $defaultsCfg (fromYaml $platformCfgFile.contents) (tpl ($.Files.Get "internal/defaults.yaml") . | fromYaml)) }}
 {{ $_ = set $rox "_defaults" $defaultsCfg }}
 {{ $_ = include "srox.mergeInto" (list $rox $defaultsCfg.defaults) }}
 
@@ -286,6 +309,18 @@
 {{/* Initial image pull secret setup. */}}
 {{ include "srox.configureImagePullSecrets" (list $ "mainImagePullSecrets" $._rox.mainImagePullSecrets (list "stackrox")) }}
 {{ include "srox.configureImagePullSecrets" (list $ "collectorImagePullSecrets" $._rox.collectorImagePullSecrets (list "stackrox" "collector-stackrox")) }}
+
+{{/*
+    Final validation (after merging in defaults).
+   */}}
+
+{{ if eq ._rox.clusterName "" }}
+  {{ if $_compatibilityMode }}
+    {{ include "srox.fail" "No cluster name specified. Set 'cluster.name' to the desired cluster name." }}
+  {{ else }}
+    {{ include "srox.fail" "No cluster name specified. Set 'clusterName' to the desired cluster name." }}
+  {{ end }}
+{{ end}}
 
 {{/*
     Sensor setup.

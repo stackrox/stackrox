@@ -65,6 +65,8 @@ func TestRenderSensorHelm(t *testing.T) {
 				"AdmissionControlEnforceOnUpdates": c.admissionController,
 
 				"EnvVars": envVars,
+
+				"RenderAsLegacyChart": true,
 			}
 
 			certs := &sensor.Certs{Files: map[string][]byte{

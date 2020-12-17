@@ -104,6 +104,8 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		"KubectlOutput": true,
 
 		"Versions": version.GetAllVersions(),
+
+		"RenderAsLegacyChart": true,
 	}
 
 	if features.AdmissionControlService.Enabled() && c.AdmissionController {

@@ -1,6 +1,16 @@
 {{- $_ := include "srox.init" . -}}
 
-StackRox Secured Cluster {{.Chart.AppVersion}} has been installed.
+StackRox Secured Cluster Services {{.Chart.AppVersion}} has been installed.
+
+Secured Cluster Configuration Summary:
+
+  Name:                              {{ ._rox.clusterName }}
+  Kubernetes Namespace:              {{ .Release.Namespace }}
+  Helm Release Name:                 {{ .Release.Name }}
+  Central Endpoint:                  {{ ._rox.centralEndpoint }}
+  OpenShift Cluster:                 {{ ._rox.env.openshift }}
+  Admission Control Service Created: {{ ._rox.admissionControl.enable }}
+  Admission Control Enforced:        {{ ._rox.admissionControl.dynamic.enforce }}
 
 {{ if ._rox._state.notes -}}
 Please take note of the following:
@@ -22,8 +32,7 @@ During installation, the following warnings were encountered:
 IMPORTANT: You have deployed into an OpenShift-enabled cluster. If you see that your pods
            are not scheduling, run
 
-             oc annotate namespace/stackrox --overwrite openshift.io/node-selector=""
-
+             oc annotate namespace/{{ .Release.Namespace }} --overwrite openshift.io/node-selector=""
 {{ end -}}
 
 Thank you for using StackRox!

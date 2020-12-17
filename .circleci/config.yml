@@ -4348,12 +4348,15 @@ jobs:
           command: |
             MAIN_TAG=$(make --quiet tag)
             make render-helm-yamls
-            sensor_chart_dir="/tmp/${MAIN_TAG}"
-            central_chart_dir="$(mktemp -d)"
-            rmdir "$central_chart_dir"
-            "./bin/$(uname | tr A-Z a-z)/roxctl" helm output central-services --output-dir "${central_chart_dir}"
-            .circleci/publish-helm-charts "$MAIN_TAG" "${central_chart_dir}" "${sensor_chart_dir}"
-            rm -rf "${sensor_chart_dir}"
+            deprecated_legacy_sensor_chart_dir="/tmp/${MAIN_TAG}"
+            central_services_chart_dir="$(mktemp -d)"
+            secured_cluster_services_chart_dir="$(mktemp -d)"
+            rmdir "$central_services_chart_dir"
+            roxctl="./bin/$(uname | tr A-Z a-z)/roxctl"
+            "$roxctl" helm output central-services --output-dir "${central_services_chart_dir}"
+            "$roxctl" helm output secured-cluster-services --output-dir "${secured_cluster_services_chart_dir}"
+            .circleci/publish-helm-charts "$MAIN_TAG" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}" "${deprecated_legacy_sensor_chart_dir}"
+            rm -rf "${deprecated_legacy_sensor_chart_dir}"
 
       - run:
           name: Push image into ECR for AWS Marketplace

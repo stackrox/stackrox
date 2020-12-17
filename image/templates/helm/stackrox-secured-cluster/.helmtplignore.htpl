@@ -1,3 +1,4 @@
+[<- if .RenderAsLegacyChart >]
 [<- if .KubectlOutput >]
 scripts/
 /README.md
@@ -9,4 +10,7 @@ scripts/
 !templates/*-secret.yaml
 !templates/_*.tpl
 templates/*
+[<- end >]
+[<- else >]
+scripts/
 [<- end >]

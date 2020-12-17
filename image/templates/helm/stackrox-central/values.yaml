@@ -1,7 +1,7 @@
 ## StackRox Central chart default settings file.
 ##
 ## This file includes the default settings for the StackRox Central chart.
-## It serves as a form of documentation what all the possible settings that are
+## It serves as a form of documentation for all the possible settings that a
 ## user can override are. HOWEVER, if you want to override some settings, DO NOT
 ## create a copy of this file to be used as a baseline, or modify it in place.
 ## Instead, create a file that contains only those settings you want to override,

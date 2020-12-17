@@ -39,10 +39,11 @@ func mainCmd(args []string) error {
 			MainVersion:      imageTag,
 			ChartVersion:     version.DeriveChartVersion(imageTag),
 		},
-		"MainRegistry":      defaults.MainImageRegistry(),
-		"CollectorRegistry": defaults.CollectorImageRegistry(),
-		"ImageTag":          imageTag,
-		"CollectorImageTag": collectorImageTag,
+		"MainRegistry":        defaults.MainImageRegistry(),
+		"CollectorRegistry":   defaults.CollectorImageRegistry(),
+		"ImageTag":            imageTag,
+		"CollectorImageTag":   collectorImageTag,
+		"RenderAsLegacyChart": true,
 	}
 
 	if _, err := os.Stat(outputDir); err != nil {

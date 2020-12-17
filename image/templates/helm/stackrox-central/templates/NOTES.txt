@@ -42,8 +42,8 @@ When installing StackRox, the following warnings were encountered:
 IMPORTANT: You have deployed into an OpenShift-enabled cluster. If you see that your pods
            are not scheduling, run
 
-             oc annotate namespace/stackrox --overwrite openshift.io/node-selector=""
-
+             oc annotate namespace/{{ .Release.Namespace }} --overwrite openshift.io/node-selector=""
 {{ end -}}
+
 
 Thank you for using StackRox!

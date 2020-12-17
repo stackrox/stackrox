@@ -41,12 +41,12 @@ sensor:
 admissionControl:
   enable: null # bool
   listenOnUpdates: null # bool
-  enforceOnUpdates: null # bool
   dynamic:
     enforce: null # bool
     scanInline: null # bool
     disableBypass: null # bool
     timeout: null # natural number
+    enforceOnUpdates: null # bool
   image:
     registry: null # string
     name: null # string
