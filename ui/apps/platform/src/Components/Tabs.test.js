@@ -1,56 +1,55 @@
 import React from 'react';
-import { shallow } from 'enzyme';
+import { fireEvent, render } from '@testing-library/react';
 
 import Tabs from 'Components/Tabs';
 
 describe('Component:Tabs', () => {
     it('shows the first tab as the active tab', () => {
-        const tabs = shallow(
-            <Tabs
-                headers={[
-                    { text: 'Tab 1', disabled: false },
-                    { text: 'Tab 2', disabled: false },
-                ]}
-            />
-        );
-        expect(tabs.state('activeIndex')).toEqual(0);
+        const headers = [
+            { text: 'Tab 1', disabled: false },
+            { text: 'Tab 2', disabled: false },
+        ];
+        const { getAllByRole } = render(<Tabs headers={headers} />);
+        const buttons = getAllByRole('button');
+
+        expect(buttons.length).toEqual(headers.length);
+        expect(buttons[0]).toHaveClass('active');
+        expect(buttons[1]).not.toHaveClass('active');
     });
 
     it('should be able to switch active tabs', () => {
-        const tabs = shallow(
-            <Tabs
-                headers={[
-                    { text: 'Tab 1', disabled: false },
-                    { text: 'Tab 2', disabled: false },
-                    { text: 'Tab 3', disabled: false },
-                ]}
-            />
-        );
-        expect(tabs.state('activeIndex')).toEqual(0);
-        let button = tabs.findWhere((n) => n.key() === 'Tab 2');
-        button.simulate('click');
-        expect(tabs.state('activeIndex')).toEqual(1);
-        button = tabs.findWhere((n) => n.key() === 'Tab 3');
-        button.simulate('click');
-        expect(tabs.state('activeIndex')).toEqual(2);
+        const headers = [
+            { text: 'Tab 1', disabled: false },
+            { text: 'Tab 2', disabled: false },
+            { text: 'Tab 3', disabled: false },
+        ];
+        const { getAllByRole } = render(<Tabs headers={headers} />);
+        const buttons = getAllByRole('button');
+
+        fireEvent.click(buttons[1]);
+        expect(buttons[0]).not.toHaveClass('active');
+        expect(buttons[1]).toHaveClass('active');
+
+        fireEvent.click(buttons[2]);
+        expect(buttons[1]).not.toHaveClass('active');
+        expect(buttons[2]).toHaveClass('active');
     });
 
     it('should not be able to switch to a disabled tab', () => {
-        const tabs = shallow(
-            <Tabs
-                headers={[
-                    { text: 'Tab 1', disabled: false },
-                    { text: 'Tab 2', disabled: true },
-                    { text: 'Tab 3', disabled: false },
-                ]}
-            />
-        );
-        expect(tabs.state('activeIndex')).toEqual(0);
-        let button = tabs.findWhere((n) => n.key() === 'Tab 2');
-        button.simulate('click');
-        expect(tabs.state('activeIndex')).toEqual(0);
-        button = tabs.findWhere((n) => n.key() === 'Tab 3');
-        button.simulate('click');
-        expect(tabs.state('activeIndex')).toEqual(2);
+        const headers = [
+            { text: 'Tab 1', disabled: false },
+            { text: 'Tab 2', disabled: true },
+            { text: 'Tab 3', disabled: false },
+        ];
+        const { getAllByRole } = render(<Tabs headers={headers} />);
+        const buttons = getAllByRole('button');
+
+        fireEvent.click(buttons[1]);
+        expect(buttons[0]).toHaveClass('active');
+        expect(buttons[1]).not.toHaveClass('active');
+
+        fireEvent.click(buttons[2]);
+        expect(buttons[0]).not.toHaveClass('active');
+        expect(buttons[2]).toHaveClass('active');
     });
 });
