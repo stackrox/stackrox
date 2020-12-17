@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import dateFns from 'date-fns';
+import { Message } from '@stackrox/ui-components';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { fetchDeployment } from 'services/DeploymentsService';
 import KeyValuePairs from 'Components/KeyValuePairs';
 import CollapsibleCard from 'Components/CollapsibleCard';
-import Message from 'Components/Message';
 import { portExposureLabels } from 'messages/common';
 import SecurityContext from './SecurityContext';
 import ContainerConfigurations from './ContainerConfigurations';
@@ -61,10 +61,9 @@ const DeploymentDetails = ({ deployment }) => {
     return (
         <div className="w-full pb-5">
             {!relatedDeployment && (
-                <Message
-                    type="warn"
-                    message="This data is a snapshot of a deployment that no longer exists."
-                />
+                <Message type="warn">
+                    This data is a snapshot of a deployment that no longer exists.
+                </Message>
             )}
             <div className="px-3 pt-5">
                 <CollapsibleCard title="Overview">

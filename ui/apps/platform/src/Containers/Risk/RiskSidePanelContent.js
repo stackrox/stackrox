@@ -1,11 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
+import { Message } from '@stackrox/ui-components';
 
 import Tabs from 'Components/Tabs';
 import Tab from 'Components/Tab';
 import Loader from 'Components/Loader';
-import Message from 'Components/Message';
 
 import RiskDetails from './RiskDetails';
 import DeploymentDetails from './DeploymentDetails';
@@ -20,7 +20,7 @@ const processErrMsg = `No processes discovered. The selected deployment may not 
 const RiskSidePanelErrorContent = ({ message }) => {
     return (
         <div className="h-full flex-1 bg-base-200 border-r border-l border-b border-base-400 p-3">
-            <Message message={message} type="error" />
+            <Message type="error">{message}</Message>
         </div>
     );
 };

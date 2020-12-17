@@ -14,7 +14,7 @@ export const validText = 'Your StackRox license has been renewed';
 export const getLicenseStatusMessage = (status, message) => {
     const result = {
         text: '',
-        type: 'info',
+        type: 'base',
     };
     if (!status && !message) {
         return null;
@@ -22,15 +22,15 @@ export const getLicenseStatusMessage = (status, message) => {
     switch (status) {
         case LICENSE_UPLOAD_STATUS.VERIFYING:
             result.text = 'Verifying...';
-            result.type = 'info';
+            result.type = 'base';
             break;
         case LICENSE_STATUS.VALID:
             result.text = message || validText;
-            result.type = 'info';
+            result.type = 'success';
             break;
         case LICENSE_STATUS.RESTARTING:
             result.text = 'Restarting...';
-            result.type = 'info';
+            result.type = 'base';
             break;
         case LICENSE_STATUS.NONE:
             result.text = noneText;
@@ -51,7 +51,7 @@ export const getLicenseStatusMessage = (status, message) => {
 export const getExpirationMessageType = (expirationDate) => {
     const daysLeft = differenceInDays(expirationDate, new Date());
     if (daysLeft > 14) {
-        return 'info';
+        return 'base';
     }
     if (daysLeft > 3) {
         return 'warn';
@@ -92,7 +92,7 @@ export const createExpirationMessageWithoutLink = (expirationDate) => {
 
     const baseMessage = 'Upload a new license key to renew your account.';
     const message =
-        type !== 'info'
+        type !== 'base'
             ? `Your license will expire in ${distanceInWordsStrict(
                   expirationDate,
                   new Date()

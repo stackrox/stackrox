@@ -2,11 +2,11 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import PropTypes from 'prop-types';
-import { selectors } from 'reducers';
+import { Message } from '@stackrox/ui-components';
 
-import Message from 'Components/Message';
 import Tabs from 'Components/Tabs';
 import Tab from 'Components/Tab';
+import { selectors } from 'reducers';
 import UsageButtons from './UsageButtons';
 import Download from './Icons/Download';
 import Generate from './Icons/Generate';
@@ -108,7 +108,7 @@ const SuccessView = ({
     return (
         <div className="flex flex-col w-full h-full space-between">
             <section className="flex flex-col bg-base-100 shadow text-base-600 border border-base-200 m-3 mt-4 overflow-hidden h-full">
-                <Message type="info" message={successMessage} />
+                <Message type="success">{successMessage}</Message>
                 <div className="flex relative h-full border-t border-r border-base-300 flex-1">
                     <SuccessViewTabs
                         modification={modification}

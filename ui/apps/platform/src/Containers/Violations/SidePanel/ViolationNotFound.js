@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-
-import Message from 'Components/Message';
+import { Message } from '@stackrox/ui-components';
 
 function ViolationNotFound() {
     const message = (
@@ -14,7 +13,7 @@ function ViolationNotFound() {
     );
     return (
         <div className="h-full flex-1 bg-base-200 border-r border-l border-b border-base-400 p-3">
-            <Message message={message} type="error" />
+            <Message type="error">{message}</Message>
         </div>
     );
 }

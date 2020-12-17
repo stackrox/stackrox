@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 import { gql, useQuery } from '@apollo/client';
+import { Message } from '@stackrox/ui-components';
 
 import Loader from 'Components/Loader';
-import Message from 'Components/Message';
 import { getCveTableColumns, defaultCveSort } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
@@ -97,10 +97,9 @@ const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, name
                 </div>
             )}
             {cvesError && (
-                <Message
-                    type="error"
-                    message={cvesError.message || 'Error retrieving fixable CVEs'}
-                />
+                <Message type="error">
+                    {cvesError.message || 'Error retrieving fixable CVEs'}
+                </Message>
             )}
             {!cvesLoading && !cvesError && (
                 <TableWidget

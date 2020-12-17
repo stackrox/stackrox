@@ -2,9 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import { ClipLoader } from 'react-spinners';
+import { Message } from '@stackrox/ui-components';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
-import Message from 'Components/Message';
 import ToggleSwitch from 'Components/ToggleSwitch';
 
 const baseClass = 'py-6';
@@ -20,12 +20,10 @@ const ClusterDeploymentPage = ({
         <div className="px-4">
             {editing && clusterCheckedIn && (
                 <div className="w-full pb-3">
-                    <Message
-                        type="guidance"
-                        message="Dynamic configurations are automatically applied.
-                            If you edited static configurations or you need to redeploy, download a
-                            new bundle."
-                    />
+                    <Message>
+                        Dynamic configurations are automatically applied. If you edited static
+                        configurations or you need to redeploy, download a new bundle.
+                    </Message>
                 </div>
             )}
             <div className={baseClass}>

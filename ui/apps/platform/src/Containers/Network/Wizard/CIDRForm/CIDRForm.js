@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Formik, Form, FieldArray } from 'formik';
 import { PlusCircle } from 'react-feather';
 import * as Yup from 'yup';
+import { Message } from '@stackrox/ui-components';
 
 import { deleteCIDRBlock, postCIDRBlock, patchCIDRBlock } from 'services/NetworkService';
 import Button from 'Components/Button';
-import Message from 'Components/Message';
 import { isValidCidrBlock } from 'utils/urlUtils';
 import { getHasDuplicateCIDRNames, getHasDuplicateCIDRAddresses } from './cidrFormUtils';
 import CIDRFormRow from './CIDRFormRow';
@@ -101,7 +101,7 @@ const CIDRForm = ({ rows, clusterId, updateNetworkNodes, onClose }) => {
             Promise.all(allBlockPromises)
                 .then(() => {
                     setFormCallout({
-                        type: 'info',
+                        type: 'success',
                         message:
                             'CIDR blocks have been successfully configured. This panel will now close.',
                     });
@@ -134,7 +134,7 @@ const CIDRForm = ({ rows, clusterId, updateNetworkNodes, onClose }) => {
         <div className="flex flex-1 flex-col">
             {formCallout && (
                 <div className="mx-4">
-                    <Message type={formCallout.type} message={formCallout.message} />
+                    <Message type={formCallout.type}>{formCallout.message}</Message>
                 </div>
             )}
             <Formik initialValues={getInitialValues()} validationSchema={validateSchema}>

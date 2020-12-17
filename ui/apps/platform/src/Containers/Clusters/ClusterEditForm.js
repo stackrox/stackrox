@@ -1,12 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-// import CollapsibleCard from 'Components/CollapsibleCard';
+import { Message } from '@stackrox/ui-components';
+
 import CollapsibleSection from 'Components/CollapsibleSection';
 import FormFieldRequired from 'Components/forms/FormFieldRequired';
 import Loader from 'Components/Loader';
 import Select from 'Components/Select';
 import ToggleSwitch from 'Components/ToggleSwitch';
-import Message from 'Components/Message';
 import FeatureEnabled from 'Containers/FeatureEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
 
@@ -69,33 +69,28 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
     const renderSlimCollectorWarning = () => {
         if (!centralEnv?.successfullyFetched) {
             return (
-                <Message
-                    message="Failed to check if Central has kernel support packages available"
-                    type="warn"
-                />
+                <Message type="warn">
+                    Failed to check if Central has kernel support packages available
+                </Message>
             );
         }
 
         if (selectedCluster.slimCollector && !centralEnv.kernelSupportAvailable) {
             return (
-                <Message
-                    message={
-                        <span>
-                            Central doesn&apos;t have the required Kernel support package. Retrieve
-                            it from{' '}
-                            <a
-                                href="https://install.stackrox.io/collector/support-packages/index.html"
-                                className="underline text-primary-900"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                stackrox.io
-                            </a>{' '}
-                            and upload it to Central using roxctl.
-                        </span>
-                    }
-                    type="warn"
-                />
+                <Message type="warn">
+                    <span>
+                        Central doesn’t have the required Kernel support package. Retrieve it from{' '}
+                        <a
+                            href="https://install.stackrox.io/collector/support-packages/index.html"
+                            className="underline text-primary-900"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            stackrox.io
+                        </a>{' '}
+                        and upload it to Central using roxctl.
+                    </span>
+                </Message>
             );
         }
 

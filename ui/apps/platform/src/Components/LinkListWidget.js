@@ -1,9 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
+import { Message } from '@stackrox/ui-components';
+
 import Widget from 'Components/Widget';
 import Loader from 'Components/Loader';
-import Message from 'Components/Message';
 import Query from 'Components/ThrowingQuery';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
@@ -56,7 +57,7 @@ const LinkListWidget = ({
             if (loading) {
                 contents = <Loader />;
             } else if (error) {
-                contents = <Message type="error" message="An error occurred loading this data" />;
+                contents = <Message type="error">An error occurred loading this data</Message>;
             } else if (data) {
                 const items = processData(data);
                 headline = getHeadline(items);

@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import pluralize from 'pluralize';
+import orderBy from 'lodash/orderBy';
+import { Message } from '@stackrox/ui-components';
+
 import entityTypes, { standardTypes } from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
-
-import pluralize from 'pluralize';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
-
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
-import Message from 'Components/Message';
 import Loader from 'Components/Loader';
 
 import TablePagination from 'Components/TablePagination';
@@ -21,7 +21,6 @@ import createPDFTable from 'utils/pdfUtils';
 import { CLUSTERS_QUERY, NAMESPACES_QUERY, NODES_QUERY, DEPLOYMENTS_QUERY } from 'queries/table';
 import { LIST_STANDARD } from 'queries/standard';
 import queryService from 'utils/queryService';
-import orderBy from 'lodash/orderBy';
 
 function getQuery(entityType) {
     switch (entityType) {
@@ -337,7 +336,7 @@ const ListTable = ({
                         contents = (
                             <>
                                 {data.results.errorMessage && (
-                                    <Message type="guidance" message={data.results.errorMessage} />
+                                    <Message type="error">{data.results.errorMessage}</Message>
                                 )}
                                 {tableElement}
                             </>

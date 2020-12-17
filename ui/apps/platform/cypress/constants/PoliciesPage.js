@@ -71,7 +71,7 @@ export const selectors = {
         confirm: '[data-testid="custom-modal-confirm"]',
         imports: '[data-testid="policies-to-import"]',
         successMessage:
-            '[data-testid="policy-import-modal-content"] [data-testid="message"].info-message:contains("Policy successfully imported")',
+            '[data-testid="policy-import-modal-content"] [data-testid="message"].success-message:contains("Policy successfully imported")',
         dupeNameMessage:
             '[data-testid="policy-import-modal-content"] [data-testid="message"].error-message:contains("An existing policy has the same name")',
         dupeIdMessage:

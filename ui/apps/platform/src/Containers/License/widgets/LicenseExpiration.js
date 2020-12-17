@@ -3,23 +3,23 @@ import PropTypes from 'prop-types';
 import { format, distanceInWordsStrict } from 'date-fns';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
+import * as Icon from 'react-feather';
+import { Message } from '@stackrox/ui-components';
+
 import { selectors } from 'reducers';
 import { getHasReadWritePermission } from 'reducers/roles';
 import {
     createExpirationMessageWithoutLink,
     getExpirationMessageType,
 } from 'Containers/License/helpers';
-
-import * as Icon from 'react-feather';
 import Widget from 'Components/Widget';
-import Message from 'Components/Message';
 import UploadLicense from 'Containers/License/UploadLicense';
 
 const LicenseExpiration = ({ expirationDate, userRolePermissions }) => {
     const canUploadLicense = getHasReadWritePermission('Licenses', userRolePermissions);
     const expirationMessage = createExpirationMessageWithoutLink(expirationDate);
 
-    const showTopTimeRemaining = getExpirationMessageType(expirationDate) === 'info';
+    const showTopTimeRemaining = getExpirationMessageType(expirationDate) === 'base';
 
     return (
         <Widget header="License Expiration">
@@ -37,10 +37,7 @@ const LicenseExpiration = ({ expirationDate, userRolePermissions }) => {
                 </div>
                 <div className="text-center">
                     {expirationMessage && (
-                        <Message
-                            type={expirationMessage.type}
-                            message={expirationMessage.message}
-                        />
+                        <Message type={expirationMessage.type}>{expirationMessage.message}</Message>
                     )}
                     {canUploadLicense && <UploadLicense />}
                 </div>

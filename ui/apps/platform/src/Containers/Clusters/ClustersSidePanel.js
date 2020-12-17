@@ -7,8 +7,8 @@ import { ArrowRight, Check } from 'react-feather';
 import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 import set from 'lodash/set';
+import { Message } from '@stackrox/ui-components';
 
-import Message from 'Components/Message';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import SidePanelAnimatedDiv from 'Components/animations/SidePanelAnimatedDiv';
@@ -254,13 +254,13 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
                 >
                     {!!messageState && (
                         <div className="m-4">
-                            <Message type={messageState.type} message={messageState.message} />
+                            <Message type={messageState.type}>{messageState.message}</Message>
                         </div>
                     )}
                     {submissionError && submissionError.length > 0 && (
                         <div className="w-full">
                             <div className="mb-4 mx-4">
-                                <Message type="error" message={submissionError} />
+                                <Message type="error">{submissionError}</Message>
                             </div>
                         </div>
                     )}

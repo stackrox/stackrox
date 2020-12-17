@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import PropTypes from 'prop-types';
-import Message from 'Components/Message';
+import { Message } from '@stackrox/ui-components';
 
 import { selectors } from 'reducers';
 
@@ -40,7 +40,7 @@ const ErrorView = ({ modification, modificationName, modificationState, policyGr
     return (
         <div className="flex flex-col flex-1">
             <section className="bg-base-100 flex flex-col shadow text-base-600 border border-base-200 m-3 mt-4 mb-4 overflow-hidden h-full">
-                <Message type="error" message={errorMessage} />
+                <Message type="error">{errorMessage}</Message>
                 {renderYamlFile()}
             </section>
         </div>

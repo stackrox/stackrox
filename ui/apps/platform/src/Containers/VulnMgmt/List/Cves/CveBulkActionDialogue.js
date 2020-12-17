@@ -3,11 +3,11 @@ import PropTypes from 'prop-types';
 import { gql, useQuery } from '@apollo/client';
 import get from 'lodash/get';
 import set from 'lodash/set';
+import { Message } from '@stackrox/ui-components';
 
 import CustomDialogue from 'Components/CustomDialogue';
 import InfoList from 'Components/InfoList';
 import Loader from 'Components/Loader';
-import Message from 'Components/Message';
 import { POLICY_ENTITY_ALL_FIELDS_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import queryService from 'utils/queryService';
 import { createPolicy, savePolicy } from 'services/PoliciesService';
@@ -175,7 +175,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
 
         addToFunc(policy)
             .then(() => {
-                setMessageObj({ type: 'info', message: 'Policy successfully saved' });
+                setMessageObj({ type: 'success', message: 'Policy successfully saved' });
 
                 // close the dialog after giving the user a little time to process the success message
                 dialogueRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -231,7 +231,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
                 ) : (
                     <>
                         {messageObj && (
-                            <Message type={messageObj.type} message={messageObj.message} />
+                            <Message type={messageObj.type}>{messageObj.message}</Message>
                         )}
                         <CveToPolicyShortForm
                             policy={policy}

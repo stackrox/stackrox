@@ -52,10 +52,10 @@ function Message({
                 </div>
             </div>
             <div
-                className={`flex items-center pl-3 border-l ${variantBodyClasses} ${extraBodyClasses}`}
+                className={`flex items-center pl-3 border-l w-full ${variantBodyClasses} ${extraBodyClasses}`}
                 data-testid="message-body"
             >
-                <div>{children}</div>
+                <div className="w-full">{children}</div>
             </div>
         </div>
     );

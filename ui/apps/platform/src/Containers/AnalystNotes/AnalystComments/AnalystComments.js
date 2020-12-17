@@ -1,11 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useQuery, useMutation } from '@apollo/client';
+import { Message } from '@stackrox/ui-components';
 
 import ANALYST_NOTES_TYPES from 'constants/analystnotes';
 import captureGraphQLErrors from 'utils/captureGraphQLErrors';
 import analystNotesLabels from 'messages/analystnotes';
-import Message from 'Components/Message';
 import CommentThread from 'Components/CommentThread';
 import { getQueriesByType } from './analystCommentsQueries';
 import getRefetchQueriesByCondition from '../analystNotesUtils/getRefetchQueriesByCondition';
@@ -51,10 +51,10 @@ const AnalystComments = ({ type, variables, isCollapsible }) => {
 
     if (hasErrors) {
         return (
-            <Message
-                type="error"
-                message="There was an issue retrieving and/or modifying comments. Please try to view this page again in a little while"
-            />
+            <Message type="error">
+                There was an issue retrieving and/or modifying comments. Please try to view this
+                page again in a little while.
+            </Message>
         );
     }
 

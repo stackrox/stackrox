@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { HashLink } from 'react-router-hash-link';
+import { Message } from '@stackrox/ui-components';
 
-import Message from 'Components/Message';
 import PageHeader from 'Components/PageHeader';
 import Widget from 'Components/Widget';
 import integrationsList from 'Containers/Integrations/integrationsList';
@@ -169,10 +169,9 @@ const SystemHealthDashboardPage = () => {
                     >
                         {vulnerabilityDefinitionsHasError ? (
                             <div className="p-2 w-full">
-                                <Message
-                                    type="error"
-                                    message="An error occurred requesting Vulnerability Definitions"
-                                />
+                                <Message type="error">
+                                    An error occurred requesting Vulnerability Definitions.
+                                </Message>
                             </div>
                         ) : (
                             <VulnerabilityDefinitions

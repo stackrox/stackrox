@@ -2,11 +2,11 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
+import upperFirst from 'lodash/upperFirst';
+import { Message } from '@stackrox/ui-components';
 
 import { useTheme } from 'Containers/ThemeProvider';
-import Message from 'Components/Message';
 import { selectors } from 'reducers';
-import upperFirst from 'lodash/upperFirst';
 import AppWrapper from '../AppWrapper';
 
 function closeThisWindow() {
@@ -63,7 +63,7 @@ function TestLoginResultsPage({ authProviderTestResults }) {
         closeThisWindow();
     }
 
-    const messageType = authProviderTestResults?.userAttributes ? 'info' : 'error';
+    const messageType = authProviderTestResults?.userAttributes ? 'success' : 'error';
     const messageBody = getMessageBody(authProviderTestResults);
 
     return (
@@ -75,7 +75,7 @@ function TestLoginResultsPage({ authProviderTestResults }) {
             >
                 <div className="flex flex-col items-center bg-base-100 w-4/5 relative">
                     <div className="p-4 w-full">
-                        <Message type={messageType} message={messageBody} />
+                        <Message type={messageType}>{messageBody}</Message>
                     </div>
                     <div className="flex flex-col items-center border-t border-base-400 p-4 w-full">
                         <p className="mb-4">

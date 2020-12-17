@@ -6,9 +6,9 @@ import { Upload } from 'react-feather';
 import pluralize from 'pluralize';
 import { Formik } from 'formik';
 import * as yup from 'yup';
+import { Message } from '@stackrox/ui-components';
 
 import CustomDialogue from 'Components/CustomDialogue';
-import Message from 'Components/Message';
 import { fileUploadColors } from 'constants/visuals/colors';
 import { actions as pageActions } from 'reducers/policies/page';
 import { importPolicies } from 'services/PoliciesService';
@@ -95,7 +95,7 @@ const PolicyImportDialogue = ({ closeAction, importPolicySuccess }) => {
             .then((response) => {
                 if (response.allSucceeded) {
                     setMessageObj({
-                        type: 'info',
+                        type: 'success',
                         message: 'Policy successfully imported',
                     });
                     const importedPolicyId = response?.responses[0]?.policy?.id; // API always returns a list, but we only support one policy
@@ -210,7 +210,7 @@ const PolicyImportDialogue = ({ closeAction, importPolicySuccess }) => {
                             </ul>
                         </div>
                     )}
-                    {messageObj && <Message type={messageObj.type} message={messageObj.message} />}
+                    {messageObj && <Message type={messageObj.type}>{messageObj.message}</Message>}
                     {duplicateErrors && (
                         <div className="w-full py-4">
                             <Formik

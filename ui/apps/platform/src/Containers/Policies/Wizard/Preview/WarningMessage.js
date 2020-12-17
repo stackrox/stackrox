@@ -1,6 +1,5 @@
 import React from 'react';
-
-import Message from 'Components/Message';
+import { Message } from '@stackrox/ui-components';
 
 function WarningMessage(policyDisabled) {
     let message = '';
@@ -11,7 +10,7 @@ function WarningMessage(policyDisabled) {
         message =
             'The policy settings you have selected will generate violations for the following deployments on your system. Please verify that this seems accurate before saving.';
     }
-    return <Message message={message} type="warn" />;
+    return <Message type="warn">{message}</Message>;
 }
 
 export default WarningMessage;

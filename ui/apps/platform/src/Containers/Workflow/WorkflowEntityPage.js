@@ -2,10 +2,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useQuery } from '@apollo/client';
+import { Message } from '@stackrox/ui-components';
 
 import PageNotFound from 'Components/PageNotFound';
 import Loader from 'Components/Loader';
-import Message from 'Components/Message';
 import { useTheme } from 'Containers/ThemeProvider';
 import queryService from 'utils/queryService';
 
@@ -83,10 +83,9 @@ const WorkflowEntityPage = ({
         return (
             <div className="flex items-center justify-center h-full w-full">
                 <div className="m-6 w-full md:w-1/2 xl:w-3/5">
-                    <Message
-                        type="error"
-                        message={error.message || 'An unknown error has occurred.'}
-                    />
+                    <Message type="error">
+                        {error.message || 'An unknown error has occurred.'}
+                    </Message>
                 </div>
             </div>
         );

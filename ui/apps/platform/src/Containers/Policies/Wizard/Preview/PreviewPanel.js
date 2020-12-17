@@ -2,10 +2,11 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
+import { Message } from '@stackrox/ui-components';
 
 import { selectors } from 'reducers';
+import Loader from 'Components/Loader';
 import Panel from 'Components/Panel';
-import Message from 'Components/Message';
 import Violations from './Violations';
 import ExcludedScopes from './ExcludedScopes';
 import PreviewButtons from './PreviewButtons';
@@ -13,7 +14,9 @@ import PreviewButtons from './PreviewButtons';
 const DryRunInProgressMessage = () => (
     <div className="flex items-center justify-center h-full" data-testid="dry-run-loading">
         <div className="flex uppercase">
-            <Message message="Dry run in progress..." type="loading" />
+            <Message icon={<Loader />} extraClasses="loading-message">
+                Dry run in progress...
+            </Message>
         </div>
     </div>
 );
@@ -29,7 +32,7 @@ const WarningMessage = ({ policyDisabled }) => {
     }
     return (
         <div className="border-b border-base-400">
-            <Message message={message} type="warn" />
+            <Message type="warn">{message}</Message>
         </div>
     );
 };
