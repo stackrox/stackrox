@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 
 import Button from './Button';
 
@@ -7,12 +7,12 @@ describe('Button', () => {
     test('renders title, subtitle and footer', () => {
         function onClick(): void {}
 
-        render(
+        const { getByText } = render(
             <Button type="button" onClick={onClick}>
                 Click me!
             </Button>
         );
 
-        expect(screen.getByText('Click me!')).toBeInTheDocument();
+        expect(getByText('Click me!')).toBeInTheDocument();
     });
 });
