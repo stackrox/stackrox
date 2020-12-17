@@ -210,7 +210,10 @@ func (s *customizeSuite) TestCustomizePodMetadata() {
 	s.Require().NoError(customizeVals.Encode(&customizeValsStrBuilder), "failed to encode customize values")
 
 	_, rendered = s.LoadAndRender(allValuesExplicit, customizeValsStrBuilder.String())
+	s.Require().NotEmpty(rendered)
+
 	objs = s.ParseObjects(rendered)
+	s.Require().NotEmpty(objs)
 
 	for _, obj := range objs {
 		if obj.GetKind() != "Deployment" {

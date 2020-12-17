@@ -160,6 +160,7 @@ func (s *baseSuite) ParseObjects(objYAMLs map[string]string) []unstructured.Unst
 
 func (s *baseSuite) TestAllGeneratableGenerated() {
 	_, rendered := s.LoadAndRender(autogenerateAll)
+	s.Require().NotEmpty(rendered)
 
 	for k, v := range rendered {
 		s.NotEmptyf(v, "unexpected empty rendered YAML %s", k)
@@ -171,6 +172,7 @@ func (s *baseSuite) TestAllGeneratableExplicit() {
 	// containing generated values.
 
 	_, rendered := s.LoadAndRender(allValuesExplicit)
+	s.Require().NotEmpty(rendered)
 
 	for k, v := range rendered {
 		if path.Base(k) == "99-generated-values-secret.yaml" {

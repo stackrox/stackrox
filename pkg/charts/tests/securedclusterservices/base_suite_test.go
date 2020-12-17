@@ -147,6 +147,7 @@ func (s *baseSuite) TestAllGeneratableExplicit() {
 	// containing generated values.
 
 	_, rendered := s.LoadAndRender(allValuesExplicit)
+	s.Require().NotEmpty(rendered)
 
 	for k, v := range rendered {
 		if path.Base(k) == "additional-ca-sensor.yaml" {

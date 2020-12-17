@@ -26,8 +26,10 @@ func TestCustomize(t *testing.T) {
 func (s *customizeSuite) TestCustomizeMetadata() {
 	// Render template with no generated values, and parse the objects.
 	_, rendered := s.LoadAndRender(allValuesExplicit)
+	s.Require().NotEmpty(rendered)
 
 	objs := s.ParseObjects(rendered)
+	s.Require().NotEmpty(objs)
 
 	// Based on the present objects, build customization settings that are unique
 	// per object and also exercise override and suppress logic.
