@@ -8,6 +8,7 @@ import (
 	networkBaselineDSMocks "github.com/stackrox/rox/central/networkbaseline/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -39,6 +40,10 @@ func (s *NetworkBaselineServiceTestSuite) SetupTest() {
 
 	s.baselines = networkBaselineDSMocks.NewMockDataStore(s.mockCtrl)
 	s.service = New(s.baselines)
+
+	if !features.NetworkDetection.Enabled() {
+		s.T().Skip()
+	}
 }
 
 func (s *NetworkBaselineServiceTestSuite) TearDownTest() {

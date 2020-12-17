@@ -141,57 +141,59 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	// Return storedFlows on DB read.
 	suite.mockFlows.EXPECT().GetAllFlows(suite.hasWriteCtx, gomock.Any()).Return(storedFlows, *firstTimestamp, nil)
 
-	suite.mockBaselines.EXPECT().ProcessFlowUpdate(testutils.PredMatcher("equivalent map except for timestamp", func(got map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) bool {
-		expectedMap := map[networkgraph.NetworkConnIndicator]timestamp.MicroTS{
-			{
-				SrcEntity: networkgraph.Entity{
-					Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					ID:   "someNode1",
-				},
-				DstEntity: networkgraph.Entity{
-					Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					ID:   "someNode2",
-				},
-				DstPort:  1,
-				Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			}: 0,
-			{
-				SrcEntity: networkgraph.Entity{
-					Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					ID:   "someNode1",
-				},
-				DstEntity: networkgraph.Entity{
-					Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					ID:   "someOtherNode2",
-				},
-				DstPort:  2,
-				Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-			}: timestamp.FromProtobuf(secondTimestamp),
-		}
+	if features.NetworkDetection.Enabled() {
+		suite.mockBaselines.EXPECT().ProcessFlowUpdate(testutils.PredMatcher("equivalent map except for timestamp", func(got map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) bool {
+			expectedMap := map[networkgraph.NetworkConnIndicator]timestamp.MicroTS{
+				{
+					SrcEntity: networkgraph.Entity{
+						Type: storage.NetworkEntityInfo_DEPLOYMENT,
+						ID:   "someNode1",
+					},
+					DstEntity: networkgraph.Entity{
+						Type: storage.NetworkEntityInfo_DEPLOYMENT,
+						ID:   "someNode2",
+					},
+					DstPort:  1,
+					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+				}: 0,
+				{
+					SrcEntity: networkgraph.Entity{
+						Type: storage.NetworkEntityInfo_DEPLOYMENT,
+						ID:   "someNode1",
+					},
+					DstEntity: networkgraph.Entity{
+						Type: storage.NetworkEntityInfo_DEPLOYMENT,
+						ID:   "someOtherNode2",
+					},
+					DstPort:  2,
+					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+				}: timestamp.FromProtobuf(secondTimestamp),
+			}
 
-		if len(expectedMap) != len(got) {
-			return false
-		}
-		for indicator, ts := range expectedMap {
-			got, inGot := got[indicator]
-			if !inGot {
+			if len(expectedMap) != len(got) {
 				return false
 			}
-			if ts == 0 {
-				if got != 0 {
+			for indicator, ts := range expectedMap {
+				got, inGot := got[indicator]
+				if !inGot {
 					return false
 				}
-			} else {
-				// The timestamp may vary slightly because of the adjustment that we do,
-				// but should not vary by more than a second.
-				if math.Abs(ts.GoTime().Sub(got.GoTime()).Seconds()) > 1 {
-					return false
+				if ts == 0 {
+					if got != 0 {
+						return false
+					}
+				} else {
+					// The timestamp may vary slightly because of the adjustment that we do,
+					// but should not vary by more than a second.
+					if math.Abs(ts.GoTime().Sub(got.GoTime()).Seconds()) > 1 {
+						return false
+					}
 				}
 			}
-		}
-		return true
-	},
-	))
+			return true
+		},
+		))
+	}
 
 	// Check that the given write matches expectations.
 	suite.mockFlows.EXPECT().UpsertFlows(suite.hasWriteCtx, testutils.PredMatcher("matches expected updates", func(actualUpdates []*storage.NetworkFlow) bool {
