@@ -10,6 +10,7 @@ import services.ImageService
 import services.PolicyService
 import spock.lang.Unroll
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
+import util.Env
 
 class ImageManagementTest extends BaseSpecification {
     @Unroll
@@ -202,6 +203,7 @@ class ImageManagementTest extends BaseSpecification {
                 .setReplicas(1)
                 .setImage("mysql@sha256:f7985e36c668bb862a0e506f4ef9acdd1254cdf690469816f99633898895f7fa")
                 .setCommand(["sleep", "60000"])
+                .setSkipReplicaWait(Env.CI_JOBNAME && Env.CI_JOBNAME.contains("openshift-crio"))
 
         orchestrator.createDeployment(deployment)
 

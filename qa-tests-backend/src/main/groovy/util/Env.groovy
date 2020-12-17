@@ -17,6 +17,7 @@ class Env {
     ]
 
     static final IN_CI = (System.getenv("CI") != null)
+    static final CI_JOBNAME = System.getenv("CIRCLE_JOB")
 
     private static final Env INSTANCE = new Env()
 

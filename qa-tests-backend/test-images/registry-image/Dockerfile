@@ -16,9 +16,6 @@ ADD tomcat-files/* /usr/share/tomcat7/conf/
 
 RUN touch /visa
 
-# trigger 'IMPROPER USAGE OF ORCHESTRATOR SECRETS VOLUME' violation
-VOLUME /run/secrets
-
 # trigger 'SECURE SHELL (SSH) PORT EXPOSED IN IMAGE' violation
 EXPOSE 22/tcp
 

@@ -33,6 +33,7 @@ import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.CreatePolicyService
 import spock.lang.Unroll
+import util.Env
 
 class PolicyConfigurationTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX = "deploymentnginx"
@@ -112,11 +113,13 @@ class PolicyConfigurationTest extends BaseSpecification {
             .setName(NGINX_LATEST_WITH_DIGEST_NAME)
             .setImage("nginx:1.17@sha256:86ae264c3f4acb99b2dee4d0098c40cb8c46dcf9e1148f05d3a51c4df6758c12")
             .setCommand(["sleep", "60000"])
+            .setSkipReplicaWait(Env.CI_JOBNAME && Env.CI_JOBNAME.contains("openshift-crio"))
 
     static final private Deployment NGINX_LATEST = new Deployment()
             .setName(NGINX_LATEST_NAME)
             .setImage("nginx:latest@sha256:86ae264c3f4acb99b2dee4d0098c40cb8c46dcf9e1148f05d3a51c4df6758c12")
             .setCommand(["sleep", "60000"])
+            .setSkipReplicaWait(Env.CI_JOBNAME && Env.CI_JOBNAME.contains("openshift-crio"))
 
     static final private Service NPSERVICE = new Service(DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_NP })
             .setType(Service.Type.NODEPORT)

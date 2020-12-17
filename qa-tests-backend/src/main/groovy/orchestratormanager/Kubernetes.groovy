@@ -146,6 +146,7 @@ class Kubernetes implements OrchestratorMain {
         try {
             client.namespaces().create(namespace)
             defaultPspForNamespace(ns)
+            provisionDefaultServiceAccount(ns)
             println "Created namespace ${ns}"
         } catch (KubernetesClientException kce) {
             // 409 is already exists
@@ -1201,6 +1202,52 @@ class Kubernetes implements OrchestratorMain {
         client.serviceAccounts().inNamespace(namespace).withName(accountName).createOrReplace(serviceAccount)
     }
 
+    def provisionDefaultServiceAccount(String forNamespace) {
+        if (forNamespace == this.namespace) {
+            return
+        }
+
+        // Copy image pull secrets from the default service account in the test orchestration namespace (i.e. 'qa') for
+        // use by the default service account in another namespace.
+
+        ServiceAccount orchestrationServiceAccount = client.serviceAccounts()
+                    .inNamespace(this.namespace)
+                    .withName("default")
+                    .get()
+        assert orchestrationServiceAccount, "Expect to find a default service account"
+
+        List<LocalObjectReference> imagePullSecrets = orchestrationServiceAccount.getImagePullSecrets()
+
+        imagePullSecrets.forEach {
+            LocalObjectReference imagePullSecret ->
+            K8sSecret secret = client.secrets().inNamespace(this.namespace).withName(imagePullSecret.name).get()
+            assert secret, "the default SA has a non existing image pull secret - ${imagePullSecret.name}"
+
+            K8sSecret copy = new K8sSecret(
+                        apiVersion: "v1",
+                        kind: "Secret",
+                        type: secret.type,
+                        data: secret.data,
+                        metadata: new ObjectMeta(
+                                name: secret.metadata.name,
+                        )
+            )
+            client.secrets().inNamespace(forNamespace).createOrReplace(copy)
+            assert waitForSecretCreation(copy.metadata.name, forNamespace), "could not copy the secret"
+        }
+
+        createServiceAccount(new K8sServiceAccount(
+                name: "default",
+                namespace: forNamespace,
+                imagePullSecrets: imagePullSecrets*.name
+        ))
+        assert client.serviceAccounts()
+                .inNamespace(this.namespace)
+                .withName("default")
+                .get()
+                ?.imagePullSecrets == imagePullSecrets
+    }
+
     /*
         Roles
      */
@@ -1695,7 +1742,7 @@ class Kubernetes implements OrchestratorMain {
 
     def waitForDeploymentAndPopulateInfo(Deployment deployment) {
         try {
-            deployment.deploymentUid = waitForDeploymentCreation(
+            deployment.deploymentUid = waitForDeploymentStart(
                     deployment.getName(),
                     deployment.getNamespace(),
                     deployment.skipReplicaWait
@@ -1704,9 +1751,12 @@ class Kubernetes implements OrchestratorMain {
         } catch (Exception e) {
             println "Error while waiting for deployment/populating deployment info: " + e.toString()
         }
+        if (!deployment.skipReplicaWait && !deployment.deploymentUid) {
+            throw new OrchestratorManagerException("The deployment did not start or reach replica ready state")
+        }
     }
 
-    def waitForDeploymentCreation(String deploymentName, String namespace, Boolean skipReplicaWait = false) {
+    def waitForDeploymentStart(String deploymentName, String namespace, Boolean skipReplicaWait = false) {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
             println "Waiting for ${deploymentName} to start"

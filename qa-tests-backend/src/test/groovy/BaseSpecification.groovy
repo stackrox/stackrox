@@ -73,17 +73,7 @@ class BaseSpecification extends Specification {
 
         orchestrator.createNamespace(Constants.ORCHESTRATOR_NAMESPACE)
 
-        // Add an image pull secret to the qa namespace and also the default service account so the qa namespace can
-        // pull stackrox images from dockerhub
-        orchestrator.createImagePullSecret("stackrox", Env.mustGetInCI("REGISTRY_USERNAME", "fakeUsername"),
-                Env.mustGetInCI("REGISTRY_PASSWORD", "fakePassword"), Constants.ORCHESTRATOR_NAMESPACE)
-        def sa = new K8sServiceAccount(
-                name: "default",
-                namespace: Constants.ORCHESTRATOR_NAMESPACE,
-                imagePullSecrets: ["stackrox"]
-        )
-        orchestrator.createServiceAccount(sa)
-
+        addStackroxImagePullSecret()
         addGCRImagePullSecret()
 
         RoleOuterClass.Role testRole = null
@@ -248,7 +238,45 @@ class BaseSpecification extends Specification {
         Helpers.resetRetryAttempts()
     }
 
+    static addStackroxImagePullSecret() {
+        // Add an image pull secret to the qa namespace and also the default service account so the qa namespace can
+        // pull stackrox images from dockerhub
+
+        if (!Env.IN_CI && (Env.get("REGISTRY_USERNAME", null) == null ||
+                           Env.get("REGISTRY_PASSWORD", null) == null)) {
+            // Arguably this should be fatal but for tests that don't pull from docker.io/stackrox it is not strictly
+            // necessary.
+            println "WARNING: The REGISTRY_USERNAME and/or REGISTRY_PASSWORD env var is missing. " +
+                    "(this is ok if your test does not use images from docker.io/stackrox)"
+            return
+        }
+
+        OrchestratorMain orchestrator = OrchestratorType.create(
+                Env.mustGetOrchestratorType(),
+                Constants.ORCHESTRATOR_NAMESPACE
+        )
+        orchestrator.createImagePullSecret(
+                "stackrox",
+                Env.mustGetInCI("REGISTRY_USERNAME", "fakeUsername"),
+                Env.mustGetInCI("REGISTRY_PASSWORD", "fakePassword"),
+                Constants.ORCHESTRATOR_NAMESPACE
+        )
+        def sa = new K8sServiceAccount(
+                name: "default",
+                namespace: Constants.ORCHESTRATOR_NAMESPACE,
+                imagePullSecrets: ["stackrox"]
+        )
+        orchestrator.createServiceAccount(sa)
+    }
+
     static addGCRImagePullSecret() {
+        if (!Env.IN_CI && Env.get("GOOGLE_CREDENTIALS_GCR_SCANNER", null) == null) {
+            // Arguably this should be fatal but for tests that don't pull from us.gcr.io it is not strictly necessary
+            println "WARNING: The GOOGLE_CREDENTIALS_GCR_SCANNER env var is missing. "+
+                    "(this is ok if your test does not use images on us.gcr.io)"
+            return
+        }
+
         OrchestratorMain orchestrator = OrchestratorType.create(
                 Env.mustGetOrchestratorType(),
                 Constants.ORCHESTRATOR_NAMESPACE

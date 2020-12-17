@@ -418,6 +418,10 @@ class NetworkFlowTest extends BaseSpecification {
     @Category([NetworkFlowVisualization])
     def "Verify intra-cluster connection via external IP"() {
         given:
+        "ROX-6092: This test is falsely passing when the deployment fails to start"
+        Assume.assumeTrue(false)
+
+        and:
         "Only run on non-OpenShift until we can fix the route issue in CI"
         Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
 

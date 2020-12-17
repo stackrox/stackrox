@@ -165,7 +165,7 @@ class PolicyFieldsTest extends BaseSpecification {
                     .addLabel("im-a-key", "with_a_different_value")
                     .addLabel("another-key", "and_a_value")
                     .setReadOnlyRootFilesystem(true)
-                    .setNamespace("policyfieldstest-c")
+                    .setNamespace("qa-policyfieldstest-c")
                     .setContainerName("match-container-name")
 
     static final private BASED_ON_ALPINE = DEP_C
@@ -191,7 +191,7 @@ class PolicyFieldsTest extends BaseSpecification {
             createAndRegisterDeployment()
                     .setName("deployment-d")
                     .setImage("docker.io/stackrox/qa:apache-dns")
-                    .setNamespace("policyfieldstest-d")
+                    .setNamespace("qa-policyfieldstest-d")
 
     static final private WITHOUT_ANNOTATIONS = DEP_D
     static final private WITH_COMPONENT_CPIO = DEP_D
@@ -543,7 +543,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private HAS_POLICYFIELDSTEST_IN_NAMESPACE = setPolicyFieldANDValues(
             BASE_POLICY.clone().setName("AAA_HAS_POLICYFIELDTEST_IN_NAMESPACE"),
             "Namespace",
-            ["policyfieldstest-.*"]
+            [".*-policyfieldstest-.*"]
     )
 
     static final private IS_NAMESPACE_OF_DEPLOYMENT_D = setPolicyFieldANDValues(
@@ -752,6 +752,10 @@ class PolicyFieldsTest extends BaseSpecification {
     private List<String> createdPolicyIds
 
     def setupSpec() {
+        if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
+            return
+        }
+
         createdPolicyIds = []
         for (policyBuilder in POLICY_BUILDERS) {
             Policy policy = policyBuilder.build()
@@ -771,6 +775,10 @@ class PolicyFieldsTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
+            return
+        }
+
         orchestrator.deleteDeployment(UNSCANNED)
 
         for (Deployment deployment : DEPLOYMENTS) {
