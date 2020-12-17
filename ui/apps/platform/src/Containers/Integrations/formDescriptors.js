@@ -1351,6 +1351,11 @@ const formDescriptors = {
                 placeholder: '',
             },
             {
+                label: 'Use Workload Identity',
+                jsonpath: 'gcs.useWorkloadId',
+                type: 'toggle',
+            },
+            {
                 label: 'Service Account JSON',
                 jsonpath: 'gcs.serviceAccount',
                 type: 'password',

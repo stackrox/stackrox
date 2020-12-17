@@ -23,6 +23,7 @@ var (
 )
 
 // Manager implements the interface for external backups
+//go:generate mockgen-wrapper Manager
 type Manager interface {
 	Upsert(ctx context.Context, backup *storage.ExternalBackup) error
 	Test(ctx context.Context, backup *storage.ExternalBackup) error

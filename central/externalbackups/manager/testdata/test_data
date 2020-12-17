@@ -1,0 +1,10 @@
+externalBackup:
+  backupsToKeep: 2
+  gcs:
+    bucket: joseph-integration-as-config-test
+    objectPrefix: a_prefix
+    useWorkloadId: true
+  name: Joseph
+  schedule:
+    intervalType: DAILY
+  type: gcs

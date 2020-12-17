@@ -19,7 +19,9 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton(), reporter.Singleton(), initializeManager())
+	mgr := initializeManager()
+	manager.StartBackupFromConfigManager(mgr)
+	as = New(datastore.Singleton(), reporter.Singleton(), mgr)
 }
 
 func initializeManager() manager.Manager {

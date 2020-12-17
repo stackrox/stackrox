@@ -52,4 +52,7 @@ var (
 	// K8sAuditLogDetection enables Sensor to collect k8s audit logs using cloud integrations and generate policy violations
 	// based on k8s audit log events
 	K8sAuditLogDetection = registerFeature("Enable Sensor to collect k8s audit logs in EKS and GKE clusters and generate violations based on audit log events", "ROX_K8S_AUDIT_LOG_DETECTION", false)
+
+	// IntegrationsAsConfig enables loading integrations from config
+	IntegrationsAsConfig = registerFeature("Enable loading integrations from config", "ROX_INTEGRATIONS_AS_CONFIG", false)
 )

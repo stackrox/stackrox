@@ -47,10 +47,20 @@ func validate(conf *storage.GCSConfig) error {
 	if conf.GetBucket() == "" {
 		errorList.AddString("Bucket must be specified")
 	}
-	if conf.GetServiceAccount() == "" {
-		errorList.AddString("Service Account JSON must be specified")
+	if conf.GetServiceAccount() == "" && !conf.GetUseWorkloadId() {
+		errorList.AddString("Service Account JSON or Use Workload Identity must be specified")
+	}
+	if conf.GetServiceAccount() != "" && conf.GetUseWorkloadId() {
+		errorList.AddString("Service Account JSON must be empty when workload ID is enabled")
 	}
 	return errorList.ToError()
+}
+
+func getClient(conf *storage.GCSConfig) (*googleStorage.Client, error) {
+	if conf.GetUseWorkloadId() {
+		return googleStorage.NewClient(context.Background())
+	}
+	return googleStorage.NewClient(context.Background(), option.WithCredentialsJSON([]byte(conf.GetServiceAccount())))
 }
 
 func newGCS(integration *storage.ExternalBackup) (*gcs, error) {
@@ -62,7 +72,7 @@ func newGCS(integration *storage.ExternalBackup) (*gcs, error) {
 		return nil, err
 	}
 
-	client, err := googleStorage.NewClient(context.Background(), option.WithCredentialsJSON([]byte(conf.GetServiceAccount())))
+	client, err := getClient(conf)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create GCS client")
 	}
