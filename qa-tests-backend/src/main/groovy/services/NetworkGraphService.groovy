@@ -2,10 +2,10 @@ package services
 
 import com.google.protobuf.Timestamp
 import io.stackrox.proto.api.v1.Common.ResourceByID
-import io.stackrox.proto.api.v1.NetworkGraphOuterClass.CreateNetworkEntityRequest
-import io.stackrox.proto.api.v1.NetworkGraphOuterClass.GetExternalNetworkEntitiesRequest
-import io.stackrox.proto.api.v1.NetworkGraphOuterClass.GetExternalNetworkEntitiesResponse
-import io.stackrox.proto.api.v1.NetworkGraphOuterClass.NetworkGraphRequest
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.CreateNetworkEntityRequest
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesRequest
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesResponse
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraphRequest
 import io.stackrox.proto.api.v1.NetworkGraphServiceGrpc
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntity
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.ExternalSource

@@ -1,6 +1,6 @@
 package util
 
-import io.stackrox.proto.api.v1.NetworkGraphOuterClass.NetworkNode
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkNode
 import io.stackrox.proto.storage.NetworkFlowOuterClass.L4Protocol
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo
 

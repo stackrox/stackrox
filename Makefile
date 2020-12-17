@@ -126,7 +126,7 @@ $(PROTOLOCK_BIN): deps
 ## Style ##
 ###########
 .PHONY: style
-style: golangci-lint roxvet blanks newlines validateimports no-large-files storage-protos-compatible ui-lint qa-tests-style
+style: golangci-lint roxvet blanks newlines validateimports check-service-protos no-large-files storage-protos-compatible ui-lint qa-tests-style
 
 # staticcheck is useful, but extremely computationally intensive on some people's machines.
 # Therefore, to allow people to continue running `make style`, staticcheck is not run along with
@@ -206,6 +206,11 @@ service-init-build:
 validateimports:
 	@echo "+ $@"
 	@go run $(BASE_DIR)/tools/validateimports/verify.go $(shell go list -e ./...)
+
+.PHONY: check-service-protos
+check-service-protos:
+	@echo "+ $@"
+	@$(BASE_DIR)/tools/check-service-protos/run.sh
 
 .PHONY: no-large-files
 no-large-files:

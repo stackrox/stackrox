@@ -4,14 +4,14 @@ import com.google.protobuf.Timestamp
 import io.stackrox.proto.storage.NetworkFlowOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo
 import objects.Edge
-import io.stackrox.proto.api.v1.NetworkGraphOuterClass
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass
 import services.NetworkGraphService
 
 class NetworkGraphUtil {
 
     static final NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS = 30 // Network flow data is updated every 30 seconds
 
-    static int edgeCount(NetworkGraphOuterClass.NetworkGraph graph) {
+    static int edgeCount(NetworkGraphServiceOuterClass.NetworkGraph graph) {
         int numEdges = 0
         graph.nodesList.each {
             numEdges += it.outEdgesCount
@@ -19,7 +19,7 @@ class NetworkGraphUtil {
         return numEdges
     }
 
-    static Set<String> deployments(NetworkGraphOuterClass.NetworkGraph graph) {
+    static Set<String> deployments(NetworkGraphServiceOuterClass.NetworkGraph graph) {
         def deploymentSet = new HashSet<String>([])
 
         graph.nodesList.each {
@@ -40,7 +40,7 @@ class NetworkGraphUtil {
         return ""
     }
 
-    static Set<String> flowStrings(NetworkGraphOuterClass.NetworkGraph graph) {
+    static Set<String> flowStrings(NetworkGraphServiceOuterClass.NetworkGraph graph) {
         return new HashSet<String>(graph.nodesList.<String>collectMany {
             def srcLabel = entityLabel(it.entity)
             return srcLabel ? it.outEdges.collectMany {
@@ -51,14 +51,14 @@ class NetworkGraphUtil {
         })
     }
 
-    static NetworkGraphOuterClass.NetworkNode findDeploymentNode(
-            NetworkGraphOuterClass.NetworkGraph graph, String deploymentId) {
+    static NetworkGraphServiceOuterClass.NetworkNode findDeploymentNode(
+            NetworkGraphServiceOuterClass.NetworkGraph graph, String deploymentId) {
         return graph.nodesList.find {
             it.deploymentId == deploymentId
         }
     }
 
-    static List<Edge> findEdges(NetworkGraphOuterClass.NetworkGraph graph, String sourceId, String targetId) {
+    static List<Edge> findEdges(NetworkGraphServiceOuterClass.NetworkGraph graph, String sourceId, String targetId) {
         println "Checking for edge between deployments: sourceId ${sourceId}, targetId ${targetId}"
 
         def sourceNodes = sourceId == null ? graph.nodesList : graph.nodesList.findAll {

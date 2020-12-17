@@ -7,7 +7,7 @@ import util.Env
 import util.Helpers
 import util.Timer
 import io.grpc.StatusRuntimeException
-import io.stackrox.proto.api.v1.NetworkGraphOuterClass
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest.DeleteExistingPoliciesMode
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
 import org.yaml.snakeyaml.Yaml
@@ -32,7 +32,7 @@ import spock.lang.Unroll
 import util.NetworkGraphUtil
 import io.stackrox.proto.storage.NetworkFlowOuterClass.L4Protocol
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.Type
-import io.stackrox.proto.api.v1.NetworkGraphOuterClass.NetworkGraph
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraph
 import com.jayway.restassured.response.Response
 
 @Stepwise
@@ -583,7 +583,7 @@ class NetworkFlowTest extends BaseSpecification {
             def index = currentGraph.nodesList.findIndexOf { node -> node.deploymentName == deploymentName }
             def allowAllIngress = deployments.find { it.name == deploymentName }?.createLoadBalancer ||
                     currentGraph.nodesList.find { it.entity.type == Type.INTERNET }.outEdgesMap.containsKey(index)
-            List<NetworkGraphOuterClass.NetworkNode> outNodes =  currentGraph.nodesList.findAll { node ->
+            List<NetworkGraphServiceOuterClass.NetworkNode> outNodes =  currentGraph.nodesList.findAll { node ->
                 node.outEdgesMap.containsKey(index)
             }
             def ingressPodSelectors = it."spec"."ingress".find { it.containsKey("from") } ?
@@ -744,7 +744,7 @@ class NetworkFlowTest extends BaseSpecification {
         "let netpols propagate and allow connection data to update, then verify graph again"
         sleep 60000
         NetworkGraph newGraph = NetworkGraphService.getNetworkGraph()
-        for (NetworkGraphOuterClass.NetworkNode newNode : newGraph.nodesList) {
+        for (NetworkGraphServiceOuterClass.NetworkNode newNode : newGraph.nodesList) {
             def baseNode = baseGraph.nodesList.find {
                 it.entity.deployment.name == newNode.entity.deployment.name &&
                         it.entity.deployment.namespace == newNode.entity.deployment.namespace
@@ -761,7 +761,7 @@ class NetworkFlowTest extends BaseSpecification {
     private static getNode(String deploymentId, boolean withListenPorts, int timeoutSeconds = 90) {
         def t = new Timer(timeoutSeconds, 1)
 
-        NetworkGraphOuterClass.NetworkNode match = null
+        NetworkGraphServiceOuterClass.NetworkNode match = null
         while (t.IsValid()) {
             def graph = NetworkGraphService.getNetworkGraph()
             def node = NetworkGraphUtil.findDeploymentNode(graph, deploymentId)
