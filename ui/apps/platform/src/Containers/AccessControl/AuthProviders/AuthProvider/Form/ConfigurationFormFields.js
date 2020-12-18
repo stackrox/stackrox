@@ -289,9 +289,7 @@ const SamlFormFields = ({ disabled, configValues }) => (
                 <Labeled label={<FormFieldLabel text="IdP Certificate (PEM)" required />}>
                     <ReduxTextAreaField
                         name="config.idp_cert_pem"
-                        placeholder={
-                            '-----BEGIN CERTIFICATE-----\nYour certificate data\n-----END CERTIFICATE-----'
-                        }
+                        placeholder="-----BEGIN CERTIFICATE-----\nYour certificate data\n-----END CERTIFICATE-----"
                         disabled={disabled}
                     />
                 </Labeled>

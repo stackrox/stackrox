@@ -419,6 +419,7 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
 ClusterEditForm.propTypes = {
     centralEnv: PropTypes.shape({
         kernelSupportAvailable: PropTypes.bool,
+        successfullyFetched: PropTypes.bool,
     }).isRequired,
     centralVersion: PropTypes.string.isRequired,
     selectedCluster: PropTypes.shape({
@@ -434,7 +435,30 @@ ClusterEditForm.propTypes = {
         tolerationsConfig: PropTypes.shape({
             disabled: PropTypes.bool,
         }),
-        status: PropTypes.object,
+        status: PropTypes.shape({
+            sensorVersion: PropTypes.string,
+            providerMetadata: PropTypes.shape({
+                region: PropTypes.string,
+            }),
+            orchestratorMetadata: PropTypes.shape({
+                version: PropTypes.string,
+                buildDate: PropTypes.string,
+            }),
+            upgradeStatus: PropTypes.shape({
+                upgradability: PropTypes.string,
+                mostRecentProcess: PropTypes.shape({
+                    active: PropTypes.bool,
+                    progress: PropTypes.shape({
+                        upgradeState: PropTypes.string,
+                        upgradeStatusDetail: PropTypes.string,
+                    }),
+                    type: PropTypes.string,
+                }),
+            }),
+            certExpiryStatus: PropTypes.shape({
+                sensorCertExpiry: PropTypes.string,
+            }),
+        }),
         dynamicConfig: PropTypes.shape({
             registryOverride: PropTypes.string,
             admissionControllerConfig: PropTypes.shape({
@@ -446,7 +470,18 @@ ClusterEditForm.propTypes = {
             }),
         }),
         slimCollector: PropTypes.bool,
-        healthStatus: PropTypes.object,
+        healthStatus: PropTypes.shape({
+            collectorHealthInfo: PropTypes.shape({
+                totalDesiredPods: PropTypes.number.isRequired,
+                totalReadyPods: PropTypes.number.isRequired,
+                totalRegisteredNodes: PropTypes.number.isRequired,
+            }),
+            sensorHealthStatus: PropTypes.string,
+            collectorHealthStatus: PropTypes.string,
+            overallHealthStatus: PropTypes.string,
+            lastContact: PropTypes.string, // ISO 8601
+            healthInfoComplete: PropTypes.bool,
+        }),
     }).isRequired,
     handleChange: PropTypes.func.isRequired,
     isLoading: PropTypes.bool.isRequired,

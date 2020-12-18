@@ -35,7 +35,7 @@ class RuleGroups extends Component {
             groups: PropTypes.arrayOf(
                 PropTypes.shape({
                     props: PropTypes.shape({
-                        key: PropTypes.any,
+                        key: PropTypes.string,
                     }),
                 })
             ),
@@ -43,7 +43,7 @@ class RuleGroups extends Component {
         groups: PropTypes.arrayOf(
             PropTypes.shape({
                 props: PropTypes.shape({
-                    key: PropTypes.any,
+                    key: PropTypes.string,
                 }),
             })
         ).isRequired,

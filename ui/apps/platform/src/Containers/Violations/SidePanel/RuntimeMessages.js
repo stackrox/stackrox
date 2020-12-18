@@ -73,7 +73,11 @@ function RuntimeMessages({ processViolation }) {
 RuntimeMessages.propTypes = {
     processViolation: PropTypes.shape({
         message: PropTypes.string.isRequired,
-        processes: PropTypes.array.isRequired,
+        processes: PropTypes.arrayOf(
+            PropTypes.shape({
+                id: PropTypes.string.isRequired,
+            })
+        ).isRequired,
     }),
 };
 

@@ -137,7 +137,7 @@ CVEStackedPill.propTypes = {
     imageNotes: PropTypes.arrayOf(PropTypes.string),
     scan: PropTypes.shape({
         scanTime: PropTypes.string,
-        scanNotes: PropTypes.arrayOf(PropTypes.string),
+        notes: PropTypes.arrayOf(PropTypes.string),
     }),
 };
 

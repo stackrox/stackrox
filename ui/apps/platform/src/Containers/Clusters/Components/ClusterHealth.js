@@ -85,16 +85,32 @@ const ClusterHealth = ({ healthStatus, status, centralVersion, currentDatetime }
 ClusterHealth.propTypes = {
     healthStatus: PropTypes.shape({
         collectorHealthStatus: PropTypes.string,
-        collectorHealthInfo: PropTypes.object,
+        collectorHealthInfo: PropTypes.shape({
+            totalDesiredPods: PropTypes.number.isRequired,
+            totalReadyPods: PropTypes.number.isRequired,
+            totalRegisteredNodes: PropTypes.number.isRequired,
+        }),
         healthInfoComplete: PropTypes.bool,
         overallHealthStatus: PropTypes.string,
         sensorHealthStatus: PropTypes.string,
         lastContact: PropTypes.string, // ISO 8601
     }),
     status: PropTypes.shape({
-        certExpiryStatus: PropTypes.object,
+        certExpiryStatus: PropTypes.shape({
+            sensorCertExpiry: PropTypes.string,
+        }),
         sensorVersion: PropTypes.string,
-        upgradeStatus: PropTypes.object,
+        upgradeStatus: PropTypes.shape({
+            upgradability: PropTypes.string,
+            mostRecentProcess: PropTypes.shape({
+                active: PropTypes.bool,
+                progress: PropTypes.shape({
+                    upgradeState: PropTypes.string,
+                    upgradeStatusDetail: PropTypes.string,
+                }),
+                type: PropTypes.string,
+            }),
+        }),
     }),
     centralVersion: PropTypes.string.isRequired,
     currentDatetime: PropTypes.instanceOf(Date).isRequired,

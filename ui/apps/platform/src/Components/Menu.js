@@ -130,7 +130,7 @@ Menu.propTypes = {
         PropTypes.arrayOf(
             PropTypes.shape({
                 className: PropTypes.string,
-                icon: PropTypes.object,
+                icon: PropTypes.element,
                 label: PropTypes.string,
                 link: PropTypes.string,
                 onClick: PropTypes.func,

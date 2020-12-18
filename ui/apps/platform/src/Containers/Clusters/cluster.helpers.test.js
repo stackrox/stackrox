@@ -156,7 +156,7 @@ describe('cluster helpers', () => {
             expect(received).toEqual(expected);
         });
 
-        it('should return "Upgrade available" if there is no mostRecentProcess ', () => {
+        it('should return "Upgrade available" if there is no mostRecentProcess', () => {
             const testUpgradeStatus = {
                 upgradability: 'AUTO_UPGRADE_POSSIBLE',
             };

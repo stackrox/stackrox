@@ -8,11 +8,13 @@ const isNilOrEmpty = (v: unknown): boolean => isNil(v) || v === '' || (isObject(
 /**
  * Removes empty fields from the object traversing deep into fields with object values.
  *
- * @param {object} object any plain object, it'll not be mutated.
+ * @param object any plain object, it'll not be mutated.
  * @param {EmptyValuePredicate} [predicate=isNilOrEmpty] either a given field value is empty
- * @returns {object} returns a deep copy of the original object with empty fields removed
+ * @returns returns a deep copy of the original object with empty fields removed
  */
-export default function removeEmptyFieldsDeep(obj: object): object {
+export default function removeEmptyFieldsDeep(
+    obj: Record<string, unknown>
+): Record<string, unknown> {
     const cloned = cloneDeep(obj);
     // deep clean all the fields with values being objects themselves
     const onlyCleanNestedObjects = mapValues(pickBy(cloned, isPlainObject), removeEmptyFieldsDeep);

@@ -1,6 +1,5 @@
 import React from 'react';
 import { MockedProvider } from '@apollo/client/testing';
-import { waitForElement } from '@testing-library/react';
 import { CLUSTER_VERSION_QUERY } from 'queries/cluster';
 import renderWithRouter from 'test-utils/renderWithRouter';
 import ClusterVersion from './ClusterVersion';
@@ -37,13 +36,13 @@ const mocks = [
 
 describe('Compliance ClusterVersion widget', () => {
     it('renders without error', async () => {
-        const { getByTestId } = renderWithRouter(
+        const { findByTestId } = renderWithRouter(
             <MockedProvider mocks={mocks} addTypename={false}>
                 <ClusterVersion clusterId={clusterId} entityType="CLUSTER" />
             </MockedProvider>,
             { route: '/some-route' }
         );
-        await waitForElement(() => getByTestId('cluster-version'));
-        expect(getByTestId('cluster-version')).toHaveTextContent('v1.12.8-gke.10');
+        const clusterVersionElement = await findByTestId('cluster-version');
+        expect(clusterVersionElement).toHaveTextContent('v1.12.8-gke.10');
     });
 });

@@ -109,7 +109,7 @@ describe('Diagnostic Bundle dialog box', () => {
             expect(startingTimeRegExp.test(startingTimeText)).toBe(true);
         });
 
-        it('should match yyyy-mm-ddThh:mm:ssZ without thousandths ', () => {
+        it('should match yyyy-mm-ddThh:mm:ssZ without thousandths', () => {
             const startingTimeText = '2020-10-20T21:22:23Z';
 
             expect(startingTimeRegExp.test(startingTimeText)).toBe(true);

@@ -6,6 +6,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
+import { Store } from 'redux';
 import { ConnectedRouter } from 'connected-react-router';
 import { createBrowserHistory as createHistory } from 'history';
 import { ApolloProvider } from '@apollo/client';
@@ -27,7 +28,7 @@ installRaven();
 
 const rootNode = document.getElementById('root');
 const history = createHistory();
-const store = configureStore(undefined, history);
+const store = configureStore(undefined, history) as Store;
 const apolloClient = configureApollo();
 
 ReactDOM.render(

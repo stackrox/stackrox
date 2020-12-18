@@ -233,7 +233,7 @@ CveToPolicyShortForm.propTypes = {
         fields: PropTypes.shape({
             cve: PropTypes.string,
         }),
-        whitelists: PropTypes.array,
+        whitelists: PropTypes.arrayOf(PropTypes.shape({})),
     }).isRequired,
     policies: PropTypes.arrayOf(
         PropTypes.shape({ label: PropTypes.string, value: PropTypes.string })

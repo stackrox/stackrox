@@ -65,7 +65,13 @@ function PreviewPanel({ header, dryRun, policyDisabled, onClose }) {
 
 PreviewPanel.propTypes = {
     header: PropTypes.string,
-    dryRun: PropTypes.shape({}).isRequired,
+    dryRun: PropTypes.shape({
+        excluded: PropTypes.arrayOf(
+            PropTypes.shape({
+                deployment: PropTypes.string.isRequired,
+            })
+        ).isRequired,
+    }).isRequired,
     policyDisabled: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
 };

@@ -39,7 +39,7 @@ RowActionMenu.propTypes = {
         PropTypes.arrayOf(
             PropTypes.shape({
                 className: PropTypes.string,
-                icon: PropTypes.object,
+                icon: PropTypes.element,
                 label: PropTypes.string.isRequired,
                 link: PropTypes.string,
                 onClick: PropTypes.func,
