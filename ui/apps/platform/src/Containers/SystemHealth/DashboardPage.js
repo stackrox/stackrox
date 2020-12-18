@@ -34,32 +34,50 @@ const SystemHealthDashboardPage = () => {
     const [pollingCountFaster, setPollingCountFaster] = useState(0);
     const [pollingCountSlower, setPollingCountSlower] = useState(0);
     const [currentDatetime, setCurrentDatetime] = useState(null);
+
     const [clusters, setClusters] = useState([]);
-    const [backupIntegrationsMerged, setBackupIntegrationsMerged] = useState([]);
+    const [backupsMerged, setBackupsMerged] = useState([]);
     const [imageIntegrationsMerged, setImageIntegrationsMerged] = useState([]);
-    const [pluginIntegrationsMerged, setPluginIntegrationsMerged] = useState([]);
+    const [notifiersMerged, setNotifiersMerged] = useState([]);
     const [vulnerabilityDefinitionsInfo, setVulnerabilityDefinitionsInfo] = useState(null);
-    const [vulnerabilityDefinitionsHasError, setVulnerabilityDefinitionsHasError] = useState(false);
+
+    const [clustersRequestHasError, setClustersRequestHasError] = useState(false);
+    const [backupsRequestHasError, setBackupsRequestHasError] = useState(false);
+    const [imageIntegrationsRequestHasError, setImageIntegrationsRequestHasError] = useState(false);
+    const [notifiersRequestHasError, setNotifiersRequestHasError] = useState(false);
+    const [
+        vulnerabilityDefinitionsRequestHasError,
+        setVulnerabilityDefinitionsRequestHasError,
+    ] = useState(false);
 
     useEffect(() => {
         setCurrentDatetime(new Date());
-        fetchClustersAsArray().then((array) => {
-            setClusters(array);
-        });
-        // TODO catch
-        Promise.all([fetchBackupIntegrationsHealth(), fetchIntegration('backups')]).then(
-            ([integrationsHealth, { response }]) => {
-                setBackupIntegrationsMerged(
+        fetchClustersAsArray()
+            .then((array) => {
+                setClusters(array);
+                setClustersRequestHasError(false);
+            })
+            .catch(() => {
+                setClusters([]);
+                setClustersRequestHasError(true);
+            });
+        Promise.all([fetchBackupIntegrationsHealth(), fetchIntegration('backups')])
+            .then(([integrationsHealth, { response }]) => {
+                setBackupsMerged(
                     mergeIntegrationResponses(
                         integrationsHealth,
                         response.externalBackups,
                         integrationsList.backups
                     )
                 );
-            }
-        );
-        Promise.all([fetchImageIntegrationsHealth(), fetchIntegration('imageIntegrations')]).then(
-            ([integrationsHealth, { response }]) => {
+                setBackupsRequestHasError(false);
+            })
+            .catch(() => {
+                setBackupsMerged([]);
+                setBackupsRequestHasError(true);
+            });
+        Promise.all([fetchImageIntegrationsHealth(), fetchIntegration('imageIntegrations')])
+            .then(([integrationsHealth, { response }]) => {
                 setImageIntegrationsMerged(
                     mergeIntegrationResponses(
                         integrationsHealth,
@@ -67,30 +85,38 @@ const SystemHealthDashboardPage = () => {
                         integrationsList.imageIntegrations
                     )
                 );
-            }
-        );
-        Promise.all([fetchPluginIntegrationsHealth(), fetchIntegration('notifiers')]).then(
-            ([integrationsHealth, { response }]) => {
-                setPluginIntegrationsMerged(
+                setImageIntegrationsRequestHasError(false);
+            })
+            .catch(() => {
+                setImageIntegrationsMerged([]);
+                setImageIntegrationsRequestHasError(true);
+            });
+        Promise.all([fetchPluginIntegrationsHealth(), fetchIntegration('notifiers')])
+            .then(([integrationsHealth, { response }]) => {
+                setNotifiersMerged(
                     mergeIntegrationResponses(
                         integrationsHealth,
                         response.notifiers,
                         integrationsList.plugins
                     )
                 );
-            }
-        );
+                setNotifiersRequestHasError(false);
+            })
+            .catch(() => {
+                setNotifiersMerged([]);
+                setNotifiersRequestHasError(true);
+            });
     }, [pollingCountFaster]);
 
     useEffect(() => {
         fetchVulnerabilityDefinitionsInfo()
             .then((info) => {
                 setVulnerabilityDefinitionsInfo(info);
-                setVulnerabilityDefinitionsHasError(false);
+                setVulnerabilityDefinitionsRequestHasError(false);
             })
             .catch(() => {
                 setVulnerabilityDefinitionsInfo(null);
-                setVulnerabilityDefinitionsHasError(true);
+                setVulnerabilityDefinitionsRequestHasError(true);
             });
     }, [pollingCountSlower]);
 
@@ -121,56 +147,62 @@ const SystemHealthDashboardPage = () => {
                         }
                         id="cluster-health"
                     >
-                        <div className="flex flex-wrap">
-                            <Widget
-                                className="h-48 m-2 w-48"
-                                header="Cluster Overview"
-                                id="cluster-overview"
-                            >
-                                <ClusterOverview clusters={clusters} />
-                            </Widget>
-                            <Widget
-                                className="h-48 m-2 text-center w-48"
-                                header="Collector Status"
-                                id="collector-status"
-                            >
-                                <CollectorStatus clusters={clusters} />
-                            </Widget>
-                            <Widget
-                                className="h-48 m-2 text-center w-48"
-                                header="Sensor Status"
-                                id="sensor-status"
-                            >
-                                <SensorStatus clusters={clusters} />
-                            </Widget>
-                            <Widget
-                                className="h-48 m-2 text-center w-48"
-                                header="Sensor Upgrade"
-                                id="sensor-upgrade"
-                            >
-                                <SensorUpgrade clusters={clusters} />
-                            </Widget>
-                            <Widget
-                                className="h-48 m-2 text-center w-48"
-                                header="Credential Expiration"
-                                id="credential-expiration"
-                            >
-                                <CredentialExpiration
-                                    clusters={clusters}
-                                    currentDatetime={currentDatetime}
-                                />
-                            </Widget>
-                        </div>
+                        {clustersRequestHasError ? (
+                            <div className="p-2 w-full">
+                                <Message type="error">Request failed for Clusters</Message>
+                            </div>
+                        ) : (
+                            <div className="flex flex-wrap">
+                                <Widget
+                                    className="h-48 m-2 w-48"
+                                    header="Cluster Overview"
+                                    id="cluster-overview"
+                                >
+                                    <ClusterOverview clusters={clusters} />
+                                </Widget>
+                                <Widget
+                                    className="h-48 m-2 text-center w-48"
+                                    header="Collector Status"
+                                    id="collector-status"
+                                >
+                                    <CollectorStatus clusters={clusters} />
+                                </Widget>
+                                <Widget
+                                    className="h-48 m-2 text-center w-48"
+                                    header="Sensor Status"
+                                    id="sensor-status"
+                                >
+                                    <SensorStatus clusters={clusters} />
+                                </Widget>
+                                <Widget
+                                    className="h-48 m-2 text-center w-48"
+                                    header="Sensor Upgrade"
+                                    id="sensor-upgrade"
+                                >
+                                    <SensorUpgrade clusters={clusters} />
+                                </Widget>
+                                <Widget
+                                    className="h-48 m-2 text-center w-48"
+                                    header="Credential Expiration"
+                                    id="credential-expiration"
+                                >
+                                    <CredentialExpiration
+                                        clusters={clusters}
+                                        currentDatetime={currentDatetime}
+                                    />
+                                </Widget>
+                            </div>
+                        )}
                     </Widget>
                     <Widget
                         className="h-48 text-center"
                         header="Vulnerability Definitions"
                         id="vulnerability-definitions"
                     >
-                        {vulnerabilityDefinitionsHasError ? (
+                        {vulnerabilityDefinitionsRequestHasError ? (
                             <div className="p-2 w-full">
                                 <Message type="error">
-                                    An error occurred requesting Vulnerability Definitions.
+                                    Request failed for Vulnerability Definitions
                                 </Message>
                             </div>
                         ) : (
@@ -194,7 +226,15 @@ const SystemHealthDashboardPage = () => {
                         }
                         id="image-integrations"
                     >
-                        <IntegrationsHealth integrationsMerged={imageIntegrationsMerged} />
+                        {imageIntegrationsRequestHasError ? (
+                            <div className="p-2 w-full">
+                                <Message type="error">
+                                    Request failed for Image Integrations
+                                </Message>
+                            </div>
+                        ) : (
+                            <IntegrationsHealth integrationsMerged={imageIntegrationsMerged} />
+                        )}
                     </Widget>
                     <Widget
                         header="Plugin Integrations"
@@ -208,7 +248,15 @@ const SystemHealthDashboardPage = () => {
                         }
                         id="plugin-integrations"
                     >
-                        <IntegrationsHealth integrationsMerged={pluginIntegrationsMerged} />
+                        {notifiersRequestHasError ? (
+                            <div className="p-2 w-full">
+                                <Message type="error">
+                                    Request failed for Plugin Integrations
+                                </Message>
+                            </div>
+                        ) : (
+                            <IntegrationsHealth integrationsMerged={notifiersMerged} />
+                        )}
                     </Widget>
                     <Widget
                         header="Backup Integrations"
@@ -222,7 +270,15 @@ const SystemHealthDashboardPage = () => {
                         }
                         id="backup-integrations"
                     >
-                        <IntegrationsHealth integrationsMerged={backupIntegrationsMerged} />
+                        {backupsRequestHasError ? (
+                            <div className="p-2 w-full">
+                                <Message type="error">
+                                    Request failed for Backup Integrations
+                                </Message>
+                            </div>
+                        ) : (
+                            <IntegrationsHealth integrationsMerged={backupsMerged} />
+                        )}
                     </Widget>
                 </div>
             </div>
