@@ -2,9 +2,11 @@ package manager
 
 import (
 	"context"
-	"sort"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
+	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -12,18 +14,16 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
 	managerCtx = sac.WithAllAccess(context.Background())
-)
 
-type peer struct {
-	isIngress bool
-	entity    networkgraph.Entity
-	dstPort   uint32
-	protocol  storage.L4Protocol
-}
+	networkBaselineSAC = sac.ForResource(resources.NetworkBaseline)
+)
 
 type baselineInfo struct {
 	// Metadata that doesn't change.
@@ -80,63 +80,8 @@ func (m *manager) maybeAddPeer(deploymentID string, p *peer, modifiedDeploymentI
 	modifiedDeploymentIDs.Add(deploymentID)
 }
 
-func convertPeersFromProto(protoPeers []*storage.NetworkBaselinePeer) map[peer]struct{} {
-	out := make(map[peer]struct{}, len(protoPeers))
-	for _, protoPeer := range protoPeers {
-		entity := networkgraph.Entity{ID: protoPeer.GetEntity().GetInfo().GetId(), Type: protoPeer.GetEntity().GetInfo().GetType()}
-		for _, props := range protoPeer.GetProperties() {
-			out[peer{
-				isIngress: props.GetIngress(),
-				entity:    entity,
-				dstPort:   props.GetPort(),
-				protocol:  props.GetProtocol(),
-			}] = struct{}{}
-		}
-	}
-	return out
-}
-
-func convertPeersToProto(peerSet map[peer]struct{}) []*storage.NetworkBaselinePeer {
-	if len(peerSet) == 0 {
-		return nil
-	}
-	propertiesByEntity := make(map[networkgraph.Entity][]*storage.NetworkBaselineConnectionProperties)
-	for peer := range peerSet {
-		propertiesByEntity[peer.entity] = append(propertiesByEntity[peer.entity], &storage.NetworkBaselineConnectionProperties{
-			Ingress:  peer.isIngress,
-			Port:     peer.dstPort,
-			Protocol: peer.protocol,
-		})
-	}
-	out := make([]*storage.NetworkBaselinePeer, 0, len(propertiesByEntity))
-	for entity, properties := range propertiesByEntity {
-		sort.Slice(properties, func(i, j int) bool {
-			if properties[i].Ingress != properties[j].Ingress {
-				return properties[i].Ingress
-			}
-			if properties[i].Protocol != properties[j].Protocol {
-				return properties[i].Protocol < properties[j].Protocol
-			}
-			return properties[i].Port < properties[j].Port
-		})
-		out = append(out, &storage.NetworkBaselinePeer{
-			Entity: &storage.NetworkEntity{
-				Info: &storage.NetworkEntityInfo{
-					Type: entity.Type,
-					Id:   entity.ID,
-				},
-			},
-			Properties: properties,
-		})
-	}
-	sort.Slice(out, func(i, j int) bool {
-		return out[i].GetEntity().GetInfo().GetId() < out[j].GetEntity().GetInfo().GetId()
-	})
-	return out
-}
-
 func (m *manager) persistNetworkBaselines(deploymentIDs set.StringSet) error {
-	if deploymentIDs.Cardinality() == 0 {
+	if len(deploymentIDs) == 0 {
 		return nil
 	}
 	baselines := make([]*storage.NetworkBaseline, 0, len(deploymentIDs))
@@ -207,6 +152,92 @@ func (m *manager) ProcessFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	return m.processFlowUpdate(flows)
+}
+
+func (m *manager) validateAllReferencedBaselinesExist(peers []*v1.NetworkBaselinePeerStatus) error {
+	var missingDeploymentIDs []string
+	for _, p := range peers {
+		entity := p.GetPeer().GetEntity()
+		if entity.GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
+			if _, found := m.baselinesByDeploymentID[entity.GetId()]; !found {
+				missingDeploymentIDs = append(missingDeploymentIDs, entity.GetId())
+			}
+		}
+	}
+	if len(missingDeploymentIDs) > 0 {
+		return status.Errorf(codes.InvalidArgument, "no baselines found for deployment IDs %v", missingDeploymentIDs)
+	}
+	return nil
+}
+
+func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest *v1.ModifyBaselineStatusForPeersRequest) error {
+	deploymentID := modifyRequest.GetDeploymentId()
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	baseline, found := m.baselinesByDeploymentID[deploymentID]
+	if !found {
+		return status.Errorf(codes.InvalidArgument, "no baseline found for deployment id %q", deploymentID)
+	}
+	if err := m.validateAllReferencedBaselinesExist(modifyRequest.GetPeers()); err != nil {
+		return err
+	}
+
+	// It's not ideal to have to duplicate this check, but we do the permission check here upfront so that we know for sure
+	// what the end state of the in-memory data structures should be. Otherwise, if there is a permission denied error,
+	// we will need to come back and undo the in-memory changes, which is more complex.
+	if ok, err := networkBaselineSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.clusterID), sac.NamespaceScopeKey(baseline.namespace)); err != nil {
+		return err
+	} else if !ok {
+		return status.Error(codes.PermissionDenied, sac.ErrPermissionDenied.Error())
+	}
+
+	modifiedDeploymentIDs := set.NewStringSet()
+	for _, peerAndStatus := range modifyRequest.GetPeers() {
+		peer := peerFromV1Peer(peerAndStatus.GetPeer())
+		_, inBaseline := baseline.baselinePeers[peer]
+		_, inForbidden := baseline.forbiddenPeers[peer]
+		switch peerAndStatus.GetStatus() {
+		case v1.NetworkBaselinePeerStatus_BASELINE:
+			if inBaseline && !inForbidden {
+				// We wouldn't make any modifications in this case.
+				continue
+			}
+			baseline.baselinePeers[peer] = struct{}{}
+			delete(baseline.forbiddenPeers, peer)
+			modifiedDeploymentIDs.Add(deploymentID)
+			if peer.entity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
+				reversePeer := reversePeerView(deploymentID, &peer)
+
+				otherBaseline := m.baselinesByDeploymentID[peer.entity.ID]
+				otherBaseline.baselinePeers[reversePeer] = struct{}{}
+				delete(otherBaseline.forbiddenPeers, reversePeer)
+				modifiedDeploymentIDs.Add(peer.entity.ID)
+			}
+		case v1.NetworkBaselinePeerStatus_ANOMALOUS:
+			if !inBaseline && inForbidden {
+				// We wouldn't make any modifications in this case.
+				continue
+			}
+			delete(baseline.baselinePeers, peer)
+			baseline.forbiddenPeers[peer] = struct{}{}
+			modifiedDeploymentIDs.Add(deploymentID)
+			if peer.entity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
+				reversePeer := reversePeerView(deploymentID, &peer)
+
+				otherBaseline := m.baselinesByDeploymentID[peer.entity.ID]
+				delete(otherBaseline.baselinePeers, reversePeer)
+				otherBaseline.forbiddenPeers[reversePeer] = struct{}{}
+				modifiedDeploymentIDs.Add(peer.entity.ID)
+			}
+		default:
+			return utils.Should(errors.Errorf("unknown status: %v", peerAndStatus.GetStatus()))
+		}
+	}
+	if err := m.persistNetworkBaselines(modifiedDeploymentIDs); err != nil {
+		return status.Errorf(codes.Internal, "failed to persist baseline to store: %v", err)
+	}
+	return nil
 }
 
 func (m *manager) initFromStore() error {

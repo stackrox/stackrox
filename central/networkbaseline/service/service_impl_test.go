@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
@@ -39,8 +40,7 @@ func (s *NetworkBaselineServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.baselines = networkBaselineDSMocks.NewMockDataStore(s.mockCtrl)
-	s.service = New(s.baselines)
-
+	s.service = New(s.baselines, nil)
 	if !features.NetworkDetection.Enabled() {
 		s.T().Skip()
 	}
@@ -48,6 +48,7 @@ func (s *NetworkBaselineServiceTestSuite) SetupTest() {
 
 func (s *NetworkBaselineServiceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
+	s.envIsolator.RestoreAll()
 }
 
 func (s *NetworkBaselineServiceTestSuite) getBaselineWithCustomFlow(
@@ -147,4 +148,8 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaseline() {
 	rsp, err := s.service.GetNetworkBaseline(allAllowedCtx, &v1.ResourceByID{Id: baseline.GetDeploymentId()})
 	s.Nil(err)
 	s.Equal(rsp, baseline, "network baselines do not match")
+}
+
+func TestAuthz(t *testing.T) {
+	testutils.AssertAuthzWorks(t, &serviceImpl{})
 }

@@ -5,11 +5,11 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
+	"github.com/stackrox/rox/central/networkbaseline/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -22,13 +22,18 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.NetworkBaseline)): {
-			"/v1.NetworkGraphService/GetNetworkBaselineStatusForDeployment",
+			"/v1.NetworkBaselineService/GetNetworkBaseline",
+			"/v1.NetworkBaselineService/GetNetworkBaselineStatusForFlows",
+		},
+		user.With(permissions.Modify(resources.NetworkBaseline)): {
+			"/v1.NetworkBaselineService/ModifyBaselineStatusForPeers",
 		},
 	})
 )
 
 type serviceImpl struct {
-	datastore datastore.DataStore
+	datastore datastore.ReadOnlyDataStore
+	manager   manager.Manager
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -50,10 +55,6 @@ func (s *serviceImpl) GetNetworkBaselineStatusForFlows(
 	ctx context.Context,
 	request *v1.NetworkBaselineStatusRequest,
 ) (*v1.NetworkBaselineStatusResponse, error) {
-	if !features.NetworkDetection.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "support for network baseline is not enabled")
-	}
-
 	// Check if the baseline for deployment indeed exists
 	baseline, found, err := s.datastore.GetNetworkBaseline(ctx, request.GetDeploymentId())
 	if err != nil {
@@ -72,10 +73,6 @@ func (s *serviceImpl) GetNetworkBaseline(
 	ctx context.Context,
 	request *v1.ResourceByID,
 ) (*storage.NetworkBaseline, error) {
-	if !features.NetworkDetection.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "support for network baseline is not enabled")
-	}
-
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Network baseline id must be provided")
 	}
@@ -141,4 +138,12 @@ func (s *serviceImpl) getBaselineByPeerEntityID(
 	}
 
 	return result
+}
+
+func (s *serviceImpl) ModifyBaselineStatusForPeers(ctx context.Context, request *v1.ModifyBaselineStatusForPeersRequest) (*v1.Empty, error) {
+	err := s.manager.ProcessBaselineStatusUpdate(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.Empty{}, nil
 }

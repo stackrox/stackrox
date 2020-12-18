@@ -4,7 +4,9 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
+
 import "api/v1/common.proto";
+import "api/v1/empty.proto";
 import "storage/network_baseline.proto";
 import "storage/network_flow.proto";
 
@@ -51,13 +53,16 @@ message NetworkBaselineStatusRequest {
     repeated NetworkBaselinePeer peers = 2;
 }
 
-
-
 message NetworkBaselineStatusResponse {
     repeated NetworkBaselinePeerStatus statuses = 1;
 }
 
-service NetworkBaselineService {
+message ModifyBaselineStatusForPeersRequest {
+    string deployment_id                     = 1;
+    repeated NetworkBaselinePeerStatus peers = 2;
+ }
+
+ service NetworkBaselineService {
     rpc GetNetworkBaselineStatusForFlows (NetworkBaselineStatusRequest) returns (NetworkBaselineStatusResponse) {
         option (google.api.http) = {
             get: "/v1/networkbaseline/{deployment_id}/status"
@@ -65,8 +70,15 @@ service NetworkBaselineService {
     }
 
     rpc GetNetworkBaseline (ResourceByID) returns (storage.NetworkBaseline) {
+      option (google.api.http) = {
+        get: "/v1/networkbaseline/{id}"
+      };
+    }
+
+    rpc ModifyBaselineStatusForPeers (ModifyBaselineStatusForPeersRequest) returns (Empty) {
         option (google.api.http) = {
-            get: "/v1/networkbaseline/{id}"
+            patch: "/v1/networkbaseline/{deployment_id}/peers"
+            body: "*"
         };
     }
 }

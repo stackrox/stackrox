@@ -5,7 +5,9 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	networkgraph "github.com/stackrox/rox/pkg/networkgraph"
 	timestamp "github.com/stackrox/rox/pkg/timestamp"
 	reflect "reflect"
@@ -60,4 +62,18 @@ func (m *MockManager) ProcessFlowUpdate(flows map[networkgraph.NetworkConnIndica
 func (mr *MockManagerMockRecorder) ProcessFlowUpdate(flows interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessFlowUpdate", reflect.TypeOf((*MockManager)(nil).ProcessFlowUpdate), flows)
+}
+
+// ProcessBaselineStatusUpdate mocks base method
+func (m *MockManager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest *v1.ModifyBaselineStatusForPeersRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessBaselineStatusUpdate", ctx, modifyRequest)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessBaselineStatusUpdate indicates an expected call of ProcessBaselineStatusUpdate
+func (mr *MockManagerMockRecorder) ProcessBaselineStatusUpdate(ctx, modifyRequest interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessBaselineStatusUpdate", reflect.TypeOf((*MockManager)(nil).ProcessBaselineStatusUpdate), ctx, modifyRequest)
 }

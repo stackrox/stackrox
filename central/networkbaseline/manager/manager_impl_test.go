@@ -7,12 +7,19 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
+	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
+)
+
+var (
+	allAllowedCtx = sac.WithAllAccess(context.Background())
 )
 
 type fakeDS struct {
@@ -218,7 +225,124 @@ func (suite *ManagerTestSuite) TestConcurrentUpdates() {
 	suite.assertBaselinesAre(expectedBaselines...)
 }
 
+func (suite *ManagerTestSuite) TestUpdateBaselineStatus() {
+	// Seed with a set of baselines.
+	suite.mustInitManager(
+		baselineWithPeers(1, depPeer(2, properties(false, 52)), depPeer(3, properties(true, 512))),
+		baselineWithPeers(2, depPeer(1, properties(true, 52))),
+		baselineWithPeers(3, depPeer(1, properties(false, 512))),
+	)
+
+	// No deployment ID -- should fail.
+	suite.Error(suite.m.ProcessBaselineStatusUpdate(allAllowedCtx, &v1.ModifyBaselineStatusForPeersRequest{
+		Peers: []*v1.NetworkBaselinePeerStatus{protoPeerStatus(v1.NetworkBaselinePeerStatus_BASELINE, 2, 52, true)},
+	}))
+
+	// Non existent deployment ID -- should fail.
+	suite.Error(suite.m.ProcessBaselineStatusUpdate(allAllowedCtx,
+		modifyPeersReq(10, protoPeerStatus(v1.NetworkBaselinePeerStatus_BASELINE, 2, 52, true)),
+	))
+
+	// Referencing a non-existent deployment ID as a peer -- should fail.
+	suite.Error(suite.m.ProcessBaselineStatusUpdate(allAllowedCtx,
+		modifyPeersReq(1, protoPeerStatus(v1.NetworkBaselinePeerStatus_BASELINE, 20, 52, true)),
+	))
+
+	// SAC enforcement: should not be able to modify other deployment.
+	suite.Error(suite.m.ProcessBaselineStatusUpdate(ctxWithAccessToWrite(2),
+		modifyPeersReq(1, protoPeerStatus(v1.NetworkBaselinePeerStatus_BASELINE, 2, 443, true)),
+	))
+
+	// Everything from below should work, since we will use correct SAC.
+
+	// Add a flow to baseline. Check baselines have been modified as expected.
+	suite.NoError(suite.m.ProcessBaselineStatusUpdate(ctxWithAccessToWrite(1),
+		modifyPeersReq(1, protoPeerStatus(v1.NetworkBaselinePeerStatus_BASELINE, 2, 443, true)),
+	))
+
+	suite.assertBaselinesAre(
+		baselineWithPeers(1, depPeer(2, properties(true, 443), properties(false, 52)), depPeer(3, properties(true, 512))),
+		baselineWithPeers(2, depPeer(1, properties(true, 52), properties(false, 443))),
+		baselineWithPeers(3, depPeer(1, properties(false, 512))),
+	)
+
+	// Add the same flow to the baseline -- should be no difference in baselines.
+	suite.NoError(suite.m.ProcessBaselineStatusUpdate(ctxWithAccessToWrite(1),
+		modifyPeersReq(1, protoPeerStatus(v1.NetworkBaselinePeerStatus_BASELINE, 2, 443, true)),
+	))
+	suite.assertBaselinesAre(
+		baselineWithPeers(1, depPeer(2, properties(true, 443), properties(false, 52)), depPeer(3, properties(true, 512))),
+		baselineWithPeers(2, depPeer(1, properties(true, 52), properties(false, 443))),
+		baselineWithPeers(3, depPeer(1, properties(false, 512))),
+	)
+
+	// Mark a random new flow as anomalous, ensure it shows as forbidden.
+	suite.NoError(suite.m.ProcessBaselineStatusUpdate(ctxWithAccessToWrite(2),
+		modifyPeersReq(2, protoPeerStatus(v1.NetworkBaselinePeerStatus_ANOMALOUS, 3, 8443, true)),
+	))
+	suite.assertBaselinesAre(
+		baselineWithPeers(1, depPeer(2, properties(true, 443), properties(false, 52)), depPeer(3, properties(true, 512))),
+		wrapWithForbidden(
+			baselineWithPeers(2, depPeer(1, properties(true, 52), properties(false, 443))),
+			depPeer(3, properties(true, 8443)),
+		),
+		wrapWithForbidden(
+			baselineWithPeers(3, depPeer(1, properties(false, 512))),
+			depPeer(2, properties(false, 8443)),
+		),
+	)
+
+	// Mark an existing baseline flow as anomalous, ensure it gets removed from the baseline
+	// and shows as forbidden.
+	suite.NoError(suite.m.ProcessBaselineStatusUpdate(ctxWithAccessToWrite(2),
+		modifyPeersReq(2, protoPeerStatus(v1.NetworkBaselinePeerStatus_ANOMALOUS, 1, 52, true)),
+	))
+	suite.assertBaselinesAre(
+		wrapWithForbidden(
+			baselineWithPeers(1, depPeer(2, properties(true, 443)), depPeer(3, properties(true, 512))),
+			depPeer(2, properties(false, 52)),
+		),
+		wrapWithForbidden(baselineWithPeers(2, depPeer(1, properties(false, 443))),
+			depPeer(1, properties(true, 52)), depPeer(3, properties(true, 8443)),
+		),
+		wrapWithForbidden(baselineWithPeers(3, depPeer(1, properties(false, 512))),
+			depPeer(2, properties(false, 8443)),
+		),
+	)
+}
+
 ///// Helper functions to make test code less verbose.
+
+func ctxWithAccessToWrite(id int) context.Context {
+	return sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+		sac.ResourceScopeKeys(resources.NetworkBaseline),
+		sac.ClusterScopeKeys(clusterID(id)),
+		sac.NamespaceScopeKeys(ns(id)),
+	))
+}
+
+func modifyPeersReq(id int, peers ...*v1.NetworkBaselinePeerStatus) *v1.ModifyBaselineStatusForPeersRequest {
+	return &v1.ModifyBaselineStatusForPeersRequest{
+		DeploymentId: depID(id),
+		Peers:        peers,
+	}
+}
+
+func protoPeerStatus(status v1.NetworkBaselinePeerStatus_Status, peerID int, port uint32, ingress bool) *v1.NetworkBaselinePeerStatus {
+	return &v1.NetworkBaselinePeerStatus{
+		Peer: &v1.NetworkBaselinePeer{
+			Entity: &v1.NetworkBaselinePeerEntity{
+				Id:   depID(peerID),
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+			},
+			Port:     port,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			Ingress:  ingress,
+		},
+		Status: status,
+	}
+}
 
 func conns(indicators ...networkgraph.NetworkConnIndicator) []networkgraph.NetworkConnIndicator {
 	return indicators
@@ -235,6 +359,11 @@ func emptyBaseline(id int) *storage.NetworkBaseline {
 func baselineWithPeers(id int, peers ...*storage.NetworkBaselinePeer) *storage.NetworkBaseline {
 	baseline := emptyBaseline(id)
 	baseline.Peers = peers
+	return baseline
+}
+
+func wrapWithForbidden(baseline *storage.NetworkBaseline, peers ...*storage.NetworkBaselinePeer) *storage.NetworkBaseline {
+	baseline.ForbiddenPeers = peers
 	return baseline
 }
 

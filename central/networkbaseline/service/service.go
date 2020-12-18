@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
+	"github.com/stackrox/rox/central/networkbaseline/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -18,8 +19,9 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(datastore datastore.DataStore) Service {
+func New(datastore datastore.DataStore, manager manager.Manager) Service {
 	return &serviceImpl{
 		datastore: datastore,
+		manager:   manager,
 	}
 }

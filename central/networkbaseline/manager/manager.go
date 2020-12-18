@@ -1,6 +1,9 @@
 package manager
 
 import (
+	"context"
+
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
@@ -18,4 +21,8 @@ type Manager interface {
 	// It must only be called by trusted code, since it assumes the caller has full access to modify
 	// network baselines in the datastore.
 	ProcessFlowUpdate(flows map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) error
+
+	// ProcessBaselineStatusUpdate processes a user-filed request to modify the baseline status.
+	// The error it returns will be a status.Error.
+	ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest *v1.ModifyBaselineStatusForPeersRequest) error
 }

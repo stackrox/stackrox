@@ -11,6 +11,59 @@ import (
 	reflect "reflect"
 )
 
+// MockReadOnlyDataStore is a mock of ReadOnlyDataStore interface
+type MockReadOnlyDataStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockReadOnlyDataStoreMockRecorder
+}
+
+// MockReadOnlyDataStoreMockRecorder is the mock recorder for MockReadOnlyDataStore
+type MockReadOnlyDataStoreMockRecorder struct {
+	mock *MockReadOnlyDataStore
+}
+
+// NewMockReadOnlyDataStore creates a new mock instance
+func NewMockReadOnlyDataStore(ctrl *gomock.Controller) *MockReadOnlyDataStore {
+	mock := &MockReadOnlyDataStore{ctrl: ctrl}
+	mock.recorder = &MockReadOnlyDataStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockReadOnlyDataStore) EXPECT() *MockReadOnlyDataStoreMockRecorder {
+	return m.recorder
+}
+
+// GetNetworkBaseline mocks base method
+func (m *MockReadOnlyDataStore) GetNetworkBaseline(ctx context.Context, deploymentID string) (*storage.NetworkBaseline, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNetworkBaseline", ctx, deploymentID)
+	ret0, _ := ret[0].(*storage.NetworkBaseline)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetNetworkBaseline indicates an expected call of GetNetworkBaseline
+func (mr *MockReadOnlyDataStoreMockRecorder) GetNetworkBaseline(ctx, deploymentID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkBaseline", reflect.TypeOf((*MockReadOnlyDataStore)(nil).GetNetworkBaseline), ctx, deploymentID)
+}
+
+// Walk mocks base method
+func (m *MockReadOnlyDataStore) Walk(ctx context.Context, f func(*storage.NetworkBaseline) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Walk", ctx, f)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Walk indicates an expected call of Walk
+func (mr *MockReadOnlyDataStoreMockRecorder) Walk(ctx, f interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockReadOnlyDataStore)(nil).Walk), ctx, f)
+}
+
 // MockDataStore is a mock of DataStore interface
 type MockDataStore struct {
 	ctrl     *gomock.Controller
