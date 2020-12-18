@@ -1,5 +1,5 @@
 import { resourceTypes } from 'constants/entityTypes';
-import { PROTOCOLS, networkConnections } from 'constants/networkGraph';
+import { PROTOCOLS, networkConnections, networkFlowStatus } from 'constants/networkGraph';
 
 export const networkProtocolLabels = {
     [PROTOCOLS.L4_PROTOCOL_TCP]: 'TCP',
@@ -15,4 +15,9 @@ export const networkConnectionLabels = {
     [networkConnections.ACTIVE]: 'Active',
     [networkConnections.ALLOWED]: 'Allowed',
     [networkConnections.ACTIVE_AND_ALLOWED]: 'Active/Allowed',
+};
+
+export const networkFlowStatusLabels = {
+    [networkFlowStatus.ANOMALOUS]: 'Anomalous',
+    [networkFlowStatus.BASELINE]: 'Baseline',
 };

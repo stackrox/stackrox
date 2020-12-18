@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
-import { useTable, useSortBy } from 'react-table';
+import { useTable, useSortBy, useGroupBy, useExpanded } from 'react-table';
 
+import { networkFlowStatus } from 'constants/networkGraph';
 import {
     networkEntityLabels,
     networkProtocolLabels,
@@ -12,6 +13,7 @@ import TableHead from './TableHead';
 import TableBody from './TableBody';
 import TableRow from './TableRow';
 import TableCell from './TableCell';
+import GroupedStatusTableCell from './GroupedStatusTableCell';
 
 type NetworkFlow = {
     peer: {
@@ -98,10 +100,17 @@ function NetworkFlowsTable({ networkFlows }: NetworkFlowsTableProps): ReactEleme
                         desc: false,
                     },
                 ],
+                groupBy: ['status'],
+                expanded: {
+                    'status:ANOMALOUS': true,
+                    'status:BASELINE': true,
+                },
                 hiddenColumns: ['status'],
             },
         },
-        useSortBy
+        useGroupBy,
+        useSortBy,
+        useExpanded
     );
 
     return (
@@ -110,11 +119,24 @@ function NetworkFlowsTable({ networkFlows }: NetworkFlowsTableProps): ReactEleme
             <TableBody>
                 {rows.map((row) => {
                     prepareRow(row);
+
+                    // If the row is the grouped row or a sub row grouped by the ANOMALOUS status,
+                    // we want a colored background
+                    const rowType =
+                        (row.isGrouped && row.groupByVal === networkFlowStatus.ANOMALOUS) ||
+                        row.values.status === networkFlowStatus.ANOMALOUS
+                            ? 'alert'
+                            : null;
+
                     return (
-                        <TableRow key={row.id} row={row}>
-                            {row.cells.map((cell) => {
-                                return <TableCell key={cell.column.Header} cell={cell} />;
-                            })}
+                        <TableRow key={row.id} row={row} type={rowType}>
+                            {row.isGrouped ? (
+                                <GroupedStatusTableCell row={row} />
+                            ) : (
+                                row.cells.map((cell) => {
+                                    return <TableCell key={cell.column.Header} cell={cell} />;
+                                })
+                            )}
                         </TableRow>
                     );
                 })}
