@@ -106,6 +106,8 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		"Versions": version.GetAllVersions(),
 
 		"RenderAsLegacyChart": true,
+
+		"FeatureFlags": make(map[string]string),
 	}
 
 	if features.AdmissionControlService.Enabled() && c.AdmissionController {

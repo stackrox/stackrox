@@ -64,7 +64,8 @@ func TestRenderSensorHelm(t *testing.T) {
 				"AdmissionControllerEnabled":       c.admissionController,
 				"AdmissionControlEnforceOnUpdates": c.admissionController,
 
-				"EnvVars": envVars,
+				"EnvVars":      envVars,
+				"FeatureFlags": make(map[string]string),
 
 				"RenderAsLegacyChart": true,
 			}

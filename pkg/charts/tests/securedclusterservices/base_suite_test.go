@@ -26,6 +26,7 @@ var (
 		"MainRegistry":      "stackrox.io", // TODO: custom?
 		"CollectorRegistry": "stackrox.io",
 		"RenderMode":        "",
+		"FeatureFlags":      make(map[string]string),
 	}
 
 	installOpts = helmutil.Options{

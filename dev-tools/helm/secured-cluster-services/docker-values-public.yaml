@@ -1,0 +1,34 @@
+cluster:
+  name: dev-cluster
+  type: KUBERNETES_CLUSTER
+
+endpoint:
+  central: central.stackrox:443
+  advertised: sensor.stackrox:443
+
+image:
+  repository:
+    main: main
+    collector: collector
+  registry:
+    main: docker.io/stackrox
+    collector: docker.io/stackrox
+
+config:
+  collectionMethod: KERNEL_MODULE
+  admissionControl:
+    createService: false
+    listenOnUpdates: false
+    enableService: false
+    enforceOnUpdates: false
+    scanInline: false
+    disableBypass: false
+    timeout: 3
+  registryOverride:
+  disableTaintTolerations: true
+  createUpgraderServiceAccount: false
+  createSecrets: true
+  offlineMode: false
+  slimCollector: false
+
+envVars:  []

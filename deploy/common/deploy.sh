@@ -3,7 +3,11 @@
 export MAIN_IMAGE_REPO="${MAIN_IMAGE_REPO:-stackrox/main}"
 echo "MAIN_IMAGE_REPO set to $MAIN_IMAGE_REPO"
 
+if [[ "$MAIN_IMAGE_TAG" == "latest-local-build" ]]; then
+  MAIN_IMAGE_TAG="$(docker images --filter="reference=stackrox/main" --format "{{.Tag}}" | head -1)"
+fi
 export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet -C "$(git rev-parse --show-toplevel)" tag)}"
+
 echo "StackRox image tag set to $MAIN_IMAGE_TAG"
 
 export MAIN_IMAGE="${MAIN_IMAGE_REPO}:${MAIN_IMAGE_TAG}"

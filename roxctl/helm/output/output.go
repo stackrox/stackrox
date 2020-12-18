@@ -18,7 +18,7 @@ import (
 
 // These are actually const.
 
-func outputHelmChart(chartName string, outputDir string) error {
+func outputHelmChart(chartName string, outputDir string, removeOutputDir bool) error {
 	// Lookup chart template prefix.
 	chartTemplatePathPrefix := common.ChartTemplates[chartName]
 	if chartTemplatePathPrefix == "" {
@@ -31,8 +31,15 @@ func outputHelmChart(chartName string, outputDir string) error {
 	}
 
 	if _, err := os.Stat(outputDir); err == nil {
-		fmt.Fprintf(os.Stderr, "Directory %q already exists, use --output-dir to select a different directory.\n", outputDir)
-		return fmt.Errorf("directory %q already exists", outputDir)
+		if removeOutputDir {
+			if err := os.RemoveAll(outputDir); err != nil {
+				return errors.Wrapf(err, "failed to remove output dir %s", outputDir)
+			}
+			fmt.Fprintf(os.Stderr, "Removed output directory %s\n", outputDir)
+		} else {
+			fmt.Fprintf(os.Stderr, "Directory %q already exists, use --remove or select a different directory with --overwrite.\n", outputDir)
+			return fmt.Errorf("directory %q already exists", outputDir)
+		}
 	} else if !os.IsNotExist(err) {
 		return errors.Wrapf(err, "failed to check if directory %q exists", outputDir)
 	}
@@ -76,6 +83,7 @@ func outputHelmChart(chartName string, outputDir string) error {
 // Command for writing Helm Chart.
 func Command() *cobra.Command {
 	var outputDir string
+	var removeOutputDir bool
 
 	c := &cobra.Command{
 		Use: fmt.Sprintf("output <%s>", common.PrettyChartNameList),
@@ -84,11 +92,12 @@ func Command() *cobra.Command {
 				return errors.New("incorrect number of arguments, see --help for usage information")
 			}
 			chartName := args[0]
-			return outputHelmChart(chartName, outputDir)
+			return outputHelmChart(chartName, outputDir, removeOutputDir)
 
 		},
 	}
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "path to the output directory for Helm chart (default: './stackrox-<chart name>-chart')")
+	c.PersistentFlags().BoolVar(&removeOutputDir, "remove", false, "remove the output directory if it already exists")
 
 	return c
 }
@@ -100,5 +109,8 @@ func writeFile(file *loader.BufferedFile, destDir string) error {
 	}
 
 	perms := os.FileMode(0644)
+	if filepath.Ext(file.Name) == ".sh" {
+		perms = os.FileMode(0755)
+	}
 	return ioutil.WriteFile(outputPath, file.Data, perms)
 }

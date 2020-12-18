@@ -117,6 +117,39 @@ spec:
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
           readOnly: true
+      [<- if index .FeatureFlags "ROX_SENSOR_INSTALLATION_EXPERIENCE" >]
+      {{- if not (kindIs "invalid" ._rox.initToken) }}
+      initContainers:
+        - image: {{ printf "%s/%s:%s" ._rox.sensor.image.registry ._rox.sensor.image.name ._rox.sensor.image.tag }}
+          imagePullPolicy: {{ ._rox.sensor.image.pullPolicy }}
+          name: sensor-init
+          command:
+            - service-init
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+          env:
+          - name: ROX_CENTRAL_ENDPOINT
+            value: {{ ._rox.centralEndpoint }}
+          - name: ROX_ADVERTISED_ENDPOINT
+            value: {{ ._rox.sensor.endpoint }}
+          {{- if ._rox.env.openshift }}
+          - name: ROX_OPENSHIFT_API
+            value: "true"
+          {{- end}}
+          {{- include "srox.envVars" (list . "deployment" "sensor" "sensor-init") | nindent 8 }}
+          volumeMounts:
+          - name: varlog
+            mountPath: /var/log/stackrox/
+          - name: sensor-etc-ssl-volume
+            mountPath: /etc/ssl/
+          - name: sensor-etc-pki-volume
+            mountPath: /etc/pki/ca-trust/
+          - name: additional-ca-volume
+            mountPath: /usr/local/share/ca-certificates/
+            readOnly: true
+      {{ end }}
+      [<- end >]
       volumes:
       - name: certs
         secret:
@@ -335,13 +368,13 @@ spec:
       - emptyDir:
           medium: Memory
         name: tmpfs-module
-      - hostPath: 
+      - hostPath:
           path: /etc
         name: etc-ro
-      - hostPath: 
+      - hostPath:
           path: /usr/lib
         name: usr-lib-ro
-      - hostPath: 
+      - hostPath:
           path: /sys/
         name: sys-ro
       - hostPath:
