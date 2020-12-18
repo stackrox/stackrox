@@ -1,5 +1,5 @@
 import { resourceTypes } from 'constants/entityTypes';
-import { PROTOCOLS } from 'constants/networkGraph';
+import { PROTOCOLS, networkConnections } from 'constants/networkGraph';
 
 export const networkProtocolLabels = {
     [PROTOCOLS.L4_PROTOCOL_TCP]: 'TCP',
@@ -7,6 +7,12 @@ export const networkProtocolLabels = {
     [PROTOCOLS.L4_PROTOCOL_ANY]: 'Any Protocol',
 };
 
-export const networkEntities = {
+export const networkEntityLabels = {
     [resourceTypes.DEPLOYMENT]: 'Deployment',
+};
+
+export const networkConnectionLabels = {
+    [networkConnections.ACTIVE]: 'Active',
+    [networkConnections.ALLOWED]: 'Allowed',
+    [networkConnections.ACTIVE_AND_ALLOWED]: 'Active/Allowed',
 };

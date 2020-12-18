@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import useTabs from 'hooks/useTabs';
-import { networkEntities } from 'messages/network';
+import { networkEntityLabels } from 'messages/network';
 
 import NetworkEntityTabHeader from './NetworkEntityTabHeader';
 
@@ -26,7 +26,7 @@ function NetworkEntityTabbedOverlay({ entityName, entityType, children }) {
                 <div className="flex flex-1 flex-col">
                     <div>{entityName}</div>
                     <div className="italic text-primary-200 text-xs capitalize">
-                        {networkEntities[entityType]}
+                        {networkEntityLabels[entityType]}
                     </div>
                 </div>
                 <ul className="flex ml-8 items-center text-sm uppercase font-700">
