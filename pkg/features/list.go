@@ -47,7 +47,7 @@ var (
 	DiscoveredAtImage = registerFeature("Enable discoveredAtImage graphQL field for CVE entity", "ROX_DISCOVERED_AT_IMAGE", true)
 
 	// SensorTLSChallenge enables Sensor to receive Centrals configured additional-ca an default certs.
-	SensorTLSChallenge = registerFeature("Enable Sensor to receive default and additional CA certificates from Central", "ROX_SENSOR_TLS_CHALLENGE", false)
+	SensorTLSChallenge = registerFeature("Enable Sensor to receive default and additional CA certificates from Central", "ROX_SENSOR_TLS_CHALLENGE", true)
 
 	// K8sAuditLogDetection enables Sensor to collect k8s audit logs using cloud integrations and generate policy violations
 	// based on k8s audit log events
