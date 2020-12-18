@@ -129,6 +129,92 @@ func (suite *ManagerTestSuite) assertBaselinesAre(baselines ...*storage.NetworkB
 	suite.ElementsMatch(baselinesWithoutObsPeriod, baselines)
 }
 
+func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
+	suite.mustInitManager()
+	suite.initBaselinesForDeployments(1, 2, 3)
+	suite.assertBaselinesAre(emptyBaseline(1), emptyBaseline(2), emptyBaseline(3))
+	suite.processFlowUpdate(conns(depToDepConn(1, 2, 52)), conns(depToDepConn(2, 3, 51)))
+	suite.assertBaselinesAre(
+		baselineWithPeers(1, depPeer(2, properties(false, 52))),
+		baselineWithPeers(2, depPeer(1, properties(true, 52))),
+		emptyBaseline(3),
+	)
+	suite.processFlowUpdate([]networkgraph.NetworkConnIndicator{
+		// This conn is valid and should get incorporated into the baseline.
+		{
+			SrcEntity: networkgraph.Entity{
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				ID:   depID(1),
+			},
+			DstEntity: networkgraph.Entity{
+				Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				ID:   "EXTERNALENTITYID",
+			},
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			DstPort:  1,
+		},
+		// This conn is valid and should get incorporated into the baseline.
+		{
+			SrcEntity: networkgraph.Entity{
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				ID:   depID(1),
+			},
+			DstEntity: networkgraph.Entity{
+				Type: storage.NetworkEntityInfo_INTERNET,
+				ID:   "INTERNETTZZ",
+			},
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			DstPort:  13,
+		},
+		// This is to a listen endpoint, so it should not get incorporated.
+		{
+			SrcEntity: networkgraph.Entity{
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				ID:   depID(1),
+			},
+			DstEntity: networkgraph.Entity{
+				Type: storage.NetworkEntityInfo_LISTEN_ENDPOINT,
+				ID:   "LISTEN",
+			},
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			DstPort:  1,
+		},
+		// Entities without ids should get ignored.
+		{
+			SrcEntity: networkgraph.Entity{
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				ID:   depID(1),
+			},
+			DstEntity: networkgraph.Entity{
+				Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				ID:   "",
+			},
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			DstPort:  1,
+		},
+	}, nil)
+	suite.assertBaselinesAre(
+		baselineWithPeers(1, depPeer(2, properties(false, 52)),
+			&storage.NetworkBaselinePeer{
+				Entity: &storage.NetworkEntity{Info: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+					Id:   "EXTERNALENTITYID",
+				}},
+				Properties: []*storage.NetworkBaselineConnectionProperties{properties(false, 1)},
+			},
+			&storage.NetworkBaselinePeer{
+				Entity: &storage.NetworkEntity{Info: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_INTERNET,
+					Id:   "INTERNETTZZ",
+				}},
+				Properties: []*storage.NetworkBaselineConnectionProperties{properties(false, 13)},
+			},
+		),
+		baselineWithPeers(2, depPeer(1, properties(true, 52))),
+		emptyBaseline(3),
+	)
+}
+
 func (suite *ManagerTestSuite) TestFlowsUpdate() {
 	suite.mustInitManager()
 	suite.initBaselinesForDeployments(1, 2, 3)
@@ -247,6 +333,22 @@ func (suite *ManagerTestSuite) TestUpdateBaselineStatus() {
 	suite.Error(suite.m.ProcessBaselineStatusUpdate(allAllowedCtx,
 		modifyPeersReq(1, protoPeerStatus(v1.NetworkBaselinePeerStatus_BASELINE, 20, 52, true)),
 	))
+
+	// Trying to add a listen endpoint as a peer -- should fail.
+	suite.Error(suite.m.ProcessBaselineStatusUpdate(allAllowedCtx,
+		modifyPeersReq(1, &v1.NetworkBaselinePeerStatus{
+			Peer: &v1.NetworkBaselinePeer{
+				Entity: &v1.NetworkBaselinePeerEntity{
+					Id:   "",
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				},
+				Port:     52,
+				Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+				Ingress:  true,
+			},
+			Status: v1.NetworkBaselinePeerStatus_ANOMALOUS,
+		},
+		)))
 
 	// SAC enforcement: should not be able to modify other deployment.
 	suite.Error(suite.m.ProcessBaselineStatusUpdate(ctxWithAccessToWrite(2),

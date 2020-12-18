@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
@@ -44,9 +45,23 @@ type manager struct {
 	lock sync.Mutex
 }
 
+var (
+	validBaselinePeerEntityTypes = map[storage.NetworkEntityInfo_Type]struct{}{
+		storage.NetworkEntityInfo_DEPLOYMENT:      {},
+		storage.NetworkEntityInfo_EXTERNAL_SOURCE: {},
+		storage.NetworkEntityInfo_INTERNET:        {},
+	}
+)
+
 func (m *manager) shouldUpdate(conn *networkgraph.NetworkConnIndicator, updateTS timestamp.MicroTS) bool {
 	var atLeastOneBaselineInObservationPeriod bool
 	for _, entity := range []*networkgraph.Entity{&conn.SrcEntity, &conn.DstEntity} {
+		if _, valid := validBaselinePeerEntityTypes[entity.Type]; !valid {
+			return false
+		}
+		if entity.ID == "" {
+			return false
+		}
 		if entity.Type != storage.NetworkEntityInfo_DEPLOYMENT {
 			continue
 		}
@@ -154,18 +169,29 @@ func (m *manager) ProcessFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 	return m.processFlowUpdate(flows)
 }
 
-func (m *manager) validateAllReferencedBaselinesExist(peers []*v1.NetworkBaselinePeerStatus) error {
+func (m *manager) validatePeers(peers []*v1.NetworkBaselinePeerStatus) error {
 	var missingDeploymentIDs []string
+	var invalidPeerTypes []string
 	for _, p := range peers {
 		entity := p.GetPeer().GetEntity()
+		if _, valid := validBaselinePeerEntityTypes[entity.GetType()]; !valid {
+			invalidPeerTypes = append(invalidPeerTypes, entity.GetType().String())
+		}
 		if entity.GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
 			if _, found := m.baselinesByDeploymentID[entity.GetId()]; !found {
 				missingDeploymentIDs = append(missingDeploymentIDs, entity.GetId())
 			}
 		}
 	}
-	if len(missingDeploymentIDs) > 0 {
-		return status.Errorf(codes.InvalidArgument, "no baselines found for deployment IDs %v", missingDeploymentIDs)
+	if len(missingDeploymentIDs) > 0 || len(invalidPeerTypes) > 0 {
+		errorList := errorhelpers.NewErrorList("peer validation")
+		if len(missingDeploymentIDs) > 0 {
+			errorList.AddStringf("no baselines found for deployment IDs %v", missingDeploymentIDs)
+		}
+		if len(invalidPeerTypes) > 0 {
+			errorList.AddStringf("invalid types for peers: %v", invalidPeerTypes)
+		}
+		return status.Error(codes.InvalidArgument, errorList.String())
 	}
 	return nil
 }
@@ -179,7 +205,7 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 	if !found {
 		return status.Errorf(codes.InvalidArgument, "no baseline found for deployment id %q", deploymentID)
 	}
-	if err := m.validateAllReferencedBaselinesExist(modifyRequest.GetPeers()); err != nil {
+	if err := m.validatePeers(modifyRequest.GetPeers()); err != nil {
 		return err
 	}
 
