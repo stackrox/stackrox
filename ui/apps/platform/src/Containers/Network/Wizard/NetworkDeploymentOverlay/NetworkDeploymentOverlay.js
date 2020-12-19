@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { useHistory } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 
 import { selectors } from 'reducers';
 import { nodeTypes } from 'constants/networkGraph';
@@ -12,6 +12,7 @@ import NetworkEntityTabbedOverlay from 'Components/NetworkEntityTabbedOverlay';
 import BinderTabs from 'Components/BinderTabs';
 import NetworkFlows from './NetworkFlows';
 import BaselineSettings from './BaselineSettings';
+import DeploymentDetails from './DeploymentDetails';
 
 function getDeploymentEdges(deployment) {
     const edges = deployment.edges.filter(
@@ -38,6 +39,7 @@ function useNavigateToDeployment() {
 
 function NetworkDeploymentOverlay({ selectedDeployment, filterState }) {
     const onNavigateToDeploymentById = useNavigateToDeployment();
+    const { deploymentId } = useParams();
 
     const edges = getDeploymentEdges(selectedDeployment);
 
@@ -65,7 +67,7 @@ function NetworkDeploymentOverlay({ selectedDeployment, filterState }) {
                     <div className="p-4 bg-primary-100">Add Policies here...</div>
                 </Tab>
                 <Tab title="Details">
-                    <div className="p-4 bg-primary-100">Add Details here...</div>
+                    <DeploymentDetails deploymentId={deploymentId} />
                 </Tab>
             </NetworkEntityTabbedOverlay>
         </div>

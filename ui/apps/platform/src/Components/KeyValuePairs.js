@@ -64,9 +64,10 @@ class KeyValuePairs extends Component {
             if (!value || (Array.isArray(value) && !value.length)) {
                 return '';
             }
+
             return (
                 <div
-                    className="py-3 pb-2 leading-normal tracking-normal border-b border-base-300"
+                    className="py-3 pb-2 leading-normal tracking-normal border-b border-base-300 last:border-b-0"
                     key={key}
                     data-testid={label}
                 >
