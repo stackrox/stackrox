@@ -74,6 +74,11 @@ TEST_FIXTURES="${BATS_TEST_DIRNAME}/test_fixtures"
     [ "${#lines[@]}" -eq 6 ]
 }
 
+@test "this kernel flavor restart is OK" {
+    run "$CMD" "gke-kernel-api-e2e-tests" "${TEST_FIXTURES}/kernel-collector-previous.log"
+    [ "$status" -eq 0 ]
+}
+
 teardown () {
     echo "$BATS_TEST_NAME
 --------

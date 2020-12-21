@@ -1,0 +1,37 @@
+Collector Version: 3.1.9
+Hostname: collector-cdq54
+OS: Ubuntu 18.04.5 LTS
+Kernel Version: 5.3.0-1036-gke
+Module Version: b6745d795b8497aaf387843dc8aa07463c944d3ad67288389b754daaebea4b62
+Didn't find kernel module collector-5.3.0-1036-gke.ko built-in.
+Attempting to download from https://sensor.stackrox:443/kernel-objects/b6745d795b8497aaf387843dc8aa07463c944d3ad67288389b754daaebea4b62/collector-5.3.0-1036-gke.ko.gz...
+curl: (28) Connection timed out after 2000 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+curl: (28) Connection timed out after 2001 milliseconds
+Failed to download kernel module.
+All attempts to download the kernel module have failed.
+The kernel module may not have been compiled for version 5.3.0-1036-gke.
+Error: Failed to find kernel module for kernel version 5.3.0-1036-gke.
+
+Please provide this complete error message to StackRox support.
+This program will now exit and retry when it is next restarted.
+
+HTTP Status Code 000

@@ -7,7 +7,7 @@
     },
     {
         "comment": "collector initialization restart with openshift",
-        "job": "openshift",
+        "job": "openshift|kernel",
         "logfile": "collector-previous",
         "logline": "All attempts to download the kernel module have failed."
     }
