@@ -1927,6 +1927,44 @@ commands:
       - store_artifacts:
           path: << parameters.path >>
 
+  pre-go-unit-tests:
+    description: "Common pre go test steps"
+    steps:
+      - checkout
+      - *restoreGoModCache
+      - setup-go-build-env
+      - *restoreGoBuildCache
+
+  post-go-unit-tests:
+    description: "Common post go test steps"
+    parameters:
+      path:
+        type: string
+    steps:
+      - *saveGoBuildCache
+
+      - run:
+          name: Generate JUnit reports
+          command: |
+            make generate-junit-reports
+            cp -a junit-reports << parameters.path >>
+          when: always
+
+      - store-test-results-and-artifacts:
+          path: << parameters.path >>
+
+      - run:
+          name: Upload coverage information
+          command: |
+            retries=0
+            success=0
+            while (( retries < 5 && success == 0 )); do
+              retries=$((retries + 1))
+              success=1
+              make upload-coverage || success=0
+            done
+          when: always
+
 jobs:
   ###
   # Jobs independent from build / compilation (like style checks, static code analysis, unit tests)
@@ -1954,32 +1992,33 @@ jobs:
               '{"text": "CircleCI build for tag `\($tag)` started! Check the status of the build under the following URL: https://circleci.com/workflow-run/\($workflow_id)"}' \
             | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
 
-  unit-tests:
+  go-unit-tests:
     executor: custom
     resource_class: xlarge
     steps:
-      - checkout
-
-      - *restoreGoModCache
-      - setup-go-build-env
-      - *restoreGradle
-      - restore-npm-deps-cache
-
-      - *restoreGoBuildCache
-
+      - pre-go-unit-tests
       - run:
           name: Run Go unit tests
-          command: make go-unit-tests
+          command: GOTAGS= make go-unit-tests
+      - post-go-unit-tests:
+          path: go-unit-junit-reports 
 
-      - *saveGoBuildCache
-
+  go-unit-tests-release:
+    executor: custom
+    resource_class: xlarge
+    steps:
+      - pre-go-unit-tests
       - run:
-          name: Generate JUnit reports
-          command: make generate-junit-reports
-          when: always
+          name: Run Go unit tests with release tag
+          command: GOTAGS=release make go-unit-tests
+      - post-go-unit-tests:
+          path: go-unit-release-junit-reports 
 
-      - store-test-results-and-artifacts:
-          path: junit-reports
+  shell-unit-tests:
+    executor: custom
+    resource_class: medium
+    steps:
+      - checkout
 
       - run:
           name: Run Shell unit tests
@@ -1987,33 +2026,27 @@ jobs:
 
       - run:
           name: Generate Shell unit test JUnit report
-          command: tap-junit < shell-test-output/test.log > shell-test-output/report.xml
+          command: |
+            if [[ -f shell-test-output/test.log ]]; then
+              tap-junit < shell-test-output/test.log > shell-test-output/report.xml
+            fi
           when: always
 
-      - store_test_results:
+      - store-test-results-and-artifacts:
           path: shell-test-output
 
-      - store_artifacts:
-          path: shell-test-output
-          destination: shell-test-output
+  ui-unit-tests:
+    executor: custom
+    resource_class: xlarge
+    steps:
+      - checkout
+      - restore-npm-deps-cache
 
       - run:
           name: Run UI unit tests
           command: make ui-test
 
       - *storeUITestReports
-
-      - run:
-          name: Upload coverage information
-          command: |
-            retries=0
-            success=0
-            while (( retries < 5 && success == 0 )); do
-              retries=$((retries + 1))
-              success=1
-              make upload-coverage || success=0
-            done
-          when: always
 
   style-checks:
     executor: custom
@@ -4648,7 +4681,13 @@ workflows:
           <<: *runOnAllTagsWithDockerIOPullCtx
       - check-generated-files-up-to-date:
           <<: *runOnAllTagsWithDockerIOPullCtx
-      - unit-tests:
+      - go-unit-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+      - go-unit-tests-release:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+      - shell-unit-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+      - ui-unit-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
       - integration-unit-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
@@ -4761,7 +4800,8 @@ workflows:
           context: docker-io-pull
           requires:
             - build
-            - unit-tests
+            - go-unit-tests
+            - ui-unit-tests
             - push-release
       - provision-openshift-rhel-api-e2e-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
@@ -4791,7 +4831,8 @@ workflows:
             - build
             - build-rhel
             - build-deployer
-            - unit-tests
+            - go-unit-tests
+            - ui-unit-tests
 
       - scan-images-in-quay:
           <<: *runOnlyOnReleaseCandidateBuilds
