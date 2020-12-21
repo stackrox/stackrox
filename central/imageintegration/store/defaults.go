@@ -1,9 +1,16 @@
 package store
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
+)
+
+var (
+	scannerEndpoint = fmt.Sprintf("scanner.%s", env.Namespace.Setting())
 )
 
 // DefaultImageIntegrations are the default public registries
@@ -105,7 +112,7 @@ var (
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER},
 		IntegrationConfig: &storage.ImageIntegration_Clairify{
 			Clairify: &storage.ClairifyConfig{
-				Endpoint: "https://scanner.stackrox:8080",
+				Endpoint: fmt.Sprintf("https://%s:8080", scannerEndpoint),
 			},
 		},
 	}
