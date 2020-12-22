@@ -55,11 +55,16 @@ var (
 		SkipResolvers: []reflect.Type{
 			reflect.TypeOf(storage.EmbeddedVulnerability{}),
 			reflect.TypeOf(storage.EmbeddedImageScanComponent{}),
+			reflect.TypeOf(storage.EmbeddedNodeScanComponent{}),
 			reflect.TypeOf(types.Timestamp{}),
 		},
 		SkipFields: []generator.TypeAndField{
 			{
 				ParentType: reflect.TypeOf(storage.ImageScan{}),
+				FieldName:  "Components",
+			},
+			{
+				ParentType: reflect.TypeOf(storage.NodeScan{}),
 				FieldName:  "Components",
 			},
 		},

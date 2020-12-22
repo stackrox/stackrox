@@ -62,10 +62,8 @@ func (e EnrichmentContext) FetchOnlyIfScanEmpty() bool {
 type EnrichmentResult struct {
 	// ImageUpdated returns whether or not the image was updated, either with metadata or with a scan.
 	ImageUpdated bool
-	ImageError   error
 
 	ScanResult ScanResult
-	ScanError  error
 }
 
 // A ScanResult denotes the result of an attempt to scan an image.

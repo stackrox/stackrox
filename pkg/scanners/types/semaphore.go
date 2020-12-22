@@ -14,8 +14,7 @@ func NewDefaultSemaphore() ScanSemaphore {
 	}
 }
 
-// NewSemaphoreWithValue creates a semaphore wrapper from the input max
-// that implements the scanner interface with a value of 6
+// NewSemaphoreWithValue creates a semaphore wrapper that implements the scanner interface with the given value
 func NewSemaphoreWithValue(val int64) ScanSemaphore {
 	return &scanSemaphoreImpl{
 		sema: semaphore.NewWeighted(val),
@@ -28,4 +27,24 @@ type scanSemaphoreImpl struct {
 
 func (s *scanSemaphoreImpl) MaxConcurrentScanSemaphore() *semaphore.Weighted {
 	return s.sema
+}
+
+// NodeScanSemaphore is an interface that implements part of the node scanner interface
+type NodeScanSemaphore interface {
+	MaxConcurrentNodeScanSemaphore() *semaphore.Weighted
+}
+
+// NewNodeSemaphoreWithValue creates a semaphore wrapper that implements the node scanner interface with the given value
+func NewNodeSemaphoreWithValue(val int64) NodeScanSemaphore {
+	return &nodeScanSemaphoreImpl{
+		ScanSemaphore: NewSemaphoreWithValue(val),
+	}
+}
+
+type nodeScanSemaphoreImpl struct {
+	ScanSemaphore
+}
+
+func (n *nodeScanSemaphoreImpl) MaxConcurrentNodeScanSemaphore() *semaphore.Weighted {
+	return n.MaxConcurrentScanSemaphore()
 }

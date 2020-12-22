@@ -277,6 +277,20 @@ func (ds *datastoreImpl) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 	}
 }
 
+func (ds *datastoreImpl) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
+	ds.cveSuppressionLock.RLock()
+	defer ds.cveSuppressionLock.RUnlock()
+	for _, component := range node.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			if entry, ok := ds.cveSuppressionCache[vuln.GetCve()]; ok {
+				vuln.Suppressed = entry.Suppressed
+				vuln.SuppressActivation = entry.SuppressActivation
+				vuln.SuppressExpiry = entry.SuppressExpiry
+			}
+		}
+	}
+}
+
 func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
 	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
 		return err

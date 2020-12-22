@@ -4,6 +4,7 @@ import (
 	"context"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -37,6 +38,7 @@ func New(registryFactory registries.Factory,
 	return &serviceImpl{
 		registryFactory:  registryFactory,
 		scannerFactory:   scannerFactory,
+		nodeEnricher:     enrichment.NodeEnricherSingleton(),
 		toNotify:         toNotify,
 		datastore:        datastore,
 		clusterDatastore: clusterDatastore,

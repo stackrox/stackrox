@@ -5,6 +5,7 @@ import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.ImageOuterClass
+import io.stackrox.proto.storage.Vulnerability
 import objects.AnchoreScannerIntegration
 import objects.ClairScannerIntegration
 import objects.Deployment
@@ -212,7 +213,7 @@ class ImageScanningTest extends BaseSpecification {
                 component -> component.vulnsList.find { vuln -> vuln.cve == cve }
             }
             assert component
-            ImageOuterClass.EmbeddedVulnerability vuln = component.vulnsList.find { it.cve == cve }
+            Vulnerability.EmbeddedVulnerability vuln = component.vulnsList.find { it.cve == cve }
             assert vuln
 
             assert vuln.summary && vuln.summary != ""
@@ -344,7 +345,7 @@ class ImageScanningTest extends BaseSpecification {
                 }
         foundComponent != null
 
-        ImageOuterClass.EmbeddedVulnerability vuln =
+        Vulnerability.EmbeddedVulnerability vuln =
                 foundComponent.vulnsList.find { v -> v.cve == cve }
 
         vuln != null
@@ -393,7 +394,7 @@ class ImageScanningTest extends BaseSpecification {
                 }
         foundComponent != null
 
-        ImageOuterClass.EmbeddedVulnerability vuln =
+        Vulnerability.EmbeddedVulnerability vuln =
                 foundComponent.vulnsList.find { v -> v.cve == cve }
 
         vuln != null
@@ -605,14 +606,14 @@ class ImageScanningTest extends BaseSpecification {
 
         then:
         "validate details for each image"
-        Map<ImageOuterClass.ImageName, List<ImageOuterClass.EmbeddedVulnerability>> missingValues = [:]
+        Map<ImageOuterClass.ImageName, List<Vulnerability.EmbeddedVulnerability>> missingValues = [:]
         for (ImageOuterClass.ListImage image : images) {
             ImageOuterClass.Image imageDetails = ImageService.getImage(image.id)
 
             if (imageDetails.hasScan()) {
                 assert imageDetails.scan.scanTime
                 for (ImageOuterClass.EmbeddedImageScanComponent component : imageDetails.scan.componentsList) {
-                    for (ImageOuterClass.EmbeddedVulnerability vuln : component.vulnsList) {
+                    for (Vulnerability.EmbeddedVulnerability vuln : component.vulnsList) {
                         if (vuln.summary == null || vuln.summary == "" ||
                                 0.0 > vuln.cvss || vuln.cvss > 10.0 ||
                                 vuln.link == null || vuln.link == "") {

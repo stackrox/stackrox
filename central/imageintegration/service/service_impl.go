@@ -15,12 +15,14 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/endpoints"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/integration"
+	"github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/secrets"
@@ -50,6 +52,7 @@ var (
 type serviceImpl struct {
 	registryFactory  registries.Factory
 	scannerFactory   scanners.Factory
+	nodeEnricher     enricher.NodeEnricher
 	toNotify         integration.ToNotify
 	datastore        datastore.DataStore
 	clusterDatastore clusterDatastore.DataStore
@@ -155,12 +158,39 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 	}
 
 	request.Id = id
+
+	// The same form on the Integrations page on the UI is used for both image and node
+	// integrations. Because each form is coupled with the image proto, we must account
+	// for node integrations here as well.
+	if features.HostScanning.Enabled() {
+		if isNodeIntegration(request) {
+			if err := s.upsertNodeIntegration(request); err != nil {
+				_ = s.datastore.RemoveImageIntegration(ctx, request.GetId())
+				return nil, err
+			}
+		}
+	}
+
 	if err := s.toNotify.NotifyUpdated(request); err != nil {
+		if features.HostScanning.Enabled() {
+			s.nodeEnricher.RemoveNodeIntegration(request.GetId())
+		}
 		_ = s.datastore.RemoveImageIntegration(ctx, request.GetId())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	s.reprocessorLoop.ShortCircuit()
 	return request, nil
+}
+
+func (s *serviceImpl) upsertNodeIntegration(request *storage.ImageIntegration) error {
+	nodeIntegration, err := imageIntegrationToNodeIntegration(request)
+	if err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err := s.nodeEnricher.UpsertNodeIntegration(nodeIntegration); err != nil {
+		return status.Error(codes.Internal, err.Error())
+	}
+	return nil
 }
 
 // DeleteImageIntegration removes a image integration given its ID.
@@ -170,6 +200,10 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 	}
 	if err := s.datastore.RemoveImageIntegration(ctx, request.GetId()); err != nil {
 		return nil, err
+	}
+
+	if features.HostScanning.Enabled() {
+		s.nodeEnricher.RemoveNodeIntegration(request.GetId())
 	}
 
 	if err := s.toNotify.NotifyRemoved(request.GetId()); err != nil {
@@ -191,6 +225,14 @@ func (s *serviceImpl) UpdateImageIntegration(ctx context.Context, request *v1.Up
 	}
 	if err := s.datastore.UpdateImageIntegration(ctx, request.GetConfig()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	if features.HostScanning.Enabled() {
+		if isNodeIntegration(request.GetConfig()) {
+			if err := s.upsertNodeIntegration(request.GetConfig()); err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	if err := s.toNotify.NotifyUpdated(request.GetConfig()); err != nil {
@@ -228,7 +270,16 @@ func (s *serviceImpl) testImageIntegration(request *storage.ImageIntegration) er
 		}
 		if category == storage.ImageIntegrationCategory_SCANNER {
 			if err := s.testScannerIntegration(request); err != nil {
-				return status.Error(codes.InvalidArgument, errors.Wrap(err, "scanner integration").Error())
+				return status.Error(codes.InvalidArgument, errors.Wrap(err, "image scanner integration").Error())
+			}
+		}
+		if features.HostScanning.Enabled() && category == storage.ImageIntegrationCategory_NODE_SCANNER {
+			nodeIntegration, err := imageIntegrationToNodeIntegration(request)
+			if err != nil {
+				return status.Error(codes.InvalidArgument, errors.Wrap(err, "node scanner integration").Error())
+			}
+			if err := s.testNodeScannerIntegration(nodeIntegration); err != nil {
+				return status.Error(codes.InvalidArgument, errors.Wrap(err, "node scanner integration").Error())
 			}
 		}
 	}
@@ -252,6 +303,17 @@ func (s *serviceImpl) testScannerIntegration(integration *storage.ImageIntegrati
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 	if err := scanner.Test(); err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+	return nil
+}
+
+func (s *serviceImpl) testNodeScannerIntegration(integration *storage.NodeIntegration) error {
+	scanner, err := s.nodeEnricher.CreateNodeScanner(integration)
+	if err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err := scanner.TestNodeScanner(); err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 	return nil
@@ -333,4 +395,15 @@ func (s *serviceImpl) reconcileImageIntegrationWithExisting(updatedConfig, store
 		return errors.New("the request doesn't have a valid integration config type")
 	}
 	return secrets.ReconcileScrubbedStructWithExisting(updatedConfig, storedConfig)
+}
+
+// isNodeIntegration returns "true" if the image integration is also a node integration.
+// It loops through the categories, which is a very small slice.
+func isNodeIntegration(integration *storage.ImageIntegration) bool {
+	for _, category := range integration.GetCategories() {
+		if category == storage.ImageIntegrationCategory_NODE_SCANNER {
+			return true
+		}
+	}
+	return false
 }

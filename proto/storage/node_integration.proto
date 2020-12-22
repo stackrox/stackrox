@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "gogoproto/gogo.proto";
+import "storage/image_integration.proto";
+
+package storage;
+
+// Next Tag: 6
+message NodeIntegration {
+    string id   = 1;
+    string name = 2;
+    string type = 3;
+
+    oneof IntegrationConfig {
+        ClairifyConfig clairify = 4;
+    }
+}

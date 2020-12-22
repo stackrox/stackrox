@@ -109,6 +109,10 @@ message AnchoreConfig {
 }
 
 enum ImageIntegrationCategory {
-    REGISTRY = 0;
-    SCANNER  = 1;
+    REGISTRY     = 0;
+    SCANNER      = 1;
+    // Image and Node integrations are currently done on the same form in the UI
+    // so the image integration is also currently used for node integrations.
+    // This decision was made because we currently only support one node scanner (our scanner).
+    NODE_SCANNER = 2;
 }

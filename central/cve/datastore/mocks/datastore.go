@@ -84,6 +84,18 @@ func (mr *MockDataStoreMockRecorder) EnrichImageWithSuppressedCVEs(arg0 interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImageWithSuppressedCVEs", reflect.TypeOf((*MockDataStore)(nil).EnrichImageWithSuppressedCVEs), arg0)
 }
 
+// EnrichNodeWithSuppressedCVEs mocks base method
+func (m *MockDataStore) EnrichNodeWithSuppressedCVEs(arg0 *storage.Node) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "EnrichNodeWithSuppressedCVEs", arg0)
+}
+
+// EnrichNodeWithSuppressedCVEs indicates an expected call of EnrichNodeWithSuppressedCVEs
+func (mr *MockDataStoreMockRecorder) EnrichNodeWithSuppressedCVEs(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNodeWithSuppressedCVEs", reflect.TypeOf((*MockDataStore)(nil).EnrichNodeWithSuppressedCVEs), arg0)
+}
+
 // Exists mocks base method
 func (m *MockDataStore) Exists(arg0 context.Context, arg1 string) (bool, error) {
 	m.ctrl.T.Helper()

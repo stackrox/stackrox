@@ -35,3 +35,19 @@ type AsyncScanner interface {
 	// if not, implementations trigger a new one and instantly return.
 	GetOrTriggerScan(image *storage.Image) (*storage.ImageScan, error)
 }
+
+// NodeScanner is the interface all node scanners must implement
+type NodeScanner interface {
+	NodeScanSemaphore
+	Name() string
+	GetNodeScan(node *storage.Node) (*storage.NodeScan, error)
+	TestNodeScanner() error
+	Type() string
+}
+
+// NodeScannerWithDataSource adds a DataSource function to NodeScanner that describes which
+// integration formed the interface
+type NodeScannerWithDataSource interface {
+	NodeScanner
+	DataSource() *storage.DataSource
+}

@@ -76,13 +76,45 @@ func getImageWithCVEs(cves ...string) *storage.Image {
 	}
 }
 
-func (suite *CVEDataStoreSuite) verifySuppressionState(image *storage.Image, suppressedCVEs, unsuppressedCVEs []string) {
+func getNodeWithCVEs(cves ...string) *storage.Node {
+	vulns := make([]*storage.EmbeddedVulnerability, 0, len(cves))
+	for _, cve := range cves {
+		vulns = append(vulns, &storage.EmbeddedVulnerability{
+			Cve: cve,
+		})
+	}
+	return &storage.Node{
+		Scan: &storage.NodeScan{
+			Components: []*storage.EmbeddedNodeScanComponent{
+				{
+					Vulns: vulns,
+				},
+			},
+		},
+	}
+}
+
+func (suite *CVEDataStoreSuite) verifySuppressionStateImage(image *storage.Image, suppressedCVEs, unsuppressedCVEs []string) {
 	cveMap := make(map[string]bool)
 	for _, comp := range image.GetScan().GetComponents() {
 		for _, vuln := range comp.GetVulns() {
 			cveMap[vuln.Cve] = vuln.GetSuppressed()
 		}
 	}
+	suite.verifySuppressionState(cveMap, suppressedCVEs, unsuppressedCVEs)
+}
+
+func (suite *CVEDataStoreSuite) verifySuppressionStateNode(node *storage.Node, suppressedCVEs, unsuppressedCVEs []string) {
+	cveMap := make(map[string]bool)
+	for _, comp := range node.GetScan().GetComponents() {
+		for _, vuln := range comp.GetVulns() {
+			cveMap[vuln.Cve] = vuln.GetSuppressed()
+		}
+	}
+	suite.verifySuppressionState(cveMap, suppressedCVEs, unsuppressedCVEs)
+}
+
+func (suite *CVEDataStoreSuite) verifySuppressionState(cveMap map[string]bool, suppressedCVEs, unsuppressedCVEs []string) {
 	for _, cve := range suppressedCVEs {
 		val, ok := cveMap[cve]
 		suite.True(ok)
@@ -95,7 +127,7 @@ func (suite *CVEDataStoreSuite) verifySuppressionState(image *storage.Image, sup
 	}
 }
 
-func (suite *CVEDataStoreSuite) TestSuppressionCache() {
+func (suite *CVEDataStoreSuite) TestSuppressionCacheImages() {
 	// Add some results
 	suite.searcher.EXPECT().SearchRawCVEs(getCVECtx, testSuppressionQuery).Return([]*storage.CVE{
 		{
@@ -121,7 +153,7 @@ func (suite *CVEDataStoreSuite) TestSuppressionCache() {
 	// No apply these to the image
 	img := getImageWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
 	suite.datastore.EnrichImageWithSuppressedCVEs(img)
-	suite.verifySuppressionState(img, []string{"CVE-ABC", "CVE-DEF"}, []string{"CVE-GHI"})
+	suite.verifySuppressionStateImage(img, []string{"CVE-ABC", "CVE-DEF"}, []string{"CVE-GHI"})
 
 	start := types.TimestampNow()
 	duration := types.DurationProto(10 * time.Minute)
@@ -143,7 +175,7 @@ func (suite *CVEDataStoreSuite) TestSuppressionCache() {
 	err = suite.datastore.Suppress(testAllAccessContext, start, duration, "CVE-GHI")
 	suite.NoError(err)
 	suite.datastore.EnrichImageWithSuppressedCVEs(img)
-	suite.verifySuppressionState(img, []string{"CVE-ABC", "CVE-DEF", "CVE-GHI"}, nil)
+	suite.verifySuppressionStateImage(img, []string{"CVE-ABC", "CVE-DEF", "CVE-GHI"}, nil)
 
 	// Clear image before unsupressing
 	img = getImageWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
@@ -152,5 +184,65 @@ func (suite *CVEDataStoreSuite) TestSuppressionCache() {
 	err = suite.datastore.Unsuppress(testAllAccessContext, "CVE-GHI")
 	suite.NoError(err)
 	suite.datastore.EnrichImageWithSuppressedCVEs(img)
-	suite.verifySuppressionState(img, []string{"CVE-ABC", "CVE-DEF"}, []string{"CVE-GHI"})
+	suite.verifySuppressionStateImage(img, []string{"CVE-ABC", "CVE-DEF"}, []string{"CVE-GHI"})
+}
+
+func (suite *CVEDataStoreSuite) TestSuppressionCacheNodes() {
+	// Add some results
+	suite.searcher.EXPECT().SearchRawCVEs(getCVECtx, testSuppressionQuery).Return([]*storage.CVE{
+		{
+			Id:         "CVE-ABC",
+			Suppressed: true,
+		},
+		{
+			Id:         "CVE-DEF",
+			Suppressed: true,
+		},
+	}, nil)
+	suite.NoError(suite.datastore.buildSuppressedCache())
+	expectedCache := map[string]suppressionCacheEntry{
+		"CVE-ABC": {
+			Suppressed: true,
+		},
+		"CVE-DEF": {
+			Suppressed: true,
+		},
+	}
+	suite.Equal(expectedCache, suite.datastore.cveSuppressionCache)
+
+	// No apply these to the node
+	node := getNodeWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
+	suite.datastore.EnrichNodeWithSuppressedCVEs(node)
+	suite.verifySuppressionStateNode(node, []string{"CVE-ABC", "CVE-DEF"}, []string{"CVE-GHI"})
+
+	start := types.TimestampNow()
+	duration := types.DurationProto(10 * time.Minute)
+
+	expiry, err := getSuppressExpiry(start, duration)
+	suite.NoError(err)
+
+	suite.storage.EXPECT().GetBatch([]string{"CVE-GHI"}).Return([]*storage.CVE{{Id: "CVE-GHI"}}, nil, nil)
+	storedCVE := &storage.CVE{
+		Id:                 "CVE-GHI",
+		Suppressed:         true,
+		SuppressActivation: start,
+		SuppressExpiry:     expiry,
+	}
+	suite.storage.EXPECT().Upsert(storedCVE).Return(nil)
+
+	// Clear node before suppressing
+	node = getNodeWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
+	err = suite.datastore.Suppress(testAllAccessContext, start, duration, "CVE-GHI")
+	suite.NoError(err)
+	suite.datastore.EnrichNodeWithSuppressedCVEs(node)
+	suite.verifySuppressionStateNode(node, []string{"CVE-ABC", "CVE-DEF", "CVE-GHI"}, nil)
+
+	// Clear node before unsupressing
+	node = getNodeWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
+	suite.storage.EXPECT().GetBatch([]string{"CVE-GHI"}).Return([]*storage.CVE{storedCVE}, nil, nil)
+	suite.storage.EXPECT().Upsert(&storage.CVE{Id: "CVE-GHI"}).Return(nil)
+	err = suite.datastore.Unsuppress(testAllAccessContext, "CVE-GHI")
+	suite.NoError(err)
+	suite.datastore.EnrichNodeWithSuppressedCVEs(node)
+	suite.verifySuppressionStateNode(node, []string{"CVE-ABC", "CVE-DEF"}, []string{"CVE-GHI"})
 }

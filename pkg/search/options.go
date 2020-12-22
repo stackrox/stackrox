@@ -57,6 +57,7 @@ var (
 	ImageRegistry                = newFieldLabel("Image Registry")
 	ImageRemote                  = newFieldLabel("Image Remote")
 	ImageScanTime                = newFieldLabel("Image Scan Time")
+	NodeScanTime                 = newFieldLabel("Node Scan Time")
 	ImageOS                      = newFieldLabel("Image OS")
 	ImageTag                     = newFieldLabel("Image Tag")
 	ImageUser                    = newFieldLabel("Image User")

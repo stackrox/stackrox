@@ -6,6 +6,7 @@ option java_package = "io.stackrox.proto.storage";
 import "google/protobuf/timestamp.proto";
 import "storage/container_runtime.proto";
 import "storage/taints.proto";
+import "storage/vulnerability.proto";
 
 import "gogoproto/gogo.proto";
 
@@ -34,7 +35,23 @@ message Node {
     string container_runtime_version       = 10 [deprecated = true];  // Use container_runtime.version
     ContainerRuntimeInfo container_runtime = 14;
     string kernel_version                  = 11;
+    // From NodeInfo. Operating system reported by the node (ex: linux).
+    string operating_system                = 17;
+    // From NodeInfo. OS image reported by the node from /etc/os-release.
     string os_image                        = 12 [(gogoproto.moretags) = "search:\"Operating System,store\""];
     string kubelet_version                 = 15;
     string kube_proxy_version              = 16;
+
+    NodeScan scan                          = 18 [(gogoproto.moretags) = "policy:\"Node Scan\""];
+}
+
+message NodeScan {
+    google.protobuf.Timestamp          scan_time  = 1 [(gogoproto.moretags) = "search:\"Node Scan Time,store\""];
+    repeated EmbeddedNodeScanComponent components = 2;
+}
+
+message EmbeddedNodeScanComponent {
+    string                         name       = 1 [(gogoproto.moretags) = "search:\"Component,store\""];
+    string                         version    = 2 [(gogoproto.moretags) = "search:\"Component Version,store\""];
+    repeated EmbeddedVulnerability vulns      = 3;
 }

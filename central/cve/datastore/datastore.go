@@ -29,6 +29,7 @@ type DataStore interface {
 	Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, ids ...string) error
 	Unsuppress(ctx context.Context, ids ...string) error
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
+	EnrichNodeWithSuppressedCVEs(node *storage.Node)
 
 	Upsert(ctx context.Context, cves ...*storage.CVE) error
 	UpsertClusterCVEs(ctx context.Context, cves ...converter.ClusterCVEParts) error

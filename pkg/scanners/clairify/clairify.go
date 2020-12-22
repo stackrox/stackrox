@@ -1,6 +1,8 @@
 package clairify
 
 import (
+	"context"
+	"crypto/tls"
 	"net"
 	"net/http"
 	"time"
@@ -11,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	clairConv "github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -20,8 +23,11 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	clairV1 "github.com/stackrox/scanner/api/v1"
+	clairGRPCV1 "github.com/stackrox/scanner/generated/shared/api/v1"
 	"github.com/stackrox/scanner/pkg/clairify/client"
 	"github.com/stackrox/scanner/pkg/clairify/types"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 const (
@@ -35,21 +41,33 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Creator provides the type an scanners.Creator to add to the scanners Registry.
+// Creator provides the type scanners.Creator to add to the scanners Registry.
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error)) {
 	return typeString, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error) {
-		scan, err := newScanner(integration, set)
-		return scan, err
+		return newScanner(integration, set)
+	}
+}
+
+// NodeScannerCreator provides the type scanners.NodeScannerCreator to add to the scanners registry.
+func NodeScannerCreator() (string, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error)) {
+	return typeString, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error) {
+		return newNodeScanner(integration)
 	}
 }
 
 type clairify struct {
 	scannerTypes.ScanSemaphore
+	scannerTypes.NodeScanSemaphore
 
-	client                *client.Clairify
-	conf                  *storage.ClairifyConfig
+	conf *storage.ClairifyConfig
+
+	httpClient            *client.Clairify
 	protoImageIntegration *storage.ImageIntegration
 	activeRegistries      registries.Set
+
+	pingServiceClient    clairGRPCV1.PingServiceClient
+	scanServiceClient    clairGRPCV1.ScanServiceClient
+	protoNodeIntegration *storage.NodeIntegration
 }
 
 func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistries registries.Set) (*clairify, error) {
@@ -67,11 +85,9 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 		Timeout: 2 * time.Second,
 	}
 
-	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
-		UseClientCert: true,
-	})
+	tlsConfig, err := getTLSConfig()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to initialize TLS config")
+		return nil, err
 	}
 
 	httpClient := &http.Client{
@@ -89,7 +105,7 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 	}
 
 	scanner := &clairify{
-		client:                client.NewWithClient(endpoint, httpClient),
+		httpClient:            client.NewWithClient(endpoint, httpClient),
 		conf:                  conf,
 		protoImageIntegration: protoImageIntegration,
 		activeRegistries:      activeRegistries,
@@ -99,9 +115,62 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 	return scanner, nil
 }
 
+func newNodeScanner(protoNodeIntegration *storage.NodeIntegration) (*clairify, error) {
+	if !features.HostScanning.Enabled() {
+		return nil, errors.New("Clairify node scanning is not currently enabled")
+	}
+
+	conf := protoNodeIntegration.GetClairify()
+	if conf == nil {
+		return nil, errors.New("Clairify configuration required")
+	}
+	if err := validateConfig(conf); err != nil {
+		return nil, err
+	}
+
+	endpoint := urlfmt.FormatURL(conf.GetEndpoint(), urlfmt.InsecureHTTP, urlfmt.NoTrailingSlash)
+	tlsConfig, err := getTLSConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	gRPCConnection, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to make gRPC connection to Clairify Scanner")
+	}
+
+	pingServiceClient := clairGRPCV1.NewPingServiceClient(gRPCConnection)
+	scanServiceClient := clairGRPCV1.NewScanServiceClient(gRPCConnection)
+
+	return &clairify{
+		NodeScanSemaphore:    scannerTypes.NewNodeSemaphoreWithValue(defaultMaxConcurrentScans),
+		conf:                 conf,
+		pingServiceClient:    pingServiceClient,
+		scanServiceClient:    scanServiceClient,
+		protoNodeIntegration: protoNodeIntegration,
+	}, nil
+}
+
+func getTLSConfig() (*tls.Config, error) {
+	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
+		UseClientCert: true,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to initialize TLS config")
+	}
+	return tlsConfig, nil
+}
+
 // Test initiates a test of the Clairify Scanner which verifies that we have the proper scan permissions
 func (c *clairify) Test() error {
-	return c.client.Ping()
+	return c.httpClient.Ping()
+}
+
+// TestNodeScanner initiates a test of the Clairify Scanner which verifies
+// that we have the proper scan permissions for node scanning
+func (c *clairify) TestNodeScanner() error {
+	_, err := c.pingServiceClient.Ping(context.Background(), &clairGRPCV1.Empty{})
+	return err
 }
 
 func validateConfig(c *storage.ClairifyConfig) error {
@@ -165,10 +234,10 @@ func v1ImageToClairifyImage(i *storage.Image) *types.Image {
 
 // Try many ways to retrieve a sha
 func (c *clairify) getScan(image *storage.Image) (*clairV1.LayerEnvelope, error) {
-	if env, err := c.client.RetrieveImageDataBySHA(utils.GetSHA(image), true, true); err == nil {
+	if env, err := c.httpClient.RetrieveImageDataBySHA(utils.GetSHA(image), true, true); err == nil {
 		return env, nil
 	}
-	return c.client.RetrieveImageDataByName(v1ImageToClairifyImage(image), true, true)
+	return c.httpClient.RetrieveImageDataByName(v1ImageToClairifyImage(image), true, true)
 }
 
 // GetScan retrieves the most recent scan
@@ -178,7 +247,7 @@ func (c *clairify) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		return nil, nil
 	}
 	// If not found by digest, then should trigger a scan
-	env, err := c.client.RetrieveImageDataBySHA(utils.GetSHA(image), true, true)
+	env, err := c.httpClient.RetrieveImageDataBySHA(utils.GetSHA(image), true, true)
 	if err != nil {
 		if err != client.ErrorScanNotFound {
 			return nil, err
@@ -204,11 +273,31 @@ func (c *clairify) scan(image *storage.Image) error {
 		return nil
 	}
 
-	_, err := c.client.AddImage(rc.Username, rc.Password, &types.ImageRequest{
+	_, err := c.httpClient.AddImage(rc.Username, rc.Password, &types.ImageRequest{
 		Image:    utils.GetFullyQualifiedFullName(image),
 		Registry: rc.URL,
 		Insecure: rc.Insecure})
 	return err
+}
+
+// GetNodeScan retrieves the most recent node scan
+func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
+	if !features.HostScanning.Enabled() {
+		return nil, errors.New("Host scanning is disabled")
+	}
+
+	req := convertNodeToVulnRequest(node)
+	resp, err := c.scanServiceClient.GetVulnerabilities(context.Background(), req)
+	if err != nil {
+		return nil, err
+	}
+
+	scan := convertVulnResponseToNodeScan(node, resp)
+	if scan == nil {
+		return nil, errors.New("malformed vuln response from scanner")
+	}
+
+	return scan, nil
 }
 
 // Match decides if the image is contained within this scanner
@@ -216,16 +305,19 @@ func (c *clairify) Match(image *storage.ImageName) bool {
 	return c.activeRegistries.Match(image)
 }
 
+// Type returns the stringified type of this scanner
 func (c *clairify) Type() string {
 	return typeString
 }
 
+// Name returns the integration's name
 func (c *clairify) Name() string {
 	return c.protoImageIntegration.GetName()
 }
 
+// GetVulnDefinitionsInfo gets the vulnerability definition metadata.
 func (c *clairify) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	info, err := c.client.GetVulnDefsMetadata()
+	info, err := c.httpClient.GetVulnDefsMetadata()
 	if err != nil {
 		return nil, err
 	}

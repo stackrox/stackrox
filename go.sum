@@ -1451,8 +1451,8 @@ github.com/stackrox/scanner v0.0.0-20191202203519-a2a15f33f41a h1:HcjJR96cL0AnLU
 github.com/stackrox/scanner v0.0.0-20191202203519-a2a15f33f41a/go.mod h1:2GKn2VH/P+4lsFJG8NlpTdgrU+nelhk8Ogtdx6XjaI0=
 github.com/stackrox/scanner v0.0.0-20200828185353-f2362ea7df99 h1:OTEQKPmQZrKSaVwF1iPuKpikUTUBxN0q4D6K9IqK3UY=
 github.com/stackrox/scanner v0.0.0-20200828185353-f2362ea7df99/go.mod h1:9EZi1lP1jHMkAdDEQKymiBSqH5Auma8DZiWcUrh7L0U=
-github.com/stackrox/scanner v0.0.0-20201210013143-a4583098a9fe h1:qISOwEVGkWnYmGEPC94fhClfJ9TQJFms9UEcKC8KFrQ=
-github.com/stackrox/scanner v0.0.0-20201210013143-a4583098a9fe/go.mod h1:EQhODmCL9hcTgyjvh8YovNfn3cFNlUSAFCMl+34aezk=
+github.com/stackrox/scanner v0.0.0-20201218051228-bb42033af91b h1:Vum2Ikr5y5/HhRnEdJwXjKNSX0DxH041WHx7/dmmRaE=
+github.com/stackrox/scanner v0.0.0-20201218051228-bb42033af91b/go.mod h1:EQhODmCL9hcTgyjvh8YovNfn3cFNlUSAFCMl+34aezk=
 github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f h1:Ofa3PAa609eSHcHP2kCJDUWUnuEWfiqXhsuppk/QtOE=
 github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f/go.mod h1:MA8QOfq0BHJwdXa996Y4dYkAqRKB8/1K1QMMZVaNZjQ=
 github.com/steveyen/gtreap v0.0.0-20150807155958-0abe01ef9be2 h1:JNEGSiWg6D3lcBCMCBqN3ELniXujt+0QNHLhNnO0w3s=

@@ -711,8 +711,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"kubeletVersion: String!",
 		"labels: [Label!]!",
 		"name: String!",
+		"operatingSystem: String!",
 		"osImage: String!",
+		"scan: NodeScan",
 		"taints: [Taint]!",
+	}))
+	utils.Must(builder.AddType("NodeScan", []string{
+		"scanTime: Time",
 	}))
 	utils.Must(builder.AddType("Notifier", []string{
 		"enabled: Boolean!",
@@ -6637,14 +6642,53 @@ func (resolver *nodeResolver) Name(ctx context.Context) string {
 	return value
 }
 
+func (resolver *nodeResolver) OperatingSystem(ctx context.Context) string {
+	value := resolver.data.GetOperatingSystem()
+	return value
+}
+
 func (resolver *nodeResolver) OsImage(ctx context.Context) string {
 	value := resolver.data.GetOsImage()
 	return value
 }
 
+func (resolver *nodeResolver) Scan(ctx context.Context) (*nodeScanResolver, error) {
+	value := resolver.data.GetScan()
+	return resolver.root.wrapNodeScan(value, true, nil)
+}
+
 func (resolver *nodeResolver) Taints(ctx context.Context) ([]*taintResolver, error) {
 	value := resolver.data.GetTaints()
 	return resolver.root.wrapTaints(value, nil)
+}
+
+type nodeScanResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.NodeScan
+}
+
+func (resolver *Resolver) wrapNodeScan(value *storage.NodeScan, ok bool, err error) (*nodeScanResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &nodeScanResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapNodeScans(values []*storage.NodeScan, err error) ([]*nodeScanResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*nodeScanResolver, len(values))
+	for i, v := range values {
+		output[i] = &nodeScanResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *nodeScanResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetScanTime()
+	return timestamp(value)
 }
 
 type notifierResolver struct {

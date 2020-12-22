@@ -8,28 +8,35 @@ import (
 	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/images/enricher"
+	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/metrics"
+	nodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	once sync.Once
 
-	ie enricher.ImageEnricher
+	ie imageEnricher.ImageEnricher
+	ne nodeEnricher.NodeEnricher
 	en Enricher
 
-	scanCacheOnce sync.Once
-	scanCache     expiringcache.Cache
+	imageScanCacheOnce sync.Once
+	imageScanCache     expiringcache.Cache
 
 	metadataCacheOnce sync.Once
 	metadataCache     expiringcache.Cache
 
+	nodeScanCacheOnce sync.Once
+	nodeScanCache     expiringcache.Cache
+
 	imageCacheExpiryDuration = 4 * time.Hour
+	nodeCacheExpiryDuration  = 4 * time.Hour
 )
 
 func initialize() {
-	ie = enricher.New(cveDataStore.Singleton(), imageintegration.Set(), metrics.CentralSubsystem, ImageMetadataCacheSingleton(), ImageScanCacheSingleton(), reporter.Singleton())
+	ie = imageEnricher.New(cveDataStore.Singleton(), imageintegration.Set(), metrics.CentralSubsystem, ImageMetadataCacheSingleton(), ImageScanCacheSingleton(), reporter.Singleton())
+	ne = nodeEnricher.New(cveDataStore.Singleton(), metrics.CentralSubsystem, NodeScanCacheSingleton())
 	en = New(datastore.Singleton(), ie)
 }
 
@@ -40,17 +47,17 @@ func Singleton() Enricher {
 }
 
 // ImageEnricherSingleton provides the singleton ImageEnricher to use.
-func ImageEnricherSingleton() enricher.ImageEnricher {
+func ImageEnricherSingleton() imageEnricher.ImageEnricher {
 	once.Do(initialize)
 	return ie
 }
 
 // ImageScanCacheSingleton returns the cache for image scans
 func ImageScanCacheSingleton() expiringcache.Cache {
-	scanCacheOnce.Do(func() {
-		scanCache = expiringcache.NewExpiringCache(imageCacheExpiryDuration)
+	imageScanCacheOnce.Do(func() {
+		imageScanCache = expiringcache.NewExpiringCache(imageCacheExpiryDuration)
 	})
-	return scanCache
+	return imageScanCache
 }
 
 // ImageMetadataCacheSingleton returns the cache for image metadata
@@ -59,4 +66,18 @@ func ImageMetadataCacheSingleton() expiringcache.Cache {
 		metadataCache = expiringcache.NewExpiringCache(imageCacheExpiryDuration, expiringcache.UpdateExpirationOnGets)
 	})
 	return metadataCache
+}
+
+// NodeEnricherSingleton provides the singleton NodeEnricher to use.
+func NodeEnricherSingleton() nodeEnricher.NodeEnricher {
+	once.Do(initialize)
+	return ne
+}
+
+// NodeScanCacheSingleton returns the cache for node scans
+func NodeScanCacheSingleton() expiringcache.Cache {
+	nodeScanCacheOnce.Do(func() {
+		nodeScanCache = expiringcache.NewExpiringCache(nodeCacheExpiryDuration)
+	})
+	return nodeScanCache
 }
