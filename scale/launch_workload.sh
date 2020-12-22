@@ -10,6 +10,8 @@ if ! kubectl -n stackrox get pvc/stackrox-db > /dev/null; then
   exit 1
 fi
 
+kubectl -n stackrox delete daemonset collector
+
 kubectl -n stackrox set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
 kubectl -n stackrox set env deploy/sensor ROX_FAKE_KUBERNETES_WORKLOAD="$1"
 kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0
