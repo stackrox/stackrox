@@ -17,21 +17,23 @@ func Generate() *cobra.Command {
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			valuesFilename, _ := c.Flags().GetString("values-file")
 			outputDir, _ := c.Flags().GetString("output-dir")
+			backupBundle, _ := c.Flags().GetString("backup-bundle")
 			values, err := loadValues(valuesFilename)
 			if err != nil {
 				return err
 			}
 
-			return generate(outputDir, values)
+			return generate(outputDir, values, backupBundle)
 		}),
 	}
 	c.PersistentFlags().String("values-file", "/data/final_values.yaml", "path to the input yaml values file")
 	c.PersistentFlags().String("output-dir", "", "path to the output helm chart directory")
+	c.PersistentFlags().String("backup-bundle", "", "path to the backup bundle from which to restore keys and certificates")
 
 	return c
 }
 
-func generate(outputDir string, values *Values) error {
+func generate(outputDir string, values *Values, backupBundle string) error {
 	config := renderer.Config{
 		Version:        version.GetMainVersion(),
 		OutputDir:      outputDir,
@@ -52,7 +54,8 @@ func generate(outputDir string, values *Values) error {
 			StorageClass: values.PVCStorageclass,
 			Size:         values.PVCSize,
 		},
-		LicenseData: []byte(values.License),
+		LicenseData:  []byte(values.License),
+		BackupBundle: backupBundle,
 	}
 
 	switch values.Network {

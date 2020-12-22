@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/badgerutils"
+	"github.com/stackrox/rox/pkg/backup"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -83,36 +84,36 @@ func tryRestoreZip(backupFile *os.File, outPath string) error {
 	hasBadger := false
 
 	for _, f := range zipReader.File {
-		if f.Name == boltFileName {
+		if f.Name == backup.BoltFileName {
 			r, err := f.Open()
 			if err != nil {
-				return errors.Wrapf(err, "could not open %s in ZIP archive", boltFileName)
+				return errors.Wrapf(err, "could not open %s in ZIP archive", backup.BoltFileName)
 			}
 			err = tryRestoreBolt(r, outPath)
 			_ = r.Close()
 			if err != nil {
-				return errors.Wrapf(err, "could not restore bolt DB from file %s in ZIP archive", boltFileName)
+				return errors.Wrapf(err, "could not restore bolt DB from file %s in ZIP archive", backup.BoltFileName)
 			}
 			hasBolt = true
-		} else if f.Name == badgerFileName {
+		} else if f.Name == backup.BadgerFileName {
 			r, err := f.Open()
 			if err != nil {
-				return errors.Wrapf(err, "could not open %s in ZIP archive", badgerFileName)
+				return errors.Wrapf(err, "could not open %s in ZIP archive", backup.BadgerFileName)
 			}
 			err = tryRestoreBadger(r, outPath)
 			_ = r.Close()
 			if err != nil {
-				return errors.Wrapf(err, "could not restore badger DB from file %s in ZIP archive", badgerFileName)
+				return errors.Wrapf(err, "could not restore badger DB from file %s in ZIP archive", backup.BadgerFileName)
 			}
 			hasBadger = true
 		}
 	}
 
 	if !hasBolt {
-		return fmt.Errorf("bolt backup file %s not found in ZIP archive", boltFileName)
+		return fmt.Errorf("bolt backup file %s not found in ZIP archive", backup.BoltFileName)
 	}
 	if !hasBadger {
-		return fmt.Errorf("badger backup file %s not found in ZIP archive", badgerFileName)
+		return fmt.Errorf("badger backup file %s not found in ZIP archive", backup.BadgerFileName)
 	}
 	return nil
 }

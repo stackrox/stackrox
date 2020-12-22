@@ -130,6 +130,7 @@ type Config struct {
 
 	DefaultTLSCertPEM []byte
 	DefaultTLSKeyPEM  []byte
+	BackupBundle      string
 
 	SecretsByteMap   map[string][]byte
 	SecretsBase64Map map[string]string

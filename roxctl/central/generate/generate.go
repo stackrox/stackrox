@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/backup"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/env"
@@ -32,6 +33,13 @@ import (
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
+// The keys used to store central keys and certificates in renderer.Config.SecretsByteMap.
+const (
+	caKeyPem    = "ca-key.pem"
+	caCertPem   = "ca.pem"
+	jwtKeyInPem = "jwt-key.pem"
+)
+
 func generateJWTSigningKey(fileMap map[string][]byte) error {
 	// Generate the private key that we will use to sign JWTs for API keys.
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
@@ -39,43 +47,109 @@ func generateJWTSigningKey(fileMap map[string][]byte) error {
 		return errors.Wrap(err, "couldn't generate private key")
 	}
 	jwtKey := x509.MarshalPKCS1PrivateKey(privateKey)
-	fileMap["jwt-key.der"] = jwtKey
-	fileMap["jwt-key.pem"] = pem.EncodeToMemory(&pem.Block{
+	fileMap[jwtKeyInPem] = pem.EncodeToMemory(&pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: jwtKey,
 	})
 	return nil
 }
 
-func generateMTLSFiles(fileMap map[string][]byte) (caCert, caKey []byte, err error) {
+func restoreJWTSigningKey(fileMap map[string][]byte, backupBundle string) error {
+	z, err := zip.NewReader(backupBundle)
+	if err != nil {
+		return err
+	}
+	defer utils.IgnoreError(z.Close)
+
+	switch {
+	case z.ContainsFile(path.Join(backup.KeysBaseFolder, backup.JwtKeyInDer)):
+		jwtKey, _ := z.ReadFrom(path.Join(backup.KeysBaseFolder, backup.JwtKeyInDer))
+		fileMap[jwtKeyInPem] = pem.EncodeToMemory(&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: jwtKey,
+		})
+	case z.ContainsFile(path.Join(backup.KeysBaseFolder, backup.JwtKeyInPem)):
+		jwtKeyPem, err := z.ReadFrom(path.Join(backup.KeysBaseFolder, backup.JwtKeyInPem))
+		if err != nil {
+			return err
+		}
+		fileMap[jwtKeyInPem] = jwtKeyPem
+		decode, _ := pem.Decode(jwtKeyPem)
+		if decode == nil {
+			return errors.Errorf("Unable to decode key in %s:\n%s", backup.JwtKeyInPem, string(jwtKeyPem))
+		}
+
+	default:
+		return errors.New("cannot find jwt key in backup bundle.")
+	}
+	return nil
+}
+
+func generateCA(fileMap map[string][]byte) error {
 	// Add MTLS files
 	serial, err := mtls.RandomSerial()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not generate a serial number")
+		return errors.Wrap(err, "could not generate a serial number")
 	}
 	req := csr.CertificateRequest{
 		CN:           mtls.ServiceCACommonName,
 		KeyRequest:   csr.NewBasicKeyRequest(),
 		SerialNumber: serial.String(),
 	}
-	caCert, _, caKey, err = initca.New(&req)
+	caCert, _, caKey, err := initca.New(&req)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not generate keypair")
+		return errors.Wrap(err, "could not generate keypair")
 	}
-	fileMap["ca.pem"] = caCert
-	fileMap["ca-key.pem"] = caKey
+	fileMap[caCertPem] = caCert
+	fileMap[caKeyPem] = caKey
+	return nil
+}
+
+func restoreCA(fileMap map[string][]byte, backupBundle string) error {
+	z, err := zip.NewReader(backupBundle)
+	if err != nil {
+		return err
+	}
+	defer utils.IgnoreError(z.Close)
+
+	caCert, err := z.ReadFrom(path.Join(backup.KeysBaseFolder, backup.CaCertPem))
+	if err != nil {
+		return err
+	}
+
+	caKey, err := z.ReadFrom(path.Join(backup.KeysBaseFolder, backup.CaKeyPem))
+	if err != nil {
+		return err
+	}
+
+	fileMap[caCertPem] = caCert
+	fileMap[caKeyPem] = caKey
+	return nil
+}
+
+func populateMTLSFiles(fileMap map[string][]byte, backupBundle string) error {
+	switch backupBundle {
+	case "":
+		if err := generateCA(fileMap); err != nil {
+			return err
+		}
+	default:
+		if err := restoreCA(fileMap, backupBundle); err != nil {
+			return err
+		}
+	}
 
 	if err := certgen.IssueCentralCert(fileMap); err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	if err := certgen.IssueScannerCerts(fileMap); err != nil {
-		return nil, nil, err
+		return err
 	}
 
 	fileMap["scanner-db-password"] = []byte(renderer.CreatePassword())
 
-	return caCert, caKey, nil
+	return nil
 }
 
 func openFileFunc(path string) func() io.ReadCloser {
@@ -108,7 +182,11 @@ func createBundle(config renderer.Config) (*zip.Wrapper, error) {
 	}
 
 	config.SecretsByteMap = make(map[string][]byte)
-	if err := generateJWTSigningKey(config.SecretsByteMap); err != nil {
+	if config.BackupBundle == "" {
+		if err := generateJWTSigningKey(config.SecretsByteMap); err != nil {
+			return nil, err
+		}
+	} else if err := restoreJWTSigningKey(config.SecretsByteMap, config.BackupBundle); err != nil {
 		return nil, err
 	}
 
@@ -153,7 +231,7 @@ func createBundle(config renderer.Config) (*zip.Wrapper, error) {
 	config.SecretsByteMap["htpasswd"] = htpasswd
 	wrapper.AddFiles(zip.NewFile("password", []byte(config.Password+"\n"), zip.Sensitive))
 
-	if _, _, err := generateMTLSFiles(config.SecretsByteMap); err != nil {
+	if err := populateMTLSFiles(config.SecretsByteMap, config.BackupBundle); err != nil {
 		return nil, err
 	}
 
@@ -248,6 +326,10 @@ func Command() *cobra.Command {
 	utils.Must(
 		c.PersistentFlags().SetAnnotation("default-tls-key", flags.DependenciesKey, []string{"default-tls-cert"}),
 		c.PersistentFlags().SetAnnotation("default-tls-key", flags.MandatoryKey, []string{"true"}),
+	)
+	c.PersistentFlags().StringVar(&cfg.BackupBundle, "backup-bundle", "", "path to the backup bundle from which to restore keys and certificates")
+	utils.Must(
+		c.PersistentFlags().SetAnnotation("backup-bundle", flags.OptionalKey, []string{"true"}),
 	)
 
 	c.PersistentFlags().VarPF(
