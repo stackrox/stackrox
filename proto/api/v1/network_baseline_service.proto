@@ -65,7 +65,7 @@ message ModifyBaselineStatusForPeersRequest {
  service NetworkBaselineService {
     rpc GetNetworkBaselineStatusForFlows (NetworkBaselineStatusRequest) returns (NetworkBaselineStatusResponse) {
         option (google.api.http) = {
-            get: "/v1/networkbaseline/{deployment_id}/status"
+            post: "/v1/networkbaseline/{deployment_id}/status"
         };
     }
 
