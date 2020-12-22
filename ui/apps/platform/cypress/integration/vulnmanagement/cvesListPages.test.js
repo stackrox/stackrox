@@ -4,7 +4,7 @@ import { hasExpectedHeaderColumns, allChecksForEntities } from '../../helpers/vm
 import * as api from '../../constants/apiEndpoints';
 import checkFeatureFlag from '../../helpers/features';
 
-describe('CVEs list Page and its entity detail page,sub list  validations ', () => {
+describe('CVEs list Page and its entity detail page, sub list validations ', () => {
     withAuth();
 
     it('should display all the columns and links expected in cves list page', () => {
@@ -18,7 +18,7 @@ describe('CVEs list Page and its entity detail page,sub list  validations ', () 
             'Impact Score',
             'Discovered Time',
             'Published',
-            'Deployments',
+            'Entities',
         ]);
         cy.get(selectors.tableBodyColumn).each(($el) => {
             const columnValue = $el.text().toLowerCase();

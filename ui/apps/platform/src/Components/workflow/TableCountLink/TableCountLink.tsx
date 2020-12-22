@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { ReactElement, useContext } from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 import camelCase from 'lodash/camelCase';
@@ -7,17 +7,33 @@ import TableCellLink from 'Components/TableCellLink';
 import workflowStateContext from 'Containers/workflowStateContext';
 import entityLabels from 'messages/entity';
 
-const TableCountLink = ({ selectedRowId, entityType, textOnly, count, entityTypeText, search }) => {
+type TableCountLinkProps = {
+    selectedRowId: string;
+    entityType: string;
+    textOnly: boolean;
+    count: number;
+    entityTypeText: string;
+    search: {};
+};
+
+function TableCountLink({
+    selectedRowId,
+    entityType,
+    textOnly = false,
+    count,
+    entityTypeText = '',
+    search = {},
+}: TableCountLinkProps): ReactElement {
     const workflowState = useContext(workflowStateContext);
 
     const type = entityTypeText || entityLabels[entityType];
     if (count === 0) {
-        return `No ${pluralize(type)}`;
+        return <div>No {pluralize(type)}</div>;
     }
 
     const text = `${count} ${pluralize(type, count)}`;
     if (textOnly) {
-        return <span data-testid={`${type}CountText`}>{text}</span>;
+        return <div data-testid={`${type}CountText`}>{text}</div>;
     }
 
     const newState = workflowState.pushListItem(selectedRowId).pushList(entityType);
@@ -31,7 +47,7 @@ const TableCountLink = ({ selectedRowId, entityType, textOnly, count, entityType
             dataTestId={`${camelCase(type)}CountLink`}
         />
     );
-};
+}
 
 TableCountLink.propTypes = {
     entityType: PropTypes.string.isRequired,

@@ -16,7 +16,7 @@ import RowActionMenu from 'Components/RowActionMenu';
 import DateTimeField from 'Components/DateTimeField';
 import LabelChip from 'Components/LabelChip';
 import Menu from 'Components/Menu';
-import TableCountLink from 'Components/workflow/TableCountLink';
+import TableCountLinks from 'Components/workflow/TableCountLinks';
 import CveType from 'Components/CveType';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import PanelButton from 'Components/PanelButton';
@@ -155,60 +155,13 @@ export function getCveTableColumns(workflowState, tableColumnOptions = {}) {
             sortField: cveSortFields.IMPACT_SCORE,
         },
         {
-            Header: `Deployments`,
-            entityType: entityTypes.DEPLOYMENT,
+            Header: `Entities`,
             headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => (
-                <TableCountLink
-                    entityType={entityTypes.DEPLOYMENT}
-                    count={original.deploymentCount}
-                    textOnly={inFindingsSection || pdf}
-                    selectedRowId={original.cve}
-                />
+                <TableCountLinks row={original} textOnly={inFindingsSection || pdf} />
             ),
-            id: cveSortFields.DEPLOYMENTS,
-            accessor: 'deploymentCount',
-            sortField: cveSortFields.DEPLOYMENTS,
-            sortable: false,
-        },
-        {
-            Header: `Images`,
-            entityType: entityTypes.IMAGE,
-            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
-            Cell: ({ original, pdf }) => (
-                <TableCountLink
-                    entityType={entityTypes.IMAGE}
-                    count={original.imageCount}
-                    textOnly={inFindingsSection || pdf}
-                    selectedRowId={original.cve}
-                />
-            ),
-            id: cveSortFields.IMAGES,
-            accessor: 'imageCount',
-            sortField: cveSortFields.IMAGES,
-            sortable: false,
-        },
-        {
-            Header: `Components`,
-            entityType: entityTypes.COMPONENT,
-            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
-            Cell: ({ original, pdf }) => (
-                <TableCountLink
-                    entityType={entityTypes.COMPONENT}
-                    count={original.componentCount}
-                    textOnly={inFindingsSection || pdf}
-                    selectedRowId={original.cve}
-                />
-            ),
-            id: cveSortFields.COMPONENTS,
-            accessor: 'componentCount',
-            sortField: cveSortFields.COMPONENTS,
             sortable: false,
         },
         {

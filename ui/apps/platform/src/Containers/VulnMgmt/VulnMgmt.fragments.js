@@ -73,6 +73,7 @@ export const VULN_CVE_LIST_FRAGMENT = gql`
         deploymentCount(query: $query)
         imageCount(query: $query)
         componentCount(query: $query)
+        # nodeCount(query: $query)
     }
 `;
 
