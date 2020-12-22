@@ -67,9 +67,9 @@ func insertThing(bucket bolthelpers.BucketRef, id string, pb proto.Message) erro
 	})
 }
 
-func (suite *MigrationTestSuite) mustInsertProcessWhitelist(pw *storage.ProcessWhitelist) {
+func (suite *MigrationTestSuite) mustInsertProcessWhitelist(pb *storage.ProcessBaseline) {
 	pWBucket := bolthelpers.TopLevelRef(suite.boltdb, whitelistBucket)
-	suite.NoError(insertThing(pWBucket, pw.GetId(), pw))
+	suite.NoError(insertThing(pWBucket, pb.GetId(), pb))
 }
 
 func (suite *MigrationTestSuite) addDeploymentIds() {
@@ -97,9 +97,9 @@ func (suite *MigrationTestSuite) addDeploymentIds() {
 func (suite *MigrationTestSuite) TestProcessWhitelistPruning() {
 	suite.addDeploymentIds()
 
-	oldPWLs := []*storage.ProcessWhitelist{
+	oldPWLs := []*storage.ProcessBaseline{
 		{Id: "1",
-			Key: &storage.ProcessWhitelistKey{
+			Key: &storage.ProcessBaselineKey{
 				DeploymentId:  "A",
 				ContainerName: "A",
 				ClusterId:     "1",
@@ -110,7 +110,7 @@ func (suite *MigrationTestSuite) TestProcessWhitelistPruning() {
 			},
 		},
 		{Id: "2",
-			Key: &storage.ProcessWhitelistKey{
+			Key: &storage.ProcessBaselineKey{
 				DeploymentId:  "dep-1",
 				ContainerName: "C",
 				ClusterId:     "2",
@@ -118,7 +118,7 @@ func (suite *MigrationTestSuite) TestProcessWhitelistPruning() {
 			},
 		},
 		{Id: "3",
-			Key: &storage.ProcessWhitelistKey{
+			Key: &storage.ProcessBaselineKey{
 				DeploymentId:  "dep-5",
 				ContainerName: "C",
 				ClusterId:     "2",
@@ -126,7 +126,7 @@ func (suite *MigrationTestSuite) TestProcessWhitelistPruning() {
 			},
 		},
 		{Id: "4",
-			Key: &storage.ProcessWhitelistKey{
+			Key: &storage.ProcessBaselineKey{
 				DeploymentId:  "B",
 				ContainerName: "B",
 				ClusterId:     "1",
@@ -134,7 +134,7 @@ func (suite *MigrationTestSuite) TestProcessWhitelistPruning() {
 			},
 		},
 		{Id: "5",
-			Key: &storage.ProcessWhitelistKey{
+			Key: &storage.ProcessBaselineKey{
 				DeploymentId:  "dep-9",
 				ContainerName: "C",
 				ClusterId:     "2",
@@ -143,9 +143,9 @@ func (suite *MigrationTestSuite) TestProcessWhitelistPruning() {
 		},
 	}
 
-	expectedPWLs := []*storage.ProcessWhitelist{
+	expectedPWLs := []*storage.ProcessBaseline{
 		{Id: "2",
-			Key: &storage.ProcessWhitelistKey{
+			Key: &storage.ProcessBaselineKey{
 				DeploymentId:  "dep-1",
 				ContainerName: "C",
 				ClusterId:     "2",
@@ -153,7 +153,7 @@ func (suite *MigrationTestSuite) TestProcessWhitelistPruning() {
 			},
 		},
 		{Id: "3",
-			Key: &storage.ProcessWhitelistKey{
+			Key: &storage.ProcessBaselineKey{
 				DeploymentId:  "dep-5",
 				ContainerName: "C",
 				ClusterId:     "2",
@@ -161,7 +161,7 @@ func (suite *MigrationTestSuite) TestProcessWhitelistPruning() {
 			},
 		},
 		{Id: "4",
-			Key: &storage.ProcessWhitelistKey{
+			Key: &storage.ProcessBaselineKey{
 				DeploymentId:  "B",
 				ContainerName: "B",
 				ClusterId:     "1",
@@ -169,7 +169,7 @@ func (suite *MigrationTestSuite) TestProcessWhitelistPruning() {
 			},
 		},
 		{Id: "5",
-			Key: &storage.ProcessWhitelistKey{
+			Key: &storage.ProcessBaselineKey{
 				DeploymentId:  "dep-9",
 				ContainerName: "C",
 				ClusterId:     "2",
@@ -184,11 +184,11 @@ func (suite *MigrationTestSuite) TestProcessWhitelistPruning() {
 
 	suite.NoError(migration.Run(&migratorTypes.Databases{BoltDB: suite.boltdb, BadgerDB: suite.badgerdb}))
 
-	newProcessWhitelist := make([]*storage.ProcessWhitelist, 0, len(oldPWLs))
+	newProcessWhitelist := make([]*storage.ProcessBaseline, 0, len(oldPWLs))
 	newPWBucket := bolthelpers.TopLevelRef(suite.boltdb, whitelistBucket)
 	suite.NoError(newPWBucket.View(func(b *bolt.Bucket) error {
 		return b.ForEach(func(_, v []byte) error {
-			var processWhitelist storage.ProcessWhitelist
+			var processWhitelist storage.ProcessBaseline
 			err := proto.Unmarshal(v, &processWhitelist)
 			if err != nil {
 				return err

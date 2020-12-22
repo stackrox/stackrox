@@ -11,7 +11,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/alert/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
-	whitelistDatastore "github.com/stackrox/rox/central/processwhitelist/datastore"
+	baselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -78,7 +78,7 @@ var (
 type serviceImpl struct {
 	dataStore         datastore.DataStore
 	notifier          notifierProcessor.Processor
-	whitelists        whitelistDatastore.DataStore
+	baselines         baselineDatastore.DataStore
 	connectionManager connection.Manager
 }
 
@@ -207,35 +207,35 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 	}
 
 	if req.GetWhitelist() {
-		// This isn't great as it assumes a single whitelist key
-		itemMap := make(map[string][]*storage.WhitelistItem)
+		// This isn't great as it assumes a single baseline key
+		itemMap := make(map[string][]*storage.BaselineItem)
 		for _, process := range alert.GetProcessViolation().GetProcesses() {
-			itemMap[process.GetContainerName()] = append(itemMap[process.GetContainerName()], &storage.WhitelistItem{
-				Item: &storage.WhitelistItem_ProcessName{
-					ProcessName: processwhitelist.WhitelistItemFromProcess(process),
+			itemMap[process.GetContainerName()] = append(itemMap[process.GetContainerName()], &storage.BaselineItem{
+				Item: &storage.BaselineItem_ProcessName{
+					ProcessName: processwhitelist.BaselineItemFromProcess(process),
 				},
 			})
 		}
 		for containerName, items := range itemMap {
-			key := &storage.ProcessWhitelistKey{
+			key := &storage.ProcessBaselineKey{
 				DeploymentId:  alert.GetDeployment().GetId(),
 				ContainerName: containerName,
 				ClusterId:     alert.GetDeployment().GetClusterId(),
 				Namespace:     alert.GetDeployment().GetNamespace(),
 			}
-			whitelist, err := s.whitelists.UpdateProcessWhitelistElements(ctx, key, items, nil, false)
+			baseline, err := s.baselines.UpdateProcessBaselineElements(ctx, key, items, nil, false)
 			if err != nil {
 				return nil, status.Error(codes.Internal, err.Error())
 			}
 			err = s.connectionManager.SendMessage(alert.GetDeployment().GetClusterId(), &central.MsgToSensor{
-				Msg: &central.MsgToSensor_WhitelistSync{
-					WhitelistSync: &central.WhitelistSync{
-						Whitelists: []*storage.ProcessWhitelist{whitelist},
+				Msg: &central.MsgToSensor_BaselineSync{
+					BaselineSync: &central.BaselineSync{
+						Baselines: []*storage.ProcessBaseline{baseline},
 					},
 				},
 			})
 			if err != nil {
-				log.Errorf("error syncing whitelist with cluster %q: %v", alert.GetDeployment().GetClusterId(), err)
+				log.Errorf("error syncing baseline with cluster %q: %v", alert.GetDeployment().GetClusterId(), err)
 			}
 		}
 	}

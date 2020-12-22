@@ -8,7 +8,7 @@ import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
-import io.stackrox.proto.storage.ProcessWhitelistOuterClass
+import io.stackrox.proto.storage.ProcessBaselineOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 import objects.DaemonSet
 import objects.Deployment
@@ -677,11 +677,11 @@ class Enforcement extends BaseSpecification {
 
         when:
         String clusterId = ClusterService.getClusterId()
-        ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
+        ProcessBaselineOuterClass.ProcessBaseline whitelist = ProcessWhitelistService.
                 getProcessWhitelist(clusterId, d)
         assert (whitelist != null)
         println whitelist
-        List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists = ProcessWhitelistService.
+        List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessWhitelists = ProcessWhitelistService.
                 lockProcessWhitelists(clusterId, d, "", true)
         assert lockProcessWhitelists.size() ==  1
         assert  lockProcessWhitelists.get(0).getElementsList().

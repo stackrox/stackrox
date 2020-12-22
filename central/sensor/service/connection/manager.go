@@ -16,7 +16,7 @@ type Manager interface {
 	Start(mgr common.ClusterManager,
 		netEntitiesMgr common.NetworkEntityManager,
 		policyMgr common.PolicyManager,
-		whitelistMgr common.ProcessBaselineManager,
+		baselineMgr common.ProcessBaselineManager,
 		autoTriggerUpgrades *concurrency.Flag) error
 
 	// Connection-related methods.

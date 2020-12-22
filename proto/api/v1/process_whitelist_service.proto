@@ -4,53 +4,65 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "storage/process_whitelist.proto";
+import "storage/process_baseline.proto";
 
 package v1;
 
+// TODO(ROX-6194): This file is replaced by "process_baseline_service.proto" and
+//   shall be removed after the deprecation cycle started with the 54.0 release.
+
 message GetProcessWhitelistRequest {
-    storage.ProcessWhitelistKey key = 1;
+    option                     deprecated = true;
+    storage.ProcessBaselineKey key        = 1;
 }
 
 message UpdateProcessWhitelistsRequest {
-    repeated storage.ProcessWhitelistKey keys         = 1;
-    repeated storage.WhitelistItem    add_elements    = 2;
-    repeated storage.WhitelistItem    remove_elements = 3;
+    option                              deprecated      = true;
+    repeated storage.ProcessBaselineKey keys            = 1;
+    repeated storage.BaselineItem       add_elements    = 2;
+    repeated storage.BaselineItem       remove_elements = 3;
 }
 
 message ProcessWhitelistsResponse {
-    repeated storage.ProcessWhitelist whitelists = 1;
+    option                           deprecated = true;
+    repeated storage.ProcessBaseline whitelists = 1;
 }
 
 message ProcessWhitelistUpdateError {
-    string                      error = 1;
-    storage.ProcessWhitelistKey key   = 2;
+    option                     deprecated = true;
+    string                     error      = 1;
+    storage.ProcessBaselineKey key        = 2;
 }
 
 message UpdateProcessWhitelistsResponse {
-    repeated storage.ProcessWhitelist    whitelists = 1;
+    option                               deprecated = true;
+    repeated storage.ProcessBaseline     whitelists = 1;
     repeated ProcessWhitelistUpdateError errors     = 2;
 }
 
 message LockProcessWhitelistsRequest {
-    repeated storage.ProcessWhitelistKey keys   = 1;
-    bool                                 locked = 2;
+    option                              deprecated = true;
+    repeated storage.ProcessBaselineKey keys       = 1;
+    bool                                locked     = 2;
 }
 
 message DeleteProcessWhitelistsRequest {
-    string query   = 1;
-    bool   confirm = 2;
+    option deprecated = true;
+    string query      = 1;
+    bool   confirm    = 2;
 }
 
 message DeleteProcessWhitelistsResponse {
-    int32 num_deleted = 1;
-    bool  dry_run     = 2;
+    option deprecated  = true;
+    int32  num_deleted = 1;
+    bool   dry_run     = 2;
 }
 
 // ProcessWhitelistService APIs can be used to manage process baselines.
 service ProcessWhitelistService {
     // GetProcessWhitelistById returns the single process whitelist referenced by the given ID.
-    rpc GetProcessWhitelist (GetProcessWhitelistRequest) returns (storage.ProcessWhitelist) {
+    rpc GetProcessWhitelist (GetProcessWhitelistRequest) returns (storage.ProcessBaseline) {
+        option deprecated = true;
         option (google.api.http) = {
                 get: "/v1/processwhitelists/key"
             };
@@ -58,6 +70,7 @@ service ProcessWhitelistService {
 
     // AddToProcessWhitelists adds a list of process names to each of a list of process baselines
     rpc UpdateProcessWhitelists (UpdateProcessWhitelistsRequest) returns (UpdateProcessWhitelistsResponse) {
+        option deprecated = true;
         option (google.api.http) = {
                 put: "/v1/processwhitelists"
                 body: "*"
@@ -66,6 +79,7 @@ service ProcessWhitelistService {
 
     // LockProcessWhitelists accepts a list of baseline IDs, locks those baselines, and returns the updated baseline objects
     rpc LockProcessWhitelists (LockProcessWhitelistsRequest) returns (UpdateProcessWhitelistsResponse) {
+        option deprecated = true;
         option (google.api.http) = {
                 put: "/v1/processwhitelists/lock"
                 body: "*"
@@ -74,6 +88,7 @@ service ProcessWhitelistService {
 
     // DeleteProcessWhitelists deletes whitelists
     rpc DeleteProcessWhitelists (DeleteProcessWhitelistsRequest) returns (DeleteProcessWhitelistsResponse) {
+        option deprecated = true;
         option (google.api.http) = {
           delete: "/v1/processwhitelists"
         };

@@ -9,7 +9,7 @@ import services.ClusterService
 
 import groups.BAT
 
-import io.stackrox.proto.storage.ProcessWhitelistOuterClass
+import io.stackrox.proto.storage.ProcessBaselineOuterClass
 import objects.Deployment
 
 import org.apache.commons.lang.StringUtils
@@ -105,7 +105,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
         assert deploymentId != null
 
         String containerName = deployment.getName()
-        ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
+        ProcessBaselineOuterClass.ProcessBaseline whitelist = ProcessWhitelistService.
                     getProcessWhitelist(clusterId, deployment, containerName)
         assert (whitelist != null)
         assert ((whitelist.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
@@ -150,7 +150,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
         // as the deployment name
         String containerName = deployment.getName()
         "get process baselines is called for a key"
-        ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
+        ProcessBaselineOuterClass.ProcessBaseline whitelist = ProcessWhitelistService.
                 getProcessWhitelist(clusterId, deployment, containerName)
 
         assert (whitelist != null)
@@ -162,7 +162,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
         assert  whitelist.getElements(0).element.processName.contains(processName)
 
         // lock the baseline with the key of the container just deployed
-        List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists = ProcessWhitelistService.
+        List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessWhitelists = ProcessWhitelistService.
                 lockProcessWhitelists(clusterId, deployment, containerName, true)
         assert  lockProcessWhitelists.size() == 1
         assert  lockProcessWhitelists.get(0).getElementsList().
@@ -198,14 +198,14 @@ class ProcessWhiteListsTest extends BaseSpecification {
         assert deploymentId != null
 
         String containerName = deployment.getName()
-        ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
+        ProcessBaselineOuterClass.ProcessBaseline whitelist = ProcessWhitelistService.
                  getProcessWhitelist(clusterId, deployment, containerName)
         assert (whitelist != null)
         assert ((whitelist.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
                  (whitelist.key.containerName.equalsIgnoreCase(containerName)))
         assert whitelist.elementsList.find { it.element.processName == processName } != null
 
-        List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists = ProcessWhitelistService.
+        List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessWhitelists = ProcessWhitelistService.
                  lockProcessWhitelists(clusterId, deployment, containerName, true)
         assert (!StringUtils.isEmpty(lockProcessWhitelists.get(0).getElements(0).getElement().processName))
         // sleep 5 seconds to allow for propagation to sensor
@@ -324,34 +324,34 @@ class ProcessWhiteListsTest extends BaseSpecification {
         assert (initialWhitelist != null)
 
         // Add the process to the baseline
-        ProcessWhitelistOuterClass.ProcessWhitelistKey [] keys = [
-                new ProcessWhitelistOuterClass
-                .ProcessWhitelistKey().newBuilderForType().setContainerName(containerName)
+        ProcessBaselineOuterClass.ProcessBaselineKey [] keys = [
+                new ProcessBaselineOuterClass
+                .ProcessBaselineKey().newBuilderForType().setContainerName(containerName)
                 .setDeploymentId(deploymentId).setClusterId(clusterId).setNamespace(namespace).build(),
         ]
         String [] toBeAddedProcesses = ["/bin/pwd"]
         String [] toBeRemovedProcesses = []
-        List<ProcessWhitelistOuterClass.ProcessWhitelist> updatedList = ProcessWhitelistService
+        List<ProcessBaselineOuterClass.ProcessBaseline> updatedList = ProcessWhitelistService
                 .updateProcessWhitelists(keys, toBeAddedProcesses, toBeRemovedProcesses)
         assert ( updatedList!= null)
-        ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
+        ProcessBaselineOuterClass.ProcessBaseline whitelist = ProcessWhitelistService.
                 getProcessWhitelist(clusterId, deployment, containerName)
-        List<ProcessWhitelistOuterClass.WhitelistElement> elements = whitelist.elementsList
-        ProcessWhitelistOuterClass.WhitelistElement element = elements.find {
+        List<ProcessBaselineOuterClass.BaselineElement> elements = whitelist.elementsList
+        ProcessBaselineOuterClass.BaselineElement element = elements.find {
             it.element.processName.contains("/bin/pwd") }
         assert ( element != null)
 
         // Remove the process from the baseline
         toBeAddedProcesses = []
         toBeRemovedProcesses = ["/bin/pwd"]
-        List<ProcessWhitelistOuterClass.ProcessWhitelist> updatedListAfterRemoveProcess = ProcessWhitelistService
+        List<ProcessBaselineOuterClass.ProcessBaseline> updatedListAfterRemoveProcess = ProcessWhitelistService
                 .updateProcessWhitelists(keys, toBeAddedProcesses, toBeRemovedProcesses)
         assert ( updatedListAfterRemoveProcess!= null)
 
         orchestrator.execInContainer(deployment, "pwd")
         then:
         "verify process is not added to the baseline"
-        ProcessWhitelistOuterClass.ProcessWhitelist whitelistAfterReRun = ProcessWhitelistService.
+        ProcessBaselineOuterClass.ProcessBaseline whitelistAfterReRun = ProcessWhitelistService.
                 getProcessWhitelist(clusterId, deployment, containerName)
         assert  ( whitelistAfterReRun.elementsList.find { it.element.processName.contains("pwd") } == null)
 

@@ -6,11 +6,11 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/processwhitelist"
+	"github.com/stackrox/rox/central/processbaseline"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containerid"
-	processWhitelistPkg "github.com/stackrox/rox/pkg/processwhitelist"
+	processBaselinePkg "github.com/stackrox/rox/pkg/processwhitelist"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -227,17 +227,17 @@ func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v
 	for _, indicator := range indicators {
 		var keyStr, procName string
 		if canReadWhitelist {
-			key := &storage.ProcessWhitelistKey{
+			key := &storage.ProcessBaselineKey{
 				ClusterId:     indicator.GetClusterId(),
 				Namespace:     indicator.GetNamespace(),
 				DeploymentId:  indicator.GetDeploymentId(),
 				ContainerName: indicator.GetContainerName(),
 			}
 			keyStr = key.String()
-			procName = processWhitelistPkg.WhitelistItemFromProcess(indicator)
+			procName = processBaselinePkg.BaselineItemFromProcess(indicator)
 			if procName != "" {
 				if _, exists := whitelists[keyStr]; !exists {
-					whitelist, exists, err := resolver.WhiteListDataStore.GetProcessWhitelist(ctx, key)
+					whitelist, exists, err := resolver.WhiteListDataStore.GetProcessBaseline(ctx, key)
 					if err != nil {
 						log.Error(errors.Wrapf(err, "retrieving whitelist data for process %s", indicator.GetSignal().GetName()))
 						continue
@@ -246,7 +246,7 @@ func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v
 						continue
 					}
 
-					whitelists[keyStr] = processwhitelist.Processes(whitelist, processwhitelist.RoxOrUserLocked)
+					whitelists[keyStr] = processbaseline.Processes(whitelist, processbaseline.RoxOrUserLocked)
 				}
 			}
 		}

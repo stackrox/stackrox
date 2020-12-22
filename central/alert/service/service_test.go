@@ -13,7 +13,7 @@ import (
 	dataStoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	"github.com/stackrox/rox/central/alerttest"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
-	whitelistMocks "github.com/stackrox/rox/central/processwhitelist/datastore/mocks"
+	baselineMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -49,16 +49,16 @@ type baseSuite struct {
 	mockCtrl      *gomock.Controller
 	datastoreMock *dataStoreMocks.MockDataStore
 	notifierMock  *notifierMocks.MockProcessor
-	whitelistMock *whitelistMocks.MockDataStore
+	baselineMock  *baselineMocks.MockDataStore
 }
 
 func (s *baseSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.notifierMock = notifierMocks.NewMockProcessor(s.mockCtrl)
-	s.whitelistMock = whitelistMocks.NewMockDataStore(s.mockCtrl)
+	s.baselineMock = baselineMocks.NewMockDataStore(s.mockCtrl)
 	s.datastoreMock = dataStoreMocks.NewMockDataStore(s.mockCtrl)
 
-	s.service = New(s.datastoreMock, s.whitelistMock, s.notifierMock, nil)
+	s.service = New(s.datastoreMock, s.baselineMock, s.notifierMock, nil)
 }
 
 func (s *baseSuite) TearDownTest() {
@@ -954,18 +954,18 @@ type patchAlertTests struct {
 	storage *dataStoreMocks.MockDataStore
 	service Service
 
-	mockCtrl      *gomock.Controller
-	notifierMock  *notifierMocks.MockProcessor
-	whitelistMock *whitelistMocks.MockDataStore
+	mockCtrl     *gomock.Controller
+	notifierMock *notifierMocks.MockProcessor
+	baselineMock *baselineMocks.MockDataStore
 }
 
 func (s *patchAlertTests) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = dataStoreMocks.NewMockDataStore(s.mockCtrl)
 	s.notifierMock = notifierMocks.NewMockProcessor(s.mockCtrl)
-	s.whitelistMock = whitelistMocks.NewMockDataStore(s.mockCtrl)
+	s.baselineMock = baselineMocks.NewMockDataStore(s.mockCtrl)
 
-	s.service = New(s.storage, s.whitelistMock, s.notifierMock, nil)
+	s.service = New(s.storage, s.baselineMock, s.notifierMock, nil)
 }
 
 func (s *patchAlertTests) TearDownTest() {

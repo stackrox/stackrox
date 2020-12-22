@@ -16,7 +16,7 @@ var (
 type Detector interface {
 	ReconcilePolicies(newList []*storage.Policy)
 	DetectDeployment(ctx deploytime.DetectionContext, deployment *storage.Deployment, images []*storage.Image) []*storage.Alert
-	DetectProcess(deployment *storage.Deployment, images []*storage.Image, processIndicator *storage.ProcessIndicator, processOutsideWhitelist bool) []*storage.Alert
+	DetectProcess(deployment *storage.Deployment, images []*storage.Image, processIndicator *storage.ProcessIndicator, processOutsideBaseline bool) []*storage.Alert
 }
 
 // NewDetector returns a new detector.

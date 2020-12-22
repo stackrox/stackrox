@@ -155,7 +155,7 @@ func (m *MockProcessBaselineManager) EXPECT() *MockProcessBaselineManagerMockRec
 }
 
 // WalkAll mocks base method
-func (m *MockProcessBaselineManager) WalkAll(ctx context.Context, fn func(*storage.ProcessWhitelist) error) error {
+func (m *MockProcessBaselineManager) WalkAll(ctx context.Context, fn func(*storage.ProcessBaseline) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WalkAll", ctx, fn)
 	ret0, _ := ret[0].(error)

@@ -20,7 +20,7 @@ import (
 	nodeMapping "github.com/stackrox/rox/central/node/index/mappings"
 	podMapping "github.com/stackrox/rox/central/pod/mappings"
 	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
-	processWhitelistMapping "github.com/stackrox/rox/central/processwhitelist/index/mappings"
+	processWhitelistMapping "github.com/stackrox/rox/central/processbaseline/index/mappings"
 	roleOptions "github.com/stackrox/rox/central/rbac/k8srole/mappings"
 	roleBindingOptions "github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
 	subjectMapping "github.com/stackrox/rox/central/rbac/service/mapping"

@@ -9,33 +9,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWhitelist(t *testing.T) {
+func TestBaseline(t *testing.T) {
 	process := fixtures.GetProcessIndicator()
 
-	notInUnlockedWhitelist := &storage.ProcessWhitelist{
-		Key: &storage.ProcessWhitelistKey{
+	notInUnlockedBaseline := &storage.ProcessBaseline{
+		Key: &storage.ProcessBaselineKey{
 			DeploymentId:  process.GetDeploymentId(),
 			ContainerName: process.GetContainerName(),
 		},
 	}
 
-	notInWhitelist := &storage.ProcessWhitelist{
-		Key: &storage.ProcessWhitelistKey{
+	notInBaseline := &storage.ProcessBaseline{
+		Key: &storage.ProcessBaselineKey{
 			DeploymentId:  process.GetDeploymentId(),
 			ContainerName: process.GetContainerName(),
 		},
 		UserLockedTimestamp: types.TimestampNow(),
 	}
 
-	inWhitelist := &storage.ProcessWhitelist{
-		Key: &storage.ProcessWhitelistKey{
+	inBaseline := &storage.ProcessBaseline{
+		Key: &storage.ProcessBaselineKey{
 			DeploymentId:  process.GetDeploymentId(),
 			ContainerName: process.GetContainerName(),
 		},
-		Elements: []*storage.WhitelistElement{
+		Elements: []*storage.BaselineElement{
 			{
-				Element: &storage.WhitelistItem{
-					Item: &storage.WhitelistItem_ProcessName{
+				Element: &storage.BaselineItem{
+					Item: &storage.BaselineItem_ProcessName{
 						ProcessName: process.GetSignal().GetExecFilePath(),
 					},
 				},
@@ -44,25 +44,25 @@ func TestWhitelist(t *testing.T) {
 		UserLockedTimestamp: types.TimestampNow(),
 	}
 
-	evaluator := NewWhitelistEvaluator()
+	evaluator := NewBaselineEvaluator()
 	// No baseline added, nothing is outside a locked baseline
-	assert.False(t, evaluator.IsOutsideLockedWhitelist(process))
+	assert.False(t, evaluator.IsOutsideLockedBaseline(process))
 
 	// Add baseline that does not contain the value
-	evaluator.AddWhitelist(notInWhitelist)
-	assert.True(t, evaluator.IsOutsideLockedWhitelist(process))
+	evaluator.AddBaseline(notInBaseline)
+	assert.True(t, evaluator.IsOutsideLockedBaseline(process))
 
 	// Verify that different baselines produce expected outcomes.
-	evaluator.AddWhitelist(inWhitelist)
-	assert.False(t, evaluator.IsOutsideLockedWhitelist(process))
-	evaluator.AddWhitelist(notInWhitelist)
-	assert.True(t, evaluator.IsOutsideLockedWhitelist(process))
-	evaluator.AddWhitelist(notInUnlockedWhitelist)
-	assert.False(t, evaluator.IsOutsideLockedWhitelist(process))
+	evaluator.AddBaseline(inBaseline)
+	assert.False(t, evaluator.IsOutsideLockedBaseline(process))
+	evaluator.AddBaseline(notInBaseline)
+	assert.True(t, evaluator.IsOutsideLockedBaseline(process))
+	evaluator.AddBaseline(notInUnlockedBaseline)
+	assert.False(t, evaluator.IsOutsideLockedBaseline(process))
 
 	// Add locked baseline then remove deployment
-	evaluator.AddWhitelist(notInWhitelist)
-	assert.True(t, evaluator.IsOutsideLockedWhitelist(process))
+	evaluator.AddBaseline(notInBaseline)
+	assert.True(t, evaluator.IsOutsideLockedBaseline(process))
 	evaluator.RemoveDeployment(process.GetDeploymentId())
-	assert.False(t, evaluator.IsOutsideLockedWhitelist(process))
+	assert.False(t, evaluator.IsOutsideLockedBaseline(process))
 }

@@ -6,9 +6,9 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/processbaseline"
+	baselineStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/central/processwhitelist"
-	whitelistStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	processWhitelistPkg "github.com/stackrox/rox/pkg/processwhitelist"
+	processBaselinePkg "github.com/stackrox/rox/pkg/processwhitelist"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
@@ -39,7 +39,7 @@ var (
 type serviceImpl struct {
 	processIndicators processIndicatorStore.DataStore
 	deployments       deploymentStore.DataStore
-	whitelists        whitelistStore.DataStore
+	baselines         baselineStore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -89,16 +89,16 @@ func sortIndicators(indicators []*storage.ProcessIndicator) {
 }
 
 func (s *serviceImpl) setSuspicious(ctx context.Context, groupedIndicators []*v1.ProcessNameAndContainerNameGroup, deploymentID string) error {
-	whitelists := make(map[string]*set.StringSet)
+	baselines := make(map[string]*set.StringSet)
 	for _, group := range groupedIndicators {
-		elementSet, ok := whitelists[group.GetContainerName()]
+		elementSet, ok := baselines[group.GetContainerName()]
 		if !ok {
 			var err error
 			elementSet, err = s.getElementSet(ctx, deploymentID, group.GetContainerName())
 			if err != nil {
 				return err
 			}
-			whitelists[group.GetContainerName()] = elementSet
+			baselines[group.GetContainerName()] = elementSet
 		}
 		group.Suspicious = elementSet != nil && !elementSet.Contains(group.Name)
 	}
@@ -114,17 +114,17 @@ func (s *serviceImpl) getElementSet(ctx context.Context, deploymentID string, co
 		return nil, status.Errorf(codes.NotFound, "deployment with id '%s' does not exist", deploymentID)
 	}
 
-	key := &storage.ProcessWhitelistKey{
+	key := &storage.ProcessBaselineKey{
 		ClusterId:     deployment.GetClusterId(),
 		Namespace:     deployment.GetNamespace(),
 		DeploymentId:  deploymentID,
 		ContainerName: containerName,
 	}
-	whitelist, exists, err := s.whitelists.GetProcessWhitelist(ctx, key)
+	baseline, exists, err := s.baselines.GetProcessBaseline(ctx, key)
 	if !exists || err != nil {
 		return nil, err
 	}
-	return processwhitelist.Processes(whitelist, processwhitelist.RoxOrUserLocked), nil
+	return processbaseline.Processes(baseline, processbaseline.RoxOrUserLocked), nil
 }
 
 // IndicatorsToGroupedResponsesWithContainer rearranges process indicator storage items into API process name/container
@@ -137,7 +137,7 @@ func indicatorsToGroupedResponsesWithContainer(indicators []*storage.ProcessIndi
 	processGroups := make(map[groupKey]map[string][]*storage.ProcessIndicator)
 	processNameToContainers := make(map[groupKey]*set.StringSet)
 	for _, i := range indicators {
-		name := processWhitelistPkg.WhitelistItemFromProcess(i)
+		name := processBaselinePkg.BaselineItemFromProcess(i)
 		if name == "" {
 			continue
 		}

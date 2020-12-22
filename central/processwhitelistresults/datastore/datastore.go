@@ -7,12 +7,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// DataStore wraps storage, indexer, and searcher for ProcessWhitelistResults.
+// DataStore wraps storage, indexer, and searcher for ProcessBaselineResults.
 //go:generate mockgen-wrapper
 type DataStore interface {
-	UpsertWhitelistResults(ctx context.Context, results *storage.ProcessWhitelistResults) error
-	GetWhitelistResults(ctx context.Context, deploymentID string) (*storage.ProcessWhitelistResults, error)
-	DeleteWhitelistResults(ctx context.Context, deploymentID string) error
+	UpsertBaselineResults(ctx context.Context, results *storage.ProcessBaselineResults) error
+	GetBaselineResults(ctx context.Context, deploymentID string) (*storage.ProcessBaselineResults, error)
+	DeleteBaselineResults(ctx context.Context, deploymentID string) error
 }
 
 // New returns a new instance of DataStore.

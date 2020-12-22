@@ -42,7 +42,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 
 		enricher:        newEnricher(cache),
 		deploymentStore: newDeploymentStore(),
-		whitelistEval:   whitelist.NewWhitelistEvaluator(),
+		baselineEval:    whitelist.NewBaselineEvaluator(),
 		deduper:         newDeduper(),
 		enforcer:        enforcer,
 
@@ -69,7 +69,7 @@ type detectorImpl struct {
 
 	enricher        *enricher
 	deploymentStore *deploymentStore
-	whitelistEval   whitelist.Evaluator
+	baselineEval    whitelist.Evaluator
 	enforcer        enforcer.Enforcer
 	deduper         *deduper
 
@@ -195,9 +195,9 @@ func (d *detectorImpl) processReassessPolicies(_ *central.ReassessPolicies) erro
 	return nil
 }
 
-func (d *detectorImpl) processWhitelistSync(sync *central.WhitelistSync) error {
-	for _, w := range sync.GetWhitelists() {
-		d.whitelistEval.AddWhitelist(w)
+func (d *detectorImpl) processBaselineSync(sync *central.BaselineSync) error {
+	for _, b := range sync.GetBaselines() {
+		d.baselineEval.AddBaseline(b)
 	}
 	return nil
 }
@@ -208,8 +208,8 @@ func (d *detectorImpl) ProcessMessage(msg *central.MsgToSensor) error {
 		return d.processPolicySync(msg.GetPolicySync())
 	case msg.GetReassessPolicies() != nil:
 		return d.processReassessPolicies(msg.GetReassessPolicies())
-	case msg.GetWhitelistSync() != nil:
-		return d.processWhitelistSync(msg.GetWhitelistSync())
+	case msg.GetBaselineSync() != nil:
+		return d.processBaselineSync(msg.GetBaselineSync())
 	}
 	return nil
 }
@@ -268,7 +268,7 @@ func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, a
 	switch action {
 	case central.ResourceAction_REMOVE_RESOURCE:
 		d.deploymentStore.removeDeployment(deployment.GetId())
-		d.whitelistEval.RemoveDeployment(deployment.GetId())
+		d.baselineEval.RemoveDeployment(deployment.GetId())
 		d.deduper.removeDeployment(deployment.GetId())
 
 		go func() {
@@ -337,7 +337,7 @@ func (d *detectorImpl) processIndicator(pi *storage.ProcessIndicator) {
 	images := d.enricher.getImages(deployment)
 
 	// Run detection now
-	alerts := d.unifiedDetector.DetectProcess(deployment, images, pi, d.whitelistEval.IsOutsideLockedWhitelist(pi))
+	alerts := d.unifiedDetector.DetectProcess(deployment, images, pi, d.baselineEval.IsOutsideLockedBaseline(pi))
 	if len(alerts) == 0 {
 		// No need to process runtime alerts that have no violations
 		return

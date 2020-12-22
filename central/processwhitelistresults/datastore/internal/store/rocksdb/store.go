@@ -27,13 +27,13 @@ type Store interface {
 	Count() (int, error)
 	Exists(id string) (bool, error)
 	GetIDs() ([]string, error)
-	Get(id string) (*storage.ProcessWhitelistResults, bool, error)
-	GetMany(ids []string) ([]*storage.ProcessWhitelistResults, []int, error)
-	Upsert(obj *storage.ProcessWhitelistResults) error
-	UpsertMany(objs []*storage.ProcessWhitelistResults) error
+	Get(id string) (*storage.ProcessBaselineResults, bool, error)
+	GetMany(ids []string) ([]*storage.ProcessBaselineResults, []int, error)
+	Upsert(obj *storage.ProcessBaselineResults) error
+	UpsertMany(objs []*storage.ProcessBaselineResults) error
 	Delete(id string) error
 	DeleteMany(ids []string) error
-	Walk(fn func(obj *storage.ProcessWhitelistResults) error) error
+	Walk(fn func(obj *storage.ProcessBaselineResults) error) error
 	AckKeysIndexed(keys ...string) error
 	GetKeysToIndex() ([]string, error)
 }
@@ -43,16 +43,16 @@ type storeImpl struct {
 }
 
 func alloc() proto.Message {
-	return &storage.ProcessWhitelistResults{}
+	return &storage.ProcessBaselineResults{}
 }
 
 func keyFunc(msg proto.Message) []byte {
-	return []byte(msg.(*storage.ProcessWhitelistResults).GetDeploymentId())
+	return []byte(msg.(*storage.ProcessBaselineResults).GetDeploymentId())
 }
 
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) Store {
-	globaldb.RegisterBucket(bucket, "ProcessWhitelistResults")
+	globaldb.RegisterBucket(bucket, "ProcessBaselineResults")
 	return &storeImpl{
 		crud: generic.NewCRUD(db, bucket, keyFunc, alloc, false),
 	}
@@ -60,61 +60,61 @@ func New(db *rocksdb.RocksDB) Store {
 
 // Count returns the number of objects in the store
 func (b *storeImpl) Count() (int, error) {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Count, "ProcessWhitelistResults")
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Count, "ProcessBaselineResults")
 
 	return b.crud.Count()
 }
 
 // Exists returns if the id exists in the store
 func (b *storeImpl) Exists(id string) (bool, error) {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Exists, "ProcessWhitelistResults")
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Exists, "ProcessBaselineResults")
 
 	return b.crud.Exists(id)
 }
 
 // GetIDs returns all the IDs for the store
 func (b *storeImpl) GetIDs() ([]string, error) {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetAll, "ProcessWhitelistResultsIDs")
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetAll, "ProcessBaselineResultsIDs")
 
 	return b.crud.GetKeys()
 }
 
 // Get returns the object, if it exists from the store
-func (b *storeImpl) Get(id string) (*storage.ProcessWhitelistResults, bool, error) {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Get, "ProcessWhitelistResults")
+func (b *storeImpl) Get(id string) (*storage.ProcessBaselineResults, bool, error) {
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Get, "ProcessBaselineResults")
 
 	msg, exists, err := b.crud.Get(id)
 	if err != nil || !exists {
 		return nil, false, err
 	}
-	return msg.(*storage.ProcessWhitelistResults), true, nil
+	return msg.(*storage.ProcessBaselineResults), true, nil
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice 
-func (b *storeImpl) GetMany(ids []string) ([]*storage.ProcessWhitelistResults, []int, error) {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetMany, "ProcessWhitelistResults")
+func (b *storeImpl) GetMany(ids []string) ([]*storage.ProcessBaselineResults, []int, error) {
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetMany, "ProcessBaselineResults")
 
 	msgs, missingIndices, err := b.crud.GetMany(ids)
 	if err != nil {
 		return nil, nil, err
 	}
-	objs := make([]*storage.ProcessWhitelistResults, 0, len(msgs))
+	objs := make([]*storage.ProcessBaselineResults, 0, len(msgs))
 	for _, m := range msgs {
-		objs = append(objs, m.(*storage.ProcessWhitelistResults))
+		objs = append(objs, m.(*storage.ProcessBaselineResults))
 	}
 	return objs, missingIndices, nil
 }
 
 // Upsert inserts the object into the DB
-func (b *storeImpl) Upsert(obj *storage.ProcessWhitelistResults) error {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Add, "ProcessWhitelistResults")
+func (b *storeImpl) Upsert(obj *storage.ProcessBaselineResults) error {
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Add, "ProcessBaselineResults")
 
 	return b.crud.Upsert(obj)
 }
 
 // UpsertMany batches objects into the DB
-func (b *storeImpl) UpsertMany(objs []*storage.ProcessWhitelistResults) error {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.AddMany, "ProcessWhitelistResults")
+func (b *storeImpl) UpsertMany(objs []*storage.ProcessBaselineResults) error {
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.AddMany, "ProcessBaselineResults")
 
 	msgs := make([]proto.Message, 0, len(objs))
 	for _, o := range objs {
@@ -126,22 +126,22 @@ func (b *storeImpl) UpsertMany(objs []*storage.ProcessWhitelistResults) error {
 
 // Delete removes the specified ID from the store
 func (b *storeImpl) Delete(id string) error {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Remove, "ProcessWhitelistResults")
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Remove, "ProcessBaselineResults")
 
 	return b.crud.Delete(id)
 }
 
 // Delete removes the specified IDs from the store
 func (b *storeImpl) DeleteMany(ids []string) error {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.RemoveMany, "ProcessWhitelistResults")
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.RemoveMany, "ProcessBaselineResults")
 
 	return b.crud.DeleteMany(ids)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (b *storeImpl) Walk(fn func(obj *storage.ProcessWhitelistResults) error) error {
+func (b *storeImpl) Walk(fn func(obj *storage.ProcessBaselineResults) error) error {
 	return b.crud.Walk(func(msg proto.Message) error {
-		return fn(msg.(*storage.ProcessWhitelistResults))
+		return fn(msg.(*storage.ProcessBaselineResults))
 	})
 }
 

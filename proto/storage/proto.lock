@@ -8373,6 +8373,213 @@
       }
     },
     {
+      "protopath": "process_baseline.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "ContainerNameAndBaselineStatus.BaselineStatus",
+            "enum_fields": [
+              {
+                "name": "INVALID"
+              },
+              {
+                "name": "NOT_GENERATED",
+                "integer": 1
+              },
+              {
+                "name": "UNLOCKED",
+                "integer": 2
+              },
+              {
+                "name": "LOCKED",
+                "integer": 3
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "ProcessBaselineKey",
+            "fields": [
+              {
+                "id": 1,
+                "name": "deployment_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Deployment ID,hidden\\"
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "container_name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster ID,hidden,store\\"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "namespace",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Namespace,hidden,store\\"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ProcessBaseline",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "key",
+                "type": "ProcessBaselineKey"
+              },
+              {
+                "id": 3,
+                "name": "elements",
+                "type": "BaselineElement",
+                "is_repeated": true
+              },
+              {
+                "id": 8,
+                "name": "element_graveyard",
+                "type": "BaselineElement",
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"-\\"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "user_locked_timestamp",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 6,
+                "name": "stack_rox_locked_timestamp",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 7,
+                "name": "last_update",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
+          },
+          {
+            "name": "BaselineElement",
+            "fields": [
+              {
+                "id": 1,
+                "name": "element",
+                "type": "BaselineItem"
+              },
+              {
+                "id": 2,
+                "name": "auto",
+                "type": "bool"
+              }
+            ]
+          },
+          {
+            "name": "BaselineItem",
+            "fields": [
+              {
+                "id": 1,
+                "name": "process_name",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "ContainerNameAndBaselineStatus",
+            "fields": [
+              {
+                "id": 1,
+                "name": "container_name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "baseline_status",
+                "type": "BaselineStatus"
+              },
+              {
+                "id": 3,
+                "name": "anomalous_processes_executed",
+                "type": "bool"
+              }
+            ]
+          },
+          {
+            "name": "ProcessBaselineResults",
+            "fields": [
+              {
+                "id": 1,
+                "name": "deployment_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "namespace",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "baseline_statuses",
+                "type": "ContainerNameAndBaselineStatus",
+                "is_repeated": true
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "gogoproto/gogo.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
       "protopath": "process_indicator.proto",
       "def": {
         "messages": [
@@ -8625,213 +8832,6 @@
                     ]
                   }
                 ]
-              }
-            ]
-          }
-        ],
-        "imports": [
-          {
-            "path": "google/protobuf/timestamp.proto"
-          },
-          {
-            "path": "gogoproto/gogo.proto"
-          }
-        ],
-        "package": {
-          "name": "storage"
-        }
-      }
-    },
-    {
-      "protopath": "process_whitelist.proto",
-      "def": {
-        "enums": [
-          {
-            "name": "ContainerNameAndWhitelistStatus.WhitelistStatus",
-            "enum_fields": [
-              {
-                "name": "INVALID"
-              },
-              {
-                "name": "NOT_GENERATED",
-                "integer": 1
-              },
-              {
-                "name": "UNLOCKED",
-                "integer": 2
-              },
-              {
-                "name": "LOCKED",
-                "integer": 3
-              }
-            ]
-          }
-        ],
-        "messages": [
-          {
-            "name": "ProcessWhitelistKey",
-            "fields": [
-              {
-                "id": 1,
-                "name": "deployment_id",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Deployment ID,hidden\\"
-                  }
-                ]
-              },
-              {
-                "id": 2,
-                "name": "container_name",
-                "type": "string"
-              },
-              {
-                "id": 3,
-                "name": "cluster_id",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Cluster ID,hidden,store\\"
-                  }
-                ]
-              },
-              {
-                "id": 4,
-                "name": "namespace",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Namespace,hidden,store\\"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "name": "ProcessWhitelist",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "key",
-                "type": "ProcessWhitelistKey"
-              },
-              {
-                "id": 3,
-                "name": "elements",
-                "type": "WhitelistElement",
-                "is_repeated": true
-              },
-              {
-                "id": 8,
-                "name": "element_graveyard",
-                "type": "WhitelistElement",
-                "is_repeated": true,
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"-\\"
-                  }
-                ]
-              },
-              {
-                "id": 4,
-                "name": "created",
-                "type": "google.protobuf.Timestamp"
-              },
-              {
-                "id": 5,
-                "name": "user_locked_timestamp",
-                "type": "google.protobuf.Timestamp"
-              },
-              {
-                "id": 6,
-                "name": "stack_rox_locked_timestamp",
-                "type": "google.protobuf.Timestamp"
-              },
-              {
-                "id": 7,
-                "name": "last_update",
-                "type": "google.protobuf.Timestamp"
-              }
-            ]
-          },
-          {
-            "name": "WhitelistElement",
-            "fields": [
-              {
-                "id": 1,
-                "name": "element",
-                "type": "WhitelistItem"
-              },
-              {
-                "id": 2,
-                "name": "auto",
-                "type": "bool"
-              }
-            ]
-          },
-          {
-            "name": "WhitelistItem",
-            "fields": [
-              {
-                "id": 1,
-                "name": "process_name",
-                "type": "string"
-              }
-            ]
-          },
-          {
-            "name": "ContainerNameAndWhitelistStatus",
-            "fields": [
-              {
-                "id": 1,
-                "name": "container_name",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "whitelist_status",
-                "type": "WhitelistStatus"
-              },
-              {
-                "id": 3,
-                "name": "anomalous_processes_executed",
-                "type": "bool"
-              }
-            ]
-          },
-          {
-            "name": "ProcessWhitelistResults",
-            "fields": [
-              {
-                "id": 1,
-                "name": "deployment_id",
-                "type": "string"
-              },
-              {
-                "id": 3,
-                "name": "cluster_id",
-                "type": "string"
-              },
-              {
-                "id": 4,
-                "name": "namespace",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "whitelist_statuses",
-                "type": "ContainerNameAndWhitelistStatus",
-                "is_repeated": true
               }
             ]
           }

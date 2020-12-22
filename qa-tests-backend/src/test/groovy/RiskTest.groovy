@@ -1,6 +1,6 @@
 import io.stackrox.proto.api.v1.DeploymentServiceOuterClass.ListDeploymentsWithProcessInfoResponse.DeploymentWithProcessInfo
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
-import io.stackrox.proto.storage.ProcessWhitelistOuterClass
+import io.stackrox.proto.storage.ProcessBaselineOuterClass
 import objects.Deployment
 import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
@@ -233,13 +233,13 @@ class RiskTest extends BaseSpecification {
         def t = new Timer(RETRIES, RETRY_DELAY)
         while (t.IsValid()) {
             response = ProcessWhitelistService.updateProcessWhitelists(
-                    [ProcessWhitelistOuterClass.ProcessWhitelistKey
+                    [ProcessBaselineOuterClass.ProcessBaselineKey
                         .newBuilder()
                             .setClusterId(clusterId)
                             .setNamespace(deploymentWithRisk.namespace)
                             .setDeploymentId(deploymentWithRisk.deploymentUid)
                             .setContainerName(deploymentWithRisk.name)
-                        .build(),] as ProcessWhitelistOuterClass.ProcessWhitelistKey[],
+                        .build(),] as ProcessBaselineOuterClass.ProcessBaselineKey[],
                     ["/bin/ls",] as String[],
                     [] as String
             )

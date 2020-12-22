@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/alert/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
-	whitelistDatastore "github.com/stackrox/rox/central/processwhitelist/datastore"
+	baselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -25,11 +25,11 @@ type Service interface {
 }
 
 // New returns a new Service soleInstance using the given DataStore.
-func New(datastore datastore.DataStore, whitelists whitelistDatastore.DataStore, notifier notifierProcessor.Processor, connectionManager connection.Manager) Service {
+func New(datastore datastore.DataStore, baselines baselineDatastore.DataStore, notifier notifierProcessor.Processor, connectionManager connection.Manager) Service {
 	return &serviceImpl{
 		dataStore:         datastore,
 		notifier:          notifier,
-		whitelists:        whitelists,
+		baselines:         baselines,
 		connectionManager: connectionManager,
 	}
 }

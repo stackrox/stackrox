@@ -57,7 +57,7 @@ type manager struct {
 	clusters            common.ClusterManager
 	networkEntities     common.NetworkEntityManager
 	policies            common.PolicyManager
-	whitelists          common.ProcessBaselineManager
+	baselines           common.ProcessBaselineManager
 	autoTriggerUpgrades *concurrency.Flag
 }
 
@@ -90,12 +90,12 @@ func (m *manager) initializeUpgradeControllers() error {
 func (m *manager) Start(clusterManager common.ClusterManager,
 	networkEntityManager common.NetworkEntityManager,
 	policyManager common.PolicyManager,
-	whitelistManager common.ProcessBaselineManager,
+	baselineManager common.ProcessBaselineManager,
 	autoTriggerUpgrades *concurrency.Flag) error {
 	m.clusters = clusterManager
 	m.networkEntities = networkEntityManager
 	m.policies = policyManager
-	m.whitelists = whitelistManager
+	m.baselines = baselineManager
 	m.autoTriggerUpgrades = autoTriggerUpgrades
 	err := m.initializeUpgradeControllers()
 	if err != nil {
@@ -200,7 +200,7 @@ func (m *manager) replaceConnection(ctx context.Context, clusterID string, newCo
 }
 
 func (m *manager) HandleConnection(ctx context.Context, clusterID string, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
-	conn := newConnection(ctx, clusterID, eventPipeline, m.clusters, m.networkEntities, m.policies, m.whitelists)
+	conn := newConnection(ctx, clusterID, eventPipeline, m.clusters, m.networkEntities, m.policies, m.baselines)
 
 	oldConnection, err := m.replaceConnection(ctx, clusterID, conn)
 	if err != nil {

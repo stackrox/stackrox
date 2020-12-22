@@ -6,9 +6,9 @@ import (
 	"github.com/stackrox/rox/central/detection/alertmanager"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/runtime"
+	baselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processindicator/filter"
-	whitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -24,7 +24,7 @@ func initialize() {
 		runtime.SingletonDetector(),
 		deploymentDatastore.Singleton(),
 		processDatastore.Singleton(),
-		whitelistDataStore.Singleton(),
+		baselineDataStore.Singleton(),
 		alertmanager.Singleton(),
 		reprocessor.Singleton(),
 		cache.DeletedDeploymentCacheSingleton(),

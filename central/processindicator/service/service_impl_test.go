@@ -7,7 +7,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	"github.com/stackrox/rox/central/processwhitelist/datastore/mocks"
+	"github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -262,13 +262,13 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 	}
 }
 
-func TestWhitelistCheck(t *testing.T) {
+func TestBaselineCheck(t *testing.T) {
 	var cases = []struct {
 		name               string
 		nameContainerGroup *v1.ProcessNameAndContainerNameGroup
-		whitelistElements  []*storage.WhitelistElement
-		whitelistExists    bool
-		whitelistLocked    bool
+		baselineElements   []*storage.BaselineElement
+		baselineExists     bool
+		baselineLocked     bool
 		expectedSuspicious bool
 	}{
 		{
@@ -277,9 +277,9 @@ func TestWhitelistCheck(t *testing.T) {
 				Name:          "Name One",
 				ContainerName: "Container One",
 			},
-			whitelistElements:  []*storage.WhitelistElement{fixtures.GetWhitelistElement("Name One")},
-			whitelistExists:    true,
-			whitelistLocked:    true,
+			baselineElements:   []*storage.BaselineElement{fixtures.GetBaselineElement("Name One")},
+			baselineExists:     true,
+			baselineLocked:     true,
 			expectedSuspicious: false,
 		},
 		{
@@ -288,9 +288,9 @@ func TestWhitelistCheck(t *testing.T) {
 				Name:          "Name Two",
 				ContainerName: "Container One",
 			},
-			whitelistElements:  []*storage.WhitelistElement{fixtures.GetWhitelistElement("Name One")},
-			whitelistExists:    true,
-			whitelistLocked:    true,
+			baselineElements:   []*storage.BaselineElement{fixtures.GetBaselineElement("Name One")},
+			baselineExists:     true,
+			baselineLocked:     true,
 			expectedSuspicious: true,
 		},
 		{
@@ -299,7 +299,7 @@ func TestWhitelistCheck(t *testing.T) {
 				Name:          "Name One",
 				ContainerName: "Container One",
 			},
-			whitelistExists:    false,
+			baselineExists:     false,
 			expectedSuspicious: false,
 		},
 		{
@@ -308,9 +308,9 @@ func TestWhitelistCheck(t *testing.T) {
 				Name:          "Name Two",
 				ContainerName: "Container One",
 			},
-			whitelistElements:  []*storage.WhitelistElement{fixtures.GetWhitelistElement("Name One")},
-			whitelistExists:    true,
-			whitelistLocked:    false,
+			baselineElements:   []*storage.BaselineElement{fixtures.GetBaselineElement("Name One")},
+			baselineExists:     true,
+			baselineLocked:     false,
 			expectedSuspicious: false,
 		},
 		{
@@ -319,9 +319,9 @@ func TestWhitelistCheck(t *testing.T) {
 				Name:          "Name One",
 				ContainerName: "Container One",
 			},
-			whitelistElements:  []*storage.WhitelistElement{},
-			whitelistExists:    true,
-			whitelistLocked:    true,
+			baselineElements:   []*storage.BaselineElement{},
+			baselineExists:     true,
+			baselineLocked:     true,
 			expectedSuspicious: true,
 		},
 		{
@@ -330,9 +330,9 @@ func TestWhitelistCheck(t *testing.T) {
 				Name:          "Name One",
 				ContainerName: "Container One",
 			},
-			whitelistElements:  []*storage.WhitelistElement{},
-			whitelistExists:    true,
-			whitelistLocked:    false,
+			baselineElements:   []*storage.BaselineElement{},
+			baselineExists:     true,
+			baselineLocked:     false,
 			expectedSuspicious: false,
 		},
 	}
@@ -341,20 +341,20 @@ func TestWhitelistCheck(t *testing.T) {
 			sac.ResourceScopeKeys(resources.ProcessWhitelist, resources.Deployment)))
 	mockCtrl := gomock.NewController(t)
 	deployments := deploymentMocks.NewMockDataStore(mockCtrl)
-	whitelists := mocks.NewMockDataStore(mockCtrl)
-	service := serviceImpl{deployments: deployments, whitelists: whitelists}
+	baselines := mocks.NewMockDataStore(mockCtrl)
+	service := serviceImpl{deployments: deployments, baselines: baselines}
 	testClusterID := "Test"
 	testNamespace := "Test"
 	testDeploymentID := "Test"
 	testStart := types.TimestampNow()
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			var whitelist *storage.ProcessWhitelist
-			if c.whitelistExists {
-				whitelist = fixtures.GetProcessWhitelist()
-				whitelist.Elements = c.whitelistElements
-				if c.whitelistLocked {
-					whitelist.UserLockedTimestamp = testStart
+			var baseline *storage.ProcessBaseline
+			if c.baselineExists {
+				baseline = fixtures.GetProcessBaseline()
+				baseline.Elements = c.baselineElements
+				if c.baselineLocked {
+					baseline.UserLockedTimestamp = testStart
 				}
 			}
 			deployment := &storage.Deployment{
@@ -362,14 +362,14 @@ func TestWhitelistCheck(t *testing.T) {
 				Namespace: testNamespace,
 				Id:        testDeploymentID,
 			}
-			key := &storage.ProcessWhitelistKey{
+			key := &storage.ProcessBaselineKey{
 				ClusterId:     testClusterID,
 				Namespace:     testNamespace,
 				DeploymentId:  testDeploymentID,
 				ContainerName: c.nameContainerGroup.ContainerName,
 			}
 			deployments.EXPECT().GetDeployment(gomock.Any(), testDeploymentID).Return(deployment, true, nil)
-			whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(whitelist, true, nil)
+			baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(baseline, true, nil)
 			err := service.setSuspicious(hasReadCtx, []*v1.ProcessNameAndContainerNameGroup{c.nameContainerGroup}, testDeploymentID)
 			assert.NoError(t, err)
 			assert.Equal(t, c.expectedSuspicious, c.nameContainerGroup.Suspicious)

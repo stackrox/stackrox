@@ -4,9 +4,9 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 )
 
-// Store implements the interface for process baseline results
+// Store implements the interface for process baseline results.
 type Store interface {
 	Delete(id string) error
-	Get(id string) (*storage.ProcessWhitelistResults, bool, error)
-	Upsert(whitelistresults *storage.ProcessWhitelistResults) error
+	Get(id string) (*storage.ProcessBaselineResults, bool, error)
+	Upsert(baselineresults *storage.ProcessBaselineResults) error
 }

@@ -34,45 +34,45 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// UpsertWhitelistResults mocks base method
-func (m *MockDataStore) UpsertWhitelistResults(ctx context.Context, results *storage.ProcessWhitelistResults) error {
+// UpsertBaselineResults mocks base method
+func (m *MockDataStore) UpsertBaselineResults(ctx context.Context, results *storage.ProcessBaselineResults) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertWhitelistResults", ctx, results)
+	ret := m.ctrl.Call(m, "UpsertBaselineResults", ctx, results)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpsertWhitelistResults indicates an expected call of UpsertWhitelistResults
-func (mr *MockDataStoreMockRecorder) UpsertWhitelistResults(ctx, results interface{}) *gomock.Call {
+// UpsertBaselineResults indicates an expected call of UpsertBaselineResults
+func (mr *MockDataStoreMockRecorder) UpsertBaselineResults(ctx, results interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertWhitelistResults", reflect.TypeOf((*MockDataStore)(nil).UpsertWhitelistResults), ctx, results)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertBaselineResults", reflect.TypeOf((*MockDataStore)(nil).UpsertBaselineResults), ctx, results)
 }
 
-// GetWhitelistResults mocks base method
-func (m *MockDataStore) GetWhitelistResults(ctx context.Context, deploymentID string) (*storage.ProcessWhitelistResults, error) {
+// GetBaselineResults mocks base method
+func (m *MockDataStore) GetBaselineResults(ctx context.Context, deploymentID string) (*storage.ProcessBaselineResults, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetWhitelistResults", ctx, deploymentID)
-	ret0, _ := ret[0].(*storage.ProcessWhitelistResults)
+	ret := m.ctrl.Call(m, "GetBaselineResults", ctx, deploymentID)
+	ret0, _ := ret[0].(*storage.ProcessBaselineResults)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetWhitelistResults indicates an expected call of GetWhitelistResults
-func (mr *MockDataStoreMockRecorder) GetWhitelistResults(ctx, deploymentID interface{}) *gomock.Call {
+// GetBaselineResults indicates an expected call of GetBaselineResults
+func (mr *MockDataStoreMockRecorder) GetBaselineResults(ctx, deploymentID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWhitelistResults", reflect.TypeOf((*MockDataStore)(nil).GetWhitelistResults), ctx, deploymentID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBaselineResults", reflect.TypeOf((*MockDataStore)(nil).GetBaselineResults), ctx, deploymentID)
 }
 
-// DeleteWhitelistResults mocks base method
-func (m *MockDataStore) DeleteWhitelistResults(ctx context.Context, deploymentID string) error {
+// DeleteBaselineResults mocks base method
+func (m *MockDataStore) DeleteBaselineResults(ctx context.Context, deploymentID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteWhitelistResults", ctx, deploymentID)
+	ret := m.ctrl.Call(m, "DeleteBaselineResults", ctx, deploymentID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeleteWhitelistResults indicates an expected call of DeleteWhitelistResults
-func (mr *MockDataStoreMockRecorder) DeleteWhitelistResults(ctx, deploymentID interface{}) *gomock.Call {
+// DeleteBaselineResults indicates an expected call of DeleteBaselineResults
+func (mr *MockDataStoreMockRecorder) DeleteBaselineResults(ctx, deploymentID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWhitelistResults", reflect.TypeOf((*MockDataStore)(nil).DeleteWhitelistResults), ctx, deploymentID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBaselineResults", reflect.TypeOf((*MockDataStore)(nil).DeleteBaselineResults), ctx, deploymentID)
 }

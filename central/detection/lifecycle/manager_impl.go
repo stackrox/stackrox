@@ -13,9 +13,9 @@ import (
 	"github.com/stackrox/rox/central/detection/lifecycle/metrics"
 	"github.com/stackrox/rox/central/detection/runtime"
 	centralMetrics "github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/processbaseline"
+	baselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/central/processwhitelist"
-	whitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,7 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/process/filter"
-	processWhitelistPkg "github.com/stackrox/rox/pkg/processwhitelist"
+	processBaselinePkg "github.com/stackrox/rox/pkg/processwhitelist"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -37,7 +37,7 @@ var (
 			sac.ResourceScopeKeys(resources.Alert, resources.Deployment, resources.Image, resources.Indicator, resources.Policy, resources.ProcessWhitelist)))
 )
 
-type processWhitelistKey struct {
+type processBaselineKey struct {
 	deploymentID  string
 	containerName string
 	clusterID     string
@@ -52,7 +52,7 @@ type managerImpl struct {
 
 	deploymentDataStore     deploymentDatastore.DataStore
 	processesDataStore      processIndicatorDatastore.DataStore
-	whitelists              whitelistDataStore.DataStore
+	baselines               baselineDataStore.DataStore
 	deletedDeploymentsCache expiringcache.Cache
 	processFilter           filter.Filter
 
@@ -120,8 +120,8 @@ func (m *managerImpl) flushQueuePeriodically() {
 	}
 }
 
-func indicatorToWhitelistKey(indicator *storage.ProcessIndicator) processWhitelistKey {
-	return processWhitelistKey{
+func indicatorToBaselineKey(indicator *storage.ProcessIndicator) processBaselineKey {
+	return processBaselineKey{
 		deploymentID:  indicator.GetDeploymentId(),
 		containerName: indicator.GetContainerName(),
 		clusterID:     indicator.GetClusterId(),
@@ -158,18 +158,18 @@ func (m *managerImpl) flushIndicatorQueue() {
 		log.Errorf("Error adding process indicators: %v", err)
 	}
 
-	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "CheckAndUpdateWhitelist")
+	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "CheckAndUpdateBaseline")
 
-	// Group the processes into particular whitelist segments
-	whitelistMap := make(map[processWhitelistKey][]*storage.ProcessIndicator)
+	// Group the processes into particular baseline segments
+	baselineMap := make(map[processBaselineKey][]*storage.ProcessIndicator)
 	for _, indicator := range indicatorSlice {
-		key := indicatorToWhitelistKey(indicator)
-		whitelistMap[key] = append(whitelistMap[key], indicator)
+		key := indicatorToBaselineKey(indicator)
+		baselineMap[key] = append(baselineMap[key], indicator)
 	}
 
-	for key, indicators := range whitelistMap {
-		if _, err := m.checkAndUpdateWhitelist(key, indicators); err != nil {
-			log.Errorf("error checking and updating whitelist for %+v: %v", key, err)
+	for key, indicators := range baselineMap {
+		if _, err := m.checkAndUpdateBaseline(key, indicators); err != nil {
+			log.Errorf("error checking and updating baseline for %+v: %v", key, err)
 		}
 	}
 }
@@ -181,55 +181,55 @@ func (m *managerImpl) addToQueue(indicator *storage.ProcessIndicator) {
 	m.queuedIndicators[indicator.GetId()] = indicator
 }
 
-func (m *managerImpl) checkAndUpdateWhitelist(whitelistKey processWhitelistKey, indicators []*storage.ProcessIndicator) (bool, error) {
-	key := &storage.ProcessWhitelistKey{
-		DeploymentId:  whitelistKey.deploymentID,
-		ContainerName: whitelistKey.containerName,
-		ClusterId:     whitelistKey.clusterID,
-		Namespace:     whitelistKey.namespace,
+func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, indicators []*storage.ProcessIndicator) (bool, error) {
+	key := &storage.ProcessBaselineKey{
+		DeploymentId:  baselineKey.deploymentID,
+		ContainerName: baselineKey.containerName,
+		ClusterId:     baselineKey.clusterID,
+		Namespace:     baselineKey.namespace,
 	}
 
-	// TODO joseph what to do if exclusions ("whitelist" in the old non-inclusive language) doesn't exist?  Always create for now?
-	whitelist, exists, err := m.whitelists.GetProcessWhitelist(lifecycleMgrCtx, key)
+	// TODO joseph what to do if exclusions ("baseline" in the old non-inclusive language) doesn't exist?  Always create for now?
+	baseline, exists, err := m.baselines.GetProcessBaseline(lifecycleMgrCtx, key)
 	if err != nil {
 		return false, err
 	}
 
 	existingProcess := set.NewStringSet()
-	for _, element := range whitelist.GetElements() {
+	for _, element := range baseline.GetElements() {
 		existingProcess.Add(element.GetElement().GetProcessName())
 	}
 
-	var elements []*storage.WhitelistItem
+	var elements []*storage.BaselineItem
 	var hasNonStartupProcess bool
 	for _, indicator := range indicators {
-		if !processwhitelist.IsStartupProcess(indicator) {
+		if !processbaseline.IsStartupProcess(indicator) {
 			hasNonStartupProcess = true
 		}
-		whitelistItem := processWhitelistPkg.WhitelistItemFromProcess(indicator)
-		if !existingProcess.Add(whitelistItem) {
+		baselineItem := processBaselinePkg.BaselineItemFromProcess(indicator)
+		if !existingProcess.Add(baselineItem) {
 			continue
 		}
-		insertableElement := &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: whitelistItem}}
+		insertableElement := &storage.BaselineItem{Item: &storage.BaselineItem_ProcessName{ProcessName: baselineItem}}
 		elements = append(elements, insertableElement)
 	}
 	if len(elements) == 0 {
 		return false, nil
 	}
 	if !exists {
-		_, err = m.whitelists.UpsertProcessWhitelist(lifecycleMgrCtx, key, elements, true)
+		_, err = m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true)
 		return false, err
 	}
 
-	userWhitelist := processwhitelist.IsUserLocked(whitelist)
-	roxWhitelist := processwhitelist.IsRoxLocked(whitelist) && hasNonStartupProcess
-	if userWhitelist || roxWhitelist {
-		// We already checked if it's in the whitelist and it is not, so reprocess risk to mark the results are suspicious if necessary
-		m.reprocessor.ReprocessRiskForDeployments(whitelistKey.deploymentID)
-		return userWhitelist, nil
+	userBaseline := processbaseline.IsUserLocked(baseline)
+	roxBaseline := processbaseline.IsRoxLocked(baseline) && hasNonStartupProcess
+	if userBaseline || roxBaseline {
+		// We already checked if it's in the baseline and it is not, so reprocess risk to mark the results are suspicious if necessary
+		m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
+		return userBaseline, nil
 	}
-	_, err = m.whitelists.UpdateProcessWhitelistElements(lifecycleMgrCtx, key, elements, nil, true)
-	return userWhitelist, err
+	_, err = m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true)
+	return userBaseline, err
 }
 
 func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator) error {

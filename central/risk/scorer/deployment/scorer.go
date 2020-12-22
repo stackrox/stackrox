@@ -3,7 +3,7 @@ package deployment
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/processwhitelist/evaluator"
+	"github.com/stackrox/rox/central/processbaseline/evaluator"
 	roleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	bindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/central/risk/datastore"

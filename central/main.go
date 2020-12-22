@@ -82,9 +82,9 @@ import (
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	policyService "github.com/stackrox/rox/central/policy/service"
 	probeUploadService "github.com/stackrox/rox/central/probeupload/service"
+	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
+	processBaselineService "github.com/stackrox/rox/central/processbaseline/service"
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
-	processWhitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
-	processWhitelistService "github.com/stackrox/rox/central/processwhitelist/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	"github.com/stackrox/rox/central/reprocessor"
@@ -357,7 +357,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		policyService.Singleton(),
 		probeUploadService.Singleton(),
 		processIndicatorService.Singleton(),
-		processWhitelistService.Singleton(),
+		processBaselineService.Singleton(),
 		rbacService.Singleton(),
 		roleService.Singleton(),
 		sacService.Singleton(),
@@ -388,7 +388,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		clusterDataStore.Singleton(),
 		networkEntityDataStore.Singleton(),
 		policyDataStore.Singleton(),
-		processWhitelistDataStore.Singleton(),
+		processBaselineDataStore.Singleton(),
 		autoTriggerUpgrades,
 	); err != nil {
 		log.Panicf("Couldn't start sensor connection manager: %v", err)

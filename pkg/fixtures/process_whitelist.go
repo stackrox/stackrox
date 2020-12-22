@@ -8,36 +8,37 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
-// Test fixtures for tests involving excluded scopes
+// Test fixtures for tests involving excluded scopes.
 
-// GetProcessWhitelist returns an empty process whitelist with a random container name and deployment ID
-func GetProcessWhitelist() *storage.ProcessWhitelist {
+// GetProcessBaseline returns an empty process baseline
+// with a random container name and deployment ID.
+func GetProcessBaseline() *storage.ProcessBaseline {
 	createStamp, _ := ptypes.TimestampProto(time.Now())
 	processName := uuid.NewV4().String()
-	process := &storage.WhitelistElement{
-		Element: &storage.WhitelistItem{
-			Item: &storage.WhitelistItem_ProcessName{
+	process := &storage.BaselineElement{
+		Element: &storage.BaselineItem{
+			Item: &storage.BaselineItem_ProcessName{
 				ProcessName: processName,
 			},
 		},
 		Auto: true,
 	}
-	return &storage.ProcessWhitelist{
-		Elements: []*storage.WhitelistElement{process},
+	return &storage.ProcessBaseline{
+		Elements: []*storage.BaselineElement{process},
 		Created:  createStamp,
 	}
 }
 
-// GetProcessWhitelistWithID returns an excluded scope with the ID filled out
-func GetProcessWhitelistWithID() *storage.ProcessWhitelist {
-	whitelist := GetProcessWhitelistWithKey()
-	whitelist.Id = uuid.NewV4().String()
-	return whitelist
+// GetProcessBaselineWithID returns an excluded scope with the ID filled out.
+func GetProcessBaselineWithID() *storage.ProcessBaseline {
+	baseline := GetProcessBaselineWithKey()
+	baseline.Id = uuid.NewV4().String()
+	return baseline
 }
 
-// GetWhitelistKey returns a random valid ProcessWhitelistKey
-func GetWhitelistKey() *storage.ProcessWhitelistKey {
-	return &storage.ProcessWhitelistKey{
+// GetBaselineKey returns a random valid `ProcessBaselineKey`.
+func GetBaselineKey() *storage.ProcessBaselineKey {
+	return &storage.ProcessBaselineKey{
 		DeploymentId:  uuid.NewV4().String(),
 		ContainerName: uuid.NewV4().String(),
 		ClusterId:     uuid.NewV4().String(),
@@ -45,19 +46,19 @@ func GetWhitelistKey() *storage.ProcessWhitelistKey {
 	}
 }
 
-// GetProcessWhitelistWithKey returns an excluded scope and its key.
-func GetProcessWhitelistWithKey() *storage.ProcessWhitelist {
-	key := GetWhitelistKey()
-	whitelist := GetProcessWhitelist()
-	whitelist.Key = key
-	return whitelist
+// GetProcessBaselineWithKey returns an excluded scope and its key.
+func GetProcessBaselineWithKey() *storage.ProcessBaseline {
+	key := GetBaselineKey()
+	baseline := GetProcessBaseline()
+	baseline.Key = key
+	return baseline
 }
 
-// GetWhitelistElement returns a *storage.WhitelistElement with a given process name
-func GetWhitelistElement(processName string) *storage.WhitelistElement {
-	return &storage.WhitelistElement{
-		Element: &storage.WhitelistItem{
-			Item: &storage.WhitelistItem_ProcessName{
+// GetBaselineElement returns a `*storage.BaselineElement` with a given process name.
+func GetBaselineElement(processName string) *storage.BaselineElement {
+	return &storage.BaselineElement{
+		Element: &storage.BaselineItem{
+			Item: &storage.BaselineItem_ProcessName{
 				ProcessName: processName,
 			},
 		},
@@ -65,22 +66,24 @@ func GetWhitelistElement(processName string) *storage.WhitelistElement {
 	}
 }
 
-// MakeWhitelistItems turns a list of strings into a list of storage objects for more convenient test
-func MakeWhitelistItems(strings ...string) []*storage.WhitelistItem {
-	elements := make([]*storage.WhitelistItem, 0, len(strings))
+// MakeBaselineItems turns a list of strings into a
+// list of storage objects for more convenient test.
+func MakeBaselineItems(strings ...string) []*storage.BaselineItem {
+	elements := make([]*storage.BaselineItem, 0, len(strings))
 	for _, stringName := range strings {
-		elements = append(elements, &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: stringName}})
+		elements = append(elements, &storage.BaselineItem{Item: &storage.BaselineItem_ProcessName{ProcessName: stringName}})
 	}
 	return elements
 }
 
-// MakeWhitelistElements turns a list of strings into a list of storage objects for more convenient test
-func MakeWhitelistElements(strings ...string) []*storage.WhitelistElement {
-	items := MakeWhitelistItems(strings...)
+// MakeBaselineElements turns a list of strings into a
+// list of storage objects for more convenient test.
+func MakeBaselineElements(strings ...string) []*storage.BaselineElement {
+	items := MakeBaselineItems(strings...)
 
-	elements := make([]*storage.WhitelistElement, 0, len(items))
+	elements := make([]*storage.BaselineElement, 0, len(items))
 	for _, item := range items {
-		elements = append(elements, &storage.WhitelistElement{Element: item})
+		elements = append(elements, &storage.BaselineElement{Element: item})
 	}
 	return elements
 }

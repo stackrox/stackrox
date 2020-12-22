@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/deployment/datastore"
+	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	processWhitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
-	processWhitelistResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
+	processBaselineResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -28,14 +28,14 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(datastore datastore.DataStore, processIndicators processIndicatorDataStore.DataStore, processWhitelists processWhitelistDataStore.DataStore,
-	processWhitelistResults processWhitelistResultsStore.DataStore, risks riskDataStore.DataStore, manager riskManager.Manager) Service {
+func New(datastore datastore.DataStore, processIndicators processIndicatorDataStore.DataStore, processBaselines processBaselineDataStore.DataStore,
+	processBaselineResults processBaselineResultsStore.DataStore, risks riskDataStore.DataStore, manager riskManager.Manager) Service {
 	return &serviceImpl{
-		datastore:               datastore,
-		processIndicators:       processIndicators,
-		processWhitelists:       processWhitelists,
-		processWhitelistResults: processWhitelistResults,
-		risks:                   risks,
-		manager:                 manager,
+		datastore:              datastore,
+		processIndicators:      processIndicators,
+		processBaselines:       processBaselines,
+		processBaselineResults: processBaselineResults,
+		risks:                  risks,
+		manager:                manager,
 	}
 }

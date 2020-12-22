@@ -9,7 +9,7 @@ import "api/v1/search_service.proto";
 import "api/v1/empty.proto";
 import "storage/deployment.proto";
 import "storage/risk.proto";
-import "storage/process_whitelist.proto";
+import "storage/process_baseline.proto";
 
 package v1;
 
@@ -32,8 +32,8 @@ message CountDeploymentsResponse {
 
 message ListDeploymentsWithProcessInfoResponse {
     message DeploymentWithProcessInfo {
-        storage.ListDeployment                           deployment         = 1;
-        repeated storage.ContainerNameAndWhitelistStatus whitelist_statuses = 2;
+        storage.ListDeployment                          deployment         = 1;
+        repeated storage.ContainerNameAndBaselineStatus whitelist_statuses = 2;
     }
     repeated DeploymentWithProcessInfo deployments = 1;
 }

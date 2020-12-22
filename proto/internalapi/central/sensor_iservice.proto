@@ -9,7 +9,7 @@ import "internalapi/central/policy_sync.proto";
 import "internalapi/central/sensor_events.proto";
 import "internalapi/central/sensor_upgrade.proto";
 import "internalapi/central/telemetry.proto";
-import "internalapi/central/whitelist_sync.proto";
+import "internalapi/central/baseline_sync.proto";
 
 package central;
 
@@ -39,7 +39,7 @@ message MsgToSensor {
         PullTelemetryDataRequest       telemetry_data_request             =  6;
         PolicySync                     policy_sync                        =  7;
         ReassessPolicies               reassess_policies                  =  8;
-        WhitelistSync                  whitelist_sync                     =  9;
+        BaselineSync                   baseline_sync                      =  9;
         CancelPullTelemetryDataRequest cancel_pull_telemetry_data_request = 10;
         PushNetworkEntitiesRequest     push_network_entities_request      = 11;
     }

@@ -15,7 +15,7 @@ import (
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
+	pwDS "github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/role/resources"
@@ -46,7 +46,7 @@ type datastoreImpl struct {
 
 	images                 imageDS.DataStore
 	networkFlows           nfDS.ClusterDataStore
-	whitelists             pwDS.DataStore
+	baselines              pwDS.DataStore
 	risks                  riskDS.DataStore
 	deletedDeploymentCache expiringcache.Cache
 	processFilter          filter.Filter
@@ -59,7 +59,7 @@ type datastoreImpl struct {
 }
 
 func newDatastoreImpl(storage deploymentStore.Store, processTagsStore processtagsstore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher,
-	images imageDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore,
+	images imageDS.DataStore, baselines pwDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (*datastoreImpl, error) {
 
@@ -69,7 +69,7 @@ func newDatastoreImpl(storage deploymentStore.Store, processTagsStore processtag
 		deploymentIndexer:      indexer,
 		deploymentSearcher:     searcher,
 		images:                 images,
-		whitelists:             whitelists,
+		baselines:              baselines,
 		networkFlows:           networkFlows,
 		risks:                  risks,
 		keyedMutex:             concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
@@ -293,7 +293,7 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		errorList.AddError(err)
 	}
 
-	if err := ds.whitelists.RemoveProcessWhitelistsByDeployment(deleteRelatedCtx, id); err != nil {
+	if err := ds.baselines.RemoveProcessBaselinesByDeployment(deleteRelatedCtx, id); err != nil {
 		errorList.AddError(err)
 	}
 

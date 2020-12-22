@@ -47,7 +47,7 @@ type sensorConnection struct {
 	clusterMgr       common.ClusterManager
 	networkEntityMgr common.NetworkEntityManager
 	policyMgr        common.PolicyManager
-	whitelistMgr     common.ProcessBaselineManager
+	baselineMgr      common.ProcessBaselineManager
 
 	capabilities centralsensor.SensorCapabilitySet
 }
@@ -58,7 +58,7 @@ func newConnection(ctx context.Context,
 	clusterMgr common.ClusterManager,
 	networkEntityMgr common.NetworkEntityManager,
 	policyMgr common.PolicyManager,
-	whitelistMgr common.ProcessBaselineManager) *sensorConnection {
+	baselineMgr common.ProcessBaselineManager) *sensorConnection {
 	conn := &sensorConnection{
 		stopSig:       concurrency.NewErrorSignal(),
 		stoppedSig:    concurrency.NewErrorSignal(),
@@ -70,7 +70,7 @@ func newConnection(ctx context.Context,
 		clusterMgr:       clusterMgr,
 		policyMgr:        policyMgr,
 		networkEntityMgr: networkEntityMgr,
-		whitelistMgr:     whitelistMgr,
+		baselineMgr:      baselineMgr,
 
 		capabilities: centralsensor.ExtractCapsFromContext(ctx),
 	}
@@ -234,25 +234,25 @@ func (c *sensorConnection) getPolicySyncMsg(ctx context.Context) (*central.MsgTo
 	}, nil
 }
 
-func (c *sensorConnection) getWhitelistSyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
-	var whitelists []*storage.ProcessWhitelist
-	err := c.whitelistMgr.WalkAll(ctx, func(pw *storage.ProcessWhitelist) error {
+func (c *sensorConnection) getBaselineSyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
+	var baselines []*storage.ProcessBaseline
+	err := c.baselineMgr.WalkAll(ctx, func(pw *storage.ProcessBaseline) error {
 		if pw.GetUserLockedTimestamp() == nil {
 			return nil
 		}
 		if pw.GetKey().GetClusterId() != c.clusterID {
 			return nil
 		}
-		whitelists = append(whitelists, pw)
+		baselines = append(baselines, pw)
 		return nil
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "could not list process baselines for Sensor connection")
 	}
 	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_WhitelistSync{
-			WhitelistSync: &central.WhitelistSync{
-				Whitelists: whitelists,
+		Msg: &central.MsgToSensor_BaselineSync{
+			BaselineSync: &central.BaselineSync{
+				Baselines: baselines,
 			},
 		},
 	}, nil
@@ -299,7 +299,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 			return errors.Wrapf(err, "unable to sync initial policies to cluster %q", c.clusterID)
 		}
 
-		msg, err = c.getWhitelistSyncMsg(ctx)
+		msg, err = c.getBaselineSyncMsg(ctx)
 		if err != nil {
 			return errors.Wrapf(err, "unable to get process baseline sync msg for %q", c.clusterID)
 		}

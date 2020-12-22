@@ -1,27 +1,27 @@
 package services
 
-import io.stackrox.proto.api.v1.ProcessWhitelistServiceGrpc
-import io.stackrox.proto.storage.ProcessWhitelistOuterClass
-import io.stackrox.proto.storage.ProcessWhitelistOuterClass.ProcessWhitelistKey
-import io.stackrox.proto.api.v1.ProcessWhitelistServiceOuterClass
-import io.stackrox.proto.api.v1.ProcessWhitelistServiceOuterClass.DeleteProcessWhitelistsRequest
+import io.stackrox.proto.api.v1.ProcessBaselineServiceGrpc
+import io.stackrox.proto.storage.ProcessBaselineOuterClass
+import io.stackrox.proto.storage.ProcessBaselineOuterClass.ProcessBaselineKey
+import io.stackrox.proto.api.v1.ProcessBaselineServiceOuterClass
+import io.stackrox.proto.api.v1.ProcessBaselineServiceOuterClass.DeleteProcessBaselinesRequest
 import objects.Deployment
 import util.Timer
 
 class ProcessWhitelistService extends BaseService {
     static getProcessWhitelistService() {
-        return ProcessWhitelistServiceGrpc.newBlockingStub(getChannel())
+        return ProcessBaselineServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static  ProcessWhitelistOuterClass.ProcessWhitelist getProcessWhitelist(
+    static  ProcessBaselineOuterClass.ProcessBaseline getProcessWhitelist(
             String clusterId, Deployment deployment, String containerName = null,
             int retries = 20, int interval = 6) {
         String namespace = deployment.getNamespace()
         String deploymentId = deployment.getDeploymentUid()
         String cName = containerName ?: deployment.getName()
-        ProcessWhitelistServiceOuterClass.GetProcessWhitelistRequest request = ProcessWhitelistServiceOuterClass.
-                GetProcessWhitelistRequest.newBuilder().
-                setKey(ProcessWhitelistKey.newBuilder()
+        ProcessBaselineServiceOuterClass.GetProcessBaselineRequest request = ProcessBaselineServiceOuterClass.
+                GetProcessBaselineRequest.newBuilder().
+                setKey(ProcessBaselineKey.newBuilder()
                         .setClusterId(clusterId)
                         .setNamespace(namespace)
                         .setDeploymentId(deploymentId)
@@ -45,11 +45,11 @@ class ProcessWhitelistService extends BaseService {
         return null
     }
 
-    static List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists(
+    static List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessWhitelists(
             String clusterId, Deployment deployment, String containerName, boolean lock) {
         try {
             String cName = containerName ?: deployment.getName()
-            ProcessWhitelistKey keyToLock = ProcessWhitelistKey
+            ProcessBaselineKey keyToLock = ProcessBaselineKey
                     .newBuilder()
                         .setClusterId(clusterId)
                         .setNamespace(deployment.getNamespace())
@@ -57,23 +57,23 @@ class ProcessWhitelistService extends BaseService {
                         .setContainerName(cName)
                     .build()
 
-            ProcessWhitelistServiceOuterClass.LockProcessWhitelistsRequest lockRequest =
-                     ProcessWhitelistServiceOuterClass.LockProcessWhitelistsRequest
+            ProcessBaselineServiceOuterClass.LockProcessBaselinesRequest lockRequest =
+                     ProcessBaselineServiceOuterClass.LockProcessBaselinesRequest
                              .newBuilder()
                                .addKeys(keyToLock)
                                .setLocked(lock)
                              .build()
 
-            def fromUpdate = getProcessWhitelistService().lockProcessWhitelists(lockRequest).whitelistsList
+            def fromUpdate = getProcessWhitelistService().lockProcessBaselines(lockRequest).baselinesList
 
-            ProcessWhitelistServiceOuterClass.GetProcessWhitelistRequest getRequest =
-                    ProcessWhitelistServiceOuterClass.GetProcessWhitelistRequest
+            ProcessBaselineServiceOuterClass.GetProcessBaselineRequest getRequest =
+                    ProcessBaselineServiceOuterClass.GetProcessBaselineRequest
                             .newBuilder()
                                 .setKey(keyToLock)
                             .build()
 
-            ProcessWhitelistOuterClass.ProcessWhitelist wl =
-                    getProcessWhitelistService().getProcessWhitelist(getRequest)
+            ProcessBaselineOuterClass.ProcessBaseline wl =
+                    getProcessWhitelistService().getProcessBaseline(getRequest)
 
             if (wl.hasUserLockedTimestamp()) {
                 if (!lock) {
@@ -93,46 +93,46 @@ class ProcessWhitelistService extends BaseService {
     }
 
     static deleteProcessWhitelists(String query) {
-        DeleteProcessWhitelistsRequest req = DeleteProcessWhitelistsRequest.newBuilder()
+        DeleteProcessBaselinesRequest req = DeleteProcessBaselinesRequest.newBuilder()
             .setQuery(query).setConfirm(true).build()
-        return getProcessWhitelistService().deleteProcessWhitelists(req)
+        return getProcessWhitelistService().deleteProcessBaselines(req)
     }
 
-    static List<ProcessWhitelistOuterClass.ProcessWhitelist> updateProcessWhitelists(
-            ProcessWhitelistKey[] keys,
+    static List<ProcessBaselineOuterClass.ProcessBaseline> updateProcessWhitelists(
+            ProcessBaselineKey[] keys,
             String [] toBeAddedProcesses,
             String[] toBeRemovedProcesses) {
         try {
-            ProcessWhitelistServiceOuterClass.UpdateProcessWhitelistsRequest.Builder requestBuilder =
-                ProcessWhitelistServiceOuterClass.UpdateProcessWhitelistsRequest.newBuilder()
-            for ( ProcessWhitelistKey key : keys) {
+            ProcessBaselineServiceOuterClass.UpdateProcessBaselinesRequest.Builder requestBuilder =
+                ProcessBaselineServiceOuterClass.UpdateProcessBaselinesRequest.newBuilder()
+            for ( ProcessBaselineKey key : keys) {
                 requestBuilder.addKeys(key)
             }
-            ProcessWhitelistOuterClass.WhitelistItemOrBuilder itemBuilder =
-                    ProcessWhitelistOuterClass.WhitelistItem.newBuilder()
+            ProcessBaselineOuterClass.BaselineItemOrBuilder itemBuilder =
+                    ProcessBaselineOuterClass.BaselineItem.newBuilder()
             for ( String processToBeAdded : toBeAddedProcesses) {
-                ProcessWhitelistOuterClass.WhitelistItem   item  =
+                ProcessBaselineOuterClass.BaselineItem   item  =
                         itemBuilder.setProcessName(processToBeAdded).build()
                 requestBuilder.addAddElements(item)
             }
 
             for ( String processToBeRemoved : toBeRemovedProcesses) {
-                ProcessWhitelistOuterClass.WhitelistItem   item  =
+                ProcessBaselineOuterClass.BaselineItem   item  =
                         itemBuilder.setProcessName(processToBeRemoved).build()
                 requestBuilder.addRemoveElements(item)
             }
-            List<ProcessWhitelistOuterClass.ProcessWhitelist> updatedLst = getProcessWhitelistService()
-                .updateProcessWhitelists(requestBuilder.build()).whitelistsList
+            List<ProcessBaselineOuterClass.ProcessBaseline> updatedLst = getProcessWhitelistService()
+                .updateProcessBaselines(requestBuilder.build()).baselinesList
             return updatedLst
         } catch (Exception e) {
             println "Error updating process baselines: ${e}"
         }
     }
 
-    static ProcessWhitelistOuterClass.ProcessWhitelist getWhitelistProcesses(
-        ProcessWhitelistServiceOuterClass.GetProcessWhitelistRequest request) {
+    static ProcessBaselineOuterClass.ProcessBaseline getWhitelistProcesses(
+        ProcessBaselineServiceOuterClass.GetProcessBaselineRequest request) {
         try {
-            return getProcessWhitelistService().getProcessWhitelist(request)
+            return getProcessWhitelistService().getProcessBaseline(request)
         }
         catch (Exception e) {
             println "Error getting  process baselines: ${e}"
@@ -144,7 +144,7 @@ class ProcessWhitelistService extends BaseService {
         Timer t = new Timer(20, 6)
         try {
             while (t.IsValid()) {
-                ProcessWhitelistOuterClass.ProcessWhitelist whitelist =
+                ProcessBaselineOuterClass.ProcessBaseline whitelist =
                         getProcessWhitelist(clusterId, deployment, containerName)
                 if (whitelist != null) {
                     return true
@@ -162,7 +162,7 @@ class ProcessWhitelistService extends BaseService {
         Timer t = new Timer(5, 2)
         try {
             while (t.IsValid()) {
-                ProcessWhitelistOuterClass.ProcessWhitelist whitelist =
+                ProcessBaselineOuterClass.ProcessBaseline whitelist =
                         getProcessWhitelist(clusterId, deployment, containerName, 1)
                 if (whitelist == null) {
                     return true

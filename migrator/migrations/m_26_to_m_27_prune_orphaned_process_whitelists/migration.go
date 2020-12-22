@@ -59,7 +59,7 @@ func pruneOrphanedProcessWhitelists(databases *types.Databases) error {
 		}
 
 		err := b.ForEach(func(k, v []byte) error {
-			var whitelist storage.ProcessWhitelist
+			var whitelist storage.ProcessBaseline
 			if err := proto.Unmarshal(v, &whitelist); err != nil {
 				log.WriteToStderr(fmt.Sprintf("Unmarshal error for process baseline: %s, %s\nerr: %s", k, v, err))
 				return nil

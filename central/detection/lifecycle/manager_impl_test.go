@@ -8,7 +8,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	processWhitelistDataStoreMocks "github.com/stackrox/rox/central/processwhitelist/datastore/mocks"
+	processBaselineDataStoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	reprocessorMocks "github.com/stackrox/rox/central/reprocessor/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -27,7 +27,7 @@ func TestManager(t *testing.T) {
 type ManagerTestSuite struct {
 	suite.Suite
 
-	whitelists  *processWhitelistDataStoreMocks.MockDataStore
+	baselines   *processBaselineDataStoreMocks.MockDataStore
 	reprocessor *reprocessorMocks.MockLoop
 	manager     *managerImpl
 
@@ -37,16 +37,16 @@ type ManagerTestSuite struct {
 func (suite *ManagerTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 
-	suite.whitelists = processWhitelistDataStoreMocks.NewMockDataStore(suite.mockCtrl)
+	suite.baselines = processBaselineDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.reprocessor = reprocessorMocks.NewMockLoop(suite.mockCtrl)
-	suite.manager = &managerImpl{whitelists: suite.whitelists, reprocessor: suite.reprocessor}
+	suite.manager = &managerImpl{baselines: suite.baselines, reprocessor: suite.reprocessor}
 }
 
 func (suite *ManagerTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 }
 
-func makeIndicator() (*storage.ProcessWhitelistKey, *storage.ProcessIndicator) {
+func makeIndicator() (*storage.ProcessBaselineKey, *storage.ProcessIndicator) {
 	signal := &storage.ProcessSignal{
 		Id:           uuid.NewV4().String(),
 		ContainerId:  uuid.NewV4().String(),
@@ -71,7 +71,7 @@ func makeIndicator() (*storage.ProcessWhitelistKey, *storage.ProcessIndicator) {
 		PodId:         uuid.NewV4().String(),
 		Signal:        signal,
 	}
-	key := &storage.ProcessWhitelistKey{
+	key := &storage.ProcessBaselineKey{
 		DeploymentId:  indicator.GetDeploymentId(),
 		ContainerName: indicator.GetContainerName(),
 		ClusterId:     indicator.GetClusterId(),
@@ -80,54 +80,54 @@ func makeIndicator() (*storage.ProcessWhitelistKey, *storage.ProcessIndicator) {
 	return key, indicator
 }
 
-func (suite *ManagerTestSuite) TestWhitelistNotFound() {
+func (suite *ManagerTestSuite) TestBaselineNotFound() {
 	envIsolator := envisolator.NewEnvIsolator(suite.T())
 	defer envIsolator.RestoreAll()
 
 	envIsolator.Setenv(env.WhitelistGenerationDuration.EnvVar(), time.Millisecond.String())
 	key, indicator := makeIndicator()
-	elements := fixtures.MakeWhitelistItems(indicator.GetSignal().GetExecFilePath())
-	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(nil, false, nil)
-	suite.whitelists.EXPECT().UpsertProcessWhitelist(gomock.Any(), key, elements, true).Return(nil, nil)
-	_, err := suite.manager.checkAndUpdateWhitelist(indicatorToWhitelistKey(indicator), []*storage.ProcessIndicator{indicator})
+	elements := fixtures.MakeBaselineItems(indicator.GetSignal().GetExecFilePath())
+	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(nil, false, nil)
+	suite.baselines.EXPECT().UpsertProcessBaseline(gomock.Any(), key, elements, true).Return(nil, nil)
+	_, err := suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.NoError(err)
 	suite.mockCtrl.Finish()
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	expectedError := errors.New("Expected error")
-	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(nil, false, expectedError)
-	_, err = suite.manager.checkAndUpdateWhitelist(indicatorToWhitelistKey(indicator), []*storage.ProcessIndicator{indicator})
+	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(nil, false, expectedError)
+	_, err = suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.Equal(expectedError, err)
 	suite.mockCtrl.Finish()
 
 	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(nil, false, nil)
-	suite.whitelists.EXPECT().UpsertProcessWhitelist(gomock.Any(), key, elements, true).Return(nil, expectedError)
-	_, err = suite.manager.checkAndUpdateWhitelist(indicatorToWhitelistKey(indicator), []*storage.ProcessIndicator{indicator})
+	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(nil, false, nil)
+	suite.baselines.EXPECT().UpsertProcessBaseline(gomock.Any(), key, elements, true).Return(nil, expectedError)
+	_, err = suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.Equal(expectedError, err)
 }
 
-func (suite *ManagerTestSuite) TestWhitelistShouldBeUpdated() {
+func (suite *ManagerTestSuite) TestBaselineShouldBeUpdated() {
 	key, indicator := makeIndicator()
-	whitelist := &storage.ProcessWhitelist{}
-	elements := fixtures.MakeWhitelistItems(indicator.Signal.GetExecFilePath())
-	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(whitelist, true, nil)
-	suite.whitelists.EXPECT().UpdateProcessWhitelistElements(gomock.Any(), key, elements, nil, true).Return(nil, nil)
-	_, err := suite.manager.checkAndUpdateWhitelist(indicatorToWhitelistKey(indicator), []*storage.ProcessIndicator{indicator})
+	baseline := &storage.ProcessBaseline{}
+	elements := fixtures.MakeBaselineItems(indicator.Signal.GetExecFilePath())
+	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(baseline, true, nil)
+	suite.baselines.EXPECT().UpdateProcessBaselineElements(gomock.Any(), key, elements, nil, true).Return(nil, nil)
+	_, err := suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.NoError(err)
 
 	expectedError := errors.New("Expected error")
-	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(whitelist, true, nil)
-	suite.whitelists.EXPECT().UpdateProcessWhitelistElements(gomock.Any(), key, elements, nil, true).Return(nil, expectedError)
-	_, err = suite.manager.checkAndUpdateWhitelist(indicatorToWhitelistKey(indicator), []*storage.ProcessIndicator{indicator})
+	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(baseline, true, nil)
+	suite.baselines.EXPECT().UpdateProcessBaselineElements(gomock.Any(), key, elements, nil, true).Return(nil, expectedError)
+	_, err = suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.Equal(expectedError, err)
 }
 
-func (suite *ManagerTestSuite) TestWhitelistShouldPass() {
+func (suite *ManagerTestSuite) TestBaselineShouldPass() {
 	key, indicator := makeIndicator()
-	whitelist := &storage.ProcessWhitelist{Elements: fixtures.MakeWhitelistElements(indicator.Signal.GetExecFilePath())}
-	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(whitelist, true, nil)
-	_, err := suite.manager.checkAndUpdateWhitelist(indicatorToWhitelistKey(indicator), []*storage.ProcessIndicator{indicator})
+	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath())}
+	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(baseline, true, nil)
+	_, err := suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.NoError(err)
 }
 

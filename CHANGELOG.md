@@ -6,6 +6,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 - Added option to backup certificates for central.
+- Deprecated `ProcessWhitelistService` and related APIs in favor of `ProcessBaselineService`. 
 
 ## [53.0]
 - [Security Advisory] Scanner was not validating Central client certificates allowing for intra-cluster unauthenticated users

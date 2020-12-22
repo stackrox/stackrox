@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/processwhitelist/evaluator/mocks"
+	"github.com/stackrox/rox/central/processbaseline/evaluator/mocks"
 	"github.com/stackrox/rox/central/risk/multipliers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
@@ -86,7 +86,7 @@ func TestProcessWhitelists(t *testing.T) {
 			defer mockCtrl.Finish()
 
 			mockEvaluator := mocks.NewMockEvaluator(mockCtrl)
-			mockEvaluator.EXPECT().EvaluateWhitelistsAndPersistResult(deployment).Return(c.violatingProcesses, c.evaluatorErr)
+			mockEvaluator.EXPECT().EvaluateBaselinesAndPersistResult(deployment).Return(c.violatingProcesses, c.evaluatorErr)
 			result := NewProcessWhitelists(mockEvaluator).Score(context.Background(), deployment, nil)
 			assert.ElementsMatch(t, c.expected.GetFactors(), result.GetFactors())
 			assert.InDelta(t, c.expected.GetScore(), result.GetScore(), 0.001)

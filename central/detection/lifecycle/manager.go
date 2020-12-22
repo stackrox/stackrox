@@ -7,8 +7,8 @@ import (
 	"github.com/stackrox/rox/central/detection/alertmanager"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/runtime"
+	baselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
-	whitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -39,7 +39,7 @@ type Manager interface {
 
 // newManager returns a new manager with the injected dependencies.
 func newManager(deploytimeDetector deploytime.Detector, runtimeDetector runtime.Detector,
-	deploymentDatastore deploymentDatastore.DataStore, processesDataStore processDatastore.DataStore, whitelists whitelistDataStore.DataStore,
+	deploymentDatastore deploymentDatastore.DataStore, processesDataStore processDatastore.DataStore, baselines baselineDataStore.DataStore,
 	alertManager alertmanager.AlertManager, reprocessor reprocessor.Loop, deletedDeploymentsCache expiringcache.Cache, filter filter.Filter) *managerImpl {
 	m := &managerImpl{
 		deploytimeDetector:      deploytimeDetector,
@@ -47,7 +47,7 @@ func newManager(deploytimeDetector deploytime.Detector, runtimeDetector runtime.
 		alertManager:            alertManager,
 		deploymentDataStore:     deploymentDatastore,
 		processesDataStore:      processesDataStore,
-		whitelists:              whitelists,
+		baselines:               baselines,
 		reprocessor:             reprocessor,
 		deletedDeploymentsCache: deletedDeploymentsCache,
 		processFilter:           filter,

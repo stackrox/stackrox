@@ -11,15 +11,15 @@ import (
 )
 
 var (
-	processWhitelistSAC = sac.ForResource(resources.ProcessWhitelist)
+	processBaselineSAC = sac.ForResource(resources.ProcessWhitelist)
 )
 
 type datastoreImpl struct {
 	storage store.Store
 }
 
-func (d *datastoreImpl) UpsertWhitelistResults(ctx context.Context, results *storage.ProcessWhitelistResults) error {
-	if ok, err := processWhitelistSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(results).Allowed(ctx); err != nil {
+func (d *datastoreImpl) UpsertBaselineResults(ctx context.Context, results *storage.ProcessBaselineResults) error {
+	if ok, err := processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(results).Allowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return errors.New("permission denied")
@@ -28,26 +28,26 @@ func (d *datastoreImpl) UpsertWhitelistResults(ctx context.Context, results *sto
 	return d.storage.Upsert(results)
 }
 
-func (d *datastoreImpl) GetWhitelistResults(ctx context.Context, deploymentID string) (*storage.ProcessWhitelistResults, error) {
+func (d *datastoreImpl) GetBaselineResults(ctx context.Context, deploymentID string) (*storage.ProcessBaselineResults, error) {
 	pWResults, exists, err := d.storage.Get(deploymentID)
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	if ok, err := processWhitelistSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(pWResults).Allowed(ctx); err != nil || !ok {
+	if ok, err := processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(pWResults).Allowed(ctx); err != nil || !ok {
 		return nil, err
 	}
 
 	return pWResults, nil
 }
 
-func (d *datastoreImpl) DeleteWhitelistResults(ctx context.Context, deploymentID string) error {
+func (d *datastoreImpl) DeleteBaselineResults(ctx context.Context, deploymentID string) error {
 	pWResults, exists, err := d.storage.Get(deploymentID)
 	if err != nil || !exists {
 		return err
 	}
 
-	if ok, err := processWhitelistSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(pWResults).Allowed(ctx); err != nil || !ok {
+	if ok, err := processBaselineSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(pWResults).Allowed(ctx); err != nil || !ok {
 		return err
 	}
 

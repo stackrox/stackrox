@@ -2,7 +2,7 @@ package deployment
 
 import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
-	"github.com/stackrox/rox/central/processwhitelist/evaluator"
+	"github.com/stackrox/rox/central/processbaseline/evaluator"
 	roleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	bindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	saStore "github.com/stackrox/rox/central/serviceaccount/datastore"

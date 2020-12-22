@@ -2,9 +2,9 @@ package service
 
 import (
 	"github.com/stackrox/rox/central/deployment/datastore"
+	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	processWhitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
-	processWhitelistResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
+	processBaselineResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/pkg/sync"
@@ -17,7 +17,7 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton(), processIndicatorDataStore.Singleton(), processWhitelistDataStore.Singleton(), processWhitelistResultsStore.Singleton(), riskDataStore.Singleton(), manager.Singleton())
+	as = New(datastore.Singleton(), processIndicatorDataStore.Singleton(), processBaselineDataStore.Singleton(), processBaselineResultsStore.Singleton(), riskDataStore.Singleton(), manager.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

@@ -18,7 +18,7 @@ import (
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
+	pbDS "github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -59,7 +59,7 @@ type DataStore interface {
 }
 
 func newDataStore(storage store.Store, graphProvider graph.Provider, processTagsStore processtagsstore.Store, bleveIndex bleve.Index, processIndex bleve.Index,
-	images imageDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore,
+	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
 	indexer := index.New(bleveIndex, processIndex)
@@ -74,7 +74,7 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, processTags
 		imageIndexer.New(bleveIndex),
 		indexer)
 
-	ds, err := newDatastoreImpl(storage, processTagsStore, indexer, searcher, images, whitelists, networkFlows, risks,
+	ds, err := newDatastoreImpl(storage, processTagsStore, indexer, searcher, images, baselines, networkFlows, risks,
 		deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 
 	if err != nil {
@@ -87,12 +87,12 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, processTags
 
 // New creates a deployment datastore based on dackbox
 func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, processTagsStore processtagsstore.Store, bleveIndex bleve.Index, processIndex bleve.Index,
-	images imageDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore,
+	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
 	storage, err := dackBoxStore.New(dacky, keyFence)
 	if err != nil {
 		return nil, err
 	}
-	return newDataStore(storage, dacky, processTagsStore, bleveIndex, processIndex, images, whitelists, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+	return newDataStore(storage, dacky, processTagsStore, bleveIndex, processIndex, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 }

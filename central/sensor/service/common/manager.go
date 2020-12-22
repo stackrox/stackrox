@@ -21,7 +21,7 @@ type PolicyManager interface {
 
 // ProcessBaselineManager implements an interface to retrieve process baselines.
 type ProcessBaselineManager interface {
-	WalkAll(ctx context.Context, fn func(whitelist *storage.ProcessWhitelist) error) error
+	WalkAll(ctx context.Context, fn func(baseline *storage.ProcessBaseline) error) error
 }
 
 // NetworkEntityManager implements an interface to retrieve network entities.

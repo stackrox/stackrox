@@ -7,9 +7,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// ProcessWhitelists encapsulates the sub-interface of the process whitelists datastore required for risk.
+// ProcessWhitelists encapsulates the sub-interface of the process baselines datastore required for risk.
 type ProcessWhitelists interface {
-	GetProcessWhitelist(context.Context, *storage.ProcessWhitelistKey) (*storage.ProcessWhitelist, error)
+	GetProcessBaseline(context.Context, *storage.ProcessBaselineKey) (*storage.ProcessBaseline, error)
 }
 
 // ProcessIndicators encapulates the sub-interface of the process indicator datastore required for risk.

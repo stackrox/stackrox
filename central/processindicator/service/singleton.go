@@ -2,8 +2,8 @@ package service
 
 import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	baselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	whitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -14,7 +14,7 @@ var (
 )
 
 func initialize() {
-	as = New(processIndicatorDataStore.Singleton(), deploymentDataStore.Singleton(), whitelistDataStore.Singleton())
+	as = New(processIndicatorDataStore.Singleton(), deploymentDataStore.Singleton(), baselineDataStore.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

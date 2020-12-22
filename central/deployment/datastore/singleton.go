@@ -9,8 +9,8 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	pbDS "github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/processindicator/filter"
-	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/pkg/logging"
@@ -34,7 +34,7 @@ func initialize() {
 		globalindex.GetGlobalIndex(),
 		globalindex.GetProcessIndex(),
 		imageDatastore.Singleton(),
-		pwDS.Singleton(),
+		pbDS.Singleton(),
 		nfDS.Singleton(),
 		riskDS.Singleton(),
 		cache.DeletedDeploymentCacheSingleton(),

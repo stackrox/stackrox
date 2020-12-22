@@ -8,9 +8,9 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore"
+	processBaselineStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
-	processWhitelistStore "github.com/stackrox/rox/central/processwhitelist/datastore"
-	processWhitelistResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
+	processBaselineResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
@@ -46,35 +46,35 @@ var (
 			"/v1.DeploymentService/ListDeploymentsWithProcessInfo",
 		},
 	})
-	whitelistAndIndicatorAuth = user.With(permissions.View(resources.ProcessWhitelist), permissions.View(resources.Indicator))
+	baselineAndIndicatorAuth = user.With(permissions.View(resources.ProcessWhitelist), permissions.View(resources.Indicator))
 )
 
 // serviceImpl provides APIs for deployments.
 type serviceImpl struct {
-	datastore               datastore.DataStore
-	processWhitelists       processWhitelistStore.DataStore
-	processIndicators       processIndicatorStore.DataStore
-	processWhitelistResults processWhitelistResultsStore.DataStore
-	risks                   riskDataStore.DataStore
-	manager                 manager.Manager
+	datastore              datastore.DataStore
+	processBaselines       processBaselineStore.DataStore
+	processIndicators      processIndicatorStore.DataStore
+	processBaselineResults processBaselineResultsStore.DataStore
+	risks                  riskDataStore.DataStore
+	manager                manager.Manager
 }
 
-func (s *serviceImpl) whitelistResultsForDeployment(ctx context.Context, deployment *storage.ListDeployment) (*storage.ProcessWhitelistResults, error) {
-	whitelistResults, err := s.processWhitelistResults.GetWhitelistResults(ctx, deployment.GetId())
+func (s *serviceImpl) baselineResultsForDeployment(ctx context.Context, deployment *storage.ListDeployment) (*storage.ProcessBaselineResults, error) {
+	baselineResults, err := s.processBaselineResults.GetBaselineResults(ctx, deployment.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	return whitelistResults, nil
+	return baselineResults, nil
 }
 
-func (s *serviceImpl) fillWhitelistResults(ctx context.Context, resp *v1.ListDeploymentsWithProcessInfoResponse) error {
-	if err := whitelistAndIndicatorAuth.Authorized(ctx, ""); err == nil {
+func (s *serviceImpl) fillBaselineResults(ctx context.Context, resp *v1.ListDeploymentsWithProcessInfoResponse) error {
+	if err := baselineAndIndicatorAuth.Authorized(ctx, ""); err == nil {
 		for _, depWithProc := range resp.Deployments {
-			whitelistResults, err := s.whitelistResultsForDeployment(ctx, depWithProc.GetDeployment())
+			baselineResults, err := s.baselineResultsForDeployment(ctx, depWithProc.GetDeployment())
 			if err != nil {
 				return err
 			}
-			depWithProc.WhitelistStatuses = whitelistResults.GetWhitelistStatuses()
+			depWithProc.WhitelistStatuses = baselineResults.GetBaselineStatuses()
 		}
 	}
 	return nil
@@ -94,7 +94,7 @@ func (s *serviceImpl) ListDeploymentsWithProcessInfo(ctx context.Context, rawQue
 			},
 		)
 	}
-	if err := s.fillWhitelistResults(ctx, resp); err != nil {
+	if err := s.fillBaselineResults(ctx, resp); err != nil {
 		return nil, err
 	}
 	return resp, nil

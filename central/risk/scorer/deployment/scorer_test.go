@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	evaluatorMocks "github.com/stackrox/rox/central/processwhitelist/evaluator/mocks"
+	evaluatorMocks "github.com/stackrox/rox/central/processbaseline/evaluator/mocks"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	"github.com/stackrox/rox/central/risk/getters"
@@ -54,7 +54,7 @@ func TestScore(t *testing.T) {
 		},
 	}, mockRoles, mockBindings, mockServiceAccounts, mockEvaluator)
 
-	mockEvaluator.EXPECT().EvaluateWhitelistsAndPersistResult(deployment).MaxTimes(2).Return(nil, nil)
+	mockEvaluator.EXPECT().EvaluateBaselinesAndPersistResult(deployment).MaxTimes(2).Return(nil, nil)
 
 	// Without user defined function
 	expectedRiskScore := 9.016
