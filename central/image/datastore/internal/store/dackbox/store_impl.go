@@ -182,11 +182,7 @@ func (b *storeImpl) Upsert(image *storage.Image) error {
 	}
 
 	// If the image scan is not updated, skip updating that part in DB, i.e. rewriting components and cves.
-	if !scanUpdated {
-		image.Scan.Components = nil
-	}
-
-	parts := Split(image)
+	parts := Split(image, scanUpdated)
 
 	keysToUpdate := gatherKeysForImageParts(&parts)
 	return b.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keysToUpdate...), func() error {

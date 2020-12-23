@@ -224,7 +224,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 		},
 	}
 
-	splitActual := Split(image)
+	splitActual := Split(image, true)
 	assert.Equal(t, splitExpected, splitActual)
 
 	imageActual := Merge(splitActual)

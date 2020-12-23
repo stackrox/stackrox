@@ -9,14 +9,16 @@ import (
 )
 
 // Split splits the input image into a set of parts.
-func Split(image *storage.Image) ImageParts {
+func Split(image *storage.Image, withComponents bool) ImageParts {
 	parts := ImageParts{
 		image: image.Clone(),
 	}
 
 	// These need to be called in order.
 	parts.listImage = splitListImage(parts)
-	parts.children = splitComponents(parts)
+	if withComponents {
+		parts.children = splitComponents(parts)
+	}
 	parts.imageCVEEdges = generateImageToCVEEdges(parts)
 
 	// Clear components in the top level image.
