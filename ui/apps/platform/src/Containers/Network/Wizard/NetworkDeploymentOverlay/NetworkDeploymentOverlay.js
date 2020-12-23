@@ -13,6 +13,7 @@ import BinderTabs from 'Components/BinderTabs';
 import NetworkFlows from './NetworkFlows';
 import BaselineSettings from './BaselineSettings';
 import DeploymentDetails from './DeploymentDetails';
+import NetworkPoliciesDetail from './NetworkPoliciesDetail';
 
 function getDeploymentEdges(deployment) {
     const edges = deployment.edges.filter(
@@ -64,7 +65,7 @@ function NetworkDeploymentOverlay({ selectedDeployment, filterState }) {
                     </BinderTabs>
                 </Tab>
                 <Tab title="Policies">
-                    <div className="p-4 bg-primary-100">Add Policies here...</div>
+                    <NetworkPoliciesDetail policyIds={selectedDeployment.policyIds} />
                 </Tab>
                 <Tab title="Details">
                     <DeploymentDetails deploymentId={deploymentId} />
@@ -80,6 +81,7 @@ NetworkDeploymentOverlay.propTypes = {
         name: PropTypes.string.isRequired,
         type: PropTypes.string.isRequired,
         edges: PropTypes.arrayOf(PropTypes.shape({})),
+        policyIds: PropTypes.arrayOf(PropTypes.string),
     }).isRequired,
     filterState: PropTypes.number.isRequired,
 };
