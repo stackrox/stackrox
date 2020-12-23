@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	"github.com/stackrox/rox/central/image/index"
-	pkgImgComponent "github.com/stackrox/rox/central/imagecomponent"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -286,9 +286,6 @@ func (ds *datastoreImpl) updateImagePriority(images ...*storage.Image) {
 
 func (ds *datastoreImpl) updateComponentRisk(image *storage.Image) {
 	for _, component := range image.GetScan().GetComponents() {
-		component.RiskScore = ds.imageComponentRanker.GetScoreForID(pkgImgComponent.ComponentID{
-			Name:    component.GetName(),
-			Version: component.GetVersion(),
-		}.ToString())
+		component.RiskScore = ds.imageComponentRanker.GetScoreForID(scancomponent.ComponentID(component.GetName(), component.GetVersion()))
 	}
 }

@@ -8,9 +8,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/image/mappings"
-	"github.com/stackrox/rox/central/imagecomponent"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -71,11 +71,7 @@ func (eicr *EmbeddedImageScanComponentResolver) License(ctx context.Context) (*l
 
 // ID returns a unique identifier for the component.
 func (eicr *EmbeddedImageScanComponentResolver) ID(ctx context.Context) graphql.ID {
-	cID := &imagecomponent.ComponentID{
-		Name:    eicr.data.GetName(),
-		Version: eicr.data.GetVersion(),
-	}
-	return graphql.ID(cID.ToString())
+	return graphql.ID(scancomponent.ComponentID(eicr.data.GetName(), eicr.data.GetVersion()))
 }
 
 // Name returns the name of the component.
@@ -328,13 +324,13 @@ func mapImagesToComponentResolvers(root *Resolver, images []*storage.Image, quer
 	}
 
 	// Use the images to map CVEs to the images and components.
-	idToComponent := make(map[imagecomponent.ComponentID]*EmbeddedImageScanComponentResolver)
+	idToComponent := make(map[string]*EmbeddedImageScanComponentResolver)
 	for _, image := range images {
 		for _, component := range image.GetScan().GetComponents() {
 			if !componentPred.Matches(component) {
 				continue
 			}
-			thisComponentID := imagecomponent.ComponentID{Name: component.GetName(), Version: component.GetVersion()}
+			thisComponentID := scancomponent.ComponentID(component.GetName(), component.GetVersion())
 			if _, exists := idToComponent[thisComponentID]; !exists {
 				idToComponent[thisComponentID] = &EmbeddedImageScanComponentResolver{
 					root: root,

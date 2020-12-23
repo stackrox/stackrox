@@ -3,11 +3,11 @@ package imagecomponent
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/imagecomponent"
 	"github.com/stackrox/rox/central/risk/datastore"
 	imageComponentMultipliers "github.com/stackrox/rox/central/risk/multipliers/image_component"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/scancomponent"
 )
 
 var (
@@ -48,15 +48,12 @@ func (s *imageComponentScorerImpl) Score(ctx context.Context, imageComponent *st
 		return nil
 	}
 
-	imageComponentID := imagecomponent.ComponentID{
-		Name:    imageComponent.GetName(),
-		Version: imageComponent.GetVersion(),
-	}
+	imageComponentID := scancomponent.ComponentID(imageComponent.GetName(), imageComponent.GetVersion())
 	risk := &storage.Risk{
 		Score:   overallScore,
 		Results: riskResults,
 		Subject: &storage.RiskSubject{
-			Id:   imageComponentID.ToString(),
+			Id:   imageComponentID,
 			Type: storage.RiskSubjectType_IMAGE_COMPONENT,
 		},
 	}

@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
-	pkgImgComponent "github.com/stackrox/rox/central/imagecomponent"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/ranking"
@@ -20,6 +19,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/scancomponent"
 )
 
 var (
@@ -187,10 +187,7 @@ func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.Embedd
 	}
 
 	oldScore := e.imageComponentRanker.GetScoreForID(
-		pkgImgComponent.ComponentID{
-			Name:    imageComponent.GetName(),
-			Version: imageComponent.GetVersion(),
-		}.ToString())
+		scancomponent.ComponentID(imageComponent.GetName(), imageComponent.GetVersion()))
 	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, risk); err != nil {
 		log.Errorf("Error reprocessing risk for image component %s v%s: %v", imageComponent.GetName(), imageComponent.GetVersion(), err)
 	}

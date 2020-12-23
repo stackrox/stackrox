@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	timestamp "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/imagecomponent"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -135,12 +135,12 @@ func TestSplitAndMergeImage(t *testing.T) {
 		children: []ComponentParts{
 			{
 				component: &storage.ImageComponent{
-					Id:      imagecomponent.ComponentID{Name: "comp1", Version: "ver1"}.ToString(),
+					Id:      scancomponent.ComponentID("comp1", "ver1"),
 					Name:    "comp1",
 					Version: "ver1",
 				},
 				edge: &storage.ImageComponentEdge{
-					Id: edges.EdgeID{ParentID: "sha", ChildID: imagecomponent.ComponentID{Name: "comp1", Version: "ver1"}.ToString()}.ToString(),
+					Id: edges.EdgeID{ParentID: "sha", ChildID: scancomponent.ComponentID("comp1", "ver1")}.ToString(),
 					HasLayerIndex: &storage.ImageComponentEdge_LayerIndex{
 						LayerIndex: 1,
 					},
@@ -149,12 +149,12 @@ func TestSplitAndMergeImage(t *testing.T) {
 			},
 			{
 				component: &storage.ImageComponent{
-					Id:      imagecomponent.ComponentID{Name: "comp1", Version: "ver2"}.ToString(),
+					Id:      scancomponent.ComponentID("comp1", "ver2"),
 					Name:    "comp1",
 					Version: "ver2",
 				},
 				edge: &storage.ImageComponentEdge{
-					Id: edges.EdgeID{ParentID: "sha", ChildID: imagecomponent.ComponentID{Name: "comp1", Version: "ver2"}.ToString()}.ToString(),
+					Id: edges.EdgeID{ParentID: "sha", ChildID: scancomponent.ComponentID("comp1", "ver2")}.ToString(),
 					HasLayerIndex: &storage.ImageComponentEdge_LayerIndex{
 						LayerIndex: 3,
 					},
@@ -166,7 +166,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							Type: storage.CVE_IMAGE_CVE,
 						},
 						edge: &storage.ComponentCVEEdge{
-							Id: edges.EdgeID{ParentID: imagecomponent.ComponentID{Name: "comp1", Version: "ver2"}.ToString(), ChildID: "cve1"}.ToString(),
+							Id: edges.EdgeID{ParentID: scancomponent.ComponentID("comp1", "ver2"), ChildID: "cve1"}.ToString(),
 						},
 					},
 					{
@@ -175,7 +175,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							Type: storage.CVE_IMAGE_CVE,
 						},
 						edge: &storage.ComponentCVEEdge{
-							Id: edges.EdgeID{ParentID: imagecomponent.ComponentID{Name: "comp1", Version: "ver2"}.ToString(), ChildID: "cve2"}.ToString(),
+							Id: edges.EdgeID{ParentID: scancomponent.ComponentID("comp1", "ver2"), ChildID: "cve2"}.ToString(),
 							HasFixedBy: &storage.ComponentCVEEdge_FixedBy{
 								FixedBy: "ver3",
 							},
@@ -186,12 +186,12 @@ func TestSplitAndMergeImage(t *testing.T) {
 			},
 			{
 				component: &storage.ImageComponent{
-					Id:      imagecomponent.ComponentID{Name: "comp2", Version: "ver1"}.ToString(),
+					Id:      scancomponent.ComponentID("comp2", "ver1"),
 					Name:    "comp2",
 					Version: "ver1",
 				},
 				edge: &storage.ImageComponentEdge{
-					Id: edges.EdgeID{ParentID: "sha", ChildID: imagecomponent.ComponentID{Name: "comp2", Version: "ver1"}.ToString()}.ToString(),
+					Id: edges.EdgeID{ParentID: "sha", ChildID: scancomponent.ComponentID("comp2", "ver1")}.ToString(),
 					HasLayerIndex: &storage.ImageComponentEdge_LayerIndex{
 						LayerIndex: 2,
 					},
@@ -203,7 +203,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							Type: storage.CVE_IMAGE_CVE,
 						},
 						edge: &storage.ComponentCVEEdge{
-							Id: edges.EdgeID{ParentID: imagecomponent.ComponentID{Name: "comp2", Version: "ver1"}.ToString(), ChildID: "cve1"}.ToString(),
+							Id: edges.EdgeID{ParentID: scancomponent.ComponentID("comp2", "ver1"), ChildID: "cve1"}.ToString(),
 							HasFixedBy: &storage.ComponentCVEEdge_FixedBy{
 								FixedBy: "ver2",
 							},
@@ -216,7 +216,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							Type: storage.CVE_IMAGE_CVE,
 						},
 						edge: &storage.ComponentCVEEdge{
-							Id: edges.EdgeID{ParentID: imagecomponent.ComponentID{Name: "comp2", Version: "ver1"}.ToString(), ChildID: "cve2"}.ToString(),
+							Id: edges.EdgeID{ParentID: scancomponent.ComponentID("comp2", "ver1"), ChildID: "cve2"}.ToString(),
 						},
 					},
 				},
