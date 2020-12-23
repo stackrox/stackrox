@@ -2171,6 +2171,8 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - AUTH0_SUPPORT: false
+      - ROX_NETWORK_DETECTION: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
     steps:
       - checkout
 
@@ -3262,6 +3264,8 @@ jobs:
       - ROX_SENSOR_TLS_CHALLENGE: true
       - ROX_DISCOVERED_AT_IMAGE: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
+      - ROX_NETWORK_DETECTION: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
 
     steps:
       - run-qa-tests:
@@ -3292,6 +3296,8 @@ jobs:
       - ROX_DISCOVERED_AT_IMAGE: true
       - ROX_SENSOR_TLS_CHALLENGE: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
+      - ROX_NETWORK_DETECTION: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
 
     steps:
       - checkout
@@ -3327,6 +3333,9 @@ jobs:
       - ROX_HOST_SCANNING: true
       - ROX_DISCOVERED_AT_IMAGE: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
+      - ROX_NETWORK_DETECTION: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+
 
     steps:
       - run-qa-tests:
@@ -3363,6 +3372,8 @@ jobs:
       - ROX_HOST_SCANNING: true
       - ROX_DISCOVERED_AT_IMAGE: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
+      - ROX_NETWORK_DETECTION: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
 
     steps:
       - run-qa-tests:
@@ -3906,6 +3917,8 @@ jobs:
       - ROX_HOST_SCANNING: true
       - ROX_DISCOVERED_AT_IMAGE: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
+      - ROX_NETWORK_DETECTION: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
 
     steps:
       - run-openshift-tests:
@@ -3933,6 +3946,8 @@ jobs:
       - ROX_HOST_SCANNING: true
       - ROX_DISCOVERED_AT_IMAGE: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
+      - ROX_NETWORK_DETECTION: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
 
     steps:
       - run-openshift-tests:
@@ -3957,6 +3972,8 @@ jobs:
       - ROX_HOST_SCANNING: true
       - ROX_DISCOVERED_AT_IMAGE: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
+      - ROX_NETWORK_DETECTION: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
 
     steps:
       - checkout
@@ -4049,6 +4066,8 @@ jobs:
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
+      - ROX_NETWORK_DETECTION: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
 
     steps:
       - checkout

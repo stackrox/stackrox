@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
@@ -24,6 +25,8 @@ var (
 	managerCtx = sac.WithAllAccess(context.Background())
 
 	networkBaselineSAC = sac.ForResource(resources.NetworkBaseline)
+
+	log = logging.LoggerForModule()
 )
 
 type baselineInfo struct {

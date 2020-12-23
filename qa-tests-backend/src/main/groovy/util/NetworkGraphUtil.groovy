@@ -117,7 +117,8 @@ class NetworkGraphUtil {
             def graph = NetworkGraphService.getNetworkGraph(since)
             def edges = NetworkGraphUtil.findEdges(graph, sourceId, targetId)
             if (edges != null && edges.size() > 0) {
-                println "Found source -> target in graph after ${(System.currentTimeMillis() - startTime) / 1000}s"
+                println "Found source ${sourceId} -> target ${targetId} " +
+                    "in graph after ${(System.currentTimeMillis() - startTime) / 1000}s"
                 return edges
             }
         }
