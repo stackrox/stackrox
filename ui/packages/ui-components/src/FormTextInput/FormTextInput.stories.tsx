@@ -3,7 +3,7 @@ import { Meta, Story } from '@storybook/react/types-6-0';
 import * as yup from 'yup';
 import { Formik, Form, useFormikContext, FormikValues } from 'formik';
 
-import Button from '../Button';
+import CondensedButton from '../CondensedButton';
 import FormTextInput, { OnChangeHandler } from './FormTextInput';
 
 export default {
@@ -32,9 +32,9 @@ interface FormSubmitButtonProps {
 function FormSubmitButton({ children }: FormSubmitButtonProps): ReactElement {
     const { submitForm } = useFormikContext<FormikValues>();
     return (
-        <Button type="submit" onClick={submitForm}>
+        <CondensedButton type="submit" onClick={submitForm}>
             {children}
-        </Button>
+        </CondensedButton>
     );
 }
 

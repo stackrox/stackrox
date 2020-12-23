@@ -1,29 +1,65 @@
 import React, { ReactElement, ReactNode } from 'react';
 
-export type ButtonProps = {
+export type HOCButtonProps = {
     type: 'button' | 'submit';
-    onClick: React.MouseEventHandler<HTMLButtonElement>; // required, but not used for type submit
+    onClick?: React.MouseEventHandler<HTMLButtonElement>; // required for type "button", but not for type "submit"
     children: ReactNode;
 };
 
-const buttonClasses =
-    'border-2 border-primary-400 font-600 hover:bg-primary-200 hover:text-base-700 inline-flex items-center justify-center min-w-16 px-2 py-2 rounded-sm text-center text-primary-800 text-sm uppercase';
+export type ButtonProps = {
+    type: 'button' | 'submit';
+    onClick?: React.MouseEventHandler<HTMLButtonElement>; // required for type "button", but not for type "submit"
+    children: ReactNode;
+    colorType: 'alert' | 'base';
+    isCondensed?: boolean;
+};
+
+const baseButtonClassName = 'border-2 font-600 inline-flex items-center justify-center rounded-sm';
+const baseClassName =
+    'border-base-400 bg-base-100 hover:bg-base-200 hover:text-base-700 text-base-800';
+const alertClassName =
+    'border-alert-400 bg-alert-100 hover:bg-alert-200 hover:text-alert-700 text-alert-800';
+
+function getColorClassName(colorType: ButtonProps['colorType']): string {
+    switch (colorType) {
+        case 'alert':
+            return alertClassName;
+        case 'base':
+        default:
+            return baseClassName;
+    }
+}
+
+function getPaddingClassName(isCondensed: boolean): string {
+    return isCondensed ? 'px-2 py-1' : 'p-2';
+}
 
 // @TODO This is just starter code for the Button Component. We can discuss, in more detail, how we want to go about it later
 /* Maybe omit type prop and separate into 2 components:
  * Button has onClick and children props
  * SubmitButton has children prop
  */
-function Button({ type, onClick, children }: ButtonProps): ReactElement {
+function Button({
+    type,
+    onClick,
+    children,
+    colorType,
+    isCondensed = false,
+}: ButtonProps): ReactElement {
+    const colorClassName = getColorClassName(colorType);
+    const paddingClassName = getPaddingClassName(isCondensed);
+    const className = `${baseButtonClassName} ${colorClassName} ${paddingClassName}`;
+
     if (type === 'submit') {
         return (
-            <button className={buttonClasses} type="submit">
+            <button className={className} type="submit">
                 {children}
             </button>
         );
     }
+
     return (
-        <button className={buttonClasses} type="button" onClick={onClick}>
+        <button className={className} type="button" onClick={onClick}>
             {children}
         </button>
     );

@@ -8,7 +8,7 @@ describe('Button', () => {
         function onClick(): void {}
 
         const { getByText } = render(
-            <Button type="button" onClick={onClick}>
+            <Button type="button" onClick={onClick} colorType="alert">
                 Click me!
             </Button>
         );
