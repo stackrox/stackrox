@@ -45,6 +45,11 @@ func (f *fakeDS) Walk(ctx context.Context, fn func(baseline *storage.NetworkBase
 	return nil
 }
 
+func (f *fakeDS) DeleteNetworkBaseline(ctx context.Context, deploymentID string) error {
+	delete(f.baselines, deploymentID)
+	return nil
+}
+
 func TestManager(t *testing.T) {
 	suite.Run(t, new(ManagerTestSuite))
 }
@@ -85,6 +90,10 @@ func clusterID(id int) string {
 
 func ns(id int) string {
 	return fmt.Sprintf("NS%d", id)
+}
+
+func extSrcID(id int) string {
+	return fmt.Sprintf("EXTSRC%03d", id)
 }
 
 func (suite *ManagerTestSuite) initBaselinesForDeployments(ids ...int) {
@@ -413,6 +422,72 @@ func (suite *ManagerTestSuite) TestUpdateBaselineStatus() {
 	)
 }
 
+func (suite *ManagerTestSuite) TestDeploymentDelete() {
+	suite.mustInitManager(
+		wrapWithForbidden(
+			baselineWithPeers(1, depPeer(2, properties(false, 52))),
+			depPeer(3, properties(true, 443)),
+		),
+		wrapWithForbidden(
+			baselineWithPeers(2, depPeer(1, properties(true, 52))),
+			depPeer(3, properties(true, 443)),
+		),
+		wrapWithForbidden(
+			emptyBaseline(3),
+			depPeer(1, properties(false, 443)),
+			depPeer(2, properties(false, 443)),
+		),
+	)
+	suite.assertBaselinesAre(
+		wrapWithForbidden(
+			baselineWithPeers(1, depPeer(2, properties(false, 52))),
+			depPeer(3, properties(true, 443)),
+		),
+		wrapWithForbidden(
+			baselineWithPeers(2, depPeer(1, properties(true, 52))),
+			depPeer(3, properties(true, 443)),
+		),
+		wrapWithForbidden(
+			emptyBaseline(3),
+			depPeer(1, properties(false, 443)),
+			depPeer(2, properties(false, 443)),
+		),
+	)
+	// First delete dep 3 to verify deletion of forbidden peers
+	suite.Nil(suite.m.ProcessDeploymentDelete(depID(3)))
+	suite.assertBaselinesAre(
+		baselineWithPeers(1, depPeer(2, properties(false, 52))),
+		baselineWithPeers(2, depPeer(1, properties(true, 52))),
+	)
+	// Then delete another dep to verify deletion of allowed peers
+	suite.Nil(suite.m.ProcessDeploymentDelete(depID(2)))
+	suite.assertBaselinesAre(
+		emptyBaseline(1),
+	)
+}
+
+func (suite *ManagerTestSuite) TestDeleteWithExtSrcPeer() {
+	suite.mustInitManager(
+		baselineWithPeers(
+			1,
+			depPeer(2, properties(false, 52)),
+			extSrcPeer(3, properties(false, 443)),
+		),
+		baselineWithPeers(2, depPeer(1, properties(true, 52))),
+	)
+	suite.assertBaselinesAre(
+		baselineWithPeers(
+			1,
+			depPeer(2, properties(false, 52)),
+			extSrcPeer(3, properties(false, 443)),
+		),
+		baselineWithPeers(2, depPeer(1, properties(true, 52))),
+	)
+	// Make sure deleting a deployment does not trigger an error even if we have ext src peer
+	suite.Nil(suite.m.ProcessDeploymentDelete(depID(2)))
+	suite.assertBaselinesAre(baselineWithPeers(1, extSrcPeer(3, properties(false, 443))))
+}
+
 ///// Helper functions to make test code less verbose.
 
 func ctxWithAccessToWrite(id int) context.Context {
@@ -475,6 +550,17 @@ func depPeer(id int, properties ...*storage.NetworkBaselineConnectionProperties)
 			Type: storage.NetworkEntityInfo_DEPLOYMENT,
 			Id:   depID(id),
 		}},
+		Properties: properties,
+	}
+}
+
+func extSrcPeer(id int, properties ...*storage.NetworkBaselineConnectionProperties) *storage.NetworkBaselinePeer {
+	return &storage.NetworkBaselinePeer{
+		Entity: &storage.NetworkEntity{
+			Info: &storage.NetworkEntityInfo{
+				Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Id:   extSrcID(id),
+			}},
 		Properties: properties,
 	}
 }

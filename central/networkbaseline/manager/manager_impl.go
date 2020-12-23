@@ -166,6 +166,53 @@ func (m *manager) ProcessDeploymentCreate(deploymentID, clusterID, namespace str
 	return m.processDeploymentCreate(deploymentID, clusterID, namespace)
 }
 
+func (m *manager) processDeploymentDelete(deploymentID string) error {
+	deletingBaseline, found := m.baselinesByDeploymentID[deploymentID]
+	if !found {
+		// Most likely a repeated call to delete. Just return
+		return nil
+	}
+
+	modifiedDeployments := set.NewStringSet()
+	for peer := range deletingBaseline.baselinePeers {
+		// Delete the edge from that deployment to this deployment
+		peerBaseline, peerFound := m.baselinesByDeploymentID[peer.entity.ID]
+		if !peerFound {
+			// Probably the peer is not a deployment
+			continue
+		}
+		reversedPeer := reversePeerView(deploymentID, &peer)
+		delete(peerBaseline.baselinePeers, reversedPeer)
+		modifiedDeployments.Add(peer.entity.ID)
+	}
+	// For now delete this deployment record from the forbidden peers as well. If we need
+	// the records to be sticky for any reason, remove the following lines
+	for forbiddenPeer := range deletingBaseline.forbiddenPeers {
+		forbiddenPeerBaseline, found := m.baselinesByDeploymentID[forbiddenPeer.entity.ID]
+		if !found {
+			// Probably the forbidden peer is not a deployment
+			continue
+		}
+		reversedPeer := reversePeerView(deploymentID, &forbiddenPeer)
+		delete(forbiddenPeerBaseline.forbiddenPeers, reversedPeer)
+		modifiedDeployments.Add(forbiddenPeer.entity.ID)
+	}
+
+	// Delete the records from other baselines first, then delete the wanted baseline after
+	err := m.persistNetworkBaselines(modifiedDeployments)
+	if err != nil {
+		return errors.Wrapf(err, "deleting baseline of deployment %q", deploymentID)
+	}
+
+	return m.ds.DeleteNetworkBaseline(managerCtx, deploymentID)
+}
+
+func (m *manager) ProcessDeploymentDelete(deploymentID string) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	return m.processDeploymentDelete(deploymentID)
+}
+
 func (m *manager) ProcessFlowUpdate(flows map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()

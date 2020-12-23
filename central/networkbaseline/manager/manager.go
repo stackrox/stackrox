@@ -17,6 +17,12 @@ type Manager interface {
 	// It must only be called by trusted code, since it assumes the caller has full access to modify
 	// network baselines in the datastore.
 	ProcessDeploymentCreate(deploymentID, clusterID, namespace string) error
+	// ProcessDeploymentDelete notifies the baseline manager of a deployment delete.
+	// The baseline manager then updates all the existing baselines that had an edge to this
+	// delete deployment.
+	// It must only be called by trusted code, since it assumes the caller has full access to modify
+	// network baselines in the datastore.
+	ProcessDeploymentDelete(deploymentID string) error
 	// ProcessFlowUpdate notifies the baseline manager of a dump of a batch of network flows.
 	// It must only be called by trusted code, since it assumes the caller has full access to modify
 	// network baselines in the datastore.

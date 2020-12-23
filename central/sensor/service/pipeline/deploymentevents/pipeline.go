@@ -136,6 +136,13 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, deployment *storag
 		return err
 	}
 
+	// Remove all the network baselines that had an edge to this deployment
+	if features.NetworkDetection.Enabled() {
+		if err := s.networkBaselines.ProcessDeploymentDelete(deployment.GetId()); err != nil {
+			return err
+		}
+	}
+
 	s.graphEvaluator.IncrementEpoch(deployment.GetClusterId())
 	return nil
 }

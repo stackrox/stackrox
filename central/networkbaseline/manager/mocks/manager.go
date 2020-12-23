@@ -50,6 +50,20 @@ func (mr *MockManagerMockRecorder) ProcessDeploymentCreate(deploymentID, cluster
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessDeploymentCreate", reflect.TypeOf((*MockManager)(nil).ProcessDeploymentCreate), deploymentID, clusterID, namespace)
 }
 
+// ProcessDeploymentDelete mocks base method
+func (m *MockManager) ProcessDeploymentDelete(deploymentID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessDeploymentDelete", deploymentID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessDeploymentDelete indicates an expected call of ProcessDeploymentDelete
+func (mr *MockManagerMockRecorder) ProcessDeploymentDelete(deploymentID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessDeploymentDelete", reflect.TypeOf((*MockManager)(nil).ProcessDeploymentDelete), deploymentID)
+}
+
 // ProcessFlowUpdate mocks base method
 func (m *MockManager) ProcessFlowUpdate(flows map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) error {
 	m.ctrl.T.Helper()

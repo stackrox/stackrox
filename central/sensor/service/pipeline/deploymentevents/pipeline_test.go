@@ -11,10 +11,13 @@ import (
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
 	graphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
+	reprocessorMocks "github.com/stackrox/rox/central/reprocessor/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,6 +27,7 @@ func TestPipeline(t *testing.T) {
 
 type PipelineTestSuite struct {
 	suite.Suite
+	envIsolator *envisolator.EnvIsolator
 
 	clusters         *clusterMocks.MockDataStore
 	deployments      *deploymentMocks.MockDataStore
@@ -31,6 +35,7 @@ type PipelineTestSuite struct {
 	networkBaselines *networkBaselineMocks.MockManager
 	manager          *lifecycleMocks.MockManager
 	graphEvaluator   *graphMocks.MockEvaluator
+	reprocessor      *reprocessorMocks.MockLoop
 	pipeline         *pipelineImpl
 
 	mockCtrl *gomock.Controller
@@ -45,6 +50,7 @@ func (suite *PipelineTestSuite) SetupTest() {
 	suite.networkBaselines = networkBaselineMocks.NewMockManager(suite.mockCtrl)
 	suite.manager = lifecycleMocks.NewMockManager(suite.mockCtrl)
 	suite.graphEvaluator = graphMocks.NewMockEvaluator(suite.mockCtrl)
+	suite.reprocessor = reprocessorMocks.NewMockLoop(suite.mockCtrl)
 	suite.pipeline =
 		NewPipeline(
 			suite.clusters,
@@ -52,8 +58,10 @@ func (suite *PipelineTestSuite) SetupTest() {
 			suite.images,
 			suite.manager,
 			suite.graphEvaluator,
-			nil,
+			suite.reprocessor,
 			suite.networkBaselines).(*pipelineImpl)
+	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
+	suite.envIsolator.Setenv("ROX_NETWORK_DETECTION", "true")
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
@@ -65,6 +73,9 @@ func (suite *PipelineTestSuite) TestDeploymentRemovePipeline() {
 
 	suite.deployments.EXPECT().RemoveDeployment(context.Background(), deployment.GetClusterId(), deployment.GetId())
 	suite.graphEvaluator.EXPECT().IncrementEpoch(deployment.GetClusterId())
+	if features.NetworkDetection.Enabled() {
+		suite.networkBaselines.EXPECT().ProcessDeploymentDelete(gomock.Any()).Return(nil)
+	}
 
 	err := suite.pipeline.Run(context.Background(), deployment.GetClusterId(), &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -84,7 +95,13 @@ func (suite *PipelineTestSuite) TestCreateNetworkBaseline() {
 	deployment := fixtures.GetDeployment()
 
 	suite.clusters.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("cluster-name", true, nil)
-	suite.deployments.EXPECT().GetDeployment(gomock.Any(), gomock.Any()).Return(deployment, true, nil)
+	suite.deployments.EXPECT().GetDeployment(gomock.Any(), gomock.Any()).Return(nil, false, nil)
+	suite.deployments.EXPECT().UpsertDeployment(gomock.Any(), gomock.Any()).Return(nil)
+	if features.NetworkDetection.Enabled() {
+		suite.networkBaselines.EXPECT().ProcessDeploymentCreate(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	}
+	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any()).Return()
+	suite.graphEvaluator.EXPECT().IncrementEpoch(gomock.Any()).Return()
 
 	err := suite.pipeline.Run(
 		context.Background(),
@@ -110,6 +127,9 @@ func (suite *PipelineTestSuite) TestAlertRemovalOnReconciliation() {
 	suite.deployments.EXPECT().RemoveDeployment(context.Background(), deployment.GetClusterId(), deployment.GetId())
 	suite.graphEvaluator.EXPECT().IncrementEpoch(deployment.GetClusterId())
 	suite.manager.EXPECT().DeploymentRemoved(deployment)
+	if features.NetworkDetection.Enabled() {
+		suite.networkBaselines.EXPECT().ProcessDeploymentDelete(deployment.GetId()).Return(nil)
+	}
 
 	suite.NoError(suite.pipeline.runRemovePipeline(context.Background(), deployment, true))
 }
