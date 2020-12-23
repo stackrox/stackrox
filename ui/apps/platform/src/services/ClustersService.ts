@@ -1,5 +1,5 @@
 import { normalize } from 'normalizr';
-import queryString from 'qs';
+import qs from 'qs';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
 import { saveFile } from 'services/DownloadService';
@@ -13,6 +13,7 @@ const autoUpgradeConfigUrl = `${upgradesUrl}/config`;
 const manualUpgradeUrl = `${upgradesUrl}/cluster`;
 
 export type Cluster = {
+    id: string;
     name: string;
 };
 
@@ -36,17 +37,21 @@ export function fetchClusters() {
  * @returns {Promise<Object, Error>} fulfilled with normalized list of clusters
  */
 export function fetchClustersAsArray(options?: unknown[]): Promise<Array<Cluster>> {
-    let params;
-    if (options) {
+    let queryString = '';
+    if (options && options.length !== 0) {
         const query = searchOptionsToQuery(options);
-        params = queryString.stringify(
+        queryString = qs.stringify(
             {
                 query,
             },
-            { arrayFormat: 'repeat', allowDots: true }
+            {
+                addQueryPrefix: true,
+                arrayFormat: 'repeat',
+                allowDots: true,
+            }
         );
     }
-    return axios.get(`${clustersUrl}?${params}`).then((response) => {
+    return axios.get(`${clustersUrl}${queryString}`).then((response) => {
         return response?.data?.clusters || [];
     });
 }
@@ -56,7 +61,7 @@ export function fetchClustersAsArray(options?: unknown[]): Promise<Array<Cluster
  *
  * @returns {Promise<Object, Error>} fulfilled with single cluster object
  */
-export function getClusterById(id) {
+export function getClusterById(id: string): Promise<Cluster | null> {
     return axios.get(`${clustersUrl}/${id}`).then((response) => {
         return (response && response.data && response.data.cluster) || null;
     });
@@ -92,7 +97,7 @@ export function saveAutoUpgradeConfig(config: AutoUpgradeConfig): Promise<AutoUp
  *
  * @returns {Promise<undefined, Error>} resolved if operation was successful
  */
-export function upgradeCluster(id) {
+export function upgradeCluster(id: string) {
     return axios.post(`${manualUpgradeUrl}/${id}`);
 }
 
@@ -102,7 +107,7 @@ export function upgradeCluster(id) {
  * @param id
  * @returns {Promise<undefined, Error>} resolved if operation was successful.
  */
-export function rotateClusterCerts(id) {
+export function rotateClusterCerts(id: string) {
     return axios.post(`${upgradesUrl}/rotateclustercerts/${id}`);
 }
 
@@ -120,7 +125,7 @@ export function upgradeClusters(ids = []) {
  *
  * @returns {Promise<Object, Error>} fulfilled with normalized cluster data
  */
-export function fetchCluster(id) {
+export function fetchCluster(id: string) {
     return axios.get(`${clustersUrl}/${id}`).then((response) => ({
         response: normalize(response.data, { cluster: clusterSchema }),
     }));
@@ -131,7 +136,7 @@ export function fetchCluster(id) {
  *
  * @returns {Promise<undefined, Error>} resolved if operation was successful
  */
-export function deleteCluster(id) {
+export function deleteCluster(id: string) {
     return axios.delete(`${clustersUrl}/${id}`);
 }
 
@@ -140,7 +145,7 @@ export function deleteCluster(id) {
  *
  * @returns {Promise<undefined, Error>} resolved if operation was successful
  */
-export function deleteClusters(ids = []) {
+export function deleteClusters(ids: string[] = []) {
     return Promise.all(ids.map((id) => deleteCluster(id)));
 }
 
@@ -149,7 +154,7 @@ export function deleteClusters(ids = []) {
  *
  * @returns {Promise<Object, Error>} fulfilled with a saved cluster data
  */
-export function saveCluster(cluster) {
+export function saveCluster(cluster: Cluster) {
     const promise = cluster.id
         ? axios.put(`${clustersUrl}/${cluster.id}`, cluster)
         : axios.post(clustersUrl, cluster);
@@ -163,11 +168,11 @@ export function saveCluster(cluster) {
  *
  * @returns {Promise<undefined, Error>} resolved if operation was successful
  */
-export function downloadClusterYaml(clusterId, createUpgraderSA = false) {
+export function downloadClusterYaml(id: string, createUpgraderSA = false) {
     return saveFile({
         method: 'post',
         url: '/api/extensions/clusters/zip',
-        data: { id: clusterId, createUpgraderSA },
+        data: { id, createUpgraderSA },
     });
 }
 
@@ -176,7 +181,7 @@ export function downloadClusterYaml(clusterId, createUpgraderSA = false) {
  *
  * @returns {Promise<boolean, Error>} fulfilled with normalized cluster data
  */
-export function fetchKernelSupportAvailable() {
+export function fetchKernelSupportAvailable(): Promise<boolean> {
     return axios.get(`${clustersEnvUrl}/kernel-support-available`).then((response) => {
         return Boolean(response?.data?.kernelSupportAvailable);
     });

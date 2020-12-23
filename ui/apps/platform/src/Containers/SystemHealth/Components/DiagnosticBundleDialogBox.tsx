@@ -75,7 +75,7 @@ const DiagnosticBundleDialogBox = (): ReactElement => {
         });
     }, []);
 
-    function onChangeStartingTime(event): void {
+    function onChangeStartingTime(event: React.ChangeEvent<HTMLInputElement>): void {
         const trimmedText = event.target.value.trim();
         setStartingTimeText(trimmedText);
 

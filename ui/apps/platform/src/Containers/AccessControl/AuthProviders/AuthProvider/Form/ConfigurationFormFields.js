@@ -326,7 +326,7 @@ const IapFormFields = ({ disabled }) => (
         <Labeled label={<FormFieldLabel text="Audience" required />}>
             <ReduxTextField
                 name="config.audience"
-                placeholder={'/projects/<PROJECT_NUMBER>/global/backendServices/<SERVICE_ID>'}
+                placeholder="/projects/<PROJECT_NUMBER>/global/backendServices/<SERVICE_ID>"
                 disabled={disabled}
             />
         </Labeled>

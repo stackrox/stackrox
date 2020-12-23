@@ -34,7 +34,7 @@ const ProcessBaselineList = ({ process, processEpoch, setProcessEpoch }) => {
         });
     }
 
-    const sortedElements = elements.sort(function (a, b) {
+    const sortedElements = elements.sort((a, b) => {
         if (!a.element || !a.element.processName) {
             return -1;
         }

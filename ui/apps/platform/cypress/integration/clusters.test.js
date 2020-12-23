@@ -53,7 +53,7 @@ describe('Cluster Certificate Expiration', () => {
 
     let clustersFixture;
 
-    before(function beforeHook() {
+    before(() => {
         cy.fixture('clusters/health.json').then((clustersArg) => {
             clustersFixture = clustersArg;
         });
@@ -308,7 +308,7 @@ describe('Cluster Health', () => {
 
     let clustersFixture;
 
-    before(function beforeHook() {
+    before(() => {
         cy.fixture('clusters/health.json').then((clustersArg) => {
             clustersFixture = clustersArg;
         });
