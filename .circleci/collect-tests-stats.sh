@@ -77,7 +77,7 @@ for (( job = 0; job < "${WF_JOBS_LENGTH}"; job++ )); do
       failed_test=$(echo "${FAILED_TESTS}" | jq ".[$test]")
       test_name=$(echo "${failed_test}" | jq -r '.name' | sed "s/'/\'/g")
       test_classname=$(echo "${failed_test}" | jq -r '.classname')
-      test_message=$(echo "${failed_test}" | jq -r '.message | gsub("[\\n\\t]"; "")' | sed 's/\\/\\\\/g' | sed "s/'//g")
+      test_message=$(echo "${failed_test}" | jq -r '.message | gsub("[\\n\\t]"; "")' | cut -c -256 | sed 's/\\/\\\\/g' | sed "s/'//g")
 
       # (test_name, test_classname, test_message, test_started, job_number, job_name, workflow_id, git_branch, git_tag)
       test_values="(\"${test_name}\", '${test_classname}', '${test_message}', ${started_at:-NULL}, ${number:-NULL}, '${name}', '${CIRCLE_WORKFLOW_ID}', ${BRANCH_VALUE}, ${TAG_VALUE})"
