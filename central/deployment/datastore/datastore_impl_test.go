@@ -64,10 +64,9 @@ func (suite *DeploymentDataStoreTestSuite) TestTags() {
 	defer testutils.TearDownDB(testDB)
 
 	processTagsStorage := processtagsstore.New(testDB)
-	datastore, err := newDatastoreImpl(suite.storage, processTagsStorage, suite.indexer, nil, nil, nil, nil,
+	datastore := newDatastoreImpl(suite.storage, processTagsStorage, suite.indexer, nil, nil, nil, nil,
 		suite.riskStore, nil, suite.filter, ranking.NewRanker(),
 		ranking.NewRanker(), ranking.NewRanker())
-	suite.NoError(err)
 
 	suite.storage.EXPECT().GetDeployment("blah").Return(nil, false, nil)
 	suite.NoError(datastore.AddTagsToProcessKey(suite.ctx, getCommentKey("blah"), []string{"new", "tag", "in-both"}))
@@ -97,10 +96,9 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	nsRanker := ranking.NewRanker()
 	deploymentRanker := ranking.NewRanker()
 
-	ds, err := newDatastoreImpl(suite.storage, nil, suite.indexer, suite.searcher, nil, nil, nil,
+	ds := newDatastoreImpl(suite.storage, nil, suite.indexer, suite.searcher, nil, nil, nil,
 		suite.riskStore, nil, suite.filter, clusterRanker,
 		nsRanker, deploymentRanker)
-	suite.NoError(err)
 
 	deployments := []*storage.Deployment{
 		{

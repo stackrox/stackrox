@@ -61,7 +61,7 @@ type datastoreImpl struct {
 func newDatastoreImpl(storage deploymentStore.Store, processTagsStore processtagsstore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher,
 	images imageDS.DataStore, baselines pwDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
-	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (*datastoreImpl, error) {
+	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) *datastoreImpl {
 
 	ds := &datastoreImpl{
 		deploymentStore:        storage,
@@ -80,7 +80,7 @@ func newDatastoreImpl(storage deploymentStore.Store, processTagsStore processtag
 		nsRanker:         nsRanker,
 		deploymentRanker: deploymentRanker,
 	}
-	return ds, nil
+	return ds
 }
 
 func (ds *datastoreImpl) initializeRanker() {

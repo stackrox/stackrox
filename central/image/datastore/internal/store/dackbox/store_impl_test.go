@@ -45,18 +45,9 @@ func (suite *ImageStoreTestSuite) SetupSuite() {
 	if err != nil {
 		suite.FailNowf("failed to create counter: %+v", err.Error())
 	}
-	suite.store, err = New(suite.dacky, concurrency.NewKeyFence(), false)
-	if err != nil {
-		suite.FailNowf("failed to create key fence: %+v", err.Error())
-	}
-	suite.cveStorage, err = cveDackBoxStore.New(suite.dacky, concurrency.NewKeyFence())
-	if err != nil {
-		suite.FailNowf("failed to create cve store: %+v", err.Error())
-	}
-	suite.imageCVEEdgeStore, err = imageCVEEdgeDackBox.New(suite.dacky)
-	if err != nil {
-		suite.FailNowf("failed to create imageCVEEdge store: %+v", err.Error())
-	}
+	suite.store = New(suite.dacky, concurrency.NewKeyFence(), false)
+	suite.cveStorage = cveDackBoxStore.New(suite.dacky, concurrency.NewKeyFence())
+	suite.imageCVEEdgeStore = imageCVEEdgeDackBox.New(suite.dacky)
 }
 
 func (suite *ImageStoreTestSuite) TearDownSuite() {

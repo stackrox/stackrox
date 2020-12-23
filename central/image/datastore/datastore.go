@@ -42,7 +42,7 @@ type DataStore interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
-func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) (DataStore, error) {
+func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.Index, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
 	indexer := imageIndexer.New(bleveIndex)
 
 	searcher := search.New(storage,
@@ -54,22 +54,16 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 		imageIndexer.New(bleveIndex),
 		deploymentIndexer.New(bleveIndex, nil),
 	)
-	ds, err := newDatastoreImpl(storage, indexer, searcher, risks, imageRanker, imageComponentRanker)
-	if err != nil {
-		return nil, err
-	}
-
+	ds := newDatastoreImpl(storage, indexer, searcher, risks, imageRanker, imageComponentRanker)
 	ds.initializeRankers()
-	return ds, nil
+
+	return ds
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
 // noUpdateTimestamps controls whether timestamps are automatically updated when upserting images.
 // This should be set to `false` except for some tests.
-func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) (DataStore, error) {
-	storage, err := dackBoxStore.New(dacky, keyFence, noUpdateTimestamps)
-	if err != nil {
-		return nil, err
-	}
-	return newDatastore(dacky, storage, bleveIndex, noUpdateTimestamps, risks, imageRanker, imageComponentRanker)
+func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
+	storage := dackBoxStore.New(dacky, keyFence, noUpdateTimestamps)
+	return newDatastore(dacky, storage, bleveIndex, risks, imageRanker, imageComponentRanker)
 }

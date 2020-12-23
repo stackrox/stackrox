@@ -48,18 +48,15 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 	bleveIndex, err := globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex, "")
 	require.NoError(b, err)
 
-	storage, err := dackBoxStore.New(dacky, concurrency.NewKeyFence())
-	require.NoError(b, err)
+	storage := dackBoxStore.New(dacky, concurrency.NewKeyFence())
 
 	deploymentsIndexer := index.New(bleveIndex, bleveIndex)
 	deploymentsSearcher := search.New(storage, dacky, nil, nil, nil, nil, nil, deploymentsIndexer)
 
-	imageDS, err := imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, false, nil, ranking.NewRanker(), ranking.NewRanker())
-	require.NoError(b, err)
+	imageDS := imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, false, nil, ranking.NewRanker(), ranking.NewRanker())
 
-	deploymentsDatastore, err := newDatastoreImpl(storage, nil, deploymentsIndexer, deploymentsSearcher, imageDS, nil, nil, nil, nil,
+	deploymentsDatastore := newDatastoreImpl(storage, nil, deploymentsIndexer, deploymentsSearcher, imageDS, nil, nil, nil, nil,
 		nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-	require.NoError(b, err)
 
 	deploymentPrototype := fixtures.GetDeployment().Clone()
 

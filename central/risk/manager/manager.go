@@ -53,7 +53,6 @@ type managerImpl struct {
 	clusterRanker        *ranking.Ranker
 	nsRanker             *ranking.Ranker
 	deploymentRanker     *ranking.Ranker
-	imageRanker          *ranking.Ranker
 	imageComponentRanker *ranking.Ranker
 }
 
@@ -68,8 +67,7 @@ func New(deploymentStorage deploymentDS.DataStore,
 	clusterRanker *ranking.Ranker,
 	nsRanker *ranking.Ranker,
 	deploymentRanker *ranking.Ranker,
-	imageRanker *ranking.Ranker,
-	imageComponentRanker *ranking.Ranker) (Manager, error) {
+	imageComponentRanker *ranking.Ranker) Manager {
 	m := &managerImpl{
 		deploymentStorage:     deploymentStorage,
 		imageStorage:          imageStorage,
@@ -83,10 +81,9 @@ func New(deploymentStorage deploymentDS.DataStore,
 		clusterRanker:        clusterRanker,
 		nsRanker:             nsRanker,
 		deploymentRanker:     deploymentRanker,
-		imageRanker:          imageRanker,
 		imageComponentRanker: imageComponentRanker,
 	}
-	return m, nil
+	return m
 }
 
 // ReprocessDeploymentRisk will reprocess the passed deployments risk and save the results

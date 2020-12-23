@@ -179,8 +179,7 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	registry.RegisterWrapper(imageDackBox.Bucket, imageIndex.Wrapper{})
 
 	// Initialize real datastore
-	images, err := imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, true, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker())
-	require.NoError(t, err)
+	images := imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, true, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker())
 
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
 	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainersByPod(gomock.Any(), gomock.Any()).Return(nil)
@@ -195,8 +194,7 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockFilter := filterMocks.NewMockFilter(ctrl)
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 
-	deployments, err := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-	require.NoError(t, err)
+	deployments := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 
 	pods, err := podDatastore.NewRocksDB(db, bleveIndex, mockProcessDataStore, mockFilter)
 	require.NoError(t, err)
@@ -227,8 +225,7 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 
-	deployments, err := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
-	require.NoError(t, err)
+	deployments := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments
 }

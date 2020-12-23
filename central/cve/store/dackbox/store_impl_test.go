@@ -36,10 +36,7 @@ func (suite *CVEStoreTestSuite) SetupSuite() {
 	if err != nil {
 		suite.FailNowf("failed to create counter: %+v", err.Error())
 	}
-	suite.store, err = New(suite.dacky, concurrency.NewKeyFence())
-	if err != nil {
-		suite.FailNowf("failed to create counter: %+v", err.Error())
-	}
+	suite.store = New(suite.dacky, concurrency.NewKeyFence())
 }
 
 func (suite *CVEStoreTestSuite) TearDownSuite() {

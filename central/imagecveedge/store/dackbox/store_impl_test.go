@@ -35,10 +35,7 @@ func (suite *EdgeStoreTestSuite) SetupSuite() {
 	if err != nil {
 		suite.FailNowf("failed to create counter: %+v", err.Error())
 	}
-	suite.store, err = New(suite.dacky)
-	if err != nil {
-		suite.FailNowf("failed to create counter: %+v", err.Error())
-	}
+	suite.store = New(suite.dacky)
 }
 
 func (suite *EdgeStoreTestSuite) TearDownSuite() {

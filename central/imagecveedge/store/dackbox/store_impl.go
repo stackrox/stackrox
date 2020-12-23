@@ -24,13 +24,13 @@ type storeImpl struct {
 }
 
 // New returns a new Store instance.
-func New(dacky *dackbox.DackBox) (store.Store, error) {
+func New(dacky *dackbox.DackBox) store.Store {
 	return &storeImpl{
 		dacky:    dacky,
 		reader:   edgeDackBox.Reader,
 		upserter: edgeDackBox.Upserter,
 		deleter:  edgeDackBox.Deleter,
-	}, nil
+	}
 }
 
 func (b *storeImpl) Exists(id string) (bool, error) {

@@ -18,8 +18,7 @@ var (
 )
 
 func initialize() {
-	var err error
-	manager, err = New(deploymentDS.Singleton(),
+	manager = New(deploymentDS.Singleton(),
 		imageDS.Singleton(),
 		imageComponentDS.Singleton(),
 		riskDS.Singleton(),
@@ -31,11 +30,7 @@ func initialize() {
 		ranking.ClusterRanker(),
 		ranking.NamespaceRanker(),
 		ranking.DeploymentRanker(),
-		ranking.ImageRanker(),
 		ranking.ImageComponentRanker())
-	if err != nil {
-		panic(err)
-	}
 }
 
 // Singleton provides the singleton Manager to use.

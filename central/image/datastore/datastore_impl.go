@@ -44,7 +44,7 @@ type datastoreImpl struct {
 }
 
 func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher search.Searcher, risks riskDS.DataStore,
-	imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) (*datastoreImpl, error) {
+	imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) *datastoreImpl {
 	ds := &datastoreImpl{
 		storage:  storage,
 		indexer:  indexer,
@@ -57,7 +57,7 @@ func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher searc
 
 		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
-	return ds, nil
+	return ds
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {

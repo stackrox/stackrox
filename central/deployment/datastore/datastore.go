@@ -61,7 +61,7 @@ type DataStore interface {
 func newDataStore(storage store.Store, graphProvider graph.Provider, processTagsStore processtagsstore.Store, bleveIndex bleve.Index, processIndex bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
-	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
+	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) DataStore {
 	indexer := index.New(bleveIndex, processIndex)
 
 	storage = cache.NewCachedStore(storage)
@@ -74,25 +74,18 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, processTags
 		imageIndexer.New(bleveIndex),
 		indexer)
 
-	ds, err := newDatastoreImpl(storage, processTagsStore, indexer, searcher, images, baselines, networkFlows, risks,
+	ds := newDatastoreImpl(storage, processTagsStore, indexer, searcher, images, baselines, networkFlows, risks,
 		deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 
-	if err != nil {
-		return nil, err
-	}
-
 	ds.initializeRanker()
-	return ds, nil
+	return ds
 }
 
 // New creates a deployment datastore based on dackbox
 func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, processTagsStore processtagsstore.Store, bleveIndex bleve.Index, processIndex bleve.Index,
 	images imageDS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
-	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
-	storage, err := dackBoxStore.New(dacky, keyFence)
-	if err != nil {
-		return nil, err
-	}
+	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) DataStore {
+	storage := dackBoxStore.New(dacky, keyFence)
 	return newDataStore(storage, dacky, processTagsStore, bleveIndex, processIndex, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 }

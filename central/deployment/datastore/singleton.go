@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/cache"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/processtagsstore"
 	"github.com/stackrox/rox/central/globaldb"
@@ -15,7 +14,6 @@ import (
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -27,8 +25,7 @@ var (
 )
 
 func initialize() {
-	var err error
-	ad, err = New(dackbox.GetGlobalDackBox(),
+	ad = New(dackbox.GetGlobalDackBox(),
 		dackbox.GetKeyFence(),
 		processtagsstore.New(globaldb.GetGlobalDB()),
 		globalindex.GetGlobalIndex(),
@@ -42,7 +39,6 @@ func initialize() {
 		ranking.ClusterRanker(),
 		ranking.NamespaceRanker(),
 		ranking.DeploymentRanker())
-	utils.Must(errors.Wrap(err, "unable to load datastore for deployments"))
 }
 
 // Singleton provides the interface for non-service external interaction.

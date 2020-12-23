@@ -37,10 +37,7 @@ func (suite *DeploymentStoreTestSuite) SetupSuite() {
 	if err != nil {
 		suite.FailNowf("failed to create dackbox: %+v", err.Error())
 	}
-	suite.store, err = New(suite.dacky, concurrency.NewKeyFence())
-	if err != nil {
-		suite.FailNowf("failed to create store: %+v", err.Error())
-	}
+	suite.store = New(suite.dacky, concurrency.NewKeyFence())
 }
 
 func (suite *DeploymentStoreTestSuite) TearDownSuite() {
@@ -104,8 +101,7 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 	suite.verifyDeploymentsAre(suite.store, deployments1...)
 
 	// This verifies that things work as expected on restarts.
-	newStore, err := New(suite.dacky, concurrency.NewKeyFence())
-	suite.NoError(err)
+	newStore := New(suite.dacky, concurrency.NewKeyFence())
 
 	suite.verifyDeploymentsAre(newStore, deployments1...)
 
@@ -156,8 +152,7 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 	suite.Equal(0, gView2.CountRefsTo(namespaceDackBox.BucketHandler.GetKey("n1")))
 	suite.Equal(0, gView2.CountRefsTo(namespaceDackBox.BucketHandler.GetKey("n2")))
 
-	newStore, err = New(suite.dacky, concurrency.NewKeyFence())
-	suite.NoError(err)
+	newStore = New(suite.dacky, concurrency.NewKeyFence())
 
 	suite.verifyDeploymentsAre(newStore)
 }

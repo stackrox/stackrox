@@ -24,8 +24,7 @@ var (
 )
 
 func initialize() {
-	storage, err := dackbox.New(globaldb.GetGlobalDackBox(), globaldb.GetKeyFence())
-	utils.Must(err)
+	storage := dackbox.New(globaldb.GetGlobalDackBox(), globaldb.GetKeyFence())
 
 	searcher := search.New(storage, globaldb.GetGlobalDackBox(),
 		cveIndexer.New(globalindex.GetGlobalIndex()),
@@ -37,6 +36,7 @@ func initialize() {
 		deploymentIndexer.New(globalindex.GetGlobalIndex(), globalindex.GetProcessIndex()),
 		clusterIndexer.New(globalindex.GetGlobalTmpIndex()))
 
+	var err error
 	ds, err = New(globaldb.GetGlobalDackBox(), storage, cveIndexer.New(globalindex.GetGlobalIndex()), searcher)
 	utils.Must(err)
 }

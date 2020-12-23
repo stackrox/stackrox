@@ -26,10 +26,7 @@ func getDeploymentStore(b *testing.B) *StoreImpl {
 	if err != nil {
 		b.Fatal(err)
 	}
-	s, err := New(dacky, concurrency.NewKeyFence())
-	if err != nil {
-		b.Fatal(err)
-	}
+	s := New(dacky, concurrency.NewKeyFence())
 
 	return s
 }

@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -113,8 +112,7 @@ func TestUnsuppressCVEs(t *testing.T) {
 }
 
 func createDataStore(t *testing.T, dacky *pkgDackBox.DackBox, bleveIndex bleve.Index) cveDataStore.DataStore {
-	store, err := cveStore.New(dacky, concurrency.NewKeyFence())
-	utils.Must(err)
+	store := cveStore.New(dacky, concurrency.NewKeyFence())
 
 	cveIndexer := cveIndex.New(bleveIndex)
 	searcher := cveSearch.New(store, dacky, cveIndexer,

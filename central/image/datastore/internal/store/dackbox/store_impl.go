@@ -29,12 +29,12 @@ type storeImpl struct {
 }
 
 // New returns a new Store instance using the provided DackBox instance.
-func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, noUpdateTimestamps bool) (store.Store, error) {
+func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, noUpdateTimestamps bool) store.Store {
 	return &storeImpl{
 		dacky:              dacky,
 		keyFence:           keyFence,
 		noUpdateTimestamps: noUpdateTimestamps,
-	}, nil
+	}
 }
 
 // ListImage returns ListImage with given id.

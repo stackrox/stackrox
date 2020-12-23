@@ -23,11 +23,11 @@ type StoreImpl struct {
 }
 
 // New returns a new instance of a deployment store using dackbox.
-func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (*StoreImpl, error) {
+func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) *StoreImpl {
 	return &StoreImpl{
 		dacky:    dacky,
 		keyFence: keyFence,
-	}, nil
+	}
 }
 
 // CountDeployments returns the number of deployments in badger.

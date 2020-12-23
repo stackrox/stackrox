@@ -4,7 +4,6 @@ import (
 	globaldb "github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/imagecveedge/store/dackbox"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -14,11 +13,7 @@ var (
 )
 
 func initialize() {
-	storage, err := dackbox.New(globaldb.GetGlobalDackBox())
-	utils.Must(err)
-
-	ad, err = New(globaldb.GetGlobalDackBox(), storage)
-	utils.Must(err)
+	ad = New(globaldb.GetGlobalDackBox(), dackbox.New(globaldb.GetGlobalDackBox()))
 }
 
 // Singleton provides the interface for non-service external interaction.

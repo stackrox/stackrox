@@ -26,11 +26,11 @@ type storeImpl struct {
 }
 
 // New returns a new Store instance.
-func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (store.Store, error) {
+func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) store.Store {
 	return &storeImpl{
 		keyFence: keyFence,
 		dacky:    dacky,
-	}, nil
+	}
 }
 
 func (b *storeImpl) Exists(id string) (bool, error) {
