@@ -38,7 +38,7 @@ const integrationsList = {
         {
             label: 'StackRox Scanner',
             type: 'clairify',
-            categories: 'Scanner',
+            categories: 'Image Scanner + Node Scanner',
             source: 'imageIntegrations',
             image: logo,
             disabled: false,

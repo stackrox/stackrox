@@ -11,7 +11,7 @@ import { actions as authActions } from 'reducers/auth';
 import { actions as apiTokenActions } from 'reducers/apitokens';
 import { actions as integrationActions } from 'reducers/integrations';
 import { selectors } from 'reducers';
-import { isBackendFeatureFlagEnabled } from 'utils/featureFlags';
+import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 import APITokensModal from './APITokens/APITokensModal';
 
 class IntegrationsPage extends Component {
@@ -176,6 +176,20 @@ class IntegrationsPage extends Component {
                     return null;
                 }
             }
+            // TODO: remove this manual check after ROOX_HOST_SCANNING feature flag turned on
+            if (
+                tile.label === 'StackRox Scanner' &&
+                !isBackendFeatureFlagEnabled(
+                    this.props.featureFlags,
+                    knownBackendFlags.ROX_HOST_SCANNING,
+                    false
+                )
+            ) {
+                // eslint-disable-next-line no-param-reassign
+                tile.categories = 'Scanner';
+            }
+            // end TODO block to remove
+
             return (
                 <IntegrationTile
                     key={tile.label}

@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { knownBackendFlags } from 'utils/featureFlags';
 import renderKeyValues from './GenericNotifier/GenericNotifier';
 import renderPriorityMapping from './Jira/Jira';
 
@@ -942,7 +943,19 @@ const formDescriptors = {
                 label: 'Types',
                 jsonpath: 'categories',
                 type: 'multiselect',
-                options: [{ value: 'SCANNER', label: 'Scanner', clearableValue: false }],
+                options: [
+                    { value: 'SCANNER', label: 'Image Scanner', clearableValue: false },
+                    {
+                        value: 'NODE_SCANNER',
+                        label: 'Node Scanner',
+                        clearableValue: false,
+                        featureFlagDependency: {
+                            featureFlag: knownBackendFlags.ROX_HOST_SCANNING,
+                            defaultValue: false,
+                            showIfValueIs: true,
+                        },
+                    },
+                ],
                 placeholder: '',
             },
             {
@@ -952,7 +965,7 @@ const formDescriptors = {
                 placeholder: 'https://scanner.stackrox:8080',
             },
             {
-                label: 'Max Concurrent Scans (0 for default)',
+                label: 'Max Concurrent Image Scans (0 for default)',
                 jsonpath: 'clairify.numConcurrentScans',
                 type: 'text',
                 placeholder: '30',

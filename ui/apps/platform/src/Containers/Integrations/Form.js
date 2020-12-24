@@ -20,6 +20,7 @@ import ReduxMultiSelectField from 'Components/forms/ReduxMultiSelectField';
 import ReduxNumericInputField from 'Components/forms/ReduxNumericInputField';
 import HelpIcon from 'Components/forms/HelpIcon';
 import formDescriptors from 'Containers/Integrations/formDescriptors';
+import { isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 import { setFormSubmissionOptions, checkFormValidity } from './integrationFormUtils';
 import Schedule from './Schedule';
 
@@ -47,6 +48,12 @@ class Form extends Component {
         testIntegration: PropTypes.func.isRequired,
         saveIntegration: PropTypes.func.isRequired,
         triggerBackup: PropTypes.func.isRequired,
+        featureFlags: PropTypes.arrayOf(
+            PropTypes.shape({
+                envVar: PropTypes.string.isRequired,
+                enabled: PropTypes.bool.isRequired,
+            })
+        ).isRequired,
     };
 
     static defaultProps = {
@@ -102,6 +109,17 @@ class Form extends Component {
         const placeholder = field.placeholderFunction
             ? field.placeholderFunction(initialValues)
             : field.placeholder;
+        const filteredOptions = field?.options?.filter(
+            (option) =>
+                !(
+                    option.featureFlagDependency &&
+                    isBackendFeatureFlagEnabled(
+                        this.props.featureFlags,
+                        option.featureFlagDependency.featureFlag,
+                        option.featureFlagDependency.defaultValue
+                    ) !== option.featureFlagDependency.showIfValueIs
+                )
+        );
         switch (field.type) {
             case 'text':
                 return (
@@ -146,7 +164,7 @@ class Form extends Component {
                     <ReduxSelectField
                         key={field.jsonpath}
                         name={field.jsonpath}
-                        options={field.options}
+                        options={filteredOptions}
                         disabled={disabled}
                         value={field.default}
                     />
@@ -165,7 +183,7 @@ class Form extends Component {
                 return (
                     <ReduxMultiSelectField
                         name={field.jsonpath}
-                        options={field.options}
+                        options={filteredOptions}
                         disabled={disabled}
                     />
                 );
@@ -327,6 +345,7 @@ const formFieldKeys = (state, props) => {
 const getFormData = createSelector([formFieldKeys], (formData) => formData);
 
 const mapStateToProps = createStructuredSelector({
+    featureFlags: selectors.getFeatureFlags,
     formFields: getFormFields,
     formData: getFormData,
 });
