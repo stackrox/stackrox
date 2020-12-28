@@ -34,15 +34,16 @@ const ContainerImage = ({ image }): ReactElement | null => {
     if (!image?.name?.fullName) {
         return null;
     }
-    if (image.id === '') {
+    if (image.id === '' || image.notPullable) {
+        const unavailableText = image.notPullable
+            ? 'image not currently pullable'
+            : 'image not available until deployment is running';
         return (
             <div className="flex py-3">
                 <div className="font-700 inline pr-1">Image Name:</div>
                 <div className="font-600">
                     {image.name.fullName}
-                    <span className="block italic pl-1">
-                        (image not available until deployment is running)
-                    </span>{' '}
+                    <span className="italic pl-1">({unavailableText})</span>{' '}
                 </div>
             </div>
         );
