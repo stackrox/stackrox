@@ -3,18 +3,22 @@ const path = require('path');
 const commonRules = {
     'prettier/prettier': 'error',
 
-    // disallow use of console in favor of raven-js for error capturing
+    // Do not require implicit return value.
+    'arrow-body-style': 'off', // override eslint-config-airbnb-base
+
+    // Require braces even when block has one statement.
+    curly: ['error', 'all'],
+
+    // Forbid use of console in favor of raven-js for error capturing.
     'no-console': 'error',
 
-    // allow function hoisting
+    // Allow function hoisting.
     'no-use-before-define': [
         'error',
         {
             functions: false,
         },
     ],
-
-    curly: [2, 'all'],
 
     'import/no-extraneous-dependencies': [
         'error',
@@ -30,6 +34,7 @@ const commonRules = {
             optionalDependencies: false,
         },
     ],
+
     'no-restricted-imports': [
         'error',
         {

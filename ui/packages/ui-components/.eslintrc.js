@@ -1,18 +1,40 @@
-/* eslint @typescript-eslint/no-var-requires: 0 */
-
 const path = require('path');
 
-const commonRules = {
+const commonJavaScriptRules = {
     'prettier/prettier': 'error',
 
-    // disallow use of console in favor of proper error capturing
-    'no-console': 'error',
+    // Do not require implicit return value.
+    'arrow-body-style': 'off', // override eslint-config-airbnb-base
 
-    'react/destructuring-assignment': ['off'],
-
+    // Require braces even when block has one statement.
     curly: ['error', 'all'],
 
-    // forbid 'data-test-id' in preference of 'data-testid'
+    // Forbid use of console in favor of proper error capturing.
+    'no-console': 'error',
+
+    'import/no-extraneous-dependencies': [
+        'error',
+        {
+            devDependencies: [
+                path.join(__dirname, '**/*.test.ts'),
+                path.join(__dirname, '**/*.test.tsx'),
+                path.join(__dirname, '**/*.stories.tsx'),
+                path.join(__dirname, '.storybook/**/*'),
+                path.join(__dirname, '.prettierrc.js'),
+                path.join(__dirname, '.postcssrc.js'),
+                path.join(__dirname, 'tailwind.config.js'),
+                path.join(__dirname, 'jest.config.js'),
+            ],
+            optionalDependencies: false,
+        },
+    ],
+};
+
+const commonTypeScriptReactRules = {
+    // Neither require nor forbid destructuring assignment for props, state, context.
+    'react/destructuring-assignment': ['off'],
+
+    // Forbid 'data-test-id' instead use 'data-testid' attribute name.
     'react/forbid-dom-props': [
         'error',
         {
@@ -21,13 +43,8 @@ const commonRules = {
     ],
 };
 
-const testRules = {
-    ...commonRules,
-
-    'jest/no-focused-tests': 'error',
-};
-
-const commonExtensions = [
+// Cannot easily factor out JavaScript extensions because the order matters.
+const commonTypeScriptReactExtensions = [
     'plugin:react/recommended',
     'plugin:@typescript-eslint/recommended',
     'plugin:@typescript-eslint/recommended-requiring-type-checking',
@@ -41,73 +58,95 @@ const commonExtensions = [
 module.exports = {
     plugins: ['@typescript-eslint', 'prettier', 'jest', 'jest-dom', 'testing-library'],
     parser: '@typescript-eslint/parser',
-    extends: commonExtensions,
     parserOptions: {
         project: './tsconfig.eslint.json',
         tsconfigRootDir: __dirname,
     },
-    rules: {
-        ...commonRules,
-
-        'import/no-extraneous-dependencies': [
-            'error',
-            {
-                devDependencies: [
-                    path.join(__dirname, '**/*.test.ts'),
-                    path.join(__dirname, '**/*.test.tsx'),
-                    path.join(__dirname, '**/*.stories.tsx'),
-                    path.join(__dirname, '.storybook/**/*'),
-                    path.join(__dirname, '.prettierrc.js'),
-                    path.join(__dirname, '.postcssrc.js'),
-                    path.join(__dirname, 'tailwind.config.js'),
-                    path.join(__dirname, 'jest.config.js'),
-                ],
-                optionalDependencies: false,
-            },
-        ],
-
-        'jsx-a11y/label-has-associated-control': [
-            2,
-            {
-                labelAttributes: ['label'],
-                controlComponents: ['Field'],
-                depth: 3,
-            },
-        ],
-    },
 
     overrides: [
         {
-            files: ['src/**/*'],
+            files: ['*.js'],
+            env: {
+                node: true,
+            },
+            extends: ['eslint:recommended', 'plugin:eslint-comments/recommended', 'prettier'],
+            rules: {
+                ...commonJavaScriptRules,
+            },
+        },
+        {
+            files: ['*.ts', '*.tsx'],
             env: {
                 browser: true,
+            },
+            extends: [...commonTypeScriptReactExtensions],
+            rules: {
+                ...commonJavaScriptRules,
+                ...commonTypeScriptReactRules,
+
+                'jsx-a11y/label-has-associated-control': [
+                    2,
+                    {
+                        labelAttributes: ['label'],
+                        controlComponents: ['Field'],
+                        depth: 3,
+                    },
+                ],
+
+                // Provide ECMAScript default values instead of defaultProps.
+                'react/require-default-props': 'off',
             },
         },
         {
             files: ['*.test.ts', '*.test.tsx'],
-            extends: [
-                ...commonExtensions,
-                'plugin:jest/recommended',
-                'plugin:jest-dom/recommended',
-                'plugin:testing-library/react',
-            ],
             env: {
                 browser: true,
                 jest: true,
             },
-            rules: testRules,
+            extends: [
+                ...commonTypeScriptReactExtensions,
+                'plugin:jest/recommended',
+                'plugin:jest-dom/recommended',
+                'plugin:testing-library/react',
+            ],
+            rules: {
+                ...commonJavaScriptRules,
+                ...commonTypeScriptReactRules,
+
+                'jest/no-focused-tests': 'error',
+            },
         },
         {
-            files: ['src/**/*.stories.tsx'],
+            files: ['*.stories.tsx'],
+            env: {
+                browser: true,
+            },
+            extends: [...commonTypeScriptReactExtensions],
             rules: {
-                ...commonRules,
-                // not checking prop types for story components
+                ...commonJavaScriptRules,
+                ...commonTypeScriptReactRules,
+
+                // Do not require type checking for story components.
                 'react/prop-types': [
                     'error',
                     {
                         skipUndeclared: true,
                     },
                 ],
+
+                /*
+                // Do not ban <{}> because it means what it says for React components, see:
+                // https://github.com/typescript-eslint/typescript-eslint/issues/2063#issuecomment-675156492
+                '@typescript-eslint/ban-types': [
+                    'error',
+                    {
+                        extendDefaults: true,
+                        types: {
+                            '{}': false,
+                        },
+                    },
+                ],
+                */
             },
         },
     ],

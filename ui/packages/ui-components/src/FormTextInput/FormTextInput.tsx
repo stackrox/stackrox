@@ -70,7 +70,7 @@ function FormTextInput({
             handleChange(event);
         }
     }
-    const value = get(values, name);
+    const value = get(values, name) as string | undefined;
     return (
         <div>
             <FormLabel label={label} helperText={helperText} isRequired={isRequired}>

@@ -898,12 +898,13 @@ describe('WorkflowState', () => {
 
         // Add other use cases when they use workflow state.
         [useCases.VULN_MANAGEMENT].forEach((useCase) => {
-            describe(useCase, () => {
+            // Template literal for jest/valid-title which forbids a variable.
+            describe(`${useCase}`, () => {
                 const entityTypesForUseCase = [...useCaseEntityMap[useCase]].sort(); // copy before sort
                 const workflowState0 = new WorkflowState(useCase);
 
                 entityTypesForUseCase.forEach((entityType) => {
-                    describe(entityType, () => {
+                    describe(`${entityType}`, () => {
                         it('has trimmed stacks', () => {
                             const workflowState1 = workflowState0.pushList(entityType);
                             const stateStacks = [];

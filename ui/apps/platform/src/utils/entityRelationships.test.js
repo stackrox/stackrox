@@ -53,7 +53,8 @@ describe('entityRelationshipMap', () => {
             '7-isContainedInferred': receivedInferred.join(' '),
         };
 
-        describe(entityType, () => {
+        // Template literal for jest/valid-title which forbids a variable.
+        describe(`${entityType}`, () => {
             it('has relationships that are not reflexive', () => {
                 expect(children).not.toContain(entityType);
                 expect(parents).not.toContain(entityType);
