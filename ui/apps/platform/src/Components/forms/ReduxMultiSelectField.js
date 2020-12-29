@@ -18,7 +18,7 @@ const ReduxMultiSelect = ({ input: { name, value, onChange }, options, placehold
 
 ReduxMultiSelect.propTypes = {
     input: PropTypes.shape({
-        value: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
+        value: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.string), PropTypes.string]),
         name: PropTypes.string,
         onChange: PropTypes.func,
     }).isRequired,

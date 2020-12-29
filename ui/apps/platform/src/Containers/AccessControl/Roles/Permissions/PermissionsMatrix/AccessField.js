@@ -39,7 +39,7 @@ const AccessField = ({ input, resourceToAccess, resourceName, isEditing }) => {
 
 AccessField.propTypes = {
     input: PropTypes.shape({
-        value: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
+        value: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.string), PropTypes.string]),
         name: PropTypes.string,
         onChange: PropTypes.func,
     }),

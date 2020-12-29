@@ -24,7 +24,7 @@ const ReduxMultiSelectCreatable = ({
 ReduxMultiSelectCreatable.propTypes = {
     input: PropTypes.shape({
         name: PropTypes.string,
-        value: PropTypes.array,
+        value: PropTypes.arrayOf(PropTypes.string),
         onChange: PropTypes.func,
     }).isRequired,
     options: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
