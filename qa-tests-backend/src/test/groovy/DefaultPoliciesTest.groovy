@@ -207,8 +207,14 @@ class DefaultPoliciesTest extends BaseSpecification {
         if (!unexpectedViolations.isEmpty()) {
             String slackPayload = ":rotating_light: Fixable Vulnerabilities found in StackRox Images! :rotating_light:"
 
+            Map<String, Set<String>> deploymentPolicyMap = [:]
             Map<String, Set<String>> imageVulnMap = [:]
             unexpectedViolations.each {
+                if (!deploymentPolicyMap.containsKey(it.deployment.name)) {
+                    deploymentPolicyMap.put(it.deployment.name, [] as Set)
+                }
+                deploymentPolicyMap.get(it.deployment.name).add(it.policy.name)
+
                 DeploymentOuterClass.Deployment dep = DeploymentService.getDeployment(it.deployment.id)
                 dep.containersList.each {
                     ImageOuterClass.Image image = ImageService.getImage(it.image.id)
@@ -226,6 +232,12 @@ class DefaultPoliciesTest extends BaseSpecification {
                 }
             }
             if (!imageVulnMap.isEmpty()) {
+                if (!deploymentPolicyMap.isEmpty()) {
+                    slackPayload += "\nDeployments and violated policies: "
+                    deploymentPolicyMap.each { k, v ->
+                        slackPayload += "${k}: ${v}  "
+                    }
+                }
                 imageVulnMap.each { k, v ->
                     slackPayload += "\n${k}: ${v}"
                 }
