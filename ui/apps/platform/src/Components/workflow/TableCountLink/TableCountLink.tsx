@@ -10,10 +10,10 @@ import entityLabels from 'messages/entity';
 type TableCountLinkProps = {
     selectedRowId: string;
     entityType: string;
-    textOnly: boolean;
+    textOnly?: boolean;
     count: number;
-    entityTypeText: string;
-    search: {};
+    entityTypeText?: string;
+    search?: Record<string, boolean>;
 };
 
 function TableCountLink({
@@ -26,7 +26,8 @@ function TableCountLink({
 }: TableCountLinkProps): ReactElement {
     const workflowState = useContext(workflowStateContext);
 
-    const type = entityTypeText || entityLabels[entityType];
+    // TODO type cast required until inconsistency is resolved between keys in constants/entityTypes and messages/common:
+    const type = entityTypeText || (entityLabels[entityType] as string);
     if (count === 0) {
         return <div>No {pluralize(type)}</div>;
     }

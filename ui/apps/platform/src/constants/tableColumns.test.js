@@ -1,7 +1,7 @@
 /* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expectColumnsToContain", "expectColumnsNotToContain"] }] */
 
 import { getColumnsByEntity, getColumnsByStandard } from './tableColumns';
-import { resourceTypes, standardTypes } from './entityTypes';
+import { resourceTypes, standardTypes } from './entityTypes.ts';
 
 function expectColumnsToContain(columns, shouldContain) {
     const accessors = columns.map((c) => c.accessor);

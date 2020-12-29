@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import URLService from 'utils/URLService';
-import labels from 'messages/common';
+import { resourceLabels } from 'messages/common';
 import capitalize from 'lodash/capitalize';
 import sortBy from 'lodash/sortBy';
 import chunk from 'lodash/chunk';
@@ -50,7 +50,7 @@ function processData(match, location, data, entityType, searchParam) {
             y: percentagePassing,
             hint: {
                 title: standardLabels[standard.id],
-                body: `${numFailingControls} controls failing in this ${labels.resourceLabels[entityType]}`,
+                body: `${numFailingControls} controls failing in this ${resourceLabels[entityType]}`,
             },
             link,
         };

@@ -1,4 +1,17 @@
-export const resourceTypes = {
+export type ResourceType =
+    | 'NAMESPACE'
+    | 'CLUSTER'
+    | 'NODE'
+    | 'DEPLOYMENT'
+    | 'NETWORK_POLICY'
+    | 'SECRET'
+    | 'IMAGE'
+    | 'COMPONENT'
+    | 'CVE'
+    | 'POLICY'
+    | 'CONTROL';
+
+export const resourceTypes: Record<ResourceType, ResourceType> = {
     NAMESPACE: 'NAMESPACE',
     CLUSTER: 'CLUSTER',
     NODE: 'NODE',
@@ -12,13 +25,17 @@ export const resourceTypes = {
     CONTROL: 'CONTROL',
 };
 
-export const rbacConfigTypes = {
+export type RbacConfigType = 'SUBJECT' | 'SERVICE_ACCOUNT' | 'ROLE';
+
+export const rbacConfigTypes: Record<RbacConfigType, RbacConfigType> = {
     SUBJECT: 'SUBJECT',
     SERVICE_ACCOUNT: 'SERVICE_ACCOUNT',
     ROLE: 'ROLE',
 };
 
-export const standardEntityTypes = {
+export type StandardEntityType = 'CONTROL' | 'CATEGORY' | 'STANDARD' | 'CHECK';
+
+export const standardEntityTypes: Record<StandardEntityType, StandardEntityType> = {
     CONTROL: 'CONTROL',
     CATEGORY: 'CATEGORY',
     STANDARD: 'STANDARD',
