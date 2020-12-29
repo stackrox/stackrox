@@ -45,13 +45,13 @@ import {
     getExternalEntitiesEdgeNodes,
     getCIDRBlockEdgeNodes,
     getDeploymentList,
-    getNetworkFlows,
     getEdgesFromNode,
     getIngressPortsAndProtocols,
     getEgressPortsAndProtocols,
     edgeTypes,
     getIsNodeHoverable,
 } from 'utils/networkGraphUtils';
+import { getNetworkFlows } from 'utils/networkUtils/getNetworkFlows';
 import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 
 import { defaultTippyTooltipProps } from '@stackrox/ui-components/lib/Tooltip';

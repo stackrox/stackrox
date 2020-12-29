@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import pluralize from 'pluralize';
 
-import { getNetworkFlows } from 'utils/networkGraphUtils';
+import { getNetworkFlows } from 'utils/networkUtils/getNetworkFlows';
 import { filterModes } from 'constants/networkFilterModes';
 import useSearchFilteredData from 'hooks/useSearchFilteredData';
 import baselineStatusesData from 'mockData/baselineStatuses';

@@ -1,4 +1,5 @@
 import { filterModes } from 'constants/networkFilterModes';
+import { Edge } from 'utils/networkUtils/getNetworkFlows';
 
 export const nodes = [
     {
@@ -1283,7 +1284,7 @@ export const namespaceEdgeNodes = [
     },
 ];
 
-export const deploymentEdges = [
+export const deploymentEdges: Edge[] = [
     {
         data: {
             destNodeId: '1',

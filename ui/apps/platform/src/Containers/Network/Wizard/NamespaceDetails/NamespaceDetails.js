@@ -12,7 +12,7 @@ import { types as deploymentTypes } from 'reducers/deployments';
 import { selectors } from 'reducers';
 import { sortValue } from 'sorters/sorters';
 import { filterModes, filterLabels } from 'constants/networkFilterModes';
-import { getNetworkFlows } from 'utils/networkGraphUtils';
+import { getNetworkFlows } from 'utils/networkUtils/getNetworkFlows';
 import Panel from 'Components/Panel';
 import Loader from 'Components/Loader';
 import TablePagination from 'Components/TablePagination';

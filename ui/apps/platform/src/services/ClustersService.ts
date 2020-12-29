@@ -36,7 +36,7 @@ export function fetchClusters() {
  *
  * @returns {Promise<Object, Error>} fulfilled with normalized list of clusters
  */
-export function fetchClustersAsArray(options?: unknown[]): Promise<Array<Cluster>> {
+export function fetchClustersAsArray(options?: unknown[]): Promise<Cluster[]> {
     let queryString = '';
     if (options && options.length !== 0) {
         const query = searchOptionsToQuery(options);

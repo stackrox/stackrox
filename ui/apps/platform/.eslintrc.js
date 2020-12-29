@@ -203,7 +203,16 @@ module.exports = {
                 project: './tsconfig.json',
                 tsconfigRootDir: __dirname,
             },
-            rules: commonRules,
+            rules: {
+                ...commonRules,
+                '@typescript-eslint/array-type': [
+                    'error',
+                    {
+                        default: 'array',
+                        readonly: 'array',
+                    },
+                ],
+            },
         },
         {
             files: ['src/**/*.test.js'],

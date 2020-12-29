@@ -28,6 +28,13 @@ const commonJavaScriptRules = {
             optionalDependencies: false,
         },
     ],
+    '@typescript-eslint/array-type': [
+        'error',
+        {
+            default: 'array',
+            readonly: 'array',
+        },
+    ],
 };
 
 const commonTypeScriptReactRules = {

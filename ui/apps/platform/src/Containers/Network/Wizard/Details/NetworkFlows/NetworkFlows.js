@@ -8,7 +8,7 @@ import { selectors } from 'reducers';
 import { actions as graphActions } from 'reducers/network/graph';
 
 import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
-import { getNetworkFlows } from 'utils/networkGraphUtils';
+import { getNetworkFlows } from 'utils/networkUtils/getNetworkFlows';
 import { filterModes, filterLabels } from 'constants/networkFilterModes';
 import Panel from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
