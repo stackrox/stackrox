@@ -1,5 +1,6 @@
+/* eslint-disable react/display-name */
 import React, { ReactElement } from 'react';
-import { useTable, useSortBy, useGroupBy, useExpanded } from 'react-table';
+import { useTable, useSortBy, useGroupBy, useExpanded, useRowSelect } from 'react-table';
 
 import { networkFlowStatus } from 'constants/networkGraph';
 import {
@@ -15,6 +16,7 @@ import TableBody from './TableBody';
 import TableRow from './TableRow';
 import TableCell from './TableCell';
 import GroupedStatusTableCell from './GroupedStatusTableCell';
+import checkboxSelectionPlugin from './checkboxSelectionPlugin';
 
 type NetworkFlow = {
     peer: {
@@ -37,10 +39,21 @@ type Row = {
     values: {
         status: NetworkFlow['status'];
     };
+    groupByVal: NetworkFlow['status'];
 };
 
 export type NetworkFlowsTableProps = {
     networkFlows: NetworkFlow[];
+};
+
+export type HoveredRowComponentProps = {
+    row: Row;
+};
+
+export type GroupedRowComponentProps = {
+    row: Row;
+    rows: Row[];
+    selectedFlatRows: Row[];
 };
 
 const columns = [
@@ -96,7 +109,8 @@ const columns = [
     },
 ];
 
-function onHoveredRowComponentRender(row: Row): ReactElement {
+// TODO: Separate into different file
+function HoveredRowComponent({ row }: HoveredRowComponentProps): ReactElement {
     function onClick(): void {
         // TODO: remove this console log and add a way to use the API call
         // for marking as anomalous or adding to baseline
@@ -107,19 +121,75 @@ function onHoveredRowComponentRender(row: Row): ReactElement {
     if (row.original.status === networkFlowStatus.ANOMALOUS) {
         return (
             <CondensedButton type="button" onClick={onClick}>
-                Add to Baseline
+                Add to baseline
             </CondensedButton>
         );
     }
     return (
         <CondensedAlertButton type="button" onClick={onClick}>
-            Mark as Anomalous
+            Mark as anomalous
+        </CondensedAlertButton>
+    );
+}
+
+// TODO: Separate into different file
+function GroupedRowComponent({
+    rows,
+    row,
+    selectedFlatRows,
+}: GroupedRowComponentProps): ReactElement {
+    const anomalousSelectedRows = selectedFlatRows.filter(
+        (datum) => datum?.original?.status === networkFlowStatus.ANOMALOUS
+    );
+    const baselineSelectedRows = selectedFlatRows.filter(
+        (datum) => datum?.original?.status === networkFlowStatus.BASELINE
+    );
+    const isAnomalousGroup = row.groupByVal === networkFlowStatus.ANOMALOUS;
+
+    function onClick(): void {
+        if (isAnomalousGroup) {
+            if (anomalousSelectedRows.length) {
+                // Replace this with an API call to mark selected rows as anomalous
+                // eslint-disable-next-line no-console
+                console.log('mark selected as anomalous', anomalousSelectedRows);
+            } else {
+                const allAnomalousRows = rows.filter(
+                    (datum) => datum?.original?.status === networkFlowStatus.ANOMALOUS
+                );
+                // Replace this with an API call to mark all rows as anomalous
+                // eslint-disable-next-line no-console
+                console.log('mark all anomalous', allAnomalousRows);
+            }
+        } else if (baselineSelectedRows.length) {
+            // Replace this with an API call to add selected rows to baseline
+            // eslint-disable-next-line no-console
+            console.log('add selected to baseline', baselineSelectedRows);
+        } else {
+            const allBaselineRows = rows.filter(
+                (datum) => datum?.original?.status === networkFlowStatus.BASELINE
+            );
+            // Replace this with an API call to add all rows to baseline
+            // eslint-disable-next-line no-console
+            console.log('add all baseline', allBaselineRows);
+        }
+    }
+
+    if (isAnomalousGroup) {
+        return (
+            <CondensedButton type="button" onClick={onClick}>
+                Add {anomalousSelectedRows.length || 'all'} to baseline
+            </CondensedButton>
+        );
+    }
+    return (
+        <CondensedAlertButton type="button" onClick={onClick}>
+            Mark {baselineSelectedRows.length || 'all'} as anomalous
         </CondensedAlertButton>
     );
 }
 
 function NetworkFlowsTable({ networkFlows }: NetworkFlowsTableProps): ReactElement {
-    const { headerGroups, rows, prepareRow } = useTable(
+    const { headerGroups, rows, prepareRow, selectedFlatRows } = useTable(
         {
             columns,
             data: networkFlows,
@@ -140,7 +210,9 @@ function NetworkFlowsTable({ networkFlows }: NetworkFlowsTableProps): ReactEleme
         },
         useGroupBy,
         useSortBy,
-        useExpanded
+        useExpanded,
+        useRowSelect,
+        checkboxSelectionPlugin
     );
 
     return (
@@ -163,7 +235,14 @@ function NetworkFlowsTable({ networkFlows }: NetworkFlowsTableProps): ReactEleme
                             key={row.id}
                             row={row}
                             type={rowType}
-                            onHoveredRowComponentRender={onHoveredRowComponentRender}
+                            HoveredRowComponent={<HoveredRowComponent row={row} />}
+                            GroupedRowComponent={
+                                <GroupedRowComponent
+                                    rows={rows}
+                                    row={row}
+                                    selectedFlatRows={selectedFlatRows}
+                                />
+                            }
                         >
                             {row.isGrouped ? (
                                 <GroupedStatusTableCell row={row} />

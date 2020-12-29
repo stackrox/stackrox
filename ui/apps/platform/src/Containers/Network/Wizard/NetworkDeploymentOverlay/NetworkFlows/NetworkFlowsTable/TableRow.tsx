@@ -9,7 +9,8 @@ export type TableRowProps = {
         isGrouped: boolean;
     };
     children: ReactNode;
-    onHoveredRowComponentRender?: (row) => ReactNode;
+    HoveredRowComponent?: ReactNode;
+    GroupedRowComponent?: ReactNode;
 };
 
 const tableRowClassName = 'relative border-b';
@@ -20,22 +21,32 @@ function onFocus(): number {
     return 0;
 }
 
+function TableRowOverlay({ children }): ReactElement {
+    return (
+        <td className="absolute right-0 transform -translate-x-2 translate-y-1 mr-2">{children}</td>
+    );
+}
+
 function TableRow({
     type,
     row,
     children,
-    onHoveredRowComponentRender,
+    HoveredRowComponent = null,
+    GroupedRowComponent = null,
 }: TableRowProps): ReactElement {
     const [isHovered, setIsHovered] = useState(false);
 
     const { key } = row.getRowProps();
     const className = type === 'alert' ? alertTableRowClassName : baseTableRowClassName;
-    const shouldShowHoveredComponent = onHoveredRowComponentRender && !row.isGrouped && isHovered;
+    const showGroupedRowComponent = row.isGrouped;
+    const showHoveredRowComponent = !showGroupedRowComponent && isHovered;
 
-    const hoveredComponent = shouldShowHoveredComponent && (
-        <td className="absolute right-0 transform -translate-x-2 translate-y-1 mr-2">
-            {onHoveredRowComponentRender && onHoveredRowComponentRender(row)}
-        </td>
+    const hoveredRowComponent = showHoveredRowComponent && (
+        <TableRowOverlay>{HoveredRowComponent}</TableRowOverlay>
+    );
+
+    const groupedRowComponent = showGroupedRowComponent && (
+        <TableRowOverlay>{GroupedRowComponent}</TableRowOverlay>
     );
 
     function onMouseEnter(): void {
@@ -55,7 +66,8 @@ function TableRow({
             onFocus={onFocus}
         >
             {children}
-            {hoveredComponent}
+            {hoveredRowComponent}
+            {groupedRowComponent}
         </tr>
     );
 }
