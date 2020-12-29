@@ -8,6 +8,7 @@ import {
     networkConnectionLabels,
 } from 'messages/network';
 
+import { CondensedButton, CondensedAlertButton } from '@stackrox/ui-components';
 import Table from './Table';
 import TableHead from './TableHead';
 import TableBody from './TableBody';
@@ -29,6 +30,13 @@ type NetworkFlow = {
         state: 'active' | 'allowed';
     };
     status: 'BASELINE' | 'ANOMALOUS';
+};
+
+type Row = {
+    original: NetworkFlow;
+    values: {
+        status: NetworkFlow['status'];
+    };
 };
 
 export type NetworkFlowsTableProps = {
@@ -88,6 +96,28 @@ const columns = [
     },
 ];
 
+function onHoveredRowComponentRender(row: Row): ReactElement {
+    function onClick(): void {
+        // TODO: remove this console log and add a way to use the API call
+        // for marking as anomalous or adding to baseline
+        // eslint-disable-next-line no-console
+        console.log(row.original);
+    }
+
+    if (row.original.status === networkFlowStatus.ANOMALOUS) {
+        return (
+            <CondensedButton type="button" onClick={onClick}>
+                Add to Baseline
+            </CondensedButton>
+        );
+    }
+    return (
+        <CondensedAlertButton type="button" onClick={onClick}>
+            Mark as Anomalous
+        </CondensedAlertButton>
+    );
+}
+
 function NetworkFlowsTable({ networkFlows }: NetworkFlowsTableProps): ReactElement {
     const { headerGroups, rows, prepareRow } = useTable(
         {
@@ -129,7 +159,12 @@ function NetworkFlowsTable({ networkFlows }: NetworkFlowsTableProps): ReactEleme
                             : null;
 
                     return (
-                        <TableRow key={row.id} row={row} type={rowType}>
+                        <TableRow
+                            key={row.id}
+                            row={row}
+                            type={rowType}
+                            onHoveredRowComponentRender={onHoveredRowComponentRender}
+                        >
                             {row.isGrouped ? (
                                 <GroupedStatusTableCell row={row} />
                             ) : (

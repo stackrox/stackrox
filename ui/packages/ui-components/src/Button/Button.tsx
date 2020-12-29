@@ -31,7 +31,7 @@ function getColorClassName(colorType: ButtonProps['colorType']): string {
 }
 
 function getPaddingClassName(isCondensed: boolean): string {
-    return isCondensed ? 'px-2 py-1' : 'p-2';
+    return isCondensed ? 'px-2' : 'p-2';
 }
 
 // @TODO This is just starter code for the Button Component. We can discuss, in more detail, how we want to go about it later
