@@ -8,12 +8,12 @@ import io.stackrox.proto.api.v1.ProcessBaselineServiceOuterClass.DeleteProcessBa
 import objects.Deployment
 import util.Timer
 
-class ProcessWhitelistService extends BaseService {
-    static getProcessWhitelistService() {
+class ProcessBaselineService extends BaseService {
+    static getProcessBaselineService() {
         return ProcessBaselineServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static  ProcessBaselineOuterClass.ProcessBaseline getProcessWhitelist(
+    static  ProcessBaselineOuterClass.ProcessBaseline getProcessBaseline(
             String clusterId, Deployment deployment, String containerName = null,
             int retries = 20, int interval = 6) {
         String namespace = deployment.getNamespace()
@@ -29,12 +29,12 @@ class ProcessWhitelistService extends BaseService {
                 .build()
         Timer t = new Timer(retries, interval)
         while (t.IsValid()) {
-            def whitelist = getWhitelistProcesses(request)
-            if (whitelist) {
+            def baseline = getBaselineProcesses(request)
+            if (baseline) {
                 println "SR found baselined process for the key - " +
                         "${clusterId}, ${namespace}, ${deploymentId}, ${containerName} " +
                             " within ${t.SecondsSince()}s"
-                return whitelist
+                return baseline
                 }
             println "SR has not found baselined  process for the key - " +
                     "${clusterId}, ${namespace}, ${deploymentId}, ${containerName} yet"
@@ -45,7 +45,7 @@ class ProcessWhitelistService extends BaseService {
         return null
     }
 
-    static List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessWhitelists(
+    static List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessBaselines(
             String clusterId, Deployment deployment, String containerName, boolean lock) {
         try {
             String cName = containerName ?: deployment.getName()
@@ -64,7 +64,7 @@ class ProcessWhitelistService extends BaseService {
                                .setLocked(lock)
                              .build()
 
-            def fromUpdate = getProcessWhitelistService().lockProcessBaselines(lockRequest).baselinesList
+            def fromUpdate = getProcessBaselineService().lockProcessBaselines(lockRequest).baselinesList
 
             ProcessBaselineServiceOuterClass.GetProcessBaselineRequest getRequest =
                     ProcessBaselineServiceOuterClass.GetProcessBaselineRequest
@@ -73,7 +73,7 @@ class ProcessWhitelistService extends BaseService {
                             .build()
 
             ProcessBaselineOuterClass.ProcessBaseline wl =
-                    getProcessWhitelistService().getProcessBaseline(getRequest)
+                    getProcessBaselineService().getProcessBaseline(getRequest)
 
             if (wl.hasUserLockedTimestamp()) {
                 if (!lock) {
@@ -92,13 +92,13 @@ class ProcessWhitelistService extends BaseService {
         }
     }
 
-    static deleteProcessWhitelists(String query) {
+    static deleteProcessBaselines(String query) {
         DeleteProcessBaselinesRequest req = DeleteProcessBaselinesRequest.newBuilder()
             .setQuery(query).setConfirm(true).build()
-        return getProcessWhitelistService().deleteProcessBaselines(req)
+        return getProcessBaselineService().deleteProcessBaselines(req)
     }
 
-    static List<ProcessBaselineOuterClass.ProcessBaseline> updateProcessWhitelists(
+    static List<ProcessBaselineOuterClass.ProcessBaseline> updateProcessBaselines(
             ProcessBaselineKey[] keys,
             String [] toBeAddedProcesses,
             String[] toBeRemovedProcesses) {
@@ -121,7 +121,7 @@ class ProcessWhitelistService extends BaseService {
                         itemBuilder.setProcessName(processToBeRemoved).build()
                 requestBuilder.addRemoveElements(item)
             }
-            List<ProcessBaselineOuterClass.ProcessBaseline> updatedLst = getProcessWhitelistService()
+            List<ProcessBaselineOuterClass.ProcessBaseline> updatedLst = getProcessBaselineService()
                 .updateProcessBaselines(requestBuilder.build()).baselinesList
             return updatedLst
         } catch (Exception e) {
@@ -129,10 +129,10 @@ class ProcessWhitelistService extends BaseService {
         }
     }
 
-    static ProcessBaselineOuterClass.ProcessBaseline getWhitelistProcesses(
+    static ProcessBaselineOuterClass.ProcessBaseline getBaselineProcesses(
         ProcessBaselineServiceOuterClass.GetProcessBaselineRequest request) {
         try {
-            return getProcessWhitelistService().getProcessBaseline(request)
+            return getProcessBaselineService().getProcessBaseline(request)
         }
         catch (Exception e) {
             println "Error getting  process baselines: ${e}"
@@ -140,13 +140,13 @@ class ProcessWhitelistService extends BaseService {
         return null
     }
 
-    static boolean waitForDeploymentWhitelistsCreated(String clusterId, Deployment deployment, String containerName) {
+    static boolean waitForDeploymentBaselinesCreated(String clusterId, Deployment deployment, String containerName) {
         Timer t = new Timer(20, 6)
         try {
             while (t.IsValid()) {
-                ProcessBaselineOuterClass.ProcessBaseline whitelist =
-                        getProcessWhitelist(clusterId, deployment, containerName)
-                if (whitelist != null) {
+                ProcessBaselineOuterClass.ProcessBaseline baseline =
+                        getProcessBaseline(clusterId, deployment, containerName)
+                if (baseline != null) {
                     return true
                 }
             }
@@ -158,17 +158,17 @@ class ProcessWhitelistService extends BaseService {
         return false
     }
 
-    static boolean waitForDeploymentWhitelistsDeleted(String clusterId, Deployment deployment, String containerName) {
+    static boolean waitForDeploymentBaselinesDeleted(String clusterId, Deployment deployment, String containerName) {
         Timer t = new Timer(5, 2)
         try {
             while (t.IsValid()) {
-                ProcessBaselineOuterClass.ProcessBaseline whitelist =
-                        getProcessWhitelist(clusterId, deployment, containerName, 1)
-                if (whitelist == null) {
+                ProcessBaselineOuterClass.ProcessBaseline baseline =
+                        getProcessBaseline(clusterId, deployment, containerName, 1)
+                if (baseline == null) {
                     return true
                 }
             }
-            println("Whitelists still exist for deployment ${deployment.getDeploymentUid()}")
+            println("Baselines still exist for deployment ${deployment.getDeploymentUid()}")
         }
         catch (Exception e) {
             println "Error waiting for deployment baselines to be deleted ${e}"

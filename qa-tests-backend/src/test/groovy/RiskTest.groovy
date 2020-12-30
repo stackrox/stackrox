@@ -7,7 +7,7 @@ import org.junit.Assume
 import services.ClusterService
 import services.DeploymentService
 import services.ProcessService
-import services.ProcessWhitelistService
+import services.ProcessBaselineService
 import spock.lang.Shared
 import spock.lang.Stepwise
 import util.Env
@@ -89,7 +89,7 @@ class RiskTest extends BaseSpecification {
 
             def processesFound = true
             for (int i = 0; i < DEPLOYMENTS.size(); i++) {
-                def processes = ProcessWhitelistService.getProcessWhitelist(clusterId, DEPLOYMENTS[i], null, 0)
+                def processes = ProcessBaselineService.getProcessBaseline(clusterId, DEPLOYMENTS[i], null, 0)
                 if (!processes || processes.elementsList.size() == 0) {
                     println "not yet ready to test - processes not found for ${DEPLOYMENTS[i].name}"
                     processesFound = false
@@ -232,7 +232,7 @@ class RiskTest extends BaseSpecification {
         def response = null
         def t = new Timer(RETRIES, RETRY_DELAY)
         while (t.IsValid()) {
-            response = ProcessWhitelistService.updateProcessWhitelists(
+            response = ProcessBaselineService.updateProcessBaselines(
                     [ProcessBaselineOuterClass.ProcessBaselineKey
                         .newBuilder()
                             .setClusterId(clusterId)

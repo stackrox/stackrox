@@ -1,4 +1,4 @@
-// HACK: We add some client only fields to the policy objects, since for the whitelist, the layout in the UI
+// HACK: We add some client only fields to the policy objects, since for the baseline, the layout in the UI
 // does not correspond to the layout on the backend. All such field names are explicitly listed below for clarity.
 // These fields have to all be derived from the server format in preFormatWhitelistField, and
 // translated back into the server format in postFormatWhitelistField.

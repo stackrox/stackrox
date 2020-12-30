@@ -17,7 +17,7 @@ import org.junit.experimental.categories.Category
 import services.AlertService
 import services.ClusterService
 import services.CreatePolicyService
-import services.ProcessWhitelistService
+import services.ProcessBaselineService
 import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
@@ -36,8 +36,8 @@ class Enforcement extends BaseSpecification {
     private final static String FAIL_BUILD_ENFORCEMENT_WITH_SCALE_TO_ZERO = "fail-build-enforcement-with-scale-to-zero"
     private final static String SCALE_DOWN_AND_NODE_CONSTRAINT = "scale-down-and-node-constraint-deployment"
     private final static String SCALE_DOWN_AND_NODE_CONSTRAINT_FOR_DS = "scale-down-and-node-constraint-daemonset"
-    private final static String ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS =
-            "alert-and-kill-enforcement-whitelist-process"
+    private final static String ALERT_AND_KILL_ENFORCEMENT_BASELINE_PROCESS =
+            "alert-and-kill-enforcement-baseline-process"
     private final static String NO_ENFORCEMENT_ON_UPDATE = "no-enforcement-on-update"
     private final static String NO_ENFORCEMENT_WITH_BYPASS_ANNOTATION = "no-enforcement-with-bypass-annotation"
 
@@ -128,10 +128,10 @@ class Enforcement extends BaseSpecification {
                          EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,],
                 )
             },
-            (ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS): {
+            (ALERT_AND_KILL_ENFORCEMENT_BASELINE_PROCESS): {
                 duplicatePolicyForTest(
-                        WHITELISTPROCESS_POLICY,
-                        ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS,
+                        BASELINEPROCESS_POLICY,
+                        ALERT_AND_KILL_ENFORCEMENT_BASELINE_PROCESS,
                         [EnforcementAction.KILL_POD_ENFORCEMENT],
                 )
             },
@@ -187,7 +187,7 @@ class Enforcement extends BaseSpecification {
                             .addPort(22)
                             .setCommand(["sleep", "600"])
                             .setSkipReplicaWait(true),
-            (ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS):
+            (ALERT_AND_KILL_ENFORCEMENT_BASELINE_PROCESS):
                     new Deployment()
                             .setImage("nginx:1.7.9")
                             .addPort(22, "TCP")
@@ -223,7 +223,7 @@ class Enforcement extends BaseSpecification {
     private final static String LATEST_TAG = "Latest tag"
     private final static String CVSS = "Fixable CVSS >= 7"
     private final static String SCAN_AGE = "30-Day Scan Age"
-    private final static String WHITELISTPROCESS_POLICY = "Unauthorized Process Execution"
+    private final static String BASELINEPROCESS_POLICY = "Unauthorized Process Execution"
 
     @Shared
     private static final Map<String, String> CREATED_POLICIES = [:]
@@ -668,33 +668,33 @@ class Enforcement extends BaseSpecification {
     }
 
     @Category([BAT, PolicyEnforcement])
-    def "Test Alert and Kill Pod Enforcement - Whitelist Process"() {
+    def "Test Alert and Kill Pod Enforcement - Baseline Process"() {
         // This test verifies enforcement of kill pod after triggering a policy violation of
         //  Unauthorized Process Execution
         given:
         "policy and deployment already fabricated"
-        Deployment d = DEPLOYMENTS[ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS]
+        Deployment d = DEPLOYMENTS[ALERT_AND_KILL_ENFORCEMENT_BASELINE_PROCESS]
 
         when:
         String clusterId = ClusterService.getClusterId()
-        ProcessBaselineOuterClass.ProcessBaseline whitelist = ProcessWhitelistService.
-                getProcessWhitelist(clusterId, d)
-        assert (whitelist != null)
-        println whitelist
-        List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessWhitelists = ProcessWhitelistService.
-                lockProcessWhitelists(clusterId, d, "", true)
-        assert lockProcessWhitelists.size() ==  1
-        assert  lockProcessWhitelists.get(0).getElementsList().
+        ProcessBaselineOuterClass.ProcessBaseline baseline = ProcessBaselineService.
+                getProcessBaseline(clusterId, d)
+        assert (baseline != null)
+        println baseline
+        List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessBaselines = ProcessBaselineService.
+                lockProcessBaselines(clusterId, d, "", true)
+        assert lockProcessBaselines.size() ==  1
+        assert  lockProcessBaselines.get(0).getElementsList().
                 find { it.element.processName.equalsIgnoreCase("/usr/sbin/nginx") } != null
         orchestrator.execInContainer(d, "pwd")
-        assert waitForViolation(d.name, ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS, WAIT_FOR_VIOLATION_TIMEOUT)
+        assert waitForViolation(d.name, ALERT_AND_KILL_ENFORCEMENT_BASELINE_PROCESS, WAIT_FOR_VIOLATION_TIMEOUT)
 
         then:
         "check pod was killed"
         List<AlertOuterClass.ListAlert> violations = AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest
                 .newBuilder().build())
         String alertId = violations.find {
-            it.getPolicy().name.equalsIgnoreCase(ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS) &&
+            it.getPolicy().name.equalsIgnoreCase(ALERT_AND_KILL_ENFORCEMENT_BASELINE_PROCESS) &&
             it.deployment.id.equalsIgnoreCase(d.deploymentUid) }?.id
         assert (alertId != null)
         AlertOuterClass.Alert alert = AlertService.getViolation(alertId)
@@ -708,7 +708,7 @@ class Enforcement extends BaseSpecification {
         }.find { it == true }
         assert alert.enforcement.action == EnforcementAction.KILL_POD_ENFORCEMENT
         println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
-        assert Services.getAlertEnforcementCount(d.name, ALERT_AND_KILL_ENFORCEMENT_WHITELIST_PROCESS) > 0
+        assert Services.getAlertEnforcementCount(d.name, ALERT_AND_KILL_ENFORCEMENT_BASELINE_PROCESS) > 0
 
         cleanup:
         if (alertId != null) {

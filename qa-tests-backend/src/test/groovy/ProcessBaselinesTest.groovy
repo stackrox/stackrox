@@ -16,23 +16,23 @@ import org.apache.commons.lang.StringUtils
 
 import org.junit.experimental.categories.Category
 
-import services.ProcessWhitelistService
+import services.ProcessBaselineService
 import spock.lang.Shared
 import spock.lang.Unroll
 
-class ProcessWhiteListsTest extends BaseSpecification {
+class ProcessBaselinesTest extends BaseSpecification {
     @Shared
     private String clusterId
 
-    static final private String DEPLOYMENTNGINX = "pw-deploymentnginx"
-    static final private String DEPLOYMENTNGINX_RESOLVE_VIOLATION = "pw-deploymentnginx-violation-resolve"
-    static final private String DEPLOYMENTNGINX_RESOLVE_AND_WHITELIST_VIOLATION =
-            "pw-deploymentnginx-violation-resolve-whitelist"
-    static final private String DEPLOYMENTNGINX_SOFTLOCK = "pw-deploymentnginx-softlock"
-    static final private String DEPLOYMENTNGINX_DELETE = "pw-deploymentnginx-delete"
-    static final private String DEPLOYMENTNGINX_DELETE_API = "pw-deploymentnginx-delete-api"
+    static final private String DEPLOYMENTNGINX = "pb-deploymentnginx"
+    static final private String DEPLOYMENTNGINX_RESOLVE_VIOLATION = "pb-deploymentnginx-violation-resolve"
+    static final private String DEPLOYMENTNGINX_RESOLVE_AND_BASELINE_VIOLATION =
+            "pb-deploymentnginx-violation-resolve-baseline"
+    static final private String DEPLOYMENTNGINX_SOFTLOCK = "pb-deploymentnginx-softlock"
+    static final private String DEPLOYMENTNGINX_DELETE = "pb-deploymentnginx-delete"
+    static final private String DEPLOYMENTNGINX_DELETE_API = "pb-deploymentnginx-delete-api"
 
-    static final private String DEPLOYMENTNGINX_REMOVEPROCESS = "pw-deploymentnginx-removeprocess"
+    static final private String DEPLOYMENTNGINX_REMOVEPROCESS = "pb-deploymentnginx-removeprocess"
     static final private List<Deployment> DEPLOYMENTS =
             [
                     new Deployment()
@@ -50,7 +50,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
                      .setEnv(["CLUSTER_NAME": "main"])
                      .addLabel("app", "test"),
              new Deployment()
-                     .setName(DEPLOYMENTNGINX_RESOLVE_AND_WHITELIST_VIOLATION)
+                     .setName(DEPLOYMENTNGINX_RESOLVE_AND_BASELINE_VIOLATION)
                      .setImage("nginx:1.7.9")
                      .addPort(22, "TCP")
                      .addAnnotation("test", "annotation")
@@ -105,12 +105,12 @@ class ProcessWhiteListsTest extends BaseSpecification {
         assert deploymentId != null
 
         String containerName = deployment.getName()
-        ProcessBaselineOuterClass.ProcessBaseline whitelist = ProcessWhitelistService.
-                    getProcessWhitelist(clusterId, deployment, containerName)
-        assert (whitelist != null)
-        assert ((whitelist.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
-                    (whitelist.key.containerName.equalsIgnoreCase(containerName)))
-        assert whitelist.elementsList.find { it.element.processName == processName } != null
+        ProcessBaselineOuterClass.ProcessBaseline baseline = ProcessBaselineService.
+                    getProcessBaseline(clusterId, deployment, containerName)
+        assert (baseline != null)
+        assert ((baseline.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
+                    (baseline.key.containerName.equalsIgnoreCase(containerName)))
+        assert baseline.elementsList.find { it.element.processName == processName } != null
         // Check that startup processes are not impacted
         Thread.sleep(10000)
         orchestrator.execInContainer(deployment, "ls")
@@ -150,22 +150,22 @@ class ProcessWhiteListsTest extends BaseSpecification {
         // as the deployment name
         String containerName = deployment.getName()
         "get process baselines is called for a key"
-        ProcessBaselineOuterClass.ProcessBaseline whitelist = ProcessWhitelistService.
-                getProcessWhitelist(clusterId, deployment, containerName)
+        ProcessBaselineOuterClass.ProcessBaseline baseline = ProcessBaselineService.
+                getProcessBaseline(clusterId, deployment, containerName)
 
-        assert (whitelist != null)
+        assert (baseline != null)
 
         then:
         "Verify  baseline processes for a given key before and after calling lock baselines"
-        assert ((whitelist.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
-                    (whitelist.key.containerName.equalsIgnoreCase(containerName)))
-        assert  whitelist.getElements(0).element.processName.contains(processName)
+        assert ((baseline.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
+                    (baseline.key.containerName.equalsIgnoreCase(containerName)))
+        assert  baseline.getElements(0).element.processName.contains(processName)
 
         // lock the baseline with the key of the container just deployed
-        List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessWhitelists = ProcessWhitelistService.
-                lockProcessWhitelists(clusterId, deployment, containerName, true)
-        assert  lockProcessWhitelists.size() == 1
-        assert  lockProcessWhitelists.get(0).getElementsList().
+        List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessBaselines = ProcessBaselineService.
+                lockProcessBaselines(clusterId, deployment, containerName, true)
+        assert  lockProcessBaselines.size() == 1
+        assert  lockProcessBaselines.get(0).getElementsList().
             find { it.element.processName.equalsIgnoreCase(processName) } != null
 
         where:
@@ -198,16 +198,16 @@ class ProcessWhiteListsTest extends BaseSpecification {
         assert deploymentId != null
 
         String containerName = deployment.getName()
-        ProcessBaselineOuterClass.ProcessBaseline whitelist = ProcessWhitelistService.
-                 getProcessWhitelist(clusterId, deployment, containerName)
-        assert (whitelist != null)
-        assert ((whitelist.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
-                 (whitelist.key.containerName.equalsIgnoreCase(containerName)))
-        assert whitelist.elementsList.find { it.element.processName == processName } != null
+        ProcessBaselineOuterClass.ProcessBaseline baseline = ProcessBaselineService.
+                 getProcessBaseline(clusterId, deployment, containerName)
+        assert (baseline != null)
+        assert ((baseline.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
+                 (baseline.key.containerName.equalsIgnoreCase(containerName)))
+        assert baseline.elementsList.find { it.element.processName == processName } != null
 
-        List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessWhitelists = ProcessWhitelistService.
-                 lockProcessWhitelists(clusterId, deployment, containerName, true)
-        assert (!StringUtils.isEmpty(lockProcessWhitelists.get(0).getElements(0).getElement().processName))
+        List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessBaselines = ProcessBaselineService.
+                 lockProcessBaselines(clusterId, deployment, containerName, true)
+        assert (!StringUtils.isEmpty(lockProcessBaselines.get(0).getElements(0).getElement().processName))
         // sleep 5 seconds to allow for propagation to sensor
         sleep 5000
         orchestrator.execInContainer(deployment, "pwd")
@@ -257,11 +257,11 @@ class ProcessWhiteListsTest extends BaseSpecification {
 
         where:
         "Data inputs are :"
-        deploymentName                                   | processName  | resolveWhitelist | expectedViolationsCount
+        deploymentName                                 | processName       | resolveWhitelist | expectedViolationsCount
 
-        DEPLOYMENTNGINX_RESOLVE_VIOLATION               | "/usr/sbin/nginx"      | false            | 1
+        DEPLOYMENTNGINX_RESOLVE_VIOLATION              | "/usr/sbin/nginx" | false            | 1
 
-        DEPLOYMENTNGINX_RESOLVE_AND_WHITELIST_VIOLATION | "/usr/sbin/nginx"      | true             | 0
+        DEPLOYMENTNGINX_RESOLVE_AND_BASELINE_VIOLATION | "/usr/sbin/nginx" | true             | 0
      }
 
     @Category(BAT)
@@ -280,9 +280,9 @@ class ProcessWhiteListsTest extends BaseSpecification {
         assert deployment != null
         orchestrator.createDeployment(deployment)
         String containerName = deployment.getName()
-        def whitelistsCreated = ProcessWhitelistService.
-                waitForDeploymentWhitelistsCreated(clusterId, deployment, containerName)
-        assert(whitelistsCreated)
+        def baselinesCreated = ProcessBaselineService.
+                waitForDeploymentBaselinesCreated(clusterId, deployment, containerName)
+        assert(baselinesCreated)
 
         // Delete the deployment
         orchestrator.deleteDeployment(deployment)
@@ -290,9 +290,9 @@ class ProcessWhiteListsTest extends BaseSpecification {
 
         then:
         "Verify that all baselines with that deployment ID have been deleted"
-        def whitelistsDeleted = ProcessWhitelistService.
-                waitForDeploymentWhitelistsDeleted(clusterId, deployment, containerName)
-        assert(whitelistsDeleted)
+        def baselinesDeleted = ProcessBaselineService.
+                waitForDeploymentBaselinesDeleted(clusterId, deployment, containerName)
+        assert(baselinesDeleted)
 
         cleanup:
         "Remove deployment"
@@ -319,9 +319,9 @@ class ProcessWhiteListsTest extends BaseSpecification {
         def namespace = deployment.getNamespace()
 
         // Wait for baseline to be created
-        def initialWhitelist = ProcessWhitelistService.
-                getProcessWhitelist(clusterId, deployment, containerName)
-        assert (initialWhitelist != null)
+        def initialBaseline = ProcessBaselineService.
+                getProcessBaseline(clusterId, deployment, containerName)
+        assert (initialBaseline != null)
 
         // Add the process to the baseline
         ProcessBaselineOuterClass.ProcessBaselineKey [] keys = [
@@ -331,12 +331,12 @@ class ProcessWhiteListsTest extends BaseSpecification {
         ]
         String [] toBeAddedProcesses = ["/bin/pwd"]
         String [] toBeRemovedProcesses = []
-        List<ProcessBaselineOuterClass.ProcessBaseline> updatedList = ProcessWhitelistService
-                .updateProcessWhitelists(keys, toBeAddedProcesses, toBeRemovedProcesses)
+        List<ProcessBaselineOuterClass.ProcessBaseline> updatedList = ProcessBaselineService
+                .updateProcessBaselines(keys, toBeAddedProcesses, toBeRemovedProcesses)
         assert ( updatedList!= null)
-        ProcessBaselineOuterClass.ProcessBaseline whitelist = ProcessWhitelistService.
-                getProcessWhitelist(clusterId, deployment, containerName)
-        List<ProcessBaselineOuterClass.BaselineElement> elements = whitelist.elementsList
+        ProcessBaselineOuterClass.ProcessBaseline baseline = ProcessBaselineService.
+                getProcessBaseline(clusterId, deployment, containerName)
+        List<ProcessBaselineOuterClass.BaselineElement> elements = baseline.elementsList
         ProcessBaselineOuterClass.BaselineElement element = elements.find {
             it.element.processName.contains("/bin/pwd") }
         assert ( element != null)
@@ -344,16 +344,16 @@ class ProcessWhiteListsTest extends BaseSpecification {
         // Remove the process from the baseline
         toBeAddedProcesses = []
         toBeRemovedProcesses = ["/bin/pwd"]
-        List<ProcessBaselineOuterClass.ProcessBaseline> updatedListAfterRemoveProcess = ProcessWhitelistService
-                .updateProcessWhitelists(keys, toBeAddedProcesses, toBeRemovedProcesses)
+        List<ProcessBaselineOuterClass.ProcessBaseline> updatedListAfterRemoveProcess = ProcessBaselineService
+                .updateProcessBaselines(keys, toBeAddedProcesses, toBeRemovedProcesses)
         assert ( updatedListAfterRemoveProcess!= null)
 
         orchestrator.execInContainer(deployment, "pwd")
         then:
         "verify process is not added to the baseline"
-        ProcessBaselineOuterClass.ProcessBaseline whitelistAfterReRun = ProcessWhitelistService.
-                getProcessWhitelist(clusterId, deployment, containerName)
-        assert  ( whitelistAfterReRun.elementsList.find { it.element.processName.contains("pwd") } == null)
+        ProcessBaselineOuterClass.ProcessBaseline baselineAfterReRun = ProcessBaselineService.
+                getProcessBaseline(clusterId, deployment, containerName)
+        assert  ( baselineAfterReRun.elementsList.find { it.element.processName.contains("pwd") } == null)
 
         cleanup:
         "Remove deployment"
@@ -373,20 +373,20 @@ class ProcessWhiteListsTest extends BaseSpecification {
         assert deployment != null
         orchestrator.createDeployment(deployment)
         String containerName = deployment.getName()
-        def whitelistsCreated = ProcessWhitelistService.
-                waitForDeploymentWhitelistsCreated(clusterId, deployment, containerName)
-        assert(whitelistsCreated)
+        def baselinesCreated = ProcessBaselineService.
+                waitForDeploymentBaselinesCreated(clusterId, deployment, containerName)
+        assert(baselinesCreated)
 
         when:
-        "delete the whitelists"
+        "delete the baselines"
         println "ID: ${deployment.getDeploymentUid()}"
-        ProcessWhitelistService.deleteProcessWhitelists("Deployment Id:${deployment.getDeploymentUid()}")
+        ProcessBaselineService.deleteProcessBaselines("Deployment Id:${deployment.getDeploymentUid()}")
 
         then:
         "Verify that all baselines with that deployment ID have been deleted"
-        def whitelistsDeleted = ProcessWhitelistService.
-                waitForDeploymentWhitelistsDeleted(clusterId, deployment, containerName)
-        assert whitelistsDeleted
+        def baselinesDeleted = ProcessBaselineService.
+                waitForDeploymentBaselinesDeleted(clusterId, deployment, containerName)
+        assert baselinesDeleted
 
         cleanup:
         "Remove deployment"
