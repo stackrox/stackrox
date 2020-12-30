@@ -597,10 +597,6 @@ class ImageScanningTest extends BaseSpecification {
 
     def "Validate basic image details across all current images in StackRox"() {
         when:
-        "This is still flaky - disable for now until we get the issue resolved (ROX-4619)"
-        Assume.assumeTrue(false)
-
-        and:
         "get list of all images"
         List<ImageOuterClass.ListImage> images = ImageService.getImages()
 
