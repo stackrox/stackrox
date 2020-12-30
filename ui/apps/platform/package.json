@@ -126,7 +126,7 @@
         "@stackrox/tailwind-config": "*",
         "@storybook/addon-info": "^5.3.19",
         "@storybook/react": "^5.3.19",
-        "@testing-library/jest-dom": "^5.11.4",
+        "@testing-library/jest-dom": "^5.11.8",
         "@testing-library/react": "^9.1.4",
         "@testing-library/react-hooks": "^3.4.2",
         "@types/jest": "^26.0.19",
