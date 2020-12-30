@@ -27,6 +27,9 @@ function processData(match, location, data, entityType, searchParam) {
         const entity = entityList.find(
             (entityObject) => entityObject.id === result.aggregationKeys[1].id
         );
+        if (!entity) {
+            return;
+        }
         const standard = complianceStandards.find((c) => c.id === result.aggregationKeys[0].id);
         const { numPassing, numFailing } = result;
         const percentagePassing = Math.round((numPassing / (numPassing + numFailing)) * 100);
