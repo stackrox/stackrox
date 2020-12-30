@@ -209,15 +209,12 @@ class AuthProvider extends Component {
             <>
                 {this.testModeSupported(selectedAuthProvider) && !selectedAuthProvider.active && (
                     <div className="w-full pt-4 pl-4 pr-4">
-                        <Message
-                            type="guidance"
-                            message={
-                                <span>
-                                    Select <strong className="font-700">Test Login</strong> to check
-                                    that your authentication provider is working properly.
-                                </span>
-                            }
-                        />
+                        <Message>
+                            <span>
+                                Select <strong className="font-700">Test Login</strong> to check
+                                that your authentication provider is working properly.
+                            </span>
+                        </Message>
                     </div>
                 )}
                 <Details
