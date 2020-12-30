@@ -33,7 +33,7 @@ func NewDeploymentScorer(alertGetter getters.AlertGetter, roles roleStore.DataSt
 		// DO NOT REORDER WITHOUT THOUGHT.
 		ConfiguredMultipliers: []deployment.Multiplier{
 			deployment.NewViolations(alertGetter),
-			deployment.NewProcessWhitelists(whitelistEvaluator),
+			deployment.NewProcessBaselines(whitelistEvaluator),
 			deployment.NewImageMultiplier(image.ImageVulnerabilitiesHeading),
 			deployment.NewServiceConfig(),
 			deployment.NewReachability(),

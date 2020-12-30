@@ -2,7 +2,7 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/processwhitelistresults/datastore/internal/store/rocksdb"
+	"github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )

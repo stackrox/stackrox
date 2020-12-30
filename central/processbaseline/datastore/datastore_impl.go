@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/processbaseline/index"
 	"github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
-	processBaselineResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
+	processBaselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"

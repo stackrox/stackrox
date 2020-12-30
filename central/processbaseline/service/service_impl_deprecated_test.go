@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/processbaseline/index"
 	whitelistSearch "github.com/stackrox/rox/central/processbaseline/search"
 	rocksdbStore "github.com/stackrox/rox/central/processbaseline/store/rocksdb"
-	resultsMocks "github.com/stackrox/rox/central/processwhitelistresults/datastore/mocks"
+	resultsMocks "github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
 	"github.com/stackrox/rox/central/reprocessor/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"

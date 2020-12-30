@@ -7,8 +7,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	processBaselineMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
+	processBaselineResultMocks "github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
 	processIndicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
-	processBaselineResultMocks "github.com/stackrox/rox/central/processwhitelistresults/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/protoconv"

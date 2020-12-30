@@ -3,8 +3,8 @@ package service
 import (
 	"github.com/stackrox/rox/central/deployment/datastore"
 	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
+	processBaselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	processBaselineResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/pkg/sync"

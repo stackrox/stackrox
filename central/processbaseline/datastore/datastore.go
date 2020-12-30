@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/central/processbaseline/index"
 	"github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
-	"github.com/stackrox/rox/central/processwhitelistresults/datastore"
+	"github.com/stackrox/rox/central/processbaselineresults/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"

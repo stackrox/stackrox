@@ -2,8 +2,8 @@ package evaluator
 
 import (
 	baselinesStore "github.com/stackrox/rox/central/processbaseline/datastore"
+	baselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
 	indicatorsStore "github.com/stackrox/rox/central/processindicator/datastore"
-	baselineResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 

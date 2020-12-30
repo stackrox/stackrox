@@ -6,8 +6,8 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// DeploymentWhitelistToQuery returns the proto query to get all whiteisted deployments
-func DeploymentWhitelistToQuery(whitelists []*storage.Whitelist) *v1.Query {
+// DeploymentBaselineToQuery returns the proto query to get all whiteisted deployments
+func DeploymentBaselineToQuery(whitelists []*storage.Whitelist) *v1.Query {
 	var queries []*v1.Query
 	for _, wl := range whitelists {
 		subqueries := make([]*v1.Query, 0, 2)

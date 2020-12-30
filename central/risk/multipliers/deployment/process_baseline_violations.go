@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	processWhitelistHeading = `Suspicious Process Executions`
+	processBaselineHeading = `Suspicious Process Executions`
 
-	processWhitelistSaturation = 10
-	processWhitelistValue      = 4
+	processBaselineSaturation = 10
+	processBaselineValue      = 4
 
 	discountFactor = 0.9
 )
@@ -30,7 +30,7 @@ type scorer struct {
 
 func newScorer() *scorer {
 	return &scorer{
-		nextIncrement: float32(processWhitelistSaturation) / 5,
+		nextIncrement: float32(processBaselineSaturation) / 5,
 	}
 }
 
@@ -43,13 +43,13 @@ func (s *scorer) getScore() float32 {
 	return s.currentScore
 }
 
-type processWhitelistMultiplier struct {
+type processBaselineMultiplier struct {
 	evaluator evaluator.Evaluator
 }
 
-// NewProcessWhitelists returns a multiplier for process whitelists.
-func NewProcessWhitelists(evaluator evaluator.Evaluator) Multiplier {
-	return &processWhitelistMultiplier{
+// NewProcessBaselines returns a multiplier for process baselines.
+func NewProcessBaselines(evaluator evaluator.Evaluator) Multiplier {
+	return &processBaselineMultiplier{
 		evaluator: evaluator,
 	}
 }
@@ -64,7 +64,7 @@ func formatProcess(process *storage.ProcessIndicator) string {
 	return sb.String()
 }
 
-func (p *processWhitelistMultiplier) Score(_ context.Context, deployment *storage.Deployment, _ map[string][]*storage.Risk_Result) *storage.Risk_Result {
+func (p *processBaselineMultiplier) Score(_ context.Context, deployment *storage.Deployment, _ map[string][]*storage.Risk_Result) *storage.Risk_Result {
 	violatingProcesses, err := p.evaluator.EvaluateBaselinesAndPersistResult(deployment)
 	if err != nil {
 		log.Errorf("Couldn't evaluate process baseline: %v", err)
@@ -73,7 +73,7 @@ func (p *processWhitelistMultiplier) Score(_ context.Context, deployment *storag
 
 	scorer := newScorer()
 	riskResult := &storage.Risk_Result{
-		Name: processWhitelistHeading,
+		Name: processBaselineHeading,
 	}
 
 	for _, process := range violatingProcesses {
@@ -87,6 +87,6 @@ func (p *processWhitelistMultiplier) Score(_ context.Context, deployment *storag
 		return nil
 	}
 
-	riskResult.Score = multipliers.NormalizeScore(scorer.getScore(), processWhitelistSaturation, processWhitelistValue)
+	riskResult.Score = multipliers.NormalizeScore(scorer.getScore(), processBaselineSaturation, processBaselineValue)
 	return riskResult
 }

@@ -1,4 +1,4 @@
-package processwhitelist
+package processbaseline
 
 import "github.com/stackrox/rox/generated/storage"
 

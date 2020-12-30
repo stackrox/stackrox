@@ -1,8 +1,8 @@
-package whitelist
+package baseline
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/processwhitelist"
+	"github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -78,5 +78,5 @@ func (w *baselineEvaluator) IsOutsideLockedBaseline(pi *storage.ProcessIndicator
 
 	baseline := w.baselines[pi.GetDeploymentId()][pi.GetContainerName()]
 	// If there is no baseline, then we are counting it as if it's within the baseline
-	return baseline != nil && !baseline.Contains(processwhitelist.BaselineItemFromProcess(pi))
+	return baseline != nil && !baseline.Contains(processbaseline.BaselineItemFromProcess(pi))
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProcessWhitelists(t *testing.T) {
+func TestProcessBaselines(t *testing.T) {
 	deployment := multipliers.GetMockDeployment()
 	cases := []struct {
 		name               string
@@ -44,7 +44,7 @@ func TestProcessWhitelists(t *testing.T) {
 				},
 			},
 			expected: &storage.Risk_Result{
-				Name:  processWhitelistHeading,
+				Name:  processBaselineHeading,
 				Score: 1.6,
 				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Detected execution of suspicious process \"apt-get\" with args \"install nmap\" in container containerName"},
@@ -70,7 +70,7 @@ func TestProcessWhitelists(t *testing.T) {
 				},
 			},
 			expected: &storage.Risk_Result{
-				Name:  processWhitelistHeading,
+				Name:  processBaselineHeading,
 				Score: 2.14,
 				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Detected execution of suspicious process \"apt-get\" with args \"install nmap\" in container containerName"},
@@ -87,7 +87,7 @@ func TestProcessWhitelists(t *testing.T) {
 
 			mockEvaluator := mocks.NewMockEvaluator(mockCtrl)
 			mockEvaluator.EXPECT().EvaluateBaselinesAndPersistResult(deployment).Return(c.violatingProcesses, c.evaluatorErr)
-			result := NewProcessWhitelists(mockEvaluator).Score(context.Background(), deployment, nil)
+			result := NewProcessBaselines(mockEvaluator).Score(context.Background(), deployment, nil)
 			assert.ElementsMatch(t, c.expected.GetFactors(), result.GetFactors())
 			assert.InDelta(t, c.expected.GetScore(), result.GetScore(), 0.001)
 		})

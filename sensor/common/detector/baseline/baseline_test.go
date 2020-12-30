@@ -1,4 +1,4 @@
-package whitelist
+package baseline
 
 import (
 	"testing"

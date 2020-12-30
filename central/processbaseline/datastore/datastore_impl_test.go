@@ -10,7 +10,7 @@ import (
 	baselineSearch "github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
 	rocksdbStore "github.com/stackrox/rox/central/processbaseline/store/rocksdb"
-	"github.com/stackrox/rox/central/processwhitelistresults/datastore/mocks"
+	"github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"

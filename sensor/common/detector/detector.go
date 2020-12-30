@@ -14,8 +14,8 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
+	"github.com/stackrox/rox/sensor/common/detector/baseline"
 	"github.com/stackrox/rox/sensor/common/detector/unified"
-	"github.com/stackrox/rox/sensor/common/detector/whitelist"
 	"github.com/stackrox/rox/sensor/common/enforcer"
 	"google.golang.org/grpc"
 )
@@ -42,7 +42,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 
 		enricher:        newEnricher(cache),
 		deploymentStore: newDeploymentStore(),
-		baselineEval:    whitelist.NewBaselineEvaluator(),
+		baselineEval:    baseline.NewBaselineEvaluator(),
 		deduper:         newDeduper(),
 		enforcer:        enforcer,
 
@@ -69,7 +69,7 @@ type detectorImpl struct {
 
 	enricher        *enricher
 	deploymentStore *deploymentStore
-	baselineEval    whitelist.Evaluator
+	baselineEval    baseline.Evaluator
 	enforcer        enforcer.Enforcer
 	deduper         *deduper
 

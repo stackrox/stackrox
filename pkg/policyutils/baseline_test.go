@@ -9,17 +9,17 @@ import (
 )
 
 func TestDeploymentWhitelistToQuery_Nil(t *testing.T) {
-	q := DeploymentWhitelistToQuery(nil)
+	q := DeploymentBaselineToQuery(nil)
 	assert.Equal(t, q, search.MatchNoneQuery())
 }
 
 func TestDeploymentWhitelistToQuery_NoWhitelists(t *testing.T) {
-	q := DeploymentWhitelistToQuery([]*storage.Whitelist{})
+	q := DeploymentBaselineToQuery([]*storage.Whitelist{})
 	assert.Equal(t, q, search.MatchNoneQuery())
 }
 
 func TestDeploymentWhitelistToQuery_NoDeploymentWhitelists(t *testing.T) {
-	q := DeploymentWhitelistToQuery([]*storage.Whitelist{
+	q := DeploymentBaselineToQuery([]*storage.Whitelist{
 		{
 			Name: "myExcludedScope",
 			Image: &storage.Whitelist_Image{
@@ -31,7 +31,7 @@ func TestDeploymentWhitelistToQuery_NoDeploymentWhitelists(t *testing.T) {
 }
 
 func TestDeploymentWhitelistToQuery_MalformedDeploymentWhitelist(t *testing.T) {
-	q := DeploymentWhitelistToQuery([]*storage.Whitelist{
+	q := DeploymentBaselineToQuery([]*storage.Whitelist{
 		{
 			Name:       "myExcludedScope",
 			Deployment: &storage.Whitelist_Deployment{},
@@ -41,7 +41,7 @@ func TestDeploymentWhitelistToQuery_MalformedDeploymentWhitelist(t *testing.T) {
 }
 
 func TestDeploymentWhitelistToQuery_NamedDeploymentWhitelist(t *testing.T) {
-	q := DeploymentWhitelistToQuery([]*storage.Whitelist{
+	q := DeploymentBaselineToQuery([]*storage.Whitelist{
 		{
 			Name: "myExcludedScope",
 			Deployment: &storage.Whitelist_Deployment{
@@ -53,7 +53,7 @@ func TestDeploymentWhitelistToQuery_NamedDeploymentWhitelist(t *testing.T) {
 }
 
 func TestDeploymentWhitelistToQuery_ScopedDeploymentWhitelist(t *testing.T) {
-	q := DeploymentWhitelistToQuery([]*storage.Whitelist{
+	q := DeploymentBaselineToQuery([]*storage.Whitelist{
 		{
 			Name: "myExcludedScope",
 			Deployment: &storage.Whitelist_Deployment{

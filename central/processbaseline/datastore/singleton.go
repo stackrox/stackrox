@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/central/processbaseline/index"
 	"github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store/rocksdb"
-	"github.com/stackrox/rox/central/processwhitelistresults/datastore"
+	"github.com/stackrox/rox/central/processbaselineresults/datastore"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"

@@ -23,7 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/processwhitelist"
+	"github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -212,7 +212,7 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 		for _, process := range alert.GetProcessViolation().GetProcesses() {
 			itemMap[process.GetContainerName()] = append(itemMap[process.GetContainerName()], &storage.BaselineItem{
 				Item: &storage.BaselineItem_ProcessName{
-					ProcessName: processwhitelist.BaselineItemFromProcess(process),
+					ProcessName: processbaseline.BaselineItemFromProcess(process),
 				},
 			})
 		}

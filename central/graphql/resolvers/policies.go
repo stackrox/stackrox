@@ -295,7 +295,7 @@ func (resolver *policyResolver) getDeploymentsForPolicy(ctx context.Context) ([]
 		return nil, err
 	}
 
-	deploymentWhitelistQuery := policyutils.DeploymentWhitelistToQuery(resolver.data.GetWhitelists())
+	deploymentWhitelistQuery := policyutils.DeploymentBaselineToQuery(resolver.data.GetWhitelists())
 	whitelistResults, err := resolver.root.DeploymentDataStore.Search(ctx, deploymentWhitelistQuery)
 	if err != nil {
 		return nil, err

@@ -3,7 +3,7 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/processwhitelistresults/datastore/internal/store"
+	"github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 )
 
