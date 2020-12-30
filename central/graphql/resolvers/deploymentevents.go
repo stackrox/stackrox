@@ -205,7 +205,7 @@ func (resolver *ProcessActivityEventResolver) Whitelisted() bool {
 	if resolver.canReadWhitelist {
 		return resolver.whitelisted
 	}
-	// Default to true if the requester cannot read the baseline.
+	// Default to true if the requester cannot read the whitelist.
 	return true
 }
 
@@ -221,7 +221,7 @@ func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v
 
 	processEvents := make([]*ProcessActivityEventResolver, 0, len(indicators))
 	whitelists := make(map[string]*set.StringSet)
-	// This determines if we should read baseline information.
+	// This determines if we should read whitelist information.
 	// nil means we can.
 	canReadWhitelist := readWhitelists(ctx) == nil
 	for _, indicator := range indicators {
@@ -239,7 +239,7 @@ func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v
 				if _, exists := whitelists[keyStr]; !exists {
 					whitelist, exists, err := resolver.WhiteListDataStore.GetProcessBaseline(ctx, key)
 					if err != nil {
-						log.Error(errors.Wrapf(err, "retrieving baseline data for process %s", indicator.GetSignal().GetName()))
+						log.Error(errors.Wrapf(err, "retrieving whitelist data for process %s", indicator.GetSignal().GetName()))
 						continue
 					}
 					if !exists {

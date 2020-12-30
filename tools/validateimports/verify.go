@@ -140,8 +140,8 @@ func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName
 	return fmt.Errorf("import %s is illegal", spec.Path.Value)
 }
 
-// TODO: update "baseline" to inclusive language when updating actual code
-// checkForbidden returns an error if an import has been forbidden and the importing package isn't on the baseline
+// TODO: update "whitelist" to inclusive language when updating actual code
+// checkForbidden returns an error if an import has been forbidden and the importing package isn't on the whitelist
 func checkForbidden(impPath, packageName string) error {
 	forbiddenDetails, ok := forbiddenImports[impPath]
 	for !ok {
