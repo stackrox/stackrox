@@ -54,6 +54,7 @@ function NetworkDeploymentOverlay({ selectedDeployment, filterState }) {
                     <BinderTabs>
                         <Tab title="Network Flows">
                             <NetworkFlows
+                                deploymentId={deploymentId}
                                 edges={edges}
                                 filterState={filterState}
                                 onNavigateToDeploymentById={onNavigateToDeploymentById}

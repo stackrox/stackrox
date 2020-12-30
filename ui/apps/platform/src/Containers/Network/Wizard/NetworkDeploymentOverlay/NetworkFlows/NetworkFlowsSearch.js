@@ -20,11 +20,23 @@ export const searchCategories = [
 const dataResolversByCategory = {
     Status: (datum) => datum.status,
     Entity: (datum) => datum.peer.entity.name,
-    Traffic: (datum) => (datum.peer.ingress ? 'ingress' : 'egress'),
+    Traffic: (datum) => {
+        if (datum.peer.ingress && datum.peer.egress) {
+            return 'bidirectional';
+        }
+        if (datum.peer.ingress) {
+            return 'ingress';
+        }
+        return 'egress';
+    },
     Type: (datum) => datum.peer.entity.type,
     Namespace: (datum) => datum.peer.entity.namespace,
-    Port: (datum) => datum.peer.port,
-    Protocol: (datum) => datum.peer.protocol,
+    Port: (datum) => {
+        return datum.peer.portsAndProtocols.map(({ port }) => port);
+    },
+    Protocol: (datum) => {
+        return datum.peer.portsAndProtocols.map(({ protocol }) => protocol);
+    },
     State: (datum) => datum.peer.state,
 };
 

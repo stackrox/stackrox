@@ -1181,54 +1181,44 @@ function DirectionalFlows() {
  *
  * @param {!Object[]} edges
  * @param {!Number} filterState
- * @returns {!Object[]}
+ * @returns {!Object}
  */
 export function getNetworkFlows(edges, filterState) {
-    if (!edges) {
-        return [];
-    }
-
     let networkFlows;
     const directionalFlows = new DirectionalFlows();
-    const nodeMapping = edges.reduce(
-        (
-            acc,
-            {
-                data: {
-                    destNodeId,
-                    traffic,
-                    destNodeName,
-                    destNodeNamespace,
-                    destNodeType,
-                    isActive,
-                    isAllowed,
-                    portsAndProtocols,
-                },
-            }
-        ) => {
-            // don't double count edges that are divided because they're within different namespaces
-            if (acc[destNodeId]) {
-                return acc;
-            }
-            const isExternal =
-                getIsExternalEntitiesNode(destNodeType) || getIsCIDRBlockNode(destNodeType);
-            const connection = getConnectionText(filterState, isActive, isAllowed);
-            directionalFlows.incrementFlows(traffic);
-            return {
-                ...acc,
-                [destNodeId]: {
-                    traffic,
-                    deploymentId: destNodeId,
-                    entityName: destNodeName,
-                    namespace: isExternal ? '-' : destNodeNamespace,
-                    type: isExternal ? 'external' : 'deployment',
-                    connection,
-                    portsAndProtocols,
-                },
-            };
-        },
-        {}
-    );
+    const nodeMapping = edges.reduce((acc, { data }) => {
+        const {
+            destNodeId,
+            traffic,
+            destNodeName,
+            destNodeNamespace,
+            destNodeType,
+            isActive,
+            isAllowed,
+            portsAndProtocols,
+        } = data;
+        // don't double count edges that are divided because they're within different namespaces
+        if (acc[destNodeId]) {
+            return acc;
+        }
+        const isExternal =
+            getIsExternalEntitiesNode(destNodeType) || getIsCIDRBlockNode(destNodeType);
+        const connection = getConnectionText(filterState, isActive, isAllowed);
+        directionalFlows.incrementFlows(traffic);
+        return {
+            ...acc,
+            [destNodeId]: {
+                traffic,
+                deploymentId: destNodeId,
+                entityName: destNodeName,
+                namespace: isExternal ? '-' : destNodeNamespace,
+                type: isExternal ? 'external' : 'deployment',
+                connection,
+                portsAndProtocols,
+                entityType: destNodeType,
+            },
+        };
+    }, {});
     switch (filterState) {
         case filterModes.active:
             networkFlows = Object.values(nodeMapping).filter(

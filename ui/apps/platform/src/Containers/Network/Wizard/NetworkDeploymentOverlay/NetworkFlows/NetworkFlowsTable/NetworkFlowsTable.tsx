@@ -8,8 +8,9 @@ import {
     networkProtocolLabels,
     networkConnectionLabels,
 } from 'messages/network';
-
 import { CondensedButton, CondensedAlertButton } from '@stackrox/ui-components';
+import { NetworkBaseline } from '../networkTypes';
+
 import Table from './Table';
 import TableHead from './TableHead';
 import TableBody from './TableBody';
@@ -18,32 +19,16 @@ import TableCell from './TableCell';
 import GroupedStatusTableCell from './GroupedStatusTableCell';
 import checkboxSelectionPlugin from './checkboxSelectionPlugin';
 
-type NetworkFlow = {
-    peer: {
-        entity: {
-            id: string;
-            type: 'DEPLOYMENT' | 'INTERNET' | 'EXTERNAL_SOURCE';
-            name: string;
-            namespace?: string;
-        };
-        port: string;
-        protocol: 'L4_PROTOCOL_TCP' | 'L4_PROTOCOL_UDP' | 'L4_PROTOCOL_ANY';
-        ingress: boolean;
-        state: 'active' | 'allowed';
-    };
-    status: 'BASELINE' | 'ANOMALOUS';
-};
-
-type Row = {
-    original: NetworkFlow;
+export type Row = {
+    original: NetworkBaseline;
     values: {
-        status: NetworkFlow['status'];
+        status: NetworkBaseline['status'];
     };
-    groupByVal: NetworkFlow['status'];
+    groupByVal: NetworkBaseline['status'];
 };
 
 export type NetworkFlowsTableProps = {
-    networkFlows: NetworkFlow[];
+    networkFlows: NetworkBaseline[];
 };
 
 export type HoveredRowComponentProps = {
@@ -65,45 +50,62 @@ const columns = [
     {
         Header: 'Entity',
         id: 'entity',
-        accessor: 'peer.entity.name',
+        // eslint-disable-next-line react/display-name
+        accessor: (datum: NetworkBaseline): ReactElement => {
+            return <div className="ml-2">{datum.peer.entity.name}</div>;
+        },
     },
     {
         Header: 'Traffic',
         id: 'traffic',
-        accessor: (datum: NetworkFlow): string => {
-            return datum.peer.ingress ? 'Ingress' : 'Egress';
+        accessor: (datum: NetworkBaseline): string => {
+            if (datum.peer.ingress && datum.peer.egress) {
+                return 'Bidirectional';
+            }
+            if (datum.peer.ingress) {
+                return 'Ingress';
+            }
+            return 'Egress';
         },
     },
     {
         Header: 'Type',
         id: 'type',
-        accessor: (datum: NetworkFlow): string => {
+        accessor: (datum: NetworkBaseline): string => {
             return networkEntityLabels[datum.peer.entity.type];
         },
     },
     {
         Header: 'Namespace',
         id: 'namespace',
-        accessor: (datum: NetworkFlow): string => {
+        accessor: (datum: NetworkBaseline): string => {
             return datum.peer.entity.namespace ?? '-';
         },
     },
     {
         Header: 'Port',
         id: 'port',
-        accessor: 'peer.port',
+        accessor: (datum: NetworkBaseline): string => {
+            if (datum.peer.portsAndProtocols.length > 1) {
+                return 'Multiple';
+            }
+            return datum.peer.portsAndProtocols[0].port;
+        },
     },
     {
         Header: 'Protocol',
         id: 'protocol',
-        accessor: (datum: NetworkFlow): string => {
-            return networkProtocolLabels[datum.peer.protocol];
+        accessor: (datum: NetworkBaseline): string => {
+            if (datum.peer.portsAndProtocols.length > 1) {
+                return 'Multiple';
+            }
+            return networkProtocolLabels[datum.peer.portsAndProtocols[0].protocol];
         },
     },
     {
         Header: 'State',
         id: 'state',
-        accessor: (datum: NetworkFlow): string => {
+        accessor: (datum: NetworkBaseline): string => {
             return networkConnectionLabels[datum.peer.state];
         },
     },

@@ -1,5 +1,10 @@
 import { resourceTypes } from 'constants/entityTypes';
-import { PROTOCOLS, networkConnections, networkFlowStatus } from 'constants/networkGraph';
+import {
+    PROTOCOLS,
+    networkConnections,
+    networkFlowStatus,
+    nodeTypes,
+} from 'constants/networkGraph';
 
 export const networkProtocolLabels = {
     [PROTOCOLS.L4_PROTOCOL_TCP]: 'TCP',
@@ -9,6 +14,8 @@ export const networkProtocolLabels = {
 
 export const networkEntityLabels = {
     [resourceTypes.DEPLOYMENT]: 'Deployment',
+    [nodeTypes.EXTERNAL_ENTITIES]: 'External',
+    [nodeTypes.CIDR_BLOCK]: 'External',
 };
 
 export const networkConnectionLabels = {

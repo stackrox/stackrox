@@ -3,10 +3,25 @@ import axios from './instance';
 
 const networkPoliciesBaseUrl = '/v1/networkpolicies';
 const networkFlowBaseUrl = '/v1/networkgraph';
+const networkBaselineBaseUrl = '/v1/networkbaseline';
 
 // for large clusters network graph requests may take time to process, so
 // removing any global default timeout
 const NETWORK_GRAPH_REQUESTS_TIMEOUT = 0;
+
+/*
+ * Fetches the baselines status of the network flow
+ *
+ * @returns {Promise<Object, Error>}
+ *
+ */
+export function fetchNetworkBaselineStatus({ deploymentId, peers }) {
+    return axios
+        .post(`${networkBaselineBaseUrl}/${deploymentId}/status`, { peers })
+        .then((response) => {
+            return response.data;
+        });
+}
 
 /**
  * Fetches nodes and links for the network graph.

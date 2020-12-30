@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import pluralize from 'pluralize';
 
-import { getNetworkFlows } from 'utils/networkUtils/getNetworkFlows';
 import { filterModes } from 'constants/networkFilterModes';
 import useSearchFilteredData from 'hooks/useSearchFilteredData';
-import baselineStatusesData from 'mockData/baselineStatuses';
 
 import Panel from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
+import Loader from 'Components/Loader';
 import NetworkFlowsSearch, { getNetworkFlowValueByCategory } from './NetworkFlowsSearch';
 import NetworkFlowsTable from './NetworkFlowsTable';
+
+import useFetchNetworkBaselines from './useFetchNetworkBaselines';
 
 function getPanelId(filterState) {
     switch (filterState) {
@@ -33,17 +34,13 @@ function getPanelHeaderText(networkFlows, filterState) {
     }
 }
 
-function useFetchBaselineStatuses(edges, filterState) {
-    // get the network flows for the edges
-    // eslint-disable-next-line no-unused-vars
-    const { networkFlows } = getNetworkFlows(edges, filterState);
-    // TODO: Do the API call to get network flows with baseline statuses
-    // return result
-    return baselineStatusesData;
-}
+function NetworkFlows({ deploymentId, edges, filterState, onNavigateToDeploymentById }) {
+    const { networkBaselines: networkFlows, isLoading } = useFetchNetworkBaselines({
+        deploymentId,
+        edges,
+        filterState,
+    });
 
-function NetworkFlows({ edges, filterState, onNavigateToDeploymentById }) {
-    const networkFlows = useFetchBaselineStatuses(edges, filterState);
     const [page, setPage] = useState(0);
     const [searchOptions, setSearchOptions] = useState([]);
 
@@ -52,6 +49,14 @@ function NetworkFlows({ edges, filterState, onNavigateToDeploymentById }) {
         searchOptions,
         getNetworkFlowValueByCategory
     );
+
+    if (isLoading) {
+        return (
+            <div className="p-4 w-full">
+                <Loader message={null} />
+            </div>
+        );
+    }
 
     const panelId = getPanelId(filterState);
     const panelHeader = getPanelHeaderText(filteredNetworkFlows, filterState);
