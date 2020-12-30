@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`should show a baselined process activity event marker 1`] = `
+exports[`should show a process in baseline activity event marker 1`] = `
 <DocumentFragment>
   <svg
     data-testid="timeline-main-view"

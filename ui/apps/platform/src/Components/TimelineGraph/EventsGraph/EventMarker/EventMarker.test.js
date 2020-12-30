@@ -47,7 +47,7 @@ test('should show a process activity event marker', async () => {
     expect(asFragment()).toMatchSnapshot();
 });
 
-test('should show a baselined process activity event marker', async () => {
+test('should show a process in baseline activity event marker', async () => {
     const { queryByTestId, asFragment } = render(
         <svg height={100} width={100} data-testid="timeline-main-view">
             <EventMarker

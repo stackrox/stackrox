@@ -62,7 +62,7 @@ func LockedUnderMode(baseline *storage.ProcessBaseline, mode EvaluationMode) boo
 
 // Processes returns the set of processes that are in the baseline.
 // It returns nil if the process baseline is not locked under the passed EvaluationMode --
-// if it returns nil, it means that all processes are baselined under the given mode.
+// if it returns nil, it means that all processes are in baseline under the given mode.
 func Processes(baseline *storage.ProcessBaseline, mode EvaluationMode) *set.StringSet {
 	if !LockedUnderMode(baseline, mode) {
 		return nil

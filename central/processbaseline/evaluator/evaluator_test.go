@@ -88,7 +88,7 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 			shouldBePersisted:          true,
 		},
 		{
-			name: "Locked process baseline, one non-baselined process",
+			name: "Locked process baseline, one not-in-baseline process",
 			baseline: &storage.ProcessBaseline{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 			},
@@ -108,7 +108,7 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 			shouldBePersisted:          true,
 		},
 		{
-			name: "Locked process baseline, two non-baselined processes",
+			name: "Locked process baseline, two not-in-baseline processes",
 			baseline: &storage.ProcessBaseline{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 			},
@@ -135,7 +135,7 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 			shouldBePersisted:          true,
 		},
 		{
-			name: "Locked process baseline, two non-baselined processes from different containers",
+			name: "Locked process baseline, two not-in-baseline processes from different containers",
 			baseline: &storage.ProcessBaseline{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 				Elements:                fixtures.MakeBaselineElements("/bin/apt-get"),
@@ -170,7 +170,7 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 			shouldBePersisted:          true,
 		},
 		{
-			name: "Locked process baseline, two non-baselined processes from different containers. result already exists",
+			name: "Locked process baseline, two not-in-baseline processes from different containers. result already exists",
 			baseline: &storage.ProcessBaseline{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 				Elements:                fixtures.MakeBaselineElements("/bin/apt-get"),
@@ -218,7 +218,7 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 			shouldBePersisted: false,
 		},
 		{
-			name: "Locked process baseline, two non-baselined processes from different containers. result already exists, but needs an update",
+			name: "Locked process baseline, two not-in-baseline processes from different containers. result already exists, but needs an update",
 			baseline: &storage.ProcessBaseline{
 				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 				Elements:                fixtures.MakeBaselineElements("/bin/apt-get"),

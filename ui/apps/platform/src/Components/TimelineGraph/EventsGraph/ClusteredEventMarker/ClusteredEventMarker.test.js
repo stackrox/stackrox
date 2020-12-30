@@ -95,7 +95,7 @@ test('should show a clustered process activity event marker', async () => {
     expect(asFragment()).toMatchSnapshot();
 });
 
-test('should show a clustered baselined process activity event marker', async () => {
+test('should show a clustered process in baseline activity event marker', async () => {
     const events = [...Array(10).keys()].map((index) => {
         return {
             id: index,

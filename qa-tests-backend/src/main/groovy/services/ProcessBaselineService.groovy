@@ -31,15 +31,15 @@ class ProcessBaselineService extends BaseService {
         while (t.IsValid()) {
             def baseline = getBaselineProcesses(request)
             if (baseline) {
-                println "SR found baselined process for the key - " +
+                println "SR found process in baseline for the key - " +
                         "${clusterId}, ${namespace}, ${deploymentId}, ${containerName} " +
                             " within ${t.SecondsSince()}s"
                 return baseline
                 }
-            println "SR has not found baselined  process for the key - " +
+            println "SR has not found process in baseline for the key - " +
                     "${clusterId}, ${namespace}, ${deploymentId}, ${containerName} yet"
         }
-        println "SR has not found baselined  process for the key in - " +
+        println "SR has not found process in baseline for the key in - " +
                 "${clusterId}, ${namespace}, ${deploymentId}, ${containerName} " +
                 "${t.SecondsSince()} seconds"
         return null
