@@ -44,7 +44,76 @@
             },
             "slimCollector": true,
             "helmConfig": {
-                "name": "test-helm-config"
+                "clusterName": "alpha-amsterdam-1",
+                "initToken": null,
+                "centralEndpoint": "central.stackrox:443",
+                "imagePullSecrets": {
+                    "useExisting": ["stackrox"]
+                },
+                "image": {
+                    "registry": "stackrox.io"
+                },
+                "env": {
+                    "openshift": true
+                },
+                "sensor": {
+                    "resources": {
+                        "requests": {
+                            "memory": "1Gi",
+                            "cpu": "1"
+                        },
+                        "limits": {
+                            "memory": "4Gi",
+                            "cpu": "2"
+                        }
+                    }
+                },
+                "admissionControl": {
+                    "enable": false,
+                    "listenOnUpdates": false,
+                    "enforceOnUpdates": false,
+                    "dynamic": {
+                        "enforce": false,
+                        "scanInline": false,
+                        "disableBypass": false,
+                        "timeout": 3
+                    },
+                    "resources": {
+                        "requests": {
+                            "memory": "100Mi",
+                            "cpu": "50m"
+                        },
+                        "limits": {
+                            "memory": "500Mi",
+                            "cpu": "500m"
+                        }
+                    }
+                },
+                "collector": {
+                    "collectionMethod": "KERNEL_MODULE",
+                    "disableTaintTolerations": false,
+                    "slimMode": true,
+                    "resources": {
+                        "requests": {
+                            "memory": "320Mi",
+                            "cpu": "50m"
+                        },
+                        "limits": {
+                            "memory": "1Gi",
+                            "cpu": "750m"
+                        }
+                    },
+                    "complianceResources": {
+                        "requests": {
+                            "memory": "10Mi",
+                            "cpu": "10m"
+                        },
+                        "limits": {
+                            "memory": "2Gi",
+                            "cpu": "1"
+                        }
+                    }
+                }
             }
         },
         {

@@ -23,6 +23,7 @@ import {
 
 import ClusterEditForm from './ClusterEditForm';
 import ClusterDeployment from './ClusterDeployment';
+import DownloadHelmValues from './DownloadHelmValues';
 import {
     clusterDetailPollingInterval,
     newClusterDefault,
@@ -120,6 +121,25 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
                         if (selectedCluster?.healthStatus?.lastContact) {
                             setPollingDelay(null);
                         }
+
+                        if (cluster.helmConfig) {
+                            if (wizardStep === wizardSteps.FORM) {
+                                setMessageState({
+                                    type: 'warn',
+                                    message: (
+                                        <>
+                                            <h3 className="font-700 mb-2">Helm-managed cluster</h3>
+                                            <p>
+                                                Warning: This is a Helm-managed cluster. If you edit
+                                                the cluster using the form below, please ask your
+                                                DevOps team to update the Helm values in source
+                                                control to ensure those changes are not overwritten.
+                                            </p>
+                                        </>
+                                    ),
+                                });
+                            }
+                        }
                     })
                     .catch(() => {
                         setMessageState({
@@ -166,6 +186,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
 
     function onNext() {
         if (wizardStep === wizardSteps.FORM) {
+            setMessageState(null);
             setSubmissionError('');
             saveCluster(selectedCluster)
                 .then((response) => {
@@ -174,6 +195,25 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
                     setSelectedCluster(clusterWithId);
 
                     setWizardStep(wizardSteps.DEPLOYMENT);
+                    if (clusterWithId.helmConfig) {
+                        setMessageState({
+                            type: 'error',
+                            message: (
+                                <>
+                                    <h3 className="font-700 mb-2">Helm-managed cluster</h3>
+                                    <p className="mb-2">
+                                        Warning: This is a Helm-managed cluster. If you edit the
+                                        cluster using the form below, please ask your DevOps team to
+                                        update the Helm values in source control to ensure those
+                                        changes are not overwritten.
+                                    </p>
+                                    <pre className="bg-base-700 inline-block p-2 rounded text-base-200">
+                                        $ helm upgrade -f myvalues.yaml
+                                    </pre>
+                                </>
+                            ),
+                        });
+                    }
 
                     if (!selectedCluster?.healthStatus?.lastContact) {
                         setPollingDelay(clusterDetailPollingInterval);
@@ -274,13 +314,18 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
                         />
                     )}
                     {!isBlocked && wizardStep === wizardSteps.DEPLOYMENT && (
-                        <ClusterDeployment
-                            editing={!!selectedCluster}
-                            createUpgraderSA={createUpgraderSA}
-                            toggleSA={toggleSA}
-                            onFileDownload={onDownload}
-                            clusterCheckedIn={!!selectedCluster?.healthStatus?.lastContact}
-                        />
+                        <div className="flex flex-col md:flex-row p-4">
+                            <ClusterDeployment
+                                editing={!!selectedCluster}
+                                createUpgraderSA={createUpgraderSA}
+                                toggleSA={toggleSA}
+                                onFileDownload={onDownload}
+                                clusterCheckedIn={!!selectedCluster?.healthStatus?.lastContact}
+                            />
+                            {!!selectedCluster?.helmConfig && (
+                                <DownloadHelmValues clusterId={selectedClusterId} />
+                            )}
+                        </div>
                     )}
                 </Panel>
             </div>

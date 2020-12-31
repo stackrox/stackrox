@@ -3,8 +3,10 @@
  */
 
 export { default as Avatar } from './Avatar';
+export { default as Button } from './Button';
 export { default as CondensedButton } from './CondensedButton';
 export { default as CondensedAlertButton } from './CondensedAlertButton';
+export { default as SuccessButton } from './SuccessButton';
 export { default as DetailedTooltipOverlay } from './DetailedTooltipOverlay';
 export { default as FormTextInput } from './FormTextInput';
 export { default as HoverHint } from './HoverHint';
