@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
-// GetMockImages return an slice of mock image
+// GetMockImages returns a slice of mock images
 func GetMockImages() []*storage.Image {
 	return []*storage.Image{
 		{
@@ -66,7 +66,7 @@ func GetMockImages() []*storage.Image {
 	}
 }
 
-// GetMockDeployment return a mock deployment
+// GetMockDeployment returns a mock deployment
 func GetMockDeployment() *storage.Deployment {
 	return &storage.Deployment{
 		Name:                         "mock-deployment",
@@ -122,6 +122,56 @@ func GetMockDeployment() *storage.Deployment {
 					},
 				},
 				SecurityContext: &storage.SecurityContext{},
+			},
+		},
+	}
+}
+
+// GetMockNodes returns a slice of mock nodes
+func GetMockNodes() []*storage.Node {
+	return []*storage.Node{
+		{
+			Name: "node1",
+			Scan: &storage.NodeScan{
+				Components: []*storage.EmbeddedNodeScanComponent{
+					{
+						Name:    "kubelet",
+						Version: "1.16.9",
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:  "CVE-2020-8558",
+								Cvss: 5.4,
+							},
+						},
+					},
+					{
+						Name:    "kube-proxy",
+						Version: "1.16.9",
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:  "CVE-2020-8558",
+								Cvss: 5.4,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name: "node2",
+			Scan: &storage.NodeScan{
+				Components: []*storage.EmbeddedNodeScanComponent{
+					{
+						Name:    "kubelet",
+						Version: "1.14.3",
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:  "CVE-2019-11248",
+								Cvss: 6.5,
+							},
+						},
+					},
+				},
 			},
 		},
 	}

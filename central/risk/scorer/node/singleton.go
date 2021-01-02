@@ -1,4 +1,4 @@
-package imagecomponent
+package node
 
 import (
 	"github.com/stackrox/rox/pkg/sync"
@@ -9,12 +9,10 @@ var (
 	scorer Scorer
 )
 
-func initialize() {
-	scorer = NewImageComponentScorer()
-}
-
 // GetScorer returns the singleton Scorer object to use when scoring risk.
 func GetScorer() Scorer {
-	once.Do(initialize)
+	once.Do(func() {
+		scorer = NewNodeScorer()
+	})
 	return scorer
 }

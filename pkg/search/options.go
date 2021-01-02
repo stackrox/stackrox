@@ -72,6 +72,7 @@ var (
 	FixableCVECount              = newFieldLabel("Fixable CVE Count")
 	LastUpdatedTime              = newFieldLabel("Last Updated")
 	ImageTopCVSS                 = newFieldLabel("Image Top CVSS")
+	NodeTopCVSS                  = newFieldLabel("Node Top CVSS")
 
 	AddCapabilities      = newFieldLabel("Add Capabilities")
 	Annotation           = newFieldLabel("Annotation")

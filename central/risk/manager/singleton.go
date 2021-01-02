@@ -6,9 +6,9 @@ import (
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
+	componentScorer "github.com/stackrox/rox/central/risk/scorer/component/singleton"
 	deploymentScorer "github.com/stackrox/rox/central/risk/scorer/deployment"
 	imageScorer "github.com/stackrox/rox/central/risk/scorer/image"
-	imageComponentScorer "github.com/stackrox/rox/central/risk/scorer/image_component"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -25,11 +25,10 @@ func initialize() {
 
 		deploymentScorer.GetScorer(),
 		imageScorer.GetScorer(),
-		imageComponentScorer.GetScorer(),
+		componentScorer.GetImageScorer(),
 
 		ranking.ClusterRanker(),
 		ranking.NamespaceRanker(),
-		ranking.DeploymentRanker(),
 		ranking.ImageComponentRanker())
 }
 

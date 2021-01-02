@@ -4,12 +4,12 @@ import (
 	"math"
 	"strings"
 
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/mathutil"
+	"github.com/stackrox/rox/pkg/scancomponent"
 )
 
 // ProcessComponents takes in a slice of components and outputs the min, max, sum CVSS scores as well as the number of CVEs
-func ProcessComponents(components []*storage.EmbeddedImageScanComponent) (min, max, sum float32, num int) {
+func ProcessComponents(components []scancomponent.ScanComponent) (min, max, sum float32, num int) {
 	min = math.MaxFloat32
 	max = -math.MaxFloat32
 	for _, component := range components {
@@ -27,7 +27,7 @@ func ProcessComponents(components []*storage.EmbeddedImageScanComponent) (min, m
 }
 
 // ProcessComponent takes in a single component and outputs the min, max, sum CVSS scores as well as the number of CVEs
-func ProcessComponent(component *storage.EmbeddedImageScanComponent) (min, max, sum float32, numCVEs int) {
+func ProcessComponent(component scancomponent.ScanComponent) (min, max, sum float32, numCVEs int) {
 	min = math.MaxFloat32
 	max = -math.MaxFloat32
 	for _, vuln := range component.GetVulns() {

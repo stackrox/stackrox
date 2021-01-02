@@ -31,11 +31,14 @@ message RiskSubject {
     RiskSubjectType type        = 4 [(gogoproto.moretags) = "search:\"Risk Subject Type,store,hidden\""];
 }
 
+// Next tag: 9
 enum RiskSubjectType {
     UNKNOWN                 = 0;
     DEPLOYMENT              = 1;
     NAMESPACE               = 2;
     CLUSTER                 = 3;
+    NODE                    = 7;
+    NODE_COMPONENT          = 8;
     IMAGE                   = 4;
     IMAGE_COMPONENT         = 6;
     SERVICEACCOUNT          = 5;

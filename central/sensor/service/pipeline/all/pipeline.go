@@ -51,7 +51,7 @@ func (s *pipelineImpl) Run(ctx context.Context, msg *central.MsgFromSensor, inje
 	errorList := errorhelpers.NewErrorList("error processing message from sensor")
 	for _, fragment := range s.fragments {
 		if fragment.Match(msg) {
-			matchCount = matchCount + 1
+			matchCount++
 			errorList.AddError(fragment.Run(ctx, s.clusterID, msg, injector))
 		}
 	}

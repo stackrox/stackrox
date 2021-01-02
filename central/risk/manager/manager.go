@@ -12,9 +12,9 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
+	componentScorer "github.com/stackrox/rox/central/risk/scorer/component"
 	deploymentScorer "github.com/stackrox/rox/central/risk/scorer/deployment"
 	imageScorer "github.com/stackrox/rox/central/risk/scorer/image"
-	imageComponentScorer "github.com/stackrox/rox/central/risk/scorer/image_component"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -48,11 +48,10 @@ type managerImpl struct {
 
 	deploymentScorer     deploymentScorer.Scorer
 	imageScorer          imageScorer.Scorer
-	imageComponentScorer imageComponentScorer.Scorer
+	imageComponentScorer componentScorer.Scorer
 
 	clusterRanker        *ranking.Ranker
 	nsRanker             *ranking.Ranker
-	deploymentRanker     *ranking.Ranker
 	imageComponentRanker *ranking.Ranker
 }
 
@@ -63,10 +62,9 @@ func New(deploymentStorage deploymentDS.DataStore,
 	riskStorage riskDS.DataStore,
 	deploymentScorer deploymentScorer.Scorer,
 	imageScorer imageScorer.Scorer,
-	imageComponentScorer imageComponentScorer.Scorer,
+	imageComponentScorer componentScorer.Scorer,
 	clusterRanker *ranking.Ranker,
 	nsRanker *ranking.Ranker,
-	deploymentRanker *ranking.Ranker,
 	imageComponentRanker *ranking.Ranker) Manager {
 	m := &managerImpl{
 		deploymentStorage:     deploymentStorage,
@@ -80,7 +78,6 @@ func New(deploymentStorage deploymentDS.DataStore,
 
 		clusterRanker:        clusterRanker,
 		nsRanker:             nsRanker,
-		deploymentRanker:     deploymentRanker,
 		imageComponentRanker: imageComponentRanker,
 	}
 	return m

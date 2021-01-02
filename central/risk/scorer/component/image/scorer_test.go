@@ -1,11 +1,11 @@
-package imagecomponent
+package image
 
 import (
 	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	imageComponentMultiplier "github.com/stackrox/rox/central/risk/multipliers/image_component"
+	imageComponentMultiplier "github.com/stackrox/rox/central/risk/multipliers/component/image"
 	pkgScorer "github.com/stackrox/rox/central/risk/scorer"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +23,7 @@ func TestScore(t *testing.T) {
 	expectedRiskScore := 1.15
 	expectedRiskResults := []*storage.Risk_Result{
 		{
-			Name: imageComponentMultiplier.ImageComponentVulnerabilitiesHeading,
+			Name: imageComponentMultiplier.VulnerabilitiesHeading,
 			Factors: []*storage.Risk_Result_Factor{
 				{Message: "Image Component ComponentX version v1 contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0"},
 			},
@@ -32,10 +32,6 @@ func TestScore(t *testing.T) {
 	}
 
 	actualRisk := scorer.Score(ctx, imageComponent)
-	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
-	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
-
-	actualRisk = scorer.Score(ctx, imageComponent)
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 

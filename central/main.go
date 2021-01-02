@@ -394,9 +394,8 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		log.Panicf("Couldn't start sensor connection manager: %v", err)
 	}
 
-	m := fetcher.SingletonManager()
 	if env.OfflineModeEnv.Setting() != "true" {
-		go m.Start()
+		go fetcher.SingletonManager().Start()
 	}
 
 	if devbuild.IsEnabled() {

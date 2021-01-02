@@ -1,4 +1,4 @@
-package imagecomponent
+package image
 
 import (
 	"context"

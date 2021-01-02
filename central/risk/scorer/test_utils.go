@@ -104,3 +104,29 @@ func GetMockDeployment() *storage.Deployment {
 		},
 	}
 }
+
+// GetMockNode returns a mock node
+func GetMockNode() *storage.Node {
+	return &storage.Node{
+		Id:   "nodeID",
+		Name: "node1",
+		Scan: &storage.NodeScan{
+			Components: []*storage.EmbeddedNodeScanComponent{
+				{
+					Name:    "ComponentX",
+					Version: "v1",
+					Vulns: []*storage.EmbeddedVulnerability{
+						{
+							Cve:  "CVE-2019-0001",
+							Cvss: 5,
+						},
+						{
+							Cve:  "CVE-2019-0002",
+							Cvss: 5,
+						},
+					},
+				},
+			},
+		},
+	}
+}

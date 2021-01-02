@@ -23,7 +23,7 @@ func TestScore(t *testing.T) {
 	expectedRiskScore := 1.4375
 	expectedRiskResults := []*storage.Risk_Result{
 		{
-			Name: imageMultiplier.ImageVulnerabilitiesHeading,
+			Name: imageMultiplier.VulnerabilitiesHeading,
 			Factors: []*storage.Risk_Result_Factor{
 				{Message: "Image \"docker.io/library/nginx:1.10\" contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0"},
 			},
