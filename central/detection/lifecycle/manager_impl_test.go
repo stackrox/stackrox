@@ -84,7 +84,7 @@ func (suite *ManagerTestSuite) TestBaselineNotFound() {
 	envIsolator := envisolator.NewEnvIsolator(suite.T())
 	defer envIsolator.RestoreAll()
 
-	envIsolator.Setenv(env.WhitelistGenerationDuration.EnvVar(), time.Millisecond.String())
+	envIsolator.Setenv(env.BaselineGenerationDuration.EnvVar(), time.Millisecond.String())
 	key, indicator := makeIndicator()
 	elements := fixtures.MakeBaselineItems(indicator.GetSignal().GetExecFilePath())
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(nil, false, nil)

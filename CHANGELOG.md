@@ -11,6 +11,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     `processbaselines/*` instead.
   - In the `ListDeploymentsWithProcessInfo(/v1/deploymentswithprocessinfo)` response, `deployments.whitelist_statuses`
     is deprecated, use `deployments.baseline_statuses` instead.
+  - `ROX_WHITELIST_GENERATION_DURATION` environment variable is deprecated, use `ROX_BASELINE_GENERATION_DURATION`
+    instead.
 
 ## [53.0]
 - [Security Advisory] Scanner was not validating Central client certificates allowing for intra-cluster unauthenticated users

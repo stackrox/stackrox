@@ -76,7 +76,7 @@ func (ds *datastoreImpl) addProcessBaselineUnlocked(id string, baseline *storage
 	baseline.Id = id
 	baseline.Created = types.TimestampNow()
 	baseline.LastUpdate = baseline.GetCreated()
-	genDuration := env.WhitelistGenerationDuration.DurationSetting()
+	genDuration := env.BaselineGenerationDuration.DurationSetting()
 	lockTimestamp, err := types.TimestampProto(time.Now().Add(genDuration))
 	if err == nil {
 		baseline.StackRoxLockedTimestamp = lockTimestamp

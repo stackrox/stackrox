@@ -180,7 +180,7 @@ class RiskTest extends BaseSpecification {
         "no longer in the process discovery phase"
         // Note: This test (and ProcessWLTest.groovy) rely heavily on the deployed SR using an
         // artificially reduced process discovery phase. i.e. "1m" instead of the default 1 hour.
-        // See ROX_WHITELIST_GENERATION_DURATION.
+        // See ROX_BASELINE_GENERATION_DURATION.
         println "sleeping for 60 seconds to ensure the discovery phase is over"
         sleep(60000)
 
