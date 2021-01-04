@@ -435,6 +435,7 @@ module.exports = {
             100: '25rem',
             full: '100%',
             screen: '100vh',
+            'minus-buttons': 'calc(100vh - 14rem)',
         },
         padding: {
             px: '1px',

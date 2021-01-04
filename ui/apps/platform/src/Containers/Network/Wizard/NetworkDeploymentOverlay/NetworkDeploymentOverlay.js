@@ -45,7 +45,7 @@ function NetworkDeploymentOverlay({ selectedDeployment, filterState }) {
     const edges = getDeploymentEdges(selectedDeployment);
 
     return (
-        <div className="flex flex-1 flex-col text-sm">
+        <div className="flex flex-1 flex-col text-sm max-h-minus-buttons">
             <NetworkEntityTabbedOverlay
                 entityName={selectedDeployment.name}
                 entityType={selectedDeployment.type}

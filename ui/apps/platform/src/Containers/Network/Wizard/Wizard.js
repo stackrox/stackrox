@@ -23,13 +23,13 @@ function Wizard({ wizardOpen, wizardStage, onClose }) {
 
     if (networkDetectionEnabled && wizardOpen && wizardStage === wizardStages.details) {
         return (
-            <div>
-                <div className="h-full absolute right-0 network-panel">
-                    <ZoomButtons />
-                </div>
-                <div className="absolute flex flex-1 max-h-full network-panel right-0">
+            <div className="network-panel">
+                <div className="absolute flex flex-1 max-h-full right-0">
                     <NodesUpdateSection />
                     <NetworkDeploymentOverlay onClose={onClose} />
+                </div>
+                <div className="absolute h-full right-0">
+                    <ZoomButtons pinnedLeft />
                 </div>
             </div>
         );
