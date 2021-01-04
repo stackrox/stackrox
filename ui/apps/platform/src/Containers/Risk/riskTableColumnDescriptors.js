@@ -9,7 +9,7 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import { sortValue, sortDate } from 'sorters/sorters';
 
 function DeploymentNameColumn({ original }) {
-    const isSuspicious = find(original.whitelistStatuses, {
+    const isSuspicious = find(original.baselineStatuses, {
         anomalousProcessesExecuted: true,
     });
     return (
@@ -34,7 +34,7 @@ DeploymentNameColumn.propTypes = {
         deployment: PropTypes.shape({
             name: PropTypes.string.isRequired,
         }).isRequired,
-        whitelistStatuses: PropTypes.arrayOf(PropTypes.object).isRequired,
+        baselineStatuses: PropTypes.arrayOf(PropTypes.object).isRequired,
     }).isRequired,
 };
 

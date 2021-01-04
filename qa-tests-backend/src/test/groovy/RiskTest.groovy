@@ -81,8 +81,8 @@ class RiskTest extends BaseSpecification {
                 println "not yet ready to test - no deployments found"
                 continue
             }
-            if (response.deploymentsList.get(0).whitelistStatusesList.size() == 0 ||
-                    response.deploymentsList.get(1).whitelistStatusesList.size() == 0) {
+            if (response.deploymentsList.get(0).baselineStatusesList.size() == 0 ||
+                    response.deploymentsList.get(1).baselineStatusesList.size() == 0) {
                 println "not yet ready to test - container summary status are not set"
                 continue
             }
@@ -125,8 +125,16 @@ class RiskTest extends BaseSpecification {
 
         and:
         "not anomalous"
-        !one.whitelistStatusesList.get(0).anomalousProcessesExecuted
-        !two.whitelistStatusesList.get(0).anomalousProcessesExecuted
+        !one.baselineStatusesList.get(0).anomalousProcessesExecuted
+        !two.baselineStatusesList.get(0).anomalousProcessesExecuted
+
+        // TODO(ROX-6194): Remove after the deprecation cycle started with the 54.0 release.
+        and:
+        "`.whitelistStatusesList` shall be identical to `.baselineStatusesList`"
+        assert one.whitelistStatusesList.size() == one.baselineStatusesList.size()
+        assert two.whitelistStatusesList.size() == two.baselineStatusesList.size()
+        assert one.whitelistStatusesList.get(0) == one.baselineStatusesList.get(0)
+        assert two.whitelistStatusesList.get(0) == two.baselineStatusesList.get(0)
     }
 
     def "Deployment count == 2"() {
@@ -201,7 +209,7 @@ class RiskTest extends BaseSpecification {
                 after = null
                 continue
             }
-            if (!after.get(withRiskIndex).whitelistStatusesList.get(0).anomalousProcessesExecuted) {
+            if (!after.get(withRiskIndex).baselineStatusesList.get(0).anomalousProcessesExecuted) {
                 println "not yet ready to test - there is no anomalous process spotted yet"
                 after = null
                 continue
@@ -217,11 +225,19 @@ class RiskTest extends BaseSpecification {
         after.get(withRiskIndex).deployment.priority < before.get(withRiskIndex).deployment.priority
 
         and:
-        "and thw deployment with risk is now at a higher priority (lower value) then the one without"
+        "and the deployment with risk is now at a higher priority (lower value) then the one without"
         after.get(withRiskIndex).deployment.priority < after.get(withoutRiskIndex).deployment.priority
 
         and:
-        after.get(withRiskIndex).whitelistStatusesList.get(0).anomalousProcessesExecuted
+        after.get(withRiskIndex).baselineStatusesList.get(0).anomalousProcessesExecuted
+
+        // TODO(ROX-6194): Remove after the deprecation cycle started with the 54.0 release.
+        and:
+        "`.whitelistStatusesList` shall be identical to `.baselineStatusesList`"
+        assert after.get(withRiskIndex).whitelistStatusesList.size() ==
+                after.get(withRiskIndex).baselineStatusesList.size()
+        assert after.get(withRiskIndex).whitelistStatusesList.get(0) ==
+                after.get(withRiskIndex).baselineStatusesList.get(0)
     }
 
     def "Risk changes when an anomalous process is added to the baseline"() {
@@ -269,7 +285,7 @@ class RiskTest extends BaseSpecification {
                 after = null
                 continue
             }
-            if (after.get(withRiskIndex).whitelistStatusesList.get(0).anomalousProcessesExecuted) {
+            if (after.get(withRiskIndex).baselineStatusesList.get(0).anomalousProcessesExecuted) {
                 println "not yet ready to test - the process anomaly is not cleared"
                 after = null
                 continue
@@ -283,7 +299,15 @@ class RiskTest extends BaseSpecification {
         "the updated deployment is at a lower priority (higher value) then before"
         assert after.get(withRiskIndex).deployment.priority > before.get(withRiskIndex).deployment.priority
 
-        assert !after.get(withRiskIndex).whitelistStatusesList.get(0).anomalousProcessesExecuted
+        assert !after.get(withRiskIndex).baselineStatusesList.get(0).anomalousProcessesExecuted
+
+        // TODO(ROX-6194): Remove after the deprecation cycle started with the 54.0 release.
+        and:
+        "`.whitelistStatusesList` shall be identical to `.baselineStatusesList`"
+        assert after.get(withRiskIndex).whitelistStatusesList.size() ==
+                after.get(withRiskIndex).baselineStatusesList.size()
+        assert after.get(withRiskIndex).whitelistStatusesList.get(0) ==
+                after.get(withRiskIndex).baselineStatusesList.get(0)
     }
 
     def debugBeforeAndAfter(
@@ -306,7 +330,7 @@ class RiskTest extends BaseSpecification {
     def debugPriorityAndState(DeploymentWithProcessInfo dpl) {
         return "${dpl.deployment.name} "+
             "priority ${dpl.deployment.priority}, "+
-            "anomalous ${dpl.whitelistStatusesList?.get(0)?.anomalousProcessesExecuted}"
+            "anomalous ${dpl.baselineStatusesList?.get(0)?.anomalousProcessesExecuted}"
     }
 
     def debugProcesses(String uid) {
