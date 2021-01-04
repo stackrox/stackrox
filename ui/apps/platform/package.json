@@ -13,7 +13,7 @@
         "@apollo/client": "^3.0.2",
         "@lifeomic/axios-fetch": "^1.4.2",
         "@stackrox/ui-components": "*",
-        "axios": "^0.20.0",
+        "axios": "^0.21.1",
         "computed-style-to-inline-style": "^3.0.0",
         "connected-react-router": "^6.8.0",
         "core-js": "^3.6.5",
