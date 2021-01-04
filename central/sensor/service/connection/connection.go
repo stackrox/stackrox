@@ -35,4 +35,6 @@ type SensorConnection interface {
 	// ObjectsDeletedByReconciliation returns the count of objects deleted by reconciliation,
 	// keyed by type name, as well as a bool returning whether reconciliation has finished.
 	ObjectsDeletedByReconciliation() (map[string]int, bool)
+
+	CheckAutoUpgradeSupport() error
 }

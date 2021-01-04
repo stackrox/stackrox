@@ -17,15 +17,6 @@ type enforcerImpl struct {
 	recorder record.EventRecorder
 }
 
-// MustCreate creates a new enforcer or panics.
-func MustCreate(client client.Interface) enforcer.Enforcer {
-	e, err := New(client)
-	if err != nil {
-		panic(err)
-	}
-	return e
-}
-
 // New returns a new Kubernetes Enforcer.
 func New(c client.Interface) (enforcer.Enforcer, error) {
 	e := &enforcerImpl{

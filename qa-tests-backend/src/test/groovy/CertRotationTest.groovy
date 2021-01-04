@@ -2,8 +2,11 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import groups.BAT
 import io.fabric8.kubernetes.api.model.Secret
+import io.grpc.StatusRuntimeException
 import io.stackrox.proto.storage.ClusterOuterClass.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
 import io.stackrox.proto.storage.ClusterOuterClass.UpgradeProgress.UpgradeState
+import org.junit.Assume
+import org.junit.AssumptionViolatedException
 import org.junit.experimental.categories.Category
 import org.yaml.snakeyaml.Yaml
 import services.ClusterService
@@ -161,8 +164,15 @@ class CertRotationTest extends BaseSpecification {
         return true
     }
 
-    def "Test sensor cert rotation with upgrader"() {
+    def "Test sensor cert rotation with upgrader succeeds for non-Helm clusters"() {
         when:
+        "Check that the cluster is not Helm-managed"
+        def cluster = ClusterService.getCluster()
+        assert cluster
+
+        Assume.assumeFalse(cluster.hasHelmConfig())
+
+        and:
         "Fetch the current sensor-tls, collector-tls and admission-control-tls secrets, and trigger cert rotation"
         def sensorTLSSecret = orchestrator.getSecret("sensor-tls", "stackrox")
         assert sensorTLSSecret
@@ -171,8 +181,6 @@ class CertRotationTest extends BaseSpecification {
         def admissionControlTLSSecret = orchestrator.getSecret("admission-control-tls", "stackrox")
         // Intentionally don't assert, admission control TLS secret may not be present.
 
-        def cluster = ClusterService.getCluster()
-        assert cluster
         def start = System.currentTimeSeconds()
         SensorUpgradeService.triggerCertRotation(cluster.getId())
 
@@ -205,5 +213,26 @@ class CertRotationTest extends BaseSpecification {
         }
     }
 
-}
+    def "Test sensor cert rotation with upgrader fails for Helm clusters"() {
+        when:
+        "Check that the cluster is Helm-managed"
+        def cluster = ClusterService.getCluster()
+        assert cluster
 
+        Assume.assumeTrue(cluster.hasHelmConfig())
+
+        // The following can NOT be rephrased using `thrown()`, as that also catches the
+        // AssumptionViolatedException generated if the assumption fails.
+        then:
+        "Trigger certificate rotation should result in an exception"
+        def caughtException = false
+        try {
+            SensorUpgradeService.triggerCertRotation(cluster.getId())
+        } catch (StatusRuntimeException exc) {
+            caughtException = true
+            assert exc.status.description.contains("cluster is Helm-managed")
+        }
+        assert caughtException
+    }
+
+}

@@ -102,6 +102,7 @@ ClusterHealth.propTypes = {
         sensorVersion: PropTypes.string,
         upgradeStatus: PropTypes.shape({
             upgradability: PropTypes.string,
+            upgradabilityStatusReason: PropTypes.string,
             mostRecentProcess: PropTypes.shape({
                 active: PropTypes.bool,
                 progress: PropTypes.shape({

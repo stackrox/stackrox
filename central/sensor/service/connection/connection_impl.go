@@ -3,6 +3,7 @@ package connection
 import (
 	"context"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/scrape"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -49,7 +51,10 @@ type sensorConnection struct {
 	policyMgr        common.PolicyManager
 	baselineMgr      common.ProcessBaselineManager
 
-	capabilities centralsensor.SensorCapabilitySet
+	sensorMetadata metautils.NiceMD
+	capabilities   centralsensor.SensorCapabilitySet
+
+	helmManaged bool
 }
 
 func newConnection(ctx context.Context,
@@ -59,6 +64,14 @@ func newConnection(ctx context.Context,
 	networkEntityMgr common.NetworkEntityManager,
 	policyMgr common.PolicyManager,
 	baselineMgr common.ProcessBaselineManager) *sensorConnection {
+
+	md := metautils.ExtractIncoming(ctx)
+
+	helmManaged := false
+	if features.SensorInstallationExperience.Enabled() {
+		helmManaged = md.Get(centralsensor.HelmManagedClusterMetadataKey) == "true"
+	}
+
 	conn := &sensorConnection{
 		stopSig:       concurrency.NewErrorSignal(),
 		stoppedSig:    concurrency.NewErrorSignal(),
@@ -72,7 +85,9 @@ func newConnection(ctx context.Context,
 		networkEntityMgr: networkEntityMgr,
 		baselineMgr:      baselineMgr,
 
-		capabilities: centralsensor.ExtractCapsFromContext(ctx),
+		sensorMetadata: md,
+		capabilities:   centralsensor.ExtractCapsFromMD(md),
+		helmManaged:    helmManaged,
 	}
 
 	// Need a reference to conn for injector
@@ -276,8 +291,31 @@ func (c *sensorConnection) getClusterConfigMsg(ctx context.Context) (*central.Ms
 }
 
 func (c *sensorConnection) Run(ctx context.Context, server central.SensorService_CommunicateServer, connectionCapabilities centralsensor.SensorCapabilitySet) error {
-	if err := server.SendHeader(metadata.MD{}); err != nil {
-		return errors.Wrap(err, "sending initial metadata")
+	serverMD := metautils.NiceMD{}
+	if c.helmManaged {
+		serverMD.Set(centralsensor.HelmManagedClusterMetadataKey, "true")
+	}
+
+	if err := server.SendHeader(metadata.MD(serverMD)); err != nil {
+		return errors.Wrap(err, "sending initial sensorMetadata")
+	}
+
+	if c.helmManaged {
+		// For Helm-managed clusters, we expect to receive the cluster configuration as the first message from sensor.
+		msg, err := server.Recv()
+		if err != nil {
+			return errors.Wrap(err, "receiving helm config init message")
+		}
+		helmConfigInit := msg.GetHelmManagedConfigInit()
+		if helmConfigInit == nil {
+			return errors.Errorf("expected helm config init message, got %T", msg.GetMsg())
+		}
+
+		if err := c.clusterMgr.ApplyHelmConfig(ctx, c.clusterID, helmConfigInit); err != nil {
+			return errors.Wrap(err, "applying initial helm configuration")
+		}
+	} else if err := c.clusterMgr.ApplyHelmConfig(ctx, c.clusterID, nil); err != nil {
+		return errors.Wrap(err, "resetting helm configuration")
 	}
 
 	// Synchronously send the config to ensure syncing before Sensor marks the connection as Central reachable
@@ -331,4 +369,11 @@ func (c *sensorConnection) HasCapability(capability centralsensor.SensorCapabili
 
 func (c *sensorConnection) ObjectsDeletedByReconciliation() (map[string]int, bool) {
 	return c.sensorEventHandler.reconciliationMap.DeletedElementsByType()
+}
+
+func (c *sensorConnection) CheckAutoUpgradeSupport() error {
+	if c.helmManaged {
+		return errors.New("cluster is Helm-managed and does not support auto upgrades; use 'helm upgrade' or a Helm-aware CD pipeline for upgrades")
+	}
+	return nil
 }

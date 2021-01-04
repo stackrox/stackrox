@@ -6,6 +6,11 @@ import "storage/cluster.proto";
 
 package central;
 
+message HelmManagedConfigInit {
+    storage.CompleteClusterConfig cluster_config = 1;
+    string cluster_name = 2;
+}
+
 message ClusterConfig {
     storage.DynamicClusterConfig config = 1;
 }

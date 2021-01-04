@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -13,13 +12,13 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 )
 
-func (u *upgradeController) RegisterConnection(sensorCtx context.Context, injector common.MessageInjector) concurrency.ErrorWaitable {
+func (u *upgradeController) RegisterConnection(sensorCtx context.Context, conn SensorConn) concurrency.ErrorWaitable {
 	var errCond concurrency.ErrorWaitable
 
 	utils.Should(u.do(func() error {
 		u.errorSig.Reset()
 
-		if u.doHandleNewConnection(sensorCtx, injector) {
+		if u.doHandleNewConnection(sensorCtx, conn) {
 			errCond = u.errorSig.Snapshot()
 		}
 		return nil
@@ -29,12 +28,12 @@ func (u *upgradeController) RegisterConnection(sensorCtx context.Context, inject
 		return nil
 	}
 
-	go u.watchConnection(sensorCtx, injector)
+	go u.watchConnection(sensorCtx, conn)
 
 	return errCond
 }
 
-func (u *upgradeController) watchConnection(sensorCtx context.Context, injector common.MessageInjector) {
+func (u *upgradeController) watchConnection(sensorCtx context.Context, conn SensorConn) {
 	select {
 	case <-u.errorSig.Done():
 		return
@@ -42,14 +41,14 @@ func (u *upgradeController) watchConnection(sensorCtx context.Context, injector 
 	}
 
 	utils.Should(u.do(func() error {
-		if u.activeSensorConn != nil && u.activeSensorConn.injector == injector {
+		if u.activeSensorConn != nil && u.activeSensorConn.conn == conn {
 			u.activeSensorConn = nil
 		}
 		return nil
 	}))
 }
 
-func determineUpgradabilityFromVersionInfo(versionInfo *centralsensor.SensorVersionInfo) (storage.ClusterUpgradeStatus_Upgradability, string) {
+func determineUpgradabilityFromVersionInfoAndConn(versionInfo *centralsensor.SensorVersionInfo, conn SensorConn) (storage.ClusterUpgradeStatus_Upgradability, string) {
 	if versionInfo == nil {
 		return storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED, "sensor is from an old version that doesn't support auto-upgrade"
 	}
@@ -63,6 +62,12 @@ func determineUpgradabilityFromVersionInfo(versionInfo *centralsensor.SensorVers
 	if cmp > 0 {
 		return storage.ClusterUpgradeStatus_SENSOR_VERSION_HIGHER, fmt.Sprintf("sensor is running a newer version (%s)", versionInfo.MainVersion)
 	}
+
+	// Check if the connection supports auto-upgrade.
+	if err := conn.CheckAutoUpgradeSupport(); err != nil {
+		return storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED, err.Error()
+	}
+
 	// We don't differentiate between cmp == -1 and cmp == 0.
 	// The former means we definitely know sensor is an older version.
 	// The latter means we don't know (ex: we're on a development version)
@@ -87,8 +92,8 @@ func (u *upgradeController) maybeTriggerAutoUpgrade() {
 	}
 }
 
-func (u *upgradeController) reconcileInitialUpgradeStatus(versionInfo *centralsensor.SensorVersionInfo) (sensorVersion string) {
-	upgradability, reason := determineUpgradabilityFromVersionInfo(versionInfo)
+func (u *upgradeController) reconcileInitialUpgradeStatus(versionInfo *centralsensor.SensorVersionInfo, conn SensorConn) (sensorVersion string) {
+	upgradability, reason := determineUpgradabilityFromVersionInfoAndConn(versionInfo, conn)
 	log.Infof("Determined upgradability status for sensor from cluster %s: %s. Reason: %s", u.clusterID, upgradability, reason)
 	u.upgradeStatus.Upgradability, u.upgradeStatus.UpgradabilityStatusReason = upgradability, reason
 	u.upgradeStatusChanged = true // we don't check for this but sensor checking in should be comparatively rare
@@ -104,7 +109,7 @@ func (u *upgradeController) reconcileInitialUpgradeStatus(versionInfo *centralse
 	return sensorVersion
 }
 
-func (u *upgradeController) doHandleNewConnection(sensorCtx context.Context, injector common.MessageInjector) (sensorSupportsAutoUpgrade bool) {
+func (u *upgradeController) doHandleNewConnection(sensorCtx context.Context, conn SensorConn) (sensorSupportsAutoUpgrade bool) {
 	versionInfo, err := centralsensor.DeriveSensorVersionInfo(sensorCtx)
 	if err != nil {
 		u.activeSensorConn = nil
@@ -112,7 +117,7 @@ func (u *upgradeController) doHandleNewConnection(sensorCtx context.Context, inj
 		return false
 	}
 
-	sensorVersion := u.reconcileInitialUpgradeStatus(versionInfo)
+	sensorVersion := u.reconcileInitialUpgradeStatus(versionInfo, conn)
 
 	// Special case: if the sensor is too old to support auto upgrades, then don't send it a trigger that
 	// it will not know how to parse.
@@ -132,12 +137,12 @@ func (u *upgradeController) doHandleNewConnection(sensorCtx context.Context, inj
 
 	// Send the trigger asynchronously - we are holding the lock so don't do anything blocking.
 	go func() {
-		if err := sendTrigger(sensorCtx, injector, trigger); err != nil {
+		if err := sendTrigger(sensorCtx, conn, trigger); err != nil {
 			log.Errorf("Could not send initial upgrade trigger: %v. Connection went away before being fully registered?", err)
 		}
 	}()
 	u.activeSensorConn = &activeSensorConnectionInfo{
-		injector:      injector,
+		conn:          conn,
 		sensorVersion: sensorVersion,
 	}
 	return true

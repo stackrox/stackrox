@@ -24,6 +24,7 @@ message MsgFromSensor {
         ClusterStatusUpdate          cluster_status_update           = 5;
         PullTelemetryDataResponse    telemetry_data_response         = 6;
         RawClusterHealthInfo         cluster_health_info             = 9;
+        HelmManagedConfigInit        helm_managed_config_init        = 10;
     }
 }
 

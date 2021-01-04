@@ -17,22 +17,27 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Handler executes the input scrape commands, and reconciles scrapes with input ComplianceReturns,
-// outputing the ScrapeUpdates we expect to be sent back to central.
+// Handler is responsible for processing dynamic config updates from central and, for Helm-managed clusters, to provide
+// access to the cluster's configuration.
 type Handler interface {
 	GetConfig() *storage.DynamicClusterConfig
+	GetHelmManagedConfig() *central.HelmManagedConfigInit
+
 	common.SensorComponent
 }
 
-// NewCommandHandler returns a new instance of a Handler using the input image and Orchestrator.
-func NewCommandHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager) Handler {
+// NewCommandHandler returns a new instance of a Handler.
+func NewCommandHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, helmManagedConfig *central.HelmManagedConfigInit) Handler {
 	return &configHandlerImpl{
 		stopC:              concurrency.NewErrorSignal(),
 		admCtrlSettingsMgr: admCtrlSettingsMgr,
+		helmManagedConfig:  helmManagedConfig,
 	}
 }
 
 type configHandlerImpl struct {
+	helmManagedConfig *central.HelmManagedConfigInit
+
 	config *storage.DynamicClusterConfig
 	lock   sync.RWMutex
 
@@ -82,4 +87,8 @@ func (c *configHandlerImpl) GetConfig() *storage.DynamicClusterConfig {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 	return c.config
+}
+
+func (c *configHandlerImpl) GetHelmManagedConfig() *central.HelmManagedConfigInit {
+	return c.helmManagedConfig
 }

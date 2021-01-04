@@ -1,5 +1,21 @@
 {{- include "srox.init" . -}}
 
+[< if and (not .KubectlOutput) (index .FeatureFlags "ROX_SENSOR_INSTALLATION_EXPERIENCE") >]
+apiVersion: v1
+kind: Secret
+metadata:
+  name: helm-cluster-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "secret" "helm-cluster-config") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "secret" "helm-cluster-config") | nindent 4 }}
+stringData:
+  config.yaml: |
+    {{- tpl (.Files.Get "internal/cluster-config.yaml.tpl") . | nindent 4 }}
+---
+[< end >]
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -103,6 +119,10 @@ spec:
         - name: ROX_OPENSHIFT_API
           value: "true"
         {{- end}}
+        [<- if and (not .KubectlOutput) (index .FeatureFlags "ROX_SENSOR_INSTALLATION_EXPERIENCE") >]
+        - name: ROX_HELM_CLUSTER_CONFIG_FP
+          value: {{ quote ._rox._configFP }}
+        [<- end >]
         {{- include "srox.envVars" (list . "deployment" "sensor" "sensor") | nindent 8 }}
         volumeMounts:
         - name: varlog
@@ -117,6 +137,11 @@ spec:
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
           readOnly: true
+        [<- if and (not .KubectlOutput) (index .FeatureFlags "ROX_SENSOR_INSTALLATION_EXPERIENCE") >]
+        - name: helm-cluster-config
+          mountPath: /run/secrets/stackrox.io/helm-cluster-config/
+          readOnly: true
+        [<- end >]
       [<- if index .FeatureFlags "ROX_SENSOR_INSTALLATION_EXPERIENCE" >]
       {{- if not (kindIs "invalid" ._rox.initToken) }}
       initContainers:
@@ -171,6 +196,11 @@ spec:
           optional: true
       - name: varlog
         emptyDir: {}
+      [<- if and (not .KubectlOutput) (index .FeatureFlags "ROX_SENSOR_INSTALLATION_EXPERIENCE") >]
+      - name: helm-cluster-config
+        secret:
+          secretName: helm-cluster-config
+      [<- end >]
 ---
 apiVersion: v1
 kind: Service

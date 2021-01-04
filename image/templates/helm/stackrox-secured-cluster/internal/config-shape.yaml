@@ -1,6 +1,7 @@
 clusterName: null # string
 initToken: null # string
 centralEndpoint: null # string
+registryOverride: null # string
 createUpgraderServiceAccount: null # string
 additionalCAs: null # [obj]
 imagePullSecrets:

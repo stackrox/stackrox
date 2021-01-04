@@ -29,7 +29,11 @@ func AppendCapsInfoToContext(ctx context.Context, caps SensorCapabilitySet) cont
 
 // ExtractCapsFromContext retrieves the set of sensor capabilities from the incoming context.
 func ExtractCapsFromContext(ctx context.Context) SensorCapabilitySet {
-	md := metautils.ExtractIncoming(ctx)
+	return ExtractCapsFromMD(metautils.ExtractIncoming(ctx))
+}
+
+// ExtractCapsFromMD retrieves the set of sensor capabilities from the metadata set.
+func ExtractCapsFromMD(md metautils.NiceMD) SensorCapabilitySet {
 	capsStr := md.Get(CapsMetadataKey)
 
 	result := NewSensorCapabilitySet()

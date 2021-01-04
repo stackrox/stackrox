@@ -74,14 +74,18 @@ func newFakeClusterStorage(existingIDs ...string) *fakeClusterStorage {
 	return &fakeClusterStorage{values: m}
 }
 
-type recordingInjector struct {
+type recordingConn struct {
 	lock     sync.Mutex
 	triggers []*central.SensorUpgradeTrigger
 
 	returnErr bool
 }
 
-func (r *recordingInjector) InjectMessage(ctx concurrency.Waitable, msg *central.MsgToSensor) error {
+func (*recordingConn) CheckAutoUpgradeSupport() error {
+	return nil
+}
+
+func (r *recordingConn) InjectMessage(ctx concurrency.Waitable, msg *central.MsgToSensor) error {
 	if r.returnErr {
 		return errors.New("RETURNING FAKE ERR FROM INJECTMESSAGE ON REQUEST")
 	}
@@ -91,7 +95,7 @@ func (r *recordingInjector) InjectMessage(ctx concurrency.Waitable, msg *central
 	return nil
 }
 
-func (r *recordingInjector) getSentTriggers() []*central.SensorUpgradeTrigger {
+func (r *recordingConn) getSentTriggers() []*central.SensorUpgradeTrigger {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 	copied := make([]*central.SensorUpgradeTrigger, 0, len(r.triggers))
@@ -105,7 +109,7 @@ type UpgradeCtrlTestSuite struct {
 	autoTriggerFlag *concurrency.Flag
 	storage         *fakeClusterStorage
 	upgradeCtrl     UpgradeController
-	injector        *recordingInjector
+	conn            *recordingConn
 	cancelSensorCtx context.CancelFunc
 }
 
@@ -122,7 +126,7 @@ func (suite *UpgradeCtrlTestSuite) validateTrigger(trigger *central.SensorUpgrad
 
 func (suite *UpgradeCtrlTestSuite) createUpgradeCtrl() {
 	suite.autoTriggerFlag = new(concurrency.Flag)
-	suite.injector = new(recordingInjector)
+	suite.conn = new(recordingConn)
 	suite.storage = newFakeClusterStorage(fakeClusterID)
 	var err error
 	suite.upgradeCtrl, err = newWithTimeoutProvider(fakeClusterID, suite.storage, suite.autoTriggerFlag, testTimeoutProvider)
@@ -131,10 +135,10 @@ func (suite *UpgradeCtrlTestSuite) createUpgradeCtrl() {
 
 func (suite *UpgradeCtrlTestSuite) waitForTriggerNumber(numExpected int) *central.SensorUpgradeTrigger {
 	poller := concurrency.NewPoller(func() bool {
-		return len(suite.injector.getSentTriggers()) >= numExpected
+		return len(suite.conn.getSentTriggers()) >= numExpected
 	}, 10*time.Millisecond)
 	suite.True(concurrency.WaitWithTimeout(poller, time.Second))
-	triggers := suite.injector.getSentTriggers()
+	triggers := suite.conn.getSentTriggers()
 	suite.Len(triggers, numExpected)
 	return triggers[numExpected-1]
 }
@@ -151,7 +155,7 @@ func (suite *UpgradeCtrlTestSuite) createSensorCtxWithVersion(version string) co
 }
 
 func (suite *UpgradeCtrlTestSuite) registerConnectionFromNonAncientSensorVersion(version string) {
-	errSig := suite.upgradeCtrl.RegisterConnection(suite.createSensorCtxWithVersion(version), suite.injector)
+	errSig := suite.upgradeCtrl.RegisterConnection(suite.createSensorCtxWithVersion(version), suite.conn)
 	suite.NotNil(errSig)
 	suite.False(concurrency.IsDone(errSig))
 }
@@ -231,13 +235,13 @@ func (suite *UpgradeCtrlTestSuite) TestDoesntTriggerWithoutConnection() {
 }
 
 func (suite *UpgradeCtrlTestSuite) TestHandlingNewConnectionFromAncientSensor() {
-	errSig := suite.upgradeCtrl.RegisterConnection(context.Background(), suite.injector)
+	errSig := suite.upgradeCtrl.RegisterConnection(context.Background(), suite.conn)
 	suite.Nil(errSig)
 
 	suite.upgradabilityMustBe(storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED)
 	// Make sure no messages are sent to the indicator. Sleep for a bit to be sure.
 	time.Sleep(100 * time.Millisecond)
-	suite.Empty(suite.injector.getSentTriggers())
+	suite.Empty(suite.conn.getSentTriggers())
 }
 
 func (suite *UpgradeCtrlTestSuite) TestWithUpToDateSensor() {

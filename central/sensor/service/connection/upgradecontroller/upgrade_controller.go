@@ -12,12 +12,18 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
+// SensorConn is the subset of the SensorConnection interface required by the upgrade controller.
+type SensorConn interface {
+	common.MessageInjector
+	CheckAutoUpgradeSupport() error
+}
+
 // UpgradeController controls auto-upgrading for one specific cluster.
 type UpgradeController interface {
 	// RegisterConnection registers a new connection from a sensor, and a handle to send messages to it.
 	// The return value is a once-triggered error waitable that gets triggered if there is any critical issue
 	// with the upgrade controller.
-	RegisterConnection(sensorCtx context.Context, connection common.MessageInjector) concurrency.ErrorWaitable
+	RegisterConnection(sensorCtx context.Context, connection SensorConn) concurrency.ErrorWaitable
 	ProcessCheckInFromUpgrader(req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error)
 	ProcessCheckInFromSensor(req *central.UpgradeCheckInFromSensorRequest) error
 	Trigger(ctx concurrency.Waitable) error

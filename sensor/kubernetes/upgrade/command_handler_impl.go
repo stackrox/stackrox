@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/config"
 	"google.golang.org/grpc"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -33,10 +34,12 @@ type commandHandler struct {
 	baseK8sRESTConfig   *rest.Config
 	k8sClient           kubernetes.Interface
 	checkInClient       central.SensorUpgradeControlServiceClient
+
+	configHandler config.Handler
 }
 
 // NewCommandHandler returns a new upgrade command handler for Kubernetes.
-func NewCommandHandler() (common.SensorComponent, error) {
+func NewCommandHandler(configHandler config.Handler) (common.SensorComponent, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining in-cluster Kubernetes config")
@@ -50,6 +53,7 @@ func NewCommandHandler() (common.SensorComponent, error) {
 	return &commandHandler{
 		baseK8sRESTConfig: config,
 		k8sClient:         k8sClientSet,
+		configHandler:     configHandler,
 	}, nil
 }
 
@@ -128,6 +132,14 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 		return nil
 	}
 
+	if h.configHandler.GetHelmManagedConfig() != nil {
+		upgradesNotSupportedErr := errors.New("Cluster is Helm-managed and does not support auto-upgrades")
+		go h.rejectUpgradeRequest(trigger, upgradesNotSupportedErr)
+		go h.deleteUpgraderDeployments()
+		h.currentProcess = nil
+		return upgradesNotSupportedErr
+	}
+
 	newProc, err := newProcess(trigger, h.checkInClient, h.baseK8sRESTConfig)
 	if err != nil {
 		return errors.Wrap(err, "error creating new upgrade process")
@@ -160,4 +172,15 @@ func (h *commandHandler) deleteUpgraderDeployments() {
 
 func (h *commandHandler) ctx() context.Context {
 	return concurrency.AsContext(&h.stopSig)
+}
+
+func (h *commandHandler) rejectUpgradeRequest(trigger *central.SensorUpgradeTrigger, errReason error) {
+	checkInReq := &central.UpgradeCheckInFromSensorRequest{
+		UpgradeProcessId: trigger.GetUpgradeProcessId(),
+		State: &central.UpgradeCheckInFromSensorRequest_LaunchError{
+			LaunchError: errReason.Error(),
+		},
+	}
+	// We don't care about the error, if any.
+	_, _ = h.checkInClient.UpgradeCheckInFromSensor(h.ctx(), checkInReq)
 }

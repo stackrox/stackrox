@@ -8,6 +8,7 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
 	search "github.com/stackrox/rox/pkg/search"
@@ -50,6 +51,20 @@ func (m *MockDataStore) AddCluster(arg0 context.Context, arg1 *storage.Cluster) 
 func (mr *MockDataStoreMockRecorder) AddCluster(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCluster", reflect.TypeOf((*MockDataStore)(nil).AddCluster), arg0, arg1)
+}
+
+// ApplyHelmConfig mocks base method
+func (m *MockDataStore) ApplyHelmConfig(arg0 context.Context, arg1 string, arg2 *central.HelmManagedConfigInit) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ApplyHelmConfig", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ApplyHelmConfig indicates an expected call of ApplyHelmConfig
+func (mr *MockDataStoreMockRecorder) ApplyHelmConfig(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyHelmConfig", reflect.TypeOf((*MockDataStore)(nil).ApplyHelmConfig), arg0, arg1, arg2)
 }
 
 // CountClusters mocks base method

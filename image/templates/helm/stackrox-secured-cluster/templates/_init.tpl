@@ -16,6 +16,11 @@
 {{ if not $._rox }}
 
 {{/*
+    Calculate the fingerprint of the input config.
+   */}}
+{{ $configFP := printf "%s-%d" (.Values | toJson | sha256sum) .Release.Revision }}
+
+{{/*
     Initial Setup
    */}}
 
@@ -196,6 +201,9 @@
 {{ $rox := deepCopy $.Values }}
 {{ $_ := include "srox.mergeInto" (list $rox ($.Files.Get "internal/config-shape.yaml" | fromYaml) ($.Files.Get "internal/bootstrap-defaults.yaml" | fromYaml)) }}
 {{ $_ = set $ "_rox" $rox }}
+
+{{/* Set the config fingerprint */}}
+{{ $_ = set $._rox "_configFP" $configFP }}
 
 {{/* Global state (accessed from sub-templates) */}}
 {{ $state := dict "notes" list "warnings" list "referencedImages" dict }}

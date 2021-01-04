@@ -3,6 +3,7 @@ package sensor
 import (
 	"context"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -13,6 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/encoding/gzip"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -92,6 +94,9 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		capsSet.AddAll(component.Capabilities()...)
 	}
 	ctx = centralsensor.AppendCapsInfoToContext(ctx, capsSet)
+	if configHandler.GetHelmManagedConfig() != nil {
+		ctx = metadata.AppendToOutgoingContext(ctx, centralsensor.HelmManagedClusterMetadataKey, "true")
+	}
 
 	stream, err := communicateWithAutoSensedEncoding(ctx, client)
 	if err != nil {
@@ -136,6 +141,28 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 }
 
 func (s *centralCommunicationImpl) initialConfigSync(stream central.SensorService_CommunicateClient, handler config.Handler) error {
+	headerMD, err := stream.Header()
+	if err != nil {
+		return errors.Wrap(err, "receiving header metadata from central")
+	}
+
+	if metautils.NiceMD(headerMD).Get(centralsensor.HelmManagedClusterMetadataKey) == "true" {
+		if handler.GetHelmManagedConfig() == nil {
+			return errors.New("central requested Helm-managed cluster config, but no Helm-managed config is available")
+		}
+
+		msg := &central.MsgFromSensor{
+			Msg: &central.MsgFromSensor_HelmManagedConfigInit{
+				HelmManagedConfigInit: handler.GetHelmManagedConfig(),
+			},
+		}
+		if err := stream.Send(msg); err != nil {
+			return errors.Wrap(err, "could not send Helm-managed cluster config")
+		}
+	} else if helmCfg := handler.GetHelmManagedConfig(); helmCfg != nil {
+		log.Warn("Central instance does NOT support Helm-managed configuration. Dynamic cluster configuration MUST be changed via the UI in order to take effect. Please upgrade Central to a recent version to allow changing dynamic cluster configuration via 'helm upgrade'")
+	}
+
 	msg, err := stream.Recv()
 	if err != nil {
 		return errors.Wrap(err, "receiving initial cluster config")

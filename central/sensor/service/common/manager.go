@@ -3,11 +3,13 @@ package common
 import (
 	"context"
 
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 )
 
 // ClusterManager envelopes functions that interact with clusters
 type ClusterManager interface {
+	ApplyHelmConfig(ctx context.Context, clusterID string, helmConfig *central.HelmManagedConfigInit) error
 	UpdateClusterUpgradeStatus(ctx context.Context, clusterID string, status *storage.ClusterUpgradeStatus) error
 	UpdateClusterHealth(ctx context.Context, id string, status *storage.ClusterHealthStatus) error
 	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)

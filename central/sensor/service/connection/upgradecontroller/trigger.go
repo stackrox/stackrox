@@ -86,6 +86,9 @@ func (u *upgradeController) checkActiveConnAndNoActiveProcess() error {
 	if u.activeSensorConn == nil {
 		return errors.Errorf("no active sensor connection for cluster %s exists, cannot trigger cert rotation", u.clusterID)
 	}
+	if err := u.activeSensorConn.conn.CheckAutoUpgradeSupport(); err != nil {
+		return err
+	}
 
 	if u.active != nil {
 		return errors.Errorf("an upgrade is already in progress in cluster %s", u.clusterID)
@@ -105,7 +108,7 @@ func (u *upgradeController) doTriggerCertRotation() (common.MessageInjector, *ce
 	cluster := u.getCluster()
 	process := newCertRotationProcess()
 	u.makeProcessActive(cluster, process)
-	return u.activeSensorConn.injector, u.active.trigger, nil
+	return u.activeSensorConn.conn, u.active.trigger, nil
 }
 
 func (u *upgradeController) doTriggerUpgrade() (common.MessageInjector, *central.SensorUpgradeTrigger, error) {
@@ -135,5 +138,5 @@ func (u *upgradeController) doTriggerUpgrade() (common.MessageInjector, *central
 
 	u.makeProcessActive(cluster, process)
 
-	return u.activeSensorConn.injector, u.active.trigger, nil
+	return u.activeSensorConn.conn, u.active.trigger, nil
 }

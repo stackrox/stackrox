@@ -297,13 +297,9 @@ func (ds *datastoreImpl) AddCluster(ctx context.Context, cluster *storage.Cluste
 	defer ds.lock.Unlock()
 
 	cluster.Id = uuid.NewV4().String()
-	if err := ds.clusterStorage.Upsert(cluster); err != nil {
+	if err := ds.updateClusterNoLock(cluster); err != nil {
 		return "", err
 	}
-	if err := ds.indexer.AddCluster(cluster); err != nil {
-		return "", err
-	}
-	ds.cache.Add(cluster.GetId(), cluster.GetName())
 
 	// Temporarily elevate permissions to create network flow store for the cluster.
 	networkGraphElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
@@ -336,14 +332,9 @@ func (ds *datastoreImpl) UpdateCluster(ctx context.Context, cluster *storage.Clu
 		cluster.Status = existingCluster.GetStatus()
 	}
 
-	if err := ds.clusterStorage.Upsert(cluster); err != nil {
+	if err := ds.updateClusterNoLock(cluster); err != nil {
 		return err
 	}
-	if err := ds.indexer.AddCluster(cluster); err != nil {
-		return err
-	}
-
-	ds.cache.Add(cluster.GetId(), cluster.GetName())
 
 	conn := ds.cm.GetConnection(cluster.GetId())
 	if conn == nil {
@@ -624,4 +615,70 @@ func (ds *datastoreImpl) populateHealthInfos(clusters ...*storage.Cluster) {
 		cluster.HealthStatus = infos[healthIdx]
 		healthIdx++
 	}
+}
+
+func (ds *datastoreImpl) updateClusterNoLock(cluster *storage.Cluster) error {
+	if err := ds.clusterStorage.Upsert(cluster); err != nil {
+		return err
+	}
+	if err := ds.indexer.AddCluster(cluster); err != nil {
+		return err
+	}
+	ds.cache.Add(cluster.GetId(), cluster.GetName())
+	return nil
+}
+
+func (ds *datastoreImpl) ApplyHelmConfig(ctx context.Context, clusterID string, helmConfig *central.HelmManagedConfigInit) error {
+	if err := checkWriteSac(ctx, clusterID); err != nil {
+		return err
+	}
+
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	cluster, exist, err := ds.GetCluster(ctx, clusterID)
+	if err != nil {
+		return err
+	} else if !exist {
+		return errors.Errorf("cluster with ID %q does not exist", clusterID)
+	}
+
+	// If the cluster should not be helm-managed, clear out the helm config field, if necessary.
+	if helmConfig == nil {
+		if cluster.GetHelmConfig() != nil {
+			cluster.HelmConfig = nil
+			return ds.updateClusterNoLock(cluster)
+		}
+		return nil
+	}
+
+	// Ensure that the name of the cluster doesn't get changed.
+	if clusterName := helmConfig.GetClusterName(); clusterName != "" && clusterName != cluster.GetName() {
+		return errors.Errorf("Cannot rename cluster with ID %s from %q to %q. Set the cluster.name/clusterName attribute in your Helm config to %q, or remove it", clusterID, cluster.GetName(), clusterName, cluster.GetName())
+	}
+
+	if cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() {
+		// No change in fingerprint, do not update.
+		return nil
+	}
+
+	cluster.HelmConfig = helmConfig.GetClusterConfig().Clone()
+	configureFromHelmConfig(cluster)
+
+	return ds.updateClusterNoLock(cluster)
+}
+
+func configureFromHelmConfig(cluster *storage.Cluster) {
+	cluster.DynamicConfig = cluster.GetHelmConfig().GetDynamicConfig().Clone()
+
+	staticConfig := cluster.GetHelmConfig().GetStaticConfig()
+	cluster.Type = staticConfig.GetType()
+	cluster.MainImage = staticConfig.GetMainImage()
+	cluster.CentralApiEndpoint = staticConfig.GetCentralApiEndpoint()
+	cluster.CollectionMethod = staticConfig.GetCollectionMethod()
+	cluster.CollectorImage = staticConfig.GetCollectorImage()
+	cluster.AdmissionController = staticConfig.GetAdmissionController()
+	cluster.AdmissionControllerUpdates = staticConfig.GetAdmissionControllerUpdates()
+	cluster.TolerationsConfig = staticConfig.GetTolerationsConfig().Clone()
+	cluster.SlimCollector = staticConfig.GetSlimCollector()
 }

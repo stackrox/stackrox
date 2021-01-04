@@ -104,13 +104,18 @@ const SensorUpgrade = ({ upgradeStatus, centralVersion, sensorVersion, isList, a
                 </table>
             );
 
-            const detailElement =
-                (type === 'failure' || type === 'intervention') &&
-                upgradeStatus?.mostRecentProcess?.progress?.upgradeStatusDetail ? (
-                    <div className="mb-2" data-testid="upgradeStatusDetail">
-                        {upgradeStatus.mostRecentProcess.progress.upgradeStatusDetail}
-                    </div>
-                ) : null;
+            let detailMessage = null;
+            if (type === 'failure') {
+                detailMessage = upgradeStatus?.mostRecentProcess?.progress?.upgradeStatusDetail;
+            } else if (type === 'intervention') {
+                detailMessage = upgradeStatus?.upgradabilityStatusReason;
+            }
+
+            const detailElement = detailMessage ? (
+                <div className="mb-2" data-testid="upgradeStatusDetail">
+                    {detailMessage}
+                </div>
+            ) : null;
 
             if (isList) {
                 const overlayElement = detailElement ? (

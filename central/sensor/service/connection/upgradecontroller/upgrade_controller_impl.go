@@ -2,7 +2,6 @@ package upgradecontroller
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
@@ -19,7 +18,7 @@ var (
 )
 
 type activeSensorConnectionInfo struct {
-	injector      common.MessageInjector
+	conn          SensorConn
 	sensorVersion string
 }
 
@@ -114,6 +113,11 @@ func (u *upgradeController) shouldAutoTriggerUpgrade() bool {
 		// (we don't distinguish success or failure; if success, the above condition should already catch this, as
 		// sensor should then be running the current version).
 		return false
+	}
+	if u.activeSensorConn != nil {
+		if err := u.activeSensorConn.conn.CheckAutoUpgradeSupport(); err != nil {
+			return false
+		}
 	}
 	return true
 }
