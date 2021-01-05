@@ -9,7 +9,7 @@ import {
     networkConnectionLabels,
 } from 'messages/network';
 import { CondensedButton, CondensedAlertButton } from '@stackrox/ui-components';
-import { NetworkBaseline } from '../networkTypes';
+import { BaselineStatus, NetworkBaseline } from '../networkTypes';
 
 import Table from './Table';
 import TableHead from './TableHead';
@@ -22,9 +22,9 @@ import checkboxSelectionPlugin from './checkboxSelectionPlugin';
 export type Row = {
     original: NetworkBaseline;
     values: {
-        status: NetworkBaseline['status'];
+        status: BaselineStatus;
     };
-    groupByVal: NetworkBaseline['status'];
+    groupByVal: BaselineStatus;
 };
 
 export type NetworkFlowsTableProps = {
