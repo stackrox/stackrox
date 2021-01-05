@@ -1,78 +1,13 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import isEqual from 'lodash/isEqual';
 
-import { getNetworkFlows } from 'utils/networkUtils/getNetworkFlows';
 import { fetchNetworkBaselineStatus } from 'services/NetworkService';
 import {
     BaselineStatus,
     FlattenedPeer,
     NetworkFlow,
-    NetworkBaseline,
     FlattenedNetworkBaseline,
 } from 'Containers/Network/Wizard/NetworkDeploymentOverlay/NetworkFlows/networkTypes';
-
-/*
- * This function will unflatten the flattened network baselines by grouping
- * the network baselines by ports and protocols
- *
- */
-function unflattenNetworkBaseline(
-    flattenedNetworkBaseline: FlattenedNetworkBaseline
-): NetworkBaseline {
-    const { peer, status } = flattenedNetworkBaseline;
-    const networkBaseline = {
-        peer: {
-            entity: {
-                id: peer.entity.id,
-                type: peer.entity.type,
-                name: peer.entity.name,
-                namespace: peer.entity.namespace,
-            },
-            portsAndProtocols: [
-                { port: peer.port, protocol: peer.protocol, ingress: peer.ingress },
-            ],
-            ingress: peer.ingress,
-            egress: !peer.ingress,
-            state: peer.state,
-        },
-        status,
-    };
-    return networkBaseline;
-}
-
-/*
- * This function will unflatten the flattened network baselines by grouping
- * the network baselines by ports and protocols
- *
- */
-function unflattenNetworkBaselines(
-    networkBaselines: FlattenedNetworkBaseline[]
-): NetworkBaseline[] {
-    const groupMap = networkBaselines.reduce(
-        (acc: { [key: string]: NetworkBaseline }, curr: FlattenedNetworkBaseline) => {
-            if (!acc[curr.peer.entity.id]) {
-                const datum = unflattenNetworkBaseline(curr);
-                acc[curr.peer.entity.id] = datum;
-            } else {
-                const datum = { ...acc[curr.peer.entity.id] };
-                datum.peer.portsAndProtocols.push({
-                    port: curr.peer.port,
-                    protocol: curr.peer.protocol,
-                    ingress: curr.peer.ingress,
-                });
-                // when both ingress and egress are true, it is bidirectional
-                if (datum.peer.ingress !== curr.peer.ingress) {
-                    datum.peer.ingress = true;
-                    datum.peer.egress = true;
-                }
-                acc[curr.peer.entity.id] = datum;
-            }
-            return acc;
-        },
-        {}
-    );
-    const unflattenedNetworkBaselines = Object.values(groupMap);
-    return unflattenedNetworkBaselines;
-}
 
 /*
  * This function takes the network flows and separates them based on their ports
@@ -127,26 +62,45 @@ function getBaselineStatusKey({ id, ingress, port, protocol }): string {
     return `${id}-${ingress}-${port}-${protocol}`;
 }
 
+type Result = { isLoading: boolean; data: FlattenedNetworkBaseline[] | null; error: string | null };
+
+function usePrevValue(newValue: NetworkFlow[]): NetworkFlow[] | undefined {
+    const ref = React.useRef<NetworkFlow[]>();
+    useEffect(() => {
+        ref.current = newValue;
+    });
+    return ref.current;
+}
+
 /*
  * This hook does an API call to the baseline status API to get the baseline status
  * of the supplied peers
  */
 function useFetchNetworkBaselines({
     deploymentId,
-    edges,
+    networkFlows,
     filterState,
-}): { isLoading: boolean; networkBaselines: NetworkBaseline[] } {
-    const [networkBaselines, setNetworkBaselines] = useState<NetworkBaseline[]>([]);
-    const [isLoading, setLoading] = useState(true);
+}: {
+    deploymentId: string;
+    networkFlows: NetworkFlow[];
+    filterState: number;
+}): Result {
+    const [result, setResult] = useState<Result>({ data: null, error: null, isLoading: true });
+    const prevNetworkFlows = usePrevValue(networkFlows);
 
     useEffect(() => {
-        const { networkFlows } = getNetworkFlows(edges, filterState);
+        if (isEqual(prevNetworkFlows, networkFlows)) {
+            return;
+        }
+
         const peers = getPeersFromNetworkFlows(networkFlows);
         const baselineStatusPromise = fetchNetworkBaselineStatus({ deploymentId, peers });
 
-        baselineStatusPromise.then((response) => {
-            const baselineStatusMap: { [key: string]: BaselineStatus } = response.statuses.reduce(
-                (acc, networkBaseline: FlattenedNetworkBaseline) => {
+        baselineStatusPromise
+            .then((response) => {
+                const baselineStatusMap: {
+                    [key: string]: BaselineStatus;
+                } = response.statuses.reduce((acc, networkBaseline: FlattenedNetworkBaseline) => {
                     const key = getBaselineStatusKey({
                         id: networkBaseline.peer.entity.id,
                         ingress: networkBaseline.peer.ingress,
@@ -155,35 +109,32 @@ function useFetchNetworkBaselines({
                     });
                     acc[key] = networkBaseline.status;
                     return acc;
-                },
-                {}
-            );
-            const flattenedNetworkBaselines = peers.reduce(
-                (acc: FlattenedNetworkBaseline[], peer: FlattenedPeer) => {
-                    const key = getBaselineStatusKey({
-                        id: peer.entity.id,
-                        ingress: peer.ingress,
-                        port: peer.port,
-                        protocol: peer.protocol,
-                    });
-                    const status = baselineStatusMap[key];
-                    acc.push({
-                        peer,
-                        status,
-                    });
-                    return acc;
-                },
-                []
-            );
-            const unflattenedNetworkBaselines = unflattenNetworkBaselines(
-                flattenedNetworkBaselines
-            );
-            setNetworkBaselines(unflattenedNetworkBaselines);
-            setLoading(false);
-        });
-    }, [deploymentId, edges, filterState]);
+                }, {});
+                const flattenedNetworkBaselines = peers.reduce(
+                    (acc: FlattenedNetworkBaseline[], peer: FlattenedPeer) => {
+                        const key = getBaselineStatusKey({
+                            id: peer.entity.id,
+                            ingress: peer.ingress,
+                            port: peer.port,
+                            protocol: peer.protocol,
+                        });
+                        const status = baselineStatusMap[key];
+                        acc.push({
+                            peer,
+                            status,
+                        });
+                        return acc;
+                    },
+                    []
+                );
+                setResult({ data: flattenedNetworkBaselines, error: null, isLoading: false });
+            })
+            .catch((error) => {
+                setResult({ data: null, error, isLoading: false });
+            });
+    }, [deploymentId, filterState, networkFlows, prevNetworkFlows]);
 
-    return { isLoading, networkBaselines };
+    return result;
 }
 
 export default useFetchNetworkBaselines;

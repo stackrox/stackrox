@@ -31,12 +31,8 @@ const dataResolversByCategory = {
     },
     Type: (datum) => datum.peer.entity.type,
     Namespace: (datum) => datum.peer.entity.namespace,
-    Port: (datum) => {
-        return datum.peer.portsAndProtocols.map(({ port }) => port);
-    },
-    Protocol: (datum) => {
-        return datum.peer.portsAndProtocols.map(({ protocol }) => protocol);
-    },
+    Port: (datum) => datum.peer.port,
+    Protocol: (datum) => datum.peer.protocol,
     State: (datum) => datum.peer.state,
 };
 

@@ -144,6 +144,7 @@ export function getNetworkFlows(edges: Edge[], filterState): OmnibusNetworkFlows
                     type: isExternal ? 'external' : 'deployment',
                     connection,
                     portsAndProtocols,
+                    entityType: destNodeType,
                 },
             };
         },

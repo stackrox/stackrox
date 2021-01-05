@@ -4,12 +4,22 @@ import IndeterminateCheckbox from './IndeterminateCheckbox';
 
 function CheckboxCellComponent({ row }): ReactNode {
     const { title, checked, indeterminate, onChange } = row.getToggleRowSelectedProps();
+    const { onClick: toggleExpand } = row.getToggleRowExpandedProps();
+
+    function onChangeHandler(event: React.ChangeEvent): void {
+        onChange(event);
+        // If a row has nested rows, and was checked, expanded it if it isn't already
+        if (!checked && !row.isExpanded && row.subRows.length > 1) {
+            toggleExpand();
+        }
+    }
+
     return (
         <IndeterminateCheckbox
             title={title}
             checked={checked}
             indeterminate={indeterminate}
-            onChange={onChange}
+            onChange={onChangeHandler}
         />
     );
 }

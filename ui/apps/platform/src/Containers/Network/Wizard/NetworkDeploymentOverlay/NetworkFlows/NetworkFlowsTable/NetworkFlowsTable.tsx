@@ -1,6 +1,7 @@
 /* eslint-disable react/display-name */
 import React, { ReactElement } from 'react';
 import { useTable, useSortBy, useGroupBy, useExpanded, useRowSelect } from 'react-table';
+import uniq from 'lodash/uniq';
 
 import { networkFlowStatus } from 'constants/networkGraph';
 import {
@@ -8,8 +9,7 @@ import {
     networkProtocolLabels,
     networkConnectionLabels,
 } from 'messages/network';
-import { CondensedButton, CondensedAlertButton } from '@stackrox/ui-components';
-import { BaselineStatus, NetworkBaseline } from '../networkTypes';
+import { FlattenedNetworkBaseline } from '../networkTypes';
 
 import Table from './Table';
 import TableHead from './TableHead';
@@ -17,29 +17,22 @@ import TableBody from './TableBody';
 import TableRow from './TableRow';
 import TableCell from './TableCell';
 import GroupedStatusTableCell from './GroupedStatusTableCell';
+import ToggleSelectedBaselineStatuses from './ToggleSelectedBaselineStatuses';
+import ToggleBaselineStatus from './ToggleBaselineStatus';
 import checkboxSelectionPlugin from './checkboxSelectionPlugin';
-
-export type Row = {
-    original: NetworkBaseline;
-    values: {
-        status: BaselineStatus;
-    };
-    groupByVal: BaselineStatus;
-};
+import expanderPlugin from './expanderPlugin';
 
 export type NetworkFlowsTableProps = {
-    networkFlows: NetworkBaseline[];
+    networkFlows: FlattenedNetworkBaseline[];
 };
 
-export type HoveredRowComponentProps = {
-    row: Row;
-};
-
-export type GroupedRowComponentProps = {
-    row: Row;
-    rows: Row[];
-    selectedFlatRows: Row[];
-};
+function getAggregateText(leafValues: string[], multiplePhrase = 'Many'): string {
+    const uniqValues = uniq(leafValues);
+    if (uniqValues.length > 1) {
+        return multiplePhrase;
+    }
+    return uniqValues[0];
+}
 
 const columns = [
     {
@@ -50,145 +43,70 @@ const columns = [
     {
         Header: 'Entity',
         id: 'entity',
-        // eslint-disable-next-line react/display-name
-        accessor: (datum: NetworkBaseline): ReactElement => {
-            return <div className="ml-2">{datum.peer.entity.name}</div>;
-        },
+        accessor: 'peer.entity.name',
     },
     {
         Header: 'Traffic',
         id: 'traffic',
-        accessor: (datum: NetworkBaseline): string => {
-            if (datum.peer.ingress && datum.peer.egress) {
-                return 'Bidirectional';
-            }
+        accessor: (datum: FlattenedNetworkBaseline): string => {
             if (datum.peer.ingress) {
                 return 'Ingress';
             }
             return 'Egress';
         },
+        aggregate: (leafValues: string[]): string => {
+            return getAggregateText(leafValues, 'Two-way');
+        },
     },
     {
         Header: 'Type',
         id: 'type',
-        accessor: (datum: NetworkBaseline): string => {
+        accessor: (datum: FlattenedNetworkBaseline): string => {
             return networkEntityLabels[datum.peer.entity.type];
+        },
+        aggregate: (leafValues: string[]): string => {
+            return getAggregateText(leafValues);
         },
     },
     {
         Header: 'Namespace',
         id: 'namespace',
-        accessor: (datum: NetworkBaseline): string => {
+        accessor: (datum: FlattenedNetworkBaseline): string => {
             return datum.peer.entity.namespace ?? '-';
+        },
+        aggregate: (leafValues: string[]): string => {
+            return getAggregateText(leafValues);
         },
     },
     {
         Header: 'Port',
         id: 'port',
-        accessor: (datum: NetworkBaseline): string => {
-            if (datum.peer.portsAndProtocols.length > 1) {
-                return 'Multiple';
-            }
-            return datum.peer.portsAndProtocols[0].port;
+        accessor: 'peer.port',
+        aggregate: (leafValues: string[]): string => {
+            return getAggregateText(leafValues);
         },
     },
     {
         Header: 'Protocol',
         id: 'protocol',
-        accessor: (datum: NetworkBaseline): string => {
-            if (datum.peer.portsAndProtocols.length > 1) {
-                return 'Multiple';
-            }
-            return networkProtocolLabels[datum.peer.portsAndProtocols[0].protocol];
+        accessor: (datum: FlattenedNetworkBaseline): string => {
+            return networkProtocolLabels[datum.peer.protocol];
+        },
+        aggregate: (leafValues: string[]): string => {
+            return getAggregateText(leafValues);
         },
     },
     {
         Header: 'State',
         id: 'state',
-        accessor: (datum: NetworkBaseline): string => {
+        accessor: (datum: FlattenedNetworkBaseline): string => {
             return networkConnectionLabels[datum.peer.state];
+        },
+        aggregate: (leafValues: string[]): string => {
+            return getAggregateText(leafValues);
         },
     },
 ];
-
-// TODO: Separate into different file
-function HoveredRowComponent({ row }: HoveredRowComponentProps): ReactElement {
-    function onClick(): void {
-        // TODO: remove this console log and add a way to use the API call
-        // for marking as anomalous or adding to baseline
-        // eslint-disable-next-line no-console
-        console.log(row.original);
-    }
-
-    if (row.original.status === networkFlowStatus.ANOMALOUS) {
-        return (
-            <CondensedButton type="button" onClick={onClick}>
-                Add to baseline
-            </CondensedButton>
-        );
-    }
-    return (
-        <CondensedAlertButton type="button" onClick={onClick}>
-            Mark as anomalous
-        </CondensedAlertButton>
-    );
-}
-
-// TODO: Separate into different file
-function GroupedRowComponent({
-    rows,
-    row,
-    selectedFlatRows,
-}: GroupedRowComponentProps): ReactElement {
-    const anomalousSelectedRows = selectedFlatRows.filter(
-        (datum) => datum?.original?.status === networkFlowStatus.ANOMALOUS
-    );
-    const baselineSelectedRows = selectedFlatRows.filter(
-        (datum) => datum?.original?.status === networkFlowStatus.BASELINE
-    );
-    const isAnomalousGroup = row.groupByVal === networkFlowStatus.ANOMALOUS;
-
-    function onClick(): void {
-        if (isAnomalousGroup) {
-            if (anomalousSelectedRows.length) {
-                // Replace this with an API call to mark selected rows as anomalous
-                // eslint-disable-next-line no-console
-                console.log('mark selected as anomalous', anomalousSelectedRows);
-            } else {
-                const allAnomalousRows = rows.filter(
-                    (datum) => datum?.original?.status === networkFlowStatus.ANOMALOUS
-                );
-                // Replace this with an API call to mark all rows as anomalous
-                // eslint-disable-next-line no-console
-                console.log('mark all anomalous', allAnomalousRows);
-            }
-        } else if (baselineSelectedRows.length) {
-            // Replace this with an API call to add selected rows to baseline
-            // eslint-disable-next-line no-console
-            console.log('add selected to baseline', baselineSelectedRows);
-        } else {
-            const allBaselineRows = rows.filter(
-                (datum) => datum?.original?.status === networkFlowStatus.BASELINE
-            );
-            // Replace this with an API call to add all rows to baseline
-            // eslint-disable-next-line no-console
-            console.log('add all baseline', allBaselineRows);
-        }
-    }
-
-    if (isAnomalousGroup) {
-        return (
-            <CondensedButton type="button" onClick={onClick}>
-                Add {anomalousSelectedRows.length || 'all'} to baseline
-            </CondensedButton>
-        );
-    }
-    return (
-        <CondensedAlertButton type="button" onClick={onClick}>
-            Mark {baselineSelectedRows.length || 'all'} as anomalous
-        </CondensedAlertButton>
-    );
-}
 
 function NetworkFlowsTable({ networkFlows }: NetworkFlowsTableProps): ReactElement {
     const { headerGroups, rows, prepareRow, selectedFlatRows } = useTable(
@@ -202,7 +120,7 @@ function NetworkFlowsTable({ networkFlows }: NetworkFlowsTableProps): ReactEleme
                         desc: false,
                     },
                 ],
-                groupBy: ['status'],
+                groupBy: ['status', 'entity'],
                 expanded: {
                     'status:ANOMALOUS': true,
                     'status:BASELINE': true,
@@ -214,7 +132,8 @@ function NetworkFlowsTable({ networkFlows }: NetworkFlowsTableProps): ReactEleme
         useSortBy,
         useExpanded,
         useRowSelect,
-        checkboxSelectionPlugin
+        checkboxSelectionPlugin,
+        expanderPlugin
     );
 
     return (
@@ -232,21 +151,30 @@ function NetworkFlowsTable({ networkFlows }: NetworkFlowsTableProps): ReactEleme
                             ? 'alert'
                             : null;
 
+                    const GroupedRowComponent =
+                        row.groupByID === 'status' ? (
+                            <ToggleSelectedBaselineStatuses
+                                rows={rows}
+                                row={row}
+                                selectedFlatRows={selectedFlatRows}
+                            />
+                        ) : null;
+
+                    const HoveredGroupedRowComponent =
+                        row.groupByID !== 'status' && row.subRows.length === 1 ? (
+                            <ToggleBaselineStatus row={row.subRows[0]} />
+                        ) : null;
+
                     return (
                         <TableRow
                             key={row.id}
                             row={row}
                             type={rowType}
-                            HoveredRowComponent={<HoveredRowComponent row={row} />}
-                            GroupedRowComponent={
-                                <GroupedRowComponent
-                                    rows={rows}
-                                    row={row}
-                                    selectedFlatRows={selectedFlatRows}
-                                />
-                            }
+                            HoveredRowComponent={<ToggleBaselineStatus row={row} />}
+                            HoveredGroupedRowComponent={HoveredGroupedRowComponent}
+                            GroupedRowComponent={GroupedRowComponent}
                         >
-                            {row.isGrouped ? (
+                            {row.isGrouped && row.groupByID === 'status' ? (
                                 <GroupedStatusTableCell row={row} />
                             ) : (
                                 row.cells.map((cell) => {

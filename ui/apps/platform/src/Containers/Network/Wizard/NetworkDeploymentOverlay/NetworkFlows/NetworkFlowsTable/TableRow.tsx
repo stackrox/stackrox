@@ -10,6 +10,7 @@ export type TableRowProps = {
     };
     children: ReactNode;
     HoveredRowComponent?: ReactNode;
+    HoveredGroupedRowComponent?: ReactNode;
     GroupedRowComponent?: ReactNode;
 };
 
@@ -32,6 +33,7 @@ function TableRow({
     row,
     children,
     HoveredRowComponent = null,
+    HoveredGroupedRowComponent = null,
     GroupedRowComponent = null,
 }: TableRowProps): ReactElement {
     const [isHovered, setIsHovered] = useState(false);
@@ -40,6 +42,7 @@ function TableRow({
     const className = type === 'alert' ? alertTableRowClassName : baseTableRowClassName;
     const showGroupedRowComponent = row.isGrouped;
     const showHoveredRowComponent = !showGroupedRowComponent && isHovered;
+    const showHoveredGroupedRowComponent = showGroupedRowComponent && isHovered;
 
     const hoveredRowComponent = showHoveredRowComponent && (
         <TableRowOverlay>{HoveredRowComponent}</TableRowOverlay>
@@ -47,6 +50,10 @@ function TableRow({
 
     const groupedRowComponent = showGroupedRowComponent && (
         <TableRowOverlay>{GroupedRowComponent}</TableRowOverlay>
+    );
+
+    const hoveredGroupedRowComponent = showHoveredGroupedRowComponent && (
+        <TableRowOverlay>{HoveredGroupedRowComponent}</TableRowOverlay>
     );
 
     function onMouseEnter(): void {
@@ -68,6 +75,7 @@ function TableRow({
             {children}
             {hoveredRowComponent}
             {groupedRowComponent}
+            {hoveredGroupedRowComponent}
         </tr>
     );
 }

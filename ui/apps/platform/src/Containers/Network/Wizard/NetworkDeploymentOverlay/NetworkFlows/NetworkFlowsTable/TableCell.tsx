@@ -5,6 +5,12 @@ export type TableCellProps = {
         getCellProps: () => {
             key: string;
         };
+        row: {
+            isGrouped: boolean;
+        };
+        column: {
+            id: string;
+        };
         render: (string) => ReactElement;
     };
 };
@@ -12,8 +18,14 @@ export type TableCellProps = {
 function TableCell({ cell }: TableCellProps): ReactElement {
     const { key } = cell.getCellProps();
 
+    const className = `text-left p-2 ${
+        !cell.row.isGrouped &&
+        cell.column.id === 'expander' &&
+        'bg-primary-200 border-r border-primary-300'
+    }`;
+
     return (
-        <td key={key} className="text-left p-2">
+        <td key={key} className={className}>
             {cell.render('Cell')}
         </td>
     );
