@@ -206,7 +206,7 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 		return nil, status.Errorf(codes.NotFound, "alert with id '%s' does not exist", req.GetId())
 	}
 
-	if req.GetWhitelist() {
+	if req.GetWhitelist() || req.GetAddToBaseline() {
 		// This isn't great as it assumes a single baseline key
 		itemMap := make(map[string][]*storage.BaselineItem)
 		for _, process := range alert.GetProcessViolation().GetProcesses() {

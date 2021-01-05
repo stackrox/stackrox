@@ -26,8 +26,9 @@ message ListAlertsRequest {
 }
 
 message ResolveAlertRequest {
-    string id      = 1;
-    bool whitelist = 2;
+    string id            = 1;
+    bool whitelist       = 2 [deprecated = true];
+    bool add_to_baseline = 3;
 }
 
 message ResolveAlertsRequest {

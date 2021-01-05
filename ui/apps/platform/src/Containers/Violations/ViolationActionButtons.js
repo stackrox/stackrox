@@ -8,11 +8,11 @@ import * as Icon from 'react-feather';
 import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 function ViolationActionButtons({ violation, setSelectedAlertId }) {
-    function resolveAlertAction(shouldExclude) {
+    function resolveAlertAction(addToBaseline) {
         const unselectAlert = () => setSelectedAlertId(null);
         return (e) => {
             e.stopPropagation();
-            resolveAlert(violation.id, shouldExclude).then(unselectAlert, unselectAlert);
+            resolveAlert(violation.id, addToBaseline).then(unselectAlert, unselectAlert);
         };
     }
 

@@ -9,6 +9,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - API changes/deprecations:
   - `ProcessWhitelistService(/v1/processwhitelists/*)`: all `processwhitelists/*` endpoints are deprecated, use
     `processbaselines/*` instead.
+  - `ResolveAlert(/v1/alerts/{id}/resolve)`: `whitelist` is deprecated, use `add_to_baseline` instead.
   - In the `ListDeploymentsWithProcessInfo(/v1/deploymentswithprocessinfo)` response, `deployments.whitelist_statuses`
     is deprecated, use `deployments.baseline_statuses` instead.
   - `ROX_WHITELIST_GENERATION_DURATION` environment variable is deprecated, use `ROX_BASELINE_GENERATION_DURATION`

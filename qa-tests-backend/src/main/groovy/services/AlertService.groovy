@@ -37,8 +37,8 @@ class AlertService extends BaseService {
         return getAlertClient().getAlert(getResourceByID(alertId))
     }
 
-    static resolveAlert(String alertID, boolean whitelist = false) {
+    static resolveAlert(String alertID, boolean addToBaseline = false) {
         return getAlertClient().resolveAlert(
-                ResolveAlertRequest.newBuilder().setId(alertID).setWhitelist(whitelist).build())
+                ResolveAlertRequest.newBuilder().setId(alertID).setAddToBaseline(addToBaseline).build())
     }
 }
