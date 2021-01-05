@@ -11,9 +11,13 @@ function AutoUpgradeToggle(): ReactElement {
     const [autoUpgradeConfig, setAutoUpgradeConfig] = useState<AutoUpgradeConfig>({});
 
     function fetchConfig(): void {
-        getAutoUpgradeConfig().then((config) => {
-            setAutoUpgradeConfig(config);
-        });
+        getAutoUpgradeConfig()
+            .then((config) => {
+                setAutoUpgradeConfig(config);
+            })
+            .catch(() => {
+                // TODO display message when there is a place for minor errors
+            });
     }
 
     useEffect(() => {

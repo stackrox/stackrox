@@ -6,19 +6,25 @@ import ToggleSwitch from 'Components/ToggleSwitch';
 import { getHideDefaultExternalSrcs, setHideDefaultExternalSrcs } from 'services/NetworkService';
 
 const DefaultCIDRToggle = ({ updateNetworkNodes }): ReactElement => {
-    const [showDefaultExternalSrcs, setShowDefaultExternalSrcs] = useState<boolean>(false);
-    const [errorMessage, setErrorMessage] = useState<string>();
+    const [showDefaultExternalSrcs, setShowDefaultExternalSrcs] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
 
     useEffect(() => {
-        getHideDefaultExternalSrcs().then(({ response }) => {
-            setShowDefaultExternalSrcs(!response.hideDefaultExternalSrcs);
-        });
+        getHideDefaultExternalSrcs()
+            .then(({ response }) => {
+                setShowDefaultExternalSrcs(!response.hideDefaultExternalSrcs);
+                setErrorMessage('');
+            })
+            .catch(({ message }) => {
+                setErrorMessage(message);
+            });
     }, [setShowDefaultExternalSrcs]);
 
     function toggleHandler(): void {
         setHideDefaultExternalSrcs(showDefaultExternalSrcs)
             .then(() => {
                 setShowDefaultExternalSrcs(!showDefaultExternalSrcs);
+                setErrorMessage('');
                 updateNetworkNodes();
             })
             .catch(({ message }) => {

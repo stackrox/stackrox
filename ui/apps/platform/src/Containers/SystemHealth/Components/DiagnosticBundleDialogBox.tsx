@@ -70,9 +70,15 @@ const DiagnosticBundleDialogBox = (): ReactElement => {
     const [currentTimeObject, setCurrentTimeObject] = useState<Date | null>(null); // for pure message
 
     useEffect(() => {
-        fetchClustersAsArray().then((clusters) => {
-            setAvailableClusterOptions(clusters.map(({ name }) => ({ label: name, value: name })));
-        });
+        fetchClustersAsArray()
+            .then((clusters) => {
+                setAvailableClusterOptions(
+                    clusters.map(({ name }) => ({ label: name, value: name }))
+                );
+            })
+            .catch(() => {
+                // TODO display message when there is a place for minor errors
+            });
     }, []);
 
     function onChangeStartingTime(event: React.ChangeEvent<HTMLInputElement>): void {
