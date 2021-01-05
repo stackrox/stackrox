@@ -58,17 +58,19 @@ const RiskDetails = ({ risk }) => {
 };
 
 RiskDetails.propTypes = {
-    results: PropTypes.arrayOf(
-        PropTypes.shape({
-            name: PropTypes.string,
-            factors: PropTypes.arrayOf(
-                PropTypes.shape({
-                    message: PropTypes.string,
-                    url: PropTypes.string,
-                })
-            ),
-        })
-    ).isRequired,
+    risk: PropTypes.shape({
+        results: PropTypes.arrayOf(
+            PropTypes.shape({
+                name: PropTypes.string,
+                factors: PropTypes.arrayOf(
+                    PropTypes.shape({
+                        message: PropTypes.string,
+                        url: PropTypes.string,
+                    })
+                ),
+            })
+        ).isRequired,
+    }),
 };
 
 RiskDetails.defaultProps = {
