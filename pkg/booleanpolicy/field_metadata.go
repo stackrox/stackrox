@@ -135,7 +135,7 @@ func init() {
 	registerFieldMetadata(fieldnames.VolumeName, querybuilders.ForFieldLabelRegex(search.VolumeName), violationmessages.VolumeContextFields, stringValueRegex)
 	registerFieldMetadata(fieldnames.VolumeSource, querybuilders.ForFieldLabelRegex(search.VolumeSource), violationmessages.VolumeContextFields, stringValueRegex)
 	registerFieldMetadata(fieldnames.VolumeType, querybuilders.ForFieldLabelRegex(search.VolumeType), violationmessages.VolumeContextFields, stringValueRegex)
-	registerFieldMetadata(fieldnames.WhitelistsEnabled, querybuilders.ForFieldLabel(augmentedobjs.NotWhitelistedCustomTag), violationmessages.ProcessWhitelistContextFields, booleanValueRegex, negationForbidden, operatorsForbidden)
+	registerFieldMetadata(fieldnames.UnexpectedProcessExecuted, querybuilders.ForFieldLabel(augmentedobjs.NotInBaselineCustomTag), violationmessages.ProcessBaselineContextFields, booleanValueRegex, negationForbidden, operatorsForbidden)
 	registerFieldMetadata(fieldnames.WritableHostMount, querybuilders.ForWriteableHostMount(), violationmessages.VolumeContextFields, booleanValueRegex, negationForbidden, operatorsForbidden)
 	registerFieldMetadata(fieldnames.WritableMountedVolume, querybuilders.ForFieldLabelBoolean(search.VolumeReadonly, true), violationmessages.VolumeContextFields, booleanValueRegex, negationForbidden, operatorsForbidden)
 }

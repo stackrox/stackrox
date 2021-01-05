@@ -9,7 +9,7 @@ import (
 var (
 	runtimeFields = set.NewFrozenStringSet(
 		fieldnames.ProcessName, fieldnames.ProcessArguments, fieldnames.ProcessAncestor, fieldnames.ProcessUID,
-		fieldnames.WhitelistsEnabled,
+		fieldnames.UnexpectedProcessExecuted,
 	)
 )
 

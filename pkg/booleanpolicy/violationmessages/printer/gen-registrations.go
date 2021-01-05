@@ -21,7 +21,7 @@ const (
 	PortKey                 = "port"
 	PortExposureKey         = "portExposure"
 	PrivilegedKey           = "privileged"
-	ProcessWhitelistKey     = "processWhitelist"
+	ProcessBaselineKey      = "processBaseline"
 	RbacKey                 = "rbac"
 	ReadOnlyRootFSKey       = "readOnlyRootFS"
 	RequiredAnnotationKey   = "requiredAnnotation"
@@ -51,7 +51,7 @@ func init() {
 	registerFunc(PortKey, portPrinter)
 	registerFunc(PortExposureKey, portExposurePrinter)
 	registerFunc(PrivilegedKey, privilegedPrinter)
-	registerFunc(ProcessWhitelistKey, processWhitelistPrinter)
+	registerFunc(ProcessBaselineKey, processBaselinePrinter)
 	registerFunc(RbacKey, rbacPrinter)
 	registerFunc(ReadOnlyRootFSKey, readOnlyRootFSPrinter)
 	registerFunc(RequiredAnnotationKey, requiredAnnotationPrinter)

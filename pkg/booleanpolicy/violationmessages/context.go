@@ -33,7 +33,7 @@ var (
 	PortContextFields = newContextFields(
 		nil,
 		[]string{augmentedobjs.ContainerNameCustomTag, search.Port.String(), search.PortProtocol.String()})
-	ProcessWhitelistContextFields = newContextFields(
+	ProcessBaselineContextFields = newContextFields(
 		nil,
 		[]string{augmentedobjs.ContainerNameCustomTag, search.ProcessName.String()})
 )

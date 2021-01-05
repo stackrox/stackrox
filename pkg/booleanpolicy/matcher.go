@@ -48,7 +48,7 @@ type DeploymentMatcher interface {
 
 // A DeploymentWithProcessMatcher matches deployments, and a process, against a policy.
 type DeploymentWithProcessMatcher interface {
-	MatchDeploymentWithProcess(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (Violations, error)
+	MatchDeploymentWithProcess(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processNotInBaseline bool) (Violations, error)
 }
 
 type sectionAndEvaluator struct {

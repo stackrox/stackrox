@@ -1521,11 +1521,11 @@ func policyWithSingleFieldAndValues(fieldName string, values []string, negate bo
 	}).([]*storage.PolicyValue), Negate: negate, BooleanOperator: op})
 }
 
-func processWhitelistMessage(dep *storage.Deployment, whitelist bool, privileged bool, processNames ...string) []*storage.Alert_Violation {
+func processBaselineMessage(dep *storage.Deployment, baseline bool, privileged bool, processNames ...string) []*storage.Alert_Violation {
 	violations := make([]*storage.Alert_Violation, 0, len(processNames))
 	containerName := dep.GetContainers()[0].GetName()
 	for _, p := range processNames {
-		if whitelist {
+		if baseline {
 			msg := fmt.Sprintf("Unexpected process '%s' in container '%s'", p, containerName)
 			violations = append(violations, &storage.Alert_Violation{Message: msg})
 		}
@@ -1969,7 +1969,7 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 	}
 }
 
-func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
+func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 	privilegedDep := fixtures.GetDeployment().Clone()
 	privilegedDep.Id = "PRIVILEGED"
 	suite.addDepAndImages(privilegedDep)
@@ -1993,7 +1993,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
 			bashKey:    suite.addIndicator(dep.GetId(), "bash", "attach.sh", "/bin/bash", nil, 0),
 		}
 	}
-	processesOutsideWhitelist := map[string]set.StringSet{
+	processesNotInBaseline := map[string]set.StringSet{
 		privilegedDep.GetId():    set.NewStringSet(aptGetKey, aptGet2Key, bashKey),
 		nonPrivilegedDep.GetId(): set.NewStringSet(aptGetKey, curlKey, bashKey),
 	}
@@ -2001,7 +2001,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
 	// Plain groups
 	aptGetGroup := policyGroupWithSingleKeyValue(fieldnames.ProcessName, "apt-get", false)
 	privilegedGroup := policyGroupWithSingleKeyValue(fieldnames.PrivilegedContainer, "true", false)
-	whitelistGroup := policyGroupWithSingleKeyValue(fieldnames.WhitelistsEnabled, "true", false)
+	whitelistGroup := policyGroupWithSingleKeyValue(fieldnames.UnexpectedProcessExecuted, "true", false)
 
 	for _, testCase := range []struct {
 		groups []*storage.PolicyGroup
@@ -2032,8 +2032,8 @@ func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
 				nonPrivilegedDep.GetId(): {aptGetKey, curlKey, bashKey},
 			},
 			expectedViolations: map[string][]*storage.Alert_Violation{
-				privilegedDep.GetId():    processWhitelistMessage(privilegedDep, true, false, "apt-get", "apt-get", "bash"),
-				nonPrivilegedDep.GetId(): processWhitelistMessage(nonPrivilegedDep, true, false, "apt-get", "bash", "curl"),
+				privilegedDep.GetId():    processBaselineMessage(privilegedDep, true, false, "apt-get", "apt-get", "bash"),
+				nonPrivilegedDep.GetId(): processBaselineMessage(nonPrivilegedDep, true, false, "apt-get", "bash", "curl"),
 			},
 		},
 
@@ -2044,7 +2044,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
 			},
 			expectedProcessMatches: map[string][]string{},
 			expectedViolations: map[string][]*storage.Alert_Violation{
-				privilegedDep.GetId(): processWhitelistMessage(privilegedDep, false, true, "apt-get", "apt-get", "curl", "bash"),
+				privilegedDep.GetId(): processBaselineMessage(privilegedDep, false, true, "apt-get", "apt-get", "curl", "bash"),
 			},
 		},
 		{
@@ -2054,8 +2054,8 @@ func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
 				nonPrivilegedDep.GetId(): {aptGetKey},
 			},
 			expectedViolations: map[string][]*storage.Alert_Violation{
-				privilegedDep.GetId():    processWhitelistMessage(privilegedDep, true, false, "apt-get", "apt-get"),
-				nonPrivilegedDep.GetId(): processWhitelistMessage(nonPrivilegedDep, true, false, "apt-get"),
+				privilegedDep.GetId():    processBaselineMessage(privilegedDep, true, false, "apt-get", "apt-get"),
+				nonPrivilegedDep.GetId(): processBaselineMessage(nonPrivilegedDep, true, false, "apt-get"),
 			},
 			expectedProcessMatches: map[string][]string{
 				privilegedDep.GetId():    {aptGetKey, aptGet2Key},
@@ -2068,7 +2068,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key},
 			},
 			expectedViolations: map[string][]*storage.Alert_Violation{
-				privilegedDep.GetId(): processWhitelistMessage(privilegedDep, false, true, "apt-get", "apt-get"),
+				privilegedDep.GetId(): processBaselineMessage(privilegedDep, false, true, "apt-get", "apt-get"),
 			},
 			expectedProcessMatches: map[string][]string{
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key},
@@ -2080,7 +2080,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key, bashKey},
 			},
 			expectedViolations: map[string][]*storage.Alert_Violation{
-				privilegedDep.GetId(): processWhitelistMessage(privilegedDep, true, true, "apt-get", "apt-get", "bash"),
+				privilegedDep.GetId(): processBaselineMessage(privilegedDep, true, true, "apt-get", "apt-get", "bash"),
 			},
 			expectedProcessMatches: map[string][]string{
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key, bashKey},
@@ -2092,7 +2092,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key},
 			},
 			expectedViolations: map[string][]*storage.Alert_Violation{
-				privilegedDep.GetId(): processWhitelistMessage(privilegedDep, true, true, "apt-get", "apt-get"),
+				privilegedDep.GetId(): processBaselineMessage(privilegedDep, true, true, "apt-get", "apt-get"),
 			},
 			expectedProcessMatches: map[string][]string{
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key},
@@ -2109,7 +2109,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
 			actualViolations := make(map[string][]*storage.Alert_Violation)
 			for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
 				for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {
-					violations, err := m.MatchDeploymentWithProcess(nil, dep, suite.getImagesForDeployment(dep), indicators[dep.GetId()][key], processesOutsideWhitelist[dep.GetId()].Contains(key))
+					violations, err := m.MatchDeploymentWithProcess(nil, dep, suite.getImagesForDeployment(dep), indicators[dep.GetId()][key], processesNotInBaseline[dep.GetId()].Contains(key))
 					suite.Require().NoError(err)
 					if len(violations.AlertViolations) > 0 {
 						actualMatches[dep.GetId()] = append(actualMatches[dep.GetId()], key)
@@ -2167,7 +2167,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			bashKey:    newIndicator(dep, "bash", "attach.sh", "/bin/bash"),
 		}
 	}
-	processesOutsideWhitelist := map[string]set.StringSet{
+	processesNotInBaseline := map[string]set.StringSet{
 		privilegedDep.GetId():    set.NewStringSet(aptGetKey, aptGet2Key, bashKey),
 		nonPrivilegedDep.GetId(): set.NewStringSet(aptGetKey, curlKey, bashKey),
 	}
@@ -2175,7 +2175,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 	// Plain groups
 	aptGetGroup := policyGroupWithSingleKeyValue(fieldnames.ProcessName, "apt-get", false)
 	privilegedGroup := policyGroupWithSingleKeyValue(fieldnames.PrivilegedContainer, "true", false)
-	whitelistGroup := policyGroupWithSingleKeyValue(fieldnames.WhitelistsEnabled, "true", false)
+	whitelistGroup := policyGroupWithSingleKeyValue(fieldnames.UnexpectedProcessExecuted, "true", false)
 
 	for _, testCase := range []struct {
 		groups []*storage.PolicyGroup
@@ -2206,8 +2206,8 @@ func BenchmarkProcessPolicies(b *testing.B) {
 				nonPrivilegedDep.GetId(): {aptGetKey, curlKey, bashKey},
 			},
 			expectedViolations: map[string][]*storage.Alert_Violation{
-				privilegedDep.GetId():    processWhitelistMessage(privilegedDep, true, false, "apt-get", "apt-get", "bash"),
-				nonPrivilegedDep.GetId(): processWhitelistMessage(nonPrivilegedDep, true, false, "apt-get", "bash", "curl"),
+				privilegedDep.GetId():    processBaselineMessage(privilegedDep, true, false, "apt-get", "apt-get", "bash"),
+				nonPrivilegedDep.GetId(): processBaselineMessage(nonPrivilegedDep, true, false, "apt-get", "bash", "curl"),
 			},
 		},
 
@@ -2218,7 +2218,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			},
 			expectedProcessMatches: map[string][]string{},
 			expectedViolations: map[string][]*storage.Alert_Violation{
-				privilegedDep.GetId(): processWhitelistMessage(privilegedDep, false, true, "apt-get", "apt-get", "curl", "bash"),
+				privilegedDep.GetId(): processBaselineMessage(privilegedDep, false, true, "apt-get", "apt-get", "curl", "bash"),
 			},
 		},
 		{
@@ -2228,8 +2228,8 @@ func BenchmarkProcessPolicies(b *testing.B) {
 				nonPrivilegedDep.GetId(): {aptGetKey},
 			},
 			expectedViolations: map[string][]*storage.Alert_Violation{
-				privilegedDep.GetId():    processWhitelistMessage(privilegedDep, true, false, "apt-get", "apt-get"),
-				nonPrivilegedDep.GetId(): processWhitelistMessage(nonPrivilegedDep, true, false, "apt-get"),
+				privilegedDep.GetId():    processBaselineMessage(privilegedDep, true, false, "apt-get", "apt-get"),
+				nonPrivilegedDep.GetId(): processBaselineMessage(nonPrivilegedDep, true, false, "apt-get"),
 			},
 			expectedProcessMatches: map[string][]string{
 				privilegedDep.GetId():    {aptGetKey, aptGet2Key},
@@ -2242,7 +2242,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key},
 			},
 			expectedViolations: map[string][]*storage.Alert_Violation{
-				privilegedDep.GetId(): processWhitelistMessage(privilegedDep, false, true, "apt-get", "apt-get"),
+				privilegedDep.GetId(): processBaselineMessage(privilegedDep, false, true, "apt-get", "apt-get"),
 			},
 			expectedProcessMatches: map[string][]string{
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key},
@@ -2254,7 +2254,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key, bashKey},
 			},
 			expectedViolations: map[string][]*storage.Alert_Violation{
-				privilegedDep.GetId(): processWhitelistMessage(privilegedDep, true, true, "apt-get", "apt-get", "bash"),
+				privilegedDep.GetId(): processBaselineMessage(privilegedDep, true, true, "apt-get", "apt-get", "bash"),
 			},
 			expectedProcessMatches: map[string][]string{
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key, bashKey},
@@ -2266,7 +2266,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key},
 			},
 			expectedViolations: map[string][]*storage.Alert_Violation{
-				privilegedDep.GetId(): processWhitelistMessage(privilegedDep, true, true, "apt-get", "apt-get"),
+				privilegedDep.GetId(): processBaselineMessage(privilegedDep, true, true, "apt-get", "apt-get"),
 			},
 			expectedProcessMatches: map[string][]string{
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key},
@@ -2282,7 +2282,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
 					for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {
-						_, err := m.MatchDeploymentWithProcess(nil, dep, images, indicators[dep.GetId()][key], processesOutsideWhitelist[dep.GetId()].Contains(key))
+						_, err := m.MatchDeploymentWithProcess(nil, dep, images, indicators[dep.GetId()][key], processesNotInBaseline[dep.GetId()].Contains(key))
 						require.NoError(b, err)
 					}
 				}
@@ -2295,13 +2295,13 @@ func BenchmarkProcessPolicies(b *testing.B) {
 	for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
 		for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {
 			indicator := indicators[dep.GetId()][key]
-			outsideWhitelist := processesOutsideWhitelist[dep.GetId()].Contains(key)
+			notInBaseline := processesNotInBaseline[dep.GetId()].Contains(key)
 			b.Run(fmt.Sprintf("benchmark caching: %s/%s", dep.GetId(), key), func(b *testing.B) {
 				var resNoCaching booleanpolicy.Violations
 				b.Run("no caching", func(b *testing.B) {
 					for i := 0; i < b.N; i++ {
 						var err error
-						resNoCaching, err = m.MatchDeploymentWithProcess(nil, privilegedDep, images, indicator, outsideWhitelist)
+						resNoCaching, err = m.MatchDeploymentWithProcess(nil, privilegedDep, images, indicator, notInBaseline)
 						require.NoError(b, err)
 					}
 				})
@@ -2311,7 +2311,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 					var cache booleanpolicy.CacheReceptacle
 					for i := 0; i < b.N; i++ {
 						var err error
-						resWithCaching, err = m.MatchDeploymentWithProcess(&cache, privilegedDep, images, indicator, outsideWhitelist)
+						resWithCaching, err = m.MatchDeploymentWithProcess(&cache, privilegedDep, images, indicator, notInBaseline)
 						require.NoError(b, err)
 					}
 				})

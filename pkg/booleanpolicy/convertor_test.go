@@ -633,7 +633,7 @@ func TestConvertPolicyFieldsToSections(t *testing.T) {
 				{
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.WhitelistsEnabled,
+							FieldName: fieldnames.UnexpectedProcessExecuted,
 							Values: []*storage.PolicyValue{
 								{
 									Value: "true",

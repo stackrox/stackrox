@@ -8,24 +8,24 @@ import (
 )
 
 const (
-	whitelistTemplate = `{{if .NotWhitelisted}}Unexpected{{else}}Expected{{end}} process{{if .ProcessName}} '{{.ProcessName}}'{{end}} in container{{if .ContainerName}} '{{.ContainerName}}'{{end}}`
+	baselineTemplate = `{{if .NotInBaseline}}Unexpected{{else}}Expected{{end}} process{{if .ProcessName}} '{{.ProcessName}}'{{end}} in container{{if .ContainerName}} '{{.ContainerName}}'{{end}}`
 )
 
-func processWhitelistPrinter(fieldMap map[string][]string) ([]string, error) {
+func processBaselinePrinter(fieldMap map[string][]string) ([]string, error) {
 	type resultFields struct {
-		ContainerName  string
-		ProcessName    string
-		NotWhitelisted bool
+		ContainerName string
+		ProcessName   string
+		NotInBaseline bool
 	}
 	r := resultFields{}
 	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
 	r.ProcessName = maybeGetSingleValueFromFieldMap(search.ProcessName.String(), fieldMap)
-	notWhitelisted, err := getSingleValueFromFieldMap(augmentedobjs.NotWhitelistedCustomTag, fieldMap)
+	notInBaseline, err := getSingleValueFromFieldMap(augmentedobjs.NotInBaselineCustomTag, fieldMap)
 	if err != nil {
 		return nil, err
 	}
-	if r.NotWhitelisted, err = strconv.ParseBool(notWhitelisted); err != nil {
+	if r.NotInBaseline, err = strconv.ParseBool(notInBaseline); err != nil {
 		return nil, err
 	}
-	return executeTemplate(whitelistTemplate, r)
+	return executeTemplate(baselineTemplate, r)
 }

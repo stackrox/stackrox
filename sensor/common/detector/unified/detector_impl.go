@@ -29,8 +29,8 @@ func (d *detectorImpl) DetectDeployment(ctx deploytime.DetectionContext, deploym
 
 }
 
-func (d *detectorImpl) DetectProcess(deployment *storage.Deployment, images []*storage.Image, process *storage.ProcessIndicator, processOutsideBaseline bool) []*storage.Alert {
-	alerts, err := d.runtimeDetector.Detect(deployment, images, process, processOutsideBaseline)
+func (d *detectorImpl) DetectProcess(deployment *storage.Deployment, images []*storage.Image, process *storage.ProcessIndicator, processNotInBaseline bool) []*storage.Alert {
+	alerts, err := d.runtimeDetector.Detect(deployment, images, process, processNotInBaseline)
 	if err != nil {
 		log.Errorf("error running runtime policies for deployment %q and process %q: %v", deployment.GetName(), process.GetSignal().GetExecFilePath(), err)
 	}

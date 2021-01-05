@@ -12,7 +12,7 @@ const (
 	// Custom augments
 	dockerfileLineAugmentKey      = "DockerfileLine"
 	componentAndVersionAugmentKey = "ComponentAndVersion"
-	whitelistResultAugmentKey     = "WhitelistResult"
+	baselineResultAugmentKey      = "BaselineResult"
 	envVarAugmentKey              = "EnvironmentVariable"
 )
 
@@ -28,5 +28,5 @@ var (
 			AddPlainObjectAt([]string{"Scan", "Components", componentAndVersionAugmentKey}, (*componentAndVersion)(nil))
 
 	ProcessMeta = pathutil.NewAugmentedObjMeta((*storage.ProcessIndicator)(nil)).
-			AddPlainObjectAt([]string{whitelistResultAugmentKey}, (*whitelistResult)(nil))
+			AddPlainObjectAt([]string{baselineResultAugmentKey}, (*baselineResult)(nil))
 )

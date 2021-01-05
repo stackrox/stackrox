@@ -16,7 +16,7 @@ var (
 type Detector interface {
 	PolicySet() detection.PolicySet
 
-	Detect(deployment *storage.Deployment, images []*storage.Image, process *storage.ProcessIndicator, processOutsideWhitelist bool) ([]*storage.Alert, error)
+	Detect(deployment *storage.Deployment, images []*storage.Image, process *storage.ProcessIndicator, processNotInBaseline bool) ([]*storage.Alert, error)
 }
 
 // NewDetector returns a new instance of a Detector.
@@ -36,7 +36,7 @@ func (d *detectorImpl) PolicySet() detection.PolicySet {
 }
 
 // Detect runs detection on an deployment, returning any generated alerts.
-func (d *detectorImpl) Detect(deployment *storage.Deployment, images []*storage.Image, indicator *storage.ProcessIndicator, processOutsideWhitelist bool) ([]*storage.Alert, error) {
+func (d *detectorImpl) Detect(deployment *storage.Deployment, images []*storage.Image, indicator *storage.ProcessIndicator, processNotInBaseline bool) ([]*storage.Alert, error) {
 	var alerts []*storage.Alert
 	var cacheReceptable booleanpolicy.CacheReceptacle
 	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
@@ -48,7 +48,7 @@ func (d *detectorImpl) Detect(deployment *storage.Deployment, images []*storage.
 			return nil
 		}
 
-		violation, err := compiled.MatchAgainstDeploymentAndProcess(&cacheReceptable, deployment, images, indicator, processOutsideWhitelist)
+		violation, err := compiled.MatchAgainstDeploymentAndProcess(&cacheReceptable, deployment, images, indicator, processNotInBaseline)
 		if err != nil {
 			return errors.Wrapf(err, "evaluating violations for policy %s; deployment %s/%s", compiled.Policy().GetName(), deployment.GetNamespace(), deployment.GetName())
 		}

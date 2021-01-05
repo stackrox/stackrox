@@ -26,12 +26,12 @@ func findMatchingContainerIdxForProcess(deployment *storage.Deployment, process 
 }
 
 // ConstructDeploymentWithProcess constructs an augmented deployment with process information.
-func ConstructDeploymentWithProcess(deployment *storage.Deployment, images []*storage.Image, process *storage.ProcessIndicator, processOutsideWhitelist bool) (*pathutil.AugmentedObj, error) {
+func ConstructDeploymentWithProcess(deployment *storage.Deployment, images []*storage.Image, process *storage.ProcessIndicator, processNotInBaseline bool) (*pathutil.AugmentedObj, error) {
 	obj, err := ConstructDeployment(deployment, images)
 	if err != nil {
 		return nil, err
 	}
-	augmentedProcess, err := ConstructProcess(process, processOutsideWhitelist)
+	augmentedProcess, err := ConstructProcess(process, processNotInBaseline)
 	if err != nil {
 		return nil, err
 	}
@@ -51,11 +51,11 @@ func ConstructDeploymentWithProcess(deployment *storage.Deployment, images []*st
 }
 
 // ConstructProcess constructs an augmented process.
-func ConstructProcess(process *storage.ProcessIndicator, processOutsideWhitelist bool) (*pathutil.AugmentedObj, error) {
+func ConstructProcess(process *storage.ProcessIndicator, processNotInBaseline bool) (*pathutil.AugmentedObj, error) {
 	augmentedProcess := pathutil.NewAugmentedObj(process)
 	err := augmentedProcess.AddPlainObjAt(
-		&whitelistResult{NotWhitelisted: processOutsideWhitelist},
-		pathutil.FieldStep(whitelistResultAugmentKey),
+		&baselineResult{NotInBaseline: processNotInBaseline},
+		pathutil.FieldStep(baselineResultAugmentKey),
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "adding process baseline result to process")

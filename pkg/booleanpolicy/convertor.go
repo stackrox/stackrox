@@ -225,7 +225,7 @@ func convertWhitelistEnabled(fields *storage.PolicyFields) []*storage.PolicyGrou
 	}
 
 	return []*storage.PolicyGroup{{
-		FieldName: fieldnames.WhitelistsEnabled,
+		FieldName: fieldnames.UnexpectedProcessExecuted,
 		Values:    getPolicyValues(fields.GetWhitelistEnabled()),
 	}}
 }

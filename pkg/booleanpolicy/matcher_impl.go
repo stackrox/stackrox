@@ -14,13 +14,13 @@ type processMatcherImpl struct {
 	matcherImpl
 }
 
-func (p *processMatcherImpl) checkWhetherProcessMatches(cache *CacheReceptacle, indicator *storage.ProcessIndicator, processOutsideWhitelist bool) (bool, error) {
+func (p *processMatcherImpl) checkWhetherProcessMatches(cache *CacheReceptacle, indicator *storage.ProcessIndicator, processNotInBaseline bool) (bool, error) {
 	var augmentedProcess *pathutil.AugmentedObj
 	if cache != nil && cache.augmentedProcess != nil {
 		augmentedProcess = cache.augmentedProcess
 	} else {
 		var err error
-		augmentedProcess, err = augmentedobjs.ConstructProcess(indicator, processOutsideWhitelist)
+		augmentedProcess, err = augmentedobjs.ConstructProcess(indicator, processNotInBaseline)
 		if err != nil {
 			return false, err
 		}
@@ -37,16 +37,16 @@ func (p *processMatcherImpl) checkWhetherProcessMatches(cache *CacheReceptacle, 
 	return false, nil
 }
 
-func (p *processMatcherImpl) MatchDeploymentWithProcess(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, indicator *storage.ProcessIndicator, processOutsideWhitelist bool) (Violations, error) {
+func (p *processMatcherImpl) MatchDeploymentWithProcess(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, indicator *storage.ProcessIndicator, processNotInBaseline bool) (Violations, error) {
 	if cache == nil || cache.augmentedObj == nil {
-		processMatched, err := p.checkWhetherProcessMatches(cache, indicator, processOutsideWhitelist)
+		processMatched, err := p.checkWhetherProcessMatches(cache, indicator, processNotInBaseline)
 		if err != nil || !processMatched {
 			return Violations{}, err
 		}
 	}
 
 	violations, err := p.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructDeploymentWithProcess(deployment, images, indicator, processOutsideWhitelist)
+		return augmentedobjs.ConstructDeploymentWithProcess(deployment, images, indicator, processNotInBaseline)
 	}, indicator)
 	if err != nil || violations == nil {
 		return Violations{}, err
