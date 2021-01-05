@@ -34,7 +34,7 @@ const LicenseReminder = ({ expirationDate, userRolePermissions }) => {
     if (!showReminder) {
         return null;
     }
-    if (!expirationMessage || expirationMessage.type === 'info') {
+    if (!expirationMessage || expirationMessage.type === 'base') {
         return null;
     }
 
