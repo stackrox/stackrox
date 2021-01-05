@@ -7,6 +7,13 @@ import Loader from 'Components/Loader';
 import { fetchNetworkPolicies } from 'services/NetworkService';
 import download from 'utils/download';
 
+// TODO delete type definition when it is available to import.
+type NetworkPolicy = {
+    id: string;
+    name: string;
+    yaml: string;
+};
+
 export type NetworkPoliciesDetailProps = {
     policyIds: string[];
 };
@@ -17,7 +24,7 @@ function downloadYamlFile(name: string, content: string, type: string) {
 
 function NetworkPoliciesDetail({ policyIds }: NetworkPoliciesDetailProps): ReactElement {
     const [isLoading, setIsLoading] = useState(false);
-    const [networkPolicies, setNetworkPolicies] = useState([]);
+    const [networkPolicies, setNetworkPolicies] = useState<NetworkPolicy[]>([]);
 
     useEffect(() => {
         setIsLoading(true);

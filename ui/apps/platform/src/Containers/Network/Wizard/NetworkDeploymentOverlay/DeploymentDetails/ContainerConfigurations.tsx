@@ -48,12 +48,13 @@ const ContainerImage = ({ image }): ReactElement | null => {
             </div>
         );
     }
+    // TODO delete type cast when components have types.
     return (
         <div className="py-3 pb-2 leading-normal border-b border-base-300">
             <div className="font-700 inline">Image Name: </div>
             <Link
                 className="font-600 text-primary-600 hover:text-primary-800 leading-normal word-break"
-                to={`${vulnManagementPath}/image/${image.id}`}
+                to={`${vulnManagementPath}/image/${image.id as string}`}
             >
                 {image.name.fullName}
             </Link>
@@ -101,8 +102,9 @@ const ContainerSecrets = ({ secrets }): ReactElement => {
     if (!secrets?.length) {
         return <span className="py-1 font-600 italic">None</span>;
     }
+    // TODO delete type casts when components have types.
     return secrets.map(({ name, path }) => (
-        <div key={`${name}-${path}`} className="py-2">
+        <div key={`${name as string}-${path as string}`} className="py-2">
             <div className="py-1 font-600">
                 <span className="pr-1">Name:</span>
                 <span className="text-accent-800 italic">{name}</span>
