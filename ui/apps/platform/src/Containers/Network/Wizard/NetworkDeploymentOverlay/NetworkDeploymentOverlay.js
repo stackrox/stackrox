@@ -45,38 +45,36 @@ function NetworkDeploymentOverlay({ selectedDeployment, filterState }) {
     const edges = getDeploymentEdges(selectedDeployment);
 
     return (
-        <div className="flex flex-1 flex-col text-sm max-h-minus-buttons">
-            <NetworkEntityTabbedOverlay
-                entityName={selectedDeployment.name}
-                entityType={selectedDeployment.type}
-            >
-                <Tab title="Flows">
-                    <BinderTabs>
-                        <Tab title="Network Flows">
-                            <NetworkFlows
-                                deploymentId={deploymentId}
-                                edges={edges}
-                                filterState={filterState}
-                                onNavigateToDeploymentById={onNavigateToDeploymentById}
-                            />
-                        </Tab>
-                        <Tab title="Baseline Settings">
-                            <BaselineSettings
-                                deploymentId={deploymentId}
-                                filterState={filterState}
-                                onNavigateToDeploymentById={onNavigateToDeploymentById}
-                            />
-                        </Tab>
-                    </BinderTabs>
-                </Tab>
-                <Tab title="Policies">
-                    <NetworkPoliciesDetail policyIds={selectedDeployment.policyIds} />
-                </Tab>
-                <Tab title="Details">
-                    <DeploymentDetails deploymentId={deploymentId} />
-                </Tab>
-            </NetworkEntityTabbedOverlay>
-        </div>
+        <NetworkEntityTabbedOverlay
+            entityName={selectedDeployment.name}
+            entityType={selectedDeployment.type}
+        >
+            <Tab title="Flows">
+                <BinderTabs>
+                    <Tab title="Network Flows">
+                        <NetworkFlows
+                            deploymentId={deploymentId}
+                            edges={edges}
+                            filterState={filterState}
+                            onNavigateToDeploymentById={onNavigateToDeploymentById}
+                        />
+                    </Tab>
+                    <Tab title="Baseline Settings">
+                        <BaselineSettings
+                            deploymentId={deploymentId}
+                            filterState={filterState}
+                            onNavigateToDeploymentById={onNavigateToDeploymentById}
+                        />
+                    </Tab>
+                </BinderTabs>
+            </Tab>
+            <Tab title="Policies">
+                <NetworkPoliciesDetail policyIds={selectedDeployment.policyIds} />
+            </Tab>
+            <Tab title="Details">
+                <DeploymentDetails deploymentId={deploymentId} />
+            </Tab>
+        </NetworkEntityTabbedOverlay>
     );
 }
 

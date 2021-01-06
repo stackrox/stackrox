@@ -1239,3 +1239,8 @@ h6 {
 .drag-grip::after {
     content: '... ... ... ... ... ... ...';
 }
+
+.network-overlay-bg-shadow {
+    box-shadow: 0 0 30px 0 rgba(81, 119, 255, 0.23);
+    background: rgba(81, 119, 255, 0.23);
+}
