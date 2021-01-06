@@ -60,3 +60,34 @@ export type NetworkFlow = {
     connection: ConnectionState;
     traffic: Traffic;
 };
+
+export type PortsAndProtocols = {
+    lastActiveTimestamp?: string;
+    port: number;
+    protocol: string;
+    traffic: 'bidirectional' | 'ingress' | 'egress';
+};
+
+export type Edge = {
+    classes?: string;
+    data: {
+        source?: string;
+        target?: string;
+        destNodeId: string;
+        destNodeNamespace: string;
+        destNodeName: string;
+        destNodeType?: string;
+        sourceNodeId?: string;
+        sourceNodeName?: string;
+        sourceNodeNamespace?: string;
+        targetNodeId?: string;
+        targetNodeName?: string;
+        targetNodeNamespace?: string;
+        isActive: boolean;
+        isAllowed: boolean;
+        isDisallowed?: boolean;
+        portsAndProtocols: PortsAndProtocols[];
+        traffic: 'bidirectional' | 'ingress' | 'egress';
+        type: 'deployment' | 'external';
+    };
+};

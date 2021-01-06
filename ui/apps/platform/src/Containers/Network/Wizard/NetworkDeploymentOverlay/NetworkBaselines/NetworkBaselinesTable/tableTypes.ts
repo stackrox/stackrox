@@ -1,7 +1,4 @@
-import {
-    FlattenedNetworkBaseline,
-    BaselineStatus,
-} from 'Containers/Network/Wizard/NetworkDeploymentOverlay/NetworkFlows/networkTypes';
+import { FlattenedNetworkBaseline, BaselineStatus } from 'Containers/Network/networkTypes';
 
 export type Row = {
     id: string;

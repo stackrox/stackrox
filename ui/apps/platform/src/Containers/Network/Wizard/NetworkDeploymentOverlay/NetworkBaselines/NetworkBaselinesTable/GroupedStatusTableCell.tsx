@@ -8,7 +8,7 @@ export type GroupedStatusTableCellProps = {
         cells: {
             length: number;
         };
-        subRows: {
+        leafRows: {
             length: number;
         };
         groupByVal: 'ANOMALOUS' | 'BASELINE';
@@ -16,9 +16,9 @@ export type GroupedStatusTableCellProps = {
 };
 
 function GroupedStatusTableCell({ row }: GroupedStatusTableCellProps): ReactElement {
-    const { cells, subRows, groupByVal } = row;
-    const flowText = pluralize('Flow', subRows.length);
-    const text = `${subRows.length} ${networkFlowStatusLabels[groupByVal]} ${flowText}`;
+    const { cells, leafRows, groupByVal } = row;
+    const flowText = pluralize('Flow', leafRows.length);
+    const text = `${leafRows.length} ${networkFlowStatusLabels[groupByVal]} ${flowText}`;
 
     return (
         <td colSpan={cells.length} className="text-left p-2 italic">

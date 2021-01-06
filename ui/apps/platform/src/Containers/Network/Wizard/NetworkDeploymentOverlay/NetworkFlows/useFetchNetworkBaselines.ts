@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import isEqual from 'lodash/isEqual';
 
-import { fetchNetworkBaselineStatus } from 'services/NetworkService';
+import { getNetworkFlows } from 'utils/networkUtils/getNetworkFlows';
+import { fetchNetworkBaselineStatuses } from 'services/NetworkService';
 import {
     BaselineStatus,
     FlattenedPeer,
     NetworkFlow,
     FlattenedNetworkBaseline,
-} from 'Containers/Network/Wizard/NetworkDeploymentOverlay/NetworkFlows/networkTypes';
+    Edge,
+} from 'Containers/Network/networkTypes';
 
 /*
  * This function takes the network flows and separates them based on their ports
@@ -62,10 +64,10 @@ function getBaselineStatusKey({ id, ingress, port, protocol }): string {
     return `${id}-${ingress}-${port}-${protocol}`;
 }
 
-type Result = { isLoading: boolean; data: FlattenedNetworkBaseline[] | null; error: string | null };
+type Result = { isLoading: boolean; data: FlattenedNetworkBaseline[]; error: string | null };
 
-function usePrevValue(newValue: NetworkFlow[]): NetworkFlow[] | undefined {
-    const ref = React.useRef<NetworkFlow[]>();
+function usePrevValue(newValue: Edge[]): Edge[] | undefined {
+    const ref = React.useRef<Edge[]>();
     useEffect(() => {
         ref.current = newValue;
     });
@@ -78,23 +80,24 @@ function usePrevValue(newValue: NetworkFlow[]): NetworkFlow[] | undefined {
  */
 function useFetchNetworkBaselines({
     deploymentId,
-    networkFlows,
+    edges,
     filterState,
 }: {
     deploymentId: string;
-    networkFlows: NetworkFlow[];
+    edges: Edge[];
     filterState: number;
 }): Result {
-    const [result, setResult] = useState<Result>({ data: null, error: null, isLoading: true });
-    const prevNetworkFlows = usePrevValue(networkFlows);
+    const [result, setResult] = useState<Result>({ data: [], error: null, isLoading: true });
+    const prevEdges = usePrevValue(edges);
 
     useEffect(() => {
-        if (isEqual(prevNetworkFlows, networkFlows)) {
+        if (isEqual(prevEdges, edges)) {
             return;
         }
 
+        const { networkFlows } = getNetworkFlows(edges, filterState);
         const peers = getPeersFromNetworkFlows(networkFlows);
-        const baselineStatusPromise = fetchNetworkBaselineStatus({ deploymentId, peers });
+        const baselineStatusPromise = fetchNetworkBaselineStatuses({ deploymentId, peers });
 
         baselineStatusPromise
             .then((response) => {
@@ -127,12 +130,12 @@ function useFetchNetworkBaselines({
                     },
                     []
                 );
-                setResult({ data: flattenedNetworkBaselines, error: null, isLoading: false });
+                setResult({ data: flattenedNetworkBaselines || [], error: null, isLoading: false });
             })
             .catch((error) => {
-                setResult({ data: null, error, isLoading: false });
+                setResult({ data: [], error, isLoading: false });
             });
-    }, [deploymentId, filterState, networkFlows, prevNetworkFlows]);
+    }, [deploymentId, edges, filterState, prevEdges]);
 
     return result;
 }

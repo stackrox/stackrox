@@ -1,37 +1,7 @@
 import { filterModes } from 'constants/networkFilterModes';
 import { networkTraffic, networkConnections } from 'constants/networkGraph';
 import { getIsExternalEntitiesNode, getIsCIDRBlockNode } from 'utils/networkGraphUtils';
-
-export type PortsAndProtocols = {
-    lastActiveTimestamp?: string;
-    port: number;
-    protocol: string;
-    traffic: 'bidirectional' | 'ingress' | 'egress';
-};
-
-export type Edge = {
-    classes?: string;
-    data: {
-        source?: string;
-        target?: string;
-        destNodeId: string;
-        destNodeNamespace: string;
-        destNodeName: string;
-        destNodeType?: string;
-        sourceNodeId?: string;
-        sourceNodeName?: string;
-        sourceNodeNamespace?: string;
-        targetNodeId?: string;
-        targetNodeName?: string;
-        targetNodeNamespace?: string;
-        isActive: boolean;
-        isAllowed: boolean;
-        isDisallowed?: boolean;
-        portsAndProtocols: PortsAndProtocols[];
-        traffic: 'bidirectional' | 'ingress' | 'egress';
-        type: 'deployment' | 'external';
-    };
-};
+import { PortsAndProtocols, Edge } from 'Containers/Network/networkTypes';
 
 // TODO: reconcile this NetworkFlow type with the one in
 //       ui/apps/platform/src/Containers/Network/Wizard/NetworkDeploymentOverlay/NetworkFlows/NetworkFlowsTable/NetworkFlowsTable.tsx

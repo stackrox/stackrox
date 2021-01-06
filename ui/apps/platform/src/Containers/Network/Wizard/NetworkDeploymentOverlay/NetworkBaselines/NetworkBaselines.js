@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import pluralize from 'pluralize';
 
 import { filterModes } from 'constants/networkFilterModes';
 import useSearchFilteredData from 'hooks/useSearchFilteredData';
-import { getNetworkFlows } from 'utils/networkUtils/getNetworkFlows';
 
 import Panel from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
 import Loader from 'Components/Loader';
-import NetworkFlowsSearch, { getNetworkFlowValueByCategory } from './NetworkFlowsSearch';
-import NetworkFlowsTable from './NetworkFlowsTable';
+import NetworkBaselinesSearch, {
+    getNetworkBaselineValueByCategory,
+} from './NetworkBaselinesSearch';
+import NetworkBaselinesTable from './NetworkBaselinesTable';
 
-import useFetchNetworkBaselines from './useFetchNetworkBaselines';
+import useToggleBaselineStatuses from './useToggleBaselineStatuses';
 
 function getPanelId(filterState) {
     switch (filterState) {
@@ -24,24 +24,15 @@ function getPanelId(filterState) {
     }
 }
 
-function getPanelHeaderText(numNetworkFlows, filterState) {
-    switch (filterState) {
-        case filterModes.active:
-            return `${numNetworkFlows} active ${pluralize('flow', numNetworkFlows)}`;
-        case filterModes.allowed:
-            return `${numNetworkFlows} allowed ${pluralize('flow', numNetworkFlows)}`;
-        default:
-            return `${numNetworkFlows} ${pluralize('flow', numNetworkFlows)}`;
-    }
-}
-
-function NetworkFlows({ deploymentId, edges, filterState, onNavigateToDeploymentById }) {
-    const { networkFlows } = getNetworkFlows(edges, filterState);
-    const { data: networkBaselines, isLoading } = useFetchNetworkBaselines({
-        deploymentId,
-        networkFlows,
-        filterState,
-    });
+function NetworkBaselines({
+    header,
+    isLoading,
+    networkBaselines,
+    deploymentId,
+    filterState,
+    onNavigateToDeploymentById,
+}) {
+    const toggleBaselineStatuses = useToggleBaselineStatuses(deploymentId);
 
     const [page, setPage] = useState(0);
     const [searchOptions, setSearchOptions] = useState([]);
@@ -49,7 +40,7 @@ function NetworkFlows({ deploymentId, edges, filterState, onNavigateToDeployment
     const filteredNetworkBaselines = useSearchFilteredData(
         networkBaselines,
         searchOptions,
-        getNetworkFlowValueByCategory
+        getNetworkBaselineValueByCategory
     );
 
     if (isLoading) {
@@ -61,7 +52,6 @@ function NetworkFlows({ deploymentId, edges, filterState, onNavigateToDeployment
     }
 
     const panelId = getPanelId(filterState);
-    const panelHeader = getPanelHeaderText(networkFlows.length, filterState);
     const headerComponents = (
         <TablePagination
             page={page}
@@ -71,22 +61,23 @@ function NetworkFlows({ deploymentId, edges, filterState, onNavigateToDeployment
     );
 
     return (
-        <Panel id={panelId} header={panelHeader} headerComponents={headerComponents}>
+        <Panel id={panelId} header={header} headerComponents={headerComponents}>
             <div className="p-2 border-b border-base-300">
-                <NetworkFlowsSearch
+                <NetworkBaselinesSearch
                     networkBaselines={networkBaselines}
                     searchOptions={searchOptions}
                     setSearchOptions={setSearchOptions}
                 />
             </div>
-            <NetworkFlowsTable
-                networkFlows={filteredNetworkBaselines}
+            <NetworkBaselinesTable
+                networkBaselines={filteredNetworkBaselines}
                 page={page}
                 filterState={filterState}
                 onNavigateToDeploymentById={onNavigateToDeploymentById}
+                toggleBaselineStatuses={toggleBaselineStatuses}
             />
         </Panel>
     );
 }
 
-export default NetworkFlows;
+export default NetworkBaselines;

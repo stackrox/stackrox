@@ -9,7 +9,7 @@ import {
     networkProtocolLabels,
     networkConnectionLabels,
 } from 'messages/network';
-import { FlattenedNetworkBaseline } from '../networkTypes';
+import { FlattenedNetworkBaseline } from 'Containers/Network/networkTypes';
 
 import Table from './Table';
 import TableHead from './TableHead';
@@ -22,8 +22,9 @@ import ToggleBaselineStatus from './ToggleBaselineStatus';
 import checkboxSelectionPlugin from './checkboxSelectionPlugin';
 import expanderPlugin from './expanderPlugin';
 
-export type NetworkFlowsTableProps = {
-    networkFlows: FlattenedNetworkBaseline[];
+export type NetworkBaselinesTableProps = {
+    networkBaselines: FlattenedNetworkBaseline[];
+    toggleBaselineStatuses: (networkBaselines: FlattenedNetworkBaseline[]) => void;
 };
 
 function getAggregateText(leafValues: string[], multiplePhrase = 'Many'): string {
@@ -108,11 +109,14 @@ const columns = [
     },
 ];
 
-function NetworkFlowsTable({ networkFlows }: NetworkFlowsTableProps): ReactElement {
+function NetworkBaselinesTable({
+    networkBaselines,
+    toggleBaselineStatuses,
+}: NetworkBaselinesTableProps): ReactElement {
     const { headerGroups, rows, prepareRow, selectedFlatRows } = useTable(
         {
             columns,
-            data: networkFlows,
+            data: networkBaselines,
             initialState: {
                 sortBy: [
                     {
@@ -157,12 +161,16 @@ function NetworkFlowsTable({ networkFlows }: NetworkFlowsTableProps): ReactEleme
                                 rows={rows}
                                 row={row}
                                 selectedFlatRows={selectedFlatRows}
+                                toggleBaselineStatuses={toggleBaselineStatuses}
                             />
                         ) : null;
 
                     const HoveredGroupedRowComponent =
                         row.groupByID !== 'status' && row.subRows.length === 1 ? (
-                            <ToggleBaselineStatus row={row.subRows[0]} />
+                            <ToggleBaselineStatus
+                                row={row.subRows[0]}
+                                toggleBaselineStatuses={toggleBaselineStatuses}
+                            />
                         ) : null;
 
                     return (
@@ -170,7 +178,12 @@ function NetworkFlowsTable({ networkFlows }: NetworkFlowsTableProps): ReactEleme
                             key={row.id}
                             row={row}
                             type={rowType}
-                            HoveredRowComponent={<ToggleBaselineStatus row={row} />}
+                            HoveredRowComponent={
+                                <ToggleBaselineStatus
+                                    row={row}
+                                    toggleBaselineStatuses={toggleBaselineStatuses}
+                                />
+                            }
                             HoveredGroupedRowComponent={HoveredGroupedRowComponent}
                             GroupedRowComponent={GroupedRowComponent}
                         >
@@ -189,4 +202,4 @@ function NetworkFlowsTable({ networkFlows }: NetworkFlowsTableProps): ReactEleme
     );
 }
 
-export default NetworkFlowsTable;
+export default NetworkBaselinesTable;

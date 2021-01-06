@@ -36,18 +36,18 @@ const dataResolversByCategory = {
     State: (datum) => datum.peer.state,
 };
 
-export function getNetworkFlowValueByCategory(datum, category) {
+export function getNetworkBaselineValueByCategory(datum, category) {
     return dataResolversByCategory[category]?.(datum);
 }
 
 const networkFlowSearchModifiers = createSearchModifiers(searchCategories);
 
-function NetworkFlowsSearch({ networkFlows, searchOptions, setSearchOptions }) {
+function NetworkBaselinesSearch({ networkBaselines, searchOptions, setSearchOptions }) {
     const autoCompleteResults = useAutoCompleteResults(
-        networkFlows,
+        networkBaselines,
         searchOptions,
         searchCategories,
-        getNetworkFlowValueByCategory
+        getNetworkBaselineValueByCategory
     );
 
     return (
@@ -62,8 +62,8 @@ function NetworkFlowsSearch({ networkFlows, searchOptions, setSearchOptions }) {
     );
 }
 
-NetworkFlowsSearch.propTypes = {
-    networkFlows: PropTypes.arrayOf(
+NetworkBaselinesSearch.propTypes = {
+    networkBaselines: PropTypes.arrayOf(
         PropTypes.shape({
             peer: PropTypes.shape({
                 entity: PropTypes.shape({
@@ -84,9 +84,9 @@ NetworkFlowsSearch.propTypes = {
     setSearchOptions: PropTypes.func.isRequired,
 };
 
-NetworkFlowsSearch.defaultProps = {
-    networkFlows: [],
+NetworkBaselinesSearch.defaultProps = {
+    networkBaselines: [],
     searchOptions: [],
 };
 
-export default NetworkFlowsSearch;
+export default NetworkBaselinesSearch;

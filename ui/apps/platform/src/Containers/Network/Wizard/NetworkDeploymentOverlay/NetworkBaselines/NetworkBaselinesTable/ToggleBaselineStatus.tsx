@@ -1,30 +1,34 @@
 import React, { ReactElement } from 'react';
 
 import { networkFlowStatus } from 'constants/networkGraph';
+import { FlattenedNetworkBaseline } from 'Containers/Network/networkTypes';
+
 import { CondensedButton, CondensedAlertButton } from '@stackrox/ui-components';
+
 import { Row } from './tableTypes';
 
 export type ToggleBaselineStatusProps = {
     row: Row;
+    toggleBaselineStatuses: (networkBaselines: FlattenedNetworkBaseline[]) => void;
 };
 
-function ToggleBaselineStatus({ row }: ToggleBaselineStatusProps): ReactElement {
-    function onClick(): void {
-        // TODO: remove this console log and add a way to use the API call
-        // for marking as anomalous or adding to baseline
-        // eslint-disable-next-line no-console
-        console.log(row.original);
+function ToggleBaselineStatus({
+    row,
+    toggleBaselineStatuses,
+}: ToggleBaselineStatusProps): ReactElement {
+    function onClickHandler(): void {
+        toggleBaselineStatuses([row.original]);
     }
 
     if (row.original.status === networkFlowStatus.ANOMALOUS) {
         return (
-            <CondensedButton type="button" onClick={onClick}>
+            <CondensedButton type="button" onClick={onClickHandler}>
                 Add to baseline
             </CondensedButton>
         );
     }
     return (
-        <CondensedAlertButton type="button" onClick={onClick}>
+        <CondensedAlertButton type="button" onClick={onClickHandler}>
             Mark as anomalous
         </CondensedAlertButton>
     );

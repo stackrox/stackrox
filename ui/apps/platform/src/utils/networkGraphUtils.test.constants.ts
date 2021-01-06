@@ -1,5 +1,5 @@
 import { filterModes } from 'constants/networkFilterModes';
-import { Edge } from 'utils/networkUtils/getNetworkFlows';
+import { Edge } from 'Containers/Network/networkTypes';
 
 export const nodes = [
     {

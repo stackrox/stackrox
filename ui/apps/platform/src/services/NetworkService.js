@@ -15,12 +15,38 @@ const NETWORK_GRAPH_REQUESTS_TIMEOUT = 0;
  * @returns {Promise<Object, Error>}
  *
  */
-export function fetchNetworkBaselineStatus({ deploymentId, peers }) {
+export function fetchNetworkBaselineStatuses({ deploymentId, peers }) {
     return axios
         .post(`${networkBaselineBaseUrl}/${deploymentId}/status`, { peers })
         .then((response) => {
             return response.data;
         });
+}
+
+/*
+ * Mark a flow (a connection of to a peer) as baselined or anomalous
+ *
+ * @returns {Promise<Object, Error>}
+ *
+ */
+export function markNetworkBaselineStatuses({ deploymentId, networkBaselines }) {
+    return axios
+        .patch(`${networkBaselineBaseUrl}/${deploymentId}/peers`, { peers: networkBaselines })
+        .then((response) => {
+            return response.data;
+        });
+}
+
+/*
+ * Fetches the network baselines
+ *
+ * @returns {Promise<Object, Error>}
+ *
+ */
+export function fetchNetworkBaselines({ deploymentId }) {
+    return axios.get(`${networkBaselineBaseUrl}/${deploymentId}`).then((response) => {
+        return response.data;
+    });
 }
 
 /**
