@@ -1,7 +1,6 @@
 import React from 'react';
 import { Router } from 'react-router-dom';
 import { createMemoryHistory } from 'history';
-// eslint-disable-next-line
 import { render } from '@testing-library/react';
 
 function renderWithRouter(

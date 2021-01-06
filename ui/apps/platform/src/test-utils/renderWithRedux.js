@@ -1,5 +1,4 @@
 import React from 'react';
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { render as rtlRender } from '@testing-library/react';
 import { Provider } from 'react-redux';
 
@@ -12,7 +11,6 @@ function renderWithRedux(store, ui, ...renderOptions) {
 }
 
 // re-export everything
-// eslint-disable-next-line import/no-extraneous-dependencies
 export * from '@testing-library/react';
 
 export default renderWithRedux;

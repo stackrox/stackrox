@@ -26,7 +26,7 @@ import {
     deploymentList,
     namespaceEdgeNodes,
     deploymentEdges,
-} from './networkGraphUtils.test.constants.ts';
+} from './networkGraphUtils.test.constants';
 
 const nodeTypes = {
     DEPLOYMENT: 'DEPLOYMENT',

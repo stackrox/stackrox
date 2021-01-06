@@ -13,10 +13,24 @@ const commonRules = {
     'no-console': 'error',
 
     // Allow function hoisting.
-    'no-use-before-define': [
+    // Supersede rule to prevent error 'React' was used before it was defined:
+    'no-use-before-define': 'off', // override eslint-config-airbnb-base
+    '@typescript-eslint/no-use-before-define': [
         'error',
         {
             functions: false,
+        },
+    ],
+
+    // override Airbnb's style to add typescript support
+    'import/extensions': [
+        'error',
+        'ignorePackages',
+        {
+            js: 'never',
+            mjs: 'never',
+            ts: 'never',
+            tsx: 'never',
         },
     ],
 
@@ -24,12 +38,14 @@ const commonRules = {
         'error',
         {
             devDependencies: [
-                path.join(__dirname, '**/*.test.js'),
+                path.join(__dirname, '**/*.test.*'),
                 path.join(__dirname, 'cypress/**'),
                 path.join(__dirname, 'src/setupTests.js'),
                 path.join(__dirname, 'src/setupProxy.js'),
-                path.join(__dirname, 'tailwind.config.js'),
+                path.join(__dirname, 'src/test-utils/*'),
+                path.join(__dirname, '.prettierrc.js'),
                 path.join(__dirname, 'postcss.config.js'),
+                path.join(__dirname, 'tailwind.config.js'),
             ],
             optionalDependencies: false,
         },
@@ -57,14 +73,14 @@ const commonRules = {
             ],
         },
     ],
+};
 
-    // React rules
-
+const commonReactRules = {
     'react/display-name': 'warn',
     'react/jsx-props-no-spreading': 'warn',
     'react/static-property-placement': ['warn', 'static public field'],
     'react/prop-types': [
-        2,
+        'error',
         {
             skipUndeclared: true,
         },
@@ -101,9 +117,9 @@ const commonRules = {
 
     // DEPRECATED in favor of label-has-associated-control
     // https://github.com/evcohen/eslint-plugin-jsx-a11y/blob/master/docs/rules/label-has-for.md#rule-details
-    'jsx-a11y/label-has-for': [0],
+    'jsx-a11y/label-has-for': ['off'],
     'jsx-a11y/control-has-associated-label': [
-        1,
+        'warn',
         {
             labelAttributes: ['label'],
             controlComponents: ['Dot', 'Labeled'],
@@ -129,9 +145,17 @@ const commonRules = {
     ],
 };
 
-const testRules = {
-    ...commonRules,
+const commonTypeScriptRules = {
+    '@typescript-eslint/array-type': [
+        'error',
+        {
+            default: 'array',
+            readonly: 'array',
+        },
+    ],
+};
 
+const commonUnitTestRules = {
     'jest/no-focused-tests': 'error',
     'jest/expect-expect': [
         'error',
@@ -140,7 +164,7 @@ const testRules = {
         },
     ],
     'testing-library/consistent-data-testid': [
-        2,
+        'error',
         {
             testIdPattern: '^[A-Za-z]+[\\w\\-\\.]*$',
         },
@@ -161,8 +185,26 @@ module.exports = {
         },
         'import/extensions': ['.js', '.ts', '.tsx'],
     },
-    rules: commonRules,
     overrides: [
+        {
+            files: ['*.js'],
+            env: {
+                node: true,
+            },
+            rules: {
+                ...commonRules,
+            },
+        },
+        {
+            files: ['.storybook/*.js'],
+            env: {
+                node: true,
+            },
+            rules: {
+                ...commonRules,
+                ...commonReactRules,
+            },
+        },
         {
             files: ['src/**/*.js'],
             env: {
@@ -170,24 +212,17 @@ module.exports = {
             },
             rules: {
                 ...commonRules,
-
-                // override Airbnb's style to add typescript support
-                'import/extensions': [
-                    'error',
-                    'ignorePackages',
-                    {
-                        js: 'never',
-                        mjs: 'never',
-                        ts: 'never',
-                        tsx: 'never',
-                    },
-                ],
+                ...commonReactRules,
             },
         },
         {
             files: ['**/*.ts', '**/*.tsx'],
-            plugins: ['@typescript-eslint', 'prettier'],
             parser: '@typescript-eslint/parser',
+            parserOptions: {
+                project: './tsconfig.eslint.json',
+                tsconfigRootDir: __dirname,
+            },
+            plugins: ['@typescript-eslint', 'prettier'],
             extends: [
                 'react-app',
                 'plugin:react/recommended',
@@ -198,20 +233,13 @@ module.exports = {
                 'prettier/@typescript-eslint',
                 'prettier/react',
             ],
-            env: { browser: true },
-            parserOptions: {
-                project: './tsconfig.json',
-                tsconfigRootDir: __dirname,
+            env: {
+                browser: true,
             },
             rules: {
                 ...commonRules,
-                '@typescript-eslint/array-type': [
-                    'error',
-                    {
-                        default: 'array',
-                        readonly: 'array',
-                    },
-                ],
+                ...commonReactRules,
+                ...commonTypeScriptRules,
             },
         },
         {
@@ -233,10 +261,19 @@ module.exports = {
                 browser: true,
                 jest: true,
             },
-            rules: testRules,
+            rules: {
+                ...commonRules,
+                ...commonReactRules,
+                ...commonUnitTestRules,
+            },
         },
         {
             files: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+            parser: '@typescript-eslint/parser',
+            parserOptions: {
+                project: './tsconfig.eslint.json',
+                tsconfigRootDir: __dirname,
+            },
             plugins: ['prettier', 'jest'],
             extends: [
                 'react-app',
@@ -254,7 +291,12 @@ module.exports = {
                 browser: true,
                 jest: true,
             },
-            rules: testRules,
+            rules: {
+                ...commonRules,
+                ...commonReactRules,
+                ...commonTypeScriptRules,
+                ...commonUnitTestRules,
+            },
         },
         {
             files: ['cypress/**/*'],
