@@ -15,9 +15,10 @@ package v1;
 message NetworkBaselinePeerEntity {
     string id                           = 1;
     storage.NetworkEntityInfo.Type type = 2;
+    string name                         = 3;
 }
 
-message NetworkBaselinePeer {
+message NetworkBaselineStatusPeer {
     // The peer entity of the connection. This can be constructed from the
     // entity object of the networkgraph API. Only the ID and type are required.
     NetworkBaselinePeerEntity entity = 1;
@@ -44,13 +45,13 @@ message NetworkBaselinePeerStatus {
       ANOMALOUS      = 1;
     }
 
-    NetworkBaselinePeer peer = 1;
+    NetworkBaselineStatusPeer peer = 1;
     Status status            = 2;
 }
 
 message NetworkBaselineStatusRequest {
     string deployment_id               = 1;
-    repeated NetworkBaselinePeer peers = 2;
+    repeated NetworkBaselineStatusPeer peers = 2;
 }
 
 message NetworkBaselineStatusResponse {

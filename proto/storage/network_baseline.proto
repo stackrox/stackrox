@@ -54,4 +54,6 @@ message NetworkBaseline {
     //   1: Do not let system automatically add any allowed peer to baseline
     //   2: Start reporting violations on flows that are not in the baseline
     bool locked                                      = 7;
+
+    string deployment_name                           = 8;
 }

@@ -98,7 +98,7 @@ func (suite *PipelineTestSuite) TestCreateNetworkBaseline() {
 	suite.deployments.EXPECT().GetDeployment(gomock.Any(), gomock.Any()).Return(nil, false, nil)
 	suite.deployments.EXPECT().UpsertDeployment(gomock.Any(), gomock.Any()).Return(nil)
 	if features.NetworkDetection.Enabled() {
-		suite.networkBaselines.EXPECT().ProcessDeploymentCreate(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+		suite.networkBaselines.EXPECT().ProcessDeploymentCreate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	}
 	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any()).Return()
 	suite.graphEvaluator.EXPECT().IncrementEpoch(gomock.Any()).Return()

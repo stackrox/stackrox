@@ -96,10 +96,11 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForFlows()
 	entityID := peer.GetEntity().GetInfo().GetId()
 	request := &v1.NetworkBaselineStatusRequest{
 		DeploymentId: baseline.GetDeploymentId(),
-		Peers: []*v1.NetworkBaselinePeer{
+		Peers: []*v1.NetworkBaselineStatusPeer{
 			{
 				Entity: &v1.NetworkBaselinePeerEntity{
 					Id:   entityID,
+					Name: "",
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
 				},
 				Port:     port,

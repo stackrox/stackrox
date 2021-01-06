@@ -89,9 +89,9 @@ func (s *serviceImpl) GetNetworkBaseline(
 
 func (s *serviceImpl) getStatusesForPeers(
 	baseline *storage.NetworkBaseline,
-	examinedPeers []*v1.NetworkBaselinePeer,
+	examinedPeers []*v1.NetworkBaselineStatusPeer,
 ) []*v1.NetworkBaselinePeerStatus {
-	baselineByID := s.getBaselineByPeerEntityID(baseline)
+	baselinePeerByID := s.getBaselinePeerByEntityID(baseline)
 
 	statuses := make([]*v1.NetworkBaselinePeerStatus, 0, len(examinedPeers))
 	for _, examinedPeer := range examinedPeers {
@@ -100,7 +100,7 @@ func (s *serviceImpl) getStatusesForPeers(
 			Type: examinedPeer.GetEntity().GetType(),
 			ID:   examinedPeer.GetEntity().GetId(),
 		}
-		if baselinePeer, ok := baselineByID[examinedPeerKey]; ok {
+		if baselinePeer, ok := baselinePeerByID[examinedPeerKey]; ok {
 			for _, baselineProperty := range baselinePeer.GetProperties() {
 				if examinedPeer.GetProtocol() == baselineProperty.GetProtocol() &&
 					examinedPeer.GetPort() == baselineProperty.GetPort() &&
@@ -123,7 +123,7 @@ func (s *serviceImpl) getStatusesForPeers(
 	return statuses
 }
 
-func (s *serviceImpl) getBaselineByPeerEntityID(
+func (s *serviceImpl) getBaselinePeerByEntityID(
 	baseline *storage.NetworkBaseline,
 ) map[networkgraph.Entity]*storage.NetworkBaselinePeer {
 	result := make(map[networkgraph.Entity]*storage.NetworkBaselinePeer, len(baseline.GetPeers()))

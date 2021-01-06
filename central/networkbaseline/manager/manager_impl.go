@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
+	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -31,8 +32,9 @@ var (
 
 type baselineInfo struct {
 	// Metadata that doesn't change.
-	clusterID string
-	namespace string
+	clusterID      string
+	namespace      string
+	deploymentName string
 
 	observationPeriodEnd timestamp.MicroTS
 	userLocked           bool
@@ -41,7 +43,8 @@ type baselineInfo struct {
 }
 
 type manager struct {
-	ds datastore.DataStore
+	ds              datastore.DataStore
+	networkEntities networkEntityDS.EntityDataStore
 
 	baselinesByDeploymentID map[string]baselineInfo
 
@@ -105,17 +108,64 @@ func (m *manager) persistNetworkBaselines(deploymentIDs set.StringSet) error {
 	baselines := make([]*storage.NetworkBaseline, 0, len(deploymentIDs))
 	for deploymentID := range deploymentIDs {
 		baselineInfo := m.baselinesByDeploymentID[deploymentID]
+		peers, err := convertPeersToProto(baselineInfo.baselinePeers)
+		if err != nil {
+			return err
+		}
+		forbiddenPeers, err := convertPeersToProto(baselineInfo.forbiddenPeers)
+		if err != nil {
+			return err
+		}
 		baselines = append(baselines, &storage.NetworkBaseline{
 			DeploymentId:         deploymentID,
 			ClusterId:            baselineInfo.clusterID,
 			Namespace:            baselineInfo.namespace,
-			Peers:                convertPeersToProto(baselineInfo.baselinePeers),
-			ForbiddenPeers:       convertPeersToProto(baselineInfo.forbiddenPeers),
+			Peers:                peers,
+			ForbiddenPeers:       forbiddenPeers,
 			ObservationPeriodEnd: baselineInfo.observationPeriodEnd.GogoProtobuf(),
 			Locked:               baselineInfo.userLocked,
+			DeploymentName:       baselineInfo.deploymentName,
 		})
 	}
 	return m.ds.UpsertNetworkBaselines(managerCtx, baselines)
+}
+
+func (m *manager) lookUpPeerName(entity networkgraph.Entity) string {
+	switch entity.Type {
+	case storage.NetworkEntityInfo_DEPLOYMENT:
+		// If the peer is a deployment, just look it up from the baselines
+		peerBaseline, ok := m.baselinesByDeploymentID[entity.ID]
+		if !ok {
+			// Unexpected but the chance of this happening should be very slim.
+			// - created deployment A and B
+			// - created baseline for A
+			// - add flow called on dep A <====== only happens in this case
+			// - created baseline for B
+			// Returning an empty string with a log
+			log.Warnf("baseline for deployment peer does not exist: %q", entity.ID)
+			return ""
+		}
+		return peerBaseline.deploymentName
+	case storage.NetworkEntityInfo_EXTERNAL_SOURCE:
+		// Look it up from datastore since as of now the external source name can change without ID changing.
+		networkEntity, found, err := m.networkEntities.GetEntity(managerCtx, entity.ID)
+		if err != nil {
+			log.Warnf("failed to get network entity for its name: %v", err)
+			return ""
+		}
+		if !found {
+			// Unexpected. Network entity can only be captured in a flow when it is in the DS
+			log.Warnf("network entity peer %q not found", entity.ID)
+			return ""
+		}
+		return networkEntity.GetInfo().GetExternalSource().GetName()
+	case storage.NetworkEntityInfo_INTERNET:
+		return networkgraph.InternetExternalSourceName
+	default:
+		// Unsupported type.
+		log.Warnf("unsupported entity type in network baseline: %v", entity)
+		return ""
+	}
 }
 
 func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) error {
@@ -125,26 +175,34 @@ func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 			continue
 		}
 		if conn.SrcEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-			m.maybeAddPeer(conn.SrcEntity.ID, &peer{
-				isIngress: false,
-				entity:    conn.DstEntity,
-				dstPort:   conn.DstPort,
-				protocol:  conn.Protocol,
-			}, modifiedDeploymentIDs)
+			peerName := m.lookUpPeerName(conn.DstEntity)
+			if peerName != "" {
+				m.maybeAddPeer(conn.SrcEntity.ID, &peer{
+					isIngress: false,
+					entity:    conn.DstEntity,
+					name:      peerName,
+					dstPort:   conn.DstPort,
+					protocol:  conn.Protocol,
+				}, modifiedDeploymentIDs)
+			}
 		}
 		if conn.DstEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-			m.maybeAddPeer(conn.DstEntity.ID, &peer{
-				isIngress: true,
-				entity:    conn.SrcEntity,
-				dstPort:   conn.DstPort,
-				protocol:  conn.Protocol,
-			}, modifiedDeploymentIDs)
+			peerName := m.lookUpPeerName(conn.SrcEntity)
+			if peerName != "" {
+				m.maybeAddPeer(conn.DstEntity.ID, &peer{
+					isIngress: true,
+					entity:    conn.SrcEntity,
+					name:      peerName,
+					dstPort:   conn.DstPort,
+					protocol:  conn.Protocol,
+				}, modifiedDeploymentIDs)
+			}
 		}
 	}
 	return m.persistNetworkBaselines(modifiedDeploymentIDs)
 }
 
-func (m *manager) processDeploymentCreate(deploymentID, clusterID, namespace string) error {
+func (m *manager) processDeploymentCreate(deploymentID, deploymentName, clusterID, namespace string) error {
 	if _, exists := m.baselinesByDeploymentID[deploymentID]; exists {
 		return nil
 	}
@@ -152,6 +210,7 @@ func (m *manager) processDeploymentCreate(deploymentID, clusterID, namespace str
 	m.baselinesByDeploymentID[deploymentID] = baselineInfo{
 		clusterID:            clusterID,
 		namespace:            namespace,
+		deploymentName:       deploymentName,
 		observationPeriodEnd: timestamp.Now().Add(env.NetworkBaselineObservationPeriod.DurationSetting()),
 		userLocked:           false,
 		baselinePeers:        make(map[peer]struct{}),
@@ -160,10 +219,10 @@ func (m *manager) processDeploymentCreate(deploymentID, clusterID, namespace str
 	return m.persistNetworkBaselines(set.NewStringSet(deploymentID))
 }
 
-func (m *manager) ProcessDeploymentCreate(deploymentID, clusterID, namespace string) error {
+func (m *manager) ProcessDeploymentCreate(deploymentID, deploymentName, clusterID, namespace string) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	return m.processDeploymentCreate(deploymentID, clusterID, namespace)
+	return m.processDeploymentCreate(deploymentID, deploymentName, clusterID, namespace)
 }
 
 func (m *manager) processDeploymentDelete(deploymentID string) error {
@@ -181,7 +240,7 @@ func (m *manager) processDeploymentDelete(deploymentID string) error {
 			// Probably the peer is not a deployment
 			continue
 		}
-		reversedPeer := reversePeerView(deploymentID, &peer)
+		reversedPeer := reversePeerView(deploymentID, deletingBaseline.deploymentName, &peer)
 		delete(peerBaseline.baselinePeers, reversedPeer)
 		modifiedDeployments.Add(peer.entity.ID)
 	}
@@ -193,7 +252,7 @@ func (m *manager) processDeploymentDelete(deploymentID string) error {
 			// Probably the forbidden peer is not a deployment
 			continue
 		}
-		reversedPeer := reversePeerView(deploymentID, &forbiddenPeer)
+		reversedPeer := reversePeerView(deploymentID, deletingBaseline.deploymentName, &forbiddenPeer)
 		delete(forbiddenPeerBaseline.forbiddenPeers, reversedPeer)
 		modifiedDeployments.Add(forbiddenPeer.entity.ID)
 	}
@@ -201,10 +260,17 @@ func (m *manager) processDeploymentDelete(deploymentID string) error {
 	// Delete the records from other baselines first, then delete the wanted baseline after
 	err := m.persistNetworkBaselines(modifiedDeployments)
 	if err != nil {
-		return errors.Wrapf(err, "deleting baseline of deployment %q", deploymentID)
+		return errors.Wrapf(err, "deleting baseline of deployment %q", deletingBaseline.deploymentName)
 	}
 
-	return m.ds.DeleteNetworkBaseline(managerCtx, deploymentID)
+	err = m.ds.DeleteNetworkBaseline(managerCtx, deploymentID)
+	if err != nil {
+		return errors.Wrapf(err, "deleting baseline of deployment %q", deletingBaseline.deploymentName)
+	}
+
+	// Clean up cache
+	delete(m.baselinesByDeploymentID, deploymentID)
+	return nil
 }
 
 func (m *manager) ProcessDeploymentDelete(deploymentID string) error {
@@ -283,7 +349,7 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 			delete(baseline.forbiddenPeers, peer)
 			modifiedDeploymentIDs.Add(deploymentID)
 			if peer.entity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-				reversePeer := reversePeerView(deploymentID, &peer)
+				reversePeer := reversePeerView(deploymentID, baseline.deploymentName, &peer)
 
 				otherBaseline := m.baselinesByDeploymentID[peer.entity.ID]
 				otherBaseline.baselinePeers[reversePeer] = struct{}{}
@@ -299,7 +365,7 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 			baseline.forbiddenPeers[peer] = struct{}{}
 			modifiedDeploymentIDs.Add(deploymentID)
 			if peer.entity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-				reversePeer := reversePeerView(deploymentID, &peer)
+				reversePeer := reversePeerView(deploymentID, baseline.deploymentName, &peer)
 
 				otherBaseline := m.baselinesByDeploymentID[peer.entity.ID]
 				delete(otherBaseline.baselinePeers, reversePeer)
@@ -319,22 +385,33 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 func (m *manager) initFromStore() error {
 	m.baselinesByDeploymentID = make(map[string]baselineInfo)
 	return m.ds.Walk(managerCtx, func(baseline *storage.NetworkBaseline) error {
+		peers, err := convertPeersFromProto(baseline.GetPeers())
+		if err != nil {
+			return err
+		}
+		forbiddenPeers, err := convertPeersFromProto(baseline.GetForbiddenPeers())
+		if err != nil {
+			return err
+		}
 		m.baselinesByDeploymentID[baseline.GetDeploymentId()] = baselineInfo{
 			clusterID:            baseline.GetClusterId(),
 			namespace:            baseline.GetNamespace(),
+			deploymentName:       baseline.GetDeploymentName(),
 			observationPeriodEnd: timestamp.FromProtobuf(baseline.GetObservationPeriodEnd()),
 			userLocked:           baseline.GetLocked(),
-			baselinePeers:        convertPeersFromProto(baseline.GetPeers()),
-			forbiddenPeers:       convertPeersFromProto(baseline.GetForbiddenPeers()),
+			baselinePeers:        peers,
+			forbiddenPeers:       forbiddenPeers,
 		}
+
 		return nil
 	})
 }
 
 // New returns an initialized manager, and starts the manager's processing loop in the background.
-func New(ds datastore.DataStore) (Manager, error) {
+func New(ds datastore.DataStore, networkEntities networkEntityDS.EntityDataStore) (Manager, error) {
 	m := &manager{
-		ds: ds,
+		ds:              ds,
+		networkEntities: networkEntities,
 	}
 	if err := m.initFromStore(); err != nil {
 		return nil, err

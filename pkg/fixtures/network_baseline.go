@@ -14,5 +14,6 @@ func GetNetworkBaseline() *storage.NetworkBaseline {
 		ForbiddenPeers:       nil,
 		ObservationPeriodEnd: nil,
 		Locked:               false,
+		DeploymentName:       GetDeployment().GetName(),
 	}
 }

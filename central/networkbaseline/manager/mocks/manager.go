@@ -37,17 +37,17 @@ func (m *MockManager) EXPECT() *MockManagerMockRecorder {
 }
 
 // ProcessDeploymentCreate mocks base method
-func (m *MockManager) ProcessDeploymentCreate(deploymentID, clusterID, namespace string) error {
+func (m *MockManager) ProcessDeploymentCreate(deploymentID, deploymentName, clusterID, namespace string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessDeploymentCreate", deploymentID, clusterID, namespace)
+	ret := m.ctrl.Call(m, "ProcessDeploymentCreate", deploymentID, deploymentName, clusterID, namespace)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessDeploymentCreate indicates an expected call of ProcessDeploymentCreate
-func (mr *MockManagerMockRecorder) ProcessDeploymentCreate(deploymentID, clusterID, namespace interface{}) *gomock.Call {
+func (mr *MockManagerMockRecorder) ProcessDeploymentCreate(deploymentID, deploymentName, clusterID, namespace interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessDeploymentCreate", reflect.TypeOf((*MockManager)(nil).ProcessDeploymentCreate), deploymentID, clusterID, namespace)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessDeploymentCreate", reflect.TypeOf((*MockManager)(nil).ProcessDeploymentCreate), deploymentID, deploymentName, clusterID, namespace)
 }
 
 // ProcessDeploymentDelete mocks base method

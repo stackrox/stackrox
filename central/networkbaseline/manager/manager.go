@@ -16,7 +16,7 @@ type Manager interface {
 	// The baseline manager then creates a baseline for this deployment if it does not already exist.
 	// It must only be called by trusted code, since it assumes the caller has full access to modify
 	// network baselines in the datastore.
-	ProcessDeploymentCreate(deploymentID, clusterID, namespace string) error
+	ProcessDeploymentCreate(deploymentID, deploymentName, clusterID, namespace string) error
 	// ProcessDeploymentDelete notifies the baseline manager of a deployment delete.
 	// The baseline manager then updates all the existing baselines that had an edge to this
 	// delete deployment.

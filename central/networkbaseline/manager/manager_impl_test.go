@@ -6,7 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
+	networkEntityDSMock "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -57,16 +59,22 @@ func TestManager(t *testing.T) {
 type ManagerTestSuite struct {
 	suite.Suite
 
-	ds            *fakeDS
+	ds              *fakeDS
+	networkEntities *networkEntityDSMock.MockEntityDataStore
+
 	m             Manager
 	currTestStart timestamp.MicroTS
+	mockCtrl      *gomock.Controller
 }
 
 func (suite *ManagerTestSuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.networkEntities = networkEntityDSMock.NewMockEntityDataStore(suite.mockCtrl)
 	suite.currTestStart = timestamp.Now()
 }
 
 func (suite *ManagerTestSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
 }
 
 func (suite *ManagerTestSuite) mustInitManager(initialBaselines ...*storage.NetworkBaseline) {
@@ -76,12 +84,16 @@ func (suite *ManagerTestSuite) mustInitManager(initialBaselines ...*storage.Netw
 		suite.ds.baselines[baseline.GetDeploymentId()] = baseline
 	}
 	var err error
-	suite.m, err = New(suite.ds)
+	suite.m, err = New(suite.ds, suite.networkEntities)
 	suite.Require().NoError(err)
 }
 
 func depID(id int) string {
 	return fmt.Sprintf("DEP%03d", id)
+}
+
+func depName(id int) string {
+	return fmt.Sprintf("DEPNAME%03d", id)
 }
 
 func clusterID(id int) string {
@@ -96,9 +108,13 @@ func extSrcID(id int) string {
 	return fmt.Sprintf("EXTSRC%03d", id)
 }
 
+func extSrcName(id int) string {
+	return fmt.Sprintf("EXTSRCNAME%03d", id)
+}
+
 func (suite *ManagerTestSuite) initBaselinesForDeployments(ids ...int) {
 	for _, id := range ids {
-		suite.Require().NoError(suite.m.ProcessDeploymentCreate(depID(id), clusterID(id), ns(id)))
+		suite.Require().NoError(suite.m.ProcessDeploymentCreate(depID(id), depName(id), clusterID(id), ns(id)))
 	}
 }
 
@@ -148,6 +164,18 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 		baselineWithPeers(2, depPeer(1, properties(true, 52))),
 		emptyBaseline(3),
 	)
+	suite.networkEntities.EXPECT().GetEntity(gomock.Any(), extSrcID(10)).Return(
+		&storage.NetworkEntity{
+			Info: &storage.NetworkEntityInfo{
+				Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Id:   extSrcID(10),
+				Desc: &storage.NetworkEntityInfo_ExternalSource_{
+					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+						Name: extSrcName(10),
+					},
+				},
+			},
+		}, true, nil)
 	suite.processFlowUpdate([]networkgraph.NetworkConnIndicator{
 		// This conn is valid and should get incorporated into the baseline.
 		{
@@ -157,7 +185,7 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 			},
 			DstEntity: networkgraph.Entity{
 				Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-				ID:   "EXTERNALENTITYID",
+				ID:   extSrcID(10),
 			},
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			DstPort:  1,
@@ -207,7 +235,12 @@ func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
 			&storage.NetworkBaselinePeer{
 				Entity: &storage.NetworkEntity{Info: &storage.NetworkEntityInfo{
 					Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-					Id:   "EXTERNALENTITYID",
+					Id:   extSrcID(10),
+					Desc: &storage.NetworkEntityInfo_ExternalSource_{
+						ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+							Name: extSrcName(10),
+						},
+					},
 				}},
 				Properties: []*storage.NetworkBaselineConnectionProperties{properties(false, 1)},
 			},
@@ -346,9 +379,10 @@ func (suite *ManagerTestSuite) TestUpdateBaselineStatus() {
 	// Trying to add a listen endpoint as a peer -- should fail.
 	suite.Error(suite.m.ProcessBaselineStatusUpdate(allAllowedCtx,
 		modifyPeersReq(1, &v1.NetworkBaselinePeerStatus{
-			Peer: &v1.NetworkBaselinePeer{
+			Peer: &v1.NetworkBaselineStatusPeer{
 				Entity: &v1.NetworkBaselinePeerEntity{
 					Id:   "",
+					Name: "",
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
 				},
 				Port:     52,
@@ -488,6 +522,26 @@ func (suite *ManagerTestSuite) TestDeleteWithExtSrcPeer() {
 	suite.assertBaselinesAre(baselineWithPeers(1, extSrcPeer(3, properties(false, 443))))
 }
 
+func (suite *ManagerTestSuite) TestValidEntityTypesMatch() {
+	validTypes := make([]storage.NetworkEntityInfo_Type, 0, len(validBaselinePeerEntityTypes))
+	for t := range validBaselinePeerEntityTypes {
+		validTypes = append(validTypes, t)
+	}
+
+	// Make sure all the variables relying on entity types have the correct set of valid entity types
+	types := make([]storage.NetworkEntityInfo_Type, 0, len(entityTypeToName))
+	for t := range entityTypeToName {
+		types = append(types, t)
+	}
+	suite.ElementsMatch(validTypes, types)
+
+	types = types[:0]
+	for t := range entityTypeToEntityInfoDesc {
+		types = append(types, t)
+	}
+	suite.ElementsMatch(validTypes, types)
+}
+
 ///// Helper functions to make test code less verbose.
 
 func ctxWithAccessToWrite(id int) context.Context {
@@ -508,9 +562,10 @@ func modifyPeersReq(id int, peers ...*v1.NetworkBaselinePeerStatus) *v1.ModifyBa
 
 func protoPeerStatus(status v1.NetworkBaselinePeerStatus_Status, peerID int, port uint32, ingress bool) *v1.NetworkBaselinePeerStatus {
 	return &v1.NetworkBaselinePeerStatus{
-		Peer: &v1.NetworkBaselinePeer{
+		Peer: &v1.NetworkBaselineStatusPeer{
 			Entity: &v1.NetworkBaselinePeerEntity{
 				Id:   depID(peerID),
+				Name: depName(peerID),
 				Type: storage.NetworkEntityInfo_DEPLOYMENT,
 			},
 			Port:     port,
@@ -527,9 +582,10 @@ func conns(indicators ...networkgraph.NetworkConnIndicator) []networkgraph.Netwo
 
 func emptyBaseline(id int) *storage.NetworkBaseline {
 	return &storage.NetworkBaseline{
-		DeploymentId: depID(id),
-		ClusterId:    clusterID(id),
-		Namespace:    ns(id),
+		DeploymentId:   depID(id),
+		ClusterId:      clusterID(id),
+		Namespace:      ns(id),
+		DeploymentName: depName(id),
 	}
 }
 
@@ -549,6 +605,11 @@ func depPeer(id int, properties ...*storage.NetworkBaselineConnectionProperties)
 		Entity: &storage.NetworkEntity{Info: &storage.NetworkEntityInfo{
 			Type: storage.NetworkEntityInfo_DEPLOYMENT,
 			Id:   depID(id),
+			Desc: &storage.NetworkEntityInfo_Deployment_{
+				Deployment: &storage.NetworkEntityInfo_Deployment{
+					Name: depName(id),
+				},
+			},
 		}},
 		Properties: properties,
 	}
@@ -560,6 +621,11 @@ func extSrcPeer(id int, properties ...*storage.NetworkBaselineConnectionProperti
 			Info: &storage.NetworkEntityInfo{
 				Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 				Id:   extSrcID(id),
+				Desc: &storage.NetworkEntityInfo_ExternalSource_{
+					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+						Name: extSrcName(id),
+					},
+				},
 			}},
 		Properties: properties,
 	}

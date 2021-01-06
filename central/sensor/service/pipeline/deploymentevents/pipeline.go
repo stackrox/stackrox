@@ -131,16 +131,18 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, deployment *storag
 		}
 	}
 
-	// Remove the deployment from persistence.
-	if err := s.deployments.RemoveDeployment(ctx, deployment.GetClusterId(), deployment.GetId()); err != nil {
-		return err
-	}
-
-	// Remove all the network baselines that had an edge to this deployment
+	// Before removing the deployment, clean up all the network baselines that had an edge to this deployment
+	// Otherwise if deployment delete succeeded but baseline clean up failed, we may never have chance to
+	// clean up these baselines
 	if features.NetworkDetection.Enabled() {
 		if err := s.networkBaselines.ProcessDeploymentDelete(deployment.GetId()); err != nil {
 			return err
 		}
+	}
+
+	// Remove the deployment from persistence.
+	if err := s.deployments.RemoveDeployment(ctx, deployment.GetClusterId(), deployment.GetId()); err != nil {
+		return err
 	}
 
 	s.graphEvaluator.IncrementEpoch(deployment.GetClusterId())
@@ -204,6 +206,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 	if features.NetworkDetection.Enabled() {
 		if err := s.networkBaselines.ProcessDeploymentCreate(
 			deployment.GetId(),
+			deployment.GetName(),
 			deployment.GetClusterId(),
 			deployment.GetNamespace(),
 		); err != nil {
