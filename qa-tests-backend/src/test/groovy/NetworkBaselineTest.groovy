@@ -6,8 +6,10 @@ import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.FeatureFlagService
 import services.NetworkBaselineService
+import spock.lang.Retry
 import util.NetworkGraphUtil
 
+@Retry(count = 0)
 class NetworkBaselineTest extends BaseSpecification {
     static final private String SERVER_DEP_NAME = "net-bl-server"
     static final private String BASELINED_CLIENT_DEP_NAME = "net-bl-client-baselined"
@@ -35,18 +37,18 @@ class NetworkBaselineTest extends BaseSpecification {
                 .setImage(NGINX_IMAGE)
                 .addLabel("app", BASELINED_CLIENT_DEP_NAME)
                 .setCommand(["/bin/sh", "-c",])
-                .setArgs(["while sleep 1; " +
-                              "do wget -S http://${SERVER_DEP_NAME}; " +
-                              "done" as String,])
+                .setArgs(
+                    ["for i in \$(seq 1 10); do wget -S http://${SERVER_DEP_NAME}; sleep 1; done; sleep 1000" as String]
+                )
 
     static final private ANOMALOUS_CLIENT_DEP = createAndRegisterDeployment()
         .setName(ANOMALOUS_CLIENT_DEP_NAME)
         .setImage(NGINX_IMAGE)
         .addLabel("app", ANOMALOUS_CLIENT_DEP_NAME)
         .setCommand(["/bin/sh", "-c",])
-        .setArgs(["echo sleeping; sleep ${EXPECTED_BASELINE_DURATION_SECONDS+30}; echo sleep done; while sleep 1; " +
-                      "do wget -S http://${SERVER_DEP_NAME}; " +
-                      "done" as String,])
+        .setArgs(["echo sleeping; sleep ${EXPECTED_BASELINE_DURATION_SECONDS+30}; echo sleep done; " +
+                      "for i in \$(seq 1 10); do wget -S http://${SERVER_DEP_NAME}; sleep 1; done;" +
+                      "sleep 1000" as String,])
 
     static final private DEFERRED_BASELINED_CLIENT_DEP = createAndRegisterDeployment()
         .setName(DEFERRED_BASELINED_CLIENT_DEP_NAME)
@@ -93,6 +95,12 @@ class NetworkBaselineTest extends BaseSpecification {
             assert properties.getProtocol() == NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
         }
         return true
+    }
+
+    def cleanup() {
+        for (Deployment deployment : DEPLOYMENTS) {
+            orchestrator.deleteDeployment(deployment)
+        }
     }
 
     @Category(NetworkBaseline)
@@ -187,11 +195,5 @@ class NetworkBaselineTest extends BaseSpecification {
         )
         validateBaseline(deferredBaselinedClientBaseline, beforeDeferredCreate, justAfterDeferredCreate,
             [new Tuple2<String, Boolean>(serverDeploymentID, false)])
-
-        cleanup:
-        for (Deployment deployment : DEPLOYMENTS) {
-            orchestrator.deleteDeployment(deployment)
-        }
     }
-
 }
