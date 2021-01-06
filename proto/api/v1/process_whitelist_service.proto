@@ -9,7 +9,7 @@ import "storage/process_baseline.proto";
 package v1;
 
 // TODO(ROX-6194): This file is replaced by "process_baseline_service.proto" and
-//   shall be removed after the deprecation cycle started with the 54.0 release.
+//   shall be removed after the deprecation cycle started with the 55.0 release.
 
 message GetProcessWhitelistRequest {
     option                     deprecated = true;

@@ -29,7 +29,7 @@ var (
 		user.With(permissions.View(resources.ProcessWhitelist)): {
 			"/v1.ProcessBaselineService/GetProcessBaseline",
 
-			// TODO(ROX-6194): Remove after the deprecation cycle started with the 54.0 release.
+			// TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
 			"/v1.ProcessWhitelistService/GetProcessWhitelist",
 		},
 		user.With(permissions.Modify(resources.ProcessWhitelist)): {
@@ -37,7 +37,7 @@ var (
 			"/v1.ProcessBaselineService/LockProcessBaselines",
 			"/v1.ProcessBaselineService/DeleteProcessBaselines",
 
-			// TODO(ROX-6194): Remove after the deprecation cycle started with the 54.0 release.
+			// TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
 			"/v1.ProcessWhitelistService/UpdateProcessWhitelists",
 			"/v1.ProcessWhitelistService/LockProcessWhitelists",
 			"/v1.ProcessWhitelistService/DeleteProcessWhitelists",
@@ -54,12 +54,12 @@ type serviceImpl struct {
 func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
 	v1.RegisterProcessBaselineServiceServer(server, s)
 
-	// TODO(ROX-6194): Remove after the deprecation cycle started with the 54.0 release.
+	// TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
 	v1.RegisterProcessWhitelistServiceServer(server, s)
 }
 
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	// TODO(ROX-6194): Remove after the deprecation cycle started with the 54.0 release.
+	// TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
 	if err := v1.RegisterProcessWhitelistServiceHandler(ctx, mux, conn); err != nil {
 		return err
 	}

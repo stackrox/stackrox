@@ -23,7 +23,7 @@ type Service interface {
 
 	v1.ProcessBaselineServiceServer
 
-	// TODO(ROX-6194): Remove after the deprecation cycle started with the 54.0 release.
+	// TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
 	v1.ProcessWhitelistServiceServer
 }
 

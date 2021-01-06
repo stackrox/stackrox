@@ -13,7 +13,7 @@ var (
 	BaselineGenerationDuration *DurationSetting
 )
 
-// TODO(ROX-6194): Remove this entirely after the deprecation cycle started with the 54.0 release.
+// TODO(ROX-6194): Remove this entirely after the deprecation cycle started with the 55.0 release.
 func init() {
 	legacyValue, legacyValueFound := os.LookupEnv("ROX_WHITELIST_GENERATION_DURATION")
 	_, newValueFound := os.LookupEnv("ROX_BASELINE_GENERATION_DURATION")

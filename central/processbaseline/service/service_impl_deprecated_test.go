@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// TODO(ROX-6194): Remove this file after the deprecation cycle started with the 54.0 release.
+// TODO(ROX-6194): Remove this file after the deprecation cycle started with the 55.0 release.
 
 func TestProcessWhitelistService(t *testing.T) {
 	suite.Run(t, new(ProcessWhitelistServiceTestSuite))

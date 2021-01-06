@@ -11,7 +11,7 @@ import (
 )
 
 // TODO(ROX-6194): The code below implements a deprecated `ProcessWhitelistServiceServer`
-//   and shall be removed after the deprecation cycle started with the 54.0 release.
+//   and shall be removed after the deprecation cycle started with the 55.0 release.
 //
 // The implementation converts protobufs using Marshal/Unmarshal trick
 // and relays the calls to the "real" methods.

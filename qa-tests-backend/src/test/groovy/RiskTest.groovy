@@ -128,7 +128,7 @@ class RiskTest extends BaseSpecification {
         !one.baselineStatusesList.get(0).anomalousProcessesExecuted
         !two.baselineStatusesList.get(0).anomalousProcessesExecuted
 
-        // TODO(ROX-6194): Remove after the deprecation cycle started with the 54.0 release.
+        // TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
         and:
         "`.whitelistStatusesList` shall be identical to `.baselineStatusesList`"
         assert one.whitelistStatusesList.size() == one.baselineStatusesList.size()
@@ -231,7 +231,7 @@ class RiskTest extends BaseSpecification {
         and:
         after.get(withRiskIndex).baselineStatusesList.get(0).anomalousProcessesExecuted
 
-        // TODO(ROX-6194): Remove after the deprecation cycle started with the 54.0 release.
+        // TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
         and:
         "`.whitelistStatusesList` shall be identical to `.baselineStatusesList`"
         assert after.get(withRiskIndex).whitelistStatusesList.size() ==
@@ -301,7 +301,7 @@ class RiskTest extends BaseSpecification {
 
         assert !after.get(withRiskIndex).baselineStatusesList.get(0).anomalousProcessesExecuted
 
-        // TODO(ROX-6194): Remove after the deprecation cycle started with the 54.0 release.
+        // TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
         and:
         "`.whitelistStatusesList` shall be identical to `.baselineStatusesList`"
         assert after.get(withRiskIndex).whitelistStatusesList.size() ==
