@@ -3,6 +3,7 @@ package plan
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -63,7 +64,7 @@ func getPodSpec(scheme *runtime.Scheme, obj k8sutil.Object) (k8sutil.Object, *v1
 	}
 
 	if newObj != nil {
-		if err := scheme.Convert(obj, newObj, nil); err != nil {
+		if err := convert(scheme, obj, newObj); err != nil {
 			return nil, nil, errors.Wrapf(err, "failed to convert workload object of type %T with GVK %v to strongly typed", obj, obj.GetObjectKind().GroupVersionKind())
 		}
 		obj = newObj
@@ -115,13 +116,39 @@ func applyPreservedTolerations(scheme *runtime.Scheme, newObj, oldObj k8sutil.Ob
 	return newObjWithPodSpec, nil
 }
 
+func applyServicePreservedProperties(scheme *runtime.Scheme, newObj, oldObj k8sutil.Object) (k8sutil.Object, error) {
+	var newSvc, oldSvc v1.Service
+	if err := convert(scheme, newObj, &newSvc); err != nil {
+		return nil, errors.Wrap(err, "failed to convert new object to service")
+	}
+	if err := convert(scheme, oldObj, &oldSvc); err != nil {
+		return nil, errors.Wrap(err, "failed to convert old object to service")
+	}
+
+	newSvc.Spec.ClusterIP = oldSvc.Spec.ClusterIP
+	return &newSvc, nil
+}
+
 func applyPreservedProperties(scheme *runtime.Scheme, newObj, oldObj k8sutil.Object) (k8sutil.Object, error) {
+	if newObj.GetObjectKind().GroupVersionKind() == serviceGVK {
+		var err error
+		newObj, err = applyServicePreservedProperties(scheme, newObj, oldObj)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to preserve properties for object %v", k8sobjects.RefOf(newObj))
+		}
+	}
 	if oldObj.GetAnnotations()[common.PreserveResourcesAnnotationKey] == "true" {
 		var err error
 		newObj, err = applyPreservedResources(scheme, newObj, oldObj)
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	switch newObj.GetObjectKind().GroupVersionKind() {
+	case deploymentGVK, daemonSetGVK:
+	default:
+		return newObj, nil
 	}
 
 	// Ignore collector because tolerations are explicitly set

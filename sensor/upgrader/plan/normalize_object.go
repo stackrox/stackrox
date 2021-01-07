@@ -43,10 +43,6 @@ func clearServiceAccountDynamicFields(obj *unstructured.Unstructured) {
 	utils.Should(unstructured.SetNestedSlice(obj.Object, filteredSecrets, "secrets"))
 }
 
-func clearServiceDynamicFields(obj *unstructured.Unstructured) {
-	unstructured.RemoveNestedField(obj.Object, "spec", "clusterIP") // clusterIP may be dynamic
-}
-
 func deleteValueIfMatching(m map[string]interface{}, key string, defaultValue interface{}) {
 	if m[key] == defaultValue {
 		delete(m, key)
@@ -105,7 +101,6 @@ func clearAdmissionWebhookDefaultFields(obj *unstructured.Unstructured) {
 var (
 	clearDynamicFieldsByGVK = map[schema.GroupVersionKind]func(*unstructured.Unstructured){
 		serviceAccountGVK:             clearServiceAccountDynamicFields,
-		serviceGVK:                    clearServiceDynamicFields,
 		validatingAdmissionWebhookGVK: clearAdmissionWebhookDefaultFields,
 	}
 )

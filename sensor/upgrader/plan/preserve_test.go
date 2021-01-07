@@ -143,3 +143,35 @@ func TestPreserveResources(t *testing.T) {
 
 	assert.Equal(t, expectedMergedDS, mergedDS)
 }
+
+func Test_applyPreservedProperties(t *testing.T) {
+	oldObj := &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo",
+			Namespace: "bar",
+		},
+		Spec: corev1.ServiceSpec{
+			ClusterIP: "1.2.3.4",
+		},
+	}
+
+	newObj := &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "foo",
+			Namespace: "bar",
+		},
+	}
+
+	r, err := applyPreservedProperties(scheme.Scheme, newObj, oldObj)
+	require.NoError(t, err)
+	assert.Equal(t, serviceGVK, r.GetObjectKind().GroupVersionKind())
+	assert.Equal(t, "1.2.3.4", r.(*corev1.Service).Spec.ClusterIP)
+}
