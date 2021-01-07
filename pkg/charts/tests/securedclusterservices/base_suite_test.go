@@ -24,7 +24,7 @@ var (
 			CollectorVersion: "1.2.3",
 		},
 		"MainRegistry":      "stackrox.io", // TODO: custom?
-		"CollectorRegistry": "stackrox.io",
+		"CollectorRegistry": "collector.stackrox.io",
 		"RenderMode":        "",
 		"FeatureFlags":      make(map[string]string),
 	}
@@ -78,6 +78,9 @@ config:
   offlineMode: true
   slimCollector: true
   exposeMonitoring: true
+
+imagePullSecrets:
+  allowNone: true
 `
 )
 

@@ -69,8 +69,6 @@ envVars: [< if empty .EnvVars >] []
 ##
 ## The cluster name.
 #clusterName: null
-## The cluster initialization token to be used for cluster initialization.
-#initToken: null
 ## The gRPC endpoint for accessing StackRox Central.
 #centralEndpoint: central.stackrox:443
 ## A dictionary of additional CA certificates to include (PEM encoded).
@@ -165,19 +163,16 @@ envVars: [< if empty .EnvVars >] []
 #  # Possible values: null, false, true
 #  istio: null
 #
-## PEM-encoded StackRox Service CA certificate.
+## PEM-encoded StackRox Service CA certificate. This is required to be specified whenever `createSecrets` isn't set
+## to false, or if the admission controller is enabled.
 #ca:
 #  cert: null
 #
 ## Sensor specific configuration.
 #sensor:
 #
-#  # Image configuration for Sensor Deployment.
-#  image:
-#    registry: null
-#    name: main
-#    tag: 3.0.48.x-121-g337915cd3d
-#    fullRef: null
+#  # Image pull policy used by the Sensor deployment
+#  imagePullPolicy: IfNotPresent  # defaults to image.main.pullPolicy
 #
 #  # Resource configuration for the sensor container.
 #  resources:
@@ -189,13 +184,12 @@ envVars: [< if empty .EnvVars >] []
 #      cpu: "2"
 #
 #  # Settings for the internal service-to-service TLS certificate used by Sensor.
-#  # Specifying this is not needed when providing a cluster init token with `initToken`.
 #  serviceTLS:
 #    cert: null
 #    key: null
 #
 #  # Rarely needs to be changed.
-#  endpoint: sensor.stackrox.443
+#  endpoint: sensor.stackrox:443  # defaults to sensor.<namespace>:443
 #
 #
 ## Admission Control specific configuration.

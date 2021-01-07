@@ -1,11 +1,34 @@
 {{- include "srox.init" . -}}
 
-{{ if and ._rox.admissionControl.enable ._rox.admissionControl.exposeMonitoring }}
+{{- if ._rox.admissionControl.enable }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: admission-control-no-ingress
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "admission-control-no-ingress") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "admission-control-no-ingress") | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app: admission-control
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 8443
+  policyTypes:
+    - Ingress
+
+{{- if ._rox.admissionControl.exposeMonitoring }}
+---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: admission-control-monitoring
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "admission-control-monitoring") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
@@ -21,4 +44,6 @@ spec:
       app: admission-control
   policyTypes:
     - Ingress
-{{ end }}
+{{- end }}
+
+{{- end }}

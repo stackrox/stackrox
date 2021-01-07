@@ -15,7 +15,7 @@
 {{ if $._rox.meta.useLookup }}
   {{ if kindIs "invalid" $._rox._state.lookupWorks }}
     {{ $testOut := dict }}
-    {{ include "srox._doLookup" (list $ $testOut "v1" "ServiceAccount" $.Release.Namespace "default") }}
+    {{ include "srox._doLookup" (list $ $testOut "v1" "ServiceAccount" $._rox._namespace "default") }}
     {{ $_ := set $._rox._state "lookupWorks" ($testOut.result | not | not) }}
   {{ end }}
   {{ include "srox._doLookup" . }}

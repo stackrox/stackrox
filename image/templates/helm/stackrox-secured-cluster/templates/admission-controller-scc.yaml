@@ -1,20 +1,18 @@
 {{- include "srox.init" . -}}
 
-{{- if ._rox.env.openshift }}
-
+{{- if and ._rox.env.openshift ._rox.admissionControl.enable }}
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
-  name: sensor
+  name: admission-control
   labels:
-    {{- include "srox.labels" (list . "securitycontextconstraints" "sensor") | nindent 4 }}
+    {{- include "srox.labels" (list . "securitycontextconstraints" "admission-control") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
-    {{- include "srox.annotations" (list . "securitycontextconstraints" "sensor") | nindent 4 }}
-    kubernetes.io/description: sensor is the security constraint for the sensor
+    {{- include "srox.annotations" (list . "securitycontextconstraints" "admission-control") | nindent 4 }}
+    kubernetes.io/description: admission-control is the security constraint for the admission controller
 users:
-  - system:serviceaccount:{{ ._rox._namespace }}:sensor
-  - system:serviceaccount:{{ ._rox._namespace }}:sensor-upgrader
+  - system:serviceaccount:{{ ._rox._namespace }}:admission-control
 priority: 0
 runAsUser:
   type: RunAsAny
@@ -33,7 +31,7 @@ allowHostIPC: false
 allowHostNetwork: false
 allowHostPID: false
 allowHostPorts: false
-allowPrivilegeEscalation: true
+allowPrivilegeEscalation: false
 allowPrivilegedContainer: false
 allowedCapabilities: []
 defaultAddCapabilities: []
@@ -43,5 +41,4 @@ volumes:
   - downwardAPI
   - emptyDir
   - secret
-
 {{- end }}

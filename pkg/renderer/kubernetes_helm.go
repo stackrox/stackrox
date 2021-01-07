@@ -224,6 +224,9 @@ func RenderSensor(values map[string]interface{}, certs *sensor.Certs, opts helmu
 	var renderedFiles []*zip.File
 	// For kubectl files, we don't want to have the templates path so we trim it out
 	for k, v := range m {
+		if strings.TrimSpace(v) == "" {
+			continue
+		}
 		if file, ok := getSensorChartFile(filepath.Base(k), []byte(v)); ok {
 			renderedFiles = append(renderedFiles, file)
 		}

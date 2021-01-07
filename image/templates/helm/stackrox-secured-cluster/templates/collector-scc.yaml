@@ -1,21 +1,25 @@
 {{- include "srox.init" . -}}
 
 {{- if ._rox.env.openshift }}
-
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
-  name: sensor
+  name: collector
   labels:
-    {{- include "srox.labels" (list . "securitycontextconstraints" "sensor") | nindent 4 }}
+    {{- include "srox.labels" (list . "securitycontextconstraints" "collector") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
-    {{- include "srox.annotations" (list . "securitycontextconstraints" "sensor") | nindent 4 }}
-    kubernetes.io/description: sensor is the security constraint for the sensor
+    {{- include "srox.annotations" (list . "securitycontextconstraints" "collector") | nindent 4 }}
+    kubernetes.io/description: This SCC is based on privileged, hostaccess, and hostmount-anyuid
 users:
-  - system:serviceaccount:{{ ._rox._namespace }}:sensor
-  - system:serviceaccount:{{ ._rox._namespace }}:sensor-upgrader
+  - system:serviceaccount:{{ ._rox._namespace }}:collector
+allowHostDirVolumePlugin: true
+allowPrivilegedContainer: true
+fsGroup:
+  type: RunAsAny
+groups: []
 priority: 0
+readOnlyRootFilesystem: true
 runAsUser:
   type: RunAsAny
 seLinuxContext:
@@ -24,17 +28,11 @@ seccompProfiles:
   - '*'
 supplementalGroups:
   type: RunAsAny
-fsGroup:
-  type: RunAsAny
-groups: []
-readOnlyRootFilesystem: true
-allowHostDirVolumePlugin: false
 allowHostIPC: false
 allowHostNetwork: false
 allowHostPID: false
 allowHostPorts: false
 allowPrivilegeEscalation: true
-allowPrivilegedContainer: false
 allowedCapabilities: []
 defaultAddCapabilities: []
 requiredDropCapabilities: []
@@ -42,6 +40,6 @@ volumes:
   - configMap
   - downwardAPI
   - emptyDir
+  - hostPath
   - secret
-
 {{- end }}

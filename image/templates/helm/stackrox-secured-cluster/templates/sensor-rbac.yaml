@@ -4,36 +4,17 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: sensor
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "serviceaccount" "sensor") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "serviceaccount" "sensor") | nindent 4 }}
 imagePullSecrets:
-- name: stackrox
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: collector
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "srox.labels" (list . "serviceaccount" "collector") | nindent 4 }}
-    auto-upgrade.stackrox.io/component: "sensor"
-  annotations:
-    {{- include "srox.annotations" (list . "serviceaccount" "collector") | nindent 4 }}
-imagePullSecrets:
-{{- range $secretName := ._rox.collectorImagePullSecrets._names }}
-  {{- if eq $secretName "collector-stackrox" }}
-    {{- /* Preserve behaviour: Only include this secret reference if collectionMethod does not equal "NO_COLLECTION" */}}
-    {{- if ne $._rox.collector.collectionMethod "NO_COLLECTION" }}
+{{- range $secretName := ._rox.mainImagePullSecrets._names }}
 - name: {{ quote $secretName }}
-    {{- end}}
-  {{- else }}
-- name: {{ quote $secretName }}
-  {{- end }}
 {{- end }}
+
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -66,7 +47,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: sensor
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace }}
 roleRef:
   kind: ClusterRole
   name: stackrox:view-cluster
@@ -76,7 +57,7 @@ kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: edit
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "role" "edit") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
@@ -94,7 +75,7 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: manage-namespace
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "rolebinding" "manage-namespace") | nindent 4 }}
     auto-upgrade.stackrox.io/component: "sensor"
@@ -103,7 +84,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: sensor
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace }}
 roleRef:
   kind: Role
   name: edit
@@ -150,7 +131,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: sensor
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace }}
 roleRef:
   kind: ClusterRole
   name: stackrox:edit-workloads
@@ -192,7 +173,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: sensor
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace }}
 roleRef:
   kind: ClusterRole
   name: stackrox:network-policies
@@ -226,7 +207,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: sensor
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace }}
 roleRef:
   kind: ClusterRole
   name: stackrox:update-namespaces
@@ -262,7 +243,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: sensor
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace }}
 roleRef:
   kind: ClusterRole
   name: stackrox:create-events

@@ -1,5 +1,5 @@
 {{/*
-  srox.configureImage $ $imageCfg
+  srox.configureImagePullSecrets $ $cfgName $imagePullSecrets $defaultSecretNames
 
   Configures settings for a single image by augmenting/completing an existing image configuration
   stanza.
@@ -25,13 +25,17 @@
 
 {{ $imagePullSecretNames := default list $imagePullSecrets.useExisting }}
 {{ if not (kindIs "slice" $imagePullSecretNames) }}
-  {{ $imagePullSecretNames = regexSplit "\\s*,\\s*" (trim $imagePullSecretNames) -1 }}
+  {{ $imagePullSecretNames = regexSplit "\\s*[,;]\\s*" (trim $imagePullSecretNames) -1 }}
 {{ end }}
 {{ if $imagePullSecrets.useFromDefaultServiceAccount }}
   {{ $defaultSA := dict }}
-  {{ include "srox.safeLookup" (list $ $defaultSA "v1" "ServiceAccount" $.Release.Namespace "default") }}
+  {{ include "srox.safeLookup" (list $ $defaultSA "v1" "ServiceAccount" $._rox._namespace "default") }}
   {{ if $defaultSA.result }}
-    {{ $imagePullSecretNames = concat $imagePullSecretNames (default list $defaultSA.result.imagePullSecrets) }}
+    {{ range $ips := default list $defaultSA.result.imagePullSecrets }}
+      {{ if $ips.name }}
+        {{ $imagePullSecretNames = append $imagePullSecretNames $ips.name }}
+      {{ end }}
+    {{ end }}
   {{ end }}
 {{ end }}
 {{ $imagePullCreds := dict }}
@@ -40,7 +44,7 @@
   {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox" }}
 {{ else if $imagePullSecrets._password }}
   {{ $msg := printf "Password missing in %q. Whenever an image pull password is specified, a username must be specified as well" $cfgName }}
-  {{ include "srox.fail" }}
+  {{ include "srox.fail" $msg }}
 {{ end }}
 {{ if and $.Release.IsInstall (not $imagePullSecretNames) (not $imagePullSecrets.allowNone) }}
   {{ $msg := printf "You have not specified any image pull secrets, and no existing image pull secrets were automatically inferred. If your registry does not need image pull credentials, explicitly set the '%s.allowNone' option to 'true'" $cfgName }}

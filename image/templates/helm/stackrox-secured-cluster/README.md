@@ -231,3 +231,12 @@ customize:
       labels: {}
       annotations: {}
 ```
+
+### Environment Variables
+
+The following table lists the acceptable environment variables for the `setup.sh` script included in this Helm chart and their default values:
+
+|Environment Variable |Description |Default value|
+|:--------------------|:-----------|:------------|
+|ROX_NO_IMAGE_PULL_SECRETS|By default, the script creates image pull secrets as Kubernetes Secrets. To disable this
+behavior, set the value of the `ROX_NO_IMAGE_PULL_SECRETS` environment variable as `true`.|`false`|

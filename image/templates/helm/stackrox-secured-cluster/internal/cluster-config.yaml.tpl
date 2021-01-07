@@ -4,8 +4,8 @@ clusterName: {{ ._rox.clusterName }}
 clusterConfig:
   staticConfig:
     type: {{ if ._rox.env.openshift -}} OPENSHIFT_CLUSTER {{- else -}} KUBERNETES_CLUSTER {{- end }}
-    mainImage: {{ printf "%s/%s" ._rox.sensor.image.registry ._rox.sensor.image.name }}
-    collectorImage: {{ printf "%s/%s" ._rox.collector.image.registry ._rox.collector.image.name }}
+    mainImage: {{ coalesce ._rox.image.main._abbrevImageRef ._rox.image.main.fullRef }}
+    collectorImage: {{ coalesce ._rox.image.collector._abbrevImageRef ._rox.image.collector.fullRef }}
     centralApiEndpoint: {{ ._rox.centralEndpoint }}
     collectionMethod: {{ ._rox.collector.collectionMethod }}
     admissionController: {{ ._rox.admissionControl.enable }}

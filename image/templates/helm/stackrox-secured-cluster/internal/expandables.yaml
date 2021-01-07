@@ -1,4 +1,3 @@
-initToken: true
 ca:
   cert: true
 sensor:

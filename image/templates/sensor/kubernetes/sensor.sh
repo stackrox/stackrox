@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 # Launch StackRox Sensor
 #
 # Deploys the StackRox Sensor into the cluster
@@ -40,7 +42,6 @@ EOF
 fi
 {{- end}}
 
-{{if ne .CollectionMethod "NO_COLLECTION"}}
 if ! ${KUBE_COMMAND} get secret/collector-stackrox -n stackrox &>/dev/null; then
   registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.CollectorRegistry}}")"
   [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
@@ -55,7 +56,6 @@ metadata:
 type: kubernetes.io/dockerconfigjson
 EOF
 fi
-{{- end}}
 
 function print_rbac_instructions {
 	echo
@@ -76,46 +76,58 @@ function print_rbac_instructions {
 	exit 1
 }
 
-echo "Creating RBAC roles..."
+echo "Creating sensor RBAC roles..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-rbac.yaml" || print_rbac_instructions
-echo "Creating network policies..."
+echo "Creating sensor network policies..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-netpol.yaml" || exit 1
-echo "Creating Pod Security Policies..."
+echo "Creating sensor pod security policies..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-pod-security.yaml"
 
-{{ if .CreateUpgraderSA}}
+{{ if .CreateUpgraderSA }}
 echo "Creating upgrader service account"
 ${KUBE_COMMAND} apply -f "${DIR}/upgrader-serviceaccount.yaml" || print_rbac_instructions
-{{- end}}
+{{- end }}
 
-{{if .AdmissionController}}
+{{- if .AdmissionController }}
+echo "Creating admission controller secrets..."
+${KUBE_COMMAND} apply -f "$DIR/admission-controller-secret.yaml"
+echo "Creating admission controller RBAC roles..."
+${KUBE_COMMAND} apply -f "$DIR/admission-controller-rbac.yaml" || print_rbac_instructions
+echo "Creating admission controller network policies..."
+${KUBE_COMMAND} apply -f "$DIR/admission-controller-netpol.yaml"
+echo "Creating admission controller pod security policies..."
+${KUBE_COMMAND} apply -f "$DIR/admission-controller-pod-security.yaml"
+echo "Creating admission controller deployment..."
 ${KUBE_COMMAND} apply -f "$DIR/admission-controller.yaml"
-{{- else}}
+{{- else }}
 echo "Deleting admission controller webhook, if it exists"
 ${KUBE_COMMAND} delete validatingwebhookconfiguration stackrox --ignore-not-found
-{{- end}}
+{{- end }}
 
 echo "Creating secrets for sensor..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-secret.yaml"
-
-echo "Creating secrets for collector..."
-${KUBE_COMMAND} apply -f "$DIR/collector-secret.yaml"
-
-{{ if .AdmissionController }}
-echo "Creating secrets for admission controller..."
-${KUBE_COMMAND} apply -f "$DIR/admission-controller-secret.yaml"
-{{- end }}
 
 if [[ -f "$DIR/additional-ca-sensor.yaml" ]]; then
   echo "Creating secret for additional CAs for sensor..."
   ${KUBE_COMMAND} apply -f "$DIR/additional-ca-sensor.yaml"
 fi
 
-echo "Creating deployment..."
+echo "Creating collector secrets..."
+${KUBE_COMMAND} apply -f "$DIR/collector-secret.yaml"
+echo "Creating collector RBAC roles..."
+${KUBE_COMMAND} apply -f "$DIR/collector-rbac.yaml" || print_rbac_instructions
+echo "Creating collector network policies..."
+${KUBE_COMMAND} apply -f "$DIR/collector-netpol.yaml"
+echo "Creating collector pod security policies..."
+${KUBE_COMMAND} apply -f "$DIR/collector-pod-security.yaml"
+echo "Creating collector daemon set..."
+${KUBE_COMMAND} apply -f "$DIR/collector.yaml"
+
+echo "Creating sensor deployment..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor.yaml"
 
-{{ if not .CreateUpgraderSA}}
+{{ if not .CreateUpgraderSA }}
 if [[ -f "${DIR}/upgrader-serviceaccount.yaml" ]]; then
     printf "%s\n\n%s\n" "Did not create the upgrader service account. To create it later, please run" "${KUBE_COMMAND} apply -f \"${DIR}/upgrader-serviceaccount.yaml\""
 fi
-{{- end}}
+{{- end }}

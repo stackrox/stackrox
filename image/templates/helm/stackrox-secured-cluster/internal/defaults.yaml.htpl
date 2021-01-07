@@ -1,27 +1,38 @@
 defaults:
 
-  clusterName: ""
-  centralEndpoint: "central.{{ .Release.Namespace }}:443"
-  createUpgraderServiceAccount: false
+  centralEndpoint: "central.{{ ._rox._namespace }}:443"
+  createUpgraderServiceAccount: [< default false .CreateUpgraderSA >]
+
+  {{- if .Release.IsInstall }}
+  createSecrets: true
+  {{- end }}
+
+  exposeMonitoring: false
+
+  helmManaged: [< not .KubectlOutput >]
 
   imagePullSecrets:
-    allowNone: false
+    allowNone: [< or .KubectlOutput .RenderAsLegacyChart >]
     useExisting: []
     useFromDefaultServiceAccount: true
 
-  env:
-    openshift: false
-    istio: false
+  image:
+    registry: [< default "stackrox.io" .MainRegistry >]
+    main:
+      name: [< default "main" .ImageRemote >]
+      pullPolicy: IfNotPresent
+    collector:
+      registry: [< default "collector.stackrox.io" .CollectorRegistry >]
+      name: [< default "collector" .CollectorImageRemote >]
 
   ca:
-    cert: ""
+    cert: "@?secrets/ca.pem"
+
+  additionalCAs: {}
 
   sensor:
-    image:
-      registry: [< default "stackrox.io" .MainRegistry >]
-      name: [< default "main" .ImageRemote >]
-      tag: [< .Versions.MainVersion >]
-      pullPolicy: IfNotPresent
+    imagePullPolicy: {{ ._rox.image.main.pullPolicy }}
+    endpoint: "sensor.{{ ._rox.namespace }}:443"
 
     resources:
       requests:
@@ -32,19 +43,11 @@ defaults:
         cpu: "2"
 
     serviceTLS:
-      cert: ""
-      key: ""
-
-    endpoint: "sensor.{{ .Release.Namespace }}:443"
-    exposeMonitoring: false
+      cert: "@?secrets/sensor-cert.pem"
+      key: "@?secrets/sensor-key.pem"
 
   admissionControl:
-    image:
-      registry: [< default "stackrox.io" .MainRegistry >]
-      name: [< default "main" .ImageRemote >]
-      tag: [< .Versions.MainVersion >]
-      pullPolicy: IfNotPresent
-
+    imagePullPolicy: {{ ._rox.image.main.pullPolicy }}
     resources:
       requests:
         memory: "100Mi"
@@ -64,18 +67,14 @@ defaults:
       enforceOnUpdates: false
 
     serviceTLS:
-      cert: ""
-      key: ""
+      cert: "@?secrets/admission-control-cert.pem"
+      key: "@?secrets/admission-control-key.pem"
 
   collector:
     collectionMethod: "KERNEL_MODULE"
     disableTaintTolerations: false
-    slimMode: false
-
-    image:
-      registry: [< default "collector.stackrox.io" .CollectorRegistry >]
-      name: [< default "collector" .CollectorImageRemote >]
-      version: [< .Versions.CollectorVersion >]
+    imagePullPolicy: {{ ._rox.image.collector.pullPolicy }}
+    complianceImagePullPolicy: {{ ._rox.image.main.pullPolicy }}
 
     resources:
       requests:
@@ -94,5 +93,5 @@ defaults:
         cpu: "1"
 
     serviceTLS:
-      cert: ""
-      key: ""
+      cert: "@?secrets/collector-cert.pem"
+      key: "@?secrets/collector-key.pem"

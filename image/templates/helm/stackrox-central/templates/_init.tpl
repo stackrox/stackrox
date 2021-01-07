@@ -150,7 +150,11 @@
   {{ $defaultSA := dict }}
   {{ include "srox.safeLookup" (list $ $defaultSA "v1" "ServiceAccount" $.Release.Namespace "default") }}
   {{ if $defaultSA.result }}
-    {{ $imagePullSecretNames = concat $imagePullSecretNames (default list $defaultSA.result.imagePullSecrets) }}
+    {{ range $ips := (default list $defaultSA.result.imagePullSecrets) }}
+      {{ if $ips.name }}
+        {{ $imagePullSecretNames = append $imagePullSecretNames $ips.name }}
+      {{ end }}
+    {{ end }}
   {{ end }}
 {{ end }}
 {{ $imagePullCreds := dict }}

@@ -14,3 +14,7 @@ templates/*
 [<- else >]
 scripts/
 [<- end >]
+[<- if or .KubectlOutput (index .FeatureFlags "ROX_SENSOR_INSTALLATION_EXPERIENCE" | not) >]
+templates/cluster-config.yaml
+[<- end >]
+main.go

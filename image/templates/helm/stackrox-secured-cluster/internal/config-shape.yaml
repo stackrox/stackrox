@@ -1,8 +1,10 @@
 clusterName: null # string
-initToken: null # string
 centralEndpoint: null # string
 registryOverride: null # string
+exposeMonitoring: null # bool
 createUpgraderServiceAccount: null # string
+helmManaged: null
+createSecrets: null
 additionalCAs: null # [obj]
 imagePullSecrets:
   username: null # string
@@ -15,30 +17,39 @@ mainImagePullSecrets:
   password: null # string
   useExisting: null # string | [string]
   useFromDefaultServiceAccount: null # bool
+  allowNone: null # bool
 collectorImagePullSecrets:
   username: null # string
   password: null # string
   useExisting: null # string | [string]
   useFromDefaultServiceAccount: null # bool
+  allowNone: null # bool
 image:
   registry: null # string
+  main:
+    registry: null # string
+    name: null # string
+    tag: null # string
+    fullRef: null # string
+    pullPolicy: null # string
+  collector:
+    registry: null # string
+    name: null # string
+    tag: null # string
+    fullRef: null # string
+    pullPolicy: null # string
 env:
   openshift: null # bool
   istio: null # bool
 ca:
   cert: null # string
 sensor:
-  image:
-    registry: null # string
-    name: null # string
-    tag: null # string
-    fullRef: null # string
-    pullPolicy: null # string
+  imagePullPolicy: null # string
+  endpoint: null # string
   resources: null # string | dict
   serviceTLS:
     cert: null # string
     key: null # string
-  exposeMonitoring: null # bool
 admissionControl:
   enable: null # bool
   listenOnUpdates: null # bool
@@ -48,12 +59,7 @@ admissionControl:
     disableBypass: null # bool
     timeout: null # natural number
     enforceOnUpdates: null # bool
-  image:
-    registry: null # string
-    name: null # string
-    tag: null # string
-    fullRef: null # string
-    pullPolicy: null # string
+  imagePullPolicy: null # string
   resources: null # string | dict
   serviceTLS:
     cert: null # string
@@ -62,14 +68,9 @@ collector:
   collectionMethod: null # string
   disableTaintTolerations: null # bool
   slimMode: null # bool
-  image:
-    registry: null # string
-    name: null # string
-    version: null # string
-    tag: null # string
-    fullRef: null # string
-    pullPolicy: null # string
+  imagePullPolicy: null # string
   resources: null # string | dict
+  complianceImagePullPolicy: null # string
   complianceResources: null # string | dict
   serviceTLS:
     cert: null # string

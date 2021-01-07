@@ -2962,7 +2962,7 @@ jobs:
             # This will ensure that the certs are valid.
             sensor_tls_cert="$(kubectl create --dry-run=client -o json -f gencerts/cluster-remote-tls.yaml | jq 'select(.metadata.name=="sensor-tls")')"
             for file in ca.pem sensor-cert.pem sensor-key.pem; do
-              echo "${sensor_tls_cert}" | jq --arg filename "${file}" '.data[$filename]' -r | base64 --decode > "gencerts/${file}"
+              echo "${sensor_tls_cert}" | jq --arg filename "${file}" '.stringData[$filename]' -r > "gencerts/${file}"
             done
 
       - run:
@@ -3482,9 +3482,9 @@ jobs:
             ## Note that we do NOT want to patch the cluster object directly since we want to ensure
             ## that an unpatched cluster object works.
             main_image="${MAIN_IMAGE_REPO:-docker.io/stackrox/main}:$(make --quiet tag)"
-            sed -i 's@docker.io/stackrox/main.*@'"${main_image}"'@g' ./sensor-remote/sensor.yaml
+            sed -i 's@docker.io/stackrox/main[^"]*@'"${main_image}"'@g' ./sensor-remote/sensor.yaml
             collector_image="${COLLECTOR_IMAGE_REPO:-docker.io/stackrox/collector}:$(cat COLLECTOR_VERSION)-latest"
-            sed -i 's@docker.io/stackrox/collector.*@'"${collector_image}"'@g' ./sensor-remote/sensor.yaml
+            sed -i 's@docker.io/stackrox/collector[^"]*@'"${collector_image}"'@g' ./sensor-remote/sensor.yaml
 
       - run:
           name: Install the sensor

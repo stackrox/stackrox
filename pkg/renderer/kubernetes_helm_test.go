@@ -2,6 +2,7 @@ package renderer
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -103,6 +104,7 @@ func TestRenderSensorHelm(t *testing.T) {
 
 			for _, file := range files {
 				if file.Name == "admission-controller.yaml" {
+					fmt.Println(string(file.Content))
 					admissionControllerRendered = true
 				}
 				if file.Name == "admission-controller-secret.yaml" {
