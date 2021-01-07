@@ -5,7 +5,7 @@ export type TableProps = {
 };
 
 function Table({ children }: TableProps): ReactElement {
-    return <table className="w-full">{children}</table>;
+    return <table className="w-full relative">{children}</table>;
 }
 
 export default Table;

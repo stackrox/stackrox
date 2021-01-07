@@ -11,8 +11,12 @@ type BinderTabHeaderProps = {
 function BinderTabHeader({ title, isActive, onSelectTab }: BinderTabHeaderProps): ReactElement {
     const className = `${
         isActive ? 'bg-primary-300' : 'bg-primary-100'
-    } rounded-tr-none first:rounded-tl-lg last:rounded-tr-lg border-b border-primary-300 border-r border-t shadow`;
-    const buttonClassName = `${isActive ? 'text-primary-700' : ''} p-3`;
+    } rounded-tr-none first:rounded-tl-lg last:rounded-tr-lg border-b border-primary-300 border-r border-t`;
+    const buttonClassName = `${
+        isActive
+            ? 'bg-primary-200 p-3 text-base-500 text-primary-700 font-700'
+            : 'bg-base-200 text-base-500'
+    } p-3 uppercase text-sm`;
 
     return (
         <li key={title} className={className}>
@@ -43,7 +47,7 @@ function BinderTabs({ children }: BinderTabsProps): ReactElement {
 
     return (
         <div className="flex flex-1 flex-col">
-            <ul className="flex font-700 items-center text-sm uppercase" data-testid="tabs">
+            <ul className="flex items-center" data-testid="tabs">
                 {tabHeaderComponents}
             </ul>
             <div className="bg-primary-100 rounded-b rounded-tr-lg shadow flex flex-1">

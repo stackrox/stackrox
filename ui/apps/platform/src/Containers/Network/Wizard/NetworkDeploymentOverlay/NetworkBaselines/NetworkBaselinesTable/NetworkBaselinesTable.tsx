@@ -141,64 +141,66 @@ function NetworkBaselinesTable({
     );
 
     return (
-        <Table>
-            <TableHead headerGroups={headerGroups} />
-            <TableBody>
-                {rows.map((row) => {
-                    prepareRow(row);
+        <div className="flex flex-1 flex-col overflow-y-auto">
+            <Table>
+                <TableHead headerGroups={headerGroups} />
+                <TableBody>
+                    {rows.map((row) => {
+                        prepareRow(row);
 
-                    // If the row is the grouped row or a sub row grouped by the ANOMALOUS status,
-                    // we want a colored background
-                    const rowType =
-                        (row.isGrouped && row.groupByVal === networkFlowStatus.ANOMALOUS) ||
-                        row.values.status === networkFlowStatus.ANOMALOUS
-                            ? 'alert'
-                            : null;
+                        // If the row is the grouped row or a sub row grouped by the ANOMALOUS status,
+                        // we want a colored background
+                        const rowType =
+                            (row.isGrouped && row.groupByVal === networkFlowStatus.ANOMALOUS) ||
+                            row.values.status === networkFlowStatus.ANOMALOUS
+                                ? 'alert'
+                                : null;
 
-                    const GroupedRowComponent =
-                        row.groupByID === 'status' ? (
-                            <ToggleSelectedBaselineStatuses
-                                rows={rows}
-                                row={row}
-                                selectedFlatRows={selectedFlatRows}
-                                toggleBaselineStatuses={toggleBaselineStatuses}
-                            />
-                        ) : null;
-
-                    const HoveredGroupedRowComponent =
-                        row.groupByID !== 'status' && row.subRows.length === 1 ? (
-                            <ToggleBaselineStatus
-                                row={row.subRows[0]}
-                                toggleBaselineStatuses={toggleBaselineStatuses}
-                            />
-                        ) : null;
-
-                    return (
-                        <TableRow
-                            key={row.id}
-                            row={row}
-                            type={rowType}
-                            HoveredRowComponent={
-                                <ToggleBaselineStatus
+                        const GroupedRowComponent =
+                            row.groupByID === 'status' ? (
+                                <ToggleSelectedBaselineStatuses
+                                    rows={rows}
                                     row={row}
+                                    selectedFlatRows={selectedFlatRows}
                                     toggleBaselineStatuses={toggleBaselineStatuses}
                                 />
-                            }
-                            HoveredGroupedRowComponent={HoveredGroupedRowComponent}
-                            GroupedRowComponent={GroupedRowComponent}
-                        >
-                            {row.isGrouped && row.groupByID === 'status' ? (
-                                <GroupedStatusTableCell row={row} />
-                            ) : (
-                                row.cells.map((cell) => {
-                                    return <TableCell key={cell.column.Header} cell={cell} />;
-                                })
-                            )}
-                        </TableRow>
-                    );
-                })}
-            </TableBody>
-        </Table>
+                            ) : null;
+
+                        const HoveredGroupedRowComponent =
+                            row.groupByID !== 'status' && row.subRows.length === 1 ? (
+                                <ToggleBaselineStatus
+                                    row={row.subRows[0]}
+                                    toggleBaselineStatuses={toggleBaselineStatuses}
+                                />
+                            ) : null;
+
+                        return (
+                            <TableRow
+                                key={row.id}
+                                row={row}
+                                type={rowType}
+                                HoveredRowComponent={
+                                    <ToggleBaselineStatus
+                                        row={row}
+                                        toggleBaselineStatuses={toggleBaselineStatuses}
+                                    />
+                                }
+                                HoveredGroupedRowComponent={HoveredGroupedRowComponent}
+                                GroupedRowComponent={GroupedRowComponent}
+                            >
+                                {row.isGrouped && row.groupByID === 'status' ? (
+                                    <GroupedStatusTableCell row={row} />
+                                ) : (
+                                    row.cells.map((cell) => {
+                                        return <TableCell key={cell.column.Header} cell={cell} />;
+                                    })
+                                )}
+                            </TableRow>
+                        );
+                    })}
+                </TableBody>
+            </Table>
+        </div>
     );
 }
 

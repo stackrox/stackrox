@@ -229,6 +229,7 @@ module.exports = {
         width: {
             auto: 'auto',
             px: '1px',
+            0: '0',
             1: '0.25rem',
             2: '0.5rem',
             3: '0.75rem',
@@ -249,8 +250,9 @@ module.exports = {
             48: '12rem',
             55: '13.75rem',
             64: '16rem',
-            120: '46rem',
-            144: '52rem',
+            168: '42rem',
+            120: '46rem', // TODO: This should be 46 * 4 = 184
+            144: '52rem', // TODO: This should be 52 * 4 = 208
             '1/2': '50%',
             '1/3': '33.33333%',
             '2/3': '66.66667%',
@@ -274,6 +276,7 @@ module.exports = {
         height: {
             auto: 'auto',
             px: '1px',
+            0: '0',
             1: '0.25rem',
             2: '0.5rem',
             3: '0.75rem',

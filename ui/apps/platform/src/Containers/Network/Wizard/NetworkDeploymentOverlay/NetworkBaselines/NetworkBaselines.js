@@ -61,7 +61,12 @@ function NetworkBaselines({
     );
 
     return (
-        <Panel id={panelId} header={header} headerComponents={headerComponents}>
+        <Panel
+            id={panelId}
+            header={header}
+            headerComponents={headerComponents}
+            bodyClassName="flex flex-1 flex-col"
+        >
             <div className="p-2 border-b border-base-300">
                 <NetworkBaselinesSearch
                     networkBaselines={networkBaselines}

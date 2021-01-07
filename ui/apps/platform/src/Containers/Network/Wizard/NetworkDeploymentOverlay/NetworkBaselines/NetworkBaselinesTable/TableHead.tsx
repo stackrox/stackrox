@@ -17,7 +17,7 @@ export type TableHeadProps = {
 
 function TableHead({ headerGroups }: TableHeadProps): ReactElement {
     return (
-        <thead className="border-b border-base-300">
+        <thead>
             {headerGroups.map((headerGroup) => {
                 const { key: headerGroupKey } = headerGroup.getHeaderGroupProps();
                 return (
@@ -25,7 +25,11 @@ function TableHead({ headerGroups }: TableHeadProps): ReactElement {
                         {headerGroup.headers.map((column) => {
                             const { colSpan, key: headerKey } = column.getHeaderProps();
                             return (
-                                <th colSpan={colSpan} key={headerKey} className="text-left p-2">
+                                <th
+                                    colSpan={colSpan}
+                                    key={headerKey}
+                                    className="text-left p-2 sticky top-0 bg-base-100 border-b border-base-300 z-1"
+                                >
                                     {column.render('Header')}
                                 </th>
                             );

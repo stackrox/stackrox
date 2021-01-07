@@ -14,7 +14,8 @@ export type ButtonProps = {
     isCondensed?: boolean;
 };
 
-const baseButtonClassName = 'border-2 font-600 inline-flex items-center justify-center rounded-sm';
+const baseButtonClassName =
+    'border-2 font-600 inline-flex items-center justify-center rounded-sm uppercase text-sm';
 const baseClassName =
     'border-base-400 bg-base-100 hover:bg-base-200 hover:text-base-700 text-base-800';
 const alertClassName =

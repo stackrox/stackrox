@@ -24,7 +24,11 @@ function onFocus(): number {
 
 function TableRowOverlay({ children }): ReactElement {
     return (
-        <td className="absolute right-0 transform -translate-x-2 translate-y-1 mr-2">{children}</td>
+        <td className="flex overflow-visible w-0">
+            <div className="-translate-x-full transform translate-y-1 whitespace-no-wrap z-0">
+                {children}
+            </div>
+        </td>
     );
 }
 
