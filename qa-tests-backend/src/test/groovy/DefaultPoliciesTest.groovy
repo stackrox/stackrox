@@ -60,6 +60,10 @@ class DefaultPoliciesTest extends BaseSpecification {
             Constants.ANY_FIXED_VULN_POLICY,
     ]
 
+    static final private List<String> WHITELISTED_KUBE_SYSTEM_DEPLOYMENTS_AND_POLICIES = [
+            "tunnelfront - Secure Shell Server (sshd) Execution",
+    ]
+
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
             .setName(STRUTS)
             .setImage("stackrox/qa:struts-app")
@@ -322,6 +326,8 @@ class DefaultPoliciesTest extends BaseSpecification {
         )
         List<ListAlert> nonWhitelistedKubeSystemViolations = kubeSystemViolations.stream()
              .filter { x -> !WHITELISTED_KUBE_SYSTEM_POLICIES.contains(x.policy.name) }
+             .filter { x -> !WHITELISTED_KUBE_SYSTEM_DEPLOYMENTS_AND_POLICIES.contains(
+                 x.deployment.name + ' - ' + x.policy.name) }
              .filter {
                      // ROX-5350 - Ignore alerts for deleted policies
             violation -> Boolean exists = false

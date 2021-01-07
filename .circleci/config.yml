@@ -977,6 +977,37 @@ commands:
               gcr.io/stackrox-infra/automation-flavors/kops:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: on_fail
 
+      - destroy-aks-cluster:
+          when: on_fail
+
+  destroy-aks-cluster:
+    parameters:
+      when:
+        type: enum
+        enum: ["on_fail", "always"]
+
+    steps:
+      - run:
+          name: Destroy AKS cluster
+          environment:
+            - AKS_AUTOMATION_VERSION: 0.1.7
+            - AZURE_RESOURCE_GROUP: stackrox-ci
+          command: |
+            if [ -z "${CIRCLE_TAG}" ]; then
+              if ! .circleci/pr_has_label.sh ci-aks-tests; then
+                echo "AKS Cluster not created, skipping destroy."
+                exit 0
+              fi
+            fi
+            if [ ! -d "$PWD/aks" ]; then
+              echo "AKS Cluster not created (due to missing artifacts), skipping destroy."
+              exit 0
+            fi
+            docker run --rm -t \
+              -e AZURE_SP_USERNAME -e AZURE_SP_PASSWORD -e AZURE_SP_TENANT \
+              gcr.io/stackrox-infra/automation-flavors/aks:$AKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}" "${AZURE_RESOURCE_GROUP}"
+          when: << parameters.when >>
+
   provision-gke-cluster:
     parameters:
       cluster-id:
@@ -1227,6 +1258,19 @@ commands:
         type: boolean
         default: false
 
+      is-gke-cluster:
+        type: boolean
+        default: true
+
+      connect-to-cluster:
+        type: steps
+        default: []
+
+      destroy-cluster:
+        type: steps
+        default:
+          - teardown-gke
+
     steps:
       - checkout
       - check-backend-changes
@@ -1243,8 +1287,14 @@ commands:
       - setup-dep-env:
           use-main-rhel: << parameters.use-main-rhel >>
           use-websocket: << parameters.use-websocket >>
-      - attach-gke-cluster:
-          cluster-id: << parameters.cluster-id >>
+      - when:
+          condition: << parameters.is-gke-cluster >>
+          steps:
+            - attach-gke-cluster:
+                cluster-id: << parameters.cluster-id >>
+      - unless:
+          condition: << parameters.is-gke-cluster >>
+          steps: << parameters.connect-to-cluster >>
       - remove-existing-stackrox-resources
       - *setupGoogleAppCreds
       - *setupLicense
@@ -1332,7 +1382,7 @@ commands:
       - teardown-clair:
           cluster-id: << parameters.cluster-id >>
 
-      - teardown-gke
+      - steps: << parameters.destroy-cluster >>
 
   provision-openshift-cluster:
     parameters:
@@ -2880,6 +2930,56 @@ jobs:
               gcr.io/stackrox-infra/automation-flavors/kops:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: on_fail
 
+  provision-aks-api-e2e-tests:
+    executor: custom
+    steps:
+      - checkout
+      - check-label-exists-or-skip:
+          label: ci-aks-tests
+          run-on-master: false
+
+      - setup_remote_docker
+
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - *loginToGCR
+      - run:
+          name: Create AKS cluster
+          environment:
+            - AKS_AUTOMATION_VERSION: 0.1.7
+            - AZURE_RESOURCE_GROUP: stackrox-ci
+            - CREATION_SOURCE: ci
+          command: |
+            mkdir $PWD/aks
+            docker run --name aks-automation -t \
+              -v $PWD/aks:/data \
+              -e AZURE_SP_USERNAME -e AZURE_SP_PASSWORD -e AZURE_SP_TENANT -e CREATION_SOURCE \
+              gcr.io/stackrox-infra/automation-flavors/aks:$AKS_AUTOMATION_VERSION create "${CIRCLE_WORKFLOW_ID:0:7}" "${AZURE_RESOURCE_GROUP}"
+            docker cp aks-automation:/data $PWD/aks
+
+      - run:
+          name: Validate Kubeconfig
+          command: |
+            ls -lh $PWD/aks/data
+            export KUBECONFIG=$PWD/aks/data/kubeconfig
+            sudo chown "$USER" $PWD/aks/data/kubeconfig
+            kubectl get nodes
+
+      - store_artifacts:
+          path: aks
+          destination: aks
+
+      - build-liveness-check
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - aks
+
+      - destroy-aks-cluster:
+          when: on_fail
+
   ###
   # Test jobs against built artifacts
   # Recommended naming format: {cluster_type}-[{flavor}-]{test_target_type}-{any_test_name}-tests
@@ -4163,6 +4263,52 @@ jobs:
               gcr.io/stackrox-infra/automation-flavors/kops:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: always
 
+  aks-api-e2e-tests:
+    executor: custom
+    environment:
+      - LOCAL_PORT: 443
+      - COLLECTION_METHOD: ebpf
+      - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: true
+      - ROX_WHITELIST_GENERATION_DURATION: 1m
+      - LOAD_BALANCER: lb
+      - ADMISSION_CONTROLLER: true
+      - ADMISSION_CONTROLLER_UPDATES: true
+      - ROX_NETWORK_GRAPH_PORTS: true
+      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
+      - ROX_CENTRAL_INSTALLATION_EXPERIENCE: true
+      - ROX_SYSLOG_INTEGRATION: true
+      - ROX_NETWORK_DETECTION: true
+      - ROX_HOST_SCANNING: true
+      - ROX_SENSOR_TLS_CHALLENGE: true
+      - ROX_DISCOVERED_AT_IMAGE: true
+      - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
+      - ROX_NETWORK_DETECTION: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+
+    steps:
+      - run-qa-tests:
+          cluster-id: aks-api-e2e-tests
+          sensor-deploy-flavor: helm
+          determine-whether-to-run:
+            - check-master-or-tag-or-label:
+                label: ci-aks-tests
+                run-on-master: false
+                run-on-tags: true
+          use-websocket: true
+          is-gke-cluster: false
+          connect-to-cluster:
+            - run:
+                name: Restore KUBECONFIG
+                command: |
+                  ls -lh $PWD/aks/data
+                  cci-export KUBECONFIG "$PWD/aks/data/kubeconfig"
+                  kubectl get nodes
+          destroy-cluster:
+            - *loginToGCR
+            - destroy-aks-cluster:
+                when: always
+
   roxctl-windows-test:
     executor:
       name: win/default  # References orbs.win defined above.
@@ -4807,6 +4953,14 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-kops-api-e2e-tests
+      - provision-aks-api-e2e-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+      - aks-api-e2e-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-aks-api-e2e-tests
       - roxctl-windows-test:
           <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
