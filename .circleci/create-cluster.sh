@@ -100,6 +100,7 @@ wait-for-cluster() {
 
   GRACE_PERIOD=30
   while true; do
+    kubectl -n kube-system get pod
     NUMSTARTING=$(kubectl -n kube-system get pod -o json | jq '[(.items[].status.containerStatuses // [])[].ready | select(. | not)] | length')
     if (( NUMSTARTING == 0 )); then
       LAST_START_TS="$(kubectl -n kube-system get pod -o json | jq '[(.items[].status.containerStatuses // [])[] | (.state.running.startedAt // (now | todate)) | fromdate] | max')"
