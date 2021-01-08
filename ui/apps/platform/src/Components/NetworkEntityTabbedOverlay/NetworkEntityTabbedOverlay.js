@@ -9,11 +9,12 @@ import NetworkEntityTabHeader from './NetworkEntityTabHeader';
 function NetworkEntityTabbedOverlay({ entityName, entityType, children }) {
     const { tabHeaders, activeTabContent } = useTabs(children);
 
-    const tabHeaderComponents = tabHeaders.map(({ title, isActive, onSelectTab }) => {
+    const tabHeaderComponents = tabHeaders.map(({ title, isActive, onSelectTab, dataTestId }) => {
         return (
             <NetworkEntityTabHeader
                 key={title}
                 title={title}
+                dataTestId={dataTestId}
                 isActive={isActive}
                 onSelectTab={onSelectTab}
             />
@@ -21,8 +22,14 @@ function NetworkEntityTabbedOverlay({ entityName, entityType, children }) {
     });
 
     return (
-        <div className="flex flex-1 flex-col text-sm network-overlay-bg-shadow max-h-minus-buttons w-168">
-            <div className="bg-primary-800 flex items-center m-2 p-3 rounded-lg shadow text-primary-100">
+        <div
+            className="flex flex-1 flex-col text-sm network-overlay-bg-shadow max-h-minus-buttons w-168"
+            data-testid="network-details-panel"
+        >
+            <div
+                className="bg-primary-800 flex items-center m-2 p-3 rounded-lg shadow text-primary-100"
+                data-testid="network-details-panel-header"
+            >
                 <div className="flex flex-1 flex-col">
                     <div className="text-base">{entityName}</div>
                     <div className="italic text-primary-300 text-xs capitalize">

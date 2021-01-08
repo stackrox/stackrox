@@ -10,6 +10,9 @@ const table = {
     rows: 'div.rt-tr-group div.rt-tr',
     cells: '.rt-td',
     columnHeaders: 'div.rt-th',
+    th: 'th',
+    dataRow: 'tbody tr[data-testid="data-row"]',
+    td: 'td',
     activeRow: 'div.rt-tr-group .row-active',
     /** @deprecated use 'cells' instead as it better reflects the nature of this selector */
     columns: '.rt-td',

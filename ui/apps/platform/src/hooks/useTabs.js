@@ -22,7 +22,7 @@ function useTabs(children) {
     const tabHeaders = React.Children.toArray(children).map((child, i) => {
         const {
             type,
-            props: { title },
+            props: { title, dataTestId },
         } = child;
 
         if (type !== Tab) {
@@ -41,7 +41,7 @@ function useTabs(children) {
             selectActiveTabIndex(i);
         }
 
-        return { title, isActive, onSelectTab };
+        return { title, isActive, onSelectTab, dataTestId };
     });
 
     const activeTabContent = React.Children.toArray(children)[activeTabIndex];

@@ -25,7 +25,7 @@ function TableCell({ cell }: TableCellProps): ReactElement {
     }`;
 
     return (
-        <td key={key} className={className}>
+        <td key={key} className={className} data-testid="data-cell">
             {cell.render('Cell')}
         </td>
     );

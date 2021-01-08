@@ -3,7 +3,6 @@ import { url as networkUrl, selectors as networkPageSelectors } from '../../cons
 
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
-import checkFeatureFlag from '../../helpers/features';
 import {
     // TODO:    clickOnNodeByName,
     // TODO: filterDeployments,
@@ -13,12 +12,6 @@ import {
 } from '../../helpers/networkGraph';
 
 describe('External Entities on Network Graph', () => {
-    before(function beforeHook() {
-        if (checkFeatureFlag('ROX_NETWORK_GRAPH_EXTERNAL_SRCS', false)) {
-            this.skip();
-        }
-    });
-
     withAuth();
 
     beforeEach(() => {

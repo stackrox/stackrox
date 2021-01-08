@@ -4,11 +4,17 @@ import useTabs from 'hooks/useTabs';
 
 type BinderTabHeaderProps = {
     title: string;
+    dataTestId?: string;
     isActive: boolean;
     onSelectTab: () => void;
 };
 
-function BinderTabHeader({ title, isActive, onSelectTab }: BinderTabHeaderProps): ReactElement {
+function BinderTabHeader({
+    title,
+    isActive,
+    onSelectTab,
+    dataTestId = 'tab',
+}: BinderTabHeaderProps): ReactElement {
     const className = `${
         isActive ? 'bg-primary-300' : 'bg-primary-100'
     } rounded-tr-none first:rounded-tl-lg last:rounded-tr-lg border-b border-primary-300 border-r border-t`;
@@ -19,7 +25,7 @@ function BinderTabHeader({ title, isActive, onSelectTab }: BinderTabHeaderProps)
     } p-3 uppercase text-sm`;
 
     return (
-        <li key={title} className={className}>
+        <li key={title} className={className} data-testid={dataTestId}>
             <button type="button" className={buttonClassName} onClick={onSelectTab}>
                 {title}
             </button>
@@ -34,11 +40,12 @@ export type BinderTabsProps = {
 function BinderTabs({ children }: BinderTabsProps): ReactElement {
     const { tabHeaders, activeTabContent } = useTabs(children);
 
-    const tabHeaderComponents = tabHeaders.map(({ title, isActive, onSelectTab }) => {
+    const tabHeaderComponents = tabHeaders.map(({ title, isActive, onSelectTab, dataTestId }) => {
         return (
             <BinderTabHeader
                 key={title}
                 title={title}
+                dataTestId={dataTestId}
                 isActive={isActive}
                 onSelectTab={onSelectTab}
             />

@@ -75,6 +75,7 @@ function TableRow({
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             onFocus={onFocus}
+            data-testid={Array.isArray(children) ? 'data-row' : 'subhead-row'}
         >
             {children}
             {hoveredRowComponent}
