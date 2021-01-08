@@ -2328,7 +2328,7 @@ jobs:
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.5
+      - EKS_AUTOMATION_VERSION: 0.1.7
     steps:
       - checkout
       - restore-npm-deps-cache
@@ -2378,7 +2378,7 @@ jobs:
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.5
+      - EKS_AUTOMATION_VERSION: 0.1.7
     steps:
       - checkout
       - *restoreGoModCache
@@ -2423,7 +2423,7 @@ jobs:
     environment:
       - GOPATH: /home/circleci/go
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.5
+      - EKS_AUTOMATION_VERSION: 0.1.7
     resource_class: large
     steps:
       - checkout
@@ -2481,7 +2481,7 @@ jobs:
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.5
+      - EKS_AUTOMATION_VERSION: 0.1.7
     steps:
       - checkout
       - setup_remote_docker
@@ -2559,7 +2559,7 @@ jobs:
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.5
+      - EKS_AUTOMATION_VERSION: 0.1.7
     steps:
       - checkout
       - setup_remote_docker
@@ -2611,7 +2611,7 @@ jobs:
     executor: custom
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.5
+      - EKS_AUTOMATION_VERSION: 0.1.7
     steps:
       - checkout
       - setup_remote_docker
@@ -2747,7 +2747,7 @@ jobs:
     resource_class: large
     environment:
       - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.5
+      - EKS_AUTOMATION_VERSION: 0.1.7
     steps:
       - checkout
       - setup_remote_docker
@@ -2811,7 +2811,7 @@ jobs:
   provision-eks-api-e2e-tests:
     executor: custom
     environment:
-      - EKS_AUTOMATION_VERSION: 0.1.5
+      - EKS_AUTOMATION_VERSION: 0.1.7
     steps:
       - checkout
       - check-label-exists-or-skip:
@@ -2831,6 +2831,7 @@ jobs:
             docker run --name eks-automation -t \
               -v $PWD/eks:/data \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+              -e CREATION_SOURCE=CI \
               gcr.io/stackrox-infra/automation-flavors/eks:$EKS_AUTOMATION_VERSION create "${CIRCLE_WORKFLOW_ID:0:7}"
             docker cp eks-automation:/data $PWD/eks
 
@@ -4055,7 +4056,7 @@ jobs:
   eks-api-e2e-tests:
     executor: custom
     environment:
-      - EKS_AUTOMATION_VERSION: 0.1.5
+      - EKS_AUTOMATION_VERSION: 0.1.7
       - LOCAL_PORT: 8000
       - COLLECTION_METHOD: kernel-module
       - MONITORING_SUPPORT: true
