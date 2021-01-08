@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { DndProvider } from 'react-dnd';
-import Backend from 'react-dnd-html5-backend';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import { FieldArray, reduxForm } from 'redux-form';
 import { connect } from 'react-redux';
 
@@ -24,7 +24,7 @@ function BooleanPolicySection({ readOnly, hasHeader }) {
         );
     }
     return (
-        <DndProvider backend={Backend}>
+        <DndProvider backend={HTML5Backend}>
             <div className="w-full h-full flex">
                 <FieldArray name="policySections" component={PolicySections} />
                 <PolicyBuilderKeys keys={policyConfiguration.descriptor} />

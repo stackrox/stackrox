@@ -1,6 +1,6 @@
 import React from 'react';
 import { DndProvider } from 'react-dnd';
-import Backend from 'react-dnd-html5-backend';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
 import PolicyBuilderKey from './PolicyBuilderKey';
 
@@ -11,7 +11,7 @@ export default {
 
 export const withLabel = () => {
     return (
-        <DndProvider backend={Backend}>
+        <DndProvider backend={HTML5Backend}>
             <PolicyBuilderKey label="Image tags" jsonpath="key1" />
         </DndProvider>
     );
