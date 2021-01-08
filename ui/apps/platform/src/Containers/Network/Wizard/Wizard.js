@@ -15,18 +15,29 @@ import Simulator from './Simulator/Simulator';
 import CIDRPanel from './CIDRForm/CIDRPanel';
 import NamespaceDetails from './NamespaceDetails/NamespaceDetails';
 import ExternalDetails from './ExternalDetails/ExternalDetails';
+import ExternalDetailsOverlay from './ExternalDetails/ExternalDetailsOverlay';
 import NodesUpdateSection from '../Graph/Overlays/NodesUpdateSection';
 import ZoomButtons from '../Graph/Overlays/ZoomButtons';
 
 function Wizard({ wizardOpen, wizardStage, onClose }) {
     const networkDetectionEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_NETWORK_DETECTION);
 
-    if (networkDetectionEnabled && wizardOpen && wizardStage === wizardStages.details) {
+    if (
+        networkDetectionEnabled &&
+        wizardOpen &&
+        (wizardStage === wizardStages.details || wizardStage === wizardStages.externalDetails)
+    ) {
+        const paletteComponent =
+            wizardStage === wizardStages.details ? (
+                <NetworkDeploymentOverlay onClose={onClose} />
+            ) : (
+                <ExternalDetailsOverlay onClose={onClose} />
+            );
         return (
             <div className="network-panel">
                 <div className="absolute flex flex-1 max-h-full right-0">
                     <NodesUpdateSection />
-                    <NetworkDeploymentOverlay onClose={onClose} />
+                    {paletteComponent}
                 </div>
                 <div className="absolute h-full right-0">
                     <ZoomButtons pinnedLeft />
