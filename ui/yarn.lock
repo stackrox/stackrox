@@ -3350,19 +3350,7 @@
     "@emotion/utils" "0.11.3"
     "@emotion/weak-memoize" "0.2.5"
 
-"@emotion/core@^10.0.15":
-  version "10.0.35"
-  resolved "https://registry.yarnpkg.com/@emotion/core/-/core-10.0.35.tgz#513fcf2e22cd4dfe9d3894ed138c9d7a859af9b3"
-  integrity sha512-sH++vJCdk025fBlRZSAhkRlSUoqSqgCzYf5fMOmqqi3bM6how+sQpg3hkgJonj8GxXM4WbD7dRO+4tegDB9fUw==
-  dependencies:
-    "@babel/runtime" "^7.5.5"
-    "@emotion/cache" "^10.0.27"
-    "@emotion/css" "^10.0.27"
-    "@emotion/serialize" "^0.11.15"
-    "@emotion/sheet" "0.9.4"
-    "@emotion/utils" "0.11.3"
-
-"@emotion/core@^10.0.20", "@emotion/core@^10.1.1":
+"@emotion/core@^10.0.20", "@emotion/core@^10.0.35", "@emotion/core@^10.1.1":
   version "10.1.1"
   resolved "https://registry.yarnpkg.com/@emotion/core/-/core-10.1.1.tgz#c956c1365f2f2481960064bcb8c4732e5fb612c3"
   integrity sha512-ZMLG6qpXR8x031NXD8HJqugy/AZSkAuMxxqB46pmAR7ze47MhNJ56cdoX243QPZdGctrdfo+s08yZTiwaUcRKA==
@@ -5838,10 +5826,10 @@
     "@testing-library/dom" "^6.1.0"
     "@types/testing-library__react" "^9.1.0"
 
-"@tippyjs/react@^4.1.0":
-  version "4.1.0"
-  resolved "https://registry.yarnpkg.com/@tippyjs/react/-/react-4.1.0.tgz#be4e826ac198d2394a5ffed3508ca9c098c527f1"
-  integrity sha512-g6Dpm46edr9T9z+BYxd/eJZa6QMFc4T4z5xrztxVlkti7AhNYf7OaE6b3Nh+boUZZ9wn8xkNq9VrQM5K4huwnQ==
+"@tippyjs/react@^4.2.0":
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/@tippyjs/react/-/react-4.2.0.tgz#a1cb369d0051099e8a7e4ceb59f809abd9955283"
+  integrity sha512-T6UcHtwtGkvgsBQ4bNp8BtXGxa2ujfOkWUogYkRtN4UVJ2QRgDdFoJeaPxdndnVYFEa2uTVxSFxs8QkSkZ2Gdw==
   dependencies:
     tippy.js "^6.2.0"
 
@@ -19931,10 +19919,10 @@ react-resize-detector@^2.3.0:
     prop-types "^15.6.0"
     resize-observer-polyfill "^1.5.0"
 
-react-responsive@^8.1.1:
-  version "8.1.1"
-  resolved "https://registry.yarnpkg.com/react-responsive/-/react-responsive-8.1.1.tgz#e4b1bd677798deecb4f1c3cff35a020ca0abdb27"
-  integrity sha512-kvgOGU4m64ALsDiNKgImW6xtbdx/aSuw8sTCHC8RsBlkXsDA/gMoZkYboZuk4V9DhX6bCFh4gBH2UqlYVPLvcA==
+react-responsive@^8.2.0:
+  version "8.2.0"
+  resolved "https://registry.yarnpkg.com/react-responsive/-/react-responsive-8.2.0.tgz#e0ffb306cfd8f38c9c12e26725b9e1245fa9debc"
+  integrity sha512-iagCqVrw4QSjhxKp3I/YK6+ODkWY6G+YPElvdYKiUUbywwh9Ds0M7r26Fj2/7dWFFbOpcGnJE6uE7aMck8j5Qg==
   dependencies:
     hyphenate-style-name "^1.0.0"
     matchmediaquery "^0.3.0"
@@ -19954,10 +19942,10 @@ react-router-dom@^5.2.0:
     tiny-invariant "^1.0.2"
     tiny-warning "^1.0.0"
 
-react-router-hash-link@^2.2.2:
-  version "2.2.2"
-  resolved "https://registry.yarnpkg.com/react-router-hash-link/-/react-router-hash-link-2.2.2.tgz#df8cccc57014a5fb9e7defe5bb28292370bb8681"
-  integrity sha512-+8u5aAiRVWAFutH2Zwcm7UiuHmfed3Yn+d6aMVP8WGclMSv2ySAbGx836UifZO/+5o5QVhOS71soYHy0NVJN5g==
+react-router-hash-link@^2.3.1:
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/react-router-hash-link/-/react-router-hash-link-2.3.1.tgz#2ebe3443caad4d478a76e484458f1974f24ee97c"
+  integrity sha512-QVYLaBLmRGovSbQv4Tbjqnl9JMEQ8c5rWebkZU16ovgZtpmNIf2znGj3uWaKkAL7lhuYBPcC3OAfhw7lk/QwNw==
   dependencies:
     prop-types "^15.7.2"
 
@@ -20098,12 +20086,12 @@ react-smooth@^1.0.5:
     raf "^3.4.0"
     react-transition-group "^2.5.0"
 
-react-spinners@^0.9.0:
-  version "0.9.0"
-  resolved "https://registry.yarnpkg.com/react-spinners/-/react-spinners-0.9.0.tgz#b22c38acbfce580cd6f1b04a4649e812370b1fb8"
-  integrity sha512-+x6eD8tn/aYLdxZjNW7fSR1uoAXLb9qq6TFYZR1dFweJvckcf/HfP8Pa/cy5HOvB/cvI4JgrYXTjh2Me3S6Now==
+react-spinners@^0.10.4:
+  version "0.10.4"
+  resolved "https://registry.yarnpkg.com/react-spinners/-/react-spinners-0.10.4.tgz#3789086f3c1289d904163517dfa240e13ffd460c"
+  integrity sha512-WRzHTHjx1nvMzsyTXg1J8VVDYadGGeas6pzzxGk0T+dVSZpMIN9NrKV/h76SybdsU8cUp55+u9L1V1C9/oafhw==
   dependencies:
-    "@emotion/core" "^10.0.15"
+    "@emotion/core" "^10.0.35"
 
 react-syntax-highlighter@^11.0.2:
   version "11.0.2"
@@ -22938,10 +22926,10 @@ tinycolor2@^1.4.1:
   resolved "https://registry.yarnpkg.com/tinycolor2/-/tinycolor2-1.4.1.tgz#f4fad333447bc0b07d4dc8e9209d8f39a8ac77e8"
   integrity sha1-9PrTM0R7wLB9TcjpIJ2POaisd+g=
 
-tippy.js@^6.2.0, tippy.js@^6.2.6:
-  version "6.2.6"
-  resolved "https://registry.yarnpkg.com/tippy.js/-/tippy.js-6.2.6.tgz#4991bbe8f75e741fb92b5ccfeebcd072d71f8345"
-  integrity sha512-0tTL3WQNT0nWmpslhDryRahoBm6PT9fh1xXyDfOsvZpDzq52by2rF2nvsW0WX2j9nUZP/jSGDqfKJGjCtoGFKg==
+tippy.js@^6.2.0, tippy.js@^6.2.7:
+  version "6.2.7"
+  resolved "https://registry.yarnpkg.com/tippy.js/-/tippy.js-6.2.7.tgz#62fb34eda23f7d78151ddca922b62818c1ab9869"
+  integrity sha512-k+kWF9AJz5xLQHBi3K/XlmJiyu+p9gsCyc5qZhxxGaJWIW8SMjw1R+C7saUnP33IM8gUhDA2xX//ejRSwqR0tA==
   dependencies:
     "@popperjs/core" "^2.4.4"
 

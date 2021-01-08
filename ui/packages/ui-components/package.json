@@ -42,12 +42,12 @@
         "react-dom": "^16.12.0 || ^17"
     },
     "dependencies": {
-        "@tippyjs/react": "^4.1.0",
+        "@tippyjs/react": "^4.2.0",
         "formik": "^2.2.6",
         "initials": "^3.1.1",
         "lodash.get": "^4.4.2",
         "react-feather": "^2.0.9",
-        "tippy.js": "^6.2.6",
+        "tippy.js": "^6.2.7",
         "yup": "^0.32.8"
     },
     "devDependencies": {
