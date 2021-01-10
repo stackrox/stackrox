@@ -68,7 +68,7 @@ function NetworkDeploymentOverlay({ selectedDeployment, filterState }) {
                     </Tab>
                 </BinderTabs>
             </Tab>
-            <Tab title="Policies">
+            <Tab title="Network Policies">
                 <NetworkPoliciesDetail policyIds={selectedDeployment.policyIds} />
             </Tab>
             <Tab title="Details">

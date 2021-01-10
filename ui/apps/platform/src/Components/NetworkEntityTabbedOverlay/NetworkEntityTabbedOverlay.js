@@ -23,7 +23,7 @@ function NetworkEntityTabbedOverlay({ entityName, entityType, children }) {
 
     return (
         <div
-            className="flex flex-1 flex-col text-sm network-overlay-bg-shadow max-h-minus-buttons w-168"
+            className="flex flex-1 flex-col text-sm network-overlay-bg-shadow max-h-minus-buttons rounded-bl-lg"
             data-testid="network-details-panel"
         >
             <div

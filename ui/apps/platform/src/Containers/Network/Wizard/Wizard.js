@@ -35,7 +35,7 @@ function Wizard({ wizardOpen, wizardStage, onClose }) {
             );
         return (
             <div className="network-panel">
-                <div className="absolute flex flex-1 max-h-full right-0">
+                <div className="absolute flex flex-1 max-h-full right-0 w-1/3 min-w-168 max-w-184">
                     <NodesUpdateSection />
                     {paletteComponent}
                 </div>
@@ -46,7 +46,7 @@ function Wizard({ wizardOpen, wizardStage, onClose }) {
         );
     }
 
-    const width = wizardOpen ? 'md:w-2/3 lg:w-2/5 min-w-144' : 'w-0';
+    const width = wizardOpen ? 'md:w-2/3 lg:w-2/5 min-w-208' : 'w-0';
     let panelContent = null;
 
     if (wizardOpen) {
