@@ -11,6 +11,10 @@ import {
     Edge,
 } from 'Containers/Network/networkTypes';
 
+type Result = { isLoading: boolean; data: FlattenedNetworkBaseline[]; error: string | null };
+
+const defaultResultState = { data: [], error: null, isLoading: true };
+
 /*
  * This function takes the network flows and separates them based on their ports
  * and protocols
@@ -64,8 +68,6 @@ function getBaselineStatusKey({ id, ingress, port, protocol }): string {
     return `${id}-${ingress}-${port}-${protocol}`;
 }
 
-type Result = { isLoading: boolean; data: FlattenedNetworkBaseline[]; error: string | null };
-
 function usePrevValue(newValue: Edge[]): Edge[] | undefined {
     const ref = React.useRef<Edge[]>();
     useEffect(() => {
@@ -87,13 +89,15 @@ function useFetchNetworkBaselines({
     edges: Edge[];
     filterState: number;
 }): Result {
-    const [result, setResult] = useState<Result>({ data: [], error: null, isLoading: true });
+    const [result, setResult] = useState<Result>(defaultResultState);
     const prevEdges = usePrevValue(edges);
 
     useEffect(() => {
         if (isEqual(prevEdges, edges)) {
             return;
         }
+
+        setResult(defaultResultState);
 
         const { networkFlows } = getNetworkFlows(edges, filterState);
         const peers = getPeersFromNetworkFlows(networkFlows);

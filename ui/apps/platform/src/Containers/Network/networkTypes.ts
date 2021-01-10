@@ -1,4 +1,4 @@
-type EntityType = 'DEPLOYMENT' | 'INTERNET' | 'EXTERNAL_SOURCE';
+export type EntityType = 'DEPLOYMENT' | 'INTERNET' | 'EXTERNAL_SOURCE';
 
 type Protocol = 'L4_PROTOCOL_TCP' | 'L4_PROTOCOL_UDP' | 'L4_PROTOCOL_ANY';
 

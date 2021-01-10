@@ -30,7 +30,7 @@ function NetworkBaselines({
     networkBaselines,
     deploymentId,
     filterState,
-    onNavigateToDeploymentById,
+    onNavigateToEntity,
 }) {
     const toggleBaselineStatuses = useToggleBaselineStatuses(deploymentId);
 
@@ -78,7 +78,7 @@ function NetworkBaselines({
                 networkBaselines={filteredNetworkBaselines}
                 page={page}
                 filterState={filterState}
-                onNavigateToDeploymentById={onNavigateToDeploymentById}
+                onNavigateToEntity={onNavigateToEntity}
                 toggleBaselineStatuses={toggleBaselineStatuses}
             />
         </Panel>

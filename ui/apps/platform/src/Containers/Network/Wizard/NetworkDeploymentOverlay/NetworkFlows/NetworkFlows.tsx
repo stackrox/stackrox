@@ -17,12 +17,7 @@ function getPanelHeaderText(numBaselineFlows, filterState): string {
     }
 }
 
-function NetworkFlows({
-    deploymentId,
-    edges,
-    filterState,
-    onNavigateToDeploymentById,
-}): ReactElement {
+function NetworkFlows({ deploymentId, edges, filterState, onNavigateToEntity }): ReactElement {
     const { data: networkBaselines, isLoading } = useFetchNetworkBaselines({
         deploymentId,
         edges,
@@ -38,7 +33,7 @@ function NetworkFlows({
             networkBaselines={networkBaselines}
             deploymentId={deploymentId}
             filterState={filterModes}
-            onNavigateToDeploymentById={onNavigateToDeploymentById}
+            onNavigateToEntity={onNavigateToEntity}
         />
     );
 }

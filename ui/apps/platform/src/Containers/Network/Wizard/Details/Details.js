@@ -12,6 +12,8 @@ import { selectors } from 'reducers';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as graphActions } from 'reducers/network/graph';
 import { nodeTypes } from 'constants/networkGraph';
+import useNavigateToEntity from 'hooks/useNavigateToEntity';
+
 import Panel from 'Components/Panel';
 import Tabs from 'Components/Tabs';
 import Loader from 'Components/Loader';
@@ -19,8 +21,8 @@ import Tab from 'Components/Tab';
 import PanelButton from 'Components/PanelButton';
 import NetworkPoliciesDetails from './NetworkPoliciesDetails';
 import NetworkFlows from './NetworkFlows';
-import wizardStages from '../wizardStages';
 import DeploymentDetails from '../../../Risk/DeploymentDetails';
+import wizardStages from '../wizardStages';
 
 function Details({
     deployment,
@@ -33,6 +35,8 @@ function Details({
     setWizardStage,
     setSelectedNode,
 }) {
+    const onNavigateToEntity = useNavigateToEntity();
+
     if (isEmpty(deployment)) {
         return null;
     }
@@ -51,16 +55,6 @@ function Details({
             (source !== target || destNodeType !== nodeTypes.DEPLOYMENT)
     );
 
-    function onNavigateToDeploymentById(deploymentId, type) {
-        return function onNavigate() {
-            if (type === 'external' || type === 'cidr') {
-                history.push(`/main/network/${deploymentId}/${type}`);
-                return;
-            }
-            history.push(`/main/network/${deploymentId}`);
-        };
-    }
-
     const content = isFetchingNode ? (
         <Loader />
     ) : (
@@ -69,7 +63,7 @@ function Details({
                 <div className="flex flex-1 flex-col h-full">
                     <NetworkFlows
                         edges={deploymentEdges}
-                        onNavigateToDeploymentById={onNavigateToDeploymentById}
+                        onNavigateToDeploymentById={onNavigateToEntity}
                     />
                 </div>
             </Tab>

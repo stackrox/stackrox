@@ -2,10 +2,11 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { useParams, useHistory } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 import { selectors } from 'reducers';
 import { nodeTypes } from 'constants/networkGraph';
+import useNavigateToEntity from 'hooks/useNavigateToEntity';
 
 import Tab from 'Components/Tab';
 import NetworkEntityTabbedOverlay from 'Components/NetworkEntityTabbedOverlay';
@@ -25,21 +26,8 @@ function getDeploymentEdges(deployment) {
     return edges;
 }
 
-function useNavigateToDeployment() {
-    const history = useHistory();
-    return function onNavigateToDeploymentById(deploymentId, type) {
-        return function onNavigate() {
-            if (type === 'external' || type === 'cidr') {
-                history.push(`/main/network/${deploymentId}/${type}`);
-                return;
-            }
-            history.push(`/main/network/${deploymentId}`);
-        };
-    };
-}
-
 function NetworkDeploymentOverlay({ selectedDeployment, filterState }) {
-    const onNavigateToDeploymentById = useNavigateToDeployment();
+    const onNavigateToEntity = useNavigateToEntity();
     const { deploymentId } = useParams();
 
     const edges = getDeploymentEdges(selectedDeployment);
@@ -56,15 +44,11 @@ function NetworkDeploymentOverlay({ selectedDeployment, filterState }) {
                             deploymentId={deploymentId}
                             edges={edges}
                             filterState={filterState}
-                            onNavigateToDeploymentById={onNavigateToDeploymentById}
+                            onNavigateToEntity={onNavigateToEntity}
                         />
                     </Tab>
                     <Tab title="Baseline Settings">
-                        <BaselineSettings
-                            deploymentId={deploymentId}
-                            filterState={filterState}
-                            onNavigateToDeploymentById={onNavigateToDeploymentById}
-                        />
+                        <BaselineSettings deploymentId={deploymentId} filterState={filterState} />
                     </Tab>
                 </BinderTabs>
             </Tab>

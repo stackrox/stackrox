@@ -1,4 +1,5 @@
 import React, { ReactElement } from 'react';
+import { PlusCircle, MinusCircle } from 'react-feather';
 
 import { networkFlowStatus } from 'constants/networkGraph';
 import { FlattenedNetworkBaseline } from 'Containers/Network/networkTypes';
@@ -23,12 +24,14 @@ function ToggleBaselineStatus({
     if (row.original.status === networkFlowStatus.ANOMALOUS) {
         return (
             <CondensedButton type="button" onClick={onClickHandler}>
+                <PlusCircle className="h-3 w-3 mr-1" />
                 Add to baseline
             </CondensedButton>
         );
     }
     return (
         <CondensedAlertButton type="button" onClick={onClickHandler}>
+            <MinusCircle className="h-3 w-3 mr-1" />
             Mark as anomalous
         </CondensedAlertButton>
     );

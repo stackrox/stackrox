@@ -11,6 +11,7 @@ import {
 } from 'messages/network';
 import { FlattenedNetworkBaseline } from 'Containers/Network/networkTypes';
 
+import NavigateToEntityButton from 'Containers/Network/NavigateToEntityButton';
 import Table from './Table';
 import TableHead from './TableHead';
 import TableBody from './TableBody';
@@ -25,6 +26,7 @@ import expanderPlugin from './expanderPlugin';
 export type NetworkBaselinesTableProps = {
     networkBaselines: FlattenedNetworkBaseline[];
     toggleBaselineStatuses: (networkBaselines: FlattenedNetworkBaseline[]) => void;
+    onNavigateToEntity: () => void;
 };
 
 function getAggregateText(leafValues: string[], multiplePhrase = 'Many'): string {
@@ -112,6 +114,7 @@ const columns = [
 function NetworkBaselinesTable({
     networkBaselines,
     toggleBaselineStatuses,
+    onNavigateToEntity,
 }: NetworkBaselinesTableProps): ReactElement {
     const { headerGroups, rows, prepareRow, selectedFlatRows } = useTable(
         {
@@ -167,24 +170,46 @@ function NetworkBaselinesTable({
                             ) : null;
 
                         const HoveredGroupedRowComponent =
-                            row.groupByID !== 'status' && row.subRows.length === 1 ? (
+                            row.groupByID !== 'status' && row.subRows.length >= 1 ? (
+                                <div className="flex">
+                                    {row.subRows.length === 1 && (
+                                        <ToggleBaselineStatus
+                                            row={row.subRows[0]}
+                                            toggleBaselineStatuses={toggleBaselineStatuses}
+                                        />
+                                    )}
+                                    <div className="ml-2">
+                                        <NavigateToEntityButton
+                                            entityId={row.subRows[0].original.peer.entity.id}
+                                            entityType={row.subRows[0].original.peer.entity.type}
+                                            onClick={onNavigateToEntity}
+                                        />
+                                    </div>
+                                </div>
+                            ) : null;
+
+                        const HoveredRowComponent = row.original ? (
+                            <div className="flex">
                                 <ToggleBaselineStatus
-                                    row={row.subRows[0]}
+                                    row={row}
                                     toggleBaselineStatuses={toggleBaselineStatuses}
                                 />
-                            ) : null;
+                                <div className="ml-2">
+                                    <NavigateToEntityButton
+                                        entityId={row.original.peer.entity.id}
+                                        entityType={row.original.peer.entity.type}
+                                        onClick={onNavigateToEntity}
+                                    />
+                                </div>
+                            </div>
+                        ) : null;
 
                         return (
                             <TableRow
                                 key={row.id}
                                 row={row}
                                 type={rowType}
-                                HoveredRowComponent={
-                                    <ToggleBaselineStatus
-                                        row={row}
-                                        toggleBaselineStatuses={toggleBaselineStatuses}
-                                    />
-                                }
+                                HoveredRowComponent={HoveredRowComponent}
                                 HoveredGroupedRowComponent={HoveredGroupedRowComponent}
                                 GroupedRowComponent={GroupedRowComponent}
                             >
