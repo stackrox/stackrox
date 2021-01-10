@@ -2,14 +2,14 @@ import React, { ReactElement } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
-import useNavigateToDeployment from 'hooks/useNavigateToDeployment';
+import useNavigateToEntity from 'hooks/useNavigateToEntity';
 import { selectors } from 'reducers';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as graphActions } from 'reducers/network/graph';
 import NetworkFlows from '../Details/NetworkFlows';
 
 function ExternalDetailsOverlay({ selectedNode }): ReactElement {
-    const onNavigateToDeploymentById = useNavigateToDeployment();
+    const onNavigateToEntity = useNavigateToEntity();
 
     const { edges, cidr, name } = selectedNode;
     const headerName = cidr ? `${name} | ${cidr}` : name;
@@ -29,7 +29,7 @@ function ExternalDetailsOverlay({ selectedNode }): ReactElement {
                 <NetworkFlows
                     edges={edges}
                     filterState={1}
-                    onNavigateToDeploymentById={onNavigateToDeploymentById}
+                    onNavigateToDeploymentById={onNavigateToEntity}
                 />
             </div>
         </div>

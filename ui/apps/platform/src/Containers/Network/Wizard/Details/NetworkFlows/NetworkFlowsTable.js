@@ -118,12 +118,15 @@ const NetworkFlowsTable = ({
             className: `${rtTrActionsClassName} w-4 break-all`,
             accessor: 'deploymentId',
             Cell: ({ original }) => {
-                const { deploymentId: id, type } = original;
+                const { deploymentId: id, entityType } = original;
+                function onClickHandler() {
+                    onNavigateToDeploymentById(id, entityType);
+                }
                 return (
                     <div className="border-2 border-r-2 border-base-400 bg-base-100 flex">
                         <RowActionButton
                             text="Navigate to Deployment"
-                            onClick={onNavigateToDeploymentById(id, type)}
+                            onClick={onClickHandler}
                             icon={<Icon.ArrowUpRight className="my-1 h-4 w-4" />}
                         />
                     </div>
