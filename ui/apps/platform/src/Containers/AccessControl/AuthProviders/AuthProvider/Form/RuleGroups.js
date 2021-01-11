@@ -15,7 +15,10 @@ import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import ReduxSelectCreatableField from 'Components/forms/ReduxSelectCreatableField';
 import { selectMenuOnTopStyles } from 'Components/ReactSelect';
 
-const defaultKeyOptions = ['userid', 'name', 'email', 'groups'];
+const standardKeyOptions = ['userid', 'name', 'email', 'groups'];
+const defaultKeyOptionsByType = {
+    userpki: ['CN', 'C', 'O', 'OU', 'L', 'ST', 'STREET', 'POSTALCODE', 'DN'],
+};
 
 const MenuList = ({ toggleModal, ...props }) => (
     <components.MenuList {...props}>
@@ -32,6 +35,7 @@ class RuleGroups extends Component {
     static propTypes = {
         initialValues: PropTypes.shape({
             id: PropTypes.string,
+            type: PropTypes.string,
             groups: PropTypes.arrayOf(
                 PropTypes.shape({
                     props: PropTypes.shape({
@@ -84,6 +88,7 @@ class RuleGroups extends Component {
 
     render() {
         const { fields, initialValues, usersAttributes, roles } = this.props;
+        const defaultKeyOptions = defaultKeyOptionsByType[initialValues.type] || standardKeyOptions;
         const keyOptions = uniq([
             ...defaultKeyOptions,
             ...usersAttributes
