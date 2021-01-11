@@ -5,8 +5,14 @@ import useFetchNetworkBaselines from './useFetchNetworkBaselines';
 
 import NetworkBaselines from '../NetworkBaselines';
 
-function BaselineSettings({ deploymentId, filterState, onNavigateToEntity }): ReactElement {
+function BaselineSettings({
+    selectedDeployment,
+    deploymentId,
+    filterState,
+    onNavigateToEntity,
+}): ReactElement {
     const { data: networkBaselines, isLoading } = useFetchNetworkBaselines({
+        selectedDeployment,
         deploymentId,
         filterState,
     });

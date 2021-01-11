@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 import Tab from 'Components/Tab';
 
@@ -13,11 +13,6 @@ import Tab from 'Components/Tab';
  */
 function useTabs(children) {
     const [activeTabIndex, selectActiveTabIndex] = useState(0);
-
-    useEffect(() => {
-        // If the child tabs are dynamically modified, we want to reset the active tab
-        selectActiveTabIndex(0);
-    }, [children]);
 
     const tabHeaders = React.Children.toArray(children).map((child, i) => {
         const {

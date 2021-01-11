@@ -7,6 +7,8 @@ import { networkFlowStatus, nodeTypes } from 'constants/networkGraph';
 
 type Result = { isLoading: boolean; data: FlattenedNetworkBaseline[]; error: string | null };
 
+const defaultResultState = { data: [], error: null, isLoading: true };
+
 export function getPeerEntityName(peer): string {
     switch (peer.entity.info.type) {
         case nodeTypes.EXTERNAL_ENTITIES:
@@ -22,10 +24,12 @@ export function getPeerEntityName(peer): string {
  * This hook does an API call to the baseline status API to get the baseline status
  * of the supplied peers
  */
-function useFetchNetworkBaselines({ deploymentId, filterState }): Result {
-    const [result, setResult] = useState<Result>({ data: [], error: null, isLoading: true });
+function useFetchNetworkBaselines({ selectedDeployment, deploymentId, filterState }): Result {
+    const [result, setResult] = useState<Result>(defaultResultState);
 
     useEffect(() => {
+        setResult(defaultResultState);
+
         const networkBaselinesPromise = fetchNetworkBaselines({ deploymentId });
 
         networkBaselinesPromise
@@ -58,7 +62,9 @@ function useFetchNetworkBaselines({ deploymentId, filterState }): Result {
             .catch((error) => {
                 setResult({ data: [], error, isLoading: false });
             });
-    }, [deploymentId, filterState]);
+        // TODO: Possibly use another value other than selectedDeployment to ensure this logic
+        // is executed again. See following comment: https://github.com/stackrox/rox/pull/7254#discussion_r555252326
+    }, [selectedDeployment, deploymentId, filterState]);
 
     return result;
 }
