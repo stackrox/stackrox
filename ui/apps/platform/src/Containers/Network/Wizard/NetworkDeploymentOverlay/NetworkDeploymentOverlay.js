@@ -48,7 +48,11 @@ function NetworkDeploymentOverlay({ selectedDeployment, filterState }) {
                         />
                     </Tab>
                     <Tab title="Baseline Settings">
-                        <BaselineSettings deploymentId={deploymentId} filterState={filterState} />
+                        <BaselineSettings
+                            selectedDeployment={selectedDeployment}
+                            deploymentId={deploymentId}
+                            filterState={filterState}
+                        />
                     </Tab>
                 </BinderTabs>
             </Tab>
