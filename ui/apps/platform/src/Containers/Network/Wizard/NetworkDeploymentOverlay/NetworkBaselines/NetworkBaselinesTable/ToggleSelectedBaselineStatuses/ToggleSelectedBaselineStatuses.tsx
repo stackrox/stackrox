@@ -1,6 +1,7 @@
-import React, { ReactElement } from 'react';
+import React, { useState, ReactElement } from 'react';
 import { PlusCircle, MinusCircle } from 'react-feather';
 
+import CustomDialogue from 'Components/CustomDialogue';
 import { networkFlowStatus } from 'constants/networkGraph';
 import { FlattenedNetworkBaseline } from 'Containers/Network/networkTypes';
 
@@ -43,6 +44,8 @@ function ToggleSelectedBaselineStatuses({
     selectedFlatRows,
     toggleBaselineStatuses,
 }: ToggleSelectedBaselineStatusesProps): ReactElement | null {
+    const [showMoveFlowDialog, setShowMoveFlowDialog] = useState(false);
+
     const selectedRows = getSelectedRows(selectedFlatRows);
 
     const anomalousSelectedRows = selectedRows.filter(
@@ -53,7 +56,7 @@ function ToggleSelectedBaselineStatuses({
     );
     const isAnomalousGroup = row.groupByVal === networkFlowStatus.ANOMALOUS;
 
-    function onClickHandler(): void {
+    function moveFlows(): void {
         if (isAnomalousGroup) {
             if (anomalousSelectedRows.length) {
                 toggleBaselineStatuses(anomalousSelectedRows);
@@ -96,19 +99,38 @@ function ToggleSelectedBaselineStatuses({
         }
     }
 
-    if (isAnomalousGroup) {
-        return (
-            <CondensedButton type="button" onClick={onClickHandler}>
-                <PlusCircle className="h-3 w-3 mr-1" />
-                Add {anomalousSelectedRows.length || 'all'} to baseline
-            </CondensedButton>
-        );
+    function onClickHandler(): void {
+        setShowMoveFlowDialog(true);
     }
+
+    function cancelMovingFlows(): void {
+        setShowMoveFlowDialog(false);
+    }
+
+    const ToggleFlowButton = isAnomalousGroup ? CondensedButton : CondensedAlertButton;
+    const numRows = isAnomalousGroup
+        ? anomalousSelectedRows.length || 'all'
+        : baselineSelectedRows.length || 'all';
+    const buttonText = isAnomalousGroup
+        ? `Add ${numRows} to baseline`
+        : `Mark ${numRows} as anomalous`;
+    const IconToShow = isAnomalousGroup ? PlusCircle : MinusCircle;
+
     return (
-        <CondensedAlertButton type="button" onClick={onClickHandler}>
-            <MinusCircle className="h-3 w-3 mr-1" />
-            Mark {baselineSelectedRows.length || 'all'} as anomalous
-        </CondensedAlertButton>
+        <>
+            <ToggleFlowButton type="button" onClick={onClickHandler}>
+                <IconToShow className="h-3 w-3 mr-1" />
+                {buttonText}
+            </ToggleFlowButton>
+            {showMoveFlowDialog && (
+                <CustomDialogue
+                    title={`${buttonText}?`}
+                    onConfirm={moveFlows}
+                    confirmText="Yes"
+                    onCancel={cancelMovingFlows}
+                />
+            )}
+        </>
     );
 }
 
