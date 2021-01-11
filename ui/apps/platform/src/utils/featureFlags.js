@@ -18,7 +18,6 @@ export const knownBackendFlags = {
     ROX_NETWORK_DETECTION: 'ROX_NETWORK_DETECTION',
     ROX_SENSOR_INSTALLATION_EXPERIENCE: 'ROX_SENSOR_INSTALLATION_EXPERIENCE',
     ROX_HOST_SCANNING: 'ROX_HOST_SCANNING',
-    ROX_DISCOVERED_AT_IMAGE: 'ROX_DISCOVERED_AT_IMAGE',
 };
 
 // isBackendFeatureFlagEnabled returns whether a feature flag retrieved from the backend is enabled.

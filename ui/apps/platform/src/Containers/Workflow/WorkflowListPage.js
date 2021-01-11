@@ -10,8 +10,6 @@ import EntityList from 'Components/EntityList';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 
 export function getDefaultExpandedRows(results) {
     return results
@@ -43,8 +41,6 @@ const WorkflowListPage = ({
 }) => {
     const workflowState = useContext(workflowStateContext);
     const [sortFields, setSortFields] = useState({});
-
-    const discoveredAtImage = useFeatureFlagEnabled(knownBackendFlags.ROX_DISCOVERED_AT_IMAGE);
 
     const searchCategories = [searchCategoryTypes[entityListType]];
     const searchQueryOptions = {
@@ -83,10 +79,7 @@ const WorkflowListPage = ({
         count = ownQueryData.count;
     }
 
-    const tableColumnOptions = {
-        discoveredAtImage,
-    };
-    const tableColumns = getTableColumns(workflowState, tableColumnOptions);
+    const tableColumns = getTableColumns(workflowState);
     const defaultExpandedRows = showSubrows ? getDefaultExpandedRows(displayData) : null;
 
     function onSortedChange(newSort, column) {

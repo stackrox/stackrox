@@ -45,7 +45,7 @@ export const defaultCveSort = [
     },
 ];
 
-export function getCveTableColumns(workflowState, tableColumnOptions = {}) {
+export function getCveTableColumns(workflowState) {
     // to determine whether to show the counts as links in the table when not in pure CVE state
     const inFindingsSection = workflowState.getCurrentEntity().entityType !== entityTypes.CVE;
 
@@ -173,20 +173,17 @@ export function getCveTableColumns(workflowState, tableColumnOptions = {}) {
             accessor: 'createdAt',
             sortField: cveSortFields.CVE_CREATED_TIME,
         },
-        // TODO: remove this feature flag check after the flag is turned on for good
-        tableColumnOptions.discoveredAtImage
-            ? {
-                  Header: `Discovered in Image`,
-                  headerClassName: `w-1/9 text-left ${nonSortableHeaderClassName}`,
-                  className: `w-1/9 ${defaultColumnClassName}`,
-                  Cell: ({ original, pdf }) => (
-                      <DateTimeField date={original.discoveredAtImage} asString={pdf} />
-                  ),
-                  id: cveSortFields.CVE_DISCOVERED_AT_IMAGE_TIME,
-                  accessor: 'discoveredAtImage',
-                  sortable: false,
-              }
-            : null,
+        {
+            Header: `Discovered in Image`,
+            headerClassName: `w-1/9 text-left ${nonSortableHeaderClassName}`,
+            className: `w-1/9 ${defaultColumnClassName}`,
+            Cell: ({ original, pdf }) => (
+                <DateTimeField date={original.discoveredAtImage} asString={pdf} />
+            ),
+            id: cveSortFields.CVE_DISCOVERED_AT_IMAGE_TIME,
+            accessor: 'discoveredAtImage',
+            sortable: false,
+        },
         {
             Header: `Published`,
             headerClassName: `w-1/12 ${defaultHeaderClassName}`,

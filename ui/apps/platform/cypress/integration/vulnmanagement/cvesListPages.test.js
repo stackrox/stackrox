@@ -2,7 +2,6 @@ import withAuth from '../../helpers/basicAuth';
 import { url, selectors } from '../../constants/VulnManagementPage';
 import { hasExpectedHeaderColumns, allChecksForEntities } from '../../helpers/vmWorkflowUtils';
 import * as api from '../../constants/apiEndpoints';
-import checkFeatureFlag from '../../helpers/features';
 
 describe('CVEs list Page and its entity detail page, sub list validations ', () => {
     withAuth();
@@ -44,10 +43,6 @@ describe('CVEs list Page and its entity detail page, sub list validations ', () 
 
     // eslint-disable-next-line func-names
     it('should display Discovered in Image time column when appropriate', function () {
-        if (checkFeatureFlag('ROX_DISCOVERED_AT_IMAGE', false)) {
-            this.skip();
-        }
-
         cy.visit(url.list.cves);
         cy.get(`${selectors.tableColumn}`)
             .invoke('text')
