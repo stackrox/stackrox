@@ -125,6 +125,10 @@ const fieldsMap = {
         label: 'Days since image was last scanned',
         formatValue: (d) => (d !== '0' ? `${Number(d)} Days ago` : ''),
     },
+    imageUser: {
+        label: 'Image User',
+        formatValue: (d) => d,
+    },
     lineRule: {
         label: 'Dockerfile Line',
         formatValue: (d) => `${d.instruction} ${d.value}`,

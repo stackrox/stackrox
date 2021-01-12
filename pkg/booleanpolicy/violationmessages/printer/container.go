@@ -136,3 +136,21 @@ func privilegedPrinter(fieldMap map[string][]string) ([]string, error) {
 	}
 	return executeTemplate(privilegedTemplate, r)
 }
+
+const (
+	imageUserTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has image with{{else}}Image has{{end}} user '{{.ImageUser}}'`
+)
+
+func imageUserPrinter(fieldMap map[string][]string) ([]string, error) {
+	type resultFields struct {
+		ContainerName string
+		ImageUser     string
+	}
+	r := resultFields{}
+	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
+	var err error
+	if r.ImageUser, err = getSingleValueFromFieldMap(search.ImageUser.String(), fieldMap); err != nil {
+		return nil, err
+	}
+	return executeTemplate(imageUserTemplate, r)
+}

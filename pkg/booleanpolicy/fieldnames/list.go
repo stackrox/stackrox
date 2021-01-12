@@ -29,6 +29,7 @@ var (
 	ImageRemote               = newFieldName("Image Remote")
 	ImageScanAge              = newFieldName("Image Scan Age")
 	ImageTag                  = newFieldName("Image Tag")
+	ImageUser                 = newFieldName("Image User")
 	MinimumRBACPermissions    = newFieldName("Minimum RBAC Permissions")
 	Namespace                 = newFieldName("Namespace")
 	PortExposure              = newFieldName("Port Exposure Method")

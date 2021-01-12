@@ -618,6 +618,29 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		}},
 	}))
 
+	rootUserImage := &storage.Image{
+		Id: "SHA:ROOTUSERIMAGE",
+		Name: &storage.ImageName{
+			FullName: "docker.io/stackrox/rootuser:0.1",
+		},
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				User: "root",
+			},
+		},
+	}
+	depWithRootUser := deploymentWithImageAnyID(rootUserImage)
+	suite.addDepAndImages(depWithRootUser, rootUserImage)
+
+	updateInstructionImage := imageWithLayers([]*storage.ImageLayer{
+		{
+			Instruction: "RUN",
+			Value:       "apt-get update",
+		},
+	})
+	depWithUpdate := deploymentWithImageAnyID(updateInstructionImage)
+	suite.addDepAndImages(depWithUpdate, updateInstructionImage)
+
 	// Index processes
 	bashLineage := []string{"/bin/bash"}
 	fixtureDepAptIndicator := suite.addIndicator(fixtureDep.GetId(), "apt", "", "/usr/bin/apt", bashLineage, 1)
@@ -1058,6 +1081,26 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				hostMountDep.GetId(): {
 					{Message: "Writable volume 'HOSTMOUNT' has source '/etc/passwd' and type 'HostPath'"},
+				},
+			},
+		},
+		{
+			policyName: "Ensure That a User for the Container Has Been Created",
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				depWithRootUser.GetId(): {
+					{
+						Message: "Container 'rootuser' has image with user 'root'",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Alert on Update Instruction",
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				depWithUpdate.GetId(): {
+					{
+						Message: "Dockerfile line 'RUN apt-get update' found in container 'ASFASF'",
+					},
 				},
 			},
 		},

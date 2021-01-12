@@ -293,6 +293,18 @@ const policyConfigurationDescriptor = [
         canBooleanLogic: false,
     },
     {
+        label: 'Image User',
+        name: 'Image User',
+        negatedName: `Image user is not`,
+        jsonpath: 'fields.imageUser',
+        category: policyCriteriaCategories.IMAGE_CONTENTS,
+        type: 'text',
+        placeholder: '0',
+        required: false,
+        default: false,
+        canBooleanLogic: false,
+    },
+    {
         label: 'Dockerfile Line',
         name: 'Dockerfile Line',
         longName: 'Disallowed Dockerfile line',

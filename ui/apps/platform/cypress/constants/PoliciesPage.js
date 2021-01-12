@@ -45,6 +45,11 @@ export const selectors = {
             'div:contains("Days since image was last scanned") + div.flex>div.flex>button',
         value: '[data-testid="scanAgeDays"] div.flex',
     },
+    imageUser: {
+        input: 'div:contains("imageUser input json") + div.flex>.react-numeric-input>input',
+        deleteButton: 'div:contains("Image User") + div.flex>div.flex>button',
+        value: '[data-testid="imageUser"] div.flex',
+    },
     categoriesField: {
         input: 'div:contains("Categories") + div.flex .react-select__input > input',
         valueContainer: 'div:contains("Categories") + div.flex .react-select__value-container',
