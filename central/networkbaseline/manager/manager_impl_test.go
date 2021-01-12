@@ -382,7 +382,6 @@ func (suite *ManagerTestSuite) TestUpdateBaselineStatus() {
 			Peer: &v1.NetworkBaselineStatusPeer{
 				Entity: &v1.NetworkBaselinePeerEntity{
 					Id:   "",
-					Name: "",
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
 				},
 				Port:     52,
@@ -565,7 +564,6 @@ func protoPeerStatus(status v1.NetworkBaselinePeerStatus_Status, peerID int, por
 		Peer: &v1.NetworkBaselineStatusPeer{
 			Entity: &v1.NetworkBaselinePeerEntity{
 				Id:   depID(peerID),
-				Name: depName(peerID),
 				Type: storage.NetworkEntityInfo_DEPLOYMENT,
 			},
 			Port:     port,
