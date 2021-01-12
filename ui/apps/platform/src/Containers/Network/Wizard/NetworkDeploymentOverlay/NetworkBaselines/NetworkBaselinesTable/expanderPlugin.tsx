@@ -2,6 +2,14 @@ import React, { ReactNode } from 'react';
 
 import { ChevronRight, ChevronDown } from 'react-feather';
 
+import { Cell } from './tableTypes';
+
+const expanderColumnId = 'expander';
+
+export function isExpanderCell(cell: Cell): boolean {
+    return cell.column.id === expanderColumnId;
+}
+
 function ExpanderCellComponent({ row }): ReactNode {
     if (!row.canExpand || row.subRows.length <= 1) {
         return null;
@@ -23,7 +31,7 @@ function expanderPlugin(hooks): void {
     hooks.visibleColumns.push((visibleColumns) => [
         {
             // Build our expander column
-            id: 'expander', // Make sure it has an ID
+            id: expanderColumnId,
             Cell: ExpanderCellComponent,
         },
         ...visibleColumns,
