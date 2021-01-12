@@ -107,3 +107,17 @@ func (mr *MockManagerMockRecorder) ProcessNetworkPolicyUpdate(ctx, action, polic
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessNetworkPolicyUpdate", reflect.TypeOf((*MockManager)(nil).ProcessNetworkPolicyUpdate), ctx, action, policy)
 }
+
+// ProcessBaselineLockUpdate mocks base method
+func (m *MockManager) ProcessBaselineLockUpdate(ctx context.Context, deploymentID string, lockBaseline bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessBaselineLockUpdate", ctx, deploymentID, lockBaseline)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessBaselineLockUpdate indicates an expected call of ProcessBaselineLockUpdate
+func (mr *MockManagerMockRecorder) ProcessBaselineLockUpdate(ctx, deploymentID, lockBaseline interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessBaselineLockUpdate", reflect.TypeOf((*MockManager)(nil).ProcessBaselineLockUpdate), ctx, deploymentID, lockBaseline)
+}

@@ -36,4 +36,6 @@ type Manager interface {
 	// ProcessNetworkPolicyUpdate is invoked when we there is a change to the network policies. Changed network
 	// policy is passed in allow updating relevant baselines.
 	ProcessNetworkPolicyUpdate(ctx context.Context, action central.ResourceAction, policy *storage.NetworkPolicy) error
+	// ProcessBaselineLockUpdate updates a baseline's lock status. This locks the baseline if lockBaseline is true
+	ProcessBaselineLockUpdate(ctx context.Context, deploymentID string, lockBaseline bool) error
 }

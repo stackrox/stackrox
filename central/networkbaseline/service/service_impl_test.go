@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	networkBaselineDSMocks "github.com/stackrox/rox/central/networkbaseline/datastore/mocks"
+	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -30,6 +31,7 @@ type NetworkBaselineServiceTestSuite struct {
 
 	mockCtrl  *gomock.Controller
 	baselines *networkBaselineDSMocks.MockDataStore
+	manager   *networkBaselineMocks.MockManager
 
 	service Service
 }
@@ -40,7 +42,8 @@ func (s *NetworkBaselineServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.baselines = networkBaselineDSMocks.NewMockDataStore(s.mockCtrl)
-	s.service = New(s.baselines, nil)
+	s.manager = networkBaselineMocks.NewMockManager(s.mockCtrl)
+	s.service = New(s.baselines, s.manager)
 	if !features.NetworkDetection.Enabled() {
 		s.T().Skip()
 	}
@@ -148,6 +151,18 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaseline() {
 	rsp, err := s.service.GetNetworkBaseline(allAllowedCtx, &v1.ResourceByID{Id: baseline.GetDeploymentId()})
 	s.Nil(err)
 	s.Equal(rsp, baseline, "network baselines do not match")
+}
+
+func (s *NetworkBaselineServiceTestSuite) TestLockBaseline() {
+	sampleID := "sample-ID"
+	// Make sure when we call lock we are indeed locking in the manager
+	s.manager.EXPECT().ProcessBaselineLockUpdate(gomock.Any(), sampleID, true).Return(nil)
+	_, err := s.service.LockNetworkBaseline(allAllowedCtx, &v1.ResourceByID{Id: sampleID})
+	s.Nil(err)
+	// and when we call unlock we are indeed unlocking in the manager
+	s.manager.EXPECT().ProcessBaselineLockUpdate(gomock.Any(), sampleID, false).Return(nil)
+	_, err = s.service.UnlockNetworkBaseline(allAllowedCtx, &v1.ResourceByID{Id: sampleID})
+	s.Nil(err)
 }
 
 func TestAuthz(t *testing.T) {

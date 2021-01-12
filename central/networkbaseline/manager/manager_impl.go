@@ -495,6 +495,34 @@ type clusterNamespacePair struct {
 	Namespace string
 }
 
+func (m *manager) processBaselineLockUpdate(ctx context.Context, deploymentID string, lockBaseline bool) error {
+	baseline, found := m.baselinesByDeploymentID[deploymentID]
+	if !found {
+		return status.Error(codes.InvalidArgument, "no baseline with given deployment ID found")
+	}
+	// Permission check before modifying in-memory data structures
+	if ok, err := networkBaselineSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.clusterID), sac.NamespaceScopeKey(baseline.namespace)); err != nil {
+		return err
+	} else if !ok {
+		return status.Error(codes.PermissionDenied, sac.ErrPermissionDenied.Error())
+	}
+
+	// No error if already locked/unlocked
+	if baseline.userLocked == lockBaseline {
+		// Already in the state which user specifies
+		return nil
+	}
+
+	baseline.userLocked = lockBaseline
+	return m.persistNetworkBaselines(set.NewStringSet(deploymentID))
+}
+
+func (m *manager) ProcessBaselineLockUpdate(ctx context.Context, deploymentID string, lockBaseline bool) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	return m.processBaselineLockUpdate(ctx, deploymentID, lockBaseline)
+}
+
 func (m *manager) initFromStore() error {
 	seenClusterAndNamespace := make(map[clusterNamespacePair]struct{})
 	m.baselinesByDeploymentID = make(map[string]*baselineInfo)

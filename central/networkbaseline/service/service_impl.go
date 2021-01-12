@@ -27,6 +27,8 @@ var (
 		},
 		user.With(permissions.Modify(resources.NetworkBaseline)): {
 			"/v1.NetworkBaselineService/ModifyBaselineStatusForPeers",
+			"/v1.NetworkBaselineService/LockNetworkBaseline",
+			"/v1.NetworkBaselineService/UnlockNetworkBaseline",
 		},
 	})
 )
@@ -142,6 +144,22 @@ func (s *serviceImpl) getBaselinePeerByEntityID(
 
 func (s *serviceImpl) ModifyBaselineStatusForPeers(ctx context.Context, request *v1.ModifyBaselineStatusForPeersRequest) (*v1.Empty, error) {
 	err := s.manager.ProcessBaselineStatusUpdate(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) LockNetworkBaseline(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
+	err := s.manager.ProcessBaselineLockUpdate(ctx, request.Id, true)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) UnlockNetworkBaseline(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
+	err := s.manager.ProcessBaselineLockUpdate(ctx, request.Id, false)
 	if err != nil {
 		return nil, err
 	}

@@ -647,6 +647,22 @@ func (suite *ManagerTestSuite) TestProcessNetworkPolicyUpdate() {
 	suite.True(afterPodSelectorUpdateObservationPeriod.After(afterPolicyRuleUpdateObservationPeriod))
 }
 
+func (suite *ManagerTestSuite) TestLockBaseline() {
+	suite.networkPolicyDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	suite.mustInitManager(
+		baselineWithPeers(1, depPeer(2, properties(false, 52))),
+		baselineWithPeers(2, depPeer(1, properties(true, 52))),
+	)
+	suite.assertBaselinesAre(
+		baselineWithPeers(1, depPeer(2, properties(false, 52))),
+		baselineWithPeers(2, depPeer(1, properties(true, 52))),
+	)
+	beforeLockUpdateState := suite.mustGetBaseline(1).GetLocked()
+	suite.Nil(suite.m.ProcessBaselineLockUpdate(managerCtx, depID(1), !beforeLockUpdateState))
+	afterLockUpdateState := suite.mustGetBaseline(1).GetLocked()
+	suite.NotEqual(beforeLockUpdateState, afterLockUpdateState)
+}
+
 ///// Helper functions to make test code less verbose.
 
 func ctxWithAccessToWrite(id int) context.Context {

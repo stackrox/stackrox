@@ -82,4 +82,18 @@ message ModifyBaselineStatusForPeersRequest {
             body: "*"
         };
     }
-}
+
+    rpc LockNetworkBaseline (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/networkbaseline/{id}/lock"
+            body: "*"
+        };
+    }
+
+    rpc UnlockNetworkBaseline (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/networkbaseline/{id}/unlock"
+            body: "*"
+       };
+    }
+ }
