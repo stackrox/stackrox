@@ -8,6 +8,7 @@ import (
 const (
 	imageAugmentKey   = "Image"
 	processAugmentKey = "ProcessIndicator"
+	kubeEventAugKey   = "KubernetesEvent"
 
 	// Custom augments
 	dockerfileLineAugmentKey      = "DockerfileLine"
@@ -21,7 +22,8 @@ var (
 	DeploymentMeta = pathutil.NewAugmentedObjMeta((*storage.Deployment)(nil)).
 			AddAugmentedObjectAt([]string{"Containers", imageAugmentKey}, ImageMeta).
 			AddAugmentedObjectAt([]string{"Containers", processAugmentKey}, ProcessMeta).
-			AddPlainObjectAt([]string{"Containers", "Config", "Env", envVarAugmentKey}, (*envVar)(nil))
+			AddPlainObjectAt([]string{"Containers", "Config", "Env", envVarAugmentKey}, (*envVar)(nil)).
+			AddPlainObjectAt([]string{kubeEventAugKey}, (*storage.KubernetesEvent)(nil))
 
 	ImageMeta = pathutil.NewAugmentedObjMeta((*storage.Image)(nil)).
 			AddPlainObjectAt([]string{"Metadata", "V1", "Layers", dockerfileLineAugmentKey}, (*dockerfileLine)(nil)).
@@ -29,4 +31,6 @@ var (
 
 	ProcessMeta = pathutil.NewAugmentedObjMeta((*storage.ProcessIndicator)(nil)).
 			AddPlainObjectAt([]string{baselineResultAugmentKey}, (*baselineResult)(nil))
+
+	KubeEventMeta = pathutil.NewAugmentedObjMeta((*storage.KubernetesEvent)(nil))
 )

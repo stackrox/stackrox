@@ -1503,20 +1503,16 @@ func policyWithGroups(groups ...*storage.PolicyGroup) *storage.Policy {
 	}
 }
 
-func policyWithSingleGroup(group *storage.PolicyGroup) *storage.Policy {
-	return policyWithGroups(group)
-}
-
 func policyGroupWithSingleKeyValue(fieldName, value string, negate bool) *storage.PolicyGroup {
 	return &storage.PolicyGroup{FieldName: fieldName, Values: []*storage.PolicyValue{{Value: value}}, Negate: negate}
 }
 
 func policyWithSingleKeyValue(fieldName, value string, negate bool) *storage.Policy {
-	return policyWithSingleGroup(policyGroupWithSingleKeyValue(fieldName, value, negate))
+	return policyWithGroups(policyGroupWithSingleKeyValue(fieldName, value, negate))
 }
 
 func policyWithSingleFieldAndValues(fieldName string, values []string, negate bool, op storage.BooleanOperator) *storage.Policy {
-	return policyWithSingleGroup(&storage.PolicyGroup{FieldName: fieldName, Values: sliceutils.Map(values, func(val *string) *storage.PolicyValue {
+	return policyWithGroups(&storage.PolicyGroup{FieldName: fieldName, Values: sliceutils.Map(values, func(val *string) *storage.PolicyValue {
 		return &storage.PolicyValue{Value: *val}
 	}).([]*storage.PolicyValue), Negate: negate, BooleanOperator: op})
 }
@@ -2127,6 +2123,119 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 			for id, violations := range c.expectedViolations {
 				assert.Contains(t, actualViolations, id)
 				assert.ElementsMatch(t, violations, actualViolations[id])
+			}
+		})
+	}
+}
+
+func (suite *DefaultPoliciesTestSuite) TestKubeEventPolicies() {
+	createVerbGroup := policyGroupWithSingleKeyValue(fieldnames.KubeAPIVerb, "CREATE", false)
+	podExecGroup := policyGroupWithSingleKeyValue(fieldnames.KubeResource, "PODS_EXEC", false)
+
+	aptGetGroup := policyGroupWithSingleKeyValue(fieldnames.ProcessName, "apt-get", false)
+	privilegedDep := fixtures.GetDeployment().Clone()
+	privilegedDep.Id = "PRIVILEGED"
+	suite.addDepAndImages(privilegedDep)
+
+	for _, c := range []struct {
+		event              *storage.KubernetesEvent
+		groups             []*storage.PolicyGroup
+		expectedViolations []*storage.Alert_Violation
+		builderErr         bool
+		withProcessSection bool
+	}{
+		{
+			event: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					Name:     "example_pod",
+					Resource: storage.KubernetesEvent_Object_PODS_EXEC,
+				},
+				ApiVerb: storage.KubernetesEvent_CREATE,
+			},
+			groups:             []*storage.PolicyGroup{createVerbGroup, podExecGroup},
+			expectedViolations: []*storage.Alert_Violation{{Message: "Kubectl exec into pod"}},
+		},
+		{
+			event: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					Name:     "example_pod",
+					Resource: storage.KubernetesEvent_Object_PODS_EXEC,
+				},
+				ApiVerb: storage.KubernetesEvent_CREATE,
+			},
+			groups:             []*storage.PolicyGroup{podExecGroup},
+			expectedViolations: []*storage.Alert_Violation{{Message: "Kubectl exec into pod"}},
+		},
+		{
+			event: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					Name:     "example_pod",
+					Resource: storage.KubernetesEvent_Object_PODS_EXEC,
+				},
+				ApiVerb: storage.KubernetesEvent_CREATE,
+			},
+			groups:             []*storage.PolicyGroup{createVerbGroup},
+			expectedViolations: []*storage.Alert_Violation{{Message: "Kubectl exec into pod"}},
+		},
+		{
+			groups: []*storage.PolicyGroup{createVerbGroup, podExecGroup},
+		},
+		{
+			event: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					Name:     "example_pod",
+					Resource: storage.KubernetesEvent_Object_PODS_PORTFORWARD,
+				},
+				ApiVerb: storage.KubernetesEvent_CREATE,
+			},
+			groups: []*storage.PolicyGroup{podExecGroup},
+		},
+		{
+			event: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					Name:     "example_pod",
+					Resource: storage.KubernetesEvent_Object_PODS_PORTFORWARD,
+				},
+				ApiVerb: storage.KubernetesEvent_CREATE,
+			},
+			groups:     []*storage.PolicyGroup{podExecGroup, aptGetGroup},
+			builderErr: true,
+		},
+		{
+			event: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					Name:     "example_pod",
+					Resource: storage.KubernetesEvent_Object_PODS_EXEC,
+				},
+				ApiVerb: storage.KubernetesEvent_CREATE,
+			},
+			groups:             []*storage.PolicyGroup{createVerbGroup},
+			expectedViolations: []*storage.Alert_Violation{{Message: "Kubectl exec into pod"}},
+			withProcessSection: true,
+		},
+	} {
+		suite.T().Run(fmt.Sprintf("%+v", c.groups), func(t *testing.T) {
+			policy := policyWithGroups(c.groups...)
+			if c.withProcessSection {
+				policy.PolicySections = append(policy.PolicySections,
+					&storage.PolicySection{PolicyGroups: []*storage.PolicyGroup{aptGetGroup}})
+			}
+
+			m, err := booleanpolicy.BuildKubeEventMatcher(policy)
+			if c.builderErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+
+			actualViolations, err := m.MatchKubeEvent(nil, c.event, &storage.Deployment{})
+			suite.Require().NoError(err)
+
+			assert.Nil(t, actualViolations.ProcessViolation)
+			if len(c.expectedViolations) == 0 {
+				assert.Nil(t, actualViolations.AlertViolations)
+			} else {
+				assert.ElementsMatch(t, c.expectedViolations, actualViolations.AlertViolations)
 			}
 		})
 	}

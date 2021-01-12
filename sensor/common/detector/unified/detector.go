@@ -17,6 +17,7 @@ type Detector interface {
 	ReconcilePolicies(newList []*storage.Policy)
 	DetectDeployment(ctx deploytime.DetectionContext, deployment *storage.Deployment, images []*storage.Image) []*storage.Alert
 	DetectProcess(deployment *storage.Deployment, images []*storage.Image, processIndicator *storage.ProcessIndicator, processOutsideBaseline bool) []*storage.Alert
+	DetectKubeEventForDeployment(deployment *storage.Deployment, images []*storage.Image, kubeEvent *storage.KubernetesEvent) []*storage.Alert
 }
 
 // NewDetector returns a new detector.

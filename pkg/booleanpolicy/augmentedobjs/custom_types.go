@@ -8,6 +8,8 @@ const (
 	ContainerNameCustomTag       = "Container Name"
 	ImageScanCustomTag           = "Image Scan"
 	EnvironmentVarCustomTag      = "Environment Variable"
+	KubernetesResourceCustomTag  = "Kubernetes Resource"
+	KubernetesAPIVerbCustomTag   = "Kubernetes API Verb"
 )
 
 type dockerfileLine struct {

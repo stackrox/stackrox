@@ -6,10 +6,29 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
+// Following fields represents all runtime policy fields.
 var (
-	runtimeFields = set.NewFrozenStringSet(
-		fieldnames.ProcessName, fieldnames.ProcessArguments, fieldnames.ProcessAncestor, fieldnames.ProcessUID,
+	processFields = set.NewFrozenStringSet(
+		fieldnames.ProcessName,
+		fieldnames.ProcessArguments,
+		fieldnames.ProcessAncestor,
+		fieldnames.ProcessUID,
 		fieldnames.UnexpectedProcessExecuted,
+	)
+
+	KubeEventsFields = set.NewFrozenStringSet(
+		fieldnames.KubeResource,
+		fieldnames.KubeAPIVerb,
+	)
+
+	runtimeFields = set.NewFrozenStringSet(
+		fieldnames.ProcessName,
+		fieldnames.ProcessArguments,
+		fieldnames.ProcessAncestor,
+		fieldnames.ProcessUID,
+		fieldnames.UnexpectedProcessExecuted,
+		fieldnames.KubeResource,
+		fieldnames.KubeAPIVerb,
 	)
 )
 
@@ -65,4 +84,47 @@ func ContainsValueWithFieldName(policy *storage.Policy, fieldName string) bool {
 	})
 	return contains
 
+}
+
+// ContainsDiscreteRuntimeFieldCategorySections returns false if the policy groups
+// contain combination of process and kubernetes events fields.
+func ContainsDiscreteRuntimeFieldCategorySections(policy *storage.Policy) bool {
+	if len(policy.GetPolicySections()) == 0 {
+		return false
+	}
+
+	//atLeastOneRunTimeField := false
+	for _, section := range policy.GetPolicySections() {
+		//if !SectionContainsOneOf(section, runtimeFields) {
+		//	continue
+		//}
+		if SectionContainsOneOf(section, KubeEventsFields) && SectionContainsOneOf(section, processFields) {
+			return false
+		}
+		//atLeastOneRunTimeField = true
+	}
+	return true
+}
+
+// SectionContainsOneOf returns true if the policy section contains at least one field from provided field set.
+func SectionContainsOneOf(section *storage.PolicySection, fieldSet set.FrozenStringSet) bool {
+	for _, group := range section.GetPolicyGroups() {
+		if fieldSet.Contains(group.GetFieldName()) {
+			return true
+		}
+	}
+	return false
+}
+
+// FilterPolicySections returns a new policy containing only the policy sections that satisfy the predicate.
+func FilterPolicySections(policy *storage.Policy, pred func(section *storage.PolicySection) bool) *storage.Policy {
+	cloned := policy.Clone()
+	sections := policy.GetPolicySections()
+	cloned.PolicySections = nil
+	for _, section := range sections {
+		if pred(section) {
+			cloned.PolicySections = append(cloned.PolicySections, section)
+		}
+	}
+	return cloned
 }

@@ -263,8 +263,14 @@ func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...
 	if err != nil {
 		return errors.Wrap(err, "policy configuration is invalid for runtime")
 	}
+
+	// TODO: Verify the default policies test failure and remove this.
 	if !booleanpolicy.ContainsRuntimeFields(policy) {
 		return errors.New("run time policy must contain runtime specific constraints")
+	}
+
+	if !booleanpolicy.ContainsDiscreteRuntimeFieldCategorySections(policy) {
+		return errors.New("a run time policy section must not contain both process and kubernetes event constraints")
 	}
 	return nil
 }

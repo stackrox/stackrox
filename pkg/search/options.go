@@ -206,6 +206,7 @@ var (
 	DeploymentCount = newFieldLabel("Deployment Count")
 	ImageCount      = newFieldLabel("Image Count")
 
+	// External network sources fields
 	DefaultExternalSource = newFieldLabel("Default External Source")
 )
 

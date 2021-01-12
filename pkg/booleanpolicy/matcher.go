@@ -11,10 +11,9 @@ import (
 
 var (
 	deploymentEvalFactory = evaluator.MustCreateNewFactory(augmentedobjs.DeploymentMeta)
-
-	processEvalFactory = evaluator.MustCreateNewFactory(augmentedobjs.ProcessMeta)
-
-	imageEvalFactory = evaluator.MustCreateNewFactory(augmentedobjs.ImageMeta)
+	processEvalFactory    = evaluator.MustCreateNewFactory(augmentedobjs.ProcessMeta)
+	imageEvalFactory      = evaluator.MustCreateNewFactory(augmentedobjs.ImageMeta)
+	kubeEventFactory      = evaluator.MustCreateNewFactory(augmentedobjs.KubeEventMeta)
 )
 
 // A CacheReceptacle is an optional argument that can be passed to the Match* functions of the Matchers below, that
@@ -28,6 +27,9 @@ type CacheReceptacle struct {
 
 	// Used only by MatchDeploymentWithProcess
 	augmentedProcess *pathutil.AugmentedObj
+
+	// Used only by MatchKubeEvent
+	augmentedKubeEvent *pathutil.AugmentedObj
 }
 
 // Violations represents a list of violation sub-objects.
@@ -51,9 +53,58 @@ type DeploymentWithProcessMatcher interface {
 	MatchDeploymentWithProcess(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processNotInBaseline bool) (Violations, error)
 }
 
+// A KubeEventMatcher matches kubernetes event against a policy.
+type KubeEventMatcher interface {
+	MatchKubeEvent(cache *CacheReceptacle, kubeEvent *storage.KubernetesEvent, kubeResource interface{}) (Violations, error)
+}
+
 type sectionAndEvaluator struct {
 	section   *storage.PolicySection
 	evaluator evaluator.Evaluator
+}
+
+// BuildKubeEventMatcher builds a KubeEventMatcher.
+func BuildKubeEventMatcher(p *storage.Policy, options ...ValidateOption) (KubeEventMatcher, error) {
+	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	kubeEventOnlyEvaluators := make([]evaluator.Evaluator, 0, len(p.GetPolicySections()))
+	for _, section := range p.GetPolicySections() {
+		if len(section.GetPolicyGroups()) == 0 {
+			return nil, errors.Errorf("no groups in section %q", section.GetSectionName())
+		}
+
+		// Conjunction of process fields and events fields is not supported.
+		if !ContainsDiscreteRuntimeFieldCategorySections(p) {
+			return nil, errors.New("a run time policy section must not contain both process and kubernetes event constraints")
+		}
+
+		fieldQueries, err := sectionToFieldQueries(section, &KubeEventsFields)
+		if err != nil {
+			return nil, errors.Wrapf(err, "converting to field queries for section %q", section.GetSectionName())
+		}
+
+		// Ignore the policy sections not containing at least one kube event field.
+		if len(fieldQueries) == 0 {
+			continue
+		}
+
+		eval, err := kubeEventFactory.GenerateEvaluator(&query.Query{FieldQueries: fieldQueries})
+		if err != nil {
+			return nil, errors.Wrapf(err, "generating kube events evaluator for section %q", section.GetSectionName())
+		}
+		kubeEventOnlyEvaluators = append(kubeEventOnlyEvaluators, eval)
+	}
+
+	return &kubeEventMatcherImpl{
+		matcherImpl: matcherImpl{
+			stage:      storage.LifecycleStage_DEPLOY,
+			evaluators: sectionsAndEvals,
+		},
+		kubeEventOnlyEvaluators: kubeEventOnlyEvaluators,
+	}, nil
 }
 
 // BuildDeploymentWithProcessMatcher builds a DeploymentWithProcessMatcher.
@@ -68,10 +119,18 @@ func BuildDeploymentWithProcessMatcher(p *storage.Policy, options ...ValidateOpt
 		if len(section.GetPolicyGroups()) == 0 {
 			return nil, errors.Errorf("no groups in section %q", section.GetSectionName())
 		}
-		fieldQueries, err := sectionToFieldQueries(section, &runtimeFields)
+
+		// Conjunction of process fields and events fields is not supported.
+		if !ContainsDiscreteRuntimeFieldCategorySections(p) {
+			return nil, errors.New("a run time policy section must not contain both process and kubernetes event constraints")
+		}
+
+		fieldQueries, err := sectionToFieldQueries(section, &processFields)
 		if err != nil {
 			return nil, errors.Wrapf(err, "converting to field queries for section %q", section.GetSectionName())
 		}
+
+		// TODO: Remove AlwaysTrue evaluator once section validation is added to prohibit deploy time only fields.
 		// This section has no process-related queries. This means that we cannot rule out this policy given a
 		// process alone, so we must return the always true evaluator.
 		// We can also discard evaluators for other sections, since they are irrelevant.
@@ -87,7 +146,13 @@ func BuildDeploymentWithProcessMatcher(p *storage.Policy, options ...ValidateOpt
 		processOnlyEvaluators = append(processOnlyEvaluators, eval)
 	}
 
-	return &processMatcherImpl{matcherImpl: matcherImpl{stage: storage.LifecycleStage_DEPLOY, evaluators: sectionsAndEvals}, processOnlyEvaluators: processOnlyEvaluators}, nil
+	return &processMatcherImpl{
+		matcherImpl: matcherImpl{
+			stage:      storage.LifecycleStage_DEPLOY,
+			evaluators: sectionsAndEvals,
+		},
+		processOnlyEvaluators: processOnlyEvaluators,
+	}, nil
 }
 
 // BuildDeploymentMatcher builds a matcher for deployments against the given policy,
@@ -123,17 +188,17 @@ func getSectionsAndEvals(factory *evaluator.Factory, p *storage.Policy, stage st
 	}
 
 	if len(p.GetPolicySections()) == 0 {
-		return nil, errors.New("no sections")
+		return nil, errors.New("no policy sections")
 	}
 	sectionsAndEvals := make([]sectionAndEvaluator, 0, len(p.GetPolicySections()))
 	for _, section := range p.GetPolicySections() {
 		sectionQ, err := sectionToQuery(section, stage)
 		if err != nil {
-			return nil, errors.Wrapf(err, "invalid section %q", section.GetSectionName())
+			return nil, errors.Wrapf(err, "invalid policy section %q", section.GetSectionName())
 		}
 		eval, err := factory.GenerateEvaluator(sectionQ)
 		if err != nil {
-			return nil, errors.Wrapf(err, "generating evaluator for section %q", section.GetSectionName())
+			return nil, errors.Wrapf(err, "generating evaluator for policy section %q", section.GetSectionName())
 		}
 		sectionsAndEvals = append(sectionsAndEvals, sectionAndEvaluator{section, eval})
 	}

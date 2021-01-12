@@ -138,4 +138,6 @@ func init() {
 	registerFieldMetadata(fieldnames.UnexpectedProcessExecuted, querybuilders.ForFieldLabel(augmentedobjs.NotInBaselineCustomTag), violationmessages.ProcessBaselineContextFields, booleanValueRegex, negationForbidden, operatorsForbidden)
 	registerFieldMetadata(fieldnames.WritableHostMount, querybuilders.ForWriteableHostMount(), violationmessages.VolumeContextFields, booleanValueRegex, negationForbidden, operatorsForbidden)
 	registerFieldMetadata(fieldnames.WritableMountedVolume, querybuilders.ForFieldLabelBoolean(search.VolumeReadonly, true), violationmessages.VolumeContextFields, booleanValueRegex, negationForbidden, operatorsForbidden)
+	registerFieldMetadata(fieldnames.KubeAPIVerb, querybuilders.ForFieldLabel(augmentedobjs.KubernetesAPIVerbCustomTag), nil, kubernetesAPIVerbValueRegex, negationForbidden, operatorsForbidden)
+	registerFieldMetadata(fieldnames.KubeResource, querybuilders.ForFieldLabel(augmentedobjs.KubernetesResourceCustomTag), nil, kubernetesResourceValueRegex, negationForbidden, operatorsForbidden)
 }

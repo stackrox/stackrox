@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/detection/runtime"
+	"github.com/stackrox/rox/pkg/kubernetes"
 )
 
 type detectorImpl struct {
@@ -30,9 +31,17 @@ func (d *detectorImpl) DetectDeployment(ctx deploytime.DetectionContext, deploym
 }
 
 func (d *detectorImpl) DetectProcess(deployment *storage.Deployment, images []*storage.Image, process *storage.ProcessIndicator, processNotInBaseline bool) []*storage.Alert {
-	alerts, err := d.runtimeDetector.Detect(deployment, images, process, processNotInBaseline)
+	alerts, err := d.runtimeDetector.DetectForDeployment(deployment, images, process, processNotInBaseline, nil)
 	if err != nil {
 		log.Errorf("error running runtime policies for deployment %q and process %q: %v", deployment.GetName(), process.GetSignal().GetExecFilePath(), err)
+	}
+	return alerts
+}
+
+func (d *detectorImpl) DetectKubeEventForDeployment(deployment *storage.Deployment, images []*storage.Image, kubeEvent *storage.KubernetesEvent) []*storage.Alert {
+	alerts, err := d.runtimeDetector.DetectForDeployment(deployment, images, nil, false, kubeEvent)
+	if err != nil {
+		log.Errorf("error running runtime policies for kubernetes event %s: %v", kubernetes.EventAsString(kubeEvent), err)
 	}
 	return alerts
 }

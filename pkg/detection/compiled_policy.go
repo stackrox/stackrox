@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/scopecomp"
 )
@@ -19,6 +20,7 @@ type CompiledPolicy interface {
 	MatchAgainstDeploymentAndProcess(cacheReceptacle *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (booleanpolicy.Violations, error)
 	MatchAgainstDeployment(cacheReceptacle *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (booleanpolicy.Violations, error)
 	MatchAgainstImage(cacheReceptacle *booleanpolicy.CacheReceptacle, image *storage.Image) (booleanpolicy.Violations, error)
+	MatchAgainstKubeResourceAndEvent(cacheReceptacle *booleanpolicy.CacheReceptacle, kubeEvent *storage.KubernetesEvent, kubeResource interface{}) (booleanpolicy.Violations, error)
 
 	Predicate
 }
@@ -30,16 +32,43 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 	}
 
 	if policies.AppliesAtRunTime(policy) {
-		deploymentWithProcessMatcher, err := booleanpolicy.BuildDeploymentWithProcessMatcher(policy)
-		if err != nil {
-			return nil, errors.Wrap(err, "building process matcher")
+		// TODO: Change inverse filter to filter by process fields once section validation is added to prohibit deploy time only fields.
+		filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
+			return !booleanpolicy.SectionContainsOneOf(section, booleanpolicy.KubeEventsFields)
+		})
+		if len(filtered.GetPolicySections()) > 0 {
+			deploymentWithProcessMatcher, err := booleanpolicy.BuildDeploymentWithProcessMatcher(filtered)
+			if err != nil {
+				return nil, errors.Wrapf(err, "building process matcher for policy %q", policy.GetName())
+			}
+			compiled.deploymentWithProcessMatcher = deploymentWithProcessMatcher
 		}
-		compiled.deploymentWithProcessMatcher = deploymentWithProcessMatcher
+
+		// Historically deploy time only field sections in policy were allowed. For kube event policies (and eventually
+		// all runtime policies), we do not want to allow such sections. If a section does not contain a kube event
+		// field, it implies it does not apply to kubernetes event.
+		filtered = booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
+			return booleanpolicy.SectionContainsOneOf(section, booleanpolicy.KubeEventsFields)
+		})
+		if len(filtered.GetPolicySections()) > 0 {
+			kubeEventsMatcher, err := booleanpolicy.BuildKubeEventMatcher(filtered)
+			if err != nil {
+				return nil, errors.Wrapf(err, "building kubernetes event matcher for policy %q", policy.GetName())
+			}
+			compiled.kubeEventsMatcher = kubeEventsMatcher
+		}
+		if features.K8sEventDetection.Enabled() {
+			if compiled.deploymentWithProcessMatcher == nil && compiled.kubeEventsMatcher == nil {
+				return nil, errors.Errorf("incorrect sections for a runtime policy %q. Section must have least "+
+					"one runtime constraint from process or kubernetes event category, but not both", policy.GetName())
+			}
+		}
 	}
+
 	if policies.AppliesAtDeployTime(policy) {
 		deploymentMatcher, err := booleanpolicy.BuildDeploymentMatcher(policy)
 		if err != nil {
-			return nil, errors.Wrap(err, "building deployment matcher")
+			return nil, errors.Wrapf(err, "building deployment matcher for policy %q", policy.GetName())
 		}
 		compiled.deploymentMatcher = deploymentMatcher
 	}
@@ -47,13 +76,14 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 	if policies.AppliesAtBuildTime(policy) {
 		imageMatcher, err := booleanpolicy.BuildImageMatcher(policy)
 		if err != nil {
-			return nil, errors.Wrap(err, "building image matcher")
+			return nil, errors.Wrapf(err, "building image matcher for policy %q", policy.GetName())
 		}
 		compiled.imageMatcher = imageMatcher
 	}
 
-	if compiled.deploymentMatcher == nil && compiled.imageMatcher == nil && compiled.deploymentWithProcessMatcher == nil {
-		return nil, errors.Errorf("no known lifecycle stage in policy %s", policy.GetName())
+	if compiled.deploymentMatcher == nil && compiled.imageMatcher == nil &&
+		compiled.deploymentWithProcessMatcher == nil && compiled.kubeEventsMatcher == nil {
+		return nil, errors.Errorf("no known lifecycle stage in policy %q", policy.GetName())
 	}
 
 	whitelists := make([]*compiledWhitelist, 0, len(policy.GetWhitelists()))
@@ -69,7 +99,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 	for _, s := range policy.GetScope() {
 		compiled, err := scopecomp.CompileScope(s)
 		if err != nil {
-			return nil, errors.Wrapf(err, "compiling scope %+v", s)
+			return nil, errors.Wrapf(err, "compiling scope %+v for policy %q", s, policy.GetName())
 		}
 		scopes = append(scopes, compiled)
 	}
@@ -91,28 +121,40 @@ type compiledPolicy struct {
 	policy     *storage.Policy
 	predicates []Predicate
 
+	kubeEventsMatcher            booleanpolicy.KubeEventMatcher
 	deploymentWithProcessMatcher booleanpolicy.DeploymentWithProcessMatcher
 	deploymentMatcher            booleanpolicy.DeploymentMatcher
 	imageMatcher                 booleanpolicy.ImageMatcher
 }
 
+func (cp *compiledPolicy) MatchAgainstKubeResourceAndEvent(
+	cache *booleanpolicy.CacheReceptacle,
+	kubeEvent *storage.KubernetesEvent,
+	kubeResource interface{},
+) (booleanpolicy.Violations, error) {
+	if cp.kubeEventsMatcher == nil {
+		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %s against kubernetes event", cp.Policy().GetName())
+	}
+	return cp.kubeEventsMatcher.MatchKubeEvent(cache, kubeEvent, kubeResource)
+}
+
 func (cp *compiledPolicy) MatchAgainstDeploymentAndProcess(cache *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processNotInBaseline bool) (booleanpolicy.Violations, error) {
 	if cp.deploymentWithProcessMatcher == nil {
-		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %s against deployments and processes", cp.Policy().GetName())
+		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against deployments and processes", cp.Policy().GetName())
 	}
 	return cp.deploymentWithProcessMatcher.MatchDeploymentWithProcess(cache, deployment, images, pi, processNotInBaseline)
 }
 
 func (cp *compiledPolicy) MatchAgainstDeployment(cache *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (booleanpolicy.Violations, error) {
 	if cp.deploymentMatcher == nil {
-		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %s against deployments", cp.Policy().GetName())
+		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against deployments", cp.Policy().GetName())
 	}
 	return cp.deploymentMatcher.MatchDeployment(cache, deployment, images)
 }
 
 func (cp *compiledPolicy) MatchAgainstImage(cache *booleanpolicy.CacheReceptacle, image *storage.Image) (booleanpolicy.Violations, error) {
 	if cp.imageMatcher == nil {
-		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %s against images", cp.Policy().GetName())
+		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against images", cp.Policy().GetName())
 	}
 	return cp.imageMatcher.MatchImage(cache, image)
 }

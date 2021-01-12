@@ -9,8 +9,8 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-// UpdateRuntimeAlertViolationMessage updates the violation message for a violation in-place
-func UpdateRuntimeAlertViolationMessage(v *storage.Alert_ProcessViolation) {
+// UpdateProcessAlertViolationMessage updates the violation message for a violation in-place
+func UpdateProcessAlertViolationMessage(v *storage.Alert_ProcessViolation) {
 	processes := v.GetProcesses()
 	if len(processes) == 0 {
 		return

@@ -48,3 +48,45 @@ func TestBypass(t *testing.T) {
 		})
 	}
 }
+
+func TestKubeEventEnforceBypass(t *testing.T) {
+	var cases = []struct {
+		annotations map[string]string
+		expected    bool
+	}{
+		{
+			annotations: map[string]string{
+				"lol": "hey",
+				"app": "central",
+			},
+			expected: true,
+		},
+		{
+			annotations: map[string]string{
+				"lol": "hey",
+				"admission.stackrox.io/bypass-kube-event-enforcement": "break-glass",
+			},
+			expected: false,
+		},
+		{
+			annotations: map[string]string{
+				"lol": "hey",
+				"admission.stackrox.io/bypass-kube-event-enforcement": "",
+			},
+			expected: false,
+		},
+		{
+			annotations: map[string]string{
+				"lol":                   "hey",
+				"admission.stackrox.io": "dont-bypass",
+			},
+			expected: true,
+		},
+	}
+
+	for i, c := range cases {
+		t.Run(fmt.Sprintf("Annotations-%d", i), func(t *testing.T) {
+			assert.Equal(t, c.expected, ShouldEnforceOnKubeEvent(c.annotations))
+		})
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -388,4 +389,12 @@ func (s *SearchMapperTestSuite) TestConvertVolumeSource() {
 
 func (s *SearchMapperTestSuite) TestConvertVolumeType() {
 	s.testDirectMapSearchString(search.VolumeType, fieldnames.VolumeType)
+}
+
+func (s *SearchMapperTestSuite) TestConvertKubeAPIVerb() {
+	s.testDirectMapSearchString(augmentedobjs.KubernetesAPIVerbCustomTag, fieldnames.KubeAPIVerb)
+}
+
+func (s *SearchMapperTestSuite) TestConvertKubeResource() {
+	s.testDirectMapSearchString(augmentedobjs.KubernetesResourceCustomTag, fieldnames.KubeResource)
 }

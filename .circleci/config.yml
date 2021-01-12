@@ -2226,6 +2226,7 @@ jobs:
       - ROX_NETWORK_DETECTION: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
+      - ROX_K8S_EVENTS_DETECTION: true
     steps:
       - checkout
 
@@ -3005,6 +3006,7 @@ jobs:
       - ROX_NETWORK_DETECTION: true
       - ROX_HOST_SCANNING: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
+      - ROX_K8S_EVENTS_DETECTION: true
 
     steps:
       - checkout
@@ -3294,6 +3296,7 @@ jobs:
       - ROX_NETWORK_DETECTION: true
       - ROX_HOST_SCANNING: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
+      - ROX_K8S_EVENTS_DETECTION: true
 
     steps:
       - checkout
@@ -3366,6 +3369,7 @@ jobs:
       - ROX_SENSOR_TLS_CHALLENGE: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_K8S_EVENTS_DETECTION: true
 
     steps:
       - run-qa-tests:
@@ -3396,6 +3400,7 @@ jobs:
       - ROX_SENSOR_TLS_CHALLENGE: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_K8S_EVENTS_DETECTION: true
 
     steps:
       - checkout
@@ -3431,7 +3436,7 @@ jobs:
       - ROX_HOST_SCANNING: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
-
+      - ROX_K8S_EVENTS_DETECTION: true
 
     steps:
       - run-qa-tests:
@@ -3468,6 +3473,7 @@ jobs:
       - ROX_HOST_SCANNING: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_K8S_EVENTS_DETECTION: true
 
     steps:
       - run-qa-tests:
@@ -4011,6 +4017,7 @@ jobs:
       - ROX_HOST_SCANNING: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_K8S_EVENTS_DETECTION: true
 
     steps:
       - run-openshift-tests:
@@ -4038,6 +4045,7 @@ jobs:
       - ROX_HOST_SCANNING: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_K8S_EVENTS_DETECTION: true
 
     steps:
       - run-openshift-tests:
@@ -4062,6 +4070,7 @@ jobs:
       - ROX_HOST_SCANNING: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_K8S_EVENTS_DETECTION: true
 
     steps:
       - checkout
@@ -4157,6 +4166,7 @@ jobs:
       - ROX_NETWORK_DETECTION: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+      - ROX_K8S_EVENTS_DETECTION: true
 
     steps:
       - checkout

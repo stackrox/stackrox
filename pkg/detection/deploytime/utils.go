@@ -34,7 +34,7 @@ func PolicyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *st
 	return alert
 }
 
-// buildEnforcement returns the enforcement action and message for deploy time enforcment.
+// buildEnforcement returns the enforcement action and message for deploy time enforcement.
 func buildEnforcement(policy *storage.Policy, deployment *storage.Deployment) (enforcement storage.EnforcementAction, message string) {
 	for _, enforcementAction := range policy.GetEnforcementActions() {
 		if enforcementAction == storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT && scaleToZeroEnabled(deployment) {

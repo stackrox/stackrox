@@ -50,6 +50,8 @@ var (
 	VolumeType                = newFieldName("Volume Type")
 	WritableHostMount         = newFieldName("Writable Host Mount")
 	WritableMountedVolume     = newFieldName("Writable Mounted Volume")
+	KubeResource              = newFieldName("Kubernetes Resource")
+	KubeAPIVerb               = newFieldName("Kubernetes API Verb")
 )
 
 func newFieldName(field string) string {

@@ -50,6 +50,31 @@ func ConstructDeploymentWithProcess(deployment *storage.Deployment, images []*st
 	return obj, nil
 }
 
+// ConstructKubeResourceWithEvent constructs an augmented deployment with kube event information.
+func ConstructKubeResourceWithEvent(kubeResource interface{}, event *storage.KubernetesEvent) (*pathutil.AugmentedObj, error) {
+	obj, isAugmented := kubeResource.(*pathutil.AugmentedObj)
+	if !isAugmented {
+		if !supportedKubeResourceForEvent(kubeResource) {
+			return nil, errors.Errorf("unsupported kubernetes resource type %T for event detection", kubeResource)
+		}
+		obj = pathutil.NewAugmentedObj(kubeResource)
+	}
+
+	if err := obj.AddPlainObjAt(event, pathutil.FieldStep(kubeEventAugKey)); err != nil {
+		return nil, utils.Should(err)
+	}
+	return obj, nil
+}
+
+func supportedKubeResourceForEvent(obj interface{}) bool {
+	switch obj.(type) {
+	case *storage.Deployment:
+		return true
+	default:
+		return false
+	}
+}
+
 // ConstructProcess constructs an augmented process.
 func ConstructProcess(process *storage.ProcessIndicator, processNotInBaseline bool) (*pathutil.AugmentedObj, error) {
 	augmentedProcess := pathutil.NewAugmentedObj(process)
@@ -61,6 +86,11 @@ func ConstructProcess(process *storage.ProcessIndicator, processNotInBaseline bo
 		return nil, errors.Wrap(err, "adding process baseline result to process")
 	}
 	return augmentedProcess, nil
+}
+
+// ConstructKubeEvent constructs an augmented kubernetes event.
+func ConstructKubeEvent(event *storage.KubernetesEvent) *pathutil.AugmentedObj {
+	return pathutil.NewAugmentedObj(event)
 }
 
 // ConstructDeployment constructs the augmented deployment object.

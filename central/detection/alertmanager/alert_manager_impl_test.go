@@ -37,7 +37,7 @@ func getProcessIndicator(timestamp *ptypes.Timestamp) *storage.ProcessIndicator 
 
 func getFakeRuntimeAlert(indicators ...*storage.ProcessIndicator) *storage.Alert {
 	v := &storage.Alert_ProcessViolation{Processes: indicators}
-	printer.UpdateRuntimeAlertViolationMessage(v)
+	printer.UpdateProcessAlertViolationMessage(v)
 	return &storage.Alert{
 		LifecycleStage:   storage.LifecycleStage_RUNTIME,
 		ProcessViolation: v,

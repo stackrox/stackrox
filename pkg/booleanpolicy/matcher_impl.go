@@ -47,11 +47,51 @@ func (p *processMatcherImpl) MatchDeploymentWithProcess(cache *CacheReceptacle, 
 
 	violations, err := p.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructDeploymentWithProcess(deployment, images, indicator, processNotInBaseline)
-	}, indicator)
+	}, indicator, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}
 	return *violations, nil
+}
+
+type kubeEventMatcherImpl struct {
+	kubeEventOnlyEvaluators []evaluator.Evaluator
+	matcherImpl
+}
+
+func (m *kubeEventMatcherImpl) MatchKubeEvent(cache *CacheReceptacle, event *storage.KubernetesEvent, kubeResource interface{}) (Violations, error) {
+	if cache == nil || cache.augmentedObj == nil {
+		if matched, err := m.checkWhetherKubeEventMatches(cache, event); err != nil || !matched {
+			return Violations{}, err
+		}
+	}
+
+	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
+		return augmentedobjs.ConstructKubeResourceWithEvent(kubeResource, event)
+	}, nil, event)
+	if err != nil || violations == nil {
+		return Violations{}, err
+	}
+	return *violations, nil
+}
+
+func (m *kubeEventMatcherImpl) checkWhetherKubeEventMatches(cache *CacheReceptacle, event *storage.KubernetesEvent) (bool, error) {
+	var augmentedEvent *pathutil.AugmentedObj
+	if cache != nil && cache.augmentedKubeEvent != nil {
+		augmentedEvent = cache.augmentedKubeEvent
+	} else {
+		augmentedEvent = augmentedobjs.ConstructKubeEvent(event)
+		if cache != nil {
+			cache.augmentedKubeEvent = augmentedEvent
+		}
+	}
+
+	for _, eval := range m.kubeEventOnlyEvaluators {
+		if _, matched := eval.Evaluate(augmentedEvent.Value()); matched {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 type matcherImpl struct {
@@ -70,7 +110,7 @@ func matchWithEvaluator(sectionAndEval sectionAndEvaluator, obj *pathutil.Augmen
 func (m *matcherImpl) MatchImage(cache *CacheReceptacle, image *storage.Image) (Violations, error) {
 	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructImage(image)
-	}, nil)
+	}, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}
@@ -94,14 +134,19 @@ func getOrConstructAugmentedObj(cache *CacheReceptacle, constructor func() (*pat
 	return obj, nil
 }
 
-func (m *matcherImpl) getViolations(cache *CacheReceptacle, constructor func() (*pathutil.AugmentedObj, error), indicator *storage.ProcessIndicator) (*Violations, error) {
+func (m *matcherImpl) getViolations(
+	cache *CacheReceptacle,
+	constructor func() (*pathutil.AugmentedObj, error),
+	indicator *storage.ProcessIndicator,
+	kubeEvent *storage.KubernetesEvent,
+) (*Violations, error) {
 	obj, err := getOrConstructAugmentedObj(cache, constructor)
 	if err != nil {
 		return nil, err
 	}
 	v := &Violations{}
 	var atLeastOneMatched bool
-	var processIndicatorMatched bool
+	var processIndicatorMatched, kubeEventMatched bool
 	for _, eval := range m.evaluators {
 		result, err := matchWithEvaluator(eval, obj)
 		if err != nil {
@@ -110,7 +155,9 @@ func (m *matcherImpl) getViolations(cache *CacheReceptacle, constructor func() (
 		if result == nil {
 			continue
 		}
-		alertViolations, isProcessViolation, err := violationmessages.Render(m.stage, eval.section, result, indicator)
+
+		alertViolations, isProcessViolation, isKubeEventViolation, err :=
+			violationmessages.Render(m.stage, eval.section, result, indicator, kubeEvent)
 		if err != nil {
 			return nil, err
 		}
@@ -119,15 +166,21 @@ func (m *matcherImpl) getViolations(cache *CacheReceptacle, constructor func() (
 		}
 		if isProcessViolation {
 			processIndicatorMatched = true
+		} else if isKubeEventViolation {
+			kubeEventMatched = true
 		}
+
 		v.AlertViolations = append(v.AlertViolations, alertViolations...)
 	}
-	if !atLeastOneMatched && !processIndicatorMatched {
+	if !atLeastOneMatched && !processIndicatorMatched && !kubeEventMatched {
 		return nil, nil
 	}
+
 	if processIndicatorMatched {
 		v.ProcessViolation = &storage.Alert_ProcessViolation{Processes: []*storage.ProcessIndicator{indicator}}
-		printer.UpdateRuntimeAlertViolationMessage(v.ProcessViolation)
+		printer.UpdateProcessAlertViolationMessage(v.ProcessViolation)
+	} else if kubeEventMatched {
+		v.AlertViolations = append(v.AlertViolations, printer.GenerateKubeEventViolationMsg(kubeEvent))
 	}
 	return v, nil
 }
@@ -136,7 +189,7 @@ func (m *matcherImpl) getViolations(cache *CacheReceptacle, constructor func() (
 func (m *matcherImpl) MatchDeployment(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (Violations, error) {
 	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructDeployment(deployment, images)
-	}, nil)
+	}, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}

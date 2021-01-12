@@ -79,7 +79,10 @@ var (
 		},
 	}
 
-	requiredProcessFields = set.NewStringSet(search.ProcessName.String(), search.ProcessAncestor.String(), search.ProcessUID.String(), search.ProcessArguments.String(), augmentedobjs.NotInBaselineCustomTag)
+	// runtime policy fields
+	requiredProcessFields = set.NewFrozenStringSet(search.ProcessName.String(), search.ProcessAncestor.String(),
+		search.ProcessUID.String(), search.ProcessArguments.String(), augmentedobjs.NotInBaselineCustomTag)
+	requiredKubeEventFields = set.NewFrozenStringSet(augmentedobjs.KubernetesAPIVerbCustomTag, augmentedobjs.KubernetesResourceCustomTag)
 )
 
 func containsAllRequiredFields(fieldMap map[string][]string, required set.StringSet) bool {
@@ -121,8 +124,25 @@ func checkForProcessViolation(result *evaluator.Result) bool {
 	return false
 }
 
+func checkForKubeEventViolation(result *evaluator.Result) bool {
+	for _, fieldMap := range result.Matches {
+		for k := range fieldMap {
+			if requiredKubeEventFields.Contains(k) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // Render creates violation messages based on evaluation results
-func Render(stage storage.LifecycleStage, section *storage.PolicySection, result *evaluator.Result, indicator *storage.ProcessIndicator) ([]*storage.Alert_Violation, bool, error) {
+func Render(
+	stage storage.LifecycleStage,
+	section *storage.PolicySection,
+	result *evaluator.Result,
+	indicator *storage.ProcessIndicator,
+	kubeEvent *storage.KubernetesEvent,
+) ([]*storage.Alert_Violation, bool, bool, error) {
 	errorList := errorhelpers.NewErrorList("violation printer")
 	messages := set.NewStringSet()
 	for _, fieldMap := range result.Matches {
@@ -139,10 +159,13 @@ func Render(stage storage.LifecycleStage, section *storage.PolicySection, result
 			messages.AddAll(messagesForResult...)
 		}
 	}
+
 	isProcessViolation := indicator != nil && checkForProcessViolation(result)
-	if len(messages) == 0 && !isProcessViolation {
+	isKubeEventViolation := kubeEvent != nil && checkForKubeEventViolation(result)
+	if len(messages) == 0 && !isProcessViolation && !isKubeEventViolation {
 		errorList.AddError(errors.New("missing messages"))
 	}
+
 	alertViolations := make([]*storage.Alert_Violation, 0, len(messages))
 	// Sort messages for consistency in output. This is important because we
 	// depend on these messages being equal when deduping updates to alerts.
@@ -151,5 +174,5 @@ func Render(stage storage.LifecycleStage, section *storage.PolicySection, result
 	}) {
 		alertViolations = append(alertViolations, &storage.Alert_Violation{Message: message})
 	}
-	return alertViolations, isProcessViolation, errorList.ToError()
+	return alertViolations, isProcessViolation, isKubeEventViolation, errorList.ToError()
 }

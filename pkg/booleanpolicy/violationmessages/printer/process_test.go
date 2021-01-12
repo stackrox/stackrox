@@ -87,7 +87,7 @@ func TestUpdateRuntimeAlertViolationMessage(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			processViolation := getAlertProcessViolation("", tc.processes...)
-			UpdateRuntimeAlertViolationMessage(processViolation)
+			UpdateProcessAlertViolationMessage(processViolation)
 			assert.DeepEqual(t, processViolation, getAlertProcessViolation(tc.expectedMessage, tc.processes...))
 		})
 	}
