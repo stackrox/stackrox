@@ -43,26 +43,25 @@ var andFieldsConverters = []individualFieldConverter{
 	convertExposureLevelPolicy,
 }
 
-// EnsureConverted converts the given policy into a Boolean policy, if it is not one already.
-func EnsureConverted(p *storage.Policy) error {
+// EnsureConvertedToLatest converts the given policy into a Boolean policy, if it is not one already.
+func EnsureConvertedToLatest(p *storage.Policy) error {
 	if p == nil {
 		return errors.New("nil policy")
 	}
-	if p.GetPolicyVersion() != legacyVersion && p.GetPolicyVersion() != Version {
+	if !isKnownPolicyVersion(p.GetPolicyVersion()) {
 		return errors.New("unknown version")
 	}
-	if p.GetPolicyVersion() == Version && len(p.GetPolicySections()) == 0 {
+	if IsBooleanPolicy(p) && len(p.GetPolicySections()) == 0 {
 		return errors.New("empty sections")
 	}
-	if p.GetPolicyVersion() == legacyVersion {
-		// If a policy is sent with legacyVersion, but contains sections, that's okay -- we will use those sections
-		// as-is, and infer that it's of the new Version.
+	if !IsBooleanPolicy(p) {
+		// If a policy is sent with legacyVersion, but contains sections, that's okay --
+		// we will use those sections as-is, and infer that it's of the newer version.
 		if p.GetFields() == nil && len(p.GetPolicySections()) == 0 {
 			return errors.New("empty policy")
 		}
-	}
-	if p.GetPolicyVersion() == legacyVersion {
-		p.PolicyVersion = Version
+
+		p.PolicyVersion = CurrentVersion().String()
 		p.PolicySections = append(p.PolicySections, ConvertPolicyFieldsToSections(p.GetFields())...)
 		p.Fields = nil
 	}
@@ -72,7 +71,7 @@ func EnsureConverted(p *storage.Policy) error {
 // CloneAndEnsureConverted returns a clone of the input that is upgraded if it is a legacy policy
 func CloneAndEnsureConverted(p *storage.Policy) (*storage.Policy, error) {
 	cloned := p.Clone()
-	if err := EnsureConverted(cloned); err != nil {
+	if err := EnsureConvertedToLatest(cloned); err != nil {
 		return nil, err
 	}
 	return cloned, nil
@@ -83,7 +82,7 @@ func CloneAndEnsureConverted(p *storage.Policy) (*storage.Policy, error) {
 // Any error in conversion results in a panic.
 // ONLY USE in program initialization blocks, similar to regexp.MustCompile.
 func MustEnsureConverted(p *storage.Policy) *storage.Policy {
-	utils.Must(EnsureConverted(p))
+	utils.Must(EnsureConvertedToLatest(p))
 	return p
 }
 

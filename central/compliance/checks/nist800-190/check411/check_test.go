@@ -100,7 +100,7 @@ var (
 func getPolicies(t *testing.T, policies ...*storage.Policy) map[string]*storage.Policy {
 	m := make(map[string]*storage.Policy, len(policies))
 	for _, p := range policies {
-		require.NoError(t, booleanpolicy.EnsureConverted(p))
+		require.NoError(t, booleanpolicy.EnsureConvertedToLatest(p))
 		m[p.GetName()] = p
 
 	}

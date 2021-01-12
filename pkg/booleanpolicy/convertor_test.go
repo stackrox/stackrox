@@ -61,7 +61,7 @@ func TestCloneAndEnsureConverted(t *testing.T) {
 		{
 			desc: "empty sections",
 			policy: &storage.Policy{
-				PolicyVersion: Version,
+				PolicyVersion: Version1().String(),
 			},
 			expected: nil,
 			hasError: true,
@@ -80,7 +80,7 @@ func TestCloneAndEnsureConverted(t *testing.T) {
 				Fields: fields,
 			},
 			expected: &storage.Policy{
-				PolicyVersion:  Version,
+				PolicyVersion:  CurrentVersion().String(),
 				PolicySections: sections,
 			},
 		},
@@ -91,18 +91,18 @@ func TestCloneAndEnsureConverted(t *testing.T) {
 				Fields:        fields,
 			},
 			expected: &storage.Policy{
-				PolicyVersion:  Version,
+				PolicyVersion:  CurrentVersion().String(),
 				PolicySections: sections,
 			},
 		},
 		{
 			desc: "valid noop",
 			policy: &storage.Policy{
-				PolicyVersion:  Version,
+				PolicyVersion:  Version1().String(),
 				PolicySections: sections,
 			},
 			expected: &storage.Policy{
-				PolicyVersion:  Version,
+				PolicyVersion:  CurrentVersion().String(),
 				PolicySections: sections,
 			},
 		},
@@ -1068,7 +1068,7 @@ func TestMigrateLegacyPolicy(t *testing.T) {
 	t.Run("test migrator", func(t *testing.T) {
 		booleanPolicy, err := CloneAndEnsureConverted(legacyPolicy)
 		require.NoError(t, err)
-		require.Equal(t, Version, booleanPolicy.GetPolicyVersion())
+		require.Equal(t, Version1().String(), booleanPolicy.GetPolicyVersion())
 		require.Equal(t, expectedSections, booleanPolicy.GetPolicySections())
 	})
 }

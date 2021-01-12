@@ -14,7 +14,7 @@ import (
 
 func constructPolicy(scopes []*storage.Scope, whitelists []*storage.Whitelist) *storage.Policy {
 	return &storage.Policy{
-		PolicyVersion:   booleanpolicy.Version,
+		PolicyVersion:   booleanpolicy.CurrentVersion().String(),
 		Name:            "testname",
 		Scope:           scopes,
 		Whitelists:      whitelists,

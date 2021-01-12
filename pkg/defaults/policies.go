@@ -46,7 +46,7 @@ func Policies() (policies []*storage.Policy, err error) {
 			errList.AddStringf("policy %s does not have an ID defined", p.GetName())
 			continue
 		}
-		if err := booleanpolicy.EnsureConverted(p); err != nil {
+		if err := booleanpolicy.EnsureConvertedToLatest(p); err != nil {
 			errList.AddWrapf(err, "converting policy %s", p.GetName())
 			continue
 		}

@@ -186,7 +186,7 @@ func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*
 }
 
 func (s *serviceImpl) convertAndValidate(ctx context.Context, p *storage.Policy, options ...booleanpolicy.ValidateOption) error {
-	if err := booleanpolicy.EnsureConverted(p); err != nil {
+	if err := booleanpolicy.EnsureConvertedToLatest(p); err != nil {
 		return status.Errorf(codes.InvalidArgument, "Could not ensure policy format: %v", err.Error())
 	}
 
@@ -732,7 +732,7 @@ func removeInternal(policy *storage.Policy) {
 }
 
 func (s *serviceImpl) convertAndValidateForImport(p *storage.Policy) error {
-	if err := booleanpolicy.EnsureConverted(p); err != nil {
+	if err := booleanpolicy.EnsureConvertedToLatest(p); err != nil {
 		return err
 	}
 	if err := s.validator.validateImport(p); err != nil {
@@ -899,7 +899,7 @@ func (s *serviceImpl) makePolicyFromFieldMap(ctx context.Context, fieldMap map[s
 	policyGroups := flattenPolicyGroupMap(policyGroupMap)
 
 	policy := &storage.Policy{
-		PolicyVersion: booleanpolicy.Version,
+		PolicyVersion: booleanpolicy.CurrentVersion().String(),
 	}
 	if len(scopes) > 0 {
 		policy.Scope = scopes

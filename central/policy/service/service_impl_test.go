@@ -299,7 +299,7 @@ func (s *PolicyServiceTestSuite) TestImportAndUpgradePolicy() {
 		Severity:        mockSeverity,
 		LifecycleStages: mockLCStages,
 		Categories:      mockCategories,
-		PolicyVersion:   booleanpolicy.Version,
+		PolicyVersion:   booleanpolicy.CurrentVersion().String(),
 		PolicySections: []*storage.PolicySection{
 			{
 				PolicyGroups: []*storage.PolicyGroup{

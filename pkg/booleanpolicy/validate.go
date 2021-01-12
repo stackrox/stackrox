@@ -35,7 +35,7 @@ func Validate(p *storage.Policy, options ...ValidateOption) error {
 	}
 
 	errorList := errorhelpers.NewErrorList("policy validation")
-	if p.GetPolicyVersion() != Version {
+	if !IsBooleanPolicy(p) {
 		errorList.AddStringf("invalid version for boolean policy (got %q)", p.GetPolicyVersion())
 	}
 	if p.GetName() == "" {

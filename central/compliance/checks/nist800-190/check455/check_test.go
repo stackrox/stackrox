@@ -214,7 +214,7 @@ func toMap(in []*storage.Deployment) map[string]*storage.Deployment {
 func policiesToMap(t *testing.T, in []*storage.Policy) map[string]*storage.Policy {
 	merp := make(map[string]*storage.Policy, len(in))
 	for _, np := range in {
-		require.NoError(t, booleanpolicy.EnsureConverted(np))
+		require.NoError(t, booleanpolicy.EnsureConvertedToLatest(np))
 		merp[np.GetId()] = np
 	}
 	return merp

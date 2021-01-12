@@ -43,7 +43,7 @@ func (l *LightPolicy) convert() *storage.Policy {
 	if l.Enforced {
 		p.EnforcementActions = append(p.EnforcementActions, storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT)
 	}
-	if err := booleanpolicy.EnsureConverted(p); err != nil {
+	if err := booleanpolicy.EnsureConvertedToLatest(p); err != nil {
 		panic(err)
 	}
 	return p

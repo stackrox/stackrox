@@ -177,7 +177,7 @@ func booleanPolicyWithFields(lifecycleStage storage.LifecycleStage, fieldsToVals
 		groups = append(groups, &storage.PolicyGroup{FieldName: k, Values: []*storage.PolicyValue{{Value: v}}})
 	}
 	return &storage.Policy{
-		PolicyVersion:   booleanpolicy.Version,
+		PolicyVersion:   booleanpolicy.CurrentVersion().String(),
 		LifecycleStages: []storage.LifecycleStage{lifecycleStage},
 		PolicySections:  []*storage.PolicySection{{PolicyGroups: groups}},
 	}

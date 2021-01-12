@@ -1497,7 +1497,7 @@ func (suite *DefaultPoliciesTestSuite) TestRuntimePolicyFieldsCompile() {
 
 func policyWithGroups(groups ...*storage.PolicyGroup) *storage.Policy {
 	return &storage.Policy{
-		PolicyVersion:  booleanpolicy.Version,
+		PolicyVersion:  booleanpolicy.CurrentVersion().String(),
 		Name:           uuid.NewV4().String(),
 		PolicySections: []*storage.PolicySection{{PolicyGroups: groups}},
 	}
