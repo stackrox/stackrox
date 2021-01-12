@@ -1,3 +1,4 @@
+import { ReactElement } from 'react';
 import { FlattenedNetworkBaseline, BaselineStatus } from 'Containers/Network/networkTypes';
 
 export type Row = {
@@ -10,4 +11,17 @@ export type Row = {
     groupByID?: string;
     isGrouped?: boolean;
     subRows?: Row[];
+};
+
+export type Cell = {
+    getCellProps: () => {
+        key: string;
+    };
+    row: {
+        isGrouped: boolean;
+    };
+    column: {
+        id: string;
+    };
+    render: (string) => ReactElement;
 };

@@ -1,27 +1,17 @@
 import React, { ReactElement } from 'react';
 
+import { Cell } from './tableTypes';
+import { isExpanderCell } from './expanderPlugin';
+
 export type TableCellProps = {
-    cell: {
-        getCellProps: () => {
-            key: string;
-        };
-        row: {
-            isGrouped: boolean;
-        };
-        column: {
-            id: string;
-        };
-        render: (string) => ReactElement;
-    };
+    cell: Cell;
 };
 
 function TableCell({ cell }: TableCellProps): ReactElement {
     const { key } = cell.getCellProps();
 
     const className = `text-left p-2 ${
-        !cell.row.isGrouped &&
-        cell.column.id === 'expander' &&
-        'bg-primary-200 border-r border-primary-300'
+        !cell.row.isGrouped && isExpanderCell(cell) && 'bg-primary-200 border-r border-primary-300'
     }`;
 
     return (

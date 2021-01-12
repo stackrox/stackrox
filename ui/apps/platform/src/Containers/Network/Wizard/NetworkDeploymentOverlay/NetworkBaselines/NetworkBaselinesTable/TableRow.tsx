@@ -15,7 +15,7 @@ export type TableRowProps = {
 };
 
 const tableRowClassName = 'relative border-b';
-const baseTableRowClassName = `${tableRowClassName} border-base-300`;
+const baseTableRowClassName = `${tableRowClassName} border-base-300 bg-base-100`;
 const alertTableRowClassName = `${tableRowClassName} border-alert-300 bg-alert-200 text-alert-800`;
 
 function onFocus(): number {
@@ -48,17 +48,18 @@ function TableRow({
     const showHoveredRowComponent = !showGroupedRowComponent && isHovered;
     const showHoveredGroupedRowComponent = showGroupedRowComponent && isHovered;
 
-    const hoveredRowComponent = showHoveredRowComponent && (
+    const hoveredRowComponent = showHoveredRowComponent && HoveredRowComponent && (
         <TableRowOverlay>{HoveredRowComponent}</TableRowOverlay>
     );
 
-    const groupedRowComponent = showGroupedRowComponent && (
+    const groupedRowComponent = showGroupedRowComponent && GroupedRowComponent && (
         <TableRowOverlay>{GroupedRowComponent}</TableRowOverlay>
     );
 
-    const hoveredGroupedRowComponent = showHoveredGroupedRowComponent && (
-        <TableRowOverlay>{HoveredGroupedRowComponent}</TableRowOverlay>
-    );
+    const hoveredGroupedRowComponent = showHoveredGroupedRowComponent &&
+        HoveredGroupedRowComponent && (
+            <TableRowOverlay>{HoveredGroupedRowComponent}</TableRowOverlay>
+        );
 
     function onMouseEnter(): void {
         setIsHovered(true);
