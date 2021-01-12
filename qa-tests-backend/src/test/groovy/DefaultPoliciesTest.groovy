@@ -25,6 +25,7 @@ import io.stackrox.proto.storage.DeploymentOuterClass
 import io.stackrox.proto.storage.ImageOuterClass
 import services.DeploymentService
 import services.ImageService
+import util.Env
 import util.SlackUtil
 
 import org.junit.Assume
@@ -197,7 +198,11 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     @Category(BAT)
     def "Verify that StackRox services don't trigger alerts"() {
-        expect:
+        when:
+        "Test are running against a 'nightly' CI build"
+        Assume.assumeTrue(Env.CI_TAG != null && Env.CI_TAG.contains("nightly"))
+
+        then:
         "Verify policies are not violated within the stackrox namespace"
         def violations = AlertService.getViolations(
                 ListAlertsRequest.newBuilder().setQuery("Namespace:stackrox,Violation State:*").build()
@@ -209,7 +214,9 @@ class DefaultPoliciesTest extends BaseSpecification {
                     !Constants.VIOLATIONS_WHITELIST.get(deploymentName).contains(policyName)
         }
         if (!unexpectedViolations.isEmpty()) {
-            String slackPayload = ":rotating_light: Fixable Vulnerabilities found in StackRox Images! :rotating_light:"
+            String slackPayload = ":rotating_light: " +
+                    "Fixable Vulnerabilities found in StackRox Images (build tag: ${Env.CI_TAG})! " +
+                    ":rotating_light:"
 
             Map<String, Set<String>> deploymentPolicyMap = [:]
             Map<String, Set<String>> imageVulnMap = [:]
