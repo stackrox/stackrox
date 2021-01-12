@@ -38,9 +38,20 @@ message Alert {
     Deployment deployment                    = 4  [(gogoproto.moretags) = "sensorhash:\"ignore\""];
 
     message Violation {
-        string message                                 = 1;
+        message KeyValueAttrs {
+            message KeyValueAttr {
+                string key   = 1;
+                string value = 2;
+            }
+            repeated KeyValueAttr attrs = 1;
+        }
+        
+        string            message         = 1;
         reserved 2; // formerly link
         reserved 3; // formerly processes
+        oneof MessageAttributes {
+            KeyValueAttrs key_value_attrs = 4;
+        }
     }
     repeated Violation violations            = 5;
 

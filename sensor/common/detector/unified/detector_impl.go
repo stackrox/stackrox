@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/detection/runtime"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
 )
 
@@ -24,7 +25,7 @@ func (d *detectorImpl) ReconcilePolicies(newList []*storage.Policy) {
 func (d *detectorImpl) DetectDeployment(ctx deploytime.DetectionContext, deployment *storage.Deployment, images []*storage.Image) []*storage.Alert {
 	alerts, err := d.deploytimeDetector.Detect(ctx, deployment, images)
 	if err != nil {
-		log.Errorf("error running detection on deployment %q: %v", deployment.GetName(), err)
+		log.Errorf("Error running detection on deployment %q: %v", deployment.GetName(), err)
 	}
 	return alerts
 
@@ -33,15 +34,20 @@ func (d *detectorImpl) DetectDeployment(ctx deploytime.DetectionContext, deploym
 func (d *detectorImpl) DetectProcess(deployment *storage.Deployment, images []*storage.Image, process *storage.ProcessIndicator, processNotInBaseline bool) []*storage.Alert {
 	alerts, err := d.runtimeDetector.DetectForDeployment(deployment, images, process, processNotInBaseline, nil)
 	if err != nil {
-		log.Errorf("error running runtime policies for deployment %q and process %q: %v", deployment.GetName(), process.GetSignal().GetExecFilePath(), err)
+		log.Errorf("Error running runtime policies for deployment %q and process %q: %v", deployment.GetName(), process.GetSignal().GetExecFilePath(), err)
 	}
 	return alerts
 }
 
 func (d *detectorImpl) DetectKubeEventForDeployment(deployment *storage.Deployment, images []*storage.Image, kubeEvent *storage.KubernetesEvent) []*storage.Alert {
+	if !features.K8sEventDetection.Enabled() {
+		log.Errorf("Cannot detect kubernetes event %s. Support for kubernetes event policies is not enabled", kubernetes.EventAsString(kubeEvent))
+		return nil
+	}
+
 	alerts, err := d.runtimeDetector.DetectForDeployment(deployment, images, nil, false, kubeEvent)
 	if err != nil {
-		log.Errorf("error running runtime policies for kubernetes event %s: %v", kubernetes.EventAsString(kubeEvent), err)
+		log.Errorf("Error running runtime policies for kubernetes event %s: %v", kubernetes.EventAsString(kubeEvent), err)
 	}
 	return alerts
 }

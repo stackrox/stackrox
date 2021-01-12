@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/detection"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -81,6 +82,12 @@ func (d *detectorImpl) DetectForDeployment(
 
 		if kubeEvent == nil {
 			return nil
+		}
+
+		if !features.K8sEventDetection.Enabled() {
+			return errors.Errorf("cannot evaluate violations for policy %q; kubernetes request %s. "+
+				"Support for kubernetes event policies is not enabled",
+				compiled.Policy().GetName(), kubernetes.EventAsString(kubeEvent))
 		}
 
 		violation, err := compiled.MatchAgainstKubeResourceAndEvent(&cacheReceptable, kubeEvent, augmentedDeploy)

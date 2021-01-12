@@ -48,8 +48,21 @@ message KubernetesEvent {
         }
     }
 
-    string                    id        = 1;
-    Object                    object    = 2;
-    google.protobuf.Timestamp timestamp = 3;
-    APIVerb                   api_verb  = 4 [(gogoproto.moretags) = "policy:\"Kubernetes API Verb\""];
+    string                    id                    = 1;
+    Object                    object                = 2;
+    google.protobuf.Timestamp timestamp             = 3;
+    APIVerb                   api_verb              = 4 [(gogoproto.moretags) = "policy:\"Kubernetes API Verb\""];
+    oneof ObjectArgs {
+        PodExecArgs           pod_exec_args         = 5;
+        PodPortForwardArgs    pod_port_forward_args = 6;
+    }
+
+    message PodExecArgs {
+        string container = 1;
+        string command   = 2;
+    }
+
+    message PodPortForwardArgs {
+        int32 port = 1;
+    }
 }

@@ -1,48 +1,58 @@
 package printer
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
+	"strconv"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/utils"
 )
-
-const (
-	defaultKubeEventViolationHeader = "Kubernetes event detected"
-)
-
-var (
-	kubeEventViolationHeaderMsgs = map[kubeOpIndicator]string{
-		{
-			resource: storage.KubernetesEvent_Object_PODS_EXEC,
-			apiVerb:  storage.KubernetesEvent_CREATE,
-		}: "Kubectl exec into pod",
-		{
-			resource: storage.KubernetesEvent_Object_PODS_PORTFORWARD,
-			apiVerb:  storage.KubernetesEvent_CREATE,
-		}: "Kubectl port-forward into pod",
-	}
-)
-
-type kubeOpIndicator struct {
-	resource storage.KubernetesEvent_Object_Resource
-	apiVerb  storage.KubernetesEvent_APIVerb
-}
 
 // GenerateKubeEventViolationMsg constructs violation message for kubernetes event violations.
-func GenerateKubeEventViolationMsg(kubeEvent *storage.KubernetesEvent) *storage.Alert_Violation {
-	msg := kubeEventViolationHeaderMsgs[kubeOpIndicator{
-		resource: kubeEvent.GetObject().GetResource(),
-		apiVerb:  kubeEvent.GetApiVerb(),
-	}]
-
-	if msg == "" {
-		utils.Should(errors.Errorf("violation header message not defined for %s", kubernetes.EventAsString(kubeEvent)))
-		msg = defaultKubeEventViolationHeader
+func GenerateKubeEventViolationMsg(event *storage.KubernetesEvent) *storage.Alert_Violation {
+	switch event.GetObject().GetResource() {
+	case storage.KubernetesEvent_Object_PODS_EXEC:
+		return podExecViolationMsg(event.GetObject().GetName(), event.GetPodExecArgs())
+	case storage.KubernetesEvent_Object_PODS_PORTFORWARD:
+		return podPortForwardViolationMsg(event.GetObject().GetName(), event.GetPodPortForwardArgs())
+	default:
+		return defaultViolationMsg(event)
 	}
+}
 
+func defaultViolationMsg(event *storage.KubernetesEvent) *storage.Alert_Violation {
 	return &storage.Alert_Violation{
-		Message: msg,
-		// TODO: fill the message attributes
+		Message: fmt.Sprintf("Kubernetes event '%s' detected", kubernetes.EventAsString(event)),
+	}
+}
+
+func podExecViolationMsg(pod string, args *storage.KubernetesEvent_PodExecArgs) *storage.Alert_Violation {
+	return &storage.Alert_Violation{
+		Message: fmt.Sprintf("Kubectl exec '%s' into pod '%s' container '%s' detected",
+			args.GetCommand(), args.GetContainer(), pod),
+		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+					{Key: "pod", Value: pod},
+					{Key: "container", Value: args.GetContainer()},
+					{Key: "command", Value: args.GetCommand()},
+				},
+			},
+		},
+	}
+}
+
+func podPortForwardViolationMsg(pod string, args *storage.KubernetesEvent_PodPortForwardArgs) *storage.Alert_Violation {
+	port := strconv.Itoa((int)(args.GetPort()))
+	return &storage.Alert_Violation{
+		Message: fmt.Sprintf("Kubectl port-forward to pod '%s' port '%s' detected", pod, port),
+		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+					{Key: "pod", Value: pod},
+					{Key: "port", Value: port},
+				},
+			},
+		},
 	}
 }

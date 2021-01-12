@@ -76,6 +76,17 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("Alert_Violation", []string{
 		"message: String!",
+		"messageAttributes: Alert_ViolationMessageAttributes",
+	}))
+	utils.Must(builder.AddUnionType("Alert_ViolationMessageAttributes", []string{
+		"Alert_Violation_KeyValueAttrs",
+	}))
+	utils.Must(builder.AddType("Alert_Violation_KeyValueAttrs", []string{
+		"attrs: [Alert_Violation_KeyValueAttrs_KeyValueAttr]!",
+	}))
+	utils.Must(builder.AddType("Alert_Violation_KeyValueAttrs_KeyValueAttr", []string{
+		"key: String!",
+		"value: String!",
 	}))
 	utils.Must(builder.AddType("AzureProviderMetadata", []string{
 		"subscriptionId: String!",
@@ -1675,6 +1686,87 @@ func (resolver *Resolver) wrapAlert_Violations(values []*storage.Alert_Violation
 
 func (resolver *alert_ViolationResolver) Message(ctx context.Context) string {
 	value := resolver.data.GetMessage()
+	return value
+}
+
+type alert_ViolationMessageAttributesResolver struct {
+	resolver interface{}
+}
+
+func (resolver *alert_ViolationResolver) MessageAttributes() *alert_ViolationMessageAttributesResolver {
+	if val := resolver.data.GetKeyValueAttrs(); val != nil {
+		return &alert_ViolationMessageAttributesResolver{
+			resolver: &alert_Violation_KeyValueAttrsResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *alert_ViolationMessageAttributesResolver) ToAlert_Violation_KeyValueAttrs() (*alert_Violation_KeyValueAttrsResolver, bool) {
+	res, ok := resolver.resolver.(*alert_Violation_KeyValueAttrsResolver)
+	return res, ok
+}
+
+type alert_Violation_KeyValueAttrsResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Alert_Violation_KeyValueAttrs
+}
+
+func (resolver *Resolver) wrapAlert_Violation_KeyValueAttrs(value *storage.Alert_Violation_KeyValueAttrs, ok bool, err error) (*alert_Violation_KeyValueAttrsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_Violation_KeyValueAttrsResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Violation_KeyValueAttrses(values []*storage.Alert_Violation_KeyValueAttrs, err error) ([]*alert_Violation_KeyValueAttrsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_Violation_KeyValueAttrsResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_Violation_KeyValueAttrsResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_Violation_KeyValueAttrsResolver) Attrs(ctx context.Context) ([]*alert_Violation_KeyValueAttrs_KeyValueAttrResolver, error) {
+	value := resolver.data.GetAttrs()
+	return resolver.root.wrapAlert_Violation_KeyValueAttrs_KeyValueAttrs(value, nil)
+}
+
+type alert_Violation_KeyValueAttrs_KeyValueAttrResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Alert_Violation_KeyValueAttrs_KeyValueAttr
+}
+
+func (resolver *Resolver) wrapAlert_Violation_KeyValueAttrs_KeyValueAttr(value *storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, ok bool, err error) (*alert_Violation_KeyValueAttrs_KeyValueAttrResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_Violation_KeyValueAttrs_KeyValueAttrResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Violation_KeyValueAttrs_KeyValueAttrs(values []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, err error) ([]*alert_Violation_KeyValueAttrs_KeyValueAttrResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_Violation_KeyValueAttrs_KeyValueAttrResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_Violation_KeyValueAttrs_KeyValueAttrResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_Violation_KeyValueAttrs_KeyValueAttrResolver) Key(ctx context.Context) string {
+	value := resolver.data.GetKey()
+	return value
+}
+
+func (resolver *alert_Violation_KeyValueAttrs_KeyValueAttrResolver) Value(ctx context.Context) string {
+	value := resolver.data.GetValue()
 	return value
 }
 

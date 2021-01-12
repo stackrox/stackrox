@@ -2176,9 +2176,6 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventPolicies() {
 	podExecGroup := policyGroupWithSingleKeyValue(fieldnames.KubeResource, "PODS_EXEC", false)
 
 	aptGetGroup := policyGroupWithSingleKeyValue(fieldnames.ProcessName, "apt-get", false)
-	privilegedDep := fixtures.GetDeployment().Clone()
-	privilegedDep.Id = "PRIVILEGED"
-	suite.addDepAndImages(privilegedDep)
 
 	for _, c := range []struct {
 		event              *storage.KubernetesEvent
@@ -2190,35 +2187,45 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventPolicies() {
 		{
 			event: &storage.KubernetesEvent{
 				Object: &storage.KubernetesEvent_Object{
-					Name:     "example_pod",
+					Name:     "p1",
 					Resource: storage.KubernetesEvent_Object_PODS_EXEC,
 				},
 				ApiVerb: storage.KubernetesEvent_CREATE,
+				ObjectArgs: &storage.KubernetesEvent_PodExecArgs_{
+					PodExecArgs: &storage.KubernetesEvent_PodExecArgs{
+						Container: "c1",
+					},
+				},
 			},
 			groups:             []*storage.PolicyGroup{createVerbGroup, podExecGroup},
-			expectedViolations: []*storage.Alert_Violation{{Message: "Kubectl exec into pod"}},
+			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "")},
 		},
 		{
 			event: &storage.KubernetesEvent{
 				Object: &storage.KubernetesEvent_Object{
-					Name:     "example_pod",
+					Name:     "p1",
 					Resource: storage.KubernetesEvent_Object_PODS_EXEC,
 				},
 				ApiVerb: storage.KubernetesEvent_CREATE,
+				ObjectArgs: &storage.KubernetesEvent_PodExecArgs_{
+					PodExecArgs: &storage.KubernetesEvent_PodExecArgs{
+						Container: "c1",
+					},
+				},
 			},
 			groups:             []*storage.PolicyGroup{podExecGroup},
-			expectedViolations: []*storage.Alert_Violation{{Message: "Kubectl exec into pod"}},
+			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "")},
 		},
 		{
 			event: &storage.KubernetesEvent{
 				Object: &storage.KubernetesEvent_Object{
-					Name:     "example_pod",
+					Name:     "p1",
 					Resource: storage.KubernetesEvent_Object_PODS_EXEC,
 				},
 				ApiVerb: storage.KubernetesEvent_CREATE,
 			},
 			groups:             []*storage.PolicyGroup{createVerbGroup},
-			expectedViolations: []*storage.Alert_Violation{{Message: "Kubectl exec into pod"}},
+			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "", "")},
 		},
 		{
 			groups: []*storage.PolicyGroup{createVerbGroup, podExecGroup},
@@ -2226,7 +2233,7 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventPolicies() {
 		{
 			event: &storage.KubernetesEvent{
 				Object: &storage.KubernetesEvent_Object{
-					Name:     "example_pod",
+					Name:     "p1",
 					Resource: storage.KubernetesEvent_Object_PODS_PORTFORWARD,
 				},
 				ApiVerb: storage.KubernetesEvent_CREATE,
@@ -2236,7 +2243,7 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventPolicies() {
 		{
 			event: &storage.KubernetesEvent{
 				Object: &storage.KubernetesEvent_Object{
-					Name:     "example_pod",
+					Name:     "p1",
 					Resource: storage.KubernetesEvent_Object_PODS_PORTFORWARD,
 				},
 				ApiVerb: storage.KubernetesEvent_CREATE,
@@ -2247,13 +2254,13 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventPolicies() {
 		{
 			event: &storage.KubernetesEvent{
 				Object: &storage.KubernetesEvent_Object{
-					Name:     "example_pod",
+					Name:     "p1",
 					Resource: storage.KubernetesEvent_Object_PODS_EXEC,
 				},
 				ApiVerb: storage.KubernetesEvent_CREATE,
 			},
 			groups:             []*storage.PolicyGroup{createVerbGroup},
-			expectedViolations: []*storage.Alert_Violation{{Message: "Kubectl exec into pod"}},
+			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "", "")},
 			withProcessSection: true,
 		},
 	} {
@@ -2472,4 +2479,20 @@ func BenchmarkProcessPolicies(b *testing.B) {
 		}
 	}
 
+}
+
+func podExecViolationMsg(pod, container, command string) *storage.Alert_Violation {
+	return &storage.Alert_Violation{
+		Message: fmt.Sprintf("Kubectl exec '%s' into pod '%s' container '%s' detected",
+			command, container, pod),
+		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+					{Key: "pod", Value: pod},
+					{Key: "container", Value: container},
+					{Key: "command", Value: command},
+				},
+			},
+		},
+	}
 }
