@@ -455,17 +455,17 @@ storeQASpockReports: &storeQASpockReports
     path: ./qa-tests-backend/build/spock-reports
     destination: qa-test-report
 
-backupDB: &backupDB
+backupCentral: &backupCentral
   run:
-    name: Backup DB
+    name: Backup Central
     command: |
-      mkdir -p db-backup
-      roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db backup --output db-backup
+      mkdir -p central-backup
+      roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output central-backup
 
-storeDBBackupArtifact: &storeDBBackupArtifact
+storeCentralBackupArtifact: &storeCentralBackupArtifact
   store_artifacts:
-    path: db-backup
-    destination: db-backup
+    path: central-backup
+    destination: central-backup
 
 updateTestRail: &updateTestRail
   run:
@@ -1367,8 +1367,8 @@ commands:
       - *collectK8sLogs
       - get-and-store-debug-dump
       - pull-stackrox-api-data
-      - *backupDB
-      - *storeDBBackupArtifact
+      - *backupCentral
+      - *storeCentralBackupArtifact
       - check-stackrox-logs
       - *storeK8sLogs
       - *storeQALogs
@@ -1664,8 +1664,8 @@ commands:
 
       - *updateTestRail
 
-      - *backupDB
-      - *storeDBBackupArtifact
+      - *backupCentral
+      - *storeCentralBackupArtifact
 
       - *collectK8sLogs
       - get-and-store-debug-dump
@@ -2312,8 +2312,8 @@ jobs:
       - *storeQASpockReports
 
       - *collectK8sLogs
-      - *backupDB
-      - *storeDBBackupArtifact
+      - *backupCentral
+      - *storeCentralBackupArtifact
       - check-stackrox-logs
       - *storeK8sLogs
       - *storeQALogs
@@ -3236,8 +3236,8 @@ jobs:
       - *collectK8sLogs
       - get-and-store-debug-dump
       - pull-stackrox-api-data
-      - *backupDB
-      - *storeDBBackupArtifact
+      - *backupCentral
+      - *storeCentralBackupArtifact
       - check-stackrox-logs
 
       - run:
@@ -3338,8 +3338,8 @@ jobs:
       - *collectK8sLogs
       - get-and-store-debug-dump
       - pull-stackrox-api-data
-      - *backupDB
-      - *storeDBBackupArtifact
+      - *backupCentral
+      - *storeCentralBackupArtifact
       - check-stackrox-logs
       - *storeK8sLogs
 
@@ -4136,8 +4136,8 @@ jobs:
       - *updateTestRail
 
       - *collectK8sLogs
-      - *backupDB
-      - *storeDBBackupArtifact
+      - *backupCentral
+      - *storeCentralBackupArtifact
       - check-stackrox-logs
       - *storeK8sLogs
       - *storeQALogs
@@ -4237,8 +4237,8 @@ jobs:
       - *updateTestRail
 
       - *collectK8sLogs
-      - *backupDB
-      - *storeDBBackupArtifact
+      - *backupCentral
+      - *storeCentralBackupArtifact
       - check-stackrox-logs
       - *storeK8sLogs
       - *storeQALogs
@@ -4657,8 +4657,8 @@ jobs:
       - *collectK8sLogs
       - get-and-store-debug-dump
       - pull-stackrox-api-data
-      - *backupDB
-      - *storeDBBackupArtifact
+      - *backupCentral
+      - *storeCentralBackupArtifact
       - check-stackrox-logs
       - *storeK8sLogs
       - teardown-gke

@@ -586,7 +586,7 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
-			Route:         "/db/backup/full",
+			Route:         "/api/extensions/backup",
 			Authorizer:    user.WithRole(role.Admin),
 			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB(), true),
 			Compression:   true,

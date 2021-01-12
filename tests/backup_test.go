@@ -44,7 +44,7 @@ func doTestBackup(t *testing.T, includeCerts bool) {
 	client := testutils.HTTPClientForCentral(t)
 	endpoint := "/db/backup"
 	if includeCerts {
-		endpoint = path.Join(endpoint, "full")
+		endpoint = "/api/extensions/backup"
 	}
 	resp, err := client.Get(endpoint)
 	require.NoError(t, err)

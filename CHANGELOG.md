@@ -5,6 +5,8 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+- `roxctl central db backup` is deprecated; please use `roxctl central backup` instead.
+- API `/db/backup` is deprecated; please use `/api/extensions/backup` instead.
 
 ## [54.0]
 - Added option to backup certificates for central.
