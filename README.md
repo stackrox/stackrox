@@ -28,6 +28,7 @@ documentation.
 * [How to Release a New Version](#how-to-release-a-new-version)
 
 ## Development
+
 **UI Dev Docs**: please refer to [ui/README.md](./ui/README.md)
 
 **E2E Dev Docs**: please refer to [qa-tests-backend/README.md](./qa-tests-backend/README.md)
@@ -38,39 +39,40 @@ documentation.
 
 The following tools are necessary to build image(s):
 
- * [Make](https://www.gnu.org/software/make/)
- * [Go](https://golang.org/dl/)
-   * Get the version specified in [EXPECTED_GO_VERSION](./EXPECTED_GO_VERSION).
- * Various Go linters and RocksDB dependencies that can be installed using `make reinstall-dev-tools`.
- * UI build tooling as specified in [ui/README.md](ui/README.md#Build-Tooling).
- * Docker
- * rocksdb
- * xcode command line tools (macOS only)
+* [Make](https://www.gnu.org/software/make/)
+* [Go](https://golang.org/dl/)
+  * Get the version specified in [EXPECTED_GO_VERSION](./EXPECTED_GO_VERSION).
+* Various Go linters and RocksDB dependencies that can be installed using `make reinstall-dev-tools`.
+* UI build tooling as specified in [ui/README.md](ui/README.md#Build-Tooling).
+* Docker
+* rocksdb
+* xcode command line tools (macOS only)
 
 ##### xcode - macOS only
+
 <details><summary>Click to expand</summary>
  Usually you would have these already installed by brew.
  However if you get an error when building the golang x/tools,
  try first making sure the EULA is agreed by:
- 
+
  1. starting XCode
  2. building a new blank app project
  3. starting the blank project app in the emulator
  4. close both the emulator and the XCode, then
  5. run the following commands:
- 
- ```
+
+ ```bash
  xcode-select --install
  sudo xcode-select --switch /Library/Developer/CommandLineTools # Enable command line tools
  sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
  ```
- 
- For more info, see https://github.com/nodejs/node-gyp/issues/569
+
+ For more info, see <https://github.com/nodejs/node-gyp/issues/569>
  </details>
- 
+
 #### Clone StackRox
 
-```
+```bash
 # Create a GOPATH: this is the location of your Go "workspace".
 # (Note that it is not – and must not – be the same as the path Go is installed to.)
 # The default is to have it in ~/go/, or ~/development, but anything you prefer goes.
@@ -101,7 +103,7 @@ Development can either happen in GCP or locally with
 [Docker Desktop](https://docs.docker.com/docker-for-mac/#kubernetes) or [Minikube](https://minikube.sigs.k8s.io/docs/start/).  
 To sweeten your experience, install [the workflow scripts](#productivity) beforehand.
 
-```
+```bash
 # Install rocksdb, central's main database
 # It is necessary because of several CGO bindings
 $ brew install rocksdb
@@ -130,7 +132,6 @@ $ logmein
 ```
 
 See the [deployment guide](#how-to-deploy) for further reading.
-
 
 #### Common Makefile Targets
 
@@ -169,10 +170,10 @@ $ make go-packr-srcs
 
 #### Productivity
 
-The [workflow repository](https://github.com/stackrox/workflow) contains some helper scripts 
+The [workflow repository](https://github.com/stackrox/workflow) contains some helper scripts
 which support our development workflow. Explore more commands with `roxhelp --list-all`.
 
-```
+```bash
 # Change directory to rox root
 $ cdrox
 
@@ -198,6 +199,7 @@ $ smart-diff                    # check diff relative to parent branch
 ---
 
 ### How to Deploy
+
 Deployment configurations are under the `deploy/` directory, organized
 per orchestrator.
 
@@ -216,31 +218,34 @@ Further steps are orchestrator specific.
 
 <details><summary>Kubernetes</summary>
 
-Set your Docker image-pull credentials as `REGISTRY_USERNAME` and
-`REGISTRY_PASSWORD`, then run:
-
 ```bash
 ./deploy/k8s/deploy.sh
 ```
+
+To avoid typing in docker registry username and password each time you deploy,
+set credentials in `REGISTRY_USERNAME` and `REGISTRY_PASSWORD` environment variables,
+or, more securely, configure credentials in docker credentials store for your OS as
+suggested [here](https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/1203863667/Fixing+DockerHub+login+during+local+deploy).
 </details>
 
 ## Deploying for Customer
 
 <details><summary>Kubernetes</summary>
 
-```
+```bash
 docker run -i --rm stackrox.io/main:<tag> interactive > k8s.zip
 ```
 
 This will run you through an installer and generate a `k8s.zip` file.
 
-```$xslt
+```bash
 unzip k8s.zip -d k8s
 ```
 
-```$xslt
+```bash
 bash k8s/central.sh
 ```
+
 Now Central has been deployed. Use the UI to deploy Sensor.
 
 </details>
@@ -252,21 +257,22 @@ Note: If using a host mount, you need to allow the container to access it by usi
 
 Take the image-setup.sh script from this repo and run it to do the pull/push to
 local OpenShift registry. This is a prerequisite for every new cluster.
-```
+
+```bash
 bash image-setup.sh
 ```
 
-```
+```bash
 docker run -i --rm stackrox.io/main:<tag> interactive > openshift.zip
 ```
 
 This will run you through an installer and generate a `openshift.zip` file.
 
-```$xslt
+```bash
 unzip openshift.zip -d openshift
 ```
 
-```$xslt
+```bash
 bash openshift/central.sh
 ```
 </details>
@@ -274,6 +280,7 @@ bash openshift/central.sh
 ## How to Release a New Version
 
 Replace the value with the version number you want to release from:
+
 ```bash
 export RELEASE_BRANCH=2.4.22.x
 export MASTER_VERSION=${RELEASE_BRANCH}
@@ -295,10 +302,12 @@ By convention, we do not currently use a `v` prefix for release tags (that is,
 we push tags like `0.5`, not `v0.5`).
 
 ### Prep the release
+
 Proceed with the steps that under the section of the release type you're making:
 non-patch or patch.
 
 #### Create a release branch from master
+
 These steps assume that the tip of `origin/master` is what you plan to release
 and that **all the builds for that commit have completed successfully**. We will
 checkout `origin/master` and create a new release branch from it. We make an
@@ -322,12 +331,14 @@ git push origin release/${RELEASE_BRANCH}
 ```
 
 #### Patching the Release
+
 ```bash
 git fetch
 git checkout release/${RELEASE_BRANCH}
 ```
 
 ### Pull Fixes into the Release
+
 Then use `git cherry-pick -x ${commit_sha}` to cherry pick commits from `master`
 that are going into this patch release. If release requires special changes
 (besides cherry picking from `master`), push the release branch and create
@@ -371,6 +382,7 @@ the image as `stackrox/main:[your-release-tag]`,
 for example `stackrox/main:2.4.22.0` and `stackrox.io/main:2.4.22.0`.
 
 ### Update JIRA release
+
 *Note: Jira [doesn't have](https://community.atlassian.com/t5/Jira-questions/How-do-I-assign-the-permission-to-create-Versions-to-a/qaq-p/677499)
 version / release specific permissions, therefore request Jira admins to assign
 to you a "Release Manager" project role (at least temporaly) to perform some of
@@ -400,8 +412,10 @@ released.
 </details>
 
 ### Create Release Notes
+
 Once the GA version of the release has been created, we need to mark the tag as a release
 in GitHub.
+
 1. Go the [tags page on GitHub](https://github.com/stackrox/rox/tags).
 1. Find the corresponding tag. Click the three-dots menu on the right and
 click "Create release".
@@ -409,6 +423,7 @@ click "Create release".
 went into the current release ([filter](https://stack-rox.atlassian.net/issues/?jql=project%20%3D%20ROX%20AND%20fixVersion%20%3D%20latestReleasedVersion()%20AND%20resolution%20not%20in%20(%22Won%27t%20Do%22%2C%20%22Won%27t%20Fix%22%2C%20%22Invalid%20Ticket%22%2C%20%22Not%20a%20Bug%22%2C%20Duplicate%2C%20%22Duplicate%20Ticket%22%2C%20%22Cannot%20Reproduce%22))).
 
 ### Update solutions offline scripts
+
 * update image tags for main, collector, and monitoring in the [solutions offline scripts](https://github.com/stackrox/solutions/blob/master/offline/create-archive.sh)
 * run the `create-archive.sh` script to generate an image bundle
 * upload the generated image bundle to the released version directory in [Google storage bucket](https://console.cloud.google.com/storage/browser/sr-roxc/?project=stackrox-hub)
