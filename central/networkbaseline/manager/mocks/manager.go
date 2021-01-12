@@ -8,6 +8,8 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	central "github.com/stackrox/rox/generated/internalapi/central"
+	storage "github.com/stackrox/rox/generated/storage"
 	networkgraph "github.com/stackrox/rox/pkg/networkgraph"
 	timestamp "github.com/stackrox/rox/pkg/timestamp"
 	reflect "reflect"
@@ -90,4 +92,18 @@ func (m *MockManager) ProcessBaselineStatusUpdate(ctx context.Context, modifyReq
 func (mr *MockManagerMockRecorder) ProcessBaselineStatusUpdate(ctx, modifyRequest interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessBaselineStatusUpdate", reflect.TypeOf((*MockManager)(nil).ProcessBaselineStatusUpdate), ctx, modifyRequest)
+}
+
+// ProcessNetworkPolicyUpdate mocks base method
+func (m *MockManager) ProcessNetworkPolicyUpdate(ctx context.Context, action central.ResourceAction, policy *storage.NetworkPolicy) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessNetworkPolicyUpdate", ctx, action, policy)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessNetworkPolicyUpdate indicates an expected call of ProcessNetworkPolicyUpdate
+func (mr *MockManagerMockRecorder) ProcessNetworkPolicyUpdate(ctx, action, policy interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessNetworkPolicyUpdate", reflect.TypeOf((*MockManager)(nil).ProcessNetworkPolicyUpdate), ctx, action, policy)
 }

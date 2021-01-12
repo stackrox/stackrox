@@ -4,6 +4,8 @@ import (
 	"context"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
@@ -31,4 +33,7 @@ type Manager interface {
 	// ProcessBaselineStatusUpdate processes a user-filed request to modify the baseline status.
 	// The error it returns will be a status.Error.
 	ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest *v1.ModifyBaselineStatusForPeersRequest) error
+	// ProcessNetworkPolicyUpdate is invoked when we there is a change to the network policies. Changed network
+	// policy is passed in allow updating relevant baselines.
+	ProcessNetworkPolicyUpdate(ctx context.Context, action central.ResourceAction, policy *storage.NetworkPolicy) error
 }

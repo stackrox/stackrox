@@ -7,14 +7,19 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
 	networkEntityDSMock "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
+	networkPolicyMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
@@ -52,6 +57,13 @@ func (f *fakeDS) DeleteNetworkBaseline(ctx context.Context, deploymentID string)
 	return nil
 }
 
+func (f *fakeDS) GetNetworkBaseline(ctx context.Context, deploymentID string) (*storage.NetworkBaseline, bool, error) {
+	if baseline, ok := f.baselines[deploymentID]; ok {
+		return baseline, true, nil
+	}
+	return nil, false, nil
+}
+
 func TestManager(t *testing.T) {
 	suite.Run(t, new(ManagerTestSuite))
 }
@@ -61,6 +73,8 @@ type ManagerTestSuite struct {
 
 	ds              *fakeDS
 	networkEntities *networkEntityDSMock.MockEntityDataStore
+	deploymentDS    *deploymentMocks.MockDataStore
+	networkPolicyDS *networkPolicyMocks.MockDataStore
 
 	m             Manager
 	currTestStart timestamp.MicroTS
@@ -71,6 +85,9 @@ func (suite *ManagerTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.networkEntities = networkEntityDSMock.NewMockEntityDataStore(suite.mockCtrl)
 	suite.currTestStart = timestamp.Now()
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.deploymentDS = deploymentMocks.NewMockDataStore(suite.mockCtrl)
+	suite.networkPolicyDS = networkPolicyMocks.NewMockDataStore(suite.mockCtrl)
 }
 
 func (suite *ManagerTestSuite) TearDownTest() {
@@ -80,11 +97,11 @@ func (suite *ManagerTestSuite) TearDownTest() {
 func (suite *ManagerTestSuite) mustInitManager(initialBaselines ...*storage.NetworkBaseline) {
 	suite.ds = &fakeDS{baselines: make(map[string]*storage.NetworkBaseline)}
 	for _, baseline := range initialBaselines {
-		baseline.ObservationPeriodEnd = timestamp.Now().Add(env.NetworkBaselineObservationPeriod.DurationSetting()).GogoProtobuf()
+		baseline.ObservationPeriodEnd = getNewObservationPeriodEnd().GogoProtobuf()
 		suite.ds.baselines[baseline.GetDeploymentId()] = baseline
 	}
 	var err error
-	suite.m, err = New(suite.ds, suite.networkEntities)
+	suite.m, err = New(suite.ds, suite.networkEntities, suite.deploymentDS, suite.networkPolicyDS)
 	suite.Require().NoError(err)
 }
 
@@ -110,6 +127,18 @@ func extSrcID(id int) string {
 
 func extSrcName(id int) string {
 	return fmt.Sprintf("EXTSRCNAME%03d", id)
+}
+
+func (suite *ManagerTestSuite) mustGetBaseline(baselineID int) *storage.NetworkBaseline {
+	baseline, found, err := suite.ds.GetNetworkBaseline(managerCtx, depID(baselineID))
+	suite.True(found)
+	suite.Nil(err)
+	return baseline
+}
+
+func (suite *ManagerTestSuite) mustGetObserationPeriod(baselineID int) timestamp.MicroTS {
+	baseline := suite.mustGetBaseline(baselineID)
+	return timestamp.FromProtobuf(baseline.GetObservationPeriodEnd())
 }
 
 func (suite *ManagerTestSuite) initBaselinesForDeployments(ids ...int) {
@@ -301,6 +330,7 @@ func (suite *ManagerTestSuite) TestRepeatedCreates() {
 }
 
 func (suite *ManagerTestSuite) TestResilienceToRestarts() {
+	suite.networkPolicyDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 	// This simulates the case where the datastore has some preexisting baselines
 	// at the time the manager starts. The manager must load them on init.
 	suite.mustInitManager(
@@ -330,6 +360,7 @@ func (suite *ManagerTestSuite) TestResilienceToRestarts() {
 }
 
 func (suite *ManagerTestSuite) TestConcurrentUpdates() {
+	suite.networkPolicyDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 	suite.mustInitManager(emptyBaseline(1))
 	suite.assertBaselinesAre(emptyBaseline(1))
 	var wg sync.WaitGroup
@@ -354,6 +385,7 @@ func (suite *ManagerTestSuite) TestConcurrentUpdates() {
 }
 
 func (suite *ManagerTestSuite) TestUpdateBaselineStatus() {
+	suite.networkPolicyDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 	// Seed with a set of baselines.
 	suite.mustInitManager(
 		baselineWithPeers(1, depPeer(2, properties(false, 52)), depPeer(3, properties(true, 512))),
@@ -456,6 +488,7 @@ func (suite *ManagerTestSuite) TestUpdateBaselineStatus() {
 }
 
 func (suite *ManagerTestSuite) TestDeploymentDelete() {
+	suite.networkPolicyDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 	suite.mustInitManager(
 		wrapWithForbidden(
 			baselineWithPeers(1, depPeer(2, properties(false, 52))),
@@ -500,6 +533,7 @@ func (suite *ManagerTestSuite) TestDeploymentDelete() {
 }
 
 func (suite *ManagerTestSuite) TestDeleteWithExtSrcPeer() {
+	suite.networkPolicyDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 	suite.mustInitManager(
 		baselineWithPeers(
 			1,
@@ -539,6 +573,78 @@ func (suite *ManagerTestSuite) TestValidEntityTypesMatch() {
 		types = append(types, t)
 	}
 	suite.ElementsMatch(validTypes, types)
+}
+
+func (suite *ManagerTestSuite) TestProcessNetworkPolicyUpdate() {
+	suite.networkPolicyDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	suite.mustInitManager(
+		baselineWithPeers(1, depPeer(2, properties(false, 52))),
+		baselineWithPeers(2, depPeer(1, properties(true, 52))),
+	)
+	suite.assertBaselinesAre(
+		baselineWithPeers(1, depPeer(2, properties(false, 52))),
+		baselineWithPeers(2, depPeer(1, properties(true, 52))),
+	)
+	originalObservationEnd := suite.mustGetObserationPeriod(1)
+
+	// Now try process a network flow update
+	matchLabels := map[string]string{"app": "test"}
+	networkPolicy := getNetworkPolicy(matchLabels)
+	// Check the query
+	deploymentSearchQuery :=
+		search.
+			NewQueryBuilder().
+			AddExactMatches(search.ClusterID, networkPolicy.GetClusterId()).
+			AddExactMatches(search.Namespace, networkPolicy.GetNamespace()).
+			ProtoQuery()
+	suite.deploymentDS.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchQuery).Return(
+		[]*storage.Deployment{
+			{
+				Id:        depID(1),
+				ClusterId: networkPolicy.GetClusterId(),
+				Namespace: networkPolicy.GetNamespace(),
+				PodLabels: matchLabels,
+			},
+		}, nil).AnyTimes()
+
+	suite.Nil(suite.m.ProcessNetworkPolicyUpdate(managerCtx, central.ResourceAction_CREATE_RESOURCE, networkPolicy))
+	// Make sure baseline contents other than observation period is not altered
+	suite.assertBaselinesAre(
+		baselineWithPeers(1, depPeer(2, properties(false, 52))),
+		baselineWithPeers(2, depPeer(1, properties(true, 52))),
+	)
+	afterPolicyCreateObservationPeriod := suite.mustGetObserationPeriod(1)
+	suite.True(afterPolicyCreateObservationPeriod.After(originalObservationEnd))
+
+	// Now test dedupe of the network policy
+	// Sending in the same policy should not change the observation period
+	suite.Nil(suite.m.ProcessNetworkPolicyUpdate(managerCtx, central.ResourceAction_CREATE_RESOURCE, networkPolicy))
+	afterDedupedPolicyUpdateObservationPeriod := suite.mustGetObserationPeriod(1)
+	suite.Equal(afterDedupedPolicyUpdateObservationPeriod, afterPolicyCreateObservationPeriod)
+
+	// But then if the action is different, we should still update the observation period
+	suite.Nil(suite.m.ProcessNetworkPolicyUpdate(managerCtx, central.ResourceAction_UPDATE_RESOURCE, networkPolicy))
+	afterActionChangeObservationPeriod := suite.mustGetObserationPeriod(1)
+	suite.True(afterActionChangeObservationPeriod.After(afterPolicyCreateObservationPeriod))
+
+	// Or changing the policy content should update the observation period as well
+	rule := networkPolicy.GetSpec().GetIngress()[0]
+	rule.Ports =
+		append(
+			rule.Ports,
+			&storage.NetworkPolicyPort{
+				Protocol: storage.Protocol_TCP_PROTOCOL,
+				PortRef:  &storage.NetworkPolicyPort_Port{Port: 1234}})
+	networkPolicy.Spec.Ingress = []*storage.NetworkPolicyIngressRule{rule}
+	suite.Nil(suite.m.ProcessNetworkPolicyUpdate(managerCtx, central.ResourceAction_CREATE_RESOURCE, networkPolicy))
+	afterPolicyRuleUpdateObservationPeriod := suite.mustGetObserationPeriod(1)
+	suite.True(afterPolicyRuleUpdateObservationPeriod.After(afterActionChangeObservationPeriod))
+
+	// Or changing the pod selector of the policy
+	networkPolicy.Spec.PodSelector.MatchLabels["another_tag"] = "another_value"
+	suite.Nil(suite.m.ProcessNetworkPolicyUpdate(managerCtx, central.ResourceAction_CREATE_RESOURCE, networkPolicy))
+	afterPodSelectorUpdateObservationPeriod := suite.mustGetObserationPeriod(1)
+	suite.True(afterPodSelectorUpdateObservationPeriod.After(afterPolicyRuleUpdateObservationPeriod))
 }
 
 ///// Helper functions to make test code less verbose.
@@ -650,4 +756,37 @@ func depToDepConn(srcID, dstID int, port uint32) networkgraph.NetworkConnIndicat
 		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		DstPort:  port,
 	}
+}
+
+func getNetworkPolicy(matchLabels map[string]string) *storage.NetworkPolicy {
+	networkPolicy := fixtures.GetNetworkPolicy()
+	networkPolicy.Spec.PodSelector = &storage.LabelSelector{MatchLabels: matchLabels}
+	// Add some ingress egress rule
+	networkPolicy.Spec.Ingress = append(networkPolicy.Spec.Ingress, &storage.NetworkPolicyIngressRule{
+		Ports: []*storage.NetworkPolicyPort{
+			{
+				Protocol: storage.Protocol_TCP_PROTOCOL,
+				PortRef:  &storage.NetworkPolicyPort_Port{Port: 80},
+			},
+		},
+		From: []*storage.NetworkPolicyPeer{
+			{
+				PodSelector: &storage.LabelSelector{MatchLabels: map[string]string{"foo": "bar"}},
+			},
+		},
+	})
+	networkPolicy.Spec.Egress = append(networkPolicy.Spec.Egress, &storage.NetworkPolicyEgressRule{
+		Ports: []*storage.NetworkPolicyPort{
+			{
+				Protocol: storage.Protocol_TCP_PROTOCOL,
+				PortRef:  &storage.NetworkPolicyPort_Port{Port: 443},
+			},
+		},
+		To: []*storage.NetworkPolicyPeer{
+			{
+				PodSelector: &storage.LabelSelector{MatchLabels: map[string]string{"foo": "bar"}},
+			},
+		},
+	})
+	return networkPolicy
 }

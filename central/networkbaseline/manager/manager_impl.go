@@ -4,16 +4,21 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -45,10 +50,12 @@ type baselineInfo struct {
 type manager struct {
 	ds              datastore.DataStore
 	networkEntities networkEntityDS.EntityDataStore
+	deploymentDS    deploymentDS.DataStore
+	networkPolicyDS networkPolicyDS.DataStore
 
-	baselinesByDeploymentID map[string]baselineInfo
-
-	lock sync.Mutex
+	baselinesByDeploymentID map[string]*baselineInfo
+	seenNetworkPolicies     set.Uint64Set
+	lock                    sync.Mutex
 }
 
 var (
@@ -58,6 +65,10 @@ var (
 		storage.NetworkEntityInfo_INTERNET:        {},
 	}
 )
+
+func getNewObservationPeriodEnd() timestamp.MicroTS {
+	return timestamp.Now().Add(env.NetworkBaselineObservationPeriod.DurationSetting())
+}
 
 func (m *manager) shouldUpdate(conn *networkgraph.NetworkConnIndicator, updateTS timestamp.MicroTS) bool {
 	var atLeastOneBaselineInObservationPeriod bool
@@ -207,11 +218,11 @@ func (m *manager) processDeploymentCreate(deploymentID, deploymentName, clusterI
 		return nil
 	}
 
-	m.baselinesByDeploymentID[deploymentID] = baselineInfo{
+	m.baselinesByDeploymentID[deploymentID] = &baselineInfo{
 		clusterID:            clusterID,
 		namespace:            namespace,
 		deploymentName:       deploymentName,
-		observationPeriodEnd: timestamp.Now().Add(env.NetworkBaselineObservationPeriod.DurationSetting()),
+		observationPeriodEnd: getNewObservationPeriodEnd(),
 		userLocked:           false,
 		baselinePeers:        make(map[peer]struct{}),
 		forbiddenPeers:       make(map[peer]struct{}),
@@ -388,8 +399,105 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 	return nil
 }
 
+func (m *manager) processNetworkPolicyUpdate(
+	ctx context.Context,
+	action central.ResourceAction,
+	policy *storage.NetworkPolicy,
+) error {
+	shouldIgnore, hash, err := m.shouldIgnoreNetworkPolicy(action, policy)
+	if err != nil || shouldIgnore {
+		return err
+	}
+
+	// This is a network policy we have not yet processed before. Process it.
+	// First get all the relevant deployments
+	deploymentIDs, err := m.getDeploymentIDsAffectedByNetworkPolicy(ctx, policy)
+	if err != nil {
+		return err
+	}
+
+	// For each of the affected deployments, reset the corresponding baseline's observation period
+	modifiedDeploymentIDs := set.NewStringSet()
+	for _, deploymentID := range deploymentIDs {
+		baseline, found := m.baselinesByDeploymentID[deploymentID]
+		if !found {
+			// Maybe somehow the network policy update came first before the deployment create event.
+			// In this case do nothing and trust that the deployment create flow should just
+			// take care of setting the observation period
+			continue
+		}
+		baseline.observationPeriodEnd = getNewObservationPeriodEnd()
+		modifiedDeploymentIDs.Add(deploymentID)
+	}
+
+	err = m.persistNetworkBaselines(modifiedDeploymentIDs)
+	if err != nil {
+		return err
+	}
+	// After everything, persist the hash of this network policy
+	m.seenNetworkPolicies.Add(hash)
+	return nil
+}
+
+func (m *manager) getDeploymentIDsAffectedByNetworkPolicy(
+	ctx context.Context,
+	policy *storage.NetworkPolicy,
+) ([]string, error) {
+	deploymentQuery :=
+		search.
+			NewQueryBuilder().
+			AddExactMatches(search.Namespace, policy.GetNamespace()).
+			AddExactMatches(search.ClusterID, policy.GetClusterId()).
+			ProtoQuery()
+	deploymentsInSameClusterAndNamespace, err := m.deploymentDS.SearchRawDeployments(managerCtx, deploymentQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter out the deployments that we don't want. aka check the policy's pod selectors and
+	// namespace selectors.
+	var result []string
+	for _, deployment := range deploymentsInSameClusterAndNamespace {
+		if m.isDeploymentAffectedByNetworkPolicy(deployment, policy) {
+			result = append(result, deployment.GetId())
+		}
+	}
+
+	return result, nil
+}
+
+func (m *manager) isDeploymentAffectedByNetworkPolicy(
+	deployment *storage.Deployment,
+	policy *storage.NetworkPolicy,
+) bool {
+	// Check if policy is specified for this deployment
+	// NOTE: we do not need to look into the ingress/egress rules of the policy since
+	//       as long as one side of the connection is still within the observation period,
+	//       the other side's network baseline also gets updated when we update the baseline
+	//       for this side.
+	return deployment.GetNamespace() == policy.GetNamespace() &&
+		deployment.GetClusterId() == policy.GetClusterId() &&
+		labels.MatchLabels(policy.GetSpec().GetPodSelector(), deployment.GetPodLabels())
+}
+
+func (m *manager) ProcessNetworkPolicyUpdate(
+	ctx context.Context,
+	action central.ResourceAction,
+	policy *storage.NetworkPolicy,
+) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	return m.processNetworkPolicyUpdate(ctx, action, policy)
+}
+
+type clusterNamespacePair struct {
+	ClusterID string
+	Namespace string
+}
+
 func (m *manager) initFromStore() error {
-	m.baselinesByDeploymentID = make(map[string]baselineInfo)
+	seenClusterAndNamespace := make(map[clusterNamespacePair]struct{})
+	m.baselinesByDeploymentID = make(map[string]*baselineInfo)
 	return m.ds.Walk(managerCtx, func(baseline *storage.NetworkBaseline) error {
 		peers, err := convertPeersFromProto(baseline.GetPeers())
 		if err != nil {
@@ -399,7 +507,7 @@ func (m *manager) initFromStore() error {
 		if err != nil {
 			return err
 		}
-		m.baselinesByDeploymentID[baseline.GetDeploymentId()] = baselineInfo{
+		m.baselinesByDeploymentID[baseline.GetDeploymentId()] = &baselineInfo{
 			clusterID:            baseline.GetClusterId(),
 			namespace:            baseline.GetNamespace(),
 			deploymentName:       baseline.GetDeploymentName(),
@@ -409,15 +517,43 @@ func (m *manager) initFromStore() error {
 			forbiddenPeers:       forbiddenPeers,
 		}
 
+		// Try loading all the network policies to build the seen network policies cache
+		curPair := clusterNamespacePair{ClusterID: baseline.GetClusterId(), Namespace: baseline.GetNamespace()}
+		if _, ok := seenClusterAndNamespace[curPair]; !ok {
+			// Mark seen
+			seenClusterAndNamespace[curPair] = struct{}{}
+
+			policies, err := m.networkPolicyDS.GetNetworkPolicies(managerCtx, baseline.ClusterId, baseline.Namespace)
+			if err != nil {
+				return err
+			}
+			for _, policy := range policies {
+				// On start treat all policies as have just been created.
+				hash, err := m.getHashOfNetworkPolicyWithResourceAction(central.ResourceAction_CREATE_RESOURCE, policy)
+				if err != nil {
+					return err
+				}
+				m.seenNetworkPolicies.Add(hash)
+			}
+		}
+
 		return nil
 	})
 }
 
 // New returns an initialized manager, and starts the manager's processing loop in the background.
-func New(ds datastore.DataStore, networkEntities networkEntityDS.EntityDataStore) (Manager, error) {
+func New(
+	ds datastore.DataStore,
+	networkEntities networkEntityDS.EntityDataStore,
+	deploymentDS deploymentDS.DataStore,
+	networkPolicyDS networkPolicyDS.DataStore,
+) (Manager, error) {
 	m := &manager{
-		ds:              ds,
-		networkEntities: networkEntities,
+		ds:                  ds,
+		networkEntities:     networkEntities,
+		deploymentDS:        deploymentDS,
+		networkPolicyDS:     networkPolicyDS,
+		seenNetworkPolicies: set.NewUint64Set(),
 	}
 	if err := m.initFromStore(); err != nil {
 		return nil, err

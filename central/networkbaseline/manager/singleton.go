@@ -1,8 +1,10 @@
 package manager
 
 import (
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -16,7 +18,12 @@ var (
 func Singleton() Manager {
 	once.Do(func() {
 		var err error
-		instance, err = New(datastore.Singleton(), networkEntityDS.Singleton())
+		instance, err =
+			New(
+				datastore.Singleton(),
+				networkEntityDS.Singleton(),
+				deploymentDS.Singleton(),
+				networkPolicyDS.Singleton())
 		utils.Must(err)
 	})
 	return instance

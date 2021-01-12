@@ -1,5 +1,9 @@
 package fixtures
 
+import (
+	"github.com/stackrox/rox/generated/storage"
+)
+
 // GetYAML returns a network policy yaml
 func GetYAML() string {
 	return `kind: NetworkPolicy
@@ -21,4 +25,26 @@ spec:
 					matchLabels:
 						app: bookstore
 						role: api`
+}
+
+// GetNetworkPolicy returns a network policy
+func GetNetworkPolicy() *storage.NetworkPolicy {
+	return &storage.NetworkPolicy{
+		Id:          "network-policy-id",
+		Name:        "network-policy-name",
+		ClusterId:   "cluster-id",
+		ClusterName: "",
+		Namespace:   "namespace",
+		Labels:      nil,
+		Annotations: nil,
+		Spec: &storage.NetworkPolicySpec{
+			PodSelector: nil,
+			Ingress:     nil,
+			Egress:      nil,
+			PolicyTypes: nil,
+		},
+		Yaml:       "",
+		ApiVersion: "",
+		Created:    nil,
+	}
 }
