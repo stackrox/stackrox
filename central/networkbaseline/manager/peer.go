@@ -134,14 +134,14 @@ func convertPeersToProto(peerSet map[peer]struct{}) ([]*storage.NetworkBaselineP
 	return out, nil
 }
 
-func peerFromV1Peer(v1Peer *v1.NetworkBaselineStatusPeer) peer {
+func peerFromV1Peer(v1Peer *v1.NetworkBaselineStatusPeer, peerName string) peer {
 	return peer{
 		isIngress: v1Peer.GetIngress(),
 		entity: networkgraph.Entity{
 			Type: v1Peer.GetEntity().GetType(),
 			ID:   v1Peer.GetEntity().GetId(),
 		},
-		name:     v1Peer.GetEntity().GetName(),
+		name:     peerName,
 		dstPort:  v1Peer.GetPort(),
 		protocol: v1Peer.GetProtocol(),
 	}

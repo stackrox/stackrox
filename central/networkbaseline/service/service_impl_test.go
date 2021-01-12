@@ -100,7 +100,6 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForFlows()
 			{
 				Entity: &v1.NetworkBaselinePeerEntity{
 					Id:   entityID,
-					Name: "",
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
 				},
 				Port:     port,
