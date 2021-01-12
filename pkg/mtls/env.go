@@ -2,11 +2,22 @@ package mtls
 
 import "github.com/stackrox/rox/pkg/env"
 
+const (
+	// CAFileEnvName is the env variable name for the CA file
+	CAFileEnvName = "ROX_MTLS_CA_FILE"
+	// CAKeyFileEnvName is the env variable name for the CA key file
+	CAKeyFileEnvName = "ROX_MTLS_CA_KEY_FILE"
+	// CertFilePathEnvName is the env variable name for the cert file
+	CertFilePathEnvName = "ROX_MTLS_CERT_FILE"
+	// KeyFileEnvName is the env variable name for the key file which signed the cert
+	KeyFileEnvName = "ROX_MTLS_KEY_FILE"
+)
+
 var (
-	caFilePathSetting    = env.RegisterSetting("ROX_MTLS_CA_FILE", env.WithDefault(defaultCACertFilePath))
-	caKeyFilePathSetting = env.RegisterSetting("ROX_MTLS_CA_KEY_FILE", env.WithDefault(defaultCAKeyFilePath))
-	certFilePathSetting  = env.RegisterSetting("ROX_MTLS_CERT_FILE", env.WithDefault(defaultCertFilePath))
-	keyFilePathSetting   = env.RegisterSetting("ROX_MTLS_KEY_FILE", env.WithDefault(defaultKeyFilePath))
+	caFilePathSetting    = env.RegisterSetting(CAFileEnvName, env.WithDefault(defaultCACertFilePath))
+	caKeyFilePathSetting = env.RegisterSetting(CAKeyFileEnvName, env.WithDefault(defaultCAKeyFilePath))
+	certFilePathSetting  = env.RegisterSetting(CertFilePathEnvName, env.WithDefault(defaultCertFilePath))
+	keyFilePathSetting   = env.RegisterSetting(KeyFileEnvName, env.WithDefault(defaultKeyFilePath))
 )
 
 // CertFilePath returns the path where the certificate is stored.
