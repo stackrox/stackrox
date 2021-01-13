@@ -523,6 +523,60 @@ func (m *manager) ProcessBaselineLockUpdate(ctx context.Context, deploymentID st
 	return m.processBaselineLockUpdate(ctx, deploymentID, lockBaseline)
 }
 
+func (m *manager) processPostClusterDelete(clusterID string) error {
+	deletingBaselines := set.NewStringSet()
+	for deploymentID, baseline := range m.baselinesByDeploymentID {
+		if baseline.clusterID == clusterID {
+			deletingBaselines.Add(deploymentID)
+		}
+	}
+
+	// Clean up edges in other baselines
+	modifiedBaselines := set.NewStringSet()
+	for deploymentID, baseline := range m.baselinesByDeploymentID {
+		if deletingBaselines.Contains(deploymentID) {
+			continue
+		}
+		// Baselines that are not deleted. Need to update their edges in case
+		// they are pointing to the deleting baselines.
+		for p := range baseline.baselinePeers {
+			if deletingBaselines.Contains(p.entity.ID) {
+				delete(baseline.baselinePeers, p)
+				modifiedBaselines.Add(deploymentID)
+			}
+		}
+		for forbiddenP := range baseline.forbiddenPeers {
+			if deletingBaselines.Contains(forbiddenP.entity.ID) {
+				delete(baseline.forbiddenPeers, forbiddenP)
+				modifiedBaselines.Add(deploymentID)
+			}
+		}
+	}
+
+	// Update the edges of other baselines first
+	err := m.persistNetworkBaselines(modifiedBaselines)
+	if err != nil {
+		return err
+	}
+
+	// Delete the baselines
+	err = m.ds.DeleteNetworkBaselines(managerCtx, deletingBaselines.AsSlice())
+	if err != nil {
+		return err
+	}
+	// Delete from cache
+	for deploymentID := range deletingBaselines {
+		delete(m.baselinesByDeploymentID, deploymentID)
+	}
+	return nil
+}
+
+func (m *manager) ProcessPostClusterDelete(clusterID string) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	return m.processPostClusterDelete(clusterID)
+}
+
 func (m *manager) initFromStore() error {
 	seenClusterAndNamespace := make(map[clusterNamespacePair]struct{})
 	m.baselinesByDeploymentID = make(map[string]*baselineInfo)

@@ -29,6 +29,9 @@ type Manager interface {
 	// It must only be called by trusted code, since it assumes the caller has full access to modify
 	// network baselines in the datastore.
 	ProcessFlowUpdate(flows map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) error
+	// ProcessPostClusterDelete is called during post cluster delete. It cleans up all the baselines that belonged to
+	// this cluster, including the edges pointing towards these baselines.
+	ProcessPostClusterDelete(clusterID string) error
 
 	// ProcessBaselineStatusUpdate processes a user-filed request to modify the baseline status.
 	// The error it returns will be a status.Error.

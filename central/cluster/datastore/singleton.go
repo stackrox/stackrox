@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
+	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	netFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
@@ -47,7 +48,8 @@ func initialize() {
 		connection.ManagerSingleton(),
 		notifierProcessor.Singleton(),
 		dackbox.GetGlobalDackBox(),
-		ranking.ClusterRanker())
+		ranking.ClusterRanker(),
+		networkBaselineManager.Singleton())
 	utils.Must(err)
 }
 

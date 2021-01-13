@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
+	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	netFlowDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
@@ -57,6 +58,7 @@ type datastoreImpl struct {
 	netFlowsDataStore   netFlowDataStore.ClusterDataStore
 	netEntityDataStore  netEntityDataStore.EntityDataStore
 	cm                  connection.Manager
+	networkBaselineMgr  networkBaselineManager.Manager
 
 	clusterRanker *ranking.Ranker
 
@@ -455,6 +457,13 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 		err := ds.netEntityDataStore.DeleteExternalNetworkEntitiesForCluster(ctx, cluster.GetId())
 		if err != nil {
 			log.Errorf("failed to delete external network graph entities for removed cluster %s: %v", cluster.GetId(), err)
+		}
+	}
+
+	if features.NetworkDetection.Enabled() {
+		err := ds.networkBaselineMgr.ProcessPostClusterDelete(cluster.GetId())
+		if err != nil {
+			log.Errorf("failed to delete network baselines associated with this cluster %q: %v", cluster.GetId(), err)
 		}
 	}
 

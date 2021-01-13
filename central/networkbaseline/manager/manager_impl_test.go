@@ -57,6 +57,13 @@ func (f *fakeDS) DeleteNetworkBaseline(ctx context.Context, deploymentID string)
 	return nil
 }
 
+func (f *fakeDS) DeleteNetworkBaselines(ctx context.Context, deploymentIDs []string) error {
+	for _, id := range deploymentIDs {
+		delete(f.baselines, id)
+	}
+	return nil
+}
+
 func (f *fakeDS) GetNetworkBaseline(ctx context.Context, deploymentID string) (*storage.NetworkBaseline, bool, error) {
 	if baseline, ok := f.baselines[deploymentID]; ok {
 		return baseline, true, nil
@@ -663,6 +670,59 @@ func (suite *ManagerTestSuite) TestLockBaseline() {
 	suite.NotEqual(beforeLockUpdateState, afterLockUpdateState)
 }
 
+func (suite *ManagerTestSuite) TestProcessPostClusterDelete() {
+	suite.networkPolicyDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	suite.mustInitManager(
+		baselineWithClusterAndPeers(
+			1,
+			10,
+			depPeer(2, properties(false, 52)),
+			depPeer(3, properties(true, 443)),
+			depPeer(4, properties(false, 443))),
+		baselineWithClusterAndPeers(
+			2,
+			10,
+			depPeer(1, properties(true, 52)),
+			depPeer(3, properties(true, 443))),
+		baselineWithClusterAndPeers(
+			3,
+			11,
+			depPeer(1, properties(false, 443)),
+			depPeer(2, properties(false, 443))),
+		wrapWithForbidden(
+			baselineWithClusterAndPeers(4, 12),
+			depPeer(1, properties(true, 443)),
+		),
+	)
+	suite.assertBaselinesAre(
+		baselineWithClusterAndPeers(
+			1,
+			10,
+			depPeer(2, properties(false, 52)),
+			depPeer(3, properties(true, 443)),
+			depPeer(4, properties(false, 443))),
+		baselineWithClusterAndPeers(
+			2,
+			10,
+			depPeer(1, properties(true, 52)),
+			depPeer(3, properties(true, 443))),
+		baselineWithClusterAndPeers(
+			3,
+			11,
+			depPeer(1, properties(false, 443)),
+			depPeer(2, properties(false, 443))),
+		wrapWithForbidden(
+			baselineWithClusterAndPeers(4, 12),
+			depPeer(1, properties(true, 443)),
+		),
+	)
+	suite.Nil(suite.m.ProcessPostClusterDelete(clusterID(10)))
+	suite.assertBaselinesAre(
+		baselineWithClusterAndPeers(3, 11),
+		baselineWithClusterAndPeers(4, 12),
+	)
+}
+
 ///// Helper functions to make test code less verbose.
 
 func ctxWithAccessToWrite(id int) context.Context {
@@ -712,6 +772,12 @@ func emptyBaseline(id int) *storage.NetworkBaseline {
 func baselineWithPeers(id int, peers ...*storage.NetworkBaselinePeer) *storage.NetworkBaseline {
 	baseline := emptyBaseline(id)
 	baseline.Peers = peers
+	return baseline
+}
+
+func baselineWithClusterAndPeers(id, _clusterID int, peers ...*storage.NetworkBaselinePeer) *storage.NetworkBaseline {
+	baseline := baselineWithPeers(id, peers...)
+	baseline.ClusterId = clusterID(_clusterID)
 	return baseline
 }
 

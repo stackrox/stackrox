@@ -144,3 +144,17 @@ func (mr *MockDataStoreMockRecorder) DeleteNetworkBaseline(ctx, deploymentID int
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNetworkBaseline", reflect.TypeOf((*MockDataStore)(nil).DeleteNetworkBaseline), ctx, deploymentID)
 }
+
+// DeleteNetworkBaselines mocks base method
+func (m *MockDataStore) DeleteNetworkBaselines(ctx context.Context, deploymentIDs []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteNetworkBaselines", ctx, deploymentIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteNetworkBaselines indicates an expected call of DeleteNetworkBaselines
+func (mr *MockDataStoreMockRecorder) DeleteNetworkBaselines(ctx, deploymentIDs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteNetworkBaselines", reflect.TypeOf((*MockDataStore)(nil).DeleteNetworkBaselines), ctx, deploymentIDs)
+}

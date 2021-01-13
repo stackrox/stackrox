@@ -108,19 +108,27 @@ func (ds *dataStoreImpl) validateClusterAndNamespaceAgainstExistingBaseline(
 }
 
 func (ds *dataStoreImpl) DeleteNetworkBaseline(ctx context.Context, deploymentID string) error {
-	baseline, found, err := ds.storage.Get(deploymentID)
-	if err != nil || !found {
-		return err
+	return ds.DeleteNetworkBaselines(ctx, []string{deploymentID})
+}
+
+func (ds *dataStoreImpl) DeleteNetworkBaselines(ctx context.Context, deploymentIDs []string) error {
+	// First check permission
+	for _, id := range deploymentIDs {
+		baseline, found, err := ds.storage.Get(id)
+		if err != nil {
+			return err
+		} else if !found {
+			continue
+		}
+		if ok, err := ds.writeAllowed(ctx, baseline); err != nil {
+			return err
+		} else if !ok {
+			return sac.ErrPermissionDenied
+		}
 	}
 
-	if ok, err := ds.writeAllowed(ctx, baseline); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrPermissionDenied
-	}
-
-	if err := ds.storage.Delete(deploymentID); err != nil {
-		return errors.Wrapf(err, "deleting network baseline %s from storage", deploymentID)
+	if err := ds.storage.DeleteMany(deploymentIDs); err != nil {
+		return errors.Wrapf(err, "deleting network baselines %q from storage", deploymentIDs)
 	}
 
 	return nil

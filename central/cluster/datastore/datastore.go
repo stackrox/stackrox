@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
+	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	netFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
@@ -78,7 +79,9 @@ func New(
 	cm connection.Manager,
 	notifier notifierProcessor.Processor,
 	graphProvider graph.Provider,
-	clusterRanker *ranking.Ranker) (DataStore, error) {
+	clusterRanker *ranking.Ranker,
+	networkBaselineMgr networkBaselineManager.Manager,
+) (DataStore, error) {
 	ds := &datastoreImpl{
 		clusterStorage:       clusterStorage,
 		clusterHealthStorage: clusterHealthStorage,
@@ -94,6 +97,7 @@ func New(
 		cm:                   cm,
 		notifier:             notifier,
 		clusterRanker:        clusterRanker,
+		networkBaselineMgr:   networkBaselineMgr,
 
 		cache: simplecache.New(),
 	}

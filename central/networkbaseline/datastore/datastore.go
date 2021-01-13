@@ -21,4 +21,5 @@ type DataStore interface {
 	// ALL PRODUCTION METHODS MUST NOT CALL THEM DIRECTLY, THEY MUST GO THROUGH THE MANAGER.
 	UpsertNetworkBaselines(ctx context.Context, baselines []*storage.NetworkBaseline) error
 	DeleteNetworkBaseline(ctx context.Context, deploymentID string) error
+	DeleteNetworkBaselines(ctx context.Context, deploymentIDs []string) error
 }

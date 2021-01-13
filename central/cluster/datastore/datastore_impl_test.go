@@ -12,6 +12,7 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/store/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
+	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
 	netEntityMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
@@ -60,6 +61,7 @@ type ClusterDataStoreTestSuite struct {
 	mockCtrl            *gomock.Controller
 	notifierMock        *notifierMocks.MockProcessor
 	mockProvider        *graphMocks.MockProvider
+	networkBaselineMgr  *networkBaselineMocks.MockManager
 }
 
 func (suite *ClusterDataStoreTestSuite) SetupTest() {
@@ -89,6 +91,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.connMgr = connectionMocks.NewMockManager(suite.mockCtrl)
 	suite.notifierMock = notifierMocks.NewMockProcessor(suite.mockCtrl)
 	suite.mockProvider = graphMocks.NewMockProvider(suite.mockCtrl)
+	suite.networkBaselineMgr = networkBaselineMocks.NewMockManager(suite.mockCtrl)
 
 	suite.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	if features.NetworkGraphExternalSrcs.Enabled() {
@@ -116,6 +119,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 		suite.notifierMock,
 		suite.mockProvider,
 		ranking.NewRanker(),
+		suite.networkBaselineMgr,
 	)
 	suite.NoError(err)
 }
@@ -164,6 +168,9 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	suite.secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(testSecrets, nil)
 	if features.NetworkGraphExternalSrcs.Enabled() {
 		suite.netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil)
+	}
+	if features.NetworkDetection.Enabled() {
+		suite.networkBaselineMgr.EXPECT().ProcessPostClusterDelete(gomock.Any()).Return(nil)
 	}
 	suite.secretDataStore.EXPECT().RemoveSecret(gomock.Any(), gomock.Any()).Return(nil)
 
@@ -303,6 +310,9 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsRemove() {
 	suite.nodeDataStore.EXPECT().RemoveClusterNodeStores(gomock.Any(), gomock.Any()).Return(nil)
 	if features.NetworkGraphExternalSrcs.Enabled() {
 		suite.netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), gomock.Any()).Return(nil)
+	}
+	if features.NetworkDetection.Enabled() {
+		suite.networkBaselineMgr.EXPECT().ProcessPostClusterDelete(gomock.Any()).Return(nil)
 	}
 	suite.secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)

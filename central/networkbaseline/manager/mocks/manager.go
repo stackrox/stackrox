@@ -80,6 +80,20 @@ func (mr *MockManagerMockRecorder) ProcessFlowUpdate(flows interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessFlowUpdate", reflect.TypeOf((*MockManager)(nil).ProcessFlowUpdate), flows)
 }
 
+// ProcessPostClusterDelete mocks base method
+func (m *MockManager) ProcessPostClusterDelete(clusterID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessPostClusterDelete", clusterID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessPostClusterDelete indicates an expected call of ProcessPostClusterDelete
+func (mr *MockManagerMockRecorder) ProcessPostClusterDelete(clusterID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessPostClusterDelete", reflect.TypeOf((*MockManager)(nil).ProcessPostClusterDelete), clusterID)
+}
+
 // ProcessBaselineStatusUpdate mocks base method
 func (m *MockManager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest *v1.ModifyBaselineStatusForPeersRequest) error {
 	m.ctrl.T.Helper()
