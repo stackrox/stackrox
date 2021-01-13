@@ -6,7 +6,11 @@ import "internalapi/sensor/admission_control.proto";
 
 package sensor;
 
-message MsgFromAdmissionControl {}
+message MsgFromAdmissionControl {
+    oneof msg {
+        AdmissionControlAlerts alerts = 1;
+    }
+}
 
 message MsgToAdmissionControl {
     oneof msg {

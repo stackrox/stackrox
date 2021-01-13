@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"google.golang.org/grpc"
@@ -20,13 +21,15 @@ var (
 
 type managementService struct {
 	settingsStream concurrency.ReadOnlyValueStream
+	alertHandler   AlertHandler
 }
 
 // NewManagementService retrieves a new admission control management service, that allows pushing config updates out
 // to admission control service replicas.
-func NewManagementService(mgr SettingsManager) pkgGRPC.APIService {
+func NewManagementService(mgr SettingsManager, alertHandler AlertHandler) pkgGRPC.APIService {
 	return &managementService{
 		settingsStream: mgr.SettingsStream(),
+		alertHandler:   alertHandler,
 	}
 }
 
@@ -95,9 +98,14 @@ func (s *managementService) Communicate(stream sensor.AdmissionControlManagement
 			if err != nil && err != io.EOF {
 				return errors.Wrap(err, "receiving message from admission control service")
 			}
-		case <-recvdMsgC:
-			log.Warn("Received message from admission control service, not sure what to do with it...")
-
+		case msg := <-recvdMsgC:
+			if features.K8sEventDetection.Enabled() {
+				if msg.GetAlerts() != nil {
+					go s.alertHandler.ProcessAlerts(msg.GetAlerts())
+				}
+			} else {
+				log.Warn("Received message from admission control service, not sure what to do with it...")
+			}
 		case <-settingsIt.Done():
 			settingsIt = settingsIt.TryNext()
 			if err := s.sendCurrentSettings(stream, settingsIt); err != nil {

@@ -5,6 +5,7 @@ option go_package = "sensor";
 import "storage/cluster.proto";
 import "storage/policy.proto";
 import "google/protobuf/timestamp.proto";
+import "internalapi/central/sensor_events.proto";
 
 package sensor;
 
@@ -15,4 +16,8 @@ message AdmissionControlSettings {
     string cache_version                             = 4;
 
     string central_endpoint                          = 5;
+}
+
+message AdmissionControlAlerts {
+    central.AlertResults   alert_results   = 1;
 }

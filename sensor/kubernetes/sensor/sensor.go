@@ -103,6 +103,9 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		components = append(components, externalsrcs.Singleton())
 	}
 
+	if features.K8sEventDetection.Enabled() {
+		components = append(components, admissioncontroller.AlertHandlerSingleton())
+	}
 	if admCtrlSettingsMgr != nil {
 		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(client.Kubernetes(), admCtrlSettingsMgr))
 	}
@@ -132,7 +135,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	}
 
 	if admCtrlSettingsMgr != nil {
-		apiServices = append(apiServices, admissioncontroller.NewManagementService(admCtrlSettingsMgr))
+		apiServices = append(apiServices, admissioncontroller.NewManagementService(admCtrlSettingsMgr, admissioncontroller.AlertHandlerSingleton()))
 	}
 
 	s.AddAPIServices(apiServices...)
