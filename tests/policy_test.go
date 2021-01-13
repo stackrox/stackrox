@@ -451,9 +451,9 @@ func verifyWhitelistsRemoved(t *testing.T) {
 	policy := validPolicy.Clone()
 	policy.Id = "verifyExcludedScopesRemoved policy ID"
 	policy.Name = "verifyExcludedScopesRemoved is a valid policy"
-	policy.Whitelists = []*storage.Whitelist{
+	policy.Whitelists = []*storage.Exclusion{
 		{
-			Deployment: &storage.Whitelist_Deployment{
+			Deployment: &storage.Exclusion_Deployment{
 				Scope: &storage.Scope{
 					Cluster: "This is not a cluster",
 				},

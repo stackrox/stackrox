@@ -112,9 +112,9 @@ func TestNamespaceMatcherWithWhitespace(t *testing.T) {
 						Namespace: "ns1",
 					},
 				},
-				Whitelists: []*storage.Whitelist{
+				Whitelists: []*storage.Exclusion{
 					{
-						Deployment: &storage.Whitelist_Deployment{
+						Deployment: &storage.Exclusion_Deployment{
 							Scope: &storage.Scope{
 								Namespace: "ns.*",
 							},
@@ -135,9 +135,9 @@ func TestNamespaceMatcherWithWhitespace(t *testing.T) {
 						Namespace: "ns1",
 					},
 				},
-				Whitelists: []*storage.Whitelist{
+				Whitelists: []*storage.Exclusion{
 					{
-						Deployment: &storage.Whitelist_Deployment{
+						Deployment: &storage.Exclusion_Deployment{
 							Scope: &storage.Scope{
 								Cluster:   "cluster1",
 								Namespace: "ns1",
@@ -159,9 +159,9 @@ func TestNamespaceMatcherWithWhitespace(t *testing.T) {
 						Namespace: "ns1",
 					},
 				},
-				Whitelists: []*storage.Whitelist{
+				Whitelists: []*storage.Exclusion{
 					{
-						Deployment: &storage.Whitelist_Deployment{
+						Deployment: &storage.Exclusion_Deployment{
 							Scope: &storage.Scope{
 								Cluster: "cluster1",
 							},

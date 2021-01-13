@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func constructPolicy(scopes []*storage.Scope, whitelists []*storage.Whitelist) *storage.Policy {
+func constructPolicy(scopes []*storage.Scope, whitelists []*storage.Exclusion) *storage.Policy {
 	return &storage.Policy{
 		PolicyVersion:   booleanpolicy.CurrentVersion().String(),
 		Name:            "testname",
@@ -47,7 +47,7 @@ func TestCompiledPolicyScopesAndWhitelists(t *testing.T) {
 	for _, testCase := range []struct {
 		desc          string
 		scopes        []*storage.Scope
-		whitelists    []*storage.Whitelist
+		whitelists    []*storage.Exclusion
 		shouldApplyTo []*storage.Deployment
 	}{
 		{
@@ -62,7 +62,7 @@ func TestCompiledPolicyScopesAndWhitelists(t *testing.T) {
 		{
 			desc:          "only stackrox ns, but app=stackrox excluded",
 			scopes:        []*storage.Scope{stackRoxNSScope},
-			whitelists:    []*storage.Whitelist{{Deployment: &storage.Whitelist_Deployment{Scope: appStackRoxScope}}},
+			whitelists:    []*storage.Exclusion{{Deployment: &storage.Exclusion_Deployment{Scope: appStackRoxScope}}},
 			shouldApplyTo: []*storage.Deployment{stackRoxNSDep},
 		},
 		{

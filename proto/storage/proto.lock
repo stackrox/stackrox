@@ -1017,6 +1017,11 @@
                 "id": 2,
                 "name": "static_config",
                 "type": "StaticClusterConfig"
+              },
+              {
+                "id": 3,
+                "name": "config_fingerprint",
+                "type": "string"
               }
             ]
           },
@@ -5731,6 +5736,170 @@
       }
     },
     {
+      "protopath": "kube_event.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "KubernetesEvent.APIVerb",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN"
+              },
+              {
+                "name": "CREATE",
+                "integer": 1
+              }
+            ]
+          },
+          {
+            "name": "Object.Resource",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN"
+              },
+              {
+                "name": "PODS_EXEC",
+                "integer": 1
+              },
+              {
+                "name": "PODS_PORTFORWARD",
+                "integer": 2
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "KubernetesEvent",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "object",
+                "type": "Object"
+              },
+              {
+                "id": 3,
+                "name": "timestamp",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 4,
+                "name": "api_verb",
+                "type": "APIVerb",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "policy:\\\"Kubernetes API Verb\\"
+                  }
+                ]
+              }
+            ],
+            "messages": [
+              {
+                "name": "Object",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "resource",
+                    "type": "Resource",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "policy:\\\"Kubernetes Resource\\"
+                      }
+                    ]
+                  },
+                  {
+                    "id": 4,
+                    "name": "deployment_scope_info",
+                    "type": "DeploymentScopeInfo"
+                  },
+                  {
+                    "id": 5,
+                    "name": "namespace_scope_info",
+                    "type": "NamespaceScopeInfo"
+                  },
+                  {
+                    "id": 6,
+                    "name": "cluster_scope_info",
+                    "type": "ClusterScopeInfo"
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "ClusterScopeInfo",
+                    "fields": [
+                      {
+                        "id": 1,
+                        "name": "cluster",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "NamespaceScopeInfo",
+                    "fields": [
+                      {
+                        "id": 1,
+                        "name": "cluster",
+                        "type": "string"
+                      },
+                      {
+                        "id": 2,
+                        "name": "namespace",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "DeploymentScopeInfo",
+                    "fields": [
+                      {
+                        "id": 1,
+                        "name": "cluster",
+                        "type": "string"
+                      },
+                      {
+                        "id": 2,
+                        "name": "namespace",
+                        "type": "string"
+                      },
+                      {
+                        "id": 3,
+                        "name": "deployment_id",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "gogoproto/gogo.proto"
+          },
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
       "protopath": "labels.proto",
       "def": {
         "enums": [
@@ -6017,6 +6186,11 @@
                 "id": 7,
                 "name": "locked",
                 "type": "bool"
+              },
+              {
+                "id": 8,
+                "name": "deployment_name",
+                "type": "string"
               }
             ]
           }
@@ -7683,7 +7857,7 @@
               {
                 "id": 10,
                 "name": "whitelists",
-                "type": "Whitelist",
+                "type": "Exclusion",
                 "is_repeated": true
               },
               {
@@ -8265,7 +8439,7 @@
             ]
           },
           {
-            "name": "Whitelist",
+            "name": "Exclusion",
             "fields": [
               {
                 "id": 1,
@@ -9255,6 +9429,14 @@
               {
                 "name": "CLUSTER",
                 "integer": 3
+              },
+              {
+                "name": "NODE",
+                "integer": 7
+              },
+              {
+                "name": "NODE_COMPONENT",
+                "integer": 8
               },
               {
                 "name": "IMAGE",

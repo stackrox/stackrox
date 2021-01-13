@@ -429,30 +429,30 @@ func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
 	suite.Error(err, "should fail when an error is thrown")
 }
 
-func (suite *PolicyValidatorTestSuite) TestValidateWhitelists() {
+func (suite *PolicyValidatorTestSuite) TestValidateExclusions() {
 	policy := &storage.Policy{}
-	err := suite.validator.validateWhitelists(policy)
+	err := suite.validator.validateExclusions(policy)
 	suite.NoError(err, "excluded scopes should not be required")
 
-	deployment := &storage.Whitelist_Deployment{
+	deployment := &storage.Exclusion_Deployment{
 		Name: "that phat cluster",
 	}
-	deploymentWhitelist := &storage.Whitelist{
+	deploymentExclusion := &storage.Exclusion{
 		Deployment: deployment,
 	}
 	policy = &storage.Policy{
 		LifecycleStages: []storage.LifecycleStage{
 			storage.LifecycleStage_DEPLOY,
 		},
-		Whitelists: []*storage.Whitelist{
-			deploymentWhitelist,
+		Whitelists: []*storage.Exclusion{
+			deploymentExclusion,
 		},
 	}
-	err = suite.validator.validateWhitelists(policy)
+	err = suite.validator.validateExclusions(policy)
 	suite.NoError(err, "valid to excluded scope by deployment name")
 
-	imageWhitelist := &storage.Whitelist{
-		Image: &storage.Whitelist_Image{
+	imageExclusion := &storage.Exclusion{
+		Image: &storage.Exclusion_Image{
 			Name: "stackrox.io",
 		},
 	}
@@ -460,27 +460,27 @@ func (suite *PolicyValidatorTestSuite) TestValidateWhitelists() {
 		LifecycleStages: []storage.LifecycleStage{
 			storage.LifecycleStage_BUILD,
 		},
-		Whitelists: []*storage.Whitelist{
-			imageWhitelist,
+		Whitelists: []*storage.Exclusion{
+			imageExclusion,
 		},
 	}
-	err = suite.validator.validateWhitelists(policy)
+	err = suite.validator.validateExclusions(policy)
 	suite.NoError(err, "valid to excluded scope by image registry")
 
 	policy = &storage.Policy{
-		Whitelists: []*storage.Whitelist{
-			imageWhitelist,
+		Whitelists: []*storage.Exclusion{
+			imageExclusion,
 		},
 	}
-	err = suite.validator.validateWhitelists(policy)
+	err = suite.validator.validateExclusions(policy)
 	suite.Error(err, "not valid to excluded scope by image registry since build time lifecycle isn't present")
 
-	emptyWhitelist := &storage.Whitelist{}
+	emptyExclusion := &storage.Exclusion{}
 	policy = &storage.Policy{
-		Whitelists: []*storage.Whitelist{
-			emptyWhitelist,
+		Whitelists: []*storage.Exclusion{
+			emptyExclusion,
 		},
 	}
-	err = suite.validator.validateWhitelists(policy)
+	err = suite.validator.validateExclusions(policy)
 	suite.Error(err, "excluded scope requires either container or deployment configuration")
 }

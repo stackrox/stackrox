@@ -20,7 +20,7 @@ const (
 
 var (
 	// These are proto types returned from Stores which are not stored there, and so don't have to be in storage.
-	whitelist = set.NewFrozenStringSet(
+	allowedList = set.NewFrozenStringSet(
 		"v1.SearchResult",
 		"v1.HostResults",
 		"v1.ImportPolicyResponse",
@@ -122,7 +122,7 @@ func returnValuesFromForbiddenPackage(forbiddenPackageNames set.StringSet, inter
 			if qualifier, identifier := qualifierAndIdentifierFromExpr(result.Type); qualifier != "" {
 				if forbiddenPackageNames.Contains(qualifier) {
 					qualifiedExpression := fmt.Sprintf("%s.%s", qualifier, identifier)
-					if !whitelist.Contains(qualifiedExpression) {
+					if !allowedList.Contains(qualifiedExpression) {
 						return fmt.Sprintf("%s.%s", qualifier, identifier)
 					}
 				}

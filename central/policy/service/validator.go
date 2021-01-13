@@ -65,7 +65,7 @@ func (s *policyValidator) internalValidate(policy *storage.Policy, additionalVal
 	errorList.AddError(s.validateSeverity(policy))
 	errorList.AddError(s.validateCategories(policy))
 	errorList.AddError(s.validateScopes(policy))
-	errorList.AddError(s.validateWhitelists(policy))
+	errorList.AddError(s.validateExclusions(policy))
 	errorList.AddError(s.validateCapabilities(policy))
 	for _, validator := range additionalValidators {
 		errorList.AddError(validator(policy))
@@ -184,40 +184,40 @@ func (s *policyValidator) validateScopes(policy *storage.Policy) error {
 	return nil
 }
 
-func (s *policyValidator) validateWhitelists(policy *storage.Policy) error {
-	for _, whitelist := range policy.GetWhitelists() {
-		if err := s.validateWhitelist(policy, whitelist); err != nil {
+func (s *policyValidator) validateExclusions(policy *storage.Policy) error {
+	for _, exclusion := range policy.GetWhitelists() {
+		if err := s.validateExclusion(policy, exclusion); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *policyValidator) validateWhitelist(policy *storage.Policy, whitelist *storage.Whitelist) error {
-	if whitelist.GetDeployment() == nil && whitelist.GetImage() == nil {
+func (s *policyValidator) validateExclusion(policy *storage.Policy, exclusion *storage.Exclusion) error {
+	if exclusion.GetDeployment() == nil && exclusion.GetImage() == nil {
 		return errors.New("all excluded scopes must have some criteria to match on")
 	}
-	if whitelist.GetDeployment() != nil {
+	if exclusion.GetDeployment() != nil {
 		if !policies.AppliesAtDeployTime(policy) && !policies.AppliesAtRunTime(policy) {
 			return errors.New("excluding a deployment is only valid during the DEPLOY and RUNTIME lifecycles")
 		}
-		if err := s.validateDeploymentWhitelist(whitelist); err != nil {
+		if err := s.validateDeploymentExclusion(exclusion); err != nil {
 			return err
 		}
 	}
-	if whitelist.GetImage() != nil {
+	if exclusion.GetImage() != nil {
 		if !policies.AppliesAtBuildTime(policy) {
 			return errors.New("excluding an image is only valid during the BUILD lifecycle")
 		}
-		if whitelist.GetImage().GetName() == "" {
+		if exclusion.GetImage().GetName() == "" {
 			return errors.New("image excluded scope must have nonempty name")
 		}
 	}
 	return nil
 }
 
-func (s *policyValidator) validateDeploymentWhitelist(whitelist *storage.Whitelist) error {
-	deployment := whitelist.GetDeployment()
+func (s *policyValidator) validateDeploymentExclusion(exclusion *storage.Exclusion) error {
+	deployment := exclusion.GetDeployment()
 	if deployment.GetScope() == nil && deployment.GetName() == "" {
 		return errors.New("at least one field of deployment excluded scope must be defined")
 	}

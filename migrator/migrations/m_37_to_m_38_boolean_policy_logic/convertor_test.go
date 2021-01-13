@@ -1004,9 +1004,9 @@ func TestConvertPolicyFieldsToSections(t *testing.T) {
 }
 
 func TestMigrateLegacyPolicy(t *testing.T) {
-	mockWhitelist := &storage.Whitelist{
+	mockWhitelist := &storage.Exclusion{
 		Name: "abcd",
-		Image: &storage.Whitelist_Image{
+		Image: &storage.Exclusion_Image{
 			Name: "some name",
 		},
 	}
@@ -1022,7 +1022,7 @@ func TestMigrateLegacyPolicy(t *testing.T) {
 		Name:            "Some Name",
 		Description:     "Some Description",
 		LifecycleStages: nil,
-		Whitelists: []*storage.Whitelist{
+		Whitelists: []*storage.Exclusion{
 			mockWhitelist,
 		},
 		Scope: []*storage.Scope{

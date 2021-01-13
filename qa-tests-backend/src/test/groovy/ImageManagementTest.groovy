@@ -93,7 +93,7 @@ class ImageManagementTest extends BaseSpecification {
         when:
         "Update Policy to build time and mark policy excluded scope"
         def startStages = Services.updatePolicyLifecycleStage(policy, [LifecycleStage.BUILD, LifecycleStage.DEPLOY])
-        Services.updatePolicyImageWhitelist(policy, excludedscopes)
+        Services.updatePolicyImageExclusion(policy, excludedscopes)
 
         and:
         "Request Image Scan"
@@ -106,7 +106,7 @@ class ImageManagementTest extends BaseSpecification {
         cleanup:
         "Revert Policy"
         Services.updatePolicyLifecycleStage(policy, startStages)
-        Services.updatePolicyImageWhitelist(policy, [])
+        Services.updatePolicyImageExclusion(policy, [])
 
         where:
         "Data inputs are: "

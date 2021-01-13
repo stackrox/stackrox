@@ -18,8 +18,8 @@ message DryRunResponse {
     }
     repeated Alert alerts = 1;
     message Excluded {
-        string deployment   = 1;
-        storage.Whitelist whitelist = 2;
+        string deployment           = 1;
+        storage.Exclusion whitelist = 2;
     }
     repeated Excluded excluded     = 2;
 }

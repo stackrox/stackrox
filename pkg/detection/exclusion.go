@@ -8,9 +8,9 @@ import (
 	"github.com/stackrox/rox/pkg/scopecomp"
 )
 
-func deploymentMatchesWhitelists(deployment *storage.Deployment, whitelists []*compiledWhitelist) bool {
-	for _, whitelist := range whitelists {
-		if whitelist.MatchesDeployment(deployment) {
+func deploymentMatchesExclusions(deployment *storage.Deployment, exclusions []*compiledExclusion) bool {
+	for _, exclusion := range exclusions {
+		if exclusion.MatchesDeployment(deployment) {
 			return true
 		}
 	}
@@ -29,12 +29,12 @@ func deploymentMatchesScopes(deployment *storage.Deployment, scopes []*scopecomp
 	return false
 }
 
-func matchesImageWhitelist(image string, policy *storage.Policy) bool {
+func matchesImageExclusion(image string, policy *storage.Policy) bool {
 	for _, w := range policy.GetWhitelists() {
 		if w.GetImage() == nil {
 			continue
 		}
-		if whitelistIsExpired(w) {
+		if exclusionIsExpired(w) {
 			continue
 		}
 		// The rationale for using a prefix is that it is the easiest way in the current format
@@ -46,10 +46,10 @@ func matchesImageWhitelist(image string, policy *storage.Policy) bool {
 	return false
 }
 
-func whitelistIsExpired(whitelist *storage.Whitelist) bool {
+func exclusionIsExpired(exclusion *storage.Exclusion) bool {
 	// If they don't set an expiration time, the excluded scope never expires.
-	if whitelist.GetExpiration() == nil {
+	if exclusion.GetExpiration() == nil {
 		return false
 	}
-	return whitelist.GetExpiration().Compare(types.TimestampNow()) < 0
+	return exclusion.GetExpiration().Compare(types.TimestampNow()) < 0
 }

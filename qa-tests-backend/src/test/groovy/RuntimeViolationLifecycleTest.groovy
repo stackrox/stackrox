@@ -2,7 +2,7 @@ import static Services.getPolicies
 import static Services.getViolationsByDeploymentID
 import static Services.roxDetectedDeployment
 import static Services.updatePolicy
-import static Services.updatePolicyToWhitelistDeployment
+import static Services.updatePolicyToExclusionDeployment
 
 import util.Timer
 import services.AlertService
@@ -158,7 +158,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
         when:
         "Exclude the deployment, get the alert again"
-        originalAptGetPolicy = updatePolicyToWhitelistDeployment(APTGETPOLICY, DEPLOYMENT)
+        originalAptGetPolicy = updatePolicyToExclusionDeployment(APTGETPOLICY, DEPLOYMENT)
         sleep(1000)
         def updatedAptGetAlert = AlertService.getViolation(originalAptGetViolation.getId())
 

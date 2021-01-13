@@ -17,7 +17,7 @@ type CompiledPolicy interface {
 	// Note that the Match* functions DO NOT care about excludes scopes, or the policy being disabled.
 	// Callers are responsible for doing those checks separately.
 	// For MatchAgainstDeployment* functions, images _must_ correspond one-to-one with the container specs in the deployment.
-	MatchAgainstDeploymentAndProcess(cacheReceptacle *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (booleanpolicy.Violations, error)
+	MatchAgainstDeploymentAndProcess(cacheReceptacle *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processNotInBaseline bool) (booleanpolicy.Violations, error)
 	MatchAgainstDeployment(cacheReceptacle *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (booleanpolicy.Violations, error)
 	MatchAgainstImage(cacheReceptacle *booleanpolicy.CacheReceptacle, image *storage.Image) (booleanpolicy.Violations, error)
 	MatchAgainstKubeResourceAndEvent(cacheReceptacle *booleanpolicy.CacheReceptacle, kubeEvent *storage.KubernetesEvent, kubeResource interface{}) (booleanpolicy.Violations, error)
@@ -86,13 +86,13 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		return nil, errors.Errorf("no known lifecycle stage in policy %q", policy.GetName())
 	}
 
-	whitelists := make([]*compiledWhitelist, 0, len(policy.GetWhitelists()))
+	exclusions := make([]*compiledExclusion, 0, len(policy.GetWhitelists()))
 	for _, w := range policy.GetWhitelists() {
-		w, err := newCompiledWhitelist(w)
+		w, err := newCompiledExclusion(w)
 		if err != nil {
 			return nil, err
 		}
-		whitelists = append(whitelists, w)
+		exclusions = append(exclusions, w)
 	}
 
 	scopes := make([]*scopecomp.CompiledScope, 0, len(policy.GetScope()))
@@ -105,7 +105,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 	}
 
 	if policies.AppliesAtDeployTime(policy) || policies.AppliesAtRunTime(policy) {
-		compiled.predicates = append(compiled.predicates, &deploymentPredicate{scopes: scopes, whitelists: whitelists})
+		compiled.predicates = append(compiled.predicates, &deploymentPredicate{scopes: scopes, exclusions: exclusions})
 	}
 	if policies.AppliesAtBuildTime(policy) {
 		compiled.predicates = append(compiled.predicates, &imagePredicate{
@@ -179,34 +179,34 @@ type Predicate interface {
 	AppliesTo(interface{}) bool
 }
 
-type compiledWhitelist struct {
-	whitelist *storage.Whitelist
+type compiledExclusion struct {
+	exclusion *storage.Exclusion
 	cs        *scopecomp.CompiledScope
 }
 
-func newCompiledWhitelist(whitelist *storage.Whitelist) (*compiledWhitelist, error) {
-	if whitelist.GetDeployment() == nil || whitelist.GetDeployment().GetScope() == nil {
-		return &compiledWhitelist{
-			whitelist: whitelist,
+func newCompiledExclusion(exclusion *storage.Exclusion) (*compiledExclusion, error) {
+	if exclusion.GetDeployment() == nil || exclusion.GetDeployment().GetScope() == nil {
+		return &compiledExclusion{
+			exclusion: exclusion,
 		}, nil
 	}
 
-	cs, err := scopecomp.CompileScope(whitelist.GetDeployment().GetScope())
+	cs, err := scopecomp.CompileScope(exclusion.GetDeployment().GetScope())
 	if err != nil {
 		return nil, err
 	}
-	return &compiledWhitelist{
-		whitelist: whitelist,
+	return &compiledExclusion{
+		exclusion: exclusion,
 		cs:        cs,
 	}, nil
 }
 
-func (cw *compiledWhitelist) MatchesDeployment(deployment *storage.Deployment) bool {
-	if whitelistIsExpired(cw.whitelist) {
+func (cw *compiledExclusion) MatchesDeployment(deployment *storage.Deployment) bool {
+	if exclusionIsExpired(cw.exclusion) {
 		return false
 	}
-	deploymentWhitelist := cw.whitelist.GetDeployment()
-	if deploymentWhitelist == nil {
+	deploymentExclusion := cw.exclusion.GetDeployment()
+	if deploymentExclusion == nil {
 		return false
 	}
 
@@ -214,7 +214,7 @@ func (cw *compiledWhitelist) MatchesDeployment(deployment *storage.Deployment) b
 		return false
 	}
 
-	if deploymentWhitelist.GetName() != "" && deploymentWhitelist.GetName() != deployment.GetName() {
+	if deploymentExclusion.GetName() != "" && deploymentExclusion.GetName() != deployment.GetName() {
 		return false
 	}
 	return true
@@ -222,7 +222,7 @@ func (cw *compiledWhitelist) MatchesDeployment(deployment *storage.Deployment) b
 
 // Predicate for deployments.
 type deploymentPredicate struct {
-	whitelists []*compiledWhitelist
+	exclusions []*compiledExclusion
 	scopes     []*scopecomp.CompiledScope
 }
 
@@ -232,7 +232,7 @@ func (cp *deploymentPredicate) AppliesTo(input interface{}) bool {
 		return false
 	}
 
-	return deploymentMatchesScopes(deployment, cp.scopes) && !deploymentMatchesWhitelists(deployment, cp.whitelists)
+	return deploymentMatchesScopes(deployment, cp.scopes) && !deploymentMatchesExclusions(deployment, cp.exclusions)
 }
 
 // Predicate for images.
@@ -245,5 +245,5 @@ func (cp *imagePredicate) AppliesTo(input interface{}) bool {
 	if !isImage {
 		return false
 	}
-	return !matchesImageWhitelist(image.GetName().GetFullName(), cp.policy)
+	return !matchesImageExclusion(image.GetName().GetFullName(), cp.policy)
 }

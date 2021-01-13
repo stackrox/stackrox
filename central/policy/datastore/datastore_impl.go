@@ -370,21 +370,21 @@ func (ds *datastoreImpl) removeForeignClusterScopesAndNotifiers(ctx context.Cont
 		}
 		policy.Notifiers = notifiers
 
-		var whitelists []*storage.Whitelist
-		for _, whitelist := range policy.GetWhitelists() {
-			whitelistCluster := whitelist.GetDeployment().GetScope().GetCluster()
-			if whitelistCluster == "" {
-				whitelists = append(whitelists, whitelist)
+		var exclusions []*storage.Exclusion
+		for _, exclusion := range policy.GetWhitelists() {
+			excludeCluster := exclusion.GetDeployment().GetScope().GetCluster()
+			if excludeCluster == "" {
+				exclusions = append(exclusions, exclusion)
 				continue
 			}
-			exists := clusters.Contains(whitelistCluster)
+			exists := clusters.Contains(excludeCluster)
 			if exists {
-				whitelists = append(whitelists, whitelist)
+				exclusions = append(exclusions, exclusion)
 				continue
 			}
 			modified = true
 		}
-		policy.Whitelists = whitelists
+		policy.Whitelists = exclusions
 
 		if modified {
 			changedIndices.Add(i)

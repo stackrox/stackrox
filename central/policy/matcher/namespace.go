@@ -35,20 +35,20 @@ func (m *namespaceMatcher) FilterApplicablePolicies(policies []*storage.Policy) 
 
 // IsPolicyApplicable returns true if the policy is applicable to namespace
 func (m *namespaceMatcher) IsPolicyApplicable(policy *storage.Policy) bool {
-	return !policy.GetDisabled() && !m.anyWhitelistMatches(policy.GetWhitelists()) && m.anyScopeMatches(policy.GetScope())
+	return !policy.GetDisabled() && !m.anyExclusionMatches(policy.GetWhitelists()) && m.anyScopeMatches(policy.GetScope())
 }
 
-func (m *namespaceMatcher) anyWhitelistMatches(whitelists []*storage.Whitelist) bool {
-	for _, whitelist := range whitelists {
-		if m.whitelistMatches(whitelist) {
+func (m *namespaceMatcher) anyExclusionMatches(exclusions []*storage.Exclusion) bool {
+	for _, exclusion := range exclusions {
+		if m.exclusionMatches(exclusion) {
 			return true
 		}
 	}
 	return false
 }
 
-func (m *namespaceMatcher) whitelistMatches(whitelist *storage.Whitelist) bool {
-	return m.scopeMatches(whitelist.GetDeployment().GetScope())
+func (m *namespaceMatcher) exclusionMatches(exclusion *storage.Exclusion) bool {
+	return m.scopeMatches(exclusion.GetDeployment().GetScope())
 }
 
 func (m *namespaceMatcher) anyScopeMatches(scopes []*storage.Scope) bool {

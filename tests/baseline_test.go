@@ -63,9 +63,9 @@ func verifyNoAlertForWhitelist(t *testing.T) {
 	cancel()
 	require.NoError(t, err)
 
-	latestPolicy.Whitelists = []*storage.Whitelist{
+	latestPolicy.Whitelists = []*storage.Exclusion{
 		{
-			Deployment: &storage.Whitelist_Deployment{
+			Deployment: &storage.Exclusion_Deployment{
 				Name: nginxDeploymentName,
 			},
 		},

@@ -35,29 +35,29 @@ func (m *deploymentMatcher) FilterApplicablePolicies(policies []*storage.Policy)
 
 // IsPolicyApplicable returns true if the policy is applicable to deployment
 func (m *deploymentMatcher) IsPolicyApplicable(policy *storage.Policy) bool {
-	return !policy.GetDisabled() && !m.anyWhitelistMatches(policy.GetWhitelists()) && m.anyScopeMatches(policy.GetScope())
+	return !policy.GetDisabled() && !m.anyExclusionMatches(policy.GetWhitelists()) && m.anyScopeMatches(policy.GetScope())
 }
 
-func (m *deploymentMatcher) anyWhitelistMatches(whitelists []*storage.Whitelist) bool {
-	for _, whitelist := range whitelists {
-		if m.whitelistMatches(whitelist) {
+func (m *deploymentMatcher) anyExclusionMatches(exclusions []*storage.Exclusion) bool {
+	for _, exclusion := range exclusions {
+		if m.exclusionMatches(exclusion) {
 			return true
 		}
 	}
 	return false
 }
 
-func (m *deploymentMatcher) whitelistMatches(whitelist *storage.Whitelist) bool {
+func (m *deploymentMatcher) exclusionMatches(exclusion *storage.Exclusion) bool {
 	// If excluded scope does not match the deployment then no need to check for deployment name
-	if !m.scopeMatches(whitelist.GetDeployment().GetScope()) {
+	if !m.scopeMatches(exclusion.GetDeployment().GetScope()) {
 		return false
 	}
 
 	// If scope of exclusions matches, the deployment is excluded if,
 	// - Deployment name is not set, or
 	// - Deployment name matches,
-	return whitelist.GetDeployment().GetName() == "" ||
-		whitelist.GetDeployment().GetName() == m.deployment.GetName()
+	return exclusion.GetDeployment().GetName() == "" ||
+		exclusion.GetDeployment().GetName() == m.deployment.GetName()
 }
 
 func (m *deploymentMatcher) anyScopeMatches(scopes []*storage.Scope) bool {

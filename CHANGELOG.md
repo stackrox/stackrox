@@ -6,7 +6,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 - `roxctl central db backup` is deprecated; please use `roxctl central backup` instead.
-- API `/db/backup` is deprecated; please use `/api/extensions/backup` instead.
+- API changes/deprecations:
+  - `/db/backup` is deprecated; please use `/api/extensions/backup` instead.
+  - In the GraphQL schema, the type name `Policy { whitelists: [Whitelist]! }` changes to 
+    `Policy { whitelists: [Exclusion]! }` preserving the existing structure and field names.
 
 ## [54.0]
 - Added option to backup certificates for central.

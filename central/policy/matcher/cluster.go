@@ -37,20 +37,20 @@ func (m *clusterMatcher) FilterApplicablePolicies(policies []*storage.Policy) ([
 
 // IsPolicyApplicable returns true if the policy is applicable to cluster
 func (m *clusterMatcher) IsPolicyApplicable(policy *storage.Policy) bool {
-	return !policy.GetDisabled() && !m.anyWhitelistMatches(policy.GetWhitelists()) && m.anyScopeMatches(policy.GetScope())
+	return !policy.GetDisabled() && !m.anyExclusionMatches(policy.GetWhitelists()) && m.anyScopeMatches(policy.GetScope())
 }
 
-func (m *clusterMatcher) anyWhitelistMatches(whitelists []*storage.Whitelist) bool {
-	for _, whitelist := range whitelists {
-		if m.whitelistMatches(whitelist) {
+func (m *clusterMatcher) anyExclusionMatches(exclusions []*storage.Exclusion) bool {
+	for _, exclusion := range exclusions {
+		if m.exclusionMatches(exclusion) {
 			return true
 		}
 	}
 	return false
 }
 
-func (m *clusterMatcher) whitelistMatches(whitelist *storage.Whitelist) bool {
-	cs, err := scopecomp.CompileScope(whitelist.GetDeployment().GetScope())
+func (m *clusterMatcher) exclusionMatches(exclusion *storage.Exclusion) bool {
+	cs, err := scopecomp.CompileScope(exclusion.GetDeployment().GetScope())
 	if err != nil {
 		utils.Should(errors.Wrap(err, "could not compile excluded scopes"))
 		return false
@@ -60,7 +60,7 @@ func (m *clusterMatcher) whitelistMatches(whitelist *storage.Whitelist) bool {
 		return false
 	}
 
-	if whitelist.GetDeployment().GetScope().GetNamespace() == "" {
+	if exclusion.GetDeployment().GetScope().GetNamespace() == "" {
 		return true
 	}
 

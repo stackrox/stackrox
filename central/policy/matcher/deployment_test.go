@@ -76,7 +76,7 @@ func TestDeploymentMatcher(t *testing.T) {
 	}
 }
 
-func TestDeploymentWithWhitelist(t *testing.T) {
+func TestDeploymentWithExclusion(t *testing.T) {
 	cases := []struct {
 		policy     *storage.Policy
 		deployment *storage.Deployment
@@ -94,9 +94,9 @@ func TestDeploymentWithWhitelist(t *testing.T) {
 						Cluster: "cluster1",
 					},
 				},
-				Whitelists: []*storage.Whitelist{
+				Whitelists: []*storage.Exclusion{
 					{
-						Deployment: &storage.Whitelist_Deployment{
+						Deployment: &storage.Exclusion_Deployment{
 							Scope: &storage.Scope{
 								Namespace: "ns.*",
 							},
@@ -119,9 +119,9 @@ func TestDeploymentWithWhitelist(t *testing.T) {
 						Namespace: "ns1",
 					},
 				},
-				Whitelists: []*storage.Whitelist{
+				Whitelists: []*storage.Exclusion{
 					{
-						Deployment: &storage.Whitelist_Deployment{
+						Deployment: &storage.Exclusion_Deployment{
 							Name: "deployment2",
 							Scope: &storage.Scope{
 								Namespace: "ns.*",
@@ -144,9 +144,9 @@ func TestDeploymentWithWhitelist(t *testing.T) {
 						Namespace: "ns1",
 					},
 				},
-				Whitelists: []*storage.Whitelist{
+				Whitelists: []*storage.Exclusion{
 					{
-						Deployment: &storage.Whitelist_Deployment{
+						Deployment: &storage.Exclusion_Deployment{
 							Name: "deployment2",
 							Scope: &storage.Scope{
 								Namespace: "ns1",
@@ -154,7 +154,7 @@ func TestDeploymentWithWhitelist(t *testing.T) {
 						},
 					},
 					{
-						Deployment: &storage.Whitelist_Deployment{
+						Deployment: &storage.Exclusion_Deployment{
 							Name: "deployment1",
 						},
 					},
@@ -174,9 +174,9 @@ func TestDeploymentWithWhitelist(t *testing.T) {
 						Namespace: "ns1",
 					},
 				},
-				Whitelists: []*storage.Whitelist{
+				Whitelists: []*storage.Exclusion{
 					{
-						Deployment: &storage.Whitelist_Deployment{
+						Deployment: &storage.Exclusion_Deployment{
 							Name: "deployment2",
 							Scope: &storage.Scope{
 								Namespace: "ns1",
@@ -184,7 +184,7 @@ func TestDeploymentWithWhitelist(t *testing.T) {
 						},
 					},
 					{
-						Deployment: &storage.Whitelist_Deployment{
+						Deployment: &storage.Exclusion_Deployment{
 							Scope: &storage.Scope{
 								Namespace: "ns1",
 							},

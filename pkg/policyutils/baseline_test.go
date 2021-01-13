@@ -14,15 +14,15 @@ func TestDeploymentWhitelistToQuery_Nil(t *testing.T) {
 }
 
 func TestDeploymentWhitelistToQuery_NoWhitelists(t *testing.T) {
-	q := DeploymentBaselineToQuery([]*storage.Whitelist{})
+	q := DeploymentBaselineToQuery([]*storage.Exclusion{})
 	assert.Equal(t, q, search.MatchNoneQuery())
 }
 
 func TestDeploymentWhitelistToQuery_NoDeploymentWhitelists(t *testing.T) {
-	q := DeploymentBaselineToQuery([]*storage.Whitelist{
+	q := DeploymentBaselineToQuery([]*storage.Exclusion{
 		{
 			Name: "myExcludedScope",
-			Image: &storage.Whitelist_Image{
+			Image: &storage.Exclusion_Image{
 				Name: "blessed-image",
 			},
 		},
@@ -31,20 +31,20 @@ func TestDeploymentWhitelistToQuery_NoDeploymentWhitelists(t *testing.T) {
 }
 
 func TestDeploymentWhitelistToQuery_MalformedDeploymentWhitelist(t *testing.T) {
-	q := DeploymentBaselineToQuery([]*storage.Whitelist{
+	q := DeploymentBaselineToQuery([]*storage.Exclusion{
 		{
 			Name:       "myExcludedScope",
-			Deployment: &storage.Whitelist_Deployment{},
+			Deployment: &storage.Exclusion_Deployment{},
 		},
 	})
 	assert.Equal(t, q, search.MatchNoneQuery())
 }
 
 func TestDeploymentWhitelistToQuery_NamedDeploymentWhitelist(t *testing.T) {
-	q := DeploymentBaselineToQuery([]*storage.Whitelist{
+	q := DeploymentBaselineToQuery([]*storage.Exclusion{
 		{
 			Name: "myExcludedScope",
-			Deployment: &storage.Whitelist_Deployment{
+			Deployment: &storage.Exclusion_Deployment{
 				Name: "blessed-deployment",
 			},
 		},
@@ -53,10 +53,10 @@ func TestDeploymentWhitelistToQuery_NamedDeploymentWhitelist(t *testing.T) {
 }
 
 func TestDeploymentWhitelistToQuery_ScopedDeploymentWhitelist(t *testing.T) {
-	q := DeploymentBaselineToQuery([]*storage.Whitelist{
+	q := DeploymentBaselineToQuery([]*storage.Exclusion{
 		{
 			Name: "myExcludedScope",
-			Deployment: &storage.Whitelist_Deployment{
+			Deployment: &storage.Exclusion_Deployment{
 				Scope: &storage.Scope{
 					Cluster: "blessed-cluster-id",
 				},

@@ -497,6 +497,19 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EmbeddedVulnerability_ScoreVersion(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EmbeddedVulnerability_VulnerabilityType(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EnforcementAction(0)))
+	utils.Must(builder.AddType("Exclusion", []string{
+		"deployment: Exclusion_Deployment",
+		"expiration: Time",
+		"image: Exclusion_Image",
+		"name: String!",
+	}))
+	utils.Must(builder.AddType("Exclusion_Deployment", []string{
+		"name: String!",
+		"scope: Scope",
+	}))
+	utils.Must(builder.AddType("Exclusion_Image", []string{
+		"name: String!",
+	}))
 	utils.Must(builder.AddType("GenerateTokenResponse", []string{
 		"metadata: TokenMetadata",
 		"token: String!",
@@ -806,7 +819,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"sORTName: String!",
 		"scope: [Scope]!",
 		"severity: Severity!",
-		"whitelists: [Whitelist]!",
+		"whitelists: [Exclusion]!",
 	}))
 	utils.Must(builder.AddType("PolicyFields", []string{
 		"addCapabilities: [String!]!",
@@ -1170,19 +1183,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 		"source: String!",
 		"type: String!",
-	}))
-	utils.Must(builder.AddType("Whitelist", []string{
-		"deployment: Whitelist_Deployment",
-		"expiration: Time",
-		"image: Whitelist_Image",
-		"name: String!",
-	}))
-	utils.Must(builder.AddType("Whitelist_Deployment", []string{
-		"name: String!",
-		"scope: Scope",
-	}))
-	utils.Must(builder.AddType("Whitelist_Image", []string{
-		"name: String!",
 	}))
 }
 
@@ -4988,6 +4988,113 @@ func toEnforcementActions(values *[]string) []storage.EnforcementAction {
 	return output
 }
 
+type exclusionResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Exclusion
+}
+
+func (resolver *Resolver) wrapExclusion(value *storage.Exclusion, ok bool, err error) (*exclusionResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &exclusionResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapExclusions(values []*storage.Exclusion, err error) ([]*exclusionResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*exclusionResolver, len(values))
+	for i, v := range values {
+		output[i] = &exclusionResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *exclusionResolver) Deployment(ctx context.Context) (*exclusion_DeploymentResolver, error) {
+	value := resolver.data.GetDeployment()
+	return resolver.root.wrapExclusion_Deployment(value, true, nil)
+}
+
+func (resolver *exclusionResolver) Expiration(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetExpiration()
+	return timestamp(value)
+}
+
+func (resolver *exclusionResolver) Image(ctx context.Context) (*exclusion_ImageResolver, error) {
+	value := resolver.data.GetImage()
+	return resolver.root.wrapExclusion_Image(value, true, nil)
+}
+
+func (resolver *exclusionResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+type exclusion_DeploymentResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Exclusion_Deployment
+}
+
+func (resolver *Resolver) wrapExclusion_Deployment(value *storage.Exclusion_Deployment, ok bool, err error) (*exclusion_DeploymentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &exclusion_DeploymentResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapExclusion_Deployments(values []*storage.Exclusion_Deployment, err error) ([]*exclusion_DeploymentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*exclusion_DeploymentResolver, len(values))
+	for i, v := range values {
+		output[i] = &exclusion_DeploymentResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *exclusion_DeploymentResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *exclusion_DeploymentResolver) Scope(ctx context.Context) (*scopeResolver, error) {
+	value := resolver.data.GetScope()
+	return resolver.root.wrapScope(value, true, nil)
+}
+
+type exclusion_ImageResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Exclusion_Image
+}
+
+func (resolver *Resolver) wrapExclusion_Image(value *storage.Exclusion_Image, ok bool, err error) (*exclusion_ImageResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &exclusion_ImageResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapExclusion_Images(values []*storage.Exclusion_Image, err error) ([]*exclusion_ImageResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*exclusion_ImageResolver, len(values))
+	for i, v := range values {
+		output[i] = &exclusion_ImageResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *exclusion_ImageResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
 type generateTokenResponseResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -7307,9 +7414,9 @@ func (resolver *policyResolver) Severity(ctx context.Context) string {
 	return value.String()
 }
 
-func (resolver *policyResolver) Whitelists(ctx context.Context) ([]*whitelistResolver, error) {
+func (resolver *policyResolver) Whitelists(ctx context.Context) ([]*exclusionResolver, error) {
 	value := resolver.data.GetWhitelists()
-	return resolver.root.wrapWhitelists(value, nil)
+	return resolver.root.wrapExclusions(value, nil)
 }
 
 type policyFieldsResolver struct {
@@ -9977,112 +10084,5 @@ func (resolver *volumePolicyResolver) Source(ctx context.Context) string {
 
 func (resolver *volumePolicyResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
-	return value
-}
-
-type whitelistResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.Whitelist
-}
-
-func (resolver *Resolver) wrapWhitelist(value *storage.Whitelist, ok bool, err error) (*whitelistResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &whitelistResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapWhitelists(values []*storage.Whitelist, err error) ([]*whitelistResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*whitelistResolver, len(values))
-	for i, v := range values {
-		output[i] = &whitelistResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *whitelistResolver) Deployment(ctx context.Context) (*whitelist_DeploymentResolver, error) {
-	value := resolver.data.GetDeployment()
-	return resolver.root.wrapWhitelist_Deployment(value, true, nil)
-}
-
-func (resolver *whitelistResolver) Expiration(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetExpiration()
-	return timestamp(value)
-}
-
-func (resolver *whitelistResolver) Image(ctx context.Context) (*whitelist_ImageResolver, error) {
-	value := resolver.data.GetImage()
-	return resolver.root.wrapWhitelist_Image(value, true, nil)
-}
-
-func (resolver *whitelistResolver) Name(ctx context.Context) string {
-	value := resolver.data.GetName()
-	return value
-}
-
-type whitelist_DeploymentResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.Whitelist_Deployment
-}
-
-func (resolver *Resolver) wrapWhitelist_Deployment(value *storage.Whitelist_Deployment, ok bool, err error) (*whitelist_DeploymentResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &whitelist_DeploymentResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapWhitelist_Deployments(values []*storage.Whitelist_Deployment, err error) ([]*whitelist_DeploymentResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*whitelist_DeploymentResolver, len(values))
-	for i, v := range values {
-		output[i] = &whitelist_DeploymentResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *whitelist_DeploymentResolver) Name(ctx context.Context) string {
-	value := resolver.data.GetName()
-	return value
-}
-
-func (resolver *whitelist_DeploymentResolver) Scope(ctx context.Context) (*scopeResolver, error) {
-	value := resolver.data.GetScope()
-	return resolver.root.wrapScope(value, true, nil)
-}
-
-type whitelist_ImageResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.Whitelist_Image
-}
-
-func (resolver *Resolver) wrapWhitelist_Image(value *storage.Whitelist_Image, ok bool, err error) (*whitelist_ImageResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &whitelist_ImageResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapWhitelist_Images(values []*storage.Whitelist_Image, err error) ([]*whitelist_ImageResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*whitelist_ImageResolver, len(values))
-	for i, v := range values {
-		output[i] = &whitelist_ImageResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *whitelist_ImageResolver) Name(ctx context.Context) string {
-	value := resolver.data.GetName()
 	return value
 }

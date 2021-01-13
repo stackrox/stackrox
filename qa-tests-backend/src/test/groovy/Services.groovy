@@ -28,7 +28,7 @@ import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import io.stackrox.proto.storage.PolicyOuterClass.ListPolicy
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
-import io.stackrox.proto.storage.PolicyOuterClass.Whitelist
+import io.stackrox.proto.storage.PolicyOuterClass.Exclusion
 import io.stackrox.proto.storage.ScopeOuterClass
 import services.ImageService
 import services.NetworkPolicyService
@@ -252,13 +252,13 @@ class Services extends BaseService {
         }
     }
 
-    static updatePolicyToWhitelistDeployment(String policyName, objects.Deployment deployment) {
+    static updatePolicyToExclusionDeployment(String policyName, objects.Deployment deployment) {
         Policy policyMeta = getPolicyByName(policyName)
 
         def policyDef = Policy.
             newBuilder(policyMeta).
-            addWhitelists(Whitelist.newBuilder().
-                setDeployment(Whitelist.Deployment.newBuilder().
+            addWhitelists(Exclusion.newBuilder().
+                setDeployment(Exclusion.Deployment.newBuilder().
                     setName(deployment.getName()).
                     setScope(ScopeOuterClass.Scope.newBuilder().
                         setNamespace(deployment.getNamespace())
@@ -295,15 +295,15 @@ class Services extends BaseService {
         return policyMeta.getLifecycleStagesList()
     }
 
-    static updatePolicyImageWhitelist(String policyName, List<String> images) {
+    static updatePolicyImageExclusion(String policyName, List<String> images) {
         Policy policyMeta = getPolicyByName(policyName)
 
         def builder = Policy.newBuilder(policyMeta).clearWhitelists()
         for (String image: images) {
             builder.addWhitelists(
-                    Whitelist.newBuilder()
+                    Exclusion.newBuilder()
                             .setImage(
-                                Whitelist.Image.newBuilder()
+                                Exclusion.Image.newBuilder()
                                         .setName(image)
                                         .build()
                             ).build())
@@ -316,7 +316,7 @@ class Services extends BaseService {
             println e.toString()
             return []
         }
-        println "Updated whitelists of '${policyName}' to ${images}"
+        println "Updated exclusions of '${policyName}' to ${images}"
         return images
     }
 
