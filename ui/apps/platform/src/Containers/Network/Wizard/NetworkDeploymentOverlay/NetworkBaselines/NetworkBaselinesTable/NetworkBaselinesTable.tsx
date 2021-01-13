@@ -194,9 +194,11 @@ function NetworkBaselinesTable({
                     {rows.map((row) => {
                         prepareRow(row);
 
+                        const { key } = row.getRowProps();
+
                         // If the row is the grouped row or a sub row grouped by the ANOMALOUS status,
                         // we want a colored background
-                        const rowType =
+                        const colorType =
                             (row.isGrouped && row.groupByVal === networkFlowStatus.ANOMALOUS) ||
                             row.values.status === networkFlowStatus.ANOMALOUS
                                 ? 'alert'
@@ -250,9 +252,9 @@ function NetworkBaselinesTable({
                         return (
                             <>
                                 <TableRow
-                                    key={row.id}
+                                    key={key}
                                     row={row}
-                                    type={rowType}
+                                    colorType={colorType}
                                     HoveredRowComponent={HoveredRowComponent}
                                     HoveredGroupedRowComponent={HoveredGroupedRowComponent}
                                     GroupedRowComponent={GroupedRowComponent}
@@ -262,7 +264,11 @@ function NetworkBaselinesTable({
                                     ) : (
                                         row.cells.map((cell) => {
                                             return (
-                                                <TableCell key={cell.column.Header} cell={cell} />
+                                                <TableCell
+                                                    key={cell.column.Header}
+                                                    cell={cell}
+                                                    colorType={colorType}
+                                                />
                                             );
                                         })
                                     )}
