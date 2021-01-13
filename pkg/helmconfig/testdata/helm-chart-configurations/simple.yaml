@@ -3,10 +3,10 @@ helmManaged: true
 centralEndpoint: central.stackrox:443
 
 admissionControl:
-  enable: true
+  listenOnCreates: true
   listenOnUpdates: true
   dynamic:
-    enforce: true
+    enforceOnCreates: true
     scanInline: true
     disableBypass: true
     timeout: 3

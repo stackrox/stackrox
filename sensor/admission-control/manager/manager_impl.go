@@ -237,7 +237,7 @@ func (m *manager) HandleReview(req *admission.AdmissionRequest) (*admission.Admi
 }
 
 func (m *manager) HandleK8sEvent(req *admission.AdmissionRequest) (*admission.AdmissionResponse, error) {
-	if !features.K8sAuditLogDetection.Enabled() {
+	if !features.K8sEventDetection.Enabled() {
 		return pass(req.UID), nil
 	}
 	//TODO add logic to process k8s events here

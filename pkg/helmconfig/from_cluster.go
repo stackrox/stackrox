@@ -42,10 +42,10 @@ func FromCluster(cluster *storage.Cluster) (map[string]interface{}, error) {
 			"image": mainImage,
 		},
 		"admissionControl": map[string]interface{}{
-			"enable":          cluster.GetAdmissionController(),
+			"listenOnCreates": cluster.GetAdmissionController(),
 			"listenOnUpdates": cluster.GetAdmissionControllerUpdates(),
 			"dynamic": map[string]interface{}{
-				"enforce":          dynAdmissionControllerCfg.GetEnabled(),
+				"enforceOnCreates": dynAdmissionControllerCfg.GetEnabled(),
 				"scanInline":       dynAdmissionControllerCfg.GetScanInline(),
 				"disableBypass":    dynAdmissionControllerCfg.GetDisableBypass(),
 				"timeout":          float64(dynAdmissionControllerCfg.GetTimeoutSeconds()),
