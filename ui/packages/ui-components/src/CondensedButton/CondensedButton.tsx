@@ -4,9 +4,14 @@ import Button, { HOCButtonProps } from '../Button';
 
 export type CondensedButtonProps = HOCButtonProps;
 
-function CondensedButton({ type, onClick, children }: CondensedButtonProps): ReactElement {
+function CondensedButton({
+    type,
+    onClick,
+    children,
+    isDisabled,
+}: CondensedButtonProps): ReactElement {
     return (
-        <Button type={type} onClick={onClick} colorType="base" isCondensed>
+        <Button type={type} onClick={onClick} colorType="base" isDisabled={isDisabled} isCondensed>
             {children}
         </Button>
     );

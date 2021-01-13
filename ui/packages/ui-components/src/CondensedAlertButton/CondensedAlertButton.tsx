@@ -8,9 +8,10 @@ function CondensedAlertButton({
     type,
     onClick,
     children,
+    isDisabled,
 }: CondensedAlertButtonProps): ReactElement {
     return (
-        <Button type={type} onClick={onClick} colorType="alert" isCondensed>
+        <Button type={type} onClick={onClick} colorType="alert" isDisabled={isDisabled} isCondensed>
             {children}
         </Button>
     );
