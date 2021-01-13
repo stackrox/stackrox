@@ -4,6 +4,7 @@ export type HOCButtonProps = {
     type?: 'button' | 'submit';
     onClick?: React.MouseEventHandler<HTMLButtonElement>; // required for type "button", but not for type "submit"
     children: ReactNode;
+    isDisabled?: boolean;
 };
 
 export type ButtonProps = {
@@ -12,6 +13,7 @@ export type ButtonProps = {
     children: ReactNode;
     colorType?: 'alert' | 'success' | 'base';
     isCondensed?: boolean;
+    isDisabled?: boolean;
 };
 
 const baseButtonClassName =
@@ -50,6 +52,7 @@ function Button({
     children,
     colorType = 'base',
     isCondensed = false,
+    isDisabled = false,
 }: ButtonProps): ReactElement {
     const colorClassName = getColorClassName(colorType);
     const paddingClassName = getPaddingClassName(isCondensed);
@@ -57,14 +60,14 @@ function Button({
 
     if (type === 'submit') {
         return (
-            <button className={className} type="submit">
+            <button className={className} type="submit" disabled={isDisabled}>
                 {children}
             </button>
         );
     }
 
     return (
-        <button className={className} type="button" onClick={onClick}>
+        <button className={className} type="button" onClick={onClick} disabled={isDisabled}>
             {children}
         </button>
     );

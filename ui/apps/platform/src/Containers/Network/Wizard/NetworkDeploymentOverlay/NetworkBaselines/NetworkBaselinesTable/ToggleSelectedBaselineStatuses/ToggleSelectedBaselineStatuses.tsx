@@ -9,6 +9,23 @@ import { CondensedButton, CondensedAlertButton } from '@stackrox/ui-components';
 
 import { Row } from '../tableTypes';
 
+function getAllRowsByType(rows: Row[], flowType: string): FlattenedNetworkBaseline[] {
+    return rows
+        .filter(
+            (datum) =>
+                !(datum.isGrouped && datum.groupByID === 'status') &&
+                datum.values.status === flowType
+        )
+        .reduce<FlattenedNetworkBaseline[]>((acc, curr) => {
+            if (curr?.subRows?.length) {
+                curr.subRows.forEach((subRow) => {
+                    acc.push(subRow.original);
+                });
+            }
+            return acc;
+        }, []);
+}
+
 export type ToggleSelectedBaselineStatusesProps = {
     row: Row;
     rows: Row[];
@@ -25,7 +42,7 @@ export function getSelectedRows(selectedFlatRows: Row[]): FlattenedNetworkBaseli
             if (curr.isGrouped && curr?.subRows?.length) {
                 curr.subRows.forEach((subRow) => {
                     if (!acc[subRow.id]) {
-                        acc[subRow.id] = subRow.original;
+                        acc[subRow.id] = subRow?.original;
                     }
                 });
             } else if (!acc[curr.id]) {
@@ -61,40 +78,13 @@ function ToggleSelectedBaselineStatuses({
             if (anomalousSelectedRows.length) {
                 toggleBaselineStatuses(anomalousSelectedRows);
             } else {
-                const allAnomalousRows = rows
-                    .filter(
-                        (datum) =>
-                            !(datum.isGrouped && datum.groupByID === 'status') &&
-                            datum.values.status === networkFlowStatus.ANOMALOUS
-                    )
-                    .reduce<FlattenedNetworkBaseline[]>((acc, curr) => {
-                        if (curr?.subRows?.length) {
-                            curr.subRows.forEach((subRow) => {
-                                acc.push(subRow.original);
-                            });
-                        }
-                        return acc;
-                    }, []);
+                const allAnomalousRows = getAllRowsByType(rows, networkFlowStatus.ANOMALOUS);
                 toggleBaselineStatuses(allAnomalousRows);
             }
         } else if (baselineSelectedRows.length) {
             toggleBaselineStatuses(baselineSelectedRows);
         } else {
-            const allBaselineRows = rows
-                .filter(
-                    (datum) =>
-                        !(datum.isGrouped && datum.groupByID === 'status') &&
-                        datum.values.status === networkFlowStatus.BASELINE
-                )
-                .reduce<FlattenedNetworkBaseline[]>((acc, curr) => {
-                    if (curr?.subRows?.length) {
-                        curr.subRows.forEach((subRow) => {
-                            acc.push(subRow.original);
-                        });
-                    }
-
-                    return acc;
-                }, []);
+            const allBaselineRows = getAllRowsByType(rows, networkFlowStatus.BASELINE);
             toggleBaselineStatuses(allBaselineRows);
         }
     }
@@ -115,13 +105,20 @@ function ToggleSelectedBaselineStatuses({
         ? `Add ${numRows} to baseline`
         : `Mark ${numRows} as anomalous`;
     const IconToShow = isAnomalousGroup ? PlusCircle : MinusCircle;
+    const hasRowsToToggle = isAnomalousGroup
+        ? anomalousSelectedRows.length > 0 ||
+          getAllRowsByType(rows, networkFlowStatus.ANOMALOUS).length > 0
+        : baselineSelectedRows.length > 0 ||
+          getAllRowsByType(rows, networkFlowStatus.BASELINE).length > 0;
 
     return (
         <>
-            <ToggleFlowButton type="button" onClick={onClickHandler}>
-                <IconToShow className="h-3 w-3 mr-1" />
-                {buttonText}
-            </ToggleFlowButton>
+            {hasRowsToToggle && (
+                <ToggleFlowButton type="button" onClick={onClickHandler}>
+                    <IconToShow className="h-3 w-3 mr-1" />
+                    {buttonText}
+                </ToggleFlowButton>
+            )}
             {showMoveFlowDialog && (
                 <CustomDialogue
                     title={`${buttonText}?`}

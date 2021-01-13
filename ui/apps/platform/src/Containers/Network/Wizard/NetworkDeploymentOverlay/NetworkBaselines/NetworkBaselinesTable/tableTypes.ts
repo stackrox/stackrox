@@ -11,6 +11,7 @@ export type Row = {
     groupByID?: string;
     isGrouped?: boolean;
     subRows?: Row[];
+    leafRows?: Row[];
 };
 
 export type Cell = {

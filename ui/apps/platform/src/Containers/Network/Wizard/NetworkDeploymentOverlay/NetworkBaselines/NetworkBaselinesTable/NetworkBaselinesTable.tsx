@@ -9,7 +9,7 @@ import {
     networkProtocolLabels,
     networkConnectionLabels,
 } from 'messages/network';
-import { FlattenedNetworkBaseline } from 'Containers/Network/networkTypes';
+import { FlattenedNetworkBaseline, BaselineStatus } from 'Containers/Network/networkTypes';
 
 import NavigateToEntityButton from 'Containers/Network/NavigateToEntityButton';
 import Table from './Table';
@@ -20,8 +20,39 @@ import TableCell from './TableCell';
 import GroupedStatusTableCell from './GroupedStatusTableCell';
 import ToggleSelectedBaselineStatuses from './ToggleSelectedBaselineStatuses';
 import ToggleBaselineStatus from './ToggleBaselineStatus';
+import EmptyGroupedStatusRow from './EmptyGroupedStatusRow';
 import checkboxSelectionPlugin from './checkboxSelectionPlugin';
 import expanderPlugin from './expanderPlugin';
+import { Row } from './tableTypes';
+
+function getEmptyGroupRow(status: BaselineStatus): Row {
+    return {
+        id: `status:${status}`,
+        // TODO: see if we can remove this fake "peer" while keeping type-checking elsewhere
+        original: {
+            peer: {
+                entity: {
+                    id: '',
+                    type: 'DEPLOYMENT', // placeholder
+                    name: 'empty-group', // placeholder
+                },
+                port: '',
+                protocol: 'L4_PROTOCOL_ANY', // placeholder
+                ingress: false,
+                state: 'active', // placeholder
+            },
+            status,
+        },
+        isGrouped: true,
+        groupByID: 'status',
+        groupByVal: status,
+        values: {
+            status,
+        },
+        subRows: [],
+        leafRows: [],
+    };
+}
 
 export type NetworkBaselinesTableProps = {
     networkBaselines: FlattenedNetworkBaseline[];
@@ -143,6 +174,18 @@ function NetworkBaselinesTable({
         expanderPlugin
     );
 
+    if (!rows.some((row) => row.id.includes(networkFlowStatus.ANOMALOUS))) {
+        const emptyAnomalousRow = getEmptyGroupRow(networkFlowStatus.ANOMALOUS as BaselineStatus);
+
+        rows.unshift(emptyAnomalousRow);
+    }
+
+    if (!rows.some((row) => row.id.includes(networkFlowStatus.BASELINE))) {
+        const emptyBaselineRow = getEmptyGroupRow(networkFlowStatus.BASELINE as BaselineStatus);
+
+        rows.push(emptyBaselineRow);
+    }
+
     return (
         <div className="flex flex-1 flex-col overflow-y-auto">
             <Table>
@@ -188,7 +231,7 @@ function NetworkBaselinesTable({
                                 </div>
                             ) : null;
 
-                        const HoveredRowComponent = row.original ? (
+                        const HoveredRowComponent = row?.original?.peer?.entity?.id ? (
                             <div className="flex">
                                 <ToggleBaselineStatus
                                     row={row}
@@ -205,22 +248,35 @@ function NetworkBaselinesTable({
                         ) : null;
 
                         return (
-                            <TableRow
-                                key={row.id}
-                                row={row}
-                                type={rowType}
-                                HoveredRowComponent={HoveredRowComponent}
-                                HoveredGroupedRowComponent={HoveredGroupedRowComponent}
-                                GroupedRowComponent={GroupedRowComponent}
-                            >
-                                {row.isGrouped && row.groupByID === 'status' ? (
-                                    <GroupedStatusTableCell row={row} />
-                                ) : (
-                                    row.cells.map((cell) => {
-                                        return <TableCell key={cell.column.Header} cell={cell} />;
-                                    })
-                                )}
-                            </TableRow>
+                            <>
+                                <TableRow
+                                    key={row.id}
+                                    row={row}
+                                    type={rowType}
+                                    HoveredRowComponent={HoveredRowComponent}
+                                    HoveredGroupedRowComponent={HoveredGroupedRowComponent}
+                                    GroupedRowComponent={GroupedRowComponent}
+                                >
+                                    {row.isGrouped && row.groupByID === 'status' ? (
+                                        <GroupedStatusTableCell row={row} />
+                                    ) : (
+                                        row.cells.map((cell) => {
+                                            return (
+                                                <TableCell key={cell.column.Header} cell={cell} />
+                                            );
+                                        })
+                                    )}
+                                </TableRow>
+                                {row.isGrouped &&
+                                    row.groupByID === 'status' &&
+                                    !row.subRows.length &&
+                                    !row.leafRows.length && (
+                                        <EmptyGroupedStatusRow
+                                            type={row.groupByVal}
+                                            columnCount={columns.length}
+                                        />
+                                    )}
+                            </>
                         );
                     })}
                 </TableBody>
