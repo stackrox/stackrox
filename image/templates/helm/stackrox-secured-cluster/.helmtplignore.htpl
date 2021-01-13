@@ -17,4 +17,7 @@ scripts/
 [<- if or .KubectlOutput (index .FeatureFlags "ROX_SENSOR_INSTALLATION_EXPERIENCE" | not) >]
 templates/cluster-config.yaml
 [<- end >]
+[< if .ReleaseBuild >]
+feature-flag-values.yaml
+[< end >]
 main.go

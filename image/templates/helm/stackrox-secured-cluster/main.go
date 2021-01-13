@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/devbuild"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
@@ -33,6 +33,12 @@ func mainCmd(args []string) error {
 	}
 
 	imageTag, collectorImageTag, outputDir := args[0], args[1], args[2]
+
+	featureFlagVals := make(map[string]interface{})
+	for _, feature := range features.Flags {
+		featureFlagVals[feature.EnvVar()] = strconv.FormatBool(feature.Enabled())
+	}
+
 	metaValues := map[string]interface{}{
 		"Versions": version.Versions{
 			CollectorVersion: collectorImageTag,
@@ -44,18 +50,12 @@ func mainCmd(args []string) error {
 		"ImageTag":            imageTag,
 		"CollectorImageTag":   collectorImageTag,
 		"RenderAsLegacyChart": true,
+		"FeatureFlags":        featureFlagVals,
+		"ReleaseBuild":        buildinfo.ReleaseBuild,
 	}
 
 	if _, err := os.Stat(outputDir); err != nil {
 		return errors.Wrapf(err, "directory %s expected to exist, but doesn't", outputDir)
-	}
-
-	if devbuild.IsEnabled() {
-		featureFlagVals := make(map[string]interface{})
-		for _, feature := range features.Flags {
-			featureFlagVals[feature.EnvVar()] = strconv.FormatBool(feature.Enabled())
-		}
-		metaValues["FeatureFlags"] = featureFlagVals
 	}
 
 	chartTpl, err := image.GetSensorChartTemplate(image.K8sBox)
