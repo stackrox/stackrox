@@ -510,6 +510,10 @@ module.exports = {
         stroke: {
             current: 'currentColor',
         },
+        inset: {
+            0: '0',
+            8: '2rem',
+        },
     },
     variants: {
         appearance: ['responsive', 'before', 'after'],

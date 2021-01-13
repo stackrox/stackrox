@@ -1244,3 +1244,7 @@ h6 {
     box-shadow: 0 0 30px 0 rgba(81, 119, 255, 0.23);
     background: rgba(81, 119, 255, 0.23);
 }
+
+.border-spacing-0 {
+    border-spacing: 0;
+}
