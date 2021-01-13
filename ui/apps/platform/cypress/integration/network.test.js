@@ -233,8 +233,7 @@ describe('Network Flows Table', () => {
         }
     });
 
-    // eslint-disable-next-line func-names
-    it('should show the proper client-side autocomplete results for network flows table', function () {
+    it('should show the proper client-side autocomplete results for network flows table', () => {
         cy.visit(riskURL);
         cy.get(`${selectors.table.rows}:contains('central')`).click();
         cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();
@@ -285,8 +284,7 @@ describe('Network Flows Table', () => {
         cy.get(networkPageSelectors.detailsPanel.search.options).contains('active');
     });
 
-    // eslint-disable-next-line func-names
-    it('should properly filter the network flows table', function () {
+    it('should properly filter the network flows table', () => {
         cy.visit(riskURL);
         cy.get(`${selectors.table.rows}:contains('central')`).click();
         cy.get(riskPageSelectors.viewDeploymentsInNetworkGraphButton).click();

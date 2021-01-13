@@ -41,8 +41,7 @@ describe('CVEs list Page and its entity detail page, sub list validations ', () 
             });
     });
 
-    // eslint-disable-next-line func-names
-    it('should display Discovered in Image time column when appropriate', function () {
+    it('should display Discovered in Image time column when appropriate', () => {
         cy.visit(url.list.cves);
         cy.get(`${selectors.tableColumn}`)
             .invoke('text')

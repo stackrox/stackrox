@@ -8,7 +8,7 @@ export default {
     component: CondensedButton,
 } as Meta;
 
-export const DefaultButton: Story<{}> = () => {
+export const DefaultButton: Story = () => {
     function onClick(): void {}
     return (
         <CondensedButton type="button" onClick={onClick}>

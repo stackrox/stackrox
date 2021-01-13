@@ -15,12 +15,12 @@ class CustomPopper extends Component {
         this.onClick = this.onClick.bind(this);
     }
 
-    onClick() {
-        this.setState((prevState) => ({ isOpen: !prevState.isOpen }));
-    }
-
     handleClickOutside() {
         this.setState({ isOpen: false });
+    }
+
+    onClick() {
+        this.setState((prevState) => ({ isOpen: !prevState.isOpen }));
     }
 
     render() {

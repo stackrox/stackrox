@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { fetchNetworkBaselines } from 'services/NetworkService';
 import { filterLabels } from 'constants/networkFilterModes';
-import { FlattenedNetworkBaseline } from 'Containers/Network/networkTypes';
+import { BaselineStatus, FlattenedNetworkBaseline } from 'Containers/Network/networkTypes';
 import { networkFlowStatus, nodeTypes } from 'constants/networkGraph';
 
 type Result = { isLoading: boolean; data: FlattenedNetworkBaseline[]; error: string | null };
@@ -14,9 +14,9 @@ export function getPeerEntityName(peer): string {
         case nodeTypes.EXTERNAL_ENTITIES:
             return 'External Entities';
         case nodeTypes.CIDR_BLOCK:
-            return peer.entity.info.externalSource.name;
+            return peer.entity.info.externalSource.name as string;
         default:
-            return peer.entity.info.deployment.name;
+            return peer.entity.info.deployment.name as string;
     }
 }
 
@@ -35,7 +35,7 @@ function useFetchNetworkBaselines({ selectedDeployment, deploymentId, filterStat
         networkBaselinesPromise
             .then((response) => {
                 const { namespace, peers } = response;
-                const data = peers.reduce((acc, currPeer) => {
+                const data = peers.reduce((acc: FlattenedNetworkBaseline[], currPeer) => {
                     currPeer.properties.forEach((property) => {
                         const name = getPeerEntityName(currPeer);
                         const peer = {
@@ -52,7 +52,7 @@ function useFetchNetworkBaselines({ selectedDeployment, deploymentId, filterStat
                         };
                         acc.push({
                             peer,
-                            status: networkFlowStatus.BASELINE,
+                            status: networkFlowStatus.BASELINE as BaselineStatus,
                         });
                     });
                     return acc;

@@ -8,6 +8,6 @@ export default {
     component: TooltipOverlay,
 } as Meta;
 
-export const SimpleText: Story<{}> = () => (
+export const SimpleText: Story = () => (
     <TooltipOverlay extraClassName="w-20">Tooltip</TooltipOverlay>
 );

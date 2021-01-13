@@ -11,7 +11,7 @@ export default {
     component: Tooltip,
 } as Meta;
 
-export const ForButton: Story<{}> = () => (
+export const ForButton: Story = () => (
     <Tooltip content={<TooltipOverlay>What does the octocat say?</TooltipOverlay>}>
         <button type="button">
             <Icon.GitHub />
@@ -20,7 +20,7 @@ export const ForButton: Story<{}> = () => (
     </Tooltip>
 );
 
-export const ComplexTooltipContent: Story<{}> = () => (
+export const ComplexTooltipContent: Story = () => (
     <Tooltip
         content={
             <DetailedTooltipOverlay

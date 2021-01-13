@@ -8,7 +8,7 @@ import { getDate } from 'utils/dateUtils';
 import ContainerConfigurations from './ContainerConfigurations';
 import SecurityContext from './SecurityContext';
 
-export const formatDeploymentPorts = (ports) => {
+export const formatDeploymentPorts = (ports): string[] => {
     return ports.map(({ exposure, exposureInfos, ...rest }) => {
         const formattedPort = { ...rest };
         formattedPort.exposure = portExposureLabels[exposure] || portExposureLabels.UNSET;
@@ -16,7 +16,7 @@ export const formatDeploymentPorts = (ports) => {
             return { ...restInfo, level: portExposureLabels[level] };
         });
         return formattedPort;
-    });
+    }) as string[];
 };
 
 const deploymentDetailsMap = {
@@ -39,7 +39,7 @@ const deploymentDetailsMap = {
     serviceAccount: { label: 'Service Account' },
     imagePullSecrets: {
         label: 'Image Pull Secrets',
-        formatValue: (v) => v.join(', '),
+        formatValue: (v) => v.join(', ') as string,
     },
 };
 

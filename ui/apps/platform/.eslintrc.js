@@ -104,7 +104,7 @@ const commonReactRules = {
         },
     ],
     // stepping away from Airbnb and into more inconsistent world to avoid huge refactoring
-    'react/destructuring-assignment': ['off'],
+    'react/destructuring-assignment': 'off',
     // forbid 'data-test-id' in preference of 'data-testid'
     'react/forbid-dom-props': [
         'error',
@@ -117,7 +117,7 @@ const commonReactRules = {
 
     // DEPRECATED in favor of label-has-associated-control
     // https://github.com/evcohen/eslint-plugin-jsx-a11y/blob/master/docs/rules/label-has-for.md#rule-details
-    'jsx-a11y/label-has-for': ['off'],
+    'jsx-a11y/label-has-for': 'off',
     'jsx-a11y/control-has-associated-label': [
         'warn',
         {
@@ -153,6 +153,14 @@ const commonTypeScriptRules = {
             readonly: 'array',
         },
     ],
+
+    /*
+     * Turn off rules from recommended-requiring-type-checking because of
+     * irrelevant problems when TypeScript modules import from JavaScript modules.
+     */
+    '@typescript-eslint/no-unsafe-assignment': 'off',
+    '@typescript-eslint/no-unsafe-call': 'off',
+    '@typescript-eslint/no-unsafe-member-access': 'off',
 };
 
 const commonUnitTestRules = {
@@ -173,7 +181,11 @@ const commonUnitTestRules = {
 
 module.exports = {
     plugins: ['prettier'],
-    parser: 'babel-eslint',
+    parser: '@typescript-eslint/parser',
+    parserOptions: {
+        project: './tsconfig.eslint.json',
+        tsconfigRootDir: __dirname,
+    },
     extends: ['react-app', 'airbnb', 'plugin:react/recommended', 'prettier', 'prettier/react'],
     settings: {
         // in build scripts we use NODE_PATH, so need to configure eslint-plugin-import
@@ -217,11 +229,6 @@ module.exports = {
         },
         {
             files: ['**/*.ts', '**/*.tsx'],
-            parser: '@typescript-eslint/parser',
-            parserOptions: {
-                project: './tsconfig.eslint.json',
-                tsconfigRootDir: __dirname,
-            },
             plugins: ['@typescript-eslint', 'prettier'],
             extends: [
                 'react-app',
@@ -240,6 +247,9 @@ module.exports = {
                 ...commonRules,
                 ...commonReactRules,
                 ...commonTypeScriptRules,
+
+                // Provide ECMAScript default values instead of defaultProps.
+                'react/require-default-props': 'off',
             },
         },
         {
@@ -269,11 +279,6 @@ module.exports = {
         },
         {
             files: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
-            parser: '@typescript-eslint/parser',
-            parserOptions: {
-                project: './tsconfig.eslint.json',
-                tsconfigRootDir: __dirname,
-            },
             plugins: ['prettier', 'jest'],
             extends: [
                 'react-app',

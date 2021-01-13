@@ -20,14 +20,14 @@ const defaultResultState = { data: [], error: null, isLoading: true };
  * and protocols
  */
 function flattenNetworkFlows(networkFlows): NetworkFlow[] {
-    return networkFlows.reduce((acc, curr) => {
+    return networkFlows.reduce((acc: NetworkFlow[], curr) => {
         curr.portsAndProtocols.forEach(({ port, protocol, traffic }) => {
             const datum = { ...curr, port, protocol, traffic };
             delete datum.portsAndProtocols;
             acc.push(datum);
         });
         return acc;
-    }, []);
+    }, []) as NetworkFlow[];
 }
 
 /*
@@ -65,7 +65,8 @@ function getPeersFromNetworkFlows(networkFlows): FlattenedPeer[] {
  * This function creates a unique key based on the fields of a peer
  */
 function getBaselineStatusKey({ id, ingress, port, protocol }): string {
-    return `${id}-${ingress}-${port}-${protocol}`;
+    // TODO remove type casts when peer argument has a type.
+    return `${id as string}-${String(ingress as boolean)}-${port as number}-${protocol as string}`;
 }
 
 function usePrevValue(newValue: unknown): unknown | undefined {
@@ -108,35 +109,36 @@ function useFetchNetworkBaselines({
 
         baselineStatusPromise
             .then((response) => {
-                const baselineStatusMap: {
-                    [key: string]: BaselineStatus;
-                } = response.statuses.reduce((acc, networkBaseline: FlattenedNetworkBaseline) => {
-                    const key = getBaselineStatusKey({
-                        id: networkBaseline.peer.entity.id,
-                        ingress: networkBaseline.peer.ingress,
-                        port: networkBaseline.peer.port,
-                        protocol: networkBaseline.peer.protocol,
-                    });
-                    acc[key] = networkBaseline.status;
-                    return acc;
-                }, {});
-                const flattenedNetworkBaselines = peers.reduce(
-                    (acc: FlattenedNetworkBaseline[], peer: FlattenedPeer) => {
+                const baselineStatusMap: Record<string, BaselineStatus> = response.statuses.reduce(
+                    (
+                        acc: Record<string, BaselineStatus>,
+                        networkBaseline: FlattenedNetworkBaseline
+                    ) => {
                         const key = getBaselineStatusKey({
-                            id: peer.entity.id,
-                            ingress: peer.ingress,
-                            port: peer.port,
-                            protocol: peer.protocol,
+                            id: networkBaseline.peer.entity.id,
+                            ingress: networkBaseline.peer.ingress,
+                            port: networkBaseline.peer.port,
+                            protocol: networkBaseline.peer.protocol,
                         });
-                        const status = baselineStatusMap[key];
-                        acc.push({
-                            peer,
-                            status,
-                        });
+                        acc[key] = networkBaseline.status;
                         return acc;
                     },
-                    []
+                    {}
                 );
+                const flattenedNetworkBaselines = peers.reduce((acc, peer) => {
+                    const key = getBaselineStatusKey({
+                        id: peer.entity.id,
+                        ingress: peer.ingress,
+                        port: peer.port,
+                        protocol: peer.protocol,
+                    });
+                    const status = baselineStatusMap[key];
+                    acc.push({
+                        peer,
+                        status,
+                    });
+                    return acc;
+                }, [] as FlattenedNetworkBaseline[]);
                 setResult({ data: flattenedNetworkBaselines || [], error: null, isLoading: false });
             })
             .catch((error) => {

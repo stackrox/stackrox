@@ -8,11 +8,11 @@ export default {
     component: Message,
 } as Meta;
 
-export const BaseTypeWithStringContent: Story<{}> = () => (
+export const BaseTypeWithStringContent: Story = () => (
     <Message>The most basic message imanginable.</Message>
 );
 
-export const BaseTypeWithChildren: Story<{}> = () => (
+export const BaseTypeWithChildren: Story = () => (
     <Message>
         <p className="mb-2">
             An existing policy with the name “Container using read-write root filesystem” has the
@@ -26,11 +26,11 @@ export const BaseTypeWithChildren: Story<{}> = () => (
     </Message>
 );
 
-export const SuccessType: Story<{}> = () => (
+export const SuccessType: Story = () => (
     <Message type="success">Congratulations! You won the lottery.</Message>
 );
 
-export const WarnType: Story<{}> = () => (
+export const WarnType: Story = () => (
     <Message type="warn">
         <span>
             Central doesn&apos;t have the required Kernel support package. Retrieve it from{' '}
@@ -47,7 +47,7 @@ export const WarnType: Story<{}> = () => (
     </Message>
 );
 
-export const ErrorType: Story<{}> = () => {
+export const ErrorType: Story = () => {
     const imageScanMessages = {
         header: 'The scanner doesn’t provide OS information.',
         body:

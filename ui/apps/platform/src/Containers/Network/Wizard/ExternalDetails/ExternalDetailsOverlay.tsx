@@ -12,7 +12,8 @@ function ExternalDetailsOverlay({ selectedNode }): ReactElement {
     const onNavigateToEntity = useNavigateToEntity();
 
     const { edges, cidr, name } = selectedNode;
-    const headerName = cidr ? `${name} | ${cidr}` : name;
+    // TODO remove type casts when selectedNode prop has a type.
+    const headerName = cidr ? `${name as string} | ${cidr as string}` : name;
 
     // TODO: generalize the layout wrapper in NetworkEntityTabbedOverlay.js so tabs are optional
     return (

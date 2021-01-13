@@ -10,10 +10,14 @@ export type DownloadHelmValuesProps = {
 
 const DownloadHelmValues = ({ clusterId }): ReactElement => {
     function downloadValues(): void {
-        getClusterById(clusterId).then((response) => {
-            // eslint-disable-next-line no-console
-            console.log(response);
-        });
+        getClusterById(clusterId)
+            .then((response) => {
+                // eslint-disable-next-line no-console
+                console.log(response);
+            })
+            .catch(() => {
+                // TODO display message when there is a place for minor errors
+            });
     }
 
     return (

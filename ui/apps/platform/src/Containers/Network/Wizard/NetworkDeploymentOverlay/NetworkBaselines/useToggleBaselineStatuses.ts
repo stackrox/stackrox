@@ -22,7 +22,7 @@ function useToggleBaselineStatuses(deploymentId: string): MarkNetworkBaselines {
                         previousStatus === networkFlowStatus.ANOMALOUS
                             ? networkFlowStatus.BASELINE
                             : networkFlowStatus.ANOMALOUS,
-                };
+                } as Record<string, unknown>;
             });
             const promise = markNetworkBaselineStatuses({
                 deploymentId,

@@ -16,11 +16,11 @@ const tooltipBody = (
     </ul>
 );
 
-export const TitleAndBody: Story<{}> = () => {
+export const TitleAndBody: Story = () => {
     return <DetailedTooltipOverlay title="scanner" body="Weighted CVSS: 6.7" />;
 };
 
-export const OptionalFooter: Story<{}> = () => {
+export const OptionalFooter: Story = () => {
     return (
         <DetailedTooltipOverlay
             title="scanner"
@@ -30,7 +30,7 @@ export const OptionalFooter: Story<{}> = () => {
     );
 };
 
-export const OptionalFooterAndSubtitle: Story<{}> = () => {
+export const OptionalFooterAndSubtitle: Story = () => {
     return (
         <DetailedTooltipOverlay
             title="jon-snow"

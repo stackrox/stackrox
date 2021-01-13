@@ -22,7 +22,7 @@ interface MultiFormValues {
 }
 
 interface FormValuesDisplayProps {
-    formValues: SingleFormValues | MultiFormValues | {};
+    formValues: SingleFormValues | MultiFormValues;
 }
 
 interface FormSubmitButtonProps {
@@ -42,10 +42,10 @@ const FormValuesDisplay = ({ formValues }: FormValuesDisplayProps): ReactElement
     return <pre className="bg-base-200 mt-4 p-4">{JSON.stringify(formValues)}</pre>;
 };
 
-export const Disabled: Story<{}> = (): ReactElement => {
-    const [formValues, setFormValues] = useState({});
+export const Disabled: Story = (): ReactElement => {
+    const [formValues, setFormValues] = useState<SingleFormValues>();
 
-    const initialValues = {};
+    const initialValues: SingleFormValues = { name: '' };
     const onSubmit = (values: SingleFormValues): void => {
         setFormValues(values);
     };
@@ -65,10 +65,10 @@ export const Disabled: Story<{}> = (): ReactElement => {
     );
 };
 
-export const Validation: Story<{}> = (): ReactElement => {
-    const [formValues, setFormValues] = useState({});
+export const Validation: Story = (): ReactElement => {
+    const [formValues, setFormValues] = useState<SingleFormValues>();
 
-    const initialValues = {};
+    const initialValues: SingleFormValues = { name: '' };
     const initialErrors = { name: 'Name is required' };
     const initialTouched = { name: true };
     const validationSchema = yup.object().shape({
@@ -98,10 +98,10 @@ export const Validation: Story<{}> = (): ReactElement => {
     );
 };
 
-export const Required: Story<{}> = (): ReactElement => {
-    const [formValues, setFormValues] = useState({});
+export const Required: Story = (): ReactElement => {
+    const [formValues, setFormValues] = useState<SingleFormValues>();
 
-    const initialValues = {};
+    const initialValues: SingleFormValues = { name: '' };
     const validationSchema = yup.object().shape({
         name: yup.string().required('Name is required'),
     });
@@ -128,10 +128,10 @@ export const Required: Story<{}> = (): ReactElement => {
     );
 };
 
-export const ChangeHandler: Story<{}> = (): ReactElement => {
-    const [formValues, setFormValues] = useState({});
+export const ChangeHandler: Story = (): ReactElement => {
+    const [formValues, setFormValues] = useState<SingleFormValues>();
 
-    const initialValues = {};
+    const initialValues: SingleFormValues = { name: '' };
     const onChange: OnChangeHandler = ({ event, handleChange }) => {
         if (event.target.value === 'Shazam') {
             const modifiedEvent = { ...event };
@@ -164,9 +164,9 @@ export const ChangeHandler: Story<{}> = (): ReactElement => {
     );
 };
 
-export const Multiple: Story<{}> = (): ReactElement => {
-    const [formValues, setFormValues] = useState({});
-    const initialValues = {};
+export const Multiple: Story = (): ReactElement => {
+    const [formValues, setFormValues] = useState<MultiFormValues>();
+    const initialValues: MultiFormValues = { firstName: '', lastName: '', nickname: '' };
     const onSubmit = (values: MultiFormValues): void => {
         setFormValues(values);
     };

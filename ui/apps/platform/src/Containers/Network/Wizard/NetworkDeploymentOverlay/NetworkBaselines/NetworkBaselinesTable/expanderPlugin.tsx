@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { Component, ReactNode } from 'react';
 
 import { ChevronRight, ChevronDown } from 'react-feather';
 
@@ -28,14 +28,17 @@ function ExpanderCellComponent({ row }): ReactNode {
 }
 
 function expanderPlugin(hooks): void {
-    hooks.visibleColumns.push((visibleColumns) => [
-        {
-            // Build our expander column
-            id: expanderColumnId,
-            Cell: ExpanderCellComponent,
-        },
-        ...visibleColumns,
-    ]);
+    hooks.visibleColumns.push(
+        (visibleColumns) =>
+            [
+                {
+                    // Build our expander column
+                    id: expanderColumnId,
+                    Cell: ExpanderCellComponent,
+                },
+                ...visibleColumns,
+            ] as { id: string; Cell: Component }[]
+    );
 }
 
 export default expanderPlugin;

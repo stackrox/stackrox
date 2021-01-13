@@ -136,7 +136,7 @@ file:
       "    component: <FFSName>,",
       "} as Meta;",
       "",
-      "export const FirstStory: Story<{}> = () => <<FFSName> />;",
+      "export const FirstStory: Story = () => <<FFSName> />;",
       ""        
     ]
   } 

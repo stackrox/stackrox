@@ -140,20 +140,6 @@ module.exports = {
                         skipUndeclared: true,
                     },
                 ],
-
-                /*
-                // Do not ban <{}> because it means what it says for React components, see:
-                // https://github.com/typescript-eslint/typescript-eslint/issues/2063#issuecomment-675156492
-                '@typescript-eslint/ban-types': [
-                    'error',
-                    {
-                        extendDefaults: true,
-                        types: {
-                            '{}': false,
-                        },
-                    },
-                ],
-                */
             },
         },
     ],

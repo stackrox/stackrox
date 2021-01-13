@@ -7,6 +7,7 @@ node_modules/
 lint
 /build
 test-results
+.eslintcache
 
 # development
 .vscode

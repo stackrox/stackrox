@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, Component } from 'react';
 
 import IndeterminateCheckbox from './IndeterminateCheckbox';
 
@@ -29,14 +29,17 @@ export type CheckboxSelectionPluginOptions = {
 };
 
 function checkboxSelectionPlugin(hooks): void {
-    hooks.visibleColumns.push((visibleColumns) => [
-        // Make a column for selection
-        {
-            id: 'selection',
-            Cell: CheckboxCellComponent,
-        },
-        ...visibleColumns,
-    ]);
+    hooks.visibleColumns.push(
+        (visibleColumns) =>
+            [
+                // Make a column for selection
+                {
+                    id: 'selection',
+                    Cell: CheckboxCellComponent,
+                },
+                ...visibleColumns,
+            ] as { id: string; Cell: Component }[]
+    );
 }
 
 export default checkboxSelectionPlugin;

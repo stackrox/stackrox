@@ -9,7 +9,7 @@ export default {
     component: FormErrorMessage,
 } as Meta;
 
-export const Default: Story<{}> = () => {
+export const Default: Story = () => {
     const initialErrors = { name: 'Required' };
     const initialTouched = { name: true };
     function onSubmit(): void {}
@@ -27,7 +27,7 @@ export const Default: Story<{}> = () => {
     );
 };
 
-export const NoError: Story<{}> = () => {
+export const NoError: Story = () => {
     const initialErrors = {};
     const initialTouched = {};
     function onSubmit(): void {}

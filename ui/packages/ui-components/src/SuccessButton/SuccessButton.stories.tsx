@@ -8,7 +8,7 @@ export default {
     component: SuccessButton,
 } as Meta;
 
-export const BasicUsage: Story<{}> = () => {
+export const BasicUsage: Story = () => {
     function onClick(): void {}
     return (
         <SuccessButton type="button" onClick={onClick}>

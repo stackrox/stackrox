@@ -174,13 +174,13 @@ function NetworkBaselinesTable({
         expanderPlugin
     );
 
-    if (!rows.some((row) => row.id.includes(networkFlowStatus.ANOMALOUS))) {
+    if (!rows.some((row: { id: string }) => row.id.includes(networkFlowStatus.ANOMALOUS))) {
         const emptyAnomalousRow = getEmptyGroupRow(networkFlowStatus.ANOMALOUS as BaselineStatus);
 
         rows.unshift(emptyAnomalousRow);
     }
 
-    if (!rows.some((row) => row.id.includes(networkFlowStatus.BASELINE))) {
+    if (!rows.some((row: { id: string }) => row.id.includes(networkFlowStatus.BASELINE))) {
         const emptyBaselineRow = getEmptyGroupRow(networkFlowStatus.BASELINE as BaselineStatus);
 
         rows.push(emptyBaselineRow);

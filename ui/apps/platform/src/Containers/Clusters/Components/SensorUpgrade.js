@@ -157,6 +157,7 @@ SensorUpgrade.propTypes = {
     // Document the properties accessed by the helper function:
     upgradeStatus: PropTypes.shape({
         upgradability: PropTypes.string,
+        upgradabilityStatusReason: PropTypes.string,
         mostRecentProcess: PropTypes.shape({
             active: PropTypes.bool,
             progress: PropTypes.shape({

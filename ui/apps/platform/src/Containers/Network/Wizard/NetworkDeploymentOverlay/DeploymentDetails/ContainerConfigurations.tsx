@@ -76,45 +76,62 @@ const Resources = ({ resources }): ReactElement => {
     return <KeyValuePairs data={resources} keyValueMap={resourceMap} />;
 };
 
-const ContainerVolumes = ({ volumes }): ReactElement => {
+type Volume = Record<string, string>;
+
+const ContainerVolumes = ({ volumes }: { volumes: Volume[] }): ReactElement => {
     if (!volumes?.length) {
         return <span className="py-1 font-600 italic">None</span>;
     }
-    return volumes.map((volume, idx) => (
-        <li
-            key={volume.name}
-            className={`py-2 ${idx === volumes.length - 1 ? '' : 'border-base-300 border-b'}`}
-        >
-            {Object.keys(volume).map(
-                (key) =>
-                    volume[key] && (
-                        <div key={key} className="py-1 font-600">
-                            <span className=" pr-1">{capitalize(lowerCase(key))}:</span>
-                            <span className="text-accent-800 italic">{volume[key].toString()}</span>
-                        </div>
-                    )
-            )}
-        </li>
-    ));
+    return (
+        <>
+            {volumes.map((volume, idx) => (
+                <li
+                    key={volume.name}
+                    className={`py-2 ${
+                        idx === volumes.length - 1 ? '' : 'border-base-300 border-b'
+                    }`}
+                >
+                    {Object.keys(volume).map(
+                        (key) =>
+                            volume[key] && (
+                                <div key={key} className="py-1 font-600">
+                                    <span className=" pr-1">{capitalize(lowerCase(key))}:</span>
+                                    <span className="text-accent-800 italic">
+                                        {volume[key].toString()}
+                                    </span>
+                                </div>
+                            )
+                    )}
+                </li>
+            ))}
+        </>
+    );
 };
 
-const ContainerSecrets = ({ secrets }): ReactElement => {
+type Secret = {
+    name: string;
+    path: string;
+};
+const ContainerSecrets = ({ secrets }: { secrets: Secret[] }): ReactElement => {
     if (!secrets?.length) {
         return <span className="py-1 font-600 italic">None</span>;
     }
-    // TODO delete type casts when components have types.
-    return secrets.map(({ name, path }) => (
-        <div key={`${name as string}-${path as string}`} className="py-2">
-            <div className="py-1 font-600">
-                <span className="pr-1">Name:</span>
-                <span className="text-accent-800 italic">{name}</span>
-            </div>
-            <div className="py-1 font-600">
-                <span className="pr-1">Container Path:</span>
-                <span className="text-accent-800 italic">{path}</span>
-            </div>
-        </div>
-    ));
+    return (
+        <>
+            {secrets.map(({ name, path }) => (
+                <div key={`${name}-${path}`} className="py-2">
+                    <div className="py-1 font-600">
+                        <span className="pr-1">Name:</span>
+                        <span className="text-accent-800 italic">{name}</span>
+                    </div>
+                    <div className="py-1 font-600">
+                        <span className="pr-1">Container Path:</span>
+                        <span className="text-accent-800 italic">{path}</span>
+                    </div>
+                </div>
+            ))}
+        </>
+    );
 };
 
 const ContainerConfigurations = ({ deployment }): ReactElement => {

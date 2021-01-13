@@ -6,7 +6,7 @@ import useFetchNetworkBaselines from './useFetchNetworkBaselines';
 
 import NetworkBaselines from '../NetworkBaselines';
 
-function getPanelHeaderText(numBaselineFlows, filterState): string {
+function getPanelHeaderText(numBaselineFlows: number, filterState): string {
     switch (filterState) {
         case filterModes.active:
             return `${numBaselineFlows} active ${pluralize('flow', numBaselineFlows)}`;

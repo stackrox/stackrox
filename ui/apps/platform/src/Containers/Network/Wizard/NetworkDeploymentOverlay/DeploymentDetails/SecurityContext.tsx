@@ -26,7 +26,7 @@ const SecurityContext = ({ deployment }): ReactElement => {
     let containerResult: ReactElement | ReactElement[];
     if (deployment.containers) {
         const containers = deployment.containers
-            .filter((container) => container.securityContext)
+            .filter((container) => !!container.securityContext)
             .map((container) => {
                 const securityContext = getSecurityContext(container);
                 if (!securityContext || JSON.stringify(securityContext) === '{}') {
