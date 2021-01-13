@@ -29,7 +29,7 @@ The following charts are deprecated and not under active development anymore.
 
  - `./helm/DEPRECATEDcentralchart`
  - `./helm/DEPRECATEDscannerchart`
- - `./helm/sensorchart`
+ - `./helm/DEPRECATEDsensorchart`
 
 ## Developing helm charts
 

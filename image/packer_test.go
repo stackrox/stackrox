@@ -24,7 +24,7 @@ var (
 func TestSensorTLSGVKs(t *testing.T) {
 	var actualNames []string
 	for _, fileName := range K8sBox.List() {
-		if !strings.HasPrefix(fileName, sensorChartPrefix) {
+		if !strings.HasPrefix(fileName, SecuredClusterServicesChartPrefix) {
 			continue
 		}
 		base := filepath.Base(fileName)
@@ -53,7 +53,7 @@ func TestTLSSecretFiles(t *testing.T) {
 		files           set.FrozenStringSet
 		knownExceptions set.FrozenStringSet
 	}{
-		{chartPrefix: sensorChartPrefix, files: SensorMTLSFiles},
+		{chartPrefix: SecuredClusterServicesChartPrefix, files: SensorMTLSFiles},
 		{chartPrefix: centralChartPrefix, files: CentralMTLSFiles, knownExceptions: set.NewFrozenStringSet("default-tls-cert-secret.yaml")},
 		{chartPrefix: scannerChartPrefix, files: ScannerMTLSFiles},
 	} {

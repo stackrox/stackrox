@@ -27,7 +27,6 @@ import (
 
 const (
 	templatePath       = "templates"
-	sensorChartPrefix  = "helm/sensorchart/"
 	centralChartPrefix = "helm/DEPRECATEDcentralchart/"
 	scannerChartPrefix = "helm/DEPRECATEDscannerchart/"
 	chartYamlFile      = "Chart.yaml"
