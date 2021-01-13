@@ -1,7 +1,6 @@
 package zip
 
 import (
-	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
@@ -10,8 +9,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
-	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/clusters"
 	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/generated/storage"
@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/zip"
 )
 
@@ -27,30 +26,6 @@ const (
 	additionalCAsZipSubdir = "additional-cas"
 	centralCA              = "default-central-ca.crt"
 )
-
-func createIdentity(wrapper *zip.Wrapper, id string, servicePrefix string, serviceType storage.ServiceType, identityStore siDataStore.DataStore, certs *sensor.Certs) error {
-	srvIDAllAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.ServiceIdentity)))
-
-	issuedCert, err := mtls.IssueNewCert(mtls.NewSubject(id, serviceType))
-	if err != nil {
-		return err
-	}
-	if err := identityStore.AddServiceIdentity(srvIDAllAccessCtx, issuedCert.ID); err != nil {
-		return err
-	}
-	if wrapper != nil {
-		wrapper.AddFiles(
-			zip.NewFile(fmt.Sprintf("%s-cert.pem", servicePrefix), issuedCert.CertPEM, 0),
-			zip.NewFile(fmt.Sprintf("%s-key.pem", servicePrefix), issuedCert.KeyPEM, zip.Sensitive),
-		)
-	}
-	certs.Files[fmt.Sprintf("secrets/%s-cert.pem", servicePrefix)] = issuedCert.CertPEM
-	certs.Files[fmt.Sprintf("secrets/%s-key.pem", servicePrefix)] = issuedCert.KeyPEM
-	return nil
-}
 
 func getAdditionalCAs(certs *sensor.Certs) ([]*zip.File, error) {
 	certFileInfos, err := ioutil.ReadDir(tlsconfig.AdditionalCACertsDirPath())
@@ -125,21 +100,17 @@ func GenerateCertsAndAddToZip(wrapper *zip.Wrapper, cluster *storage.Cluster, id
 	}
 	certs.Files["secrets/ca.pem"] = ca
 
-	// Add MTLS files for sensor
-	if err := createIdentity(wrapper, cluster.GetId(), "sensor", storage.ServiceType_SENSOR_SERVICE, identityStore, &certs); err != nil {
-		return certs, err
-	}
-
-	// Add MTLS files for collector
-	if err := createIdentity(wrapper, cluster.GetId(), "collector", storage.ServiceType_COLLECTOR_SERVICE, identityStore, &certs); err != nil {
-		return certs, err
-	}
-
+	serviceTypes := []storage.ServiceType{storage.ServiceType_COLLECTOR_SERVICE, storage.ServiceType_SENSOR_SERVICE}
 	if features.AdmissionControlService.Enabled() && cluster.GetAdmissionController() {
-		if err := createIdentity(wrapper, cluster.GetId(), "admission-control",
-			storage.ServiceType_ADMISSION_CONTROL_SERVICE, identityStore, &certs); err != nil {
+		serviceTypes = append(serviceTypes, storage.ServiceType_ADMISSION_CONTROL_SERVICE)
+	}
+
+	for _, serviceType := range serviceTypes {
+		issuedCert, err := clusters.CreateIdentity(cluster.GetId(), serviceType, identityStore)
+		if err != nil {
 			return certs, err
 		}
+		addCerts(wrapper, &certs, serviceType, issuedCert)
 	}
 
 	if wrapper != nil {
@@ -151,4 +122,22 @@ func GenerateCertsAndAddToZip(wrapper *zip.Wrapper, cluster *storage.Cluster, id
 	}
 
 	return certs, nil
+}
+
+func addCerts(wrapper *zip.Wrapper, certs *sensor.Certs, serviceType storage.ServiceType, issuedCert *mtls.IssuedCert) {
+	components := strings.Split(serviceType.String(), "_")
+	components = components[:len(components)-1] // last component is "SERVICE"
+	servicePrefix := strings.ToLower(strings.Join(components, "-"))
+
+	certFileName := fmt.Sprintf("%s-cert.pem", servicePrefix)
+	keyFileName := fmt.Sprintf("%s-key.pem", servicePrefix)
+
+	if wrapper != nil {
+		wrapper.AddFiles(
+			zip.NewFile(certFileName, issuedCert.CertPEM, 0),
+			zip.NewFile(keyFileName, issuedCert.KeyPEM, zip.Sensitive),
+		)
+	}
+	certs.Files[path.Join("secrets", certFileName)] = issuedCert.CertPEM
+	certs.Files[path.Join("secrets", keyFileName)] = issuedCert.KeyPEM
 }
