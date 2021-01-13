@@ -9,7 +9,7 @@ import (
 // independently, and makes the settings available via a ValueStream.
 type SettingsManager interface {
 	UpdatePolicies(allPolicies []*storage.Policy)
-	UpdateConfig(config *storage.DynamicClusterConfig)
+	UpdateConfig(clusterID string, config *storage.DynamicClusterConfig)
 	FlushCache()
 
 	SettingsStream() concurrency.ReadOnlyValueStream

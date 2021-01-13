@@ -143,7 +143,7 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 		return nil, errors.Wrap(err, "could not unmarshal object from request")
 	}
 
-	deployment, err := resources.NewDeploymentFromStaticResource(k8sObj, req.Kind.Kind, s.GetClusterConfig().GetRegistryOverride())
+	deployment, err := resources.NewDeploymentFromStaticResource(k8sObj, req.Kind.Kind, s.clusterID(), s.GetClusterConfig().GetRegistryOverride())
 	if err != nil {
 		return nil, errors.Wrap(err, "could not convert Kubernetes object into StackRox deployment")
 	}
@@ -152,8 +152,6 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 		log.Debugf("Non-top-level object, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
 		return pass(req.UID), nil // we only enforce on top-level objects
 	}
-
-	deployment.ClusterId = getClusterID()
 
 	log.Debugf("Evaluating policies on %+v", deployment)
 

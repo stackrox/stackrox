@@ -13,4 +13,5 @@ message HelmManagedConfigInit {
 
 message ClusterConfig {
     storage.DynamicClusterConfig config = 1;
+    string cluster_id = 2;
 }

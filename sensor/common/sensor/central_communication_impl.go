@@ -8,7 +8,9 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"google.golang.org/grpc"
@@ -169,6 +171,9 @@ func (s *centralCommunicationImpl) initialConfigSync(stream central.SensorServic
 	}
 	if msg.GetClusterConfig() == nil {
 		return errors.Errorf("initial message received from Sensor was not a cluster config: %T", msg.Msg)
+	}
+	if features.SensorInstallationExperience.Enabled() {
+		clusterid.Set(msg.GetClusterConfig().GetClusterId())
 	}
 	// Send the initial cluster config to the config handler
 	if err := handler.ProcessMessage(msg); err != nil {

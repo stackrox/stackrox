@@ -110,6 +110,7 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 
 	cacheVersion := string(cm.Data[admissioncontrol.CacheVersionDataKey])
 	centralEndpoint := string(cm.Data[admissioncontrol.CentralEndpointDataKey])
+	clusterID := string(cm.Data[admissioncontrol.ClusterIDDataKey])
 
 	settings := &sensor.AdmissionControlSettings{
 		ClusterConfig:              &config,
@@ -117,6 +118,7 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 		Timestamp:                  tsProto,
 		CacheVersion:               cacheVersion,
 		CentralEndpoint:            centralEndpoint,
+		ClusterId:                  clusterID,
 	}
 
 	return settings, nil

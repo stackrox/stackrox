@@ -284,7 +284,8 @@ func (c *sensorConnection) getClusterConfigMsg(ctx context.Context) (*central.Ms
 	return &central.MsgToSensor{
 		Msg: &central.MsgToSensor_ClusterConfig{
 			ClusterConfig: &central.ClusterConfig{
-				Config: cluster.GetDynamicConfig(),
+				Config:    cluster.GetDynamicConfig(),
+				ClusterId: c.clusterID,
 			},
 		},
 	}, nil

@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
@@ -201,8 +200,8 @@ func (m *networkFlowManager) enrichAndSend() {
 		Time:             types.TimestampNow(),
 	}
 
-	metrics.IncrementTotalNetworkFlowsSentCounter(clusterid.Get(), len(protoToSend.Updated))
-	metrics.IncrementTotalNetworkEndpointsSentCounter(clusterid.Get(), len(protoToSend.UpdatedEndpoints))
+	metrics.IncrementTotalNetworkFlowsSentCounter(len(protoToSend.Updated))
+	metrics.IncrementTotalNetworkEndpointsSentCounter(len(protoToSend.UpdatedEndpoints))
 	log.Debugf("Flow update : %v", protoToSend)
 	select {
 	case <-m.done.Done():

@@ -56,7 +56,7 @@ func IsTrackedOwnerReference(reference metav1.OwnerReference) bool {
 }
 
 // NewDeploymentFromStaticResource returns a storage.Deployment from a k8s object
-func NewDeploymentFromStaticResource(obj interface{}, deploymentType, registryOverride string) (*storage.Deployment, error) {
+func NewDeploymentFromStaticResource(obj interface{}, deploymentType, clusterID, registryOverride string) (*storage.Deployment, error) {
 	objMeta, err := meta.Accessor(obj)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not access metadata of object of type %T", obj)
@@ -80,7 +80,7 @@ func NewDeploymentFromStaticResource(obj interface{}, deploymentType, registryOv
 		}
 	}
 
-	wrap := newWrap(objMeta, kind, registryOverride)
+	wrap := newWrap(objMeta, kind, clusterID, registryOverride)
 	wrap.populateFields(obj)
 	return wrap.Deployment, nil
 
@@ -97,7 +97,7 @@ func extractDeploymentConfig(encodedDeploymentConfig string) (metav1.Object, str
 	return &dc.MetaData, dc.Kind, err
 }
 
-func newWrap(meta metav1.Object, kind, registryOverride string) *DeploymentWrap {
+func newWrap(meta metav1.Object, kind, clusterID, registryOverride string) *DeploymentWrap {
 	createdTime, err := ptypes.TimestampProto(meta.GetCreationTimestamp().Time)
 	if err != nil {
 		log.Error(err)
@@ -106,6 +106,7 @@ func newWrap(meta metav1.Object, kind, registryOverride string) *DeploymentWrap 
 		registryOverride: registryOverride,
 		Deployment: &storage.Deployment{
 			Id:             string(meta.GetUID()),
+			ClusterId:      clusterID,
 			Name:           meta.GetName(),
 			Type:           kind,
 			Namespace:      stringutils.OrDefault(meta.GetNamespace(), "default"),

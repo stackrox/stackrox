@@ -32,7 +32,7 @@ type DispatcherRegistry interface {
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
-func NewDispatcherRegistry(syncedRBAC *concurrency.Flag, podLister v1Listers.PodLister, entityStore *clusterentities.Store, processFilter filter.Filter,
+func NewDispatcherRegistry(syncedRBAC *concurrency.Flag, clusterID string, podLister v1Listers.PodLister, entityStore *clusterentities.Store, processFilter filter.Filter,
 	configHandler config.Handler, detector detector.Detector) DispatcherRegistry {
 	serviceStore := newServiceStore()
 	deploymentStore := DeploymentStoreSingleton()
@@ -43,7 +43,7 @@ func NewDispatcherRegistry(syncedRBAC *concurrency.Flag, podLister v1Listers.Pod
 	rbacUpdater := newRBACUpdater(syncedRBAC)
 
 	return &registryImpl{
-		deploymentHandler: newDeploymentHandler(serviceStore, deploymentStore, podStore, endpointManager, nsStore,
+		deploymentHandler: newDeploymentHandler(clusterID, serviceStore, deploymentStore, podStore, endpointManager, nsStore,
 			rbacUpdater, podLister, processFilter, configHandler, detector),
 
 		rbacDispatcher:           newRBACDispatcher(rbacUpdater),

@@ -158,7 +158,7 @@ func hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.
 		return true
 	}
 
-	oldDeployment, err := resources.NewDeploymentFromStaticResource(oldK8sObj, req.Kind.Kind, s.GetClusterConfig().GetRegistryOverride())
+	oldDeployment, err := resources.NewDeploymentFromStaticResource(oldK8sObj, req.Kind.Kind, s.clusterID(), s.GetClusterConfig().GetRegistryOverride())
 	if err != nil {
 		log.Errorf("Failed to convert old K8s object into StackRox deployment: %v", err)
 		return true

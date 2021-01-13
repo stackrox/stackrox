@@ -49,40 +49,40 @@ var (
 		Help:      "A gauge to track the enrichment lru cache size",
 	})
 
-	sensorIndicatorChannelFullCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	sensorIndicatorChannelFullCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "indicators_channel_indicator_dropped_counter",
 		Help:      "A counter of the total number of times we've dropped indicators from the indicators channel because it was full",
-	}, []string{"ClusterID"})
+	})
 
-	totalNetworkFlowsSentCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	totalNetworkFlowsSentCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "total_network_flows_sent_counter",
 		Help:      "A counter of the total number of network flows sent to Central by Sensor",
-	}, []string{"ClusterID"})
+	})
 
-	totalNetworkFlowsReceivedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	totalNetworkFlowsReceivedCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "total_network_flows_sensor_received_counter",
 		Help:      "A counter of the total number of network flows received by Sensor from Collector",
-	}, []string{"ClusterID"})
+	})
 
-	totalNetworkEndpointsSentCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	totalNetworkEndpointsSentCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "total_network_endpoints_sent_counter",
 		Help:      "A counter of the total number of network endpoints sent to Central by Sensor",
-	}, []string{"ClusterID"})
+	})
 
-	totalNetworkEndpointsReceivedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	totalNetworkEndpointsReceivedCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "total_network_endpoints_received_counter",
 		Help:      "A counter of the total number of network endpoints received by Sensor from Collector",
-	}, []string{"ClusterID"})
+	})
 
 	sensorEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -108,28 +108,28 @@ func IncrementProcessDedupeCacheMisses() {
 }
 
 // RegisterSensorIndicatorChannelFullCounter registers the number of indicators dropped
-func RegisterSensorIndicatorChannelFullCounter(clusterID string) {
-	sensorIndicatorChannelFullCounter.With(prometheus.Labels{"ClusterID": clusterID}).Inc()
+func RegisterSensorIndicatorChannelFullCounter() {
+	sensorIndicatorChannelFullCounter.Inc()
 }
 
 // IncrementTotalNetworkFlowsSentCounter registers the total number of flows processed
-func IncrementTotalNetworkFlowsSentCounter(clusterID string, numberOfFlows int) {
-	totalNetworkFlowsSentCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfFlows))
+func IncrementTotalNetworkFlowsSentCounter(numberOfFlows int) {
+	totalNetworkFlowsSentCounter.Add(float64(numberOfFlows))
 }
 
 // IncrementTotalNetworkFlowsReceivedCounter registers the total number of flows received
-func IncrementTotalNetworkFlowsReceivedCounter(clusterID string, numberOfFlows int) {
-	totalNetworkFlowsReceivedCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfFlows))
+func IncrementTotalNetworkFlowsReceivedCounter(numberOfFlows int) {
+	totalNetworkFlowsReceivedCounter.Add(float64(numberOfFlows))
 }
 
 // IncrementTotalNetworkEndpointsSentCounter increments the total number of endpoints sent
-func IncrementTotalNetworkEndpointsSentCounter(clusterID string, numberOfEndpoints int) {
-	totalNetworkEndpointsSentCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfEndpoints))
+func IncrementTotalNetworkEndpointsSentCounter(numberOfEndpoints int) {
+	totalNetworkEndpointsSentCounter.Add(float64(numberOfEndpoints))
 }
 
 // IncrementTotalNetworkEndpointsReceivedCounter increments the total number of endpoints received
-func IncrementTotalNetworkEndpointsReceivedCounter(clusterID string, numberOfEndpoints int) {
-	totalNetworkEndpointsReceivedCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfEndpoints))
+func IncrementTotalNetworkEndpointsReceivedCounter(numberOfEndpoints int) {
+	totalNetworkEndpointsReceivedCounter.Add(float64(numberOfEndpoints))
 }
 
 // IncrementProcessEnrichmentDrops increments the number of times we could not enrich.

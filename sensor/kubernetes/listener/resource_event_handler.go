@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/processfilter"
@@ -24,9 +25,12 @@ func handleAllEvents(sif, resyncingSif informers.SharedInformerFactory, osf exte
 
 	var syncedRBAC concurrency.Flag
 
+	// This might block if a cluster ID is initially unavailable, which is okay.
+	clusterID := clusterid.Get()
+
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
 	podInformer := resyncingSif.Core().V1().Pods()
-	dispatchers := resources.NewDispatcherRegistry(&syncedRBAC, podInformer.Lister(), clusterentities.StoreInstance(), processfilter.Singleton(), config, detector)
+	dispatchers := resources.NewDispatcherRegistry(&syncedRBAC, clusterID, podInformer.Lister(), clusterentities.StoreInstance(), processfilter.Singleton(), config, detector)
 
 	namespaceInformer := sif.Core().V1().Namespaces().Informer()
 	secretInformer := sif.Core().V1().Secrets().Informer()

@@ -29,7 +29,6 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/centralclient"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image"
@@ -51,7 +50,6 @@ var (
 // A Sensor object configures a StackRox Sensor.
 // Its functions execute common tasks across supported platforms.
 type Sensor struct {
-	clusterID          string
 	centralEndpoint    string
 	advertisedEndpoint string
 
@@ -74,7 +72,6 @@ type Sensor struct {
 // NewSensor initializes a Sensor, including reading configurations from the environment.
 func NewSensor(configHandler config.Handler, detector detector.Detector, imageService image.Service, centralClient *centralclient.Client, components ...common.SensorComponent) *Sensor {
 	return &Sensor{
-		clusterID:          clusterid.Get(),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 

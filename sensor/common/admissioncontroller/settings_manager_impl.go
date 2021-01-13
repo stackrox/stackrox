@@ -62,7 +62,7 @@ func (p *settingsManager) UpdatePolicies(policies []*storage.Policy) {
 	p.currSettings = newSettings
 }
 
-func (p *settingsManager) UpdateConfig(config *storage.DynamicClusterConfig) {
+func (p *settingsManager) UpdateConfig(clusterID string, config *storage.DynamicClusterConfig) {
 	clonedConfig := config.Clone()
 
 	p.mutex.Lock()
@@ -72,6 +72,9 @@ func (p *settingsManager) UpdateConfig(config *storage.DynamicClusterConfig) {
 
 	newSettings := p.newSettingsNoLock()
 	newSettings.ClusterConfig = clonedConfig
+	if clusterID != "" {
+		newSettings.ClusterId = clusterID
+	}
 
 	if p.hasClusterConfig && p.hasPolicies {
 		p.settingsStream.Push(newSettings)

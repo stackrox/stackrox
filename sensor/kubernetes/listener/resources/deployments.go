@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
@@ -82,10 +81,12 @@ type deploymentHandler struct {
 	rbac            rbacUpdater
 
 	detector detector.Detector
+
+	clusterID string
 }
 
 // newDeploymentHandler creates and returns a new deployment handler.
-func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *podStore,
+func newDeploymentHandler(clusterID string, serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *podStore,
 	endpointManager *endpointManager, namespaceStore *namespaceStore, rbac rbacUpdater, podLister v1listers.PodLister,
 	processFilter filter.Filter, config config.Handler, detector detector.Detector) *deploymentHandler {
 	return &deploymentHandler{
@@ -101,11 +102,13 @@ func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *Deploymen
 		rbac:            rbac,
 
 		detector: detector,
+
+		clusterID: clusterID,
 	}
 }
 
 func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent {
-	deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.podLister, d.namespaceStore, d.hierarchy, d.config.GetConfig().GetRegistryOverride())
+	deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.clusterID, d.podLister, d.namespaceStore, d.hierarchy, d.config.GetConfig().GetRegistryOverride())
 	// Note: deploymentWrap may be nil. Typically, this means that this is not a top-level object that we track --
 	// either it's an object we don't track, or we track its parent.
 	// (For example, we don't track replicasets if they are owned by a deployment.)
@@ -151,7 +154,6 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		return events
 	}
 
-	deploymentWrap.ClusterId = clusterid.Get()
 	deploymentWrap.updatePortExposureFromStore(d.serviceStore)
 	if action != central.ResourceAction_REMOVE_RESOURCE {
 		d.deploymentStore.addOrUpdateDeployment(deploymentWrap)
@@ -233,7 +235,7 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 		Id:           uid,
 		Name:         k8sPod.GetName(),
 		DeploymentId: owningDeploymentID,
-		ClusterId:    clusterid.Get(),
+		ClusterId:    d.clusterID,
 		Namespace:    k8sPod.Namespace,
 		Started:      started,
 	}

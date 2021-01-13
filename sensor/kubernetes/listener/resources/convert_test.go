@@ -19,6 +19,10 @@ import (
 	v1listers "k8s.io/client-go/listers/core/v1"
 )
 
+const (
+	testClusterID = "12b1af66-be55-4e54-948d-ac9c311ca4b2"
+)
+
 var (
 	mockNamespaceStore = func() *namespaceStore {
 		s := newNamespaceStore()
@@ -77,7 +81,7 @@ func TestPopulateNonStaticFieldWithPod(t *testing.T) {
 	}
 	for _, c := range cases {
 		ph := references.NewParentHierarchy()
-		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", nil, mockNamespaceStore, ph, "")
+		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", testClusterID, nil, mockNamespaceStore, ph, "")
 		assert.Equal(t, c.expectedAction, c.action)
 	}
 }
@@ -475,6 +479,7 @@ func TestConvert(t *testing.T) {
 			},
 			expectedDeployment: &storage.Deployment{
 				Id:                           "FooID",
+				ClusterId:                    testClusterID,
 				Name:                         "deployment",
 				Namespace:                    "namespace",
 				NamespaceId:                  "FAKENSID",
@@ -633,7 +638,7 @@ func TestConvert(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "").GetDeployment()
+			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID, c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "").GetDeployment()
 			if actual != nil {
 				actual.StateTimestamp = 0
 			}

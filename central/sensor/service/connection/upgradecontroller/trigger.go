@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/sensorupgrader"
 )
 
 func constructTriggerUpgradeRequest(cluster *storage.Cluster, process *storage.ClusterUpgradeStatus_UpgradeProcessStatus) *central.SensorUpgradeTrigger {
@@ -23,6 +24,10 @@ func constructTriggerUpgradeRequest(cluster *storage.Cluster, process *storage.C
 			{
 				Name:         "ROX_UPGRADE_PROCESS_ID",
 				DefaultValue: process.GetId(),
+			},
+			{
+				Name:         sensorupgrader.ClusterIDEnvVarName,
+				DefaultValue: cluster.GetId(),
 			},
 		},
 	}

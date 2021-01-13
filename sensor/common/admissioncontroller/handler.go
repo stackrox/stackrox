@@ -143,7 +143,7 @@ func parseIntoDeployment(ar *admission.AdmissionReview, registryOverride string)
 		return nil, err
 	}
 
-	return resources.NewDeploymentFromStaticResource(objType, ar.Request.Kind.Kind, registryOverride)
+	return resources.NewDeploymentFromStaticResource(objType, ar.Request.Kind.Kind, "", registryOverride)
 }
 
 // ServeHTTP serves the admission controller endpoint

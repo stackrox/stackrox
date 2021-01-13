@@ -343,7 +343,8 @@ func (ds *datastoreImpl) UpdateCluster(ctx context.Context, cluster *storage.Clu
 	err = conn.InjectMessage(concurrency.Never(), &central.MsgToSensor{
 		Msg: &central.MsgToSensor_ClusterConfig{
 			ClusterConfig: &central.ClusterConfig{
-				Config: cluster.GetDynamicConfig(),
+				Config:    cluster.GetDynamicConfig(),
+				ClusterId: cluster.GetId(),
 			},
 		},
 	})

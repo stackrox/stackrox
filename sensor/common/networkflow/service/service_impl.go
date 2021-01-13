@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/timestamp"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"google.golang.org/grpc"
@@ -128,7 +127,7 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 				return status.Errorf(codes.Internal, "received unexpected message type %T from hostname %s", networkInfoMsg, hostname)
 			}
 
-			metrics.IncrementTotalNetworkFlowsReceivedCounter(clusterid.Get(), len(msg.GetInfo().GetUpdatedConnections()))
+			metrics.IncrementTotalNetworkFlowsReceivedCounter(len(msg.GetInfo().GetUpdatedConnections()))
 			if err := hostConnections.Process(networkInfoMsg, networkInfoMsgTimestamp, sequenceID); err != nil {
 				return status.Errorf(codes.Internal, "could not process connections: %v", err)
 			}

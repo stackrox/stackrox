@@ -44,6 +44,7 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 	timestampPath := filepath.Join(dir, admissioncontrol.LastUpdateTimeDataKey)
 	cacheVersionPath := filepath.Join(dir, admissioncontrol.CacheVersionDataKey)
 	centralEndpointPath := filepath.Join(dir, admissioncontrol.CentralEndpointDataKey)
+	clusterIDPath := filepath.Join(dir, admissioncontrol.ClusterIDDataKey)
 
 	if noneExists, err := fileutils.NoneExists(configPath, policiesPath, timestampPath); err != nil {
 		return nil, errors.Wrapf(err, "error checking the existence of files in %s", dir)
@@ -110,12 +111,21 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 		centralEndpoint = string(centralEndpointBytes)
 	}
 
+	var clusterID string
+	clusterIDBytes, err := ioutil.ReadFile(clusterIDPath)
+	if err != nil && !os.IsNotExist(err) {
+		log.Errorf("Failed to read cluster ID from file %s: %v", clusterIDPath, err)
+	} else {
+		clusterID = string(clusterIDBytes)
+	}
+
 	return &sensor.AdmissionControlSettings{
 		ClusterConfig:              &clusterConfig,
 		EnforcedDeployTimePolicies: &policyList,
 		Timestamp:                  tsProto,
 		CacheVersion:               cacheVersion,
 		CentralEndpoint:            centralEndpoint,
+		ClusterId:                  clusterID,
 	}, nil
 }
 

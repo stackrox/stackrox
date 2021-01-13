@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
@@ -42,8 +41,8 @@ var (
 	}
 )
 
-func getK8sComponentID(component string) string {
-	u, err := uuid.FromString(clusterid.Get())
+func getK8sComponentID(clusterID string, component string) string {
+	u, err := uuid.FromString(clusterID)
 	if err != nil {
 		log.Error(err)
 		return ""
@@ -67,9 +66,9 @@ func doesFieldExist(value reflect.Value) bool {
 	return !reflect.DeepEqual(value, reflect.Value{})
 }
 
-func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAction, deploymentType string,
+func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAction, deploymentType, clusterID string,
 	lister v1listers.PodLister, namespaceStore *namespaceStore, hierarchy references.ParentHierarchy, registryOverride string) *deploymentWrap {
-	wrap := newWrap(obj, deploymentType, registryOverride)
+	wrap := newWrap(obj, deploymentType, clusterID, registryOverride)
 	if wrap == nil {
 		return nil
 	}
@@ -83,8 +82,8 @@ func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAct
 	return wrap
 }
 
-func newWrap(obj interface{}, kind, registryOverride string) *deploymentWrap {
-	deployment, err := resources.NewDeploymentFromStaticResource(obj, kind, registryOverride)
+func newWrap(obj interface{}, kind, clusterID, registryOverride string) *deploymentWrap {
+	deployment, err := resources.NewDeploymentFromStaticResource(obj, kind, clusterID, registryOverride)
 	if err != nil || deployment == nil {
 		return nil
 	}
@@ -101,7 +100,7 @@ func (w *deploymentWrap) populateK8sComponentIfNecessary(o *v1.Pod) *metav1.Labe
 			if !ok {
 				continue
 			}
-			w.Id = getK8sComponentID(value)
+			w.Id = getK8sComponentID(w.GetClusterId(), value)
 			w.Name = fmt.Sprintf("static-%s-pods", value)
 			w.Type = k8sStandalonePodType
 			return &metav1.LabelSelector{

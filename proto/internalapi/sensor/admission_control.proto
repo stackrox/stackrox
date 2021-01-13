@@ -16,6 +16,8 @@ message AdmissionControlSettings {
     string cache_version                             = 4;
 
     string central_endpoint                          = 5;
+
+    string cluster_id                                = 6;
 }
 
 message AdmissionControlAlerts {

@@ -46,6 +46,14 @@ type state struct {
 	centralConn *grpc.ClientConn
 }
 
+func (s *state) clusterID() string {
+	clusterID := s.GetClusterId()
+	if clusterID == "" {
+		clusterID = getClusterID()
+	}
+	return clusterID
+}
+
 func (s *state) activeForOperation(op admission.Operation) bool {
 	_, active := s.enforcedOps[op]
 	return active

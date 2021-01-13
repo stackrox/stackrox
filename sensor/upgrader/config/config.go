@@ -5,12 +5,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/clusterid"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/netutil"
+	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/upgrader/common"
@@ -61,7 +60,7 @@ func Create() (*UpgraderConfig, error) {
 	}
 
 	// clusterID is optional and only required when fetching the bundle, not when used in standalone mode
-	clusterID, _ := clusterid.ParseClusterIDFromServiceCert(storage.ServiceType_SENSOR_SERVICE)
+	clusterID := os.Getenv(sensorupgrader.ClusterIDEnvVarName)
 
 	centralEndpoint := os.Getenv(env.CentralEndpoint.EnvVar())
 	if strings.HasPrefix(centralEndpoint, "ws://") || strings.HasPrefix(centralEndpoint, "wss://") {
