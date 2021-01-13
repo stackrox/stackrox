@@ -1,6 +1,5 @@
 {{- include "srox.init" . -}}
 
-{{- if ._rox.admissionControl.enable }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -49,4 +48,3 @@ roleRef:
   kind: Role
   name: watch-config
   apiGroup: rbac.authorization.k8s.io
-{{- end }}

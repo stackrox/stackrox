@@ -71,6 +71,10 @@
   {{ end }}
 {{ end }}
 
+{{ if and $._rox.admissionControl.dynamic.enforceOnCreates (not $._rox.admissionControl.listenOnCreates) }}
+  {{ include "srox.warn" (list $ "Incompatible settings: 'admissionControl.dynamic.enforceOnCreates' is set to true, while `admissionControl.listenOnCreates` is set to false. For the feature to be active, enable both settings by setting them to true.") }}
+{{ end }}
+
 {{ if and $._rox.admissionControl.dynamic.enforceOnUpdates (not $._rox.admissionControl.listenOnUpdates) }}
   {{ include "srox.warn" (list $ "Incompatible settings: 'admissionControl.dynamic.enforceOnUpdates' is set to true, while `admissionControl.listenOnUpdates` is set to false. For the feature to be active, enable both settings by setting them to true.") }}
 {{ end }}

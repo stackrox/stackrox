@@ -83,14 +83,14 @@ config:
   admissionControl:
     createService: |
       admissionControl:
-        enable: {{ .value }}
+        listenOnCreates: {{ .value }}
     listenOnUpdates: |
       admissionControl:
         listenOnUpdates: {{ .value }}
     enableService: |
       admissionControl:
         dynamic:
-          enforce: {{ .value }}
+          enforceOnCreates: {{ .value }}
     enforceOnUpdates: |
       admissionControl:
         dynamic:
@@ -100,6 +100,10 @@ config:
         dynamic:
           scanInline: {{ .value }}
     disableBypass: |
+      admissionControl:
+        dynamic:
+          disableBypass: {{ .value }}
+    timeout: |
       admissionControl:
         dynamic:
           timeout: {{ .value }}

@@ -18,9 +18,9 @@ image:
 config:
   collectionMethod: [< default "KERNEL_MODULE" .CollectionMethod >]
   admissionControl:
-    createService: [< default false .AdmissionController >]
+    listenOnCreates: [< default false .AdmissionController >]
     listenOnUpdates: [< default false .AdmissionControlListenOnUpdates >]
-    enableService: [< default false .AdmissionControllerEnabled >]
+    enforceOnCreates: [< default false .AdmissionControllerEnabled >]
     enforceOnUpdates: [< default false .AdmissionControlEnforceOnUpdates >]
     scanInline: [< default false .ScanInline >]
     disableBypass: [< default false .DisableBypass >]

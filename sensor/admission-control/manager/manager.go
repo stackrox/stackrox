@@ -21,6 +21,7 @@ type Manager interface {
 	IsReady() bool
 
 	HandleReview(review *admission.AdmissionRequest) (*admission.AdmissionResponse, error)
+	HandleK8sEvent(review *admission.AdmissionRequest) (*admission.AdmissionResponse, error)
 }
 
 // New creates a new admission control manager

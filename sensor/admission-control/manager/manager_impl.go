@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/set"
@@ -233,6 +234,15 @@ func (m *manager) HandleReview(req *admission.AdmissionRequest) (*admission.Admi
 		return nil, errors.New("admission controller is disabled, not handling request")
 	}
 	return m.evaluateAdmissionRequest(state, req)
+}
+
+func (m *manager) HandleK8sEvent(req *admission.AdmissionRequest) (*admission.AdmissionResponse, error) {
+	if !features.K8sAuditLogDetection.Enabled() {
+		return pass(req.UID), nil
+	}
+	//TODO add logic to process k8s events here
+	return pass(req.UID), nil
+
 }
 
 func (m *manager) SensorConnStatusFlag() *concurrency.Flag {

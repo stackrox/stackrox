@@ -65,9 +65,9 @@ envVars:
 config:
   collectionMethod: KERNEL_MODULE
   admissionControl:
-    createService: true
+    listenOnCreates: true
     listenOnUpdates: true
-    enableService: true
+    enforceOnCreates: true
     enforceOnUpdates: true
     scanInline: true
     disableBypass: true

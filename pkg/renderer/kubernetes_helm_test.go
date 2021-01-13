@@ -23,12 +23,33 @@ func TestRenderSensorHelm(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		admissionController bool
-		istioVersion        string
+		admissionController                       bool
+		istioVersion                              string
+		expectedAdmissionControllerRendered       bool
+		expectedAdmissionControllerSecretRendered bool
+		expectedHasDestinationRule                bool
 	}{
-		"withAdmissionController":    {admissionController: true},
-		"withoutAdmissionController": {admissionController: false},
-		"onIstio":                    {istioVersion: "1.5"},
+		"withAdmissionControllerListenOnCreates": {
+			admissionController:                       true,
+			istioVersion:                              "",
+			expectedAdmissionControllerRendered:       true,
+			expectedAdmissionControllerSecretRendered: true,
+			expectedHasDestinationRule:                false,
+		},
+		"withoutAdmissionControllerListenOnCreates": {
+			admissionController:                       false,
+			istioVersion:                              "",
+			expectedAdmissionControllerRendered:       true,
+			expectedAdmissionControllerSecretRendered: true,
+			expectedHasDestinationRule:                false,
+		},
+		"onIstio": {
+			admissionController:                       true,
+			istioVersion:                              "1.5",
+			expectedAdmissionControllerRendered:       true,
+			expectedAdmissionControllerSecretRendered: true,
+			expectedHasDestinationRule:                true,
+		},
 	}
 
 	for name, c := range cases {
@@ -58,7 +79,7 @@ func TestRenderSensorHelm(t *testing.T) {
 				"CreateUpgraderSA": true,
 
 				"AdmissionController":              c.admissionController,
-				"AdmissionControlListenOnUpdates":  c.admissionController,
+				"AdmissionControlListenOnUpdates":  false,
 				"DisableBypass":                    false,
 				"TimeoutSeconds":                   3,
 				"ScanInline":                       true,
@@ -115,9 +136,9 @@ func TestRenderSensorHelm(t *testing.T) {
 				}
 			}
 
-			assert.Equal(t, c.admissionController, admissionControllerRendered, "incorrect bundle rendered")
-			assert.Equal(t, c.admissionController, admissionControllerSecretRendered, "incorrect bundle rendered")
-			assert.Equal(t, c.istioVersion != "", hasDestinationRule, "unexpected presence/absence of destination rule")
+			assert.Equal(t, c.expectedAdmissionControllerRendered, admissionControllerRendered, "incorrect bundle rendered")
+			assert.Equal(t, c.expectedAdmissionControllerSecretRendered, admissionControllerSecretRendered, "incorrect bundle rendered")
+			assert.Equal(t, c.expectedHasDestinationRule, hasDestinationRule, "unexpected presence/absence of destination rule")
 		})
 	}
 }

@@ -8,14 +8,14 @@ clusterConfig:
     collectorImage: {{ coalesce ._rox.image.collector._abbrevImageRef ._rox.image.collector.fullRef }}
     centralApiEndpoint: {{ ._rox.centralEndpoint }}
     collectionMethod: {{ ._rox.collector.collectionMethod }}
-    admissionController: {{ ._rox.admissionControl.enable }}
+    admissionController: {{ ._rox.admissionControl.listenOnCreates }}
     admissionControllerUpdates: {{ ._rox.admissionControl.listenOnUpdates }}
     tolerationsConfig:
       disabled: {{ ._rox.collector.disableTaintTolerations }}
     slimCollector: {{ ._rox.collector.slimMode }}
   dynamicConfig:
     admissionControllerConfig:
-      enabled: {{ ._rox.admissionControl.dynamic.enforce }}
+      enabled: {{ ._rox.admissionControl.dynamic.enforceOnCreates }}
       timeoutSeconds: {{ ._rox.admissionControl.dynamic.timeout }}
       scanInline: {{ ._rox.admissionControl.dynamic.scanInline }}
       disableBypass: {{ ._rox.admissionControl.dynamic.disableBypass }}

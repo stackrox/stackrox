@@ -1,6 +1,5 @@
 {{- include "srox.init" . -}}
 
-{{- if ._rox.admissionControl.enable }}
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
@@ -74,4 +73,3 @@ subjects:
     name: admission-control
     namespace: {{ ._rox._namespace }}
 
-{{- end }}

@@ -56,11 +56,11 @@ defaults:
         memory: "500Mi"
         cpu: "500m"
 
-    enable: false
+    listenOnCreates: false
     listenOnUpdates: false
 
     dynamic:
-      enforce: false
+      enforceOnCreates: false
       scanInline: false
       disableBypass: false
       timeout: 3

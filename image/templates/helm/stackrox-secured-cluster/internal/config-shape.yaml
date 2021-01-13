@@ -51,10 +51,10 @@ sensor:
     cert: null # string
     key: null # string
 admissionControl:
-  enable: null # bool
+  listenOnCreates: null # bool
   listenOnUpdates: null # bool
   dynamic:
-    enforce: null # bool
+    enforceOnCreates: null # bool
     scanInline: null # bool
     disableBypass: null # bool
     timeout: null # natural number
