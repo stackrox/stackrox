@@ -8,12 +8,12 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 )
 
-// computeImageOverrides takes in a full image reference as well as default registries, names,
+// ComputeImageOverrides takes in a full image reference as well as default registries, names,
 // and tags, and computes the components of the image which are different. I.e., if
 // `fullImageRef` is `<defRegistry>/<defName>:<defTag>`, an empty map is returned; if, for
 // example, only the tag is different, a map containing only the non-default "Tag" is returned
 // etc.
-func computeImageOverrides(fullImageRef, defRegistry, defName, defTag string) map[string]string {
+func ComputeImageOverrides(fullImageRef, defRegistry, defName, defTag string) map[string]string {
 	var remoteAndRepo, tag string
 
 	// See the goal of the override computation explained in the `configureImageOverrides`
@@ -77,7 +77,7 @@ func computeImageOverrides(fullImageRef, defRegistry, defName, defTag string) ma
 func configureImageOverrides(c *Config) {
 	imageOverrides := make(map[string]interface{})
 
-	mainOverrides := computeImageOverrides(c.K8sConfig.MainImage, defaults.MainImageRegistry(), "main", version.GetMainVersion())
+	mainOverrides := ComputeImageOverrides(c.K8sConfig.MainImage, defaults.MainImageRegistry(), "main", version.GetMainVersion())
 	registry := mainOverrides["Registry"]
 	if registry == "" {
 		registry = defaults.MainImageRegistry()
@@ -87,8 +87,8 @@ func configureImageOverrides(c *Config) {
 	}
 	imageOverrides["Main"] = mainOverrides
 
-	imageOverrides["Scanner"] = computeImageOverrides(c.K8sConfig.ScannerImage, registry, "scanner", version.GetScannerVersion())
-	imageOverrides["ScannerDB"] = computeImageOverrides(c.K8sConfig.ScannerDBImage, registry, "scanner-db", version.GetScannerVersion())
+	imageOverrides["Scanner"] = ComputeImageOverrides(c.K8sConfig.ScannerImage, registry, "scanner", version.GetScannerVersion())
+	imageOverrides["ScannerDB"] = ComputeImageOverrides(c.K8sConfig.ScannerDBImage, registry, "scanner-db", version.GetScannerVersion())
 
 	c.K8sConfig.ImageOverrides = imageOverrides
 }

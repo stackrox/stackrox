@@ -1,0 +1,18 @@
+clusterName: foo
+helmManaged: true
+centralEndpoint: central.stackrox:443
+
+admissionControl:
+  enable: true
+  listenOnUpdates: true
+  dynamic:
+    enforce: true
+    scanInline: true
+    disableBypass: true
+    timeout: 3
+    enforceOnUpdates: true
+
+collector:
+  collectionMethod: KERNEL_MODULE
+  disableTaintTolerations: false
+  slimMode: false

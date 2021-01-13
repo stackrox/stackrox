@@ -90,7 +90,6 @@ message DynamicClusterConfig {
 message CompleteClusterConfig {
     DynamicClusterConfig dynamic_config = 1;
     StaticClusterConfig  static_config  = 2;
-
     string config_fingerprint = 3;
 }
 

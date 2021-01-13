@@ -2,14 +2,13 @@ package helmconfig
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/helmconfig"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/zip"
@@ -21,7 +20,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Handler returns a handler for the cluster zip method.
+// Handler returns a handler for the helm-config method.
 func Handler(c datastore.DataStore) http.Handler {
 	return helmConfigHandler{
 		clusterStore: c,
@@ -32,16 +31,7 @@ type helmConfigHandler struct {
 	clusterStore datastore.DataStore
 }
 
-// Returns the cluster's Helm configuration.
-func (h helmConfigHandler) deriveHelmConfig(cluster *storage.Cluster) map[string]interface{} {
-	m := map[string]interface{}{
-		"name": cluster.GetName(),
-	}
-
-	return m
-}
-
-// ServeHTTP serves a ZIP file for the cluster upon request.
+// ServeHTTP serves a cluster's Helm chart configuration as YAML.
 func (h helmConfigHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -55,12 +45,6 @@ func (h helmConfigHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	identity := authn.IdentityFromContext(r.Context())
-	if identity == nil {
-		httputil.WriteGRPCStyleError(w, codes.Unauthenticated, errors.New("no identity in context"))
-		return
-	}
-
 	cluster, _, err := h.clusterStore.GetCluster(r.Context(), params.ID)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
@@ -71,17 +55,21 @@ func (h helmConfigHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	config := h.deriveHelmConfig(cluster)
-	configYaml, err := yaml.Marshal(config)
+	config, err := helmconfig.FromCluster(cluster)
 	if err != nil {
-		httputil.WriteGRPCStyleError(w, codes.Internal, err)
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "deriving Helm configuration for cluster"))
 		return
 	}
-
-	attachment := fmt.Sprintf(`attachment; filename="values-%s.yaml"`, zip.GetSafeFilename(cluster.GetName()))
+	configYaml, err := yaml.Marshal(config)
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "marshalling cluster configuration as YAML"))
+		return
+	}
+	configYamlBytes := []byte(configYaml)
 
 	// Tell the browser this is a download.
-	w.Header().Add("Content-Disposition", attachment)
+	w.Header().Add("Content-Disposition", fmt.Sprintf(`attachment; filename="values-%s.yaml"`, zip.GetSafeFilename(cluster.GetName())))
 	w.Header().Add("Content-Type", "text/yaml")
-	_, _ = w.Write([]byte(configYaml))
+	w.Header().Add("Content-Length", fmt.Sprint(len(configYamlBytes)))
+	_, _ = w.Write(configYamlBytes)
 }

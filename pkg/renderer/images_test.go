@@ -154,7 +154,7 @@ func TestComputeOverrides(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.ref, func(t *testing.T) {
-			overrides := computeImageOverrides(c.ref, "stackrox.io", "main", "1.2.3")
+			overrides := ComputeImageOverrides(c.ref, "stackrox.io", "main", "1.2.3")
 			assert.Equal(t, c.expected, overrides)
 		})
 	}

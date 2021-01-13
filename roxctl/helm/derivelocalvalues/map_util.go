@@ -1,6 +1,8 @@
 package derivelocalvalues
 
-import "github.com/stackrox/rox/pkg/set"
+import (
+	"github.com/stackrox/rox/pkg/set"
+)
 
 func filterMap(m map[string]interface{}, keysToDelete []string) map[string]interface{} {
 	if m == nil {
@@ -17,24 +19,6 @@ func filterMap(m map[string]interface{}, keysToDelete []string) map[string]inter
 		return nil
 	}
 	return mReduced
-}
-
-func normalizeMap(src map[string]interface{}) map[string]interface{} {
-	dst := make(map[string]interface{})
-	for k, v := range src {
-		if obj, ok := v.(map[string]interface{}); ok {
-			v = normalizeMap(obj)
-		}
-		if isNil(v) {
-			continue
-		}
-
-		dst[k] = v
-	}
-	if len(dst) == 0 {
-		return nil
-	}
-	return dst
 }
 
 func envVarSliceToObj(slice []interface{}) map[string]interface{} {

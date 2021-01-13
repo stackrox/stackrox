@@ -196,9 +196,9 @@
     Final validation (after merging in defaults).
    */}}
 
-{{ if eq ._rox.clusterName "" }}
+{{ if not ._rox.clusterName }}
   {{ include "srox.fail" "No cluster name specified. Set 'clusterName' to the desired cluster name." }}
-{{ end}}
+{{ end }}
 
 {{/* Image settings */}}
 {{ include "srox.configureImage" (list $ ._rox.image.main) }}

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"gopkg.in/yaml.v3"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -165,8 +165,8 @@ func helmValuesForCentralServices(ctx context.Context, namespace string, k8s k8s
 	// - recursively remove any keys from objects whose associated values are nil,
 	// - remove complete objects whose only values are nil,
 	// - replace string pointers with strings.
-	publicValuesCleaned := normalizeMap(publicValues)
-	privateValuesCleaned := normalizeMap(privateValues)
+	publicValuesCleaned := maputil.NormalizeGenericMap(publicValues)
+	privateValuesCleaned := maputil.NormalizeGenericMap(privateValues)
 
 	return publicValuesCleaned, privateValuesCleaned, err
 
@@ -333,18 +333,6 @@ func retrieveCustomLabels(labels map[string]interface{}) map[string]interface{} 
 
 func retrieveCustomEnvVars(envVars map[string]interface{}) map[string]interface{} {
 	return filterMap(envVars, []string{"ROX_OFFLINE_MODE", "ROX_INIT_TELEMETRY_ENABLED"})
-}
-
-// Is there a better way?
-func isNil(i interface{}) bool {
-	if i == nil {
-		return true
-	}
-	switch reflect.TypeOf(i).Kind() {
-	case reflect.Ptr, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
-		return reflect.ValueOf(i).IsNil()
-	}
-	return false
 }
 
 func printWarnings(warnings []string) {

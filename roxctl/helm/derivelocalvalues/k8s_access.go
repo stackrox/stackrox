@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/set"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/util/jsonpath"
@@ -74,7 +75,7 @@ func (k *k8sObjectDescription) evaluateToSlice(ctx context.Context, kind string,
 func (k *k8sObjectDescription) evaluateToSubObject(ctx context.Context, kind string, name string, jsonpath string, retainKeys []string, def map[string]interface{}) map[string]interface{} {
 	var objStrings map[string]interface{}
 	x := k.evaluate(ctx, kind, name, jsonpath)
-	if isNil(x) {
+	if reflectutils.IsNil(x) {
 		return def
 	}
 
