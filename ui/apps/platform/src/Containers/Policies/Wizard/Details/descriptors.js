@@ -211,6 +211,14 @@ const fieldsMap = {
             return output.join(', ');
         },
     },
+    nodePortPolicy: {
+        label: 'Node Port',
+        formatValue: (d) => {
+            const protocol = d.protocol ? `${d.protocol} ` : '';
+            const port = d.port ? d.port : '';
+            return `${protocol}${port}`;
+        },
+    },
     portPolicy: {
         label: 'Port',
         formatValue: (d) => {

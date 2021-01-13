@@ -641,6 +641,21 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	depWithUpdate := deploymentWithImageAnyID(updateInstructionImage)
 	suite.addDepAndImages(depWithUpdate, updateInstructionImage)
 
+	restrictedHostPortDep := &storage.Deployment{
+		Id: "RESTRICTEDHOSTPORT",
+		Ports: []*storage.PortConfig{
+			{
+				ExposureInfos: []*storage.PortConfig_ExposureInfo{
+					{
+						NodePort: 22,
+					},
+				},
+			},
+		},
+	}
+
+	suite.addDepAndImages(restrictedHostPortDep)
+
 	// Index processes
 	bashLineage := []string{"/bin/bash"}
 	fixtureDepAptIndicator := suite.addIndicator(fixtureDep.GetId(), "apt", "", "/usr/bin/apt", bashLineage, 1)
@@ -871,6 +886,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				depWithAllResourceLimitsRequestsSpecified.GetId(): {},
 				depWithEnforcementBypassAnnotation.GetId():        {},
 				hostMountDep.GetId():                              {},
+				restrictedHostPortDep.GetId():                     {},
 			},
 			sampleViolationForMatched: "Image in container '%s' has not been scanned",
 		},
@@ -1100,6 +1116,16 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				depWithUpdate.GetId(): {
 					{
 						Message: "Dockerfile line 'RUN apt-get update' found in container 'ASFASF'",
+					},
+				},
+			},
+		},
+		{
+			policyName: "Ensure privileged ports are not mapped within containers",
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				restrictedHostPortDep.GetId(): {
+					{
+						Message: "Exposed node port 22 is present",
 					},
 				},
 			},

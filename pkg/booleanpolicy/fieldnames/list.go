@@ -19,6 +19,7 @@ var (
 	DockerfileLine            = newFieldName("Dockerfile Line")
 	DropCaps                  = newFieldName("Drop Capabilities")
 	EnvironmentVariable       = newFieldName("Environment Variable")
+	ExposedNodePort           = newFieldName("Exposed Node Port")
 	ExposedPort               = newFieldName("Exposed Port")
 	ExposedPortProtocol       = newFieldName("Exposed Port Protocol")
 	FixedBy                   = newFieldName("Fixed By")

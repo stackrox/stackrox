@@ -662,6 +662,18 @@ const policyConfigurationDescriptor = [
         canBooleanLogic: true,
     },
     {
+        label: 'Exposed Node Port',
+        name: 'Exposed Node Port',
+        negatedName: `Exposed node port doesn't match`,
+        jsonpath: 'fields.nodePortPolicy.exposedNodePort',
+        category: policyCriteriaCategories.NETWORKING,
+        type: 'number',
+        placeholder: '22',
+        required: false,
+        default: false,
+        canBooleanLogic: true,
+    },
+    {
         label: 'Port',
         name: 'Exposed Port',
         negatedName: `Exposed port doesn't match`,

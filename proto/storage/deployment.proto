@@ -40,7 +40,7 @@ message Deployment {
     bool automount_service_account_token       = 25;
     bool host_network                          = 21;
     repeated Toleration tolerations            = 22 [(gogoproto.moretags) = "search:\"-\""];
-    repeated PortConfig ports                  = 24;
+    repeated PortConfig ports                  = 24 [(gogoproto.moretags) = "policy:\"Ports\""];
 
     int64 state_timestamp                      = 27 [(gogoproto.moretags) = "hash:\"ignore\" sensorhash:\"ignore\""]; // Internal use only
     float risk_score                           = 29 [(gogoproto.moretags) = "search:\"Risk Score,hidden\" policy:\",ignore\""];
@@ -185,7 +185,7 @@ message PortConfig {
     ExposureLevel exposure       = 4 [(gogoproto.moretags) = "search:\"Max Exposure Level,store\""];
     int32 exposed_port           = 5 [deprecated = true];
 
-    repeated ExposureInfo exposure_infos = 6;
+    repeated ExposureInfo exposure_infos = 6 [(gogoproto.moretags) = "policy:\"Exposure Infos\""];
 }
 
 message ContainerConfig {

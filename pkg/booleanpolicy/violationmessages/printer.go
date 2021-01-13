@@ -33,6 +33,7 @@ var (
 			fieldnames.DockerfileLine:            {{required: set.NewStringSet(augmentedobjs.DockerfileLineCustomTag), printerFuncKey: printer.LineKey}},
 			fieldnames.DropCaps:                  {{required: set.NewStringSet(search.DropCapabilities.String()), printerFuncKey: printer.DropCapabilityKey}},
 			fieldnames.EnvironmentVariable:       {{required: set.NewStringSet(augmentedobjs.EnvironmentVarCustomTag), printerFuncKey: printer.EnvKey}},
+			fieldnames.ExposedNodePort:           {{required: set.NewStringSet(search.ExposedNodePort.String()), printerFuncKey: printer.NodePortKey}},
 			fieldnames.ExposedPort:               {{required: set.NewStringSet(search.Port.String()), printerFuncKey: printer.PortKey}},
 			fieldnames.FixedBy:                   {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
 			fieldnames.ImageAge:                  {{required: set.NewStringSet(search.ImageCreatedTime.String()), printerFuncKey: printer.ImageAgeKey}},

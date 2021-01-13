@@ -19,6 +19,7 @@ const (
 	ImageUserKey            = "imageUser"
 	LineKey                 = "line"
 	NamespaceKey            = "namespace"
+	NodePortKey             = "nodePort"
 	PortKey                 = "port"
 	PortExposureKey         = "portExposure"
 	PrivilegedKey           = "privileged"
@@ -50,6 +51,7 @@ func init() {
 	registerFunc(ImageUserKey, imageUserPrinter)
 	registerFunc(LineKey, linePrinter)
 	registerFunc(NamespaceKey, namespacePrinter)
+	registerFunc(NodePortKey, nodePortPrinter)
 	registerFunc(PortKey, portPrinter)
 	registerFunc(PortExposureKey, portExposurePrinter)
 	registerFunc(PrivilegedKey, privilegedPrinter)
