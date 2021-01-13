@@ -26,7 +26,7 @@ function getDeploymentEdges(deployment) {
     return edges;
 }
 
-function NetworkDeploymentOverlay({ selectedDeployment, filterState }) {
+function NetworkDeploymentOverlay({ selectedDeployment, filterState, lastUpdatedTimestamp }) {
     const onNavigateToEntity = useNavigateToEntity();
     const { deploymentId } = useParams();
 
@@ -45,6 +45,7 @@ function NetworkDeploymentOverlay({ selectedDeployment, filterState }) {
                             edges={edges}
                             filterState={filterState}
                             onNavigateToEntity={onNavigateToEntity}
+                            lastUpdatedTimestamp={lastUpdatedTimestamp}
                         />
                     </Tab>
                     <Tab title="Baseline Settings">
@@ -75,11 +76,13 @@ NetworkDeploymentOverlay.propTypes = {
         policyIds: PropTypes.arrayOf(PropTypes.string),
     }).isRequired,
     filterState: PropTypes.number.isRequired,
+    lastUpdatedTimestamp: PropTypes.string.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
     selectedDeployment: selectors.getSelectedNode,
     filterState: selectors.getNetworkGraphFilterMode,
+    lastUpdatedTimestamp: selectors.getLastUpdatedTimestamp,
 });
 
 export default connect(mapStateToProps, null)(NetworkDeploymentOverlay);
