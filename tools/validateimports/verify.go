@@ -34,7 +34,6 @@ var (
 		"sensor/kubernetes",
 		"sensor/admission-control",
 		"sensor/upgrader",
-		"sensor/service-init",
 		"tools",
 		"webhookserver",
 	}

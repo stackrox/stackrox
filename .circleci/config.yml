@@ -2469,7 +2469,6 @@ jobs:
             - bin/linux/admission-control
             - bin/linux/upgrader
             - bin/linux/collection
-            - bin/linux/service-init
             - image/docs # This will go into the image as generated docs.
             - image/keys
             - deps # Used to speed up k8s-tests

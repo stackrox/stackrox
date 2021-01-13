@@ -196,12 +196,6 @@ fast-sensor: sensor-build-dockerized
 .PHONY: fast-sensor-kubernetes
 fast-sensor-kubernetes: sensor-kubernetes-build-dockerized
 
-.PHONY: service-init-build
-service-init-build:
-	@echo "+ $@"
-	GOOS=linux CGO_ENABLED=0 $(GOBUILD) sensor/service-init
-	GOOS=darwin CGO_ENABLED=0 $(GOBUILD) sensor/service-init
-
 .PHONY: validateimports
 validateimports:
 	@echo "+ $@"
@@ -437,7 +431,7 @@ endif
 .PHONY: main-build-nodeps
 main-build-nodeps:
 	$(GOBUILD) central migrator sensor/kubernetes sensor/admission-control compliance/collection
-	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader sensor/service-init
+	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
 ifndef CI
     CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
@@ -620,7 +614,6 @@ endif
 	cp bin/linux/upgrader          image/bin/sensor-upgrader
 	cp bin/linux/admission-control image/bin/admission-control
 	cp bin/linux/collection        image/bin/compliance
-	cp bin/linux/service-init      image/bin/service-init
 
 ifdef CI
 	@[ -d image/THIRD_PARTY_NOTICES ] || { echo "image/THIRD_PARTY_NOTICES dir not found! It is required for CI-built images."; exit 1; }

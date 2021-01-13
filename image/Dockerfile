@@ -39,7 +39,6 @@ COPY ./bin/roxctl* /assets/downloads/cli/
 COPY ./bin/kubernetes-sensor /stackrox/bin/
 COPY ./bin/sensor-upgrader /stackrox/bin/
 COPY ./bin/admission-control /stackrox/bin/
-COPY ./bin/service-init /stackrox/bin/
 COPY ./static-bin/* /stackrox/
 COPY ./ui/build /ui/
 COPY --from=data /stackrox-data.tgze /stackrox/
