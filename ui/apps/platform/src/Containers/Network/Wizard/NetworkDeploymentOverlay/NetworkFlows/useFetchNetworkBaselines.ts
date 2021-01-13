@@ -68,8 +68,8 @@ function getBaselineStatusKey({ id, ingress, port, protocol }): string {
     return `${id}-${ingress}-${port}-${protocol}`;
 }
 
-function usePrevValue(newValue: Edge[]): Edge[] | undefined {
-    const ref = React.useRef<Edge[]>();
+function usePrevValue(newValue: unknown): unknown | undefined {
+    const ref = React.useRef<unknown>();
     useEffect(() => {
         ref.current = newValue;
     });
@@ -84,16 +84,19 @@ function useFetchNetworkBaselines({
     deploymentId,
     edges,
     filterState,
+    lastUpdatedTimestamp,
 }: {
     deploymentId: string;
     edges: Edge[];
     filterState: number;
+    lastUpdatedTimestamp: string;
 }): Result {
     const [result, setResult] = useState<Result>(defaultResultState);
     const prevEdges = usePrevValue(edges);
+    const prevLastUpdatedTimestamp = usePrevValue(lastUpdatedTimestamp);
 
     useEffect(() => {
-        if (isEqual(prevEdges, edges)) {
+        if (isEqual(prevEdges, edges) && isEqual(prevLastUpdatedTimestamp, lastUpdatedTimestamp)) {
             return;
         }
 
@@ -139,7 +142,14 @@ function useFetchNetworkBaselines({
             .catch((error) => {
                 setResult({ data: [], error, isLoading: false });
             });
-    }, [deploymentId, edges, filterState, prevEdges]);
+    }, [
+        deploymentId,
+        edges,
+        filterState,
+        prevEdges,
+        lastUpdatedTimestamp,
+        prevLastUpdatedTimestamp,
+    ]);
 
     return result;
 }

@@ -17,11 +17,18 @@ function getPanelHeaderText(numBaselineFlows, filterState): string {
     }
 }
 
-function NetworkFlows({ deploymentId, edges, filterState, onNavigateToEntity }): ReactElement {
+function NetworkFlows({
+    deploymentId,
+    edges,
+    filterState,
+    onNavigateToEntity,
+    lastUpdatedTimestamp,
+}): ReactElement {
     const { data: networkBaselines, isLoading } = useFetchNetworkBaselines({
         deploymentId,
         edges,
         filterState,
+        lastUpdatedTimestamp,
     });
 
     const header = getPanelHeaderText(networkBaselines.length, filterState);
