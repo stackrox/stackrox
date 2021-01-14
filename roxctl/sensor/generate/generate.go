@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/pflag/autobool"
 	"github.com/stackrox/rox/roxctl/sensor/util"
@@ -28,6 +29,18 @@ import (
 const (
 	infoDefaultingToSlimCollector          = `Defaulting to slim collector image since kernel probes seem to be available for central.`
 	infoDefaultingToComprehensiveCollector = `Defaulting to comprehensive collector image since kernel probes seem to be unavailable for central.`
+
+	warningDeprecatedAdmControllerCreateSet = `WARNING: The --create-admission-controller flag has been deprecated and will be removed in future versions of roxctl.
+Please use --admission-controller-listen-on-creates instead to suppress this warning text and avoid breakages in the future.`
+
+	errorDeprecatedAdmControllerCreateSet = `It is illegal to specify both the --create-admission-controller and --admission-controller-listen-on-creates flags.
+Please use --admission-controller-listen-on-creates exclusively in all invocations.`
+
+	warningDeprecatedAdmControllerEnableSet = `WARNING: The --admission-controller-enabled flag has been deprecated and will be removed in future versions of roxctl.
+Please use --admission-controller-enforce-on-creates instead to suppress this warning text and avoid breakages in the future.`
+
+	errorDeprecatedAdmControllerEnableSet = `It is illegal to specify both the --admission-controller-enabled and --admission-controller-enforce-on-creates flags.
+Please use --admission-controller-enforce-on-creates exclusively in all invocations.`
 )
 
 var (
@@ -128,6 +141,28 @@ func fullClusterCreation(timeout time.Duration) error {
 func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use: "generate",
+		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
+			// Migration process for renaming "--create-admission-controller" parameter to "--admission-controller-listen-on-creates".
+			// Can be removed in a future release.
+			if c.PersistentFlags().Lookup("create-admission-controller").Changed && c.PersistentFlags().Lookup("admission-controller-listen-on-creates").Changed {
+				fmt.Fprintln(os.Stderr, errorDeprecatedAdmControllerCreateSet)
+				return errors.New("Specified deprecated flag --create-admission-controller and new flag --admission-controller-listen-on-creates at the same time")
+			}
+			if c.PersistentFlags().Lookup("create-admission-controller").Changed {
+				fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedAdmControllerCreateSet)
+			}
+
+			// Migration process for renaming "--admission-controller-enabled" parameter to "--admission-controller-enforce-on-creates".
+			// Can be removed in a future release.
+			if c.PersistentFlags().Lookup("admission-controller-enabled").Changed && c.PersistentFlags().Lookup("admission-controller-enforce-on-creates").Changed {
+				fmt.Fprintln(os.Stderr, errorDeprecatedAdmControllerEnableSet)
+				return errors.New("Specified deprecated flag --admission-controller-enabled and new flag --admission-controller-enforce-on-creates at the same time")
+			}
+			if c.PersistentFlags().Lookup("admission-controller-enabled").Changed {
+				fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedAdmControllerEnableSet)
+			}
+			return nil
+		},
 	}
 
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "output directory for bundle contents (default: auto-generated directory name inside the current directory)")
@@ -154,15 +189,21 @@ func Command() *cobra.Command {
 		slimCollectorP = pointers.Bool(false)
 	}
 
-	c.PersistentFlags().BoolVar(&cluster.AdmissionController, "create-admission-controller", false, "whether or not to use an admission controller for enforcement")
-	c.PersistentFlags().BoolVar(&cluster.AdmissionControllerUpdates, "admission-controller-listen-on-updates", false, "whether or not to configure the admission controller webhook to listen on object updates")
+	c.PersistentFlags().BoolVar(&cluster.AdmissionController, "create-admission-controller", false, "whether or not to use an admission controller for enforcement (WARNING: deprecated; admission controller will be deployed by default")
+	utils.Must(c.PersistentFlags().MarkHidden("create-admission-controller"))
+
+	c.PersistentFlags().BoolVar(&cluster.AdmissionController, "admission-controller-listen-on-creates", false, "whether or not to configure the admission controller webhook to listen on deployment creates")
+	c.PersistentFlags().BoolVar(&cluster.AdmissionControllerUpdates, "admission-controller-listen-on-updates", false, "whether or not to configure the admission controller webhook to listen on deployment updates")
 
 	// Admission controller config
 	ac := cluster.DynamicConfig.AdmissionControllerConfig
-	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enabled", false, "dynamic enable for the admission controller")
+	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enabled", false, "dynamic enable for the admission controller (WARNING: deprecated; use --admission-controller-enforce-on-creates instead")
+	utils.Must(c.PersistentFlags().MarkHidden("admission-controller-enabled"))
+
 	c.PersistentFlags().Int32Var(&ac.TimeoutSeconds, "admission-controller-timeout", 3, "timeout in seconds for the admission controller")
 	c.PersistentFlags().BoolVar(&ac.ScanInline, "admission-controller-scan-inline", false, "get scans inline when using the admission controller")
 	c.PersistentFlags().BoolVar(&ac.DisableBypass, "admission-controller-disable-bypass", false, "disable the bypass annotations for the admission controller")
+	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enforce-on-creates", false, "dynamic enable for enforcing on object creates in the admission controller")
 	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", false, "dynamic enable for enforcing on object updates in the admission controller")
 
 	c.AddCommand(k8s())
