@@ -9,6 +9,7 @@ import (
 	cfcsr "github.com/cloudflare/cfssl/csr"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -46,8 +47,14 @@ func (id Identity) V1() *storage.ServiceIdentity {
 
 // Subject encodes the parts of a certificate's identity.
 type Subject struct {
-	ServiceType storage.ServiceType
-	Identifier  string
+	ServiceType  storage.ServiceType
+	Identifier   string
+	InitBundleID uuid.UUID
+}
+
+// CertificateOptions define options which are available at cert generation
+type CertificateOptions struct {
+	SerialNumber *big.Int
 }
 
 // NewSubject returns a new subject from the passed ID and service type
@@ -55,6 +62,15 @@ func NewSubject(id string, serviceType storage.ServiceType) Subject {
 	return Subject{
 		Identifier:  id,
 		ServiceType: serviceType,
+	}
+}
+
+// NewInitSubject returns a new subject from the passed ID and service type
+func NewInitSubject(id string, serviceType storage.ServiceType, initBundleID uuid.UUID) Subject {
+	return Subject{
+		Identifier:   id,
+		ServiceType:  serviceType,
+		InitBundleID: initBundleID,
 	}
 }
 
@@ -93,8 +109,14 @@ func (s Subject) OU() string {
 
 // Name generates a cfssl Name for the subject, as a convenience.
 func (s Subject) Name() cfcsr.Name {
+	var initBundleID string
+	if s.InitBundleID != uuid.Nil {
+		initBundleID = s.InitBundleID.String()
+	}
+
 	return cfcsr.Name{
 		OU: s.OU(),
+		O:  initBundleID,
 	}
 }
 

@@ -84,9 +84,10 @@ var (
 
 // IssuedCert is a representation of an issued certificate
 type IssuedCert struct {
-	CertPEM []byte
-	KeyPEM  []byte
-	ID      *storage.ServiceIdentity
+	CertPEM  []byte
+	KeyPEM   []byte
+	X509Cert *x509.Certificate
+	ID       *storage.ServiceIdentity
 }
 
 // LeafCertificateFromFile reads a tls.Certificate (including private key and cert).
@@ -183,6 +184,7 @@ func signingPolicy() *config.Signing {
 				PublicKeyAlgorithm: true,
 				SignatureAlgorithm: true,
 			},
+			ClientProvidesSerialNumbers: true,
 		},
 	}
 }
@@ -231,8 +233,10 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer) (*IssuedCert, 
 	if err != nil {
 		return nil, errors.Wrap(err, "serial generation")
 	}
+
 	csr := &cfcsr.CertificateRequest{
-		KeyRequest: cfcsr.NewBasicKeyRequest(),
+		KeyRequest:   cfcsr.NewBasicKeyRequest(),
+		SerialNumber: serial.String(),
 	}
 	csrBytes, keyBytes, err := cfcsr.ParseRequest(csr)
 	if err != nil {
@@ -247,18 +251,25 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer) (*IssuedCert, 
 			Names:        []cfcsr.Name{subj.Name()},
 			SerialNumber: serial.String(),
 		},
+		Serial: serial,
 	}
 	certBytes, err := signer.Sign(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "signing")
 	}
 
+	x509Cert, err := helpers.ParseCertificatePEM(certBytes)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not parse generated PEM cert")
+	}
+
 	id := generateIdentity(subj, serial)
 
 	return &IssuedCert{
-		CertPEM: certBytes,
-		KeyPEM:  keyBytes,
-		ID:      id,
+		CertPEM:  certBytes,
+		KeyPEM:   keyBytes,
+		X509Cert: x509Cert,
+		ID:       id,
 	}, nil
 
 }

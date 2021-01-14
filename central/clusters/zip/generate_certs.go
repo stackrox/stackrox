@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/sensor"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/zip"
@@ -100,16 +99,11 @@ func GenerateCertsAndAddToZip(wrapper *zip.Wrapper, cluster *storage.Cluster, id
 	}
 	certs.Files["secrets/ca.pem"] = ca
 
-	serviceTypes := []storage.ServiceType{storage.ServiceType_COLLECTOR_SERVICE, storage.ServiceType_SENSOR_SERVICE}
-	if features.AdmissionControlService.Enabled() && cluster.GetAdmissionController() {
-		serviceTypes = append(serviceTypes, storage.ServiceType_ADMISSION_CONTROL_SERVICE)
+	identities, err := clusters.IssueSecuredClusterCertificates(cluster, identityStore)
+	if err != nil {
+		return certs, err
 	}
-
-	for _, serviceType := range serviceTypes {
-		issuedCert, err := clusters.CreateIdentity(cluster.GetId(), serviceType, identityStore)
-		if err != nil {
-			return certs, err
-		}
+	for serviceType, issuedCert := range identities {
 		addCerts(wrapper, &certs, serviceType, issuedCert)
 	}
 
