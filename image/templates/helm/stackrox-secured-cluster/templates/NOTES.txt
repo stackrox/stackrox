@@ -9,8 +9,7 @@ Secured Cluster Configuration Summary:
   Helm Release Name:                 {{ .Release.Name }}
   Central Endpoint:                  {{ ._rox.centralEndpoint }}
   OpenShift Cluster:                 {{ ._rox.env.openshift }}
-  Admission Control Service Created: {{ ._rox.admissionControl.enable }}
-  Admission Control Enforced:        {{ ._rox.admissionControl.dynamic.enforce }}
+  Admission Control Enforced:        {{ or ._rox.admissionControl.dynamic.enforceOnCreates ._rox.admissionControl.dynamic.enforceOnUpdates }}
 
 {{ if ._rox._state.notes -}}
 Please take note of the following:
