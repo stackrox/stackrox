@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
@@ -36,7 +35,7 @@ func mainCmd(args []string) error {
 
 	featureFlagVals := make(map[string]interface{})
 	for _, feature := range features.Flags {
-		featureFlagVals[feature.EnvVar()] = strconv.FormatBool(feature.Enabled())
+		featureFlagVals[feature.EnvVar()] = feature.Enabled()
 	}
 
 	metaValues := map[string]interface{}{
