@@ -4545,8 +4545,9 @@ jobs:
             make render-helm-yamls
             deprecated_legacy_sensor_chart_dir="/tmp/${MAIN_TAG}"
             central_services_chart_dir="$(mktemp -d)"
-            secured_cluster_services_chart_dir="$(mktemp -d)"
             rmdir "$central_services_chart_dir"
+            secured_cluster_services_chart_dir="$(mktemp -d)"
+            rmdir "$secured_cluster_services_chart_dir"
             roxctl="./bin/$(uname | tr A-Z a-z)/roxctl"
             "$roxctl" helm output central-services --output-dir "${central_services_chart_dir}"
             "$roxctl" helm output secured-cluster-services --output-dir "${secured_cluster_services_chart_dir}"
