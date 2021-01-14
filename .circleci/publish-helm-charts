@@ -23,7 +23,7 @@ legacy_sensor_chart="$4"
 
 [[ -n "$version" ]] || die "No version specified"
 [[ -n "$central_services_chart" ]] || die "No central services chart path specified!"
-[[ -n "$sensor_chart" ]] || die "No sensor chart path specified!"
+[[ -n "$legacy_sensor_chart" ]] || die "No sensor chart path specified!"
 
 echo "Publishing charts for version $version"
 echo " Central Services Chart location: ${central_services_chart}"
