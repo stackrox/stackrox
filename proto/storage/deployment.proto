@@ -13,7 +13,7 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
-// Next available tag: 31
+// Next available tag: 32
 message Deployment {
     string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
     string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
@@ -39,6 +39,7 @@ message Deployment {
     PermissionLevel service_account_permission_level = 28 [(gogoproto.moretags) = "search:\"Service Account Permission Level,store\""];
     bool automount_service_account_token       = 25;
     bool host_network                          = 21;
+    bool host_pid                              = 31 [(gogoproto.moretags) = "policy:\"Host PID\""];
     repeated Toleration tolerations            = 22 [(gogoproto.moretags) = "search:\"-\""];
     repeated PortConfig ports                  = 24 [(gogoproto.moretags) = "policy:\"Ports\""];
 

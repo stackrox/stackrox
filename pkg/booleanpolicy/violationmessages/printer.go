@@ -36,6 +36,7 @@ var (
 			fieldnames.ExposedNodePort:           {{required: set.NewStringSet(search.ExposedNodePort.String()), printerFuncKey: printer.NodePortKey}},
 			fieldnames.ExposedPort:               {{required: set.NewStringSet(search.Port.String()), printerFuncKey: printer.PortKey}},
 			fieldnames.FixedBy:                   {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
+			fieldnames.HostPID:                   {{required: set.NewStringSet(search.HostPID.String()), printerFuncKey: printer.HostPidKey}},
 			fieldnames.ImageAge:                  {{required: set.NewStringSet(search.ImageCreatedTime.String()), printerFuncKey: printer.ImageAgeKey}},
 			fieldnames.ImageComponent:            {{required: set.NewStringSet(augmentedobjs.ComponentAndVersionCustomTag), printerFuncKey: printer.ComponentKey}},
 			fieldnames.ImageOS:                   {{required: set.NewStringSet(search.ImageOS.String()), printerFuncKey: printer.ImageOSKey}},

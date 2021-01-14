@@ -452,6 +452,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"containers: [Container]!",
 		"created: Time",
 		"hostNetwork: Boolean!",
+		"hostPid: Boolean!",
 		"id: ID!",
 		"imagePullSecrets: [String!]!",
 		"inactive: Boolean!",
@@ -4630,6 +4631,12 @@ func (resolver *deploymentResolver) Created(ctx context.Context) (*graphql.Time,
 func (resolver *deploymentResolver) HostNetwork(ctx context.Context) bool {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetHostNetwork()
+	return value
+}
+
+func (resolver *deploymentResolver) HostPid(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetHostPid()
 	return value
 }
 

@@ -11,6 +11,7 @@ const (
 	DisallowedImageLabelKey = "disallowedImageLabel"
 	DropCapabilityKey       = "dropCapability"
 	EnvKey                  = "env"
+	HostPidKey              = "hostPid"
 	ImageAgeKey             = "imageAge"
 	ImageDetailsKey         = "imageDetails"
 	ImageOSKey              = "imageOS"
@@ -43,6 +44,7 @@ func init() {
 	registerFunc(DisallowedImageLabelKey, disallowedImageLabelPrinter)
 	registerFunc(DropCapabilityKey, dropCapabilityPrinter)
 	registerFunc(EnvKey, envPrinter)
+	registerFunc(HostPidKey, hostPidPrinter)
 	registerFunc(ImageAgeKey, imageAgePrinter)
 	registerFunc(ImageDetailsKey, imageDetailsPrinter)
 	registerFunc(ImageOSKey, imageOSPrinter)

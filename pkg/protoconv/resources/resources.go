@@ -173,6 +173,7 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 // PopulateDeploymentFromPodSpec fills in the initialized wrap with data from the passed pod spec
 func (w *DeploymentWrap) PopulateDeploymentFromPodSpec(podSpec v1.PodSpec) {
 	w.HostNetwork = podSpec.HostNetwork
+	w.HostPid = podSpec.HostPID
 	w.populateTolerations(podSpec)
 	w.populateServiceAccount(podSpec)
 	w.populateImagePullSecrets(podSpec)

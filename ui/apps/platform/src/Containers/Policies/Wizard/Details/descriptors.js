@@ -243,6 +243,10 @@ const fieldsMap = {
         label: 'Read Only Root Filesystem',
         formatValue: (d) => (d === true ? 'Yes' : 'Not Enabled'),
     },
+    HostPid: {
+        label: 'Host PID',
+        formatValue: (d) => (d === true ? 'Yes' : 'Not Enabled'),
+    },
     containerResourcePolicy: {
         label: 'Container Resources',
         formatValue: formatResources,

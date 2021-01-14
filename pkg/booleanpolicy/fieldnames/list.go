@@ -23,6 +23,7 @@ var (
 	ExposedPort               = newFieldName("Exposed Port")
 	ExposedPortProtocol       = newFieldName("Exposed Port Protocol")
 	FixedBy                   = newFieldName("Fixed By")
+	HostPID                   = newFieldName("Host PID")
 	ImageAge                  = newFieldName("Image Age")
 	ImageComponent            = newFieldName("Image Component")
 	ImageOS                   = newFieldName("Image OS")

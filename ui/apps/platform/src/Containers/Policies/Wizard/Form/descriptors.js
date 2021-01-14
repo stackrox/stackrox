@@ -736,6 +736,29 @@ const policyConfigurationDescriptor = [
         canBooleanLogic: false,
     },
     {
+        label: 'Share Host PID Namespace',
+        name: 'Host PID',
+        longName: 'Host PID',
+        jsonpath: 'fields.hostPid',
+        category: policyCriteriaCategories.DEPLOYMENT_METADATA,
+        type: 'radioGroup',
+        radioButtons: [
+            {
+                text: 'Uses Host PID namespace',
+                value: true,
+            },
+            {
+                text: 'Does Not Use Host PID namespace',
+                value: false,
+            },
+        ],
+        required: false,
+        default: false,
+        defaultValue: true,
+        disabled: true,
+        canBooleanLogic: false,
+    },
+    {
         label: 'Drop Capabilities',
         name: 'Drop Capabilities',
         jsonpath: 'fields.dropCapabilities',
