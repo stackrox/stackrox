@@ -134,6 +134,6 @@ config:
 envVars: |
   customize:
     envVars:
-      {{- range $_, $v := .rawValue -}}
+      {{- range $_, $v := .rawValue }}
       {{ quote $v.name }}: {{ quote $v.value }}
       {{- end }}

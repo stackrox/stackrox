@@ -162,7 +162,7 @@ func (s *customizeSuite) TestCustomizePodMetadata() {
 		seenKinds := set.NewStringSet()
 
 		for _, obj := range objs {
-			if obj.GetKind() != "Deployment" {
+			if obj.GetKind() != "Deployment" && obj.GetKind() != "DaemonSet" {
 				continue
 			}
 			typeSig := fmt.Sprintf("%s-%s", globalSig, obj.GetKind())
@@ -216,7 +216,7 @@ func (s *customizeSuite) TestCustomizePodMetadata() {
 	s.Require().NotEmpty(objs)
 
 	for _, obj := range objs {
-		if obj.GetKind() != "Deployment" {
+		if obj.GetKind() != "Deployment" && obj.GetKind() != "DaemonSet" {
 			continue
 		}
 
