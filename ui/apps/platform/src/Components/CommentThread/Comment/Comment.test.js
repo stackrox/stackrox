@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, wait } from '@testing-library/react';
+import { render, fireEvent, waitFor } from '@testing-library/react';
 
 import Comment from './Comment';
 
@@ -24,7 +24,7 @@ test('should not save on an empty comment', async () => {
     fireEvent.change(textarea, { target: { value: '   ' } });
     fireEvent.click(saveButton);
 
-    await wait(() => expect(getByText('This field is required')).toBeInTheDocument());
+    await waitFor(() => expect(getByText('This field is required')).toBeInTheDocument());
 });
 
 test('should show links for urls with http(s) as a prefix', async () => {
@@ -37,7 +37,7 @@ test('should show links for urls with http(s) as a prefix', async () => {
         <Comment comment={comment} onSave={doNothing} onClose={doNothing} onRemove={doNothing} />
     );
 
-    await wait(() =>
+    await waitFor(() =>
         expect(getByTestId('comment-link')).toHaveAttribute('href', 'https://www.example.com')
     );
 });
