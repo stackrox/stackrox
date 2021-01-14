@@ -7,7 +7,6 @@ package mocks
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
@@ -33,20 +32,6 @@ func NewMockClusterManager(ctrl *gomock.Controller) *MockClusterManager {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockClusterManager) EXPECT() *MockClusterManagerMockRecorder {
 	return m.recorder
-}
-
-// ApplyHelmConfig mocks base method
-func (m *MockClusterManager) ApplyHelmConfig(ctx context.Context, clusterID string, helmConfig *central.HelmManagedConfigInit) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ApplyHelmConfig", ctx, clusterID, helmConfig)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ApplyHelmConfig indicates an expected call of ApplyHelmConfig
-func (mr *MockClusterManagerMockRecorder) ApplyHelmConfig(ctx, clusterID, helmConfig interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyHelmConfig", reflect.TypeOf((*MockClusterManager)(nil).ApplyHelmConfig), ctx, clusterID, helmConfig)
 }
 
 // UpdateClusterUpgradeStatus mocks base method

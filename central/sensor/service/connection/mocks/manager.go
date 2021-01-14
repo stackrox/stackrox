@@ -11,6 +11,7 @@ import (
 	connection "github.com/stackrox/rox/central/sensor/service/connection"
 	pipeline "github.com/stackrox/rox/central/sensor/service/pipeline"
 	central "github.com/stackrox/rox/generated/internalapi/central"
+	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
 	reflect "reflect"
 )
@@ -53,17 +54,17 @@ func (mr *MockManagerMockRecorder) Start(mgr, netEntitiesMgr, policyMgr, baselin
 }
 
 // HandleConnection mocks base method
-func (m *MockManager) HandleConnection(ctx context.Context, clusterID string, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
+func (m *MockManager) HandleConnection(ctx context.Context, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleConnection", ctx, clusterID, eventPipeline, server)
+	ret := m.ctrl.Call(m, "HandleConnection", ctx, cluster, eventPipeline, server)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // HandleConnection indicates an expected call of HandleConnection
-func (mr *MockManagerMockRecorder) HandleConnection(ctx, clusterID, eventPipeline, server interface{}) *gomock.Call {
+func (mr *MockManagerMockRecorder) HandleConnection(ctx, cluster, eventPipeline, server interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleConnection", reflect.TypeOf((*MockManager)(nil).HandleConnection), ctx, clusterID, eventPipeline, server)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleConnection", reflect.TypeOf((*MockManager)(nil).HandleConnection), ctx, cluster, eventPipeline, server)
 }
 
 // GetConnection mocks base method

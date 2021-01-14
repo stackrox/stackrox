@@ -16,12 +16,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
-	"google.golang.org/grpc/metadata"
 )
 
 var (
@@ -58,7 +56,7 @@ type sensorConnection struct {
 }
 
 func newConnection(ctx context.Context,
-	clusterID string,
+	cluster *storage.Cluster,
 	eventPipeline pipeline.ClusterPipeline,
 	clusterMgr common.ClusterManager,
 	networkEntityMgr common.NetworkEntityManager,
@@ -67,11 +65,6 @@ func newConnection(ctx context.Context,
 
 	md := metautils.ExtractIncoming(ctx)
 
-	helmManaged := false
-	if features.SensorInstallationExperience.Enabled() {
-		helmManaged = md.Get(centralsensor.HelmManagedClusterMetadataKey) == "true"
-	}
-
 	conn := &sensorConnection{
 		stopSig:       concurrency.NewErrorSignal(),
 		stoppedSig:    concurrency.NewErrorSignal(),
@@ -79,7 +72,7 @@ func newConnection(ctx context.Context,
 		eventPipeline: eventPipeline,
 		queues:        make(map[string]*dedupingQueue),
 
-		clusterID:        clusterID,
+		clusterID:        cluster.GetId(),
 		clusterMgr:       clusterMgr,
 		policyMgr:        policyMgr,
 		networkEntityMgr: networkEntityMgr,
@@ -87,14 +80,14 @@ func newConnection(ctx context.Context,
 
 		sensorMetadata: md,
 		capabilities:   centralsensor.ExtractCapsFromMD(md),
-		helmManaged:    helmManaged,
+		helmManaged:    cluster.GetHelmConfig() != nil,
 	}
 
 	// Need a reference to conn for injector
 	conn.sensorEventHandler = newSensorEventHandler(eventPipeline, conn, &conn.stopSig)
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
-	conn.networkEntitiesCtrl = networkentities.NewController(clusterID, networkEntityMgr, graph.Singleton(), conn, &conn.stopSig)
+	conn.networkEntitiesCtrl = networkentities.NewController(cluster.GetId(), networkEntityMgr, graph.Singleton(), conn, &conn.stopSig)
 	conn.telemetryCtrl = telemetry.NewController(conn.capabilities, conn, &conn.stopSig)
 
 	return conn
@@ -292,33 +285,6 @@ func (c *sensorConnection) getClusterConfigMsg(ctx context.Context) (*central.Ms
 }
 
 func (c *sensorConnection) Run(ctx context.Context, server central.SensorService_CommunicateServer, connectionCapabilities centralsensor.SensorCapabilitySet) error {
-	serverMD := metautils.NiceMD{}
-	if c.helmManaged {
-		serverMD.Set(centralsensor.HelmManagedClusterMetadataKey, "true")
-	}
-
-	if err := server.SendHeader(metadata.MD(serverMD)); err != nil {
-		return errors.Wrap(err, "sending initial sensorMetadata")
-	}
-
-	if c.helmManaged {
-		// For Helm-managed clusters, we expect to receive the cluster configuration as the first message from sensor.
-		msg, err := server.Recv()
-		if err != nil {
-			return errors.Wrap(err, "receiving helm config init message")
-		}
-		helmConfigInit := msg.GetHelmManagedConfigInit()
-		if helmConfigInit == nil {
-			return errors.Errorf("expected helm config init message, got %T", msg.GetMsg())
-		}
-
-		if err := c.clusterMgr.ApplyHelmConfig(ctx, c.clusterID, helmConfigInit); err != nil {
-			return errors.Wrap(err, "applying initial helm configuration")
-		}
-	} else if err := c.clusterMgr.ApplyHelmConfig(ctx, c.clusterID, nil); err != nil {
-		return errors.Wrap(err, "resetting helm configuration")
-	}
-
 	// Synchronously send the config to ensure syncing before Sensor marks the connection as Central reachable
 	msg, err := c.getClusterConfigMsg(ctx)
 	if err != nil {

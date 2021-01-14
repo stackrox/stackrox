@@ -62,7 +62,8 @@ type datastoreImpl struct {
 
 	clusterRanker *ranking.Ranker
 
-	cache simplecache.Cache
+	idToNameCache simplecache.Cache
+	nameToIDCache simplecache.Cache
 
 	lock sync.Mutex
 }
@@ -146,7 +147,8 @@ func (ds *datastoreImpl) buildIndex() error {
 	}
 
 	for _, c := range clusters {
-		ds.cache.Add(c.GetId(), c.GetName())
+		ds.idToNameCache.Add(c.GetId(), c.GetName())
+		ds.nameToIDCache.Add(c.GetName(), c.GetId())
 		c.HealthStatus = clusterHealthStatuses[c.GetId()]
 	}
 	return ds.indexer.AddClusters(clusters)
@@ -236,7 +238,7 @@ func (ds *datastoreImpl) GetClusterName(ctx context.Context, id string) (string,
 	if ok, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(id)); err != nil || !ok {
 		return "", false, err
 	}
-	val, ok := ds.cache.Get(id)
+	val, ok := ds.idToNameCache.Get(id)
 	if !ok {
 		return "", false, nil
 	}
@@ -247,7 +249,7 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	if ok, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(id)); err != nil || !ok {
 		return false, err
 	}
-	_, ok := ds.cache.Get(id)
+	_, ok := ds.idToNameCache.Get(id)
 	return ok, nil
 }
 
@@ -287,6 +289,13 @@ func (ds *datastoreImpl) AddCluster(ctx context.Context, cluster *storage.Cluste
 		return "", err
 	}
 
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	return ds.addClusterNoLock(cluster)
+}
+
+func (ds *datastoreImpl) addClusterNoLock(cluster *storage.Cluster) (string, error) {
 	if cluster.GetId() != "" {
 		return "", errors.Errorf("cannot add a cluster that has already been assigned an id: %q", cluster.GetId())
 	}
@@ -294,9 +303,6 @@ func (ds *datastoreImpl) AddCluster(ctx context.Context, cluster *storage.Cluste
 	if cluster.GetName() == "" {
 		return "", errors.New("cannot add a cluster without name")
 	}
-
-	ds.lock.Lock()
-	defer ds.lock.Unlock()
 
 	cluster.Id = uuid.NewV4().String()
 	if err := ds.updateClusterNoLock(cluster); err != nil {
@@ -418,7 +424,8 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 	if err := ds.clusterStorage.Delete(id); err != nil {
 		return errors.Wrapf(err, "failed to remove cluster %q", id)
 	}
-	ds.cache.Remove(id)
+	ds.idToNameCache.Remove(id)
+	ds.nameToIDCache.Remove(cluster.GetName())
 
 	deleteRelatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
@@ -634,48 +641,79 @@ func (ds *datastoreImpl) updateClusterNoLock(cluster *storage.Cluster) error {
 	if err := ds.indexer.AddCluster(cluster); err != nil {
 		return err
 	}
-	ds.cache.Add(cluster.GetId(), cluster.GetName())
+	ds.idToNameCache.Add(cluster.GetId(), cluster.GetName())
+	ds.nameToIDCache.Add(cluster.GetName(), cluster.GetId())
 	return nil
 }
 
-func (ds *datastoreImpl) ApplyHelmConfig(ctx context.Context, clusterID string, helmConfig *central.HelmManagedConfigInit) error {
+func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, clusterID string, helmConfig *central.HelmManagedConfigInit) (*storage.Cluster, error) {
 	if err := checkWriteSac(ctx, clusterID); err != nil {
-		return err
+		return nil, err
 	}
 
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	cluster, exist, err := ds.GetCluster(ctx, clusterID)
-	if err != nil {
-		return err
-	} else if !exist {
-		return errors.Errorf("cluster with ID %q does not exist", clusterID)
+	clusterName := helmConfig.GetClusterName()
+
+	if clusterID == "" && clusterName != "" {
+		// Try to look up cluster ID by name, if this is for an existing cluster
+		clusterIDVal, _ := ds.nameToIDCache.Get(clusterName)
+		clusterID, _ = clusterIDVal.(string)
+	}
+
+	var cluster *storage.Cluster
+	if clusterID != "" {
+		clusterByID, exist, err := ds.GetCluster(ctx, clusterID)
+		if err != nil {
+			return nil, err
+		} else if !exist {
+			return nil, errors.Errorf("cluster with ID %q does not exist", clusterID)
+		}
+
+		// If a name is specified, validate it (otherwise, accept any name)
+		if clusterName != "" && clusterName != clusterByID.GetName() {
+			return nil, errors.Errorf("Name mismatch for cluster %q: expected %q, but %q was specified. Set the cluster.name/clusterName attribute in your Helm config to %q, or remove it", clusterID, cluster.GetName(), clusterName, cluster.GetName())
+		}
+		cluster = clusterByID
+	} else if clusterName != "" {
+		// A this point, we can be sure that the cluster does not exist.
+		cluster = &storage.Cluster{
+			Name:       clusterName,
+			HelmConfig: helmConfig.GetClusterConfig().Clone(),
+		}
+		configureFromHelmConfig(cluster)
+		if _, err := ds.addClusterNoLock(cluster); err != nil {
+			return nil, errors.Wrapf(err, "failed to dynamically add cluster with name %q", clusterName)
+		}
+	} else {
+		return nil, errors.New("neither a cluster ID nor a cluster name was specified")
 	}
 
 	// If the cluster should not be helm-managed, clear out the helm config field, if necessary.
 	if helmConfig == nil {
 		if cluster.GetHelmConfig() != nil {
 			cluster.HelmConfig = nil
-			return ds.updateClusterNoLock(cluster)
+			if err := ds.updateClusterNoLock(cluster); err != nil {
+				return nil, err
+			}
 		}
-		return nil
-	}
-
-	// Ensure that the name of the cluster doesn't get changed.
-	if clusterName := helmConfig.GetClusterName(); clusterName != "" && clusterName != cluster.GetName() {
-		return errors.Errorf("Cannot rename cluster with ID %s from %q to %q. Set the cluster.name/clusterName attribute in your Helm config to %q, or remove it", clusterID, cluster.GetName(), clusterName, cluster.GetName())
+		return cluster, nil
 	}
 
 	if cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() {
-		// No change in fingerprint, do not update.
-		return nil
+		// No change in fingerprint, do not update. Note: this also is the case if the cluster was newly added.
+		return cluster, nil
 	}
 
 	cluster.HelmConfig = helmConfig.GetClusterConfig().Clone()
 	configureFromHelmConfig(cluster)
 
-	return ds.updateClusterNoLock(cluster)
+	if err := ds.updateClusterNoLock(cluster); err != nil {
+		return nil, err
+	}
+
+	return cluster, nil
 }
 
 func configureFromHelmConfig(cluster *storage.Cluster) {

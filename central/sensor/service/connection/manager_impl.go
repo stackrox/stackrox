@@ -199,9 +199,10 @@ func (m *manager) replaceConnection(ctx context.Context, clusterID string, newCo
 	return oldConnection, nil
 }
 
-func (m *manager) HandleConnection(ctx context.Context, clusterID string, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
-	conn := newConnection(ctx, clusterID, eventPipeline, m.clusters, m.networkEntities, m.policies, m.baselines)
+func (m *manager) HandleConnection(ctx context.Context, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
+	conn := newConnection(ctx, cluster, eventPipeline, m.clusters, m.networkEntities, m.policies, m.baselines)
 
+	clusterID := cluster.GetId()
 	oldConnection, err := m.replaceConnection(ctx, clusterID, conn)
 	if err != nil {
 		log.Errorf("Replacing connection: %v", err)

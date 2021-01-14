@@ -61,7 +61,7 @@ type DataStore interface {
 	SearchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error)
 	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 
-	ApplyHelmConfig(ctx context.Context, clusterID string, helmConfig *central.HelmManagedConfigInit) error
+	LookupOrCreateClusterFromConfig(ctx context.Context, clusterID string, helmConfig *central.HelmManagedConfigInit) (*storage.Cluster, error)
 }
 
 // New returns an instance of DataStore.
@@ -99,7 +99,8 @@ func New(
 		clusterRanker:        clusterRanker,
 		networkBaselineMgr:   networkBaselineMgr,
 
-		cache: simplecache.New(),
+		idToNameCache: simplecache.New(),
+		nameToIDCache: simplecache.New(),
 	}
 
 	if err := ds.buildIndex(); err != nil {

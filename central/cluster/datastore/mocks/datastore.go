@@ -53,20 +53,6 @@ func (mr *MockDataStoreMockRecorder) AddCluster(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCluster", reflect.TypeOf((*MockDataStore)(nil).AddCluster), arg0, arg1)
 }
 
-// ApplyHelmConfig mocks base method
-func (m *MockDataStore) ApplyHelmConfig(arg0 context.Context, arg1 string, arg2 *central.HelmManagedConfigInit) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ApplyHelmConfig", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ApplyHelmConfig indicates an expected call of ApplyHelmConfig
-func (mr *MockDataStoreMockRecorder) ApplyHelmConfig(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ApplyHelmConfig", reflect.TypeOf((*MockDataStore)(nil).ApplyHelmConfig), arg0, arg1, arg2)
-}
-
 // CountClusters mocks base method
 func (m *MockDataStore) CountClusters(arg0 context.Context) (int, error) {
 	m.ctrl.T.Helper()
@@ -142,6 +128,21 @@ func (m *MockDataStore) GetClusters(arg0 context.Context) ([]*storage.Cluster, e
 func (mr *MockDataStoreMockRecorder) GetClusters(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusters", reflect.TypeOf((*MockDataStore)(nil).GetClusters), arg0)
+}
+
+// LookupOrCreateClusterFromConfig mocks base method
+func (m *MockDataStore) LookupOrCreateClusterFromConfig(arg0 context.Context, arg1 string, arg2 *central.HelmManagedConfigInit) (*storage.Cluster, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LookupOrCreateClusterFromConfig", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*storage.Cluster)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LookupOrCreateClusterFromConfig indicates an expected call of LookupOrCreateClusterFromConfig
+func (mr *MockDataStoreMockRecorder) LookupOrCreateClusterFromConfig(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LookupOrCreateClusterFromConfig", reflect.TypeOf((*MockDataStore)(nil).LookupOrCreateClusterFromConfig), arg0, arg1, arg2)
 }
 
 // RemoveCluster mocks base method
