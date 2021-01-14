@@ -38,7 +38,7 @@ main() {
 
 	set +e
 
-    for object in deployments services pods secrets serviceaccounts; do
+    for object in deployments services pods secrets serviceaccounts validatingwebhookconfigurations; do
         # A feel good command before pulling logs
         echo ">>> ${object} <<<"
         kubectl -n "${namespace}" get "${object}" -o wide
@@ -46,7 +46,14 @@ main() {
         mkdir -p "${log_dir}/${object}"
 
         for item in $(kubectl -n "${namespace}" get "${object}" -o jsonpath='{.items}' | jq -r '.[] | select(.metadata.deletionTimestamp | not) | .metadata.name'); do
-            kubectl describe "${object}" "${item}" -n "${namespace}" > "${log_dir}/${object}/${item}_describe.log"
+            {
+              kubectl describe "${object}" "${item}" -n "${namespace}" 2>&1
+              echo
+              echo
+              echo '----------------------'
+              echo '# Full YAML definition'
+              kubectl get "${object}" "${item}" -n "${namespace}" -o yaml 2>&1
+            } > "${log_dir}/${object}/${item}_describe.log"
             for ctr in $(kubectl -n "${namespace}" get "${object}" "${item}" -o jsonpath='{.status.containerStatuses[*].name}'); do
                 kubectl -n "${namespace}" logs "${object}/${item}" -c "${ctr}" > "${log_dir}/${object}/${item}-${ctr}.log"
                 prev_log_file="${log_dir}/${object}/${item}-${ctr}-previous.log"
