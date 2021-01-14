@@ -160,4 +160,26 @@ func (s *baseSuite) TestAllGeneratableExplicit() {
 			s.NotEmptyf(v, "unexpected empty rendered YAML %s", k)
 		}
 	}
+
+	// Verify custom environment variable
+	expectedEnvVar := map[string]interface{}{
+		"name":  "CUSTOM_ENV_VAR",
+		"value": "FOO",
+	}
+
+	objs := s.ParseObjects(rendered)
+	for _, obj := range objs {
+		if obj.GetKind() != "Deployment" && obj.GetKind() != "DaemonSet" {
+			continue
+		}
+		containers, _, err := unstructured.NestedSlice(obj.Object, "spec", "template", "spec", "containers")
+		s.NoError(err)
+		s.NotEmpty(containers)
+		for _, container := range containers {
+			containerObj := container.(map[string]interface{})
+			envVars, _, err := unstructured.NestedSlice(containerObj, "env")
+			s.NoError(err)
+			s.Contains(envVars, expectedEnvVar)
+		}
+	}
 }
