@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -46,6 +47,13 @@ func Policies() (policies []*storage.Policy, err error) {
 			errList.AddStringf("policy %s does not have an ID defined", p.GetName())
 			continue
 		}
+
+		if !features.K8sEventDetection.Enabled() {
+			if p.GetId() == "8ab0f199-4904-4808-9461-3501da1d1b77" || p.GetId() == "742e0361-bddd-4a2d-8758-f2af6197f61d" {
+				continue
+			}
+		}
+
 		if err := booleanpolicy.EnsureConvertedToLatest(p); err != nil {
 			errList.AddWrapf(err, "converting policy %s", p.GetName())
 			continue

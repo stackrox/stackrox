@@ -37,6 +37,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 			return !booleanpolicy.SectionContainsOneOf(section, booleanpolicy.KubeEventsFields)
 		})
 		if len(filtered.GetPolicySections()) > 0 {
+			compiled.hasProcessSection = true
 			deploymentWithProcessMatcher, err := booleanpolicy.BuildDeploymentWithProcessMatcher(filtered)
 			if err != nil {
 				return nil, errors.Wrapf(err, "building process matcher for policy %q", policy.GetName())
@@ -51,6 +52,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 			return booleanpolicy.SectionContainsOneOf(section, booleanpolicy.KubeEventsFields)
 		})
 		if len(filtered.GetPolicySections()) > 0 {
+			compiled.hasKubeEventsSection = true
 			kubeEventsMatcher, err := booleanpolicy.BuildKubeEventMatcher(filtered)
 			if err != nil {
 				return nil, errors.Wrapf(err, "building kubernetes event matcher for policy %q", policy.GetName())
@@ -125,6 +127,9 @@ type compiledPolicy struct {
 	deploymentWithProcessMatcher booleanpolicy.DeploymentWithProcessMatcher
 	deploymentMatcher            booleanpolicy.DeploymentMatcher
 	imageMatcher                 booleanpolicy.ImageMatcher
+
+	hasProcessSection    bool
+	hasKubeEventsSection bool
 }
 
 func (cp *compiledPolicy) MatchAgainstKubeResourceAndEvent(
@@ -132,13 +137,27 @@ func (cp *compiledPolicy) MatchAgainstKubeResourceAndEvent(
 	kubeEvent *storage.KubernetesEvent,
 	kubeResource interface{},
 ) (booleanpolicy.Violations, error) {
+	if !cp.hasKubeEventsSection {
+		return booleanpolicy.Violations{}, nil
+	}
+
 	if cp.kubeEventsMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %s against kubernetes event", cp.Policy().GetName())
 	}
 	return cp.kubeEventsMatcher.MatchKubeEvent(cache, kubeEvent, kubeResource)
 }
 
-func (cp *compiledPolicy) MatchAgainstDeploymentAndProcess(cache *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processNotInBaseline bool) (booleanpolicy.Violations, error) {
+func (cp *compiledPolicy) MatchAgainstDeploymentAndProcess(
+	cache *booleanpolicy.CacheReceptacle,
+	deployment *storage.Deployment,
+	images []*storage.Image,
+	pi *storage.ProcessIndicator,
+	processNotInBaseline bool,
+) (booleanpolicy.Violations, error) {
+	if !cp.hasProcessSection {
+		return booleanpolicy.Violations{}, nil
+	}
+
 	if cp.deploymentWithProcessMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against deployments and processes", cp.Policy().GetName())
 	}

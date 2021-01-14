@@ -1,0 +1,42 @@
+{
+  "id": "8ab0f199-4904-4808-9461-3501da1d1b77",
+  "name": "Kubectl Exec into Pod",
+  "description": "Alerts when Kubernetes API receives request to execute command in container",
+  "severity": "HIGH_SEVERITY",
+  "lifecycle_stages": [
+    "RUNTIME"
+  ],
+  "categories": [
+    "Kubernetes Events"
+  ],
+  "rationale": "'pods/exec' is non-standard approach for interacting with containers. Attackers with permissions could execute malicious code and compromise resources within a cluster",
+  "remediation": "Restrict RBAC access to the 'pods/exec' resource according to the Principle of Least Privilege. Limit such usage only to development, testing or debugging (non-production) activities",
+  "policyVersion": "1",
+  "policySections": [
+    {
+      "sectionName": "",
+      "policyGroups": [
+        {
+          "fieldName": "Kubernetes API Verb",
+          "booleanOperator": "OR",
+          "negate": false,
+          "values": [
+            {
+              "value": "CREATE"
+            }
+          ]
+        },
+        {
+          "fieldName": "Kubernetes Resource",
+          "booleanOperator": "OR",
+          "negate": false,
+          "values": [
+            {
+              "value": "PODS_EXEC"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

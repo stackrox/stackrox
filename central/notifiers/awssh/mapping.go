@@ -34,6 +34,7 @@ var (
 		"privileges":               "TTPs/Privilege Escalation",
 		"security best practices":  "TTPs",
 		"system modification":      "Effects",
+		"kubernetes events":        "Unusual Behaviors",
 	}
 
 	defaultFindingType = "TTPs"

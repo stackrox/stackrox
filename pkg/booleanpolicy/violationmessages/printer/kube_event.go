@@ -22,14 +22,14 @@ func GenerateKubeEventViolationMsg(event *storage.KubernetesEvent) *storage.Aler
 
 func defaultViolationMsg(event *storage.KubernetesEvent) *storage.Alert_Violation {
 	return &storage.Alert_Violation{
-		Message: fmt.Sprintf("Kubernetes event '%s' detected", kubernetes.EventAsString(event)),
+		Message: fmt.Sprintf("Kubernetes API request '%s' detected", kubernetes.EventAsString(event)),
 	}
 }
 
 func podExecViolationMsg(pod string, args *storage.KubernetesEvent_PodExecArgs) *storage.Alert_Violation {
 	return &storage.Alert_Violation{
-		Message: fmt.Sprintf("Kubectl exec '%s' into pod '%s' container '%s' detected",
-			args.GetCommand(), args.GetContainer(), pod),
+		Message: fmt.Sprintf("Kubernetes API received exec '%s' request into pod '%s' container '%s'",
+			args.GetCommand(), pod, args.GetContainer()),
 		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
 			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
 				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
@@ -45,7 +45,7 @@ func podExecViolationMsg(pod string, args *storage.KubernetesEvent_PodExecArgs) 
 func podPortForwardViolationMsg(pod string, args *storage.KubernetesEvent_PodPortForwardArgs) *storage.Alert_Violation {
 	port := strconv.Itoa((int)(args.GetPort()))
 	return &storage.Alert_Violation{
-		Message: fmt.Sprintf("Kubectl port-forward to pod '%s' port '%s' detected", pod, port),
+		Message: fmt.Sprintf("Kubernetes API received port forward request to pod '%s' port '%s'", pod, port),
 		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
 			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
 				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{

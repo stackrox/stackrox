@@ -4,6 +4,7 @@ package booleanpolicy_test
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -15,8 +16,10 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/defaults"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/kubernetes"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/readable"
@@ -2197,7 +2200,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 	}
 }
 
-func (suite *DefaultPoliciesTestSuite) TestKubeEventPolicies() {
+func (suite *DefaultPoliciesTestSuite) TestKubeEventConstraints() {
 	createVerbGroup := policyGroupWithSingleKeyValue(fieldnames.KubeAPIVerb, "CREATE", false)
 	podExecGroup := policyGroupWithSingleKeyValue(fieldnames.KubeResource, "PODS_EXEC", false)
 
@@ -2211,45 +2214,17 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventPolicies() {
 		withProcessSection bool
 	}{
 		{
-			event: &storage.KubernetesEvent{
-				Object: &storage.KubernetesEvent_Object{
-					Name:     "p1",
-					Resource: storage.KubernetesEvent_Object_PODS_EXEC,
-				},
-				ApiVerb: storage.KubernetesEvent_CREATE,
-				ObjectArgs: &storage.KubernetesEvent_PodExecArgs_{
-					PodExecArgs: &storage.KubernetesEvent_PodExecArgs{
-						Container: "c1",
-					},
-				},
-			},
+			event:              podExecEvent("p1", "c1", ""),
 			groups:             []*storage.PolicyGroup{createVerbGroup, podExecGroup},
 			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "")},
 		},
 		{
-			event: &storage.KubernetesEvent{
-				Object: &storage.KubernetesEvent_Object{
-					Name:     "p1",
-					Resource: storage.KubernetesEvent_Object_PODS_EXEC,
-				},
-				ApiVerb: storage.KubernetesEvent_CREATE,
-				ObjectArgs: &storage.KubernetesEvent_PodExecArgs_{
-					PodExecArgs: &storage.KubernetesEvent_PodExecArgs{
-						Container: "c1",
-					},
-				},
-			},
+			event:              podExecEvent("p1", "c1", ""),
 			groups:             []*storage.PolicyGroup{podExecGroup},
 			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "")},
 		},
 		{
-			event: &storage.KubernetesEvent{
-				Object: &storage.KubernetesEvent_Object{
-					Name:     "p1",
-					Resource: storage.KubernetesEvent_Object_PODS_EXEC,
-				},
-				ApiVerb: storage.KubernetesEvent_CREATE,
-			},
+			event:              podExecEvent("p1", "", ""),
 			groups:             []*storage.PolicyGroup{createVerbGroup},
 			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "", "")},
 		},
@@ -2257,36 +2232,18 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventPolicies() {
 			groups: []*storage.PolicyGroup{createVerbGroup, podExecGroup},
 		},
 		{
-			event: &storage.KubernetesEvent{
-				Object: &storage.KubernetesEvent_Object{
-					Name:     "p1",
-					Resource: storage.KubernetesEvent_Object_PODS_PORTFORWARD,
-				},
-				ApiVerb: storage.KubernetesEvent_CREATE,
-			},
+			event:  podPortForwardEvent("p1", 8000),
 			groups: []*storage.PolicyGroup{podExecGroup},
 		},
 		{
-			event: &storage.KubernetesEvent{
-				Object: &storage.KubernetesEvent_Object{
-					Name:     "p1",
-					Resource: storage.KubernetesEvent_Object_PODS_PORTFORWARD,
-				},
-				ApiVerb: storage.KubernetesEvent_CREATE,
-			},
+			event:      podPortForwardEvent("p1", 8000),
 			groups:     []*storage.PolicyGroup{podExecGroup, aptGetGroup},
 			builderErr: true,
 		},
 		{
-			event: &storage.KubernetesEvent{
-				Object: &storage.KubernetesEvent_Object{
-					Name:     "p1",
-					Resource: storage.KubernetesEvent_Object_PODS_EXEC,
-				},
-				ApiVerb: storage.KubernetesEvent_CREATE,
-			},
+			event:              podExecEvent("p1", "c1", ""),
 			groups:             []*storage.PolicyGroup{createVerbGroup},
-			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "", "")},
+			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "")},
 			withProcessSection: true,
 		},
 	} {
@@ -2302,6 +2259,69 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventPolicies() {
 				require.Error(t, err)
 				return
 			}
+			require.NoError(t, err)
+
+			actualViolations, err := m.MatchKubeEvent(nil, c.event, &storage.Deployment{})
+			suite.Require().NoError(err)
+
+			assert.Nil(t, actualViolations.ProcessViolation)
+			if len(c.expectedViolations) == 0 {
+				assert.Nil(t, actualViolations.AlertViolations)
+			} else {
+				assert.ElementsMatch(t, c.expectedViolations, actualViolations.AlertViolations)
+			}
+		})
+	}
+}
+func (suite *DefaultPoliciesTestSuite) TestKubeEventDefaultPolicies() {
+	if !features.K8sEventDetection.Enabled() {
+		suite.T().Skip()
+	}
+
+	for _, c := range []struct {
+		policyName         string
+		event              *storage.KubernetesEvent
+		expectedViolations []*storage.Alert_Violation
+	}{
+		{
+			policyName:         "Kubectl Exec into Pod",
+			event:              podExecEvent("p1", "c1", "apt-get"),
+			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "apt-get")},
+		},
+		{
+			policyName: "Kubectl Exec into Pod",
+			event:      podPortForwardEvent("p1", 8000),
+		},
+		{
+			policyName: "Kubectl Exec into Pod",
+			event: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					Name:     "p1",
+					Resource: storage.KubernetesEvent_Object_PODS_EXEC,
+				},
+			},
+		},
+		{
+			policyName: "Kubectl Port Forward to Pod",
+		},
+		{
+			policyName:         "Kubectl Port Forward to Pod",
+			event:              podPortForwardEvent("p1", 8000),
+			expectedViolations: []*storage.Alert_Violation{podPortForwardViolationMsg("p1", 8000)},
+		},
+		{
+			policyName: "Kubectl Port Forward to Pod",
+			event: &storage.KubernetesEvent{
+				Object: &storage.KubernetesEvent_Object{
+					Name:     "p1",
+					Resource: storage.KubernetesEvent_Object_PODS_PORTFORWARD,
+				},
+			},
+		},
+	} {
+		suite.T().Run(fmt.Sprintf("%s:%s", c.policyName, kubernetes.EventAsString(c.event)), func(t *testing.T) {
+			policy := suite.MustGetPolicy(c.policyName)
+			m, err := booleanpolicy.BuildKubeEventMatcher(policy)
 			require.NoError(t, err)
 
 			actualViolations, err := m.MatchKubeEvent(nil, c.event, &storage.Deployment{})
@@ -2509,8 +2529,8 @@ func BenchmarkProcessPolicies(b *testing.B) {
 
 func podExecViolationMsg(pod, container, command string) *storage.Alert_Violation {
 	return &storage.Alert_Violation{
-		Message: fmt.Sprintf("Kubectl exec '%s' into pod '%s' container '%s' detected",
-			command, container, pod),
+		Message: fmt.Sprintf("Kubernetes API received exec '%s' request into pod '%s' container '%s'",
+			command, pod, container),
 		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
 			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
 				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
@@ -2518,6 +2538,51 @@ func podExecViolationMsg(pod, container, command string) *storage.Alert_Violatio
 					{Key: "container", Value: container},
 					{Key: "command", Value: command},
 				},
+			},
+		},
+	}
+}
+
+func podPortForwardViolationMsg(pod string, port int) *storage.Alert_Violation {
+	return &storage.Alert_Violation{
+		Message: fmt.Sprintf("Kubernetes API received port forward request to pod '%s' port '%s'", pod, strconv.Itoa(port)),
+		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+					{Key: "pod", Value: pod},
+					{Key: "port", Value: strconv.Itoa(port)},
+				},
+			},
+		},
+	}
+}
+
+func podExecEvent(pod, container, command string) *storage.KubernetesEvent {
+	return &storage.KubernetesEvent{
+		Object: &storage.KubernetesEvent_Object{
+			Name:     pod,
+			Resource: storage.KubernetesEvent_Object_PODS_EXEC,
+		},
+		ApiVerb: storage.KubernetesEvent_CREATE,
+		ObjectArgs: &storage.KubernetesEvent_PodExecArgs_{
+			PodExecArgs: &storage.KubernetesEvent_PodExecArgs{
+				Container: container,
+				Command:   command,
+			},
+		},
+	}
+}
+
+func podPortForwardEvent(pod string, port int) *storage.KubernetesEvent {
+	return &storage.KubernetesEvent{
+		Object: &storage.KubernetesEvent_Object{
+			Name:     pod,
+			Resource: storage.KubernetesEvent_Object_PODS_PORTFORWARD,
+		},
+		ApiVerb: storage.KubernetesEvent_CREATE,
+		ObjectArgs: &storage.KubernetesEvent_PodPortForwardArgs_{
+			PodPortForwardArgs: &storage.KubernetesEvent_PodPortForwardArgs{
+				Port: int32(port),
 			},
 		},
 	}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/defaults"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,6 +32,11 @@ func TestAllDefaultCategoriesHaveMappings(t *testing.T) {
 			assert.True(t, ok, "category %s not mapped", category)
 		}
 	}
-	// Ensure that all categories in the map are used in policies
-	assert.Len(t, categoryMapSet, 0)
+	// Ensure that all categories in the map are used in policies.
+	if features.K8sEventDetection.Enabled() {
+		assert.Len(t, categoryMapSet, 0)
+	} else {
+		// Kubernetes event not used.
+		assert.Len(t, categoryMapSet, 1)
+	}
 }
