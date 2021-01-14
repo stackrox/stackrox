@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -141,6 +142,7 @@ func (p *process) sendCheckInRequestSingle(req *central.UpgradeCheckInFromSensor
 // checkInWithCentral schedules a check in request for being sent to central. This is done on a best-effort basis; if
 // it fails, NBD. We will keep retrying though while the upgrade process is in progress.
 func (p *process) checkInWithCentral(req *central.UpgradeCheckInFromSensorRequest) {
+	req.ClusterId = clusterid.Get()
 	req.UpgradeProcessId = p.GetID()
 
 	// If there is a currently pending request, remove it from the channel - it is now obsolete.

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/sensor"
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -93,9 +94,12 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	clusterID := params.ID
 	if identity.Service().GetType() == storage.ServiceType_SENSOR_SERVICE {
-		if identity.Service().GetId() != params.ID {
-			httputil.WriteGRPCStyleError(w, codes.PermissionDenied, errors.New("sensors may only download their own bundle"))
+		var err error
+		clusterID, err = centralsensor.GetClusterID(clusterID, identity.Service().GetId())
+		if err != nil {
+			httputil.WriteGRPCStyleError(w, codes.PermissionDenied, errors.Wrapf(err, "sensor is not authorized to download bundle for cluster %q", params.ID))
 			return
 		}
 	}
@@ -103,7 +107,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	wrapper := zip.NewWrapper()
 
 	// Add cluster YAML and command
-	cluster, _, err := z.clusterStore.GetCluster(r.Context(), params.ID)
+	cluster, _, err := z.clusterStore.GetCluster(r.Context(), clusterID)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return

@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"google.golang.org/grpc"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -177,6 +178,7 @@ func (h *commandHandler) ctx() context.Context {
 func (h *commandHandler) rejectUpgradeRequest(trigger *central.SensorUpgradeTrigger, errReason error) {
 	checkInReq := &central.UpgradeCheckInFromSensorRequest{
 		UpgradeProcessId: trigger.GetUpgradeProcessId(),
+		ClusterId:        clusterid.Get(), // will definitely be available at this point
 		State: &central.UpgradeCheckInFromSensorRequest_LaunchError{
 			LaunchError: errReason.Error(),
 		},

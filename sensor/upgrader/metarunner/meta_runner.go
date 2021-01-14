@@ -31,6 +31,7 @@ func sendRequest(upgradeCtx *upgradectx.UpgradeContext, svc central.SensorUpgrad
 	defer cancel()
 	return svc.UpgradeCheckInFromUpgrader(ctx, &central.UpgradeCheckInFromUpgraderRequest{
 		UpgradeProcessId:       upgradeCtx.ProcessID(),
+		ClusterId:              upgradeCtx.ClusterID(),
 		CurrentWorkflow:        workflow,
 		LastExecutedStage:      stage.String(),
 		LastExecutedStageError: lastExecutedStageError,

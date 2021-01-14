@@ -8,6 +8,8 @@ import "storage/cluster.proto";
 package central;
 
 message UpgradeCheckInFromUpgraderRequest {
+    string  cluster_id                = 5;
+
     string  upgrade_process_id        = 1;
     string  current_workflow          = 2;
     string  last_executed_stage       = 3;
@@ -39,6 +41,7 @@ message UpgradeCheckInFromSensorRequest {
         repeated UpgraderPodState states = 1;
     }
 
+    string cluster_id         = 5;
     string upgrade_process_id = 1;
 
     oneof state {

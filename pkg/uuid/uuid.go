@@ -85,9 +85,7 @@ func FromBytes(input []byte) (u UUID, err error) {
 func FromBytesOrNil(input []byte) UUID {
 	id, err := FromBytes(input)
 	if err != nil {
-		return UUID{
-			uuid: uuid.Nil,
-		}
+		return Nil
 	}
 	return id
 }

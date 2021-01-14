@@ -204,6 +204,7 @@ func (suite *UpgradeCtrlTestSuite) upgraderCheckInAndRespMustBe(processID string
 func (suite *UpgradeCtrlTestSuite) upgraderCheckInWithErrAndRespMustBe(processID string, workflow string, stage sensorupgrader.Stage, upgraderErr string, expectedWorkflowResp string) {
 	resp, err := suite.upgradeCtrl.ProcessCheckInFromUpgrader(&central.UpgradeCheckInFromUpgraderRequest{
 		UpgradeProcessId:       processID,
+		ClusterId:              fakeClusterID,
 		CurrentWorkflow:        workflow,
 		LastExecutedStage:      stage.String(),
 		LastExecutedStageError: upgraderErr,
@@ -214,6 +215,7 @@ func (suite *UpgradeCtrlTestSuite) upgraderCheckInWithErrAndRespMustBe(processID
 
 func (suite *UpgradeCtrlTestSuite) sensorSaysUpgraderIsUp(processID string) {
 	suite.NoError(suite.upgradeCtrl.ProcessCheckInFromSensor(&central.UpgradeCheckInFromSensorRequest{
+		ClusterId:        fakeClusterID,
 		UpgradeProcessId: processID,
 		State: &central.UpgradeCheckInFromSensorRequest_PodStates{
 			PodStates: &central.UpgradeCheckInFromSensorRequest_UpgraderPodStates{
