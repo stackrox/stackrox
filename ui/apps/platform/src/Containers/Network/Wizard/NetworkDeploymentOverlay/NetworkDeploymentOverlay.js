@@ -76,7 +76,7 @@ NetworkDeploymentOverlay.propTypes = {
         policyIds: PropTypes.arrayOf(PropTypes.string),
     }).isRequired,
     filterState: PropTypes.number.isRequired,
-    lastUpdatedTimestamp: PropTypes.string.isRequired,
+    lastUpdatedTimestamp: PropTypes.instanceOf(Date).isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
