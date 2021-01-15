@@ -5,12 +5,19 @@ import useFetchNetworkBaselines from './useFetchNetworkBaselines';
 
 import NetworkBaselines from '../NetworkBaselines';
 
+export type BaselineSettingsProps = {
+    selectedDeployment: unknown;
+    deploymentId: string;
+    filterState: string;
+    onNavigateToEntity: () => void;
+};
+
 function BaselineSettings({
     selectedDeployment,
     deploymentId,
     filterState,
     onNavigateToEntity,
-}): ReactElement {
+}: BaselineSettingsProps): ReactElement {
     const { data: networkBaselines, isLoading } = useFetchNetworkBaselines({
         selectedDeployment,
         deploymentId,
@@ -25,6 +32,7 @@ function BaselineSettings({
             deploymentId={deploymentId}
             filterState={filterModes}
             onNavigateToEntity={onNavigateToEntity}
+            showAnomalousFlows={false}
         />
     );
 }

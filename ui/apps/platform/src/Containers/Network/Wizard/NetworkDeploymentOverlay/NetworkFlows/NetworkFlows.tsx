@@ -2,9 +2,18 @@ import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
 
 import { filterModes } from 'constants/networkFilterModes';
+import { Edge } from 'Containers/Network/networkTypes';
 import useFetchNetworkBaselines from './useFetchNetworkBaselines';
 
 import NetworkBaselines from '../NetworkBaselines';
+
+export type NetworkFlowsProps = {
+    deploymentId: string;
+    edges: Edge[];
+    filterState: number;
+    onNavigateToEntity: () => void;
+    lastUpdatedTimestamp: string;
+};
 
 function getPanelHeaderText(numBaselineFlows: number, filterState): string {
     switch (filterState) {
@@ -23,7 +32,7 @@ function NetworkFlows({
     filterState,
     onNavigateToEntity,
     lastUpdatedTimestamp,
-}): ReactElement {
+}: NetworkFlowsProps): ReactElement {
     const { data: networkBaselines, isLoading } = useFetchNetworkBaselines({
         deploymentId,
         edges,
@@ -41,6 +50,7 @@ function NetworkFlows({
             deploymentId={deploymentId}
             filterState={filterModes}
             onNavigateToEntity={onNavigateToEntity}
+            showAnomalousFlows
         />
     );
 }

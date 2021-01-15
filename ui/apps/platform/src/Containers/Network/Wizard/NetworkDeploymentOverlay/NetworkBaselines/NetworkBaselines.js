@@ -31,6 +31,7 @@ function NetworkBaselines({
     deploymentId,
     filterState,
     onNavigateToEntity,
+    showAnomalousFlows = false,
 }) {
     const toggleBaselineStatuses = useToggleBaselineStatuses(deploymentId);
 
@@ -80,6 +81,7 @@ function NetworkBaselines({
                 filterState={filterState}
                 onNavigateToEntity={onNavigateToEntity}
                 toggleBaselineStatuses={toggleBaselineStatuses}
+                showAnomalousFlows={showAnomalousFlows}
             />
         </Panel>
     );

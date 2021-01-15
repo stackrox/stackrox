@@ -58,6 +58,7 @@ export type NetworkBaselinesTableProps = {
     networkBaselines: FlattenedNetworkBaseline[];
     toggleBaselineStatuses: (networkBaselines: FlattenedNetworkBaseline[]) => void;
     onNavigateToEntity: () => void;
+    showAnomalousFlows?: boolean;
 };
 
 function getAggregateText(leafValues: string[], multiplePhrase = 'Many'): string {
@@ -146,6 +147,7 @@ function NetworkBaselinesTable({
     networkBaselines,
     toggleBaselineStatuses,
     onNavigateToEntity,
+    showAnomalousFlows = false,
 }: NetworkBaselinesTableProps): ReactElement {
     const { headerGroups, rows, prepareRow, selectedFlatRows } = useTable(
         {
@@ -174,7 +176,10 @@ function NetworkBaselinesTable({
         expanderPlugin
     );
 
-    if (!rows.some((row: { id: string }) => row.id.includes(networkFlowStatus.ANOMALOUS))) {
+    if (
+        showAnomalousFlows &&
+        !rows.some((row: { id: string }) => row.id.includes(networkFlowStatus.ANOMALOUS))
+    ) {
         const emptyAnomalousRow = getEmptyGroupRow(networkFlowStatus.ANOMALOUS as BaselineStatus);
 
         rows.unshift(emptyAnomalousRow);
