@@ -56,10 +56,10 @@ import io.fabric8.kubernetes.api.model.batch.JobSpec
 import io.fabric8.kubernetes.api.model.policy.HostPortRange
 import io.fabric8.kubernetes.api.model.policy.PodSecurityPolicy
 import io.fabric8.kubernetes.api.model.policy.PodSecurityPolicyBuilder
-import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder
-import io.fabric8.kubernetes.api.model.networking.NetworkPolicyEgressRuleBuilder
-import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder
-import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyEgressRuleBuilder
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRuleBuilder
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule
@@ -994,12 +994,12 @@ class Kubernetes implements OrchestratorMain {
 
     String applyNetworkPolicy(NetworkPolicy policy) {
         return evaluateWithRetry(2, 3) {
-            io.fabric8.kubernetes.api.model.networking.NetworkPolicy networkPolicy =
+            io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy networkPolicy =
                     createNetworkPolicyObject(policy)
 
             println "${networkPolicy.metadata.name}: NetworkPolicy created:"
             println YamlGenerator.toYaml(networkPolicy)
-            io.fabric8.kubernetes.api.model.networking.NetworkPolicy createdPolicy =
+            io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy createdPolicy =
                     client.network().networkPolicies()
                             .inNamespace(networkPolicy.metadata.namespace ?
                                     networkPolicy.metadata.namespace :
@@ -2008,7 +2008,8 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
-    protected io.fabric8.kubernetes.api.model.networking.NetworkPolicy createNetworkPolicyObject(NetworkPolicy policy) {
+    protected io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy createNetworkPolicyObject(
+            NetworkPolicy policy) {
         def networkPolicy = new NetworkPolicyBuilder()
                 .withApiVersion("networking.k8s.io/v1")
                 .withKind("NetworkPolicy")
