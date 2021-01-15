@@ -1,22 +1,25 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Panel from 'Components/Panel';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import { resourceTypes, standardEntityTypes } from 'constants/entityTypes';
 import { Link, withRouter } from 'react-router-dom';
-import URLService from 'utils/URLService';
-import getEntityName from 'utils/getEntityName';
-import { entityNameQueryMap } from 'utils/queryMap';
+import { ExternalLink } from 'react-feather';
+
 import Query from 'Components/CacheFirstQuery';
-import * as Icon from 'react-feather';
+import Panel from 'Components/Panel';
+import { resourceTypes, standardEntityTypes } from 'constants/entityTypes';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable import/no-cycle */
 import ControlPage from 'Containers/Compliance/Entity/Control';
+import URLService from 'utils/URLService';
+import getEntityName from 'utils/getEntityName';
+import { entityNameQueryMap } from 'utils/queryMap';
+import { truncate } from 'utils/textUtils';
 import NamespacePage from '../Entity/Namespace';
 import ClusterPage from '../Entity/Cluster';
 import NodePage from '../Entity/Node';
 import DeploymentPage from '../Entity/Deployment';
-/* eslint-enable import/no-cycle */
+
+const MAX_CONTROL_TITLE = 120;
 
 const ComplianceListSidePanel = ({ entityType, entityId, match, location, history }) => {
     function getEntityPage() {
@@ -47,7 +50,7 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
             {({ loading, data }) => {
                 let linkText = 'loading...';
                 if (!loading && data) {
-                    linkText = getEntityName(entityType, data);
+                    linkText = truncate(getEntityName(entityType, data), MAX_CONTROL_TITLE);
                 }
                 const headerTextComponent = (
                     <div className="w-full flex items-center">
@@ -65,7 +68,7 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
                                 to={headerUrl}
                                 target="_blank"
                             >
-                                <Icon.ExternalLink size="14" />
+                                <ExternalLink size="14" />
                             </Link>
                         </div>
                     </div>
