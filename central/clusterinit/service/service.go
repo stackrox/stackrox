@@ -13,7 +13,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Service provides the interface to the service for managing bootstrap tokens.
+// Service provides the interface to the service for managing cluster init bundles.
 type Service interface {
 	grpc.APIService
 	v1.ClusterInitServiceServer

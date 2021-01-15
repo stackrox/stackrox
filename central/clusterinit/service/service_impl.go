@@ -35,47 +35,44 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) GetBootstrapTokens(ctx context.Context, empty *v1.Empty) (*v1.BootstrapTokensResponse, error) {
-	tokenMetas, err := s.backend.GetAll(ctx)
+func (s *serviceImpl) GetInitBundles(ctx context.Context, empty *v1.Empty) (*v1.InitBundleMetasResponse, error) {
+	initBundleMetas, err := s.backend.GetAll(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving meta data for all bootstrap tokens")
+		return nil, errors.Wrap(err, "retrieving meta data for all init bundles")
 	}
 
-	tokens := make([]*v1.BootstrapTokensResponse_BootstrapTokenResponse, 0, len(tokenMetas))
-	for _, meta := range tokenMetas {
-		tokens = append(tokens, &v1.BootstrapTokensResponse_BootstrapTokenResponse{Id: meta.GetId(), Description: meta.GetDescription()})
+	v1InitBundleMetas := make([]*v1.InitBundleMeta, 0, len(initBundleMetas))
+	for _, initBundle := range initBundleMetas {
+		v1InitBundleMetas = append(v1InitBundleMetas, &v1.InitBundleMeta{
+			Id:        initBundle.GetId(),
+			Name:      initBundle.GetName(),
+			CreatedAt: initBundle.GetCreatedAt(),
+			CreatedBy: initBundle.GetCreatedBy(),
+		})
 	}
 
-	return &v1.BootstrapTokensResponse{Tokens: tokens}, nil
+	return &v1.InitBundleMetasResponse{Items: v1InitBundleMetas}, nil
 }
 
-func (s *serviceImpl) DeleteBootstrapToken(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
-	err := s.backend.Revoke(ctx, request.Id)
+func (s *serviceImpl) GenerateInitBundle(ctx context.Context, request *v1.InitBundleGenRequest) (*v1.InitBundleGenResponse, error) {
+	generated, err := s.backend.Issue(ctx, request.GetName())
 	if err != nil {
-		return nil, errors.Wrap(err, "deleting bootstrap token")
+		return nil, errors.Wrap(err, "generating new init bundle")
 	}
-	return &v1.Empty{}, nil
-}
+	meta := &v1.InitBundleMeta{
+		Id:        generated.Meta.Id,
+		Name:      generated.Meta.Name,
+		CreatedAt: generated.Meta.GetCreatedAt(),
+		CreatedBy: generated.Meta.GetCreatedBy(),
+		ExpiresAt: generated.Meta.ExpiresAt,
+	}
 
-func (s *serviceImpl) PatchBootstrapToken(ctx context.Context, request *v1.BootstrapTokenPatchRequest) (*v1.Empty, error) {
-	tokenID := request.GetId()
-	if tokenID == "" {
-		return &v1.Empty{}, errors.New("no token ID found in patch request")
-	}
-	if request.GetSetActive() != nil {
-		err := s.backend.SetActive(ctx, tokenID, request.GetActive())
-		if err != nil {
-			return nil, errors.Wrap(err, "patching bootstrap token")
-		}
-	}
-	return &v1.Empty{}, nil
-}
-
-func (s *serviceImpl) PostBootstrapToken(ctx context.Context, request *v1.BootstrapTokenGenRequest) (*v1.BootstrapTokenMetaResponse, error) {
-	tokenMeta, err := s.backend.Issue(ctx, request.Description)
+	bundleYaml, err := generated.RenderAsYAML()
 	if err != nil {
-		return nil, errors.Wrap(err, "generating new bootstrap token")
+		return nil, errors.Wrap(err, "rendering init bundle as YAML")
 	}
-	rsp := v1.BootstrapTokenMetaResponse{Id: tokenMeta.GetId(), Token: tokenMeta.GetToken(), Description: tokenMeta.GetDescription()}
-	return &rsp, nil
+	return &v1.InitBundleGenResponse{
+		HelmValuesBundle: bundleYaml,
+		Meta:             meta,
+	}, nil
 }

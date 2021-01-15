@@ -4,59 +4,43 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "api/v1/common.proto";
+import "google/protobuf/timestamp.proto";
 import "api/v1/empty.proto";
+import "storage/user.proto";
 
 package v1;
 
-message BootstrapTokenMetaResponse {
-    string id = 1;
-    bytes token = 2;
-    string description = 3;
+message InitBundleMeta {
+    string                    id          = 1;
+    string                    name        = 2;
+    google.protobuf.Timestamp created_at  = 3;
+    storage.User              created_by  = 4;
+    google.protobuf.Timestamp expires_at  = 5;
 }
 
-message BootstrapTokensResponse {
-    message BootstrapTokenResponse {
-        string id = 1;
-        string description = 2;
-    }
-    repeated BootstrapTokenResponse tokens = 1;
+message InitBundleGenResponse {
+    InitBundleMeta meta               = 1;
+    bytes          helm_values_bundle = 2;
 }
 
-message BootstrapTokenGenRequest {
-    string description = 1;
+message InitBundleMetasResponse {
+    repeated InitBundleMeta items = 1;
 }
 
-message BootstrapTokenPatchRequest {
-    string id = 1;
-    oneof set_active {
-        bool active = 2;
-    };
+message InitBundleGenRequest {
+    string name = 1;
 }
 
 service ClusterInitService {
-    rpc GetBootstrapTokens(Empty) returns (BootstrapTokensResponse) {
+    rpc GetInitBundles(Empty) returns (InitBundleMetasResponse) {
         option (google.api.http) = {
-            get: "/v1/cluster-init/tokens"
+            get: "/v1/cluster-init/init-bundles"
         };
     }
 
-    rpc DeleteBootstrapToken(ResourceByID) returns (Empty) {
+    rpc GenerateInitBundle(InitBundleGenRequest) returns (InitBundleGenResponse) {
         option (google.api.http) = {
-            delete: "/v1/cluster-init/tokens/{id}"
-        };
-    }
-
-    rpc PostBootstrapToken(BootstrapTokenGenRequest) returns (BootstrapTokenMetaResponse) {
-        option (google.api.http) = {
-            post: "/v1/cluster-init/tokens"
-            body: "*"
-        };
-    }
-
-    rpc PatchBootstrapToken(BootstrapTokenPatchRequest) returns (Empty) {
-        option (google.api.http) = {
-            patch: "/v1/cluster-init/tokens/{id}"
+            post: "/v1/cluster-init/init-bundles"
             body: "*"
         };
     }

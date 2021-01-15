@@ -206,11 +206,46 @@
                     "id": 1,
                     "name": "message",
                     "type": "string"
+                  },
+                  {
+                    "id": 4,
+                    "name": "key_value_attrs",
+                    "type": "KeyValueAttrs"
                   }
                 ],
                 "reserved_ids": [
                   2,
                   3
+                ],
+                "messages": [
+                  {
+                    "name": "KeyValueAttrs",
+                    "fields": [
+                      {
+                        "id": 1,
+                        "name": "attrs",
+                        "type": "KeyValueAttr",
+                        "is_repeated": true
+                      }
+                    ],
+                    "messages": [
+                      {
+                        "name": "KeyValueAttr",
+                        "fields": [
+                          {
+                            "id": 1,
+                            "name": "key",
+                            "type": "string"
+                          },
+                          {
+                            "id": 2,
+                            "name": "value",
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    ]
+                  }
                 ]
               },
               {
@@ -1398,36 +1433,31 @@
       "def": {
         "messages": [
           {
-            "name": "BootstrapTokenWithMeta",
+            "name": "InitBundleMeta",
             "fields": [
               {
                 "id": 1,
-                "name": "token",
-                "type": "bytes"
-              },
-              {
-                "id": 2,
                 "name": "id",
                 "type": "string"
               },
               {
-                "id": 3,
-                "name": "description",
+                "id": 2,
+                "name": "name",
                 "type": "string"
               },
               {
-                "id": 4,
+                "id": 3,
                 "name": "created_at",
                 "type": "google.protobuf.Timestamp"
               },
               {
-                "id": 5,
+                "id": 4,
                 "name": "created_by",
                 "type": "User"
               },
               {
-                "id": 6,
-                "name": "active",
+                "id": 5,
+                "name": "is_revoked",
                 "type": "bool"
               }
             ]
@@ -3119,7 +3149,13 @@
                 "id": 24,
                 "name": "ports",
                 "type": "PortConfig",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "policy:\\\"Ports\\"
+                  }
+                ]
               },
               {
                 "id": 27,
@@ -3679,7 +3715,13 @@
                 "id": 6,
                 "name": "exposure_infos",
                 "type": "ExposureInfo",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "policy:\\\"Exposure Infos\\"
+                  }
+                ]
               }
             ],
             "messages": [
@@ -5797,6 +5839,16 @@
                     "value": "policy:\\\"Kubernetes API Verb\\"
                   }
                 ]
+              },
+              {
+                "id": 5,
+                "name": "pod_exec_args",
+                "type": "PodExecArgs"
+              },
+              {
+                "id": 6,
+                "name": "pod_port_forward_args",
+                "type": "PodPortForwardArgs"
               }
             ],
             "messages": [
@@ -5880,6 +5932,31 @@
                         "type": "string"
                       }
                     ]
+                  }
+                ]
+              },
+              {
+                "name": "PodExecArgs",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "container",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "command",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "name": "PodPortForwardArgs",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "port",
+                    "type": "int32"
                   }
                 ]
               }

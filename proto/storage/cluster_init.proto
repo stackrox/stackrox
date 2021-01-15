@@ -8,11 +8,11 @@ import "storage/user.proto";
 
 package storage;
 
-message BootstrapTokenWithMeta {
-    bytes                     token       = 1;
-    string                    id          = 2;
-    string                    description = 3;
-    google.protobuf.Timestamp created_at  = 4;
-    User                      created_by  = 5;
-    bool                      active      = 6;
+message InitBundleMeta {
+    string                    id          = 1;
+    string                    name        = 2;
+    google.protobuf.Timestamp created_at  = 3;
+    User                      created_by  = 4;
+    bool                      is_revoked  = 5;
+    google.protobuf.Timestamp expires_at  = 6;
 }

@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"github.com/stackrox/rox/central/clusterinit/datastore"
+	"github.com/stackrox/rox/central/clusterinit/store"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -13,10 +13,10 @@ var (
 	initBackendInstance sync.Once
 )
 
-// Singleton returns the bootstraptoken backend singleton instance.
+// Singleton returns the cluster init backend singleton instance.
 func Singleton() Backend {
 	initBackendInstance.Do(func() {
-		backendInstance = newBackend(datastore.Singleton())
+		backendInstance = newBackend(store.Singleton())
 	})
 	return backendInstance
 }
