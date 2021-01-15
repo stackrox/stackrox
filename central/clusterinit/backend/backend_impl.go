@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/mtls"
 )
 
 type backendImpl struct {
@@ -70,6 +71,11 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 		return nil, err
 	}
 
+	caCert, err := mtls.CACertPEM()
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving CA certificate")
+	}
+
 	user := extractUserIdentity(ctx)
 	certBundle, id, err := clusters.IssueSecuredClusterInitCertificates()
 	if err != nil {
@@ -95,6 +101,7 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 
 	return &InitBundleWithMeta{
 		CertBundle: certBundle,
+		CaCert:     string(caCert),
 		Meta:       meta,
 	}, nil
 }

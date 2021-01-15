@@ -16,6 +16,7 @@ import (
 // InitBundleWithMeta contains an init bundle alongside its meta data.
 type InitBundleWithMeta struct {
 	CertBundle clusters.CertBundle
+	CaCert     string
 	Meta       *storage.InitBundleMeta
 }
 
@@ -45,6 +46,9 @@ func (b *InitBundleWithMeta) RenderAsYAML() ([]byte, error) {
 	}
 
 	bundleMap := map[string]interface{}{
+		"ca": map[string]interface{}{
+			"cert": b.CaCert,
+		},
 		"sensor":           serviceTLS(sensorTLS),
 		"collector":        serviceTLS(collectorTLS),
 		"admissionControl": serviceTLS(admissionControlTLS),
