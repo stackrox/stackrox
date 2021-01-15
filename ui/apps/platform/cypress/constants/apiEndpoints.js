@@ -95,6 +95,7 @@ export const dashboard = {
 export const metadata = 'v1/metadata';
 
 export const network = {
+    networkBaselineStatus: '/v1/networkbaseline/**/status',
     networkPoliciesGraph: '/v1/networkpolicies/cluster/*',
     networkGraph: '/v1/networkgraph/cluster/*',
     epoch: '/v1/networkpolicies/graph/epoch',
