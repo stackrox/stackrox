@@ -1,6 +1,6 @@
 defaults:
 
-  centralEndpoint: "central.{{ ._rox._namespace }}:443"
+  centralEndpoint: "central.{{ required "unknown namespace" ._rox._namespace }}:443"
   createUpgraderServiceAccount: [< default false .CreateUpgraderSA >]
 
   {{- if .Release.IsInstall }}
@@ -32,7 +32,7 @@ defaults:
 
   sensor:
     imagePullPolicy: {{ ._rox.image.main.pullPolicy }}
-    endpoint: "sensor.{{ ._rox.namespace }}:443"
+    endpoint: "sensor.{{ required "unknown namespace" ._rox._namespace }}:443"
 
     resources:
       requests:
