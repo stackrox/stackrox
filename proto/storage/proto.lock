@@ -4090,7 +4090,13 @@
               {
                 "id": 8,
                 "name": "include_certificates",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               }
             ]
           },

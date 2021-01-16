@@ -69,7 +69,10 @@ func (s *scheduler) send(r io.ReadCloser, backup types.ExternalBackup) error {
 
 func (s *scheduler) RunBackup(backup types.ExternalBackup, plugin *storage.ExternalBackup) error {
 	pr, pw := io.Pipe()
-	go s.backup(pw, plugin.GetIncludeCertificates())
+
+	// Include certificates in backup by default.
+	includeCerts := plugin.GetIncludeCertificatesOpt() == nil || plugin.GetIncludeCertificates()
+	go s.backup(pw, includeCerts)
 
 	err := s.send(pr, backup)
 

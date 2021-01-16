@@ -20,7 +20,9 @@ message ExternalBackup {
         S3Config       s3       = 6;
         GCSConfig      gcs      = 7;
     }
-    bool include_certificates         = 8;
+    oneof include_certificates_opt {
+        bool include_certificates = 8 [deprecated = true];
+    }
 }
 
 message S3Config {

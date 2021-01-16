@@ -10,6 +10,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - `/db/backup` is deprecated; please use `/api/extensions/backup` instead.
   - In the GraphQL schema, the type name `Policy { whitelists: [Whitelist]! }` changes to 
     `Policy { whitelists: [Exclusion]! }` preserving the existing structure and field names.
+  - Deprecated `includeCertificates` flag in `/v1/externalbackups/*'. Certificates are included in central
+    backups by default for both new and existing backup configs.
 - Admission controller service will be deployed by default in new k8s and Openshift clusters.
 - The following  roxctl flags have been deprecated for the command `sensor generate`:
   - `--create-admission-controller` (replaced by `--admission-controller-listen-on-creates`)
