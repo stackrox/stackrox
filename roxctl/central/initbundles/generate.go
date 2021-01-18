@@ -48,7 +48,7 @@ func generateInitBundle(name string, outputFile string) error {
 	fmt.Fprintf(os.Stderr, `Successfully generated new init bundle.
 
   ID:         %s
-  Name:       %q
+  Name:       %s
   Expires at: %v
 
 `, meta.GetId(), meta.GetName(), meta.GetExpiresAt())

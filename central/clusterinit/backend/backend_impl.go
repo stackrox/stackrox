@@ -71,6 +71,10 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 		return nil, err
 	}
 
+	if err := validateName(name); err != nil {
+		return nil, err
+	}
+
 	caCert, err := mtls.CACertPEM()
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving CA certificate")
