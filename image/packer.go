@@ -1,7 +1,6 @@
 package image
 
 import (
-	"io"
 	"io/ioutil"
 	"path"
 	"strings"
@@ -16,20 +15,16 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/namespaces"
 	rendererUtils "github.com/stackrox/rox/pkg/renderer/utils"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/version"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 const (
-	templatePath       = "templates"
-	centralChartPrefix = "helm/DEPRECATEDcentralchart/"
-	scannerChartPrefix = "helm/DEPRECATEDscannerchart/"
-	chartYamlFile      = "Chart.yaml"
+	templatePath = "templates"
+
 	// CentralServicesChartPrefix points to the new stackrox-central-services Helm Chart.
 	CentralServicesChartPrefix = "helm/stackrox-central/"
 	// SecuredClusterServicesChartPrefix points to the new stackrox-secured-cluster-services Helm Chart.
@@ -102,25 +97,10 @@ func getChartTemplate(prefix string) (*helmtpl.ChartTemplate, error) {
 	return chartTpl, nil
 }
 
-func mustGetChart(box packr.Box, overrides map[string]func() io.ReadCloser, prefixes ...string) []*loader.BufferedFile {
-	ch, err := getChartFiles(box, prefixes, overrides)
-	utils.Must(err)
-	return ch
-}
 func mustGetSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.Certs) *chart.Chart {
 	ch, err := getSensorChart(box, values, certs)
 	utils.Must(err)
 	return ch
-}
-
-// GetCentralChart returns the Helm chart for Central
-func GetCentralChart(overrides map[string]func() io.ReadCloser) []*loader.BufferedFile {
-	return mustGetChart(K8sBox, overrides, centralChartPrefix)
-}
-
-// GetScannerChart returns the Helm chart for the scanner
-func GetScannerChart() []*loader.BufferedFile {
-	return mustGetChart(K8sBox, nil, scannerChartPrefix)
 }
 
 // GetSensorChart returns the Helm chart for sensor
@@ -153,62 +133,6 @@ var (
 		Namespace: namespaces.StackRox,
 	}
 )
-
-// This block enumerates the files in the various charts that have TLS secrets relevant for mTLS.
-// A unit test ensures that it is in sync with the contents of the YAML files.
-var (
-	SensorMTLSFiles = set.NewFrozenStringSet("admission-controller-secret.yaml", "collector-secret.yaml", "sensor-secret.yaml")
-
-	CentralMTLSFiles = set.NewFrozenStringSet("tls-secret.yaml")
-	ScannerMTLSFiles = set.NewFrozenStringSet("tls-secret.yaml")
-)
-
-// We need to stamp in the version to the Chart.yaml files prior to loading the chart
-// or it will fail
-func getChartFiles(box packr.Box, prefixes []string, overrides map[string]func() io.ReadCloser) ([]*loader.BufferedFile, error) {
-	var chartFiles []*loader.BufferedFile
-	for _, prefix := range prefixes {
-		err := box.WalkPrefix(prefix, func(name string, file packd.File) error {
-			trimmedPath := strings.TrimPrefix(name, prefix)
-			dataReader := ioutil.NopCloser(file)
-
-			if overrideFunc := overrides[trimmedPath]; overrideFunc != nil {
-				dataReader = overrideFunc()
-			}
-			defer utils.IgnoreError(dataReader.Close)
-
-			data, err := ioutil.ReadAll(dataReader)
-			if err != nil {
-				return errors.Wrapf(err, "failed to read file %s", trimmedPath)
-			}
-
-			// if chart file, then render the version into it
-			if trimmedPath == chartYamlFile {
-				t, err := template.New("chart").Parse(file.String())
-				if err != nil {
-					return err
-				}
-				data, err = templates.ExecuteToBytes(t, map[string]string{
-					"Version": version.GetMainVersion(),
-					"Name":    prefix,
-				})
-				if err != nil {
-					return err
-				}
-			}
-			chartFiles = append(chartFiles, &loader.BufferedFile{
-				Name: trimmedPath,
-				Data: data,
-			})
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return chartFiles, nil
-}
 
 // GetFilesFromBox returns all files from the box matching the provided prefix.
 func GetFilesFromBox(box packr.Box, prefix string) ([]*loader.BufferedFile, error) {

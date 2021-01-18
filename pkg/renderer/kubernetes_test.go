@@ -2,14 +2,10 @@ package renderer
 
 import (
 	"fmt"
-	"strconv"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -27,19 +23,7 @@ func getBaseConfig() Config {
 }
 
 func TestRender(t *testing.T) {
-	for _, experienceVal := range []bool{false, true} {
-		t.Run(fmt.Sprintf("newExperience=%t", experienceVal), func(t *testing.T) {
-			ei := envisolator.NewEnvIsolator(t)
-			defer ei.RestoreAll()
-
-			if buildinfo.ReleaseBuild && experienceVal != features.CentralInstallationExperience.Enabled() {
-				t.Skip("cannot set feature flags in release mode")
-			}
-
-			ei.Setenv(features.CentralInstallationExperience.EnvVar(), strconv.FormatBool(experienceVal))
-			suite.Run(t, new(renderSuite))
-		})
-	}
+	suite.Run(t, new(renderSuite))
 }
 
 type renderSuite struct {

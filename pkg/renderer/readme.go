@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -21,7 +20,7 @@ func instructionPrefix(deploymentFormat v1.DeploymentFormat) string {
 		prefix += "  - Unzip the deployment bundle.\n"
 	}
 	caSetupPath := "scripts/ca-setup.sh"
-	if !features.CentralInstallationExperience.Enabled() || deploymentFormat == v1.DeploymentFormat_KUBECTL {
+	if deploymentFormat == v1.DeploymentFormat_KUBECTL {
 		caSetupPath = "central/scripts/ca-setup.sh"
 	}
 	prefix += fmt.Sprintf("  - If you need to add additional trusted CAs, run %s.\n", caSetupPath)
@@ -34,17 +33,6 @@ const (
 For administrator login, select the "Login with username/password" option on
 the login page, and log in with username "admin" and the password found in the
 "password" file located in the same directory as this README.
-`
-	helmInstructionTemplate = `
-  - Deploy Central
-    - Run central/scripts/setup.sh
-    - If you are using Helm v2, run helm install --name central ./central
-    - If you are using Helm v3, run helm install central ./central
-  - Deploy Scanner
-    - Run scanner/scripts/setup.sh
-    - If you want to run the StackRox Scanner
-		- If you are using Helm v2, run helm install --name scanner ./scanner
-		- If you are using Helm v3, run helm install scanner ./scanner
 `
 
 	kubectlInstructionTemplate = `
@@ -106,20 +94,12 @@ func instructions(c Config, mode mode) (string, error) {
 		if mode != renderAll {
 			return "", fmt.Errorf("mode %s not supported for helm", mode)
 		}
-		if features.CentralInstallationExperience.Enabled() {
-			template = newHelmInstructionTemplate
-		} else {
-			template = helmInstructionTemplate
-		}
+		template = newHelmInstructionTemplate
 	} else if c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_KUBECTL {
 		if mode == scannerOnly {
 			template = kubectlScannerTemplate
 		} else {
-			template = kubectlInstructionTemplate + kubectlScannerTemplate
-
-			if features.CentralInstallationExperience.Enabled() {
-				template += recommendHelmInstallationTemplate
-			}
+			template = kubectlInstructionTemplate + kubectlScannerTemplate + recommendHelmInstallationTemplate
 		}
 	} else {
 		return "", errors.Errorf("invalid deployment format %v", c.K8sConfig.DeploymentFormat)

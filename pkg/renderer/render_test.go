@@ -2,15 +2,12 @@ package renderer
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,22 +29,16 @@ func TestRenderTLSSecretsOnly(t *testing.T) {
 		},
 	}
 
-	for _, flagValue := range []bool{false, true} {
-		for _, renderMode := range []mode{centralTLSOnly, scannerTLSOnly} {
-			t.Run(fmt.Sprintf("newExperience=%t,mode=%s", flagValue, renderMode), func(t *testing.T) {
-				env := envisolator.NewEnvIsolator(t)
-				defer env.RestoreAll()
+	for _, renderMode := range []mode{centralTLSOnly, scannerTLSOnly} {
+		t.Run(fmt.Sprintf("mode=%s", renderMode), func(t *testing.T) {
+			contents, err := renderAndExtractSingleFileContents(config, renderMode)
+			assert.NoError(t, err)
 
-				env.Setenv(features.CentralInstallationExperience.EnvVar(), strconv.FormatBool(flagValue))
-				contents, err := renderAndExtractSingleFileContents(config, renderMode)
-				assert.NoError(t, err)
+			objs, err := k8sutil.UnstructuredFromYAMLMulti(string(contents))
+			assert.NoError(t, err)
 
-				objs, err := k8sutil.UnstructuredFromYAMLMulti(string(contents))
-				assert.NoError(t, err)
-
-				assert.NotEmpty(t, objs)
-			})
-		}
+			assert.NotEmpty(t, objs)
+		})
 	}
 }
 
@@ -74,18 +65,10 @@ func TestRenderScannerOnly(t *testing.T) {
 		},
 	}
 
-	for _, flagValue := range []bool{false, true} {
-		t.Run(fmt.Sprintf("newExperience=%t", flagValue), func(t *testing.T) {
-			env := envisolator.NewEnvIsolator(t)
-			defer env.RestoreAll()
+	files, err := render(config, scannerOnly, nil)
+	assert.NoError(t, err)
 
-			env.Setenv(features.CentralInstallationExperience.EnvVar(), strconv.FormatBool(flagValue))
-			files, err := render(config, scannerOnly, nil)
-			assert.NoError(t, err)
-
-			for _, f := range files {
-				assert.Falsef(t, strings.HasPrefix(f.Name, "central/"), "unexpected file %s in scanner only bundle", f.Name)
-			}
-		})
+	for _, f := range files {
+		assert.Falsef(t, strings.HasPrefix(f.Name, "central/"), "unexpected file %s in scanner only bundle", f.Name)
 	}
 }
