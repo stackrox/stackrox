@@ -21,7 +21,7 @@ func (b *backendImpl) GetAll(ctx context.Context) ([]*storage.InitBundleMeta, er
 		return nil, err
 	}
 
-	allBundleMetas, err := b.store.GetAll(ctx)
+	allBundleMetas, err := b.store.GetAll()
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving all init bundles")
 	}
@@ -95,7 +95,7 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 		ExpiresAt: expiryDate,
 	}
 
-	if err := b.store.Add(ctx, meta); err != nil {
+	if err := b.store.Add(meta); err != nil {
 		return nil, errors.Wrap(err, "adding new init bundle to data store")
 	}
 
@@ -119,7 +119,7 @@ func (b *backendImpl) CheckRevoked(ctx context.Context, id string) error {
 		return err
 	}
 
-	bundleMeta, err := b.store.Get(ctx, id)
+	bundleMeta, err := b.store.Get(id)
 	if err != nil {
 		return errors.Wrap(err, "retrieving init bundle")
 	}

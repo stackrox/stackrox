@@ -4,7 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/clusterinit/store"
+	rocksdbStore "github.com/stackrox/rox/central/clusterinit/store/rocksdb"
+	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -17,10 +19,17 @@ type clusterInitBackendTestSuite struct {
 	suite.Suite
 	backend Backend
 	ctx     context.Context
+	rocksDB *rocksdb.RocksDB
 }
 
 func (s *clusterInitBackendTestSuite) SetupTest() {
-	store := store.NewInMemory()
+	s.rocksDB = rocksdbtest.RocksDBForT(s.T())
+	store, err := rocksdbStore.NewStore(s.rocksDB)
+	s.Require().NoError(err)
 	s.backend = newBackend(store)
 	s.ctx = context.Background()
+}
+
+func (s *clusterInitBackendTestSuite) TearDownTest() {
+	rocksdbtest.TearDownRocksDB(s.rocksDB)
 }
