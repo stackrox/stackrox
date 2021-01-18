@@ -1810,7 +1810,7 @@ commands:
             - run:
                 name: Validate Sensor bundle (upgrader)
                 command: |
-                  if [[ "<< parameters.sensor-deploy-flavor >>" == "kubectl" ]]; then
+                  if [[ "<< parameters.sensor-deploy-flavor >>" == "kubectl" && "$SENSOR_HELM_DEPLOY" != "true" ]]; then
                     kubectl proxy --port 28001 &
                     proxy_pid=$!
                     sleep 5
@@ -3005,6 +3005,7 @@ jobs:
       - ROX_HOST_SCANNING: true
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_K8S_EVENTS_DETECTION: true
+      - SENSOR_HELM_DEPLOY: true
 
     steps:
       - checkout
@@ -3462,6 +3463,7 @@ jobs:
       - ROX_NETWORK_GRAPH_PORTS: true
       - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
       - OUTPUT_FORMAT: helm
+      - SENSOR_HELM_DEPLOY: true
       - ROX_SYSLOG_INTEGRATION: true
       - ROX_SENSOR_TLS_CHALLENGE: true
       - ROX_NETWORK_DETECTION: true
@@ -4012,6 +4014,7 @@ jobs:
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_K8S_EVENTS_DETECTION: true
+      - SENSOR_HELM_DEPLOY: true
 
     steps:
       - run-openshift-tests:

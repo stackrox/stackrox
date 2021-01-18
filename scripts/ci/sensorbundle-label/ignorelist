@@ -1,5 +1,6 @@
 v1:ServiceAccount:sensor-upgrader
 v1:Secret:sh.helm.release.v1.sensor.v1
+v1:Secret:sh.helm.release.v1.stackrox-secured-cluster-services.v1
 v1:Secret:additional-ca-sensor
 v1:Secret:helm-cluster-config
 v1:ResourceQuota:gke-resource-quotas

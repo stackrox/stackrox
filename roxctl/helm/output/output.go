@@ -9,9 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/charts"
-	"github.com/stackrox/rox/pkg/helmtpl"
-	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
@@ -44,26 +41,10 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool) e
 		return errors.Wrapf(err, "failed to check if directory %q exists", outputDir)
 	}
 
-	// Retrieve template files from box.
-	chartTplFiles, err := image.GetFilesFromBox(image.K8sBox, chartTemplatePathPrefix)
+	// Load and render template files.
+	renderedChartFiles, err := image.LoadAndInstantiateChartTemplate(image.K8sBox, chartTemplatePathPrefix)
 	if err != nil {
-		return errors.Wrapf(err, "fetching %s chart files from box", chartName)
-	}
-	chartTpl, err := helmtpl.Load(chartTplFiles)
-	if err != nil {
-		return errors.Wrapf(err, "loading %s helmtpl", chartName)
-	}
-
-	// Render template files.
-	renderedChartFiles, err := chartTpl.InstantiateRaw(charts.DefaultMetaValues())
-	if err != nil {
-		return errors.Wrapf(err, "instantiating %s helmtpl", chartName)
-	}
-
-	// Apply .helmignore filtering rules, to be on the safe side (but keep .helmignore).
-	renderedChartFiles, err = helmutil.FilterFiles(renderedChartFiles)
-	if err != nil {
-		return errors.Wrap(err, "filtering instantiated helm chart files")
+		return errors.Wrapf(err, "loading and instantiating %s helmtpl", chartName)
 	}
 
 	// Write rendered files to output directory.

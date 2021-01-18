@@ -54,6 +54,7 @@ import (
 	groupService "github.com/stackrox/rox/central/group/service"
 	"github.com/stackrox/rox/central/grpc/metrics"
 	helmHandler "github.com/stackrox/rox/central/helm/handler"
+	"github.com/stackrox/rox/central/helmcharts"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
 	"github.com/stackrox/rox/central/imageintegration"
@@ -380,7 +381,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 	}
 
 	if features.SensorInstallationExperience.Enabled() {
-		servicesToRegister = append(servicesToRegister, clusterInitService.Singleton())
+		servicesToRegister = append(servicesToRegister, clusterInitService.Singleton(), helmcharts.NewService())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()

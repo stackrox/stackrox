@@ -318,19 +318,23 @@ function launch_sensor {
     local k8s_dir="$1"
 
     local extra_config=()
-    local extra_json_config=()
+    local extra_json_config=''
+    local extra_helm_config=()
 
     if [[ "$ADMISSION_CONTROLLER" == "true" ]]; then
-        extra_config+=("--create-admission-controller=true")
+      extra_config+=("--create-admission-controller=true")
     	extra_json_config+=', "admissionController": true'
+    	extra_helm_config+=(--set "admissionControl.listenOnCreates=true")
     fi
     if [[ "$ADMISSION_CONTROLLER_UPDATES" == "true" ]]; then
     	extra_config+=("--admission-controller-listen-on-updates=true")
     	extra_json_config+=', "admissionControllerUpdates": true'
+    	extra_helm_config+=(--set "admissionControl.listenOnUpdates=true")
     fi
 
     if [[ -n "$COLLECTOR_IMAGE_REPO" ]]; then
         extra_config+=("--collector-image-repository=${COLLECTOR_IMAGE_REPO}")
+        extra_helm_config=(--set "image.collector.repository=${COLLECTOR_IMAGE_REPO}")
     fi
 
     # Disabled this special-case for now.
@@ -349,21 +353,61 @@ function launch_sensor {
     # Delete path
     rm -rf "$k8s_dir/sensor-deploy"
 
-    if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
+    if [[ "$(curl_central "https://${API_ENDPOINT}/v1/featureflags" | jq -r '.featureFlags[] | select(.envVar == "ROX_SENSOR_INSTALLATION_EXPERIENCE") | .enabled')" != "true" ]]; then
+      SENSOR_HELM_DEPLOY=false  # Old central version doesn't support helm deploy
+    elif [[ -z "$CI" && -z "${SENSOR_HELM_DEPLOY:-}" && -x "$(command -v helm)" && "$(helm version --short)" == v3.* ]]; then
+      echo >&2 "================================================================================================"
+      echo >&2 "NOTE: Based on your environment, you have been volunteered to participate in the experimental"
+      echo >&2 "      Helm-based deployment method. Set SENSOR_HELM_DEPLOY=false in your environment to opt out."
+      echo >&2 "================================================================================================"
+      SENSOR_HELM_DEPLOY=true
+    fi
+
+    if [[ "$SENSOR_HELM_DEPLOY" == "true" ]]; then
+      mkdir "$k8s_dir/sensor-deploy"
+      touch "$k8s_dir/sensor-deploy/init-bundle.yaml"
+      chmod 0600 "$k8s_dir/sensor-deploy/init-bundle.yaml"
+      curl_central "https://${API_ENDPOINT}/v1/cluster-init/init-bundles" \
+          -XPOST -d '{"name":"deploy-'"${CLUSTER}-$(date '+%Y%m%d%H%M%S')"'"}' \
+          | jq '.helmValuesBundle' -r | base64 --decode >"$k8s_dir/sensor-deploy/init-bundle.yaml"
+
+      curl_central "https://${API_ENDPOINT}/api/extensions/helm-charts/secured-cluster-services.zip" \
+          -o "$k8s_dir/sensor-deploy/chart.zip"
+      mkdir "$k8s_dir/sensor-deploy/chart"
+      unzip "$k8s_dir/sensor-deploy/chart.zip" -d "$k8s_dir/sensor-deploy/chart"
+
+      helm_args=(
+        -f "$k8s_dir/sensor-deploy/init-bundle.yaml"
+        --set "imagePullSecrets.allowNone=true"
+        --set "clusterName=${CLUSTER}"
+        --set "centralEndpoint=${CLUSTER_API_ENDPOINT}"
+        --set "image.main.repository=${MAIN_IMAGE_REPO}"
+        --set "collector.collectionMethod=$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
+        --set "env.openshift=$([[ "$ORCH" == "openshift" ]] && echo "true" || echo "false")"
+      )
+      if [[ -f "$k8s_dir/sensor-deploy/chart/feature-flag-values.yaml" ]]; then
+        helm_args+=(-f "$k8s_dir/sensor-deploy/chart/feature-flag-values.yaml")
+      fi
+
+      helm upgrade --install -n stackrox stackrox-secured-cluster-services "$k8s_dir/sensor-deploy/chart" \
+          "${helm_args[@]}" "${extra_helm_config[@]}"
+    else
+      if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }
         roxctl -p ${ROX_ADMIN_PASSWORD} --endpoint "${API_ENDPOINT}" sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
              --collection-method="$COLLECTION_METHOD" \
              "${ORCH}" \
              "${extra_config[@]+"${extra_config[@]}"}"
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
-    else
+      else
         get_cluster_zip "$API_ENDPOINT" "$CLUSTER" ${CLUSTER_TYPE} "${MAIN_IMAGE_REPO}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
         unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
         rm "$k8s_dir/sensor-deploy.zip"
-    fi
+      fi
 
-    echo "Deploying Sensor..."
-    $k8s_dir/sensor-deploy/sensor.sh
+      echo "Deploying Sensor..."
+      $k8s_dir/sensor-deploy/sensor.sh
+    fi
 
     if [[ -n "${CI}" || $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
        if [[ "${HOTRELOAD}" == "true" ]]; then

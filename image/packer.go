@@ -11,7 +11,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/sensor"
+	"github.com/stackrox/rox/pkg/charts"
 	"github.com/stackrox/rox/pkg/helmtpl"
+	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/namespaces"
 	rendererUtils "github.com/stackrox/rox/pkg/renderer/utils"
@@ -133,6 +135,34 @@ var (
 		Namespace: namespaces.StackRox,
 	}
 )
+
+// LoadAndInstantiateChartTemplate loads a Helm chart (meta-)template from a packr box, and instantiates
+// it, using default chart values.
+func LoadAndInstantiateChartTemplate(box packr.Box, prefix string) ([]*loader.BufferedFile, error) {
+	// Retrieve template files from box.
+	chartTplFiles, err := GetFilesFromBox(box, prefix)
+	if err != nil {
+		return nil, errors.Wrapf(err, "fetching %s chart files from box", prefix)
+	}
+	chartTpl, err := helmtpl.Load(chartTplFiles)
+	if err != nil {
+		return nil, errors.Wrapf(err, "loading %s helmtpl", prefix)
+	}
+
+	// Render template files.
+	renderedChartFiles, err := chartTpl.InstantiateRaw(charts.DefaultMetaValues())
+	if err != nil {
+		return nil, errors.Wrapf(err, "instantiating %s helmtpl", prefix)
+	}
+
+	// Apply .helmignore filtering rules, to be on the safe side (but keep .helmignore).
+	renderedChartFiles, err = helmutil.FilterFiles(renderedChartFiles)
+	if err != nil {
+		return nil, errors.Wrap(err, "filtering instantiated helm chart files")
+	}
+
+	return renderedChartFiles, nil
+}
 
 // GetFilesFromBox returns all files from the box matching the provided prefix.
 func GetFilesFromBox(box packr.Box, prefix string) ([]*loader.BufferedFile, error) {
