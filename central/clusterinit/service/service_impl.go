@@ -43,12 +43,7 @@ func (s *serviceImpl) GetInitBundles(ctx context.Context, empty *v1.Empty) (*v1.
 
 	v1InitBundleMetas := make([]*v1.InitBundleMeta, 0, len(initBundleMetas))
 	for _, initBundle := range initBundleMetas {
-		v1InitBundleMetas = append(v1InitBundleMetas, &v1.InitBundleMeta{
-			Id:        initBundle.GetId(),
-			Name:      initBundle.GetName(),
-			CreatedAt: initBundle.GetCreatedAt(),
-			CreatedBy: initBundle.GetCreatedBy(),
-		})
+		v1InitBundleMetas = append(v1InitBundleMetas, InitBundleMetaStorageToV1(initBundle))
 	}
 
 	return &v1.InitBundleMetasResponse{Items: v1InitBundleMetas}, nil
@@ -59,13 +54,7 @@ func (s *serviceImpl) GenerateInitBundle(ctx context.Context, request *v1.InitBu
 	if err != nil {
 		return nil, errors.Wrap(err, "generating new init bundle")
 	}
-	meta := &v1.InitBundleMeta{
-		Id:        generated.Meta.Id,
-		Name:      generated.Meta.Name,
-		CreatedAt: generated.Meta.GetCreatedAt(),
-		CreatedBy: generated.Meta.GetCreatedBy(),
-		ExpiresAt: generated.Meta.ExpiresAt,
-	}
+	meta := InitBundleMetaStorageToV1(generated.Meta)
 
 	bundleYaml, err := generated.RenderAsYAML()
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/roxctl/central/db"
 	"github.com/stackrox/rox/roxctl/central/debug"
 	"github.com/stackrox/rox/roxctl/central/generate"
+	"github.com/stackrox/rox/roxctl/central/initbundles"
 	"github.com/stackrox/rox/roxctl/central/license"
 	"github.com/stackrox/rox/roxctl/central/userpki"
 	"github.com/stackrox/rox/roxctl/central/whoami"
@@ -27,6 +28,8 @@ func Command() *cobra.Command {
 		license.Command(),
 		userpki.Command(),
 		whoami.Command(),
+		initbundles.Command(),
 	)
+
 	return c
 }
