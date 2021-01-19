@@ -88,7 +88,6 @@ echo "Creating upgrader service account"
 ${KUBE_COMMAND} apply -f "${DIR}/upgrader-serviceaccount.yaml" || print_rbac_instructions
 {{- end }}
 
-{{- if .AdmissionController }}
 echo "Creating admission controller secrets..."
 ${KUBE_COMMAND} apply -f "$DIR/admission-controller-secret.yaml"
 echo "Creating admission controller RBAC roles..."
@@ -99,10 +98,6 @@ echo "Creating admission controller pod security policies..."
 ${KUBE_COMMAND} apply -f "$DIR/admission-controller-pod-security.yaml"
 echo "Creating admission controller deployment..."
 ${KUBE_COMMAND} apply -f "$DIR/admission-controller.yaml"
-{{- else }}
-echo "Deleting admission controller webhook, if it exists"
-${KUBE_COMMAND} delete validatingwebhookconfiguration stackrox --ignore-not-found
-{{- end }}
 
 echo "Creating secrets for sensor..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-secret.yaml"

@@ -59,7 +59,6 @@ type: kubernetes.io/dockerconfigjson
 EOF
 fi
 
-{{- if .AdmissionController }}
 echo "Creating admission controller security context constraints..."
 ${KUBE_COMMAND} apply -f "$DIR/admission-controller-scc.yaml"
 echo "Creating admission controller secrets..."
@@ -72,10 +71,6 @@ echo "Creating admission controller pod security policies..."
 ${KUBE_COMMAND} apply -f "$DIR/admission-controller-pod-security.yaml"
 echo "Creating admission controller deployment..."
 ${KUBE_COMMAND} apply -f "$DIR/admission-controller.yaml"
-{{- else }}
-echo "Deleting admission controller webhook, if it exists"
-${KUBE_COMMAND} delete validatingwebhookconfiguration stackrox --ignore-not-found
-{{- end }}
 
 echo "Creating collector security context constraints..."
 ${KUBE_COMMAND} apply -f "$DIR/collector-scc.yaml"

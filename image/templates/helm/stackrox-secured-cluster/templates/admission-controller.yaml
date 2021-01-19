@@ -151,6 +151,9 @@ metadata:
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "validatingwebhookconfiguration" "stackrox") | nindent 4 }}
+{{- if and ._rox.env.openshift (not (or ._rox.admissionControl.listenOnCreates ._rox.admissionControl.listenOnUpdates))}}
+webhooks: []
+{{else}}
 webhooks:
   {{- if or ._rox.admissionControl.listenOnCreates ._rox.admissionControl.listenOnUpdates }}
   - name: policyeval.stackrox.io
@@ -195,6 +198,7 @@ webhooks:
         name: admission-control
         path: /validate
   {{- end}}
+  {{- if not ._rox.env.openshift }}
   - name: k8sevents.stackrox.io
     rules:
       - apiGroups:
@@ -224,3 +228,5 @@ webhooks:
         namespace: {{ ._rox._namespace }}
         name: admission-control
         path: /events
+  {{- end }}
+{{- end }}

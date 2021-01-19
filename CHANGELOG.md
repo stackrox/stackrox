@@ -13,6 +13,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Deprecated `includeCertificates` flag in `/v1/externalbackups/*'. Certificates are included in central
     backups by default for both new and existing backup configs.
 - Admission controller service will be deployed by default in new k8s and Openshift clusters.
+The validating webhook configuration for exec and port forward events is not supported on and hence
+will not be deployed on OpenShift clusters.
 - The following  roxctl flags have been deprecated for the command `sensor generate`:
   - `--create-admission-controller` (replaced by `--admission-controller-listen-on-creates`)
   - `--admission-controller-enabled` (replaced by `--admission-controller-enforce-on-creates`)
