@@ -16,9 +16,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - The following  roxctl flags have been deprecated for the command `sensor generate`:
   - `--create-admission-controller` (replaced by `--admission-controller-listen-on-creates`)
   - `--admission-controller-enabled` (replaced by `--admission-controller-enforce-on-creates`)
-- Added retry flags to `roxctl image scan`:
+- Added retry flags to `roxctl image scan` and `roxctl image check`:
   - Introduced two new flags, `--retries` and `--retry-delay`, that change how `roxctl` deals with errors
-  - `--retries 3 --retry-delay 2` will retry the scan three times on failure with two seconds delay between retries
+  - `--retries 3 --retry-delay 2` will retry the command three times on failure with two seconds delay between retries
 
 ## [54.0]
 - Added option to backup certificates for central.

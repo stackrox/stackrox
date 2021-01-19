@@ -2,6 +2,7 @@ package check
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/report"
@@ -19,8 +21,10 @@ import (
 // Command checks the image against image build lifecycle policies
 func Command() *cobra.Command {
 	var (
-		image string
-		json  bool
+		image      string
+		json       bool
+		retryDelay int
+		retryCount int
 	)
 	c := &cobra.Command{
 		Use: "check",
@@ -28,13 +32,30 @@ func Command() *cobra.Command {
 			if image == "" {
 				return errors.New("--image must be set")
 			}
-			return checkImage(image, json, flags.Timeout(c))
+			return checkImageWithRetry(image, json, flags.Timeout(c), retryDelay, retryCount)
 		}),
 	}
 
 	c.Flags().StringVarP(&image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
 	c.Flags().BoolVar(&json, "json", false, "output policy results as json.")
+	c.Flags().IntVarP(&retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
+	c.Flags().IntVarP(&retryCount, "retries", "r", 0, "Number of retries before exiting as error")
 	return c
+}
+
+func checkImageWithRetry(image string, json bool, timeout time.Duration, retryDelay int, retryCount int) error {
+	err := retry.WithRetry(func() error {
+		return checkImage(image, json, timeout)
+	},
+		retry.Tries(retryCount+1),
+		retry.OnFailedAttempts(func(err error) {
+			fmt.Fprintf(os.Stderr, "Checking image failed: %v. Retrying after %v seconds\n", err, retryDelay)
+			time.Sleep(time.Duration(retryDelay) * time.Second)
+		}))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func checkImage(image string, json bool, timeout time.Duration) error {
