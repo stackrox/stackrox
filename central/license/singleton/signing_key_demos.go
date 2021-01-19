@@ -20,7 +20,7 @@ func init() {
 					AllowOffline:                  true,
 					MaxNodeLimit:                  50,
 					AllowNoBuildFlavorRestriction: true,
-					DeploymentEnvironments:        []string{"gcp/ultra-current-825", "azure/66c57ff5-f49f-4510-ae04-e26d3ad2ee63", "aws/051999192406"},
+					DeploymentEnvironments:        []string{"gcp/ultra-current-825", "azure/3fe60802-349e-47c6-ba86-4d3bba2b5650", "aws/051999192406"},
 				}
 			},
 		},

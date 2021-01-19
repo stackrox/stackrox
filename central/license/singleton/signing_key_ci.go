@@ -20,7 +20,11 @@ func init() {
 					AllowOffline:                  true,
 					MaxNodeLimit:                  10,
 					AllowNoBuildFlavorRestriction: true,
-					DeploymentEnvironments:        []string{"gcp/stackrox-ci", "aws/051999192406"},
+					DeploymentEnvironments: []string{
+						"gcp/stackrox-ci",
+						"aws/051999192406",
+						"azure/3fe60802-349e-47c6-ba86-4d3bba2b5650",
+					},
 				}
 			},
 		},

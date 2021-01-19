@@ -22,7 +22,7 @@ func init() {
 					AllowNoBuildFlavorRestriction: true,
 					DeploymentEnvironments: []string{
 						"gcp/srox-temp-dev-test",
-						"azure/66c57ff5-f49f-4510-ae04-e26d3ad2ee63",
+						"azure/3fe60802-349e-47c6-ba86-4d3bba2b5650",
 						"aws/051999192406", // setup-automation
 						"aws/880732477823", // k@stackrox.com
 						"aws/393282794030", // gavin@stackrox.com
