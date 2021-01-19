@@ -110,4 +110,5 @@ export const policyCriteriaCategories = Object.freeze({
     NETWORKING: 'Networking',
     PROCESS_ACTIVITY: 'Process Activity',
     KUBERNETES_ACCESS: 'Kubernetes Access',
+    KUBERNETES_EVENTS: 'Kubernetes Events',
 });

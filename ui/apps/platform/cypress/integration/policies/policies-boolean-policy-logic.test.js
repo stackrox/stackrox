@@ -3,7 +3,7 @@ import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import DndSimulatorDataTransfer from '../../helpers/dndSimulatorDataTransfer';
 
-const NUM_POLICY_CATEGORIES = 8;
+const NUM_POLICY_CATEGORIES = 9;
 
 describe('Boolean Policy Logic Section', () => {
     withAuth();

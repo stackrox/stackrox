@@ -5,11 +5,18 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { FieldArray, reduxForm } from 'redux-form';
 import { connect } from 'react-redux';
 
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import PolicyBuilderKeys from 'Components/PolicyBuilderKeys';
 import PolicySections from './PolicySections';
-import { policyConfiguration } from './descriptors';
+import { getPolicyConfiguration } from './descriptors';
 
 function BooleanPolicySection({ readOnly, hasHeader }) {
+    const k8sEventsEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_K8S_EVENTS_DETECTION);
+    const featureFlags = {
+        [knownBackendFlags.ROX_K8S_EVENTS_DETECTION]: k8sEventsEnabled,
+    };
+    const keys = getPolicyConfiguration(featureFlags).descriptor;
     if (readOnly) {
         return (
             <div className="w-full flex">
@@ -27,7 +34,7 @@ function BooleanPolicySection({ readOnly, hasHeader }) {
         <DndProvider backend={HTML5Backend}>
             <div className="w-full h-full flex">
                 <FieldArray name="policySections" component={PolicySections} />
-                <PolicyBuilderKeys keys={policyConfiguration.descriptor} />
+                <PolicyBuilderKeys keys={keys} />
             </div>
         </DndProvider>
     );

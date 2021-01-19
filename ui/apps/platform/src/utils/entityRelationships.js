@@ -40,7 +40,6 @@ export const getUseCaseEntityMap = (featureFlags) => {
     const entityMap = { ...useCaseEntityMap };
     if (featureFlags[knownBackendFlags.ROX_HOST_SCANNING]) {
         entityMap[useCaseTypes.VULN_MANAGEMENT].push(entityTypes.NODE);
-        return entityMap;
     }
     return entityMap;
 };

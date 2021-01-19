@@ -5,6 +5,7 @@ import {
     rbacPermissionLabels,
     policyCriteriaCategories,
 } from 'messages/common';
+import { knownBackendFlags } from 'utils/featureFlags';
 import { clientOnlyWhitelistFieldNames } from './whitelistFieldNames';
 
 const equalityOptions = [
@@ -991,6 +992,41 @@ const policyConfigurationDescriptor = [
     },
 ];
 
+const k8sEventsDescriptor = [
+    {
+        name: 'Kubernetes API Verb',
+        category: policyCriteriaCategories.KUBERNETES_EVENTS,
+        type: 'select',
+        options: [
+            {
+                label: 'CREATE',
+                value: 'CREATE',
+            },
+        ],
+        required: false,
+        default: false,
+        canBooleanLogic: false,
+    },
+    {
+        name: 'Kubernetes Resource',
+        category: policyCriteriaCategories.KUBERNETES_EVENTS,
+        type: 'multiselect',
+        options: [
+            {
+                label: 'PODS_EXEC',
+                value: 'PODS_EXEC',
+            },
+            {
+                label: 'PODS_PORTFORWARD',
+                value: 'PODS_PORTFORWARD',
+            },
+        ],
+        required: false,
+        default: false,
+        canBooleanLogic: false,
+    },
+];
+
 export const policyStatus = {
     header: 'Enable Policy',
     descriptor: policyStatusDescriptor,
@@ -1007,4 +1043,15 @@ export const policyConfiguration = {
     header: 'Policy Criteria',
     descriptor: policyConfigurationDescriptor,
     dataTestId: 'policyConfigurationFields',
+};
+
+let isFirstLoad = true;
+
+export const getPolicyConfiguration = (featureFlags) => {
+    const newPolicyConfiguration = { ...policyConfiguration };
+    if (featureFlags[knownBackendFlags.ROX_K8S_EVENTS_DETECTION] && isFirstLoad) {
+        newPolicyConfiguration.descriptor.push(...k8sEventsDescriptor);
+        isFirstLoad = false;
+    }
+    return newPolicyConfiguration;
 };
