@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import * as Icon from 'react-feather';
+import { CheckCircle, Download } from 'react-feather';
 import { ClipLoader } from 'react-spinners';
 import { Message } from '@stackrox/ui-components';
 
@@ -52,12 +52,11 @@ const ClusterDeploymentPage = ({
                         <div className="flex justify-center px-3">
                             <button
                                 type="button"
-                                className="download uppercase text-primary-600 p-2 text-center text-sm border border-solid bg-primary-200 border-primary-300 hover:bg-primary-100"
+                                className="download uppercase text-primary-600 p-2 text-center text-sm border border-solid bg-primary-200 border-primary-300 hover:bg-primary-100 flex items-center"
                                 onClick={onFileDownload}
-                                tabIndex="-1"
                             >
                                 <span className="pr-2">Download YAML file and keys</span>
-                                <Icon.Download className="h-3 w-3" />
+                                <Download className="h-3 w-3" />
                             </button>
                         </div>
                         <div className="py-2 text-xs text-center text-base-600">
@@ -85,7 +84,7 @@ const ClusterDeploymentPage = ({
                 {clusterCheckedIn ? (
                     <div className="flex flex text-success-600 bg-success-200 border border-solid border-success-400 p-4 items-center">
                         <div className="flex-1 text-center">
-                            <Icon.CheckCircle />
+                            <CheckCircle />
                         </div>
                         <div className="flex-3 pl-2">
                             Success! The cluster has been recognized properly by StackRox.

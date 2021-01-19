@@ -177,6 +177,19 @@ export function downloadClusterYaml(id: string, createUpgraderSA = false) {
 }
 
 /**
+ * Downloads cluster Helm YAML configuration.
+ *
+ * @returns {Promise<undefined, Error>} resolved if operation was successful
+ */
+export function downloadClusterHelmValuesYaml(id: string) {
+    return saveFile({
+        method: 'post',
+        url: '/api/extensions/clusters/helm-config.yaml',
+        data: { id },
+    });
+}
+
+/**
  * Fetches the KernelSupportAvailable property.
  *
  * @returns {Promise<boolean, Error>} fulfilled with normalized cluster data

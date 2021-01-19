@@ -1,22 +1,24 @@
-import React, { ReactElement } from 'react';
+import React, { useState, ReactElement } from 'react';
 import { SuccessButton } from '@stackrox/ui-components';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
-import { getClusterById } from 'services/ClustersService';
+import { downloadClusterHelmValuesYaml } from 'services/ClustersService';
 
 export type DownloadHelmValuesProps = {
     clusterId: string;
 };
 
-const DownloadHelmValues = ({ clusterId }): ReactElement => {
+const DownloadHelmValues = ({ clusterId }: DownloadHelmValuesProps): ReactElement => {
+    const [isFetchingValues, setIsFetchingValues] = useState(false);
+
     function downloadValues(): void {
-        getClusterById(clusterId)
-            .then((response) => {
-                // eslint-disable-next-line no-console
-                console.log(response);
-            })
+        setIsFetchingValues(true);
+        downloadClusterHelmValuesYaml(clusterId)
             .catch(() => {
                 // TODO display message when there is a place for minor errors
+            })
+            .finally(() => {
+                setIsFetchingValues(false);
             });
     }
 
@@ -31,7 +33,7 @@ const DownloadHelmValues = ({ clusterId }): ReactElement => {
                 Download the required YAML to update your Helm values.
             </div>
             <div className="flex justify-center items-center p-4">
-                <SuccessButton type="button" onClick={downloadValues}>
+                <SuccessButton type="button" onClick={downloadValues} isDisabled={isFetchingValues}>
                     Download Helm values
                 </SuccessButton>
             </div>
