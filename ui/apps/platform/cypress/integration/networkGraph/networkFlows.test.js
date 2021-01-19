@@ -1,5 +1,5 @@
 import { url as networkUrl, selectors as networkPageSelectors } from '../../constants/NetworkPage';
-
+import selectors from '../../selectors';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import { clickOnNodeByName } from '../../helpers/networkGraph';
@@ -8,6 +8,8 @@ const tableDataRows = 'table tr[data-testid="data-row"]';
 const tableStatusHeaders = 'table tr[data-testid="subhead-row"]';
 const sensorTableRow = `${tableDataRows}:contains("sensor")`;
 const confirmationButton = 'button:contains("Yes")';
+const markAsAnomalousButton = `${sensorTableRow} button:contains("Mark as anomalous")`;
+const baselineSettingsTab = `${selectors.tab.tabs}:contains('Baseline Settings')`;
 
 describe('Network Baseline Flows', () => {
     withAuth();
@@ -23,7 +25,7 @@ describe('Network Baseline Flows', () => {
         cy.wait('@networkGraph');
     });
 
-    describe('Navigating to Deployment', () => {
+    xdescribe('Navigating to Deployment', () => {
         it('should navigate to a different deployment when clicking the "Navigate" button', () => {
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 const tabbedOverlayHeader = '[data-testid="network-entity-tabbed-overlay-header"]';
@@ -41,7 +43,7 @@ describe('Network Baseline Flows', () => {
         });
     });
 
-    describe('Active Network Flows', () => {
+    xdescribe('Active Network Flows', () => {
         it('should show anomalous flows section above the baseline flows', () => {
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 clickOnNodeByName(cytoscape, { type: 'DEPLOYMENT', name: 'central' });
@@ -52,10 +54,9 @@ describe('Network Baseline Flows', () => {
         });
     });
 
-    describe('Toggling Status of Active Baseline Network Flows', () => {
+    xdescribe('Toggling Status of Active Baseline Network Flows', () => {
         it('should be able to toggle status of a single flow', () => {
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
-                const markAsAnomalousButton = `${sensorTableRow} button:contains("Mark as anomalous")`;
                 const addToBaselineButton = `${sensorTableRow} button:contains("Add to baseline")`;
 
                 clickOnNodeByName(cytoscape, { type: 'DEPLOYMENT', name: 'central' });
@@ -142,6 +143,43 @@ describe('Network Baseline Flows', () => {
                         cy.wait('@networkGraph');
                         cy.wait('@networkBaselineStatus');
                         cy.get(prevAnomalousFlowsText);
+                    });
+            });
+        });
+    });
+
+    describe('Baseline Settings', () => {
+        it('should not show the anomalous flows section', () => {
+            cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
+                clickOnNodeByName(cytoscape, { type: 'DEPLOYMENT', name: 'central' });
+                cy.get(baselineSettingsTab).click();
+                cy.get(tableStatusHeaders).eq(0).contains('Baseline Flow');
+            });
+        });
+
+        it('should be able to toggle status of a single baseline flow', () => {
+            cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
+                const baselineStatusHeader = `${tableStatusHeaders}:eq(0)`;
+
+                clickOnNodeByName(cytoscape, { type: 'DEPLOYMENT', name: 'central' });
+                cy.get(baselineSettingsTab).click();
+
+                cy.get(baselineStatusHeader)
+                    .invoke('text')
+                    .then((baselineFlowsText) => {
+                        // get the number value of baseline flows
+                        const prevNumBaselineFlows = parseInt(baselineFlowsText, 10);
+                        const postNumBaselineFlowsText = `${tableStatusHeaders}:contains("${
+                            prevNumBaselineFlows - 1
+                        } Baseline Flow")`;
+
+                        // marking a baseline flow as anomalous should remove it from the baseline
+                        cy.get(sensorTableRow).trigger('mouseover');
+                        cy.get(markAsAnomalousButton).click();
+                        cy.wait('@networkPoliciesGraph');
+                        cy.wait('@networkGraph');
+                        cy.wait('@networkBaselineStatus');
+                        cy.get(postNumBaselineFlowsText);
                     });
             });
         });
