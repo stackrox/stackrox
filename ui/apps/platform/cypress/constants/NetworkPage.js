@@ -10,6 +10,8 @@ const networkPanels = {
     detailsPanel: '[data-testid="network-details-panel"]',
 };
 
+const networkEntityTabbedOverlay = '[data-testid="network-entity-tabbed-overlay"]';
+
 export const selectors = {
     cytoscapeContainer: '#cytoscapeContainer',
     network: 'nav.left-navigation li:contains("Network") a',
@@ -51,5 +53,8 @@ export const selectors = {
         table: {
             rows: '.rt-tbody .rt-tr',
         },
+    }),
+    networkEntityTabbedOverlay: scopeSelectors(networkEntityTabbedOverlay, {
+        header: '[data-testid="network-entity-tabbed-overlay-header"]',
     }),
 };

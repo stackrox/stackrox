@@ -24,13 +24,13 @@ function NetworkEntityTabbedOverlay({ entityName, entityType, children }) {
     return (
         <div
             className="flex flex-1 flex-col text-sm network-overlay-bg-shadow max-h-minus-buttons rounded-bl-lg"
-            data-testid="network-details-panel"
+            data-testid="network-entity-tabbed-overlay"
         >
-            <div
-                className="bg-primary-800 flex items-center m-2 p-3 rounded-lg shadow text-primary-100"
-                data-testid="network-details-panel-header"
-            >
-                <div className="flex flex-1 flex-col">
+            <div className="bg-primary-800 flex items-center m-2 p-3 rounded-lg shadow text-primary-100">
+                <div
+                    className="flex flex-1 flex-col"
+                    data-testid="network-entity-tabbed-overlay-header"
+                >
                     <div className="text-base">{entityName}</div>
                     <div className="italic text-primary-300 text-xs capitalize">
                         {networkEntityLabels[entityType]}

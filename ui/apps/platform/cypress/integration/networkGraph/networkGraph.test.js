@@ -34,7 +34,7 @@ describe('Network Deployment Details', () => {
                 name: 'central',
             });
             cy.wait('@centralDeployment');
-            cy.get(`${networkPageSelectors.detailsPanel.header}:contains("central")`);
+            cy.get(`${networkPageSelectors.networkEntityTabbedOverlay.header}:contains("central")`);
         });
     });
 });
