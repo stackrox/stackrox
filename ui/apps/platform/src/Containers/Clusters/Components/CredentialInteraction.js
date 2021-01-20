@@ -57,7 +57,7 @@ const CredentialInteraction = ({ certExpiryStatus, currentDatetime, upgradeStatu
             <div className="mt-2">
                 <div data-testid="downloadedToReissueCertificate">
                     Apply downloaded YAML file to the cluster:{' '}
-                    <span className="font-700 whitespace-no-wrap">kubectl apply -f</span>
+                    <span className="font-700 whitespace-nowrap">kubectl apply -f</span>
                 </div>
                 <div>
                     Sensor, Admission Controller, and Collectors begin using new credentials the

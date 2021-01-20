@@ -16,7 +16,7 @@ export type TableRowOverlayProps = {
 function TableRowOverlay({ isLayeredFirst = false, children }: TableRowOverlayProps): ReactElement {
     return (
         <td className={`flex overflow-visible w-0 sticky top-8 ${isLayeredFirst ? 'z-1' : ''}`}>
-            <div className="-translate-x-full transform translate-y-1 whitespace-no-wrap z-0">
+            <div className="-translate-x-full transform translate-y-1 whitespace-nowrap z-0">
                 {children}
             </div>
         </td>

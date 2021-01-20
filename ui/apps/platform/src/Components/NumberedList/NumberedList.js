@@ -41,7 +41,7 @@ const NumberedList = ({ data, linkLeftOnly }) => {
         let content = (
             <>
                 {leftSide}
-                <div className="flex justify-end pr-2 whitespace-no-wrap items-center">
+                <div className="flex justify-end pr-2 whitespace-nowrap items-center">
                     {component}
                 </div>
             </>

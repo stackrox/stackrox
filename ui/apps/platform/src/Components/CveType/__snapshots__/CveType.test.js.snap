@@ -3,7 +3,7 @@
 exports[`CveType callout style should show a Kubernetes CVE type in callout style 1`] = `
 <DocumentFragment>
   <span
-    class="inline-block border rounded font-600 text-center whitespace-no-wrap min-h-6 flex justify-center items-center text-base px-2 bg-base-200 border-base-400 text-base-800 capitalize "
+    class="inline-block border rounded font-600 text-center whitespace-nowrap min-h-6 flex justify-center items-center text-base px-2 bg-base-200 border-base-400 text-base-800 capitalize "
     data-testid="label-chip"
   >
     <span>
@@ -16,7 +16,7 @@ exports[`CveType callout style should show a Kubernetes CVE type in callout styl
 exports[`CveType callout style should show an Istio CVE type in callout style 1`] = `
 <DocumentFragment>
   <span
-    class="inline-block border rounded font-600 text-center whitespace-no-wrap min-h-6 flex justify-center items-center text-base px-2 bg-base-200 border-base-400 text-base-800 capitalize "
+    class="inline-block border rounded font-600 text-center whitespace-nowrap min-h-6 flex justify-center items-center text-base px-2 bg-base-200 border-base-400 text-base-800 capitalize "
     data-testid="label-chip"
   >
     <span>
@@ -29,7 +29,7 @@ exports[`CveType callout style should show an Istio CVE type in callout style 1`
 exports[`CveType callout style should show an image CVE type in callout style 1`] = `
 <DocumentFragment>
   <span
-    class="inline-block border rounded font-600 text-center whitespace-no-wrap min-h-6 flex justify-center items-center text-base px-2 bg-base-200 border-base-400 text-base-800 capitalize "
+    class="inline-block border rounded font-600 text-center whitespace-nowrap min-h-6 flex justify-center items-center text-base px-2 bg-base-200 border-base-400 text-base-800 capitalize "
     data-testid="label-chip"
   >
     <span>

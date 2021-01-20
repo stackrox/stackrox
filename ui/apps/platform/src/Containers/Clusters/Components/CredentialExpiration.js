@@ -24,7 +24,7 @@ const CredentialExpiration = ({ certExpiryStatus, currentDatetime, isList }) => 
         // If sensorCertExpiry > currentDateTime: in X units
         // If sensorCertExpiry <= currentDateTime: X units ago
         const distanceElement = (
-            <span className={`${bgColor} ${fgColor} whitespace-no-wrap`}>
+            <span className={`${bgColor} ${fgColor} whitespace-nowrap`}>
                 {getDistanceStrictAsPhrase(sensorCertExpiry, currentDatetime)}
             </span>
         );
@@ -53,7 +53,7 @@ const CredentialExpiration = ({ certExpiryStatus, currentDatetime, isList }) => 
                 expirationElement = (
                     <div data-testid={testId}>
                         {distanceElement}{' '}
-                        <span className="whitespace-no-wrap">{`on ${
+                        <span className="whitespace-nowrap">{`on ${
                             diffInDays > 0 && diffInDays < 7
                                 ? getDayOfWeek(sensorCertExpiry)
                                 : getDate(sensorCertExpiry)

@@ -25,7 +25,7 @@ const TileContent = ({
             {icon !== null && <div className="p-1 flex justify-center">{icon}</div>}
             <div
                 className={`flex ${
-                    !textWrap && 'whitespace-no-wrap'
+                    !textWrap && 'whitespace-nowrap'
                 } items-center font-600 font-condensed uppercase justify-center text-base`}
                 data-testid="tile-link-value"
             >

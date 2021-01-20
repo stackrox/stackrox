@@ -20,7 +20,7 @@ const ResourceCountPopper = ({ data, label, renderContent, reactOutsideClassName
                 </div>
             }
             popperContent={
-                <div className="border border-base-300 p-4 shadow bg-base-100 whitespace-no-wrap">
+                <div className="border border-base-300 p-4 shadow bg-base-100 whitespace-nowrap">
                     {renderContent(data)}
                 </div>
             }

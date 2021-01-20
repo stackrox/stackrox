@@ -39,11 +39,11 @@ class Pills extends Component {
         const { active } = this.state;
         return this.state.data.map((item) => {
             let pillClass = active[item.value]
-                ? 'text-black select-none cursor-pointer p-2 m-2 bg-blue-lightest rounded-sm whitespace-no-wrap shadow-md'
-                : 'text-black select-none cursor-pointer p-2 m-2 rounded-sm whitespace-no-wrap hover:bg-blue-lightest';
+                ? 'text-black select-none cursor-pointer p-2 m-2 bg-blue-lightest rounded-sm whitespace-nowrap shadow-md'
+                : 'text-black select-none cursor-pointer p-2 m-2 rounded-sm whitespace-nowrap hover:bg-blue-lightest';
             if (item.disabled) {
                 pillClass =
-                    'text-grey select-none cursor-default p-2 m-2 rounded-sm whitespace-no-wrap';
+                    'text-grey select-none cursor-default p-2 m-2 rounded-sm whitespace-nowrap';
             }
             return (
                 <div

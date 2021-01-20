@@ -10,11 +10,12 @@
         ],
         "nohoist": [
             "**/mocha-multi-reporters",
-            "**/mocha-multi-reporters/**"
+            "**/mocha-multi-reporters/**",
+            "**/@tailwindcss/**"
         ]
     },
     "engines": {
-        "node": ">=10.22.0"
+        "node": ">=12.13.0"
     },
     "scripts": {
         "postinstall": "./scripts/patch-deps.sh",

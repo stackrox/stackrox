@@ -14,7 +14,7 @@ View the full documentation at https://tailwindcss.com.
 
 */
 
-const customFormsPlugin = require('@tailwindcss/custom-forms');
+const formsPlugin = require('@tailwindcss/forms');
 const getGradientClasses = require('./plugins/gradient');
 const getGridClasses = require('./plugins/grid');
 const getObjectFitClasses = require('./plugins/object-fit');
@@ -28,10 +28,6 @@ function remCalc(pixel) {
 }
 
 module.exports = {
-    future: {
-        removeDeprecatedGapUtilities: true,
-        purgeLayersByDefault: true,
-    },
     important: true,
     theme: {
         screens: {
@@ -205,7 +201,7 @@ module.exports = {
         textColor: (theme) => theme('colors'),
         backgroundColor: (theme) => theme('colors'),
         borderWidth: {
-            default: '1px',
+            DEFAULT: '1px',
             0: '0',
             2: '2px',
             3: '3px',
@@ -215,14 +211,14 @@ module.exports = {
         borderColor: (theme) => {
             const colors = theme('colors');
             return {
-                default: colors['grey-light'],
+                DEFAULT: colors['grey-light'],
                 ...colors,
             };
         },
         borderRadius: {
             none: '0',
             sm: remCalc('2'),
-            default: remCalc('4'),
+            DEFAULT: remCalc('4'),
             lg: remCalc('8'),
             full: '9999px',
         },
@@ -485,7 +481,7 @@ module.exports = {
             '-8': '-2rem',
         },
         boxShadow: {
-            default: '0 2px 8px 0 hsla(0, 0%, 0%, 0.14)',
+            DEFAULT: '0 2px 8px 0 hsla(0, 0%, 0%, 0.14)',
             md: '0 8px 8px 0 hsla(0, 0%, 0%, 0.04), 0 2px 4px 0 hsla(0, 0%, 0%, 0.17)',
             lg: '0 8px 8px 0 hsla(0, 0%, 0%, 0.04), 0 2px 4px 0 hsla(0, 0%, 0%, 0.17)',
             inner: 'inset 0 0px 8px 0 hsla(0, 0%, 0%, .25)',
@@ -580,7 +576,7 @@ module.exports = {
         zIndex: ['responsive', 'hover', 'before', 'after'],
     },
     plugins: [
-        customFormsPlugin,
+        formsPlugin,
         function addvariant({ addVariant, e }) {
             addVariant('before', ({ modifySelectors, separator }) => {
                 modifySelectors(

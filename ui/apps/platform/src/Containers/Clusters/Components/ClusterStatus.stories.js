@@ -16,7 +16,7 @@ const AtSide = ({ children }) => (
         <table style={{ width: '20rem' }}>
             <tbody>
                 <tr className="align-top leading-normal">
-                    <th className="pl-0 pr-2 py-1 text-left whitespace-no-wrap" scope="row">
+                    <th className="pl-0 pr-2 py-1 text-left whitespace-nowrap" scope="row">
                         {heading}
                     </th>
                     <td className="px-0 py-1">{children}</td>

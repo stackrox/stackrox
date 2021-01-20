@@ -28,7 +28,7 @@ import VulnerabilityDefinitions from './Components/VulnerabilityDefinitions';
 
 import { mergeIntegrationResponses } from './utils/integrations';
 
-const smallButtonClassName = 'btn-sm btn-base flex-shrink-0 no-underline whitespace-no-wrap';
+const smallButtonClassName = 'btn-sm btn-base flex-shrink-0 no-underline whitespace-nowrap';
 
 const SystemHealthDashboardPage = () => {
     const [pollingCountFaster, setPollingCountFaster] = useState(0);

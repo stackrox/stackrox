@@ -16,7 +16,7 @@ const Form = ({ handleSubmit, initialValues, onSubmit, values }) => {
             onSubmit={handleSubmit(onSubmit)}
             initialValues={initialValues}
         >
-            <div className="mb-4 flex flex-wrap md:flex-no-wrap items-center">
+            <div className="mb-4 flex flex-wrap md:flex-nowrap items-center">
                 <div className="flex-shrink-0 w-full md:w-1/3 pr-8 mb-4 md:mb-0">
                     <div className="py-2 text-base-600 font-700 text-lg">
                         Role Name <FormFieldRequired empty={!values.name.trim()} />

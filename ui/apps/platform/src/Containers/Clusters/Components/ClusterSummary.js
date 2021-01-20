@@ -15,7 +15,7 @@ import SensorUpgrade from './SensorUpgrade';
 import { formatBuildDate, formatCloudProvider, formatKubernetesVersion } from '../cluster.helpers';
 
 const trClass = 'align-top leading-normal';
-const thClass = 'pl-0 pr-2 py-1 text-left whitespace-no-wrap';
+const thClass = 'pl-0 pr-2 py-1 text-left whitespace-nowrap';
 const tdClass = 'px-0 py-1';
 
 /*

@@ -108,7 +108,7 @@ const Menu = ({
                 </button>
                 {isMenuOpen && (
                     <div
-                        className={`absolute flex flex-col flex-no-wrap menu right-0 z-10 min-w-32 bg-base-100 shadow border border-base-400 ${menuClassName}`}
+                        className={`absolute flex flex-col flex-nowrap menu right-0 z-10 min-w-32 bg-base-100 shadow border border-base-400 ${menuClassName}`}
                         data-testid="menu-list"
                     >
                         {grouped ? renderGroupedOptions(options) : renderOptions(options)}

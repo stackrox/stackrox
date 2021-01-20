@@ -35,14 +35,10 @@ function DeploymentColumn({ original }) {
                 className="pr-2"
                 title={`${original?.deployment?.inactive ? 'Inactive' : 'Active'} Deployment`}
             >
-                <Icon.Circle
-                    className="h-2 w-2 text-success-600"
-                    hidden={original?.deployment?.inactive}
-                />
-                <Icon.Slash
-                    className="h-2 w-2 text-base-500"
-                    hidden={!original?.deployment?.inactive}
-                />
+                {!original?.deployment?.inactive && (
+                    <Icon.Circle className="h-2 w-2 text-success-600" />
+                )}
+                {original?.deployment?.inactive && <Icon.Slash className="h-2 w-2 text-base-500" />}
             </span>
             <span>{original?.deployment?.name}</span>
         </div>

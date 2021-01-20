@@ -66,7 +66,7 @@ export const listSelectors = {
 
 export const sidePanelListEntityPageSelectors = {
     entityRowHeader:
-        '[data-testid="side-panel"] > .h-full > .flex > .flex-no-wrap > .flex > [data-testid="panel-header"]',
+        '[data-testid="side-panel"] > .h-full > .flex > .flex-nowrap > .flex > [data-testid="panel-header"]',
     sidePanelTableBodyRows: '[data-testid="side-panel"] .rt-tbody .rt-tr',
     parentEntityInfoHeader: '[data-testid="breadcrumb-link-text"] > a',
     childEntityInfoHeader: '[data-testid="breadcrumb-link-text"] > span',

@@ -24,11 +24,11 @@ const NumberedGrid = ({ data, history }) => {
                 </span>
                 <div className={`flex flex-1 ${stacked ? 'justify-between' : 'flex-col'}`}>
                     {subText && (
-                        <div className="text-base-500 italic font-600 text-sm mb-1 whitespace-no-wrap truncate">
+                        <div className="text-base-500 italic font-600 text-sm mb-1 whitespace-nowrap truncate">
                             {subText}
                         </div>
                     )}
-                    <div className="text-base-600 font-600 flex items-center text-base mr-4 whitespace-no-wrap truncate">
+                    <div className="text-base-600 font-600 flex items-center text-base mr-4 whitespace-nowrap truncate">
                         {text}
                     </div>
                     {component && <div className={`${stacked ? '' : 'mt-2'}`}>{component}</div>}

@@ -45,7 +45,7 @@ const CountElement = ({ count, url, fixable, hideLink, individualClasses }) => {
 };
 
 const FixableCVECount = ({ cves, fixable, url, fixableUrl, orientation, hideLink, showZero }) => {
-    const className = `text-sm items-center leading-normal whitespace-no-wrap ${getOrientationClassName(
+    const className = `text-sm items-center leading-normal whitespace-nowrap ${getOrientationClassName(
         orientation
     )}`;
     const individualClasses = orientation === 'horizontal' ? 'mr-1' : '';

@@ -13,7 +13,7 @@ const Panel = (props) => (
         }`}
         data-testid={props.id}
     >
-        <div className="flex-no-wrap">
+        <div className="flex-nowrap">
             <div className={props.headerClassName}>
                 {props.leftButtons && (
                     <div className="flex items-center pr-3 relative border-base-400 border-r hover:bg-primary-300 hover:border-primary-300">

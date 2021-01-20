@@ -120,14 +120,10 @@ class TableContents extends Component {
                             }`}
                             title={`Notification ${original.notifiers.length === 0 ? 'Off' : 'On'}`}
                         >
-                            <Icon.Bell
-                                className="h-2 w-2"
-                                hidden={original.notifiers.length === 0}
-                            />
-                            <Icon.BellOff
-                                className="h-2 w-2"
-                                hidden={original.notifiers.length !== 0}
-                            />
+                            {original.notifiers.length !== 0 && <Icon.Bell className="h-2 w-2" />}
+                            {original.notifiers.length === 0 && (
+                                <Icon.BellOff className="h-2 w-2" />
+                            )}
                         </div>
                         <div className="pl-4" data-testid="policy-name">
                             {original.name}

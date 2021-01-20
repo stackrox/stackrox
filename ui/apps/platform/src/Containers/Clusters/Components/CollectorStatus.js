@@ -44,14 +44,14 @@ const CollectorStatus = ({ healthStatus, currentDatetime, isList }) => {
         );
 
         // In rare case that the block does not fit in a narrow column,
-        // the space and "whitespace-no-wrap" cause time phrase to wrap as a unit.
+        // the space and "whitespace-nowrap" cause time phrase to wrap as a unit.
         // Order arguments according to date-fns@2 convention:
         // If lastContact <= currentDateTime: X units ago
         const statusElement =
             lastContact && isDelayedSensorHealthStatus(sensorHealthStatus) ? (
                 <div data-testid={testId}>
                     {labelElement}{' '}
-                    <span className="whitespace-no-wrap">
+                    <span className="whitespace-nowrap">
                         {getDistanceStrictAsPhrase(lastContact, currentDatetime)}
                     </span>
                 </div>

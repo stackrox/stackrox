@@ -84,7 +84,7 @@ function TestLoginResultsPage({ authProviderTestResults }) {
                         </p>
                         <button
                             type="button"
-                            className="btn btn-base whitespace-no-wrap h-10 ml-4"
+                            className="btn btn-base whitespace-nowrap h-10 ml-4"
                             onClick={closeThisWindow}
                             dataTestId="button-close-window"
                         >

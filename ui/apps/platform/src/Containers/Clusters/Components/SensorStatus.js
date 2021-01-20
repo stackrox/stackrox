@@ -30,11 +30,11 @@ const SensorStatus = ({ healthStatus, currentDatetime }) => {
         const isDelayed = lastContact && isDelayedSensorHealthStatus(sensorHealthStatus);
 
         // In rare case that the block does not fit in a narrow column,
-        // the space and "whitespace-no-wrap" cause time phrase to wrap as a unit.
+        // the space and "whitespace-nowrap" cause time phrase to wrap as a unit.
         const statusElement = isDelayed ? (
             <div data-testid={testId}>
                 {labelElement}{' '}
-                <span className="whitespace-no-wrap">{`for ${getDistanceStrict(
+                <span className="whitespace-nowrap">{`for ${getDistanceStrict(
                     lastContact,
                     currentDatetime
                 )}`}</span>

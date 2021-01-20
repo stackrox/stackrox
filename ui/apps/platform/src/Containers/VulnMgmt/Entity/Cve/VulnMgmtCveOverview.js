@@ -134,7 +134,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                                         {
                                             // eslint-disable-next-line eqeqeq
                                             envImpact == Number(envImpact) && (
-                                                <span className="w-full md:w-auto p-4 border-base-400 text-base-600 border-l whitespace-no-wrap">
+                                                <span className="w-full md:w-auto p-4 border-base-400 text-base-600 border-l whitespace-nowrap">
                                                     <span>
                                                         {' '}
                                                         {`Env. Impact: ${(envImpact * 100).toFixed(

@@ -84,7 +84,7 @@ function CreatePolicyFromSearch({
     return (
         <PanelButton
             icon={<Plus className="h-4 w-4" />}
-            className="btn-icon btn-tertiary whitespace-no-wrap h-10 ml-4"
+            className="btn-icon btn-tertiary whitespace-nowrap h-10 ml-4"
             onClick={createPolicyFromSearch}
             disabled={isPolicyBtnDisabled}
             tooltip="Create Policy from Current Search"
