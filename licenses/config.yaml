@@ -47,6 +47,16 @@ generators:
       - gcp/srox-temp-sales-demos
       - azure/3fe60802-349e-47c6-ba86-4d3bba2b5650
       - aws/051999192406
+- name: upgrade
+  key:
+    keyResourceId: "projects/stackrox-dev/locations/global/keyRings/licensing-ci/cryptoKeys/ci-license-signer/cryptoKeyVersions/1"
+  limit:
+    maxDuration: 21600000000000
+    allowOffline: true
+    maxNodeLimit: 10
+    allowNoBuildFlavorRestriction: true
+    deploymentEnvironments:
+      - gcp/stackrox-ci
 datastore:
   project: stackrox-licensing
   namespace: internal

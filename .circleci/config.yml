@@ -3509,7 +3509,7 @@ jobs:
       - run:
           name: Setup CI License
           command: |
-            ROX_LICENSE_KEY="$(licenses/ci.sh)"
+            ROX_LICENSE_KEY="$(licenses/upgrade.sh)"
             cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
 
       - run:
