@@ -620,6 +620,9 @@ class ImageScanningTest extends BaseSpecification {
                     }
                 }
             }
+            if (missingValues.containsKey(imageDetails.name)) {
+                println "Failing image: ${image}"
+            }
         }
         println missingValues
         assert missingValues.size() == 0
