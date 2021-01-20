@@ -16,7 +16,7 @@ var (
 // Singleton returns the cluster init backend singleton instance.
 func Singleton() Backend {
 	initBackendInstance.Do(func() {
-		backendInstance = newBackend(singleton.Singleton())
+		backendInstance = newBackend(singleton.Singleton(), NewCertProvider())
 	})
 	return backendInstance
 }

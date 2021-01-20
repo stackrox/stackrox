@@ -75,9 +75,10 @@ type Backend interface {
 	CheckRevoked(ctx context.Context, id string) error
 }
 
-func newBackend(store store.Store) Backend {
+func newBackend(store store.Store, certProvider CertificateProvider) Backend {
 	return &backendImpl{
-		store: store,
+		store:        store,
+		certProvider: certProvider,
 	}
 }
 
