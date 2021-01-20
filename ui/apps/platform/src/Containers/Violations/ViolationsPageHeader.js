@@ -24,6 +24,7 @@ function ViolationsPageHeader({
     currentPage,
     sortOption,
     setCurrentPageAlerts,
+    setCurrentPageAlertsErrorMessage,
     setAlertCount,
     setSelectedAlertId,
     currentPageAlerts,
@@ -60,12 +61,17 @@ function ViolationsPageHeader({
     useEffect(() => {
         if (!searchOptions.length || !searchOptions[searchOptions.length - 1].type) {
             // Get the alerts that match the search request for the current page.
-            fetchAlerts(searchOptions, sortOption, currentPage, pageSize).then(
-                setCurrentPageAlerts,
-                () => {
+            setCurrentPageAlertsErrorMessage('');
+            fetchAlerts(searchOptions, sortOption, currentPage, pageSize)
+                .then((alerts) => {
+                    setCurrentPageAlerts(alerts);
+                })
+                .catch((error) => {
                     setCurrentPageAlerts([]);
-                }
-            );
+                    setCurrentPageAlertsErrorMessage(
+                        error.message || 'An unknown error has occurred.'
+                    );
+                });
             // Get the total count of alerts that match the search request.
             fetchAlertCount(searchOptions).then(setAlertCount);
         }
@@ -74,7 +80,15 @@ function ViolationsPageHeader({
         runAfter5Seconds(() => {
             setPollEpoch(pollEpoch + 1);
         });
-    }, [searchOptions, currentPage, sortOption, pollEpoch, setCurrentPageAlerts, setAlertCount]);
+    }, [
+        searchOptions,
+        currentPage,
+        sortOption,
+        pollEpoch,
+        setCurrentPageAlerts,
+        setCurrentPageAlertsErrorMessage,
+        setAlertCount,
+    ]);
 
     // Render.
     const subHeader = isViewFiltered ? 'Filtered view' : 'Default view';
@@ -104,6 +118,7 @@ ViolationsPageHeader.propTypes = {
     sortOption: PropTypes.shape({}).isRequired,
     currentPageAlerts: PropTypes.arrayOf(PropTypes.object),
     setCurrentPageAlerts: PropTypes.func.isRequired,
+    setCurrentPageAlertsErrorMessage: PropTypes.func.isRequired,
     setAlertCount: PropTypes.func.isRequired,
     setSelectedAlertId: PropTypes.func.isRequired,
     selectedAlertId: PropTypes.string,

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 
+import MessageCentered from 'Components/MessageCentered';
 import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import dialogues from './dialogues';
 
@@ -31,6 +32,7 @@ function ViolationsPage({
 
     // Handle changes in the currently displayed violations.
     const [currentPageAlerts, setCurrentPageAlerts] = useEntitiesByIdsCache();
+    const [currentPageAlertsErrorMessage, setCurrentPageAlertsErrorMessage] = useState('');
     const [alertCount, setAlertCount] = useState(0);
 
     // Handle confirmation dialogue being open.
@@ -61,32 +63,41 @@ function ViolationsPage({
                     selectedAlertId={selectedAlertId}
                     currentPageAlerts={currentPageAlerts}
                     setCurrentPageAlerts={setCurrentPageAlerts}
+                    setCurrentPageAlertsErrorMessage={setCurrentPageAlertsErrorMessage}
                     setSelectedAlertId={setSelectedAlertId}
                     setAlertCount={setAlertCount}
                     isViewFiltered={isViewFiltered}
                     setIsViewFiltered={setIsViewFiltered}
                 />
                 <div className="flex flex-1 relative">
-                    <div className="shadow border-primary-300 w-full overflow-hidden">
-                        <ViolationsTablePanel
-                            violations={currentPageAlerts}
-                            violationsCount={alertCount}
-                            isViewFiltered={isViewFiltered}
-                            setDialogue={setDialogue}
-                            selectedAlertId={selectedAlertId}
-                            setSelectedAlertId={setSelectedAlertId}
-                            checkedAlertIds={checkedAlertIds}
-                            setCheckedAlertIds={setCheckedAlertIds}
-                            currentPage={currentPage}
-                            setCurrentPage={setCurrentPage}
-                            setSortOption={setSortOption}
-                            runtimeAlerts={runtimeAlerts}
-                        />
-                    </div>
-                    <ViolationsSidePanel
-                        selectedAlertId={selectedAlertId}
-                        setSelectedAlertId={setSelectedAlertId}
-                    />
+                    {currentPageAlertsErrorMessage ? (
+                        <MessageCentered type="error">
+                            {currentPageAlertsErrorMessage}
+                        </MessageCentered>
+                    ) : (
+                        <>
+                            <div className="shadow border-primary-300 w-full overflow-hidden">
+                                <ViolationsTablePanel
+                                    violations={currentPageAlerts}
+                                    violationsCount={alertCount}
+                                    isViewFiltered={isViewFiltered}
+                                    setDialogue={setDialogue}
+                                    selectedAlertId={selectedAlertId}
+                                    setSelectedAlertId={setSelectedAlertId}
+                                    checkedAlertIds={checkedAlertIds}
+                                    setCheckedAlertIds={setCheckedAlertIds}
+                                    currentPage={currentPage}
+                                    setCurrentPage={setCurrentPage}
+                                    setSortOption={setSortOption}
+                                    runtimeAlerts={runtimeAlerts}
+                                />
+                            </div>
+                            <ViolationsSidePanel
+                                selectedAlertId={selectedAlertId}
+                                setSelectedAlertId={setSelectedAlertId}
+                            />
+                        </>
+                    )}
                 </div>
             </div>
             {dialogue === dialogues.excludeScopes && (
