@@ -56,6 +56,7 @@ message ClairConfig {
 
 message ClairifyConfig {
     string endpoint             = 1 [(gogoproto.moretags) = "validate:\"nolocalendpoint\""];
+    string grpc_endpoint        = 3 [(gogoproto.moretags) = "validate:\"nolocalendpoint\""];
     int32  num_concurrent_scans = 2;
 }
 

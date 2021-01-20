@@ -3,8 +3,8 @@ package datastore
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/sac"
@@ -24,13 +24,13 @@ func initialize() {
 
 	// Initialize the integration set with all present integrations.
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
-	toNotifyOfIntegrations := imageintegration.ToNotify()
+	integrationManager := enrichment.ManagerSingleton()
 	integrations, err := ad.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
 	if err != nil {
 		log.Errorf("unable to use previous integrations: %s", err)
 	}
 	for _, ii := range integrations {
-		if err := toNotifyOfIntegrations.NotifyUpdated(ii); err != nil {
+		if err := integrationManager.Upsert(ii); err != nil {
 			log.Errorf("unable to use previous integration: %s", err)
 		}
 	}

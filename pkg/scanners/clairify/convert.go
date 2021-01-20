@@ -17,142 +17,69 @@ const (
 	timeFormat = "2006-01-02T15:04Z"
 )
 
-func convertNodeToVulnRequest(node *storage.Node) *v1.GetVulnerabilitiesRequest {
-	// Components we support: kubelet, kube-proxy, container runtime, linux kernel
-	components := make([]*v1.Component, 0, 4)
-
-	if node.GetKubeletVersion() != "" {
-		components = append(components, &v1.Component{
-			Component: &v1.Component_K8SComponent{
-				K8SComponent: &v1.KubernetesComponent{
-					Component: v1.KubernetesComponent_KUBELET,
-					Version:   node.GetKubeletVersion(),
-				},
-			},
-		})
-	}
-
-	if node.GetKubeProxyVersion() != "" {
-		components = append(components, &v1.Component{
-			Component: &v1.Component_K8SComponent{
-				K8SComponent: &v1.KubernetesComponent{
-					Component: v1.KubernetesComponent_KUBE_PROXY,
-					Version:   node.GetKubeProxyVersion(),
-				},
-			},
-		})
-	}
-
-	containerRuntime := convertContainerRuntime(node.GetContainerRuntime())
-	if containerRuntime != nil {
-		components = append(components, &v1.Component{
-			Component: &v1.Component_AppComponent{
-				AppComponent: containerRuntime,
-			},
-		})
-	}
-
-	// Only linux is supported at this time.
-	if node.GetOperatingSystem() == "linux" {
-		components = append(components, &v1.Component{
-			Component: &v1.Component_AppComponent{
-				AppComponent: &v1.ApplicationComponent{
-					Vendor:  "linux",
-					Product: "linux_kernel",
-					Version: node.GetKernelVersion(),
-				},
-			},
-		})
-	}
-
-	return &v1.GetVulnerabilitiesRequest{
-		Components: components,
+func convertNodeToVulnRequest(node *storage.Node) *v1.GetNodeVulnerabilitiesRequest {
+	return &v1.GetNodeVulnerabilitiesRequest{
+		OsImage:          node.GetOsImage(),
+		KernelVersion:    node.GetKernelVersion(),
+		KubeletVersion:   node.GetKubeletVersion(),
+		KubeproxyVersion: node.GetKubeProxyVersion(),
+		Runtime:          convertContainerRuntime(node.GetContainerRuntime()),
 	}
 }
 
-func convertContainerRuntime(containerRuntime *storage.ContainerRuntimeInfo) *v1.ApplicationComponent {
-	var comp v1.ApplicationComponent
+func convertContainerRuntime(containerRuntime *storage.ContainerRuntimeInfo) *v1.GetNodeVulnerabilitiesRequest_ContainerRuntime {
+	var name, version string
 	switch containerRuntime.GetType() {
 	case storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME:
-		comp.Vendor = "docker"
-		comp.Product = "docker"
-		comp.Version = containerRuntime.GetVersion()
+		name = "docker"
+		version = containerRuntime.GetVersion()
 	case storage.ContainerRuntime_CRIO_CONTAINER_RUNTIME:
-		comp.Vendor = "kubernetes"
-		comp.Product = "cri-o"
-		comp.Version = containerRuntime.GetVersion()
+		name = "cri-o"
+		version = containerRuntime.GetVersion()
 	default:
 		runtime, v := stringutils.Split2(containerRuntime.GetVersion(), "://")
 		if runtime != "containerd" && runtime != "runc" {
-			log.Warnf("Unsupported container runtime for node scanning: %s", runtime)
+			log.Warnf("unsupported container runtime for node scanning: %s", runtime)
 			return nil
 		}
-		comp.Vendor = "linuxfoundation"
-		comp.Product = runtime
-		comp.Version = v
+		name = runtime
+		version = v
 	}
-
-	return &comp
-}
-
-func convertVulnResponseToNodeScan(node *storage.Node, resp *v1.GetVulnerabilitiesResponse) *storage.NodeScan {
-	componentsWithVulns := resp.GetVulnerabilitiesByComponent()
-	if resp.GetVulnerabilitiesByComponent() == nil {
-		return nil
-	}
-
-	components := make([]*storage.EmbeddedNodeScanComponent, 0, len(componentsWithVulns))
-	for _, componentWithVulns := range componentsWithVulns {
-		switch typ := componentWithVulns.GetComponent().GetComponent().(type) {
-		case *v1.Component_AppComponent:
-			component := typ.AppComponent
-			name, v := getNameAndNodeVersion(node, component.GetProduct())
-			if name == "" {
-				continue
-			}
-			components = append(components, &storage.EmbeddedNodeScanComponent{
-				Name:    name,
-				Version: v,
-				Vulns:   convertVulns(componentWithVulns.GetVulnerabilities()),
-			})
-		case *v1.Component_K8SComponent:
-			component := typ.K8SComponent
-			name, v := getNameAndNodeVersion(node, component.GetComponent().String())
-			if name == "" {
-				continue
-			}
-			components = append(components, &storage.EmbeddedNodeScanComponent{
-				Name:    name,
-				Version: v,
-				Vulns:   convertVulns(componentWithVulns.GetVulnerabilities()),
-			})
-		default:
-			log.Errorf("unsupported Node Component type %v", typ)
-		}
-	}
-
-	return &storage.NodeScan{
-		ScanTime:   gogoProto.TimestampNow(),
-		Components: components,
+	return &v1.GetNodeVulnerabilitiesRequest_ContainerRuntime{
+		Name:    name,
+		Version: version,
 	}
 }
 
-func getNameAndNodeVersion(node *storage.Node, component string) (string, string) {
-	switch component {
-	case v1.KubernetesComponent_KUBELET.String():
-		return "kubelet", node.GetKubeletVersion()
-	case v1.KubernetesComponent_KUBE_PROXY.String():
-		return "kube-proxy", node.GetKubeProxyVersion()
-	case "docker", "cri-o":
-		return component, node.GetContainerRuntime().GetVersion()
-	case "containerd", "runc":
-		_, v := stringutils.Split2(node.GetContainerRuntime().GetVersion(), "://")
-		return component, v
-	case "linux_kernel":
-		return "linux kernel", node.GetKernelVersion()
-	default:
-		return "", ""
+func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *v1.GetNodeVulnerabilitiesResponse) *storage.NodeScan {
+	scan := &storage.NodeScan{
+		ScanTime: gogoProto.TimestampNow(),
+		Components: []*storage.EmbeddedNodeScanComponent{
+			{
+				Name:    "kernel",
+				Version: req.GetKernelVersion(),
+				Vulns:   convertVulns(resp.GetKernelVulnerabilities()),
+			},
+			{
+				Name:    "kubelet",
+				Version: req.GetKubeletVersion(),
+				Vulns:   convertVulns(resp.GetKubeletVulnerabilities()),
+			},
+			{
+				Name:    "kube-proxy",
+				Version: req.GetKubeproxyVersion(),
+				Vulns:   convertVulns(resp.GetKubeproxyVulnerabilities()),
+			},
+		},
 	}
+	if req.GetRuntime().GetName() != "" && req.GetRuntime().GetVersion() != "" {
+		scan.Components = append(scan.Components, &storage.EmbeddedNodeScanComponent{
+			Name:    req.GetRuntime().GetName(),
+			Version: req.GetRuntime().GetVersion(),
+			Vulns:   convertVulns(resp.GetRuntimeVulnerabilities()),
+		})
+	}
+	return scan
 }
 
 func convertVulns(vulnerabilities []*v1.Vulnerability) []*storage.EmbeddedVulnerability {

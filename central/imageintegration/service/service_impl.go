@@ -7,6 +7,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
@@ -21,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners"
@@ -50,13 +50,13 @@ var (
 
 // ImageIntegrationService is the struct that manages the ImageIntegration API
 type serviceImpl struct {
-	registryFactory  registries.Factory
-	scannerFactory   scanners.Factory
-	nodeEnricher     enricher.NodeEnricher
-	toNotify         integration.ToNotify
-	datastore        datastore.DataStore
-	clusterDatastore clusterDatastore.DataStore
-	reprocessorLoop  reprocessor.Loop
+	registryFactory    registries.Factory
+	scannerFactory     scanners.Factory
+	nodeEnricher       enricher.NodeEnricher
+	integrationManager enrichment.Manager
+	datastore          datastore.DataStore
+	clusterDatastore   clusterDatastore.DataStore
+	reprocessorLoop    reprocessor.Loop
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -159,38 +159,12 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 
 	request.Id = id
 
-	// The same form on the Integrations page on the UI is used for both image and node
-	// integrations. Because each form is coupled with the image proto, we must account
-	// for node integrations here as well.
-	if features.HostScanning.Enabled() {
-		if isNodeIntegration(request) {
-			if err := s.upsertNodeIntegration(request); err != nil {
-				_ = s.datastore.RemoveImageIntegration(ctx, request.GetId())
-				return nil, err
-			}
-		}
-	}
-
-	if err := s.toNotify.NotifyUpdated(request); err != nil {
-		if features.HostScanning.Enabled() {
-			s.nodeEnricher.RemoveNodeIntegration(request.GetId())
-		}
+	if err := s.integrationManager.Upsert(request); err != nil {
 		_ = s.datastore.RemoveImageIntegration(ctx, request.GetId())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	s.reprocessorLoop.ShortCircuit()
 	return request, nil
-}
-
-func (s *serviceImpl) upsertNodeIntegration(request *storage.ImageIntegration) error {
-	nodeIntegration, err := imageIntegrationToNodeIntegration(request)
-	if err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
-	}
-	if err := s.nodeEnricher.UpsertNodeIntegration(nodeIntegration); err != nil {
-		return status.Error(codes.Internal, err.Error())
-	}
-	return nil
 }
 
 // DeleteImageIntegration removes a image integration given its ID.
@@ -202,11 +176,7 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 		return nil, err
 	}
 
-	if features.HostScanning.Enabled() {
-		s.nodeEnricher.RemoveNodeIntegration(request.GetId())
-	}
-
-	if err := s.toNotify.NotifyRemoved(request.GetId()); err != nil {
+	if err := s.integrationManager.Remove(request.GetId()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &v1.Empty{}, nil
@@ -227,15 +197,7 @@ func (s *serviceImpl) UpdateImageIntegration(ctx context.Context, request *v1.Up
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	if features.HostScanning.Enabled() {
-		if isNodeIntegration(request.GetConfig()) {
-			if err := s.upsertNodeIntegration(request.GetConfig()); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	if err := s.toNotify.NotifyUpdated(request.GetConfig()); err != nil {
+	if err := s.integrationManager.Upsert(request.GetConfig()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	s.reprocessorLoop.ShortCircuit()
@@ -395,15 +357,4 @@ func (s *serviceImpl) reconcileImageIntegrationWithExisting(updatedConfig, store
 		return errors.New("the request doesn't have a valid integration config type")
 	}
 	return secrets.ReconcileScrubbedStructWithExisting(updatedConfig, storedConfig)
-}
-
-// isNodeIntegration returns "true" if the image integration is also a node integration.
-// It loops through the categories, which is a very small slice.
-func isNodeIntegration(integration *storage.ImageIntegration) bool {
-	for _, category := range integration.GetCategories() {
-		if category == storage.ImageIntegrationCategory_NODE_SCANNER {
-			return true
-		}
-	}
-	return false
 }

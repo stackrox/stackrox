@@ -1447,12 +1447,15 @@ github.com/stackrox/nvdtools v0.0.0-20200903060121-ccc2b5ea9f6f/go.mod h1:AIeN7k
 github.com/stackrox/rox v0.0.0-20191128130813-ae51554fc242/go.mod h1:Qshd7p6Hw8xBvPlJM3pKWh81R2s3qhbAdYIvA6pPStw=
 github.com/stackrox/rox v0.0.0-20200813232042-403e0ab8a77e/go.mod h1:X/6FdUgnl7zcQX+YgQt1tJHRU8joAifnMAj9pefVjrI=
 github.com/stackrox/rox v0.0.0-20200902200840-183e12662c50/go.mod h1:U3X7wnmLK3TQbM0jAf5SvKLnVsq/neyQNTEc23X8zkY=
+github.com/stackrox/rox v0.0.0-20201222223839-042406f3664c/go.mod h1:i2w/bSJhyytJ8xQNcjBIHZWyLhoI4BgZ/1BfgFgGv54=
 github.com/stackrox/scanner v0.0.0-20191202203519-a2a15f33f41a h1:HcjJR96cL0AnLUtQCfNjCZbbymSCgT5DFvssZNFSFjw=
 github.com/stackrox/scanner v0.0.0-20191202203519-a2a15f33f41a/go.mod h1:2GKn2VH/P+4lsFJG8NlpTdgrU+nelhk8Ogtdx6XjaI0=
 github.com/stackrox/scanner v0.0.0-20200828185353-f2362ea7df99 h1:OTEQKPmQZrKSaVwF1iPuKpikUTUBxN0q4D6K9IqK3UY=
 github.com/stackrox/scanner v0.0.0-20200828185353-f2362ea7df99/go.mod h1:9EZi1lP1jHMkAdDEQKymiBSqH5Auma8DZiWcUrh7L0U=
 github.com/stackrox/scanner v0.0.0-20201218051228-bb42033af91b h1:Vum2Ikr5y5/HhRnEdJwXjKNSX0DxH041WHx7/dmmRaE=
 github.com/stackrox/scanner v0.0.0-20201218051228-bb42033af91b/go.mod h1:EQhODmCL9hcTgyjvh8YovNfn3cFNlUSAFCMl+34aezk=
+github.com/stackrox/scanner v0.0.0-20210119224325-eb0b09221ba8 h1:ue1dOuZlF4aNElmEWm3YRGT8ZG9M7/hMzcdELP/cpeQ=
+github.com/stackrox/scanner v0.0.0-20210119224325-eb0b09221ba8/go.mod h1:Y3bO2GiXKWLYcpZk9Ts057Nmy4z2510Id9EOXFD8Ehk=
 github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f h1:Ofa3PAa609eSHcHP2kCJDUWUnuEWfiqXhsuppk/QtOE=
 github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f/go.mod h1:MA8QOfq0BHJwdXa996Y4dYkAqRKB8/1K1QMMZVaNZjQ=
 github.com/steveyen/gtreap v0.0.0-20150807155958-0abe01ef9be2 h1:JNEGSiWg6D3lcBCMCBqN3ELniXujt+0QNHLhNnO0w3s=

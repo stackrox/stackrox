@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/enrichment"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/node/globaldatastore"
 	"github.com/stackrox/rox/central/node/store"
@@ -14,8 +15,10 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -28,20 +31,22 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(clusterDataStore.Singleton(), globaldatastore.Singleton())
+	return NewPipeline(clusterDataStore.Singleton(), globaldatastore.Singleton(), enrichment.NodeEnricherSingleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(clusters clusterDataStore.DataStore, nodes globaldatastore.GlobalDataStore) pipeline.Fragment {
+func NewPipeline(clusters clusterDataStore.DataStore, nodes globaldatastore.GlobalDataStore, enricher enricher.NodeEnricher) pipeline.Fragment {
 	return &pipelineImpl{
 		clusterStore: clusters,
 		nodeStore:    nodes,
+		enricher:     enricher,
 	}
 }
 
 type pipelineImpl struct {
 	clusterStore clusterDataStore.DataStore
 	nodeStore    globaldatastore.GlobalDataStore
+	enricher     enricher.NodeEnricher
 }
 
 func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
@@ -81,11 +86,10 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return errors.Wrap(err, "getting cluster-local node store")
 	}
 
-	nodeOneof, ok := event.Resource.(*central.SensorEvent_Node)
-	if !ok {
+	node := event.GetNode()
+	if node == nil {
 		return fmt.Errorf("unexpected resource type %T for cluster status", event.Resource)
 	}
-	node := nodeOneof.Node
 
 	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		return p.processRemove(store, node)
@@ -96,6 +100,15 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	clusterName, ok, err := p.clusterStore.GetClusterName(ctx, clusterID)
 	if err == nil && ok {
 		node.ClusterName = clusterName
+	}
+
+	if features.HostScanning.Enabled() {
+		enrichmentCtx := enricher.EnrichmentContext{
+			FetchOpt: enricher.UseCachesIfPossible,
+		}
+		if err := p.enricher.EnrichNode(enrichmentCtx, node); err != nil {
+			log.Warn(err.Error())
+		}
 	}
 	return store.UpsertNode(node)
 }

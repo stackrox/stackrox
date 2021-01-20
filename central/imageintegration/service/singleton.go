@@ -2,6 +2,7 @@ package service
 
 import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
@@ -17,7 +18,8 @@ var (
 func initialize() {
 	as = New(imageintegration.Set().RegistryFactory(),
 		imageintegration.Set().ScannerFactory(),
-		imageintegration.ToNotify(),
+		enrichment.ManagerSingleton(),
+		enrichment.NodeEnricherSingleton(),
 		datastore.Singleton(),
 		clusterDatastore.Singleton(),
 		reprocessor.Singleton())

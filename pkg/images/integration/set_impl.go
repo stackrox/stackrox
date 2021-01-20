@@ -62,6 +62,7 @@ func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) 
 			err = e.registrySet.UpdateImageIntegration(integration)
 		case storage.ImageIntegrationCategory_SCANNER:
 			err = e.scannerSet.UpdateImageIntegration(integration)
+		case storage.ImageIntegrationCategory_NODE_SCANNER: // This is because node scanners are implemented into image integrations
 		default:
 			err = fmt.Errorf("Source category '%s' has not been implemented", category)
 		}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
 )
@@ -106,10 +107,12 @@ func makeDelayedIntegration(imageIntegration *storage.ImageIntegration, creatorF
 
 var (
 	defaultScanner = &storage.ImageIntegration{
-		Id:         "169b0d3f-8277-4900-bbce-1127077defae",
-		Name:       "Stackrox Scanner",
-		Type:       "clairify",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER},
+		Id:   "169b0d3f-8277-4900-bbce-1127077defae",
+		Name: "Stackrox Scanner",
+		Type: "clairify",
+		Categories: []storage.ImageIntegrationCategory{
+			storage.ImageIntegrationCategory_SCANNER,
+		},
 		IntegrationConfig: &storage.ImageIntegration_Clairify{
 			Clairify: &storage.ClairifyConfig{
 				Endpoint: fmt.Sprintf("https://%s:8080", scannerEndpoint),
@@ -125,3 +128,9 @@ var (
 		}),
 	}
 )
+
+func init() {
+	if features.HostScanning.Enabled() {
+		defaultScanner.Categories = append(defaultScanner.Categories, storage.ImageIntegrationCategory_NODE_SCANNER)
+	}
+}

@@ -17,9 +17,10 @@ import (
 var (
 	once sync.Once
 
-	ie imageEnricher.ImageEnricher
-	ne nodeEnricher.NodeEnricher
-	en Enricher
+	ie      imageEnricher.ImageEnricher
+	ne      nodeEnricher.NodeEnricher
+	en      Enricher
+	manager Manager
 
 	imageScanCacheOnce sync.Once
 	imageScanCache     expiringcache.Cache
@@ -38,6 +39,7 @@ func initialize() {
 	ie = imageEnricher.New(cveDataStore.Singleton(), imageintegration.Set(), metrics.CentralSubsystem, ImageMetadataCacheSingleton(), ImageScanCacheSingleton(), reporter.Singleton())
 	ne = nodeEnricher.New(cveDataStore.Singleton(), metrics.CentralSubsystem, NodeScanCacheSingleton())
 	en = New(datastore.Singleton(), ie)
+	manager = newManager(imageintegration.Set(), ne)
 }
 
 // Singleton provides the singleton Enricher to use.
@@ -80,4 +82,10 @@ func NodeScanCacheSingleton() expiringcache.Cache {
 		nodeScanCache = expiringcache.NewExpiringCache(nodeCacheExpiryDuration)
 	})
 	return nodeScanCache
+}
+
+// ManagerSingleton returns the multiplexing manager
+func ManagerSingleton() Manager {
+	once.Do(initialize)
+	return manager
 }

@@ -3,6 +3,7 @@ package clairify
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net"
 	"net/http"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	clairConv "github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -66,7 +68,7 @@ type clairify struct {
 	activeRegistries      registries.Set
 
 	pingServiceClient    clairGRPCV1.PingServiceClient
-	scanServiceClient    clairGRPCV1.ScanServiceClient
+	scanServiceClient    clairGRPCV1.NodeScanServiceClient
 	protoNodeIntegration *storage.NodeIntegration
 }
 
@@ -117,30 +119,34 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 
 func newNodeScanner(protoNodeIntegration *storage.NodeIntegration) (*clairify, error) {
 	if !features.HostScanning.Enabled() {
-		return nil, errors.New("Clairify node scanning is not currently enabled")
+		return nil, errors.New("node scanning is not currently enabled")
 	}
 
 	conf := protoNodeIntegration.GetClairify()
 	if conf == nil {
-		return nil, errors.New("Clairify configuration required")
+		return nil, errors.New("scanner configuration required")
 	}
 	if err := validateConfig(conf); err != nil {
 		return nil, err
 	}
 
-	endpoint := urlfmt.FormatURL(conf.GetEndpoint(), urlfmt.InsecureHTTP, urlfmt.NoTrailingSlash)
 	tlsConfig, err := getTLSConfig()
 	if err != nil {
 		return nil, err
 	}
 
+	endpoint := conf.GetGrpcEndpoint()
+	if endpoint == "" {
+		endpoint = fmt.Sprintf("scanner.%s:8443", env.Namespace.Setting())
+	}
+
 	gRPCConnection, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to make gRPC connection to Clairify Scanner")
+		return nil, errors.Wrap(err, "failed to make gRPC connection to Scanner")
 	}
 
 	pingServiceClient := clairGRPCV1.NewPingServiceClient(gRPCConnection)
-	scanServiceClient := clairGRPCV1.NewScanServiceClient(gRPCConnection)
+	scanServiceClient := clairGRPCV1.NewNodeScanServiceClient(gRPCConnection)
 
 	return &clairify{
 		NodeScanSemaphore:    scannerTypes.NewNodeSemaphoreWithValue(defaultMaxConcurrentScans),
@@ -287,12 +293,12 @@ func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
 	}
 
 	req := convertNodeToVulnRequest(node)
-	resp, err := c.scanServiceClient.GetVulnerabilities(context.Background(), req)
+	resp, err := c.scanServiceClient.GetNodeVulnerabilities(context.Background(), req)
 	if err != nil {
 		return nil, err
 	}
 
-	scan := convertVulnResponseToNodeScan(node, resp)
+	scan := convertVulnResponseToNodeScan(req, resp)
 	if scan == nil {
 		return nil, errors.New("malformed vuln response from scanner")
 	}

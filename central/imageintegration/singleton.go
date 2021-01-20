@@ -11,14 +11,12 @@ var (
 	once sync.Once
 
 	is              integration.Set
-	no              integration.ToNotify
 	vulDefsProvider scanners.VulnDefsInfoProvider
 )
 
 func initialize() {
 	// This is the set of image integrations currently active, and the ToNotify that updates that set.
 	is = integration.NewSet(reporter.Singleton())
-	no = integration.NewToNotify(is)
 	vulDefsProvider = scanners.NewVulnDefsInfoProvider(is.ScannerSet())
 }
 
@@ -32,10 +30,4 @@ func Set() integration.Set {
 func VulnDefsInfoProvider() scanners.VulnDefsInfoProvider {
 	once.Do(initialize)
 	return vulDefsProvider
-}
-
-// ToNotify returns the ToNotify instance that updates the integration Set.
-func ToNotify() integration.ToNotify {
-	once.Do(initialize)
-	return no
 }

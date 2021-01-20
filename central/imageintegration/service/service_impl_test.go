@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	"github.com/stackrox/rox/central/enrichment/mocks"
 	integrationMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
 	loopMocks "github.com/stackrox/rox/central/reprocessor/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -66,16 +67,6 @@ func (f *fakeScanner) DataSource() *storage.DataSource {
 
 func (f *fakeScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
 	return &v1.VulnDefinitionsInfo{}, nil
-}
-
-type fakeToNotify struct{}
-
-func (*fakeToNotify) NotifyUpdated(integration *storage.ImageIntegration) error {
-	return nil
-}
-
-func (*fakeToNotify) NotifyRemoved(id string) error {
-	return nil
 }
 
 func TestValidateIntegration(t *testing.T) {
@@ -238,14 +229,15 @@ func TestValidateNodeIntegration(t *testing.T) {
 		scannerFactory := scannerMocks.NewMockFactory(ctrl)
 		nodeEnricher := nodeMocks.NewMockNodeEnricher(ctrl)
 		reprocessorLoop := loopMocks.NewMockLoop(ctrl)
+		integrationManager := mocks.NewMockManager(ctrl)
 
 		s := &serviceImpl{
-			clusterDatastore: clusterDatastore,
-			datastore:        integrationDatastore,
-			nodeEnricher:     nodeEnricher,
-			scannerFactory:   scannerFactory,
-			toNotify:         &fakeToNotify{},
-			reprocessorLoop:  reprocessorLoop,
+			clusterDatastore:   clusterDatastore,
+			datastore:          integrationDatastore,
+			nodeEnricher:       nodeEnricher,
+			integrationManager: integrationManager,
+			scannerFactory:     scannerFactory,
+			reprocessorLoop:    reprocessorLoop,
 		}
 
 		// Test should be successful
@@ -291,7 +283,7 @@ func TestValidateNodeIntegration(t *testing.T) {
 			&v1.GetImageIntegrationsRequest{Name: "name"},
 		).Return([]*storage.ImageIntegration{clairifyIntegrationConfigStored}, nil).AnyTimes()
 		integrationDatastore.EXPECT().UpdateImageIntegration(gomock.Any(), clairifyIntegrationConfig).Return(nil).Times(1)
-		nodeEnricher.EXPECT().UpsertNodeIntegration(clairifyNodeIntegrationConfig).Return(nil).Times(1)
+		integrationManager.EXPECT().Upsert(clairifyIntegrationConfig).Return(nil)
 		reprocessorLoop.EXPECT().ShortCircuit().Times(1)
 		_, err = s.PutImageIntegration(testCtx, clairifyIntegrationConfig)
 		assert.NoError(t, err)

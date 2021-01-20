@@ -9,8 +9,8 @@ import (
 	"github.com/stackrox/rox/central/reprocessor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners"
 )
@@ -31,17 +31,18 @@ type Service interface {
 // New returns a new Service instance using the given DataStore.
 func New(registryFactory registries.Factory,
 	scannerFactory scanners.Factory,
-	toNotify integration.ToNotify,
+	integrationManager enrichment.Manager,
+	nodeEnricher enricher.NodeEnricher,
 	datastore datastore.DataStore,
 	clusterDatastore clusterDatastore.DataStore,
 	reprocessorLoop reprocessor.Loop) Service {
 	return &serviceImpl{
-		registryFactory:  registryFactory,
-		scannerFactory:   scannerFactory,
-		nodeEnricher:     enrichment.NodeEnricherSingleton(),
-		toNotify:         toNotify,
-		datastore:        datastore,
-		clusterDatastore: clusterDatastore,
-		reprocessorLoop:  reprocessorLoop,
+		registryFactory:    registryFactory,
+		scannerFactory:     scannerFactory,
+		nodeEnricher:       nodeEnricher,
+		integrationManager: integrationManager,
+		datastore:          datastore,
+		clusterDatastore:   clusterDatastore,
+		reprocessorLoop:    reprocessorLoop,
 	}
 }

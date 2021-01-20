@@ -13,28 +13,29 @@ func TestConvertNodeToVulnRequest(t *testing.T) {
 	for _, testCase := range []struct {
 		containerRuntime *storage.ContainerRuntimeInfo
 		kernelVersion    string
-		operatingSystem  string
+		osImage          string
 		kubeletVersion   string
 		kubeProxyVersion string
 
-		expected *v1.GetVulnerabilitiesRequest
+		expected *v1.GetNodeVulnerabilitiesRequest
 	}{
 		{
+			kernelVersion:    "3.10.0-1127.13.1.el7.x86_64",
+			osImage:          "linux",
+			kubeletVersion:   "v1.14.8",
+			kubeProxyVersion: "v1.16.13-gke.401",
 			containerRuntime: &storage.ContainerRuntimeInfo{
 				Type:    storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
 				Version: "19.3.5",
 			},
-			expected: &v1.GetVulnerabilitiesRequest{
-				Components: []*v1.Component{
-					{
-						Component: &v1.Component_AppComponent{
-							AppComponent: &v1.ApplicationComponent{
-								Vendor:  "docker",
-								Product: "docker",
-								Version: "19.3.5",
-							},
-						},
-					},
+			expected: &v1.GetNodeVulnerabilitiesRequest{
+				KernelVersion:    "3.10.0-1127.13.1.el7.x86_64",
+				OsImage:          "linux",
+				KubeletVersion:   "v1.14.8",
+				KubeproxyVersion: "v1.16.13-gke.401",
+				Runtime: &v1.GetNodeVulnerabilitiesRequest_ContainerRuntime{
+					Name:    "docker",
+					Version: "19.3.5",
 				},
 			},
 		},
@@ -43,17 +44,10 @@ func TestConvertNodeToVulnRequest(t *testing.T) {
 				Type:    storage.ContainerRuntime_CRIO_CONTAINER_RUNTIME,
 				Version: "1.11.13-1.rhaos3.11.gitfb88a9c.el7",
 			},
-			expected: &v1.GetVulnerabilitiesRequest{
-				Components: []*v1.Component{
-					{
-						Component: &v1.Component_AppComponent{
-							AppComponent: &v1.ApplicationComponent{
-								Vendor:  "kubernetes",
-								Product: "cri-o",
-								Version: "1.11.13-1.rhaos3.11.gitfb88a9c.el7",
-							},
-						},
-					},
+			expected: &v1.GetNodeVulnerabilitiesRequest{
+				Runtime: &v1.GetNodeVulnerabilitiesRequest_ContainerRuntime{
+					Name:    "cri-o",
+					Version: "1.11.13-1.rhaos3.11.gitfb88a9c.el7",
 				},
 			},
 		},
@@ -62,152 +56,10 @@ func TestConvertNodeToVulnRequest(t *testing.T) {
 				Type:    storage.ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME,
 				Version: "containerd://1.2.8",
 			},
-			expected: &v1.GetVulnerabilitiesRequest{
-				Components: []*v1.Component{
-					{
-						Component: &v1.Component_AppComponent{
-							AppComponent: &v1.ApplicationComponent{
-								Vendor:  "linuxfoundation",
-								Product: "containerd",
-								Version: "1.2.8",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			kernelVersion:   "3.10.0-1127.13.1.el7.x86_64",
-			operatingSystem: "linux",
-			expected: &v1.GetVulnerabilitiesRequest{
-				Components: []*v1.Component{
-					{
-						Component: &v1.Component_AppComponent{
-							AppComponent: &v1.ApplicationComponent{
-								Vendor:  "linux",
-								Product: "linux_kernel",
-								Version: "3.10.0-1127.13.1.el7.x86_64",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			kernelVersion:   "4.19.112+",
-			operatingSystem: "linux",
-			expected: &v1.GetVulnerabilitiesRequest{
-				Components: []*v1.Component{
-					{
-						Component: &v1.Component_AppComponent{
-							AppComponent: &v1.ApplicationComponent{
-								Vendor:  "linux",
-								Product: "linux_kernel",
-								Version: "4.19.112+",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			kernelVersion:   "5.4.0-1027-gke",
-			operatingSystem: "linux",
-			expected: &v1.GetVulnerabilitiesRequest{
-				Components: []*v1.Component{
-					{
-						Component: &v1.Component_AppComponent{
-							AppComponent: &v1.ApplicationComponent{
-								Vendor:  "linux",
-								Product: "linux_kernel",
-								Version: "5.4.0-1027-gke",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			kernelVersion:   "4.14.203-156.332.amzn2.x86_64",
-			operatingSystem: "linux",
-			expected: &v1.GetVulnerabilitiesRequest{
-				Components: []*v1.Component{
-					{
-						Component: &v1.Component_AppComponent{
-							AppComponent: &v1.ApplicationComponent{
-								Vendor:  "linux",
-								Product: "linux_kernel",
-								Version: "4.14.203-156.332.amzn2.x86_64",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			kernelVersion:   "4.14.203",
-			operatingSystem: "notlinux",
-			expected: &v1.GetVulnerabilitiesRequest{
-				Components: []*v1.Component{},
-			},
-		},
-		{
-			kubeletVersion: "v1.14.8",
-			expected: &v1.GetVulnerabilitiesRequest{
-				Components: []*v1.Component{
-					{
-						Component: &v1.Component_K8SComponent{
-							K8SComponent: &v1.KubernetesComponent{
-								Component: v1.KubernetesComponent_KUBELET,
-								Version:   "v1.14.8",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			kubeletVersion: "v1.11.0+d4cacc0",
-			expected: &v1.GetVulnerabilitiesRequest{
-				Components: []*v1.Component{
-					{
-						Component: &v1.Component_K8SComponent{
-							K8SComponent: &v1.KubernetesComponent{
-								Component: v1.KubernetesComponent_KUBELET,
-								Version:   "v1.11.0+d4cacc0",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			kubeProxyVersion: "v1.16.13-gke.401",
-			expected: &v1.GetVulnerabilitiesRequest{
-				Components: []*v1.Component{
-					{
-						Component: &v1.Component_K8SComponent{
-							K8SComponent: &v1.KubernetesComponent{
-								Component: v1.KubernetesComponent_KUBE_PROXY,
-								Version:   "v1.16.13-gke.401",
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			kubeProxyVersion: "v1.17.12-eks-7684af",
-			expected: &v1.GetVulnerabilitiesRequest{
-				Components: []*v1.Component{
-					{
-						Component: &v1.Component_K8SComponent{
-							K8SComponent: &v1.KubernetesComponent{
-								Component: v1.KubernetesComponent_KUBE_PROXY,
-								Version:   "v1.17.12-eks-7684af",
-							},
-						},
-					},
+			expected: &v1.GetNodeVulnerabilitiesRequest{
+				Runtime: &v1.GetNodeVulnerabilitiesRequest_ContainerRuntime{
+					Name:    "containerd",
+					Version: "1.2.8",
 				},
 			},
 		},
@@ -215,7 +67,7 @@ func TestConvertNodeToVulnRequest(t *testing.T) {
 		node := &storage.Node{
 			ContainerRuntime: testCase.containerRuntime,
 			KernelVersion:    testCase.kernelVersion,
-			OperatingSystem:  testCase.operatingSystem,
+			OsImage:          testCase.osImage,
 			KubeletVersion:   testCase.kubeletVersion,
 			KubeProxyVersion: testCase.kubeProxyVersion,
 		}
@@ -225,74 +77,54 @@ func TestConvertNodeToVulnRequest(t *testing.T) {
 
 func TestConvertVulnResponseToNodeScan(t *testing.T) {
 	for _, testCase := range []struct {
-		node *storage.Node
-		resp *v1.GetVulnerabilitiesResponse
+		req  *v1.GetNodeVulnerabilitiesRequest
+		resp *v1.GetNodeVulnerabilitiesResponse
 
 		expected []*storage.EmbeddedNodeScanComponent
 	}{
 		{
-			node: &storage.Node{
-				ContainerRuntime: &storage.ContainerRuntimeInfo{
-					Type:    storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
+			req: &v1.GetNodeVulnerabilitiesRequest{
+				Runtime: &v1.GetNodeVulnerabilitiesRequest_ContainerRuntime{
+					Name:    "docker",
 					Version: "19.3.5",
 				},
 				KernelVersion:    "4.9.184-linuxkit",
-				OperatingSystem:  "linux",
+				OsImage:          "linux",
 				KubeletVersion:   "v1.16.13-gke.401",
-				KubeProxyVersion: "v1.17.14-gke.400",
+				KubeproxyVersion: "v1.17.14-gke.400",
 			},
-			resp: &v1.GetVulnerabilitiesResponse{
-				VulnerabilitiesByComponent: []*v1.ComponentWithVulns{
+			resp: &v1.GetNodeVulnerabilitiesResponse{
+				RuntimeVulnerabilities: []*v1.Vulnerability{
 					{
-						Component: &v1.Component{
-							Component: &v1.Component_AppComponent{
-								AppComponent: &v1.ApplicationComponent{
-									Vendor:  "docker",
-									Product: "docker",
-									Version: "19.3.5",
-								},
-							},
-						},
-						Vulnerabilities: []*v1.Vulnerability{
-							{
-								Name:    "CVE-2020-1234",
-								FixedBy: "19.4.0",
-							},
-						},
+						Name:    "CVE-2020-0000",
+						Link:    "link0",
+						FixedBy: "0",
+					},
+				},
+				KernelVulnerabilities: []*v1.Vulnerability{
+					{
+						Name:    "CVE-2020-1111",
+						Link:    "link1",
+						FixedBy: "1",
+					},
+				},
+				KubeletVulnerabilities: []*v1.Vulnerability{
+					{
+						Name:    "CVE-2020-2222",
+						Link:    "link2",
+						FixedBy: "2",
+					},
+				},
+				KubeproxyVulnerabilities: []*v1.Vulnerability{
+					{
+						Name:    "CVE-2020-3333",
+						Link:    "link3",
+						FixedBy: "3",
 					},
 					{
-						Component: &v1.Component{
-							Component: &v1.Component_AppComponent{
-								AppComponent: &v1.ApplicationComponent{
-									Vendor:  "linux",
-									Product: "linux_kernel",
-									Version: "4.9.184",
-								},
-							},
-						},
-						Vulnerabilities: []*v1.Vulnerability{},
-					},
-					{
-						Component: &v1.Component{
-							Component: &v1.Component_K8SComponent{
-								K8SComponent: &v1.KubernetesComponent{
-									Component: v1.KubernetesComponent_KUBELET,
-									Version:   "1.16.13",
-								},
-							},
-						},
-						Vulnerabilities: []*v1.Vulnerability{},
-					},
-					{
-						Component: &v1.Component{
-							Component: &v1.Component_K8SComponent{
-								K8SComponent: &v1.KubernetesComponent{
-									Component: v1.KubernetesComponent_KUBE_PROXY,
-									Version:   "1.17.14",
-								},
-							},
-						},
-						Vulnerabilities: []*v1.Vulnerability{},
+						Name:    "CVE-2020-4444",
+						Link:    "link4",
+						FixedBy: "4",
 					},
 				},
 			},
@@ -302,231 +134,68 @@ func TestConvertVulnResponseToNodeScan(t *testing.T) {
 					Version: "19.3.5",
 					Vulns: []*storage.EmbeddedVulnerability{
 						{
-							Cve:  "CVE-2020-1234",
-							Link: "https://nvd.nist.gov/vuln/detail/CVE-2020-1234",
+							Cve:  "CVE-2020-0000",
+							Link: "link0",
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "19.4.0",
+								FixedBy: "0",
 							},
 							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
 						},
 					},
 				},
 				{
-					Name:    "linux kernel",
+					Name:    "kernel",
 					Version: "4.9.184-linuxkit",
-					Vulns:   []*storage.EmbeddedVulnerability{},
-				},
+					Vulns: []*storage.EmbeddedVulnerability{
+						{
+							Cve:  "CVE-2020-1111",
+							Link: "link1",
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+								FixedBy: "1",
+							},
+							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+						},
+					}},
 				{
 					Name:    "kubelet",
 					Version: "v1.16.13-gke.401",
-					Vulns:   []*storage.EmbeddedVulnerability{},
-				},
+					Vulns: []*storage.EmbeddedVulnerability{
+						{
+							Cve:  "CVE-2020-2222",
+							Link: "link2",
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+								FixedBy: "2",
+							},
+							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+						},
+					}},
 				{
 					Name:    "kube-proxy",
 					Version: "v1.17.14-gke.400",
-					Vulns:   []*storage.EmbeddedVulnerability{},
-				},
-			},
-		},
-		{
-			node: &storage.Node{
-				ContainerRuntime: &storage.ContainerRuntimeInfo{
-					Type:    storage.ContainerRuntime_CRIO_CONTAINER_RUNTIME,
-					Version: "1.11.13-1.rhaos3.11.gitfb88a9c.el7",
-				},
-				KernelVersion:    "5.4.0-1027-gke",
-				OperatingSystem:  "linux",
-				KubeletVersion:   "v1.11.0+d4cacc0",
-				KubeProxyVersion: "v1.17.12-eks-7684af",
-			},
-			resp: &v1.GetVulnerabilitiesResponse{
-				VulnerabilitiesByComponent: []*v1.ComponentWithVulns{
-					{
-						Component: &v1.Component{
-							Component: &v1.Component_AppComponent{
-								AppComponent: &v1.ApplicationComponent{
-									Vendor:  "kubernetes",
-									Product: "cri-o",
-									Version: "1.11.13",
-								},
-							},
-						},
-						Vulnerabilities: []*v1.Vulnerability{
-							{
-								Name:    "CVE-2020-1234",
-								FixedBy: "19.4.0",
-							},
-						},
-					},
-					{
-						Component: &v1.Component{
-							Component: &v1.Component_AppComponent{
-								AppComponent: &v1.ApplicationComponent{
-									Vendor:  "linux",
-									Product: "linux_kernel",
-									Version: "5.4.0",
-								},
-							},
-						},
-						Vulnerabilities: []*v1.Vulnerability{},
-					},
-					{
-						Component: &v1.Component{
-							Component: &v1.Component_K8SComponent{
-								K8SComponent: &v1.KubernetesComponent{
-									Component: v1.KubernetesComponent_KUBELET,
-									Version:   "1.11.0",
-								},
-							},
-						},
-						Vulnerabilities: []*v1.Vulnerability{},
-					},
-					{
-						Component: &v1.Component{
-							Component: &v1.Component_K8SComponent{
-								K8SComponent: &v1.KubernetesComponent{
-									Component: v1.KubernetesComponent_KUBE_PROXY,
-									Version:   "1.17.12",
-								},
-							},
-						},
-						Vulnerabilities: []*v1.Vulnerability{},
-					},
-				},
-			},
-			expected: []*storage.EmbeddedNodeScanComponent{
-				{
-					Name:    "cri-o",
-					Version: "1.11.13-1.rhaos3.11.gitfb88a9c.el7",
 					Vulns: []*storage.EmbeddedVulnerability{
 						{
-							Cve:  "CVE-2020-1234",
-							Link: "https://nvd.nist.gov/vuln/detail/CVE-2020-1234",
+							Cve:  "CVE-2020-3333",
+							Link: "link3",
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "19.4.0",
+								FixedBy: "3",
+							},
+							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+						},
+						{
+							Cve:  "CVE-2020-4444",
+							Link: "link4",
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+								FixedBy: "4",
 							},
 							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
 						},
 					},
-				},
-				{
-					Name:    "linux kernel",
-					Version: "5.4.0-1027-gke",
-					Vulns:   []*storage.EmbeddedVulnerability{},
-				},
-				{
-					Name:    "kubelet",
-					Version: "v1.11.0+d4cacc0",
-					Vulns:   []*storage.EmbeddedVulnerability{},
-				},
-				{
-					Name:    "kube-proxy",
-					Version: "v1.17.12-eks-7684af",
-					Vulns:   []*storage.EmbeddedVulnerability{},
-				},
-			},
-		},
-		{
-			node: &storage.Node{
-				ContainerRuntime: &storage.ContainerRuntimeInfo{
-					Type:    storage.ContainerRuntime_UNKNOWN_CONTAINER_RUNTIME,
-					Version: "containerd://1.2.8",
-				},
-				KernelVersion:    "4.14.203-156.332.amzn2.x86_64",
-				OperatingSystem:  "linux",
-				KubeletVersion:   "v1.14.8",
-				KubeProxyVersion: "v1.14.8",
-			},
-			resp: &v1.GetVulnerabilitiesResponse{
-				VulnerabilitiesByComponent: []*v1.ComponentWithVulns{
-					{
-						Component: &v1.Component{
-							Component: &v1.Component_AppComponent{
-								AppComponent: &v1.ApplicationComponent{
-									Vendor:  "linuxfoundation",
-									Product: "containerd",
-									Version: "1.2.8",
-								},
-							},
-						},
-						Vulnerabilities: []*v1.Vulnerability{
-							{
-								Name:    "CVE-2020-1234",
-								FixedBy: "19.4.0",
-							},
-						},
-					},
-					{
-						Component: &v1.Component{
-							Component: &v1.Component_AppComponent{
-								AppComponent: &v1.ApplicationComponent{
-									Vendor:  "linux",
-									Product: "linux_kernel",
-									Version: "4.14.203",
-								},
-							},
-						},
-						Vulnerabilities: []*v1.Vulnerability{},
-					},
-					{
-						Component: &v1.Component{
-							Component: &v1.Component_K8SComponent{
-								K8SComponent: &v1.KubernetesComponent{
-									Component: v1.KubernetesComponent_KUBELET,
-									Version:   "1.14.8",
-								},
-							},
-						},
-						Vulnerabilities: []*v1.Vulnerability{},
-					},
-					{
-						Component: &v1.Component{
-							Component: &v1.Component_K8SComponent{
-								K8SComponent: &v1.KubernetesComponent{
-									Component: v1.KubernetesComponent_KUBE_PROXY,
-									Version:   "1.14.8",
-								},
-							},
-						},
-						Vulnerabilities: []*v1.Vulnerability{},
-					},
-				},
-			},
-			expected: []*storage.EmbeddedNodeScanComponent{
-				{
-					Name:    "containerd",
-					Version: "1.2.8",
-					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve:  "CVE-2020-1234",
-							Link: "https://nvd.nist.gov/vuln/detail/CVE-2020-1234",
-							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-								FixedBy: "19.4.0",
-							},
-							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-						},
-					},
-				},
-				{
-					Name:    "linux kernel",
-					Version: "4.14.203-156.332.amzn2.x86_64",
-					Vulns:   []*storage.EmbeddedVulnerability{},
-				},
-				{
-					Name:    "kubelet",
-					Version: "v1.14.8",
-					Vulns:   []*storage.EmbeddedVulnerability{},
-				},
-				{
-					Name:    "kube-proxy",
-					Version: "v1.14.8",
-					Vulns:   []*storage.EmbeddedVulnerability{},
 				},
 			},
 		},
 	} {
-		actual := convertVulnResponseToNodeScan(testCase.node, testCase.resp)
-		assert.Equal(t, testCase.expected, actual.Components)
+		actual := convertVulnResponseToNodeScan(testCase.req, testCase.resp)
+		assert.ElementsMatch(t, testCase.expected, actual.Components)
 	}
 }
 

@@ -43,6 +43,7 @@ import (
 	"github.com/stackrox/rox/central/docs"
 	"github.com/stackrox/rox/central/ed"
 	"github.com/stackrox/rox/central/endpoints"
+	"github.com/stackrox/rox/central/enrichment"
 	_ "github.com/stackrox/rox/central/externalbackups/plugins/all" // Import all of the external backup plugins
 	backupService "github.com/stackrox/rox/central/externalbackups/service"
 	featureFlagService "github.com/stackrox/rox/central/featureflags/service"
@@ -57,7 +58,6 @@ import (
 	"github.com/stackrox/rox/central/helmcharts"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
-	"github.com/stackrox/rox/central/imageintegration"
 	iiDatastore "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
@@ -510,6 +510,8 @@ func startGRPCServer(factory serviceFactory) {
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
+	integrationManager := enrichment.ManagerSingleton()
+
 	integrations := make(map[int]iiStore.DelayedIntegration, len(integrationsInput))
 	for k, v := range integrationsInput {
 		integrations[k] = v
@@ -528,7 +530,7 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 			}
 			// add the integration first, which is more likely to fail. If it does, no big deal -- you can still try to
 			// manually add it and get the error message.
-			err := imageintegration.ToNotify().NotifyUpdated(integration.Integration)
+			err := integrationManager.Upsert(integration.Integration)
 			if err == nil {
 				err = ds.UpdateImageIntegration(imageIntegrationContext, integration.Integration)
 				if err != nil {
