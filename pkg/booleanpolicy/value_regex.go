@@ -17,7 +17,7 @@ var (
 	rbacPermissionValueRegex                 = createRegex("(?i:DEFAULT|ELEVATED_IN_NAMESPACE|ELEVATED_CLUSTER_WIDE|CLUSTER_ADMIN)")
 	portExposureValueRegex                   = createRegex("(?i:UNSET|EXTERNAL|NODE|HOST|INTERNAL)")
 	kubernetesAPIVerbValueRegex              = createRegex(`(?i:CREATE)`)
-	kubernetesResourceValueRegex             = createRegex(`(?i:(PODS_EXEC?|PODS_PORTFORWARD?))`)
+	kubernetesResourceValueRegex             = createRegex(`(?i:(PODS_EXEC|PODS_PORTFORWARD))`)
 )
 
 func createRegex(s string) *regexp.Regexp {

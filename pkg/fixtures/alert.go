@@ -17,6 +17,20 @@ func GetAlert() *storage.Alert {
 			{
 				Message: "Deployment is affected by 'CVE-2017-15670'",
 			},
+			{
+				Message: "This is a kube event violation",
+				MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+					KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+						Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+							{Key: "pod", Value: "nginx"},
+							{Key: "container", Value: "nginx"},
+						},
+					},
+				},
+			},
+		},
+		ProcessViolation: &storage.Alert_ProcessViolation{
+			Message: "This is a process violation",
 		},
 		Time:   ptypes.TimestampNow(),
 		Policy: GetPolicy(),

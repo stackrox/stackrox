@@ -30,7 +30,19 @@ const bplPolicyFormat = `
 {{stringify "Time (UTC):" .Time | line}}
 {{stringify "Severity:" .Severity | line}}
 {{header "Violations:"}}
-	{{range .Violations}}{{list .Message}}{{end}}
+	{{range .Violations}}
+		{{list .Message}}
+		{{if .MessageAttributes}}
+			{{if .MessageAttributes.KeyValueAttrs}}
+				{{range .MessageAttributes.KeyValueAttrs.Attrs}}
+					{{stringify .Key ":" .Value | nestedList}}
+				{{end}}
+			{{end}}
+		{{end}}
+	{{end}}
+	{{if .ProcessViolation}}
+		{{list .ProcessViolation.Message}}
+	{{end}}
 {{header "Policy Definition:"}}
 	{{"Description:" | subheader}}
 	{{.Policy.Description | list}}
