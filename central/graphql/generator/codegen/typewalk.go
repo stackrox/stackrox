@@ -103,6 +103,9 @@ func (ctx *walkState) walkType(typeDesc typeDescriptor) {
 		return
 	}
 	td := typeData{Name: ty.Name(), Package: ty.PkgPath(), Type: ty, UnionData: unions}
+	for _, union := range unions {
+		td.FieldData = append(td.FieldData, union.Entries...)
+	}
 	if typeDesc.isInputType {
 		td.IsInputType = true
 	}

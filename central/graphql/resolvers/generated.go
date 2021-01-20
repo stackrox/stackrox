@@ -75,6 +75,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"processes: [ProcessIndicator]!",
 	}))
 	utils.Must(builder.AddType("Alert_Violation", []string{
+		"keyValueAttrs: Alert_Violation_KeyValueAttrs",
 		"message: String!",
 		"messageAttributes: Alert_ViolationMessageAttributes",
 	}))
@@ -306,6 +307,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"value: ComplianceResultValue",
 	}))
 	utils.Must(builder.AddType("ComplianceResource", []string{
+		"cluster: ComplianceResource_ClusterName",
+		"deployment: ComplianceResource_DeploymentName",
+		"image: ImageName",
+		"node: ComplianceResource_NodeName",
 		"resource: ComplianceResourceResource",
 	}))
 	utils.Must(builder.AddUnionType("ComplianceResourceResource", []string{
@@ -689,6 +694,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"priority: Int!",
 	}))
 	utils.Must(builder.AddType("NetworkEntityInfo", []string{
+		"deployment: NetworkEntityInfo_Deployment",
+		"externalSource: NetworkEntityInfo_ExternalSource",
 		"id: ID!",
 		"type: NetworkEntityInfo_Type!",
 		"desc: NetworkEntityInfoDesc",
@@ -746,11 +753,20 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"scanTime: Time",
 	}))
 	utils.Must(builder.AddType("Notifier", []string{
+		"awsSecurityHub: AWSSecurityHub",
+		"cscc: CSCC",
+		"email: Email",
 		"enabled: Boolean!",
+		"generic: Generic",
 		"id: ID!",
+		"jira: Jira",
 		"labelDefault: String!",
 		"labelKey: String!",
 		"name: String!",
+		"pagerduty: PagerDuty",
+		"splunk: Splunk",
+		"sumologic: SumoLogic",
+		"syslog: Syslog",
 		"type: String!",
 		"uiEndpoint: String!",
 		"config: NotifierConfig",
@@ -946,6 +962,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"parentUid: Int!",
 	}))
 	utils.Must(builder.AddType("ProviderMetadata", []string{
+		"aws: AWSProviderMetadata",
+		"azure: AzureProviderMetadata",
+		"google: GoogleProviderMetadata",
 		"region: String!",
 		"verified: Boolean!",
 		"zone: String!",
@@ -1030,6 +1049,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"path: String!",
 	}))
 	utils.Must(builder.AddType("SecretDataFile", []string{
+		"cert: Cert",
+		"imagePullSecret: ImagePullSecret",
 		"name: String!",
 		"type: SecretType!",
 		"metadata: SecretDataFileMetadata",
@@ -1114,6 +1135,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("Syslog", []string{
 		"localFacility: Syslog_LocalFacility!",
+		"tcpConfig: Syslog_TCPConfig",
 		"endpoint: SyslogEndpoint",
 	}))
 	utils.Must(builder.AddUnionType("SyslogEndpoint", []string{
@@ -1683,6 +1705,11 @@ func (resolver *Resolver) wrapAlert_Violations(values []*storage.Alert_Violation
 		output[i] = &alert_ViolationResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *alert_ViolationResolver) KeyValueAttrs(ctx context.Context) (*alert_Violation_KeyValueAttrsResolver, error) {
+	value := resolver.data.GetKeyValueAttrs()
+	return resolver.root.wrapAlert_Violation_KeyValueAttrs(value, true, nil)
 }
 
 func (resolver *alert_ViolationResolver) Message(ctx context.Context) string {
@@ -3514,6 +3541,26 @@ func (resolver *Resolver) wrapComplianceResources(values []*storage.ComplianceRe
 		output[i] = &complianceResourceResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *complianceResourceResolver) Cluster(ctx context.Context) (*complianceResource_ClusterNameResolver, error) {
+	value := resolver.data.GetCluster()
+	return resolver.root.wrapComplianceResource_ClusterName(value, true, nil)
+}
+
+func (resolver *complianceResourceResolver) Deployment(ctx context.Context) (*complianceResource_DeploymentNameResolver, error) {
+	value := resolver.data.GetDeployment()
+	return resolver.root.wrapComplianceResource_DeploymentName(value, true, nil)
+}
+
+func (resolver *complianceResourceResolver) Image(ctx context.Context) (*imageNameResolver, error) {
+	value := resolver.data.GetImage()
+	return resolver.root.wrapImageName(value, true, nil)
+}
+
+func (resolver *complianceResourceResolver) Node(ctx context.Context) (*complianceResource_NodeNameResolver, error) {
+	value := resolver.data.GetNode()
+	return resolver.root.wrapComplianceResource_NodeName(value, true, nil)
 }
 
 type complianceResourceResourceResolver struct {
@@ -6514,6 +6561,16 @@ func (resolver *Resolver) wrapNetworkEntityInfos(values []*storage.NetworkEntity
 	return output, nil
 }
 
+func (resolver *networkEntityInfoResolver) Deployment(ctx context.Context) (*networkEntityInfo_DeploymentResolver, error) {
+	value := resolver.data.GetDeployment()
+	return resolver.root.wrapNetworkEntityInfo_Deployment(value, true, nil)
+}
+
+func (resolver *networkEntityInfoResolver) ExternalSource(ctx context.Context) (*networkEntityInfo_ExternalSourceResolver, error) {
+	value := resolver.data.GetExternalSource()
+	return resolver.root.wrapNetworkEntityInfo_ExternalSource(value, true, nil)
+}
+
 func (resolver *networkEntityInfoResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
@@ -6927,14 +6984,39 @@ func (resolver *Resolver) wrapNotifiers(values []*storage.Notifier, err error) (
 	return output, nil
 }
 
+func (resolver *notifierResolver) AwsSecurityHub(ctx context.Context) (*aWSSecurityHubResolver, error) {
+	value := resolver.data.GetAwsSecurityHub()
+	return resolver.root.wrapAWSSecurityHub(value, true, nil)
+}
+
+func (resolver *notifierResolver) Cscc(ctx context.Context) (*cSCCResolver, error) {
+	value := resolver.data.GetCscc()
+	return resolver.root.wrapCSCC(value, true, nil)
+}
+
+func (resolver *notifierResolver) Email(ctx context.Context) (*emailResolver, error) {
+	value := resolver.data.GetEmail()
+	return resolver.root.wrapEmail(value, true, nil)
+}
+
 func (resolver *notifierResolver) Enabled(ctx context.Context) bool {
 	value := resolver.data.GetEnabled()
 	return value
 }
 
+func (resolver *notifierResolver) Generic(ctx context.Context) (*genericResolver, error) {
+	value := resolver.data.GetGeneric()
+	return resolver.root.wrapGeneric(value, true, nil)
+}
+
 func (resolver *notifierResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
+}
+
+func (resolver *notifierResolver) Jira(ctx context.Context) (*jiraResolver, error) {
+	value := resolver.data.GetJira()
+	return resolver.root.wrapJira(value, true, nil)
 }
 
 func (resolver *notifierResolver) LabelDefault(ctx context.Context) string {
@@ -6950,6 +7032,26 @@ func (resolver *notifierResolver) LabelKey(ctx context.Context) string {
 func (resolver *notifierResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
+}
+
+func (resolver *notifierResolver) Pagerduty(ctx context.Context) (*pagerDutyResolver, error) {
+	value := resolver.data.GetPagerduty()
+	return resolver.root.wrapPagerDuty(value, true, nil)
+}
+
+func (resolver *notifierResolver) Splunk(ctx context.Context) (*splunkResolver, error) {
+	value := resolver.data.GetSplunk()
+	return resolver.root.wrapSplunk(value, true, nil)
+}
+
+func (resolver *notifierResolver) Sumologic(ctx context.Context) (*sumoLogicResolver, error) {
+	value := resolver.data.GetSumologic()
+	return resolver.root.wrapSumoLogic(value, true, nil)
+}
+
+func (resolver *notifierResolver) Syslog(ctx context.Context) (*syslogResolver, error) {
+	value := resolver.data.GetSyslog()
+	return resolver.root.wrapSyslog(value, true, nil)
 }
 
 func (resolver *notifierResolver) Type(ctx context.Context) string {
@@ -8258,6 +8360,21 @@ func (resolver *Resolver) wrapProviderMetadatas(values []*storage.ProviderMetada
 	return output, nil
 }
 
+func (resolver *providerMetadataResolver) Aws(ctx context.Context) (*aWSProviderMetadataResolver, error) {
+	value := resolver.data.GetAws()
+	return resolver.root.wrapAWSProviderMetadata(value, true, nil)
+}
+
+func (resolver *providerMetadataResolver) Azure(ctx context.Context) (*azureProviderMetadataResolver, error) {
+	value := resolver.data.GetAzure()
+	return resolver.root.wrapAzureProviderMetadata(value, true, nil)
+}
+
+func (resolver *providerMetadataResolver) Google(ctx context.Context) (*googleProviderMetadataResolver, error) {
+	value := resolver.data.GetGoogle()
+	return resolver.root.wrapGoogleProviderMetadata(value, true, nil)
+}
+
 func (resolver *providerMetadataResolver) Region(ctx context.Context) string {
 	value := resolver.data.GetRegion()
 	return value
@@ -8946,6 +9063,16 @@ func (resolver *Resolver) wrapSecretDataFiles(values []*storage.SecretDataFile, 
 	return output, nil
 }
 
+func (resolver *secretDataFileResolver) Cert(ctx context.Context) (*certResolver, error) {
+	value := resolver.data.GetCert()
+	return resolver.root.wrapCert(value, true, nil)
+}
+
+func (resolver *secretDataFileResolver) ImagePullSecret(ctx context.Context) (*imagePullSecretResolver, error) {
+	value := resolver.data.GetImagePullSecret()
+	return resolver.root.wrapImagePullSecret(value, true, nil)
+}
+
 func (resolver *secretDataFileResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
@@ -9539,6 +9666,11 @@ func (resolver *Resolver) wrapSyslogs(values []*storage.Syslog, err error) ([]*s
 func (resolver *syslogResolver) LocalFacility(ctx context.Context) string {
 	value := resolver.data.GetLocalFacility()
 	return value.String()
+}
+
+func (resolver *syslogResolver) TcpConfig(ctx context.Context) (*syslog_TCPConfigResolver, error) {
+	value := resolver.data.GetTcpConfig()
+	return resolver.root.wrapSyslog_TCPConfig(value, true, nil)
 }
 
 type syslogEndpointResolver struct {
