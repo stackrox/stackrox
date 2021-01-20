@@ -977,9 +977,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			policyName: "No resource requests or limits specified",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				fixtureDep.GetId(): {
-					{Message: "CPU limit set to 0 cores"},
-					{Message: "Memory limit set to 0 MB"},
-					{Message: "Memory request set to 0 MB"},
+					{Message: "CPU limit set to 0 cores for container 'nginx110container'"},
+					{Message: "Memory limit set to 0 MB for container 'nginx110container'"},
+					{Message: "Memory request set to 0 MB for container 'nginx110container'"},
 				},
 			},
 		},

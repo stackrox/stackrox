@@ -30,8 +30,8 @@ func resourcePrinter(fieldMap map[string][]string) ([]string, error) {
 		r = append(r, resultFields{Name: "Memory limit", Value: memLimit, Unit: "MB"})
 	}
 	if containerName, err := getSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap); err == nil {
-		for _, templateFields := range r {
-			templateFields.ContainerName = containerName
+		for i := range r {
+			r[i].ContainerName = containerName
 		}
 	}
 	messages := make([]string, 0, len(r))
