@@ -322,7 +322,7 @@ function launch_sensor {
     local extra_helm_config=()
 
     if [[ "$ADMISSION_CONTROLLER" == "true" ]]; then
-      extra_config+=("--create-admission-controller=true")
+      extra_config+=("--admission-controller-listen-on-creates=true")
     	extra_json_config+=', "admissionController": true'
     	extra_helm_config+=(--set "admissionControl.listenOnCreates=true")
     fi
