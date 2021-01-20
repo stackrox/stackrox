@@ -18,9 +18,10 @@ will not be deployed on OpenShift clusters.
 - The following  roxctl flags have been deprecated for the command `sensor generate`:
   - `--create-admission-controller` (replaced by `--admission-controller-listen-on-creates`)
   - `--admission-controller-enabled` (replaced by `--admission-controller-enforce-on-creates`)
-- Added retry flags to `roxctl image scan` and `roxctl image check`:
-  - Introduced two new flags, `--retries` and `--retry-delay`, that change how `roxctl` deals with errors
+- Added retry flags to `roxctl image scan`, `roxctl image check`, and `roxctl deployment check`:
+  - Introduced two new flags, `--retries` and `--retry-delay`, that change how the commands deal with errors
   - `--retries 3 --retry-delay 2` will retry the command three times on failure with two seconds delay between retries
+  - As the default value for `retries` is 0, the behaviour of the commands is unchanged if the flag is not used
 
 ## [54.0]
 - Added option to backup certificates for central.

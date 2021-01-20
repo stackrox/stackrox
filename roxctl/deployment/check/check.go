@@ -3,6 +3,7 @@ package check
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
@@ -11,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/report"
@@ -24,8 +26,10 @@ var (
 // Command checks the deployment against deploy time system policies
 func Command() *cobra.Command {
 	var (
-		file string
-		json bool
+		file       string
+		json       bool
+		retryDelay int
+		retryCount int
 	)
 	c := &cobra.Command{
 		Use: "check",
@@ -33,13 +37,30 @@ func Command() *cobra.Command {
 			if file == "" {
 				return errors.New("--file must be set")
 			}
-			return checkDeployment(file, json, flags.Timeout(c))
+			return checkDeploymentWithRetry(file, json, flags.Timeout(c), retryDelay, retryCount)
 		}),
 	}
 
 	c.Flags().StringVarP(&file, "file", "f", "", "yaml file to send to Central to evaluate policies against")
 	c.Flags().BoolVar(&json, "json", false, "output policy results as json.")
+	c.Flags().IntVarP(&retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
+	c.Flags().IntVarP(&retryCount, "retries", "r", 0, "Number of retries before exiting as error")
 	return c
+}
+
+func checkDeploymentWithRetry(file string, json bool, timeout time.Duration, retryDelay int, retryCount int) error {
+	err := retry.WithRetry(func() error {
+		return checkDeployment(file, json, timeout)
+	},
+		retry.Tries(retryCount+1),
+		retry.OnFailedAttempts(func(err error) {
+			fmt.Fprintf(os.Stderr, "Scanning image failed: %v. Retrying after %v seconds\n", err, retryDelay)
+			time.Sleep(time.Duration(retryDelay) * time.Second)
+		}))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func checkDeployment(file string, json bool, timeout time.Duration) error {
