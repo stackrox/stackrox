@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/enforcers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
@@ -207,6 +208,10 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 		return pass(req.UID), nil
 	}
 
+	if features.K8sEventDetection.Enabled() {
+		go m.putAlertsOnChan(alerts)
+	}
+
 	noun := "policies"
 	if len(alerts) == 1 {
 		noun = "policy"
@@ -226,4 +231,12 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	}
 
 	return fail(req.UID, msgHeader+msgBody+"\n\n"), nil
+}
+
+func (m *manager) putAlertsOnChan(alerts []*storage.Alert) {
+	select {
+	case <-m.stopSig.Done():
+		return
+	case m.alertsC <- alerts:
+	}
 }

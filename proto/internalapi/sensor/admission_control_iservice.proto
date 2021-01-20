@@ -3,14 +3,11 @@ syntax = "proto3";
 option go_package = "sensor";
 
 import "internalapi/sensor/admission_control.proto";
+import "google/protobuf/empty.proto";
 
 package sensor;
 
-message MsgFromAdmissionControl {
-    oneof msg {
-        AdmissionControlAlerts alerts = 1;
-    }
-}
+message MsgFromAdmissionControl {}
 
 message MsgToAdmissionControl {
     oneof msg {
@@ -21,4 +18,6 @@ message MsgToAdmissionControl {
 // A Sensor service that allows node scrapes to report results.
 service AdmissionControlManagementService {
     rpc Communicate (stream MsgFromAdmissionControl) returns (stream MsgToAdmissionControl);
+
+    rpc PolicyAlerts (AdmissionControlAlerts) returns (google.protobuf.Empty);
 }

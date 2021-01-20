@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -98,14 +99,8 @@ func (s *managementService) Communicate(stream sensor.AdmissionControlManagement
 			if err != nil && err != io.EOF {
 				return errors.Wrap(err, "receiving message from admission control service")
 			}
-		case msg := <-recvdMsgC:
-			if features.K8sEventDetection.Enabled() {
-				if msg.GetAlerts() != nil {
-					go s.alertHandler.ProcessAlerts(msg.GetAlerts())
-				}
-			} else {
-				log.Warn("Received message from admission control service, not sure what to do with it...")
-			}
+		case <-recvdMsgC:
+			log.Warn("Received message from admission control service, not sure what to do with it...")
 		case <-settingsIt.Done():
 			settingsIt = settingsIt.TryNext()
 			if err := s.sendCurrentSettings(stream, settingsIt); err != nil {
@@ -116,4 +111,12 @@ func (s *managementService) Communicate(stream sensor.AdmissionControlManagement
 			return stream.Context().Err()
 		}
 	}
+}
+
+func (s *managementService) PolicyAlerts(_ context.Context, alerts *sensor.AdmissionControlAlerts) (*types.Empty, error) {
+	if !features.K8sEventDetection.Enabled() {
+		return nil, errors.New("support for kubernetes events policies is not enabled")
+	}
+	go s.alertHandler.ProcessAlerts(alerts)
+	return &types.Empty{}, nil
 }

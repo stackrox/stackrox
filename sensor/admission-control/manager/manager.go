@@ -2,6 +2,7 @@ package manager
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"google.golang.org/grpc"
 
@@ -22,6 +23,8 @@ type Manager interface {
 
 	HandleReview(review *admission.AdmissionRequest) (*admission.AdmissionResponse, error)
 	HandleK8sEvent(review *admission.AdmissionRequest) (*admission.AdmissionResponse, error)
+
+	Alerts() <-chan []*storage.Alert
 }
 
 // New creates a new admission control manager

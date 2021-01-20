@@ -7,21 +7,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/sensor/admission-control/common"
 	"github.com/stackrox/rox/sensor/admission-control/manager"
 	"google.golang.org/grpc"
-)
-
-const (
-	// backoffResetThreshold indicates how long a connection must last in order to reset the exponential backoff timer.
-	backoffResetThreshold = 10 * time.Second
-)
-
-var (
-	closedTimeC = func() <-chan time.Time {
-		c := make(chan time.Time)
-		close(c)
-		return c
-	}()
 )
 
 // WatchSensorSettingsPush watches for sensor pushes of admission control settings, and forwards them.
@@ -46,13 +34,8 @@ type sensorPushWatch struct {
 func (w *sensorPushWatch) run() {
 	w.sensorConnStatus.Set(false)
 
-	eb := backoff.NewExponentialBackOff()
-	eb.MaxInterval = 1 * time.Minute
-	eb.InitialInterval = 10 * time.Second
-	eb.MaxElapsedTime = 365 * 24 * time.Hour
-	eb.Reset()
-
-	tC := closedTimeC
+	eb := common.NewBackOffForSensorConn()
+	tC := time.After(0)
 
 	ctx := concurrency.AsContext(w.ctx)
 
@@ -65,7 +48,7 @@ func (w *sensorPushWatch) run() {
 				err = w.runWithStream(stream)
 			}
 
-			if time.Since(communicateStart) > backoffResetThreshold {
+			if time.Since(communicateStart) > common.BackoffResetThreshold {
 				eb.Reset()
 			}
 

@@ -48,25 +48,27 @@ func (h *alertHandlerImpl) ProcessAlerts(alerts *sensor.AdmissionControlAlerts) 
 	go h.processAlerts(alerts)
 }
 
-func (h *alertHandlerImpl) processAlerts(alerts *sensor.AdmissionControlAlerts) {
+func (h *alertHandlerImpl) processAlerts(alertMsg *sensor.AdmissionControlAlerts) {
 	// Enforcement is carried out by admission controller, hence skip processing it.
-	select {
-	case <-h.stopSig.Done():
-		return
-	case h.output <- createAlertResultsMsg(alerts.GetAlertResults()):
+	for _, alertResult := range alertMsg.GetAlertResults() {
+		select {
+		case <-h.stopSig.Done():
+			return
+		case h.output <- createAlertResultsMsg(alertResult):
+		}
 	}
 }
 
-func createAlertResultsMsg(alertResults *central.AlertResults) *central.MsgFromSensor {
+func createAlertResultsMsg(alertResult *central.AlertResults) *central.MsgFromSensor {
 	return &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
-				Id: alertResults.GetDeploymentId(),
+				Id: alertResult.GetDeploymentId(),
 				Resource: &central.SensorEvent_AlertResults{
 					AlertResults: &central.AlertResults{
-						DeploymentId: alertResults.GetDeploymentId(),
-						Alerts:       alertResults.GetAlerts(),
-						Stage:        alertResults.GetStage(),
+						DeploymentId: alertResult.GetDeploymentId(),
+						Alerts:       alertResult.GetAlerts(),
+						Stage:        alertResult.GetStage(),
 					},
 				},
 			},

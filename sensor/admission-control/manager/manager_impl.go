@@ -7,6 +7,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -77,6 +78,8 @@ type manager struct {
 	cacheVersion string
 
 	sensorConnStatus concurrency.Flag
+
+	alertsC chan []*storage.Alert
 }
 
 func newManager(conn *grpc.ClientConn) *manager {
@@ -92,6 +95,8 @@ func newManager(conn *grpc.ClientConn) *manager {
 
 		client:     sensor.NewImageServiceClient(conn),
 		imageCache: cache,
+
+		alertsC: make(chan []*storage.Alert),
 	}
 }
 
@@ -247,4 +252,8 @@ func (m *manager) HandleK8sEvent(req *admission.AdmissionRequest) (*admission.Ad
 
 func (m *manager) SensorConnStatusFlag() *concurrency.Flag {
 	return &m.sensorConnStatus
+}
+
+func (m *manager) Alerts() <-chan []*storage.Alert {
+	return m.alertsC
 }

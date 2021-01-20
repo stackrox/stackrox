@@ -21,5 +21,5 @@ message AdmissionControlSettings {
 }
 
 message AdmissionControlAlerts {
-    central.AlertResults   alert_results   = 1;
+    repeated central.AlertResults   alert_results   = 1;
 }
