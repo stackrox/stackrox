@@ -34,7 +34,7 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool) e
 			}
 			fmt.Fprintf(os.Stderr, "Removed output directory %s\n", outputDir)
 		} else {
-			fmt.Fprintf(os.Stderr, "Directory %q already exists, use --remove or select a different directory with --overwrite.\n", outputDir)
+			fmt.Fprintf(os.Stderr, "Directory %q already exists, use --remove or select a different directory with --output-dir.\n", outputDir)
 			return fmt.Errorf("directory %q already exists", outputDir)
 		}
 	} else if !os.IsNotExist(err) {
