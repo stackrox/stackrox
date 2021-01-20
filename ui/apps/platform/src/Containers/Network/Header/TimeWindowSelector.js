@@ -20,7 +20,7 @@ const TimeWindowSelector = ({ setActivityTimeWindow, activityTimeWindow }) => {
                 <Icon.Clock className="h-4 w-4 text-base-500" />
             </div>
             <select
-                className="pl-8 pr-8 truncate text-lg bg-base-100 py-2 text-sm text-base-600 hover:border-base-300 cursor-pointer"
+                className="pl-8 pr-8 truncate text-lg bg-base-100 py-2 text-sm text-base-600 border-0 hover:border-base-300 cursor-pointer"
                 onChange={selectTimeWindow}
                 value={activityTimeWindow}
             >
@@ -30,9 +30,6 @@ const TimeWindowSelector = ({ setActivityTimeWindow, activityTimeWindow }) => {
                     </option>
                 ))}
             </select>
-            <div className="absolute pl-2 inset-y-0 right-0 flex items-center px-2 cursor-pointer z-0 pointer-events-none">
-                <Icon.ChevronDown className="h-4 w-4" />
-            </div>
         </div>
     );
 };
