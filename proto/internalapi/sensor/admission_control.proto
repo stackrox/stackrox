@@ -10,14 +10,15 @@ import "internalapi/central/sensor_events.proto";
 package sensor;
 
 message AdmissionControlSettings {
-    storage.DynamicClusterConfig cluster_config      = 1;
-    storage.PolicyList enforced_deploy_time_policies = 2;
-    google.protobuf.Timestamp timestamp              = 3;
-    string cache_version                             = 4;
+    storage.DynamicClusterConfig cluster_config                = 1;
+    storage.PolicyList           enforced_deploy_time_policies = 2;
+    google.protobuf.Timestamp    timestamp                     = 3;
+    string                       cache_version                 = 4;
 
-    string central_endpoint                          = 5;
+    string                       central_endpoint              = 5;
 
-    string cluster_id                                = 6;
+    string                       cluster_id                    = 6;
+    storage.PolicyList           runtime_policies              = 7;
 }
 
 message AdmissionControlAlerts {

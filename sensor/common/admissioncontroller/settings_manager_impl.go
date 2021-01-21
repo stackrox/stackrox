@@ -4,8 +4,10 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	pkgPolicies "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -39,8 +41,11 @@ func (p *settingsManager) newSettingsNoLock() *sensor.AdmissionControlSettings {
 
 func (p *settingsManager) UpdatePolicies(policies []*storage.Policy) {
 	var filtered []*storage.Policy
+	var runtime []*storage.Policy
 	for _, policy := range policies {
-		if !isEnforcedDeployTimePolicy(policy) {
+		if pkgPolicies.AppliesAtRunTime(policy) && booleanpolicy.ContainsOneOf(policy, booleanpolicy.KubeEventsFields) {
+			runtime = append(runtime, policy.Clone())
+		} else if !isEnforcedDeployTimePolicy(policy) {
 			continue
 		}
 
@@ -54,6 +59,7 @@ func (p *settingsManager) UpdatePolicies(policies []*storage.Policy) {
 
 	newSettings := p.newSettingsNoLock()
 	newSettings.EnforcedDeployTimePolicies = &storage.PolicyList{Policies: filtered}
+	newSettings.RuntimePolicies = &storage.PolicyList{Policies: runtime}
 
 	if p.hasClusterConfig && p.hasPolicies {
 		p.settingsStream.Push(newSettings)

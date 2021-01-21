@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/admissioncontrol"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -86,15 +87,28 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 		return nil, errors.Wrap(err, "timestamp in configmap is not valid")
 	}
 
-	policiesGZData := cm.BinaryData[admissioncontrol.PoliciesGZDataKey]
-	policiesData, err := gziputil.Decompress(policiesGZData)
+	deployTimePoliciesGZData := cm.BinaryData[admissioncontrol.DeployTimePoliciesGZDataKey]
+	deployTimePoliciesData, err := gziputil.Decompress(deployTimePoliciesGZData)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not read gzipped policies data from configmap")
+		return nil, errors.Wrap(err, "could not read gzipped deploy-time policies data from configmap")
 	}
 
-	var policies storage.PolicyList
-	if err := proto.Unmarshal(policiesData, &policies); err != nil {
+	var deployTimePolicies storage.PolicyList
+	if err := proto.Unmarshal(deployTimePoliciesData, &deployTimePolicies); err != nil {
 		return nil, errors.Wrap(err, "could not parse protobuf-encoded policies from configmap")
+	}
+
+	var runTimePolicies storage.PolicyList
+	if features.K8sEventDetection.Enabled() {
+		runTimePoliciesGZData := cm.BinaryData[admissioncontrol.RunTimePoliciesGZDataKey]
+		runTimePoliciesData, err := gziputil.Decompress(runTimePoliciesGZData)
+		if err != nil {
+			return nil, errors.Wrap(err, "could not read gzipped run-time policies data from configmap")
+		}
+
+		if err := proto.Unmarshal(runTimePoliciesData, &runTimePolicies); err != nil {
+			return nil, errors.Wrap(err, "could not parse protobuf-encoded policies from configmap")
+		}
 	}
 
 	configGZData := cm.BinaryData[admissioncontrol.ConfigGZDataKey]
@@ -114,7 +128,8 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 
 	settings := &sensor.AdmissionControlSettings{
 		ClusterConfig:              &config,
-		EnforcedDeployTimePolicies: &policies,
+		EnforcedDeployTimePolicies: &deployTimePolicies,
+		RuntimePolicies:            &runTimePolicies,
 		Timestamp:                  tsProto,
 		CacheVersion:               cacheVersion,
 		CentralEndpoint:            centralEndpoint,

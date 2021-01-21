@@ -5,7 +5,7 @@ import (
 	"unsafe"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/pkg/errors"
+	pkgErr "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
+	"github.com/stackrox/rox/pkg/detection/runtime"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -20,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/size"
 	"github.com/stackrox/rox/pkg/sizeboundedcache"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/admission-control/errors"
 	"google.golang.org/grpc"
 	admission "k8s.io/api/admission/v1beta1"
 )
@@ -40,7 +42,8 @@ var (
 
 type state struct {
 	*sensor.AdmissionControlSettings
-	detector deploytime.Detector
+	deploytimeDetector deploytime.Detector
+	runtimeDetector    runtime.Detector
 
 	bypassForUsers, bypassForGroups set.FrozenStringSet
 	enforcedOps                     map[admission.Operation]struct{}
@@ -114,7 +117,7 @@ func (m *manager) IsReady() bool {
 
 func (m *manager) Start() error {
 	if !m.stopSig.Reset() {
-		return errors.New("admission control manager has already been started")
+		return pkgErr.New("admission control manager has already been started")
 	}
 
 	go m.runSettingsWatch()
@@ -164,7 +167,7 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 	policySet := detection.NewPolicySet()
 	for _, policy := range newSettings.GetEnforcedDeployTimePolicies().GetPolicies() {
 		if policyfields.ContainsUnscannedImageField(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
-			log.Warnf("Policy %q (%s) depends on the existence of image scans, but this is only enforceable if the 'Contact image scanners' option is enabled (which it currently isn't)", policy.GetName(), policy.GetId())
+			log.Warnf(errors.ImageScanUnavailableMsg(policy))
 			continue
 		}
 		if err := policySet.UpsertPolicy(policy); err != nil {
@@ -172,9 +175,21 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 		}
 	}
 
-	var detector deploytime.Detector
+	runtimePolicySet := detection.NewPolicySet()
+	for _, policy := range newSettings.GetRuntimePolicies().GetPolicies() {
+		if policyfields.ContainsUnscannedImageField(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
+			log.Warnf(errors.ImageScanUnavailableMsg(policy))
+			continue
+		}
+		if err := runtimePolicySet.UpsertPolicy(policy); err != nil {
+			log.Errorf("Unable to upsert policy %q (%s), will not be able to detect", policy.GetName(), policy.GetId())
+		}
+		log.Debugf("Upserted policy %q (%s)", policy.GetName(), policy.GetId())
+	}
+
+	var deployTimeDetector deploytime.Detector
 	if newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnabled() && len(policySet.GetCompiledPolicies()) > 0 {
-		detector = deploytime.NewDetector(policySet)
+		deployTimeDetector = deploytime.NewDetector(policySet)
 	}
 
 	enforcedOperations := map[admission.Operation]struct{}{
@@ -188,7 +203,8 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 	oldState := m.currentState()
 	newState := &state{
 		AdmissionControlSettings: newSettings,
-		detector:                 detector,
+		deploytimeDetector:       deployTimeDetector,
+		runtimeDetector:          runtime.NewDetector(runtimePolicySet),
 		bypassForUsers:           allowAlwaysUsers,
 		bypassForGroups:          allowAlwaysGroups,
 		enforcedOps:              enforcedOperations,
@@ -236,7 +252,7 @@ func (m *manager) HandleReview(req *admission.AdmissionRequest) (*admission.Admi
 	state := m.currentState()
 
 	if state == nil {
-		return nil, errors.New("admission controller is disabled, not handling request")
+		return nil, pkgErr.New("admission controller is disabled, not handling request")
 	}
 	return m.evaluateAdmissionRequest(state, req)
 }

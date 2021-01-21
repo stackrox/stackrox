@@ -29,7 +29,7 @@ func TestAdmissionControllerConfigMap(t *testing.T) {
 	cm, err := k8sClient.CoreV1().ConfigMaps(namespaces.StackRox).Get(ctx, admissioncontrol.ConfigMapName, metav1.GetOptions{})
 	require.NoError(t, err, "could not obtain admission controller configmap")
 
-	policiesGZData := cm.BinaryData[admissioncontrol.PoliciesGZDataKey]
+	policiesGZData := cm.BinaryData[admissioncontrol.DeployTimePoliciesGZDataKey]
 	configGZData := cm.BinaryData[admissioncontrol.ConfigGZDataKey]
 
 	timestamp := cm.Data[admissioncontrol.LastUpdateTimeDataKey]
@@ -90,7 +90,7 @@ func TestAdmissionControllerConfigMap(t *testing.T) {
 		assert.NoErrorf(t, err, "unparseable last update timestamp %q", timestamp)
 		assert.True(t, newTS.After(ts), "expected updated timestamp in configmap")
 
-		newPoliciesGZData := newCM.BinaryData[admissioncontrol.PoliciesGZDataKey]
+		newPoliciesGZData := newCM.BinaryData[admissioncontrol.DeployTimePoliciesGZDataKey]
 		newConfigGZData := newCM.BinaryData[admissioncontrol.ConfigGZDataKey]
 
 		newPoliciesData, err := gziputil.Decompress(newPoliciesGZData)

@@ -3,12 +3,12 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/routes"
@@ -94,6 +94,7 @@ func (s *service) handleValidate(w http.ResponseWriter, req *http.Request) {
 
 	admissionRequest, err := readAdmissionRequest(req)
 	if err != nil {
+		log.Errorf("Failed to read admission request: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -130,6 +131,7 @@ func (s *service) handleK8sEvents(w http.ResponseWriter, req *http.Request) {
 
 	admissionRequest, err := readAdmissionRequest(req)
 	if err != nil {
+		log.Errorf("Failed to read admission request: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -160,22 +162,16 @@ func (s *service) handleK8sEvents(w http.ResponseWriter, req *http.Request) {
 func readAdmissionRequest(req *http.Request) (*admission.AdmissionRequest, error) {
 	respBody, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		errMsg := fmt.Sprintf("Failed to read request body: %v", err)
-		log.Error(errMsg)
-		return nil, errors.New(errMsg)
+		return nil, errors.Wrap(err, "reading request body")
 	}
 
 	var admissionReview admission.AdmissionReview
 	if _, _, err := universalDeserializer.Decode(respBody, nil, &admissionReview); err != nil {
-		errMsg := fmt.Sprintf("Error decoding admission review: %v", err)
-		log.Errorf(errMsg)
-		return nil, errors.New(errMsg)
+		return nil, errors.Wrap(err, "decoding admission review")
 	}
 
 	if admissionReview.Request == nil {
-		errMsg := fmt.Sprintf("invalid admission review. nil request: %+v", admissionReview)
-		log.Error(errMsg)
-		return nil, errors.New(errMsg)
+		return nil, errors.Errorf("invalid admission review. nil request: %+v", admissionReview)
 	}
 	return admissionReview.Request, nil
 }

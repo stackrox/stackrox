@@ -7,9 +7,12 @@ const (
 	// ConfigGZDataKey is the key in the config map under which the serialized dynamic cluster config is stored.
 	ConfigGZDataKey = `config.pb.gz`
 
-	// PoliciesGZDataKey is the key in the config map under which the serialized enforced deploy-time policies are
+	// DeployTimePoliciesGZDataKey is the key in the config map under which the serialized enforced deploy-time policies are
 	// stored.
-	PoliciesGZDataKey = `policies.pb.gz`
+	DeployTimePoliciesGZDataKey = `policies.pb.gz`
+
+	// RunTimePoliciesGZDataKey is the key in the config map under which the serialized runtime policies are stored.
+	RunTimePoliciesGZDataKey = `runtime-policies.pb.gz`
 
 	// LastUpdateTimeDataKey is the key in the config map under which the "last updated" timestamp is stored.
 	// This is stored as a data member instead of an annotation in order to allow accessing this also via a file

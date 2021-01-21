@@ -58,7 +58,7 @@ var (
 
 func (m *manager) shouldBypass(s *state, req *admission.AdmissionRequest) bool {
 	// If enforcement is disabled (or there are no enforced policies), mark this as pass.
-	if s.detector == nil {
+	if s.deploytimeDetector == nil {
 		log.Debugf("Enforcement disabled, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
 		return true
 	}
@@ -173,7 +173,7 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	}
 
 	images, resultChan := m.getAvailableImagesAndKickOffScans(fetchImgCtx, s, deployment)
-	alerts, err := s.detector.Detect(detectionCtx, deployment, images)
+	alerts, err := s.deploytimeDetector.Detect(detectionCtx, deployment, images)
 
 	if fetchImgCtx != nil {
 		// Wait for image scan results to come back, running detection after every update to give a verdict ASAP.
@@ -193,7 +193,7 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 				break resultsLoop
 			}
 
-			alerts, err = s.detector.Detect(detectionCtx, deployment, images)
+			alerts, err = s.deploytimeDetector.Detect(detectionCtx, deployment, images)
 		}
 	} else {
 		alerts = filterOutNoScanAlerts(alerts) // no point in alerting on no scans if we're not even trying

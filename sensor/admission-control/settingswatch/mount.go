@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/admissioncontrol"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
@@ -40,13 +41,14 @@ type mountSettingsWatch struct {
 
 func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 	configPath := filepath.Join(dir, admissioncontrol.ConfigGZDataKey)
-	policiesPath := filepath.Join(dir, admissioncontrol.PoliciesGZDataKey)
+	deployTimePoliciesPath := filepath.Join(dir, admissioncontrol.DeployTimePoliciesGZDataKey)
+	runTimePoliciesPath := filepath.Join(dir, admissioncontrol.RunTimePoliciesGZDataKey)
 	timestampPath := filepath.Join(dir, admissioncontrol.LastUpdateTimeDataKey)
 	cacheVersionPath := filepath.Join(dir, admissioncontrol.CacheVersionDataKey)
 	centralEndpointPath := filepath.Join(dir, admissioncontrol.CentralEndpointDataKey)
 	clusterIDPath := filepath.Join(dir, admissioncontrol.ClusterIDDataKey)
 
-	if noneExists, err := fileutils.NoneExists(configPath, policiesPath, timestampPath); err != nil {
+	if noneExists, err := fileutils.NoneExists(configPath, deployTimePoliciesPath, timestampPath); err != nil {
 		return nil, errors.Wrapf(err, "error checking the existence of files in %s", dir)
 	} else if noneExists {
 		return nil, nil
@@ -66,18 +68,34 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 		return nil, errors.Wrapf(err, "unmarshaling decompressed cluster config data from file %s", configPath)
 	}
 
-	policiesDataGZ, err := ioutil.ReadFile(policiesPath)
+	deployTimePoliciesDataGZ, err := ioutil.ReadFile(deployTimePoliciesPath)
 	if err != nil {
-		return nil, errors.Wrapf(err, "reading policies from file %s", policiesPath)
+		return nil, errors.Wrapf(err, "reading deploy-time policies from file %s", deployTimePoliciesPath)
 	}
-	policiesData, err := gziputil.Decompress(policiesDataGZ)
+	deployTimePoliciesData, err := gziputil.Decompress(deployTimePoliciesDataGZ)
 	if err != nil {
-		return nil, errors.Wrapf(err, "decompressing policies in file %s", policiesPath)
+		return nil, errors.Wrapf(err, "decompressing deploy-time policies in file %s", deployTimePoliciesPath)
 	}
 
-	var policyList storage.PolicyList
-	if err := proto.Unmarshal(policiesData, &policyList); err != nil {
-		return nil, errors.Wrapf(err, "unmarshaling decompressed policies data from file %s", policiesPath)
+	var deployTimePolicyList storage.PolicyList
+	if err := proto.Unmarshal(deployTimePoliciesData, &deployTimePolicyList); err != nil {
+		return nil, errors.Wrapf(err, "unmarshaling decompressed deploy-time policies data from file %s", deployTimePoliciesPath)
+	}
+
+	var runTimePolicyList storage.PolicyList
+	if features.K8sEventDetection.Enabled() {
+		runTimePoliciesDataGZ, err := ioutil.ReadFile(runTimePoliciesPath)
+		if err != nil {
+			return nil, errors.Wrapf(err, "reading run-time policies from file %s", runTimePoliciesPath)
+		}
+		runTimePoliciesData, err := gziputil.Decompress(runTimePoliciesDataGZ)
+		if err != nil {
+			return nil, errors.Wrapf(err, "decompressing run-time policies in file %s", runTimePoliciesPath)
+		}
+
+		if err := proto.Unmarshal(runTimePoliciesData, &runTimePolicyList); err != nil {
+			return nil, errors.Wrapf(err, "unmarshaling decompressed run-time policies data from file %s", runTimePoliciesPath)
+		}
 	}
 
 	timestampBytes, err := ioutil.ReadFile(timestampPath)
@@ -121,7 +139,8 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 
 	return &sensor.AdmissionControlSettings{
 		ClusterConfig:              &clusterConfig,
-		EnforcedDeployTimePolicies: &policyList,
+		EnforcedDeployTimePolicies: &deployTimePolicyList,
+		RuntimePolicies:            &runTimePolicyList,
 		Timestamp:                  tsProto,
 		CacheVersion:               cacheVersion,
 		CentralEndpoint:            centralEndpoint,
