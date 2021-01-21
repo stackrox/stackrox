@@ -22,7 +22,7 @@ export const globalTypes = {
 
 const withThemeProvider = (StoryComp: Story, context: StoryContext): ReactElement => {
     return (
-        <div className={context.globals.theme as string}>
+        <div className={`${context.globals.theme as string} text-base`}>
             {/* eslint-disable-next-line react/jsx-props-no-spreading */}
             <StoryComp {...context} />
         </div>

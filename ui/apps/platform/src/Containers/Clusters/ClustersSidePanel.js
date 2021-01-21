@@ -144,7 +144,8 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
                     .catch(() => {
                         setMessageState({
                             type: 'error',
-                            message: 'There was an error downloading the configuration files.',
+                            message:
+                                'There was an error retrieving the configuration for the cluster.',
                         });
                         setIsBlocked(true);
                     })

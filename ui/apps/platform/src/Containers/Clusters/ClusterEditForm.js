@@ -34,6 +34,7 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
                 />
                 <DynamicConfigurationSection
                     dynamicConfig={selectedCluster.dynamicConfig}
+                    helmConfig={selectedCluster.helmConfig}
                     handleChange={handleChange}
                 />
             </form>
@@ -94,6 +95,10 @@ ClusterEditForm.propTypes = {
                 scanInline: PropTypes.bool,
                 disableBypass: PropTypes.bool,
             }),
+        }),
+        helmConfig: PropTypes.shape({
+            staticConfig: PropTypes.shape({}),
+            dynamicConfig: PropTypes.shape({}),
         }),
         slimCollector: PropTypes.bool,
         healthStatus: PropTypes.shape({

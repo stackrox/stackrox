@@ -514,7 +514,7 @@ module.exports = {
     variants: {
         appearance: ['responsive', 'before', 'after'],
         backgroundAttachment: ['responsive', 'before', 'after'],
-        backgroundColor: ['responsive', 'before', 'after', 'hover', 'focus'],
+        backgroundColor: ['responsive', 'before', 'after', 'hover', 'focus', 'disabled'],
         backgroundPosition: ['responsive', 'before', 'after'],
         backgroundRepeat: ['responsive', 'before', 'after'],
         backgroundSize: ['responsive', 'before', 'after'],
