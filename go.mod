@@ -124,7 +124,7 @@ replace (
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20200903060121-ccc2b5ea9f6f
 	github.com/fullsailor/pkcs7 => github.com/misberner/pkcs7 v0.0.0-20190417093538-a48bf0f78dea
 	github.com/go-resty/resty => gopkg.in/resty.v1 v1.11.0
-	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20201113151318-22295c28f27c
+	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
 
 	// Something pulls in an older version with uppercase OpenAPIv2 package version
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.1
