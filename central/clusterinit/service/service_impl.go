@@ -6,15 +6,20 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/clusterinit/backend"
+	"github.com/stackrox/rox/central/clusterinit/store"
 	"github.com/stackrox/rox/central/role"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
 	authorizer = user.WithRole(role.Admin)
 )
+
+var _ v1.ClusterInitServiceServer = (*serviceImpl)(nil)
 
 type serviceImpl struct {
 	backend backend.Backend
@@ -38,7 +43,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) GetInitBundles(ctx context.Context, empty *v1.Empty) (*v1.InitBundleMetasResponse, error) {
 	initBundleMetas, err := s.backend.GetAll(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving meta data for all init bundles")
+		return nil, status.Errorf(codes.Internal, "retrieving meta data for all init bundles: %s", err)
 	}
 
 	v1InitBundleMetas := make([]*v1.InitBundleMeta, 0, len(initBundleMetas))
@@ -52,16 +57,31 @@ func (s *serviceImpl) GetInitBundles(ctx context.Context, empty *v1.Empty) (*v1.
 func (s *serviceImpl) GenerateInitBundle(ctx context.Context, request *v1.InitBundleGenRequest) (*v1.InitBundleGenResponse, error) {
 	generated, err := s.backend.Issue(ctx, request.GetName())
 	if err != nil {
-		return nil, errors.Wrap(err, "generating new init bundle")
+		if errors.Is(err, store.ErrInitBundleDuplicateName) {
+			return nil, status.Errorf(codes.AlreadyExists, "generating new init bundle: %s", err)
+		}
+		return nil, status.Errorf(codes.Internal, "generating new init bundle: %s", err)
 	}
 	meta := InitBundleMetaStorageToV1(generated.Meta)
 
 	bundleYaml, err := generated.RenderAsYAML()
 	if err != nil {
-		return nil, errors.Wrap(err, "rendering init bundle as YAML")
+		return nil, status.Errorf(codes.Internal, "rendering init bundle as YAML: %s", err)
 	}
 	return &v1.InitBundleGenResponse{
 		HelmValuesBundle: bundleYaml,
 		Meta:             meta,
 	}, nil
+}
+
+func (s *serviceImpl) RevokeInitBundle(ctx context.Context, request *v1.InitBundleRevokeRequest) (*v1.Empty, error) {
+	for _, id := range request.GetIds() {
+		if err := s.backend.Revoke(ctx, id); err != nil {
+			if errors.Is(err, store.ErrInitBundleNotFound) {
+				return nil, status.Errorf(codes.NotFound, "revoking %q failed: %s", id, err)
+			}
+			return nil, status.Errorf(codes.Internal, "revoking %q failed: %s", id, err)
+		}
+	}
+	return &v1.Empty{}, nil
 }

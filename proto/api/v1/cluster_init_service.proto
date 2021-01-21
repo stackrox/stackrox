@@ -31,7 +31,18 @@ message InitBundleGenRequest {
     string name = 1;
 }
 
+message InitBundleRevokeRequest {
+    repeated string ids = 1;
+}
+
 service ClusterInitService {
+    rpc RevokeInitBundle(InitBundleRevokeRequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/cluster-init/init-bundles/revoke",
+            body: "*"
+        };
+    }
+
     rpc GetInitBundles(Empty) returns (InitBundleMetasResponse) {
         option (google.api.http) = {
             get: "/v1/cluster-init/init-bundles"

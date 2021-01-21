@@ -115,7 +115,11 @@ func (b *backendImpl) Revoke(ctx context.Context, id string) error {
 		return err
 	}
 
-	return errors.New("not implemented")
+	if err := b.store.Revoke(id); err != nil {
+		return errors.Wrap(err, "revoking init bundle")
+	}
+
+	return nil
 }
 
 func (b *backendImpl) CheckRevoked(ctx context.Context, id string) error {

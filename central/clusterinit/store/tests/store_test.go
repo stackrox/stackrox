@@ -60,10 +60,15 @@ func (s *clusterInitStoreTestSuite) TestIDCollisionOnAdd() {
 		Id:   "0123456789",
 		Name: "test name",
 	}
+	idCollision := &storage.InitBundleMeta{
+		Id:   "0123456789",
+		Name: "id collision",
+	}
+
 	err := s.store.Add(meta)
 	s.NoError(err)
 
-	err = s.store.Add(meta)
+	err = s.store.Add(idCollision)
 	s.Error(err)
 	s.True(errors.Is(err, store.ErrInitBundleIDCollision))
 }
@@ -83,4 +88,48 @@ func (s *clusterInitStoreTestSuite) TestNameCollisionOnAdd() {
 
 	err = s.store.Add(meta2)
 	s.Error(err)
+}
+
+func (s *clusterInitStoreTestSuite) TestRevokeToken() {
+	meta := &storage.InitBundleMeta{
+		Id:        "012345",
+		Name:      "available",
+		IsRevoked: false,
+	}
+	toRevokeMeta := &storage.InitBundleMeta{
+		Id:        "0123456789",
+		Name:      "revoked",
+		IsRevoked: false,
+	}
+	toReuseMetaName := &storage.InitBundleMeta{
+		Id:        "0123456",
+		Name:      "revoked",
+		IsRevoked: false,
+	}
+
+	for _, m := range []*storage.InitBundleMeta{toRevokeMeta, meta} {
+		err := s.store.Add(m)
+		s.Require().NoError(err)
+	}
+
+	storedMeta, err := s.store.Get(toRevokeMeta.GetId())
+	s.Require().NoError(err)
+	s.False(storedMeta.GetIsRevoked())
+
+	err = s.store.Revoke(toRevokeMeta.GetId())
+	s.Require().NoError(err)
+
+	// test GetAll ignores revoked bundles
+	all, err := s.store.GetAll()
+	s.Require().NoError(err)
+	s.Len(all, 1)
+	s.Equal("available", all[0].GetName())
+
+	// test name can be reused after revoking an init-bundle
+	err = s.store.Add(toReuseMetaName)
+	s.Require().NoError(err)
+	reused, err := s.store.Get(toReuseMetaName.GetId())
+	s.Require().NoError(err)
+	s.Equal(toReuseMetaName.GetName(), reused.GetName())
+	s.Equal(toRevokeMeta.GetName(), reused.GetName())
 }

@@ -37,16 +37,15 @@ func listInitBundles() error {
 	bundles := rsp.GetItems()
 	sort.Slice(bundles, func(i, j int) bool { return bundles[i].GetName() < bundles[j].GetName() })
 
-	fmt.Fprintln(tabWriter, " \tName\tCreated at\tExpires at\tID")
-	fmt.Fprintln(tabWriter, " \t====\t==========\t==========\t==")
+	fmt.Fprintln(tabWriter, "Name\tCreated at\tExpires at\tID")
+	fmt.Fprintln(tabWriter, "====\t==========\t==========\t==")
 
-	for idx, meta := range bundles {
+	for _, meta := range bundles {
 		name := meta.GetName()
 		if name == "" {
 			name = "(empty)"
 		}
-		fmt.Fprintf(tabWriter, "%4d\t%s\t%s\t%v\t%v\n",
-			idx,
+		fmt.Fprintf(tabWriter, "%s\t%s\t%v\t%v\n",
 			name,
 			meta.GetCreatedAt(),
 			meta.GetExpiresAt(),

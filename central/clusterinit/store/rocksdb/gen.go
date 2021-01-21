@@ -1,3 +1,3 @@
 package rocksdb
 
-//go:generate rocksdb-bindings-wrapper --type=InitBundleMeta --bucket=clusterinitbundles --cache --uniq-key-func GetName()
+//go:generate rocksdb-bindings-wrapper --type=InitBundleMeta --bucket=clusterinitbundles --cache

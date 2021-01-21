@@ -8,7 +8,7 @@ set -eo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-source "${DIR}"/../../deploy/common/k8sbased.sh
+source "${DIR}"/../deploy/common/k8sbased.sh
 
 if [[ -z "$1" ]]; then
   echo "Expected component as the first arg"

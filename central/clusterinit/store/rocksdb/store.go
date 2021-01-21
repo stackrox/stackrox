@@ -50,14 +50,10 @@ func keyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.InitBundleMeta).GetId())
 }
 
-func uniqKeyFunc(msg proto.Message) []byte {
-	return []byte(msg.(*storage.InitBundleMeta).GetName())
-}
-
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) (Store, error) {
 	globaldb.RegisterBucket(bucket, "InitBundleMeta")
-	baseCRUD := generic.NewUniqueKeyCRUD(db, bucket, keyFunc, alloc, uniqKeyFunc, false)
+	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc, false)
 	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, keyFunc)
 	if err != nil {
 		return nil, err
