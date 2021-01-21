@@ -125,21 +125,6 @@
   {{ end }}
 {{ end }}
 
-{{/* Apply default for slim collector mode */}}
-{{ if kindIs "invalid" $._rox.collector.slimMode }}
-  {{ include "srox.warn" (list $ "You have not specified whether or not to use a slim collector image, therefore defaulting to using the full image. If your StackRox Central deployment has access to the internet or current collector support packages, we strongly recommend setting this option to true, as it may drastically decrease your image pull traffic.") }}
-  {{ $_ = set $._rox.collector "slimMode" false }}
-{{ end }}
-
-{{/* Adjust collector image pull policy based on slim/non-slim mode */}}
-{{ if kindIs "invalid" $._rox.image.collector.pullPolicy }}
-  {{ if $._rox.collector.slimMode }}
-    {{ $_ = set $._rox.image.collector "pullPolicy" "IfNotPresent" }}
-  {{ else }}
-    {{ $_ = set $._rox.image.collector "pullPolicy" "Always" }}
-  {{ end }}
-{{ end }}
-
 {{/* Apply defaults */}}
 {{ $defaultsCfg := dict }}
 {{ $_ = include "srox.mergeInto" (list $defaultsCfg (tpl ($.Files.Get "internal/defaults.yaml") . | fromYaml)) }}
@@ -162,10 +147,31 @@
   {{ end }}
 {{ else }}
   {{ $_ = set $._rox.image.collector "_abbrevImageRef" (printf "%s/%s" $._rox.image.collector.registry $._rox.image.collector.name) }}
+
+  {{/* Apply default for slim collector mode */}}
+  {{ if kindIs "invalid" $._rox.collector.slimMode }}
+    {{ if eq $._rox.image.collector.registry "[< default "collector.stackrox.io" .CollectorRegistry >]" }}
+      {{ $_ = set $._rox.collector "slimMode" true }}
+      {{ include "srox.note" (list $ "Based on your use of the default StackRox Collector registry, a slim collector image will be used. Set 'collector.slimMode' to false if this is causing issues.") }}
+    {{ else }}
+      {{ $_ = set $._rox.collector "slimMode" false }}
+      {{ include "srox.warn" (list $ "Based on your use of a non-default StackRox Collector registry, a full collector image will be used. This can potentially cause a lot of image pull traffic; we therefore recommend to switch to slim mode by setting 'collector.slimMode' to true, and ensuring that StackRox Central either has internet connectivity, or regularly receives the latest StackRox Collector support packages.") }}
+    {{ end }}
+  {{ end }}
+
   {{ if $._rox.collector.slimMode }}
     {{ $_ = set $._rox.image.collector "tag" "[< .Versions.CollectorVersion >]-slim" }}
   {{ else }}
     {{ $_ = set $._rox.image.collector "tag" "[< .Versions.CollectorVersion >]-latest" }}
+  {{ end }}
+{{ end }}
+
+{{/* Adjust collector image pull policy based on slim/non-slim mode */}}
+{{ if kindIs "invalid" $._rox.image.collector.pullPolicy }}
+  {{ if $._rox.collector.slimMode }}
+    {{ $_ = set $._rox.image.collector "pullPolicy" "IfNotPresent" }}
+  {{ else }}
+    {{ $_ = set $._rox.image.collector "pullPolicy" "Always" }}
   {{ end }}
 {{ end }}
 
