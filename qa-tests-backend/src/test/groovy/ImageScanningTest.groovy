@@ -610,8 +610,8 @@ class ImageScanningTest extends BaseSpecification {
                 assert imageDetails.scan.scanTime
                 for (ImageOuterClass.EmbeddedImageScanComponent component : imageDetails.scan.componentsList) {
                     for (Vulnerability.EmbeddedVulnerability vuln : component.vulnsList) {
-                        if (vuln.summary == null || vuln.summary == "" ||
-                                0.0 > vuln.cvss || vuln.cvss > 10.0 ||
+                        // Removed summary due to GCR's lack of summary
+                        if (0.0 > vuln.cvss || vuln.cvss > 10.0 ||
                                 vuln.link == null || vuln.link == "") {
                             missingValues.containsKey(imageDetails.name) ?
                                     missingValues.get(imageDetails.name).add(vuln) :
@@ -621,7 +621,7 @@ class ImageScanningTest extends BaseSpecification {
                 }
             }
             if (missingValues.containsKey(imageDetails.name)) {
-                println "Failing image: ${image}"
+                println "Failing image: ${imageDetails}"
             }
         }
         println missingValues
