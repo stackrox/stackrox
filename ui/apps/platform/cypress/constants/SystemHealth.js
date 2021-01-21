@@ -38,7 +38,7 @@ export const selectors = {
         viewAllButton: 'a:contains("View All")',
         widgets: {
             imageIntegrations: '[data-testid="image-integrations"]',
-            pluginIntegrations: '[data-testid="plugin-integrations"]',
+            notifierIntegrations: '[data-testid="notifier-integrations"]',
             backupIntegrations: '[data-testid="backup-integrations"]',
         },
     },

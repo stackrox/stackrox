@@ -76,7 +76,9 @@ describe('Notifiers Test', () => {
     describe('AWS Security Hub notifier', () => {
         it('should show the AWS Security Hub notifier', () => {
             cy.get(selectors.awsSecurityHubTile).click();
-            cy.get(`${selectors.modalHeader}:contains('Configure AWS Security Hub plugin')`);
+            cy.get(
+                `${selectors.modalHeader}:contains('Configure AWS Security Hub notifier integrations')`
+            );
             cy.get(`${selectors.resultsSection}:contains('No AWS Security Hub integrations')`);
         });
 
@@ -130,7 +132,7 @@ describe('Notifiers Test', () => {
     describe('Syslog notifier', () => {
         it('should show the Syslog notifier', () => {
             cy.get(selectors.syslogTile).click();
-            cy.get(`${selectors.modalHeader}:contains('Configure Syslog plugin')`);
+            cy.get(`${selectors.modalHeader}:contains('Configure Syslog notifier integrations')`);
             cy.get(`${selectors.resultsSection}:contains('No Syslog integrations')`);
         });
 

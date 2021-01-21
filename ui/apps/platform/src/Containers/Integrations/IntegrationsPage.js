@@ -215,7 +215,7 @@ class IntegrationsPage extends Component {
                 <div className="w-full h-full overflow-auto">
                     <section className="mb-6" id="image-integrations">
                         <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
-                            Images
+                            Image Integrations
                         </h2>
                         <div className="flex flex-col items-center w-full">
                             <div className="flex flex-wrap w-full -mx-6 p-3">
@@ -224,9 +224,9 @@ class IntegrationsPage extends Component {
                         </div>
                     </section>
 
-                    <section className="mb-6" id="plugin-integrations">
+                    <section className="mb-6" id="notifier-integrations">
                         <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
-                            Plugins
+                            Notifier Integrations
                         </h2>
                         <div className="flex flex-col items-center w-full">
                             <div className="flex flex-wrap w-full -mx-6 p-3">{plugins}</div>
@@ -235,7 +235,7 @@ class IntegrationsPage extends Component {
 
                     <section className="mb-6" id="backup-integrations">
                         <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
-                            External Backups
+                            Backup Integrations
                         </h2>
                         <div className="flex flex-col items-center w-full">
                             <div className="flex flex-wrap w-full -mx-6 p-3">{backups}</div>

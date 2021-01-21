@@ -37,7 +37,7 @@ describe('System Health Integrations local deployment', () => {
 
         Object.entries({
             imageIntegrations: 'Image Integrations',
-            pluginIntegrations: 'Plugin Integrations',
+            notifierIntegrations: 'Notifier Integrations',
             backupIntegrations: 'Backup Integrations',
         }).forEach(([key, text]) => {
             cy.get(`${selectors.integrations.widgets[key]} [data-testid="widget-header"]`).should(
@@ -47,7 +47,7 @@ describe('System Health Integrations local deployment', () => {
         });
     });
 
-    it('should go to Images anchor on Integrations page via click View All', () => {
+    it('should go to Image Integrations anchor on Integrations page via click View All', () => {
         cy.visit(url.dashboard);
         cy.wait('@GetImageIntegrations');
 
@@ -57,23 +57,23 @@ describe('System Health Integrations local deployment', () => {
         cy.wait('@GetImageIntegrations');
 
         cy.get('[data-testid="header-text"]').should('have.text', 'Integrations');
-        cy.get('#image-integrations h2:contains("Images")').should('be.visible');
+        cy.get('#image-integrations h2:contains("Image Integrations")').should('be.visible');
     });
 
-    it('should go to Plugins anchor on Integrations page via click View All', () => {
+    it('should go to Notifier Integrations anchor on Integrations page via click View All', () => {
         cy.visit(url.dashboard);
         cy.wait('@GetNotifiers');
 
         cy.get(
-            `${selectors.integrations.widgets.pluginIntegrations} ${selectors.integrations.viewAllButton}`
+            `${selectors.integrations.widgets.notifierIntegrations} ${selectors.integrations.viewAllButton}`
         ).click();
         cy.wait('@GetNotifiers');
 
         cy.get('[data-testid="header-text"]').should('have.text', 'Integrations');
-        cy.get('#plugin-integrations h2:contains("Plugins")').should('be.visible');
+        cy.get('#notifier-integrations h2:contains("Notifier Integrations")').should('be.visible');
     });
 
-    it('should go to External Backups anchor on Integrations page via click View All', () => {
+    it('should go to Backup Integrations anchor on Integrations page via click View All', () => {
         cy.visit(url.dashboard);
         cy.wait('@GetExternalBackups');
 
@@ -83,7 +83,7 @@ describe('System Health Integrations local deployment', () => {
         cy.wait('@GetExternalBackups');
 
         cy.get('[data-testid="header-text"]').should('have.text', 'Integrations');
-        cy.get('#backup-integrations h2:contains("External Backups")').should('be.visible');
+        cy.get('#backup-integrations h2:contains("Backup Integrations")').should('be.visible');
     });
 });
 
@@ -179,7 +179,7 @@ describe('System Health Integrations fixtures', () => {
 
         Object.entries({
             imageIntegrations: '2 / 3 healthy integrations',
-            pluginIntegrations: '1 healthy integration',
+            notifierIntegrations: '1 healthy integration',
             backupIntegrations: 'No configured integrations',
         }).forEach(([key, text]) => {
             cy.get(`${widgets[key]} ${healthyText}`).should('have.text', text);

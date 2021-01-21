@@ -237,21 +237,21 @@ const SystemHealthDashboardPage = () => {
                         )}
                     </Widget>
                     <Widget
-                        header="Plugin Integrations"
+                        header="Notifier Integrations"
                         headerComponents={
                             <HashLink
-                                to={`${integrationsPath}#plugin-integrations`}
+                                to={`${integrationsPath}#notifier-integrations`}
                                 className={smallButtonClassName}
                             >
                                 View All
                             </HashLink>
                         }
-                        id="plugin-integrations"
+                        id="notifier-integrations"
                     >
                         {notifiersRequestHasError ? (
                             <div className="p-2 w-full">
                                 <Message type="error">
-                                    Request failed for Plugin Integrations
+                                    Request failed for Notifier Integrations
                                 </Message>
                             </div>
                         ) : (

@@ -18,8 +18,8 @@ const SOURCE_LABELS = Object.freeze({
     authPlugins: 'auth plugins',
     authProviders: 'authentication provider',
     imageIntegrations: 'image integrations',
-    notifiers: 'plugin',
-    backups: 'backups',
+    notifiers: 'notifier integrations',
+    backups: 'backup integrations',
 });
 
 class IntegrationModal extends Component {
