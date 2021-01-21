@@ -21,7 +21,7 @@ func initialize() {
 		false,
 		riskDS.Singleton(),
 		ranking.ImageRanker(),
-		ranking.ImageComponentRanker())
+		ranking.ComponentRanker())
 }
 
 // Singleton provides the interface for non-service external interaction.

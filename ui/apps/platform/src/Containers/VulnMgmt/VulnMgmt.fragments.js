@@ -157,7 +157,9 @@ export const NODE_LIST_FRAGMENT = gql`
             cvss
             scoreVersion
         }
-        scanTime
+        scan {
+            scanTime
+        }
         osImage
         containerRuntimeVersion
         nodeStatus

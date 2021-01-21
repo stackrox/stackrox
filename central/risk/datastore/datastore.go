@@ -34,9 +34,11 @@ func New(store store.Store, indexer index.Indexer, searcher search.Searcher) (Da
 		subjectTypeToRanker: map[string]*ranking.Ranker{
 			storage.RiskSubjectType_CLUSTER.String():         ranking.ClusterRanker(),
 			storage.RiskSubjectType_NAMESPACE.String():       ranking.NamespaceRanker(),
+			storage.RiskSubjectType_NODE.String():            ranking.NodeRanker(),
+			storage.RiskSubjectType_NODE_COMPONENT.String():  ranking.ComponentRanker(),
 			storage.RiskSubjectType_DEPLOYMENT.String():      ranking.DeploymentRanker(),
 			storage.RiskSubjectType_IMAGE.String():           ranking.ImageRanker(),
-			storage.RiskSubjectType_IMAGE_COMPONENT.String(): ranking.ImageComponentRanker(),
+			storage.RiskSubjectType_IMAGE_COMPONENT.String(): ranking.ComponentRanker(),
 		},
 	}
 	if err := d.buildIndex(); err != nil {

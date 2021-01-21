@@ -208,7 +208,7 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 	if err := ds.storage.Upsert(image); err != nil {
 		return err
 	}
-	// If the image in db is latest, this image object will be carrying it's risk score
+	// If the image in db is latest, this image object will be carrying its risk score
 	ds.imageRanker.Add(image.GetId(), image.GetRiskScore())
 	return nil
 }

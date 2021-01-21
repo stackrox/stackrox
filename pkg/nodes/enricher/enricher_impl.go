@@ -98,6 +98,7 @@ func (e *enricherImpl) populateFromCache(ctx EnrichmentContext, node *storage.No
 
 	e.metrics.IncrementScanCacheHit()
 	node.Scan = scanValue.(*storage.NodeScan).Clone()
+	FillScanStats(node)
 	return true
 }
 
@@ -117,10 +118,81 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, scanner types.N
 	}
 
 	node.Scan = scan
+	FillScanStats(node)
 
 	// Clone the cachedScan because the scan is used within the node leading to race conditions
 	cachedScan := scan.Clone()
 	e.scanCache.Add(node.GetId(), cachedScan)
 
 	return nil
+}
+
+// FillScanStats fills in the higher level stats from the scan data.
+func FillScanStats(n *storage.Node) {
+	if n.GetScan() == nil {
+		return
+	}
+
+	n.SetComponents = &storage.Node_Components{
+		Components: int32(len(n.GetScan().GetComponents())),
+	}
+
+	var fixedByProvided bool
+	var nodeTopCVSS float32
+	vulns := make(map[string]bool)
+	for _, c := range n.GetScan().GetComponents() {
+		var componentTopCVSS float32
+		var hasVulns bool
+		for _, v := range c.GetVulns() {
+			hasVulns = true
+			if _, ok := vulns[v.GetCve()]; !ok {
+				vulns[v.GetCve()] = false
+			}
+
+			if v.GetCvss() > componentTopCVSS {
+				componentTopCVSS = v.GetCvss()
+			}
+
+			if v.GetSetFixedBy() == nil {
+				continue
+			}
+
+			fixedByProvided = true
+			if v.GetFixedBy() != "" {
+				vulns[v.GetCve()] = true
+			}
+		}
+
+		if hasVulns {
+			c.SetTopCvss = &storage.EmbeddedNodeScanComponent_TopCvss{
+				TopCvss: componentTopCVSS,
+			}
+		}
+
+		if componentTopCVSS > nodeTopCVSS {
+			nodeTopCVSS = componentTopCVSS
+		}
+	}
+
+	n.SetCves = &storage.Node_Cves{
+		Cves: int32(len(vulns)),
+	}
+
+	if len(vulns) > 0 {
+		n.SetTopCvss = &storage.Node_TopCvss{
+			TopCvss: nodeTopCVSS,
+		}
+	}
+
+	if int32(len(vulns)) == 0 || fixedByProvided {
+		var numFixableVulns int32
+		for _, fixable := range vulns {
+			if fixable {
+				numFixableVulns++
+			}
+		}
+		n.SetFixable = &storage.Node_FixableCves{
+			FixableCves: numFixableVulns,
+		}
+	}
 }

@@ -11,14 +11,17 @@ var (
 	namespaceOnce   sync.Once
 	namespaceRanker *Ranker
 
+	nodeOnce   sync.Once
+	nodeRanker *Ranker
+
 	deploymentOnce   sync.Once
 	deploymentRanker *Ranker
 
 	imageOnce   sync.Once
 	imageRanker *Ranker
 
-	imageComponentOnce   sync.Once
-	imageComponentRanker *Ranker
+	componentOnce   sync.Once
+	componentRanker *Ranker
 )
 
 // ClusterRanker returns the instance of ranker that ranks clusters.
@@ -37,6 +40,14 @@ func NamespaceRanker() *Ranker {
 	return namespaceRanker
 }
 
+// NodeRanker returns the instance of ranker that ranks nodes.
+func NodeRanker() *Ranker {
+	nodeOnce.Do(func() {
+		nodeRanker = NewRanker()
+	})
+	return nodeRanker
+}
+
 // DeploymentRanker returns the instance of ranker that ranks deployments.
 func DeploymentRanker() *Ranker {
 	deploymentOnce.Do(func() {
@@ -53,10 +64,10 @@ func ImageRanker() *Ranker {
 	return imageRanker
 }
 
-// ImageComponentRanker returns the instance of ranker that ranks image components.
-func ImageComponentRanker() *Ranker {
-	imageComponentOnce.Do(func() {
-		imageComponentRanker = NewRanker()
+// ComponentRanker returns the instance of ranker that ranks image and node components.
+func ComponentRanker() *Ranker {
+	componentOnce.Do(func() {
+		componentRanker = NewRanker()
 	})
-	return imageComponentRanker
+	return componentRanker
 }

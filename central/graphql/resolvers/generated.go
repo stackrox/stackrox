@@ -746,6 +746,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 		"operatingSystem: String!",
 		"osImage: String!",
+		"priority: Int!",
+		"riskScore: Float!",
 		"scan: NodeScan",
 		"taints: [Taint]!",
 	}))
@@ -6919,6 +6921,16 @@ func (resolver *nodeResolver) OperatingSystem(ctx context.Context) string {
 func (resolver *nodeResolver) OsImage(ctx context.Context) string {
 	value := resolver.data.GetOsImage()
 	return value
+}
+
+func (resolver *nodeResolver) Priority(ctx context.Context) int32 {
+	value := resolver.data.GetPriority()
+	return int32(value)
+}
+
+func (resolver *nodeResolver) RiskScore(ctx context.Context) float64 {
+	value := resolver.data.GetRiskScore()
+	return float64(value)
 }
 
 func (resolver *nodeResolver) Scan(ctx context.Context) (*nodeScanResolver, error) {

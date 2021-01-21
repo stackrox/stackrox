@@ -13,6 +13,7 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	networkFlowDatastore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	nodeGlobalDatastore "github.com/stackrox/rox/central/node/globaldatastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	processBaselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
@@ -20,6 +21,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -46,6 +48,7 @@ type GarbageCollector interface {
 }
 
 func newGarbageCollector(alerts alertDatastore.DataStore,
+	nodes nodeGlobalDatastore.GlobalDataStore,
 	images imageDatastore.DataStore,
 	clusters clusterDatastore.DataStore,
 	deployments deploymentDatastore.DataStore,
@@ -59,6 +62,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	return &garbageCollectorImpl{
 		alerts:          alerts,
 		clusters:        clusters,
+		nodes:           nodes,
 		images:          images,
 		imageComponents: imageComponents,
 		deployments:     deployments,
@@ -76,6 +80,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 type garbageCollectorImpl struct {
 	alerts          alertDatastore.DataStore
 	clusters        clusterDatastore.DataStore
+	nodes           nodeGlobalDatastore.GlobalDataStore
 	images          imageDatastore.DataStore
 	imageComponents imageComponentDatastore.DataStore
 	deployments     deploymentDatastore.DataStore
@@ -414,17 +419,20 @@ func (g *garbageCollectorImpl) removeOrphanedRisks() {
 	g.removeOrphanedDeploymentRisks()
 	g.removeOrphanedImageRisks()
 	g.removeOrphanedImageComponentRisks()
+	if features.HostScanning.Enabled() {
+		g.removeOrphanedNodeRisks()
+	}
 }
 
 func (g *garbageCollectorImpl) removeOrphanedDeploymentRisks() {
 	deploymentsWithRisk := g.getRisks(storage.RiskSubjectType_DEPLOYMENT)
 	results, err := g.deployments.Search(pruningCtx, search.EmptyQuery())
 	if err != nil {
-		log.Error(err)
+		log.Errorf("[Risk pruning] Searching deployments: %v", err)
 		return
 	}
 
-	prunable := deploymentsWithRisk.Difference(set.NewStringSet(search.ResultsToIDs(results)...)).AsSlice()
+	prunable := deploymentsWithRisk.Difference(search.ResultsToIDSet(results)).AsSlice()
 	log.Infof("[Risk pruning] Removing %d deployment risks", len(prunable))
 	g.removeRisks(storage.RiskSubjectType_DEPLOYMENT, prunable...)
 }
@@ -433,11 +441,11 @@ func (g *garbageCollectorImpl) removeOrphanedImageRisks() {
 	imagesWithRisk := g.getRisks(storage.RiskSubjectType_IMAGE)
 	results, err := g.images.Search(pruningCtx, search.EmptyQuery())
 	if err != nil {
-		log.Error(err)
+		log.Errorf("[Risk pruning] Searching images: %v", err)
 		return
 	}
 
-	prunable := imagesWithRisk.Difference(set.NewStringSet(search.ResultsToIDs(results)...)).AsSlice()
+	prunable := imagesWithRisk.Difference(search.ResultsToIDSet(results)).AsSlice()
 	log.Infof("[Risk pruning] Removing %d image risks", len(prunable))
 	g.removeRisks(storage.RiskSubjectType_IMAGE, prunable...)
 }
@@ -446,13 +454,26 @@ func (g *garbageCollectorImpl) removeOrphanedImageComponentRisks() {
 	componentsWithRisk := g.getRisks(storage.RiskSubjectType_IMAGE_COMPONENT)
 	results, err := g.imageComponents.Search(pruningCtx, search.EmptyQuery())
 	if err != nil {
-		log.Error(err)
+		log.Errorf("[Risk pruning] Searching image components: %v", err)
 		return
 	}
 
-	prunable := componentsWithRisk.Difference(set.NewStringSet(search.ResultsToIDs(results)...)).AsSlice()
+	prunable := componentsWithRisk.Difference(search.ResultsToIDSet(results)).AsSlice()
 	log.Infof("[Risk pruning] Removing %d image component risks", len(prunable))
 	g.removeRisks(storage.RiskSubjectType_IMAGE_COMPONENT, prunable...)
+}
+
+func (g *garbageCollectorImpl) removeOrphanedNodeRisks() {
+	nodesWithRisk := g.getRisks(storage.RiskSubjectType_NODE)
+	results, err := g.nodes.Search(pruningCtx, search.EmptyQuery())
+	if err != nil {
+		log.Errorf("[Risk pruning] Searching nodes: %v", err)
+		return
+	}
+
+	prunable := nodesWithRisk.Difference(search.ResultsToIDSet(results)).AsSlice()
+	log.Infof("[Risk pruning] Removing %d node risks", len(prunable))
+	g.removeRisks(storage.RiskSubjectType_NODE, prunable...)
 }
 
 func (g *garbageCollectorImpl) getRisks(riskType storage.RiskSubjectType) set.StringSet {

@@ -12,6 +12,15 @@ export const NODE_FRAGMENT = gql`
         joinedAt
         kernelVersion
         osImage
+        nodeStatus
+        priority
+        topVuln {
+            cvss
+            scoreVersion
+        }
+        scan {
+            scanTime
+        }
         labels {
             key
             value
@@ -19,6 +28,28 @@ export const NODE_FRAGMENT = gql`
         annotations {
             key
             value
+        }
+        vulnCounter {
+            all {
+                total
+                fixable
+            }
+            low {
+                total
+                fixable
+            }
+            medium {
+                total
+                fixable
+            }
+            high {
+                total
+                fixable
+            }
+            critical {
+                total
+                fixable
+            }
         }
         nodeComplianceControlCount(query: "Standard:CIS") {
             failingCount

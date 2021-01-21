@@ -15,6 +15,7 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageIndex "github.com/stackrox/rox/central/image/index"
+	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -23,7 +24,8 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/fixtures"
-	enricherMocks "github.com/stackrox/rox/pkg/images/enricher/mocks"
+	imageEnricherMocks "github.com/stackrox/rox/pkg/images/enricher/mocks"
+	nodeEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
@@ -39,10 +41,12 @@ type loopTestSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
 
-	mockManager    *connectionMocks.MockManager
-	mockDeployment *deploymentMocks.MockDataStore
-	mockImage      *imageMocks.MockDataStore
-	mockEnricher   *enricherMocks.MockImageEnricher
+	mockManager       *connectionMocks.MockManager
+	mockDeployment    *deploymentMocks.MockDataStore
+	mockNode          *nodeMocks.MockGlobalDataStore
+	mockNodeEnricher  *nodeEnricherMocks.MockNodeEnricher
+	mockImage         *imageMocks.MockDataStore
+	mockImageEnricher *imageEnricherMocks.MockImageEnricher
 }
 
 func (suite *loopTestSuite) SetupTest() {
@@ -50,6 +54,7 @@ func (suite *loopTestSuite) SetupTest() {
 	suite.mockManager = connectionMocks.NewMockManager(suite.mockCtrl)
 	suite.mockImage = imageMocks.NewMockDataStore(suite.mockCtrl)
 	suite.mockDeployment = deploymentMocks.NewMockDataStore(suite.mockCtrl)
+	suite.mockNode = nodeMocks.NewMockGlobalDataStore(suite.mockCtrl)
 }
 
 func (suite *loopTestSuite) TearDownTest() {
@@ -82,7 +87,7 @@ func (suite *loopTestSuite) waitForRun(loop *loopImpl, timeout time.Duration) bo
 
 func (suite *loopTestSuite) TestTimerTicksOnce() {
 	duration := 1 * time.Second // Need this to be long enough that the enrichAndDetectTicker won't get called twice during the test.
-	loop := newLoopWithDuration(suite.mockManager, suite.mockEnricher, suite.mockDeployment, suite.mockImage, nil, duration, duration, duration).(*loopImpl)
+	loop := newLoopWithDuration(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil, duration, duration, duration).(*loopImpl)
 	suite.expectCalls(2, false)
 	loop.Start()
 	// Wait for initial to complete
@@ -95,7 +100,7 @@ func (suite *loopTestSuite) TestTimerTicksOnce() {
 
 func (suite *loopTestSuite) TestTimerTicksTwice() {
 	duration := 100 * time.Millisecond
-	loop := newLoopWithDuration(suite.mockManager, suite.mockEnricher, suite.mockDeployment, suite.mockImage, nil, duration, duration, duration).(*loopImpl)
+	loop := newLoopWithDuration(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil, duration, duration, duration).(*loopImpl)
 	suite.expectCalls(3, false)
 	loop.Start()
 
@@ -107,7 +112,7 @@ func (suite *loopTestSuite) TestTimerTicksTwice() {
 }
 
 func (suite *loopTestSuite) TestShortCircuitOnce() {
-	loop := NewLoop(suite.mockManager, suite.mockEnricher, suite.mockDeployment, suite.mockImage, nil).(*loopImpl)
+	loop := NewLoop(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil).(*loopImpl)
 	suite.expectCalls(2, false)
 	loop.Start()
 
@@ -119,7 +124,7 @@ func (suite *loopTestSuite) TestShortCircuitOnce() {
 }
 
 func (suite *loopTestSuite) TestShortCircuitTwice() {
-	loop := NewLoop(suite.mockManager, suite.mockEnricher, suite.mockDeployment, suite.mockImage, nil).(*loopImpl)
+	loop := NewLoop(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil).(*loopImpl)
 	suite.expectCalls(2, true)
 	loop.Start()
 	timeout := 100 * time.Millisecond
@@ -132,7 +137,7 @@ func (suite *loopTestSuite) TestShortCircuitTwice() {
 }
 
 func (suite *loopTestSuite) TestStopWorks() {
-	loop := NewLoop(suite.mockManager, suite.mockEnricher, suite.mockDeployment, suite.mockImage, nil).(*loopImpl)
+	loop := NewLoop(suite.mockManager, suite.mockImageEnricher, suite.mockNodeEnricher, suite.mockDeployment, suite.mockImage, suite.mockNode, nil).(*loopImpl)
 	suite.expectCalls(1, false)
 	loop.Start()
 	timeout := 100 * time.Millisecond
@@ -164,11 +169,11 @@ func TestGetActiveImageIDs(t *testing.T) {
 	deploymentsDS := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, nil, nil, nil,
 		nil, filter.NewFilter(5, []int{5}), ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 
-	loop := NewLoop(nil, nil, deploymentsDS, imageDS, nil).(*loopImpl)
+	loop := NewLoop(nil, nil, nil, deploymentsDS, imageDS, nil, nil).(*loopImpl)
 
 	ids, err := loop.getActiveImageIDs()
 	require.NoError(t, err)
-	require.Len(t, ids, 0)
+	require.Equal(t, 0, ids.Cardinality())
 
 	testCtx := sac.WithAllAccess(context.Background())
 
@@ -188,5 +193,5 @@ func TestGetActiveImageIDs(t *testing.T) {
 
 	ids, err = loop.getActiveImageIDs()
 	require.NoError(t, err)
-	require.ElementsMatch(t, imageIDs, ids)
+	require.ElementsMatch(t, imageIDs, ids.AsSlice())
 }

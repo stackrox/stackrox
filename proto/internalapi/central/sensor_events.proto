@@ -38,6 +38,7 @@ message AlertResults {
     storage.LifecycleStage stage  = 3;
 }
 
+// Next tag: 20.
 message SensorEvent {
     // These fields may be duplicated in the individual events, but avoid the need to branch all the time
     string         id                           = 1;

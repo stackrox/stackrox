@@ -120,7 +120,9 @@ const TOP_RISKIEST_NODES = gql`
                 }
             }
             priority
-            scanTime
+            scan {
+                scanTime
+            }
         }
     }
 `;

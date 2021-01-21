@@ -14,6 +14,8 @@ import (
 	"github.com/stackrox/rox/central/node/index"
 	"github.com/stackrox/rox/central/node/store"
 	mocks2 "github.com/stackrox/rox/central/node/store/mocks"
+	"github.com/stackrox/rox/central/ranking"
+	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
@@ -84,6 +86,7 @@ type testSuite struct {
 
 	mockCtrl        *gomock.Controller
 	mockGlobalStore *mocks.MockGlobalStore
+	mockRiskStore   *mockRisks.MockDataStore
 
 	globalDataStore GlobalDataStore
 
@@ -97,10 +100,11 @@ func (s *testSuite) SetupTest() {
 		"cluster-2-read-access": {"2-1", "2-2", "2-3"},
 		"cluster-3-full-access": {"3-1", "3-2", "3-3", "3-4"},
 	})
+	s.mockRiskStore = mockRisks.NewMockDataStore(s.mockCtrl)
 
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	s.Require().NoError(err)
-	s.globalDataStore, err = New(s.mockGlobalStore, index.New(tmpIndex))
+	s.globalDataStore, err = New(s.mockGlobalStore, index.New(tmpIndex), s.mockRiskStore, ranking.NodeRanker(), ranking.ComponentRanker())
 	s.Require().NoError(err)
 
 	scc := sac.OneStepSCC{
@@ -223,8 +227,10 @@ func (s *liveTestSuite) SetupTest() {
 
 	store := globalstore.NewGlobalStore(testutils.DBForT(s.T()))
 	indexer := index.New(bleveIndex)
+	mockCtrl := gomock.NewController(s.T())
+	riskStore := mockRisks.NewMockDataStore(mockCtrl)
 
-	s.globalDataStore, err = New(store, indexer)
+	s.globalDataStore, err = New(store, indexer, riskStore, ranking.NodeRanker(), ranking.ComponentRanker())
 	s.NoError(err)
 	s.ctx = sac.WithAllAccess(context.Background())
 }

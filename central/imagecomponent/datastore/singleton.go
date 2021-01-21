@@ -35,7 +35,7 @@ func initialize() {
 		imageIndexer.New(globalindex.GetGlobalIndex()),
 		deploymentIndexer.New(globalindex.GetGlobalIndex(), globalindex.GetProcessIndex()))
 
-	ad, err = New(globaldb.GetGlobalDackBox(), storage, componentIndexer.New(globalindex.GetGlobalIndex()), searcher, riskDataStore.Singleton(), ranking.ImageComponentRanker())
+	ad, err = New(globaldb.GetGlobalDackBox(), storage, componentIndexer.New(globalindex.GetGlobalIndex()), searcher, riskDataStore.Singleton(), ranking.ComponentRanker())
 	utils.Must(err)
 }
 

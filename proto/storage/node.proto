@@ -43,6 +43,20 @@ message Node {
     string kube_proxy_version              = 16;
 
     NodeScan scan                          = 18 [(gogoproto.moretags) = "policy:\"Node Scan\""];
+    oneof set_components {
+        int32 components                   = 19 [(gogoproto.moretags) = "search:\"Component Count,store,hidden\""];
+    }
+    oneof set_cves {
+        int32 cves                         = 20 [(gogoproto.moretags) = "search:\"CVE Count,store,hidden\""];
+    }
+    oneof set_fixable {
+        int32 fixable_cves                 = 21 [(gogoproto.moretags) = "search:\"Fixable CVE Count,store,hidden\""];
+    }
+    int64 priority                         = 22;
+    float risk_score                       = 23 [(gogoproto.moretags) = "search:\"Risk Score,hidden\""];
+    oneof set_top_cvss {
+        float top_cvss                     = 24 [(gogoproto.moretags) = "search:\"Node Top CVSS,store\""];
+    }
 }
 
 message NodeScan {
@@ -54,4 +68,9 @@ message EmbeddedNodeScanComponent {
     string                         name       = 1 [(gogoproto.moretags) = "search:\"Component,store\""];
     string                         version    = 2 [(gogoproto.moretags) = "search:\"Component Version,store\""];
     repeated EmbeddedVulnerability vulns      = 3;
+    int64                          priority   = 4;
+    oneof set_top_cvss {
+        float                      top_cvss   = 5;
+    }
+    float                          risk_score = 6;
 }

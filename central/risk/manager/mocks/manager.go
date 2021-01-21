@@ -47,6 +47,20 @@ func (mr *MockManagerMockRecorder) CalculateRiskAndUpsertImage(arg0 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CalculateRiskAndUpsertImage", reflect.TypeOf((*MockManager)(nil).CalculateRiskAndUpsertImage), arg0)
 }
 
+// CalculateRiskAndUpsertNode mocks base method
+func (m *MockManager) CalculateRiskAndUpsertNode(arg0 *storage.Node) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CalculateRiskAndUpsertNode", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CalculateRiskAndUpsertNode indicates an expected call of CalculateRiskAndUpsertNode
+func (mr *MockManagerMockRecorder) CalculateRiskAndUpsertNode(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CalculateRiskAndUpsertNode", reflect.TypeOf((*MockManager)(nil).CalculateRiskAndUpsertNode), arg0)
+}
+
 // ReprocessDeploymentRisk mocks base method
 func (m *MockManager) ReprocessDeploymentRisk(arg0 *storage.Deployment) {
 	m.ctrl.T.Helper()

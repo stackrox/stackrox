@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
@@ -38,8 +37,6 @@ func init() {
 		schema.AddExtraResolver("Node", "topVuln(query: String): EmbeddedVulnerability"),
 		schema.AddExtraResolver("Node", "vulnCount(query: String): Int!"),
 		schema.AddExtraResolver("Node", "vulnCounter(query: String): VulnerabilityCounter!"),
-		schema.AddExtraResolver("Node", "priority: Int!"),
-		schema.AddExtraResolver("Node", "scanTime: Time"),
 		schema.AddExtraResolver("Node", "plottedVulns(query: String): PlottedVulnerabilities!"),
 	)
 }
@@ -389,16 +386,6 @@ func (resolver *nodeResolver) VulnCounter(ctx context.Context, args RawQuery) (*
 			fixable: 2,
 		},
 	}, nil
-}
-
-// Priority is here for mocking purposes only. The real implementation will add a priority field to the node proto.
-func (resolver *nodeResolver) Priority(ctx context.Context) (int32, error) {
-	return 1, nil
-}
-
-// ScanTime is here for mocking purposes only. The real implementation will add a scanTime field to the node proto.
-func (resolver *nodeResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
-	return timestamp(types.TimestampNow())
 }
 
 // PlottedVulns returns the data required by top risky entity scatter-plot on vuln mgmt dashboard

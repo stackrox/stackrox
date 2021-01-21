@@ -9,9 +9,12 @@ import (
 	"github.com/stackrox/rox/central/node/globalstore"
 	"github.com/stackrox/rox/central/node/index"
 	"github.com/stackrox/rox/central/node/index/mappings"
+	"github.com/stackrox/rox/central/ranking"
+	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -28,17 +31,33 @@ type globalDataStore struct {
 	globalStore globalstore.GlobalStore
 
 	indexer index.Indexer
+
+	risks               riskDS.DataStore
+	nodeRanker          *ranking.Ranker
+	nodeComponentRanker *ranking.Ranker
 }
 
 // New creates and returns a new GlobalDataStore.
-func New(globalStore globalstore.GlobalStore, indexer index.Indexer) (GlobalDataStore, error) {
+func New(globalStore globalstore.GlobalStore, indexer index.Indexer, risks riskDS.DataStore,
+	nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) (GlobalDataStore, error) {
 	gds := &globalDataStore{
 		globalStore: globalStore,
 		indexer:     indexer,
+
+		risks:               risks,
+		nodeRanker:          nodeRanker,
+		nodeComponentRanker: nodeComponentRanker,
 	}
 	if err := gds.buildIndex(); err != nil {
 		return nil, err
 	}
+
+	if features.HostScanning.Enabled() {
+		if err := gds.initializeRankers(); err != nil {
+			return nil, err
+		}
+	}
+
 	return gds, nil
 }
 
@@ -57,6 +76,26 @@ func (s *globalDataStore) buildIndex() error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (s *globalDataStore) initializeRankers() error {
+	stores, err := s.globalStore.GetAllClusterNodeStores()
+	if err != nil {
+		return errors.Wrap(err, "initializing node rankers")
+	}
+
+	for _, store := range stores {
+		nodes, err := store.ListNodes()
+		if err != nil {
+			return errors.Wrap(err, "retrieving nodes from store for ranker initialization")
+		}
+
+		for _, node := range nodes {
+			s.nodeRanker.Add(node.GetId(), node.GetRiskScore())
+		}
+	}
+
 	return nil
 }
 
@@ -92,7 +131,7 @@ func (s *globalDataStore) GetAllClusterNodeStores(ctx context.Context, writeAcce
 
 	dataStores := make(map[string]datastore.DataStore, len(stores))
 	for clusterID, store := range stores {
-		dataStores[clusterID] = datastore.New(store, s.indexer, writeAccess)
+		dataStores[clusterID] = datastore.New(store, s.indexer, writeAccess, s.risks, s.nodeRanker, s.nodeComponentRanker)
 	}
 
 	return dataStores, nil
@@ -113,7 +152,7 @@ func (s *globalDataStore) GetClusterNodeStore(ctx context.Context, clusterID str
 	if err != nil {
 		return nil, err
 	}
-	return datastore.New(store, s.indexer, writeAccess), nil
+	return datastore.New(store, s.indexer, writeAccess, s.risks, s.nodeRanker, s.nodeComponentRanker), nil
 }
 
 func (s *globalDataStore) RemoveClusterNodeStores(ctx context.Context, clusterIDs ...string) error {
@@ -210,8 +249,8 @@ func (s *globalDataStore) SearchRawNodes(ctx context.Context, q *v1.Query) ([]*s
 	nodes := make([]*storage.Node, 0, len(results))
 	for _, r := range results {
 		var node *storage.Node
-		for _, s := range stores {
-			node, err = s.GetNode(r.ID)
+		for _, store := range stores {
+			node, err = store.GetNode(r.ID)
 			if err == nil && node != nil {
 				nodes = append(nodes, node)
 				break
