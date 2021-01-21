@@ -1,0 +1,7 @@
+<component name="ProjectCodeStyleConfiguration">
+  <code_scheme name="Project" version="173">
+    <GoCodeStyleSettings>
+      <option name="IMPORT_SORTING" value="GOIMPORTS" />
+    </GoCodeStyleSettings>
+  </code_scheme>
+</component>
