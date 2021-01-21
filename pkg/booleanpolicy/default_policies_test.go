@@ -2551,7 +2551,7 @@ func podExecViolationMsg(pod, container, command string) *storage.Alert_Violatio
 				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
 					{Key: "pod", Value: pod},
 					{Key: "container", Value: container},
-					{Key: "command", Value: command},
+					{Key: "commands", Value: command},
 				},
 			},
 		},
@@ -2560,12 +2560,12 @@ func podExecViolationMsg(pod, container, command string) *storage.Alert_Violatio
 
 func podPortForwardViolationMsg(pod string, port int) *storage.Alert_Violation {
 	return &storage.Alert_Violation{
-		Message: fmt.Sprintf("Kubernetes API received port forward request to pod '%s' port '%s'", pod, strconv.Itoa(port)),
+		Message: fmt.Sprintf("Kubernetes API received port forward request to pod '%s' ports '%s'", pod, strconv.Itoa(port)),
 		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
 			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
 				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
 					{Key: "pod", Value: pod},
-					{Key: "port", Value: strconv.Itoa(port)},
+					{Key: "ports", Value: strconv.Itoa(port)},
 				},
 			},
 		},
@@ -2582,13 +2582,13 @@ func podExecEvent(pod, container, command string) *storage.KubernetesEvent {
 		ObjectArgs: &storage.KubernetesEvent_PodExecArgs_{
 			PodExecArgs: &storage.KubernetesEvent_PodExecArgs{
 				Container: container,
-				Command:   command,
+				Commands:  []string{command},
 			},
 		},
 	}
 }
 
-func podPortForwardEvent(pod string, port int) *storage.KubernetesEvent {
+func podPortForwardEvent(pod string, port int32) *storage.KubernetesEvent {
 	return &storage.KubernetesEvent{
 		Object: &storage.KubernetesEvent_Object{
 			Name:     pod,
@@ -2597,7 +2597,7 @@ func podPortForwardEvent(pod string, port int) *storage.KubernetesEvent {
 		ApiVerb: storage.KubernetesEvent_CREATE,
 		ObjectArgs: &storage.KubernetesEvent_PodPortForwardArgs_{
 			PodPortForwardArgs: &storage.KubernetesEvent_PodPortForwardArgs{
-				Port: int32(port),
+				Ports: []int32{port},
 			},
 		},
 	}

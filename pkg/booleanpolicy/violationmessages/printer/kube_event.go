@@ -2,10 +2,10 @@ package printer
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 // GenerateKubeEventViolationMsg constructs violation message for kubernetes event violations.
@@ -27,15 +27,16 @@ func defaultViolationMsg(event *storage.KubernetesEvent) *storage.Alert_Violatio
 }
 
 func podExecViolationMsg(pod string, args *storage.KubernetesEvent_PodExecArgs) *storage.Alert_Violation {
+	cmds := stringutils.JoinNonEmpty(", ", args.GetCommands()...)
 	return &storage.Alert_Violation{
 		Message: fmt.Sprintf("Kubernetes API received exec '%s' request into pod '%s' container '%s'",
-			args.GetCommand(), pod, args.GetContainer()),
+			cmds, pod, args.GetContainer()),
 		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
 			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
 				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
 					{Key: "pod", Value: pod},
 					{Key: "container", Value: args.GetContainer()},
-					{Key: "command", Value: args.GetCommand()},
+					{Key: "commands", Value: cmds},
 				},
 			},
 		},
@@ -43,14 +44,14 @@ func podExecViolationMsg(pod string, args *storage.KubernetesEvent_PodExecArgs) 
 }
 
 func podPortForwardViolationMsg(pod string, args *storage.KubernetesEvent_PodPortForwardArgs) *storage.Alert_Violation {
-	port := strconv.Itoa((int)(args.GetPort()))
+	ports := stringutils.JoinInt32(", ", args.GetPorts()...)
 	return &storage.Alert_Violation{
-		Message: fmt.Sprintf("Kubernetes API received port forward request to pod '%s' port '%s'", pod, port),
+		Message: fmt.Sprintf("Kubernetes API received port forward request to pod '%s' ports '%s'", pod, ports),
 		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
 			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
 				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
 					{Key: "pod", Value: pod},
-					{Key: "port", Value: port},
+					{Key: "ports", Value: ports},
 				},
 			},
 		},

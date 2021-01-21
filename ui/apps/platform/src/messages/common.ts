@@ -38,6 +38,7 @@ export const enforcementActionLabels = Object.freeze({
     FAIL_BUILD_ENFORCEMENT: 'Fail builds during continuous integration',
     SCALE_TO_ZERO_ENFORCEMENT: 'Scale to Zero Replicas',
     KILL_POD_ENFORCEMENT: 'Kill Pod',
+    FAIL_KUBE_REQUEST_ENFORCEMENT: 'Fail Kubernetes API Request',
     UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: 'Add an Unsatisfiable Node Constraint',
 });
 

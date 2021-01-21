@@ -87,27 +87,16 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 		return nil, errors.Wrap(err, "timestamp in configmap is not valid")
 	}
 
-	deployTimePoliciesGZData := cm.BinaryData[admissioncontrol.DeployTimePoliciesGZDataKey]
-	deployTimePoliciesData, err := gziputil.Decompress(deployTimePoliciesGZData)
+	deployTimePolicies, err := decompressAndUnmarshalPolicies(cm.BinaryData[admissioncontrol.DeployTimePoliciesGZDataKey])
 	if err != nil {
-		return nil, errors.Wrap(err, "could not read gzipped deploy-time policies data from configmap")
+		return nil, errors.Wrap(err, "reading deploy-time policies from configmap")
 	}
 
-	var deployTimePolicies storage.PolicyList
-	if err := proto.Unmarshal(deployTimePoliciesData, &deployTimePolicies); err != nil {
-		return nil, errors.Wrap(err, "could not parse protobuf-encoded policies from configmap")
-	}
-
-	var runTimePolicies storage.PolicyList
+	var runTimePolicies *storage.PolicyList
 	if features.K8sEventDetection.Enabled() {
-		runTimePoliciesGZData := cm.BinaryData[admissioncontrol.RunTimePoliciesGZDataKey]
-		runTimePoliciesData, err := gziputil.Decompress(runTimePoliciesGZData)
+		runTimePolicies, err = decompressAndUnmarshalPolicies(cm.BinaryData[admissioncontrol.RunTimePoliciesGZDataKey])
 		if err != nil {
-			return nil, errors.Wrap(err, "could not read gzipped run-time policies data from configmap")
-		}
-
-		if err := proto.Unmarshal(runTimePoliciesData, &runTimePolicies); err != nil {
-			return nil, errors.Wrap(err, "could not parse protobuf-encoded policies from configmap")
+			return nil, errors.Wrap(err, "reading run-time policies from configmap")
 		}
 	}
 
@@ -128,8 +117,8 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 
 	settings := &sensor.AdmissionControlSettings{
 		ClusterConfig:              &config,
-		EnforcedDeployTimePolicies: &deployTimePolicies,
-		RuntimePolicies:            &runTimePolicies,
+		EnforcedDeployTimePolicies: deployTimePolicies,
+		RuntimePolicies:            runTimePolicies,
 		Timestamp:                  tsProto,
 		CacheVersion:               cacheVersion,
 		CentralEndpoint:            centralEndpoint,

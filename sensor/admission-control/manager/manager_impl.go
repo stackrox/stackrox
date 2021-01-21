@@ -164,13 +164,13 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 		return // no update
 	}
 
-	policySet := detection.NewPolicySet()
+	deployTimePolicySet := detection.NewPolicySet()
 	for _, policy := range newSettings.GetEnforcedDeployTimePolicies().GetPolicies() {
 		if policyfields.ContainsUnscannedImageField(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
 			log.Warnf(errors.ImageScanUnavailableMsg(policy))
 			continue
 		}
-		if err := policySet.UpsertPolicy(policy); err != nil {
+		if err := deployTimePolicySet.UpsertPolicy(policy); err != nil {
 			log.Errorf("Unable to upsert policy %q (%s), will not be able to enforce", policy.GetName(), policy.GetId())
 		}
 	}
@@ -188,8 +188,8 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 	}
 
 	var deployTimeDetector deploytime.Detector
-	if newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnabled() && len(policySet.GetCompiledPolicies()) > 0 {
-		deployTimeDetector = deploytime.NewDetector(policySet)
+	if newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnabled() && len(deployTimePolicySet.GetCompiledPolicies()) > 0 {
+		deployTimeDetector = deploytime.NewDetector(deployTimePolicySet)
 	}
 
 	enforcedOperations := map[admission.Operation]struct{}{
@@ -244,7 +244,20 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 	}
 	m.lastSettingsUpdate = newSettings.GetTimestamp()
 
-	log.Infof("Applied new admission control settings (enforcing on %d policies).", len(policySet.GetCompiledPolicies()))
+	enforceablePolicies := 0
+	for _, policy := range runtimePolicySet.GetCompiledPolicies() {
+		if len(policy.Policy().GetEnforcementActions()) > 0 {
+			enforceablePolicies++
+		}
+	}
+	log.Infof("Applied new admission control settings "+
+		"(enforcing on %d deploy-time policies; "+
+		"detecting on %d run-time policies; "+
+		"enforcing on %d run-time policies).",
+		len(deployTimePolicySet.GetCompiledPolicies()),
+		len(runtimePolicySet.GetCompiledPolicies()),
+		enforceablePolicies)
+
 	m.settingsStream.Push(newSettings)
 }
 
@@ -261,9 +274,13 @@ func (m *manager) HandleK8sEvent(req *admission.AdmissionRequest) (*admission.Ad
 	if !features.K8sEventDetection.Enabled() {
 		return pass(req.UID), nil
 	}
-	//TODO add logic to process k8s events here
-	return pass(req.UID), nil
 
+	state := m.currentState()
+	if state == nil {
+		return nil, pkgErr.New("admission controller is disabled, not handling request")
+	}
+
+	return m.evaluateRuntimeAdmissionRequest(state, req)
 }
 
 func (m *manager) SensorConnStatusFlag() *concurrency.Flag {
@@ -272,4 +289,12 @@ func (m *manager) SensorConnStatusFlag() *concurrency.Flag {
 
 func (m *manager) Alerts() <-chan []*storage.Alert {
 	return m.alertsC
+}
+
+func (m *manager) putAlertsOnChan(alerts []*storage.Alert) {
+	select {
+	case <-m.stopSig.Done():
+		return
+	case m.alertsC <- alerts:
+	}
 }

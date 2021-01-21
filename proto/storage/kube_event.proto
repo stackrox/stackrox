@@ -58,11 +58,11 @@ message KubernetesEvent {
     }
 
     message PodExecArgs {
-        string container = 1;
-        string command   = 2;
+        string          container = 1;
+        repeated string commands   = 2;
     }
 
     message PodPortForwardArgs {
-        int32 port = 1;
+        repeated int32 ports = 1;
     }
 }

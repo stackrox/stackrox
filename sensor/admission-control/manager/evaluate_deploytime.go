@@ -2,9 +2,7 @@ package manager
 
 import (
 	"context"
-	"fmt"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/pkg/errors"
@@ -12,12 +10,10 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/enforcers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/templates"
 	admission "k8s.io/api/admission/v1beta1"
 )
 
@@ -25,35 +21,6 @@ var (
 	detectionCtx = deploytime.DetectionContext{
 		EnforcementOnly: true,
 	}
-)
-
-const (
-	kubectlTemplate = `
-{{- range .Alerts -}}
-Policy: {{.Policy.Name}}
-- Description:
-    ↳ {{wrap .Policy.Description}}
-- Rationale:
-    ↳ {{wrap .Policy.Rationale}}
-- Remediation:
-    ↳ {{wrap .Policy.Remediation}}
-- Violations:
-    {{- range .Violations}}
-    - {{.Message}}
-    {{- end}}
-
-{{ end -}}
-{{- if .BypassAnnotationKey}}
-In case of emergency, add the annotation {"{{.BypassAnnotationKey}}": "ticket-1234"} to your deployment with an updated ticket number
-{{- end -}}
-`
-)
-
-var (
-	msgTemplate = template.Must(template.New("name").Funcs(
-		template.FuncMap{
-			"wrap": stringutils.Wrap,
-		}).Parse(kubectlTemplate))
 )
 
 func (m *manager) shouldBypass(s *state, req *admission.AdmissionRequest) bool {
@@ -204,39 +171,14 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	}
 
 	if len(alerts) == 0 {
-		log.Debugf("No policies triggered, allowing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
+		log.Debugf("No policies violated, allowing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
 		return pass(req.UID), nil
 	}
 
-	if features.K8sEventDetection.Enabled() {
-		go m.putAlertsOnChan(alerts)
-	}
+	// TODO: Mark enforced violations as attempted
+	//if features.K8sEventDetection.Enabled() {
+	//	go m.putAlertsOnChan(alerts)
+	//}
 
-	noun := "policies"
-	if len(alerts) == 1 {
-		noun = "policy"
-	}
-
-	// We add a line break at the beginning to look nicer in kubectl
-	msgHeader := fmt.Sprintf("\nThe attempted operation violated %d enforced %s, described below:\n\n", len(alerts), noun)
-	data := map[string]interface{}{
-		"Alerts": alerts,
-	}
-	if !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass() {
-		data["BypassAnnotationKey"] = enforcers.EnforcementBypassAnnotationKey
-	}
-	msgBody, err := templates.ExecuteToString(msgTemplate, data)
-	if err != nil {
-		msgBody = fmt.Sprintf("Internal error executing message template: %v", err)
-	}
-
-	return fail(req.UID, msgHeader+msgBody+"\n\n"), nil
-}
-
-func (m *manager) putAlertsOnChan(alerts []*storage.Alert) {
-	select {
-	case <-m.stopSig.Done():
-		return
-	case m.alertsC <- alerts:
-	}
+	return fail(req.UID, message(alerts, !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass())), nil
 }

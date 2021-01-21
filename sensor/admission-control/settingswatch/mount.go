@@ -68,33 +68,16 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 		return nil, errors.Wrapf(err, "unmarshaling decompressed cluster config data from file %s", configPath)
 	}
 
-	deployTimePoliciesDataGZ, err := ioutil.ReadFile(deployTimePoliciesPath)
+	deployTimePolicies, err := getPoliciesFromFile(deployTimePoliciesPath)
 	if err != nil {
-		return nil, errors.Wrapf(err, "reading deploy-time policies from file %s", deployTimePoliciesPath)
-	}
-	deployTimePoliciesData, err := gziputil.Decompress(deployTimePoliciesDataGZ)
-	if err != nil {
-		return nil, errors.Wrapf(err, "decompressing deploy-time policies in file %s", deployTimePoliciesPath)
+		return nil, errors.Wrapf(err, "getting deploy-time policies from file %s", deployTimePoliciesPath)
 	}
 
-	var deployTimePolicyList storage.PolicyList
-	if err := proto.Unmarshal(deployTimePoliciesData, &deployTimePolicyList); err != nil {
-		return nil, errors.Wrapf(err, "unmarshaling decompressed deploy-time policies data from file %s", deployTimePoliciesPath)
-	}
-
-	var runTimePolicyList storage.PolicyList
+	var runTimePolicies *storage.PolicyList
 	if features.K8sEventDetection.Enabled() {
-		runTimePoliciesDataGZ, err := ioutil.ReadFile(runTimePoliciesPath)
+		runTimePolicies, err = getPoliciesFromFile(runTimePoliciesPath)
 		if err != nil {
-			return nil, errors.Wrapf(err, "reading run-time policies from file %s", runTimePoliciesPath)
-		}
-		runTimePoliciesData, err := gziputil.Decompress(runTimePoliciesDataGZ)
-		if err != nil {
-			return nil, errors.Wrapf(err, "decompressing run-time policies in file %s", runTimePoliciesPath)
-		}
-
-		if err := proto.Unmarshal(runTimePoliciesData, &runTimePolicyList); err != nil {
-			return nil, errors.Wrapf(err, "unmarshaling decompressed run-time policies data from file %s", runTimePoliciesPath)
+			return nil, errors.Wrapf(err, "getting run-time policies from file %s", runTimePoliciesPath)
 		}
 	}
 
@@ -139,8 +122,8 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 
 	return &sensor.AdmissionControlSettings{
 		ClusterConfig:              &clusterConfig,
-		EnforcedDeployTimePolicies: &deployTimePolicyList,
-		RuntimePolicies:            &runTimePolicyList,
+		EnforcedDeployTimePolicies: deployTimePolicies,
+		RuntimePolicies:            runTimePolicies,
 		Timestamp:                  tsProto,
 		CacheVersion:               cacheVersion,
 		CentralEndpoint:            centralEndpoint,

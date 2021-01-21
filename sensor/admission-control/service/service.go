@@ -123,7 +123,6 @@ func (s *service) handleValidate(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s *service) handleK8sEvents(w http.ResponseWriter, req *http.Request) {
-
 	if !s.mgr.IsReady() {
 		http.Error(w, "No settings are available. Not ready to handle admission controller requests", http.StatusServiceUnavailable)
 		return

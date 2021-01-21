@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -70,11 +71,11 @@ func buildEnforcement(policy *storage.Policy, deployment *storage.Deployment) (e
 }
 
 func buildKubeEventEnforcement(policy *storage.Policy, kubeEvent *storage.KubernetesEvent) (enforcement storage.EnforcementAction, message string) {
-	//for _, enforcementAction := range policy.GetEnforcementActions() {
-	//	if enforcementAction == storage.EnforcementAction_FAIL_KUBE_REQUEST_ENFORCEMENT {
-	//		return storage.EnforcementAction_FAIL_KUBE_REQUEST_ENFORCEMENT,
-	//			fmt.Sprintf("Kubernetes event %s has failed in response to policy violation", kubernetes.EventAsString(kubeEvent))
-	//	}
-	//}
+	for _, enforcementAction := range policy.GetEnforcementActions() {
+		if enforcementAction == storage.EnforcementAction_FAIL_KUBE_REQUEST_ENFORCEMENT {
+			return storage.EnforcementAction_FAIL_KUBE_REQUEST_ENFORCEMENT,
+				fmt.Sprintf("Kubernetes request %s failed in response to policy violation", kubernetes.EventAsString(kubeEvent))
+		}
+	}
 	return storage.EnforcementAction_UNSET_ENFORCEMENT, ""
 }

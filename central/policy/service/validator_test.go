@@ -298,9 +298,10 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycleEnforcementCombinati
 					storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
 					storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
 					storage.EnforcementAction_KILL_POD_ENFORCEMENT,
+					storage.EnforcementAction_FAIL_KUBE_REQUEST_ENFORCEMENT,
 				},
 			},
-			expectedSize: 1,
+			expectedSize: 2,
 		},
 		{
 			description: "Remove invalid enforcement with build lifecycle",
@@ -346,6 +347,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycleEnforcementCombinati
 					storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
 					storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
 					storage.EnforcementAction_KILL_POD_ENFORCEMENT,
+					storage.EnforcementAction_FAIL_KUBE_REQUEST_ENFORCEMENT,
 				},
 			},
 			expectedSize: 2,
@@ -356,7 +358,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycleEnforcementCombinati
 		suite.T().Run(c.description, func(t *testing.T) {
 			c.p.Name = "BLAHBLAH"
 			suite.validator.removeEnforcementsForMissingLifecycles(c.p)
-			assert.Equal(t, len(c.p.EnforcementActions), c.expectedSize, "enforcement size does not match")
+			assert.Equal(t, c.expectedSize, len(c.p.EnforcementActions), "enforcement size does not match")
 		})
 	}
 }

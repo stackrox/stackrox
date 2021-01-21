@@ -80,6 +80,7 @@ enum EnforcementAction {
     UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT = 2;
     KILL_POD_ENFORCEMENT                      = 3;
     FAIL_BUILD_ENFORCEMENT                    = 4;
+    FAIL_KUBE_REQUEST_ENFORCEMENT             = 5;
 }
 
 enum Severity {

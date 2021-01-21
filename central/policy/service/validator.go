@@ -294,6 +294,7 @@ var enforcementToLifecycle = map[storage.EnforcementAction]storage.LifecycleStag
 	storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT:                 storage.LifecycleStage_DEPLOY,
 	storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: storage.LifecycleStage_DEPLOY,
 	storage.EnforcementAction_KILL_POD_ENFORCEMENT:                      storage.LifecycleStage_RUNTIME,
+	storage.EnforcementAction_FAIL_KUBE_REQUEST_ENFORCEMENT:             storage.LifecycleStage_RUNTIME,
 }
 
 func removeEnforcementForLifecycle(policy *storage.Policy, stage storage.LifecycleStage) {

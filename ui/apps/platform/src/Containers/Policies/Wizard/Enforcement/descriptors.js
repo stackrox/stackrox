@@ -40,7 +40,7 @@ const getLifecycleTileMap = (featureFlags) => {
 export const lifecycleToEnforcementsMap = {
     BUILD: ['FAIL_BUILD_ENFORCEMENT'],
     DEPLOY: ['SCALE_TO_ZERO_ENFORCEMENT', 'UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT'],
-    RUNTIME: ['KILL_POD_ENFORCEMENT'],
+    RUNTIME: ['KILL_POD_ENFORCEMENT', 'FAIL_KUBE_REQUEST_ENFORCEMENT'],
 };
 
 export default getLifecycleTileMap;
