@@ -221,13 +221,13 @@ class ProcessBaselinesTest extends BaseSpecification {
             if (alert.getPolicy().name.equalsIgnoreCase("Unauthorized Process Execution") &&
                      alert.deployment.id.equalsIgnoreCase(deploymentId)) {
                 alertId = alert.id
-                AlertService.resolveAlert(alertId, resolveWhitelist)
+                AlertService.resolveAlert(alertId, addToBaseline)
                 // again, allow the new baseline that contains pwd to propagate
                 sleep 5000
             }
          }
         orchestrator.execInContainer(deployment, "pwd")
-        if (resolveWhitelist) {
+        if (addToBaseline) {
             waitForViolation(containerName, "Unauthorized Process Execution", 15)
         }
         else {
@@ -257,11 +257,11 @@ class ProcessBaselinesTest extends BaseSpecification {
 
         where:
         "Data inputs are :"
-        deploymentName                                 | processName       | resolveWhitelist | expectedViolationsCount
+        deploymentName                                 | processName       | addToBaseline | expectedViolationsCount
 
-        DEPLOYMENTNGINX_RESOLVE_VIOLATION              | "/usr/sbin/nginx" | false            | 1
+        DEPLOYMENTNGINX_RESOLVE_VIOLATION              | "/usr/sbin/nginx" | false         | 1
 
-        DEPLOYMENTNGINX_RESOLVE_AND_BASELINE_VIOLATION | "/usr/sbin/nginx" | true             | 0
+        DEPLOYMENTNGINX_RESOLVE_AND_BASELINE_VIOLATION | "/usr/sbin/nginx" | true          | 0
      }
 
     @Category(BAT)
