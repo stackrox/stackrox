@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/encoding/gzip"
@@ -148,20 +149,33 @@ func (s *centralCommunicationImpl) initialConfigSync(stream central.SensorServic
 		return errors.Wrap(err, "receiving header metadata from central")
 	}
 
+	helmManagedCfg := handler.GetHelmManagedConfig()
+
 	if metautils.NiceMD(headerMD).Get(centralsensor.HelmManagedClusterMetadataKey) == "true" {
-		if handler.GetHelmManagedConfig() == nil {
+		if helmManagedCfg == nil {
 			return errors.New("central requested Helm-managed cluster config, but no Helm-managed config is available")
+		}
+
+		if helmManagedCfg.GetClusterId() == "" {
+			cachedClusterID, err := helmconfig.LoadCachedClusterID()
+			if err != nil {
+				log.Warnf("Failed to load cached cluster ID: %s", err)
+			} else if cachedClusterID != "" {
+				helmManagedCfg = helmManagedCfg.Clone()
+				helmManagedCfg.ClusterId = cachedClusterID
+				log.Infof("Re-using cluster ID %s of previous run. If this is causing issues, re-apply a new Helm configuration via 'helm upgrade', or delete the sensor pod.", cachedClusterID)
+			}
 		}
 
 		msg := &central.MsgFromSensor{
 			Msg: &central.MsgFromSensor_HelmManagedConfigInit{
-				HelmManagedConfigInit: handler.GetHelmManagedConfig(),
+				HelmManagedConfigInit: helmManagedCfg,
 			},
 		}
 		if err := stream.Send(msg); err != nil {
 			return errors.Wrap(err, "could not send Helm-managed cluster config")
 		}
-	} else if helmCfg := handler.GetHelmManagedConfig(); helmCfg != nil {
+	} else if helmManagedCfg != nil {
 		log.Warn("Central instance does NOT support Helm-managed configuration. Dynamic cluster configuration MUST be changed via the UI in order to take effect. Please upgrade Central to a recent version to allow changing dynamic cluster configuration via 'helm upgrade'")
 	}
 
@@ -173,7 +187,11 @@ func (s *centralCommunicationImpl) initialConfigSync(stream central.SensorServic
 		return errors.Errorf("initial message received from Sensor was not a cluster config: %T", msg.Msg)
 	}
 	if features.SensorInstallationExperience.Enabled() {
-		clusterid.Set(msg.GetClusterConfig().GetClusterId())
+		clusterID := msg.GetClusterConfig().GetClusterId()
+		clusterid.Set(clusterID)
+		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {
+			log.Warnf("Could not cache cluster ID: %v", err)
+		}
 	}
 	// Send the initial cluster config to the config handler
 	if err := handler.ProcessMessage(msg); err != nil {

@@ -114,6 +114,8 @@ spec:
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
           readOnly: true
+        - name: cache
+          mountPath: /var/cache/stackrox
         [<- if and (not .KubectlOutput) (index .FeatureFlags "ROX_SENSOR_INSTALLATION_EXPERIENCE") >]
         - name: helm-cluster-config
           mountPath: /run/secrets/stackrox.io/helm-cluster-config/
@@ -139,6 +141,8 @@ spec:
           secretName: additional-ca-sensor
           optional: true
       - name: varlog
+        emptyDir: {}
+      - name: cache
         emptyDir: {}
       [<- if and (not .KubectlOutput) (index .FeatureFlags "ROX_SENSOR_INSTALLATION_EXPERIENCE") >]
       - name: helm-cluster-config

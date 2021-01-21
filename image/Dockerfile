@@ -72,6 +72,10 @@ VOLUME /var/lib/stackrox
 RUN mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox
 VOLUME /var/log/stackrox
 
+# Temporary data is stored at this path
+RUN mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox
+VOLUME /var/cache/stackrox
+
 # /tmp needs to be a read-write filesystem.
 RUN chown -R 4000:4000 /tmp
 VOLUME /tmp

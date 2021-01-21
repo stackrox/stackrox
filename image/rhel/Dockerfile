@@ -46,6 +46,7 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     chown -R 4000:4000 /etc/pki /etc/ssl && save-dir-contents /etc/pki/ca-trust /etc/ssl && \
     mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
     mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
+    mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
     chown -R 4000:4000 /tmp && \
     mkdir -p /stackrox/data && chown -R 4000:4000 /stackrox/data
 
