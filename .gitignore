@@ -30,19 +30,10 @@ combined_coverage.dat
 /bin/
 /linux-gocache
 
-# Exclude GoLand/IntelliJ/JetBrains products files
-# Note that `/**/*` is required because some `git` versions will not respect the following inclusions without it.
-# See https://stackoverflow.com/a/60288435/484050
-.idea/**/*
-# Yet, include per-project code style settings.
-# Directory must be included because otherwise file will not be seen by `git`. See why in the link above.
-!.idea/codeStyles/
-!.idea/codeStyles/codeStyleConfig.xml
-!.idea/codeStyles/Project.xml
-
 # Miscellaneous
 *.g4
 *.tokens
+.idea/
 /vendor/
 /.gradle/
 /stackrox-central-services-chart/
