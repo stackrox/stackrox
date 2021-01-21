@@ -358,7 +358,7 @@ func (n *notifier) Test(ctx context.Context) error {
 					Severity:    storage.Severity_HIGH_SEVERITY,
 					Description: "This finding tests the SecurityHub integration",
 				},
-				Deployment: &storage.Alert_Deployment{
+				Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
 					Id:          uuid.NewV4().String(),
 					Name:        "example deployment",
 					Namespace:   "example namespace",
@@ -375,7 +375,7 @@ func (n *notifier) Test(ctx context.Context) error {
 							},
 						},
 					},
-				},
+				}},
 				FirstOccurred: types.TimestampNow(),
 				Time:          types.TimestampNow(),
 				// Mark the state as resolved, thus indicating to security hub that all is good and avoiding raising a false alert.

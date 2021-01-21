@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/detection"
+	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -34,7 +35,7 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 		}
 		alertViolations := violations.AlertViolations
 		if len(alertViolations) > 0 {
-			alerts = append(alerts, policyAndViolationsToAlert(compiled.Policy(), alertViolations))
+			alerts = append(alerts, policyViolationsAndImageToAlert(compiled.Policy(), alertViolations, image))
 		}
 		return nil
 	})
@@ -44,7 +45,7 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 	return alerts, nil
 }
 
-func policyAndViolationsToAlert(policy *storage.Policy, violations []*storage.Alert_Violation) *storage.Alert {
+func policyViolationsAndImageToAlert(policy *storage.Policy, violations []*storage.Alert_Violation, image *storage.Image) *storage.Alert {
 	if len(violations) == 0 {
 		return nil
 	}
@@ -52,6 +53,7 @@ func policyAndViolationsToAlert(policy *storage.Policy, violations []*storage.Al
 		Id:             uuid.NewV4().String(),
 		LifecycleStage: storage.LifecycleStage_BUILD,
 		Policy:         policy.Clone(),
+		Entity:         &storage.Alert_Image{Image: types.ToContainerImage(image)},
 		Violations:     violations,
 		Time:           ptypes.TimestampNow(),
 	}

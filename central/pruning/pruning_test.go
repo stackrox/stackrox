@@ -80,13 +80,15 @@ func newAlertInstance(id string, daysOld int, stage storage.LifecycleStage, stat
 	return newAlertInstanceWithDeployment(id, daysOld, stage, state, nil)
 }
 func newAlertInstanceWithDeployment(id string, daysOld int, stage storage.LifecycleStage, state storage.ViolationState, deployment *storage.Deployment) *storage.Alert {
-	var alertDeployment *storage.Alert_Deployment
+	var alertDeployment *storage.Alert_Deployment_
 	if deployment != nil {
 		alertDeployment = convert.ToAlertDeployment(deployment)
 	} else {
-		alertDeployment = &storage.Alert_Deployment{
-			Id:       "inactive",
-			Inactive: true,
+		alertDeployment = &storage.Alert_Deployment_{
+			Deployment: &storage.Alert_Deployment{
+				Id:       "inactive",
+				Inactive: true,
+			},
 		}
 	}
 	return &storage.Alert{
@@ -94,7 +96,7 @@ func newAlertInstanceWithDeployment(id string, daysOld int, stage storage.Lifecy
 
 		LifecycleStage: stage,
 		State:          state,
-		Deployment:     alertDeployment,
+		Entity:         alertDeployment,
 		Time:           protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * time.Duration(daysOld) * time.Hour)),
 	}
 }

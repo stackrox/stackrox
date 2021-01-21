@@ -220,22 +220,22 @@ func TestMergeProcessesFromOldIntoNew(t *testing.T) {
 func getAlerts() []*storage.Alert {
 	return []*storage.Alert{
 		{
-			Id:         "alert1",
-			Policy:     getPolicies()[0],
-			Deployment: getDeployments()[0],
-			Time:       &ptypes.Timestamp{Seconds: 100},
+			Id:     "alert1",
+			Policy: getPolicies()[0],
+			Entity: &storage.Alert_Deployment_{Deployment: getDeployments()[0]},
+			Time:   &ptypes.Timestamp{Seconds: 100},
 		},
 		{
-			Id:         "alert2",
-			Policy:     getPolicies()[1],
-			Deployment: getDeployments()[1],
-			Time:       &ptypes.Timestamp{Seconds: 200},
+			Id:     "alert2",
+			Policy: getPolicies()[1],
+			Entity: &storage.Alert_Deployment_{Deployment: getDeployments()[1]},
+			Time:   &ptypes.Timestamp{Seconds: 200},
 		},
 		{
-			Id:         "alert3",
-			Policy:     getPolicies()[2],
-			Deployment: getDeployments()[2],
-			Time:       &ptypes.Timestamp{Seconds: 300},
+			Id:     "alert3",
+			Policy: getPolicies()[2],
+			Entity: &storage.Alert_Deployment_{Deployment: getDeployments()[2]},
+			Time:   &ptypes.Timestamp{Seconds: 300},
 		},
 	}
 }

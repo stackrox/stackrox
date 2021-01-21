@@ -15,12 +15,10 @@ func PolicyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *st
 		return nil
 	}
 
-	alertDeployment := convert.ToAlertDeployment(deployment)
-
 	alert := &storage.Alert{
 		Id:             uuid.NewV4().String(),
 		LifecycleStage: storage.LifecycleStage_DEPLOY,
-		Deployment:     alertDeployment,
+		Entity:         convert.ToAlertDeployment(deployment),
 		Policy:         policy.Clone(),
 		Violations:     violations,
 		Time:           ptypes.TimestampNow(),

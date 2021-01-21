@@ -21,7 +21,7 @@ func (cs FromContainers) Images() []*storage.ContainerImage {
 func (cs FromContainers) String() string {
 	output := make([]string, 0, len(cs))
 	for _, c := range cs {
-		output = append(output, c.GetImage().GetName().GetFullName())
+		output = append(output, Wrapper{GenericImage: c.GetImage()}.FullName())
 	}
 	return strings.Join(output, ", ")
 }

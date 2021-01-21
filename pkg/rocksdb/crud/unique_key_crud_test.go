@@ -19,7 +19,7 @@ func uniqueKeyFunc(msg proto.Message) []byte {
 
 func getAlertWithDeploymentName(id, deploymentName string) *storage.Alert {
 	a := fixtures.GetAlertWithID(id)
-	a.Deployment.Name = deploymentName
+	a.GetDeployment().Name = deploymentName
 	return a
 }
 
@@ -54,10 +54,10 @@ func (s *UniqueKeyCRUDTestSuite) TearDownTest() {
 
 func (s *UniqueKeyCRUDTestSuite) TestUpsert() {
 	alert1 := fixtures.GetAlertWithID("alert1")
-	alert1.Deployment.Name = "dep1"
+	alert1.GetDeployment().Name = "dep1"
 
 	alert2 := fixtures.GetAlertWithID("alert2")
-	alert2.Deployment.Name = "dep2"
+	alert2.GetDeployment().Name = "dep2"
 
 	// Insert both alerts successfully
 	s.NoError(s.crud.Upsert(alert1))
@@ -69,7 +69,7 @@ func (s *UniqueKeyCRUDTestSuite) TestUpsert() {
 
 	// Insert alert3 with the same unique key as 1
 	alert3 := fixtures.GetAlertWithID("alert3")
-	alert3.Deployment.Name = "dep1"
+	alert3.GetDeployment().Name = "dep1"
 
 	// Should have conflict error
 	s.Error(s.crud.Upsert(alert3))
@@ -99,10 +99,10 @@ func (s *UniqueKeyCRUDTestSuite) TestUpsertMany() {
 
 func (s *UniqueKeyCRUDTestSuite) TestUpsertWithID() {
 	alert1 := fixtures.GetAlertWithID("noop1")
-	alert1.Deployment.Name = "dep1"
+	alert1.GetDeployment().Name = "dep1"
 
 	alert2 := fixtures.GetAlertWithID("noop1")
-	alert2.Deployment.Name = "dep2"
+	alert2.GetDeployment().Name = "dep2"
 
 	// Insert both alerts successfully
 	s.NoError(s.crud.UpsertWithID("alert1", alert1))
@@ -118,7 +118,7 @@ func (s *UniqueKeyCRUDTestSuite) TestUpsertWithID() {
 
 	// Insert alert3 with the same unique key as 1
 	alert3 := fixtures.GetAlertWithID("noop1")
-	alert3.Deployment.Name = "dep1"
+	alert3.GetDeployment().Name = "dep1"
 
 	// Should have conflict error
 	s.Error(s.crud.UpsertWithID("alert3", alert3))

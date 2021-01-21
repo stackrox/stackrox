@@ -128,7 +128,7 @@ func (j *jira) getAlertDescription(alert *storage.Alert) (string, error) {
 		},
 	}
 	alertLink := notifiers.AlertLink(j.notifier.UiEndpoint, alert.GetId())
-	return notifiers.FormatPolicy(alert, alertLink, funcMap)
+	return notifiers.FormatAlert(alert, alertLink, funcMap)
 }
 
 func (j *jira) Close(ctx context.Context) error {
@@ -145,7 +145,7 @@ func (j *jira) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	project := notifiers.GetLabelValue(alert, j.notifier.GetLabelKey(), j.notifier.GetLabelDefault())
 	i := &jiraLib.Issue{
 		Fields: &jiraLib.IssueFields{
-			Summary: fmt.Sprintf("Deployment %v (%v) violates '%v' Policy", alert.Deployment.Name, alert.Deployment.Id, alert.Policy.Name),
+			Summary: notifiers.SummaryForAlert(alert),
 			Type: jiraLib.IssueType{
 				Name: j.conf.GetIssueType(),
 			},

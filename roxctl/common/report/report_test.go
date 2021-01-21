@@ -55,9 +55,9 @@ var (
 	}
 
 	deploymentAlertOne = storage.Alert{
-		Deployment: &storage.Alert_Deployment{
+		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
 			Name: "deployment1",
-		},
+		}},
 		Policy: &storage.Policy{
 			Name:        "CI Test Policy One",
 			Description: "CI policy one that is used for tests",
@@ -79,9 +79,9 @@ var (
 	}
 
 	deploymentAlertTwo = storage.Alert{
-		Deployment: &storage.Alert_Deployment{
+		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
 			Name: "deployment2",
-		},
+		}},
 		Policy: &storage.Policy{
 			Name:        "CI Test Policy Two",
 			Description: "CI policy two that is used for tests",

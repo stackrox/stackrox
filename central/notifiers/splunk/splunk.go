@@ -63,8 +63,8 @@ func (s *splunk) Test(ctx context.Context) error {
 		return s.sendHTTPPayload(ctx, http.MethodGet, s.healthEndpoint, nil)
 	}
 	alert := &storage.Alert{
-		Policy:     &storage.Policy{Name: "Test Policy"},
-		Deployment: &storage.Alert_Deployment{Name: "Test Deployment"},
+		Policy: &storage.Policy{Name: "Test Policy"},
+		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{Name: "Test Deployment"}},
 		Violations: []*storage.Alert_Violation{
 			{Message: "This is a sample Splunk alert message created to test integration with StackRox."},
 		},

@@ -35,7 +35,10 @@ message Alert {
         bool                    inactive            = 15;
     }
 
-    Deployment deployment                    = 4  [(gogoproto.moretags) = "sensorhash:\"ignore\""];
+    oneof Entity {
+        Deployment deployment = 4  [(gogoproto.moretags) = "sensorhash:\"ignore\""];
+        ContainerImage image  = 15;
+    }
 
     message Violation {
         message KeyValueAttrs {

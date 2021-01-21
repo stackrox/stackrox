@@ -99,10 +99,10 @@ func (p *pagerDuty) Test(ctx context.Context) error {
 			Severity:    storage.Severity_HIGH_SEVERITY,
 			Categories:  []string{"Privileges"},
 		},
-		Deployment: &storage.Alert_Deployment{
+		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
 			Name:        "Test Deployment",
 			ClusterName: "Test Cluster",
-		},
+		}},
 		Violations: []*storage.Alert_Violation{
 			{Message: "This is a sample pagerduty alert message created to test integration with StackRox."},
 		},

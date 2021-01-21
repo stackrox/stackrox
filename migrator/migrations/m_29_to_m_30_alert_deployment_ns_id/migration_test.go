@@ -36,20 +36,20 @@ func TestMigration(t *testing.T) {
 		{
 			alert: &storage.Alert{
 				Id: "alert-1",
-				Deployment: &storage.Alert_Deployment{
+				Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
 					Namespace: "name-1",
 					ClusterId: "cluster-1",
-				},
+				}},
 			},
 			expectedNamespaceID: "id-1",
 		},
 		{
 			alert: &storage.Alert{
 				Id: "alert-2",
-				Deployment: &storage.Alert_Deployment{
+				Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
 					Namespace: "name-1",
 					ClusterId: "cluster-2",
-				},
+				}},
 			},
 			expectedNamespaceID: "id-2",
 		},
@@ -78,7 +78,7 @@ func TestMigration(t *testing.T) {
 
 func createNamespaceBucket(db *bbolt.DB) error {
 	return db.Update(func(tx *bbolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte(namespaceBucketName))
+		_, err := tx.CreateBucketIfNotExists(namespaceBucketName)
 		return err
 	})
 }

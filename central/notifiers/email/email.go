@@ -207,7 +207,7 @@ func (e *email) plainTextAlert(alert *storage.Alert) (string, error) {
 		},
 	}
 	alertLink := notifiers.AlertLink(e.notifier.UiEndpoint, alert.GetId())
-	return notifiers.FormatPolicy(alert, alertLink, funcMap)
+	return notifiers.FormatAlert(alert, alertLink, funcMap)
 }
 
 func (*email) Close(context.Context) error {

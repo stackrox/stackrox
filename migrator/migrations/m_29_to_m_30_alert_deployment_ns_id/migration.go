@@ -90,7 +90,7 @@ func updateAlertDeployments(badgerDB *badger.DB, namespaceKeyMap map[namespaceKe
 					return nil
 				}
 
-				alert.Deployment.NamespaceId = nsID
+				alert.GetDeployment().NamespaceId = nsID
 				data, err := proto.Marshal(&alert)
 				if err != nil {
 					return errors.Wrapf(err, "marshal error for alert: %s", key)

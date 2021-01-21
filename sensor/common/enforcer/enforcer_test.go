@@ -16,7 +16,7 @@ type alertEnforcementPair struct {
 
 func TestProcessAlertResults(t *testing.T) {
 	alert1 := fixtures.GetAlert()
-	alert1.Deployment.Id = "dep1"
+	alert1.GetDeployment().Id = "dep1"
 	alert1.ProcessViolation = &storage.Alert_ProcessViolation{
 		Processes: []*storage.ProcessIndicator{
 			{
@@ -27,7 +27,7 @@ func TestProcessAlertResults(t *testing.T) {
 	}
 
 	alert2 := fixtures.GetAlert()
-	alert2.Deployment.Id = "dep2"
+	alert2.GetDeployment().Id = "dep2"
 
 	cases := []struct {
 		name                 string

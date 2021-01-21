@@ -62,8 +62,10 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	alertResults := msg.GetEvent().GetAlertResults()
 	for _, a := range alertResults.GetAlerts() {
-		a.Deployment.ClusterId = clusterID
-		a.Deployment.ClusterName = clusterName
+		if deployment := a.GetDeployment(); deployment != nil {
+			deployment.ClusterId = clusterID
+			deployment.ClusterName = clusterName
+		}
 	}
 	if err := s.lifecycleManager.HandleAlerts(alertResults.GetDeploymentId(), alertResults.GetAlerts(), alertResults.GetStage()); err != nil {
 		return errors.Wrap(err, "error handling alerts")

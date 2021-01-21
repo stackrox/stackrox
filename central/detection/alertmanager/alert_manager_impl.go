@@ -204,8 +204,8 @@ func (d *alertManagerImpl) mergeManyAlerts(ctx context.Context, presentAlerts []
 		}
 
 		if alert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME && d.inactiveDeploymentAlert(alert) {
-			if !alert.Deployment.Inactive {
-				alert.Deployment.Inactive = true
+			if deployment := alert.GetDeployment(); deployment != nil && !deployment.GetInactive() {
+				deployment.Inactive = true
 				updatedAlerts = append(updatedAlerts, alert)
 			}
 		}

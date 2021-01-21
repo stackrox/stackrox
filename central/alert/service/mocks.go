@@ -82,11 +82,13 @@ func getMockK8sAlert() *storage.Alert {
 				},
 			},
 		},
-		Deployment: &storage.Alert_Deployment{
-			Id:          "dep-1",
-			Name:        "dep-1",
-			ClusterName: "cluster-1",
-			Namespace:   "ns-1",
+		Entity: &storage.Alert_Deployment_{
+			Deployment: &storage.Alert_Deployment{
+				Id:          "dep-1",
+				Name:        "dep-1",
+				ClusterName: "cluster-1",
+				Namespace:   "ns-1",
+			},
 		},
 	}
 }

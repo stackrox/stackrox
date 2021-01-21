@@ -18,7 +18,7 @@ func constructProcessAlert(policy *storage.Policy, deployment *storage.Deploymen
 	alert := &storage.Alert{
 		Id:               uuid.NewV4().String(),
 		LifecycleStage:   storage.LifecycleStage_RUNTIME,
-		Deployment:       convert.ToAlertDeployment(deployment),
+		Entity:           convert.ToAlertDeployment(deployment),
 		Policy:           policy.Clone(),
 		Violations:       violations.AlertViolations,
 		ProcessViolation: violations.ProcessViolation,
@@ -46,7 +46,7 @@ func constructKubeEventAlert(
 	alert := &storage.Alert{
 		Id:             uuid.NewV4().String(),
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
-		Deployment:     convert.ToAlertDeployment(kubeResource.(*storage.Deployment)),
+		Entity:         convert.ToAlertDeployment(kubeResource.(*storage.Deployment)),
 		Policy:         policy.Clone(),
 		Violations:     violations.AlertViolations,
 		Time:           ptypes.TimestampNow(),

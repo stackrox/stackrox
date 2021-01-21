@@ -55,19 +55,21 @@ func newAlert(state storage.ViolationState) *storage.Alert {
 			Description: "Some random description",
 			Severity:    storage.Severity_HIGH_SEVERITY,
 		},
-		Deployment: &storage.Alert_Deployment{
-			Id:          uuid.NewV4().String(),
-			Name:        "example deployment",
-			Namespace:   "example namespace",
-			ClusterId:   uuid.NewV4().String(),
-			ClusterName: "example cluster",
-			Containers: []*storage.Alert_Deployment_Container{
-				{
-					Name: "example container",
-					Image: &storage.ContainerImage{
-						Id: uuid.NewV4().String(),
-						Name: &storage.ImageName{
-							FullName: "registry/path/to/image:tag",
+		Entity: &storage.Alert_Deployment_{
+			Deployment: &storage.Alert_Deployment{
+				Id:          uuid.NewV4().String(),
+				Name:        "example deployment",
+				Namespace:   "example namespace",
+				ClusterId:   uuid.NewV4().String(),
+				ClusterName: "example cluster",
+				Containers: []*storage.Alert_Deployment_Container{
+					{
+						Name: "example container",
+						Image: &storage.ContainerImage{
+							Id: uuid.NewV4().String(),
+							Name: &storage.ImageName{
+								FullName: "registry/path/to/image:tag",
+							},
 						},
 					},
 				},

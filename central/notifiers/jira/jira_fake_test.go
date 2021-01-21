@@ -185,10 +185,10 @@ func TestWithFakeJira(t *testing.T) {
 			Fields:      &storage.PolicyFields{},
 			Severity:    storage.Severity_HIGH_SEVERITY,
 		},
-		Deployment: &storage.Alert_Deployment{
+		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
 			Name: "myDeployment",
 			Id:   "myDeploymentID",
-		},
+		}},
 		Time: types.TimestampNow(),
 	}
 	assert.NoError(t, j.AlertNotify(context.Background(), testAlert))

@@ -70,7 +70,7 @@ func toAlertDeploymentContainer(c *storage.Container) *storage.Alert_Deployment_
 }
 
 // ToAlertDeployment converts a storage.Deployment to a Alert_Deployment
-func ToAlertDeployment(deployment *storage.Deployment) *storage.Alert_Deployment {
+func ToAlertDeployment(deployment *storage.Deployment) *storage.Alert_Deployment_ {
 	alertDeployment := &storage.Alert_Deployment{
 		Id:          deployment.GetId(),
 		Name:        deployment.GetName(),
@@ -87,5 +87,5 @@ func ToAlertDeployment(deployment *storage.Deployment) *storage.Alert_Deployment
 	for _, c := range deployment.GetContainers() {
 		alertDeployment.Containers = append(alertDeployment.Containers, toAlertDeploymentContainer(c))
 	}
-	return alertDeployment
+	return &storage.Alert_Deployment_{Deployment: alertDeployment}
 }

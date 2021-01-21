@@ -57,11 +57,13 @@ func TestTeamsRandomAlertNotify(t *testing.T) {
 
 	alert.Id = ""
 	alert.Violations = []*storage.Alert_Violation{}
-	alert.Deployment.ClusterId = ""
-	alert.Deployment.ClusterName = ""
+	alert.GetDeployment().ClusterId = ""
+	alert.GetDeployment().ClusterName = ""
 	assert.NoError(t, s.AlertNotify(context.Background(), alert))
 
-	alert.Deployment = &storage.Alert_Deployment{}
+	alert.Entity = &storage.Alert_Deployment_{
+		Deployment: &storage.Alert_Deployment{},
+	}
 	assert.NoError(t, s.AlertNotify(context.Background(), alert))
 
 	alert = &storage.Alert{}

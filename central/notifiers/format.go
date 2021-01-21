@@ -11,17 +11,20 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 type policyFormatStruct struct {
 	*storage.Alert
 
 	AlertLink string
-	CVSS      string
-	Images    string
-	Port      string
 	Severity  string
 	Time      string
+
+	DeploymentCommaSeparatedImages string
+
+	// Populated only if the entity is an image.
+	Image string
 }
 
 const bplPolicyFormat = `
@@ -53,19 +56,23 @@ const bplPolicyFormat = `
 
 	{{ subheader "Policy Criteria:"}}
 	{{range .Policy.PolicySections}}
-		{{ stringify "Section:" .SectionName | section}}
+		{{ stringify "Section" (default .SectionName "Unnamed") ":" | section}}
 		{{range .PolicyGroups}}
 			{{group .FieldName}}{{": "}}{{valuePrinter .Values .BooleanOperator .Negate}}
 		{{end}}
 	{{end}}
 
-	{{if .Deployment}}{{line ""}}{{subheader "Deployment:"}}
-		{{stringify "ID:" .Deployment.Id | list}}
-		{{stringify "Name:" .Deployment.Name | list}}
-		{{stringify "Cluster:" .Deployment.ClusterName | list}}
-		{{stringify "ClusterId:" .Deployment.ClusterId | list}}
-		{{if .Deployment.Namespace }}{{stringify "Namespace:" .Deployment.Namespace | list}}{{end}}
-		{{stringify "Images:"  .Images | list}}
+	{{if .GetDeployment}}{{line ""}}{{subheader "Deployment:"}}
+		{{stringify "ID:" .GetDeployment.Id | list}}
+		{{stringify "Name:" .GetDeployment.Name | list}}
+		{{stringify "Cluster:" .GetDeployment.ClusterName | list}}
+		{{stringify "ClusterId:" .GetDeployment.ClusterId | list}}
+		{{if .GetDeployment.Namespace }}{{stringify "Namespace:" .GetDeployment.Namespace | list}}{{end}}
+		{{stringify "Images:"  .DeploymentCommaSeparatedImages | list}}
+	{{end}}
+
+	{{if .GetImage}}{{line ""}}{{subheader "Image:"}}
+		{{stringify "Name:" .Image | list}}
 	{{end}}
 `
 
@@ -79,10 +86,10 @@ var requiredFunctions = set.NewFrozenStringSet(
 	"group",
 )
 
-// FormatPolicy takes in an alert, a link and funcMap that must define specific formatting functions
-func FormatPolicy(alert *storage.Alert, alertLink string, funcMap template.FuncMap) (string, error) {
+// FormatAlert takes in an alert, a link and funcMap that must define specific formatting functions
+func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMap) (string, error) {
 	if funcMap == nil {
-		return "", errors.New("Function map passed to FormatPolicy cannot be nil")
+		return "", errors.New("Function map passed to FormatAlert cannot be nil")
 	}
 	for _, k := range requiredFunctions.AsSlice() {
 		if _, ok := funcMap[k]; !ok {
@@ -90,20 +97,23 @@ func FormatPolicy(alert *storage.Alert, alertLink string, funcMap template.FuncM
 		}
 	}
 	funcMap["stringify"] = stringify
+	funcMap["default"] = stringutils.OrDefault
 	if _, ok := funcMap["valuePrinter"]; !ok {
 		funcMap["valuePrinter"] = valuePrinter
 	}
-	portPolicy := alert.GetPolicy().GetFields().GetPortPolicy()
-	portStr := fmt.Sprintf("%v/%v", portPolicy.GetPort(), portPolicy.GetProtocol())
 	data := policyFormatStruct{
 		Alert:     alert,
 		AlertLink: alertLink,
-		CVSS:      readable.NumericalPolicy(alert.GetPolicy().GetFields().GetCvss(), "cvss"),
-		Images:    types.FromContainers(alert.GetDeployment().GetContainers()).String(),
-		Port:      portStr,
 		Severity:  SeverityString(alert.Policy.Severity),
 		Time:      readable.ProtoTime(alert.Time),
 	}
+	switch alert.GetEntity().(type) {
+	case *storage.Alert_Deployment_:
+		data.DeploymentCommaSeparatedImages = types.FromContainers(alert.GetDeployment().GetContainers()).String()
+	case *storage.Alert_Image:
+		data.Image = types.Wrapper{GenericImage: alert.GetImage()}.FullName()
+	}
+
 	// Remove all the formatting
 	format := bplPolicyFormat
 	f := strings.Replace(format, "\t", "", -1)
@@ -119,6 +129,18 @@ func FormatPolicy(alert *storage.Alert, alertLink string, funcMap template.FuncM
 		return "", err
 	}
 	return tpl.String(), nil
+}
+
+// SummaryForAlert returns a summary for an alert.
+// This can be used for notifiers that need a summary/title for the notification.
+func SummaryForAlert(alert *storage.Alert) string {
+	switch entity := alert.GetEntity().(type) {
+	case *storage.Alert_Deployment_:
+		return fmt.Sprintf("Deployment %s (%s) violates '%s' Policy", entity.Deployment.GetName(), entity.Deployment.GetId(), alert.GetPolicy().GetName())
+	case *storage.Alert_Image:
+		return fmt.Sprintf("Image %s violates '%s' Policy", types.Wrapper{GenericImage: entity.Image}.FullName(), alert.GetPolicy().GetName())
+	}
+	return fmt.Sprintf("Policy '%s' violated", alert.GetPolicy().GetName())
 }
 
 type networkPolicyFormatStruct struct {
@@ -152,9 +174,12 @@ func FormatNetworkPolicyYAML(yaml string, clusterName string, funcMap template.F
 
 // stringify converts a list of interfaces into a space separated string of their string representations
 func stringify(inter ...interface{}) string {
-	result := make([]string, len(inter))
-	for i, in := range inter {
-		result[i] = fmt.Sprintf("%v", in)
+	result := make([]string, 0, len(inter))
+	for _, in := range inter {
+		str := fmt.Sprintf("%v", in)
+		if str != "" {
+			result = append(result, fmt.Sprintf("%v", in))
+		}
 	}
 	return strings.Join(result, " ")
 }
@@ -176,8 +201,6 @@ func valuePrinter(values []*storage.PolicyValue, op storage.BooleanOperator, neg
 	if negated {
 		valuesString = fmt.Sprintf("NOT (%s)", valuesString)
 	}
-
-	valuesString = valuesString + "\r\n"
 
 	return valuesString
 }

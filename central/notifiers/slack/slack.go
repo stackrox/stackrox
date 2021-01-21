@@ -108,7 +108,7 @@ func (s *slack) getDescription(alert *storage.Alert) (string, error) {
 		},
 	}
 	alertLink := notifiers.AlertLink(s.Notifier.UiEndpoint, alert.GetId())
-	return notifiers.FormatPolicy(alert, alertLink, funcMap)
+	return notifiers.FormatAlert(alert, alertLink, funcMap)
 }
 
 func (*slack) Close(ctx context.Context) error {
@@ -117,7 +117,6 @@ func (*slack) Close(ctx context.Context) error {
 
 // AlertNotify takes in an alert and generates the Slack message
 func (s *slack) AlertNotify(ctx context.Context, alert *storage.Alert) error {
-	tagLine := fmt.Sprintf("*Deployment %v (%v) violates '%v' Policy*", alert.Deployment.Name, alert.Deployment.Id, alert.Policy.Name)
 	body, err := s.getDescription(alert)
 	if err != nil {
 		return err
@@ -126,7 +125,7 @@ func (s *slack) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		{
 			FallBack:       body,
 			Color:          notifiers.GetAttachmentColor(alert.GetPolicy().GetSeverity()),
-			Pretext:        tagLine,
+			Pretext:        fmt.Sprintf("*%s*", notifiers.SummaryForAlert(alert)),
 			Text:           body,
 			MarkDownFields: []string{"pretext", "text", "fields"},
 		},

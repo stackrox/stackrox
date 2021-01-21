@@ -14,8 +14,8 @@ const (
 	// failedTemplate is a (raw) template for displaying when there are failed
 	// policies.
 	failedTemplate = `{{- range .Alerts}}
-{{if .Deployment}}
-✗ Deployment {{.Deployment.Name}} failed policy '{{.Policy.Name}}' {{if failedFunc .Policy}}(policy enforcement caused failure){{end}}
+{{if .GetDeployment}}
+✗ Deployment {{.GetDeployment.Name}} failed policy '{{.Policy.Name}}' {{if failedFunc .Policy}}(policy enforcement caused failure){{end}}
 {{else}}
 ✗ Image {{$.ResourceName}} failed policy '{{.Policy.Name}}' {{if failedFunc .Policy}}(policy enforcement caused failure){{end}}
 {{end -}}

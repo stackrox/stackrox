@@ -34,22 +34,24 @@ func GetAlert() *storage.Alert {
 		},
 		Time:   ptypes.TimestampNow(),
 		Policy: GetPolicy(),
-		Deployment: &storage.Alert_Deployment{
-			Name:        "nginx_server",
-			Id:          "s79mdvmb6dsl",
-			ClusterId:   "prod cluster",
-			ClusterName: "prod cluster",
-			Namespace:   "stackrox",
-			Labels: map[string]string{
-				"com.docker.stack.namespace":    "prevent",
-				"com.docker.swarm.service.name": "prevent_sensor",
-				"email":                         "vv@stackrox.com",
-				"owner":                         "stackrox",
-			},
-			Containers: []*storage.Alert_Deployment_Container{
-				{
-					Name:  "nginx110container",
-					Image: types.ToContainerImage(LightweightDeploymentImage()),
+		Entity: &storage.Alert_Deployment_{
+			Deployment: &storage.Alert_Deployment{
+				Name:        "nginx_server",
+				Id:          "s79mdvmb6dsl",
+				ClusterId:   "prod cluster",
+				ClusterName: "prod cluster",
+				Namespace:   "stackrox",
+				Labels: map[string]string{
+					"com.docker.stack.namespace":    "prevent",
+					"com.docker.swarm.service.name": "prevent_sensor",
+					"email":                         "vv@stackrox.com",
+					"owner":                         "stackrox",
+				},
+				Containers: []*storage.Alert_Deployment_Container{
+					{
+						Name:  "nginx110container",
+						Image: types.ToContainerImage(LightweightDeploymentImage()),
+					},
 				},
 			},
 		},

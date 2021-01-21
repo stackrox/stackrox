@@ -40,6 +40,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"enforcement: Alert_Enforcement",
 		"firstOccurred: Time",
 		"id: ID!",
+		"image: ContainerImage",
 		"lifecycleStage: LifecycleStage!",
 		"policy: Policy",
 		"processViolation: Alert_ProcessViolation",
@@ -48,6 +49,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"tags: [String!]!",
 		"time: Time",
 		"violations: [Alert_Violation]!",
+		"entity: AlertEntity",
+	}))
+	utils.Must(builder.AddUnionType("AlertEntity", []string{
+		"Alert_Deployment",
+		"ContainerImage",
 	}))
 	utils.Must(builder.AddType("Alert_Deployment", []string{
 		"annotations: [Label!]!",
@@ -1448,6 +1454,12 @@ func (resolver *alertResolver) Id(ctx context.Context) graphql.ID {
 	return graphql.ID(value)
 }
 
+func (resolver *alertResolver) Image(ctx context.Context) (*containerImageResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetImage()
+	return resolver.root.wrapContainerImage(value, true, nil)
+}
+
 func (resolver *alertResolver) LifecycleStage(ctx context.Context) string {
 	value := resolver.data.GetLifecycleStage()
 	if resolver.data == nil {
@@ -1502,6 +1514,34 @@ func (resolver *alertResolver) Violations(ctx context.Context) ([]*alert_Violati
 	resolver.ensureData(ctx)
 	value := resolver.data.GetViolations()
 	return resolver.root.wrapAlert_Violations(value, nil)
+}
+
+type alertEntityResolver struct {
+	resolver interface{}
+}
+
+func (resolver *alertResolver) Entity() *alertEntityResolver {
+	if val := resolver.data.GetDeployment(); val != nil {
+		return &alertEntityResolver{
+			resolver: &alert_DeploymentResolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetImage(); val != nil {
+		return &alertEntityResolver{
+			resolver: &containerImageResolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *alertEntityResolver) ToAlert_Deployment() (*alert_DeploymentResolver, bool) {
+	res, ok := resolver.resolver.(*alert_DeploymentResolver)
+	return res, ok
+}
+
+func (resolver *alertEntityResolver) ToContainerImage() (*containerImageResolver, bool) {
+	res, ok := resolver.resolver.(*containerImageResolver)
+	return res, ok
 }
 
 type alert_DeploymentResolver struct {
