@@ -46,6 +46,9 @@ var (
 	// K8sEventDetection enables detection of kubernetes events.
 	K8sEventDetection = registerFeature("Enable detection of kubernetes events", "ROX_K8S_EVENTS_DETECTION", false)
 
+	// MockK8sEventDetection mocks detection of kubernetes events.
+	MockK8sEventDetection = registerFeature("Mock detection of kubernetes events", "ROX_MOCK_K8S_EVENTS_DETECTION", false)
+
 	// IntegrationsAsConfig enables loading integrations from config
 	IntegrationsAsConfig = registerFeature("Enable loading integrations from config", "ROX_INTEGRATIONS_AS_CONFIG", false)
 )
