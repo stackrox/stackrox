@@ -663,7 +663,8 @@ class Enforcement extends BaseSpecification {
                 LATEST_TAG
 
         [LifecycleStage.RUNTIME,]                      |
-                [EnforcementAction.KILL_POD_ENFORCEMENT]                       |
+                [EnforcementAction.KILL_POD_ENFORCEMENT,
+                 EnforcementAction.FAIL_KUBE_REQUEST_ENFORCEMENT]              |
                 APT_GET_POLICY
     }
 
