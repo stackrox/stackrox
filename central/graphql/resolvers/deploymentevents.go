@@ -43,7 +43,8 @@ func init() {
 			"uid: Int!",
 			"parentName: String",
 			"parentUid: Int!",
-			"whitelisted: Boolean!",
+			"whitelisted: Boolean!", // TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
+			"inBaseline: Boolean!",
 		}, "DeploymentEvent"),
 		schema.AddType("PolicyViolationEvent", []string{
 			"id: ID!",
@@ -155,8 +156,8 @@ type ProcessActivityEventResolver struct {
 	parentName          *string
 	parentUID           int32
 	containerInstanceID string
-	canReadWhitelist    bool
-	whitelisted         bool
+	canReadBaseline     bool
+	inBaseline          bool
 }
 
 // ID returns the event's ID.
@@ -200,12 +201,18 @@ func (resolver *ProcessActivityEventResolver) ParentUID() int32 {
 	return resolver.parentUID
 }
 
-// Whitelisted returns true if this process is whitelisted.
+// Whitelisted returns true if this process is in baseline.
+// TODO(ROX-6194): Remove after the deprecation cycle started with the 55.0 release.
 func (resolver *ProcessActivityEventResolver) Whitelisted() bool {
-	if resolver.canReadWhitelist {
-		return resolver.whitelisted
+	return resolver.InBaseline()
+}
+
+// InBaseline returns true if this process is in baseline.
+func (resolver *ProcessActivityEventResolver) InBaseline() bool {
+	if resolver.canReadBaseline {
+		return resolver.inBaseline
 	}
-	// Default to true if the requester cannot read the whitelist.
+	// Default to true if the requester cannot read the baseline.
 	return true
 }
 
@@ -220,13 +227,13 @@ func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v
 	}
 
 	processEvents := make([]*ProcessActivityEventResolver, 0, len(indicators))
-	whitelists := make(map[string]*set.StringSet)
-	// This determines if we should read whitelist information.
+	baselines := make(map[string]*set.StringSet)
+	// This determines if we should read baseline information.
 	// nil means we can.
-	canReadWhitelist := readWhitelists(ctx) == nil
+	canReadBaseline := readBaselines(ctx) == nil
 	for _, indicator := range indicators {
 		var keyStr, procName string
-		if canReadWhitelist {
+		if canReadBaseline {
 			key := &storage.ProcessBaselineKey{
 				ClusterId:     indicator.GetClusterId(),
 				Namespace:     indicator.GetNamespace(),
@@ -236,17 +243,17 @@ func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v
 			keyStr = key.String()
 			procName = processBaselinePkg.BaselineItemFromProcess(indicator)
 			if procName != "" {
-				if _, exists := whitelists[keyStr]; !exists {
-					whitelist, exists, err := resolver.WhiteListDataStore.GetProcessBaseline(ctx, key)
+				if _, exists := baselines[keyStr]; !exists {
+					baseline, exists, err := resolver.BaselineDataStore.GetProcessBaseline(ctx, key)
 					if err != nil {
-						log.Error(errors.Wrapf(err, "retrieving whitelist data for process %s", indicator.GetSignal().GetName()))
+						log.Error(errors.Wrapf(err, "retrieving baseline data for process %s", indicator.GetSignal().GetName()))
 						continue
 					}
 					if !exists {
 						continue
 					}
 
-					whitelists[keyStr] = processbaseline.Processes(whitelist, processbaseline.RoxOrUserLocked)
+					baselines[keyStr] = processbaseline.Processes(baseline, processbaseline.RoxOrUserLocked)
 				}
 			}
 		}
@@ -276,8 +283,8 @@ func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v
 			parentName:          parentName,
 			parentUID:           parentUID,
 			containerInstanceID: indicator.GetSignal().GetContainerId(),
-			canReadWhitelist:    canReadWhitelist,
-			whitelisted:         whitelists[keyStr] == nil || whitelists[keyStr].Contains(procName),
+			canReadBaseline:     canReadBaseline,
+			inBaseline:          baselines[keyStr] == nil || baselines[keyStr].Contains(procName),
 		})
 	}
 	return processEvents, nil

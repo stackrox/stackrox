@@ -21,7 +21,7 @@ const Events = ({ events, height, translateX, minTimeRange, maxTimeRange, margin
             parentName,
             parentUid,
             reason,
-            whitelisted,
+            inBaseline,
             differenceInMilliseconds,
             timestamp,
         }) => (
@@ -35,7 +35,7 @@ const Events = ({ events, height, translateX, minTimeRange, maxTimeRange, margin
                 reason={reason}
                 type={type}
                 timestamp={timestamp}
-                whitelisted={whitelisted}
+                inBaseline={inBaseline}
                 differenceInMilliseconds={differenceInMilliseconds}
                 translateX={translateX}
                 translateY={eventMarkerOffsetY}

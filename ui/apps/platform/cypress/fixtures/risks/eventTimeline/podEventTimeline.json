@@ -45,7 +45,7 @@
                         "parentName": null,
                         "parentUid": -1,
                         "uid": 1000,
-                        "whitelisted": false,
+                        "inBaseline": false,
                         "__typename": "ProcessActivityEvent"
                     },
                     {
@@ -57,7 +57,7 @@
                         "parentName": "/usr/sbin/nginx",
                         "parentUid": -1,
                         "uid": 2000,
-                        "whitelisted": false,
+                        "inBaseline": false,
                         "__typename": "ProcessActivityEvent"
                     },
                     {
@@ -69,7 +69,7 @@
                         "parentName": "/usr/sbin/nginx",
                         "parentUid": 1000,
                         "uid": 3000,
-                        "whitelisted": false,
+                        "inBaseline": false,
                         "__typename": "ProcessActivityEvent"
                     },
                     {
@@ -81,7 +81,7 @@
                         "parentName": "/usr/sbin/nginx",
                         "parentUid": 4000,
                         "uid": 4000,
-                        "whitelisted": false,
+                        "inBaseline": false,
                         "__typename": "ProcessActivityEvent"
                     },
                     {
@@ -93,7 +93,7 @@
                         "parentName": "/bin/bash",
                         "parentUid": 0,
                         "uid": 0,
-                        "whitelisted": true,
+                        "inBaseline": true,
                         "__typename": "ProcessActivityEvent"
                     }
                 ],

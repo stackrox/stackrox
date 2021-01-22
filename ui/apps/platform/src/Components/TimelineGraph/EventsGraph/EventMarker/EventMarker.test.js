@@ -59,7 +59,7 @@ test('should show a process in baseline activity event marker', async () => {
                 parentUid={-1}
                 uid={1000}
                 differenceInMilliseconds={3600000}
-                whitelisted
+                inBaseline
                 translateX={0}
                 translateY={0}
                 size={10}

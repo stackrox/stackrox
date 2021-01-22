@@ -34,7 +34,7 @@ import (
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
-	whitelistStore "github.com/stackrox/rox/central/processbaseline/datastore"
+	baselineStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	k8sroleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	k8srolebindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
@@ -83,7 +83,7 @@ type Resolver struct {
 	SecretsDataStore            secretDataStore.DataStore
 	ServiceAccountsDataStore    serviceAccountDataStore.DataStore
 	ViolationsDataStore         violationsDatastore.DataStore
-	WhiteListDataStore          whitelistStore.DataStore
+	BaselineDataStore           baselineStore.DataStore
 	k8sIstioCVEManager          fetcher.K8sIstioCVEManager
 	cveMatcher                  *cveMatcher.CVEMatcher
 }
@@ -123,7 +123,7 @@ func New() *Resolver {
 		SecretsDataStore:            secretDataStore.Singleton(),
 		ServiceAccountsDataStore:    serviceAccountDataStore.Singleton(),
 		ViolationsDataStore:         violationsDatastore.Singleton(),
-		WhiteListDataStore:          whitelistStore.Singleton(),
+		BaselineDataStore:           baselineStore.Singleton(),
 		k8sIstioCVEManager:          fetcher.SingletonManager(),
 		cveMatcher:                  cveMatcher.Singleton(),
 	}
@@ -153,7 +153,7 @@ var (
 	readRoles                  = readAuth(resources.Role)
 	readSecrets                = readAuth(resources.Secret)
 	readServiceAccounts        = readAuth(resources.ServiceAccount)
-	readWhitelists             = readAuth(resources.ProcessWhitelist)
+	readBaselines              = readAuth(resources.ProcessWhitelist)
 	writeAlerts                = writeAuth(resources.Alert)
 	writeCompliance            = writeAuth(resources.Compliance)
 	writeComplianceRuns        = writeAuth(resources.ComplianceRuns)

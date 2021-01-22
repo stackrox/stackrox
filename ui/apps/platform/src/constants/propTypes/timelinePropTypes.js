@@ -9,7 +9,7 @@ export const eventPropTypes = {
     parentUid: PropTypes.number,
     reason: PropTypes.string,
     timestamp: PropTypes.string.isRequired,
-    whitelisted: PropTypes.bool,
+    inBaseline: PropTypes.bool,
 };
 
 export const defaultEventPropTypes = {
@@ -18,7 +18,7 @@ export const defaultEventPropTypes = {
     parentName: null,
     parentUid: null,
     reason: null,
-    whitelisted: null,
+    inBaseline: null,
 };
 
 export const clusteredEventPropTypes = {

@@ -45,7 +45,7 @@
                         "parentName": "/usr/sbin/nginx",
                         "parentUid": 4000,
                         "uid": 4000,
-                        "whitelisted": false,
+                        "inBaseline": false,
                         "__typename": "ProcessActivityEvent"
                     },
                     {
@@ -57,7 +57,7 @@
                         "parentName": "/bin/bash",
                         "parentUid": 0,
                         "uid": 0,
-                        "whitelisted": false,
+                        "inBaseline": false,
                         "__typename": "ProcessActivityEvent"
                     }
                 ],

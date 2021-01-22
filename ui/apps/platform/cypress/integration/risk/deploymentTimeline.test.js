@@ -127,7 +127,7 @@ describe('Risk Page Deployment Event Timeline', () => {
             );
         });
 
-        it('should filter process activity events and whitelisted process activity events', () => {
+        it('should filter process activity events and process in baseline activity events', () => {
             setRoutes();
             // mocking data to thoroughly test the filtering
             cy.route(
@@ -140,7 +140,7 @@ describe('Risk Page Deployment Event Timeline', () => {
 
             cy.wait('@getDeploymentEventTimeline');
 
-            // the process activity + whitelisted process activity event should be visible
+            // the process activity + process in baseline activity event should be visible
             cy.get(selectors.eventTimeline.select.value).should('contain', 'Show All');
             cy.get(selectors.eventTimeline.timeline.mainView.event.processActivity);
             cy.get(selectors.eventTimeline.timeline.mainView.event.processInBaselineActivity);
@@ -151,7 +151,7 @@ describe('Risk Page Deployment Event Timeline', () => {
                 `${selectors.eventTimeline.select.options}:eq(${FILTER_OPTIONS.POLICY_VIOLATIONS})`
             ).click({ force: true });
 
-            // the process activity + whitelisted process activity event should not be visible
+            // the process activity + process in baseline activity event should not be visible
             cy.get(selectors.eventTimeline.timeline.mainView.event.processActivity).should(
                 'not.exist'
             );
@@ -445,7 +445,7 @@ describe('Risk Page Deployment Event Timeline', () => {
             );
         });
 
-        it('shows the whitelisted process activity event details', () => {
+        it('shows the process in baseline activity event details', () => {
             setRoutes();
             // mocking data to thoroughly test the event details
             cy.route(
@@ -596,7 +596,7 @@ describe('Risk Page Deployment Event Timeline', () => {
                 `${selectors.tooltip.legendContents}:eq(1) ${selectors.tooltip.legendContent.event.policyViolation}`
             );
 
-            // make sure the whitelisted process activity icon and text shows up
+            // make sure the process in baseline activity icon and text shows up
             cy.get(
                 `${selectors.tooltip.legendContents}:eq(2):contains("Baseline Process Activity")`
             );

@@ -21,7 +21,7 @@ const ClusteredEventsTooltip = ({ events, children }) => {
         events.length
     )} within ${timeRangeTextOfEvents}`;
     const sections = events.map(
-        ({ id, type, name, args, uid, parentName, parentUid, timestamp, reason, whitelisted }) => {
+        ({ id, type, name, args, uid, parentName, parentUid, timestamp, reason, inBaseline }) => {
             let section = null;
             switch (type) {
                 case eventTypes.PROCESS_ACTIVITY:
@@ -55,7 +55,7 @@ const ClusteredEventsTooltip = ({ events, children }) => {
                     <div className="mt-1 mr-4">
                         {type === eventTypes.POLICY_VIOLATION && <PolicyViolationEvent size={15} />}
                         {type === eventTypes.PROCESS_ACTIVITY && (
-                            <ProcessActivityEvent size={15} whitelisted={whitelisted} />
+                            <ProcessActivityEvent size={15} inBaseline={inBaseline} />
                         )}
                         {type === eventTypes.RESTART && <RestartEvent size={15} />}
                         {type === eventTypes.TERMINATION && <TerminationEvent size={15} />}

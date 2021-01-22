@@ -21,7 +21,7 @@ const EventMarker = ({
     parentUid,
     reason,
     timestamp,
-    whitelisted,
+    inBaseline,
     differenceInMilliseconds,
     translateX,
     translateY,
@@ -64,12 +64,12 @@ const EventMarker = ({
                 parentUid={parentUid}
                 timestamp={timestamp}
                 reason={reason}
-                whitelisted={whitelisted}
+                inBaseline={inBaseline}
             >
                 <g>
                     {type === eventTypes.POLICY_VIOLATION && <PolicyViolationEvent size={size} />}
                     {type === eventTypes.PROCESS_ACTIVITY && (
-                        <ProcessActivityEvent size={size} whitelisted={whitelisted} />
+                        <ProcessActivityEvent size={size} inBaseline={inBaseline} />
                     )}
                     {type === eventTypes.RESTART && <RestartEvent size={size} />}
                     {type === eventTypes.TERMINATION && <TerminationEvent size={size} />}
@@ -88,7 +88,7 @@ EventMarker.propTypes = {
     parentUid: PropTypes.number,
     reason: PropTypes.string,
     timestamp: PropTypes.string.isRequired,
-    whitelisted: PropTypes.bool,
+    inBaseline: PropTypes.bool,
     differenceInMilliseconds: PropTypes.number.isRequired,
     translateX: PropTypes.number.isRequired,
     translateY: PropTypes.number.isRequired,
@@ -104,7 +104,7 @@ EventMarker.defaultProps = {
     parentUid: null,
     args: null,
     reason: null,
-    whitelisted: false,
+    inBaseline: false,
     margin: 0,
 };
 

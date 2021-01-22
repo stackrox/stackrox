@@ -2,8 +2,8 @@
 import React, { forwardRef } from 'react';
 import PropTypes from 'prop-types';
 
-const ProcessActivityEvent = forwardRef(({ whitelisted, size }, ref) => {
-    return whitelisted ? (
+const ProcessActivityEvent = forwardRef(({ inBaseline, size }, ref) => {
+    return inBaseline ? (
         <svg
             data-testid="process-in-baseline-activity-event"
             width={size}
@@ -45,12 +45,12 @@ const ProcessActivityEvent = forwardRef(({ whitelisted, size }, ref) => {
 });
 
 ProcessActivityEvent.propTypes = {
-    whitelisted: PropTypes.bool,
+    inBaseline: PropTypes.bool,
     size: PropTypes.number.isRequired,
 };
 
 ProcessActivityEvent.defaultProps = {
-    whitelisted: false,
+    inBaseline: false,
 };
 
 export default ProcessActivityEvent;

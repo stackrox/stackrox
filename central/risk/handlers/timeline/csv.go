@@ -43,7 +43,7 @@ var (
 		},
 		{
 			header: "Process Baselined",
-			getter: func(r *eventRow) string { return r.processWhitelisted },
+			getter: func(r *eventRow) string { return r.processInBaseline },
 		},
 		{
 			header: "Process UID",
@@ -106,7 +106,7 @@ type eventRow struct {
 	processUID          string
 	processParentUID    string
 	processParentName   string
-	processWhitelisted  string
+	processInBaseline   string
 	containerExitCode   string
 	containerExitReason string
 	containerID         string
@@ -234,7 +234,7 @@ func CSVHandler() http.HandlerFunc {
 					dataRow.processUID = strconv.Itoa(int(processEvent.UID()))
 					dataRow.processParentUID = strconv.Itoa(int(processEvent.ParentUID()))
 					dataRow.processParentName = stringutils.PointerOrDefault(processEvent.ParentName(), "")
-					dataRow.processWhitelisted = strconv.FormatBool(processEvent.Whitelisted())
+					dataRow.processInBaseline = strconv.FormatBool(processEvent.InBaseline())
 				}
 
 				if terminationEvent, ok := event.ToContainerTerminationEvent(); ok {

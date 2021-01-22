@@ -58,7 +58,7 @@ export const processInBaselineActivityEvent = () => {
                 parentName={null}
                 parentUid={-1}
                 uid={1000}
-                whitelisted
+                inBaseline
                 timestamp="2020-04-20T20:20:20.358227916Z"
                 differenceInMilliseconds={50}
                 translateX={0}

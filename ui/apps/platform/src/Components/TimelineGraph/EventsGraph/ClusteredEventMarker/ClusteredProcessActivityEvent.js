@@ -5,10 +5,10 @@ import PropTypes from 'prop-types';
 import { clusteredEventPropTypes } from 'constants/propTypes/timelinePropTypes';
 import { getNumEventsBackgroundWidth, getNumEventsText } from './clusteredEventMarkerUtils';
 
-const ClusteredProcessActivityEvent = forwardRef(({ whitelisted, size, numEvents }, ref) => {
+const ClusteredProcessActivityEvent = forwardRef(({ inBaseline, size, numEvents }, ref) => {
     const numEventsBackgroundWidth = getNumEventsBackgroundWidth(numEvents);
     const numEventsText = getNumEventsText(numEvents);
-    return whitelisted ? (
+    return inBaseline ? (
         <svg
             className="cursor-pointer"
             data-testid="clustered-process-in-baseline-activity-event"
@@ -97,12 +97,12 @@ const ClusteredProcessActivityEvent = forwardRef(({ whitelisted, size, numEvents
 });
 
 ClusteredProcessActivityEvent.propTypes = {
-    whitelisted: PropTypes.bool,
+    inBaseline: PropTypes.bool,
     ...clusteredEventPropTypes,
 };
 
 ClusteredProcessActivityEvent.defaultProps = {
-    whitelisted: false,
+    inBaseline: false,
 };
 
 export default ClusteredProcessActivityEvent;

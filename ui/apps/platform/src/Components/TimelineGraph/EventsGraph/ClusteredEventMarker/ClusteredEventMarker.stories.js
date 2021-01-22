@@ -94,7 +94,7 @@ export const clusteredProcessInBaselineActivityEvent = () => {
             parentName: null,
             parentUid: -1,
             uid: 1000,
-            whitelisted: true,
+            inBaseline: true,
             timestamp: '2020-04-20T20:20:20.358227916Z',
         };
     });

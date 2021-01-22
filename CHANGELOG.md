@@ -8,9 +8,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - `roxctl central db backup` is deprecated; please use `roxctl central backup` instead.
 - API changes/deprecations:
   - `/db/backup` is deprecated; please use `/api/extensions/backup` instead.
+  - In the GraphQL API, `ProcessActivityEvent { whitelisted: Boolean! }` is deprecated, use
+    `ProcessActivityEvent { inBaseline: Boolean! }` instead.
   - In the GraphQL schema, the type name `Policy { whitelists: [Whitelist]! }` changes to 
     `Policy { whitelists: [Exclusion]! }` preserving the existing structure and field names.
-  - In the GraphQL schema, `Policy { whitelists: [Whitelist]! }` is deprecated, use
+  - In the GraphQL API, `Policy { whitelists: [Whitelist]! }` is deprecated, use
     `Policy { exclusions: [Whitelist]! }` instead.
   - `PolicyService(/v1/policies/*)`: in all affected responses, `Policy.whitelists` is now always empty, use
     `Policy.exclusions` instead. This is because the current policy version has been updated to "1.1" which deprecates

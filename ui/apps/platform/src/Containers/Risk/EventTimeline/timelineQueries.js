@@ -39,7 +39,7 @@ export const PROCESS_ACTIVITY_EVENT_FRAGMENT = gql`
         uid
         parentName
         parentUid
-        whitelisted
+        inBaseline
     }
 `;
 

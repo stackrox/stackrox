@@ -25,7 +25,7 @@ function getClusterEventType(events) {
         events.map((event) =>
             // if the event is a process in baseline activity, we should use a new type specific
             // to just clustered events
-            event.whitelisted ? clusteredEventTypes.WHITELISTED_PROCESS_ACTIVITY : event.type
+            event.inBaseline ? clusteredEventTypes.PROCESS_IN_BASELINE_ACTIVITY : event.type
         )
     );
     // if all the events are the same type, use that type
@@ -85,10 +85,10 @@ const ClusteredEventMarker = ({
                     {clusterEventType === clusteredEventTypes.PROCESS_ACTIVITY && (
                         <ClusteredProcessActivityEvent size={size} numEvents={numEvents} />
                     )}
-                    {clusterEventType === clusteredEventTypes.WHITELISTED_PROCESS_ACTIVITY && (
+                    {clusterEventType === clusteredEventTypes.PROCESS_IN_BASELINE_ACTIVITY && (
                         <ClusteredProcessActivityEvent
                             size={size}
-                            whitelisted
+                            inBaseline
                             numEvents={numEvents}
                         />
                     )}
