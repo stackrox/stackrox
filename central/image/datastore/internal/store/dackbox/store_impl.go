@@ -227,9 +227,13 @@ func (b *storeImpl) isUpdated(image *storage.Image) (bool, bool, error) {
 		scanUpdated = true
 	}
 
-	// If the image in the DB is latest, then use it's risk score
+	// If the image in the DB is latest, then use its risk score and scan stats
 	if !scanUpdated {
 		image.RiskScore = oldImage.GetRiskScore()
+		image.SetComponents = oldImage.GetSetComponents()
+		image.SetCves = oldImage.GetSetCves()
+		image.SetFixable = oldImage.GetSetFixable()
+		image.SetTopCvss = oldImage.GetSetTopCvss()
 	}
 	return metadataUpdated, scanUpdated, nil
 }

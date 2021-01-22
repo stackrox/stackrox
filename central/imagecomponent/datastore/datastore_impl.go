@@ -24,6 +24,7 @@ var (
 	log = logging.LoggerForModule()
 	// TODO: Need to setup sac for Image Components correctly instead of relying on global access.
 	imagesSAC = sac.ForResource(resources.Image)
+	nodesSac  = sac.ForResource(resources.Node)
 )
 
 type datastoreImpl struct {
@@ -112,7 +113,11 @@ func (ds *datastoreImpl) Upsert(ctx context.Context, imagecomponents ...*storage
 	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		if ok, err := nodesSac.WriteAllowed(ctx); err != nil {
+			return err
+		} else if !ok {
+			return errors.New("permission denied")
+		}
 	}
 
 	// Update image components with latest risk score
@@ -127,7 +132,11 @@ func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
 	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		if ok, err := nodesSac.WriteAllowed(ctx); err != nil {
+			return err
+		} else if !ok {
+			return errors.New("permission denied")
+		}
 	}
 
 	if err := ds.storage.Delete(ids...); err != nil {
@@ -151,7 +160,7 @@ func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
 func (ds *datastoreImpl) initializeRankers() {
 	readCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Image)))
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Image, resources.Node)))
 
 	results, err := ds.Search(readCtx, pkgSearch.EmptyQuery())
 	if err != nil {
@@ -181,7 +190,7 @@ func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]st
 	var filteredIDs []string
 	var err error
 	graph.Context(ctx, ds.graphProvider, func(graphContext context.Context) {
-		filteredIDs, err = filtered.ApplySACFilters(graphContext, ids, sacFilters.GetSACFilter())
+		filteredIDs, err = filtered.ApplySACFilters(graphContext, ids, sacFilters.GetSACFilters()...)
 	})
 	return filteredIDs, err
 }

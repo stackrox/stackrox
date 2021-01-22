@@ -3,6 +3,7 @@ package search
 import (
 	"context"
 
+	clusterIndexer "github.com/stackrox/rox/central/cluster/index"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
@@ -10,6 +11,8 @@ import (
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	"github.com/stackrox/rox/central/imagecomponent/store"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
+	nodeIndexer "github.com/stackrox/rox/central/node/index"
+	nodeComponentEdgeIndexer "github.com/stackrox/rox/central/nodecomponentedge/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
@@ -31,7 +34,10 @@ func New(storage store.Store, graphProvider graph.Provider,
 	componentIndexer componentIndexer.Indexer,
 	imageComponentEdgeIndexer imageComponentEdgeIndexer.Indexer,
 	imageIndexer imageIndexer.Indexer,
-	deploymentIndexer deploymentIndexer.Indexer) Searcher {
+	nodeComponentEdgeIndexer nodeComponentEdgeIndexer.Indexer,
+	nodeIndexer nodeIndexer.Indexer,
+	deploymentIndexer deploymentIndexer.Indexer,
+	clusterIndexer clusterIndexer.Indexer) Searcher {
 	return &searcherImpl{
 		storage:       storage,
 		graphProvider: graphProvider,
@@ -41,6 +47,9 @@ func New(storage store.Store, graphProvider graph.Provider,
 			componentIndexer,
 			imageComponentEdgeIndexer,
 			imageIndexer,
-			deploymentIndexer),
+			nodeComponentEdgeIndexer,
+			nodeIndexer,
+			deploymentIndexer,
+			clusterIndexer),
 	}
 }

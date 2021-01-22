@@ -102,5 +102,9 @@ var (
 
 		// We don't want to surface cluster level CVEs from an image scope.
 		v1.SearchCategory_CLUSTER_VULN_EDGE: ReturnNothing,
+
+		v1.SearchCategory_NODES:               ReturnNothing,
+		v1.SearchCategory_NODE_COMPONENT_EDGE: ReturnNothing,
+		v1.SearchCategory_NODE_VULN_EDGE:      ReturnNothing,
 	}
 )

@@ -20,6 +20,9 @@ var (
 		v1.SearchCategory_IMAGE_VULN_EDGE:      ReturnNothing,
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE: ReturnNothing,
 		v1.SearchCategory_IMAGE_COMPONENTS:     ReturnNothing,
+		v1.SearchCategory_NODES:                ReturnNothing,
+		v1.SearchCategory_NODE_VULN_EDGE:       ReturnNothing,
+		v1.SearchCategory_NODE_COMPONENT_EDGE:  ReturnNothing,
 		v1.SearchCategory_COMPONENT_VULN_EDGE:  ReturnNothing,
 
 		// Edge (parse second key in pair) CVE

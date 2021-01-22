@@ -9,11 +9,14 @@ import "api/v1/pagination.proto";
 
 package v1;
 
-// Next available tag: 28
+// Next available tag: 30
 enum SearchCategory {
     SEARCH_UNSET             = 0;
     ALERTS                   = 1;
     IMAGES                   = 2;
+    IMAGE_COMPONENTS         = 20;
+    IMAGE_VULN_EDGE          = 27;
+    IMAGE_COMPONENT_EDGE     = 23;
     POLICIES                 = 3;
     DEPLOYMENTS              = 4;
     PODS                     = 25;
@@ -23,6 +26,8 @@ enum SearchCategory {
     CLUSTERS                 = 8;
     NAMESPACES               = 9;
     NODES                    = 10;
+    NODE_VULN_EDGE           = 28;
+    NODE_COMPONENT_EDGE      = 29;
     COMPLIANCE_STANDARD      = 11;
     COMPLIANCE_CONTROL_GROUP = 12;
     COMPLIANCE_CONTROL       = 13;
@@ -32,13 +37,10 @@ enum SearchCategory {
     PROCESS_WHITELISTS       = 17;
     SUBJECTS                 = 18;
     RISKS                    = 19;
-    IMAGE_COMPONENTS         = 20;
     VULNERABILITIES          = 21;
     COMPONENT_VULN_EDGE      = 22;
-    IMAGE_COMPONENT_EDGE     = 23;
     CLUSTER_VULN_EDGE        = 24;
     NETWORK_ENTITY           = 26;
-    IMAGE_VULN_EDGE          = 27;
 }
 
 enum SearchDataType {

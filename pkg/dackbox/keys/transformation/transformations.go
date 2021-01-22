@@ -235,10 +235,14 @@ func BackwardFromContext() OneToMany {
 	}
 }
 
-// Both returns the results of both transformations.
-func Both(f1, f2 OneToMany) OneToMany {
+// Many returns the results of all the given transformations.
+func Many(fs ...OneToMany) OneToMany {
 	return func(ctx context.Context, key []byte) [][]byte {
-		return append(f1(ctx, key), f2(ctx, key)...)
+		var all [][]byte
+		for _, f := range fs {
+			all = append(all, f(ctx, key)...)
+		}
+		return all
 	}
 }
 

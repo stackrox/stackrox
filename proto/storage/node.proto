@@ -13,7 +13,7 @@ import "gogoproto/gogo.proto";
 package storage;
 
 // Node represents information about a node in the cluster.
-// next available tag: 17
+// next available tag: 26
 message Node {
     // A unique ID identifying this node.
     string id                              = 1 [(gogoproto.moretags) = "search:\"Node ID,store\""];
@@ -41,6 +41,8 @@ message Node {
     string os_image                        = 12 [(gogoproto.moretags) = "search:\"Operating System,store\""];
     string kubelet_version                 = 15;
     string kube_proxy_version              = 16;
+
+    google.protobuf.Timestamp last_updated = 25 [(gogoproto.moretags) = "search:\"Last Updated,hidden\""];
 
     NodeScan scan                          = 18 [(gogoproto.moretags) = "policy:\"Node Scan\""];
     oneof set_components {
@@ -73,4 +75,15 @@ message EmbeddedNodeScanComponent {
         float                      top_cvss   = 5;
     }
     float                          risk_score = 6;
+}
+
+message NodeComponentEdge {
+    // base 64 encoded Node:Component ids.
+    string id = 1;
+}
+
+message NodeCVEEdge {
+    // base 64 encoded Node:CVE ids.
+    string                    id                    = 1;
+    google.protobuf.Timestamp first_node_occurrence = 2;
 }

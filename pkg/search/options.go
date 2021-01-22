@@ -207,6 +207,7 @@ var (
 	NamespaceCount  = newFieldLabel("Namespace Count")
 	DeploymentCount = newFieldLabel("Deployment Count")
 	ImageCount      = newFieldLabel("Image Count")
+	NodeCount       = newFieldLabel("Node Count")
 
 	// External network sources fields
 	DefaultExternalSource = newFieldLabel("Default External Source")

@@ -2,10 +2,13 @@ package globaldatastore
 
 import (
 	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	"github.com/stackrox/rox/central/node/datastore/dackbox/globaldatastore"
 	"github.com/stackrox/rox/central/node/globalstore"
 	"github.com/stackrox/rox/central/node/index"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -20,7 +23,11 @@ func Singleton() GlobalDataStore {
 	initGlobalDataStoreInstance.Do(func() {
 		var err error
 		indexer := index.New(globalindex.GetGlobalTmpIndex())
-		globalDataStoreInstance, err = New(globalstore.Singleton(), indexer, riskDS.Singleton(), ranking.NodeRanker(), ranking.ComponentRanker())
+		if features.HostScanning.Enabled() {
+			globalDataStoreInstance, _ = globaldatastore.New(datastore.Singleton(), indexer)
+		} else {
+			globalDataStoreInstance, err = New(globalstore.Singleton(), indexer, riskDS.Singleton(), ranking.NodeRanker(), ranking.ComponentRanker())
+		}
 		utils.Must(err)
 	})
 	return globalDataStoreInstance

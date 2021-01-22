@@ -11,21 +11,30 @@ import (
 
 var (
 	imageComponentSAC = sac.ForResource(resources.Image)
+	nodeComponentSAC  = sac.ForResource(resources.Node)
 
 	imageComponentSACFilter filtered.Filter
+	nodeComponentSACFilter  filtered.Filter
 	once                    sync.Once
 )
 
-// GetSACFilter returns the sac filter for image component ids.
-func GetSACFilter() filtered.Filter {
+// GetSACFilters returns the sac filter for component ids.
+func GetSACFilters() []filtered.Filter {
 	once.Do(func() {
 		var err error
 		imageComponentSACFilter, err = filtered.NewSACFilter(
 			filtered.WithResourceHelper(imageComponentSAC),
-			filtered.WithScopeTransform(dackbox.ComponentSACTransform),
+			filtered.WithScopeTransform(dackbox.ImageComponentSACTransform),
+			filtered.WithReadAccess(),
+		)
+		utils.Must(err)
+
+		nodeComponentSACFilter, err = filtered.NewSACFilter(
+			filtered.WithResourceHelper(nodeComponentSAC),
+			filtered.WithScopeTransform(dackbox.NodeComponentSACTransform),
 			filtered.WithReadAccess(),
 		)
 		utils.Must(err)
 	})
-	return imageComponentSACFilter
+	return []filtered.Filter{imageComponentSACFilter, nodeComponentSACFilter}
 }

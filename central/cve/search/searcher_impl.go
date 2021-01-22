@@ -17,6 +17,9 @@ import (
 	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	componentSAC "github.com/stackrox/rox/central/imagecomponent/sac"
 	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
+	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
+	nodeSAC "github.com/stackrox/rox/central/node/sac"
+	nodeComponentEdgeMappings "github.com/stackrox/rox/central/nodecomponentedge/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
@@ -51,6 +54,16 @@ var (
 			componentMappings.OptionsMap,
 			componentCVEEdgeMappings.OptionsMap,
 			cveMappings.OptionsMap,
+		),
+	)
+	nodeOnlyOptionsMap = search.Difference(
+		nodeMappings.OptionsMap,
+		search.CombineOptionsMaps(
+			nodeComponentEdgeMappings.OptionsMap,
+			componentMappings.OptionsMap,
+			componentCVEEdgeMappings.OptionsMap,
+			cveMappings.OptionsMap,
+			clusterMappings.OptionsMap,
 		),
 	)
 )
@@ -124,6 +137,8 @@ func formatSearcher(graphProvider graph.Provider,
 	componentIndexer blevesearch.UnsafeSearcher,
 	imageComponentEdgeIndexer blevesearch.UnsafeSearcher,
 	imageIndexer blevesearch.UnsafeSearcher,
+	nodeComponentEdgeIndexer blevesearch.UnsafeSearcher,
+	nodeIndexer blevesearch.UnsafeSearcher,
 	deploymentIndexer blevesearch.UnsafeSearcher,
 	clusterIndexer blevesearch.UnsafeSearcher) search.Searcher {
 
@@ -133,6 +148,8 @@ func formatSearcher(graphProvider graph.Provider,
 	componentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentIndexer)
 	imageComponentEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageComponentEdgeIndexer)
 	imageSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageIndexer)
+	nodeComponentEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(nodeComponentEdgeIndexer)
+	nodeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(nodeIndexer)
 	deploymentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(deploymentIndexer)
 	clusterSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(clusterIndexer)
 
@@ -143,6 +160,8 @@ func formatSearcher(graphProvider graph.Provider,
 		componentSearcher,
 		imageComponentEdgeSearcher,
 		imageSearcher,
+		nodeComponentEdgeSearcher,
+		nodeSearcher,
 		deploymentSearcher,
 		clusterSearcher)
 	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), cveSAC.GetSACFilters()...)
@@ -173,6 +192,8 @@ func getCompoundCVESearcher(
 	componentSearcher search.Searcher,
 	imageComponentEdgeSearcher search.Searcher,
 	imageSearcher search.Searcher,
+	nodeComponentEdgeSearcher search.Searcher,
+	nodeSearcher search.Searcher,
 	deploymentSearcher search.Searcher,
 	clusterSearcher search.Searcher) search.Searcher {
 	// The ordering of these is important, so do not change.
@@ -213,6 +234,16 @@ func getCompoundCVESearcher(
 			Options:        deploymentOnlyOptionsMap,
 		},
 		{
+			Searcher:       scoped.WithScoping(nodeComponentEdgeSearcher, dackbox.ToCategory(v1.SearchCategory_NODE_COMPONENT_EDGE)),
+			Transformation: dackbox.GraphTransformations[v1.SearchCategory_NODE_COMPONENT_EDGE][v1.SearchCategory_VULNERABILITIES],
+			Options:        nodeComponentEdgeMappings.OptionsMap,
+		},
+		{
+			Searcher:       scoped.WithScoping(nodeSearcher, dackbox.ToCategory(v1.SearchCategory_NODES)),
+			Transformation: dackbox.GraphTransformations[v1.SearchCategory_NODES][v1.SearchCategory_VULNERABILITIES],
+			Options:        nodeOnlyOptionsMap,
+		},
+		{
 			Searcher:       scoped.WithScoping(clusterSearcher, dackbox.ToCategory(v1.SearchCategory_CLUSTERS)),
 			Transformation: dackbox.GraphTransformations[v1.SearchCategory_CLUSTERS][v1.SearchCategory_VULNERABILITIES],
 			Options:        clusterMappings.OptionsMap,
@@ -224,6 +255,7 @@ func wrapDerivedFieldSearcher(graphProvider graph.Provider, searcher search.Sear
 	return derivedfields.CountSortedSearcher(searcher, map[string]counter.DerivedFieldCounter{
 		search.DeploymentCount.String(): counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.CVEToDeploymentPath, deploymentSAC.GetSACFilter()),
 		search.ImageCount.String():      counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.CVEToImagePath, imageSAC.GetSACFilter()),
-		search.ComponentCount.String():  counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.CVEToComponentPath, componentSAC.GetSACFilter()),
+		search.NodeCount.String():       counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.CVEToNodePath, nodeSAC.GetSACFilter()),
+		search.ComponentCount.String():  counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.CVEToComponentPath, componentSAC.GetSACFilters()...),
 	})
 }

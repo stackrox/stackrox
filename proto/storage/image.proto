@@ -92,6 +92,7 @@ enum SourceType {
     RUBY              = 3;
     NODEJS            = 4;
     DOTNETCORERUNTIME = 5;
+    INFRASTRUCTURE    = 6;
 }
 
 message License {

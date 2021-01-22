@@ -107,7 +107,7 @@ class UpgradesTest extends BaseSpecification {
         Assume.assumeTrue(CLUSTERID=="260e11a3-cbea-464c-95f0-588fa7695b49")
 
         expect:
-        "Alert retention duration is nil, image rentention duration is 7 days"
+        "Alert retention duration is nil, image retention duration is 7 days"
         def config = ConfigService.getConfig()
         config != null
         config.getPrivateConfig().getAlertConfig() != null

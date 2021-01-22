@@ -10,22 +10,22 @@ import (
 /*
 The DackBox graph is currently designed with the following directed hierarchy:
 
-   Cluster ID-
-      |        \
-      V         \
-  Namespace ID   \
-      |           \
-      V            |
-  Deployment ID    |
-      |            |
-      V            |
-   Image IDs       |
-      |            |
-      V            |
-  Component IDs   /
-      |          /
-      V         /
-   CVE IDs <---
+            -Cluster ID-
+          /     |        \
+         /      V         \
+        /   Namespace ID   \
+       /        |           \
+      /         V            |
+     |      Deployment ID    |
+     |          |            |
+     |          V            |
+  Node IDs   Image IDs       |
+     |          |            |
+      \         V            |
+        --> Component IDs   /
+                |          /
+                V         /
+             CVE IDs <---
 
 So to get from a cluster to it's CVEs, there are two paths (which lead to the two different kinds of CVEs).
 One from the deployment pointing toward it:
@@ -47,11 +47,14 @@ var (
 
 	// GraphTransformations holds how to scope a secondary category under a primary category.
 	// For instance, if you want to search CVEs within the scope of an image, you would use the function stored
-	// under GraphTransformations[va.SearchCategory_IMAGES][v1.SearchCategory_VULNERABILITIES] to pull the vulns
+	// under GraphTransformations[v1.SearchCategory_IMAGES][v1.SearchCategory_VULNERABILITIES] to pull the vulns
 	// that exist in the image.
 	GraphTransformations = map[v1.SearchCategory]map[v1.SearchCategory]transformation.OneToMany{
 		v1.SearchCategory_CLUSTERS:             ClusterTransformations,
 		v1.SearchCategory_NAMESPACES:           NamespaceTransformations,
+		v1.SearchCategory_NODES:                NodeTransformations,
+		v1.SearchCategory_NODE_VULN_EDGE:       NodeCVEEdgeTransformations,
+		v1.SearchCategory_NODE_COMPONENT_EDGE:  NodeComponentEdgeTransformations,
 		v1.SearchCategory_DEPLOYMENTS:          DeploymentTransformations,
 		v1.SearchCategory_IMAGES:               ImageTransformations,
 		v1.SearchCategory_IMAGE_VULN_EDGE:      ImageCVEEdgeTransformations,

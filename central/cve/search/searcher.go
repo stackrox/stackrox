@@ -12,6 +12,8 @@ import (
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
+	nodeIndexer "github.com/stackrox/rox/central/node/index"
+	nodeComponentEdgeIndexer "github.com/stackrox/rox/central/nodecomponentedge/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
@@ -34,6 +36,8 @@ func New(storage store.Store, graphProvider graph.Provider,
 	componentIndexer componentIndexer.Indexer,
 	imageComponentEdgeIndexer imageComponentEdgeIndexer.Indexer,
 	imageIndexer imageIndexer.Indexer,
+	nodeComponentEdgeIndexer nodeComponentEdgeIndexer.Indexer,
+	nodeIndexer nodeIndexer.Indexer,
 	deploymentIndexer deploymentIndexer.Indexer,
 	clusterIndexer clusterIndexer.Indexer) Searcher {
 	return &searcherImpl{
@@ -47,6 +51,8 @@ func New(storage store.Store, graphProvider graph.Provider,
 			componentIndexer,
 			imageComponentEdgeIndexer,
 			imageIndexer,
+			nodeComponentEdgeIndexer,
+			nodeIndexer,
 			deploymentIndexer,
 			clusterIndexer),
 	}

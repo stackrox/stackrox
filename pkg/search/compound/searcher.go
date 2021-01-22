@@ -15,7 +15,7 @@ type SearcherSpec struct {
 	Searcher  search.Searcher
 	Options   search.OptionsMap
 
-	// If you want a transformation applied to the resultss prior to aggregation.
+	// If you want a transformation applied to the results prior to aggregation.
 	Transformation transformation.OneToMany
 
 	// Provides the ability to do linked fields queries. You should populate this field with a transformation that
@@ -33,7 +33,7 @@ type SearcherSpec struct {
 
 // NewSearcher returns a searcher that applies search terms to the first input index that supports the term.
 // If no index supports the term, then the search will return an error.
-func NewSearcher(specs []SearcherSpec, names ...string) search.Searcher {
+func NewSearcher(specs []SearcherSpec) search.Searcher {
 	return paginated.Paginated(&compoundSearcherImpl{
 		specs: specs,
 	})

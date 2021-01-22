@@ -7,6 +7,7 @@ import (
 	imageDackBox "github.com/stackrox/rox/central/image/dackbox"
 	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
 	nsDackBox "github.com/stackrox/rox/central/namespace/dackbox"
+	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
 )
@@ -14,22 +15,34 @@ import (
 var (
 	// ComponentCVEEdgeTransformations holds the transformations to go from a component:cve edge id to the ids of the given category.
 	ComponentCVEEdgeTransformations = map[v1.SearchCategory]transformation.OneToMany{
-		// Edge (parse first key in pair) Component (backwards) Images (backwards) Deployments (backwards) Namespaces (backwards) Clusters
+		// Many(
+		//      Edge (parse first key in pair) Component (backwards) Images (backwards) Deployments (backwards) Namespaces (backwards) Clusters,
+		//      Edge (parse first key in pair) Component (backwards) Nodes (backwards) Clusters,
+		//     )
 		v1.SearchCategory_CLUSTERS: transformation.Split([]byte(":")).
 			ThenMapEachToOne(transformation.Decode()).
 			Then(transformation.AtIndex(0)).
 			ThenMapEachToOne(transformation.AddPrefix(componentDackBox.Bucket)).
-			ThenMapEachToMany(transformation.BackwardFromContext()).
-			Then(transformation.HasPrefix(imageDackBox.Bucket)).
-			ThenMapEachToMany(transformation.BackwardFromContext()).
-			Then(transformation.Dedupe()).
-			Then(transformation.HasPrefix(deploymentDackBox.Bucket)).
-			ThenMapEachToMany(transformation.BackwardFromContext()).
-			Then(transformation.HasPrefix(nsDackBox.Bucket)).
-			Then(transformation.Dedupe()).
-			ThenMapEachToMany(transformation.BackwardFromContext()).
-			Then(transformation.HasPrefix(clusterDackBox.Bucket)).
-			ThenMapEachToOne(transformation.StripPrefix(clusterDackBox.Bucket)),
+			ThenMapEachToMany(transformation.Many(
+				transformation.BackwardFromContext().
+					Then(transformation.HasPrefix(imageDackBox.Bucket)).
+					ThenMapEachToMany(transformation.BackwardFromContext()).
+					Then(transformation.Dedupe()).
+					Then(transformation.HasPrefix(deploymentDackBox.Bucket)).
+					ThenMapEachToMany(transformation.BackwardFromContext()).
+					Then(transformation.HasPrefix(nsDackBox.Bucket)).
+					Then(transformation.Dedupe()).
+					ThenMapEachToMany(transformation.BackwardFromContext()).
+					Then(transformation.HasPrefix(clusterDackBox.Bucket)).
+					ThenMapEachToOne(transformation.StripPrefix(clusterDackBox.Bucket)),
+				transformation.BackwardFromContext().
+					Then(transformation.HasPrefix(nodeDackBox.Bucket)).
+					Then(transformation.Dedupe()).
+					ThenMapEachToMany(transformation.BackwardFromContext()).
+					Then(transformation.Dedupe()).
+					Then(transformation.HasPrefix(clusterDackBox.Bucket)).
+					ThenMapEachToOne(transformation.StripPrefix(clusterDackBox.Bucket)),
+			)),
 
 		// Edge (parse first key in pair) Component (backwards) Images (backwards) Deployments (backwards) Namespaces
 		v1.SearchCategory_NAMESPACES: transformation.Split([]byte(":")).
@@ -96,6 +109,46 @@ var (
 				ThenMapToMany(transformation.BackwardFromContext()).
 				Then(transformation.HasPrefix(imageDackBox.Bucket)).
 				ThenMapEachToOne(transformation.StripPrefix(imageDackBox.Bucket)),
+		),
+
+		// Edge (parse first key in pair) Component (backwards) Nodes
+		v1.SearchCategory_NODES: transformation.Split([]byte(":")).
+			ThenMapEachToOne(transformation.Decode()).
+			Then(transformation.AtIndex(0)).
+			ThenMapEachToOne(transformation.AddPrefix(componentDackBox.Bucket)).
+			ThenMapEachToMany(transformation.BackwardFromContext()).
+			Then(transformation.HasPrefix(nodeDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefix(nodeDackBox.Bucket)),
+
+		// CombineReversed ( { k2, k1 }
+		//          Edge (parse second key in pair) CVE,
+		//          CVE (backwards) Components (backwards) Nodes,
+		//          )
+		v1.SearchCategory_NODE_VULN_EDGE: transformation.ReverseEdgeKeys(
+			transformation.Split([]byte(":")).
+				ThenMapEachToOne(transformation.Decode()).
+				Then(transformation.AtIndex(1)),
+			transformation.AddPrefix(cveDackBox.Bucket).
+				ThenMapToMany(transformation.BackwardFromContext()).
+				Then(transformation.HasPrefix(componentDackBox.Bucket)).
+				ThenMapEachToMany(transformation.BackwardFromContext()).
+				Then(transformation.Dedupe()).
+				Then(transformation.HasPrefix(nodeDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefix(nodeDackBox.Bucket)),
+		),
+
+		// CombineReversed ( { k2, k1 }
+		//          Edge (parse first key in pair) Component,
+		//          Components (backwards) Nodes,
+		//          )
+		v1.SearchCategory_NODE_COMPONENT_EDGE: transformation.ReverseEdgeKeys(
+			transformation.Split([]byte(":")).
+				ThenMapEachToOne(transformation.Decode()).
+				Then(transformation.AtIndex(0)),
+			transformation.AddPrefix(componentDackBox.Bucket).
+				ThenMapToMany(transformation.BackwardFromContext()).
+				Then(transformation.HasPrefix(nodeDackBox.Bucket)).
+				ThenMapEachToOne(transformation.StripPrefix(nodeDackBox.Bucket)),
 		),
 
 		// Edge (parse first key in pair) Component

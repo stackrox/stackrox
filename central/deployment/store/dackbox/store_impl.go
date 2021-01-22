@@ -9,6 +9,7 @@ import (
 	imageDackBox "github.com/stackrox/rox/central/image/dackbox"
 	"github.com/stackrox/rox/central/metrics"
 	namespaceDackBox "github.com/stackrox/rox/central/namespace/dackbox"
+	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
@@ -48,7 +49,7 @@ func (b *StoreImpl) CountDeployments() (int, error) {
 	return count, nil
 }
 
-// GetDeploymentIDs returns the keys of all deployments stored in badger.
+// GetDeploymentIDs returns the keys of all deployments stored in RocksDB.
 func (b *StoreImpl) GetDeploymentIDs() ([]string, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Deployment")
 
@@ -253,8 +254,9 @@ func (b *StoreImpl) RemoveDeployment(id string) error {
 			}
 		}
 
-		// If the cluster has no more namespaces, remove its refs. (Clusters only have forward refs)
-		if clusterKey != nil && len(namespaceDackBox.BucketHandler.FilterKeys(txn.Graph().GetRefsFrom(clusterKey))) == 0 {
+		// If the cluster has no more namespaces nor nodes, remove its refs. (Clusters only have forward refs)
+		if clusterKey != nil && len(namespaceDackBox.BucketHandler.FilterKeys(txn.Graph().GetRefsFrom(clusterKey))) == 0 &&
+			len(nodeDackBox.BucketHandler.FilterKeys(txn.Graph().GetRefsFrom(clusterKey))) == 0 {
 			if err := txn.Graph().DeleteRefsFrom(clusterKey); err != nil {
 				return err
 			}
@@ -309,7 +311,7 @@ func convertDeploymentToListDeployment(d *storage.Deployment) *storage.ListDeplo
 }
 
 // AckKeysIndexed is a stub for the store interface
-func (b *StoreImpl) AckKeysIndexed(keys ...string) error {
+func (b *StoreImpl) AckKeysIndexed(_ ...string) error {
 	return nil
 }
 

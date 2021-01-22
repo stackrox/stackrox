@@ -210,7 +210,7 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheNodes() {
 	}
 	suite.Equal(expectedCache, suite.datastore.cveSuppressionCache)
 
-	// No apply these to the node
+	// Now apply these to the node
 	node := getNodeWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
 	suite.datastore.EnrichNodeWithSuppressedCVEs(node)
 	suite.verifySuppressionStateNode(node, []string{"CVE-ABC", "CVE-DEF"}, []string{"CVE-GHI"})

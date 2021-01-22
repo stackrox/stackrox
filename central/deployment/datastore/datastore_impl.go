@@ -108,6 +108,7 @@ func (ds *datastoreImpl) initializeRanker() {
 		riskScore := deployment.GetRiskScore()
 		ds.deploymentRanker.Add(id, deployment.GetRiskScore())
 
+		// TODO: ROX-6235: account for nodes in cluster risk
 		// aggregate deployment risk scores to get cluster risk score
 		clusterScores[deployment.GetClusterId()] += riskScore
 

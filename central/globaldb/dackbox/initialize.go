@@ -21,6 +21,10 @@ import (
 	imagecomponentIndex "github.com/stackrox/rox/central/imagecomponent/index"
 	imagecomponentEdgeDackBox "github.com/stackrox/rox/central/imagecomponentedge/dackbox"
 	imagecomponentEdgeIndex "github.com/stackrox/rox/central/imagecomponentedge/index"
+	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
+	nodeIndex "github.com/stackrox/rox/central/node/index"
+	nodeComponentEdgeDackBox "github.com/stackrox/rox/central/nodecomponentedge/dackbox"
+	nodeComponentEdgeIndex "github.com/stackrox/rox/central/nodecomponentedge/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
@@ -79,6 +83,18 @@ var (
 			reader:   deploymentDackBox.Reader,
 			category: v1.SearchCategory_DEPLOYMENTS,
 			wrapper:  deploymentIndex.Wrapper{},
+		},
+		{
+			bucket:   nodeComponentEdgeDackBox.Bucket,
+			reader:   nodeComponentEdgeDackBox.Reader,
+			category: v1.SearchCategory_NODE_COMPONENT_EDGE,
+			wrapper:  nodeComponentEdgeIndex.Wrapper{},
+		},
+		{
+			bucket:   nodeDackBox.Bucket,
+			reader:   nodeDackBox.Reader,
+			category: v1.SearchCategory_NODES,
+			wrapper:  nodeIndex.Wrapper{},
 		},
 	}
 )

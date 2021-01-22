@@ -8,8 +8,7 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
-	nodeGlobalDatastore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -26,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/throttle"
 	"github.com/stackrox/rox/pkg/uuid"
 	"go.uber.org/atomic"
 	"golang.org/x/sync/semaphore"
@@ -60,7 +58,7 @@ var (
 func Singleton() Loop {
 	once.Do(func() {
 		loop = NewLoop(connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.NodeEnricherSingleton(),
-			deploymentDatastore.Singleton(), imageDatastore.Singleton(), nodeGlobalDatastore.Singleton(), manager.Singleton())
+			deploymentDatastore.Singleton(), imageDatastore.Singleton(), nodeDatastore.Singleton(), manager.Singleton())
 	})
 	return loop
 }
@@ -77,7 +75,7 @@ type Loop interface {
 
 // NewLoop returns a new instance of a Loop.
 func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, nodeEnricher nodeEnricher.NodeEnricher,
-	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeGlobalDatastore.GlobalDataStore,
+	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeDatastore.DataStore,
 	risk manager.Manager) Loop {
 	return newLoopWithDuration(connManager, imageEnricher, nodeEnricher, deployments, images, nodes, risk, env.ReprocessInterval.DurationSetting(), 30*time.Minute, 15*time.Second)
 }
@@ -86,11 +84,11 @@ func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEn
 // It is NOT exported, since we don't want clients to control the duration; it only exists as a separate function
 // to enable testing.
 func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, nodeEnricher nodeEnricher.NodeEnricher,
-	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeGlobalDatastore.GlobalDataStore,
+	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeDatastore.DataStore,
 	risk manager.Manager, enrichAndDetectDuration, enrichAndDetectInjectionPeriod, deploymentRiskDuration time.Duration) Loop {
 	return &loopImpl{
 		enrichAndDetectTickerDuration:  enrichAndDetectDuration,
-		deploymenRiskTickerDuration:    deploymentRiskDuration,
+		deploymentRiskTickerDuration:   deploymentRiskDuration,
 		enrichAndDetectInjectionPeriod: enrichAndDetectInjectionPeriod,
 
 		imageEnricher: imageEnricher,
@@ -113,7 +111,6 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 		reprocessingComplete: concurrency.NewSignal(),
 
 		connManager: connManager,
-		throttler:   throttle.NewDropThrottle(time.Second),
 	}
 }
 
@@ -126,13 +123,13 @@ type loopImpl struct {
 	risk          manager.Manager
 	imageEnricher imageEnricher.ImageEnricher
 
-	deployments                 deploymentDatastore.DataStore
-	deploymentRiskSet           set.StringSet
-	deploymentRiskLock          sync.Mutex
-	deploymentRiskTicker        *time.Ticker
-	deploymenRiskTickerDuration time.Duration
+	deployments                  deploymentDatastore.DataStore
+	deploymentRiskSet            set.StringSet
+	deploymentRiskLock           sync.Mutex
+	deploymentRiskTicker         *time.Ticker
+	deploymentRiskTickerDuration time.Duration
 
-	nodes        nodeGlobalDatastore.GlobalDataStore
+	nodes        nodeDatastore.DataStore
 	nodeEnricher nodeEnricher.NodeEnricher
 
 	shortCircuitSig   concurrency.Signal
@@ -144,7 +141,6 @@ type loopImpl struct {
 	reprocessingComplete concurrency.Signal
 
 	connManager connection.Manager
-	throttler   throttle.DropThrottle
 }
 
 func (l *loopImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
@@ -156,7 +152,7 @@ func (l *loopImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
 // Start starts the enrich and detect loop.
 func (l *loopImpl) Start() {
 	l.enrichAndDetectTicker = time.NewTicker(l.enrichAndDetectTickerDuration)
-	l.deploymentRiskTicker = time.NewTicker(l.deploymenRiskTickerDuration)
+	l.deploymentRiskTicker = time.NewTicker(l.deploymentRiskTickerDuration)
 	go l.riskLoop()
 	go l.enrichLoop()
 }
@@ -310,29 +306,21 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	}
 }
 
-func (l *loopImpl) reprocessNode(id string, nodeStores map[string]nodeDatastore.DataStore,
-	sema *semaphore.Weighted, wg *concurrency.WaitGroup, fetchOpt nodeEnricher.FetchOption) bool {
+func (l *loopImpl) reprocessNode(id string, sema *semaphore.Weighted, wg *concurrency.WaitGroup, fetchOpt nodeEnricher.FetchOption) bool {
 	defer sema.Release(1)
 	defer wg.Add(-1)
 
-	var node *storage.Node
-	for clusterID, store := range nodeStores {
-		var err error
-		node, err = store.GetNode(id)
-		if err == nil && node != nil {
-			break
-		}
-		if err != nil {
-			log.Errorf("Error fetching node %q from cluster database %q: %v", id, clusterID, err)
-		}
+	node, exists, err := l.nodes.GetNode(getNodesContext, id)
+	if err != nil {
+		log.Errorf("error fetching node %q from the database: %v", id, err)
+		return false
 	}
-
-	if node == nil {
-		log.Warnf("Node %q does not exist in the database. Skipping...", id)
+	if !exists {
+		log.Warnf("node %q does not exist in the database. Skipping...", id)
 		return false
 	}
 
-	err := l.nodeEnricher.EnrichNode(nodeEnricher.EnrichmentContext{
+	err = l.nodeEnricher.EnrichNode(nodeEnricher.EnrichmentContext{
 		FetchOpt: fetchOpt,
 	}, node)
 	if err != nil {
@@ -350,12 +338,6 @@ func (l *loopImpl) reprocessNode(id string, nodeStores map[string]nodeDatastore.
 
 func (l *loopImpl) reprocessNodes(fetchOpt nodeEnricher.FetchOption) {
 	if l.stopSig.IsDone() {
-		return
-	}
-
-	nodeStores, err := l.nodes.GetAllClusterNodeStores(getNodesContext, false)
-	if err != nil {
-		log.Errorf("Unable to get each node store: %v", err)
 		return
 	}
 
@@ -380,7 +362,7 @@ func (l *loopImpl) reprocessNodes(fetchOpt nodeEnricher.FetchOption) {
 		}
 
 		go func(id string) {
-			if l.reprocessNode(id, nodeStores, nodeSemaphore, &wg, fetchOpt) {
+			if l.reprocessNode(id, nodeSemaphore, &wg, fetchOpt) {
 				nReprocessed.Inc()
 			}
 		}(nodeID)

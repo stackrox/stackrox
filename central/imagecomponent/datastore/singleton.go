@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	clusterIndexer "github.com/stackrox/rox/central/cluster/index"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
@@ -11,6 +12,8 @@ import (
 	"github.com/stackrox/rox/central/imagecomponent/search"
 	"github.com/stackrox/rox/central/imagecomponent/store/dackbox"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
+	nodeIndexer "github.com/stackrox/rox/central/node/index"
+	nodeComponentEdgeIndexer "github.com/stackrox/rox/central/nodecomponentedge/index"
 	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/pkg/sync"
@@ -33,7 +36,10 @@ func initialize() {
 		componentIndexer.New(globalindex.GetGlobalIndex()),
 		imageComponentEdgeIndexer.New(globalindex.GetGlobalIndex()),
 		imageIndexer.New(globalindex.GetGlobalIndex()),
-		deploymentIndexer.New(globalindex.GetGlobalIndex(), globalindex.GetProcessIndex()))
+		nodeComponentEdgeIndexer.New(globalindex.GetGlobalIndex()),
+		nodeIndexer.New(globalindex.GetGlobalIndex()),
+		deploymentIndexer.New(globalindex.GetGlobalIndex(), globalindex.GetProcessIndex()),
+		clusterIndexer.New(globalindex.GetGlobalTmpIndex()))
 
 	ad, err = New(globaldb.GetGlobalDackBox(), storage, componentIndexer.New(globalindex.GetGlobalIndex()), searcher, riskDataStore.Singleton(), ranking.ComponentRanker())
 	utils.Must(err)

@@ -11,10 +11,12 @@ import (
 
 var (
 	imageCVESAC   = sac.ForResource(resources.Image)
+	nodeCVESAC    = sac.ForResource(resources.Node)
 	clusterCVESAC = sac.ForResource(resources.Cluster)
 
 	clusterCVESACFilter filtered.Filter
-	cveSACFilter        filtered.Filter
+	imageCVESACFilter   filtered.Filter
+	nodeCVESACFilter    filtered.Filter
 	once                sync.Once
 )
 
@@ -22,9 +24,16 @@ var (
 func GetSACFilters() []filtered.Filter {
 	once.Do(func() {
 		var err error
-		cveSACFilter, err = filtered.NewSACFilter(
+		imageCVESACFilter, err = filtered.NewSACFilter(
 			filtered.WithResourceHelper(imageCVESAC),
-			filtered.WithScopeTransform(dackbox.VulnSACTransform),
+			filtered.WithScopeTransform(dackbox.ImageVulnSACTransform),
+			filtered.WithReadAccess(),
+		)
+		utils.Must(err)
+
+		nodeCVESACFilter, err = filtered.NewSACFilter(
+			filtered.WithResourceHelper(nodeCVESAC),
+			filtered.WithScopeTransform(dackbox.NodeVulnSACTransform),
 			filtered.WithReadAccess(),
 		)
 		utils.Must(err)
@@ -36,5 +45,5 @@ func GetSACFilters() []filtered.Filter {
 		)
 		utils.Must(err)
 	})
-	return []filtered.Filter{cveSACFilter, clusterCVESACFilter}
+	return []filtered.Filter{imageCVESACFilter, nodeCVESACFilter, clusterCVESACFilter}
 }

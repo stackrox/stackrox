@@ -3,6 +3,7 @@ package search
 import (
 	"context"
 
+	clusterMapping "github.com/stackrox/rox/central/cluster/index/mappings"
 	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
 	"github.com/stackrox/rox/central/cve/cveedge"
 	cveMappings "github.com/stackrox/rox/central/cve/mappings"
@@ -14,6 +15,8 @@ import (
 	componentSAC "github.com/stackrox/rox/central/imagecomponent/sac"
 	"github.com/stackrox/rox/central/imagecomponent/store"
 	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
+	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
+	nodeComponentEdgeMappings "github.com/stackrox/rox/central/nodecomponentedge/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
@@ -35,14 +38,30 @@ var (
 		Field: search.Component.String(),
 	}
 
-	deploymentOnlyOptionsMap = search.Difference(deploymentMappings.OptionsMap, imageMappings.OptionsMap)
-	imageOnlyOptionsMap      = search.Difference(
+	deploymentOnlyOptionsMap = search.Difference(
+		deploymentMappings.OptionsMap,
+		search.CombineOptionsMaps(
+			imageMappings.OptionsMap,
+			clusterMapping.OptionsMap,
+		),
+	)
+	imageOnlyOptionsMap = search.Difference(
 		imageMappings.OptionsMap,
 		search.CombineOptionsMaps(
 			imageComponentEdgeMappings.OptionsMap,
 			componentMappings.OptionsMap,
 			componentCVEEdgeMappings.OptionsMap,
 			cveMappings.OptionsMap,
+		),
+	)
+	nodeOnlyOptionsMap = search.Difference(
+		nodeMappings.OptionsMap,
+		search.CombineOptionsMaps(
+			nodeComponentEdgeMappings.OptionsMap,
+			componentMappings.OptionsMap,
+			componentCVEEdgeMappings.OptionsMap,
+			cveMappings.OptionsMap,
+			clusterMapping.OptionsMap,
 		),
 	)
 )
@@ -128,13 +147,19 @@ func formatSearcher(graphProvider graph.Provider,
 	componentIndexer blevesearch.UnsafeSearcher,
 	imageComponentEdgeIndexer blevesearch.UnsafeSearcher,
 	imageIndexer blevesearch.UnsafeSearcher,
-	deploymentIndexer blevesearch.UnsafeSearcher) search.Searcher {
+	nodeComponentEdgeIndexer blevesearch.UnsafeSearcher,
+	nodeIndexer blevesearch.UnsafeSearcher,
+	deploymentIndexer blevesearch.UnsafeSearcher,
+	clusterIndexer blevesearch.UnsafeSearcher) search.Searcher {
 	cveSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(cveIndexer)
 	componentCVEEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentCVEEdgeIndexer)
 	componentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentIndexer)
 	imageComponentEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageComponentEdgeIndexer)
 	imageSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageIndexer)
+	nodeComponentEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(nodeComponentEdgeIndexer)
+	nodeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(nodeIndexer)
 	deploymentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(deploymentIndexer)
+	clusterSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(clusterIndexer)
 
 	compoundSearcher := getCompoundComponentSearcher(
 		cveSearcher,
@@ -142,8 +167,11 @@ func formatSearcher(graphProvider graph.Provider,
 		componentSearcher,
 		imageComponentEdgeSearcher,
 		imageSearcher,
-		deploymentSearcher)
-	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), componentSAC.GetSACFilter())
+		nodeComponentEdgeSearcher,
+		nodeSearcher,
+		deploymentSearcher,
+		clusterSearcher)
+	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), componentSAC.GetSACFilters()...)
 	transformedSortSearcher := sortfields.TransformSortFields(filteredSearcher)
 	derivedFieldSortedSearcher := wrapDerivedFieldSearcher(graphProvider, transformedSortSearcher)
 	paginatedSearcher := paginated.Paginated(derivedFieldSortedSearcher)
@@ -157,7 +185,10 @@ func getCompoundComponentSearcher(
 	componentSearcher search.Searcher,
 	imageComponentEdgeSearcher search.Searcher,
 	imageSearcher search.Searcher,
-	deploymentSearcher search.Searcher) search.Searcher {
+	nodeComponentEdgeSearcher search.Searcher,
+	nodeSearcher search.Searcher,
+	deploymentSearcher search.Searcher,
+	clusterSearcher search.Searcher) search.Searcher {
 	// The ordering of these is important, so do not change.
 	return compound.NewSearcher([]compound.SearcherSpec{
 		{
@@ -188,9 +219,24 @@ func getCompoundComponentSearcher(
 			Options:        imageOnlyOptionsMap,
 		},
 		{
+			Searcher:       scoped.WithScoping(nodeComponentEdgeSearcher, dackbox.ToCategory(v1.SearchCategory_NODE_COMPONENT_EDGE)),
+			Transformation: dackbox.GraphTransformations[v1.SearchCategory_NODE_COMPONENT_EDGE][v1.SearchCategory_IMAGE_COMPONENTS],
+			Options:        nodeComponentEdgeMappings.OptionsMap,
+		},
+		{
 			Searcher:       scoped.WithScoping(deploymentSearcher, dackbox.ToCategory(v1.SearchCategory_DEPLOYMENTS)),
 			Transformation: dackbox.GraphTransformations[v1.SearchCategory_DEPLOYMENTS][v1.SearchCategory_IMAGE_COMPONENTS],
 			Options:        deploymentOnlyOptionsMap,
+		},
+		{
+			Searcher:       scoped.WithScoping(nodeSearcher, dackbox.ToCategory(v1.SearchCategory_NODES)),
+			Transformation: dackbox.GraphTransformations[v1.SearchCategory_NODES][v1.SearchCategory_IMAGE_COMPONENTS],
+			Options:        nodeOnlyOptionsMap,
+		},
+		{
+			Searcher:       scoped.WithScoping(clusterSearcher, dackbox.ToCategory(v1.SearchCategory_CLUSTERS)),
+			Transformation: dackbox.GraphTransformations[v1.SearchCategory_CLUSTERS][v1.SearchCategory_IMAGE_COMPONENTS],
+			Options:        clusterMapping.OptionsMap,
 		},
 	})
 }

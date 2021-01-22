@@ -749,6 +749,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"kubeProxyVersion: String!",
 		"kubeletVersion: String!",
 		"labels: [Label!]!",
+		"lastUpdated: Time",
 		"name: String!",
 		"operatingSystem: String!",
 		"osImage: String!",
@@ -6948,6 +6949,11 @@ func (resolver *nodeResolver) KubeletVersion(ctx context.Context) string {
 func (resolver *nodeResolver) Labels(ctx context.Context) labels {
 	value := resolver.data.GetLabels()
 	return labelsResolver(value)
+}
+
+func (resolver *nodeResolver) LastUpdated(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetLastUpdated()
+	return timestamp(value)
 }
 
 func (resolver *nodeResolver) Name(ctx context.Context) string {

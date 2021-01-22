@@ -15,7 +15,7 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageIndex "github.com/stackrox/rox/central/image/index"
-	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/datastore/dackbox/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -43,7 +43,7 @@ type loopTestSuite struct {
 
 	mockManager       *connectionMocks.MockManager
 	mockDeployment    *deploymentMocks.MockDataStore
-	mockNode          *nodeMocks.MockGlobalDataStore
+	mockNode          *nodeMocks.MockDataStore
 	mockNodeEnricher  *nodeEnricherMocks.MockNodeEnricher
 	mockImage         *imageMocks.MockDataStore
 	mockImageEnricher *imageEnricherMocks.MockImageEnricher
@@ -54,7 +54,7 @@ func (suite *loopTestSuite) SetupTest() {
 	suite.mockManager = connectionMocks.NewMockManager(suite.mockCtrl)
 	suite.mockImage = imageMocks.NewMockDataStore(suite.mockCtrl)
 	suite.mockDeployment = deploymentMocks.NewMockDataStore(suite.mockCtrl)
-	suite.mockNode = nodeMocks.NewMockGlobalDataStore(suite.mockCtrl)
+	suite.mockNode = nodeMocks.NewMockDataStore(suite.mockCtrl)
 }
 
 func (suite *loopTestSuite) TearDownTest() {

@@ -7,6 +7,7 @@ import (
 	imageDackBox "github.com/stackrox/rox/central/image/dackbox"
 	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
 	nsDackBox "github.com/stackrox/rox/central/namespace/dackbox"
+	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox"
 )
 
@@ -174,6 +175,16 @@ var (
 		Path: [][]byte{
 			cveDackBox.Bucket,
 			componentDackBox.Bucket,
+		},
+		ForwardTraversal: false,
+	}
+
+	// CVEToNodePath defines prefix path to go from cves to nodes in dackbox
+	CVEToNodePath = dackbox.Path{
+		Path: [][]byte{
+			cveDackBox.Bucket,
+			componentDackBox.Bucket,
+			nodeDackBox.Bucket,
 		},
 		ForwardTraversal: false,
 	}
