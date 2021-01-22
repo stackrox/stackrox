@@ -79,6 +79,7 @@ fi
   --arg cm "${config_collectionMethod}" \
   --argjson ac "${config_admissionControl_createService}" \
   --argjson acu "${config_admissionControl_listenOnUpdates}" \
+  --argjson ace "${config_admissionControl_listenOnEvents}" \
   --argjson aes "${config_admissionControl_enableService}" \
   --argjson aeu "${config_admissionControl_enforceOnUpdates}" \
   --arg to "${config_admissionControl_timeout}" \
@@ -89,7 +90,7 @@ fi
   --argjson td "${config_disableTaintTolerations}" \
   '{"cluster": { "name": $cn, "type": $ct, "mainImage": $mimage, "collectorImage": $cimage,
   "centralApiEndpoint": $ce, "collectionMethod": $cm, "admissionController": $ac,
-  "admissionControllerUpdates": $acu, "dynamicConfig": { "admissionControllerConfig": { "enabled": $aes,
+  "admissionControllerUpdates": $acu, "admissionControllerEvents": $ace, "dynamicConfig": { "admissionControllerConfig": { "enabled": $aes,
   "timeoutSeconds": $to, "scanInline": $si, "enforceOnUpdates": $aeu,
   "disableBypass": $db }, "registryOverride": $ro }, "tolerationsConfig": {"disabled": $td} } }')
 

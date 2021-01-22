@@ -79,6 +79,10 @@
   {{ include "srox.warn" (list $ "Incompatible settings: 'admissionControl.dynamic.enforceOnUpdates' is set to true, while `admissionControl.listenOnUpdates` is set to false. For the feature to be active, enable both settings by setting them to true.") }}
 {{ end }}
 
+{{ if and $._rox.env.openshift $._rox.admissionControl.listenOnEvents }}
+  {{ include "srox.warn" (list $ "WARNING: 'admissionControl.listenOnEvents' is set to true, please ensure your OpenShift version is 4.0 or greater, for this feature to work") }}
+{{ end }}
+
 [< end >]
 
 {{/*

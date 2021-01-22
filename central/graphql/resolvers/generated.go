@@ -188,6 +188,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("Cluster", []string{
 		"admissionController: Boolean!",
+		"admissionControllerEvents: Boolean!",
 		"admissionControllerUpdates: Boolean!",
 		"centralApiEndpoint: String!",
 		"collectionMethod: CollectionMethod!",
@@ -1119,6 +1120,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("StaticClusterConfig", []string{
 		"admissionController: Boolean!",
+		"admissionControllerEvents: Boolean!",
 		"admissionControllerUpdates: Boolean!",
 		"centralApiEndpoint: String!",
 		"collectionMethod: CollectionMethod!",
@@ -2628,6 +2630,11 @@ func (resolver *Resolver) wrapClusters(values []*storage.Cluster, err error) ([]
 
 func (resolver *clusterResolver) AdmissionController(ctx context.Context) bool {
 	value := resolver.data.GetAdmissionController()
+	return value
+}
+
+func (resolver *clusterResolver) AdmissionControllerEvents(ctx context.Context) bool {
+	value := resolver.data.GetAdmissionControllerEvents()
 	return value
 }
 
@@ -9542,6 +9549,11 @@ func (resolver *Resolver) wrapStaticClusterConfigs(values []*storage.StaticClust
 
 func (resolver *staticClusterConfigResolver) AdmissionController(ctx context.Context) bool {
 	value := resolver.data.GetAdmissionController()
+	return value
+}
+
+func (resolver *staticClusterConfigResolver) AdmissionControllerEvents(ctx context.Context) bool {
+	value := resolver.data.GetAdmissionControllerEvents()
 	return value
 }
 

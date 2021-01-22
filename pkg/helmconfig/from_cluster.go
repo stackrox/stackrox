@@ -44,6 +44,7 @@ func FromCluster(cluster *storage.Cluster) (map[string]interface{}, error) {
 		"admissionControl": map[string]interface{}{
 			"listenOnCreates": cluster.GetAdmissionController(),
 			"listenOnUpdates": cluster.GetAdmissionControllerUpdates(),
+			"listenOnEvents":  cluster.GetAdmissionControllerEvents(),
 			"dynamic": map[string]interface{}{
 				"enforceOnCreates": dynAdmissionControllerCfg.GetEnabled(),
 				"scanInline":       dynAdmissionControllerCfg.GetScanInline(),

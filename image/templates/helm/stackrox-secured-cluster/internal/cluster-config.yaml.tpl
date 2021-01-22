@@ -10,6 +10,7 @@ clusterConfig:
     collectionMethod: {{ ._rox.collector.collectionMethod | upper | replace "-" "_" }}
     admissionController: {{ ._rox.admissionControl.listenOnCreates }}
     admissionControllerUpdates: {{ ._rox.admissionControl.listenOnUpdates }}
+    admissionControllerEvents: {{ ._rox.admissionControl.listenOnEvents }}
     tolerationsConfig:
       disabled: {{ ._rox.collector.disableTaintTolerations }}
     slimCollector: {{ ._rox.collector.slimMode }}

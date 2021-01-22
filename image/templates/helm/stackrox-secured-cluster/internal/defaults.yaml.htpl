@@ -58,7 +58,7 @@ defaults:
 
     listenOnCreates: false
     listenOnUpdates: false
-
+    listenOnEvents: {{ not ._rox.env.openshift }}
     dynamic:
       enforceOnCreates: false
       scanInline: false

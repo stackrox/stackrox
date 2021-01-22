@@ -184,6 +184,7 @@ func initClusterFromCompleteClusterConfig(cfg *storage.CompleteClusterConfig) *s
 		CollectionMethod:           cfg.GetStaticConfig().GetCollectionMethod(),
 		AdmissionController:        cfg.GetStaticConfig().GetAdmissionController(),
 		AdmissionControllerUpdates: cfg.GetStaticConfig().GetAdmissionControllerUpdates(),
+		AdmissionControllerEvents:  cfg.GetStaticConfig().GetAdmissionControllerEvents(),
 		DynamicConfig:              cfg.GetDynamicConfig(),
 		TolerationsConfig:          cfg.GetStaticConfig().GetTolerationsConfig(),
 		SlimCollector:              cfg.GetStaticConfig().GetSlimCollector(),

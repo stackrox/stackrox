@@ -20,6 +20,7 @@ config:
   admissionControl:
     createService: [< default false .AdmissionController >]
     listenOnUpdates: [< default false .AdmissionControlListenOnUpdates >]
+    listenOnEvents: [< default false .AdmissionControlListenOnEvents >]
     enableService: [< default false .AdmissionControllerEnabled >]
     enforceOnUpdates: [< default false .AdmissionControlEnforceOnUpdates >]
     scanInline: [< default false .ScanInline >]

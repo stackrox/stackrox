@@ -110,9 +110,10 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		"FeatureFlags": make(map[string]string),
 	}
 
-	if features.AdmissionControlService.Enabled() && c.AdmissionController {
-		fields["AdmissionController"] = true
+	if features.AdmissionControlService.Enabled() {
+		fields["AdmissionController"] = c.AdmissionController
 		fields["AdmissionControlListenOnUpdates"] = c.GetAdmissionControllerUpdates()
+		fields["AdmissionControlListenOnEvents"] = c.GetAdmissionControllerEvents()
 		fields["DisableBypass"] = c.GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass()
 		fields["TimeoutSeconds"] = c.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds()
 		fields["ScanInline"] = c.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline()

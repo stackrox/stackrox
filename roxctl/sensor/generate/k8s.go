@@ -19,5 +19,7 @@ func k8s() *cobra.Command {
 			return fullClusterCreation(flags.Timeout(c))
 		}),
 	}
+
+	c.PersistentFlags().BoolVar(&cluster.AdmissionControllerEvents, "admission-controller-listen-on-events", true, "enable admission controller webhook to listen on Kubernetes events")
 	return c
 }

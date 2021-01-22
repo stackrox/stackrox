@@ -53,6 +53,7 @@ sensor:
 admissionControl:
   listenOnCreates: null # bool
   listenOnUpdates: null # bool
+  listenOnEvents:  null # bool
   dynamic:
     enforceOnCreates: null # bool
     scanInline: null # bool

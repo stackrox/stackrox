@@ -19,6 +19,7 @@ config:
   admissionControl:
     createService: true
     listenOnUpdates: true
+    listenOnEvents: true
     enableService: false
     enforceOnUpdates: false
     scanInline: false

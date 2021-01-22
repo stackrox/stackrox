@@ -87,6 +87,9 @@ config:
     listenOnUpdates: |
       admissionControl:
         listenOnUpdates: {{ .value }}
+    listenOnEvents: |
+      admissionControl:
+        listenOnEvents: {{ .value }}
     enableService: |
       admissionControl:
         dynamic:

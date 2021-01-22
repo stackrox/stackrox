@@ -22,6 +22,10 @@ will not be deployed on OpenShift clusters.
   - Introduced two new flags, `--retries` and `--retry-delay`, that change how the commands deal with errors
   - `--retries 3 --retry-delay 2` will retry the command three times on failure with two seconds delay between retries
   - As the default value for `retries` is 0, the behaviour of the commands is unchanged if the flag is not used
+- Added a new flag `--admission-controller-listen-on-events` to `roxctl sensor generate k8s` and 
+`roxctl sensor generate openshift`, that controls the deployment of the admission controller webhook which
+listens on Kubernetes events like exec and portforward. Default value is `true` for `roxctl sensor generate k8s`
+and false for `roxctl sensor generate openshift`.
 
 ## [54.0]
 - Added option to backup certificates for central.

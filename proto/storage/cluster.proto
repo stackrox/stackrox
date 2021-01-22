@@ -78,6 +78,7 @@ message StaticClusterConfig {
     bool                      admission_controller_updates = 7;
     TolerationsConfig         tolerations_config           = 8;
     bool                      slim_collector               = 9;
+    bool                      admission_controller_events  = 10;
 }
 
 message DynamicClusterConfig {
@@ -109,6 +110,7 @@ message Cluster {
 
     bool                      admission_controller             = 13;
     bool                      admission_controller_updates     = 21;
+    bool                      admission_controller_events      = 25;
 
     ClusterStatus             status                           = 15;
     DynamicClusterConfig      dynamic_config                   = 18;

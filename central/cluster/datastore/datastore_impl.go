@@ -727,6 +727,7 @@ func configureFromHelmConfig(cluster *storage.Cluster) {
 	cluster.CollectorImage = staticConfig.GetCollectorImage()
 	cluster.AdmissionController = staticConfig.GetAdmissionController()
 	cluster.AdmissionControllerUpdates = staticConfig.GetAdmissionControllerUpdates()
+	cluster.AdmissionControllerEvents = staticConfig.GetAdmissionControllerEvents()
 	cluster.TolerationsConfig = staticConfig.GetTolerationsConfig().Clone()
 	cluster.SlimCollector = staticConfig.GetSlimCollector()
 }

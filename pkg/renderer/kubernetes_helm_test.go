@@ -80,6 +80,7 @@ func TestRenderSensorHelm(t *testing.T) {
 
 				"AdmissionController":              c.admissionController,
 				"AdmissionControlListenOnUpdates":  false,
+				"AdmissionControlListenOnEvents":   true,
 				"DisableBypass":                    false,
 				"TimeoutSeconds":                   3,
 				"ScanInline":                       true,

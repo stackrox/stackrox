@@ -5,6 +5,7 @@ centralEndpoint: central.stackrox:443
 admissionControl:
   listenOnCreates: true
   listenOnUpdates: true
+  listenOnEvents: true
   dynamic:
     enforceOnCreates: true
     scanInline: true
