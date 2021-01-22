@@ -1,6 +1,6 @@
 import React from 'react';
 import { Route, Switch } from 'react-router-dom';
-import { nestedPaths as PATHS } from 'routePaths';
+import { workflowPaths } from 'routePaths';
 import isEqual from 'lodash/isEqual';
 import PageNotFound from 'Components/PageNotFound';
 
@@ -10,9 +10,9 @@ import EntityPage from './WorkflowEntityPageLayout';
 
 const Page = () => (
     <Switch>
-        <Route exact path={PATHS.DASHBOARD} component={DashboardPage} />
-        <Route path={PATHS.ENTITY} component={EntityPage} />
-        <Route path={PATHS.LIST} component={ListPage} />
+        <Route exact path={workflowPaths.DASHBOARD} component={DashboardPage} />
+        <Route path={workflowPaths.ENTITY} component={EntityPage} />
+        <Route path={workflowPaths.LIST} component={ListPage} />
         <Route render={PageNotFound} />
     </Switch>
 );

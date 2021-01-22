@@ -5,7 +5,7 @@ import pageTypes from 'constants/pageTypes';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import useCases from 'constants/useCaseTypes';
 import {
-    nestedPaths as workflowPaths,
+    workflowPaths,
     clustersPath,
     clustersPathWithParam,
     riskPath,

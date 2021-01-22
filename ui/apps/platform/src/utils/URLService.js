@@ -9,7 +9,7 @@ import configMgmtEntityRelationship from 'Containers/ConfigManagement/entityTabR
 import Raven from 'raven-js';
 
 import {
-    nestedPaths,
+    workflowPaths,
     riskPath,
     secretsPath,
     urlEntityListTypes,
@@ -83,9 +83,9 @@ function getPath(urlParams) {
     const { context } = urlParams;
 
     const defaultPathMap = {
-        [pageTypes.DASHBOARD]: nestedPaths.DASHBOARD,
-        [pageTypes.ENTITY]: nestedPaths.ENTITY,
-        [pageTypes.LIST]: nestedPaths.LIST,
+        [pageTypes.DASHBOARD]: workflowPaths.DASHBOARD,
+        [pageTypes.ENTITY]: workflowPaths.ENTITY,
+        [pageTypes.LIST]: workflowPaths.LIST,
     };
 
     const legacyPathMap = {

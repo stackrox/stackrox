@@ -6,7 +6,7 @@ import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import WorkflowEntity from './WorkflowEntity';
 import { WorkflowState } from './WorkflowState';
 import {
-    nestedPaths as workflowPaths,
+    workflowPaths,
     urlEntityListTypes,
     urlEntityTypes,
     clustersPathWithParam,
