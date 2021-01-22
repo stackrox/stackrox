@@ -29,7 +29,7 @@
     },
     "privilegePolicy": null,
     "configurationPolicy": null,
-    "whitelists": []
+    "exclusions": []
   },
   "deployment": {
     "id": "e841ea9b-6a96-11e8-b4ce-42010a8a01d4",

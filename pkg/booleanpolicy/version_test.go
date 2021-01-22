@@ -49,6 +49,7 @@ func TestVersionCompare(t *testing.T) {
 		{PolicyVersion{versions[0]}, Version1(), -1},
 		{Version1(), PolicyVersion{versions[0]}, 1},
 		{Version1(), Version1(), 0},
+		{PolicyVersion{"1.1"}, Version1(), 1},
 		{PolicyVersion{versions[len(versions)-1]}, PolicyVersion{versions[len(versions)-2]}, 1},
 	}
 
@@ -61,6 +62,9 @@ func TestIsBooleanPolicy(t *testing.T) {
 	testCasesTrue := []*storage.Policy{
 		{
 			PolicyVersion: version1,
+		},
+		{
+			PolicyVersion: "1.1",
 		},
 		{
 			PolicyVersion: CurrentVersion().String(),

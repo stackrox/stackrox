@@ -14,11 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestWhitelist(t *testing.T) {
-	defer teardownTestWhitelist(t)
+func TestExcludedScopes(t *testing.T) {
+	defer teardownTestExcludedScopes(t)
 	setupNginxLatestTagDeployment(t)
-	verifyNoAlertForWhitelist(t)
-	verifyAlertForWhitelistRemoval(t)
+	verifyNoAlertForExcludedScopes(t)
+	verifyAlertForExcludedScopesRemoval(t)
 }
 
 func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlertsRequest, desired int) {
@@ -43,7 +43,7 @@ func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlert
 	require.Fail(t, fmt.Sprintf("Failed to have %d alerts, instead received %d alerts", desired, len(alerts)))
 }
 
-func verifyNoAlertForWhitelist(t *testing.T) {
+func verifyNoAlertForExcludedScopes(t *testing.T) {
 	conn := testutils.GRPCConnectionToCentral(t)
 
 	service := v1.NewPolicyServiceClient(conn)
@@ -63,7 +63,7 @@ func verifyNoAlertForWhitelist(t *testing.T) {
 	cancel()
 	require.NoError(t, err)
 
-	latestPolicy.Whitelists = []*storage.Exclusion{
+	latestPolicy.Exclusions = []*storage.Exclusion{
 		{
 			Deployment: &storage.Exclusion_Deployment{
 				Name: nginxDeploymentName,
@@ -82,7 +82,7 @@ func verifyNoAlertForWhitelist(t *testing.T) {
 	}, 0)
 }
 
-func verifyAlertForWhitelistRemoval(t *testing.T) {
+func verifyAlertForExcludedScopesRemoval(t *testing.T) {
 	conn := testutils.GRPCConnectionToCentral(t)
 
 	service := v1.NewPolicyServiceClient(conn)
@@ -103,7 +103,7 @@ func verifyAlertForWhitelistRemoval(t *testing.T) {
 	cancel()
 	require.NoError(t, err)
 
-	latestPolicy.Whitelists = nil
+	latestPolicy.Exclusions = nil
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	_, err = service.PutPolicy(ctx, latestPolicy)
 	cancel()
@@ -118,6 +118,6 @@ func verifyAlertForWhitelistRemoval(t *testing.T) {
 	}, 1)
 }
 
-func teardownTestWhitelist(t *testing.T) {
+func teardownTestExcludedScopes(t *testing.T) {
 	teardownNginxLatestTagDeployment(t)
 }

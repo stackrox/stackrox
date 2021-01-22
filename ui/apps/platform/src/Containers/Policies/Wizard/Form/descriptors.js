@@ -6,7 +6,7 @@ import {
     policyCriteriaCategories,
 } from 'messages/common';
 import { knownBackendFlags } from 'utils/featureFlags';
-import { clientOnlyWhitelistFieldNames } from './whitelistFieldNames';
+import { clientOnlyExclusionFieldNames } from './whitelistFieldNames';
 
 const equalityOptions = [
     { label: 'Is greater than', value: '>' },
@@ -214,7 +214,7 @@ const policyDetailsFormDescriptor = [
     },
     {
         label: 'Exclude by Scope',
-        jsonpath: clientOnlyWhitelistFieldNames.WHITELISTED_DEPLOYMENT_SCOPES,
+        jsonpath: clientOnlyExclusionFieldNames.EXCLUDED_DEPLOYMENT_SCOPES,
         type: 'whitelistScope',
         options: [],
         required: false,
@@ -222,7 +222,7 @@ const policyDetailsFormDescriptor = [
     },
     {
         label: 'Excluded Images (Build Lifecycle only)',
-        jsonpath: clientOnlyWhitelistFieldNames.WHITELISTED_IMAGE_NAMES,
+        jsonpath: clientOnlyExclusionFieldNames.EXCLUDED_IMAGE_NAMES,
         type: 'multiselect-creatable',
         options: [],
         required: false,

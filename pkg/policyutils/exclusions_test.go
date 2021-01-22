@@ -8,18 +8,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDeploymentWhitelistToQuery_Nil(t *testing.T) {
-	q := DeploymentBaselineToQuery(nil)
+func TestDeploymentExclusionToQuery_Nil(t *testing.T) {
+	q := DeploymentExclusionToQuery(nil)
 	assert.Equal(t, q, search.MatchNoneQuery())
 }
 
-func TestDeploymentWhitelistToQuery_NoWhitelists(t *testing.T) {
-	q := DeploymentBaselineToQuery([]*storage.Exclusion{})
+func TestDeploymentExclusionToQuery_NoExclusions(t *testing.T) {
+	q := DeploymentExclusionToQuery([]*storage.Exclusion{})
 	assert.Equal(t, q, search.MatchNoneQuery())
 }
 
-func TestDeploymentWhitelistToQuery_NoDeploymentWhitelists(t *testing.T) {
-	q := DeploymentBaselineToQuery([]*storage.Exclusion{
+func TestDeploymentExclusionToQuery_NoDeploymentExclusions(t *testing.T) {
+	q := DeploymentExclusionToQuery([]*storage.Exclusion{
 		{
 			Name: "myExcludedScope",
 			Image: &storage.Exclusion_Image{
@@ -30,8 +30,8 @@ func TestDeploymentWhitelistToQuery_NoDeploymentWhitelists(t *testing.T) {
 	assert.Equal(t, q, search.MatchNoneQuery())
 }
 
-func TestDeploymentWhitelistToQuery_MalformedDeploymentWhitelist(t *testing.T) {
-	q := DeploymentBaselineToQuery([]*storage.Exclusion{
+func TestDeploymentExclusionToQuery_MalformedDeploymentExclusion(t *testing.T) {
+	q := DeploymentExclusionToQuery([]*storage.Exclusion{
 		{
 			Name:       "myExcludedScope",
 			Deployment: &storage.Exclusion_Deployment{},
@@ -40,8 +40,8 @@ func TestDeploymentWhitelistToQuery_MalformedDeploymentWhitelist(t *testing.T) {
 	assert.Equal(t, q, search.MatchNoneQuery())
 }
 
-func TestDeploymentWhitelistToQuery_NamedDeploymentWhitelist(t *testing.T) {
-	q := DeploymentBaselineToQuery([]*storage.Exclusion{
+func TestDeploymentExclusionToQuery_NamedDeploymentExclusion(t *testing.T) {
+	q := DeploymentExclusionToQuery([]*storage.Exclusion{
 		{
 			Name: "myExcludedScope",
 			Deployment: &storage.Exclusion_Deployment{
@@ -52,8 +52,8 @@ func TestDeploymentWhitelistToQuery_NamedDeploymentWhitelist(t *testing.T) {
 	assert.Equal(t, q, search.NewQueryBuilder().AddExactMatches(search.DeploymentName, "blessed-deployment").ProtoQuery())
 }
 
-func TestDeploymentWhitelistToQuery_ScopedDeploymentWhitelist(t *testing.T) {
-	q := DeploymentBaselineToQuery([]*storage.Exclusion{
+func TestDeploymentExclusionToQuery_ScopedDeploymentExclusion(t *testing.T) {
+	q := DeploymentExclusionToQuery([]*storage.Exclusion{
 		{
 			Name: "myExcludedScope",
 			Deployment: &storage.Exclusion_Deployment{

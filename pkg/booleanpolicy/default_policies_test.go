@@ -2084,7 +2084,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 	// Plain groups
 	aptGetGroup := policyGroupWithSingleKeyValue(fieldnames.ProcessName, "apt-get", false)
 	privilegedGroup := policyGroupWithSingleKeyValue(fieldnames.PrivilegedContainer, "true", false)
-	whitelistGroup := policyGroupWithSingleKeyValue(fieldnames.UnexpectedProcessExecuted, "true", false)
+	baselineGroup := policyGroupWithSingleKeyValue(fieldnames.UnexpectedProcessExecuted, "true", false)
 
 	for _, testCase := range []struct {
 		groups []*storage.PolicyGroup
@@ -2105,7 +2105,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 			},
 		},
 		{
-			groups: []*storage.PolicyGroup{whitelistGroup},
+			groups: []*storage.PolicyGroup{baselineGroup},
 			expectedMatches: map[string][]string{
 				privilegedDep.GetId():    {aptGetKey, aptGet2Key, bashKey},
 				nonPrivilegedDep.GetId(): {aptGetKey, curlKey, bashKey},
@@ -2131,7 +2131,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 			},
 		},
 		{
-			groups: []*storage.PolicyGroup{aptGetGroup, whitelistGroup},
+			groups: []*storage.PolicyGroup{aptGetGroup, baselineGroup},
 			expectedMatches: map[string][]string{
 				privilegedDep.GetId():    {aptGetKey, aptGet2Key},
 				nonPrivilegedDep.GetId(): {aptGetKey},
@@ -2158,7 +2158,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 			},
 		},
 		{
-			groups: []*storage.PolicyGroup{privilegedGroup, whitelistGroup},
+			groups: []*storage.PolicyGroup{privilegedGroup, baselineGroup},
 			expectedMatches: map[string][]string{
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key, bashKey},
 			},
@@ -2170,7 +2170,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 			},
 		},
 		{
-			groups: []*storage.PolicyGroup{aptGetGroup, privilegedGroup, whitelistGroup},
+			groups: []*storage.PolicyGroup{aptGetGroup, privilegedGroup, baselineGroup},
 			expectedMatches: map[string][]string{
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key},
 			},
@@ -2395,7 +2395,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 	// Plain groups
 	aptGetGroup := policyGroupWithSingleKeyValue(fieldnames.ProcessName, "apt-get", false)
 	privilegedGroup := policyGroupWithSingleKeyValue(fieldnames.PrivilegedContainer, "true", false)
-	whitelistGroup := policyGroupWithSingleKeyValue(fieldnames.UnexpectedProcessExecuted, "true", false)
+	baselineGroup := policyGroupWithSingleKeyValue(fieldnames.UnexpectedProcessExecuted, "true", false)
 
 	for _, testCase := range []struct {
 		groups []*storage.PolicyGroup
@@ -2416,7 +2416,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			},
 		},
 		{
-			groups: []*storage.PolicyGroup{whitelistGroup},
+			groups: []*storage.PolicyGroup{baselineGroup},
 			expectedMatches: map[string][]string{
 				privilegedDep.GetId():    {aptGetKey, aptGet2Key, bashKey},
 				nonPrivilegedDep.GetId(): {aptGetKey, curlKey, bashKey},
@@ -2442,7 +2442,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			},
 		},
 		{
-			groups: []*storage.PolicyGroup{aptGetGroup, whitelistGroup},
+			groups: []*storage.PolicyGroup{aptGetGroup, baselineGroup},
 			expectedMatches: map[string][]string{
 				privilegedDep.GetId():    {aptGetKey, aptGet2Key},
 				nonPrivilegedDep.GetId(): {aptGetKey},
@@ -2469,7 +2469,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			},
 		},
 		{
-			groups: []*storage.PolicyGroup{privilegedGroup, whitelistGroup},
+			groups: []*storage.PolicyGroup{privilegedGroup, baselineGroup},
 			expectedMatches: map[string][]string{
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key, bashKey},
 			},
@@ -2481,7 +2481,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			},
 		},
 		{
-			groups: []*storage.PolicyGroup{aptGetGroup, privilegedGroup, whitelistGroup},
+			groups: []*storage.PolicyGroup{aptGetGroup, privilegedGroup, baselineGroup},
 			expectedMatches: map[string][]string{
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key},
 			},
@@ -2510,7 +2510,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 		})
 	}
 
-	m, err := booleanpolicy.BuildDeploymentWithProcessMatcher(policyWithGroups(aptGetGroup, privilegedGroup, whitelistGroup))
+	m, err := booleanpolicy.BuildDeploymentWithProcessMatcher(policyWithGroups(aptGetGroup, privilegedGroup, baselineGroup))
 	require.NoError(b, err)
 	for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
 		for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {

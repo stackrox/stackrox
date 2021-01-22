@@ -43,7 +43,7 @@ func TestImportExportPolicies(t *testing.T) {
 	verifyImportMultipleSucceeds(t)
 	verifyImportMixedSuccess(t)
 	verifyNotifiersRemoved(t)
-	verifyWhitelistsRemoved(t)
+	verifyExclusionsRemoved(t)
 	verifyScopesRemoved(t)
 	verifyOverwriteNameSucceeds(t)
 	verifyOverwriteIDSucceeds(t)
@@ -204,7 +204,7 @@ func createUniquePolicy(t *testing.T, service v1.PolicyServiceClient) *storage.P
 	return newUniquePolicy
 }
 
-func validateWhitelistOrScopeOrNotiferRemoved(t *testing.T, importResp *v1.ImportPoliciesResponse, expectedPolicy *storage.Policy) {
+func validateExclusionOrScopeOrNotiferRemoved(t *testing.T, importResp *v1.ImportPoliciesResponse, expectedPolicy *storage.Policy) {
 	require.NotNil(t, importResp)
 	require.True(t, importResp.GetAllSucceeded())
 	require.NotNil(t, importResp.GetResponses())
@@ -438,10 +438,10 @@ func verifyNotifiersRemoved(t *testing.T) {
 
 	// Notifier should have been scraped out
 	policy.Notifiers = nil
-	validateWhitelistOrScopeOrNotiferRemoved(t, importResp, policy)
+	validateExclusionOrScopeOrNotiferRemoved(t, importResp, policy)
 }
 
-func verifyWhitelistsRemoved(t *testing.T) {
+func verifyExclusionsRemoved(t *testing.T) {
 	conn := testutils.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
@@ -451,7 +451,7 @@ func verifyWhitelistsRemoved(t *testing.T) {
 	policy := validPolicy.Clone()
 	policy.Id = "verifyExcludedScopesRemoved policy ID"
 	policy.Name = "verifyExcludedScopesRemoved is a valid policy"
-	policy.Whitelists = []*storage.Exclusion{
+	policy.Exclusions = []*storage.Exclusion{
 		{
 			Deployment: &storage.Exclusion_Deployment{
 				Scope: &storage.Scope{
@@ -469,8 +469,8 @@ func verifyWhitelistsRemoved(t *testing.T) {
 	require.NoError(t, err)
 
 	// Exclude scopes should have been scraped out
-	policy.Whitelists = nil
-	validateWhitelistOrScopeOrNotiferRemoved(t, importResp, policy)
+	policy.Exclusions = nil
+	validateExclusionOrScopeOrNotiferRemoved(t, importResp, policy)
 }
 
 func verifyScopesRemoved(t *testing.T) {
@@ -498,7 +498,7 @@ func verifyScopesRemoved(t *testing.T) {
 
 	// Scope should have been scraped out
 	policy.Scope = nil
-	validateWhitelistOrScopeOrNotiferRemoved(t, importResp, policy)
+	validateExclusionOrScopeOrNotiferRemoved(t, importResp, policy)
 }
 
 func verifyOverwriteNameSucceeds(t *testing.T) {

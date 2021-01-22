@@ -257,7 +257,7 @@ class Services extends BaseService {
 
         def policyDef = Policy.
             newBuilder(policyMeta).
-            addWhitelists(Exclusion.newBuilder().
+            addExclusions(Exclusion.newBuilder().
                 setDeployment(Exclusion.Deployment.newBuilder().
                     setName(deployment.getName()).
                     setScope(ScopeOuterClass.Scope.newBuilder().
@@ -298,9 +298,9 @@ class Services extends BaseService {
     static updatePolicyImageExclusion(String policyName, List<String> images) {
         Policy policyMeta = getPolicyByName(policyName)
 
-        def builder = Policy.newBuilder(policyMeta).clearWhitelists()
+        def builder = Policy.newBuilder(policyMeta).clearExclusions()
         for (String image: images) {
-            builder.addWhitelists(
+            builder.addExclusions(
                     Exclusion.newBuilder()
                             .setImage(
                                 Exclusion.Image.newBuilder()

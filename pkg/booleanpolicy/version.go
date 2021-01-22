@@ -21,7 +21,7 @@ const (
 var (
 	// versions enumerates *all* known policy versions and must be in the
 	// strictly ascending order.
-	versions = [...]string{legacyVersion, version1}
+	versions = [...]string{legacyVersion, version1, "1.1"}
 
 	// versionRanks maps known versions to their sequence numbers. Note that
 	// the sequence number may vary among different builds.

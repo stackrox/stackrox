@@ -61,7 +61,7 @@ const VulmMgmtEntityPolicy = ({
                     }
                     namespace
                 }
-                whitelists {
+                exclusions {
                     deployment {
                         name
                     }

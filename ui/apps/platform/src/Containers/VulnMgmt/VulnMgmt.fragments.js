@@ -362,7 +362,7 @@ export const POLICY_ENTITY_ALL_FIELDS_FRAGMENT = gql`
             }
             namespace
         }
-        whitelists {
+        exclusions {
             deployment {
                 name
                 scope {

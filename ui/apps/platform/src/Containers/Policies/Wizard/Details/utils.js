@@ -47,12 +47,12 @@ export const formatScope = (scope, props) => {
     return values.join('; ');
 };
 
-export const formatDeploymentWhitelistScope = (whitelistScope, props) => {
+export const formatDeploymentExcludedScope = (excludedScope, props) => {
     const values = [];
-    if (whitelistScope.name && whitelistScope.name !== '') {
-        values.push(`Deployment Name:${whitelistScope.name}`);
+    if (excludedScope.name && excludedScope.name !== '') {
+        values.push(`Deployment Name:${excludedScope.name}`);
     }
-    const scopeVal = formatScope(whitelistScope.scope, props);
+    const scopeVal = formatScope(excludedScope.scope, props);
     if (scopeVal !== '') {
         values.push(scopeVal);
     }

@@ -29,7 +29,7 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			name:       "Named excluded scope",
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{
 						Deployment: &storage.Exclusion_Deployment{Name: fixtures.GetDeployment().GetName()},
 					},
@@ -41,7 +41,7 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			name:       "Named excluded scope, and another with a different name",
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{
 						Deployment: &storage.Exclusion_Deployment{Name: fixtures.GetDeployment().GetName()},
 					},
@@ -56,7 +56,7 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			name:       "Named excluded scope with different name",
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{
 						Deployment: &storage.Exclusion_Deployment{Name: uuid.NewV4().String()},
 					},
@@ -68,7 +68,7 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			name:       "Scoped excluded scope",
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{
 						Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: fixtures.GetDeployment().GetNamespace()}},
 					},
@@ -80,7 +80,7 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			name:       "Scoped excluded scope with wrong name",
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{
 						Deployment: &storage.Exclusion_Deployment{Scope: &storage.Scope{Namespace: uuid.NewV4().String()}},
 					},
@@ -92,7 +92,7 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			name:       "Scoped excluded scope, but different name",
 			deployment: fixtures.GetDeployment(),
 			policy: &storage.Policy{
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{
 						Deployment: &storage.Exclusion_Deployment{Name: uuid.NewV4().String(), Scope: &storage.Scope{Namespace: fixtures.GetDeployment().GetNamespace()}},
 					},
@@ -104,8 +104,8 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			compiledExclusions := make([]*compiledExclusion, 0, len(c.policy.GetWhitelists()))
-			for _, w := range c.policy.GetWhitelists() {
+			compiledExclusions := make([]*compiledExclusion, 0, len(c.policy.GetExclusions()))
+			for _, w := range c.policy.GetExclusions() {
 				cw, err := newCompiledExclusion(w)
 				require.NoError(t, err)
 				compiledExclusions = append(compiledExclusions, cw)
@@ -115,17 +115,17 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 			assert.Equal(t, c.shouldMatch, got)
 			// If it should match, make sure it doesn't match if the exclusions are all expired.
 			if c.shouldMatch {
-				for _, exclusion := range c.policy.GetWhitelists() {
+				for _, exclusion := range c.policy.GetExclusions() {
 					exclusion.Expiration = protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour))
 				}
 				assert.False(t, deploymentMatchesExclusions(c.deployment, compiledExclusions))
 
-				for _, exclusion := range c.policy.GetWhitelists() {
+				for _, exclusion := range c.policy.GetExclusions() {
 					exclusion.Expiration = protoconv.MustConvertTimeToTimestamp(time.Now().Add(time.Hour))
 				}
 				assert.True(t, deploymentMatchesExclusions(c.deployment, compiledExclusions))
 			}
-			c.policy.Whitelists = append(c.policy.Whitelists, &storage.Exclusion{Image: &storage.Exclusion_Image{Name: "BLAH"}})
+			c.policy.Exclusions = append(c.policy.Exclusions, &storage.Exclusion{Image: &storage.Exclusion_Image{Name: "BLAH"}})
 			assert.Equal(t, c.shouldMatch, got)
 		})
 	}
@@ -142,7 +142,7 @@ func TestMatchesImageExclusion(t *testing.T) {
 			name:  "no excluded scopes",
 			image: "docker.io/stackrox/main",
 			policy: &storage.Policy{
-				Whitelists: []*storage.Exclusion{},
+				Exclusions: []*storage.Exclusion{},
 			},
 			shouldMatch: false,
 		},
@@ -150,7 +150,7 @@ func TestMatchesImageExclusion(t *testing.T) {
 			name:  "doesn't match",
 			image: "docker.io/stackrox/main",
 			policy: &storage.Policy{
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{Image: &storage.Exclusion_Image{Name: "docker.io/stackrox/mainasfasf"}},
 				},
 			},
@@ -160,7 +160,7 @@ func TestMatchesImageExclusion(t *testing.T) {
 			name:  "matches",
 			image: "docker.io/stackrox/main",
 			policy: &storage.Policy{
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{Image: &storage.Exclusion_Image{Name: "docker.io/stackrox/m"}},
 				},
 			},
@@ -170,7 +170,7 @@ func TestMatchesImageExclusion(t *testing.T) {
 			name:  "one matches",
 			image: "docker.io/stackrox/main",
 			policy: &storage.Policy{
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{Image: &storage.Exclusion_Image{Name: "BLAH"}},
 					{Image: &storage.Exclusion_Image{Name: "docker.io/stackrox/m"}},
 				},
@@ -181,7 +181,7 @@ func TestMatchesImageExclusion(t *testing.T) {
 			name:  "neither matches",
 			image: "docker.io/stackrox/main",
 			policy: &storage.Policy{
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{Image: &storage.Exclusion_Image{Name: "BLAH"}},
 					{Image: &storage.Exclusion_Image{Name: "docker.io/stackrox/masfasfa"}},
 				},
@@ -196,17 +196,17 @@ func TestMatchesImageExclusion(t *testing.T) {
 			assert.Equal(t, c.shouldMatch, got)
 			// If it should match, make sure it doesn't match if the excluded scopes are all expired.
 			if c.shouldMatch {
-				for _, exclusion := range c.policy.GetWhitelists() {
+				for _, exclusion := range c.policy.GetExclusions() {
 					exclusion.Expiration = protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour))
 				}
 				assert.False(t, matchesImageExclusion(c.image, c.policy))
 
-				for _, exclusion := range c.policy.GetWhitelists() {
+				for _, exclusion := range c.policy.GetExclusions() {
 					exclusion.Expiration = protoconv.MustConvertTimeToTimestamp(time.Now().Add(time.Hour))
 				}
 				assert.True(t, matchesImageExclusion(c.image, c.policy))
 			}
-			c.policy.Whitelists = append(c.policy.Whitelists, &storage.Exclusion{Deployment: &storage.Exclusion_Deployment{Name: "BLAH"}})
+			c.policy.Exclusions = append(c.policy.Exclusions, &storage.Exclusion{Deployment: &storage.Exclusion_Deployment{Name: "BLAH"}})
 			assert.Equal(t, c.shouldMatch, got)
 		})
 	}

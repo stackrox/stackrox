@@ -295,14 +295,14 @@ func (resolver *policyResolver) getDeploymentsForPolicy(ctx context.Context) ([]
 		return nil, err
 	}
 
-	deploymentWhitelistQuery := policyutils.DeploymentBaselineToQuery(resolver.data.GetWhitelists())
-	whitelistResults, err := resolver.root.DeploymentDataStore.Search(ctx, deploymentWhitelistQuery)
+	deploymentWhitelistQuery := policyutils.DeploymentExclusionToQuery(resolver.data.GetExclusions())
+	exclusionResults, err := resolver.root.DeploymentDataStore.Search(ctx, deploymentWhitelistQuery)
 	if err != nil {
 		return nil, err
 	}
 
 	return search.ResultsToIDSet(scopeQueryResults).
-		Difference(search.ResultsToIDSet(whitelistResults)).AsSlice(), nil
+		Difference(search.ResultsToIDSet(exclusionResults)).AsSlice(), nil
 }
 
 func (resolver *policyResolver) LatestViolation(ctx context.Context, args RawQuery) (*graphql.Time, error) {

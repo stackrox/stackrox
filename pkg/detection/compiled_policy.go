@@ -88,8 +88,8 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		return nil, errors.Errorf("no known lifecycle stage in policy %q", policy.GetName())
 	}
 
-	exclusions := make([]*compiledExclusion, 0, len(policy.GetWhitelists()))
-	for _, w := range policy.GetWhitelists() {
+	exclusions := make([]*compiledExclusion, 0, len(policy.GetExclusions()))
+	for _, w := range policy.GetExclusions() {
 		w, err := newCompiledExclusion(w)
 		if err != nil {
 			return nil, err

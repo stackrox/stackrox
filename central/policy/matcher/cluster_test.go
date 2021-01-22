@@ -136,7 +136,7 @@ func TestClusterMatcherWithExclusion(t *testing.T) {
 						Cluster: "cluster1",
 					},
 				},
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{
 						Deployment: &storage.Exclusion_Deployment{
 							Scope: &storage.Scope{
@@ -165,7 +165,7 @@ func TestClusterMatcherWithExclusion(t *testing.T) {
 						Namespace: "ns1",
 					},
 				},
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{
 						Deployment: &storage.Exclusion_Deployment{
 							Scope: &storage.Scope{
@@ -193,7 +193,7 @@ func TestClusterMatcherWithExclusion(t *testing.T) {
 						Namespace: "ns1",
 					},
 				},
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{
 						Deployment: &storage.Exclusion_Deployment{
 							Scope: &storage.Scope{
@@ -216,7 +216,7 @@ func TestClusterMatcherWithExclusion(t *testing.T) {
 				},
 			},
 			policy: &storage.Policy{
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{
 						Deployment: &storage.Exclusion_Deployment{
 							Scope: &storage.Scope{

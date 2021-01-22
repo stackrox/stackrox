@@ -13,7 +13,7 @@ import { actions as wizardActions } from 'reducers/policies/wizard';
 import WizardPanel from 'Containers/Policies/Wizard/WizardPanel';
 import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 import { policyStatus, policyDetails } from 'Containers/Policies/Wizard/Form/descriptors';
-import { clientOnlyWhitelistFieldNames } from 'Containers/Policies/Wizard/Form/whitelistFieldNames';
+import { clientOnlyExclusionFieldNames } from 'Containers/Policies/Wizard/Form/whitelistFieldNames';
 import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
 
 // Wizard is the side panel that pops up when you click on a row in the table.
@@ -88,7 +88,7 @@ const getFieldGroups = createSelector(
                         value: category,
                     }));
                     break;
-                case clientOnlyWhitelistFieldNames.WHITELISTED_IMAGE_NAMES:
+                case clientOnlyExclusionFieldNames.EXCLUDED_IMAGE_NAMES:
                     options = images.map((image) => ({
                         label: image.name,
                         value: image.name,

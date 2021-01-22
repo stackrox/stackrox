@@ -1459,6 +1459,11 @@
                 "id": 5,
                 "name": "is_revoked",
                 "type": "bool"
+              },
+              {
+                "id": 6,
+                "name": "expires_at",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           }
@@ -3132,6 +3137,17 @@
                 "id": 21,
                 "name": "host_network",
                 "type": "bool"
+              },
+              {
+                "id": 31,
+                "name": "host_pid",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "policy:\\\"Host PID\\"
+                  }
+                ]
               },
               {
                 "id": 22,
@@ -7940,6 +7956,18 @@
               {
                 "id": 10,
                 "name": "whitelists",
+                "type": "Exclusion",
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
+              },
+              {
+                "id": 21,
+                "name": "exclusions",
                 "type": "Exclusion",
                 "is_repeated": true
               },

@@ -44,7 +44,7 @@ export const emptyPolicy = {
     disabled: false,
     categories: ['Vulnerability Management'],
     policySections: [],
-    whitelists: [],
+    exclusions: [],
 };
 
 function wrapSelectEvent(key, handleChange) {
@@ -233,7 +233,7 @@ CveToPolicyShortForm.propTypes = {
         fields: PropTypes.shape({
             cve: PropTypes.string,
         }),
-        whitelists: PropTypes.arrayOf(PropTypes.shape({})),
+        exclusions: PropTypes.arrayOf(PropTypes.shape({})),
     }).isRequired,
     policies: PropTypes.arrayOf(
         PropTypes.shape({ label: PropTypes.string, value: PropTypes.string })

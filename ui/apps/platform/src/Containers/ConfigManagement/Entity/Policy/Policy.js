@@ -60,7 +60,7 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext, paginatio
                 rationale
                 remediation
                 severity
-                whitelists {
+                exclusions {
                     name
                 }
                 deploymentCount
@@ -141,7 +141,7 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext, paginatio
                     remediation,
                     disabled,
                     enforcementActions,
-                    whitelists = [],
+                    exclusions = [],
                     alerts = [],
                     deploymentCount,
                 } = entity;
@@ -188,7 +188,7 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext, paginatio
                                 <Metadata
                                     className="sx-2 bg-base-100 min-h-48 h-full"
                                     keyValuePairs={metadataKeyValuePairs}
-                                    whitelists={whitelists}
+                                    exclusions={exclusions}
                                 />
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 h-full mb-4"

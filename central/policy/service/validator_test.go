@@ -446,7 +446,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateExclusions() {
 		LifecycleStages: []storage.LifecycleStage{
 			storage.LifecycleStage_DEPLOY,
 		},
-		Whitelists: []*storage.Exclusion{
+		Exclusions: []*storage.Exclusion{
 			deploymentExclusion,
 		},
 	}
@@ -462,7 +462,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateExclusions() {
 		LifecycleStages: []storage.LifecycleStage{
 			storage.LifecycleStage_BUILD,
 		},
-		Whitelists: []*storage.Exclusion{
+		Exclusions: []*storage.Exclusion{
 			imageExclusion,
 		},
 	}
@@ -470,7 +470,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateExclusions() {
 	suite.NoError(err, "valid to excluded scope by image registry")
 
 	policy = &storage.Policy{
-		Whitelists: []*storage.Exclusion{
+		Exclusions: []*storage.Exclusion{
 			imageExclusion,
 		},
 	}
@@ -479,7 +479,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateExclusions() {
 
 	emptyExclusion := &storage.Exclusion{}
 	policy = &storage.Policy{
-		Whitelists: []*storage.Exclusion{
+		Exclusions: []*storage.Exclusion{
 			emptyExclusion,
 		},
 	}

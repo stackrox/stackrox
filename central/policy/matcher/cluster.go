@@ -37,7 +37,7 @@ func (m *clusterMatcher) FilterApplicablePolicies(policies []*storage.Policy) ([
 
 // IsPolicyApplicable returns true if the policy is applicable to cluster
 func (m *clusterMatcher) IsPolicyApplicable(policy *storage.Policy) bool {
-	return !policy.GetDisabled() && !m.anyExclusionMatches(policy.GetWhitelists()) && m.anyScopeMatches(policy.GetScope())
+	return !policy.GetDisabled() && !m.anyExclusionMatches(policy.GetExclusions()) && m.anyScopeMatches(policy.GetScope())
 }
 
 func (m *clusterMatcher) anyExclusionMatches(exclusions []*storage.Exclusion) bool {

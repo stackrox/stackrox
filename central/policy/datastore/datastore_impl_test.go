@@ -317,7 +317,7 @@ func (s *PolicyDatastoreTestSuite) TestRemoveScopesAndNotifiers() {
 				Cluster: clusterName,
 			},
 		},
-		Whitelists: []*storage.Exclusion{
+		Exclusions: []*storage.Exclusion{
 			{
 				Deployment: &storage.Exclusion_Deployment{
 					Scope: &storage.Scope{
@@ -367,7 +367,7 @@ func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 				Cluster: clusterID,
 			},
 		},
-		Whitelists: []*storage.Exclusion{
+		Exclusions: []*storage.Exclusion{
 			{
 				Deployment: &storage.Exclusion_Deployment{
 					Scope: &storage.Scope{

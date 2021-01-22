@@ -828,6 +828,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"description: String!",
 		"disabled: Boolean!",
 		"enforcementActions: [EnforcementAction!]!",
+		"exclusions: [Exclusion]!",
 		"fields: PolicyFields",
 		"id: ID!",
 		"lastUpdated: Time",
@@ -843,7 +844,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"sORTName: String!",
 		"scope: [Scope]!",
 		"severity: Severity!",
-		"whitelists: [Exclusion]!",
 	}))
 	utils.Must(builder.AddType("PolicyFields", []string{
 		"addCapabilities: [String!]!",
@@ -7495,6 +7495,11 @@ func (resolver *policyResolver) EnforcementActions(ctx context.Context) []string
 	return stringSlice(value)
 }
 
+func (resolver *policyResolver) Exclusions(ctx context.Context) ([]*exclusionResolver, error) {
+	value := resolver.data.GetExclusions()
+	return resolver.root.wrapExclusions(value, nil)
+}
+
 func (resolver *policyResolver) Fields(ctx context.Context) (*policyFieldsResolver, error) {
 	value := resolver.data.GetFields()
 	return resolver.root.wrapPolicyFields(value, true, nil)
@@ -7568,11 +7573,6 @@ func (resolver *policyResolver) Scope(ctx context.Context) ([]*scopeResolver, er
 func (resolver *policyResolver) Severity(ctx context.Context) string {
 	value := resolver.data.GetSeverity()
 	return value.String()
-}
-
-func (resolver *policyResolver) Whitelists(ctx context.Context) ([]*exclusionResolver, error) {
-	value := resolver.data.GetWhitelists()
-	return resolver.root.wrapExclusions(value, nil)
 }
 
 type policyFieldsResolver struct {

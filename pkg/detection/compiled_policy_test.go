@@ -12,12 +12,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func constructPolicy(scopes []*storage.Scope, whitelists []*storage.Exclusion) *storage.Policy {
+func constructPolicy(scopes []*storage.Scope, exclusions []*storage.Exclusion) *storage.Policy {
 	return &storage.Policy{
 		PolicyVersion:   booleanpolicy.CurrentVersion().String(),
 		Name:            "testname",
 		Scope:           scopes,
-		Whitelists:      whitelists,
+		Exclusions:      exclusions,
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
 		PolicySections:  []*storage.PolicySection{{PolicyGroups: []*storage.PolicyGroup{{FieldName: fieldnames.VolumeName, Values: []*storage.PolicyValue{{Value: "something"}}}}}},
 	}
@@ -29,7 +29,7 @@ func newDeployment(id string) *storage.Deployment {
 	return dep
 }
 
-func TestCompiledPolicyScopesAndWhitelists(t *testing.T) {
+func TestCompiledPolicyScopesAndExclusions(t *testing.T) {
 	stackRoxNSScope := &storage.Scope{Namespace: "stackr.*"}
 	defaultNSScope := &storage.Scope{Namespace: "default"}
 	appStackRoxScope := &storage.Scope{Label: &storage.Scope_Label{Key: "app", Value: "stackrox"}}
@@ -47,7 +47,7 @@ func TestCompiledPolicyScopesAndWhitelists(t *testing.T) {
 	for _, testCase := range []struct {
 		desc          string
 		scopes        []*storage.Scope
-		whitelists    []*storage.Exclusion
+		exclusions    []*storage.Exclusion
 		shouldApplyTo []*storage.Deployment
 	}{
 		{
@@ -62,7 +62,7 @@ func TestCompiledPolicyScopesAndWhitelists(t *testing.T) {
 		{
 			desc:          "only stackrox ns, but app=stackrox excluded",
 			scopes:        []*storage.Scope{stackRoxNSScope},
-			whitelists:    []*storage.Exclusion{{Deployment: &storage.Exclusion_Deployment{Scope: appStackRoxScope}}},
+			exclusions:    []*storage.Exclusion{{Deployment: &storage.Exclusion_Deployment{Scope: appStackRoxScope}}},
 			shouldApplyTo: []*storage.Deployment{stackRoxNSDep},
 		},
 		{
@@ -78,7 +78,7 @@ func TestCompiledPolicyScopesAndWhitelists(t *testing.T) {
 	} {
 		c := testCase
 		t.Run(c.desc, func(t *testing.T) {
-			compiled, err := CompilePolicy(constructPolicy(c.scopes, c.whitelists))
+			compiled, err := CompilePolicy(constructPolicy(c.scopes, c.exclusions))
 			require.NoError(t, err)
 			for _, dep := range c.shouldApplyTo {
 				assert.True(t, compiled.AppliesTo(dep), "Failed expectation for %s", dep.GetId())

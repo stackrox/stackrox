@@ -48,23 +48,40 @@ func EnsureConvertedToLatest(p *storage.Policy) error {
 	if p == nil {
 		return errors.New("nil policy")
 	}
-	if !isKnownPolicyVersion(p.GetPolicyVersion()) {
-		return errors.New("unknown version")
+	policyVersion, err := FromString(p.GetPolicyVersion())
+	if err != nil {
+		return err
 	}
-	if IsBooleanPolicy(p) && len(p.GetPolicySections()) == 0 {
+
+	if Compare(policyVersion, Version1()) >= 0 && len(p.GetPolicySections()) == 0 {
 		return errors.New("empty sections")
 	}
-	if !IsBooleanPolicy(p) {
-		// If a policy is sent with legacyVersion, but contains sections, that's okay --
+	if Compare(policyVersion, Version1()) < 0 {
+		// If a policy is sent with legacyVersion but contains sections, that's okay --
 		// we will use those sections as-is, and infer that it's of the newer version.
 		if p.GetFields() == nil && len(p.GetPolicySections()) == 0 {
 			return errors.New("empty policy")
 		}
 
-		p.PolicyVersion = CurrentVersion().String()
 		p.PolicySections = append(p.PolicySections, ConvertPolicyFieldsToSections(p.GetFields())...)
 		p.Fields = nil
 	}
+	if Compare(policyVersion, Version1()) > 0 && len(p.GetWhitelists()) > 0 {
+		// `Policy.whitelists` is deprecated in favor of `Policy.exclusions` in
+		// all versions greater than `Version1`.
+		return errors.New("field 'whitelists' is deprecated in this version")
+	}
+	if Compare(policyVersion, Version1()) <= 0 {
+		// It's fine to receive `exclusions` but not both `exclusions` and `whitelists`.
+		if len(p.GetWhitelists()) > 0 && len(p.GetExclusions()) > 0 {
+			return errors.New("both 'exclusions' and 'whitelists' fields are set")
+		}
+
+		p.Exclusions = append(p.Exclusions, p.Whitelists...)
+		p.Whitelists = nil
+	}
+
+	p.PolicyVersion = CurrentVersion().String()
 	return nil
 }
 

@@ -30,7 +30,7 @@ func deploymentMatchesScopes(deployment *storage.Deployment, scopes []*scopecomp
 }
 
 func matchesImageExclusion(image string, policy *storage.Policy) bool {
-	for _, w := range policy.GetWhitelists() {
+	for _, w := range policy.GetExclusions() {
 		if w.GetImage() == nil {
 			continue
 		}

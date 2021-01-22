@@ -2,7 +2,7 @@ import {
     formatResourceValue,
     formatResources,
     formatScope,
-    formatDeploymentWhitelistScope,
+    formatDeploymentExcludedScope,
 } from './utils';
 
 describe('policyDetailsUtils', () => {
@@ -102,19 +102,19 @@ describe('policyDetailsUtils', () => {
             expect(valueStr).toBe('');
         });
     });
-    describe('formatDeploymentWhitelistScope', () => {
+    describe('formatDeploymentExcludedScope', () => {
         it('should format deployment scope if deployment is defined', () => {
-            const whitelistScope = {
+            const excludedScope = {
                 name: 'nginx',
             };
-            const valueStr = formatDeploymentWhitelistScope(whitelistScope);
-            expect(valueStr).toBe(`Deployment Name:${whitelistScope.name}`);
+            const valueStr = formatDeploymentExcludedScope(excludedScope);
+            expect(valueStr).toBe(`Deployment Name:${excludedScope.name}`);
         });
         it('should not format deployment scope if deployment is not defined', () => {
-            const whitelistScope = {
+            const excludedScope = {
                 name: undefined,
             };
-            const valueStr = formatDeploymentWhitelistScope(whitelistScope);
+            const valueStr = formatDeploymentExcludedScope(excludedScope);
             expect(valueStr).toBe('');
         });
     });

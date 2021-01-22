@@ -1022,7 +1022,7 @@ func TestMigrateLegacyPolicy(t *testing.T) {
 		Name:            "Some Name",
 		Description:     "Some Description",
 		LifecycleStages: nil,
-		Whitelists: []*storage.Exclusion{
+		Exclusions: []*storage.Exclusion{
 			mockWhitelist,
 		},
 		Scope: []*storage.Scope{

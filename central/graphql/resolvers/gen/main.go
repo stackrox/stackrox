@@ -67,6 +67,11 @@ var (
 				ParentType: reflect.TypeOf(storage.NodeScan{}),
 				FieldName:  "Components",
 			},
+			// TODO(ROX-6194): Remove this entirely after the deprecation cycle started with the 55.0 release.
+			{
+				ParentType: reflect.TypeOf(storage.Policy{}),
+				FieldName:  "Whitelists",
+			},
 		},
 		InputTypes: []reflect.Type{
 			reflect.TypeOf((*inputtypes.SortOption)(nil)),

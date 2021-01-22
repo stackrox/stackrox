@@ -43,6 +43,12 @@ func TestCloneAndEnsureConverted(t *testing.T) {
 			},
 		},
 	}
+	exclusions := []*storage.Exclusion{
+		{
+			Name: "abcd",
+		},
+	}
+
 	cases := []convertTestCase{
 		{
 			desc:     "nil failure",
@@ -75,6 +81,27 @@ func TestCloneAndEnsureConverted(t *testing.T) {
 			hasError: true,
 		},
 		{
+			desc: "whitelists in version greater than 1",
+			policy: &storage.Policy{
+				PolicyVersion:  CurrentVersion().String(),
+				PolicySections: sections,
+				Whitelists:     exclusions,
+			},
+			expected: nil,
+			hasError: true,
+		},
+		{
+			desc: "both whitelists and exclusions",
+			policy: &storage.Policy{
+				PolicyVersion:  Version1().String(),
+				PolicySections: sections,
+				Whitelists:     exclusions,
+				Exclusions:     exclusions,
+			},
+			expected: nil,
+			hasError: true,
+		},
+		{
 			desc: "valid conversion",
 			policy: &storage.Policy{
 				Fields: fields,
@@ -96,7 +123,33 @@ func TestCloneAndEnsureConverted(t *testing.T) {
 			},
 		},
 		{
-			desc: "valid noop",
+			desc: "valid conversion with legacy version and whitelists",
+			policy: &storage.Policy{
+				PolicyVersion: legacyVersion,
+				Fields:        fields,
+				Whitelists:    exclusions,
+			},
+			expected: &storage.Policy{
+				PolicyVersion:  CurrentVersion().String(),
+				PolicySections: sections,
+				Exclusions:     exclusions,
+			},
+		},
+		{
+			desc: "valid conversion with version 1 and whitelists",
+			policy: &storage.Policy{
+				PolicyVersion:  Version1().String(),
+				PolicySections: sections,
+				Whitelists:     exclusions,
+			},
+			expected: &storage.Policy{
+				PolicyVersion:  CurrentVersion().String(),
+				PolicySections: sections,
+				Exclusions:     exclusions,
+			},
+		},
+		{
+			desc: "valid noop with sections",
 			policy: &storage.Policy{
 				PolicyVersion:  Version1().String(),
 				PolicySections: sections,
@@ -104,6 +157,30 @@ func TestCloneAndEnsureConverted(t *testing.T) {
 			expected: &storage.Policy{
 				PolicyVersion:  CurrentVersion().String(),
 				PolicySections: sections,
+			},
+		},
+		{
+			desc: "valid noop with empty exclusions",
+			policy: &storage.Policy{
+				PolicyVersion:  Version1().String(),
+				PolicySections: sections,
+			},
+			expected: &storage.Policy{
+				PolicyVersion:  CurrentVersion().String(),
+				PolicySections: sections,
+			},
+		},
+		{
+			desc: "valid noop with exclusions",
+			policy: &storage.Policy{
+				PolicyVersion:  Version1().String(),
+				PolicySections: sections,
+				Exclusions:     exclusions,
+			},
+			expected: &storage.Policy{
+				PolicyVersion:  CurrentVersion().String(),
+				PolicySections: sections,
+				Exclusions:     exclusions,
 			},
 		},
 	}
@@ -1002,7 +1079,7 @@ func TestConvertPolicyFieldsToSections(t *testing.T) {
 }
 
 func TestMigrateLegacyPolicy(t *testing.T) {
-	mockWhitelist := &storage.Exclusion{
+	mockExclusion := &storage.Exclusion{
 		Name: "abcd",
 		Image: &storage.Exclusion_Image{
 			Name: "some name",
@@ -1020,8 +1097,8 @@ func TestMigrateLegacyPolicy(t *testing.T) {
 		Name:            "Some Name",
 		Description:     "Some Description",
 		LifecycleStages: nil,
-		Whitelists: []*storage.Exclusion{
-			mockWhitelist,
+		Exclusions: []*storage.Exclusion{
+			mockExclusion,
 		},
 		Scope: []*storage.Scope{
 			mockScope,
@@ -1068,7 +1145,7 @@ func TestMigrateLegacyPolicy(t *testing.T) {
 	t.Run("test migrator", func(t *testing.T) {
 		booleanPolicy, err := CloneAndEnsureConverted(legacyPolicy)
 		require.NoError(t, err)
-		require.Equal(t, Version1().String(), booleanPolicy.GetPolicyVersion())
+		require.Equal(t, CurrentVersion().String(), booleanPolicy.GetPolicyVersion())
 		require.Equal(t, expectedSections, booleanPolicy.GetPolicySections())
 	})
 }

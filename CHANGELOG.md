@@ -10,6 +10,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - `/db/backup` is deprecated; please use `/api/extensions/backup` instead.
   - In the GraphQL schema, the type name `Policy { whitelists: [Whitelist]! }` changes to 
     `Policy { whitelists: [Exclusion]! }` preserving the existing structure and field names.
+  - In the GraphQL schema, `Policy { whitelists: [Whitelist]! }` is deprecated, use
+    `Policy { exclusions: [Whitelist]! }` instead.
+  - `PolicyService(/v1/policies/*)`: in all affected responses, `Policy.whitelists` is now always empty, use
+    `Policy.exclusions` instead. This is because the current policy version has been updated to "1.1" which deprecates
+    the `Policy.whitelists` field. All previous policy versions are still accepted as input.
   - Deprecated `includeCertificates` flag in `/v1/externalbackups/*'. Certificates are included in central
     backups by default for both new and existing backup configs.
 - Admission controller service will be deployed by default in new k8s and Openshift clusters.

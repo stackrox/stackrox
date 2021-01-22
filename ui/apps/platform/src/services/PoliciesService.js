@@ -175,7 +175,7 @@ export async function excludeDeployments(policyId, deploymentNames) {
     const deploymentEntries = deploymentNames.map((name) => ({
         deployment: { name },
     }));
-    policy.whitelists = [...policy.whitelists, ...deploymentEntries];
+    policy.exclusions = [...policy.exclusions, ...deploymentEntries];
     return axios.put(`${baseUrl}/${policy.id}`, policy);
 }
 

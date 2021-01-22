@@ -20,7 +20,7 @@ const Metadata = ({
     statTiles,
     labels,
     annotations,
-    whitelists,
+    exclusions,
     secrets,
     bgClass,
     className,
@@ -37,7 +37,7 @@ const Metadata = ({
     ));
 
     const keyValueClasses = `flex-1 last:border-0 border-base-300 overflow-hidden px-3 ${
-        labels || annotations || whitelists || secrets ? ' border-r' : ''
+        labels || annotations || exclusions || secrets ? ' border-r' : ''
     }`;
 
     const widgetClassName = `${className} ${!isDarkMode && bgClass ? 'bg-counts-widget' : ''}`;
@@ -67,10 +67,10 @@ const Metadata = ({
                                 />
                             </li>
                         )}
-                        {whitelists && (
+                        {exclusions && (
                             <li className="m-4">
                                 <ResourceCountPopper
-                                    data={whitelists}
+                                    data={exclusions}
                                     reactOutsideClassName="ignore-react-onclickoutside"
                                     label="Excluded Scopes"
                                     renderContent={renderName}
@@ -105,7 +105,7 @@ Metadata.propTypes = {
     statTiles: PropTypes.arrayOf(PropTypes.node),
     labels: PropTypes.arrayOf(PropTypes.shape({})),
     annotations: PropTypes.arrayOf(PropTypes.shape({})),
-    whitelists: PropTypes.arrayOf(PropTypes.shape({})),
+    exclusions: PropTypes.arrayOf(PropTypes.shape({})),
     secrets: PropTypes.arrayOf(PropTypes.shape({})),
     bgClass: PropTypes.bool,
     className: PropTypes.string,
@@ -116,7 +116,7 @@ Metadata.defaultProps = {
     statTiles: null,
     labels: null,
     annotations: null,
-    whitelists: null,
+    exclusions: null,
     secrets: null,
     bgClass: false,
     className: '',

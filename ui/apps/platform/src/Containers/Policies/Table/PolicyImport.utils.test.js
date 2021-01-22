@@ -564,7 +564,7 @@ function getPolicy(errors = {}) {
                         disallowedImageLabel: null,
                     },
                     lifecycleStages: ['BUILD', 'DEPLOY'],
-                    whitelists: [],
+                    exclusions: [],
                     scope: [],
                     severity: 'HIGH_SEVERITY',
                     enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],

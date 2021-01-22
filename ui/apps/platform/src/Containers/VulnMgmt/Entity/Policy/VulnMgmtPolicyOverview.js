@@ -45,7 +45,7 @@ const emptyPolicy = {
     remediation: '',
     scope: [],
     severity: '',
-    whitelists: [],
+    exclusions: [],
 };
 
 const noop = () => {};
@@ -72,7 +72,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
         fields,
         policySections,
         scope,
-        whitelists,
+        exclusions,
         deployments,
     } = safeData;
     const [currentDisabledState, setCurrentDisabledState] = useState(disabled);
@@ -188,11 +188,11 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
     const excludedScopesDetails = [
         {
             key: 'Image(s)',
-            value: getExcludedNamesByType(whitelists, 'image') || 'N/A',
+            value: getExcludedNamesByType(exclusions, 'image') || 'N/A',
         },
         {
             key: 'Deployment(s)',
-            value: getExcludedNamesByType(whitelists, 'deployment') || 'N/A',
+            value: getExcludedNamesByType(exclusions, 'deployment') || 'N/A',
         },
     ];
 

@@ -6,18 +6,18 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// DeploymentBaselineToQuery returns the proto query to get all whiteisted deployments
-func DeploymentBaselineToQuery(whitelists []*storage.Exclusion) *v1.Query {
+// DeploymentExclusionToQuery returns the proto query to get all excluded deployments
+func DeploymentExclusionToQuery(exclusions []*storage.Exclusion) *v1.Query {
 	var queries []*v1.Query
-	for _, wl := range whitelists {
+	for _, exclusion := range exclusions {
 		subqueries := make([]*v1.Query, 0, 2)
-		if wl.GetDeployment() != nil {
-			if wl.GetDeployment().GetName() != "" {
+		if exclusion.GetDeployment() != nil {
+			if exclusion.GetDeployment().GetName() != "" {
 				subqueries = append(subqueries, search.NewQueryBuilder().AddExactMatches(search.DeploymentName,
-					wl.GetDeployment().GetName()).ProtoQuery())
+					exclusion.GetDeployment().GetName()).ProtoQuery())
 			}
-			if wl.GetDeployment().GetScope() != nil {
-				subqueries = append(subqueries, ScopeToQuery([]*storage.Scope{wl.GetDeployment().GetScope()}))
+			if exclusion.GetDeployment().GetScope() != nil {
+				subqueries = append(subqueries, ScopeToQuery([]*storage.Scope{exclusion.GetDeployment().GetScope()}))
 			}
 
 			if len(subqueries) == 0 {

@@ -40,4 +40,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_51_to_m_52_remove_invalid_transactions"
 	_ "github.com/stackrox/rox/migrator/migrations/m_52_to_m_53_aws_endpoints"
 	_ "github.com/stackrox/rox/migrator/migrations/m_53_to_m_54_enable_exec_webhook"
+	_ "github.com/stackrox/rox/migrator/migrations/m_54_to_m_55_deprecate_policy_whitelist"
 )

@@ -54,7 +54,7 @@ const renderName = (data) => {
     ));
 };
 
-const Metadata = ({ keyValuePairs, labels, annotations, whitelists, secrets, ...rest }) => {
+const Metadata = ({ keyValuePairs, labels, annotations, exclusions, secrets, ...rest }) => {
     const keyValueList = keyValuePairs.map(({ key, value }) => (
         <li className="border-b border-base-300 px-4 py-2" key={key}>
             <span className="text-base-700 font-600 mr-2 font-700">{key}:</span>
@@ -86,10 +86,10 @@ const Metadata = ({ keyValuePairs, labels, annotations, whitelists, secrets, ...
                             />
                         </li>
                     )}
-                    {whitelists && (
+                    {exclusions && (
                         <li className="m-4">
                             <ResourceCountPopper
-                                data={whitelists}
+                                data={exclusions}
                                 reactOutsideClassName="ignore-whitelist-onclickoutside"
                                 label="Excluded Scopes"
                                 renderContent={renderName}
@@ -121,7 +121,7 @@ Metadata.propTypes = {
     ).isRequired,
     labels: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     annotations: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    whitelists: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    exclusions: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     secrets: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
 };
 

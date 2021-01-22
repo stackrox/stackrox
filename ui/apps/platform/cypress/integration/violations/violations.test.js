@@ -38,12 +38,10 @@ describe('Violations page', () => {
             'alertWithEmptyContainerConfig'
         );
     };
-    const mockWhitelistDeployment = () => {
-        cy.fixture('alerts/alertsWithWhitelistedDeployments.json').as(
-            'alertsWithWhitelistedDeployments'
-        );
-        cy.route('GET', api.alerts.alerts, '@alertsWithWhitelistedDeployments').as(
-            'alertsWithWhitelistedDeployments'
+    const mockExclusionDeployment = () => {
+        cy.fixture('alerts/alertsWithExcludedDeployments.json').as('alertsWithExcludedDeployments');
+        cy.route('GET', api.alerts.alerts, '@alertsWithExcludedDeployments').as(
+            'alertsWithExcludedDeployments'
         );
     };
 
@@ -166,8 +164,8 @@ describe('Violations page', () => {
 
     // Excluding this test because it's causing issues. Will include it again once it's fixed in a different PR
     // also need to test bulk whitelisting (see ROX-2304)
-    xit('should whitelist the deployment', () => {
-        mockWhitelistDeployment();
+    xit('should exclude the deployment', () => {
+        mockExclusionDeployment();
         mockPatchAlerts();
         mockGetPolicy();
         cy.get(ViolationsPageSelectors.lastTableRow).find('[type="checkbox"]').check();
@@ -175,7 +173,7 @@ describe('Violations page', () => {
         cy.get('.ReactModal__Content .btn.btn-success').click();
         cy.wait('@getPolicy');
         cy.visit('/main/violations');
-        cy.wait('@alertsWithWhitelistedDeployments');
+        cy.wait('@alertsWithExcludedDeployments');
         cy.get(ViolationsPageSelectors.excludedDeploymentRow).should('not.exist');
     });
 

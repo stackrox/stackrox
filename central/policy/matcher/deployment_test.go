@@ -94,7 +94,7 @@ func TestDeploymentWithExclusion(t *testing.T) {
 						Cluster: "cluster1",
 					},
 				},
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{
 						Deployment: &storage.Exclusion_Deployment{
 							Scope: &storage.Scope{
@@ -119,7 +119,7 @@ func TestDeploymentWithExclusion(t *testing.T) {
 						Namespace: "ns1",
 					},
 				},
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{
 						Deployment: &storage.Exclusion_Deployment{
 							Name: "deployment2",
@@ -144,7 +144,7 @@ func TestDeploymentWithExclusion(t *testing.T) {
 						Namespace: "ns1",
 					},
 				},
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{
 						Deployment: &storage.Exclusion_Deployment{
 							Name: "deployment2",
@@ -174,7 +174,7 @@ func TestDeploymentWithExclusion(t *testing.T) {
 						Namespace: "ns1",
 					},
 				},
-				Whitelists: []*storage.Exclusion{
+				Exclusions: []*storage.Exclusion{
 					{
 						Deployment: &storage.Exclusion_Deployment{
 							Name: "deployment2",

@@ -185,7 +185,11 @@ func (s *policyValidator) validateScopes(policy *storage.Policy) error {
 }
 
 func (s *policyValidator) validateExclusions(policy *storage.Policy) error {
-	for _, exclusion := range policy.GetWhitelists() {
+	if len(policy.GetWhitelists()) > 0 {
+		return errors.New("whitelists not converted to exclusions")
+	}
+
+	for _, exclusion := range policy.GetExclusions() {
 		if err := s.validateExclusion(policy, exclusion); err != nil {
 			return err
 		}

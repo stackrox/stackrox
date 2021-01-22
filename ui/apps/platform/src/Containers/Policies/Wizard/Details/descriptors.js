@@ -6,12 +6,7 @@ import {
     envVarSrcLabels,
 } from 'messages/common';
 
-import {
-    comparatorOp,
-    formatResources,
-    formatScope,
-    formatDeploymentWhitelistScope,
-} from './utils';
+import { comparatorOp, formatResources, formatScope, formatDeploymentExcludedScope } from './utils';
 
 // JSON value name mapped to formatting for description page.
 const fieldsMap = {
@@ -81,27 +76,27 @@ const fieldsMap = {
         label: 'Categories',
         formatValue: (d) => d.join(', '),
     },
-    whitelists: {
+    exclusions: {
         label: 'Exclusions',
         formatValue: (d, props) => {
-            const whitelistObj = {};
-            const deploymentWhitelistScopes = d
+            const exclusionObj = {};
+            const deploymentExcludedScopes = d
                 .filter((obj) => obj.deployment && (obj.deployment.name || obj.deployment.scope))
                 .map((obj) => obj.deployment);
-            if (deploymentWhitelistScopes.length > 0) {
-                whitelistObj[
+            if (deploymentExcludedScopes.length > 0) {
+                exclusionObj[
                     'Excluded Deployments'
-                ] = deploymentWhitelistScopes.map((deploymentWhitelistScope) =>
-                    formatDeploymentWhitelistScope(deploymentWhitelistScope, props)
+                ] = deploymentExcludedScopes.map((deploymentExcludedScope) =>
+                    formatDeploymentExcludedScope(deploymentExcludedScope, props)
                 );
             }
             const images = d
                 .filter((obj) => obj.image && obj.image.name !== '')
                 .map((obj) => obj.image.name);
             if (images.length !== 0) {
-                whitelistObj['Excluded Images'] = images;
+                exclusionObj['Excluded Images'] = images;
             }
-            return whitelistObj;
+            return exclusionObj;
         },
     },
     imageName: {

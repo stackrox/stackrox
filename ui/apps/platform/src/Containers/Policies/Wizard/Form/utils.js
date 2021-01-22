@@ -6,26 +6,24 @@ import {
     policyStatus,
 } from 'Containers/Policies/Wizard/Form/descriptors';
 import { removeEmptyPolicyFields } from 'utils/policyUtils';
-import { clientOnlyWhitelistFieldNames } from './whitelistFieldNames';
+import { clientOnlyExclusionFieldNames } from './whitelistFieldNames';
 
-function filterAndMapWhitelists(whitelists, filterFunc, mapFunc) {
-    return whitelists && whitelists.length ? whitelists.filter(filterFunc).map(mapFunc) : [];
+function filterAndMapExclusions(exclusions, filterFunc, mapFunc) {
+    return exclusions && exclusions.length ? exclusions.filter(filterFunc).map(mapFunc) : [];
 }
 
-export function preFormatWhitelistField(policy) {
-    const { whitelists } = policy;
+export function preFormatExclusionField(policy) {
+    const { exclusions } = policy;
     const clientPolicy = { ...policy };
 
-    clientPolicy[clientOnlyWhitelistFieldNames.WHITELISTED_IMAGE_NAMES] = filterAndMapWhitelists(
-        whitelists,
+    clientPolicy[clientOnlyExclusionFieldNames.EXCLUDED_IMAGE_NAMES] = filterAndMapExclusions(
+        exclusions,
         (o) => o.image && o.image.name,
         (o) => o.image.name
     );
 
-    clientPolicy[
-        clientOnlyWhitelistFieldNames.WHITELISTED_DEPLOYMENT_SCOPES
-    ] = filterAndMapWhitelists(
-        whitelists,
+    clientPolicy[clientOnlyExclusionFieldNames.EXCLUDED_DEPLOYMENT_SCOPES] = filterAndMapExclusions(
+        exclusions,
         (o) => o.deployment && (o.deployment.name || o.deployment.scope),
         (o) => o.deployment
     );
@@ -33,22 +31,22 @@ export function preFormatWhitelistField(policy) {
     return clientPolicy;
 }
 
-export function postFormatWhitelistField(policy) {
+export function postFormatExclusionField(policy) {
     const serverPolicy = { ...policy };
-    serverPolicy.whitelists = [];
+    serverPolicy.exclusions = [];
 
-    const whitelistedDeploymentScopes =
-        policy[clientOnlyWhitelistFieldNames.WHITELISTED_DEPLOYMENT_SCOPES];
-    if (whitelistedDeploymentScopes && whitelistedDeploymentScopes.length) {
-        serverPolicy.whitelists = serverPolicy.whitelists.concat(
-            whitelistedDeploymentScopes.map((deployment) => ({ deployment }))
+    const excludedDeploymentScopes =
+        policy[clientOnlyExclusionFieldNames.EXCLUDED_DEPLOYMENT_SCOPES];
+    if (excludedDeploymentScopes && excludedDeploymentScopes.length) {
+        serverPolicy.exclusions = serverPolicy.exclusions.concat(
+            excludedDeploymentScopes.map((deployment) => ({ deployment }))
         );
     }
 
-    const whitelistedImageNames = policy[clientOnlyWhitelistFieldNames.WHITELISTED_IMAGE_NAMES];
-    if (whitelistedImageNames && whitelistedImageNames.length > 0) {
-        serverPolicy.whitelists = serverPolicy.whitelists.concat(
-            whitelistedImageNames.map((name) => ({ image: { name } }))
+    const excludedImageNames = policy[clientOnlyExclusionFieldNames.EXCLUDED_IMAGE_NAMES];
+    if (excludedImageNames && excludedImageNames.length > 0) {
+        serverPolicy.exclusions = serverPolicy.exclusions.concat(
+            excludedImageNames.map((name) => ({ image: { name } }))
         );
     }
 
@@ -211,7 +209,7 @@ function postFormatNestedPolicyFields(policy) {
 
 export function preFormatPolicyFields(policy) {
     let formattedPolicy = removeEmptyPolicyFields(policy);
-    formattedPolicy = preFormatWhitelistField(formattedPolicy);
+    formattedPolicy = preFormatExclusionField(formattedPolicy);
     formattedPolicy = preFormatNestedPolicyFields(formattedPolicy);
     return formattedPolicy;
 }
@@ -220,7 +218,7 @@ export function formatPolicyFields(policy) {
     let serverPolicy = removeEmptyPolicyFields(policy);
     serverPolicy = postFormatLifecycleField(serverPolicy);
     serverPolicy = postFormatEnforcementField(serverPolicy);
-    serverPolicy = postFormatWhitelistField(serverPolicy);
+    serverPolicy = postFormatExclusionField(serverPolicy);
     serverPolicy = postFormatNestedPolicyFields(serverPolicy);
     return serverPolicy;
 }

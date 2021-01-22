@@ -41,7 +41,7 @@
             }
         },
         "lifecycleStage": "RUNTIME",
-        "whitelists": [
+        "exclusions": [
             {
                 "name": "",
                 "container": null,
