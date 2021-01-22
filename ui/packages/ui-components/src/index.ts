@@ -13,3 +13,5 @@ export { default as HoverHint } from './HoverHint';
 export { default as Message } from './Message';
 export { default as Tooltip } from './Tooltip';
 export { default as TooltipOverlay } from './TooltipOverlay';
+export { default as ToggleButtonGroup } from './ToggleButtonGroup';
+export { default as ToggleButton } from './ToggleButton';
