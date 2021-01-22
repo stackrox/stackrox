@@ -127,9 +127,11 @@ const ClusterSummary = ({ healthStatus, status, centralVersion, currentDatetime,
 ClusterSummary.propTypes = {
     healthStatus: PropTypes.shape({
         collectorHealthInfo: PropTypes.shape({
-            totalDesiredPods: PropTypes.number.isRequired,
-            totalReadyPods: PropTypes.number.isRequired,
-            totalRegisteredNodes: PropTypes.number.isRequired,
+            version: PropTypes.string,
+            totalDesiredPods: PropTypes.number,
+            totalReadyPods: PropTypes.number,
+            totalRegisteredNodes: PropTypes.number,
+            statusErrors: PropTypes.arrayOf(PropTypes.string),
         }),
         sensorHealthStatus: PropTypes.string,
         collectorHealthStatus: PropTypes.string,

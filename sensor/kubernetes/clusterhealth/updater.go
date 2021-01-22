@@ -2,9 +2,10 @@ package clusterhealth
 
 import (
 	"context"
-	"errors"
+	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -18,7 +19,7 @@ import (
 )
 
 const (
-	interval               = 30 * time.Second
+	defaultInterval        = 30 * time.Second
 	collectorDaemonsetName = "collector"
 	collectorContainerName = "collector"
 )
@@ -28,9 +29,10 @@ var (
 )
 
 type updaterImpl struct {
-	client  kubernetes.Interface
-	updates chan *central.MsgFromSensor
-	stopSig concurrency.Signal
+	client         kubernetes.Interface
+	updates        chan *central.MsgFromSensor
+	stopSig        concurrency.Signal
+	updateInterval time.Duration
 }
 
 func (u *updaterImpl) Start() error {
@@ -55,17 +57,13 @@ func (u *updaterImpl) ResponsesC() <-chan *central.MsgFromSensor {
 }
 
 func (u *updaterImpl) run() {
-	ticker := time.NewTicker(interval)
+	ticker := time.NewTicker(u.updateInterval)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			collectorHealthInfo, err := u.getCollectorInfo()
-			if err != nil {
-				log.Errorf("Unable to get collector health info: %v", err)
-				continue
-			}
+			collectorHealthInfo := u.getCollectorInfo()
 			select {
 			case u.updates <- &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_ClusterHealthInfo{
@@ -84,34 +82,47 @@ func (u *updaterImpl) run() {
 	}
 }
 
-func (u *updaterImpl) getCollectorInfo() (*storage.CollectorHealthInfo, error) {
+func (u *updaterImpl) getCollectorInfo() *storage.CollectorHealthInfo {
+	result := storage.CollectorHealthInfo{}
+
 	nodes, err := u.client.CoreV1().Nodes().List(u.ctx(), metav1.ListOptions{})
 	if err != nil {
-		return nil, err
-	}
-	collectorDS, err := u.client.AppsV1().DaemonSets(namespaces.StackRox).Get(u.ctx(), collectorDaemonsetName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	var version string
-	for _, container := range collectorDS.Spec.Template.Spec.Containers {
-		if container.Name == collectorContainerName {
-			version = stringutils.GetAfterLast(container.Image, ":")
-			break
+		result.StatusErrors = append(result.StatusErrors, errors.Wrap(err, "unable to list cluster nodes").Error())
+	} else {
+		result.TotalRegisteredNodesOpt = &storage.CollectorHealthInfo_TotalRegisteredNodes{
+			TotalRegisteredNodes: int32(len(nodes.Items)),
 		}
 	}
 
-	if version == "" {
-		return nil, errors.New("unable to determine collector version")
+	collectorDS, err := u.client.AppsV1().DaemonSets(namespaces.StackRox).Get(u.ctx(), collectorDaemonsetName, metav1.GetOptions{})
+	if err != nil {
+		result.StatusErrors = append(result.StatusErrors, errors.Wrap(err, "unable to find collector DaemonSet").Error())
+	} else {
+		for _, container := range collectorDS.Spec.Template.Spec.Containers {
+			if container.Name == collectorContainerName {
+				result.Version = stringutils.GetAfterLast(container.Image, ":")
+				result.Version = strings.TrimSuffix(result.Version, "-slim")
+				result.Version = strings.TrimSuffix(result.Version, "-latest")
+				break
+			}
+		}
+		if result.Version == "" {
+			result.StatusErrors = append(result.StatusErrors, "unable to determine collector version")
+		}
+
+		result.TotalDesiredPodsOpt = &storage.CollectorHealthInfo_TotalDesiredPods{
+			TotalDesiredPods: collectorDS.Status.DesiredNumberScheduled,
+		}
+		result.TotalReadyPodsOpt = &storage.CollectorHealthInfo_TotalReadyPods{
+			TotalReadyPods: collectorDS.Status.NumberReady,
+		}
 	}
 
-	return &storage.CollectorHealthInfo{
-		Version:              version,
-		TotalDesiredPods:     collectorDS.Status.DesiredNumberScheduled,
-		TotalReadyPods:       collectorDS.Status.NumberReady,
-		TotalRegisteredNodes: int32(len(nodes.Items)),
-	}, nil
+	if len(result.StatusErrors) > 0 {
+		log.Errorf("Errors while getting collector info: %v", result.StatusErrors)
+	}
+
+	return &result
 }
 
 func (u *updaterImpl) ctx() context.Context {
@@ -119,10 +130,16 @@ func (u *updaterImpl) ctx() context.Context {
 }
 
 // NewUpdater returns a new ready-to-use updater.
-func NewUpdater(client kubernetes.Interface) common.SensorComponent {
+// updateInterval is optional argument, default 30 seconds interval is used.
+func NewUpdater(client kubernetes.Interface, updateInterval time.Duration) common.SensorComponent {
+	interval := updateInterval
+	if interval == 0 {
+		interval = defaultInterval
+	}
 	return &updaterImpl{
-		client:  client,
-		updates: make(chan *central.MsgFromSensor),
-		stopSig: concurrency.NewSignal(),
+		client:         client,
+		updates:        make(chan *central.MsgFromSensor),
+		stopSig:        concurrency.NewSignal(),
+		updateInterval: interval,
 	}
 }

@@ -8,72 +8,57 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetSensorStatus(t *testing.T) {
+func TestPopulateInactiveSensorStatus(t *testing.T) {
 	cases := []struct {
-		name            string
-		previousContact time.Time
-		newContact      time.Time
-		expectedStatus  storage.ClusterHealthStatus_HealthStatusLabel
+		name           string
+		lastContact    time.Time
+		expectedStatus storage.ClusterHealthStatus_HealthStatusLabel
 	}{
 		{
-			name:            "sensor never connected",
-			previousContact: time.Time{},
-			newContact:      time.Time{},
-			expectedStatus:  storage.ClusterHealthStatus_UNINITIALIZED,
+			name:           "sensor never connected",
+			lastContact:    time.Time{},
+			expectedStatus: storage.ClusterHealthStatus_UNINITIALIZED,
 		},
 		{
-			name:            "first ever sensor contact",
-			previousContact: time.Time{},
-			newContact:      time.Now(),
-			expectedStatus:  storage.ClusterHealthStatus_HEALTHY,
+			name:           "first ever sensor contact",
+			lastContact:    time.Now(),
+			expectedStatus: storage.ClusterHealthStatus_HEALTHY,
 		},
 		{
-			name:            "sensor contact: still healthy",
-			previousContact: time.Now().Add(-45 * time.Second),
-			newContact:      time.Now(),
-			expectedStatus:  storage.ClusterHealthStatus_HEALTHY,
+			name:           "sensor contact: still healthy",
+			lastContact:    time.Now().Add(-45 * time.Second),
+			expectedStatus: storage.ClusterHealthStatus_HEALTHY,
 		},
 		{
-			name:            "no sensor contact: still healthy",
-			previousContact: time.Now().Add(-50 * time.Second),
-			newContact:      time.Time{},
-			expectedStatus:  storage.ClusterHealthStatus_HEALTHY,
+			name:           "no sensor contact: still healthy",
+			lastContact:    time.Now().Add(-50 * time.Second),
+			expectedStatus: storage.ClusterHealthStatus_HEALTHY,
 		},
 		{
-			name:            "no sensor contact: healthy to degraded",
-			previousContact: time.Now().Add(-120 * time.Second),
-			newContact:      time.Time{},
-			expectedStatus:  storage.ClusterHealthStatus_DEGRADED,
+			name:           "no sensor contact: healthy to degraded",
+			lastContact:    time.Now().Add(-120 * time.Second),
+			expectedStatus: storage.ClusterHealthStatus_DEGRADED,
 		},
 		{
-			name:            "no sensor contact: still degraded",
-			previousContact: time.Now().Add(-170 * time.Second),
-			newContact:      time.Time{},
-			expectedStatus:  storage.ClusterHealthStatus_DEGRADED,
+			name:           "no sensor contact: still degraded",
+			lastContact:    time.Now().Add(-170 * time.Second),
+			expectedStatus: storage.ClusterHealthStatus_DEGRADED,
 		},
 		{
-			name:            "no sensor contact: degraded to unhealthy",
-			previousContact: time.Now().Add(-4 * time.Minute),
-			newContact:      time.Time{},
-			expectedStatus:  storage.ClusterHealthStatus_UNHEALTHY,
+			name:           "no sensor contact: degraded to unhealthy",
+			lastContact:    time.Now().Add(-4 * time.Minute),
+			expectedStatus: storage.ClusterHealthStatus_UNHEALTHY,
 		},
 		{
-			name:            "no sensor contact: still unhealthy",
-			previousContact: time.Now().Add(-1 * time.Hour),
-			newContact:      time.Time{},
-			expectedStatus:  storage.ClusterHealthStatus_UNHEALTHY,
-		},
-		{
-			name:            "sensor contact: unhealthy to healthy",
-			previousContact: time.Now().Add(-1 * time.Hour),
-			newContact:      time.Now(),
-			expectedStatus:  storage.ClusterHealthStatus_HEALTHY,
+			name:           "no sensor contact: still unhealthy",
+			lastContact:    time.Now().Add(-1 * time.Hour),
+			expectedStatus: storage.ClusterHealthStatus_UNHEALTHY,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expectedStatus, PopulateSensorStatus(c.previousContact, c.newContact))
+			assert.Equal(t, c.expectedStatus, PopulateInactiveSensorStatus(c.lastContact))
 		})
 	}
 
@@ -90,34 +75,82 @@ func TestCollectorStatus(t *testing.T) {
 			expectedStatus: storage.ClusterHealthStatus_UNINITIALIZED,
 		},
 		{
-			name: "collector: unhealthy",
+			name: "collector: uninitialized - 5/0",
 			collectorHealthInfo: &storage.CollectorHealthInfo{
-				TotalDesiredPods: 0,
-				TotalReadyPods:   5,
+				TotalDesiredPodsOpt: podsDesired(0),
+				TotalReadyPodsOpt:   podsReady(5),
 			},
 			expectedStatus: storage.ClusterHealthStatus_UNINITIALIZED,
 		},
 		{
-			name: "collector: healthy",
+			name: "collector: uninitialized - 0/0",
 			collectorHealthInfo: &storage.CollectorHealthInfo{
-				TotalDesiredPods: 10,
-				TotalReadyPods:   10,
+				TotalDesiredPodsOpt: podsDesired(0),
+				TotalReadyPodsOpt:   podsReady(0),
+			},
+			expectedStatus: storage.ClusterHealthStatus_UNINITIALIZED,
+		},
+		{
+			name: "collector: healthy - 10/10",
+			collectorHealthInfo: &storage.CollectorHealthInfo{
+				TotalDesiredPodsOpt: podsDesired(10),
+				TotalReadyPodsOpt:   podsReady(10),
 			},
 			expectedStatus: storage.ClusterHealthStatus_HEALTHY,
 		},
 		{
-			name: "collector: degraded",
+			name: "collector: healthy - 12/10 (anomaly)",
 			collectorHealthInfo: &storage.CollectorHealthInfo{
-				TotalDesiredPods: 10,
-				TotalReadyPods:   9,
+				TotalDesiredPodsOpt: podsDesired(10),
+				TotalReadyPodsOpt:   podsReady(12),
+			},
+			expectedStatus: storage.ClusterHealthStatus_HEALTHY,
+		},
+		{
+			name: "collector: degraded - 9/10",
+			collectorHealthInfo: &storage.CollectorHealthInfo{
+				TotalDesiredPodsOpt: podsDesired(10),
+				TotalReadyPodsOpt:   podsReady(9),
 			},
 			expectedStatus: storage.ClusterHealthStatus_DEGRADED,
 		},
 		{
-			name: "collector: unhealthy",
+			name: "collector: unhealthy - 5/10",
 			collectorHealthInfo: &storage.CollectorHealthInfo{
-				TotalDesiredPods: 10,
-				TotalReadyPods:   5,
+				TotalDesiredPodsOpt: podsDesired(10),
+				TotalReadyPodsOpt:   podsReady(5),
+			},
+			expectedStatus: storage.ClusterHealthStatus_UNHEALTHY,
+		},
+		{
+			name: "collector: unhealthy - 10/n.a. can't get count of desired pods",
+			collectorHealthInfo: &storage.CollectorHealthInfo{
+				TotalDesiredPodsOpt: nil,
+				TotalReadyPodsOpt:   podsReady(10),
+			},
+			expectedStatus: storage.ClusterHealthStatus_UNHEALTHY,
+		},
+		{
+			name: "collector: unhealthy - n.a./10 can't get count of ready pods",
+			collectorHealthInfo: &storage.CollectorHealthInfo{
+				TotalDesiredPodsOpt: podsDesired(10),
+				TotalReadyPodsOpt:   nil,
+			},
+			expectedStatus: storage.ClusterHealthStatus_UNHEALTHY,
+		},
+		{
+			name: "collector: unhealthy - n.a./0 can't get count of ready pods",
+			collectorHealthInfo: &storage.CollectorHealthInfo{
+				TotalDesiredPodsOpt: podsDesired(0),
+				TotalReadyPodsOpt:   nil,
+			},
+			expectedStatus: storage.ClusterHealthStatus_UNHEALTHY,
+		},
+		{
+			name: "collector: unhealthy - n.a./n.a. can't get both counts",
+			collectorHealthInfo: &storage.CollectorHealthInfo{
+				TotalDesiredPodsOpt: nil,
+				TotalReadyPodsOpt:   nil,
 			},
 			expectedStatus: storage.ClusterHealthStatus_UNHEALTHY,
 		},
@@ -127,6 +160,13 @@ func TestCollectorStatus(t *testing.T) {
 			assert.Equal(t, c.expectedStatus, PopulateCollectorStatus(c.collectorHealthInfo))
 		})
 	}
+}
+
+func podsDesired(num int32) *storage.CollectorHealthInfo_TotalDesiredPods {
+	return &storage.CollectorHealthInfo_TotalDesiredPods{TotalDesiredPods: num}
+}
+func podsReady(num int32) *storage.CollectorHealthInfo_TotalReadyPods {
+	return &storage.CollectorHealthInfo_TotalReadyPods{TotalReadyPods: num}
 }
 
 func TestOverallHealth(t *testing.T) {

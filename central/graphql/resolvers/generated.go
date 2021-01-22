@@ -244,9 +244,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CollectionMethod(0)))
 	utils.Must(builder.AddType("CollectorHealthInfo", []string{
-		"totalDesiredPods: Int!",
-		"totalReadyPods: Int!",
-		"totalRegisteredNodes: Int!",
+		"statusErrors: [String!]!",
 		"version: String!",
 	}))
 	utils.Must(builder.AddType("Comment", []string{
@@ -3062,18 +3060,8 @@ func (resolver *Resolver) wrapCollectorHealthInfos(values []*storage.CollectorHe
 	return output, nil
 }
 
-func (resolver *collectorHealthInfoResolver) TotalDesiredPods(ctx context.Context) int32 {
-	value := resolver.data.GetTotalDesiredPods()
-	return value
-}
-
-func (resolver *collectorHealthInfoResolver) TotalReadyPods(ctx context.Context) int32 {
-	value := resolver.data.GetTotalReadyPods()
-	return value
-}
-
-func (resolver *collectorHealthInfoResolver) TotalRegisteredNodes(ctx context.Context) int32 {
-	value := resolver.data.GetTotalRegisteredNodes()
+func (resolver *collectorHealthInfoResolver) StatusErrors(ctx context.Context) []string {
+	value := resolver.data.GetStatusErrors()
 	return value
 }
 

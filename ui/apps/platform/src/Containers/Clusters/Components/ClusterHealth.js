@@ -86,9 +86,11 @@ ClusterHealth.propTypes = {
     healthStatus: PropTypes.shape({
         collectorHealthStatus: PropTypes.string,
         collectorHealthInfo: PropTypes.shape({
-            totalDesiredPods: PropTypes.number.isRequired,
-            totalReadyPods: PropTypes.number.isRequired,
-            totalRegisteredNodes: PropTypes.number.isRequired,
+            version: PropTypes.string,
+            totalDesiredPods: PropTypes.number,
+            totalReadyPods: PropTypes.number,
+            totalRegisteredNodes: PropTypes.number,
+            statusErrors: PropTypes.arrayOf(PropTypes.string),
         }),
         healthInfoComplete: PropTypes.bool,
         overallHealthStatus: PropTypes.string,

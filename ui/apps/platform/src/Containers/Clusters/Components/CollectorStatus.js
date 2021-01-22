@@ -16,6 +16,7 @@ import {
 const trClassName = 'align-bottom leading-normal'; // align-bottom in case heading text wraps
 const thClassName = 'font-600 pl-0 pr-1 py-0 text-left';
 const tdClassName = 'p-0 text-right';
+const tdErrorsClassName = 'font-600 pb-0 pl-0 pr-1 pt-2 text-left'; // pt for gap above errors
 
 const testId = 'collectorStatus';
 
@@ -60,16 +61,33 @@ const CollectorStatus = ({ healthStatus, currentDatetime, isList }) => {
             );
 
         if (collectorHealthInfo) {
-            const { totalReadyPods, totalDesiredPods, totalRegisteredNodes } = collectorHealthInfo;
+            const notAvailable = 'n/a';
+            const {
+                totalReadyPods,
+                totalDesiredPods,
+                totalRegisteredNodes,
+                version,
+                statusErrors,
+            } = collectorHealthInfo;
             const totalsElement = (
                 <table>
                     <tbody>
+                        <tr className={trClassName} key="version">
+                            <th className={thClassName} scope="row">
+                                Collector version:
+                            </th>
+                            <td className={tdClassName} data-testid="version">
+                                {version || notAvailable}
+                            </td>
+                        </tr>
                         <tr className={trClassName} key="totalReadyPods">
                             <th className={thClassName} scope="row">
                                 Collector pods ready:
                             </th>
                             <td className={tdClassName} data-testid="totalReadyPods">
-                                <span className={`${bgColor} ${fgColor}`}>{totalReadyPods}</span>
+                                <span className={`${bgColor} ${fgColor}`}>
+                                    {totalReadyPods == null ? notAvailable : totalReadyPods}
+                                </span>
                             </td>
                         </tr>
                         <tr className={trClassName} key="totalDesiredPods">
@@ -77,7 +95,9 @@ const CollectorStatus = ({ healthStatus, currentDatetime, isList }) => {
                                 Collector pods expected:
                             </th>
                             <td className={tdClassName} data-testid="totalDesiredPods">
-                                <span className={`${bgColor} ${fgColor}`}>{totalDesiredPods}</span>
+                                <span className={`${bgColor} ${fgColor}`}>
+                                    {totalDesiredPods == null ? notAvailable : totalDesiredPods}
+                                </span>
                             </td>
                         </tr>
                         <tr className={trClassName} key="totalRegisteredNodes">
@@ -85,9 +105,30 @@ const CollectorStatus = ({ healthStatus, currentDatetime, isList }) => {
                                 Registered nodes in cluster:
                             </th>
                             <td className={tdClassName} data-testid="totalRegisteredNodes">
-                                {totalRegisteredNodes}
+                                {totalRegisteredNodes == null ? notAvailable : totalRegisteredNodes}
                             </td>
                         </tr>
+                        {statusErrors && statusErrors.length > 0 && (
+                            <tr className={trClassName} key="statusErrors">
+                                <td
+                                    className={tdErrorsClassName}
+                                    colSpan={2}
+                                    data-testid="statusErrors"
+                                >
+                                    <ul>
+                                        {statusErrors.map((err) => (
+                                            <li key={err}>
+                                                <span
+                                                    className={`${healthStatusStyles.UNHEALTHY.fgColor} break-all`}
+                                                >
+                                                    {err}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             );
@@ -174,9 +215,11 @@ CollectorStatus.propTypes = {
             'HEALTHY',
         ]),
         collectorHealthInfo: PropTypes.shape({
-            totalDesiredPods: PropTypes.number.isRequired,
-            totalReadyPods: PropTypes.number.isRequired,
-            totalRegisteredNodes: PropTypes.number.isRequired,
+            version: PropTypes.string,
+            totalDesiredPods: PropTypes.number,
+            totalReadyPods: PropTypes.number,
+            totalRegisteredNodes: PropTypes.number,
+            statusErrors: PropTypes.arrayOf(PropTypes.string),
         }),
         healthInfoComplete: PropTypes.bool,
         sensorHealthStatus: PropTypes.oneOf(['UNINITIALIZED', 'UNHEALTHY', 'DEGRADED', 'HEALTHY']),

@@ -24,7 +24,7 @@ var (
 )
 
 func init() {
-	// This needs to be increased in order to prevent the fake watcher from panicing.
+	// This needs to be increased in order to prevent the fake watcher from panicking.
 	// Note that as this is a global variable, it _must_ be set in an init() in order to
 	// ensure race-freeness. While it may look weird that we are setting this unconditionally
 	// whenever the fake package is imported (including in prod), this doesn't hurt and is

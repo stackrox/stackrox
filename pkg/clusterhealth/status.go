@@ -21,21 +21,14 @@ const (
 	DegradedCollectorThreshold = float64(0.8)
 )
 
-// PopulateSensorStatus returns sensor status based on sensor's last contact with central
-func PopulateSensorStatus(previousContact time.Time, newContact time.Time) storage.ClusterHealthStatus_HealthStatusLabel {
+// PopulateInactiveSensorStatus returns sensor status based on sensor's last contact with central in situation when there's no active connection between sensor and central.
+func PopulateInactiveSensorStatus(lastContact time.Time) storage.ClusterHealthStatus_HealthStatusLabel {
 	// sensor never connected with central
-	if previousContact.IsZero() && newContact.IsZero() {
+	if lastContact.IsZero() {
 		return storage.ClusterHealthStatus_UNINITIALIZED
 	}
 
-	// sensor has connected with central
-	if !newContact.IsZero() {
-		return storage.ClusterHealthStatus_HEALTHY
-	}
-
-	// sensor has lost connection with central
-	newContact = time.Now()
-	diff := time.Since(previousContact)
+	diff := time.Since(lastContact)
 	if diff <= HealthySensorThreshold {
 		return storage.ClusterHealthStatus_HEALTHY
 	}
@@ -49,6 +42,13 @@ func PopulateSensorStatus(previousContact time.Time, newContact time.Time) stora
 func PopulateCollectorStatus(collectorInfo *storage.CollectorHealthInfo) storage.ClusterHealthStatus_HealthStatusLabel {
 	if collectorInfo == nil {
 		return storage.ClusterHealthStatus_UNINITIALIZED
+	}
+
+	if collectorInfo.TotalDesiredPodsOpt == nil || collectorInfo.TotalReadyPodsOpt == nil {
+		// Fields will be nil if there was an error when trying to determine counts of desired/ready pods.
+		// In this case we don't have enough information and can't report status as HEALTHY or even DEGRADED.
+		// Reporting status as UNHEALTHY will attract user's attention to the problem and push them to resolve it.
+		return storage.ClusterHealthStatus_UNHEALTHY
 	}
 
 	desiredPods := collectorInfo.GetTotalDesiredPods()

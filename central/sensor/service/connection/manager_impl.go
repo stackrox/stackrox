@@ -134,8 +134,8 @@ func (m *manager) updateClusterHealthForever() {
 
 func (m *manager) updateInactiveClusterHealth(cluster *storage.Cluster) {
 	oldHealth := cluster.GetHealthStatus()
-	previousContact := protoconv.ConvertTimestampToTimeOrDefault(oldHealth.GetLastContact(), time.Time{})
-	newSensorStatus := clusterhealth.PopulateSensorStatus(previousContact, time.Time{})
+	lastContact := protoconv.ConvertTimestampToTimeOrDefault(oldHealth.GetLastContact(), time.Time{})
+	newSensorStatus := clusterhealth.PopulateInactiveSensorStatus(lastContact)
 	clusterHealthStatus := &storage.ClusterHealthStatus{
 		SensorHealthStatus:    newSensorStatus,
 		CollectorHealthStatus: oldHealth.GetCollectorHealthStatus(),
