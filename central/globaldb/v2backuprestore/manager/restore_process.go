@@ -365,6 +365,10 @@ func (p *restoreProcess) processFiles(ctx *restoreProcessContext) error {
 			return ctxErr
 		}
 
+		if file.handlerFunc == nil {
+			continue
+		}
+
 		if err := p.processSingleFile(ctx, file); err != nil {
 			return errors.Wrapf(err, "error processing file %s", file.manifestFile.GetName())
 		}

@@ -467,6 +467,12 @@ storeCentralBackupArtifact: &storeCentralBackupArtifact
     path: central-backup
     destination: central-backup
 
+restoreDB: &restoreDB
+  run:
+    name: Restore DB
+    command: |
+      roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore `ls -t central-backup/stackrox_db_* |head -n1`
+
 updateTestRail: &updateTestRail
   run:
     name: Update test results in TestRail
@@ -1369,6 +1375,7 @@ commands:
       - pull-stackrox-api-data
       - *backupCentral
       - *storeCentralBackupArtifact
+      - *restoreDB
       - check-stackrox-logs
       - *storeK8sLogs
       - *storeQALogs
@@ -1666,6 +1673,7 @@ commands:
 
       - *backupCentral
       - *storeCentralBackupArtifact
+      - *restoreDB
 
       - *collectK8sLogs
       - get-and-store-debug-dump
@@ -3338,6 +3346,7 @@ jobs:
       - pull-stackrox-api-data
       - *backupCentral
       - *storeCentralBackupArtifact
+      - *restoreDB
       - check-stackrox-logs
       - *storeK8sLogs
 
@@ -4134,6 +4143,7 @@ jobs:
       - *collectK8sLogs
       - *backupCentral
       - *storeCentralBackupArtifact
+      - *restoreDB
       - check-stackrox-logs
       - *storeK8sLogs
       - *storeQALogs
@@ -4235,6 +4245,7 @@ jobs:
       - *collectK8sLogs
       - *backupCentral
       - *storeCentralBackupArtifact
+      - *restoreDB
       - check-stackrox-logs
       - *storeK8sLogs
       - *storeQALogs
