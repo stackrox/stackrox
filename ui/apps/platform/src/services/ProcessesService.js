@@ -1,7 +1,7 @@
 import axios from './instance';
 
 const baseUrl = '/v1/processes';
-const processesInBaselineUrl = '/v1/processwhitelists';
+const processesInBaselineUrl = '/v1/processbaselines';
 
 /**
  * Fetches Processes for a given deployment ID.

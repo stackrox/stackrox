@@ -5,7 +5,7 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 
 export const types = {
     FETCH_PROCESSES: createFetchingActionTypes('processes/FETCH_PROCESSES'),
-    FETCH_PROCESSES_WHITELIST: createFetchingActionTypes('processes/FETCH_PROCESSES_WHITELIST'),
+    FETCH_PROCESSES_BASELINE: createFetchingActionTypes('processes/FETCH_PROCESSES_BASELINE'),
     ADD_DELETE_PROCESSES: 'processes/ADD_DELETE_PROCESS',
     LOCK_UNLOCK_PROCESSES: 'processes/LOCK_UNLOCK_PROCESS',
 };
@@ -14,7 +14,7 @@ export const types = {
 
 export const actions = {
     fetchProcesses: createFetchingActions(types.FETCH_PROCESSES),
-    fetchProcessesWhitelist: createFetchingActions(types.FETCH_PROCESSES_WHITELIST),
+    fetchProcessesBaseline: createFetchingActions(types.FETCH_PROCESSES_BASELINE),
     addDeleteProcesses: (processes) => ({ type: types.ADD_DELETE_PROCESSES, processes }),
     lockUnlockProcesses: (processes) => ({ type: types.LOCK_UNLOCK_PROCESSES, processes }),
 };
@@ -28,8 +28,8 @@ const byDeployment = (state = {}, action) => {
     return state;
 };
 
-const processesWhitelistByDeployment = (state = [], action) => {
-    if (action.type === types.FETCH_PROCESSES_WHITELIST.SUCCESS) {
+const processesBaselineByDeployment = (state = [], action) => {
+    if (action.type === types.FETCH_PROCESSES_BASELINE.SUCCESS) {
         return action.response;
     }
     return state;
@@ -37,7 +37,7 @@ const processesWhitelistByDeployment = (state = [], action) => {
 
 const reducer = combineReducers({
     byDeployment,
-    processesWhitelistByDeployment,
+    processesBaselineByDeployment,
 });
 
 export default reducer;
@@ -45,9 +45,9 @@ export default reducer;
 // Selectors
 
 const getProcessesByDeployment = (state) => state.byDeployment;
-const getProcessesWhitelistByDeployment = (state) => state.processesWhitelistByDeployment;
+const getProcessesBaselineByDeployment = (state) => state.processesBaselineByDeployment;
 
 export const selectors = {
     getProcessesByDeployment,
-    getProcessesWhitelistByDeployment,
+    getProcessesBaselineByDeployment,
 };

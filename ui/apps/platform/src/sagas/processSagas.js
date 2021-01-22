@@ -32,11 +32,11 @@ export function* getProcesses(id) {
             });
         }
 
-        const processesWhiteList = yield all(promises);
-        yield put(actions.fetchProcessesWhitelist.success(processesWhiteList));
+        const processesBaseline = yield all(promises);
+        yield put(actions.fetchProcessesBaseline.success(processesBaseline));
     } catch (error) {
         yield put(actions.fetchProcesses.failure(error));
-        yield put(actions.fetchProcessesWhitelist.failure(error));
+        yield put(actions.fetchProcessesBaseline.failure(error));
         Raven.captureException(error);
     }
 }
@@ -53,7 +53,7 @@ function* getProcessesByDeployment({ match }) {
     }
 }
 
-function* addDeleteProcessesWhitelist(action) {
+function* addDeleteProcessesBaseline(action) {
     try {
         const { deploymentId } = action.processes.keys[0];
         yield call(addDeleteProcesses, action.processes);
@@ -63,7 +63,7 @@ function* addDeleteProcessesWhitelist(action) {
     }
 }
 
-function* lockUnlockProcessesWhitelist(action) {
+function* lockUnlockProcessesBaseline(action) {
     try {
         const { deploymentId } = action.processes.keys[0];
         yield call(lockUnlockProcesses, action.processes);
@@ -74,11 +74,11 @@ function* lockUnlockProcessesWhitelist(action) {
 }
 
 function* watchAddDeleteProcesses() {
-    yield takeLatest(types.ADD_DELETE_PROCESSES, addDeleteProcessesWhitelist);
+    yield takeLatest(types.ADD_DELETE_PROCESSES, addDeleteProcessesBaseline);
 }
 
 function* watchLockUnlockProcesses() {
-    yield takeLatest(types.LOCK_UNLOCK_PROCESSES, lockUnlockProcessesWhitelist);
+    yield takeLatest(types.LOCK_UNLOCK_PROCESSES, lockUnlockProcessesBaseline);
 }
 
 export default function* processes() {
