@@ -612,6 +612,12 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.addDepAndImages(hostPIDDep)
 
+	hostIPCDep := &storage.Deployment{
+		Id:      "HOSTIPC",
+		HostIpc: true,
+	}
+	suite.addDepAndImages(hostIPCDep)
+
 	imgWithFixedByEmpty := suite.addImage(imageWithComponents([]*storage.EmbeddedImageScanComponent{
 		{Name: "EXplicitlyEmptyFixedBy", Version: "2.3", Vulns: []*storage.EmbeddedVulnerability{
 			{Cve: "CVE-1234-5678", Cvss: 8, Link: "https://abcdefgh", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{}},
@@ -897,6 +903,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				hostMountDep.GetId():                              {},
 				restrictedHostPortDep.GetId():                     {},
 				hostPIDDep.GetId():                                {},
+				hostIPCDep.GetId():                                {},
 			},
 			sampleViolationForMatched: "Image in container '%s' has not been scanned",
 		},
@@ -1145,6 +1152,14 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				hostPIDDep.GetId(): {
 					{Message: "Deployment uses the host's process ID namespace"},
+				},
+			},
+		},
+		{
+			policyName: "Ensure that the host's IPC namespace is not shared",
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				hostIPCDep.GetId(): {
+					{Message: "Deployment uses the host's IPC namespace"},
 				},
 			},
 		},

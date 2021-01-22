@@ -174,6 +174,7 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 func (w *DeploymentWrap) PopulateDeploymentFromPodSpec(podSpec v1.PodSpec) {
 	w.HostNetwork = podSpec.HostNetwork
 	w.HostPid = podSpec.HostPID
+	w.HostIpc = podSpec.HostIPC
 	w.populateTolerations(podSpec)
 	w.populateServiceAccount(podSpec)
 	w.populateImagePullSecrets(podSpec)

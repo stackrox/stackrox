@@ -461,6 +461,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"clusterName: String!",
 		"containers: [Container]!",
 		"created: Time",
+		"hostIpc: Boolean!",
 		"hostNetwork: Boolean!",
 		"hostPid: Boolean!",
 		"id: ID!",
@@ -4710,6 +4711,12 @@ func (resolver *deploymentResolver) Created(ctx context.Context) (*graphql.Time,
 		value = resolver.list.GetCreated()
 	}
 	return timestamp(value)
+}
+
+func (resolver *deploymentResolver) HostIpc(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetHostIpc()
+	return value
 }
 
 func (resolver *deploymentResolver) HostNetwork(ctx context.Context) bool {

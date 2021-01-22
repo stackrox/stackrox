@@ -293,6 +293,10 @@ const fieldsMap = {
             return `Alerts on deployments with disallowed image label ${key}${comma}${value}`;
         },
     },
+    HostIPC: {
+        label: 'Host IPC',
+        formatValue: (d) => (d === true ? 'Yes' : 'Not Enabled'),
+    },
 };
 
 export default fieldsMap;

@@ -11,7 +11,7 @@ const (
 	hostPidTemplate = `Deployment {{- if .HostPID }} uses the host's process ID namespace{{else}} does not use the host's process ID namespace{{end}}`
 )
 
-func hostPidPrinter(fieldMap map[string][]string) ([]string, error) {
+func hostPIDPrinter(fieldMap map[string][]string) ([]string, error) {
 	type resultFields struct {
 		ContainerName string
 		HostPID       bool

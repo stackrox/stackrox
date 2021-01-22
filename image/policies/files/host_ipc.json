@@ -1,0 +1,34 @@
+{
+  "id": "47cb9e0a-879a-417b-9a8f-de644d7c8a77",
+  "name": "Ensure that the host's IPC namespace is not shared",
+  "description": "IPC (POSIX/SysV IPC) namespace provides separation of named shared memory segments, semaphores and message queues. The IPC namespace on the host should therefore not be shared with containers and should remain isolated.",
+  "rationale": "The IPC namespace provides separation of IPC between the host and containers. If the host's IPC namespace is shared with the container, it would allow processes within the container to see all of IPC communications on the host system. This would remove the benefit of IPC level isolation between host and containers. An attacker with access to a container could get access to the host at this level with major consequences. The IPC namespace should therefore not be shared between the host and its containers.",
+  "remediation": "You should not create a deployment with `hostIPC: true`",
+  "disabled": false,
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "lastUpdated": "2021-01-12T22:31:43.702483800Z",
+  "policyVersion": "1",
+  "policySections": [
+    {
+      "sectionName": "Section 1",
+      "policyGroups": [
+        {
+          "fieldName": "Host IPC",
+          "booleanOperator": "OR",
+          "negate": false,
+          "values": [
+            {
+              "value": "true"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

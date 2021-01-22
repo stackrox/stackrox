@@ -760,6 +760,29 @@ const policyConfigurationDescriptor = [
         canBooleanLogic: false,
     },
     {
+        label: 'Share Host IPC Namespace',
+        name: 'Host IPC',
+        longName: 'Host IPC',
+        jsonpath: 'fields.hostIPC',
+        category: policyCriteriaCategories.DEPLOYMENT_METADATA,
+        type: 'radioGroup',
+        radioButtons: [
+            {
+                text: 'Uses Host IPC namespace',
+                value: true,
+            },
+            {
+                text: 'Does Not Use Host IPC namespace',
+                value: false,
+            },
+        ],
+        required: false,
+        default: false,
+        defaultValue: true,
+        disabled: true,
+        canBooleanLogic: false,
+    },
+    {
         label: 'Drop Capabilities',
         name: 'Drop Capabilities',
         jsonpath: 'fields.dropCapabilities',
