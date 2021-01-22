@@ -63,6 +63,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     static final private List<String> WHITELISTED_KUBE_SYSTEM_DEPLOYMENTS_AND_POLICIES = [
             "tunnelfront - Secure Shell Server (sshd) Execution",
+            "tunnelfront - Alert on Update Instruction",
     ]
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
