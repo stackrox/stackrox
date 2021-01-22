@@ -30,10 +30,26 @@ combined_coverage.dat
 /bin/
 /linux-gocache
 
+# Exclude GoLand/IntelliJ files in the repo.
+# Note that trailing `/**/*` is required because some `git` versions will not respect the following inclusions without
+# it. See https://stackoverflow.com/a/60288435/484050
+# Leading `/**/` is required to apply exclsuion to all directories of the repo recursively. Basically, it is needed
+# because of the trailing `/**/*`.
+/**/.idea/**/*
+# Yet, include per-project code style settings in the root of the repo.
+# `codeStyles/` directory must be included explicitly because otherwise files will not be seen by `git`. See why in the
+# link above.
+!/.idea/codeStyles/
+!/.idea/codeStyles/codeStyleConfig.xml
+!/.idea/codeStyles/Project.xml
+# If you intend adding code styles from subdirectories, you should enumerate them explicitly similar to above. E.g.
+# !/qa-tests-backend/.idea/codeStyles/
+# !/qa-tests-backend/.idea/codeStyles/codeStyleConfig.xml
+# !/qa-tests-backend/.idea/codeStyles/Project.xml
+
 # Miscellaneous
 *.g4
 *.tokens
-.idea/
 /vendor/
 /.gradle/
 /stackrox-central-services-chart/
