@@ -331,6 +331,11 @@ function launch_sensor {
     	extra_json_config+=', "admissionControllerUpdates": true'
     	extra_helm_config+=(--set "admissionControl.listenOnUpdates=true")
     fi
+    if [[ "$ADMISSION_CONTROLLER_POD_EVENTS" == "true" ]]; then
+    	extra_config+=("--admission-controller-listen-on-events=true")
+    	extra_json_config+=', "admissionControllerEvents": true'
+    	extra_helm_config+=(--set "admissionControl.listenOnEvents=true")
+    fi
 
     if [[ -n "$COLLECTOR_IMAGE_REPO" ]]; then
         extra_config+=("--collector-image-repository=${COLLECTOR_IMAGE_REPO}")
