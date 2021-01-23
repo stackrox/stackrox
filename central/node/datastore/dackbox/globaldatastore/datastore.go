@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/node/datastore"
 	dackboxDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
-	"github.com/stackrox/rox/central/node/index"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,15 +24,12 @@ var (
 
 type globalDataStore struct {
 	datastore dackboxDatastore.DataStore
-
-	indexer index.Indexer
 }
 
 // New creates and returns a new GlobalDataStore.
-func New(datastore dackboxDatastore.DataStore, indexer index.Indexer) (*globalDataStore, error) {
+func New(datastore dackboxDatastore.DataStore) (*globalDataStore, error) {
 	return &globalDataStore{
 		datastore: datastore,
-		indexer:   indexer,
 	}, nil
 }
 
@@ -115,13 +111,12 @@ func (s *globalDataStore) RemoveClusterNodeStores(ctx context.Context, clusterID
 	}
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDs...).ProtoQuery()
-	results, err := s.indexer.Search(q)
+	results, err := s.datastore.Search(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "searching for nodes")
 	}
 
 	nodeIDs := search.ResultsToIDs(results)
-
 	if err := s.datastore.DeleteNodes(ctx, nodeIDs...); err != nil {
 		return errors.Wrap(err, "deleting nodes from storage")
 	}

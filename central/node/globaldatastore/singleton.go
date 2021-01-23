@@ -22,11 +22,10 @@ var (
 func Singleton() GlobalDataStore {
 	initGlobalDataStoreInstance.Do(func() {
 		var err error
-		indexer := index.New(globalindex.GetGlobalTmpIndex())
 		if features.HostScanning.Enabled() {
-			globalDataStoreInstance, _ = globaldatastore.New(datastore.Singleton(), indexer)
+			globalDataStoreInstance, _ = globaldatastore.New(datastore.Singleton())
 		} else {
-			globalDataStoreInstance, err = New(globalstore.Singleton(), indexer, riskDS.Singleton(), ranking.NodeRanker(), ranking.ComponentRanker())
+			globalDataStoreInstance, err = New(globalstore.Singleton(), index.New(globalindex.GetGlobalTmpIndex()), riskDS.Singleton(), ranking.NodeRanker(), ranking.ComponentRanker())
 		}
 		utils.Must(err)
 	})
