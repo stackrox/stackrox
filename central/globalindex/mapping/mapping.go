@@ -21,7 +21,7 @@ import (
 	nodeComponentEdgeMappings "github.com/stackrox/rox/central/nodecomponentedge/mappings"
 	podMapping "github.com/stackrox/rox/central/pod/mappings"
 	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
-	processWhitelistMapping "github.com/stackrox/rox/central/processbaseline/index/mappings"
+	processBaselineMapping "github.com/stackrox/rox/central/processbaseline/index/mappings"
 	roleOptions "github.com/stackrox/rox/central/rbac/k8srole/mappings"
 	roleBindingOptions "github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
 	subjectMapping "github.com/stackrox/rox/central/rbac/service/mapping"
@@ -129,7 +129,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_CLUSTERS:             clusterMapping.OptionsMap,
 		v1.SearchCategory_NAMESPACES:           namespaceMapping.OptionsMap,
 		v1.SearchCategory_NODES:                nodeMapping.OptionsMap,
-		v1.SearchCategory_PROCESS_WHITELISTS:   processWhitelistMapping.OptionsMap,
+		v1.SearchCategory_PROCESS_BASELINES:    processBaselineMapping.OptionsMap,
 		v1.SearchCategory_RISKS:                riskMappings.OptionsMap,
 		v1.SearchCategory_ROLES:                roleOptions.OptionsMap,
 		v1.SearchCategory_ROLEBINDINGS:         roleBindingOptions.OptionsMap,

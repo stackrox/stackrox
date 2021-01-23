@@ -33,7 +33,7 @@ func (b *indexerImpl) AddBaseline(baseline *storage.ProcessBaseline) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "ProcessBaseline")
 	if err := b.index.Index(baseline.GetId(), &processBaselineWrapper{
 		ProcessBaseline: baseline,
-		Type:            v1.SearchCategory_PROCESS_WHITELISTS.String(),
+		Type:            v1.SearchCategory_PROCESS_BASELINES.String(),
 	}); err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (b *indexerImpl) processBatch(baselines []*storage.ProcessBaseline) error {
 	for _, baseline := range baselines {
 		if err := batch.Index(baseline.GetId(), &processBaselineWrapper{
 			ProcessBaseline: baseline,
-			Type:            v1.SearchCategory_PROCESS_WHITELISTS.String(),
+			Type:            v1.SearchCategory_PROCESS_BASELINES.String(),
 		}); err != nil {
 			return err
 		}
@@ -102,5 +102,5 @@ func (b *indexerImpl) NeedsInitialIndexing() (bool, error) {
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ProcessBaseline")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_PROCESS_WHITELISTS, q, b.index, mappings.OptionsMap, opts...)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_PROCESS_BASELINES, q, b.index, mappings.OptionsMap, opts...)
 }

@@ -8,4 +8,4 @@ import (
 	search "github.com/stackrox/rox/pkg/search"
 )
 
-var OptionsMap = search.Walk(v1.SearchCategory_PROCESS_WHITELISTS, "process_baseline", (*storage.ProcessBaseline)(nil))
+var OptionsMap = search.Walk(v1.SearchCategory_PROCESS_BASELINES, "process_baseline", (*storage.ProcessBaseline)(nil))

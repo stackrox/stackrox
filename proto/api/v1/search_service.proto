@@ -34,7 +34,7 @@ enum SearchCategory {
     SERVICE_ACCOUNTS         = 14;
     ROLES                    = 15;
     ROLEBINDINGS             = 16;
-    PROCESS_WHITELISTS       = 17;
+    PROCESS_BASELINES        = 17;
     SUBJECTS                 = 18;
     RISKS                    = 19;
     VULNERABILITIES          = 21;
