@@ -247,6 +247,54 @@ func (eicr *EmbeddedImageScanComponentResolver) DeploymentCount(ctx context.Cont
 	return deploymentLoader.CountFromQuery(ctx, search.ConjunctionQuery(deploymentBaseQuery, query))
 }
 
+// Nodes are the nodes that contain the Component.
+func (eicr *EmbeddedImageScanComponentResolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
+	if err := readNodes(ctx); err != nil {
+		return nil, err
+	}
+	// Convert to query, but link the fields for the search.
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	nodeLoader, err := loaders.GetNodeLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	pagination := query.GetPagination()
+	query.Pagination = nil
+
+	query, err = search.AddAsConjunction(eicr.componentQuery(), query)
+	if err != nil {
+		return nil, err
+	}
+
+	query.Pagination = pagination
+
+	return eicr.root.wrapNodes(nodeLoader.FromQuery(ctx, query))
+}
+
+// NodeCount is the number of nodes that contain the Component.
+func (eicr *EmbeddedImageScanComponentResolver) NodeCount(ctx context.Context, args RawQuery) (int32, error) {
+	if err := readNodes(ctx); err != nil {
+		return 0, err
+	}
+	nodeLoader, err := loaders.GetNodeLoader(ctx)
+	if err != nil {
+		return 0, err
+	}
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	query, err = search.AddAsConjunction(eicr.componentQuery(), query)
+	if err != nil {
+		return 0, err
+	}
+	return nodeLoader.CountFromQuery(ctx, query)
+}
+
 func (eicr *EmbeddedImageScanComponentResolver) loadImages(ctx context.Context, query *v1.Query) ([]*imageResolver, error) {
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {

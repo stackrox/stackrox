@@ -292,6 +292,42 @@ func (eicr *imageComponentResolver) DeploymentCount(ctx context.Context, args Ra
 	return deploymentLoader.CountFromQuery(ctx, query)
 }
 
+// Nodes are the nodes that contain the Component.
+func (eicr *imageComponentResolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
+	nodeLoader, err := loaders.GetNodeLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	pagination := query.GetPagination()
+	query, err = search.AddAsConjunction(eicr.componentQuery(), query)
+	if err != nil {
+		return nil, err
+	}
+	query.Pagination = pagination
+	return eicr.root.wrapNodes(nodeLoader.FromQuery(ctx, query))
+}
+
+// NodeCount is the number of nodes that contain the Component.
+func (eicr *imageComponentResolver) NodeCount(ctx context.Context, args RawQuery) (int32, error) {
+	nodeLoader, err := loaders.GetNodeLoader(ctx)
+	if err != nil {
+		return 0, err
+	}
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	query, err = search.AddAsConjunction(eicr.componentQuery(), query)
+	if err != nil {
+		return 0, err
+	}
+	return nodeLoader.CountFromQuery(ctx, query)
+}
+
 // Helper functions.
 ////////////////////
 

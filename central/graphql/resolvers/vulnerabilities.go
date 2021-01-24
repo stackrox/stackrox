@@ -34,6 +34,8 @@ func init() {
 			"imageCount(query: String): Int!",
 			"deployments(query: String, pagination: Pagination): [Deployment!]!",
 			"deploymentCount(query: String): Int!",
+			"nodes(query: String, pagination: Pagination): [Node!]!",
+			"nodeCount(query: String): Int!",
 			"envImpact: Float!",
 			"severity: String!",
 			"publishedOn: Time",
@@ -85,6 +87,10 @@ type VulnerabilityResolver interface {
 
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
+
+	Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error)
+	NodeCount(ctx context.Context, args RawQuery) (int32, error)
+
 	UnusedVarSink(ctx context.Context, args RawQuery) *int32
 
 	Suppressed(ctx context.Context) bool
@@ -112,7 +118,7 @@ func (resolver *Resolver) Vulnerabilities(ctx context.Context, q PaginatedQuery)
 
 // VulnerabilityCount returns count of all clusters across infrastructure
 func (resolver *Resolver) VulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnerabilityCount")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "VulnerabilityCount")
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
@@ -121,7 +127,7 @@ func (resolver *Resolver) VulnerabilityCount(ctx context.Context, args RawQuery)
 
 // VulnCounter returns a VulnerabilityCounterResolver for the input query.s
 func (resolver *Resolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnCounter")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "VulnCounter")
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}

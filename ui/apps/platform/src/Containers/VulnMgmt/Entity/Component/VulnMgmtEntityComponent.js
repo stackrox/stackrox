@@ -36,6 +36,7 @@ const VulnMgmtComponent = ({
                 vulnCount(query: $query)
                 deploymentCount(query: $query)
                 imageCount(query: $query)
+                nodeCount(query: $query)
                 topVuln {
                     cvss
                     scoreVersion

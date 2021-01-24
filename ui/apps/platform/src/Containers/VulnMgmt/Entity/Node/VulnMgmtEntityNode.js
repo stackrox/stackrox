@@ -54,6 +54,15 @@ const VulmMgmtNode = ({
                     value
                 }
                 vulnCount
+                scan {
+                    scanTime
+                    components {
+                        id
+                        priority
+                        name
+                        version
+                    }
+                }
                 ${entityContext[entityTypes.CLUSTER] ? '' : 'clusterId clusterName'}
             }
         }

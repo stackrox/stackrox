@@ -12,6 +12,7 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
+import TableWidgetFixableCves from '../TableWidgetFixableCves';
 
 const emptyNode = {
     annotations: [],
@@ -56,7 +57,9 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         joinedAt,
         // eslint-disable-next-line no-unused-vars
         vulnCount,
+        scan,
     } = safeData;
+    safeData.componentCount = scan?.components?.length || 0;
 
     const metadataKeyValuePairs = [
         {
@@ -125,13 +128,13 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                 </CollapsibleSection>
                 <CollapsibleSection title="Node Findings">
                     <div className="flex pdf-page pdf-stretch pdf-new shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
-                        {/* <TableWidgetFixableCves
+                        <TableWidgetFixableCves
                             workflowState={workflowState}
                             entityContext={entityContext}
                             entityType={entityTypes.NODE}
                             name={safeData?.name}
                             id={safeData?.id}
-                        /> */}
+                        />
                     </div>
                 </CollapsibleSection>
             </div>

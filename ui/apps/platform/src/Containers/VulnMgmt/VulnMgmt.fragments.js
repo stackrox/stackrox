@@ -162,7 +162,6 @@ export const NODE_LIST_FRAGMENT = gql`
         }
         osImage
         containerRuntimeVersion
-        nodeStatus
         clusterName
         clusterId
         joinedAt
@@ -254,6 +253,7 @@ export const VULN_COMPONENT_LIST_FRAGMENT = gql`
         }
         imageCount(query: $query)
         deploymentCount(query: $query)
+        nodeCount(query: $query)
         priority
     }
 `;

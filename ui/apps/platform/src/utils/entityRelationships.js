@@ -39,7 +39,9 @@ export const useCaseEntityMap = {
 export const getUseCaseEntityMap = (featureFlags) => {
     const entityMap = { ...useCaseEntityMap };
     if (featureFlags[knownBackendFlags.ROX_HOST_SCANNING]) {
-        entityMap[useCaseTypes.VULN_MANAGEMENT].push(entityTypes.NODE);
+        if (!entityMap[useCaseTypes.VULN_MANAGEMENT].includes(entityTypes.NODE)) {
+            entityMap[useCaseTypes.VULN_MANAGEMENT].push(entityTypes.NODE);
+        }
     }
     return entityMap;
 };
@@ -99,9 +101,9 @@ const entityRelationshipMap = {
         // extendedMatches: [entityTypes.POLICY]
     },
     [entityTypes.NODE]: {
-        children: [],
+        children: [entityTypes.COMPONENT],
         parents: [entityTypes.CLUSTER],
-        matches: [entityTypes.CONTROL, entityTypes.CVE],
+        matches: [entityTypes.CONTROL],
     },
     [entityTypes.NAMESPACE]: {
         children: [entityTypes.DEPLOYMENT, entityTypes.SERVICE_ACCOUNT, entityTypes.SECRET],
@@ -127,15 +129,20 @@ const entityRelationshipMap = {
     [entityTypes.COMPONENT]: {
         children: [],
         parents: [],
-        matches: [entityTypes.IMAGE, entityTypes.CVE],
+        matches: [entityTypes.IMAGE, entityTypes.CVE, entityTypes.NODE],
         extendedMatches: [entityTypes.DEPLOYMENT],
     },
     // technically this CVE entity type encompasses node CVEs, image/component CVEs, k8s CVEs (for clusters)
     [entityTypes.CVE]: {
         children: [],
         parents: [],
-        matches: [entityTypes.COMPONENT, entityTypes.CLUSTER, entityTypes.NODE],
-        extendedMatches: [entityTypes.IMAGE, entityTypes.DEPLOYMENT],
+        matches: [entityTypes.COMPONENT],
+        extendedMatches: [
+            entityTypes.IMAGE,
+            entityTypes.DEPLOYMENT,
+            entityTypes.CLUSTER,
+            entityTypes.NODE,
+        ],
     },
     [entityTypes.CONTROL]: {
         children: [],
@@ -222,6 +229,17 @@ export const getEntityTypesByRelationship = (
     let entities = [];
     if (relationship === relationshipTypes.CONTAINS) {
         entities = getContains(entityType);
+        // this is to remove NODE links from IMAGE, DEPLOYMENT, NAMESPACE and vice versa
+        // need to revisit the mapping later.
+        if (entityType === entityTypes.NODE) {
+            entities = entities.filter((entity) => entity !== entityTypes.IMAGE);
+        } else if (
+            entityType === entityTypes.IMAGE ||
+            entityType === entityTypes.DEPLOYMENT ||
+            entityType === entityTypes.NAMESPACE
+        ) {
+            entities = entities.filter((entity) => entity !== entityTypes.NODE);
+        }
     } else if (relationship === relationshipTypes.MATCHES) {
         entities = getMatches(entityType);
     } else if (relationship === relationshipTypes.PARENTS) {

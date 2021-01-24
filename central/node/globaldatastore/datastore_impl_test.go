@@ -104,6 +104,7 @@ func (s *testSuite) SetupTest() {
 
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	s.Require().NoError(err)
+
 	s.globalDataStore, err = New(s.mockGlobalStore, index.New(tmpIndex), s.mockRiskStore, ranking.NodeRanker(), ranking.ComponentRanker())
 	s.Require().NoError(err)
 

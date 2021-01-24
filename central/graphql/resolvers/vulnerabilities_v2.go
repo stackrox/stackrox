@@ -176,33 +176,71 @@ func (resolver *cVEResolver) scopeContext(ctx context.Context) context.Context {
 	})
 }
 
-// EnvImpact is the fraction of deployments that contains the CVE
-func (resolver *cVEResolver) EnvImpact(ctx context.Context) (float64, error) {
-	if resolver.data.GetType() == storage.CVE_K8S_CVE {
-		return resolver.getEnvImpactForK8sIstioVuln(ctx, converter.K8s)
-	} else if resolver.data.GetType() == storage.CVE_ISTIO_CVE {
-		return resolver.getEnvImpactForK8sIstioVuln(ctx, converter.Istio)
-	}
-
+func (resolver *cVEResolver) getEnvImpactComponentsForImages(ctx context.Context) (numerator, denominator int, err error) {
 	allDepsCount, err := resolver.root.DeploymentDataStore.CountDeployments(ctx)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	if allDepsCount == 0 {
-		return 0, nil
+		return 0, 0, nil
 	}
 	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	withThisCVECount, err := deploymentLoader.CountFromQuery(resolver.scopeContext(ctx), search.EmptyQuery())
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
-	if allDepsCount == 0 {
-		return float64(0), nil
+	return int(withThisCVECount), allDepsCount, nil
+}
+
+func (resolver *cVEResolver) getEnvImpactComponentsForNodes(ctx context.Context) (numerator, denominator int, err error) {
+	allNodesCount, err := resolver.root.NodeGlobalDataStore.CountAllNodes(ctx)
+	if err != nil {
+		return 0, 0, err
 	}
-	return float64(float64(withThisCVECount) / float64(allDepsCount)), nil
+	if allNodesCount == 0 {
+		return 0, 0, nil
+	}
+	nodeLoader, err := loaders.GetNodeLoader(ctx)
+	if err != nil {
+		return 0, 0, err
+	}
+	withThisCVECount, err := nodeLoader.CountFromQuery(resolver.scopeContext(ctx), search.EmptyQuery())
+	if err != nil {
+		return 0, 0, err
+	}
+	return int(withThisCVECount), allNodesCount, nil
+}
+
+// EnvImpact is the fraction of deployments that contains the CVE
+func (resolver *cVEResolver) EnvImpact(ctx context.Context) (float64, error) {
+	switch resolver.data.GetType() {
+	case storage.CVE_K8S_CVE:
+		return resolver.getEnvImpactForK8sIstioVuln(ctx, converter.K8s)
+	case storage.CVE_ISTIO_CVE:
+		return resolver.getEnvImpactForK8sIstioVuln(ctx, converter.Istio)
+	case storage.CVE_IMAGE_CVE:
+		numerator, denominator, err := resolver.getEnvImpactComponentsForImages(ctx)
+		if err != nil {
+			return 0, err
+		}
+		if denominator == 0 {
+			return 0, nil
+		}
+		return float64(numerator) / float64(denominator), nil
+	case storage.CVE_NODE_CVE:
+		numerator, denominator, err := resolver.getEnvImpactComponentsForNodes(ctx)
+		if err != nil {
+			return 0, err
+		}
+		if denominator == 0 {
+			return 0, nil
+		}
+		return float64(numerator) / float64(denominator), nil
+	}
+	return 0, errors.Errorf("unknown cve type: %s", resolver.data.GetType())
 }
 
 func (resolver *cVEResolver) getEnvImpactForK8sIstioVuln(ctx context.Context, ct converter.CVEType) (float64, error) {
@@ -369,6 +407,40 @@ func (resolver *cVEResolver) DeploymentCount(ctx context.Context, args RawQuery)
 	return deploymentLoader.CountFromQuery(resolver.scopeContext(ctx), query)
 }
 
+// Nodes are the nodes that contain the CVE/Vulnerability.
+func (resolver *cVEResolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
+	if err := readNodes(ctx); err != nil {
+		return nil, err
+	}
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	nodeLoader, err := loaders.GetNodeLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapNodes(nodeLoader.FromQuery(resolver.scopeContext(ctx), query))
+}
+
+// NodeCount is the number of nodes that contain the CVE/Vulnerability.
+func (resolver *cVEResolver) NodeCount(ctx context.Context, args RawQuery) (int32, error) {
+	if err := readNodes(ctx); err != nil {
+		return 0, err
+	}
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	nodeLoader, err := loaders.GetNodeLoader(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	return nodeLoader.CountFromQuery(resolver.scopeContext(ctx), query)
+}
+
 // These return dummy values, as they should not be accessed from the top level vuln resolver, but the embedded
 // version instead.
 
@@ -383,7 +455,7 @@ func (resolver *cVEResolver) UnusedVarSink(ctx context.Context, args RawQuery) *
 }
 
 func (resolver *cVEResolver) getCVEFixedByVersion(ctx context.Context) (string, error) {
-	if resolver.data.GetType() == storage.CVE_IMAGE_CVE {
+	if resolver.data.GetType() == storage.CVE_IMAGE_CVE || resolver.data.GetType() == storage.CVE_NODE_CVE {
 		return resolver.getComponentFixedByVersion(ctx)
 	}
 	return resolver.getClusterFixedByVersion(ctx)

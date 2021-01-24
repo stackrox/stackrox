@@ -109,6 +109,12 @@ function getListFieldName(entityType, listType, useCase) {
         }
     }
 
+    if (entityType === entityTypes.NODE) {
+        if (listType === entityTypes.CVE) {
+            return 'vulns';
+        }
+    }
+
     if (entityType === entityTypes.DEPLOYMENT) {
         if (listType === entityTypes.CVE) {
             return 'vulns';

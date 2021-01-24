@@ -33,6 +33,8 @@ func init() {
 			"imageCount(query: String): Int!",
 			"deployments(query: String, pagination: Pagination): [Deployment!]!",
 			"deploymentCount(query: String): Int!",
+			"nodes(query: String, pagination: Pagination): [Node!]!",
+			"nodeCount(query: String): Int!",
 			"priority: Int!",
 			"source: String!",
 			"location: String!",
@@ -72,6 +74,10 @@ type ComponentResolver interface {
 
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
+
+	Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error)
+	NodeCount(ctx context.Context, args RawQuery) (int32, error)
+
 	PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error)
 
 	UnusedVarSink(ctx context.Context, args RawQuery) *int32

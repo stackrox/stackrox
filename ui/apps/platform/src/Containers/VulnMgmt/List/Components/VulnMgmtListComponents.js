@@ -144,6 +144,23 @@ export function getComponentTableColumns(workflowState) {
             sortField: componentSortFields.DEPLOYMENT_COUNT,
         },
         {
+            Header: `Nodes`,
+            entityType: entityTypes.NODE,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            id: componentSortFields.NODE_COUNT,
+            accessor: 'nodeCount',
+            Cell: ({ original, pdf }) => (
+                <TableCountLink
+                    entityType={entityTypes.NODE}
+                    count={original.nodeCount}
+                    textOnly={pdf}
+                    selectedRowId={original.id}
+                />
+            ),
+            sortField: componentSortFields.NODE_COUNT,
+        },
+        {
             Header: `Risk Priority`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,

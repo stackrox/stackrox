@@ -8,14 +8,16 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func init() {
@@ -32,14 +34,24 @@ func init() {
 		schema.AddExtraResolver("Node", "passingControls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Node", "controls(query: String): [ComplianceControl!]!"),
 		schema.AddExtraResolver("Node", "cluster: Cluster!"),
-
+		schema.AddExtraResolver("Node", "vulns(query: String, pagination: Pagination): [EmbeddedVulnerability]!"),
+		schema.AddExtraResolver("Node", `unusedVarSink(query: String): Int`),
 		schema.AddExtraResolver("Node", "nodeStatus(query: String): String!"),
 		schema.AddExtraResolver("Node", "topVuln(query: String): EmbeddedVulnerability"),
 		schema.AddExtraResolver("Node", "vulnCount(query: String): Int!"),
 		schema.AddExtraResolver("Node", "vulnCounter(query: String): VulnerabilityCounter!"),
 		schema.AddExtraResolver("Node", "plottedVulns(query: String): PlottedVulnerabilities!"),
+		schema.AddExtraResolver("Node", "components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!"),
+		schema.AddExtraResolver("Node", `componentCount(query: String): Int!`),
 	)
 }
+
+var (
+	clusterReadAccessForNodeStoreCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKeys(resources.Cluster),
+	))
+)
 
 // Node returns a resolver for a matching node, or nil if no node is found in any cluster
 func (resolver *Resolver) Node(ctx context.Context, args struct{ graphql.ID }) (*nodeResolver, error) {
@@ -47,11 +59,10 @@ func (resolver *Resolver) Node(ctx context.Context, args struct{ graphql.ID }) (
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-	clusters, err := resolver.ClusterDataStore.GetClusters(ctx)
+	clusters, err := resolver.ClusterDataStore.GetClusters(clusterReadAccessForNodeStoreCtx)
 	if err != nil {
 		return nil, err
 	}
-	var output *nodeResolver
 	for _, cluster := range clusters {
 		store, err := resolver.NodeGlobalDataStore.GetClusterNodeStore(ctx, cluster.GetId(), false)
 		if err != nil {
@@ -62,14 +73,10 @@ func (resolver *Resolver) Node(ctx context.Context, args struct{ graphql.ID }) (
 			return nil, err
 		}
 		if node != nil {
-			if output == nil {
-				output = &nodeResolver{root: resolver, data: node}
-			} else {
-				return nil, status.Error(codes.Internal, "multiple matching node ids found")
-			}
+			return &nodeResolver{root: resolver, data: node}, nil
 		}
 	}
-	return output, nil
+	return nil, nil
 }
 
 // Nodes returns resolvers for a matching nodes, or nil if no node is found in any cluster
@@ -310,90 +317,137 @@ func (resolver *nodeResolver) NodeStatus(ctx context.Context, args RawQuery) (st
 	return "active", nil
 }
 
+// Compoonents returns all of the components in the node.
+func (resolver *nodeResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeComponents")
+	if err := readNodes(ctx); err != nil {
+		return nil, err
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
+
+	return resolver.root.componentsV2(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_NODES,
+		ID:    resolver.data.GetId(),
+	}), PaginatedQuery{Query: &query, Pagination: args.Pagination})
+}
+
+// ComponentCount returns the number of components in the node
+func (resolver *nodeResolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "ComponentCount")
+	if err := readNodes(ctx); err != nil {
+		return 0, err
+	}
+
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
+
+	return resolver.root.componentCountV2(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_NODES,
+		ID:    resolver.data.GetId(),
+	}), RawQuery{Query: &query})
+}
+
 // TopVuln returns the first vulnerability with the top CVSS score.
 func (resolver *nodeResolver) TopVuln(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "TopVulnerability")
-	return &cVEResolver{
-		root: resolver.root,
-		data: &storage.CVE{
-			Id:           "CVE-2020-0",
-			Cvss:         9.9,
-			ImpactScore:  6.0,
-			Type:         storage.CVE_NODE_CVE,
-			Summary:      "The Kubelet and kube-proxy components in versions 1.1.0-1.16.10, 1.17.0-1.17.6, and 1.18.0-1.18.3 were found to contain a security issue which allows adjacent hosts to reach TCP and UDP services bound to 127.0.0.1 running on the node or in the node's network namespace. Such a service is generally thought to be reachable only by other processes on the same host, but due to this defeect, could be reachable by other hosts on the same LAN as the node, or by containers running on the same node as the service.",
-			Link:         "https://github.com/kubernetes/kubernetes/issues/92315",
-			ScoreVersion: storage.CVE_V3,
-			CvssV2: &storage.CVSSV2{
-				Vector:              "AV:A/AC:L/Au:N/C:P/I:P/A:P",
-				AttackVector:        storage.CVSSV2_ATTACK_ADJACENT,
-				AccessComplexity:    storage.CVSSV2_ACCESS_LOW,
-				Authentication:      storage.CVSSV2_AUTH_NONE,
-				Confidentiality:     storage.CVSSV2_IMPACT_PARTIAL,
-				Integrity:           storage.CVSSV2_IMPACT_PARTIAL,
-				Availability:        storage.CVSSV2_IMPACT_PARTIAL,
-				ExploitabilityScore: 6.5,
-				ImpactScore:         6.4,
-				Score:               5.8,
-				Severity:            storage.CVSSV2_MEDIUM,
+	if err := readNodes(ctx); err != nil {
+		return nil, err
+	}
+
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	if resolver.data.GetSetTopCvss() == nil {
+		return nil, nil
+	}
+
+	query = search.NewConjunctionQuery(query, resolver.getNodeQuery())
+	query.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field:    search.CVSS.String(),
+				Reversed: true,
 			},
-			CvssV3: &storage.CVSSV3{
-				Vector:              "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H",
-				ExploitabilityScore: 3.1,
-				ImpactScore:         6.0,
-				AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
-				AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
-				PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_LOW,
-				UserInteraction:     storage.CVSSV3_UI_NONE,
-				Scope:               storage.CVSSV3_CHANGED,
-				Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
-				Integrity:           storage.CVSSV3_IMPACT_HIGH,
-				Availability:        storage.CVSSV3_IMPACT_HIGH,
-				Score:               9.9,
-				Severity:            storage.CVSSV3_CRITICAL,
+			{
+				Field:    search.CVE.String(),
+				Reversed: true,
 			},
 		},
-	}, nil
+		Limit:  1,
+		Offset: 0,
+	}
+
+	vulnLoader, err := loaders.GetCVELoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	vulns, err := vulnLoader.FromQuery(ctx, query)
+	if err != nil {
+		return nil, err
+	} else if len(vulns) == 0 {
+		return nil, err
+	} else if len(vulns) > 1 {
+		return nil, errors.New("multiple vulnerabilities matched for top node vulnerability")
+	}
+	return &cVEResolver{root: resolver.root, data: vulns[0]}, nil
+}
+
+func (resolver *nodeResolver) getNodeRawQuery() string {
+	return search.NewQueryBuilder().AddExactMatches(search.NodeID, resolver.data.GetId()).Query()
+}
+
+func (resolver *nodeResolver) getNodeQuery() *v1.Query {
+	return search.NewQueryBuilder().AddExactMatches(search.NodeID, resolver.data.GetId()).ProtoQuery()
+}
+
+// Vulns returns all of the vulnerabilities in the node.
+func (resolver *nodeResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "Vulnerabilities")
+	if err := readNodes(ctx); err != nil {
+		return nil, err
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
+
+	return resolver.root.vulnerabilitiesV2(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_NODES,
+		ID:    resolver.data.GetId(),
+	}), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 // VulnCount returns the number of vulnerabilities the node has.
 func (resolver *nodeResolver) VulnCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "VulnerabilityCount")
+	if err := readNodes(ctx); err != nil {
+		return 0, err
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
 
-	return 10, nil
+	return resolver.root.vulnerabilityCountV2(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_NODES,
+		ID:    resolver.data.GetId(),
+	}), RawQuery{Query: &query})
 }
 
 // VulnCounter resolves the number of different types of vulnerabilities contained in a node.
 func (resolver *nodeResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	return &VulnerabilityCounterResolver{
-		all: &VulnerabilityFixableCounterResolver{
-			total:   10,
-			fixable: 3,
-		},
-		low: &VulnerabilityFixableCounterResolver{
-			total:   4,
-			fixable: 0,
-		},
-		medium: &VulnerabilityFixableCounterResolver{
-			total:   2,
-			fixable: 1,
-		},
-		high: &VulnerabilityFixableCounterResolver{
-			total:   1,
-			fixable: 0,
-		},
-		critical: &VulnerabilityFixableCounterResolver{
-			total:   3,
-			fixable: 2,
-		},
-	}, nil
+	if err := readNodes(ctx); err != nil {
+		return nil, err
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
+
+	return resolver.root.vulnCounterV2(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_NODES,
+		ID:    resolver.data.GetId(),
+	}), RawQuery{Query: &query})
 }
 
 // PlottedVulns returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
-func (resolver *nodeResolver) PlottedVulns(_ context.Context, _ RawQuery) (*PlottedVulnerabilitiesResolver, error) {
-	return &PlottedVulnerabilitiesResolver{
-		root:    resolver.root,
-		all:     []string{"CVE-2020-0", "CVE-2020-1", "CVE-2020-2", "CVE-2020-3", "CVE-2020-4", "CVE-2020-5", "CVE-2020-6", "CVE-2020-7", "CVE-2020-8", "CVE-2020-9"},
-		fixable: []string{"CVE-2020-0", "CVE-2020-2", "CVE-2020-4"},
-		mock:    true,
-	}, nil
+func (resolver *nodeResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getNodeRawQuery())
+	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
+}
+
+func (resolver *nodeResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+	return nil
 }

@@ -7,12 +7,7 @@ import TopCvssLabel from 'Components/TopCvssLabel';
 import TableCellLink from 'Components/TableCellLink';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import DateTimeField from 'Components/DateTimeField';
-import StatusChip from 'Components/StatusChip';
-import {
-    defaultHeaderClassName,
-    defaultColumnClassName,
-    nonSortableHeaderClassName,
-} from 'Components/Table';
+import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
@@ -24,7 +19,7 @@ import { nodeSortFields } from 'constants/sortFields';
 // TODO: need to get default node sort
 export const defaultNodeSort = [
     {
-        id: nodeSortFields.NODE,
+        id: nodeSortFields.PRIORITY,
         desc: false,
     },
 ];
@@ -127,19 +122,6 @@ export function getImageTableColumns(workflowState) {
             id: nodeSortFields.CONTAINER_RUNTIME,
             accessor: 'containerRuntimeVersion',
             sortField: nodeSortFields.CONTAINER_RUNTIME,
-        },
-        {
-            Header: 'Node Status',
-            headerClassName: `w-1/12 ${nonSortableHeaderClassName}`,
-            className: `w-1/12 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
-                const { nodeStatus } = original;
-                return <StatusChip status={nodeStatus} asString={pdf} />;
-            },
-            id: nodeSortFields.NODE_STATUS,
-            accessor: 'nodeStatus',
-            sortField: nodeSortFields.NODE_STATUS,
-            sortable: false,
         },
         {
             Header: `Join Time`,

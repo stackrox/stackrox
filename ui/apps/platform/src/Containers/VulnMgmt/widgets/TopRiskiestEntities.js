@@ -175,8 +175,8 @@ const processData = (data, entityType, workflowState) => {
             const tooltipBody = (
                 <div className="flex-1 border-base-300 overflow-hidden">
                     <div className="mb-2">
-                        <span className="text-base-600 font-700 mr-2">
-                            {entityType === entityTypes.IMAGE ? 'Image:' : 'Component:'}
+                        <span className="text-base-600 font-700 mr-2 capitalize">
+                            {resourceLabels[entityType]}:
                         </span>
                         <span className="font-600">{text}</span>
                     </div>

@@ -329,7 +329,7 @@ func (l *loopImpl) reprocessNode(id string, sema *semaphore.Weighted, wg *concur
 	}
 
 	if err := l.risk.CalculateRiskAndUpsertNode(node); err != nil {
-		log.Errorf("error upserting node %q into datastore: %v", node, err)
+		log.Errorf("error upserting node %q into datastore: %v", node.GetName(), err)
 		return false
 	}
 
