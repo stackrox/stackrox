@@ -53,8 +53,9 @@ func (suite *NodeStoreTestSuite) TearDownSuite() {
 func (suite *NodeStoreTestSuite) TestNodes() {
 	nodes := []*storage.Node{
 		{
-			Id:   "id1",
-			Name: "name1",
+			Id:         "id1",
+			Name:       "name1",
+			K8SUpdated: types.TimestampNow(),
 			Scan: &storage.NodeScan{
 				ScanTime: types.TimestampNow(),
 				Components: []*storage.EmbeddedNodeScanComponent{
@@ -102,8 +103,9 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 			RiskScore: 30,
 		},
 		{
-			Id:   "id2",
-			Name: "name2",
+			Id:         "id2",
+			Name:       "name2",
+			K8SUpdated: types.TimestampNow(),
 		},
 	}
 
@@ -182,7 +184,6 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 
 	// Since nodes[0] is updated in store, update the "expected" object
 	nodes[0].LastUpdated = got.GetLastUpdated()
-	nodes[0].Scan.ScanTime.Seconds = cloned.Scan.ScanTime.Seconds
 	nodes[0].Name = "newname"
 
 	// Test first node occurrence of CVE that is already discovered in system.
@@ -246,4 +247,94 @@ func (suite *NodeStoreTestSuite) TestNodes() {
 	count, err = suite.nodeCVEEdgeStore.Count()
 	suite.NoError(err)
 	suite.Equal(0, count)
+}
+
+func (suite *NodeStoreTestSuite) TestNodeUpsert() {
+	node := &storage.Node{
+		Id:         "id1",
+		Name:       "name1",
+		K8SUpdated: types.TimestampNow(),
+		Scan: &storage.NodeScan{
+			ScanTime: types.TimestampNow(),
+			Components: []*storage.EmbeddedNodeScanComponent{
+				{
+					Name:    "comp1",
+					Version: "ver1",
+					Vulns:   []*storage.EmbeddedVulnerability{},
+				},
+				{
+					Name:    "comp1",
+					Version: "ver2",
+					Vulns: []*storage.EmbeddedVulnerability{
+						{
+							Cve:               "cve1",
+							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+						},
+						{
+							Cve:               "cve2",
+							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+								FixedBy: "ver3",
+							},
+						},
+					},
+				},
+				{
+					Name:    "comp2",
+					Version: "ver1",
+					Vulns: []*storage.EmbeddedVulnerability{
+						{
+							Cve:               "cve1",
+							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
+								FixedBy: "ver2",
+							},
+						},
+						{
+							Cve:               "cve2",
+							VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+						},
+					},
+				},
+			},
+		},
+		RiskScore: 30,
+	}
+
+	suite.NoError(suite.store.Upsert(node))
+	storedNode, exists, err := suite.store.GetNode(node.GetId())
+	suite.NoError(err)
+	suite.True(exists)
+
+	// Update node (non-scan update).
+	node = storedNode.Clone()
+	newNode := storedNode.Clone()
+	newNode.Annotations = map[string]string{
+		"hi": "bye",
+	}
+	newNode.K8SUpdated = types.TimestampNow()
+
+	expectedNode := newNode.Clone()
+
+	suite.NoError(suite.store.Upsert(newNode))
+	storedNode, exists, err = suite.store.GetNode(newNode.GetId())
+	suite.NoError(err)
+	suite.True(exists)
+	suite.True(expectedNode.GetLastUpdated().Compare(storedNode.GetLastUpdated()) < 0)
+	expectedNode.LastUpdated = storedNode.GetLastUpdated()
+	suite.Equal(expectedNode, storedNode)
+
+	// "Asynchronously" update scan with old node data.
+	node.Scan.ScanTime = types.TimestampNow()
+	expectedNode.Scan.ScanTime = node.GetScan().GetScanTime()
+
+	suite.NoError(suite.store.Upsert(node))
+	storedNode, exists, err = suite.store.GetNode(node.GetId())
+	suite.NoError(err)
+	suite.True(exists)
+	suite.True(expectedNode.GetLastUpdated().Compare(storedNode.GetLastUpdated()) < 0)
+	expectedNode.LastUpdated = storedNode.GetLastUpdated()
+	suite.Equal(expectedNode, storedNode)
+
+	suite.NoError(suite.store.Delete(node.GetId()))
 }

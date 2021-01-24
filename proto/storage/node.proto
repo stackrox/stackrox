@@ -13,7 +13,7 @@ import "gogoproto/gogo.proto";
 package storage;
 
 // Node represents information about a node in the cluster.
-// next available tag: 26
+// next available tag: 27
 message Node {
     // A unique ID identifying this node.
     string id                              = 1 [(gogoproto.moretags) = "search:\"Node ID,store\""];
@@ -43,6 +43,8 @@ message Node {
     string kube_proxy_version              = 16;
 
     google.protobuf.Timestamp last_updated = 25 [(gogoproto.moretags) = "search:\"Last Updated,hidden\""];
+    // Time we received an update from Kubernetes.
+    google.protobuf.Timestamp k8s_updated  = 26;
 
     NodeScan scan                          = 18 [(gogoproto.moretags) = "policy:\"Node Scan\""];
     oneof set_components {

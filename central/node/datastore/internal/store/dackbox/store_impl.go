@@ -157,12 +157,13 @@ func (b *storeImpl) Upsert(node *storage.Node) error {
 		node.LastUpdated = iTime
 	}
 
-	scanUpdated, err := b.isUpdated(node)
+	node, nodeUpdated, scanUpdated, err := b.toUpsert(node)
 	if err != nil {
 		return err
 	}
-
-	// Unlike images, nodes are not static, so we must continue upsert even if the scan is not updated.
+	if !nodeUpdated && !scanUpdated {
+		return nil
+	}
 
 	// If the node scan is not updated, skip updating that part in DB, i.e. rewriting components and cves.
 	parts := Split(node, scanUpdated)
@@ -174,46 +175,72 @@ func (b *storeImpl) Upsert(node *storage.Node) error {
 	})
 }
 
-func (b *storeImpl) isUpdated(node *storage.Node) (bool, error) {
+// toUpsert returns the node to upsert to the store based on the given node.
+// The first bool return is true if the node data from Kubernetes is updated from what is currently stored.
+// The second bool return is true if the node's scan data is updated from what is currently stored.
+func (b *storeImpl) toUpsert(node *storage.Node) (*storage.Node, bool, bool, error) {
 	txn, err := b.dacky.NewReadOnlyTransaction()
 	if err != nil {
-		return false, err
+		return nil, false, false, err
 	}
 	defer txn.Discard()
 
 	msg, err := nodeDackBox.Reader.ReadIn(nodeDackBox.BucketHandler.GetKey(node.GetId()), txn)
 	if err != nil {
-		return false, err
+		return nil, false, false, err
 	}
 	// No node for given ID found, hence mark new node as latest
 	if msg == nil {
-		return true, nil
+		return node, true, true, nil
 	}
 
 	oldNode := msg.(*storage.Node)
 
-	scanUpdated := false
-	// We skip rewriting components and cves if scan is not newer, hence we do not need to merge.
-	if oldNode.GetScan().GetScanTime().Compare(node.GetScan().GetScanTime()) > 0 {
-		fullOldNode, err := b.readNode(txn, node.GetId())
+	nodeToUpsert := node.Clone()
+
+	scanUpdated := true
+	// We skip rewriting components and CVEs if scan is not newer, hence we do not need to merge.
+	if oldNode.GetScan().GetScanTime().Compare(nodeToUpsert.GetScan().GetScanTime()) > 0 {
+		scanUpdated = false
+
+		fullOldNode, err := b.readNode(txn, nodeToUpsert.GetId())
 		if err != nil {
-			return false, err
+			return nil, false, false, err
 		}
-		node.Scan = fullOldNode.Scan
-	} else {
-		scanUpdated = true
+		nodeToUpsert.Scan = fullOldNode.GetScan()
+
+		// The node scan in the DB is latest, then use its risk score and scan stats.
+		nodeToUpsert.RiskScore = oldNode.GetRiskScore()
+		nodeToUpsert.SetComponents = oldNode.GetSetComponents()
+		nodeToUpsert.SetCves = oldNode.GetSetCves()
+		nodeToUpsert.SetFixable = oldNode.GetSetFixable()
+		nodeToUpsert.SetTopCvss = oldNode.GetSetTopCvss()
 	}
 
-	// If the node in the DB is latest, then use its risk score and scan stats.
-	if !scanUpdated {
-		node.RiskScore = oldNode.GetRiskScore()
-		node.SetComponents = oldNode.GetSetComponents()
-		node.SetCves = oldNode.GetSetCves()
-		node.SetFixable = oldNode.GetSetFixable()
-		node.SetTopCvss = oldNode.GetSetTopCvss()
+	nodeUpdated := true
+	// We skip rewriting the node (excluding the components and CVEs) if the node is not newer.
+	if oldNode.GetK8SUpdated().Compare(nodeToUpsert.GetK8SUpdated()) > 0 {
+		nodeUpdated = false
+
+		lastUpdated := nodeToUpsert.GetLastUpdated()
+		scan := nodeToUpsert.GetScan()
+		riskScore := nodeToUpsert.GetRiskScore()
+		setComponents := nodeToUpsert.GetSetComponents()
+		setCVEs := nodeToUpsert.GetSetCves()
+		setFixable := nodeToUpsert.GetSetFixable()
+		setTopCVSS := nodeToUpsert.GetSetTopCvss()
+
+		nodeToUpsert = oldNode.Clone()
+		nodeToUpsert.LastUpdated = lastUpdated
+		nodeToUpsert.Scan = scan
+		nodeToUpsert.RiskScore = riskScore
+		nodeToUpsert.SetComponents = setComponents
+		nodeToUpsert.SetCves = setCVEs
+		nodeToUpsert.SetFixable = setFixable
+		nodeToUpsert.SetTopCvss = setTopCVSS
 	}
 
-	return scanUpdated, nil
+	return nodeToUpsert, nodeUpdated, scanUpdated, nil
 }
 
 // DeleteNode deletes an node and all its data.
