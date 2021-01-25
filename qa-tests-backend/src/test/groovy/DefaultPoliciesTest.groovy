@@ -58,6 +58,8 @@ class DefaultPoliciesTest extends BaseSpecification {
             "Curl in Image",
             "Wget in Image",
             "Mount Docker Socket",
+            "Ensure that the host's process namespace is not shared",
+            "Ensure privileged ports are not mapped within containers",
             Constants.ANY_FIXED_VULN_POLICY,
     ]
 
