@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { render, fireEvent } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import ToggleButtonGroup from './ToggleButtonGroup';
 import ToggleButton from '../ToggleButton';
@@ -30,13 +31,7 @@ describe('ToggleButtonGroup', () => {
 
         expect(getByTestId('active-toggle-button')).toHaveTextContent('Lock');
 
-        fireEvent(
-            getByText('Unlock'),
-            new MouseEvent('click', {
-                bubbles: true,
-                cancelable: true,
-            })
-        );
+        userEvent.click(getByText('Unlock'));
 
         expect(getByTestId('active-toggle-button')).toHaveTextContent('Unlock');
     });

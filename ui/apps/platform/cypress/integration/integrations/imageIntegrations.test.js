@@ -22,7 +22,7 @@ describe('Image Integrations Test', () => {
     it('should show a hint about stored credentials for Docker Trusted Registry', () => {
         cy.get(selectors.dockerTrustedRegistryTile).click();
         cy.get(`${selectors.table.rows}:contains('DTR Test')`).click();
-        cy.get('div:contains("Password"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );
@@ -31,7 +31,7 @@ describe('Image Integrations Test', () => {
     it('should show a hint about stored credentials for Quay', () => {
         cy.get(selectors.quayTile).click();
         cy.get(`${selectors.table.rows}:contains('Quay Test')`).click();
-        cy.get('div:contains("OAuth Token"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("OAuth Token"):last [data-testid="help-icon"]').trigger('mouseenter');
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );
@@ -40,11 +40,15 @@ describe('Image Integrations Test', () => {
     it('should show a hint about stored credentials for Amazon ECR', () => {
         cy.get(selectors.amazonECRTile).click();
         cy.get(`${selectors.table.rows}:contains('Amazon ECR Test')`).click();
-        cy.get('div:contains("Access Key ID"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("Access Key ID"):last [data-testid="help-icon"]').trigger(
+            'mouseenter'
+        );
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );
-        cy.get('div:contains("Secret Access Key"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("Secret Access Key"):last [data-testid="help-icon"]').trigger(
+            'mouseenter'
+        );
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );
@@ -53,11 +57,11 @@ describe('Image Integrations Test', () => {
     it('should show a hint about stored credentials for Tenable', () => {
         cy.get(selectors.tenableTile).click();
         cy.get(`${selectors.table.rows}:contains('Tenable Test')`).click();
-        cy.get('div:contains("Access Key"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("Access Key"):last [data-testid="help-icon"]').trigger('mouseenter');
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );
-        cy.get('div:contains("Secret Key"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("Secret Key"):last [data-testid="help-icon"]').trigger('mouseenter');
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );
@@ -66,7 +70,9 @@ describe('Image Integrations Test', () => {
     it('should show a hint about stored credentials for Google Container Registry', () => {
         cy.get(selectors.googleContainerRegistryTile).click();
         cy.get(`${selectors.table.rows}:contains('Google Container Registry Test')`).click();
-        cy.get('div:contains("Service Account Key"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("Service Account Key"):last [data-testid="help-icon"]').trigger(
+            'mouseenter'
+        );
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );
@@ -75,7 +81,7 @@ describe('Image Integrations Test', () => {
     it('should show a hint about stored credentials for Anchore Scanner', () => {
         cy.get(selectors.anchoreScannerTile).click();
         cy.get(`${selectors.table.rows}:contains('Anchore Scanner Test')`).click();
-        cy.get('div:contains("Password"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );
@@ -84,7 +90,7 @@ describe('Image Integrations Test', () => {
     it('should show a hint about stored credentials for IBM Cloud', () => {
         cy.get(selectors.ibmCloudTile).click();
         cy.get(`${selectors.table.rows}:contains('IBM Cloud Test')`).click();
-        cy.get('div:contains("API Key"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("API Key"):last [data-testid="help-icon"]').trigger('mouseenter');
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );
@@ -93,7 +99,7 @@ describe('Image Integrations Test', () => {
     it('should show a hint about stored credentials for Microsoft ACR', () => {
         cy.get(selectors.microsoftACRTile).click();
         cy.get(`${selectors.table.rows}:contains('Microsoft ACR Test')`).click();
-        cy.get('div:contains("Password"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );
@@ -102,7 +108,7 @@ describe('Image Integrations Test', () => {
     it('should show a hint about stored credentials for JFrog Artifactory', () => {
         cy.get(selectors.jFrogArtifactoryTile).click();
         cy.get(`${selectors.table.rows}:contains('JFrog Artifactory Test')`).click();
-        cy.get('div:contains("Password"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );
@@ -111,7 +117,7 @@ describe('Image Integrations Test', () => {
     it('should show a hint about stored credentials for Sonatype Nexus', () => {
         cy.get(selectors.sonatypeNexusTile).click();
         cy.get(`${selectors.table.rows}:contains('Sonatype Nexus Test')`).click();
-        cy.get('div:contains("Password"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );
@@ -120,7 +126,7 @@ describe('Image Integrations Test', () => {
     it('should show a hint about stored credentials for Red Hat', () => {
         cy.get(selectors.redHatTile).click();
         cy.get(`${selectors.table.rows}:contains('Red Hat Test')`).click();
-        cy.get('div:contains("Password"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );

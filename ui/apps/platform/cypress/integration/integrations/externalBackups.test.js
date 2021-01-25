@@ -22,11 +22,15 @@ describe('External Backups Test', () => {
     it('should show a hint about stored credentials for Amazon S3', () => {
         cy.get(selectors.amazonS3Tile).click();
         cy.get(`${selectors.table.rows}:contains('Amazon S3 Test')`).click();
-        cy.get('div:contains("Access Key ID"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("Access Key ID"):last [data-testid="help-icon"]').trigger(
+            'mouseenter'
+        );
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );
-        cy.get('div:contains("Secret Access Key"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("Secret Access Key"):last [data-testid="help-icon"]').trigger(
+            'mouseenter'
+        );
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );
@@ -35,7 +39,9 @@ describe('External Backups Test', () => {
     it('should show a hint about stored credentials for Google Cloud Storage', () => {
         cy.get(selectors.googleCloudStorageTile).click();
         cy.get(`${selectors.table.rows}:contains('Google Cloud Storage Test')`).click();
-        cy.get('div:contains("Service Account JSON"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("Service Account JSON"):last [data-testid="help-icon"]').trigger(
+            'mouseenter'
+        );
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );

@@ -20,11 +20,11 @@ describe('Auth Plugins Test', () => {
     it('should show a hint about stored credentials for Scoped Access Plugin', () => {
         cy.get(selectors.scopedAccessPluginTile).click();
         cy.get(`${selectors.table.rows}:contains('Scoped Access Plugin Test')`).click();
-        cy.get('div:contains("Password"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("Password"):last [data-testid="help-icon"]').trigger('mouseenter');
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );
-        cy.get('div:contains("Client Key"):last [alt="help"]').trigger('mouseenter');
+        cy.get('div:contains("Client Key"):last [data-testid="help-icon"]').trigger('mouseenter');
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );

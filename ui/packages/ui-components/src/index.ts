@@ -15,3 +15,4 @@ export { default as Tooltip } from './Tooltip';
 export { default as TooltipOverlay } from './TooltipOverlay';
 export { default as ToggleButtonGroup } from './ToggleButtonGroup';
 export { default as ToggleButton } from './ToggleButton';
+export { default as HelpIcon } from './HelpIcon';
