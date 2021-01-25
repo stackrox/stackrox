@@ -21,6 +21,7 @@ var (
 type extractor struct {
 	verifyOpts x509.VerifyOptions
 	maxLeeway  time.Duration
+	validator  authn.ValidateCertChain
 }
 
 func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
@@ -47,15 +48,21 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 		return nil, errors.New("UNEXPECTED: verified chain is empty")
 	}
 
+	chain := requestinfo.ExtractCertInfoChains(verifiedChains)
+	if e.validator != nil {
+		if err := e.validator.ValidateClientCertificate(ctx, chain[0]); err != nil {
+			log.Errorf("init bundle cert is revoked: %q", ri.VerifiedChains[0][0].Subject.Organization)
+			return nil, err
+		}
+	}
+
 	log.Debugf("Woot! Someone (%s) is authenticating with a service cert token", verifiedChains[0][0].Subject)
 
-	leaf := requestinfo.ExtractCertInfo(verifiedChains[0][0])
-
-	return service.WrapMTLSIdentity(mtls.IdentityFromCert(leaf)), nil
+	return service.WrapMTLSIdentity(mtls.IdentityFromCert(chain[0][0])), nil
 }
 
-// NewExtractor returns an extractor that extracts an identity from a ServiceCert token.
-func NewExtractor(maxLeeway time.Duration) (authn.IdentityExtractor, error) {
+// NewExtractorWithCertValidation returns an extractor which allows to configure a cert chain validation
+func NewExtractorWithCertValidation(maxLeeway time.Duration, validator authn.ValidateCertChain) (authn.IdentityExtractor, error) {
 	ca, _, err := mtls.CACert()
 	if err != nil {
 		return nil, err
@@ -70,5 +77,6 @@ func NewExtractor(maxLeeway time.Duration) (authn.IdentityExtractor, error) {
 	return extractor{
 		verifyOpts: verifyOpts,
 		maxLeeway:  maxLeeway,
+		validator:  validator,
 	}, nil
 }

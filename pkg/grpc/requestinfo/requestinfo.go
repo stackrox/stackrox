@@ -110,7 +110,8 @@ func ExtractCertInfo(fullCert *x509.Certificate) CertInfo {
 	}
 }
 
-func extractCertInfoChains(fullCertChains [][]*x509.Certificate) [][]CertInfo {
+// ExtractCertInfoChains gets the cert infos from a cert chain
+func ExtractCertInfoChains(fullCertChains [][]*x509.Certificate) [][]CertInfo {
 	result := make([][]CertInfo, 0, len(fullCertChains))
 	for _, chain := range fullCertChains {
 		// This should never happen in practice based on the Go standard library's documented guarantees,
@@ -174,7 +175,7 @@ func (h *Handler) AnnotateMD(ctx context.Context, req *http.Request) metadata.MD
 	}
 
 	if tlsState != nil {
-		ri.VerifiedChains = extractCertInfoChains(tlsState.VerifiedChains)
+		ri.VerifiedChains = ExtractCertInfoChains(tlsState.VerifiedChains)
 	}
 
 	// Encode to GOB.
@@ -252,7 +253,7 @@ func (h *Handler) UpdateContextForGRPC(ctx context.Context) (context.Context, er
 	// Populate request info from TLS state.
 	if tlsState != nil {
 		ri.Hostname = tlsState.ServerName
-		ri.VerifiedChains = extractCertInfoChains(tlsState.VerifiedChains)
+		ri.VerifiedChains = ExtractCertInfoChains(tlsState.VerifiedChains)
 	}
 
 	ri.Metadata, _ = metadata.FromIncomingContext(ctx)
@@ -280,7 +281,7 @@ func (h *Handler) HTTPIntercept(handler http.Handler) http.Handler {
 		}
 
 		if r.TLS != nil {
-			ri.VerifiedChains = extractCertInfoChains(r.TLS.VerifiedChains)
+			ri.VerifiedChains = ExtractCertInfoChains(r.TLS.VerifiedChains)
 		}
 		newCtx := context.WithValue(r.Context(), requestInfoKey{}, *ri)
 		logRequest(ri)

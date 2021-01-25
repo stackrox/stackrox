@@ -121,6 +121,8 @@ func ExtractAttributes(userCerts ...requestinfo.CertInfo) map[string][]string {
 	return output
 }
 
+var _ authn.Identity = (*identity)(nil)
+
 type identity struct {
 	info       requestinfo.CertInfo
 	provider   authproviders.Provider

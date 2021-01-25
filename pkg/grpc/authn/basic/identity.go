@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/pkg/timeutil"
 )
 
+var _ authn.Identity = (*identity)(nil)
+
 // IsBasicIdentity returns whether or not the input Identity is a basic identity.
 func IsBasicIdentity(id authn.Identity) bool {
 	_, isBasic := id.(Identity)

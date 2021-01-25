@@ -6,14 +6,20 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 )
 
+var (
+	log = logging.LoggerForModule()
+)
+
 type extractor struct {
-	caFP string
+	caFP      string
+	validator authn.ValidateCertChain
 }
 
-func (e extractor) IdentityForRequest(_ context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
+func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
 	l := len(ri.VerifiedChains)
 	// For all mTLS communication, there will be exactly one verified chain.
 	// If there are multiple verified chains, no need to send an error -- it just
@@ -28,12 +34,20 @@ func (e extractor) IdentityForRequest(_ context.Context, ri requestinfo.RequestI
 		return nil, nil
 	}
 
+	if e.validator != nil {
+		err := e.validator.ValidateClientCertificate(ctx, ri.VerifiedChains[0])
+		if err != nil {
+			log.Errorf("init bundle cert is revoked: %q", ri.VerifiedChains[0][0].Subject.Organization)
+			return nil, err
+		}
+	}
+
 	leaf := ri.VerifiedChains[0][0]
 	return WrapMTLSIdentity(mtls.IdentityFromCert(leaf)), nil
 }
 
-// NewExtractor returns a new identity extractor for internal services.
-func NewExtractor() (authn.IdentityExtractor, error) {
+// NewExtractorWithCertValidation returns a new identity extractor which allows to configure a cert chain validation function
+func NewExtractorWithCertValidation(validator authn.ValidateCertChain) (authn.IdentityExtractor, error) {
 	ca, _, err := mtls.CACert()
 	if err != nil {
 		return nil, err
@@ -41,6 +55,12 @@ func NewExtractor() (authn.IdentityExtractor, error) {
 
 	caFP := cryptoutils.CertFingerprint(ca)
 	return extractor{
-		caFP: caFP,
+		caFP:      caFP,
+		validator: validator,
 	}, nil
+}
+
+// NewExtractor returns a new identity extractor for internal services.
+func NewExtractor() (authn.IdentityExtractor, error) {
+	return NewExtractorWithCertValidation(nil)
 }

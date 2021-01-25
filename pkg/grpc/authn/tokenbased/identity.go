@@ -5,7 +5,10 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 )
+
+var _ authn.Identity = (*roleBasedIdentity)(nil)
 
 type roleBasedIdentity struct {
 	uid          string

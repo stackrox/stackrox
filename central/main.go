@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/central/cli"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
+	"github.com/stackrox/rox/central/clusterinit/backend"
 	clusterInitService "github.com/stackrox/rox/central/clusterinit/service"
 	clustersHelmConfig "github.com/stackrox/rox/central/clusters/helmconfig"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
@@ -452,12 +453,13 @@ func startGRPCServer(factory serviceFactory) {
 
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
 
-	serviceMTLSExtractor, err := service.NewExtractor()
+	clusterInitBackend := backend.Singleton()
+	serviceMTLSExtractor, err := service.NewExtractorWithCertValidation(clusterInitBackend)
 	if err != nil {
 		log.Panicf("Could not create mTLS-based service identity extractor: %v", err)
 	}
 
-	serviceTokenExtractor, err := servicecerttoken.NewExtractor(maxServiceCertTokenLeeway)
+	serviceTokenExtractor, err := servicecerttoken.NewExtractorWithCertValidation(maxServiceCertTokenLeeway, clusterInitBackend)
 	if err != nil {
 		log.Panicf("Could not create ServiceCert token-based identity extractor: %v", err)
 	}

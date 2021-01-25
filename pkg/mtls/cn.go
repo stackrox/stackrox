@@ -1,6 +1,7 @@
 package mtls
 
 import (
+	"crypto/x509/pkix"
 	"fmt"
 	"math/big"
 	"strings"
@@ -28,7 +29,7 @@ type Identity struct {
 // IdentityFromCert returns an mTLS (mutual TLS) identity for the given certificate.
 func IdentityFromCert(cert requestinfo.CertInfo) Identity {
 	return Identity{
-		Subject: SubjectFromCommonName(cert.Subject.CommonName),
+		Subject: convertCertSubject(cert.Subject),
 		Serial:  cert.SerialNumber,
 		Expiry:  cert.NotAfter,
 	}
@@ -40,8 +41,9 @@ func (id Identity) V1() *storage.ServiceIdentity {
 		Srl: &storage.ServiceIdentity_SerialStr{
 			SerialStr: id.Serial.String(),
 		},
-		Type: id.Subject.ServiceType,
-		Id:   id.Subject.Identifier,
+		Type:         id.Subject.ServiceType,
+		Id:           id.Subject.Identifier,
+		InitBundleId: id.Subject.InitBundleID,
 	}
 }
 
@@ -49,7 +51,7 @@ func (id Identity) V1() *storage.ServiceIdentity {
 type Subject struct {
 	ServiceType  storage.ServiceType
 	Identifier   string
-	InitBundleID uuid.UUID
+	InitBundleID string
 }
 
 // CertificateOptions define options which are available at cert generation
@@ -70,7 +72,7 @@ func NewInitSubject(id string, serviceType storage.ServiceType, initBundleID uui
 	return Subject{
 		Identifier:   id,
 		ServiceType:  serviceType,
-		InitBundleID: initBundleID,
+		InitBundleID: initBundleID.String(),
 	}
 }
 
@@ -107,17 +109,26 @@ func (s Subject) OU() string {
 	return s.ServiceType.String()
 }
 
+// O returns the Organization for the Subject.
+func (s Subject) O() string {
+	return s.InitBundleID
+}
+
 // Name generates a cfssl Name for the subject, as a convenience.
 func (s Subject) Name() cfcsr.Name {
-	var initBundleID string
-	if s.InitBundleID != uuid.Nil {
-		initBundleID = s.InitBundleID.String()
-	}
-
 	return cfcsr.Name{
 		OU: s.OU(),
-		O:  initBundleID,
+		O:  s.O(),
 	}
+}
+
+func convertCertSubject(subject pkix.Name) Subject {
+	s := SubjectFromCommonName(subject.CommonName)
+
+	if len(subject.Organization) != 0 && subject.Organization[0] != "" {
+		s.InitBundleID = uuid.FromStringOrNil(subject.Organization[0]).String()
+	}
+	return s
 }
 
 // SubjectFromCommonName parses a CN string into a Subject.

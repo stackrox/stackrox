@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -16,6 +17,7 @@ import (
 	rocksdbStore "github.com/stackrox/rox/central/clusterinit/store/rocksdb"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -207,6 +209,54 @@ func (s *clusterInitBackendTestSuite) TestIssuingWithDuplicateName() {
 	s.Require().NoError(err)
 	_, err = s.backend.Issue(ctx, "test2")
 	s.Require().Error(err, "issuing two init bundles with the same name")
+}
+
+func (s *clusterInitBackendTestSuite) TestValidateClientCertificateNotFound() {
+	ctx := s.ctx
+	id := uuid.NewV4()
+	certs := []requestinfo.CertInfo{
+		{Subject: pkix.Name{Organization: []string{id.String()}}},
+	}
+
+	err := s.backend.ValidateClientCertificate(ctx, certs)
+	s.Require().Error(err)
+	s.Equal("failed checking init bundle status: retrieving init bundle: init bundle not found", err.Error())
+}
+
+func (s *clusterInitBackendTestSuite) TestValidateClientCertificate() {
+	// To access the revoke check a token should be passed without any access rights.
+	ctxWithoutSAC := context.Background()
+
+	meta, err := s.backend.Issue(s.ctx, "revoke-check")
+	s.Require().NoError(err)
+
+	certs := []requestinfo.CertInfo{
+		{Subject: pkix.Name{Organization: []string{meta.Meta.Id}}},
+	}
+
+	// Success for valid init bundles
+	err = s.backend.ValidateClientCertificate(ctxWithoutSAC, certs)
+	s.Require().NoError(err)
+
+	err = s.backend.Revoke(s.ctx, meta.Meta.Id)
+	s.Require().NoError(err)
+
+	// Fail for a revoked init bundles
+	err = s.backend.ValidateClientCertificate(ctxWithoutSAC, certs)
+	s.Require().Error(err)
+	s.Contains(err.Error(), "init bundle is revoked")
+}
+
+func (s *clusterInitBackendTestSuite) TestValidateClientCertificateShouldIgnoreNonInitBundles() {
+	// To access the revoke check a token should be passed without any access rights.
+	ctxWithoutSAC := context.Background()
+
+	certs := []requestinfo.CertInfo{
+		{Subject: pkix.Name{Organization: []string{}}},
+	}
+
+	err := s.backend.ValidateClientCertificate(ctxWithoutSAC, certs)
+	s.Require().NoError(err)
 }
 
 func (s *clusterInitBackendTestSuite) TearDownTest() {

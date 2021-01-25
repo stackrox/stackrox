@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 )
 
+var _ authn.Identity = (*identity)(nil)
+
 type identity struct {
 	id mtls.Identity
 }

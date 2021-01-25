@@ -9,7 +9,11 @@ import (
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/sac"
 )
+
+var _ authn.ValidateCertChain = (*backendImpl)(nil)
 
 type backendImpl struct {
 	store        store.Store
@@ -135,5 +139,29 @@ func (b *backendImpl) CheckRevoked(ctx context.Context, id string) error {
 	if bundleMeta.GetIsRevoked() {
 		return ErrInitBundleIsRevoked
 	}
+	return nil
+}
+
+// ValidateClientCertificate validates cert chains in identity extractors defined in authn.ValidateCertChain
+func (b *backendImpl) ValidateClientCertificate(ctx context.Context, chain []requestinfo.CertInfo) error {
+	if len(chain) == 0 {
+		return errors.New("empty cert chain passed")
+	}
+
+	leaf := chain[0]
+	bundleID := leaf.Subject.Organization
+	// check if leaf cert is part of an init bundle
+	if len(bundleID) == 0 {
+		log.Infof("Init bundle ID was not found in certificate %q", leaf.Subject.OrganizationalUnit)
+		return nil
+	}
+
+	if err := b.CheckRevoked(sac.WithAllAccess(ctx), bundleID[0]); err != nil {
+		if errors.Is(ErrInitBundleIsRevoked, err) {
+			return errors.Wrapf(err, "init bundle verification failed %q", bundleID[0])
+		}
+		return errors.Wrap(err, "failed checking init bundle status")
+	}
+
 	return nil
 }

@@ -7,6 +7,8 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 )
 
+//go:generate mockgen-wrapper
+
 // Identity represents the identity of an entity accessing a service.
 type Identity interface {
 	UID() string
@@ -24,5 +26,3 @@ type Identity interface {
 	Expiry() time.Time
 	ExternalAuthProvider() authproviders.Provider
 }
-
-//go:generate mockgen-wrapper

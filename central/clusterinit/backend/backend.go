@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/sac"
 	"gopkg.in/yaml.v3"
@@ -73,6 +74,7 @@ type Backend interface {
 	Issue(ctx context.Context, name string) (*InitBundleWithMeta, error)
 	Revoke(ctx context.Context, id string) error
 	CheckRevoked(ctx context.Context, id string) error
+	authn.ValidateCertChain
 }
 
 func newBackend(store store.Store, certProvider CertificateProvider) Backend {
