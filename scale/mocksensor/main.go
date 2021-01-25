@@ -92,7 +92,13 @@ func main() {
 	defer cancel()
 
 	capsSet := centralsensor.NewSensorCapabilitySet(centralsensor.ComplianceInNodesCap)
-	ctx = centralsensor.AppendCapsInfoToContext(ctx, capsSet)
+	sensorHello := &central.SensorHello{
+		Capabilities: centralsensor.CapSetToStringSlice(capsSet),
+	}
+	ctx, err = centralsensor.AppendSensorHelloInfoToOutgoingMetadata(ctx, sensorHello)
+	if err != nil {
+		panic(err)
+	}
 	communicateStream, err := client.Communicate(ctx)
 	if err != nil {
 		panic(err)

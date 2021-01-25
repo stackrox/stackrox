@@ -77,7 +77,7 @@ func (c *configHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 		defer c.lock.Unlock()
 		c.config = config.Config
 		if c.admCtrlSettingsMgr != nil {
-			c.admCtrlSettingsMgr.UpdateConfig(config.GetClusterId(), config.GetConfig())
+			c.admCtrlSettingsMgr.UpdateConfig(config.GetConfig())
 		}
 		return nil
 	}

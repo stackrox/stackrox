@@ -10,6 +10,7 @@ import (
 	pkgPolicies "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 )
 
 type settingsManager struct {
@@ -34,6 +35,7 @@ func (p *settingsManager) newSettingsNoLock() *sensor.AdmissionControlSettings {
 	if p.currSettings != nil {
 		*settings = *p.currSettings
 	}
+	settings.ClusterId = clusterid.Get()
 	settings.CentralEndpoint = p.centralEndpoint
 	settings.Timestamp = types.TimestampNow()
 	return settings
@@ -68,7 +70,7 @@ func (p *settingsManager) UpdatePolicies(policies []*storage.Policy) {
 	p.currSettings = newSettings
 }
 
-func (p *settingsManager) UpdateConfig(clusterID string, config *storage.DynamicClusterConfig) {
+func (p *settingsManager) UpdateConfig(config *storage.DynamicClusterConfig) {
 	clonedConfig := config.Clone()
 
 	p.mutex.Lock()
@@ -78,9 +80,6 @@ func (p *settingsManager) UpdateConfig(clusterID string, config *storage.Dynamic
 
 	newSettings := p.newSettingsNoLock()
 	newSettings.ClusterConfig = clonedConfig
-	if clusterID != "" {
-		newSettings.ClusterId = clusterID
-	}
 
 	if p.hasClusterConfig && p.hasPolicies {
 		p.settingsStream.Push(newSettings)

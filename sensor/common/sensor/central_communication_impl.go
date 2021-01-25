@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
@@ -86,19 +87,47 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 
 	// Start the stream client.
 	///////////////////////////
-	ctx, err := centralsensor.AppendSensorVersionInfoToContext(context.Background())
-	if err != nil {
-		s.stopC.SignalWithError(err)
-		return
-	}
 
+	// Prepare the `SensorHello` message. This message informs Central about who is talking to it, and announces
+	// the capabilities/features supported by this sensor.
+	// While the message is only sent after the stream is established, it is also used to populate the legacy,
+	// header metadata-based self-identification protocol, which needs to happen prior to making the streaming RPC
+	// call. That's why we create it here and not in the `initialSync` method below.
+	sensorHello := &central.SensorHello{
+		SensorVersion: version.GetMainVersion(),
+	}
 	capsSet := centralsensor.NewSensorCapabilitySet()
 	for _, component := range s.components {
 		capsSet.AddAll(component.Capabilities()...)
 	}
-	ctx = centralsensor.AppendCapsInfoToContext(ctx, capsSet)
-	if configHandler.GetHelmManagedConfig() != nil {
-		ctx = metadata.AppendToOutgoingContext(ctx, centralsensor.HelmManagedClusterMetadataKey, "true")
+	sensorHello.Capabilities = centralsensor.CapSetToStringSlice(capsSet)
+
+	// Inject desired Helm configuration, if any.
+	if features.SensorInstallationExperience.Enabled() {
+		helmManagedCfg := configHandler.GetHelmManagedConfig()
+
+		if helmManagedCfg.GetClusterId() == "" {
+			cachedClusterID, err := helmconfig.LoadCachedClusterID()
+			if err != nil {
+				log.Warnf("Failed to load cached cluster ID: %s", err)
+			} else if cachedClusterID != "" {
+				helmManagedCfg = helmManagedCfg.Clone()
+				helmManagedCfg.ClusterId = cachedClusterID
+				log.Infof("Re-using cluster ID %s of previous run. If you see the connection to central failing, re-apply a new Helm configuration via 'helm upgrade', or delete the sensor pod.", cachedClusterID)
+			}
+		}
+
+		sensorHello.HelmManagedConfigInit = helmManagedCfg
+	}
+
+	// Prepare outgoing context
+	ctx := context.Background()
+
+	ctx = metadata.AppendToOutgoingContext(ctx, centralsensor.SensorHelloMetadataKey, "true")
+	ctx, err := centralsensor.AppendSensorHelloInfoToOutgoingMetadata(ctx, sensorHello)
+	if err != nil {
+		s.stopC.SignalWithError(err)
+		return
 	}
 
 	stream, err := communicateWithAutoSensedEncoding(ctx, client)
@@ -107,7 +136,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		return
 	}
 
-	if err := s.initialSync(stream, capsSet, configHandler, detector); err != nil {
+	if err := s.initialSync(stream, sensorHello, configHandler, detector); err != nil {
 		s.stopC.SignalWithError(err)
 		return
 	}
@@ -134,7 +163,44 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	log.Info("Communication with central ended.")
 }
 
-func (s *centralCommunicationImpl) initialSync(stream central.SensorService_CommunicateClient, capabilities centralsensor.SensorCapabilitySet, configHandler config.Handler, detector detector.Detector) error {
+func (s *centralCommunicationImpl) initialSync(stream central.SensorService_CommunicateClient, hello *central.SensorHello, configHandler config.Handler, detector detector.Detector) error {
+	rawHdr, err := stream.Header()
+	if err != nil {
+		return errors.Wrap(err, "receiving headers from central")
+	}
+
+	var centralHello *central.CentralHello
+
+	hdr := metautils.NiceMD(rawHdr)
+	if hdr.Get(centralsensor.SensorHelloMetadataKey) == "true" {
+		// Yay, central supports the "sensor hello" protocol!
+		err := stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: hello}})
+		if err != nil {
+			return errors.Wrap(err, "sending SensorHello message to central")
+		}
+
+		firstMsg, err := stream.Recv()
+		if err != nil {
+			return errors.Wrap(err, "receiving first message from central")
+		}
+		centralHello = firstMsg.GetHello()
+		if centralHello == nil {
+			return errors.Errorf("first message received from central was not CentralHello but of type %T", firstMsg.GetMsg())
+		}
+	} else {
+		// No sensor hello :(
+		log.Warnf("Central is running a legacy version that might not support all current features")
+	}
+
+	clusterID := centralHello.GetClusterId()
+	clusterid.Set(clusterID)
+
+	if features.SensorInstallationExperience.Enabled() {
+		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {
+			log.Warnf("Could not cache cluster ID: %v", err)
+		}
+	}
+
 	// DO NOT CHANGE THE ORDER. Please refer to `Run()` at `central/sensor/service/connection/connection_impl.go`
 	if err := s.initialConfigSync(stream, configHandler); err != nil {
 		return err
@@ -144,54 +210,12 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 }
 
 func (s *centralCommunicationImpl) initialConfigSync(stream central.SensorService_CommunicateClient, handler config.Handler) error {
-	headerMD, err := stream.Header()
-	if err != nil {
-		return errors.Wrap(err, "receiving header metadata from central")
-	}
-
-	helmManagedCfg := handler.GetHelmManagedConfig()
-
-	if metautils.NiceMD(headerMD).Get(centralsensor.HelmManagedClusterMetadataKey) == "true" {
-		if helmManagedCfg == nil {
-			return errors.New("central requested Helm-managed cluster config, but no Helm-managed config is available")
-		}
-
-		if helmManagedCfg.GetClusterId() == "" {
-			cachedClusterID, err := helmconfig.LoadCachedClusterID()
-			if err != nil {
-				log.Warnf("Failed to load cached cluster ID: %s", err)
-			} else if cachedClusterID != "" {
-				helmManagedCfg = helmManagedCfg.Clone()
-				helmManagedCfg.ClusterId = cachedClusterID
-				log.Infof("Re-using cluster ID %s of previous run. If this is causing issues, re-apply a new Helm configuration via 'helm upgrade', or delete the sensor pod.", cachedClusterID)
-			}
-		}
-
-		msg := &central.MsgFromSensor{
-			Msg: &central.MsgFromSensor_HelmManagedConfigInit{
-				HelmManagedConfigInit: helmManagedCfg,
-			},
-		}
-		if err := stream.Send(msg); err != nil {
-			return errors.Wrap(err, "could not send Helm-managed cluster config")
-		}
-	} else if helmManagedCfg != nil {
-		log.Warn("Central instance does NOT support Helm-managed configuration. Dynamic cluster configuration MUST be changed via the UI in order to take effect. Please upgrade Central to a recent version to allow changing dynamic cluster configuration via 'helm upgrade'")
-	}
-
 	msg, err := stream.Recv()
 	if err != nil {
 		return errors.Wrap(err, "receiving initial cluster config")
 	}
 	if msg.GetClusterConfig() == nil {
 		return errors.Errorf("initial message received from Sensor was not a cluster config: %T", msg.Msg)
-	}
-	if features.SensorInstallationExperience.Enabled() {
-		clusterID := msg.GetClusterConfig().GetClusterId()
-		clusterid.Set(clusterID)
-		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {
-			log.Warnf("Could not cache cluster ID: %v", err)
-		}
 	}
 	// Send the initial cluster config to the config handler
 	if err := handler.ProcessMessage(msg); err != nil {

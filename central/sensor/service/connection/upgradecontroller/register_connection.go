@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -48,19 +47,19 @@ func (u *upgradeController) watchConnection(sensorCtx context.Context, conn Sens
 	}))
 }
 
-func determineUpgradabilityFromVersionInfoAndConn(versionInfo *centralsensor.SensorVersionInfo, conn SensorConn) (storage.ClusterUpgradeStatus_Upgradability, string) {
-	if versionInfo == nil {
+func determineUpgradabilityFromVersionInfoAndConn(sensorVersion string, conn SensorConn) (storage.ClusterUpgradeStatus_Upgradability, string) {
+	if sensorVersion == "" {
 		return storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED, "sensor is from an old version that doesn't support auto-upgrade"
 	}
 
-	if versionInfo.MainVersion == version.GetMainVersion() {
+	if sensorVersion == version.GetMainVersion() {
 		return storage.ClusterUpgradeStatus_UP_TO_DATE, "sensor is running the same version as Central"
 	}
-	cmp := version.CompareReleaseVersions(versionInfo.MainVersion, version.GetMainVersion())
+	cmp := version.CompareReleaseVersions(sensorVersion, version.GetMainVersion())
 	// The sensor is newer! See comments on the below enum value in the proto file
 	// for more details on how we handle this case.
 	if cmp > 0 {
-		return storage.ClusterUpgradeStatus_SENSOR_VERSION_HIGHER, fmt.Sprintf("sensor is running a newer version (%s)", versionInfo.MainVersion)
+		return storage.ClusterUpgradeStatus_SENSOR_VERSION_HIGHER, fmt.Sprintf("sensor is running a newer version (%s)", sensorVersion)
 	}
 
 	// Check if the connection supports auto-upgrade.
@@ -75,7 +74,7 @@ func determineUpgradabilityFromVersionInfoAndConn(versionInfo *centralsensor.Sen
 	// Ideally, we would panic if cmp == 0 on release builds, since that should
 	// only happen if the versions are exactly equal (which is checked above),
 	// but panic-ing on release builds doesn't help anyone with on-prem software, so...
-	return storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE, fmt.Sprintf("sensor is running an old version (%s)", versionInfo.MainVersion)
+	return storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE, fmt.Sprintf("sensor is running an old version (%s)", sensorVersion)
 }
 
 func (u *upgradeController) maybeTriggerAutoUpgrade() {
@@ -92,32 +91,21 @@ func (u *upgradeController) maybeTriggerAutoUpgrade() {
 	}
 }
 
-func (u *upgradeController) reconcileInitialUpgradeStatus(versionInfo *centralsensor.SensorVersionInfo, conn SensorConn) (sensorVersion string) {
-	upgradability, reason := determineUpgradabilityFromVersionInfoAndConn(versionInfo, conn)
+func (u *upgradeController) reconcileInitialUpgradeStatus(sensorVersion string, conn SensorConn) {
+	upgradability, reason := determineUpgradabilityFromVersionInfoAndConn(sensorVersion, conn)
 	log.Infof("Determined upgradability status for sensor from cluster %s: %s. Reason: %s", u.clusterID, upgradability, reason)
 	u.upgradeStatus.Upgradability, u.upgradeStatus.UpgradabilityStatusReason = upgradability, reason
 	u.upgradeStatusChanged = true // we don't check for this but sensor checking in should be comparatively rare
-	if versionInfo != nil {
-		sensorVersion = versionInfo.MainVersion
-	}
 
 	// No active upgrade process. Maybe trigger an auto-upgrade.
 	if u.active == nil {
 		u.maybeTriggerAutoUpgrade()
 	}
-
-	return sensorVersion
 }
 
 func (u *upgradeController) doHandleNewConnection(sensorCtx context.Context, conn SensorConn) (sensorSupportsAutoUpgrade bool) {
-	versionInfo, err := centralsensor.DeriveSensorVersionInfo(sensorCtx)
-	if err != nil {
-		u.activeSensorConn = nil
-		log.Errorf("Could not derive sensor version info for cluster %s from context: %v. Auto-upgrade functionality will not work.", u.clusterID, err)
-		return false
-	}
-
-	sensorVersion := u.reconcileInitialUpgradeStatus(versionInfo, conn)
+	sensorVersion := conn.SensorVersion()
+	u.reconcileInitialUpgradeStatus(sensorVersion, conn)
 
 	// Special case: if the sensor is too old to support auto upgrades, then don't send it a trigger that
 	// it will not know how to parse.

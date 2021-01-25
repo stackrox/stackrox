@@ -16,6 +16,7 @@ import (
 type SensorConn interface {
 	common.MessageInjector
 	CheckAutoUpgradeSupport() error
+	SensorVersion() string
 }
 
 // UpgradeController controls auto-upgrading for one specific cluster.

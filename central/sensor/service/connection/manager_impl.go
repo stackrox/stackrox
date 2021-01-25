@@ -199,8 +199,9 @@ func (m *manager) replaceConnection(ctx context.Context, clusterID string, newCo
 	return oldConnection, nil
 }
 
-func (m *manager) HandleConnection(ctx context.Context, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
-	conn := newConnection(ctx, cluster, eventPipeline, m.clusters, m.networkEntities, m.policies, m.baselines)
+func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.SensorHello, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
+	conn := newConnection(sensorHello, cluster, eventPipeline, m.clusters, m.networkEntities, m.policies, m.baselines)
+	ctx = withConnection(ctx, conn)
 
 	clusterID := cluster.GetId()
 	oldConnection, err := m.replaceConnection(ctx, clusterID, conn)

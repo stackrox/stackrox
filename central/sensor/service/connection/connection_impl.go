@@ -3,7 +3,6 @@ package connection
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/scrape"
@@ -49,21 +48,17 @@ type sensorConnection struct {
 	policyMgr        common.PolicyManager
 	baselineMgr      common.ProcessBaselineManager
 
-	sensorMetadata metautils.NiceMD
-	capabilities   centralsensor.SensorCapabilitySet
-
-	helmManaged bool
+	sensorHello  *central.SensorHello
+	capabilities centralsensor.SensorCapabilitySet
 }
 
-func newConnection(ctx context.Context,
+func newConnection(sensorHello *central.SensorHello,
 	cluster *storage.Cluster,
 	eventPipeline pipeline.ClusterPipeline,
 	clusterMgr common.ClusterManager,
 	networkEntityMgr common.NetworkEntityManager,
 	policyMgr common.PolicyManager,
 	baselineMgr common.ProcessBaselineManager) *sensorConnection {
-
-	md := metautils.ExtractIncoming(ctx)
 
 	conn := &sensorConnection{
 		stopSig:       concurrency.NewErrorSignal(),
@@ -78,9 +73,8 @@ func newConnection(ctx context.Context,
 		networkEntityMgr: networkEntityMgr,
 		baselineMgr:      baselineMgr,
 
-		sensorMetadata: md,
-		capabilities:   centralsensor.ExtractCapsFromMD(md),
-		helmManaged:    cluster.GetHelmConfig() != nil,
+		sensorHello:  sensorHello,
+		capabilities: centralsensor.CapSetFromStringSlice(sensorHello.GetCapabilities()...),
 	}
 
 	// Need a reference to conn for injector
@@ -175,7 +169,7 @@ func (c *sensorConnection) Scrapes() scrape.Controller {
 }
 
 func (c *sensorConnection) InjectMessageIntoQueue(msg *central.MsgFromSensor) {
-	c.multiplexedPush(sac.WithAllAccess(context.Background()), msg, nil)
+	c.multiplexedPush(sac.WithAllAccess(withConnection(context.Background(), c)), msg, nil)
 }
 
 func (c *sensorConnection) NetworkEntities() networkentities.Controller {
@@ -277,8 +271,7 @@ func (c *sensorConnection) getClusterConfigMsg(ctx context.Context) (*central.Ms
 	return &central.MsgToSensor{
 		Msg: &central.MsgToSensor_ClusterConfig{
 			ClusterConfig: &central.ClusterConfig{
-				Config:    cluster.GetDynamicConfig(),
-				ClusterId: c.clusterID,
+				Config: cluster.GetDynamicConfig(),
 			},
 		},
 	}, nil
@@ -339,8 +332,12 @@ func (c *sensorConnection) ObjectsDeletedByReconciliation() (map[string]int, boo
 }
 
 func (c *sensorConnection) CheckAutoUpgradeSupport() error {
-	if c.helmManaged {
+	if c.sensorHello.GetHelmManagedConfigInit() != nil {
 		return errors.New("cluster is Helm-managed and does not support auto upgrades; use 'helm upgrade' or a Helm-aware CD pipeline for upgrades")
 	}
 	return nil
+}
+
+func (c *sensorConnection) SensorVersion() string {
+	return c.sensorHello.GetSensorVersion()
 }

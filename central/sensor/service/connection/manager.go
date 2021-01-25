@@ -21,7 +21,7 @@ type Manager interface {
 		autoTriggerUpgrades *concurrency.Flag) error
 
 	// Connection-related methods.
-	HandleConnection(ctx context.Context, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error
+	HandleConnection(ctx context.Context, sensorHello *central.SensorHello, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error
 	GetConnection(clusterID string) SensorConnection
 	GetActiveConnections() []SensorConnection
 	BroadcastMessage(msg *central.MsgToSensor)

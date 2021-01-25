@@ -5,19 +5,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller/stateutils"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -113,6 +110,15 @@ type UpgradeCtrlTestSuite struct {
 	cancelSensorCtx context.CancelFunc
 }
 
+type connWithVersion struct {
+	*recordingConn
+	version string
+}
+
+func (c connWithVersion) SensorVersion() string {
+	return c.version
+}
+
 func TestUpgradeCtrl(t *testing.T) {
 	suite.Run(t, new(UpgradeCtrlTestSuite))
 }
@@ -143,19 +149,14 @@ func (suite *UpgradeCtrlTestSuite) waitForTriggerNumber(numExpected int) *centra
 	return triggers[numExpected-1]
 }
 
-func (suite *UpgradeCtrlTestSuite) createSensorCtxWithVersion(version string) context.Context {
-	ctx, err := centralsensor.AppendSpecificVersionInfoToContext(context.Background(), version, suite.T())
-	suite.Require().NoError(err)
-	md := metautils.ExtractOutgoing(ctx)
-	// The outgoing context will look like an incoming context once it reaches the Central side.
-	incomingCtx := metadata.NewIncomingContext(ctx, metadata.MD(md))
-	incomingCtx, cancel := context.WithCancel(incomingCtx)
+func (suite *UpgradeCtrlTestSuite) createSensorCtx() context.Context {
+	incomingCtx, cancel := context.WithCancel(context.Background())
 	suite.cancelSensorCtx = cancel
 	return incomingCtx
 }
 
 func (suite *UpgradeCtrlTestSuite) registerConnectionFromNonAncientSensorVersion(version string) {
-	errSig := suite.upgradeCtrl.RegisterConnection(suite.createSensorCtxWithVersion(version), suite.conn)
+	errSig := suite.upgradeCtrl.RegisterConnection(suite.createSensorCtx(), connWithVersion{suite.conn, version})
 	suite.NotNil(errSig)
 	suite.False(concurrency.IsDone(errSig))
 }
@@ -237,7 +238,7 @@ func (suite *UpgradeCtrlTestSuite) TestDoesntTriggerWithoutConnection() {
 }
 
 func (suite *UpgradeCtrlTestSuite) TestHandlingNewConnectionFromAncientSensor() {
-	errSig := suite.upgradeCtrl.RegisterConnection(context.Background(), suite.conn)
+	errSig := suite.upgradeCtrl.RegisterConnection(context.Background(), connWithVersion{recordingConn: suite.conn})
 	suite.Nil(errSig)
 
 	suite.upgradabilityMustBe(storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED)

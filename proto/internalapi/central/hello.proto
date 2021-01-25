@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+import "storage/cluster.proto";
+
+package central;
+
+message HelmManagedConfigInit {
+  storage.CompleteClusterConfig cluster_config = 1;
+  string cluster_name                          = 2;
+  string cluster_id                            = 3;
+}
+
+message SensorHello {
+  string sensor_version        = 1;
+  repeated string capabilities = 2;
+
+  HelmManagedConfigInit helm_managed_config_init = 3;
+}
+
+message CentralHello {
+  string cluster_id = 1;
+}

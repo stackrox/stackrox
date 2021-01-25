@@ -5,6 +5,7 @@ import (
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/sensor/service/common"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -48,13 +49,14 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	m := msg.GetClusterHealthInfo().GetCollectorHealthInfo()
 
+	conn := connection.FromContext(ctx)
 	clusterHealthStatus := &storage.ClusterHealthStatus{
 		SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
 		CollectorHealthStatus: clusterhealth.PopulateCollectorStatus(m),
 		CollectorHealthInfo:   m,
 		LastContact:           timestamp.Now().GogoProtobuf(),
 		// When sensor health monitoring is revised update the sensor capability
-		HealthInfoComplete: centralsensor.ExtractCapsFromContext(ctx).Contains(centralsensor.HealthMonitoringCap),
+		HealthInfoComplete: conn != nil && conn.HasCapability(centralsensor.HealthMonitoringCap),
 	}
 	clusterHealthStatus.OverallHealthStatus = clusterhealth.PopulateOverallClusterStatus(clusterHealthStatus)
 

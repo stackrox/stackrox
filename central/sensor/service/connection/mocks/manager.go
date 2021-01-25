@@ -54,17 +54,17 @@ func (mr *MockManagerMockRecorder) Start(mgr, netEntitiesMgr, policyMgr, baselin
 }
 
 // HandleConnection mocks base method
-func (m *MockManager) HandleConnection(ctx context.Context, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
+func (m *MockManager) HandleConnection(ctx context.Context, sensorHello *central.SensorHello, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleConnection", ctx, cluster, eventPipeline, server)
+	ret := m.ctrl.Call(m, "HandleConnection", ctx, sensorHello, cluster, eventPipeline, server)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // HandleConnection indicates an expected call of HandleConnection
-func (mr *MockManagerMockRecorder) HandleConnection(ctx, cluster, eventPipeline, server interface{}) *gomock.Call {
+func (mr *MockManagerMockRecorder) HandleConnection(ctx, sensorHello, cluster, eventPipeline, server interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleConnection", reflect.TypeOf((*MockManager)(nil).HandleConnection), ctx, cluster, eventPipeline, server)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleConnection", reflect.TypeOf((*MockManager)(nil).HandleConnection), ctx, sensorHello, cluster, eventPipeline, server)
 }
 
 // GetConnection mocks base method

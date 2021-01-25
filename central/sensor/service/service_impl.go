@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -72,10 +73,25 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		return authz.ErrNotAuthorized("only sensor may access this API")
 	}
 
-	// Fetch the cluster metadata, then process the stream.
-	cluster, err := s.getClusterForConnection(server, svc)
+	sensorHello, sensorSupportsHello, err := receiveSensorHello(server)
 	if err != nil {
 		return err
+	}
+
+	// Fetch the cluster metadata, then process the stream.
+	cluster, err := s.getClusterForConnection(sensorHello, svc)
+	if err != nil {
+		return err
+	}
+
+	if sensorSupportsHello {
+		// Let's be polite and respond with a greeting from our side.
+		centralHello := &central.CentralHello{
+			ClusterId: cluster.GetId(),
+		}
+		if err := server.Send(&central.MsgToSensor{Msg: &central.MsgToSensor_Hello{Hello: centralHello}}); err != nil {
+			return errors.Wrap(err, "sending CentralHello message to sensor")
+		}
 	}
 
 	if expiry := identity.Expiry(); !expiry.IsZero() {
@@ -97,42 +113,19 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 	log.Infof("Cluster %s (%s) has successfully connected to Central", cluster.GetName(), cluster.GetId())
 
-	return s.manager.HandleConnection(server.Context(), cluster, eventPipeline, server)
+	return s.manager.HandleConnection(server.Context(), sensorHello, cluster, eventPipeline, server)
 }
 
-func (s *serviceImpl) getClusterForConnection(server central.SensorService_CommunicateServer, serviceID *storage.ServiceIdentity) (*storage.Cluster, error) {
-	incomingMD := metautils.ExtractIncoming(server.Context())
-
-	helmManaged := false
+func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, serviceID *storage.ServiceIdentity) (*storage.Cluster, error) {
+	var helmConfigInit *central.HelmManagedConfigInit
 	if features.SensorInstallationExperience.Enabled() {
-		helmManaged = incomingMD.Get(centralsensor.HelmManagedClusterMetadataKey) == "true"
+		helmConfigInit = sensorHello.GetHelmManagedConfigInit()
 	}
 
 	clusterIDFromCert := serviceID.GetId()
-	outMD := metautils.NiceMD{}
 	if features.SensorInstallationExperience.Enabled() {
-		if helmManaged {
-			outMD.Set(centralsensor.HelmManagedClusterMetadataKey, "true")
-		} else if clusterIDFromCert == centralsensor.InitCertClusterID {
+		if helmConfigInit == nil && clusterIDFromCert == centralsensor.InitCertClusterID {
 			return nil, status.Error(codes.InvalidArgument, "sensor using cluster init certificate must be helm-managed")
-		}
-	}
-
-	if err := server.SendHeader(metadata.MD(outMD)); err != nil {
-		return nil, status.Error(codes.Internal, "failed to send header metadata to client")
-	}
-
-	var helmConfigInit *central.HelmManagedConfigInit
-	if helmManaged {
-		// For Helm-managed clusters, we expect to receive the cluster configuration as the first message from sensor.
-		msg, err := server.Recv()
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "receiving helm config init message: %v", err)
-		}
-
-		helmConfigInit = msg.GetHelmManagedConfigInit()
-		if helmConfigInit == nil {
-			return nil, status.Errorf(codes.InvalidArgument, "expected helm config init message, got %T", msg.GetMsg())
 		}
 	}
 
@@ -151,4 +144,38 @@ func (s *serviceImpl) getClusterForConnection(server central.SensorService_Commu
 	}
 
 	return cluster, nil
+}
+
+func receiveSensorHello(server central.SensorService_CommunicateServer) (*central.SensorHello, bool, error) {
+	incomingMD := metautils.ExtractIncoming(server.Context())
+	outMD := metautils.NiceMD{}
+
+	sensorSupportsHello := incomingMD.Get(centralsensor.SensorHelloMetadataKey) == "true"
+	if sensorSupportsHello {
+		outMD.Set(centralsensor.SensorHelloMetadataKey, "true")
+	}
+
+	if err := server.SendHeader(metadata.MD(outMD)); err != nil {
+		return nil, false, errors.Wrap(err, "sending header metadata")
+	}
+
+	if !sensorSupportsHello {
+		sensorHello, err := centralsensor.DeriveSensorHelloFromIncomingMetadata(incomingMD)
+		if err != nil {
+			log.Warnf("Failed to completely derive SensorHello information from header metadata: %s", err)
+		}
+
+		return sensorHello, false, nil
+	}
+
+	firstMsg, err := server.Recv()
+	if err != nil {
+		return nil, false, errors.Wrap(err, "receiving first message")
+	}
+	sensorHello := firstMsg.GetHello()
+	if sensorHello == nil {
+		return nil, false, errors.Wrapf(err, "first message received is not a SensorHello message, but %T", firstMsg.GetMsg())
+	}
+
+	return sensorHello, true, nil
 }
