@@ -15,6 +15,7 @@ message BuildDetectionRequest {
         string image_name   = 3;
     }
     bool no_external_metadata = 2;
+    bool send_notifications   = 4;
 }
 
 message BuildDetectionResponse {

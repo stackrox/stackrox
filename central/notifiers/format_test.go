@@ -16,7 +16,7 @@ import (
 
 const (
 	expectedFormattedDeploymentAlert = `Alert ID: Alert1
-Alert URL: https://localhost:8080/main/violations/alert-id
+Alert URL: https://localhost:8080/main/violations/Alert1
 Time (UTC): 2021-01-20 22:42:02
 Severity: Low
 
@@ -73,7 +73,7 @@ Policy Definition:
 	 - Images: docker.io/library/nginx:1.10@sha256:SHA1
 `
 	expectedFormatImageAlert = `Alert ID: Alert1
-Alert URL: https://localhost:8080/main/violations/alert-id
+Alert URL: https://localhost:8080/main/vulnerability-management/image/sha256:SHA2
 Time (UTC): 2021-01-20 22:42:02
 Severity: Low
 
@@ -151,13 +151,11 @@ func TestFormatAlert(t *testing.T) {
 		},
 	}
 
-	alertLink := AlertLink("https://localhost:8080", "alert-id")
-
 	testFormat := func(alert *storage.Alert, expected string) {
 		var err error
 		alert.Time, err = types2.TimestampProto(timeutil.MustParse("2006-01-02 15:04:05", "2021-01-20 22:42:02"))
 		require.NoError(t, err)
-		formatted, err := FormatAlert(alert, alertLink, funcMap)
+		formatted, err := FormatAlert(alert, AlertLink("https://localhost:8080", alert), funcMap)
 		require.NoError(t, err)
 		assert.Equal(t, expected, formatted)
 	}

@@ -213,17 +213,22 @@ class Services extends BaseService {
         return getImageClient().listImages(query)
     }
 
-    static requestBuildImageScan(String registry, String remote, String tag) {
-        println "${registry}/${remote}:${tag}"
-        return getDetectionClient().detectBuildTime(BuildDetectionRequest.newBuilder().setImage(
+    static requestBuildImageScan(String registry, String remote, String tag, Boolean sendNotifications = false) {
+        println "Request scan of ${registry}/${remote}:${tag} with sendNotifications=${sendNotifications}"
+        return getDetectionClient().detectBuildTime(
+            BuildDetectionRequest.newBuilder().
+            setImage(
                ContainerImage.newBuilder()
-                        .setName(ImageOuterClass.ImageName.newBuilder()
-                        .setRegistry(registry)
-                        .setRemote(remote)
-                        .setTag(tag)
-                        .build()
+                    .setName(ImageOuterClass.ImageName.newBuilder()
+                    .setRegistry(registry)
+                    .setRemote(remote)
+                    .setTag(tag)
+                    .build()
                 )
-        ).build())
+            ).
+            setSendNotifications(sendNotifications).
+            build()
+        )
       }
 
     static updatePolicy(Policy policyDef) {

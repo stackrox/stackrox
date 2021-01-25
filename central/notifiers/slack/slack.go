@@ -107,7 +107,7 @@ func (s *slack) getDescription(alert *storage.Alert) (string, error) {
 			return valuesString
 		},
 	}
-	alertLink := notifiers.AlertLink(s.Notifier.UiEndpoint, alert.GetId())
+	alertLink := notifiers.AlertLink(s.Notifier.UiEndpoint, alert)
 	return notifiers.FormatAlert(alert, alertLink, funcMap)
 }
 

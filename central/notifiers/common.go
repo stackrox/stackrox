@@ -28,18 +28,26 @@ const (
 
 const (
 	alertLinkPath = "/main/violations/%s"
+	imageLinkPath = "/main/vulnerability-management/image/%s"
 )
 
 // AlertLink is the link URL for this alert
-func AlertLink(endpoint string, alertID string) string {
+func AlertLink(endpoint string, alert *storage.Alert) string {
 	base, err := url.Parse(endpoint)
 	if err != nil {
-		log.Error(err)
+		log.Errorf("Invalid endpoint %s: %v", endpoint, err)
+		return ""
 	}
-	alertPath := fmt.Sprintf(alertLinkPath, alertID)
+	var alertPath string
+	switch entity := alert.GetEntity().(type) {
+	case *storage.Alert_Deployment_:
+		alertPath = fmt.Sprintf(alertLinkPath, alert.GetId())
+	case *storage.Alert_Image:
+		alertPath = fmt.Sprintf(imageLinkPath, entity.Image.GetId())
+	}
 	u, err := url.Parse(alertPath)
 	if err != nil {
-		log.Error(err)
+		log.Errorf("Invalid alert path %s: %v", alertPath, err)
 		return ""
 	}
 	return base.ResolveReference(u).String()
@@ -66,6 +74,9 @@ func SeverityString(s storage.Severity) string {
 // GetLabelValue returns the value based on the label in the deployment or the default value if it does not exist
 func GetLabelValue(alert *storage.Alert, labelKey, def string) string {
 	deployment := alert.GetDeployment()
+	if deployment == nil {
+		return def
+	}
 	// Annotations will most likely be used for k8s
 	if value, ok := deployment.GetAnnotations()[labelKey]; ok {
 		return value

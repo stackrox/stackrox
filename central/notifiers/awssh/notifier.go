@@ -277,7 +277,7 @@ func (n *notifier) uploadBatchIf(ctx context.Context, predicate func(*notifier) 
 	input := &securityhub.BatchImportFindingsInput{}
 
 	for _, alert := range n.cache {
-		input.Findings = append(input.Findings, mapAlertToFinding(n.account, n.arn, notifiers.AlertLink(n.ProtoNotifier().GetUiEndpoint(), alert.GetId()), alert))
+		input.Findings = append(input.Findings, mapAlertToFinding(n.account, n.arn, notifiers.AlertLink(n.ProtoNotifier().GetUiEndpoint(), alert), alert))
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, n.upstreamTimeout)
@@ -348,39 +348,40 @@ func (n *notifier) Test(ctx context.Context) error {
 		return createError("error testing AWS Security Hub integration", err)
 	}
 
-	_, err = n.SecurityHub.BatchImportFindings(&securityhub.BatchImportFindingsInput{
-		Findings: []*securityhub.AwsSecurityFinding{
-			mapAlertToFinding(n.account, n.arn, notifiers.AlertLink(n.ProtoNotifier().GetUiEndpoint(), "test"), &storage.Alert{
-				Id: uuid.NewV4().String(),
-				Policy: &storage.Policy{
-					Id:          uuid.NewV4().String(),
-					Name:        "example policy",
-					Severity:    storage.Severity_HIGH_SEVERITY,
-					Description: "This finding tests the SecurityHub integration",
-				},
-				Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
-					Id:          uuid.NewV4().String(),
-					Name:        "example deployment",
-					Namespace:   "example namespace",
-					ClusterId:   uuid.NewV4().String(),
-					ClusterName: "example cluster",
-					Containers: []*storage.Alert_Deployment_Container{
-						{
-							Name: "example container",
-							Image: &storage.ContainerImage{
-								Id: uuid.NewV4().String(),
-								Name: &storage.ImageName{
-									FullName: "registry/path/to/image:tag",
-								},
-							},
+	testAlert := &storage.Alert{
+		Id: uuid.NewV4().String(),
+		Policy: &storage.Policy{
+			Id:          uuid.NewV4().String(),
+			Name:        "example policy",
+			Severity:    storage.Severity_HIGH_SEVERITY,
+			Description: "This finding tests the SecurityHub integration",
+		},
+		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
+			Id:          uuid.NewV4().String(),
+			Name:        "example deployment",
+			Namespace:   "example namespace",
+			ClusterId:   uuid.NewV4().String(),
+			ClusterName: "example cluster",
+			Containers: []*storage.Alert_Deployment_Container{
+				{
+					Name: "example container",
+					Image: &storage.ContainerImage{
+						Id: uuid.NewV4().String(),
+						Name: &storage.ImageName{
+							FullName: "registry/path/to/image:tag",
 						},
 					},
-				}},
-				FirstOccurred: types.TimestampNow(),
-				Time:          types.TimestampNow(),
-				// Mark the state as resolved, thus indicating to security hub that all is good and avoiding raising a false alert.
-				State: storage.ViolationState_RESOLVED,
-			}),
+				},
+			},
+		}},
+		FirstOccurred: types.TimestampNow(),
+		Time:          types.TimestampNow(),
+		// Mark the state as resolved, thus indicating to security hub that all is good and avoiding raising a false alert.
+		State: storage.ViolationState_RESOLVED,
+	}
+	_, err = n.SecurityHub.BatchImportFindings(&securityhub.BatchImportFindingsInput{
+		Findings: []*securityhub.AwsSecurityFinding{
+			mapAlertToFinding(n.account, n.arn, notifiers.AlertLink(n.ProtoNotifier().GetUiEndpoint(), testAlert), testAlert),
 		},
 	})
 
@@ -394,6 +395,10 @@ func (n *notifier) Test(ctx context.Context) error {
 func (n *notifier) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	if n.stopSig.IsDone() {
 		return errNotRunning
+	}
+
+	if alert.GetDeployment() == nil {
+		return errors.New("AWS SH notifier only supports deployment alerts")
 	}
 
 	select {

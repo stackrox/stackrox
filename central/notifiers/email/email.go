@@ -206,7 +206,7 @@ func (e *email) plainTextAlert(alert *storage.Alert) (string, error) {
 			return fmt.Sprintf("\r\n\t\t\t - %s", s)
 		},
 	}
-	alertLink := notifiers.AlertLink(e.notifier.UiEndpoint, alert.GetId())
+	alertLink := notifiers.AlertLink(e.notifier.UiEndpoint, alert)
 	return notifiers.FormatAlert(alert, alertLink, funcMap)
 }
 
@@ -216,8 +216,7 @@ func (*email) Close(context.Context) error {
 
 // AlertNotify takes in an alert and generates the email
 func (e *email) AlertNotify(ctx context.Context, alert *storage.Alert) error {
-	subject := fmt.Sprintf("Deployment %v (%v) violates '%v' Policy", alert.GetDeployment().GetName(),
-		alert.GetDeployment().GetId(), alert.GetPolicy().GetName())
+	subject := notifiers.SummaryForAlert(alert)
 	body, err := e.plainTextAlert(alert)
 	if err != nil {
 		return err

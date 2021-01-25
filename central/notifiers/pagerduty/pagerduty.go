@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	imagesTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -157,19 +158,25 @@ func (p *pagerDuty) createPagerDutyEvent(alert *storage.Alert, eventType string)
 
 	payload := &pd.V2Payload{
 		Summary:   alert.GetPolicy().GetDescription(),
-		Source:    fmt.Sprintf("Cluster %s", alert.GetDeployment().GetClusterName()),
 		Severity:  severityMap[alert.GetPolicy().GetSeverity()],
 		Timestamp: alert.GetTime().String(),
 		Class:     strings.Join(alert.GetPolicy().GetCategories(), " "),
-		Component: fmt.Sprintf("Deployment %s", alert.GetDeployment().GetName()),
 		Details:   jsonPayload,
 	}
 
+	switch entity := alert.GetEntity().(type) {
+	case *storage.Alert_Deployment_:
+		payload.Source = fmt.Sprintf("Cluster %s", entity.Deployment.GetClusterName())
+		payload.Component = fmt.Sprintf("Deployment %s", entity.Deployment.GetName())
+	case *storage.Alert_Image:
+		payload.Source = fmt.Sprintf("Image from %s/%s", entity.Image.GetName().GetRemote(), entity.Image.GetName().GetRegistry())
+		payload.Component = fmt.Sprintf("Image %s", imagesTypes.Wrapper{GenericImage: entity.Image}.FullName())
+	}
 	return pd.V2Event{
 		Action:     eventType,
 		RoutingKey: p.apikey,
 		Client:     client,
-		ClientURL:  notifiers.AlertLink(p.Notifier.UiEndpoint, alert.GetId()),
+		ClientURL:  notifiers.AlertLink(p.Notifier.UiEndpoint, alert),
 		DedupKey:   alert.GetId(),
 		Payload:    payload,
 	}, nil

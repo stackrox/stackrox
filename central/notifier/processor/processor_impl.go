@@ -44,6 +44,9 @@ func (p *processorImpl) UpdateNotifier(ctx context.Context, notifier notifiers.N
 
 // ProcessAlert pushes the alert into a channel to be processed
 func (p *processorImpl) ProcessAlert(ctx context.Context, alert *storage.Alert) {
+	if len(alert.GetPolicy().GetNotifiers()) == 0 {
+		return
+	}
 	alertNotifiers := set.NewStringSet(alert.GetPolicy().GetNotifiers()...)
 	p.ns.ForEach(ctx, func(ctx context.Context, notifier notifiers.Notifier, failures AlertSet) {
 		if alertNotifiers.Contains(notifier.ProtoNotifier().GetId()) {

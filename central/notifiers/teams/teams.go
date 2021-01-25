@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -60,7 +61,7 @@ func (t *teams) getAlertSection(alert *storage.Alert) section {
 		facts = append(facts, fact{Name: "ID", Value: alertID})
 	}
 
-	alertLink := notifiers.AlertLink(t.Notifier.UiEndpoint, alertID)
+	alertLink := notifiers.AlertLink(t.Notifier.UiEndpoint, alert)
 	if len(alertLink) > 0 {
 		facts = append(facts, fact{Name: "URL", Value: alertLink})
 	}
@@ -114,12 +115,22 @@ func (t *teams) getPolicySection(alert *storage.Alert) (section, error) {
 	return section, nil
 }
 
-func (t *teams) getDeploymentSection(alert *storage.Alert) (section, error) {
-	var facts []fact
-	deployment := alert.GetDeployment()
-	if deployment == nil {
-		return section{}, errors.New("Deployment does not exist on alert object")
+func (t *teams) getEntitySection(alert *storage.Alert) section {
+	switch entity := alert.GetEntity().(type) {
+	case *storage.Alert_Deployment_:
+		return t.getDeploymentSection(entity.Deployment)
+	case *storage.Alert_Image:
+		return t.getImageSection(entity.Image)
 	}
+	return section{}
+}
+
+func (t *teams) getImageSection(image *storage.ContainerImage) section {
+	return section{Title: "Image Details", Facts: []fact{{Name: "Image Name", Value: types.Wrapper{GenericImage: image}.FullName()}}}
+}
+
+func (t *teams) getDeploymentSection(deployment *storage.Alert_Deployment) section {
+	var facts []fact
 
 	if len(deployment.GetId()) > 0 {
 		facts = append(facts, fact{Name: "ID", Value: deployment.GetId()})
@@ -152,7 +163,7 @@ func (t *teams) getDeploymentSection(alert *storage.Alert) (section, error) {
 		facts = append(facts, fact{Name: "Images", Value: strings.Join(images, ", ")})
 	}
 
-	return section{Title: "Deployment Details", Facts: facts}, nil
+	return section{Title: "Deployment Details", Facts: facts}
 }
 
 func (t *teams) getViolationSection(alert *storage.Alert) (section, error) {
@@ -224,7 +235,7 @@ func (*teams) Close(ctx context.Context) error {
 // AlertNotify takes in an alert and generates the Teams message
 func (t *teams) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	var sections []section
-	title := fmt.Sprintf("New Alert: Deployment %q violates %q Policy", alert.GetDeployment().GetName(), alert.GetPolicy().GetName())
+	title := notifiers.SummaryForAlert(alert)
 
 	alertSection := t.getAlertSection(alert)
 	sections = append(sections, alertSection)
@@ -239,15 +250,15 @@ func (t *teams) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		sections = append(sections, violationSection)
 	}
 
-	deploymentSection, err := t.getDeploymentSection(alert)
-	if err == nil && len(deploymentSection.Facts) > 0 {
-		sections = append(sections, deploymentSection)
+	entitySection := t.getEntitySection(alert)
+	if len(entitySection.Facts) > 0 {
+		sections = append(sections, entitySection)
 	}
 
 	notification := notification{
 		Title:    title,
 		Color:    notifiers.GetAttachmentColor(alert.GetPolicy().GetSeverity()),
-		Text:     fmt.Sprintf("Deployment %q (%q) violates %q Policy", alert.GetDeployment().GetName(), alert.GetDeployment().GetId(), alert.GetPolicy().GetName()),
+		Text:     title,
 		Sections: sections,
 	}
 

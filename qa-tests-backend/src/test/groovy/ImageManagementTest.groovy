@@ -4,6 +4,7 @@ import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import objects.Deployment
+import objects.GenericNotifier
 import org.junit.experimental.categories.Category
 import services.CVEService
 import services.ImageService
@@ -264,6 +265,54 @@ class ImageManagementTest extends BaseSpecification {
         cleanup:
         // Should be able to call this multiple times safely in case of any failures previously
         CVEService.unsuppressCVE("CVE-2010-0928")
+    }
+
+    @Category([BAT, Integration])
+    def "Verify CI/CD Integration Endpoint with notifications"() {
+        when:
+        "Update policy to build time, create notifier and add it to policy"
+        def notifier = new GenericNotifier()
+        notifier.createNotifier()
+        assert notifier.id
+
+        def policyName = "Latest tag"
+        def startPolicy = Services.getPolicyByName(policyName)
+        assert startPolicy
+
+        def newPolicy = PolicyOuterClass.Policy.newBuilder(startPolicy)
+            .clearLifecycleStages()
+            .addLifecycleStages(LifecycleStage.BUILD)
+            .addNotifiers(notifier.id)
+            .build()
+        Services.updatePolicy(newPolicy)
+
+        and:
+        "Request Image Scan with sendNotifications"
+        def scanResults = Services.requestBuildImageScan("docker.io", "library/busybox", "latest", true)
+
+        then:
+        "verify violation matches expected violation status and notification sent"
+        assert scanResults.getAlertsList().findAll { it.getPolicy().name == policyName }.size() == 1
+        withRetry(2, 3) {
+            def genericViolation = GenericNotifier.getMostRecentViolationAndValidateCommonFields()
+            println "Most recent violation sent: ${genericViolation}"
+            def alert = genericViolation["data"]["alert"]
+            assert alert != null
+            assert alert["policy"]["name"] == policyName
+            assert alert["image"] != null
+            assert alert["deployment"] == null
+            assert alert["image"]["name"]["fullName"] == "docker.io/library/busybox:latest"
+            assert alert["image"]["name"]["registry"] == "docker.io"
+            assert alert["image"]["name"]["remote"] == "library/busybox"
+            assert alert["image"]["name"]["tag"] == "latest"
+        }
+
+        cleanup:
+        "Revert policy and clean up notifier"
+        if (startPolicy != null) {
+            Services.updatePolicy(startPolicy)
+        }
+        notifier.deleteNotifier()
     }
 
 }

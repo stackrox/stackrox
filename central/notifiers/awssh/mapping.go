@@ -130,7 +130,7 @@ func mapAlertToFinding(account string, arn string, alertURL string, alert *stora
 		// reference the StackRox UI and break
 		if len(finding.Resources) == maxResources-1 && i != len(alert.GetViolations())-1 {
 			finding.Resources = append(finding.Resources, &securityhub.Resource{
-				Id:   aws.String("Note: More than 32 violations found. Please consult the StackRox product to see more."),
+				Id:   aws.String(fmt.Sprintf("Note: More than %d violations found. Please consult the StackRox product to see more.", maxResources)),
 				Type: aws.String(resourceTypeOther),
 			})
 			break

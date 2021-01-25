@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/retry"
+	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/report"
@@ -21,31 +22,34 @@ import (
 // Command checks the image against image build lifecycle policies
 func Command() *cobra.Command {
 	var (
-		image      string
-		json       bool
-		retryDelay int
-		retryCount int
+		image             string
+		json              bool
+		retryDelay        int
+		retryCount        int
+		sendNotifications bool
 	)
 	c := &cobra.Command{
 		Use: "check",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			if image == "" {
-				return errors.New("--image must be set")
-			}
-			return checkImageWithRetry(image, json, flags.Timeout(c), retryDelay, retryCount)
+			return checkImageWithRetry(image, json, sendNotifications, flags.Timeout(c), retryDelay, retryCount)
 		}),
 	}
 
 	c.Flags().StringVarP(&image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
+	pkgUtils.Must(c.MarkFlagRequired("image"))
+
 	c.Flags().BoolVar(&json, "json", false, "output policy results as json.")
 	c.Flags().IntVarP(&retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
 	c.Flags().IntVarP(&retryCount, "retries", "r", 0, "Number of retries before exiting as error")
+	c.Flags().BoolVar(&sendNotifications, "send-notifications", false,
+		"whether to send notifications for violations (notifications will be sent to the notifiers "+
+			"configured in each violated policy)")
 	return c
 }
 
-func checkImageWithRetry(image string, json bool, timeout time.Duration, retryDelay int, retryCount int) error {
+func checkImageWithRetry(image string, json bool, sendNotifications bool, timeout time.Duration, retryDelay int, retryCount int) error {
 	err := retry.WithRetry(func() error {
-		return checkImage(image, json, timeout)
+		return checkImage(image, json, sendNotifications, timeout)
 	},
 		retry.Tries(retryCount+1),
 		retry.OnFailedAttempts(func(err error) {
@@ -58,9 +62,13 @@ func checkImageWithRetry(image string, json bool, timeout time.Duration, retryDe
 	return nil
 }
 
-func checkImage(image string, json bool, timeout time.Duration) error {
+func checkImage(image string, json bool, sendNotifications bool, timeout time.Duration) error {
 	// Get the violated policies for the input data.
-	alerts, err := getAlerts(image, timeout)
+	req, err := buildRequest(image, sendNotifications)
+	if err != nil {
+		return err
+	}
+	alerts, err := sendRequestAndGetAlerts(req, timeout)
 	if err != nil {
 		return err
 	}
@@ -86,13 +94,7 @@ func checkImage(image string, json bool, timeout time.Duration) error {
 }
 
 // Get the alerts for the command line inputs.
-func getAlerts(imageStr string, timeout time.Duration) ([]*storage.Alert, error) {
-	// Attempt to construct the request first since it is the cheapest op.
-	image, err := buildRequest(imageStr)
-	if err != nil {
-		return nil, err
-	}
-
+func sendRequestAndGetAlerts(req *v1.BuildDetectionRequest, timeout time.Duration) ([]*storage.Alert, error) {
 	// Create the connection to the central detection service.
 	conn, err := common.GetGRPCConnection()
 	if err != nil {
@@ -106,7 +108,7 @@ func getAlerts(imageStr string, timeout time.Duration) ([]*storage.Alert, error)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	// Call detection and return the returned alerts.
-	response, err := service.DetectBuildTime(ctx, &v1.BuildDetectionRequest{Resource: &v1.BuildDetectionRequest_Image{Image: image}})
+	response, err := service.DetectBuildTime(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -114,10 +116,13 @@ func getAlerts(imageStr string, timeout time.Duration) ([]*storage.Alert, error)
 }
 
 // Use inputs to generate an image name for request.
-func buildRequest(image string) (*storage.ContainerImage, error) {
+func buildRequest(image string, sendNotifications bool) (*v1.BuildDetectionRequest, error) {
 	img, err := utils.GenerateImageFromString(image)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not parse image '%s'", image)
 	}
-	return img, nil
+	return &v1.BuildDetectionRequest{
+		Resource:          &v1.BuildDetectionRequest_Image{Image: img},
+		SendNotifications: sendNotifications,
+	}, nil
 }

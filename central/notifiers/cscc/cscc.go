@@ -152,7 +152,10 @@ func (c *cscc) Close(ctx context.Context) error {
 
 //AlertNotify takes in an alert and generates the notification
 func (c *cscc) AlertNotify(ctx context.Context, alert *storage.Alert) error {
-	alertLink := notifiers.AlertLink(c.Notifier.UiEndpoint, alert.GetId())
+	if alert.GetDeployment() == nil {
+		return errors.New("CSCC integration can only handle alerts for deployments")
+	}
+	alertLink := notifiers.AlertLink(c.Notifier.UiEndpoint, alert)
 	summary := c.getAlertDescription(alert)
 
 	findingID := processUUID(alert.GetId())

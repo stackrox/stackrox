@@ -144,30 +144,29 @@ class GenericNotifier extends Notifier {
                 integrationName, enableTLS, caCert, skipTLSVerification, auditLoggingEnabled)
     }
 
-    void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
+    static getMostRecentViolationAndValidateCommonFields() {
         def get = new URL("http://localhost:8080").openConnection()
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(get.getInputStream().getText())
         def generic = object[-1]
-
         assert generic["headers"]["Headerkey"] == ["headervalue"]
         assert generic["headers"]["Content-Type"] == ["application/json"]
         assert generic["headers"]["Authorization"] == ["Basic YWRtaW46YWRtaW4="]
         assert generic["data"]["fieldkey"] == "fieldvalue"
+
+        return generic
+    }
+
+    void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
+        def generic = getMostRecentViolationAndValidateCommonFields()
+
         assert generic["data"]["alert"]["policy"]["name"] == policy.name
         assert generic["data"]["alert"]["deployment"]["name"] == deployment.name
     }
 
     void validateNetpolNotification(String yaml, boolean strictIntegrationTesting) {
-        def get = new URL("http://localhost:8080").openConnection()
-        def jsonSlurper = new JsonSlurper()
-        def object = jsonSlurper.parseText(get.getInputStream().getText())
-        def generic = object[-1]
+        def generic = getMostRecentViolationAndValidateCommonFields()
 
-        assert generic["headers"]["Headerkey"] == ["headervalue"]
-        assert generic["headers"]["Content-Type"] == ["application/json"]
-        assert generic["headers"]["Authorization"] == ["Basic YWRtaW46YWRtaW4="]
-        assert generic["data"]["fieldkey"] == "fieldvalue"
         assert generic["data"]["networkpolicy"]["yaml"] == yaml
     }
 }

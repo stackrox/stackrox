@@ -127,7 +127,7 @@ func (j *jira) getAlertDescription(alert *storage.Alert) (string, error) {
 			return valuesString
 		},
 	}
-	alertLink := notifiers.AlertLink(j.notifier.UiEndpoint, alert.GetId())
+	alertLink := notifiers.AlertLink(j.notifier.UiEndpoint, alert)
 	return notifiers.FormatAlert(alert, alertLink, funcMap)
 }
 

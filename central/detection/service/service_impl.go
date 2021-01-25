@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
@@ -65,6 +66,8 @@ type serviceImpl struct {
 	buildTimeDetector  buildtime.Detector
 	clusters           clusterDatastore.DataStore
 
+	notifications processor.Processor
+
 	detector deploytime.Detector
 }
 
@@ -81,6 +84,17 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
+}
+
+func (s *serviceImpl) maybeSendNotifications(req *apiV1.BuildDetectionRequest, alerts []*storage.Alert) {
+	if !req.GetSendNotifications() {
+		return
+	}
+	for _, alert := range alerts {
+		// We use context.Background() instead of the request context because it is possible (and expected) that the
+		// sending of notifications will take place asynchronously, and will still be happening after the request is done.
+		s.notifications.ProcessAlert(context.Background(), alert)
+	}
 }
 
 // DetectBuildTime runs detection on a built image.
@@ -117,6 +131,8 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	if err != nil {
 		return nil, err
 	}
+
+	s.maybeSendNotifications(req, alerts)
 
 	if enrichResult.ImageUpdated {
 		img.Id = utils.GetImageID(img)
