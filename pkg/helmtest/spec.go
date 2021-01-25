@@ -17,6 +17,7 @@ type Test struct {
 
 	Defs    string       `json:"defs,omitempty"`
 	Release *ReleaseSpec `json:"release,omitempty"`
+	Server  *ServerSpec  `json:"server,omitempty"`
 
 	Expect      string `json:"expect,omitempty"`
 	ExpectError *bool  `json:"expectError,omitempty"`
@@ -37,4 +38,17 @@ type ReleaseSpec struct {
 	Revision  *int   `json:"revision,omitempty"`
 	IsInstall *bool  `json:"isInstall,omitempty"`
 	IsUpgrade *bool  `json:"isUpgrade,omitempty"`
+}
+
+// ServerSpec specifies how the model of the server will be constructed.
+type ServerSpec struct {
+	// AvailableSchemas are the names of schemas that are available on the server (i.e., that rendered objects must
+	// pass validation against, but not necessarily discoverable via `.Capabilities.APIVersions`).
+	AvailableSchemas []string `json:"availableSchemas,omitempty"`
+	// VisibleSchemas are the names of schemas that are available on the server AND discoverable via
+	// `.Capabilities.APIVersions`.
+	VisibleSchemas []string `json:"visibleSchemas,omitempty"`
+
+	// NoInherit indicates that server-side settings should *not* be inherited from the enclosing scope.
+	NoInherit bool `json:"noInherit,omitempty"`
 }

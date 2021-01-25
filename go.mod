@@ -111,6 +111,7 @@ require (
 	k8s.io/apimachinery v0.19.2
 	k8s.io/apiserver v0.19.2
 	k8s.io/client-go v12.0.0+incompatible
+	k8s.io/kube-openapi v0.0.0-20200805222855-6aeccd4b50c6
 	k8s.io/kubectl v0.19.2
 	k8s.io/utils v0.0.0-20201027101359-01387209bb0d
 	sigs.k8s.io/yaml v1.2.0
@@ -128,7 +129,7 @@ replace (
 	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20210115205927-b892c1b298f7
 
 	// Something pulls in an older version with uppercase OpenAPIv2 package version
-	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.1
+	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.3
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20200930173048-36c5a823baf5
 	github.com/mattn/goveralls => github.com/viswajithiii/goveralls v0.0.3-0.20190917224517-4dd02c532775
 	github.com/nilslice/protolock => github.com/viswajithiii/protolock v0.10.1-0.20190117180626-43bb8a9ba4e8

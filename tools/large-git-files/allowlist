@@ -23,3 +23,5 @@ roxctl/helm/derivelocalvalues/testdata/k8s-resources/defaults.yaml
 roxctl/helm/derivelocalvalues/testdata/k8s-resources/hostPath.yaml
 roxctl/helm/derivelocalvalues/testdata/k8s-resources/loadBalancer.yaml
 roxctl/helm/derivelocalvalues/testdata/k8s-resources/offlineMode-internalRegistry-nodePortExposure-scannerDisabled.yaml
+pkg/helmtest/openapi-schemas/kubernetes-1.20.2.json.gz
+pkg/helmtest/openapi-schemas/openshift-4.1.0.json.gz

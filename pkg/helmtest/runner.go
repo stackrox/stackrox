@@ -1,20 +1,28 @@
 package helmtest
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
+	"io"
 	"path"
 	"strings"
 	"testing"
 
 	"github.com/itchyny/gojq"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/engine"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/kubectl/pkg/util/openapi"
+	"k8s.io/kubectl/pkg/util/openapi/validation"
+	yaml2 "sigs.k8s.io/yaml"
 )
 
 type runner struct {
@@ -31,7 +39,67 @@ func (r *runner) Require() *require.Assertions {
 	return require.New(r.t)
 }
 
-func (r *runner) instantiateWorld(renderVals chartutil.Values) map[string]interface{} {
+func (r *runner) readAndValidateYAML(fileName string, fileContents string, resources openapi.Resources) []unstructured.Unstructured {
+	validator := validation.NewSchemaValidation(resources)
+
+	yamlReader := yaml.NewYAMLReader(bufio.NewReader(strings.NewReader(fileContents)))
+
+	var objs []unstructured.Unstructured
+
+	docCounter := 0
+	var yamlDoc []byte
+	var err error
+	var emptyDocs []int
+	for yamlDoc, err = yamlReader.Read(); err == nil; yamlDoc, err = yamlReader.Read() {
+		docCounter++
+
+		// We can tolerate empty documents in some circumstances (such as when the entire file is empty), but having
+		// empty documents in an overall non-empty file will at least cause lint errors.
+		if len(bytes.TrimSpace(yamlDoc)) == 0 {
+			emptyDocs = append(emptyDocs, docCounter)
+			continue
+		}
+
+		// Do the validation before converting to JSON such that we get accurate line numbers.
+		validationErr := validator.ValidateBytes(yamlDoc)
+		r.Assert().NoErrorf(validationErr, "YAML document #%d in file %s failed validation", docCounter, fileName)
+
+		// YAMLToJSONStrict will not only convert to YAML, but also validate that there are no duplicate keys.
+		jsonBytes, err := yaml2.YAMLToJSONStrict(yamlDoc)
+		if !r.Assert().NoErrorf(err, "could not convert YAML document #%d in file %s to JSON", docCounter, fileName) {
+			continue
+		}
+
+		obj, _, err := unstructured.UnstructuredJSONScheme.Decode(jsonBytes, nil, nil)
+		if !r.Assert().NoErrorf(err, "could not decode Kubernetes object in YAML document #%d in file %s", docCounter, fileName) {
+			continue
+		}
+
+		unstructuredObj, _ := obj.(*unstructured.Unstructured)
+		if !r.Assert().NotNilf(unstructuredObj, "YAML document #%d in file %s is not a Kubernetes object", docCounter, fileName) {
+			continue
+		}
+
+		r.Assert().NotNilf(resources.LookupResource(unstructuredObj.GroupVersionKind()), "YAML document #%d in file %s defines object of kind %s not known in schema", docCounter, fileName, unstructuredObj.GroupVersionKind())
+		objs = append(objs, *unstructuredObj)
+	}
+
+	// The only acceptable error is EOF.
+	if !errors.Is(err, io.EOF) {
+		r.Assert().NoErrorf(err, "reading multi-document YAML file %s", fileName)
+	}
+
+	// Validate that there is at most a single empty document, and only if the file is otherwise empty.
+	if len(objs) > 0 {
+		r.Assert().Empty(emptyDocs, "multi-document YAML file %s is non-empty but has empty documents", fileName)
+	} else {
+		r.Assert().LessOrEqualf(len(emptyDocs), 1, "multi-document YAML file %s has multiple empty documents", fileName)
+	}
+
+	return objs
+}
+
+func (r *runner) instantiateWorld(renderVals chartutil.Values, resources openapi.Resources) map[string]interface{} {
 	world := make(map[string]interface{})
 
 	renderValsBytes, err := json.Marshal(renderVals)
@@ -71,10 +139,7 @@ func (r *runner) instantiateWorld(renderVals chartutil.Values) map[string]interf
 			continue
 		}
 
-		objs, err := k8sutil.UnstructuredFromYAMLMulti(renderedContents)
-		if !r.Assert().NoErrorf(err, "parsing objects from file %s", fileName) {
-			continue
-		}
+		objs := r.readAndValidateYAML(fileName, renderedContents, resources)
 
 		for _, obj := range objs {
 			kindPlural := strings.TrimSuffix(strings.ToLower(obj.GetKind()), "s") + "s"
@@ -93,6 +158,46 @@ func (r *runner) instantiateWorld(renderVals chartutil.Values) map[string]interf
 
 	world["objects"] = allObjects
 	return world
+}
+
+func (r *runner) loadSchemas() (visible, available schemas) {
+	var visibleSchemaNames, availableSchemaNames []string
+	r.test.forEachScopeTopDown(func(t *Test) {
+		server := t.Server
+		if server == nil {
+			return
+		}
+		if server.NoInherit {
+			visibleSchemaNames = nil
+			availableSchemaNames = nil
+		}
+		for _, schemaName := range server.AvailableSchemas {
+			schemaName = strings.ToLower(schemaName)
+			availableSchemaNames = append(availableSchemaNames, schemaName)
+		}
+		for _, schemaName := range server.VisibleSchemas {
+			schemaName = strings.ToLower(schemaName)
+			visibleSchemaNames = append(visibleSchemaNames, schemaName)
+			// Every visible schema is also available (but not vice versa)
+			availableSchemaNames = append(availableSchemaNames, schemaName)
+		}
+	})
+
+	availableSchemaNames = sliceutils.StringUnique(availableSchemaNames)
+	visibleSchemaNames = sliceutils.StringUnique(visibleSchemaNames)
+
+	for _, schemaName := range availableSchemaNames {
+		schema, err := getSchema(schemaName)
+		r.Require().NoErrorf(err, "failed to load schema %q", schemaName)
+		available = append(available, schema)
+	}
+	for _, schemaName := range visibleSchemaNames {
+		schema, err := getSchema(schemaName)
+		r.Require().NoErrorf(err, "failed to load schema %q", schemaName)
+		visible = append(visible, schema)
+	}
+
+	return visible, available
 }
 
 func (r *runner) Run() {
@@ -114,10 +219,22 @@ func (r *runner) Run() {
 		rel.apply(&releaseOpts)
 	})
 
-	renderVals, err := chartutil.ToRenderValues(r.tgt.Chart, values, releaseOpts, r.tgt.Capabilities)
+	visibleSchemas, availableSchemas := r.loadSchemas()
+
+	caps := r.tgt.Capabilities
+	if caps == nil {
+		caps = chartutil.DefaultCapabilities
+	}
+	if len(visibleSchemas) > 0 {
+		newCaps := *caps
+		newCaps.APIVersions = visibleSchemas.versionSet()
+		caps = &newCaps
+	}
+
+	renderVals, err := chartutil.ToRenderValues(r.tgt.Chart, values, releaseOpts, caps)
 	r.Require().NoError(err, "failed to obtain render values")
 
-	world := r.instantiateWorld(renderVals)
+	world := r.instantiateWorld(renderVals, availableSchemas)
 	r.evaluatePredicates(world)
 }
 

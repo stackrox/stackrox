@@ -23,7 +23,9 @@ defs: |
       (envVars(.daemonsets.collector; "compliance")["ROX_ADVERTISED_ENDPOINT"]
         | assertThat(. == ep))
     ][];
-
+server:
+  visibleSchemas:
+  - kubernetes-1.20.2
 values:
   clusterName: "testcluster"
   imagePullSecrets:
