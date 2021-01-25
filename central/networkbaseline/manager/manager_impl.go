@@ -58,14 +58,6 @@ type manager struct {
 	lock                    sync.Mutex
 }
 
-var (
-	validBaselinePeerEntityTypes = map[storage.NetworkEntityInfo_Type]struct{}{
-		storage.NetworkEntityInfo_DEPLOYMENT:      {},
-		storage.NetworkEntityInfo_EXTERNAL_SOURCE: {},
-		storage.NetworkEntityInfo_INTERNET:        {},
-	}
-)
-
 func getNewObservationPeriodEnd() timestamp.MicroTS {
 	return timestamp.Now().Add(env.NetworkBaselineObservationPeriod.DurationSetting())
 }
@@ -73,7 +65,7 @@ func getNewObservationPeriodEnd() timestamp.MicroTS {
 func (m *manager) shouldUpdate(conn *networkgraph.NetworkConnIndicator, updateTS timestamp.MicroTS) bool {
 	var atLeastOneBaselineInObservationPeriod bool
 	for _, entity := range []*networkgraph.Entity{&conn.SrcEntity, &conn.DstEntity} {
-		if _, valid := validBaselinePeerEntityTypes[entity.Type]; !valid {
+		if _, valid := networkgraph.ValidBaselinePeerEntityTypes[entity.Type]; !valid {
 			return false
 		}
 		if entity.ID == "" {
@@ -301,7 +293,7 @@ func (m *manager) validatePeers(peers []*v1.NetworkBaselinePeerStatus) error {
 	var invalidPeerTypes []string
 	for _, p := range peers {
 		entity := p.GetPeer().GetEntity()
-		if _, valid := validBaselinePeerEntityTypes[entity.GetType()]; !valid {
+		if _, valid := networkgraph.ValidBaselinePeerEntityTypes[entity.GetType()]; !valid {
 			invalidPeerTypes = append(invalidPeerTypes, entity.GetType().String())
 		}
 		if entity.GetType() == storage.NetworkEntityInfo_DEPLOYMENT {

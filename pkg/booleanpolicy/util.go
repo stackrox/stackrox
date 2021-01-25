@@ -21,6 +21,10 @@ var (
 		fieldnames.KubeAPIVerb,
 	)
 
+	NetworkFlowFields = set.NewFrozenStringSet(
+		fieldnames.UnexpectedNetworkFlowDetected,
+	)
+
 	runtimeFields = set.NewFrozenStringSet(
 		fieldnames.ProcessName,
 		fieldnames.ProcessArguments,
@@ -29,6 +33,7 @@ var (
 		fieldnames.UnexpectedProcessExecuted,
 		fieldnames.KubeResource,
 		fieldnames.KubeAPIVerb,
+		fieldnames.UnexpectedNetworkFlowDetected,
 	)
 )
 
@@ -98,7 +103,17 @@ func ContainsDiscreteRuntimeFieldCategorySections(policy *storage.Policy) bool {
 		//if !SectionContainsOneOf(section, runtimeFields) {
 		//	continue
 		//}
-		if SectionContainsOneOf(section, KubeEventsFields) && SectionContainsOneOf(section, processFields) {
+		var numRuntimeSections int
+		if SectionContainsOneOf(section, KubeEventsFields) {
+			numRuntimeSections++
+		}
+		if SectionContainsOneOf(section, processFields) {
+			numRuntimeSections++
+		}
+		if SectionContainsOneOf(section, NetworkFlowFields) {
+			numRuntimeSections++
+		}
+		if numRuntimeSections > 1 {
 			return false
 		}
 		//atLeastOneRunTimeField = true

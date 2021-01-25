@@ -20,7 +20,7 @@ func processBaselinePrinter(fieldMap map[string][]string) ([]string, error) {
 	r := resultFields{}
 	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
 	r.ProcessName = maybeGetSingleValueFromFieldMap(search.ProcessName.String(), fieldMap)
-	notInBaseline, err := getSingleValueFromFieldMap(augmentedobjs.NotInBaselineCustomTag, fieldMap)
+	notInBaseline, err := getSingleValueFromFieldMap(augmentedobjs.NotInProcessBaselineCustomTag, fieldMap)
 	if err != nil {
 		return nil, err
 	}

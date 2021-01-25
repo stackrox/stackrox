@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -91,6 +92,59 @@ func ConstructProcess(process *storage.ProcessIndicator, processNotInBaseline bo
 // ConstructKubeEvent constructs an augmented kubernetes event.
 func ConstructKubeEvent(event *storage.KubernetesEvent) *pathutil.AugmentedObj {
 	return pathutil.NewAugmentedObj(event)
+}
+
+func flowProtoToDetails(flow *storage.NetworkFlow, flowNotInBaseline bool) (*networkFlowDetails, error) {
+	srcInfo, dstInfo := flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity()
+	srcNameFn, ok := networkgraph.EntityTypeToName[srcInfo.GetType()]
+	if !ok {
+		return nil, errors.Errorf("source entity with type %q is not supported in policies", srcInfo.GetType())
+	}
+	dstNameFn, ok := networkgraph.EntityTypeToName[dstInfo.GetType()]
+	if !ok {
+		return nil, errors.Errorf("destination entity with type %q is not supported in policies", dstInfo.GetType())
+	}
+	return &networkFlowDetails{
+		SrcEntityName:        srcNameFn(srcInfo),
+		DstEntityName:        dstNameFn(dstInfo),
+		DstPort:              flow.GetProps().GetDstPort(),
+		L4Protocol:           flow.GetProps().GetL4Protocol(),
+		NotInNetworkBaseline: flowNotInBaseline,
+	}, nil
+}
+
+// ConstructNetworkFlow constructs an augmented network flow.
+func ConstructNetworkFlow(flow *storage.NetworkFlow, flowNotInBaseline bool) (*pathutil.AugmentedObj, error) {
+	flowDetails, err := flowProtoToDetails(flow, flowNotInBaseline)
+	if err != nil {
+		return nil, errors.Wrap(err, "flattening flow proto to details")
+	}
+	augmentedFlow := pathutil.NewAugmentedObj(flowDetails)
+	return augmentedFlow, nil
+}
+
+// ConstructDeploymentWithNetworkFlowInfo constructs an augmented object with deployment and network flow.
+func ConstructDeploymentWithNetworkFlowInfo(
+	deployment *storage.Deployment,
+	images []*storage.Image,
+	flow *storage.NetworkFlow,
+	flowNotInBaseline bool,
+) (*pathutil.AugmentedObj, error) {
+	obj, err := ConstructDeployment(deployment, images)
+	if err != nil {
+		return nil, err
+	}
+	augmentedFlow, err := ConstructNetworkFlow(flow, flowNotInBaseline)
+	if err != nil {
+		return nil, err
+	}
+
+	err = obj.AddAugmentedObjAt(augmentedFlow, pathutil.FieldStep(networkFlowAugKey))
+	if err != nil {
+		return nil, err
+	}
+
+	return obj, nil
 }
 
 // ConstructDeployment constructs the augmented deployment object.

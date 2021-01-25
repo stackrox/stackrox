@@ -10,18 +10,6 @@ import (
 )
 
 var (
-	entityTypeToName = map[storage.NetworkEntityInfo_Type]func(peer *storage.NetworkBaselinePeer) string{
-		storage.NetworkEntityInfo_DEPLOYMENT: func(peer *storage.NetworkBaselinePeer) string {
-			return peer.GetEntity().GetInfo().GetDeployment().GetName()
-		},
-		storage.NetworkEntityInfo_EXTERNAL_SOURCE: func(peer *storage.NetworkBaselinePeer) string {
-			return peer.GetEntity().GetInfo().GetExternalSource().GetName()
-		},
-		storage.NetworkEntityInfo_INTERNET: func(peer *storage.NetworkBaselinePeer) string {
-			return networkgraph.InternetExternalSourceName
-		},
-	}
-
 	entityTypeToEntityInfoDesc = map[storage.NetworkEntityInfo_Type]func(name string, info *storage.NetworkEntityInfo){
 		storage.NetworkEntityInfo_DEPLOYMENT: func(name string, info *storage.NetworkEntityInfo) {
 			info.Desc = &storage.NetworkEntityInfo_Deployment_{
@@ -62,13 +50,13 @@ func convertPeersFromProto(protoPeers []*storage.NetworkBaselinePeer) (map[peer]
 		entity := networkgraph.Entity{ID: protoPeer.GetEntity().GetInfo().GetId(), Type: protoPeer.GetEntity().GetInfo().GetType()}
 
 		// Get name of entity based on type
-		nameFn, ok := entityTypeToName[entity.Type]
+		nameFn, ok := networkgraph.EntityTypeToName[entity.Type]
 		if !ok {
 			// Not supported type
 			return nil, errors.Errorf("unsupported entity type in network baseline: %q", entity.Type)
 		}
 
-		name := nameFn(protoPeer)
+		name := nameFn(protoPeer.GetEntity().GetInfo())
 		for _, props := range protoPeer.GetProperties() {
 			out[peer{
 				isIngress: props.GetIngress(),

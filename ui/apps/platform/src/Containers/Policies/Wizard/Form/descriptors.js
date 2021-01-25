@@ -1050,6 +1050,26 @@ const k8sEventsDescriptor = [
     },
 ];
 
+const networkDetectionDescriptor = [
+    {
+        label: 'Network Baselining Enabled',
+        name: 'Unexpected Network Flow Detected',
+        longName: 'Network Baselining Status',
+        jsonpath: 'fields.networkbaselineenabled',
+        category: policyCriteriaCategories.NETWORKING,
+        type: 'radioGroup',
+        radioButtons: [
+            { text: 'Unexpected Network Flow', value: true },
+            { text: 'Expected Network Flow', value: false },
+        ],
+        required: false,
+        default: false,
+        defaultValue: false,
+        reverse: false,
+        canBooleanLogic: false,
+    },
+];
+
 export const policyStatus = {
     header: 'Enable Policy',
     descriptor: policyStatusDescriptor,
@@ -1074,7 +1094,10 @@ export const getPolicyConfiguration = (featureFlags) => {
     const newPolicyConfiguration = { ...policyConfiguration };
     if (featureFlags[knownBackendFlags.ROX_K8S_EVENTS_DETECTION] && isFirstLoad) {
         newPolicyConfiguration.descriptor.push(...k8sEventsDescriptor);
-        isFirstLoad = false;
     }
+    if (featureFlags[knownBackendFlags.ROX_NETWORK_DETECTION_BASELINE_VIOLATION] && isFirstLoad) {
+        newPolicyConfiguration.descriptor.push(...networkDetectionDescriptor);
+    }
+    isFirstLoad = false;
     return newPolicyConfiguration;
 };

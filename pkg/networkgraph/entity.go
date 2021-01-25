@@ -4,6 +4,28 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
+var (
+	// EntityTypeToName is NetworkEntityInfo_Type to name function
+	EntityTypeToName = map[storage.NetworkEntityInfo_Type]func(info *storage.NetworkEntityInfo) string{
+		storage.NetworkEntityInfo_DEPLOYMENT: func(info *storage.NetworkEntityInfo) string {
+			return info.GetDeployment().GetName()
+		},
+		storage.NetworkEntityInfo_EXTERNAL_SOURCE: func(info *storage.NetworkEntityInfo) string {
+			return info.GetExternalSource().GetName()
+		},
+		storage.NetworkEntityInfo_INTERNET: func(info *storage.NetworkEntityInfo) string {
+			return InternetExternalSourceName
+		},
+	}
+
+	// ValidBaselinePeerEntityTypes is a set of valid peer entity types that we currently support in network baseline
+	ValidBaselinePeerEntityTypes = map[storage.NetworkEntityInfo_Type]struct{}{
+		storage.NetworkEntityInfo_DEPLOYMENT:      {},
+		storage.NetworkEntityInfo_EXTERNAL_SOURCE: {},
+		storage.NetworkEntityInfo_INTERNET:        {},
+	}
+)
+
 // Entity represents a network entity in a form that is suitable for use as a map key.
 type Entity struct {
 	Type storage.NetworkEntityInfo_Type

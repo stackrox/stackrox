@@ -21,6 +21,7 @@ type CompiledPolicy interface {
 	MatchAgainstDeployment(cacheReceptacle *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (booleanpolicy.Violations, error)
 	MatchAgainstImage(cacheReceptacle *booleanpolicy.CacheReceptacle, image *storage.Image) (booleanpolicy.Violations, error)
 	MatchAgainstKubeResourceAndEvent(cacheReceptacle *booleanpolicy.CacheReceptacle, kubeEvent *storage.KubernetesEvent, kubeResource interface{}) (booleanpolicy.Violations, error)
+	MatchAgainstDeploymentAndNetworkFlow(cacheReceptable *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, flow *storage.NetworkFlow, flowNotInBaseline bool) (booleanpolicy.Violations, error)
 
 	Predicate
 }
@@ -34,7 +35,8 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 	if policies.AppliesAtRunTime(policy) {
 		// TODO: Change inverse filter to filter by process fields once section validation is added to prohibit deploy time only fields.
 		filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
-			return !booleanpolicy.SectionContainsOneOf(section, booleanpolicy.KubeEventsFields)
+			return !booleanpolicy.SectionContainsOneOf(section, booleanpolicy.KubeEventsFields) &&
+				!booleanpolicy.SectionContainsOneOf(section, booleanpolicy.NetworkFlowFields)
 		})
 		if len(filtered.GetPolicySections()) > 0 {
 			compiled.hasProcessSection = true
@@ -48,22 +50,37 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		// Historically deploy time only field sections in policy were allowed. For kube event policies (and eventually
 		// all runtime policies), we do not want to allow such sections. If a section does not contain a kube event
 		// field, it implies it does not apply to kubernetes event.
-		filtered = booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
-			return booleanpolicy.SectionContainsOneOf(section, booleanpolicy.KubeEventsFields)
-		})
-		if len(filtered.GetPolicySections()) > 0 {
-			compiled.hasKubeEventsSection = true
-			kubeEventsMatcher, err := booleanpolicy.BuildKubeEventMatcher(filtered)
-			if err != nil {
-				return nil, errors.Wrapf(err, "building kubernetes event matcher for policy %q", policy.GetName())
-			}
-			compiled.kubeEventsMatcher = kubeEventsMatcher
-		}
 		if features.K8sEventDetection.Enabled() {
-			if compiled.deploymentWithProcessMatcher == nil && compiled.kubeEventsMatcher == nil {
-				return nil, errors.Errorf("incorrect sections for a runtime policy %q. Section must have least "+
-					"one runtime constraint from process or kubernetes event category, but not both", policy.GetName())
+			filtered = booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
+				return booleanpolicy.SectionContainsOneOf(section, booleanpolicy.KubeEventsFields)
+			})
+			if len(filtered.GetPolicySections()) > 0 {
+				compiled.hasKubeEventsSection = true
+				kubeEventsMatcher, err := booleanpolicy.BuildKubeEventMatcher(filtered)
+				if err != nil {
+					return nil, errors.Wrapf(err, "building kubernetes event matcher for policy %q", policy.GetName())
+				}
+				compiled.kubeEventsMatcher = kubeEventsMatcher
 			}
+		}
+
+		if features.NetworkDetectionBaselineViolation.Enabled() {
+			filtered = booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
+				return booleanpolicy.SectionContainsOneOf(section, booleanpolicy.NetworkFlowFields)
+			})
+			if len(filtered.GetPolicySections()) > 0 {
+				deploymentWithNetworkFlowMatcher, err := booleanpolicy.BuildDeploymentWithNetworkFlowMatcher(filtered)
+				if err != nil {
+					return nil, errors.Wrapf(err, "building network baseline matcher for policy %q", policy.GetName())
+				}
+				compiled.deploymentWithNetworkFlowMatcher = deploymentWithNetworkFlowMatcher
+			}
+		}
+
+		// There should be exactly one defined
+		if !compiled.exactlyOneRuntimeMatcherDefined() {
+			return nil, errors.Errorf("incorrect sections for a runtime policy %q. Section must have exactly "+
+				"one runtime constraint from either process, or kubernetes event category, or network baseline.", policy.GetName())
 		}
 	}
 
@@ -84,7 +101,8 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 	}
 
 	if compiled.deploymentMatcher == nil && compiled.imageMatcher == nil &&
-		compiled.deploymentWithProcessMatcher == nil && compiled.kubeEventsMatcher == nil {
+		compiled.deploymentWithProcessMatcher == nil && compiled.kubeEventsMatcher == nil &&
+		compiled.deploymentWithNetworkFlowMatcher == nil {
 		return nil, errors.Errorf("no known lifecycle stage in policy %q", policy.GetName())
 	}
 
@@ -118,15 +136,31 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 	return compiled, nil
 }
 
+func (cp *compiledPolicy) exactlyOneRuntimeMatcherDefined() bool {
+	var numMatchers int
+	if cp.deploymentWithProcessMatcher != nil {
+		numMatchers++
+	}
+	if cp.kubeEventsMatcher != nil {
+		numMatchers++
+	}
+	if cp.deploymentWithNetworkFlowMatcher != nil {
+		numMatchers++
+	}
+
+	return numMatchers == 1
+}
+
 // Top level compiled Policy.
 type compiledPolicy struct {
 	policy     *storage.Policy
 	predicates []Predicate
 
-	kubeEventsMatcher            booleanpolicy.KubeEventMatcher
-	deploymentWithProcessMatcher booleanpolicy.DeploymentWithProcessMatcher
-	deploymentMatcher            booleanpolicy.DeploymentMatcher
-	imageMatcher                 booleanpolicy.ImageMatcher
+	kubeEventsMatcher                booleanpolicy.KubeEventMatcher
+	deploymentWithProcessMatcher     booleanpolicy.DeploymentWithProcessMatcher
+	deploymentWithNetworkFlowMatcher booleanpolicy.DeploymentWithNetworkFlowMatcher
+	deploymentMatcher                booleanpolicy.DeploymentMatcher
+	imageMatcher                     booleanpolicy.ImageMatcher
 
 	hasProcessSection    bool
 	hasKubeEventsSection bool
@@ -157,11 +191,23 @@ func (cp *compiledPolicy) MatchAgainstDeploymentAndProcess(
 	if !cp.hasProcessSection {
 		return booleanpolicy.Violations{}, nil
 	}
-
 	if cp.deploymentWithProcessMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against deployments and processes", cp.Policy().GetName())
 	}
 	return cp.deploymentWithProcessMatcher.MatchDeploymentWithProcess(cache, deployment, images, pi, processNotInBaseline)
+}
+
+func (cp *compiledPolicy) MatchAgainstDeploymentAndNetworkFlow(
+	cache *booleanpolicy.CacheReceptacle,
+	deployment *storage.Deployment,
+	images []*storage.Image,
+	flow *storage.NetworkFlow,
+	flowNotInBaseline bool,
+) (booleanpolicy.Violations, error) {
+	if cp.deploymentWithNetworkFlowMatcher == nil {
+		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %s against network baseline", cp.Policy().GetName())
+	}
+	return cp.deploymentWithNetworkFlowMatcher.MatchDeploymentWithNetworkFlowInfo(cache, deployment, images, flow, flowNotInBaseline)
 }
 
 func (cp *compiledPolicy) MatchAgainstDeployment(cache *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (booleanpolicy.Violations, error) {

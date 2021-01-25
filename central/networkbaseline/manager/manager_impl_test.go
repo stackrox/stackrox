@@ -563,14 +563,14 @@ func (suite *ManagerTestSuite) TestDeleteWithExtSrcPeer() {
 }
 
 func (suite *ManagerTestSuite) TestValidEntityTypesMatch() {
-	validTypes := make([]storage.NetworkEntityInfo_Type, 0, len(validBaselinePeerEntityTypes))
-	for t := range validBaselinePeerEntityTypes {
+	validTypes := make([]storage.NetworkEntityInfo_Type, 0, len(networkgraph.ValidBaselinePeerEntityTypes))
+	for t := range networkgraph.ValidBaselinePeerEntityTypes {
 		validTypes = append(validTypes, t)
 	}
 
 	// Make sure all the variables relying on entity types have the correct set of valid entity types
-	types := make([]storage.NetworkEntityInfo_Type, 0, len(entityTypeToName))
-	for t := range entityTypeToName {
+	types := make([]storage.NetworkEntityInfo_Type, 0, len(networkgraph.EntityTypeToName))
+	for t := range networkgraph.EntityTypeToName {
 		types = append(types, t)
 	}
 	suite.ElementsMatch(validTypes, types)

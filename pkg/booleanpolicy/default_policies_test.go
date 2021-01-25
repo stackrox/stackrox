@@ -1634,6 +1634,14 @@ func processBaselineMessage(dep *storage.Deployment, baseline bool, privileged b
 	return violations
 }
 
+func networkBaselineMessage(srcName, dstName string, port int, protocol storage.L4Protocol) *storage.Alert_Violation {
+	return &storage.Alert_Violation{
+		Message: fmt.Sprintf(
+			"Unexpected network flow found in deployment. Source name: '%s'. Destination name: '%s'. Destination port: '%d'. Protocol: '%s'.",
+			srcName, dstName, port, protocol.String()),
+	}
+}
+
 func privilegedMessage(dep *storage.Deployment) []*storage.Alert_Violation {
 	containerName := dep.GetContainers()[0].GetName()
 	return []*storage.Alert_Violation{{Message: fmt.Sprintf("Container '%s' is privileged", containerName)}}
@@ -2365,6 +2373,56 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventDefaultPolicies() {
 			}
 		})
 	}
+}
+
+func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
+	suite.envIsolator.Setenv(features.NetworkDetectionBaselineViolation.EnvVar(), "true")
+	if !features.NetworkDetectionBaselineViolation.Enabled() {
+		return
+	}
+
+	deployment := fixtures.GetDeployment().Clone()
+	suite.addDepAndImages(deployment)
+
+	// Create a policy for triggering flows that are not in baseline
+	whitelistGroup := policyGroupWithSingleKeyValue(fieldnames.UnexpectedNetworkFlowDetected, "true", false)
+
+	m, err := booleanpolicy.BuildDeploymentWithNetworkFlowMatcher(policyWithGroups(whitelistGroup))
+	suite.NoError(err)
+
+	srcName, dstName, port, protocol := "deployment-name", "ext-source-name", 1, storage.L4Protocol_L4_PROTOCOL_TCP
+	flow := &storage.NetworkFlow{
+		Props: &storage.NetworkFlowProperties{
+			SrcEntity: &storage.NetworkEntityInfo{
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				Id:   "deployment-id",
+				Desc: &storage.NetworkEntityInfo_Deployment_{
+					Deployment: &storage.NetworkEntityInfo_Deployment{
+						Name: srcName,
+					}},
+			},
+			DstEntity: &storage.NetworkEntityInfo{
+				Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+				Id:   "ext-source-id",
+				Desc: &storage.NetworkEntityInfo_ExternalSource_{
+					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+						Name: dstName,
+					}},
+			},
+			DstPort:    uint32(port),
+			L4Protocol: protocol,
+		},
+		LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
+	}
+
+	violations, err := m.MatchDeploymentWithNetworkFlowInfo(nil, deployment, suite.getImagesForDeployment(deployment), flow, true)
+	suite.NoError(err)
+	suite.ElementsMatch(violations.AlertViolations, []*storage.Alert_Violation{networkBaselineMessage(srcName, dstName, port, protocol)})
+
+	// And if the flow is in the baseline, no violations should exist
+	violations, err = m.MatchDeploymentWithNetworkFlowInfo(nil, deployment, suite.getImagesForDeployment(deployment), flow, false)
+	suite.NoError(err)
+	suite.Empty(violations)
 }
 
 func newIndicator(deployment *storage.Deployment, name, args, execFilePath string) *storage.ProcessIndicator {

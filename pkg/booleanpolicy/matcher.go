@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 var (
@@ -14,6 +15,7 @@ var (
 	processEvalFactory    = evaluator.MustCreateNewFactory(augmentedobjs.ProcessMeta)
 	imageEvalFactory      = evaluator.MustCreateNewFactory(augmentedobjs.ImageMeta)
 	kubeEventFactory      = evaluator.MustCreateNewFactory(augmentedobjs.KubeEventMeta)
+	networkFlowFactory    = evaluator.MustCreateNewFactory(augmentedobjs.NetworkFlowMeta)
 )
 
 // A CacheReceptacle is an optional argument that can be passed to the Match* functions of the Matchers below, that
@@ -30,6 +32,9 @@ type CacheReceptacle struct {
 
 	// Used only by MatchKubeEvent
 	augmentedKubeEvent *pathutil.AugmentedObj
+
+	// Used only by MatchDeploymentWithNetworkFlow
+	augmentedNetworkFlow *pathutil.AugmentedObj
 }
 
 // Violations represents a list of violation sub-objects.
@@ -56,6 +61,11 @@ type DeploymentWithProcessMatcher interface {
 // A KubeEventMatcher matches kubernetes event against a policy.
 type KubeEventMatcher interface {
 	MatchKubeEvent(cache *CacheReceptacle, kubeEvent *storage.KubernetesEvent, kubeResource interface{}) (Violations, error)
+}
+
+// A DeploymentWithNetworkFlowMatcher matches deployments, and a network flow against a policy.
+type DeploymentWithNetworkFlowMatcher interface {
+	MatchDeploymentWithNetworkFlowInfo(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, flow *storage.NetworkFlow, flowNotInNetworkBaseline bool) (Violations, error)
 }
 
 type sectionAndEvaluator struct {
@@ -152,6 +162,50 @@ func BuildDeploymentWithProcessMatcher(p *storage.Policy, options ...ValidateOpt
 			evaluators: sectionsAndEvals,
 		},
 		processOnlyEvaluators: processOnlyEvaluators,
+	}, nil
+}
+
+// BuildDeploymentWithNetworkFlowMatcher builds a DeploymentWithNetworkFlowMatcher
+func BuildDeploymentWithNetworkFlowMatcher(p *storage.Policy, options ...ValidateOption) (DeploymentWithNetworkFlowMatcher, error) {
+	if !features.NetworkDetectionBaselineViolation.Enabled() {
+		return nil, errors.Errorf("please enable %q feature", features.NetworkDetectionBaselineViolation.EnvVar())
+	}
+	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	networkFlowOnlyEvaluators := make([]evaluator.Evaluator, 0, len(p.GetPolicySections()))
+	for _, section := range p.GetPolicySections() {
+		if len(section.GetPolicyGroups()) == 0 {
+			return nil, errors.Errorf("no groups in section %q", section.GetSectionName())
+		}
+
+		// Conjunction of process fields and events fields is not supported.
+		if !ContainsDiscreteRuntimeFieldCategorySections(p) {
+			return nil, errors.New("a run time policy section must not contain both process and kubernetes event constraints")
+		}
+
+		fieldQueries, err := sectionToFieldQueries(section, &NetworkFlowFields)
+		if err != nil {
+			return nil, errors.Wrapf(err, "converting to field queries for section %q", section.GetSectionName())
+		}
+
+		eval, err := networkFlowFactory.GenerateEvaluator(&query.Query{FieldQueries: fieldQueries})
+		if err != nil {
+			return nil, errors.Wrapf(err, "generating network flow evaluator for section %q", section.GetSectionName())
+		}
+		networkFlowOnlyEvaluators = append(networkFlowOnlyEvaluators, eval)
+	}
+
+	// Although the struct implementation is the same as matcherImpl, we should still use networkFlowMatcher
+	// since it implements another check func MatchDeploymentWithNetworkFlowInfo
+	return &networkFlowMatcherImpl{
+		matcherImpl: matcherImpl{
+			evaluators: sectionsAndEvals,
+			stage:      storage.LifecycleStage_DEPLOY,
+		},
+		networkFlowOnlyEvaluators: networkFlowOnlyEvaluators,
 	}, nil
 }
 
