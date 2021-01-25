@@ -2,6 +2,8 @@ package clusterhealth
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -33,6 +35,7 @@ type updaterImpl struct {
 	updates        chan *central.MsgFromSensor
 	stopSig        concurrency.Signal
 	updateInterval time.Duration
+	namespace      string
 }
 
 func (u *updaterImpl) Start() error {
@@ -94,9 +97,11 @@ func (u *updaterImpl) getCollectorInfo() *storage.CollectorHealthInfo {
 		}
 	}
 
-	collectorDS, err := u.client.AppsV1().DaemonSets(namespaces.StackRox).Get(u.ctx(), collectorDaemonsetName, metav1.GetOptions{})
+	// Collector DaemonSet is looked up in the same namespace as Sensor because that is how they should be deployed.
+	collectorDS, err := u.client.AppsV1().DaemonSets(u.namespace).Get(u.ctx(), collectorDaemonsetName, metav1.GetOptions{})
 	if err != nil {
-		result.StatusErrors = append(result.StatusErrors, errors.Wrap(err, "unable to find collector DaemonSet").Error())
+		err = errors.Wrap(err, fmt.Sprintf("unable to find collector DaemonSet in namespace %q", u.namespace))
+		result.StatusErrors = append(result.StatusErrors, err.Error())
 	} else {
 		for _, container := range collectorDS.Spec.Template.Spec.Containers {
 			if container.Name == collectorContainerName {
@@ -125,6 +130,17 @@ func (u *updaterImpl) getCollectorInfo() *storage.CollectorHealthInfo {
 	return &result
 }
 
+func getSensorNamespace() string {
+	// The corresponding environment variable is configured to contain pod namespace by sensor YAML/helm file.
+	const nsEnvVar = "POD_NAMESPACE"
+	ns := os.Getenv(nsEnvVar)
+	if ns == "" {
+		ns = namespaces.StackRox
+		log.Warnf("%s environment variable is unset/empty, using %q as fallback for sensor namespace", nsEnvVar, ns)
+	}
+	return ns
+}
+
 func (u *updaterImpl) ctx() context.Context {
 	return concurrency.AsContext(&u.stopSig)
 }
@@ -141,5 +157,6 @@ func NewUpdater(client kubernetes.Interface, updateInterval time.Duration) commo
 		updates:        make(chan *central.MsgFromSensor),
 		stopSig:        concurrency.NewSignal(),
 		updateInterval: interval,
+		namespace:      getSensorNamespace(),
 	}
 }

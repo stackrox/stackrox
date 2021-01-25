@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
-	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
@@ -23,6 +23,8 @@ const (
 	updateTimeout = 3 * time.Second
 	// How frequently should updater provide health info during tests.
 	updateInterval = 1 * time.Millisecond
+	// Environment variable to hold pod namespace. In actual k8s deployment it is set by helm/yaml file.
+	namespaceVar = "POD_NAMESPACE"
 )
 
 func TestUpdater(t *testing.T) {
@@ -32,13 +34,24 @@ func TestUpdater(t *testing.T) {
 type UpdaterTestSuite struct {
 	suite.Suite
 
-	client  *fake.Clientset
-	updater common.SensorComponent
+	client *fake.Clientset
+	env    *envisolator.EnvIsolator
+}
+
+type expectedHealthInfo struct {
+	version               string
+	desired, ready, nodes int32
+	errors                []string
 }
 
 func (s *UpdaterTestSuite) SetupTest() {
 	s.client = fake.NewSimpleClientset()
-	s.updater = NewUpdater(s.client, updateInterval)
+	s.env = envisolator.NewEnvIsolator(s.T())
+	s.env.Setenv(namespaceVar, "stackrox-mock-ns")
+}
+
+func (s *UpdaterTestSuite) TearDownTest() {
+	s.env.RestoreAll()
 }
 
 func (s *UpdaterTestSuite) TestHappyCase() {
@@ -48,11 +61,9 @@ func (s *UpdaterTestSuite) TestHappyCase() {
 
 	health := s.getHealthInfo(1)
 
-	s.assertVersion(health, "v456")
-	s.assertTotalDesiredPods(health, 6)
-	s.assertTotalReadyPods(health, 4)
-	s.assertTotalRegisteredNodes(health, 7)
-	s.assertNoStatusErrors(health)
+	s.assertHealthInfo(health, expectedHealthInfo{
+		version: "v456", desired: 6, ready: 4, nodes: 7, errors: nil,
+	})
 }
 
 func (s *UpdaterTestSuite) TestSlimSuffixTrimmed() {
@@ -83,24 +94,20 @@ func (s *UpdaterTestSuite) TestDaemonSetWithoutContainerSpec() {
 
 	health := s.getHealthInfo(1)
 
-	s.assertStatusErrors(health, "collector version")
-	s.assertVersion(health, "")
-
-	s.assertTotalDesiredPods(health, 6)
-	s.assertTotalReadyPods(health, 4)
-	s.assertTotalRegisteredNodes(health, 7)
+	s.assertHealthInfo(health, expectedHealthInfo{
+		version: "", desired: 6, ready: 4, nodes: 7, errors: []string{"collector version"},
+	})
 }
 
 func (s *UpdaterTestSuite) TestWithoutDaemonSet() {
+	// No DaemonSet added.
 	s.addNodes(7)
 
 	health := s.getHealthInfo(1)
 
-	s.assertStatusErrors(health, "collector DaemonSet")
-	s.assertVersion(health, "")
-	s.assertTotalRegisteredNodes(health, 7)
-	s.assertTotalDesiredPods(health, -1)
-	s.assertTotalDesiredPods(health, -1)
+	s.assertHealthInfo(health, expectedHealthInfo{
+		version: "", desired: -1, ready: -1, nodes: 7, errors: []string{"collector DaemonSet"},
+	})
 }
 
 func (s *UpdaterTestSuite) TestWithoutNodes() {
@@ -110,11 +117,9 @@ func (s *UpdaterTestSuite) TestWithoutNodes() {
 
 	health := s.getHealthInfo(1)
 
-	s.assertVersion(health, "v456")
-	s.assertTotalDesiredPods(health, 6)
-	s.assertTotalReadyPods(health, 4)
-	s.assertTotalRegisteredNodes(health, 0)
-	s.assertNoStatusErrors(health)
+	s.assertHealthInfo(health, expectedHealthInfo{
+		version: "v456", desired: 6, ready: 4, nodes: 0, errors: nil,
+	})
 }
 
 func (s *UpdaterTestSuite) TestVersionWithoutTag() {
@@ -125,11 +130,9 @@ func (s *UpdaterTestSuite) TestVersionWithoutTag() {
 
 	health := s.getHealthInfo(1)
 
-	s.assertVersion(health, "blah/without/tags")
-	s.assertTotalDesiredPods(health, 6)
-	s.assertTotalReadyPods(health, 4)
-	s.assertTotalRegisteredNodes(health, 7)
-	s.assertNoStatusErrors(health)
+	s.assertHealthInfo(health, expectedHealthInfo{
+		version: "blah/without/tags", desired: 6, ready: 4, nodes: 7, errors: nil,
+	})
 }
 
 func (s *UpdaterTestSuite) TestCanSendMultipleUpdates() {
@@ -138,21 +141,70 @@ func (s *UpdaterTestSuite) TestCanSendMultipleUpdates() {
 
 	health := s.getHealthInfo(5)
 
-	s.NotNil(health)
+	s.assertHealthInfo(health, expectedHealthInfo{
+		version: "v456", desired: 6, ready: 4, nodes: 7, errors: nil,
+	})
+}
+
+func (s *UpdaterTestSuite) TestCustomNamespaceHappyCase() {
+	const customNs = "custom-test-ns"
+	s.env.Setenv(namespaceVar, customNs)
+
+	ds := makeDaemonSet()
+	ds.ObjectMeta.Namespace = customNs
+	s.addDaemonSet(ds)
+	s.addNodes(7)
+
+	health := s.getHealthInfo(1)
+
+	s.assertHealthInfo(health, expectedHealthInfo{
+		version: "v456", desired: 6, ready: 4, nodes: 7, errors: nil,
+	})
+}
+
+func (s *UpdaterTestSuite) TestNamespaceFallback() {
+	s.env.Unsetenv(namespaceVar)
+
+	ds := makeDaemonSet()
+	ds.ObjectMeta.Namespace = namespaces.StackRox
+	s.addDaemonSet(ds)
+	s.addNodes(7)
+
+	health := s.getHealthInfo(1)
+
+	s.assertHealthInfo(health, expectedHealthInfo{
+		version: "v456", desired: 6, ready: 4, nodes: 7, errors: nil,
+	})
+}
+
+func (s *UpdaterTestSuite) TestNamespaceMismatch() {
+	s.env.Setenv(namespaceVar, "where-things-should-be")
+
+	ds := makeDaemonSet()
+	ds.ObjectMeta.Namespace = "where-things-are"
+	s.addDaemonSet(ds)
+	s.addNodes(7)
+
+	health := s.getHealthInfo(1)
+
+	s.assertHealthInfo(health, expectedHealthInfo{
+		version: "", desired: -1, ready: -1, nodes: 7, errors: []string{"unable to find collector DaemonSet in namespace \"where-things-should-be\""},
+	})
 }
 
 func (s *UpdaterTestSuite) getHealthInfo(times int) *storage.CollectorHealthInfo {
 	timer := time.NewTimer(updateTimeout)
+	updater := NewUpdater(s.client, updateInterval)
 
-	err := s.updater.Start()
+	err := updater.Start()
 	s.Require().NoError(err)
-	defer s.updater.Stop(nil)
+	defer updater.Stop(nil)
 
 	var healthInfo *storage.CollectorHealthInfo
 
 	for i := 0; i < times; i++ {
 		select {
-		case response := <-s.updater.ResponsesC():
+		case response := <-updater.ResponsesC():
 			healthInfo = response.Msg.(*central.MsgFromSensor_ClusterHealthInfo).ClusterHealthInfo.CollectorHealthInfo
 		case <-timer.C:
 			s.Fail("Timed out while waiting for cluster health update")
@@ -166,7 +218,7 @@ func makeDaemonSet() appsV1.DaemonSet {
 	return appsV1.DaemonSet{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "collector",
-			Namespace: namespaces.StackRox,
+			Namespace: "stackrox-mock-ns",
 		},
 		Spec: appsV1.DaemonSetSpec{
 			Template: coreV1.PodTemplateSpec{
@@ -185,7 +237,7 @@ func makeDaemonSet() appsV1.DaemonSet {
 }
 
 func (s *UpdaterTestSuite) addDaemonSet(ds appsV1.DaemonSet) {
-	_, err := s.client.AppsV1().DaemonSets(namespaces.StackRox).Create(context.Background(), &ds, metaV1.CreateOptions{})
+	_, err := s.client.AppsV1().DaemonSets(ds.ObjectMeta.Namespace).Create(context.Background(), &ds, metaV1.CreateOptions{})
 	s.Require().NoError(err)
 }
 
@@ -198,6 +250,14 @@ func (s *UpdaterTestSuite) addNodes(count int) {
 		}, metaV1.CreateOptions{})
 		s.Require().NoError(err)
 	}
+}
+
+func (s *UpdaterTestSuite) assertHealthInfo(actual *storage.CollectorHealthInfo, expected expectedHealthInfo) {
+	s.assertVersion(actual, expected.version)
+	s.assertTotalDesiredPods(actual, expected.desired)
+	s.assertTotalReadyPods(actual, expected.ready)
+	s.assertTotalRegisteredNodes(actual, expected.nodes)
+	s.assertStatusErrors(actual, expected.errors...)
 }
 
 func (s *UpdaterTestSuite) assertVersion(health *storage.CollectorHealthInfo, expected string) {
@@ -241,10 +301,6 @@ func (s *UpdaterTestSuite) assertTotalRegisteredNodes(health *storage.CollectorH
 		s.FailNowf("Unexpected total registered nodes value type", "actual value: %#v", health.TotalRegisteredNodesOpt)
 	}
 	s.Equalf(expected, actual, "Unexpected value of total registered nodes %#v", health.TotalReadyPodsOpt)
-}
-
-func (s *UpdaterTestSuite) assertNoStatusErrors(health *storage.CollectorHealthInfo) {
-	s.assertStatusErrors(health)
 }
 
 func (s *UpdaterTestSuite) assertStatusErrors(health *storage.CollectorHealthInfo, expected ...string) {
