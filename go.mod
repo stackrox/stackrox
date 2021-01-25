@@ -54,6 +54,7 @@ require (
 	github.com/hashicorp/go-version v1.2.1
 	github.com/hashicorp/golang-lru v0.5.3
 	github.com/heroku/docker-registry-client v0.0.0
+	github.com/itchyny/gojq v0.12.1
 	github.com/jstemmer/go-junit-report v0.9.1
 	github.com/machinebox/graphql v0.2.2
 	github.com/magiconair/properties v1.8.1
@@ -91,7 +92,7 @@ require (
 	golang.org/x/net v0.0.0-20201016165138-7b1cca2348c0
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
-	golang.org/x/sys v0.0.0-20201101102859-da207088b7d1
+	golang.org/x/sys v0.0.0-20210113181707-4bcb84eeeb78
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	golang.org/x/tools v0.0.0-20201019175715-b894a3290fff
 	golang.stackrox.io/grpc-http1 v0.2.2
@@ -102,7 +103,7 @@ require (
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.3.1
 	gopkg.in/yaml.v2 v2.3.0
-	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.4.0
 	honnef.co/go/tools v0.0.1-2020.1.6

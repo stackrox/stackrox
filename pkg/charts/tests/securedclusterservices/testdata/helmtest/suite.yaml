@@ -1,0 +1,30 @@
+defs: |
+  def container(obj; name):
+    obj.spec.template.spec.containers[] | select(.name == name);
+
+  def envVars(obj; container):
+    container(obj; container) | .env | from_entries;
+
+  def verifyNamespace(ns):
+    .objects[].metadata | select(.namespace and .namespace != ns) | assertNotExist;
+
+  def verifyCentralEndpoint(ep):
+    [
+      (envVars(.deployments.sensor; "sensor")["ROX_CENTRAL_ENDPOINT"] | assertThat(. == ep)),
+      (.secrets["helm-cluster-config"] | .stringData["config.yaml"] | fromyaml
+        | .clusterConfig.staticConfig.centralApiEndpoint | assertThat(. == ep))
+    ][];
+
+  def verifySensorEndpoint(ep):
+    [
+      (envVars(.deployments["admission-control"]; "admission-control")["ROX_SENSOR_ENDPOINT"]
+        | assertThat(. == ep)),
+      (envVars(.daemonsets.collector; "collector")["GRPC_SERVER"] | assertThat(. == ep)),
+      (envVars(.daemonsets.collector; "compliance")["ROX_ADVERTISED_ENDPOINT"]
+        | assertThat(. == ep))
+    ][];
+
+values:
+  clusterName: "testcluster"
+  imagePullSecrets:
+    allowNone: true

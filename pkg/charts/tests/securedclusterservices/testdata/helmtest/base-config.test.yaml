@@ -1,0 +1,46 @@
+tests:
+- name: default release
+  expect: |
+    verifyNamespace("stackrox")
+  tests:
+  - name: default settings
+    expect: |
+      verifySensorEndpoint("sensor.stackrox:443")
+      verifyCentralEndpoint("central.stackrox:443")
+
+  - name: different sensor endpoint
+    set:
+      sensor.endpoint: stackrox-sensor.example.com:8443
+    expect: |
+      verifySensorEndpoint("stackrox-sensor.example.com:8443")
+      verifyCentralEndpoint("central.stackrox:443")
+  - name: different central endpoint
+    set:
+      centralEndpoint: stackrox-central.example.com:8443
+    expect: |
+      verifySensorEndpoint("sensor.stackrox:443")
+      verifyCentralEndpoint("stackrox-central.example.com:8443")
+
+- name: different namespace
+  release:
+    namespace: custom-ns
+  tests:
+  - name: fails without explicit allow
+    expectError: true
+  - name: succeeds with explicit allow
+    set:
+      allowNonstandardNamespace: true
+    expect: |
+      verifyNamespace("custom-ns")
+      verifyCentralEndpoint("central.custom-ns:443")
+      verifySensorEndpoint("sensor.custom-ns:443")
+
+- name: different release name
+  release:
+    name: custom-name
+  tests:
+  - name: fails without explicit allow
+    expectError: true
+  - name: succeeds with explicit allow
+    set:
+      allowNonstandardReleaseName: true

@@ -1,0 +1,17 @@
+tests:
+- name: "Helm-managed clusters should have secret created"
+  expect: |
+    .secrets["helm-cluster-config"].stringData["config.yaml"] | assertThat(. and . != "")
+    envVars(.deployments.sensor; "sensor")["ROX_HELM_CLUSTER_CONFIG_FP"] | assertThat(. and . != "")
+  tests:
+  - name: "with default (null) setting"
+  - name: "with explicit true setting"
+    set:
+      helmManaged: true
+
+- name: "Non-Helm-managed clusters should have no secret created"
+  values:
+    helmManaged: false
+  expect: |
+    .secrets["helm-cluster-config"] | assertThat(. == null)
+    envVars(.deployments.sensor; "sensor")["ROX_HELM_CLUSTER_CONFIG_FP"] | assertThat(. == null)

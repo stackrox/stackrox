@@ -1,0 +1,10 @@
+tests:
+- name: "Additional CA secret is not created by default"
+  expect: |
+    .secrets["additional-ca-sensor"] | assertThat(. == null)
+- name: "Additional CA secret is created from a map"
+  values:
+    additionalCAs:
+      foo.crt: bar
+  expect: |
+    .secrets["additional-ca-sensor"].stringData["foo.crt"] | assertThat(. == "bar\n")

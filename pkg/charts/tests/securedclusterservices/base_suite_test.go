@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helmutil"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/suite"
@@ -26,7 +27,9 @@ var (
 		"MainRegistry":      "stackrox.io", // TODO: custom?
 		"CollectorRegistry": "collector.stackrox.io",
 		"RenderMode":        "",
-		"FeatureFlags":      make(map[string]string),
+		"FeatureFlags": map[string]interface{}{
+			features.SensorInstallationExperience.EnvVar(): true,
+		},
 	}
 
 	installOpts = helmutil.Options{

@@ -97,8 +97,10 @@ spec:
           value: "true"
         {{- end}}
         [<- if and (not .KubectlOutput) (index .FeatureFlags "ROX_SENSOR_INSTALLATION_EXPERIENCE") >]
+        {{- if ._rox.helmManaged }}
         - name: ROX_HELM_CLUSTER_CONFIG_FP
           value: {{ quote ._rox._configFP }}
+        {{- end }}
         [<- end >]
         {{- include "srox.envVars" (list . "deployment" "sensor" "sensor") | nindent 8 }}
         volumeMounts:

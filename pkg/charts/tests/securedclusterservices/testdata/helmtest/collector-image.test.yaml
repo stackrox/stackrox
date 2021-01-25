@@ -1,0 +1,42 @@
+tests:
+- name: slim mode
+  set:
+    collector.slimMode: true
+  tests:
+  - name: default image with default pull policy
+    expect: |
+      container(.daemonsets.collector; "collector") | .image | assertThat(endswith("-slim"))
+      # container(.daemonsets.collector; "collector") | .imagePullPolicy | assertThat(. == "IfNotPresent")
+  - name: default image with custom pull policy
+    set:
+      collector.imagePullPolicy: Never
+    expect: |
+      container(.daemonsets.collector; "collector") | .image | assertThat(endswith("-slim"))
+      container(.daemonsets.collector; "collector") | .imagePullPolicy | assertThat(. == "Never")
+  - name: custom image tag is honored
+    set:
+      image.collector.tag: mytag
+    expect: |
+      container(.daemonsets.collector; "collector") | .image | assertThat(endswith(":mytag"))
+      # container(.daemonsets.collector; "collector") | .imagePullPolicy | assertThat(. == "IfNotPresent")
+
+- name: non-slim mode
+  set:
+    collector.slimMode: false
+  tests:
+  - name: default image with default pull policy
+    expect: |
+      container(.daemonsets.collector; "collector") | .image | assertThat(endswith("-latest"))
+      # container(.daemonsets.collector; "collector") | .imagePullPolicy | assertThat(. == "Always")
+  - name: default image with custom pull policy
+    set:
+      collector.imagePullPolicy: Never
+    expect: |
+      container(.daemonsets.collector; "collector") | .image | assertThat(endswith("-latest"))
+      container(.daemonsets.collector; "collector") | .imagePullPolicy | assertThat(. == "Never")
+  - name: custom image tag is honored
+    set:
+      image.collector.tag: mytag
+    expect: |
+      container(.daemonsets.collector; "collector") | .image | assertThat(endswith(":mytag"))
+      # container(.daemonsets.collector; "collector") | .imagePullPolicy | assertThat(. == "Always")
