@@ -1,3 +1,12 @@
+imagePullSecrets:
+  username: true
+  password: true
+mainImagePullSecrets:
+  username: true
+  password: true
+collectorImagePullSecrets:
+  username: true
+  password: true
 ca:
   cert: true
 sensor:

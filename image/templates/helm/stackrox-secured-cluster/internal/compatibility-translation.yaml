@@ -59,15 +59,6 @@ image:
         collector:
           tag: {{ .value }}
 
-imagePullSecrets:
-  useExisting: null
-
-mainImagePullSecrets:
-  useExisting: null
-
-collectorImagePullSecrets:
-  useExisting: null
-
 config:
   collectionMethod: |
     collector:

@@ -46,6 +46,10 @@ cluster:
   name: foo
   type: OPENSHIFT_CLUSTER
 
+imagePullSecrets:
+  username: myuser
+  password: mypass
+  
 endpoint:
   central: "central.stackrox:443"
   advertised: "central-advertised.stackrox:443"
@@ -78,9 +82,6 @@ config:
   offlineMode: true
   slimCollector: true
   exposeMonitoring: true
-
-imagePullSecrets:
-  allowNone: true
 `
 )
 

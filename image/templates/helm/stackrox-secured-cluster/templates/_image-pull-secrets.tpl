@@ -1,27 +1,24 @@
 {{/*
-  srox.configureImagePullSecrets $ $cfgName $imagePullSecrets $defaultSecretNames
+  srox.configureImagePullSecrets $ $cfgName $imagePullSecrets $secretResourceName $defaultSecretNames
 
-  Configures settings for a single image by augmenting/completing an existing image configuration
-  stanza.
+  Configures image pull secrets.
 
-  If $imageCfg.fullRef is empty:
-    First, the image registry is determined by inspecting $imageCfg.registry and, if this is empty,
-    $._rox.image.registry, ultimately defaulting to `docker.io`. The full image ref is then
-    constructed from the registry, $imageCfg.name (must be non-empty), and $imageCfg.tag (may be
-    empty, in which case "latest" is assumed). The result is stored in $imageCfg.fullRef.
+  This function enriches $imagePullSecrets based on the exposed configuration parameters to contain
+  a list of Kubernetes secret names as `_names` to be used as image pull secrets within the chart
+  templates. This list contains the following secrets:
 
-  Afterwards (irrespective of the previous check), $imageCfg.fullRef is modified by prepending
-  "docker.io/" if and only if it did not contain a remote yet (i.e., the part before the first "/"
-  did not contain a dot (DNS name) or colon (port)).
+  - Secrets referenced via $imagePullSecrets.useExisting.
+  - Image pull secrets associated with the default service account (if
+    $imagePullSecrets.useFromDefaultServiceAccount is true).
+  - $secretResourceName, if $imagePullSecrets.username is set.
+  - $defaultSecretNames. */}}
 
-  Finally, the resulting $imageCfg.fullRef is stored as a dict entry with value `true` in the
-  $._rox._state.referencedImages dict.
-   */}}
 {{ define "srox.configureImagePullSecrets" }}
 {{ $ := index . 0 }}
 {{ $cfgName := index . 1 }}
 {{ $imagePullSecrets := index . 2 }}
-{{ $defaultSecretNames := index . 3 }}
+{{ $secretResourceName := index . 3 }}
+{{ $defaultSecretNames := index . 4 }}
 
 {{ $imagePullSecretNames := default list $imagePullSecrets.useExisting }}
 {{ if not (kindIs "slice" $imagePullSecretNames) }}
@@ -41,9 +38,9 @@
 {{ $imagePullCreds := dict }}
 {{ if $imagePullSecrets._username }}
   {{ $imagePullCreds = dict "username" $imagePullSecrets._username "password" $imagePullSecrets._password }}
-  {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox" }}
+  {{ $imagePullSecretNames = append $imagePullSecretNames $secretResourceName }}
 {{ else if $imagePullSecrets._password }}
-  {{ $msg := printf "Password missing in %q. Whenever an image pull password is specified, a username must be specified as well" $cfgName }}
+  {{ $msg := printf "Username missing in %q. Whenever an image pull password is specified, a username must be specified as well" $cfgName }}
   {{ include "srox.fail" $msg }}
 {{ end }}
 {{ if and $.Release.IsInstall (not $imagePullSecretNames) (not $imagePullSecrets.allowNone) }}
