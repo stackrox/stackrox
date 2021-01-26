@@ -139,45 +139,13 @@
 {{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
 {{ include "srox.expandAll" (list $ $rox $expandables) }}
 
+{{/* Initial image pull secret setup.
 
-{{/* Image pull secret setup. */}}
-{{ $imagePullSecrets := $._rox.imagePullSecrets }}
-{{ $imagePullSecretNames := default list $imagePullSecrets.useExisting }}
-{{ if not (kindIs "slice" $imagePullSecretNames) }}
-  {{ $imagePullSecretNames = regexSplit "\\s*,\\s*" (trim $imagePullSecretNames) -1 }}
-{{ end }}
-{{ if $imagePullSecrets.useFromDefaultServiceAccount }}
-  {{ $defaultSA := dict }}
-  {{ include "srox.safeLookup" (list $ $defaultSA "v1" "ServiceAccount" $.Release.Namespace "default") }}
-  {{ if $defaultSA.result }}
-    {{ range $ips := (default list $defaultSA.result.imagePullSecrets) }}
-      {{ if $ips.name }}
-        {{ $imagePullSecretNames = append $imagePullSecretNames $ips.name }}
-      {{ end }}
-    {{ end }}
-  {{ end }}
-{{ end }}
-{{ $imagePullCreds := dict }}
-{{ if $imagePullSecrets._username }}
-  {{ $imagePullCreds = dict "username" $imagePullSecrets._username "password" $imagePullSecrets._password }}
-  {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox" }}
-{{ else if $imagePullSecrets._password }}
-  {{ include "srox.fail" "Whenever an image pull password is specified, a username must be specified as well "}}
-{{ end }}
-{{ if and $.Release.IsInstall (not $imagePullSecretNames) (not $imagePullSecrets.allowNone) }}
-  {{ include "srox.fail" "You have not specified any image pull secrets, and no existing image pull secrets were automatically inferred. If your registry does not need image pull credentials, explicitly set the 'imagePullSecrets.allowNone' option to 'true'" }}
-{{ end }}
-
-{{/*
-    Always assume that there are `stackrox` and `stackrox-scanner` image pull secrets,
-    even if they weren't specified.
-    This is required for updates anyway, so referencing it on first install will minimize a later
-    diff.
-   */}}
-{{ $imagePullSecretNames = concat $imagePullSecretNames (list "stackrox" "stackrox-scanner") | uniq | sortAlpha }}
-{{ $_ = set $imagePullSecrets "_names" $imagePullSecretNames }}
-{{ $_ = set $imagePullSecrets "_creds" $imagePullCreds }}
-
+     Always assume that there are `stackrox` and `stackrox-scanner` image pull secrets,
+     even if they weren't specified.
+     This is required for updates anyway, so referencing it on first install will minimize a later
+     diff. */}}
+{{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "stackrox" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
 
 {{/* Global CA setup */}}
 {{ $caCertSpec := dict "CN" "StackRox Certificate Authority" "ca" true }}
@@ -360,25 +328,7 @@
 {{/* Setup Image Pull Secrets for Docker Registry.
      Note: This must happen afterwards, as we rely on "srox.configureImage" to collect the
      set of all referenced images first. */}}
-{{ if $imagePullSecrets._username }}
-  {{ $dockerAuths := dict }}
-  {{ range $image := keys $._rox._state.referencedImages }}
-    {{ $registry := splitList "/" $image | first }}
-    {{ if eq $registry "docker.io" }}
-      {{/* Special case docker.io */}}
-      {{ $registry = "https://index.docker.io/v1/" }}
-    {{ else }}
-      {{ $registry = printf "https://%s" $registry }}
-    {{ end }}
-    {{ $_ := set $dockerAuths $registry dict }}
-  {{ end }}
-  {{ $authToken := printf "%s:%s" $imagePullSecrets._username $imagePullSecrets._password | b64enc }}
-  {{ range $regSettings := values $dockerAuths }}
-    {{ $_ := set $regSettings "auth" $authToken }}
-  {{ end }}
-
-  {{ $_ := set $imagePullSecrets "_dockerAuths" $dockerAuths }}
-{{ end }}
+{{ include "srox.configureImagePullSecretsForDockerRegistry" (list $ ._rox.imagePullSecrets) }}
 
 {{/* Final warnings based on state. */}}
 {{ if $._rox._state.customCertGen }}
