@@ -56,6 +56,18 @@ func postProcessQuery(query *gojq.Query) error {
 		if err := postProcessQuery(query.Term.Query); err != nil {
 			return err
 		}
+		if lbl := query.Term.Label; lbl != nil {
+			if err := postProcessQuery(lbl.Body); err != nil {
+				return err
+			}
+		}
+		for _, suff := range query.Term.SuffixList {
+			if bind := suff.Bind; bind != nil {
+				if err := postProcessQuery(bind.Body); err != nil {
+					return err
+				}
+			}
+		}
 	}
 
 	for _, fd := range query.FuncDefs {

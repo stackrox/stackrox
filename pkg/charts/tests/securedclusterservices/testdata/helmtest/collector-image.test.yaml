@@ -1,64 +1,66 @@
+defs: |
+  def collector:
+    container(.daemonsets.collector; "collector");
+
+  def collectorImageFromConfig:
+    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.staticConfig.collectorImage;
+
+expect: |
+  # The image in the config should at least be a prefix (sans tag) of the sensor image
+  collectorImageFromConfig as $imgFromConfig
+    | collector | .image | assertThat(startswith($imgFromConfig))
+  # Whenever the image in the config contains a tag, there shold be a warning informing the user about the upgrade
+  # impact.
+  .notes as $notes
+    | collectorImageFromConfig | assumeThat(contains(":"))
+      | $notes | assertThat(contains("WARNING: You have specified an explicit collector image"))
+
 tests:
-- name: default settings (should infer slim collector due to default registry)
+- name: "test image settings"
   tests:
-    - name: default image with default pull policy
-      expect: |
-        container(.daemonsets.collector; "collector") | .image | assertThat(endswith("-slim"))
-        container(.daemonsets.collector; "collector") | .imagePullPolicy | assertThat(. == "IfNotPresent")
-    - name: default image with custom pull policy
-      set:
-        collector.imagePullPolicy: Never
-      expect: |
-        container(.daemonsets.collector; "collector") | .image | assertThat(endswith("-slim"))
-        container(.daemonsets.collector; "collector") | .imagePullPolicy | assertThat(. == "Never")
-    - name: custom image tag is honored
-      set:
-        image.collector.tag: mytag
-      expect: |
-        container(.daemonsets.collector; "collector") | .image | assertThat(endswith(":mytag"))
-        container(.daemonsets.collector; "collector") | .imagePullPolicy | assertThat(. == "IfNotPresent")
-        .notes | contains("You have specified an explicit collector image tag")
+  - name: "custom registry for collector image"
+    set:
+      image.collector.registry: "collector-registry.example.com"
+    expect: |
+      collector | .image | assertThat(startswith("collector-registry.example.com/collector:"))
+      collectorImageFromConfig | assertThat(. == "collector-registry.example.com/collector")
 
-- name: slim mode
-  set:
-    collector.slimMode: true
+  - name: "custom name for collector image"
+    set:
+      image.collector.registry: "collector-registry.example.com"
+      image.collector.name: "my-collector"
+    expect: |
+      collector | .image | assertThat(startswith("collector-registry.example.com/my-collector:"))
+      collectorImageFromConfig | assertThat(. == "collector-registry.example.com/my-collector")
+  - name: "custom tag for collector image"
+    set:
+      image.collector.registry: "collector-registry.example.com"
+      image.collector.tag: "my-tag"
+    expect: |
+      collector | .image | assertThat(. == "collector-registry.example.com/collector:my-tag")
+      collectorImageFromConfig | assertThat(. == "collector-registry.example.com/collector:my-tag")
+  - name: "custom full reference"
+    set:
+      image.collector.registry: "collector-registry.example.com"
+      image.collector.tag: "my-tag"
+      image.collector.fullRef: "completely-unrelated.example.com/some-image:some-tag"
+    expect: |
+      collector | .image | assertThat(. == "completely-unrelated.example.com/some-image:some-tag")
+      collectorImageFromConfig | assertThat(. == "completely-unrelated.example.com/some-image:some-tag")
+- name: "test image pull policy settings"
   tests:
-  - name: default image with default pull policy
+  - name: "default settings"
     expect: |
-      container(.daemonsets.collector; "collector") | .image | assertThat(endswith("-slim"))
-      container(.daemonsets.collector; "collector") | .imagePullPolicy | assertThat(. == "IfNotPresent")
-  - name: default image with custom pull policy
+      collector | assertThat(.imagePullPolicy == "IfNotPresent")
+  - name: "global setting"
     set:
-      collector.imagePullPolicy: Never
-    expect: |
-      container(.daemonsets.collector; "collector") | .image | assertThat(endswith("-slim"))
-      container(.daemonsets.collector; "collector") | .imagePullPolicy | assertThat(. == "Never")
-  - name: custom image tag is honored
-    set:
-      image.collector.tag: mytag
-    expect: |
-      container(.daemonsets.collector; "collector") | .image | assertThat(endswith(":mytag"))
-      container(.daemonsets.collector; "collector") | .imagePullPolicy | assertThat(. == "IfNotPresent")
-      .notes | contains("You have specified an explicit collector image tag")
-
-- name: non-slim mode
-  set:
-    collector.slimMode: false
-  tests:
-  - name: default image with default pull policy
-    expect: |
-      container(.daemonsets.collector; "collector") | .image | assertThat(endswith("-latest"))
-      container(.daemonsets.collector; "collector") | .imagePullPolicy | assertThat(. == "Always")
-  - name: default image with custom pull policy
-    set:
-      collector.imagePullPolicy: Never
-    expect: |
-      container(.daemonsets.collector; "collector") | .image | assertThat(endswith("-latest"))
-      container(.daemonsets.collector; "collector") | .imagePullPolicy | assertThat(. == "Never")
-  - name: custom image tag is honored
-    set:
-      image.collector.tag: mytag
-    expect: |
-      container(.daemonsets.collector; "collector") | .image | assertThat(endswith(":mytag"))
-      container(.daemonsets.collector; "collector") | .imagePullPolicy | assertThat(. == "Always")
-      .notes | contains("You have specified an explicit collector image tag")
+      image.collector.pullPolicy: Never
+    tests:
+    - name: "with no override"
+      expect: |
+        collector | assertThat(.imagePullPolicy == "Never")
+    - name: "with collector override"
+      set:
+        collector.imagePullPolicy: Always
+      expect: |
+        collector | assertThat(.imagePullPolicy == "Always")

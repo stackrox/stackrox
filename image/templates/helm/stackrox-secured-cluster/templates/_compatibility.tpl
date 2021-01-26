@@ -15,9 +15,11 @@
   {{ $oldVal := index $valuesCtx $k }}
   {{ if not (kindIs "invalid" $oldVal) }}
     {{ if kindIs "map" $v }}
-      {{ include "srox._doApplyCompat" (list $values $template $oldVal $v (append $ctxPath $k)) }}
-      {{ if not $oldVal }}
-        {{ $_ := unset $valuesCtx $k }}
+      {{ if kindIs "map" $oldVal }}
+        {{ include "srox._doApplyCompat" (list $values $template $oldVal $v (append $ctxPath $k)) }}
+        {{ if not $oldVal }}
+          {{ $_ := unset $valuesCtx $k }}
+        {{ end }}
       {{ end }}
     {{ else }}
       {{ $_ := unset $valuesCtx $k }}

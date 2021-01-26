@@ -1,0 +1,85 @@
+defs: |
+  def mainImageContainers:
+    [(container(.deployments.sensor; "sensor")),
+     (container(.daemonsets.collector; "compliance")),
+     (container(.deployments["admission-control"]; "admission-control"))][];
+  def mainImageFromConfig:
+    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.staticConfig.mainImage;
+
+expect: |
+  # The image in the config should at least be a prefix (sans tag) of the sensor image
+  mainImageFromConfig as $imgFromConfig
+    | mainImageContainers | .image | assertThat(startswith($imgFromConfig))
+  # Whenever the image in the config contains a tag, there shold be a warning informing the user about the upgrade
+  # impact.
+  .notes as $notes
+    | mainImageFromConfig | assumeThat(contains(":"))
+      | $notes | assertThat(contains("WARNING: You have specified an explicit main image"))
+
+tests:
+- name: "test image settings"
+  tests:
+  - name: "custom registry for main image"
+    expect: |
+      mainImageContainers | assertThat(.image | startswith("main-registry.example.com/"))
+      mainImageFromConfig | assertThat(. == "main-registry.example.com/main")
+    tests:
+    - name: with setting via image.registry
+      set:
+        image.registry: "main-registry.example.com"
+    - name: with setting via image.main.registry
+      set:
+        image.registry: "some-other-registry.example.com"
+        image.main.registry: "main-registry.example.com"
+  - name: "custom name for main image"
+    set:
+      image.main.registry: "main-registry.example.com"
+      image.main.name: "my-main"
+    expect: |
+      mainImageContainers | assertThat(.image | startswith("main-registry.example.com/my-main:"))
+      mainImageFromConfig | assertThat(. == "main-registry.example.com/my-main")
+  - name: "custom tag for main image"
+    set:
+      image.main.registry: "main-registry.example.com"
+      image.main.tag: "my-tag"
+    expect: |
+      mainImageContainers | assertThat(.image == "main-registry.example.com/main:my-tag")
+      mainImageFromConfig | assertThat(. == "main-registry.example.com/main:my-tag")
+  - name: "custom full reference"
+    set:
+      image.main.registry: "main-registry.example.com"
+      image.main.tag: "my-tag"
+      image.main.fullRef: "completely-unrelated.example.com/some-image:some-tag"
+    expect: |
+      mainImageContainers | assertThat(.image == "completely-unrelated.example.com/some-image:some-tag")
+      mainImageFromConfig | assertThat(. == "completely-unrelated.example.com/some-image:some-tag")
+- name: "test image pull policy settings"
+  tests:
+  - name: "default settings"
+    expect: |
+      mainImageContainers | assertThat(.imagePullPolicy == "IfNotPresent")
+  - name: "global setting"
+    set:
+      image.main.pullPolicy: Never
+    tests:
+    - name: "with no override"
+      expect: |
+        mainImageContainers | assertThat(.imagePullPolicy == "Never")
+    - name: "with sensor override"
+      set:
+        sensor.imagePullPolicy: Always
+      expect: |
+        mainImageContainers | select(.name != "sensor") | assertThat(.imagePullPolicy == "Never")
+        container(.deployments.sensor; "sensor") | assertThat(.imagePullPolicy == "Always")
+    - name: "with compliance override"
+      set:
+        collector.complianceImagePullPolicy: Always
+      expect: |
+        mainImageContainers | select(.name != "compliance") | assertThat(.imagePullPolicy == "Never")
+        container(.daemonsets.collector; "compliance") | assertThat(.imagePullPolicy == "Always")
+    - name: "with admission-control override"
+      set:
+        admissionControl.imagePullPolicy: Always
+      expect: |
+        mainImageContainers | select(.name != "admission-control") | assertThat(.imagePullPolicy == "Never")
+        container(.deployments["admission-control"]; "admission-control") | assertThat(.imagePullPolicy == "Always")
