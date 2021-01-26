@@ -2252,9 +2252,9 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventConstraints() {
 		withProcessSection bool
 	}{
 		{
-			event:              podExecEvent("p1", "c1", ""),
+			event:              podExecEvent("p1", "c1", "cmd"),
 			groups:             []*storage.PolicyGroup{createVerbGroup, podExecGroup},
-			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "")},
+			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "cmd")},
 		},
 		{
 			event:              podExecEvent("p1", "c1", ""),
@@ -2262,9 +2262,9 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventConstraints() {
 			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "")},
 		},
 		{
-			event:              podExecEvent("p1", "", ""),
+			event:              podExecEvent("p1", "c1", ""),
 			groups:             []*storage.PolicyGroup{createVerbGroup},
-			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "", "")},
+			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "")},
 		},
 		{
 			groups: []*storage.PolicyGroup{createVerbGroup, podExecGroup},
@@ -2616,6 +2616,20 @@ func BenchmarkProcessPolicies(b *testing.B) {
 }
 
 func podExecViolationMsg(pod, container, command string) *storage.Alert_Violation {
+	if command == "" {
+		return &storage.Alert_Violation{
+			Message: fmt.Sprintf("Kubernetes API received exec request into pod '%s' container '%s'", pod, container),
+			MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+				KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+					Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+						{Key: "pod", Value: pod},
+						{Key: "container", Value: container},
+					},
+				},
+			},
+		}
+	}
+
 	return &storage.Alert_Violation{
 		Message: fmt.Sprintf("Kubernetes API received exec '%s' request into pod '%s' container '%s'",
 			command, pod, container),

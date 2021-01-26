@@ -27,32 +27,51 @@ func defaultViolationMsg(event *storage.KubernetesEvent) *storage.Alert_Violatio
 }
 
 func podExecViolationMsg(pod string, args *storage.KubernetesEvent_PodExecArgs) *storage.Alert_Violation {
+	var message string
+	attrs := []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{{Key: "pod", Value: pod}}
+
 	cmds := stringutils.JoinNonEmpty(", ", args.GetCommands()...)
+	if len(cmds) > 0 {
+		message = fmt.Sprintf("Kubernetes API received exec '%s' request into pod '%s'", cmds, pod)
+	} else {
+		message = fmt.Sprintf("Kubernetes API received exec request into pod '%s'", pod)
+	}
+
+	if args.GetContainer() != "" {
+		message = fmt.Sprintf("%s container '%s'", message, args.GetContainer())
+		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: "container", Value: args.GetContainer()})
+	}
+
+	// Order of attrs-pods, containers and commands
+	if len(cmds) > 0 {
+		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: "commands", Value: cmds})
+	}
+
 	return &storage.Alert_Violation{
-		Message: fmt.Sprintf("Kubernetes API received exec '%s' request into pod '%s' container '%s'",
-			cmds, pod, args.GetContainer()),
+		Message: message,
 		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
 			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
-				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
-					{Key: "pod", Value: pod},
-					{Key: "container", Value: args.GetContainer()},
-					{Key: "commands", Value: cmds},
-				},
+				Attrs: attrs,
 			},
 		},
 	}
 }
 
 func podPortForwardViolationMsg(pod string, args *storage.KubernetesEvent_PodPortForwardArgs) *storage.Alert_Violation {
-	ports := stringutils.JoinInt32(", ", args.GetPorts()...)
+	message := fmt.Sprintf("Kubernetes API received port forward request to pod '%s'", pod)
+	attrs := []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{{Key: "pod", Value: pod}}
+
+	if len(args.GetPorts()) > 0 {
+		ports := stringutils.JoinInt32(", ", args.GetPorts()...)
+		message = fmt.Sprintf("%s ports '%s'", message, ports)
+		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: "ports", Value: ports})
+	}
+
 	return &storage.Alert_Violation{
-		Message: fmt.Sprintf("Kubernetes API received port forward request to pod '%s' ports '%s'", pod, ports),
+		Message: message,
 		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
 			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
-				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
-					{Key: "pod", Value: pod},
-					{Key: "ports", Value: ports},
-				},
+				Attrs: attrs,
 			},
 		},
 	}
