@@ -7,7 +7,9 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	bolt "go.etcd.io/bbolt"
 )
@@ -18,11 +20,15 @@ func TestExecWebhookMigration(t *testing.T) {
 
 type execWebhookTestSuite struct {
 	suite.Suite
+	envIsolator *envisolator.EnvIsolator
 
 	db *bolt.DB
 }
 
 func (suite *execWebhookTestSuite) SetupTest() {
+	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
+	suite.envIsolator.Setenv(features.K8sEventDetection.EnvVar(), "true")
+
 	db, err := bolthelpers.NewTemp(testutils.DBFileName(suite))
 	if err != nil {
 		suite.FailNow("Failed to make BoltDB", err.Error())
@@ -38,9 +44,15 @@ func (suite *execWebhookTestSuite) SetupTest() {
 
 func (suite *execWebhookTestSuite) TearDownTest() {
 	testutils.TearDownDB(suite.db)
+	suite.envIsolator.RestoreAll()
+
 }
 
 func (suite *execWebhookTestSuite) TestMigrateClustersWithExecWebhooks() {
+	if !features.K8sEventDetection.Enabled() {
+		suite.T().Skipf("feature flag %s not enabled", features.K8sEventDetection.EnvVar())
+	}
+
 	clusters := []*storage.Cluster{
 		{
 			Id:   "1",

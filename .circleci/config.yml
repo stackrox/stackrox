@@ -3503,6 +3503,7 @@ jobs:
       - STORAGE: pvc
       - LOAD_BALANCER: lb
       - ROX_HOST_SCANNING: true
+      - ROX_K8S_EVENTS_DETECTION: true
 
     steps:
       - checkout
