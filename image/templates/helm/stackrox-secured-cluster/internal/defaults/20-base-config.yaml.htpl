@@ -1,0 +1,37 @@
+# This file contains basic configuration options for all services
+
+centralEndpoint: "central.{{ required "unknown namespace" ._rox._namespace }}:443"
+createUpgraderServiceAccount: [< default false .CreateUpgraderSA >]
+
+{{- if .Release.IsInstall }}
+createSecrets: true
+{{- end }}
+
+exposeMonitoring: false
+
+helmManaged: [< not .KubectlOutput >]
+
+imagePullSecrets:
+  allowNone: [< or .KubectlOutput .RenderAsLegacyChart | not | not >]
+  useExisting: []
+  useFromDefaultServiceAccount: true
+
+additionalCAs: {}
+
+sensor:
+  endpoint: "sensor.{{ required "unknown namespace" ._rox._namespace }}:443"
+
+admissionControl:
+  listenOnCreates: false
+  listenOnUpdates: false
+  listenOnEvents: {{ not ._rox.env.openshift }}
+  dynamic:
+    enforceOnCreates: false
+    scanInline: false
+    disableBypass: false
+    timeout: 3
+    enforceOnUpdates: false
+
+collector:
+  collectionMethod: "KERNEL_MODULE"
+  disableTaintTolerations: false

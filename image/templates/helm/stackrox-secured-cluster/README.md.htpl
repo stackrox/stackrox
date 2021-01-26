@@ -163,15 +163,15 @@ Advanced parameters which should only be necessary in non-standard environments:
 ### Default resources
 
 The default resource settings for each container are defined under specific paths in the file
-`internal/defaults.yaml` in this chart. The following table lists the paths to the respective
-defaults for each chart configuration parameter:
+`internal/defaults/30-resources.yaml` in this chart. The following table lists the paths to the
+respective defaults for each chart configuration parameter:
 
-|Parameter                         |Path in `internal/defaults.yaml`        |
-|:---------------------------------|:---------------------------------------|
-|`config.sensorResources`          |`defaults.sensor.resources`             |
-|`config.collectorResources`       |`defaults.collector.resources`          |
-|`config.complianceResources`      |`defaults.collector.complianceResources`|
-|`config.admissionControlResources`|`defaults.admissionControl.resources`   |
+|Parameter                         |Path in `internal/defaults/30-resources.yaml` |
+|:---------------------------------|:---------------------------------------------|
+|`config.sensorResources`          |`sensor.resources`                            |
+|`config.collectorResources`       |`collector.resources`                         |
+|`config.complianceResources`      |`collector.complianceResources`               |
+|`config.admissionControlResources`|`admissionControl.resources`                  |
 
 ### Customization Settings
 

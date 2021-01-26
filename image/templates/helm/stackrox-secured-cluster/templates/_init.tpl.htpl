@@ -107,84 +107,11 @@
 {{ $apiServer := dict "apiResources" $apiResources "version" $apiServerVersion }}
 {{ $_ = set $._rox "_apiServer" $apiServer }}
 
-
-{{/*
-    Environment setup - part 1
-   */}}
-{{ $env := $._rox.env }}
-
-{{/* Infer OpenShift, if needed */}}
-{{ if kindIs "invalid" $env.openshift }}
-  {{ $_ := set $env "openshift" (has "apps.openshift.io/v1" $._rox._apiServer.apiResources) }}
-  {{ if $env.openshift }}
-    {{ include "srox.note" (list $ "Based on API server properties, we have inferred that you are deploying into an OpenShift cluster. Set the `env.openshift` property explicitly to false/true to override the auto-sensed value.") }}
-  {{ end }}
-{{ end }}
-
-{{/* Infer Istio, if needed */}}
-{{ if kindIs "invalid" $env.istio }}
-  {{ $_ := set $env "istio" (has "networking.istio.io/v1alpha3" $._rox._apiServer.apiResources) }}
-  {{ if $env.istio }}
-    {{ include "srox.note" (list $ "Based on API server properties, we have inferred that you are deploying into an Istio-enabled cluster. Set the `env.istio` property explicitly to false/true to override the auto-sensed value.") }}
-  {{ end }}
-{{ end }}
-
-{{/* Apply defaults */}}
-{{ $defaultsCfg := dict }}
-{{ $_ = include "srox.mergeInto" (list $defaultsCfg (tpl ($.Files.Get "internal/defaults.yaml") . | fromYaml)) }}
-{{ $_ = set $rox "_defaults" $defaultsCfg }}
-{{ $_ = include "srox.mergeInto" (list $rox $defaultsCfg.defaults) }}
+{{ include "srox.applyDefaults" $ }}
 
 {{/* Expand applicable config values */}}
 {{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
 {{ include "srox.expandAll" (list $ $rox $expandables) }}
-
-{{ if kindIs "invalid" ._rox.image.main.registry }}
-  {{ $_ = set $._rox.image.main "registry" $._rox.image.registry }}
-{{ end }}
-
-{{/* Adjust image tag settings */}}
-{{ if or $._rox.image.collector.tag $._rox.image.collector.fullRef }}
-  {{ include "srox.warn" (list $ "You have specified an explicit collector image tag. This will prevent the collector image from being updated correctly when upgrading to a newer version of this chart.") }}
-  {{ if not (kindIs "invalid" $._rox.collector.slimMode) }}
-    {{ include "srox.warn" (list $ "You have specified an explicit collector image tag. The slim collector setting will not have any effect.") }}
-  {{ end }}
-{{ else }}
-  {{ $_ = set $._rox.image.collector "_abbrevImageRef" (printf "%s/%s" $._rox.image.collector.registry $._rox.image.collector.name) }}
-
-  {{/* Apply default for slim collector mode */}}
-  {{ if kindIs "invalid" $._rox.collector.slimMode }}
-    {{ if eq $._rox.image.collector.registry "[< default "collector.stackrox.io" .CollectorRegistry >]" }}
-      {{ $_ = set $._rox.collector "slimMode" true }}
-      {{ include "srox.note" (list $ "Based on your use of the default StackRox Collector registry, a slim collector image will be used. Set 'collector.slimMode' to false if this is causing issues.") }}
-    {{ else }}
-      {{ $_ = set $._rox.collector "slimMode" false }}
-      {{ include "srox.warn" (list $ "Based on your use of a non-default StackRox Collector registry, a full collector image will be used. This can potentially cause a lot of image pull traffic; we therefore recommend to switch to slim mode by setting 'collector.slimMode' to true, and ensuring that StackRox Central either has internet connectivity, or regularly receives the latest StackRox Collector support packages.") }}
-    {{ end }}
-  {{ end }}
-
-  {{ if $._rox.collector.slimMode }}
-    {{ $_ = set $._rox.image.collector "tag" "[< .Versions.CollectorVersion >]-slim" }}
-  {{ else }}
-    {{ $_ = set $._rox.image.collector "tag" "[< .Versions.CollectorVersion >]-latest" }}
-  {{ end }}
-{{ end }}
-
-{{/* Adjust collector image pull policy based on slim/non-slim mode */}}
-{{ if kindIs "invalid" $._rox.image.collector.pullPolicy }}
-  {{ if $._rox.collector.slimMode }}
-    {{ $_ = set $._rox.image.collector "pullPolicy" "IfNotPresent" }}
-  {{ else }}
-    {{ $_ = set $._rox.image.collector "pullPolicy" "Always" }}
-  {{ end }}
-{{ end }}
-
-{{ if or $._rox.image.main.tag $._rox.image.main.fullRef }}
-  {{ include "srox.warn" (list $ "You have specified an explicit main image tag. This will prevent the main image from being updated correctly when upgrading to a newer version of this chart.") }}
-{{ else }}
-  {{ $_ = set $._rox.image.main "tag" "[< .Versions.MainVersion >]" }}
-  {{ $_ = set $._rox.image.main "_abbrevImageRef" (printf "%s/%s" $._rox.image.main.registry $._rox.image.main.name) }}
-{{ end }}
 
 {{/* Initial image pull secret setup. */}}
 {{ include "srox.mergeInto" (list $._rox.mainImagePullSecrets $._rox.imagePullSecrets) }}
@@ -210,7 +137,7 @@
     Final validation (after merging in defaults).
    */}}
 
-{{ if not ._rox.clusterName }}
+{{ if and ._rox.helmManaged (not ._rox.clusterName) }}
   {{ include "srox.fail" "No cluster name specified. Set 'clusterName' to the desired cluster name." }}
 {{ end }}
 

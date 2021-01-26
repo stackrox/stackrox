@@ -1,0 +1,59 @@
+# This file contains the default image (registry + name + tag) settings) for all StackRox Secured Cluster
+# Services.
+
+image:
+  registry: [< default "stackrox.io" .MainRegistry >]
+  main:
+    name: [< default "main" .ImageRemote >]
+    pullPolicy: IfNotPresent
+  collector:
+    registry: [< default "collector.stackrox.io" .CollectorRegistry >]
+    name: [< default "collector" .CollectorImageRemote >]
+---
+image:
+  main:
+    registry: {{ ._rox.image.registry }}
+---
+image:
+  main:
+    {{- if or ._rox.image.main.tag ._rox.image.main.fullRef }}
+      {{- include "srox.warn" (list . "You have specified an explicit main image (tag). This will prevent the main image from being updated correctly when upgrading to a newer version of this chart.") }}
+    {{- else }}
+    _abbrevImageRef: {{ printf "%s/%s" ._rox.image.main.registry ._rox.image.main.name }}
+    {{- end }}
+    tag: {{ .Chart.AppVersion }}
+  collector:
+    {{- if or ._rox.image.collector.tag ._rox.image.collector.fullRef }}
+      {{- include "srox.warn" (list . "You have specified an explicit collector image tag. This will prevent the collector image from being updated correctly when upgrading to a newer version of this chart.") }}
+      {{- if ._rox.collector.slimMode }}
+        {{- include "srox.warn" (list . "You have specified an explicit collector image tag. The slim collector setting will not have any effect.") }}
+      {{- end }}
+    {{- else }}
+    _abbrevImageRef: {{ printf "%s/%s" ._rox.image.collector.registry ._rox.image.collector.name }}
+    {{- end }}
+---
+collector:
+  slimMode: {{ eq ._rox.image.collector.registry "[< .CollectorRegistry >]" }}
+---
+image:
+  collector:
+    {{- if ._rox.collector.slimMode }}
+    tag: "[< .Versions.CollectorVersion >]-slim"
+    pullPolicy: IfNotPresent
+    {{- else }}
+    tag: "[< .Versions.CollectorVersion >]-latest"
+    pullPolicy: Always
+    {{- end }}
+---
+image:
+  main:
+    fullRef: {{ printf "%s/%s:%s" ._rox.image.main.registry ._rox.image.main.name ._rox.image.main.tag }}
+  collector:
+    fullRef: {{ printf "%s/%s:%s" ._rox.image.collector.registry ._rox.image.collector.name ._rox.image.collector.tag }}
+collector:
+  imagePullPolicy: {{ ._rox.image.collector.pullPolicy }}
+  complianceImagePullPolicy: {{ ._rox.image.main.pullPolicy }}
+sensor:
+  imagePullPolicy: {{ ._rox.image.main.pullPolicy }}
+admissionControl:
+  imagePullPolicy: {{ ._rox.image.main.pullPolicy }}

@@ -43,9 +43,9 @@ envVars: [< if empty .EnvVars >] []
 [<- else ->]
 ## StackRox Secured Cluster Services chart default settings file.
 ##
-## This file includes the default settings for the StackRox Secured Cluster Services chart.
-## It serves as a form of documentation for all the possible settings that a
-## user can override are. HOWEVER, if you want to override some settings, DO NOT
+## For technical reasons, this file does not set any default values. It
+## merely serves as a form of documentation for all the possible settings that a
+## user can override are. If you want to override some settings, DO NOT
 ## create a copy of this file to be used as a baseline, or modify it in place.
 ## Instead, create a file that contains only those settings you want to override,
 ## and pass it to `helm` via the `-f` parameter.
@@ -66,6 +66,9 @@ envVars: [< if empty .EnvVars >] []
 ## Note that an arbitrary number of `-f` and `--set` parameters can be combined. It is
 ## generally a good practice to store secret data such as an cluster initialization token
 ## separate from non-sensitive configuration data.
+##
+## To see most of the defaults that are applied for the available configuration settings, see
+## the YAML files in `internal/defaults/` instead.
 ##
 ##
 ## The cluster name.
