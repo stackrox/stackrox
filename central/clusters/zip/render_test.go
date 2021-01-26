@@ -8,13 +8,32 @@ import (
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/sensor"
+	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
 )
+
+var dummyCerts = sensor.Certs{
+	Files: map[string][]byte{
+		"secrets/ca.pem":                     []byte("ca cert"),
+		"secrets/sensor-cert.pem":            []byte("sensor cert"),
+		"secrets/sensor-key.pem":             []byte("sensor key"),
+		"secrets/collector-cert.pem":         []byte("collector cert"),
+		"secrets/collector-key.pem":          []byte("collector key"),
+		"secrets/admission-control-cert.pem": []byte("adm ctrl cert"),
+		"secrets/admission-control-key.pem":  []byte("adm ctrl key"),
+	},
+}
+
+func init() {
+	testbuildinfo.SetForTest(&testing.T{})
+	testutils.SetMainVersion(&testing.T{}, "3.0.55.0")
+}
 
 func TestRenderOpenshiftEnv(t *testing.T) {
 	cluster := &storage.Cluster{
@@ -23,7 +42,7 @@ func TestRenderOpenshiftEnv(t *testing.T) {
 		Type:      storage.ClusterType_OPENSHIFT_CLUSTER,
 	}
 
-	baseFiles, err := renderBaseFiles(cluster, clusters.RenderOptions{}, sensor.Certs{})
+	baseFiles, err := renderBaseFiles(cluster, clusters.RenderOptions{}, dummyCerts)
 	require.NoError(t, err)
 
 	for _, f := range baseFiles {
@@ -60,7 +79,7 @@ func TestRenderWithNoCollection(t *testing.T) {
 		CollectionMethod: storage.CollectionMethod_NO_COLLECTION,
 	}
 
-	baseFiles, err := renderBaseFiles(cluster, clusters.RenderOptions{}, sensor.Certs{})
+	baseFiles, err := renderBaseFiles(cluster, clusters.RenderOptions{}, dummyCerts)
 	require.NoError(t, err)
 
 	var found bool

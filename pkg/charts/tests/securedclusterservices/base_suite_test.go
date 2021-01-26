@@ -49,6 +49,9 @@ cluster:
   name: foo
   type: OPENSHIFT_CLUSTER
 
+ca:
+  cert: "DUMMY CA CERTIFICATE"
+
 imagePullSecrets:
   username: myuser
   password: mypass
@@ -68,6 +71,21 @@ image:
 envVars:
 - name: CUSTOM_ENV_VAR
   value: FOO
+
+sensor:
+  serviceTLS:
+    cert: "DUMMY SENSOR CERT"
+    key: "DUMMY SENSOR KEY"
+
+collector:
+  serviceTLS:
+    cert: "DUMMY COLLECTOR CERT"
+    key: "DUMMY COLLECTOR KEY"
+
+admissionControl:
+  serviceTLS:
+    cert: "DUMMY ADMISSION CONTROL CERT"
+    key: "DUMMY ADMISSION CONTROL KEY"
 
 config:
   collectionMethod: KERNEL_MODULE

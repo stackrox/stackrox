@@ -146,6 +146,10 @@ func (h *helmConfigSuite) DoTestHelmConfigRoundTrip(helmValuesFile string) {
 		"imagePullSecrets": map[string]interface{}{
 			"allowNone": true,
 		},
+		"createSecrets": false,
+		"ca": map[string]interface{}{
+			"cert": "DUMMY CA CERTIFICATE",
+		},
 	}
 
 	enrichedHelmCfg := chartutil.CoalesceTables(helmCfgOverwrites, helmCfg)

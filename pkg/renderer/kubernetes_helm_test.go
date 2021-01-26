@@ -94,13 +94,13 @@ func TestRenderSensorHelm(t *testing.T) {
 			}
 
 			certs := &sensor.Certs{Files: map[string][]byte{
-				"ca.pem":                     []byte("abc"),
-				"sensor-cert.pem":            []byte("def"),
-				"sensor-key.pem":             []byte("ghi"),
-				"collector-cert.pem":         []byte("jkl"),
-				"collector-key.pem":          []byte("mno"),
-				"admission-control-cert.pem": []byte("pqr"),
-				"admission-control-key.pem":  []byte("stu"),
+				"secrets/ca.pem":                     []byte("abc"),
+				"secrets/sensor-cert.pem":            []byte("def"),
+				"secrets/sensor-key.pem":             []byte("ghi"),
+				"secrets/collector-cert.pem":         []byte("jkl"),
+				"secrets/collector-key.pem":          []byte("mno"),
+				"secrets/admission-control-cert.pem": []byte("pqr"),
+				"secrets/admission-control-key.pem":  []byte("stu"),
 			}}
 
 			opts := helmutil.Options{

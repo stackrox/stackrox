@@ -30,3 +30,6 @@ values:
   clusterName: "testcluster"
   imagePullSecrets:
     allowNone: true
+  createSecrets: false
+  ca:
+    cert: "DUMMY CA CERTIFICATE"

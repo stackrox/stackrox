@@ -83,7 +83,7 @@
             {{- if and (not $allowNotFound) (not $fileRes.found) -}}
                 {{- include "srox.fail" (printf "Expanding %s: file reference %q: none of the referenced files were found" $context $spec) -}}
             {{- end -}}
-            {{- $result = $fileRes.contents -}}
+            {{- $result = default "" $fileRes.contents -}}
         {{- else -}}
             {{/* treat as raw string */}}
             {{- $result = $spec -}}
