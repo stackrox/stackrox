@@ -1,9 +1,12 @@
 package manager
 
 import (
+	"context"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
@@ -12,7 +15,7 @@ import (
 )
 
 func (m *manager) shouldBypassRuntimeDetection(s *state, req *admission.AdmissionRequest) bool {
-	if s.runtimeDetector == nil {
+	if s.allRuntimePoliciesDetector == nil {
 		log.Debugf("Runtime policy matcher not found, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
 		return true
 	}
@@ -60,11 +63,9 @@ func (m *manager) evaluateRuntimeAdmissionRequest(s *state, req *admission.Admis
 		return nil, errors.Wrap(err, "translating admission request object from request")
 	}
 
-	log.Debugf("Evaluating policies on %s", kubernetes.EventAsString(event))
+	log.Debugf("Evaluating policies on kubernetes request %s", kubernetes.EventAsString(event))
 
-	// TODO: Map pods to deployment
-
-	alerts, err := s.runtimeDetector.DetectForDeployment(&storage.Deployment{}, nil, nil, false, event)
+	alerts, enrichedWithDeployment, err := m.evaluatePodEvent(s, event)
 	if err != nil {
 		return nil, errors.Wrap(err, "running StackRox detection")
 	}
@@ -74,19 +75,111 @@ func (m *manager) evaluateRuntimeAdmissionRequest(s *state, req *admission.Admis
 		return pass(req.UID), nil
 	}
 
-	atleastOneEnforced := false
-	for _, alert := range alerts {
-		if alert.GetEnforcement().GetAction() == storage.EnforcementAction_FAIL_KUBE_REQUEST_ENFORCEMENT {
-			atleastOneEnforced = true
-			break
-		}
-	}
-
-	if atleastOneEnforced {
+	if failReviewRequest(alerts...) {
+		// TODO: Mark enforced violations as attempted and send to Sensor.
 		return fail(req.UID, message(alerts, false)), nil
 	}
-	// TODO: Mark enforced violations as attempted
-	go m.putAlertsOnChan(alerts)
 
+	if enrichedWithDeployment {
+		go m.putAlertsOnChan(alerts)
+	}
 	return pass(req.UID), nil
+}
+
+func (m *manager) evaluatePodEvent(s *state, event *storage.KubernetesEvent) ([]*storage.Alert, bool, error) {
+	deployment := m.getDeploymentForPod(event.GetObject().GetNamespace(), event.GetObject().GetName())
+	if deployment != nil {
+		log.Debugf("Found deployment %s (id=%s) for %s/%s", deployment.GetName(), deployment.GetId(),
+			event.GetObject().GetNamespace(), event.GetObject().GetName())
+
+		var fetchImgCtx context.Context
+		if timeoutSecs := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(); timeoutSecs > 1 {
+			var cancel context.CancelFunc
+			fetchImgCtx, cancel = context.WithTimeout(context.Background(), time.Duration(timeoutSecs)*time.Second)
+			defer cancel()
+		}
+
+		getAlertsFunc := func(dep *storage.Deployment, imgs []*storage.Image) ([]*storage.Alert, error) {
+			return s.allRuntimePoliciesDetector.DetectForDeployment(dep, imgs, nil, false, event)
+		}
+
+		alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)
+		if err != nil {
+			return nil, false, err
+		}
+		return alerts, true, nil
+	}
+
+	// If deployment is not available , detect without deployment to respond to admission review. Run detection with
+	// deployment enrichment in the background and record it.
+	log.Warnf("Deployment for %s/%s not found. "+
+		"Policies with deploy-time fields for kubernetes event %s will be detected in background",
+		event.GetObject().GetNamespace(), event.GetObject().GetName(), kubernetes.EventAsString(event))
+
+	go m.waitForDeploymentAndDetect(s, event)
+
+	alerts, err := s.runtimeDetectorForPoliciesWithoutDeployFields.DetectForDeployment(&storage.Deployment{}, nil, nil, false, event)
+	if err != nil {
+		return nil, false, err
+	}
+	return alerts, false, nil
+}
+
+func (m *manager) waitForDeploymentAndDetect(s *state, event *storage.KubernetesEvent) {
+	select {
+	case <-m.stopSig.Done():
+		return
+	case <-m.initialSyncSig.Done():
+		deployment := m.getDeploymentForPod(event.GetObject().GetNamespace(), event.GetObject().GetName())
+		if deployment == nil {
+			dep, err := m.depClient.GetDeploymentForPod(context.Background(), &sensor.GetDeploymentForPodRequest{
+				PodName:   event.GetObject().GetName(),
+				Namespace: event.GetObject().GetNamespace(),
+			})
+			if err != nil {
+				log.Errorf("Could not fetch deployment for namespace/%s/pod/%s from Sensor. ",
+					event.GetObject().GetNamespace(), event.GetObject().GetName())
+				return
+			}
+			if dep == nil {
+				return
+			}
+		}
+
+		log.Debugf("Found deployment %s (id=%s) for %s/%s", deployment.GetName(), deployment.GetId(),
+			event.GetObject().GetNamespace(), event.GetObject().GetName())
+
+		var fetchImgCtx context.Context
+		if timeoutSecs := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(); timeoutSecs > 1 {
+			var cancel context.CancelFunc
+			fetchImgCtx, cancel = context.WithTimeout(context.Background(), time.Duration(timeoutSecs)*time.Second)
+			defer cancel()
+		}
+
+		getAlertsFunc := func(dep *storage.Deployment, imgs []*storage.Image) ([]*storage.Alert, error) {
+			return s.runtimeDetectorForPoliciesWithDeployFields.DetectForDeployment(dep, imgs, nil, false, event)
+		}
+
+		alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)
+		if err != nil {
+			log.Errorf("Failed to run StackRox detection: %v", err)
+			return
+		}
+		if len(alerts) == 0 {
+			return
+		}
+
+		go m.putAlertsOnChan(alerts)
+
+		return
+	}
+}
+
+func failReviewRequest(alerts ...*storage.Alert) bool {
+	for _, alert := range alerts {
+		if alert.GetEnforcement().GetAction() == storage.EnforcementAction_FAIL_KUBE_REQUEST_ENFORCEMENT {
+			return true
+		}
+	}
+	return false
 }

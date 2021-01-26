@@ -54,6 +54,18 @@ func ContainsRuntimeFields(policy *storage.Policy) bool {
 	return ContainsOneOf(policy, runtimeFields)
 }
 
+// ContainsDeployTimeFields returns whether the policy contains deploy-time specific fields.
+func ContainsDeployTimeFields(policy *storage.Policy) bool {
+	for _, section := range policy.GetPolicySections() {
+		for _, group := range section.GetPolicyGroups() {
+			if !runtimeFields.Contains(group.GetFieldName()) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // ForEachValueWithFieldName calls the given function for each value in any group with the given fieldName.
 // If the function returns false, the iteration early exits.
 func ForEachValueWithFieldName(policy *storage.Policy, fieldName string, f func(value string) bool) {

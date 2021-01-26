@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"k8s.io/apimachinery/pkg/labels"
@@ -81,4 +82,37 @@ func (ds *DeploymentStore) OnNamespaceDeleted(ns string) {
 	defer ds.lock.Unlock()
 
 	delete(ds.deployments, ns)
+}
+
+// GetAll returns all deployments.
+func (ds *DeploymentStore) GetAll() []*storage.Deployment {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+
+	var ret []*storage.Deployment
+	for _, depMap := range ds.deployments {
+		for _, dep := range depMap {
+			if dep != nil {
+				ret = append(ret, dep.GetDeployment())
+			}
+		}
+	}
+	return ret
+}
+
+// Get returns deployment for supplied id and namespace, if available.
+func (ds *DeploymentStore) Get(id, namespace string) *storage.Deployment {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+
+	depMap := ds.deployments[namespace]
+	if depMap == nil {
+		return nil
+	}
+
+	wrap := depMap[id]
+	if wrap == nil {
+		return nil
+	}
+	return wrap.GetDeployment()
 }

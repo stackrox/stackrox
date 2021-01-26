@@ -21,16 +21,22 @@ var (
 )
 
 type managementService struct {
-	settingsStream concurrency.ReadOnlyValueStream
-	alertHandler   AlertHandler
+	settingsStream     concurrency.ReadOnlyValueStream
+	sensorEventsStream concurrency.ReadOnlyValueStream
+
+	alertHandler AlertHandler
+	admCtrlMgr   SettingsManager
 }
 
 // NewManagementService retrieves a new admission control management service, that allows pushing config updates out
 // to admission control service replicas.
 func NewManagementService(mgr SettingsManager, alertHandler AlertHandler) pkgGRPC.APIService {
 	return &managementService{
-		settingsStream: mgr.SettingsStream(),
-		alertHandler:   alertHandler,
+		settingsStream:     mgr.SettingsStream(),
+		sensorEventsStream: mgr.SensorEventsStream(),
+
+		alertHandler: alertHandler,
+		admCtrlMgr:   mgr,
 	}
 }
 
@@ -88,11 +94,24 @@ func (s *managementService) Communicate(stream sensor.AdmissionControlManagement
 		return errors.Wrap(err, "sending initial settings")
 	}
 
+	var sensorEventIt concurrency.ValueStreamIter
+	if features.K8sEventDetection.Enabled() {
+		if err := s.sync(stream); err != nil {
+			return errors.Wrap(err, "syncing resources")
+		}
+		sensorEventIt = s.sensorEventsStream.Iterator(true)
+	}
+
 	recvdMsgC := make(chan *sensor.MsgFromAdmissionControl)
 	recvErrC := make(chan error, 1)
 	go s.runRecv(stream, recvdMsgC, recvErrC)
 
 	for {
+		var sensorEventItrDoneC <-chan struct{}
+		if sensorEventIt != nil {
+			sensorEventItrDoneC = sensorEventIt.Done()
+		}
+
 		select {
 		case err := <-recvErrC:
 			recvErrC = nil // we won't receive anything more on this channel
@@ -105,6 +124,11 @@ func (s *managementService) Communicate(stream sensor.AdmissionControlManagement
 			settingsIt = settingsIt.TryNext()
 			if err := s.sendCurrentSettings(stream, settingsIt); err != nil {
 				return errors.Wrap(err, "sending settings push")
+			}
+		case <-sensorEventItrDoneC:
+			sensorEventIt = sensorEventIt.TryNext()
+			if err := s.sendSensorEvent(stream, sensorEventIt); err != nil {
+				return errors.Wrap(err, "sending sensor events to admission control service")
 			}
 
 		case <-stream.Context().Done():
@@ -119,4 +143,44 @@ func (s *managementService) PolicyAlerts(_ context.Context, alerts *sensor.Admis
 	}
 	go s.alertHandler.ProcessAlerts(alerts)
 	return &types.Empty{}, nil
+}
+
+func (s *managementService) sendSensorEvent(stream sensor.AdmissionControlManagementService_CommunicateServer, iter concurrency.ValueStreamIter) error {
+	obj, _ := iter.Value().(*sensor.AdmCtrlUpdateResourceRequest)
+	if obj == nil {
+		return nil
+	}
+
+	return stream.Send(&sensor.MsgToAdmissionControl{
+		Msg: &sensor.MsgToAdmissionControl_UpdateResourceRequest{
+			UpdateResourceRequest: obj,
+		},
+	})
+}
+
+func (s *managementService) sync(stream sensor.AdmissionControlManagementService_CommunicateServer) error {
+	for _, msg := range s.admCtrlMgr.GetResourcesForSync() {
+		err := stream.Send(&sensor.MsgToAdmissionControl{
+			Msg: &sensor.MsgToAdmissionControl_UpdateResourceRequest{
+				UpdateResourceRequest: msg,
+			},
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	err := stream.Send(&sensor.MsgToAdmissionControl{
+		Msg: &sensor.MsgToAdmissionControl_UpdateResourceRequest{
+			UpdateResourceRequest: &sensor.AdmCtrlUpdateResourceRequest{
+				Resource: &sensor.AdmCtrlUpdateResourceRequest_Synced{
+					Synced: &sensor.AdmCtrlUpdateResourceRequest_ResourcesSynced{},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }

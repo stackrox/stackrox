@@ -7,19 +7,19 @@ import (
 )
 
 // PodStore stores pods (by namespace, deploymentID, and id).
-type podStore struct {
+type PodStore struct {
 	lock sync.RWMutex
 	pods map[string]map[string]map[string]*storage.Pod
 }
 
 // newPodStore creates and returns a new pod store.
-func newPodStore() *podStore {
-	return &podStore{
+func newPodStore() *PodStore {
+	return &PodStore{
 		pods: make(map[string]map[string]map[string]*storage.Pod),
 	}
 }
 
-func (ps *podStore) addOrUpdatePod(pod *storage.Pod) {
+func (ps *PodStore) addOrUpdatePod(pod *storage.Pod) {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
 
@@ -36,7 +36,7 @@ func (ps *podStore) addOrUpdatePod(pod *storage.Pod) {
 	dMap[pod.GetId()] = pod
 }
 
-func (ps *podStore) removePod(namespace, deploymentID, podID string) {
+func (ps *PodStore) removePod(namespace, deploymentID, podID string) {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
 
@@ -45,7 +45,7 @@ func (ps *podStore) removePod(namespace, deploymentID, podID string) {
 
 // forEach takes in a function that will perform some actions for each pod in the given deployment.
 // The function MUST NOT update the pods.
-func (ps *podStore) forEach(ns, deploymentID string, f func(*storage.Pod)) {
+func (ps *PodStore) forEach(ns, deploymentID string, f func(*storage.Pod)) {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 
@@ -54,7 +54,7 @@ func (ps *podStore) forEach(ns, deploymentID string, f func(*storage.Pod)) {
 	}
 }
 
-func (ps *podStore) getContainersForDeployment(ns, deploymentID string) set.StringSet {
+func (ps *PodStore) getContainersForDeployment(ns, deploymentID string) set.StringSet {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
 
@@ -69,7 +69,7 @@ func (ps *podStore) getContainersForDeployment(ns, deploymentID string) set.Stri
 }
 
 // OnNamespaceDeleted reacts to a namespace deletion, deleting all pods in this namespace from the store.
-func (ps *podStore) OnNamespaceDeleted(ns string) {
+func (ps *PodStore) OnNamespaceDeleted(ns string) {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
 
@@ -77,9 +77,49 @@ func (ps *podStore) OnNamespaceDeleted(ns string) {
 }
 
 // onDeploymentRemove reacts to a deployment deletion, deleting all pods in this namespace and deployment from the store.
-func (ps *podStore) onDeploymentRemove(wrap *deploymentWrap) {
+func (ps *PodStore) onDeploymentRemove(wrap *deploymentWrap) {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
 
 	delete(ps.pods[wrap.GetNamespace()], wrap.GetId())
+}
+
+// GetAll returns all pods.
+func (ps *PodStore) GetAll() []*storage.Pod {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	var ret []*storage.Pod
+	for _, depMap := range ps.pods {
+		for _, podMap := range depMap {
+			for _, pod := range podMap {
+				ret = append(ret, pod)
+			}
+		}
+	}
+	return ret
+}
+
+// GetByName returns pod for supplied name in namespace.
+func (ps *PodStore) GetByName(podName, namespace string) *storage.Pod {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	depMap := ps.pods[namespace]
+	if depMap == nil {
+		return nil
+	}
+
+	var ret *storage.Pod
+	for _, podMap := range depMap {
+		for _, pod := range podMap {
+			if pod == nil {
+				continue
+			}
+			if pod.GetName() == podName {
+				return pod
+			}
+		}
+	}
+	return ret
 }

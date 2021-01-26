@@ -8,6 +8,7 @@ import (
 	pkgErr "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -22,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/sizeboundedcache"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/admission-control/errors"
+	"github.com/stackrox/rox/sensor/admission-control/resources"
 	"google.golang.org/grpc"
 	admission "k8s.io/api/admission/v1beta1"
 )
@@ -43,7 +45,10 @@ var (
 type state struct {
 	*sensor.AdmissionControlSettings
 	deploytimeDetector deploytime.Detector
-	runtimeDetector    runtime.Detector
+
+	allRuntimePoliciesDetector                    runtime.Detector
+	runtimeDetectorForPoliciesWithoutDeployFields runtime.Detector
+	runtimeDetectorForPoliciesWithDeployFields    runtime.Detector
 
 	bypassForUsers, bypassForGroups set.FrozenStringSet
 	enforcedOps                     map[admission.Operation]struct{}
@@ -71,8 +76,14 @@ type manager struct {
 	client     sensor.ImageServiceClient
 	imageCache sizeboundedcache.Cache
 
-	settingsStream *concurrency.ValueStream
+	depClient        sensor.DeploymentServiceClient
+	resourceUpdatesC chan *sensor.AdmCtrlUpdateResourceRequest
+	namespaces       *resources.NamespaceStore
+	deployments      *resources.DeploymentStore
+	pods             *resources.PodStore
+	initialSyncSig   concurrency.Signal
 
+	settingsStream     *concurrency.ValueStream
 	settingsC          chan *sensor.AdmissionControlSettings
 	lastSettingsUpdate *types.Timestamp
 
@@ -91,6 +102,9 @@ func newManager(conn *grpc.ClientConn) *manager {
 	})
 	utils.Must(err)
 
+	podStore := resources.NewPodStore()
+	depStore := resources.NewDeploymentStore(podStore)
+	nsStore := resources.NewNamespaceStore(depStore, podStore)
 	return &manager{
 		settingsStream: concurrency.NewValueStream(nil),
 		settingsC:      make(chan *sensor.AdmissionControlSettings),
@@ -100,6 +114,13 @@ func newManager(conn *grpc.ClientConn) *manager {
 		imageCache: cache,
 
 		alertsC: make(chan []*storage.Alert),
+
+		namespaces:       nsStore,
+		deployments:      depStore,
+		pods:             podStore,
+		resourceUpdatesC: make(chan *sensor.AdmCtrlUpdateResourceRequest),
+		initialSyncSig:   concurrency.NewSignal(),
+		depClient:        sensor.NewDeploymentServiceClient(conn),
 	}
 }
 
@@ -121,6 +142,7 @@ func (m *manager) Start() error {
 	}
 
 	go m.runSettingsWatch()
+	go m.runUpdateResourceReqWatch()
 	return nil
 }
 
@@ -136,6 +158,14 @@ func (m *manager) SettingsUpdateC() chan<- *sensor.AdmissionControlSettings {
 	return m.settingsC
 }
 
+func (m *manager) ResourceUpdatesC() chan<- *sensor.AdmCtrlUpdateResourceRequest {
+	return m.resourceUpdatesC
+}
+
+func (m *manager) InitialResourceSyncSig() *concurrency.Signal {
+	return &m.initialSyncSig
+}
+
 func (m *manager) runSettingsWatch() {
 	defer m.stoppedSig.Signal()
 	defer log.Info("Stopping watcher for new settings")
@@ -147,6 +177,24 @@ func (m *manager) runSettingsWatch() {
 			return
 		case newSettings := <-m.settingsC:
 			m.processNewSettings(newSettings)
+		}
+	}
+}
+
+func (m *manager) runUpdateResourceReqWatch() {
+	if !features.K8sEventDetection.Enabled() {
+		return
+	}
+
+	defer m.stoppedSig.Signal()
+	defer log.Info("Stopping watcher for new sensor events")
+
+	for {
+		select {
+		case <-m.stopSig.Done():
+			return
+		case req := <-m.resourceUpdatesC:
+			m.processUpdateResourceRequest(req)
 		}
 	}
 }
@@ -175,14 +223,26 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 		}
 	}
 
-	runtimePolicySet := detection.NewPolicySet()
+	allRuntimePolicySet := detection.NewPolicySet()
+	runtimePoliciesWithDeployFields, runtimePoliciesWithoutDeployFields := detection.NewPolicySet(), detection.NewPolicySet()
 	for _, policy := range newSettings.GetRuntimePolicies().GetPolicies() {
 		if policyfields.ContainsUnscannedImageField(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
 			log.Warnf(errors.ImageScanUnavailableMsg(policy))
 			continue
 		}
-		if err := runtimePolicySet.UpsertPolicy(policy); err != nil {
+
+		if err := allRuntimePolicySet.UpsertPolicy(policy); err != nil {
 			log.Errorf("Unable to upsert policy %q (%s), will not be able to detect", policy.GetName(), policy.GetId())
+		}
+
+		if booleanpolicy.ContainsDeployTimeFields(policy) {
+			if err := runtimePoliciesWithDeployFields.UpsertPolicy(policy); err != nil {
+				log.Errorf("Unable to upsert policy %q (%s), will not be able to detect", policy.GetName(), policy.GetId())
+			}
+		} else {
+			if err := runtimePoliciesWithoutDeployFields.UpsertPolicy(policy); err != nil {
+				log.Errorf("Unable to upsert policy %q (%s), will not be able to detect", policy.GetName(), policy.GetId())
+			}
 		}
 		log.Debugf("Upserted policy %q (%s)", policy.GetName(), policy.GetId())
 	}
@@ -202,12 +262,14 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 
 	oldState := m.currentState()
 	newState := &state{
-		AdmissionControlSettings: newSettings,
-		deploytimeDetector:       deployTimeDetector,
-		runtimeDetector:          runtime.NewDetector(runtimePolicySet),
-		bypassForUsers:           allowAlwaysUsers,
-		bypassForGroups:          allowAlwaysGroups,
-		enforcedOps:              enforcedOperations,
+		AdmissionControlSettings:                      newSettings,
+		deploytimeDetector:                            deployTimeDetector,
+		allRuntimePoliciesDetector:                    runtime.NewDetector(allRuntimePolicySet),
+		runtimeDetectorForPoliciesWithDeployFields:    runtime.NewDetector(runtimePoliciesWithDeployFields),
+		runtimeDetectorForPoliciesWithoutDeployFields: runtime.NewDetector(runtimePoliciesWithoutDeployFields),
+		bypassForUsers:                                allowAlwaysUsers,
+		bypassForGroups:                               allowAlwaysGroups,
+		enforcedOps:                                   enforcedOperations,
 	}
 
 	if oldState != nil && newSettings.GetCentralEndpoint() == oldState.GetCentralEndpoint() {
@@ -245,7 +307,7 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 	m.lastSettingsUpdate = newSettings.GetTimestamp()
 
 	enforceablePolicies := 0
-	for _, policy := range runtimePolicySet.GetCompiledPolicies() {
+	for _, policy := range allRuntimePolicySet.GetCompiledPolicies() {
 		if len(policy.Policy().GetEnforcementActions()) > 0 {
 			enforceablePolicies++
 		}
@@ -255,7 +317,7 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 		"detecting on %d run-time policies; "+
 		"enforcing on %d run-time policies).",
 		len(deployTimePolicySet.GetCompiledPolicies()),
-		len(runtimePolicySet.GetCompiledPolicies()),
+		len(allRuntimePolicySet.GetCompiledPolicies()),
 		enforceablePolicies)
 
 	m.settingsStream.Push(newSettings)
@@ -297,4 +359,24 @@ func (m *manager) putAlertsOnChan(alerts []*storage.Alert) {
 		return
 	case m.alertsC <- alerts:
 	}
+}
+
+func (m *manager) processUpdateResourceRequest(req *sensor.AdmCtrlUpdateResourceRequest) {
+	switch req.GetResource().(type) {
+	case *sensor.AdmCtrlUpdateResourceRequest_Synced:
+		m.initialSyncSig.Signal()
+		log.Info("Initial resource sync with Sensor complete")
+	case *sensor.AdmCtrlUpdateResourceRequest_Deployment:
+		m.deployments.ProcessEvent(req.GetAction(), req.GetDeployment())
+	case *sensor.AdmCtrlUpdateResourceRequest_Pod:
+		m.pods.ProcessEvent(req.GetAction(), req.GetPod())
+	case *sensor.AdmCtrlUpdateResourceRequest_Namespace:
+		m.namespaces.ProcessEvent(req.GetAction(), req.GetNamespace())
+	default:
+		log.Warnf("Received message of unknown type %T from sensor, not sure what to do with it ...", m)
+	}
+}
+
+func (m *manager) getDeploymentForPod(namespace, podName string) *storage.Deployment {
+	return m.deployments.Get(namespace, m.pods.GetDeploymentID(namespace, podName))
 }

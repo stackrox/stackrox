@@ -181,3 +181,41 @@ func hasModifiedImages(s *state, deployment *storage.Deployment, req *admission.
 
 	return false
 }
+
+func (m *manager) kickOffImgScansAndDetect(
+	fetchImgCtx context.Context,
+	s *state,
+	getAlertsFunc func(*storage.Deployment, []*storage.Image) ([]*storage.Alert, error),
+	deployment *storage.Deployment,
+) ([]*storage.Alert, error) {
+	if deployment == nil {
+		return nil, nil
+	}
+	images, resultChan := m.getAvailableImagesAndKickOffScans(fetchImgCtx, s, deployment)
+	alerts, err := getAlertsFunc(deployment, images)
+
+	if fetchImgCtx != nil {
+		// Wait for image scan results to come back, running detection after every update to give a verdict ASAP.
+	resultsLoop:
+		for !hasNonNoScanAlerts(alerts) && err == nil {
+			select {
+			case nextRes, ok := <-resultChan:
+				if !ok {
+					break resultsLoop
+				}
+				if nextRes.err != nil {
+					continue
+				}
+				images[nextRes.idx] = nextRes.img
+
+			case <-fetchImgCtx.Done():
+				break resultsLoop
+			}
+
+			alerts, err = getAlertsFunc(deployment, images)
+		}
+	} else {
+		alerts = filterOutNoScanAlerts(alerts) // no point in alerting on no scans if we're not even trying
+	}
+	return alerts, err
+}

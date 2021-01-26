@@ -16,21 +16,6 @@ message KubernetesEvent {
     }
 
     message Object {
-        message ClusterScopeInfo {
-            string cluster = 1;
-        }
-
-        message NamespaceScopeInfo {
-            string cluster   = 1;
-            string namespace = 2;
-        }
-
-        message DeploymentScopeInfo {
-            string cluster       = 1;
-            string namespace     = 2;
-            string deployment_id = 3;
-        }
-
         // Resource and sub-resource mapping is represented as resource_subresource.
         enum Resource {
             UNKNOWN          = 0;
@@ -38,14 +23,10 @@ message KubernetesEvent {
             PODS_PORTFORWARD = 2;
         }
 
-        string                  name                  = 1;
-        Resource                resource              = 2 [(gogoproto.moretags) = "policy:\"Kubernetes Resource\""];
-
-        oneof ScopeInfo {
-            DeploymentScopeInfo deployment_scope_info = 4;
-            NamespaceScopeInfo  namespace_scope_info  = 5;
-            ClusterScopeInfo    cluster_scope_info    = 6;
-        }
+        string   name       = 1;
+        Resource resource   = 2 [(gogoproto.moretags) = "policy:\"Kubernetes Resource\""];
+        string   cluster_id = 3;
+        string   namespace  = 4;
     }
 
     string                    id                    = 1;

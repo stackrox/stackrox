@@ -70,7 +70,7 @@ func mainCmd() error {
 		log.Errorf("Could not run settings persister: %v. Admission control service might take longer to become ready after container restarts", err)
 	}
 	if sensorConn != nil {
-		settingswatch.WatchSensorSettingsPush(mgr, sensorConn)
+		settingswatch.WatchSensorMessagePush(mgr, sensorConn)
 
 		if features.K8sEventDetection.Enabled() {
 			alerts.NewAlertSender(sensorConn, mgr.Alerts()).Start(concurrency.AsContext(mgr.Stopped()))

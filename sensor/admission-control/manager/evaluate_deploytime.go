@@ -139,33 +139,11 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 		defer cancel()
 	}
 
-	images, resultChan := m.getAvailableImagesAndKickOffScans(fetchImgCtx, s, deployment)
-	alerts, err := s.deploytimeDetector.Detect(detectionCtx, deployment, images)
-
-	if fetchImgCtx != nil {
-		// Wait for image scan results to come back, running detection after every update to give a verdict ASAP.
-	resultsLoop:
-		for !hasNonNoScanAlerts(alerts) && err == nil {
-			select {
-			case nextRes, ok := <-resultChan:
-				if !ok {
-					break resultsLoop
-				}
-				if nextRes.err != nil {
-					continue
-				}
-				images[nextRes.idx] = nextRes.img
-
-			case <-fetchImgCtx.Done():
-				break resultsLoop
-			}
-
-			alerts, err = s.deploytimeDetector.Detect(detectionCtx, deployment, images)
-		}
-	} else {
-		alerts = filterOutNoScanAlerts(alerts) // no point in alerting on no scans if we're not even trying
+	getAlertsFunc := func(dep *storage.Deployment, imgs []*storage.Image) ([]*storage.Alert, error) {
+		return s.deploytimeDetector.Detect(detectionCtx, dep, imgs)
 	}
 
+	alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)
 	if err != nil {
 		return nil, errors.Wrap(err, "running StackRox detection")
 	}

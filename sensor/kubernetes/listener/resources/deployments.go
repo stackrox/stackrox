@@ -72,7 +72,7 @@ type deploymentHandler struct {
 	podLister       v1listers.PodLister
 	serviceStore    *serviceStore
 	deploymentStore *DeploymentStore
-	podStore        *podStore
+	podStore        *PodStore
 	endpointManager *endpointManager
 	namespaceStore  *namespaceStore
 	processFilter   filter.Filter
@@ -86,7 +86,7 @@ type deploymentHandler struct {
 }
 
 // newDeploymentHandler creates and returns a new deployment handler.
-func newDeploymentHandler(clusterID string, serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *podStore,
+func newDeploymentHandler(clusterID string, serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore,
 	endpointManager *endpointManager, namespaceStore *namespaceStore, rbac rbacUpdater, podLister v1listers.PodLister,
 	processFilter filter.Filter, config config.Handler, detector detector.Detector) *deploymentHandler {
 	return &deploymentHandler{
@@ -210,7 +210,7 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 	uid := uuid.NewV5(podNamespace, string(k8sPod.GetUID())).String()
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		// If we couldn't find an owning deployment ID, that means the deployment was probably removed,
-		// which means the pod would have been removed from the podStore when the owning deployment was.
+		// which means the pod would have been removed from the PodStore when the owning deployment was.
 		if owningDeploymentID != "" {
 			d.podStore.removePod(k8sPod.GetNamespace(), owningDeploymentID, uid)
 		}
@@ -220,7 +220,10 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 			Action: action,
 			Resource: &central.SensorEvent_Pod{
 				Pod: &storage.Pod{
-					Id: uid,
+					Id:           uid,
+					Name:         k8sPod.GetName(),
+					DeploymentId: owningDeploymentID,
+					Namespace:    k8sPod.GetNamespace(),
 				},
 			},
 		}

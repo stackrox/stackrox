@@ -33,20 +33,11 @@ func EventAsString(event *storage.KubernetesEvent) string {
 		suffix = suffix + "/" + subresource
 	}
 
-	if event.GetObject().GetScopeInfo() == nil {
-		return suffix
+	if event.GetObject().GetNamespace() == "" {
+		return event.GetApiVerb().String() + ":" + suffix
 	}
 
-	var prefix string
-	if event.GetObject().GetDeploymentScopeInfo() != nil {
-		prefix = "namespace/" + event.GetObject().GetDeploymentScopeInfo().GetNamespace()
-	}
-
-	if event.GetObject().GetNamespaceScopeInfo() != nil {
-		prefix = "namespace/" + event.GetObject().GetNamespaceScopeInfo().GetNamespace()
-	}
-
-	return event.GetApiVerb().String() + "/" + prefix + "/" + suffix
+	return event.GetApiVerb().String() + ":" + "namespace/" + event.GetObject().GetNamespace() + "/" + suffix
 }
 
 // AdmissionRequestToKubeEventObj translates admission request into a kubernetes event object.
@@ -76,13 +67,9 @@ func podExecEvent(req *admission.AdmissionRequest) (*storage.KubernetesEvent, er
 		Id:      string(req.UID),
 		ApiVerb: apiVerb,
 		Object: &storage.KubernetesEvent_Object{
-			Name:     req.Name,
-			Resource: storage.KubernetesEvent_Object_PODS_EXEC,
-			ScopeInfo: &storage.KubernetesEvent_Object_DeploymentScopeInfo_{
-				DeploymentScopeInfo: &storage.KubernetesEvent_Object_DeploymentScopeInfo{
-					Namespace: req.Namespace,
-				},
-			},
+			Name:      req.Name,
+			Resource:  storage.KubernetesEvent_Object_PODS_EXEC,
+			Namespace: req.Namespace,
 		},
 
 		ObjectArgs: &storage.KubernetesEvent_PodExecArgs_{
@@ -109,13 +96,9 @@ func podPortForwardEvent(req *admission.AdmissionRequest) (*storage.KubernetesEv
 		Id:      string(req.UID),
 		ApiVerb: apiVerb,
 		Object: &storage.KubernetesEvent_Object{
-			Name:     req.Name,
-			Resource: storage.KubernetesEvent_Object_PODS_PORTFORWARD,
-			ScopeInfo: &storage.KubernetesEvent_Object_DeploymentScopeInfo_{
-				DeploymentScopeInfo: &storage.KubernetesEvent_Object_DeploymentScopeInfo{
-					Namespace: req.Namespace,
-				},
-			},
+			Name:      req.Name,
+			Resource:  storage.KubernetesEvent_Object_PODS_PORTFORWARD,
+			Namespace: req.Namespace,
 		},
 
 		ObjectArgs: &storage.KubernetesEvent_PodPortForwardArgs_{

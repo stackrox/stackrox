@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/deployment"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/image"
@@ -31,6 +32,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
@@ -45,7 +47,7 @@ var (
 func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager) (*sensor.Sensor, error) {
 	var admCtrlSettingsMgr admissioncontroller.SettingsManager
 	if features.AdmissionControlService.Enabled() {
-		admCtrlSettingsMgr = admissioncontroller.NewSettingsManager()
+		admCtrlSettingsMgr = admissioncontroller.NewSettingsManager(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton())
 	}
 
 	var helmManagedConfig *central.HelmManagedConfigInit
@@ -70,7 +72,8 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, imageCache)
-	listener := listener.New(client, configHandler, policyDetector)
+
+	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, listener.New(client, configHandler, policyDetector))
 
 	upgradeCmdHandler, err := upgrade.NewCommandHandler(configHandler)
 	if err != nil {
@@ -87,7 +90,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	processPipeline := processsignal.NewProcessPipeline(indicators, clusterentities.StoreInstance(), processfilter.Singleton(), policyDetector)
 	processSignals := signalService.New(processPipeline, indicators)
 	components := []common.SensorComponent{
-		listener,
+		admCtrlMsgForwarder,
 		enforcer,
 		manager.Singleton(),
 		networkpolicies.NewCommandHandler(client.Kubernetes()),
@@ -132,6 +135,10 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		processSignals,
 		complianceService,
 		imageService,
+	}
+
+	if features.K8sEventDetection.Enabled() {
+		apiServices = append(apiServices, deployment.NewService(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton()))
 	}
 
 	if admCtrlSettingsMgr != nil {

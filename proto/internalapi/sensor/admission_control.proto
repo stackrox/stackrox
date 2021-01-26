@@ -3,6 +3,8 @@ syntax = "proto3";
 option go_package = "sensor";
 
 import "storage/cluster.proto";
+import "storage/namespace_metadata.proto";
+import "storage/deployment.proto";
 import "storage/policy.proto";
 import "google/protobuf/timestamp.proto";
 import "internalapi/central/sensor_events.proto";
@@ -23,4 +25,17 @@ message AdmissionControlSettings {
 
 message AdmissionControlAlerts {
     repeated central.AlertResults   alert_results   = 1;
+}
+
+message AdmCtrlUpdateResourceRequest {
+    message ResourcesSynced {}
+
+    central.ResourceAction        action     = 1;
+    oneof resource {
+        storage.Deployment        deployment = 2;
+        storage.Pod               pod        = 3;
+        storage.NamespaceMetadata namespace  = 4;
+
+        ResourcesSynced           synced     = 5;
+    }
 }

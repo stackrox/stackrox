@@ -11,7 +11,8 @@ message MsgFromAdmissionControl {}
 
 message MsgToAdmissionControl {
     oneof msg {
-        AdmissionControlSettings settings_push = 1;
+        AdmissionControlSettings     settings_push           = 1;
+        AdmCtrlUpdateResourceRequest update_resource_request = 2;
     }
 }
 

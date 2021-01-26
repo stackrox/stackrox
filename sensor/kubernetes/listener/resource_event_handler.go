@@ -17,8 +17,14 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-func handleAllEvents(sif, resyncingSif informers.SharedInformerFactory, osf externalversions.SharedInformerFactory, output chan<- *central.MsgFromSensor,
-	stopSignal *concurrency.Signal, config config.Handler, detector detector.Detector) {
+func handleAllEvents(sif,
+	resyncingSif informers.SharedInformerFactory,
+	osf externalversions.SharedInformerFactory,
+	output chan<- *central.MsgFromSensor,
+	stopSignal *concurrency.Signal,
+	config config.Handler,
+	detector detector.Detector,
+) {
 	// We want creates to be treated as updates while existing objects are loaded.
 	var treatCreatesAsUpdates concurrency.Flag
 	treatCreatesAsUpdates.Set(true)
@@ -152,7 +158,15 @@ func handleAllEvents(sif, resyncingSif informers.SharedInformerFactory, osf exte
 
 // Helper function that creates and adds a handler to an informer.
 //////////////////////////////////////////////////////////////////
-func handle(informer cache.SharedIndexInformer, dispatcher resources.Dispatcher, output chan<- *central.MsgFromSensor, treatCreatesAsUpdates *concurrency.Flag, wg *concurrency.WaitGroup, stopSignal *concurrency.Signal, eventLock *sync.Mutex) {
+func handle(
+	informer cache.SharedIndexInformer,
+	dispatcher resources.Dispatcher,
+	output chan<- *central.MsgFromSensor,
+	treatCreatesAsUpdates *concurrency.Flag,
+	wg *concurrency.WaitGroup,
+	stopSignal *concurrency.Signal,
+	eventLock *sync.Mutex,
+) {
 	handlerImpl := &resourceEventHandlerImpl{
 		eventLock:             eventLock,
 		dispatcher:            dispatcher,

@@ -16,8 +16,11 @@ type Manager interface {
 	Stopped() concurrency.ErrorWaitable
 
 	SettingsUpdateC() chan<- *sensor.AdmissionControlSettings
+	ResourceUpdatesC() chan<- *sensor.AdmCtrlUpdateResourceRequest
+
 	SettingsStream() concurrency.ReadOnlyValueStream
 	SensorConnStatusFlag() *concurrency.Flag
+	InitialResourceSyncSig() *concurrency.Signal
 
 	IsReady() bool
 

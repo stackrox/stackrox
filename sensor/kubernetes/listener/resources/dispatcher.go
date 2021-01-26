@@ -36,7 +36,7 @@ func NewDispatcherRegistry(syncedRBAC *concurrency.Flag, clusterID string, podLi
 	configHandler config.Handler, detector detector.Detector) DispatcherRegistry {
 	serviceStore := newServiceStore()
 	deploymentStore := DeploymentStoreSingleton()
-	podStore := newPodStore()
+	podStore := PodStoreSingleton()
 	nodeStore := newNodeStore()
 	nsStore := newNamespaceStore()
 	endpointManager := newEndpointManager(serviceStore, deploymentStore, podStore, nodeStore, entityStore)

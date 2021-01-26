@@ -12,27 +12,33 @@ import (
 	"google.golang.org/grpc"
 )
 
-// WatchSensorSettingsPush watches for sensor pushes of admission control settings, and forwards them.
-func WatchSensorSettingsPush(mgr manager.Manager, cc *grpc.ClientConn) {
+// WatchSensorMessagePush watches for sensor pushes, and forwards them.
+func WatchSensorMessagePush(mgr manager.Manager, cc *grpc.ClientConn) {
 	w := &sensorPushWatch{
-		ctx:               mgr.Stopped(),
-		mgmtServiceClient: sensor.NewAdmissionControlManagementServiceClient(cc),
-		outC:              mgr.SettingsUpdateC(),
-		sensorConnStatus:  mgr.SensorConnStatusFlag(),
+		ctx:                   mgr.Stopped(),
+		mgmtServiceClient:     sensor.NewAdmissionControlManagementServiceClient(cc),
+		settingsOutC:          mgr.SettingsUpdateC(),
+		updateResourceReqOutC: mgr.ResourceUpdatesC(),
+		sensorConnStatus:      mgr.SensorConnStatusFlag(),
+		initialResourceSync:   mgr.InitialResourceSyncSig(),
 	}
 	go w.run()
 }
 
 type sensorPushWatch struct {
-	ctx              concurrency.ErrorWaitable
-	outC             chan<- *sensor.AdmissionControlSettings
-	sensorConnStatus *concurrency.Flag
+	ctx                   concurrency.ErrorWaitable
+	settingsOutC          chan<- *sensor.AdmissionControlSettings
+	updateResourceReqOutC chan<- *sensor.AdmCtrlUpdateResourceRequest
+
+	sensorConnStatus    *concurrency.Flag
+	initialResourceSync *concurrency.Signal
 
 	mgmtServiceClient sensor.AdmissionControlManagementServiceClient
 }
 
 func (w *sensorPushWatch) run() {
 	w.sensorConnStatus.Set(false)
+	w.initialResourceSync.Reset()
 
 	eb := common.NewBackOffForSensorConn()
 	tC := time.After(0)
@@ -88,8 +94,14 @@ func (w *sensorPushWatch) dispatchMsg(msg *sensor.MsgToAdmissionControl) error {
 		select {
 		case <-w.ctx.Done():
 			return w.ctx.Err()
-		case w.outC <- m.SettingsPush:
+		case w.settingsOutC <- m.SettingsPush:
 			log.Infof("Received and propagated updated admission controller settings via sensor push, timestamp: %v", m.SettingsPush.GetTimestamp())
+		}
+	case *sensor.MsgToAdmissionControl_UpdateResourceRequest:
+		select {
+		case <-w.ctx.Done():
+			return w.ctx.Err()
+		case w.updateResourceReqOutC <- m.UpdateResourceRequest:
 		}
 	default:
 		log.Warnf("Received message of unknown type %T from sensor, not sure what to do with it ...", m)
