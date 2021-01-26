@@ -137,12 +137,7 @@ const entityRelationshipMap = {
         children: [],
         parents: [],
         matches: [entityTypes.COMPONENT],
-        extendedMatches: [
-            entityTypes.IMAGE,
-            entityTypes.DEPLOYMENT,
-            entityTypes.CLUSTER,
-            entityTypes.NODE,
-        ],
+        extendedMatches: [entityTypes.IMAGE, entityTypes.DEPLOYMENT, entityTypes.NODE],
     },
     [entityTypes.CONTROL]: {
         children: [],
