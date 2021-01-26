@@ -422,15 +422,17 @@ func (b *storeImpl) deleteNodeKeys(keys *nodeKeySet) error {
 		if err := nodeComponentEdgeDackBox.Deleter.DeleteIn(component.nodeComponentEdgeKey, upsertTxn); err != nil {
 			return err
 		}
-		if err := componentDackBox.Deleter.DeleteIn(component.componentKey, upsertTxn); err != nil {
-			return err
-		}
-		for _, cve := range component.cveKeys {
-			if err := componentCVEEdgeDackBox.Deleter.DeleteIn(cve.componentCVEEdgeKey, upsertTxn); err != nil {
+		if upsertTxn.Graph().CountRefsTo(component.componentKey) == 0 {
+			if err := componentDackBox.Deleter.DeleteIn(component.componentKey, upsertTxn); err != nil {
 				return err
 			}
-			if err := cveDackBox.Deleter.DeleteIn(cve.cveKey, upsertTxn); err != nil {
-				return err
+			for _, cve := range component.cveKeys {
+				if err := componentCVEEdgeDackBox.Deleter.DeleteIn(cve.componentCVEEdgeKey, upsertTxn); err != nil {
+					return err
+				}
+				if err := cveDackBox.Deleter.DeleteIn(cve.cveKey, upsertTxn); err != nil {
+					return err
+				}
 			}
 		}
 	}

@@ -412,15 +412,17 @@ func (b *storeImpl) deleteImageKeys(keys *imageKeySet) error {
 		if err := imageComponentEdgeDackBox.Deleter.DeleteIn(component.imageComponentEdgeKey, upsertTxn); err != nil {
 			return err
 		}
-		if err := componentDackBox.Deleter.DeleteIn(component.componentKey, upsertTxn); err != nil {
-			return err
-		}
-		for _, cve := range component.cveKeys {
-			if err := componentCVEEdgeDackBox.Deleter.DeleteIn(cve.componentCVEEdgeKey, upsertTxn); err != nil {
+		if upsertTxn.Graph().CountRefsTo(component.componentKey) == 0 {
+			if err := componentDackBox.Deleter.DeleteIn(component.componentKey, upsertTxn); err != nil {
 				return err
 			}
-			if err := cveDackBox.Deleter.DeleteIn(cve.cveKey, upsertTxn); err != nil {
-				return err
+			for _, cve := range component.cveKeys {
+				if err := componentCVEEdgeDackBox.Deleter.DeleteIn(cve.componentCVEEdgeKey, upsertTxn); err != nil {
+					return err
+				}
+				if err := cveDackBox.Deleter.DeleteIn(cve.cveKey, upsertTxn); err != nil {
+					return err
+				}
 			}
 		}
 	}
