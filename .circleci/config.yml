@@ -3502,6 +3502,7 @@ jobs:
     environment:
       - STORAGE: pvc
       - LOAD_BALANCER: lb
+      - ROX_HOST_SCANNING: true
 
     steps:
       - checkout
