@@ -46,8 +46,8 @@ handle_failure() {
 trap "handle_failure" EXIT
 
 get_token() {
-    resource="$(kubectl -n "$NAMESPACE" get secret | grep "${NAME}-svcacct-token" | head -n1 | awk '{print $1}')"
-    token="$(kubectl -n "$NAMESPACE" get secret "$resource" -o jsonpath='{.data.token}' | base64 -d)"
+    resource="$(kubectl -n "$STACKROX_NAMESPACE" get secret | grep "${NAME}-svcacct-token" | head -n1 | awk '{print $1}')"
+    token="$(kubectl -n "$STACKROX_NAMESPACE" get secret "$resource" -o jsonpath='{.data.token}' | base64 -d)"
     if [[ -z "$token" ]]; then
         echo "Kube token could not be obtained for ${resource}" 1>&2
         return 1
@@ -67,20 +67,20 @@ update_description() {
     # Template and update description.
     markdown="$(kubectl -n stackrox get application "$name" -o jsonpath='{.spec.descriptor.description}')"
     markdown="$(echo "$markdown" | CONNECT="$connect" envsubst | jq --slurp --raw-input .)"
-    kubectl -n stackrox patch application "$name" --type=json \
+    kubectl -n "$STACKROX_NAMESPACE" patch application "$name" --type=json \
         -p "[{\"op\":\"replace\",\"path\":\"/spec/descriptor/description\",\"value\":${markdown}}]"
 }
 
 wait_for_central_pod() {
     # Wait 2 minutes for a central pod to be ready.
     echo "Waiting for central pod..."
-    kubectl -n stackrox wait --for=condition=Ready --selector=app=central --timeout=2m pod
+    kubectl -n "$STACKROX_NAMESPACE" wait --for=condition=Ready --selector=app=central --timeout=2m pod
 }
 
 wait_for_sensor_pod() {
     # Wait 2 minutes for a sensor pod to be ready.
     echo "Waiting for sensor pod..."
-    kubectl -n stackrox wait --for=condition=Ready --selector=app=sensor --timeout=2m pod
+    kubectl -n "$STACKROX_NAMESPACE" wait --for=condition=Ready --selector=app=sensor --timeout=2m pod
 }
 
 wait_for_central_api() {
@@ -194,7 +194,7 @@ update_network_docs() {
     # Wait for service to be ready for 60 seconds.
     echo "Waiting for service address"
     for i in $(seq 1 24); do
-        ip_address="$(kubectl -n stackrox get svc central-loadbalancer -o jsonpath="$selector")"
+        ip_address="$(kubectl -n "$STACKROX_NAMESPACE" get svc central-loadbalancer -o jsonpath="$selector")"
         if [[ -n "$ip_address" ]]; then
             break
         fi
@@ -220,7 +220,7 @@ update_network_docs() {
 
     # Update application info.
     echo "Got address ${text}"
-    kubectl -n stackrox patch application "$name" --type=json \
+    kubectl -n "$STACKROX_NAMESPACE" patch application "$name" --type=json \
     -p "[{\"op\":\"add\",\"path\":\"/spec/info/-\",\"value\":{\"name\":\"Stackrox address\",\"value\":\"${text}\"}}]"
 }
 
@@ -239,14 +239,9 @@ export KUBE_TOKEN="$(get_token)"
 # Create and check for the stackrox namespace
 kubectl create namespace stackrox || true
 kubectl get namespace stackrox
-export NAMESPACE=stackrox
+export STACKROX_NAMESPACE=stackrox
 
 echo "Deploying application \"$NAME\""
-
-if not_deploying_to_stackrox_namespace; then
-    cat /data/application.yaml.tpl | envsubst > /data/application.yaml
-    kubectl apply --namespace="$NAMESPACE" -f /data/application.yaml
-fi
 
 app_uid=$(kubectl get "applications.app.k8s.io/$NAME" \
   --namespace="$NAMESPACE" \
@@ -268,7 +263,7 @@ done < <({ kubectl get --raw /apis | jq -r '.groups[].versions[].groupVersion | 
 # Generate installation bundles for both Central and Scanner.
 roxctl gcp generate --values-file /data/final_values.yaml --output-dir /tmp/stackrox
 mkdir -p /tmp/stackrox/rendered
-helm template -n stackrox stackrox-central-services /tmp/stackrox/chart/ \
+helm template -n "$STACKROX_NAMESPACE" stackrox-central-services /tmp/stackrox/chart/ \
   -f /tmp/stackrox/values-public.yaml -f /tmp/stackrox/values-private.yaml \
   --set imagePullSecrets.allowNone=true \
   "${api_version_args[@]}" \
@@ -288,7 +283,7 @@ helm template -n stackrox stackrox-central-services /tmp/stackrox/chart/ \
   --status "Pending"
 
 # Apply the manifest.
-kubectl apply --namespace=stackrox --filename=/data/resources.yaml
+kubectl apply -n "$STACKROX_NAMESPACE" --filename=/data/resources.yaml
 
 # Attempt to provision a sensor.
 try_install_sensor || true
@@ -300,10 +295,8 @@ update_network_docs || true
 patch_assembly_phase.sh --status="Success"
 export NAMESPACE="$(cat /data/values/namespace)"
 
-if not_deploying_to_stackrox_namespace; then
-    cat /data/application-success.yaml.tpl | envsubst > /data/application-success.yaml
-    kubectl patch --namespace="$NAMESPACE" application "$NAME" --type merge --patch "$(cat /data/application-success.yaml)"
-fi
+cat /data/application.yaml.tpl | envsubst > /data/application.yaml
+kubectl apply --namespace="$NAMESPACE" -f /data/application.yaml
 
 kubectl -n "$NAMESPACE" delete serviceaccount "${NAME}-deployer-sa"
 kubectl -n "$NAMESPACE" delete rolebinding    "${NAME}-deployer-rb"

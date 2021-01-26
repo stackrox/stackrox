@@ -7,9 +7,9 @@ RUN apt-get -y update \
 
 COPY ./bin/roxctl-linux /usr/bin/roxctl
 COPY gcp/application.yaml.tpl /data/application.yaml.tpl
-COPY gcp/application-success.yaml.tpl /data/application-success.yaml.tpl
 COPY gcp/create_manifests.sh /bin/create_manifests.sh
 COPY gcp/deploy.sh /bin/deploy.sh
+COPY gcp/deploy.sh /bin/deploy_with_tests.sh
 COPY gcp/kubectl /usr/local/bin/kubectl
 COPY gcp/schema.yaml.tpl /data/schema.yaml.tpl
 

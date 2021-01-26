@@ -69,6 +69,11 @@ extract_manifest "$data_dir"
 if [[ "$mode" = "test" ]]; then
   extract_manifest "$test_data_dir"
 
+  if [[ ! -e "$data_dir/extracted" ]]; then
+    echo "$LOG_SMOKE_TEST No test charts declared."
+    continue
+  fi
+
   overlay_test_files.py \
     --manifest "$data_dir/extracted" \
     --test_manifest "$test_data_dir/extracted"
@@ -85,8 +90,7 @@ echo "==================="
 for chart in "$data_dir/extracted"/*; do
   chart_manifest_file=$(basename "$chart" | sed 's/.tar.gz$//').yaml
   ## BEGIN STACKROX MODIFICATIONS
-  helm template "$chart/chart" \
-    --name="$NAME" \
+  helm template "$NAME" "$chart/chart" \
     --namespace="$NAMESPACE" \
     --values=<(/bin/print_config.py --output=yaml) \
     --set "namespace=$NAMESPACE" \
