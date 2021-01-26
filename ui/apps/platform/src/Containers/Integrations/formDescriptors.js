@@ -965,6 +965,17 @@ const formDescriptors = {
                 placeholder: 'https://scanner.stackrox:8080',
             },
             {
+                label: 'gRPC Endpoint (used for node scanning)',
+                jsonpath: 'clairify.grpcEndpoint',
+                type: 'text',
+                placeholder: 'scanner.stackrox:8443',
+                featureFlagDependency: {
+                    featureFlag: knownBackendFlags.ROX_HOST_SCANNING,
+                    defaultValue: false,
+                    showIfValueIs: true,
+                },
+            },
+            {
                 label: 'Max Concurrent Image Scans (0 for default)',
                 jsonpath: 'clairify.numConcurrentScans',
                 type: 'text',

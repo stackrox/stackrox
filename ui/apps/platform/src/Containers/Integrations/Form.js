@@ -216,6 +216,16 @@ class Form extends Component {
                                 ? !field.hiddenFunction(initialValues)
                                 : !field.hidden;
                         })
+                        .filter((field) => {
+                            return !(
+                                field.featureFlagDependency &&
+                                isBackendFeatureFlagEnabled(
+                                    this.props.featureFlags,
+                                    field.featureFlagDependency.featureFlag,
+                                    field.featureFlagDependency.defaultValue
+                                ) !== field.featureFlagDependency.showIfValueIs
+                            );
+                        })
                         .map((field) => {
                             if (field.type === 'html') {
                                 return field.html;
