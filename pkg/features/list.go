@@ -32,7 +32,7 @@ var (
 	SyslogIntegration = registerFeature("Enable UI for a Syslog integration in the Integrations section", "ROX_SYSLOG_INTEGRATION", true)
 
 	// SensorInstallationExperience enables new features related to the new installation experience for sensor.
-	SensorInstallationExperience = registerFeature("Enable new installation user experience for Sensor", "ROX_SENSOR_INSTALLATION_EXPERIENCE", false)
+	SensorInstallationExperience = registerFeature("Enable new installation user experience for Sensor", "ROX_SENSOR_INSTALLATION_EXPERIENCE", true)
 
 	// NetworkDetection enables new features related to the new network detection experience.
 	NetworkDetection = registerFeature("Enable new network detection experience", "ROX_NETWORK_DETECTION", true)
