@@ -1,7 +1,9 @@
 package backend
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/clusterinit/store"
@@ -12,6 +14,20 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/sac"
 	"gopkg.in/yaml.v3"
+)
+
+const (
+	initBundleHeader = `# This is a StackRox cluster init bundle.
+# This bundle can be used for setting up any number of StackRox secured clusters.
+# NOTE: This file contains secret data and needs to be handled and stored accordingly.
+`
+	initBundleHeaderMeta = `#
+#   name:      %q
+#   createdAt: %v
+#   expiresAt: %v
+#   id:        %s
+#
+`
 )
 
 // InitBundleWithMeta contains an init bundle alongside its meta data.
@@ -60,7 +76,18 @@ func (b *InitBundleWithMeta) RenderAsYAML() ([]byte, error) {
 		return nil, errors.Wrap(err, "YAML marshalling of init bundle")
 	}
 
-	return bundleYaml, nil
+	var bundleBuffer bytes.Buffer
+
+	fmt.Fprint(&bundleBuffer, initBundleHeader)
+	fmt.Fprintf(&bundleBuffer,
+		initBundleHeaderMeta,
+		b.Meta.GetName(),
+		b.Meta.GetCreatedAt(),
+		b.Meta.GetExpiresAt(),
+		b.Meta.GetId())
+	_, _ = bundleBuffer.Write(bundleYaml)
+
+	return bundleBuffer.Bytes(), nil
 }
 
 var (
