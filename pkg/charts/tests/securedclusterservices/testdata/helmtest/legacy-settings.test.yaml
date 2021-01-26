@@ -1,0 +1,62 @@
+tests:
+- name: Basic legacy settings
+  values:
+    clusterName: null  # clear out setting from parent
+    cluster:
+      name: legacy-cluster
+      type: KUBERNETES_CLUSTER
+    endpoint:
+      central: "legacy-central.example.com:8443"
+      advertised: "legacy-sensor.example.com:8443"
+    image:
+      registry:
+        main: "legacy-main.example.com"
+        collector: "legacy-collector.example.com"
+      repository:
+        main: "legacy-main"
+        collector: "legacy-collector"
+    config:
+      collectionMethod: "EBPF"
+    envVars:
+      - name: "CUSTOM_ENV_VAR"
+        value: "custom-value"
+  expect: |
+    # Config translation
+    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | [
+        (.clusterName | assertThat(. == "legacy-cluster")),
+        (.clusterConfig | [
+          (.staticConfig | [
+            (.type | assertThat(. == "KUBERNETES_CLUSTER")),
+            (.mainImage | assertThat(. == "legacy-main.example.com/legacy-main")),
+            (.collectorImage | assertThat(. == "legacy-collector.example.com/legacy-collector")),
+            (.centralApiEndpoint | assertThat(. == "legacy-central.example.com:8443")),
+            (.collectionMethod | assertThat(. == "EBPF"))
+          ][])
+        ][])
+      ][]
+
+    # Image settings
+    container(.deployments.sensor; "sensor") | .image | assertThat(startswith("legacy-main.example.com/legacy-main:"))
+    container(.daemonsets.collector; "collector") | .image
+      | assertThat(startswith("legacy-collector.example.com/legacy-collector:"))
+
+    # Custom environment variables
+    envVars(.deployments.sensor; "sensor")["CUSTOM_ENV_VAR"] | assertThat(. == "custom-value")
+
+    # Endpoint settings
+    envVars(.daemonsets.collector; "compliance")["ROX_ADVERTISED_ENDPOINT"]
+      | assertThat(. == "legacy-sensor.example.com:8443")
+    envVars(.deployments["admission-control"]; "admission-control")["ROX_SENSOR_ENDPOINT"]
+      | assertThat(. == "legacy-sensor.example.com:8443")
+- name: OpenShift in Legacy mode
+  values:
+    cluster:
+      type: OPENSHIFT_CLUSTER
+  server:
+    availableSchemas:
+    - openshift-4.1.0
+  expect: |
+    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml |
+      .clusterConfig.staticConfig.type | assertThat(. == "OPENSHIFT_CLUSTER")
+    envVars(.deployments.sensor; "sensor")["ROX_OPENSHIFT_API"] | assertThat(. == "true")
+    .securitycontextconstraints | assertThat(length == 3)
