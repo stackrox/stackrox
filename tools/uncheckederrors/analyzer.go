@@ -49,12 +49,25 @@ var (
 )
 
 func getReturnTypesFromFuncType(typ types.Type) (typs []types.Type) {
-	for typ.Underlying() != typ {
-		typ = typ.Underlying()
+	for {
+		// This deferences type definitions.
+		// For example, if you have:
+		// type myFunc func() error
+		// Then, if typ is myFunc, then
+		// typ.Underlying() is func() error
+		for typ.Underlying() != typ {
+			typ = typ.Underlying()
+		}
+		// This dereferences pointers, arrays and slices.
+		elemTyp, canElem := typ.(interface{ Elem() types.Type })
+		if !canElem {
+			break
+		}
+		typ = elemTyp.Elem()
 	}
 	sig, ok := typ.(*types.Signature)
 	if !ok {
-		panic("type was not a signature")
+		panic(fmt.Sprintf("type %+v was not a signature", typ))
 	}
 	results := sig.Results()
 	if results == nil {
@@ -114,9 +127,14 @@ func getReturnTypesOfFunc(pass *analysis.Pass, fun ast.Expr) (name string, typs 
 			_, typs, exprs := getReturnTypesOfFunc(pass, exprs[0])
 			return name, typs, exprs
 		}
+	// This handles the case where you have
+	// var funcs []func() error
+	// funcs[2]() <- unchecked error.
+	case *ast.IndexExpr:
+		return getReturnTypesOfFunc(pass, fun.X)
 	}
 
-	panic(fmt.Sprintf("Unexpected func type %T", fun))
+	panic(fmt.Sprintf("Unexpected func type %T %+v", fun, fun))
 }
 
 func doesFuncReturnError(pass *analysis.Pass, fun ast.Expr) (name string, returnsError bool) {
