@@ -6,7 +6,7 @@ defs: |
     container(obj; container) | .env | from_entries;
 
   def verifyNamespace(ns):
-    .objects[].metadata | select(.namespace and .namespace != ns) | assertNotExist;
+    [.objects[].metadata | select(.namespace and .namespace != ns)] | assertThat(length == 0);
 
   def verifyCentralEndpoint(ep):
     [

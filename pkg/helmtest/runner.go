@@ -261,7 +261,9 @@ func (r *runner) evaluatePredicates(world map[string]interface{}) {
 		}
 
 		iter := code.Run(runtime.DeepCopyJSON(world))
+		hadElem := false
 		for result, ok := iter.Next(); ok; result, ok = iter.Next() {
+			hadElem = true
 			err, _ := result.(error)
 			if errors.Is(err, errAssumptionViolation) {
 				continue
@@ -271,5 +273,6 @@ func (r *runner) evaluatePredicates(world map[string]interface{}) {
 			}
 			r.Assert().True(truthiness(result), "predicate %q evaluated to falsy result %v", pred, result)
 		}
+		r.Assert().Truef(hadElem, "predicate %q evaluated to empty sequence", pred)
 	}
 }
