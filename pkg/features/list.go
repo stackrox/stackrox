@@ -47,10 +47,7 @@ var (
 	SensorTLSChallenge = registerFeature("Enable Sensor to receive default and additional CA certificates from Central", "ROX_SENSOR_TLS_CHALLENGE", true)
 
 	// K8sEventDetection enables detection of kubernetes events.
-	K8sEventDetection = registerFeature("Enable detection of kubernetes events", "ROX_K8S_EVENTS_DETECTION", false)
-
-	// MockK8sEventDetection mocks detection of kubernetes events.
-	MockK8sEventDetection = registerFeature("Mock detection of kubernetes events", "ROX_MOCK_K8S_EVENTS_DETECTION", false)
+	K8sEventDetection = registerFeature("Enable detection of kubernetes events", "ROX_K8S_EVENTS_DETECTION", true)
 
 	// IntegrationsAsConfig enables loading integrations from config
 	IntegrationsAsConfig = registerFeature("Enable loading integrations from config", "ROX_INTEGRATIONS_AS_CONFIG", false)

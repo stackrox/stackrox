@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -100,13 +99,6 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetAlert returns the alert with given id.
 func (s *serviceImpl) GetAlert(ctx context.Context, request *v1.ResourceByID) (*storage.Alert, error) {
-	// TODO: Remove when actual alert is available.
-	if features.MockK8sEventDetection.Enabled() {
-		if request.GetId() == getMockK8sAlert().GetId() {
-			return getMockK8sAlert(), nil
-		}
-	}
-
 	alert, exists, err := s.dataStore.GetAlert(ctx, request.GetId())
 	if err != nil {
 		log.Error(err)
@@ -129,11 +121,6 @@ func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequ
 	alerts, err := s.dataStore.ListAlerts(ctx, request)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	// TODO: Remove when actual alert is available.
-	if features.MockK8sEventDetection.Enabled() {
-		alerts = append(alerts, getMockK8sListAlert())
 	}
 	return &v1.ListAlertsResponse{Alerts: alerts}, nil
 }
