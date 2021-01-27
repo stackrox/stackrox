@@ -34,6 +34,7 @@ export const CLUSTER_LIST_FRAGMENT = gql`
         # createdAt
         namespaceCount
         deploymentCount
+        nodeCount
         # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
         policyStatus(query: $policyQuery) {
             status
