@@ -5,6 +5,7 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+- The `/v1/metadata` endpoint redacts version information from unauthenticated users.
 - `roxctl image check` now has a `--send-notifications` flag, which will send notifications for
   build time alerts to the notifiers configured in each violated policy.
 - `roxctl central db backup` is deprecated; please use `roxctl central backup` instead.

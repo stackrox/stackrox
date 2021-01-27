@@ -24,7 +24,7 @@ function* pollVersion() {
     while (true) {
         // eslint-disable-next-line
         const metadata = yield call(fetchVersionAndSendTo, action);
-        if (metadata) {
+        if (metadata && metadata.version) {
             action = actions.pollMetadata;
         }
         const nextPoll =

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/version"
@@ -44,19 +45,21 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetMetadata returns the metadata for Rox.
-func (s *serviceImpl) GetMetadata(context.Context, *v1.Empty) (*v1.Metadata, error) {
-	var status v1.Metadata_LicenseStatus
-	if s.restarting.Get() {
-		status = v1.Metadata_RESTARTING
-	} else {
-		status = s.licenseMgr.GetLicenseStatus()
+func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadata, error) {
+	metadata := &v1.Metadata{
+		BuildFlavor:  buildinfo.BuildFlavor,
+		ReleaseBuild: buildinfo.ReleaseBuild,
 	}
-	return &v1.Metadata{
-		Version:       version.GetMainVersion(),
-		BuildFlavor:   buildinfo.BuildFlavor,
-		ReleaseBuild:  buildinfo.ReleaseBuild,
-		LicenseStatus: status,
-	}, nil
+	if s.restarting.Get() {
+		metadata.LicenseStatus = v1.Metadata_RESTARTING
+	} else {
+		metadata.LicenseStatus = s.licenseMgr.GetLicenseStatus()
+	}
+	// Only return the version to logged in users, not anonymous users.
+	if authn.IdentityFromContext(ctx) != nil {
+		metadata.Version = version.GetMainVersion()
+	}
+	return metadata, nil
 }
 
 // TLSChallenge returns all trusted CAs (i.e. secret/additional-ca) and centrals cert chain. This is necessary if

@@ -3149,21 +3149,21 @@ jobs:
           name: Test HTTP access to plain HTTP proxy
           command: |
             # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
-            version="$(curl --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 -f 'http://central-proxy.stackrox.local:10080/v1/metadata' | jq -r '.version')"
-            echo "Got version ${version} from server"
-            [[ "$version" == "$(make --quiet tag)" ]]
+            license_status="$(curl --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 -f 'http://central-proxy.stackrox.local:10080/v1/metadata' | jq -r '.licenseStatus')"
+            echo "Got license status ${license_status} from server"
+            [[ "$license_status" == "VALID" ]]
 
       - run:
           name: Test HTTPS access to multiplexed TLS proxy
           command: |
             # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
-            version="$(
+            license_status="$(
               curl --cacert "${PROXY_CERTS_DIR}/ca.crt" \
                 --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 \
                 -f \
-                'https://central-proxy.stackrox.local:10443/v1/metadata' | jq -r '.version')"
-            echo "Got version ${version} from server"
-            [[ "$version" == "$(make --quiet tag)" ]]
+                'https://central-proxy.stackrox.local:10443/v1/metadata' | jq -r '.licenseStatus')"
+            echo "Got license status ${license_status} from server"
+            [[ "$license_status" == "VALID" ]]
 
       - run:
           name: Test roxctl access to proxies

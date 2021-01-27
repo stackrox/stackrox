@@ -65,9 +65,21 @@ func RoxAPIEndpoint(t T) string {
 	return stringutils.FirstNonEmpty(mustGetEnvVarInCI(t, apiEndpointEnvVar), defaultAPIEndpoint)
 }
 
+// UnauthenticatedGRPCConnectionToCentral is like GRPCConnectionToCentral,
+// but does not inject credentials into the request.
+func UnauthenticatedGRPCConnectionToCentral(t *testing.T) *grpc.ClientConn {
+	return grpcConnectionToCentral(t, nil)
+}
+
 // GRPCConnectionToCentral returns a GRPC connection to Central, which can be used in E2E tests.
 // It fatals the test if there's an error.
 func GRPCConnectionToCentral(t *testing.T) *grpc.ClientConn {
+	return grpcConnectionToCentral(t, func(opts *clientconn.Options) {
+		opts.ConfigureBasicAuth(RoxUsername(t), RoxPassword(t))
+	})
+}
+
+func grpcConnectionToCentral(t *testing.T, optsModifyFunc func(options *clientconn.Options)) *grpc.ClientConn {
 	endpoint := RoxAPIEndpoint(t)
 	host, _, _, err := netutil.ParseEndpoint(endpoint)
 	require.NoError(t, err)
@@ -78,7 +90,9 @@ func GRPCConnectionToCentral(t *testing.T) *grpc.ClientConn {
 			ServerName:         host,
 		},
 	}
-	opts.ConfigureBasicAuth(RoxUsername(t), RoxPassword(t))
+	if optsModifyFunc != nil {
+		optsModifyFunc(&opts)
+	}
 	conn, err := clientconn.GRPCConnection(context.Background(), mtls.CentralSubject, endpoint, opts)
 	require.NoError(t, err)
 	return conn
