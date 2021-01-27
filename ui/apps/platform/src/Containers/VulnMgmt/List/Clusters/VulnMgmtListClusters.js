@@ -255,9 +255,6 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
 };
 
 VulnMgmtClusters.propTypes = workflowListPropTypes;
-VulnMgmtClusters.defaultProps = {
-    ...workflowListDefaultProps,
-    sort: null,
-};
+VulnMgmtClusters.defaultProps = workflowListDefaultProps;
 
 export default VulnMgmtClusters;

@@ -212,9 +212,6 @@ const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data, totalResu
 };
 
 VulnMgmtComponents.propTypes = workflowListPropTypes;
-VulnMgmtComponents.defaultProps = {
-    ...workflowListDefaultProps,
-    sort: null,
-};
+VulnMgmtComponents.defaultProps = workflowListDefaultProps;
 
 export default VulnMgmtComponents;

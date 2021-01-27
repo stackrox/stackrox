@@ -342,7 +342,6 @@ VulnMgmtPolicies.propTypes = {
 };
 VulnMgmtPolicies.defaultProps = {
     ...workflowListDefaultProps,
-    sort: null,
     refreshTrigger: 0,
     setRefreshTrigger: null,
 };

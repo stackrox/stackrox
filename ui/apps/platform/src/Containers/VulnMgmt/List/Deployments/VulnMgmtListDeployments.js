@@ -235,9 +235,6 @@ const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data, totalRes
 };
 
 VulnMgmtDeployments.propTypes = workflowListPropTypes;
-VulnMgmtDeployments.defaultProps = {
-    ...workflowListDefaultProps,
-    sort: null,
-};
+VulnMgmtDeployments.defaultProps = workflowListDefaultProps;
 
 export default VulnMgmtDeployments;

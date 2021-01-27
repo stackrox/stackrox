@@ -228,9 +228,6 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResu
 };
 
 VulnMgmtNamespaces.propTypes = workflowListPropTypes;
-VulnMgmtNamespaces.defaultProps = {
-    ...workflowListDefaultProps,
-    sort: null,
-};
+VulnMgmtNamespaces.defaultProps = workflowListDefaultProps;
 
 export default VulnMgmtNamespaces;
