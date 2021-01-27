@@ -1,5 +1,4 @@
 import React from 'react';
-import { event } from 'd3-selection';
 import { scaleLinear } from 'd3-scale';
 
 import D3Anchor from 'Components/D3Anchor';
@@ -24,7 +23,7 @@ const ZoomableOverlay = ({
         .on('start', onZoomStart)
         .on('end', onZoomEnd);
 
-    function zooming() {
+    function zooming(event) {
         if (event.sourceEvent && event.sourceEvent.type === 'end') {
             return;
         }

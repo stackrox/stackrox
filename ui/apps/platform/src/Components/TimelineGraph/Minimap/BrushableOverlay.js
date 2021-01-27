@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { event } from 'd3-selection';
 import { brushX } from 'd3-brush';
 import { scaleLinear } from 'd3-scale';
 import { zoomIdentity } from 'd3-zoom';
@@ -24,7 +23,7 @@ const BrushableOverlay = ({
         .domain([absoluteMinTimeRange, absoluteMaxTimeRange])
         .range([0, width]);
 
-    function brushEnded() {
+    function brushEnded(event) {
         if (!event.sourceEvent) {
             return;
         } // Only transition after input.
@@ -64,13 +63,7 @@ const BrushableOverlay = ({
             .on('end', brushEnded);
         container
             .call(brush)
-            .call(
-                brushX().extent([
-                    [minHorizontalExtent, 0],
-                    [maxHorizontalExtent, height],
-                ]).move,
-                [xScale(minTimeRange), xScale(maxTimeRange)]
-            )
+            .call(brush.move, [xScale(minTimeRange), xScale(maxTimeRange)])
             .select('rect.selection')
             .style('fill', 'var(--accent-500)')
             .style('stroke', 'var(--accent-500)');
