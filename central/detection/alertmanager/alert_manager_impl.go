@@ -18,7 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-const maxProcessViolationsPerAlert = 40
+const maxRunTimeViolationsPerAlert = 40
 
 var (
 	log = logging.LoggerForModule()
@@ -110,18 +110,11 @@ func lastTimestamp(processes []*storage.ProcessIndicator) *ptypes.Timestamp {
 func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewProcesses bool) {
 	oldProcessViolation := old.GetProcessViolation()
 
-	if len(oldProcessViolation.GetProcesses()) == 0 {
-		log.Errorf("UNEXPECTED: found no old violation with processes for runtime alert %s", proto.MarshalTextString(old))
-		newAlertHasNewProcesses = true
-		return
-	}
-
 	if len(newAlert.GetProcessViolation().GetProcesses()) == 0 {
-		log.Errorf("UNEXPECTED: found no new violation with processes for runtime alert %s", proto.MarshalTextString(newAlert))
 		return
 	}
 
-	if len(oldProcessViolation.GetProcesses()) >= maxProcessViolationsPerAlert {
+	if len(oldProcessViolation.GetProcesses()) >= maxRunTimeViolationsPerAlert {
 		return
 	}
 
@@ -138,20 +131,66 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 	if !newAlertHasNewProcesses {
 		return
 	}
-	if len(newProcessesSlice) > maxProcessViolationsPerAlert {
-		newProcessesSlice = newProcessesSlice[:maxProcessViolationsPerAlert]
+	if len(newProcessesSlice) > maxRunTimeViolationsPerAlert {
+		newProcessesSlice = newProcessesSlice[:maxRunTimeViolationsPerAlert]
 	}
 	newAlert.ProcessViolation.Processes = newProcessesSlice
 	printer.UpdateProcessAlertViolationMessage(newAlert.ProcessViolation)
 	return
 }
 
+// mergeRunTimeAlerts merges run-time alerts, and returns true if new alert has at least one new run-time violation.
+func mergeRunTimeAlerts(old, newAlert *storage.Alert) bool {
+	newAlertHasNewProcesses := mergeProcessesFromOldIntoNew(old, newAlert)
+	newAlertHasNewEventViolations := mergeK8sEventViolations(old, newAlert)
+	return newAlertHasNewProcesses || newAlertHasNewEventViolations
+}
+
+// Given the nature of an event, each event it anticipated to generate exactly one alert (one or more violations).
+// Therefore, event violations seen in new alerts are assumed to be distinct from the old.
+// For k8s event violations we want to *always* show the recent events. This approach is different from they way process
+// violations are dealt where longest running processes take precedence over new processes.
+func mergeK8sEventViolations(old, new *storage.Alert) bool {
+	var newK8sViolations []*storage.Alert_Violation
+	for _, v := range new.GetViolations() {
+		if v.GetType() == storage.Alert_Violation_K8S_EVENT {
+			newK8sViolations = append(newK8sViolations, v)
+		}
+	}
+
+	if len(newK8sViolations) == 0 {
+		return false
+	}
+
+	// New alert takes precedence. Do not merge any old event violations into new alert if we are already at threshold.
+	if len(newK8sViolations) >= maxRunTimeViolationsPerAlert {
+		return true
+	}
+
+	var oldK8sViolations []*storage.Alert_Violation
+	// Append old violations to the end of the list so that they appear at bottom in UI.
+	for _, v := range old.GetViolations() {
+		if v.GetType() == storage.Alert_Violation_K8S_EVENT {
+			oldK8sViolations = append(oldK8sViolations, v)
+		}
+	}
+
+	newK8sViolations = append(newK8sViolations, oldK8sViolations...)
+
+	if len(newK8sViolations) > maxRunTimeViolationsPerAlert {
+		newK8sViolations = newK8sViolations[:maxRunTimeViolationsPerAlert]
+	}
+	new.Violations = newK8sViolations
+	// K8s event violations are not aggregated under one drop-down. Therefore, no other message changes required.
+
+	return true
+}
+
 // MergeAlerts merges two alerts.
 func mergeAlerts(old, newAlert *storage.Alert) *storage.Alert {
 	if old.GetLifecycleStage() == storage.LifecycleStage_RUNTIME && newAlert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME {
-		newAlertHasNewProcesses := mergeProcessesFromOldIntoNew(old, newAlert)
 		// This ensures that we don't keep updating an old runtime alert, so that we have idempotent checks.
-		if !newAlertHasNewProcesses {
+		if newAlertHasNewRuntimeViolations := mergeRunTimeAlerts(old, newAlert); !newAlertHasNewRuntimeViolations {
 			return old
 		}
 	}

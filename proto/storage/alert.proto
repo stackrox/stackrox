@@ -41,6 +41,10 @@ message Alert {
     }
 
     message Violation {
+        enum Type {
+            GENERIC   = 0;
+            K8S_EVENT = 1;
+        }
         message KeyValueAttrs {
             message KeyValueAttr {
                 string key   = 1;
@@ -49,12 +53,18 @@ message Alert {
             repeated KeyValueAttr attrs = 1;
         }
         
-        string            message         = 1;
+        string                    message = 1;
         reserved 2; // formerly link
         reserved 3; // formerly processes
         oneof MessageAttributes {
             KeyValueAttrs key_value_attrs = 4;
         }
+        // 'type' is for internal use only.
+        Type                      type    = 5;
+        // Indicates violation time. This field differs from top-level field 'time' which represents last time the alert
+        // occurred in case of multiple occurrence of the policy alert. As of 55.0, this field is set only for kubernetes
+        // event violations, but may not be limited to it in future.
+        google.protobuf.Timestamp time    = 6;
     }
     repeated Violation violations            = 5;
 

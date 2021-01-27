@@ -2620,6 +2620,7 @@ func podExecViolationMsg(pod, container, command string) *storage.Alert_Violatio
 	if command == "" {
 		return &storage.Alert_Violation{
 			Message: fmt.Sprintf("Kubernetes API received exec request into pod '%s' container '%s'", pod, container),
+			Type:    storage.Alert_Violation_K8S_EVENT,
 			MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
 				KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
 					Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
@@ -2634,6 +2635,7 @@ func podExecViolationMsg(pod, container, command string) *storage.Alert_Violatio
 	return &storage.Alert_Violation{
 		Message: fmt.Sprintf("Kubernetes API received exec '%s' request into pod '%s' container '%s'",
 			command, pod, container),
+		Type: storage.Alert_Violation_K8S_EVENT,
 		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
 			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
 				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
@@ -2649,6 +2651,7 @@ func podExecViolationMsg(pod, container, command string) *storage.Alert_Violatio
 func podPortForwardViolationMsg(pod string, port int) *storage.Alert_Violation {
 	return &storage.Alert_Violation{
 		Message: fmt.Sprintf("Kubernetes API received port forward request to pod '%s' ports '%s'", pod, strconv.Itoa(port)),
+		Type:    storage.Alert_Violation_K8S_EVENT,
 		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
 			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
 				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{

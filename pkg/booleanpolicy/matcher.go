@@ -135,7 +135,7 @@ func BuildDeploymentWithProcessMatcher(p *storage.Policy, options ...ValidateOpt
 			return nil, errors.New("a run time policy section must not contain both process and kubernetes event constraints")
 		}
 
-		fieldQueries, err := sectionToFieldQueries(section, &processFields)
+		fieldQueries, err := sectionToFieldQueries(section, &ProcessFields)
 		if err != nil {
 			return nil, errors.Wrapf(err, "converting to field queries for section %q", section.GetSectionName())
 		}

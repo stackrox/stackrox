@@ -83,6 +83,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Alert_Violation", []string{
 		"keyValueAttrs: Alert_Violation_KeyValueAttrs",
 		"message: String!",
+		"time: Time",
+		"type: Alert_Violation_Type!",
 		"messageAttributes: Alert_ViolationMessageAttributes",
 	}))
 	utils.Must(builder.AddUnionType("Alert_ViolationMessageAttributes", []string{
@@ -95,6 +97,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"key: String!",
 		"value: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_Violation_Type(0)))
 	utils.Must(builder.AddType("AzureProviderMetadata", []string{
 		"subscriptionId: String!",
 	}))
@@ -1762,6 +1765,16 @@ func (resolver *alert_ViolationResolver) Message(ctx context.Context) string {
 	return value
 }
 
+func (resolver *alert_ViolationResolver) Time(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetTime()
+	return timestamp(value)
+}
+
+func (resolver *alert_ViolationResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
+}
+
 type alert_ViolationMessageAttributesResolver struct {
 	resolver interface{}
 }
@@ -1841,6 +1854,24 @@ func (resolver *alert_Violation_KeyValueAttrs_KeyValueAttrResolver) Key(ctx cont
 func (resolver *alert_Violation_KeyValueAttrs_KeyValueAttrResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
 	return value
+}
+
+func toAlert_Violation_Type(value *string) storage.Alert_Violation_Type {
+	if value != nil {
+		return storage.Alert_Violation_Type(storage.Alert_Violation_Type_value[*value])
+	}
+	return storage.Alert_Violation_Type(0)
+}
+
+func toAlert_Violation_Types(values *[]string) []storage.Alert_Violation_Type {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Alert_Violation_Type, len(*values))
+	for i, v := range *values {
+		output[i] = toAlert_Violation_Type(&v)
+	}
+	return output
 }
 
 type azureProviderMetadataResolver struct {

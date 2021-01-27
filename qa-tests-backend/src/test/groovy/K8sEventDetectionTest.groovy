@@ -66,12 +66,12 @@ class K8sEventDetectionTest extends BaseSpecification {
         assert fullViolation.getViolationsCount() == 1
         def subViolation = fullViolation.getViolations(0)
         // TODO(Mandar): Update these messages when we remove the comma separation
-        assert subViolation.message == "Kubernetes API received exec 'ls, -l' request into pod '${pod.metadata.name}'"
+        assert subViolation.message == "Kubernetes API received exec 'ls -l' request into pod '${pod.metadata.name}'"
         def kvAttrs = subViolation.getKeyValueAttrs().getAttrsList()
         def podAttr = kvAttrs.find { it.key == "pod" }
         assert podAttr != null && podAttr.value == pod.metadata.name
         def commandsAttr = kvAttrs.find { it.key == "commands" }
-        assert commandsAttr != null && commandsAttr.value == "ls, -l"
+        assert commandsAttr != null && commandsAttr.value == "ls -l"
 
         // Ensure the deployment enrichment works.
         def deploymentFromViolation = fullViolation.getDeployment()

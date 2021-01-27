@@ -8,7 +8,7 @@ import (
 
 // Following fields represents all runtime policy fields.
 var (
-	processFields = set.NewFrozenStringSet(
+	ProcessFields = set.NewFrozenStringSet(
 		fieldnames.ProcessName,
 		fieldnames.ProcessArguments,
 		fieldnames.ProcessAncestor,
@@ -115,17 +115,17 @@ func ContainsDiscreteRuntimeFieldCategorySections(policy *storage.Policy) bool {
 		//if !SectionContainsOneOf(section, runtimeFields) {
 		//	continue
 		//}
-		var numRuntimeSections int
+		var numRuntimeCategories int
 		if SectionContainsOneOf(section, KubeEventsFields) {
-			numRuntimeSections++
+			numRuntimeCategories++
 		}
-		if SectionContainsOneOf(section, processFields) {
-			numRuntimeSections++
+		if SectionContainsOneOf(section, ProcessFields) {
+			numRuntimeCategories++
 		}
 		if SectionContainsOneOf(section, NetworkFlowFields) {
-			numRuntimeSections++
+			numRuntimeCategories++
 		}
-		if numRuntimeSections > 1 {
+		if numRuntimeCategories > 1 {
 			return false
 		}
 		//atLeastOneRunTimeField = true

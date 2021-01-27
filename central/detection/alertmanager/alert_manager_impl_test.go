@@ -24,7 +24,18 @@ var (
 	nowProcess        = getProcessIndicator(ptypes.TimestampNow())
 	yesterdayProcess  = getProcessIndicator(protoconv.ConvertTimeToTimestamp(time.Now().Add(-24 * time.Hour)))
 	twoDaysAgoProcess = getProcessIndicator(protoconv.ConvertTimeToTimestamp(time.Now().Add(-2 * 24 * time.Hour)))
+
+	firstKubeEventViolation  = getKubeEventViolation("1", protoconv.ConvertTimeToTimestamp(time.Now().Add(-24*time.Hour)))
+	secondKubeEventViolation = getKubeEventViolation("2", ptypes.TimestampNow())
 )
+
+func getKubeEventViolation(msg string, timestamp *ptypes.Timestamp) *storage.Alert_Violation {
+	return &storage.Alert_Violation{
+		Message: msg,
+		Type:    storage.Alert_Violation_K8S_EVENT,
+		Time:    timestamp,
+	}
+}
 
 func getProcessIndicator(timestamp *ptypes.Timestamp) *storage.ProcessIndicator {
 	return &storage.ProcessIndicator{
@@ -42,6 +53,11 @@ func getFakeRuntimeAlert(indicators ...*storage.ProcessIndicator) *storage.Alert
 		LifecycleStage:   storage.LifecycleStage_RUNTIME,
 		ProcessViolation: v,
 	}
+}
+
+func appendViolations(alert *storage.Alert, violations ...*storage.Alert_Violation) *storage.Alert {
+	alert.Violations = append(alert.Violations, violations...)
+	return alert
 }
 
 func TestAlertManager(t *testing.T) {
@@ -204,6 +220,84 @@ func TestMergeProcessesFromOldIntoNew(t *testing.T) {
 	} {
 		t.Run(c.desc, func(t *testing.T) {
 			out := mergeProcessesFromOldIntoNew(c.old, c.new)
+			assert.Equal(t, c.expectedOutput, out)
+			if c.expectedNew != nil {
+				assert.Equal(t, c.expectedNew, c.new)
+			}
+		})
+	}
+}
+
+func TestMergeRunTimeAlerts(t *testing.T) {
+	for _, c := range []struct {
+		desc           string
+		old            *storage.Alert
+		new            *storage.Alert
+		expectedNew    *storage.Alert
+		expectedOutput bool
+	}{
+		{
+			desc:           "No process; no event",
+			old:            getFakeRuntimeAlert(),
+			new:            getFakeRuntimeAlert(),
+			expectedOutput: false,
+		},
+		{
+			desc:           "No new process; no event",
+			old:            getFakeRuntimeAlert(yesterdayProcess),
+			new:            getFakeRuntimeAlert(),
+			expectedOutput: false,
+		},
+		{
+			desc:           "No process; no new event",
+			old:            appendViolations(getFakeRuntimeAlert(), firstKubeEventViolation),
+			new:            getFakeRuntimeAlert(),
+			expectedOutput: false,
+		},
+		{
+			desc:           "No process; new event",
+			old:            getFakeRuntimeAlert(),
+			new:            appendViolations(getFakeRuntimeAlert(), firstKubeEventViolation),
+			expectedNew:    appendViolations(getFakeRuntimeAlert(), firstKubeEventViolation),
+			expectedOutput: true,
+		},
+		{
+			desc:           "Equal process; no new event",
+			old:            appendViolations(getFakeRuntimeAlert(yesterdayProcess), firstKubeEventViolation),
+			new:            appendViolations(getFakeRuntimeAlert(yesterdayProcess)),
+			expectedOutput: false,
+		},
+		{
+			desc:           "Equal process; new event",
+			old:            appendViolations(getFakeRuntimeAlert(yesterdayProcess), firstKubeEventViolation),
+			new:            appendViolations(getFakeRuntimeAlert(yesterdayProcess), secondKubeEventViolation),
+			expectedNew:    appendViolations(getFakeRuntimeAlert(yesterdayProcess), secondKubeEventViolation, firstKubeEventViolation),
+			expectedOutput: true,
+		},
+		{
+			desc:           "New process; new event ",
+			old:            appendViolations(getFakeRuntimeAlert(yesterdayProcess), firstKubeEventViolation),
+			new:            appendViolations(getFakeRuntimeAlert(nowProcess), secondKubeEventViolation),
+			expectedNew:    appendViolations(getFakeRuntimeAlert(yesterdayProcess, nowProcess), secondKubeEventViolation, firstKubeEventViolation),
+			expectedOutput: true,
+		},
+		{
+			desc:           "New process; no new event ",
+			old:            appendViolations(getFakeRuntimeAlert(yesterdayProcess), firstKubeEventViolation),
+			new:            getFakeRuntimeAlert(nowProcess),
+			expectedNew:    getFakeRuntimeAlert(yesterdayProcess, nowProcess),
+			expectedOutput: true,
+		},
+		{
+			desc:           "Many new process; many new events",
+			old:            getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess),
+			new:            appendViolations(getFakeRuntimeAlert(yesterdayProcess, nowProcess), firstKubeEventViolation, secondKubeEventViolation),
+			expectedNew:    appendViolations(getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess, nowProcess), firstKubeEventViolation, secondKubeEventViolation),
+			expectedOutput: true,
+		},
+	} {
+		t.Run(c.desc, func(t *testing.T) {
+			out := mergeRunTimeAlerts(c.old, c.new)
 			assert.Equal(t, c.expectedOutput, out)
 			if c.expectedNew != nil {
 				assert.Equal(t, c.expectedNew, c.new)

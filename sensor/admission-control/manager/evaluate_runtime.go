@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -62,6 +63,8 @@ func (m *manager) evaluateRuntimeAdmissionRequest(s *state, req *admission.Admis
 	if err != nil {
 		return nil, errors.Wrap(err, "translating admission request object from request")
 	}
+	event.Timestamp = types.TimestampNow()
+	event.Object.ClusterId = s.ClusterId
 
 	log.Debugf("Evaluating policies on kubernetes request %s", kubernetes.EventAsString(event))
 
