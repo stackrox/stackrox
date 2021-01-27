@@ -6,8 +6,8 @@ module.exports = function getColumnClasses({ index = {}, variants = ['responsive
             [
                 ...map(index, (value, name) => ({
                     [`.${e(`columns-${name}`)}`]: { columnCount: value },
-                    [`.${e(`columns-gap-${name}`)}`]: { columnGap: value }
-                }))
+                    [`.${e(`columns-gap-${name}`)}`]: { columnGap: value },
+                })),
             ],
             variants
         );

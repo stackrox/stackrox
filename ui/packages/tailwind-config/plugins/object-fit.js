@@ -6,7 +6,7 @@ module.exports = function getObjectFitClasses({ variants }) {
                 '.object-cover': { objectFit: 'cover' },
                 '.object-fill': { objectFit: 'fill' },
                 '.object-none': { objectFit: 'none' },
-                '.object-scale': { objectFit: 'scale-down' }
+                '.object-scale': { objectFit: 'scale-down' },
             },
             variants
         );
