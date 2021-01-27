@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { useDrag } from 'react-dnd';
 
 function PolicyBuilderKey({ fieldKey }) {
-    const { name } = fieldKey;
+    const { name, shortName } = fieldKey;
     const [, drag] = useDrag({
         item: { id: name, type: name, fieldKey },
     });
@@ -14,7 +14,7 @@ function PolicyBuilderKey({ fieldKey }) {
             data-testid="draggable-policy-key"
         >
             <span className="drag-grip min-w-4 border-r border-base-500 mr-2" />
-            {name}
+            {shortName || name}
         </div>
     );
 }
@@ -22,6 +22,7 @@ function PolicyBuilderKey({ fieldKey }) {
 PolicyBuilderKey.propTypes = {
     fieldKey: PropTypes.shape({
         name: PropTypes.string.isRequired,
+        shortName: PropTypes.string,
     }).isRequired,
 };
 

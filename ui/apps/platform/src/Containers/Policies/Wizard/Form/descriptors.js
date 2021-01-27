@@ -1017,30 +1017,19 @@ const policyConfigurationDescriptor = [
 
 const k8sEventsDescriptor = [
     {
-        name: 'Kubernetes API Verb',
-        category: policyCriteriaCategories.KUBERNETES_EVENTS,
-        type: 'select',
-        options: [
-            {
-                label: 'CREATE',
-                value: 'CREATE',
-            },
-        ],
-        required: false,
-        default: false,
-        canBooleanLogic: false,
-    },
-    {
+        label: 'Kubernetes Action',
         name: 'Kubernetes Resource',
+        longName: 'Kubernetes Action',
+        shortName: 'Kubernetes Action',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'multiselect',
         options: [
             {
-                label: 'PODS_EXEC',
+                label: 'Pod Exec',
                 value: 'PODS_EXEC',
             },
             {
-                label: 'PODS_PORTFORWARD',
+                label: 'Port Forward',
                 value: 'PODS_PORTFORWARD',
             },
         ],
