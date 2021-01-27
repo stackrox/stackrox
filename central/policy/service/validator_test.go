@@ -9,8 +9,8 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -177,7 +177,7 @@ func booleanPolicyWithFields(lifecycleStage storage.LifecycleStage, fieldsToVals
 		groups = append(groups, &storage.PolicyGroup{FieldName: k, Values: []*storage.PolicyValue{{Value: v}}})
 	}
 	return &storage.Policy{
-		PolicyVersion:   booleanpolicy.CurrentVersion().String(),
+		PolicyVersion:   policyversion.CurrentVersion().String(),
 		LifecycleStages: []storage.LifecycleStage{lifecycleStage},
 		PolicySections:  []*storage.PolicySection{{PolicyGroups: groups}},
 	}

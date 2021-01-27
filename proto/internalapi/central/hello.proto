@@ -17,6 +17,9 @@ message SensorHello {
   repeated string capabilities = 2;
 
   HelmManagedConfigInit helm_managed_config_init = 3;
+
+  // Policy version sensor understands. If unset, central will try to guess it.
+  string policy_version = 4;
 }
 
 message CentralHello {

@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -214,7 +214,7 @@ func toMap(in []*storage.Deployment) map[string]*storage.Deployment {
 func policiesToMap(t *testing.T, in []*storage.Policy) map[string]*storage.Policy {
 	merp := make(map[string]*storage.Policy, len(in))
 	for _, np := range in {
-		require.NoError(t, booleanpolicy.EnsureConvertedToLatest(np))
+		require.NoError(t, policyversion.EnsureConvertedToLatest(np))
 		merp[np.GetId()] = np
 	}
 	return merp

@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -120,7 +121,7 @@ func TestEnvKeyValuePolicyValidation(t *testing.T) {
 	} {
 		assert.NoError(t, Validate(&storage.Policy{
 			Name:          "some-policy",
-			PolicyVersion: CurrentVersion().String(),
+			PolicyVersion: policyversion.CurrentVersion().String(),
 			Fields: &storage.PolicyFields{
 				Env: &storage.KeyValuePolicy{
 					Key:          "key",
@@ -146,7 +147,7 @@ func TestEnvKeyValuePolicyValidation(t *testing.T) {
 
 		assert.NoError(t, Validate(&storage.Policy{
 			Name:          "some-policy",
-			PolicyVersion: CurrentVersion().String(),
+			PolicyVersion: policyversion.CurrentVersion().String(),
 			Fields: &storage.PolicyFields{
 				Env: &storage.KeyValuePolicy{
 					Key:          "key",
@@ -178,7 +179,7 @@ func TestEnvKeyValuePolicyValidation(t *testing.T) {
 	} {
 		assert.Error(t, Validate(&storage.Policy{
 			Name:          "some-policy",
-			PolicyVersion: CurrentVersion().String(),
+			PolicyVersion: policyversion.CurrentVersion().String(),
 			Fields: &storage.PolicyFields{
 				Env: &storage.KeyValuePolicy{
 					Key:          "key",
@@ -204,7 +205,7 @@ func TestEnvKeyValuePolicyValidation(t *testing.T) {
 
 		assert.NoError(t, Validate(&storage.Policy{
 			Name:          "some-policy",
-			PolicyVersion: CurrentVersion().String(),
+			PolicyVersion: policyversion.CurrentVersion().String(),
 			Fields: &storage.PolicyFields{
 				Env: &storage.KeyValuePolicy{
 					Key:          "key",
@@ -231,10 +232,10 @@ func TestEnvKeyValuePolicyValidation(t *testing.T) {
 
 func TestValidateMultipleSections(t *testing.T) {
 	group := &storage.PolicyGroup{FieldName: fieldnames.CVE, Values: []*storage.PolicyValue{{Value: "CVE-2017-1234"}}}
-	assert.NoError(t, Validate(&storage.Policy{Name: "name", PolicyVersion: CurrentVersion().String(), PolicySections: []*storage.PolicySection{
+	assert.NoError(t, Validate(&storage.Policy{Name: "name", PolicyVersion: policyversion.CurrentVersion().String(), PolicySections: []*storage.PolicySection{
 		{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}},
 	}}))
-	assert.Error(t, Validate(&storage.Policy{Name: "name", PolicyVersion: CurrentVersion().String(), PolicySections: []*storage.PolicySection{
+	assert.Error(t, Validate(&storage.Policy{Name: "name", PolicyVersion: policyversion.CurrentVersion().String(), PolicySections: []*storage.PolicySection{
 		{SectionName: "bad", PolicyGroups: []*storage.PolicyGroup{group, group}},
 	}}))
 }

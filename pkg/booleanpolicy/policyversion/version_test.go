@@ -1,4 +1,4 @@
-package booleanpolicy
+package policyversion
 
 import (
 	"testing"
@@ -11,7 +11,7 @@ func TestLatestVersion(t *testing.T) {
 	assert.Equal(t, CurrentVersion().String(), versions[len(versions)-1])
 }
 
-// versions in `versions` are sorted from old to new.
+// versions in versions are sorted from old to new.
 func TestVersionsOrderStrictlyAscending(t *testing.T) {
 	policyVersions := make([]PolicyVersion, 0, len(versions))
 	for _, v := range versions {
@@ -49,7 +49,7 @@ func TestVersionCompare(t *testing.T) {
 		{PolicyVersion{versions[0]}, Version1(), -1},
 		{Version1(), PolicyVersion{versions[0]}, 1},
 		{Version1(), Version1(), 0},
-		{PolicyVersion{"1.1"}, Version1(), 1},
+		{PolicyVersion{version1_1}, Version1(), 1},
 		{PolicyVersion{versions[len(versions)-1]}, PolicyVersion{versions[len(versions)-2]}, 1},
 	}
 
@@ -64,7 +64,7 @@ func TestIsBooleanPolicy(t *testing.T) {
 			PolicyVersion: version1,
 		},
 		{
-			PolicyVersion: "1.1",
+			PolicyVersion: version1_1,
 		},
 		{
 			PolicyVersion: CurrentVersion().String(),

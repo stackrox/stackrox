@@ -11,6 +11,7 @@ import (
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/scopecomp"
@@ -81,7 +82,7 @@ func (s *policyValidator) validateName(policy *storage.Policy) error {
 }
 
 func (s *policyValidator) validateVersion(policy *storage.Policy) error {
-	if !booleanpolicy.IsBooleanPolicy(policy) {
+	if !policyversion.IsBooleanPolicy(policy) {
 		return errors.New("policy not converted to boolean policy")
 	}
 	return nil

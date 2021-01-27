@@ -14,8 +14,8 @@ import (
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	detectionMocks "github.com/stackrox/rox/pkg/detection/mocks"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -299,7 +299,7 @@ func (s *PolicyServiceTestSuite) TestImportAndUpgradePolicy() {
 		Severity:        mockSeverity,
 		LifecycleStages: mockLCStages,
 		Categories:      mockCategories,
-		PolicyVersion:   booleanpolicy.CurrentVersion().String(),
+		PolicyVersion:   policyversion.CurrentVersion().String(),
 		PolicySections: []*storage.PolicySection{
 			{
 				PolicyGroups: []*storage.PolicyGroup{

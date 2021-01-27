@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +14,7 @@ import (
 
 func constructPolicy(scopes []*storage.Scope, exclusions []*storage.Exclusion) *storage.Policy {
 	return &storage.Policy{
-		PolicyVersion:   booleanpolicy.CurrentVersion().String(),
+		PolicyVersion:   policyversion.CurrentVersion().String(),
 		Name:            "testname",
 		Scope:           scopes,
 		Exclusions:      exclusions,

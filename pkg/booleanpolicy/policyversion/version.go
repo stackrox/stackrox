@@ -1,4 +1,4 @@
-package booleanpolicy
+package policyversion
 
 import (
 	"github.com/pkg/errors"
@@ -12,7 +12,10 @@ const (
 	// Named policy versions, starting from the most recent. For clarity, it
 	// is a good idea to name a version if it is used in checks in the code.
 
-	// version1 introduced `PolicySection` instead of `PolicyFields`.
+	// version1_1 renamed Policy.whitelists to Policy.exclusions.
+	version1_1 = "1.1"
+
+	// version1 introduced PolicySection instead of PolicyFields.
 	version1 = "1"
 
 	legacyVersion = ""
@@ -21,7 +24,7 @@ const (
 var (
 	// versions enumerates *all* known policy versions and must be in the
 	// strictly ascending order.
-	versions = [...]string{legacyVersion, version1, "1.1"}
+	versions = [...]string{legacyVersion, version1, version1_1}
 
 	// versionRanks maps known versions to their sequence numbers. Note that
 	// the sequence number may vary among different builds.
@@ -29,13 +32,13 @@ var (
 )
 
 // CurrentVersion is the current version of boolean policies that is handled
-// by this package. It shall equal the last element in `versions`.
+// by this package. It shall equal the last element in versions.
 func CurrentVersion() PolicyVersion {
 	return PolicyVersion{versions[len(versions)-1]}
 }
 
-// Version1 is the version that introduced `PolicySection` in favor of
-// `PolicyFields`.
+// Version1 is the version that introduced PolicySection in favor of
+// PolicyFields.
 func Version1() PolicyVersion {
 	return PolicyVersion{version1}
 }
@@ -69,7 +72,7 @@ func Compare(a, b PolicyVersion) int {
 }
 
 // IsBooleanPolicy returns true if the policy has policy version equal or
-// greater to `Version1` of boolean policies.
+// greater to Version1 of boolean policies.
 func IsBooleanPolicy(p *storage.Policy) bool {
 	v, err := FromString(p.GetPolicyVersion())
 	if err != nil {

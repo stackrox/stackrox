@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
@@ -95,6 +96,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	// call. That's why we create it here and not in the `initialSync` method below.
 	sensorHello := &central.SensorHello{
 		SensorVersion: version.GetMainVersion(),
+		PolicyVersion: policyversion.CurrentVersion().String(),
 	}
 	capsSet := centralsensor.NewSensorCapabilitySet()
 	for _, component := range s.components {

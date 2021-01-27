@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	complianceMocks "github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -171,7 +171,7 @@ var (
 func getPolicies(t *testing.T, policies ...*storage.Policy) map[string]*storage.Policy {
 	m := make(map[string]*storage.Policy, len(policies))
 	for _, p := range policies {
-		require.NoError(t, booleanpolicy.EnsureConvertedToLatest(p))
+		require.NoError(t, policyversion.EnsureConvertedToLatest(p))
 		m[p.GetName()] = p
 
 	}

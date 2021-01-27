@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -1599,7 +1600,7 @@ func (suite *DefaultPoliciesTestSuite) TestRuntimePolicyFieldsCompile() {
 
 func policyWithGroups(groups ...*storage.PolicyGroup) *storage.Policy {
 	return &storage.Policy{
-		PolicyVersion:  booleanpolicy.CurrentVersion().String(),
+		PolicyVersion:  policyversion.CurrentVersion().String(),
 		Name:           uuid.NewV4().String(),
 		PolicySections: []*storage.PolicySection{{PolicyGroups: groups}},
 	}

@@ -169,6 +169,8 @@ func (d *detectorImpl) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (d *detectorImpl) processPolicySync(sync *central.PolicySync) error {
+	// Note: Assume the version of the policies received from central is never
+	// older than sensor's version. Convert to latest if this proves wrong.
 	d.unifiedDetector.ReconcilePolicies(sync.GetPolicies())
 	d.deduper.reset()
 
