@@ -11,6 +11,6 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "serviceaccount" "collector") | nindent 4 }}
 imagePullSecrets:
-{{- range $secretName := ._rox.collectorImagePullSecrets._names }}
+{{- range $secretName := concat ._rox.collectorImagePullSecrets._names ._rox.mainImagePullSecrets._names | uniq }}
 - name: {{ quote $secretName }}
 {{- end }}
