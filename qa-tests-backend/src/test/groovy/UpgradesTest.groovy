@@ -101,6 +101,18 @@ class UpgradesTest extends BaseSpecification {
     }
 
     @Category(Upgrade)
+    def "Verify cluster has listen on exec/pf webhook turned on"() {
+        given:
+        Assume.assumeTrue(CLUSTERID=="260e11a3-cbea-464c-95f0-588fa7695b49")
+
+        expect:
+        "Migrated clusters to have admissionControllerEvents set to true"
+        def cluster = ClusterService.getCluster()
+        cluster != null
+        assert(cluster.ClusterOuterClass.getAdmissionControllerEvents() == true)
+    }
+
+    @Category(Upgrade)
     def "Verify private config contains the correct retention duration for alerts and images"() {
         given:
         "Only run on specific upgrade from 2.4.16"

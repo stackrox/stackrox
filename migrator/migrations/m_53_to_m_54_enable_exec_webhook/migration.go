@@ -5,13 +5,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
+	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/features"
-	bolt "go.etcd.io/bbolt"
+	"github.com/tecbot/gorocksdb"
 )
 
 var (
-	clustersBucket = []byte("clusters")
+	clustersPrefix = []byte("clusters")
 )
 
 var (
@@ -19,72 +20,48 @@ var (
 		StartingSeqNum: 53,
 		VersionAfter:   storage.Version{SeqNum: 54},
 		Run: func(databases *types.Databases) error {
-			return migrateExecWebhook(databases.BoltDB)
+			return migrateExecWebhook(databases.RocksDB)
 		},
 	}
 )
 
-func migrateExecWebhook(db *bolt.DB) error {
+func migrateExecWebhook(db *gorocksdb.DB) error {
 	if !features.K8sEventDetection.Enabled() {
 		return nil
 	}
 
 	var clustersToMigrate []*storage.Cluster // Should be able to hold all policies in memory easily
-	err := db.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(clustersBucket)
-		if bucket == nil {
-			return nil
-		}
-		return bucket.ForEach(func(k, v []byte) error {
-			cluster := &storage.Cluster{}
-			if err := proto.Unmarshal(v, cluster); err != nil {
-				// If anything fails to unmarshal roll back the transaction and abort
-				return errors.Wrapf(err, "Failed to unmarshal cluster data for key %s", k)
-			}
-			if cluster.GetType() == storage.ClusterType_OPENSHIFT_CLUSTER {
-				return nil
-			}
-			cluster.AdmissionControllerEvents = true
-			clustersToMigrate = append(clustersToMigrate, cluster)
-			return nil
-		})
-	})
+	readOpts := gorocksdb.NewDefaultReadOptions()
+	it := db.NewIterator(readOpts)
+	defer it.Close()
 
-	if err != nil {
-		return errors.Wrap(err, "reading cluster data")
+	for it.Seek(clustersPrefix); it.ValidForPrefix(clustersPrefix); it.Next() {
+		cluster := &storage.Cluster{}
+		if err := proto.Unmarshal(it.Value().Data(), cluster); err != nil {
+			// If anything fails to unmarshal roll back the transaction and abort
+			return errors.Wrapf(err, "Failed to unmarshal cluster data for key %v", it.Key().Data())
+		}
+		if cluster.GetType() == storage.ClusterType_OPENSHIFT_CLUSTER {
+			continue
+		}
+		cluster.AdmissionControllerEvents = true
+		clustersToMigrate = append(clustersToMigrate, cluster)
 	}
 
 	if len(clustersToMigrate) == 0 {
 		return nil // nothing to do
 	}
+	rocksWriteBatch := gorocksdb.NewWriteBatch()
+	defer rocksWriteBatch.Destroy()
 
-	return db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(clustersBucket)
-		if bucket == nil {
-			return nil
+	for _, c := range clustersToMigrate {
+		bytes, err := proto.Marshal(c)
+		if err != nil {
+			return err
 		}
-
-		// Store successfully migrated policies.  We don't need to change the name/ID cross index.
-		for _, cluster := range clustersToMigrate {
-			if err := storeCluster(cluster, bucket); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
-func storeCluster(cluster *storage.Cluster, bucket *bolt.Bucket) error {
-	bytes, err := proto.Marshal(cluster)
-	if err != nil {
-		// If anything fails to marshal roll back the transaction and abort
-		return errors.Wrapf(err, "failed to marshal migrated cluster %s:%s", cluster.GetName(), cluster.GetId())
+		rocksWriteBatch.Put(rocksdbmigration.GetPrefixedKey(clustersPrefix, []byte(c.Id)), bytes)
 	}
-	// No need to update secondary mappings, we haven't changed the name and the name mapping just references the ID.
-	if err := bucket.Put([]byte(cluster.GetId()), bytes); err != nil {
-		return err
-	}
-	return nil
+	return db.Write(gorocksdb.NewDefaultWriteOptions(), rocksWriteBatch)
 }
 
 func init() {

@@ -1,17 +1,18 @@
 package m53tom54
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	bolt "go.etcd.io/bbolt"
+	"github.com/tecbot/gorocksdb"
 )
 
 func TestExecWebhookMigration(t *testing.T) {
@@ -22,28 +23,18 @@ type execWebhookTestSuite struct {
 	suite.Suite
 	envIsolator *envisolator.EnvIsolator
 
-	db *bolt.DB
+	db *rocksdb.RocksDB
 }
 
 func (suite *execWebhookTestSuite) SetupTest() {
 	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
 	suite.envIsolator.Setenv(features.K8sEventDetection.EnvVar(), "true")
 
-	db, err := bolthelpers.NewTemp(testutils.DBFileName(suite))
-	if err != nil {
-		suite.FailNow("Failed to make BoltDB", err.Error())
-	}
-	suite.NoError(db.Update(func(tx *bolt.Tx) error {
-		if _, err := tx.CreateBucketIfNotExists(clustersBucket); err != nil {
-			return err
-		}
-		return nil
-	}))
-	suite.db = db
+	suite.db = rocksdbtest.RocksDBForT(suite.T())
 }
 
 func (suite *execWebhookTestSuite) TearDownTest() {
-	testutils.TearDownDB(suite.db)
+	rocksdbtest.TearDownRocksDB(suite.db)
 	suite.envIsolator.RestoreAll()
 
 }
@@ -74,23 +65,18 @@ func (suite *execWebhookTestSuite) TestMigrateClustersWithExecWebhooks() {
 		},
 	}
 
-	err := suite.db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(clustersBucket)
-		for _, cluster := range clusters {
-			bytes, err := proto.Marshal(cluster)
-			if err != nil {
-				return err
-			}
-			if err := bucket.Put([]byte(cluster.GetId()), bytes); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+	wb := gorocksdb.NewWriteBatch()
+	for _, c := range clusters {
+		bytes, err := proto.Marshal(c)
+		suite.NoError(err)
+
+		wb.Put(rocksdbmigration.GetPrefixedKey(clustersPrefix, []byte(c.Id)), bytes)
+	}
+	err := suite.db.Write(gorocksdb.NewDefaultWriteOptions(), wb)
 	suite.NoError(err)
 
 	// Migrate the data
-	suite.NoError(migrateExecWebhook(suite.db))
+	suite.NoError(migrateExecWebhook(suite.db.DB))
 
 	expected := []*storage.Cluster{
 		{
@@ -114,22 +100,18 @@ func (suite *execWebhookTestSuite) TestMigrateClustersWithExecWebhooks() {
 			AdmissionControllerEvents: true,
 		},
 	}
+	readOpts := gorocksdb.NewDefaultReadOptions()
+	it := suite.db.NewIterator(readOpts)
+	defer it.Close()
 
-	err = suite.db.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(clustersBucket)
-		for _, cluster := range expected {
-			value := bucket.Get([]byte(cluster.GetId()))
-			if len(value) == 0 {
-				return fmt.Errorf("no value for id: %q", cluster.GetId())
-			}
-			var c storage.Cluster
-			if err := proto.Unmarshal(value, &c); err != nil {
-				return err
-			}
-
-			suite.Equal(cluster, &c)
+	migratedClusters := make([]*storage.Cluster, 0, len(expected))
+	for it.Seek(clustersPrefix); it.ValidForPrefix(clustersPrefix); it.Next() {
+		cluster := &storage.Cluster{}
+		if err := proto.Unmarshal(it.Value().Data(), cluster); err != nil {
+			suite.NoError(err)
 		}
-		return nil
-	})
-	suite.NoError(err)
+		migratedClusters = append(migratedClusters, cluster)
+	}
+
+	assert.ElementsMatch(suite.T(), expected, migratedClusters)
 }
