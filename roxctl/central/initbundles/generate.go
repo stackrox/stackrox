@@ -47,11 +47,13 @@ func generateInitBundle(name string, outputFile string) error {
 
 	fmt.Fprintf(os.Stderr, `Successfully generated new init bundle.
 
-  ID:         %s
   Name:       %s
+  Created at: %v
   Expires at: %v
+  Created By: %v
+  ID:         %s
 
-`, meta.GetId(), meta.GetName(), meta.GetExpiresAt())
+`, meta.GetName(), meta.GetCreatedAt(), meta.GetExpiresAt(), getPrettyUser(meta.GetCreatedBy()), meta.GetId())
 
 	_, err = bundleOutput.Write(resp.GetHelmValuesBundle())
 	if err != nil {
