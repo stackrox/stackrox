@@ -13,3 +13,4 @@ package groups
 @interface SensorBounceNext { } // Next batch that don't care
 @interface GraphQL { }
 @interface Notifiers { }
+@interface K8sEvents { }
