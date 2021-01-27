@@ -89,9 +89,20 @@ message DynamicClusterConfig {
 // Encodes a complete cluster configuration minus ID/Name identifiers
 // including static and dynamic settings.
 message CompleteClusterConfig {
-    DynamicClusterConfig dynamic_config = 1;
-    StaticClusterConfig  static_config  = 2;
-    string config_fingerprint = 3;
+    DynamicClusterConfig  dynamic_config               = 1;
+    StaticClusterConfig   static_config                = 2;
+    string                config_fingerprint           = 3;
+}
+
+// StackRoxDeploymentIdentification aims at uniquely identifying a StackRox Sensor deployment. It is used to determine
+// whether a sensor connection comes from a sensor pod that has restarted or was recreated (possibly after a network
+// partition), or from a deployment in a different namespace or cluster.
+message SensorDeploymentIdentification {
+    string system_namespace_id   = 1;
+    string default_namespace_id  = 2;
+    string app_namespace         = 3;
+    string app_namespace_id      = 4;
+    string app_serviceaccount_id = 5;
 }
 
 message Cluster {
@@ -119,6 +130,9 @@ message Cluster {
     ClusterHealthStatus       health_status                    = 22;
     bool                      slim_collector                   = 23;
     CompleteClusterConfig     helm_config                      = 24;
+
+    // most_recent_sensor_id is the current or most recent identification of a successfully connected sensor (if any).
+    SensorDeploymentIdentification most_recent_sensor_id       = 26;
 }
 
 message ClusterCertExpiryStatus {

@@ -1,6 +1,8 @@
 package sensor
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/env"
@@ -8,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/centralclient"
@@ -64,7 +67,11 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 			log.Infof("Loaded Helm-managed cluster configuration with fingerprint %q", configFP)
 		}
 	}
-	configHandler := config.NewCommandHandler(admCtrlSettingsMgr, helmManagedConfig)
+
+	deploymentIdentification := fetchDeploymentIdentification(context.Background(), client.Kubernetes())
+	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
+
+	configHandler := config.NewCommandHandler(admCtrlSettingsMgr, deploymentIdentification, helmManagedConfig)
 	enforcer, err := enforcer.New(client)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating enforcer")

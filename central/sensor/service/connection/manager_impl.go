@@ -180,6 +180,16 @@ func (m *manager) replaceConnection(ctx context.Context, clusterID string, newCo
 
 	connAndUpgradeCtrl := m.connectionsByClusterID[clusterID]
 	oldConnection = connAndUpgradeCtrl.connection
+	if oldConnection != nil {
+		if err := common.CheckConnReplace(newConnection.sensorHello.GetDeploymentIdentification(), oldConnection.sensorHello.GetDeploymentIdentification()); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := m.clusters.UpdateSensorDeploymentIdentification(ctx, clusterID, newConnection.sensorHello.GetDeploymentIdentification()); err != nil {
+		return nil, errors.Wrap(err, "updating deployment identification")
+	}
+
 	upgradeCtrl := connAndUpgradeCtrl.upgradeCtrl
 
 	if upgradeCtrl == nil {
@@ -196,6 +206,7 @@ func (m *manager) replaceConnection(ctx context.Context, clusterID string, newCo
 		connection:  newConnection,
 		upgradeCtrl: upgradeCtrl,
 	}
+
 	return oldConnection, nil
 }
 

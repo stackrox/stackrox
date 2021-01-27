@@ -22,21 +22,24 @@ var (
 type Handler interface {
 	GetConfig() *storage.DynamicClusterConfig
 	GetHelmManagedConfig() *central.HelmManagedConfigInit
+	GetDeploymentIdentification() *storage.SensorDeploymentIdentification
 
 	common.SensorComponent
 }
 
 // NewCommandHandler returns a new instance of a Handler.
-func NewCommandHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, helmManagedConfig *central.HelmManagedConfigInit) Handler {
+func NewCommandHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager, deploymentIdentification *storage.SensorDeploymentIdentification, helmManagedConfig *central.HelmManagedConfigInit) Handler {
 	return &configHandlerImpl{
-		stopC:              concurrency.NewErrorSignal(),
-		admCtrlSettingsMgr: admCtrlSettingsMgr,
-		helmManagedConfig:  helmManagedConfig,
+		stopC:                    concurrency.NewErrorSignal(),
+		admCtrlSettingsMgr:       admCtrlSettingsMgr,
+		helmManagedConfig:        helmManagedConfig,
+		deploymentIdentification: deploymentIdentification,
 	}
 }
 
 type configHandlerImpl struct {
-	helmManagedConfig *central.HelmManagedConfigInit
+	deploymentIdentification *storage.SensorDeploymentIdentification
+	helmManagedConfig        *central.HelmManagedConfigInit
 
 	config *storage.DynamicClusterConfig
 	lock   sync.RWMutex
@@ -91,4 +94,8 @@ func (c *configHandlerImpl) GetConfig() *storage.DynamicClusterConfig {
 
 func (c *configHandlerImpl) GetHelmManagedConfig() *central.HelmManagedConfigInit {
 	return c.helmManagedConfig
+}
+
+func (c *configHandlerImpl) GetDeploymentIdentification() *storage.SensorDeploymentIdentification {
+	return c.deploymentIdentification
 }

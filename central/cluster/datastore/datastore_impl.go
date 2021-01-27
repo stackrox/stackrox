@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
+	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -26,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -37,6 +39,10 @@ import (
 
 const (
 	connectionTerminationTimeout = 5 * time.Second
+
+	// clusterMoveGracePeriod determines the amount of time that has to pass before a (logical) StackRox cluster can
+	// be moved to a different (physical) Kubernetes cluster.
+	clusterMoveGracePeriod = 3 * time.Minute
 )
 
 var (
@@ -403,6 +409,23 @@ func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clu
 	return ds.indexer.AddCluster(cluster)
 }
 
+func (ds *datastoreImpl) UpdateSensorDeploymentIdentification(ctx context.Context, id string, identification *storage.SensorDeploymentIdentification) error {
+	if err := checkWriteSac(ctx, id); err != nil {
+		return err
+	}
+
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	cluster, err := ds.getClusterOnly(id)
+	if err != nil {
+		return err
+	}
+
+	cluster.MostRecentSensorId = identification
+	return ds.clusterStorage.Upsert(cluster)
+}
+
 func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *concurrency.Signal) error {
 	if err := checkWriteSac(ctx, id); err != nil {
 		return err
@@ -645,9 +668,14 @@ func (ds *datastoreImpl) updateClusterNoLock(cluster *storage.Cluster) error {
 	return nil
 }
 
-func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, clusterID string, helmConfig *central.HelmManagedConfigInit) (*storage.Cluster, error) {
+func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, clusterID string, hello *central.SensorHello) (*storage.Cluster, error) {
 	if err := checkWriteSac(ctx, clusterID); err != nil {
 		return nil, err
+	}
+
+	var helmConfig *central.HelmManagedConfigInit
+	if features.SensorInstallationExperience.Enabled() {
+		helmConfig = hello.GetHelmManagedConfigInit()
 	}
 
 	ds.lock.Lock()
@@ -661,6 +689,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		clusterID, _ = clusterIDVal.(string)
 	}
 
+	isExisting := false
 	var cluster *storage.Cluster
 	if clusterID != "" {
 		clusterByID, exist, err := ds.GetCluster(ctx, clusterID)
@@ -670,16 +699,20 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			return nil, errors.Errorf("cluster with ID %q does not exist", clusterID)
 		}
 
+		isExisting = true
+
 		// If a name is specified, validate it (otherwise, accept any name)
 		if clusterName != "" && clusterName != clusterByID.GetName() {
 			return nil, errors.Errorf("Name mismatch for cluster %q: expected %q, but %q was specified. Set the cluster.name/clusterName attribute in your Helm config to %q, or remove it", clusterID, cluster.GetName(), clusterName, cluster.GetName())
 		}
+
 		cluster = clusterByID
 	} else if clusterName != "" {
 		// A this point, we can be sure that the cluster does not exist.
 		cluster = &storage.Cluster{
-			Name:       clusterName,
-			HelmConfig: helmConfig.GetClusterConfig().Clone(),
+			Name:               clusterName,
+			HelmConfig:         helmConfig.GetClusterConfig().Clone(),
+			MostRecentSensorId: hello.GetDeploymentIdentification().Clone(),
 		}
 		configureFromHelmConfig(cluster)
 		if _, err := ds.addClusterNoLock(cluster); err != nil {
@@ -700,9 +733,21 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		return cluster, nil
 	}
 
-	if cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() {
-		// No change in fingerprint, do not update. Note: this also is the case if the cluster was newly added.
-		return cluster, nil
+	if isExisting {
+		// Check if the newly incoming request may replace the old connection
+		lastContact := protoconv.ConvertTimestampToTimeOrDefault(cluster.GetHealthStatus().GetLastContact(), time.Time{})
+		timeLeftInGracePeriod := clusterMoveGracePeriod - time.Since(lastContact)
+
+		if timeLeftInGracePeriod > 0 {
+			if err := common.CheckConnReplace(hello.GetDeploymentIdentification(), cluster.GetMostRecentSensorId()); err != nil {
+				return nil, errors.Errorf("registering Helm-managed cluster is not allowed: %s. If you recently re-deployed, please wait for another %v", err, timeLeftInGracePeriod)
+			}
+		}
+
+		if cluster.GetHelmConfig().GetConfigFingerprint() == helmConfig.GetClusterConfig().GetConfigFingerprint() {
+			// No change in fingerprint, do not update. Note: this also is the case if the cluster was newly added.
+			return cluster, nil
+		}
 	}
 
 	cluster.HelmConfig = helmConfig.GetClusterConfig().Clone()

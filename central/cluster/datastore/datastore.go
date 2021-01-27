@@ -56,12 +56,13 @@ type DataStore interface {
 	UpdateClusterUpgradeStatus(ctx context.Context, id string, clusterUpgradeStatus *storage.ClusterUpgradeStatus) error
 	UpdateClusterCertExpiryStatus(ctx context.Context, id string, clusterCertExpiryStatus *storage.ClusterCertExpiryStatus) error
 	UpdateClusterHealth(ctx context.Context, id string, clusterHealthStatus *storage.ClusterHealthStatus) error
+	UpdateSensorDeploymentIdentification(ctx context.Context, id string, identification *storage.SensorDeploymentIdentification) error
 
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
 	SearchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error)
 	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 
-	LookupOrCreateClusterFromConfig(ctx context.Context, clusterID string, helmConfig *central.HelmManagedConfigInit) (*storage.Cluster, error)
+	LookupOrCreateClusterFromConfig(ctx context.Context, clusterID string, hello *central.SensorHello) (*storage.Cluster, error)
 }
 
 // New returns an instance of DataStore.

@@ -95,8 +95,9 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	// header metadata-based self-identification protocol, which needs to happen prior to making the streaming RPC
 	// call. That's why we create it here and not in the `initialSync` method below.
 	sensorHello := &central.SensorHello{
-		SensorVersion: version.GetMainVersion(),
-		PolicyVersion: policyversion.CurrentVersion().String(),
+		SensorVersion:            version.GetMainVersion(),
+		PolicyVersion:            policyversion.CurrentVersion().String(),
+		DeploymentIdentification: configHandler.GetDeploymentIdentification(),
 	}
 	capsSet := centralsensor.NewSensorCapabilitySet()
 	for _, component := range s.components {

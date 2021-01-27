@@ -62,6 +62,20 @@ func (mr *MockClusterManagerMockRecorder) UpdateClusterHealth(ctx, id, status in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterHealth", reflect.TypeOf((*MockClusterManager)(nil).UpdateClusterHealth), ctx, id, status)
 }
 
+// UpdateSensorDeploymentIdentification mocks base method
+func (m *MockClusterManager) UpdateSensorDeploymentIdentification(ctx context.Context, clusterID string, identification *storage.SensorDeploymentIdentification) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSensorDeploymentIdentification", ctx, clusterID, identification)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSensorDeploymentIdentification indicates an expected call of UpdateSensorDeploymentIdentification
+func (mr *MockClusterManagerMockRecorder) UpdateSensorDeploymentIdentification(ctx, clusterID, identification interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSensorDeploymentIdentification", reflect.TypeOf((*MockClusterManager)(nil).UpdateSensorDeploymentIdentification), ctx, clusterID, identification)
+}
+
 // GetCluster mocks base method
 func (m *MockClusterManager) GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error) {
 	m.ctrl.T.Helper()

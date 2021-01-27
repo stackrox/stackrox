@@ -201,6 +201,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"helmConfig: CompleteClusterConfig",
 		"id: ID!",
 		"mainImage: String!",
+		"mostRecentSensorId: SensorDeploymentIdentification",
 		"name: String!",
 		"priority: Int!",
 		"runtimeSupport: Boolean!",
@@ -1094,6 +1095,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"role: String!",
 		"type: String!",
 		"user: String!",
+	}))
+	utils.Must(builder.AddType("SensorDeploymentIdentification", []string{
+		"appNamespace: String!",
+		"appNamespaceId: String!",
+		"appServiceaccountId: String!",
+		"defaultNamespaceId: String!",
+		"systemNamespaceId: String!",
 	}))
 	utils.Must(builder.AddType("ServiceAccount", []string{
 		"annotations: [Label!]!",
@@ -2713,6 +2721,11 @@ func (resolver *clusterResolver) Id(ctx context.Context) graphql.ID {
 func (resolver *clusterResolver) MainImage(ctx context.Context) string {
 	value := resolver.data.GetMainImage()
 	return value
+}
+
+func (resolver *clusterResolver) MostRecentSensorId(ctx context.Context) (*sensorDeploymentIdentificationResolver, error) {
+	value := resolver.data.GetMostRecentSensorId()
+	return resolver.root.wrapSensorDeploymentIdentification(value, true, nil)
 }
 
 func (resolver *clusterResolver) Name(ctx context.Context) string {
@@ -9389,6 +9402,55 @@ func (resolver *securityContext_SELinuxResolver) Type(ctx context.Context) strin
 
 func (resolver *securityContext_SELinuxResolver) User(ctx context.Context) string {
 	value := resolver.data.GetUser()
+	return value
+}
+
+type sensorDeploymentIdentificationResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.SensorDeploymentIdentification
+}
+
+func (resolver *Resolver) wrapSensorDeploymentIdentification(value *storage.SensorDeploymentIdentification, ok bool, err error) (*sensorDeploymentIdentificationResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &sensorDeploymentIdentificationResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSensorDeploymentIdentifications(values []*storage.SensorDeploymentIdentification, err error) ([]*sensorDeploymentIdentificationResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*sensorDeploymentIdentificationResolver, len(values))
+	for i, v := range values {
+		output[i] = &sensorDeploymentIdentificationResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *sensorDeploymentIdentificationResolver) AppNamespace(ctx context.Context) string {
+	value := resolver.data.GetAppNamespace()
+	return value
+}
+
+func (resolver *sensorDeploymentIdentificationResolver) AppNamespaceId(ctx context.Context) string {
+	value := resolver.data.GetAppNamespaceId()
+	return value
+}
+
+func (resolver *sensorDeploymentIdentificationResolver) AppServiceaccountId(ctx context.Context) string {
+	value := resolver.data.GetAppServiceaccountId()
+	return value
+}
+
+func (resolver *sensorDeploymentIdentificationResolver) DefaultNamespaceId(ctx context.Context) string {
+	value := resolver.data.GetDefaultNamespaceId()
+	return value
+}
+
+func (resolver *sensorDeploymentIdentificationResolver) SystemNamespaceId(ctx context.Context) string {
+	value := resolver.data.GetSystemNamespaceId()
 	return value
 }
 

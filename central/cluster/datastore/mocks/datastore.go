@@ -131,7 +131,7 @@ func (mr *MockDataStoreMockRecorder) GetClusters(arg0 interface{}) *gomock.Call 
 }
 
 // LookupOrCreateClusterFromConfig mocks base method
-func (m *MockDataStore) LookupOrCreateClusterFromConfig(arg0 context.Context, arg1 string, arg2 *central.HelmManagedConfigInit) (*storage.Cluster, error) {
+func (m *MockDataStore) LookupOrCreateClusterFromConfig(arg0 context.Context, arg1 string, arg2 *central.SensorHello) (*storage.Cluster, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LookupOrCreateClusterFromConfig", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*storage.Cluster)
@@ -272,4 +272,18 @@ func (m *MockDataStore) UpdateClusterUpgradeStatus(arg0 context.Context, arg1 st
 func (mr *MockDataStoreMockRecorder) UpdateClusterUpgradeStatus(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterUpgradeStatus", reflect.TypeOf((*MockDataStore)(nil).UpdateClusterUpgradeStatus), arg0, arg1, arg2)
+}
+
+// UpdateSensorDeploymentIdentification mocks base method
+func (m *MockDataStore) UpdateSensorDeploymentIdentification(arg0 context.Context, arg1 string, arg2 *storage.SensorDeploymentIdentification) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSensorDeploymentIdentification", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSensorDeploymentIdentification indicates an expected call of UpdateSensorDeploymentIdentification
+func (mr *MockDataStoreMockRecorder) UpdateSensorDeploymentIdentification(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSensorDeploymentIdentification", reflect.TypeOf((*MockDataStore)(nil).UpdateSensorDeploymentIdentification), arg0, arg1, arg2)
 }

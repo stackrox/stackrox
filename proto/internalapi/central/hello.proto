@@ -16,6 +16,8 @@ message SensorHello {
   string sensor_version        = 1;
   repeated string capabilities = 2;
 
+  storage.SensorDeploymentIdentification deployment_identification = 5;
+
   HelmManagedConfigInit helm_managed_config_init = 3;
 
   // Policy version sensor understands. If unset, central will try to guess it.
