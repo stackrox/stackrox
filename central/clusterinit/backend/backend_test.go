@@ -123,16 +123,20 @@ func (s *clusterInitBackendTestSuite) SetupTest() {
 
 	// Configure CertificateProvider mock.
 	s.certProvider.EXPECT().GetCA().Return(s.caCert, nil).AnyTimes()
-	s.certProvider.EXPECT().GetBundle().Return(s.certBundle, uuid.NewV4(), nil).AnyTimes()
 }
 
-func (s *clusterInitBackendTestSuite) TestIssuing() {
+func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
 	ctx := s.ctx
+
+	s.certProvider.EXPECT().GetBundle().Return(s.certBundle, uuid.NewV4(), nil).AnyTimes()
 
 	// Issue new init bundle.
 	initBundle, err := s.backend.Issue(ctx, "test1")
 	s.Require().NoError(err)
 	id := initBundle.Meta.Id
+
+	err = s.backend.CheckRevoked(ctx, id)
+	s.Require().NoErrorf(err, "newly generated init bundle %q is revoked", id)
 
 	caCert, err := s.certProvider.GetCA()
 	s.Require().NoError(err)
@@ -188,6 +192,7 @@ func (s *clusterInitBackendTestSuite) TestIssuing() {
 	// Verify the newly generated bundle is listed.
 	initBundleMetas, err := s.backend.GetAll(ctx)
 	s.Require().NoError(err)
+	oldInitBundleMetasLength := len(initBundleMetas)
 	var initBundleMeta *storage.InitBundleMeta
 	for _, m := range initBundleMetas {
 		if m.Id == id {
@@ -200,13 +205,38 @@ func (s *clusterInitBackendTestSuite) TestIssuing() {
 
 	// Verify it is not revoked.
 	s.Require().False(initBundleMeta.IsRevoked, "newly generated init bundle is revoked")
+
+	// Verify it can be revoked.
+	err = s.backend.Revoke(ctx, id)
+	s.Require().NoErrorf(err, "revoking newly generated init bundle %q", id)
+
+	err = s.backend.CheckRevoked(ctx, id)
+	s.Require().Errorf(err, "init bundle %q is not revoked", id)
+
+	initBundleMetas, err = s.backend.GetAll(ctx)
+	s.Require().NoError(err)
+	s.Require().Len(initBundleMetas, oldInitBundleMetasLength-1, "unexpected number of returned init bundles")
+
+	initBundleMeta = nil
+	for _, m := range initBundleMetas {
+		if m.Id == id {
+			initBundleMeta = m
+			break
+		}
+	}
+	s.Require().Nilf(initBundleMeta, "revoked init bundle %q contained in listing", id)
+
 }
 
 // Tests if attempt to issue two init bundles with the same name fails as expected.
 func (s *clusterInitBackendTestSuite) TestIssuingWithDuplicateName() {
 	ctx := s.ctx
+
+	s.certProvider.EXPECT().GetBundle().Return(s.certBundle, uuid.NewV4(), nil)
 	_, err := s.backend.Issue(ctx, "test2")
 	s.Require().NoError(err)
+
+	s.certProvider.EXPECT().GetBundle().Return(s.certBundle, uuid.NewV4(), nil)
 	_, err = s.backend.Issue(ctx, "test2")
 	s.Require().Error(err, "issuing two init bundles with the same name")
 }
@@ -226,6 +256,8 @@ func (s *clusterInitBackendTestSuite) TestValidateClientCertificateNotFound() {
 func (s *clusterInitBackendTestSuite) TestValidateClientCertificate() {
 	// To access the revoke check a token should be passed without any access rights.
 	ctxWithoutSAC := context.Background()
+
+	s.certProvider.EXPECT().GetBundle().Return(s.certBundle, uuid.NewV4(), nil)
 
 	meta, err := s.backend.Issue(s.ctx, "revoke-check")
 	s.Require().NoError(err)
@@ -256,6 +288,28 @@ func (s *clusterInitBackendTestSuite) TestValidateClientCertificateShouldIgnoreN
 	}
 
 	err := s.backend.ValidateClientCertificate(ctxWithoutSAC, certs)
+	s.Require().NoError(err)
+}
+
+// Tests if names can be reused after revoking.
+func (s *clusterInitBackendTestSuite) TestIssuingAfterRevoking() {
+	name := "test3"
+	ctx := s.ctx
+
+	s.certProvider.EXPECT().GetBundle().Return(s.certBundle, uuid.NewV4(), nil)
+	initBundle, err := s.backend.Issue(ctx, name)
+	id := initBundle.Meta.GetId()
+	s.Require().NoError(err)
+
+	s.certProvider.EXPECT().GetBundle().Return(s.certBundle, uuid.NewV4(), nil)
+	_, err = s.backend.Issue(ctx, name)
+	s.Require().Error(err, "issuing two init bundles with the same name")
+
+	err = s.backend.Revoke(ctx, id)
+	s.Require().NoErrorf(err, "revoking init bundle %q", id)
+
+	s.certProvider.EXPECT().GetBundle().Return(s.certBundle, uuid.NewV4(), nil)
+	_, err = s.backend.Issue(ctx, name)
 	s.Require().NoError(err)
 }
 
