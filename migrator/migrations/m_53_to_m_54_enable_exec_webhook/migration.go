@@ -13,6 +13,7 @@ import (
 
 var (
 	clustersPrefix = []byte("clusters")
+	separator      = []byte("\x00")
 )
 
 var (
@@ -35,7 +36,8 @@ func migrateExecWebhook(db *gorocksdb.DB) error {
 	it := db.NewIterator(readOpts)
 	defer it.Close()
 
-	for it.Seek(clustersPrefix); it.ValidForPrefix(clustersPrefix); it.Next() {
+	prefix := getPrefix()
+	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 		cluster := &storage.Cluster{}
 		if err := proto.Unmarshal(it.Value().Data(), cluster); err != nil {
 			// If anything fails to unmarshal roll back the transaction and abort
@@ -64,6 +66,12 @@ func migrateExecWebhook(db *gorocksdb.DB) error {
 	return db.Write(gorocksdb.NewDefaultWriteOptions(), rocksWriteBatch)
 }
 
+func getPrefix() []byte {
+	prefix := make([]byte, 0, len(clustersPrefix)+len(separator))
+	prefix = append(prefix, clustersPrefix...)
+	prefix = append(prefix, separator...)
+	return prefix
+}
 func init() {
 	migrations.MustRegisterMigration(migration)
 }

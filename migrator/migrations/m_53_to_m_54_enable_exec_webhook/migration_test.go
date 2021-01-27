@@ -105,7 +105,8 @@ func (suite *execWebhookTestSuite) TestMigrateClustersWithExecWebhooks() {
 	defer it.Close()
 
 	migratedClusters := make([]*storage.Cluster, 0, len(expected))
-	for it.Seek(clustersPrefix); it.ValidForPrefix(clustersPrefix); it.Next() {
+	prefix := getPrefix()
+	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 		cluster := &storage.Cluster{}
 		if err := proto.Unmarshal(it.Value().Data(), cluster); err != nil {
 			suite.NoError(err)
