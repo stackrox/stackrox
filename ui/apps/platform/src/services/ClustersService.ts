@@ -1,13 +1,14 @@
 import { normalize } from 'normalizr';
 import qs from 'qs';
-import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { saveFile } from 'services/DownloadService';
 import axios from './instance';
 import { cluster as clusterSchema } from './schemas';
 
 const clustersUrl = '/v1/clusters';
 const clustersEnvUrl = '/v1/clusters-env';
+const clusterInitUrl = '/v1/cluster-init';
 const upgradesUrl = '/v1/sensorupgrades';
 const autoUpgradeConfigUrl = `${upgradesUrl}/config`;
 const manualUpgradeUrl = `${upgradesUrl}/cluster`;
@@ -198,4 +199,50 @@ export function fetchKernelSupportAvailable(): Promise<boolean> {
     return axios.get(`${clustersEnvUrl}/kernel-support-available`).then((response) => {
         return Boolean(response?.data?.kernelSupportAvailable);
     });
+}
+
+export type InitBundleAttribute = {
+    key: string;
+    value: string;
+};
+
+export type ClusterInitBundle = {
+    id?: string;
+    name: string;
+    createdAt: string;
+    createdBy: {
+        id: string;
+        authProviderId: string;
+        attributes: InitBundleAttribute[];
+    };
+    expiresAt: string;
+};
+
+export function fetchClusterInitBundles(): Promise<{ response: { items: ClusterInitBundle[] } }> {
+    return axios
+        .get<{ items: ClusterInitBundle[] }>(`${clusterInitUrl}/init-bundles`)
+        .then((response) => {
+            return {
+                response: response.data || { items: [] },
+            };
+        });
+}
+
+export function generateClusterInitBundle(
+    data: ClusterInitBundle
+): Promise<{ response: { meta?: ClusterInitBundle; helmValuesBundle?: string } }> {
+    return axios
+        .post<{ meta: ClusterInitBundle; helmValuesBundle: string }>(
+            `${clusterInitUrl}/init-bundles`,
+            data
+        )
+        .then((response) => {
+            return {
+                response: response.data || {},
+            };
+        });
+}
+
+export function revokeClusterInitBundles(ids: string[]): Promise<Record<string, never>> {
+    return axios.patch(`${clusterInitUrl}/init-bundles/revoke`, { ids });
 }

@@ -26,7 +26,7 @@ export function toggleRow(id, selection) {
  *  If some or none are selected, all become selected on that page,
  *  else if all are selected in the entire table, all become unselected in the table
  *
- *  @param {!String} rowsLength the length of the table
+ *  @param {!Number} rowsLength the length of the table
  *  @param {!Object[]} selection the current selection
  *  @returns {!Object[]} the modified selection
  */

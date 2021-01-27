@@ -6,6 +6,7 @@ import bindSelectors from 'utils/bindSelectors';
 import alerts, { selectors as alertSelectors } from './alerts';
 import apiTokens, { selectors as apiTokenSelectors } from './apitokens';
 import auth, { selectors as authSelectors } from './auth';
+import clusterInitBundles, { selectors as clusterInitBundleSelectors } from './clusterInitBundles';
 import clusters, { selectors as clusterSelectors } from './clusters';
 import deployments, { selectors as deploymentSelectors } from './deployments';
 import formMessages, { selectors as formMessageSelectors } from './formMessages';
@@ -39,6 +40,7 @@ const appReducer = combineReducers({
     alerts,
     apiTokens,
     auth,
+    clusterInitBundles,
     clusters,
     deployments,
     formMessages,
@@ -83,6 +85,7 @@ const getApp = (state) => state.app;
 const getAlerts = (state) => getApp(state).alerts;
 const getAPITokens = (state) => getApp(state).apiTokens;
 const getAuth = (state) => getApp(state).auth;
+const getClusterInitBundles = (state) => getApp(state).clusterInitBundles;
 const getClusters = (state) => getApp(state).clusters;
 const getDeployments = (state) => getApp(state).deployments;
 const getFormMessages = (state) => getApp(state).formMessages;
@@ -113,6 +116,7 @@ const boundSelectors = {
     ...bindSelectors(getAlerts, alertSelectors),
     ...bindSelectors(getAPITokens, apiTokenSelectors),
     ...bindSelectors(getAuth, authSelectors),
+    ...bindSelectors(getClusterInitBundles, clusterInitBundleSelectors),
     ...bindSelectors(getClusters, clusterSelectors),
     ...bindSelectors(getDeployments, deploymentSelectors),
     ...bindSelectors(getFormMessages, formMessageSelectors),

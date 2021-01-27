@@ -9,6 +9,7 @@ import email from 'images/email.svg';
 import google from 'images/google-cloud.svg';
 import googleregistry from 'images/google-container.svg';
 import googleartifact from 'images/google-artifact.svg';
+import helm from 'images/helm.svg';
 import ibm from 'images/ibm-ccr.svg';
 import jira from 'images/jira.svg';
 import logo from 'images/logo-tall.svg';
@@ -32,6 +33,12 @@ const integrationsList = {
             type: 'apitoken',
             source: 'authProviders',
             image: logo,
+        },
+        {
+            label: 'Cluster Init Bundle',
+            type: 'clusterInitBundle',
+            source: 'authProviders',
+            image: helm,
         },
     ],
     imageIntegrations: [

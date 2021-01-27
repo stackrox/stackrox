@@ -3,6 +3,7 @@ import { all, fork } from 'redux-saga/effects';
 import alerts from './alertSagas';
 import apiTokens from './apiTokenSagas';
 import authProviders from './authSagas';
+import clusterInitBundles from './clusterInitBundleSagas';
 import clusters from './clusterSagas';
 import deployments from './deploymentSagas';
 import featureFlags from './featureFlagSagas';
@@ -30,6 +31,7 @@ export default function* root() {
         fork(alerts),
         fork(apiTokens),
         fork(authProviders),
+        fork(clusterInitBundles),
         fork(cli),
         fork(clusters),
         fork(deployments),

@@ -57,6 +57,7 @@ const commonRules = {
             paths: [
                 {
                     name: 'axios',
+                    importNames: ['default'],
                     message:
                         "Please use the axios exported from 'src/services/instance.js' since we've made modifications to it there.",
                 },

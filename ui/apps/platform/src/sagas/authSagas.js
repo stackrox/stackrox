@@ -5,8 +5,14 @@ import queryString from 'qs';
 import Raven from 'raven-js';
 import { Base64 } from 'js-base64';
 
-import { loginPath, testLoginResultsPath, accessControlPath, authResponsePrefix } from 'routePaths';
-import { takeEveryLocation } from 'utils/sagaEffects';
+import {
+    loginPath,
+    testLoginResultsPath,
+    accessControlPath,
+    authResponsePrefix,
+    integrationsPath,
+} from 'routePaths';
+import { takeEveryLocation, takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 import * as AuthService from 'services/AuthService';
 import fetchUsersAttributes from 'services/AttributesService';
 import { fetchUserRolePermissions } from 'services/RolesService';
@@ -304,6 +310,13 @@ function* watchDeleteAuthProvider() {
     yield takeLatest(types.DELETE_AUTH_PROVIDER, deleteAuthProvider);
 }
 
+function* watchLocationForAuthProviders() {
+    const effects = [accessControlPath, integrationsPath].map((path) =>
+        takeEveryNewlyMatchedLocation(path, getAuthProviders)
+    );
+    yield all(effects);
+}
+
 export default function* auth() {
     // start by monitoring auth providers to re-evaluate user access
     yield fork(watchNewAuthProviders);
@@ -324,7 +337,7 @@ export default function* auth() {
     }
 
     yield all([
-        takeEveryLocation(accessControlPath, getAuthProviders),
+        fork(watchLocationForAuthProviders),
         takeEveryLocation(loginPath, handleLoginPageRedirect),
         fork(watchSaveAuthProvider),
         fork(watchDeleteAuthProvider),

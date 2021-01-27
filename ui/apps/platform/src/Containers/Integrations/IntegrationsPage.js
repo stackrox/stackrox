@@ -9,10 +9,12 @@ import IntegrationModal from 'Containers/Integrations/IntegrationModal';
 import IntegrationTile from 'Containers/Integrations/IntegrationTile';
 import { actions as authActions } from 'reducers/auth';
 import { actions as apiTokenActions } from 'reducers/apitokens';
+import { actions as clusterInitBundleActions } from 'reducers/clusterInitBundles';
 import { actions as integrationActions } from 'reducers/integrations';
 import { selectors } from 'reducers';
 import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 import APITokensModal from './APITokens/APITokensModal';
+import ClusterInitBundlesModal from './ClusterInitBundles/ClusterInitBundlesModal';
 
 class IntegrationsPage extends Component {
     static propTypes = {
@@ -32,6 +34,11 @@ class IntegrationsPage extends Component {
                 role: PropTypes.string.isRequired,
             })
         ).isRequired,
+        clusterInitBundles: PropTypes.arrayOf(
+            PropTypes.shape({
+                name: PropTypes.string.isRequired,
+            })
+        ).isRequired,
         backups: PropTypes.arrayOf(
             PropTypes.shape({
                 name: PropTypes.string.isRequired,
@@ -43,6 +50,7 @@ class IntegrationsPage extends Component {
         fetchAuthProviders: PropTypes.func.isRequired,
         fetchAPITokens: PropTypes.func.isRequired,
         fetchBackups: PropTypes.func.isRequired,
+        fetchClusterInitBundles: PropTypes.func.isRequired,
         fetchNotifiers: PropTypes.func.isRequired,
         fetchImageIntegrations: PropTypes.func.isRequired,
         featureFlags: PropTypes.arrayOf(
@@ -73,6 +81,9 @@ class IntegrationsPage extends Component {
                 if (type === 'apitoken') {
                     this.props.fetchAPITokens();
                     break;
+                }
+                if (type === 'clusterInitBundle') {
+                    this.props.fetchClusterInitBundles();
                 }
                 this.props.fetchAuthProviders();
                 break;
@@ -114,21 +125,30 @@ class IntegrationsPage extends Component {
             integration.type.toLowerCase() === type.toLowerCase();
 
         switch (source) {
-            case 'authPlugins':
+            case 'authPlugins': {
                 return this.props.authPlugins;
-            case 'authProviders':
+            }
+            case 'authProviders': {
                 if (type === 'apitoken') {
                     return this.props.apiTokens;
                 }
+                if (type === 'clusterInitBundle') {
+                    return this.props.clusterInitBundles;
+                }
                 return this.props.authProviders.filter(typeLowerMatches);
-            case 'notifiers':
+            }
+            case 'notifiers': {
                 return this.props.notifiers.filter(typeLowerMatches);
-            case 'backups':
+            }
+            case 'backups': {
                 return this.props.backups.filter(typeLowerMatches);
-            case 'imageIntegrations':
+            }
+            case 'imageIntegrations': {
                 return this.props.imageIntegrations.filter(typeLowerMatches);
-            default:
+            }
+            default: {
                 throw new Error(`Unknown source ${source}`);
+            }
         }
     };
 
@@ -136,6 +156,15 @@ class IntegrationsPage extends Component {
         return (
             <APITokensModal
                 tokens={this.props.apiTokens}
+                onRequestClose={this.fetchEntitiesAndCloseModal}
+            />
+        );
+    }
+
+    renderClusterInitBundlesModal() {
+        return (
+            <ClusterInitBundlesModal
+                clusterInitBundles={this.props.clusterInitBundles}
                 onRequestClose={this.fetchEntitiesAndCloseModal}
             />
         );
@@ -149,6 +178,10 @@ class IntegrationsPage extends Component {
 
         if (selectedSource === 'authProviders' && selectedType === 'apitoken') {
             return this.renderAPITokensModal();
+        }
+
+        if (selectedSource === 'authProviders' && selectedType === 'clusterInitBundle') {
+            return this.renderClusterInitBundlesModal();
         }
 
         const integrations = this.findIntegrations(selectedSource, selectedType);
@@ -176,7 +209,7 @@ class IntegrationsPage extends Component {
                     return null;
                 }
             }
-            // TODO: remove this manual check after ROOX_HOST_SCANNING feature flag turned on
+            // TODO: remove this manual check after ROX_HOST_SCANNING feature flag turned on
             if (
                 tile.label === 'StackRox Scanner' &&
                 !isBackendFeatureFlagEnabled(
@@ -270,6 +303,7 @@ const mapStateToProps = createStructuredSelector({
     authPlugins: selectors.getAuthPlugins,
     authProviders: selectors.getAuthProviders,
     apiTokens: selectors.getAPITokens,
+    clusterInitBundles: selectors.getClusterInitBundles,
     notifiers: selectors.getNotifiers,
     imageIntegrations: selectors.getImageIntegrations,
     backups: selectors.getBackups,
@@ -279,6 +313,8 @@ const mapStateToProps = createStructuredSelector({
 const mapDispatchToProps = (dispatch) => ({
     fetchAuthProviders: () => dispatch(authActions.fetchAuthProviders.request()),
     fetchAPITokens: () => dispatch(apiTokenActions.fetchAPITokens.request()),
+    fetchClusterInitBundles: () =>
+        dispatch(clusterInitBundleActions.fetchClusterInitBundles.request()),
     fetchBackups: () => dispatch(integrationActions.fetchBackups.request()),
     fetchNotifiers: () => dispatch(integrationActions.fetchNotifiers.request()),
     fetchImageIntegrations: () => dispatch(integrationActions.fetchImageIntegrations.request()),
