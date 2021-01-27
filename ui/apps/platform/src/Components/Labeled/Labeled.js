@@ -1,6 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+/*
+ * Recommended for optional string value or Redux form element as children.
+ * Not recommeded for input element as children because component does not render label with htmlFor prop.
+ */
 function Labeled({ label, children }) {
     if (!React.Children.count(children)) {
         return null;

@@ -9,21 +9,19 @@ export default {
 
 export const withTextLabelAndValue = () => <Labeled label="Label">Value</Labeled>;
 
-export const withTextLabelAndInput = () => (
-    <Labeled label="Enter value">
-        <input className="border-2" />
-    </Labeled>
+export const withTextLabelAndEmptyValue = () => (
+    <Labeled label="Does not render if value is empty string" />
 );
 
-export const withElementLabelAndInput = () => {
+export const withElementLabelAndValue = () => {
     const label = (
         <p>
-            Important thing <i className="text-base-500">(required)</i>
+            Details <i>(for geeks)</i>
         </p>
     );
     return (
         <Labeled label={label}>
-            <input className="border-2" />
+            <pre>{JSON.stringify({ key1: 'value1', key2: 'value2', key3: 'value3' }, null, 2)}</pre>
         </Labeled>
     );
 };

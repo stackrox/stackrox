@@ -121,6 +121,7 @@ const commonReactRules = {
     'jsx-a11y/control-has-associated-label': [
         'warn',
         {
+            ignoreElements: ['input', 'textarea'], // rule does not consider label htmlFor attribute
             labelAttributes: ['label'],
             controlComponents: ['Dot', 'Labeled'],
             depth: 3,
