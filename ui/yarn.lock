@@ -3831,10 +3831,10 @@
     npmlog "^4.1.2"
     write-file-atomic "^2.3.0"
 
-"@lifeomic/axios-fetch@^1.4.2":
-  version "1.4.2"
-  resolved "https://registry.yarnpkg.com/@lifeomic/axios-fetch/-/axios-fetch-1.4.2.tgz#141ba1017294098cccc10afc56bc32e71237ddbb"
-  integrity sha512-UW2AprfPA/9tfIUmgZLKCGDCLhNWM28cLmEqqxB/zk95BwljSizR8bWxTKQQ1I6HFb7gKxbAfPsfVWoJ00QyyQ==
+"@lifeomic/axios-fetch@^1.5.1":
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/@lifeomic/axios-fetch/-/axios-fetch-1.5.1.tgz#401f12435531efecb7d3b9197119622eb75f5c10"
+  integrity sha512-LROjSL0I6m7L/WLxTqpXgSW5X3Ljx7M7oMIPSpgmkBOs2bKCqzxAJBqS9V7TgGkudJq+FQBUzSpc+L1KyzqtnA==
   dependencies:
     form-data "^2.3.3"
     lodash.identity "^3.0.0"
