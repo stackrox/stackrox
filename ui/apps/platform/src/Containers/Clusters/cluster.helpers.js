@@ -61,6 +61,7 @@ export const newClusterDefault = {
     runtimeSupport: false,
     collectionMethod: defaultCollectionMethod,
     DEPRECATEDProviderMetadata: null,
+    admissionControllerEvents: true,
     admissionController: false,
     admissionControllerUpdates: false,
     DEPRECATEDOrchestratorMetadata: null,
@@ -134,12 +135,12 @@ export const sublabelClassName = 'font-600 italic';
 export const wrapperMarginClassName = 'mb-4';
 
 export const inputBaseClassName =
-    'bg-base-100 border-2 border-base-300 hover:border-base-400 font-600 leading-normal p-2 rounded text-base-600 disabled:bg-base-200';
+    'bg-base-100 border-2 border-base-300 hover:border-base-400 font-600 leading-normal p-2 first:rounded-t last:rounded-b text-base-600 disabled:bg-base-200';
 export const inputTextClassName = `${inputBaseClassName} w-full`;
 export const inputNumberClassName = `${inputBaseClassName} text-right w-12`;
 
 export const divToggleOuterClassName =
-    'bg-base-100 border-2 border-base-300 hover:border-base-400 font-600 leading-normal px-2 py-2 rounded text-base-600 w-full';
+    'bg-base-100 border-2 border-base-300 hover:border-base-400 font-600 leading-normal px-2 py-2 rounded-t last:rounded-b text-base-600 w-full';
 
 export const justifyBetweenClassName = 'flex items-center justify-between';
 

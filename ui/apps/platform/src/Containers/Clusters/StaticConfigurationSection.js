@@ -76,14 +76,16 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                     <label htmlFor="name" className={labelClassName}>
                         Cluster Name <FormFieldRequired empty={selectedCluster.name.length === 0} />
                     </label>
-                    <input
-                        id="name"
-                        name="name"
-                        value={selectedCluster.name}
-                        onChange={handleChange}
-                        disabled={selectedCluster.id}
-                        className={inputTextClassName}
-                    />
+                    <div data-testid="input-wrapper">
+                        <input
+                            id="name"
+                            name="name"
+                            value={selectedCluster.name}
+                            onChange={handleChange}
+                            disabled={selectedCluster.id}
+                            className={inputTextClassName}
+                        />
+                    </div>
                 </div>
                 <div className={wrapperMarginClassName}>
                     <label htmlFor="clusterType" className={labelClassName}>
@@ -109,17 +111,19 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                         Main Image Repository{' '}
                         <FormFieldRequired empty={selectedCluster.mainImage.length === 0} />
                     </label>
-                    <input
-                        id="mainImage"
-                        name="mainImage"
-                        onChange={handleChange}
-                        value={selectedCluster.mainImage}
-                        className={inputTextClassName}
-                    />
-                    <HelmValueWarning
-                        currentValue={selectedCluster.mainImage}
-                        helmValue={selectedCluster?.helmConfig?.staticConfig?.mainImage}
-                    />
+                    <div data-testid="input-wrapper">
+                        <input
+                            id="mainImage"
+                            name="mainImage"
+                            onChange={handleChange}
+                            value={selectedCluster.mainImage}
+                            className={inputTextClassName}
+                        />
+                        <HelmValueWarning
+                            currentValue={selectedCluster.mainImage}
+                            helmValue={selectedCluster?.helmConfig?.staticConfig?.mainImage}
+                        />
+                    </div>
                 </div>
                 <div className={wrapperMarginClassName}>
                     <label htmlFor="centralApiEndpoint" className={labelClassName}>
@@ -128,17 +132,21 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                             empty={selectedCluster.centralApiEndpoint.length === 0}
                         />
                     </label>
-                    <input
-                        id="centralApiEndpoint"
-                        name="centralApiEndpoint"
-                        onChange={handleChange}
-                        value={selectedCluster.centralApiEndpoint}
-                        className={inputTextClassName}
-                    />
-                    <HelmValueWarning
-                        currentValue={selectedCluster.centralApiEndpoint}
-                        helmValue={selectedCluster?.helmConfig?.staticConfig?.centralApiEndpoint}
-                    />
+                    <div data-testid="input-wrapper">
+                        <input
+                            id="centralApiEndpoint"
+                            name="centralApiEndpoint"
+                            onChange={handleChange}
+                            value={selectedCluster.centralApiEndpoint}
+                            className={inputTextClassName}
+                        />
+                        <HelmValueWarning
+                            currentValue={selectedCluster.centralApiEndpoint}
+                            helmValue={
+                                selectedCluster?.helmConfig?.staticConfig?.centralApiEndpoint
+                            }
+                        />
+                    </div>
                 </div>
                 <div className={wrapperMarginClassName}>
                     <label htmlFor="collectionMethod" className={labelClassName}>
@@ -162,18 +170,49 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                     <label htmlFor="collectorImage" className={labelClassName}>
                         Collector Image Repository (uses Main image repository by default)
                     </label>
-                    <input
-                        id="collectorImage"
-                        name="collectorImage"
-                        onChange={handleChange}
-                        value={selectedCluster.collectorImage}
-                        className={inputTextClassName}
-                    />
-                    <HelmValueWarning
-                        currentValue={selectedCluster.collectorImage}
-                        helmValue={selectedCluster?.helmConfig?.staticConfig?.collectorImage}
-                    />
+                    <div data-testid="input-wrapper">
+                        <input
+                            id="collectorImage"
+                            name="collectorImage"
+                            onChange={handleChange}
+                            value={selectedCluster.collectorImage}
+                            className={inputTextClassName}
+                        />
+                        <HelmValueWarning
+                            currentValue={selectedCluster.collectorImage}
+                            helmValue={selectedCluster?.helmConfig?.staticConfig?.collectorImage}
+                        />
+                    </div>
                 </div>
+                {k8sEventsEnabled && (
+                    <div className={wrapperMarginClassName}>
+                        <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
+                            <label htmlFor="admissionControllerEvents" className={labelClassName}>
+                                Enable Admission Controller Webhook to listen on exec and
+                                port-forward events
+                            </label>
+                            <ToggleSwitch
+                                id="admissionControllerEvents"
+                                name="admissionControllerEvents"
+                                toggleHandler={handleChange}
+                                enabled={selectedCluster.admissionControllerEvents}
+                            />
+                        </div>
+                        <HelmValueWarning
+                            currentValue={selectedCluster.admissionControllerEvents}
+                            helmValue={
+                                selectedCluster?.helmConfig?.staticConfig?.admissionControllerEvents
+                            }
+                        />
+                        {selectedCluster.admissionControllerEvents &&
+                            selectedCluster?.type === 'OPENSHIFT_CLUSTER' && (
+                                <div className="border border-alert-200 bg-alert-200 p-2 rounded-b">
+                                    This setting will not work for OpenShift 3.11; so please ensure
+                                    that your cluster is running OpenShift 4.0 and higher.
+                                </div>
+                            )}
+                    </div>
+                )}
                 <div className={wrapperMarginClassName}>
                     <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
                         <label htmlFor="admissionController" className={labelClassName}>

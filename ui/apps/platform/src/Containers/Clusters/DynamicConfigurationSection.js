@@ -34,7 +34,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig }
                             Set a value if the default registry is not docker.io in this cluster
                         </span>
                     </label>
-                    <div className="flex">
+                    <div className="flex" data-testid="input-wrapper">
                         <input
                             id="dynamicConfig.registryOverride"
                             name="dynamicConfig.registryOverride"
