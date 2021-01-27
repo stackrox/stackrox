@@ -3,6 +3,7 @@ package sac
 import (
 	"github.com/stackrox/rox/central/dackbox"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/filtered"
 	"github.com/stackrox/rox/pkg/sync"
@@ -36,5 +37,8 @@ func GetSACFilters() []filtered.Filter {
 		)
 		utils.Must(err)
 	})
-	return []filtered.Filter{imageComponentSACFilter, nodeComponentSACFilter}
+	if features.HostScanning.Enabled() {
+		return []filtered.Filter{imageComponentSACFilter, nodeComponentSACFilter}
+	}
+	return []filtered.Filter{imageComponentSACFilter}
 }

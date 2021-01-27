@@ -97,7 +97,7 @@ func (suite *ImageComponentDataStoreTestSuite) TestBasicSearch() {
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.Node),
+		sac.ResourceScopeKeys(resources.Image),
 	))
 
 	// Basic unscoped search.
@@ -166,7 +166,7 @@ func (suite *ImageComponentDataStoreTestSuite) TestBasicSearch() {
 func (suite *ImageComponentDataStoreTestSuite) TestSearchByComponent() {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.Node),
+		sac.ResourceScopeKeys(resources.Image),
 	))
 	suite.upsertTestImageComponents(ctx)
 
