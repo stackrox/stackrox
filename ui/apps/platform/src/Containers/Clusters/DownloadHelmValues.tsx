@@ -6,9 +6,10 @@ import { downloadClusterHelmValuesYaml } from 'services/ClustersService';
 
 export type DownloadHelmValuesProps = {
     clusterId: string;
+    description: string;
 };
 
-const DownloadHelmValues = ({ clusterId }: DownloadHelmValuesProps): ReactElement => {
+const DownloadHelmValues = ({ clusterId, description }: DownloadHelmValuesProps): ReactElement => {
     const [isFetchingValues, setIsFetchingValues] = useState(false);
 
     function downloadValues(): void {
@@ -30,7 +31,7 @@ const DownloadHelmValues = ({ clusterId }: DownloadHelmValuesProps): ReactElemen
             titleClassName="border-b px-1 border-primary-300 leading-normal cursor-pointer flex justify-between items-center bg-primary-200 hover:border-primary-400"
         >
             <div className="w-full p-3 leading-normal border-b pb-3 border-primary-300">
-                Download the required YAML to update your Helm values.
+                {description}
             </div>
             <div className="flex justify-center items-center p-4">
                 <SuccessButton type="button" onClick={downloadValues} isDisabled={isFetchingValues}>
