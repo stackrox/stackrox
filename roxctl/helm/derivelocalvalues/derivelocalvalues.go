@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -12,6 +13,10 @@ import (
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"gopkg.in/yaml.v3"
 	"helm.sh/helm/v3/pkg/chartutil"
+)
+
+var (
+	supportedCharts = []string{common.ChartCentralServices}
 )
 
 func deriveLocalValuesForChart(namespace, chartName, input, output string, useDirectory bool) error {
@@ -22,8 +27,8 @@ func deriveLocalValuesForChart(namespace, chartName, input, output string, useDi
 	case common.ChartCentralServices:
 		err = deriveLocalValuesForCentralServices(ctx, namespace, input, output, useDirectory)
 	default:
-		fmt.Fprintf(os.Stderr, "Deriving local values for chart %q is currently unsupported.", chartName)
-		fmt.Fprintf(os.Stderr, "Supported charts: %s", common.PrettyChartNameList)
+		fmt.Fprintf(os.Stderr, "Deriving local values for chart %q is currently unsupported.\n", chartName)
+		fmt.Fprintf(os.Stderr, "Supported charts: %s\n", strings.Join(supportedCharts, ", "))
 		err = errors.Errorf("unsupported chart %q", chartName)
 	}
 

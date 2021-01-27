@@ -16,7 +16,7 @@ func Command() *cobra.Command {
 	var input string
 
 	c := &cobra.Command{
-		Use: fmt.Sprintf("derive-local-values --output <path> <%s>", common.PrettyChartNameList),
+		Use: fmt.Sprintf("derive-local-values --output <path> <%s>", common.MakePrettyChartNameList(supportedCharts...)),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("incorrect number of arguments, see --help for usage information")

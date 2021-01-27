@@ -13,7 +13,7 @@ var (
 		ChartCentralServices:        image.CentralServicesChartPrefix,
 		ChartSecuredClusterServices: image.SecuredClusterServicesChartPrefix,
 	}
-	// PrettyChartNameList contains the list of currently supported chart names for helm relateld
+	// PrettyChartNameList contains the list of currently supported chart names for Helm related
 	// commands suitable for inline display.
 	PrettyChartNameList string
 )
@@ -25,12 +25,17 @@ const (
 	ChartSecuredClusterServices string = "secured-cluster-services"
 )
 
+// MakePrettyChartNameList forms a pretty printed string listing multiple chart names.
+func MakePrettyChartNameList(chartNames ...string) string {
+	sort.Strings(chartNames)
+	return strings.Join(chartNames, " | ")
+}
+
 // Initialize `prettyChartNameList` for usage information.
 func init() {
 	chartTemplateNames := make([]string, 0, len(ChartTemplates))
 	for name := range ChartTemplates {
 		chartTemplateNames = append(chartTemplateNames, name)
 	}
-	sort.Strings(chartTemplateNames)
-	PrettyChartNameList = strings.Join(chartTemplateNames, " | ")
+	PrettyChartNameList = MakePrettyChartNameList(chartTemplateNames...)
 }
