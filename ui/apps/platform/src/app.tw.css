@@ -77,6 +77,10 @@ select {
     @apply w-3 h-3 rounded-sm;
 }
 
+.react-select__input input[type='text']:focus {
+    box-shadow: none !important;
+}
+
 /* end reset of the Tailwind forms reset */
 
 .sticky {
