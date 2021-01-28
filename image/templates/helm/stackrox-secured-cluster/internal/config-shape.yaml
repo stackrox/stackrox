@@ -104,6 +104,7 @@ customize:
 allowNonstandardNamespace: null # bool
 allowNonstandardReleaseName: null # bool
 meta:
+  namespaceOverride: null # bool
   useLookup: null # bool
   fileOverrides: {} # dict
   apiServer:

@@ -1,0 +1,21 @@
+release:
+  isInstall: false
+  isUpgrade: true
+tests:
+- name: "should accept a non-standard namespace"
+  release:
+    namespace: my-stackrox
+  expect: |
+    verifyNamespace("my-stackrox")
+- name: "should accept a non-standard release name"
+  release:
+    name: sensor
+  expect: |
+    verifyNamespace("stackrox")
+- name: "should honor the namespace override"
+  release:
+    namespace: default
+  set:
+    meta.namespaceOverride: my-stackrox
+  expect: |
+    verifyNamespace("my-stackrox")

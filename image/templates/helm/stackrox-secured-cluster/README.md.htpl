@@ -249,6 +249,11 @@ This Helm chart allows you to deploy the necessary services on a StackRox
 secured cluster: StackRox Sensor, StackRox Collector, and StackRox Admission
 Control.
 
+**PLEASE NOTE:** This Helm chart supersedes the `sensor` Helm chart shipped for previous
+versions of the StackRox Kubernetes Security Platform. If you have previously used the
+`sensor` chart, see the [sensor-chart-upgrade.md](sensor-chart-upgrade.md) document in this
+directory for instructions on how to upgrade.
+
 ## Prerequisites
 
 To deploy the secured cluster services for the StackRox Kubernetes Security Platform, you must:

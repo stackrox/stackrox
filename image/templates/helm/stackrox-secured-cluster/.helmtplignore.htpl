@@ -1,4 +1,8 @@
 [<- if .RenderAsLegacyChart >]
+scripts/fetch-secrets.sh
+scripts/fetched-secrets-bundle.yaml.tpl
+scripts/fetched-secrets-bundle-ca-only.yaml.tpl
+sensor-chart-upgrade.md
 [<- if .KubectlOutput >]
 scripts/
 /README.md
@@ -12,7 +16,8 @@ scripts/
 templates/*
 [<- end >]
 [<- else >]
-scripts/
+scripts/add-cluster.sh
+scripts/setup.sh
 [<- end >]
 [<- if or .KubectlOutput (index .FeatureFlags "ROX_SENSOR_INSTALLATION_EXPERIENCE" | not) >]
 templates/cluster-config.yaml

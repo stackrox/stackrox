@@ -51,9 +51,10 @@
 [< if .RenderAsLegacyChart >]
 {{ $_ = set $._rox "_namespace" "stackrox" }}
 [< else >]
-{{ $_ = set $._rox "_namespace" .Release.Namespace }}
+{{ $_ = set $._rox "_namespace" (default $.Release.Namespace $._rox.meta.namespaceOverride) }}
 [< end >]
 
+{{ if not $.Release.IsUpgrade }}
 {{ if ne $._rox._namespace "stackrox" }}
   {{ if $._rox.allowNonstandardNamespace }}
     {{ include "srox.note" (list $ (printf "You have chosen to deploy to namespace '%s'." $._rox._namespace)) }}
@@ -61,14 +62,17 @@
     {{ include "srox.fail" (printf "You have chosen to deploy to namespace '%s', not 'stackrox'. If this was accidental, please re-run helm with the '-n stackrox' option. Otherwise, if you need to deploy into this namespace, set the 'allowNonstandardNamespace' configuration value to true." $._rox._namespace) }}
   {{ end }}
 {{ end }}
+{{ end }}
 
 [< if not .RenderAsLegacyChart >]
+{{ if not $.Release.IsUpgrade }}
 {{ if ne $.Release.Name $.Chart.Name }}
   {{ if $._rox.allowNonstandardReleaseName }}
     {{ include "srox.warn" (list $ (printf "You have chosen a release name of '%s', not '%s'. Accompanying scripts and commands in documentation might require adjustments." $.Release.Name $.Chart.Name)) }}
   {{ else }}
     {{ include "srox.fail" (printf "You have chosen a release name of '%s', not '%s'. We strongly recommend using the standard release name. If you must use a different name, set the 'allowNonstandardReleaseName' configuration option to true." $.Release.Name $.Chart.Name) }}
   {{ end }}
+{{ end }}
 {{ end }}
 
 {{ if and $._rox.admissionControl.dynamic.enforceOnCreates (not $._rox.admissionControl.listenOnCreates) }}
