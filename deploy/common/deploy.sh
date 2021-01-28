@@ -3,6 +3,9 @@
 export MAIN_IMAGE_REPO="${MAIN_IMAGE_REPO:-stackrox/main}"
 echo "MAIN_IMAGE_REPO set to $MAIN_IMAGE_REPO"
 
+export COLLECTOR_IMAGE_REPO="${COLLECTOR_IMAGE_REPO:-stackrox/collector}"
+echo "COLLECTOR_IMAGE_REPO set to $COLLECTOR_IMAGE_REPO"
+
 if [[ "$MAIN_IMAGE_TAG" == "latest-local-build" ]]; then
   MAIN_IMAGE_TAG="$(docker images --filter="reference=stackrox/main" --format "{{.Tag}}" | head -1)"
 fi

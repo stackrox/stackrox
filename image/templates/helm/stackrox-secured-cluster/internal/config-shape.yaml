@@ -29,12 +29,14 @@ image:
   main:
     registry: null # string
     name: null # string
+    repository: null # string
     tag: null # string
     fullRef: null # string
     pullPolicy: null # string
   collector:
     registry: null # string
     name: null # string
+    repository: null # string
     tag: null # string
     fullRef: null # string
     pullPolicy: null # string
