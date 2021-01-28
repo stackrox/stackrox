@@ -49,6 +49,20 @@ export function fetchNetworkBaselines({ deploymentId }) {
     });
 }
 
+/*
+ * Enables or disables alerts on baseline violations
+ *
+ * @returns {Promise<Object, Error>}
+ *
+ */
+export function toggleAlertBaselineViolations({ deploymentId, enable }) {
+    const baseURL = `${networkBaselineBaseUrl}/${deploymentId}`;
+    const URL = enable ? `${baseURL}/lock` : `${baseURL}/unlock`;
+    return axios.patch(URL).then((response) => {
+        return response.data;
+    });
+}
+
 /**
  * Fetches nodes and links for the network graph.
  * Returns response with nodes and links
