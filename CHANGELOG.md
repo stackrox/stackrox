@@ -5,10 +5,9 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+
+## [55.0]
 - The `/v1/metadata` endpoint redacts version information from unauthenticated users.
-- `roxctl image check` now has a `--send-notifications` flag, which will send notifications for
-  build time alerts to the notifiers configured in each violated policy.
-- `roxctl central db backup` is deprecated; please use `roxctl central backup` instead.
 - API changes/deprecations:
   - `/db/backup` is deprecated; please use `/api/extensions/backup` instead.
   - In the GraphQL API, `ProcessActivityEvent { whitelisted: Boolean! }` is deprecated, use
@@ -20,11 +19,14 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - `PolicyService(/v1/policies/*)`: in all affected responses, `Policy.whitelists` is now always empty, use
     `Policy.exclusions` instead. This is because the current policy version has been updated to "1.1" which deprecates
     the `Policy.whitelists` field. All previous policy versions are still accepted as input.
-  - Deprecated `includeCertificates` flag in `/v1/externalbackups/*'. Certificates are included in central
+  - Deprecated `includeCertificates` flag in `/v1/externalbackups/*`. Certificates are included in central
     backups by default for both new and existing backup configs.
 - Admission controller service will be deployed by default in new k8s and Openshift clusters.
 The validating webhook configuration for exec and port forward events is not supported on and hence
 will not be deployed on OpenShift clusters.
+- `roxctl image check` now has a `--send-notifications` flag, which will send notifications for
+  build time alerts to the notifiers configured in each violated policy.
+- `roxctl central db backup` is deprecated; please use `roxctl central backup` instead.
 - The following  roxctl flags have been deprecated for the command `sensor generate`:
   - `--create-admission-controller` (replaced by `--admission-controller-listen-on-creates`)
   - `--admission-controller-enabled` (replaced by `--admission-controller-enforce-on-creates`)
