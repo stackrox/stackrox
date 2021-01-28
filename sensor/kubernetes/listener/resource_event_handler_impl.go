@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/cache"
 )
 
 // resourceEventHandlerImpl processes OnAdd, OnUpdate, and OnDelete events, and joins the results to an output
@@ -43,6 +44,9 @@ func (h *resourceEventHandlerImpl) OnUpdate(oldObj, newObj interface{}) {
 }
 
 func (h *resourceEventHandlerImpl) OnDelete(obj interface{}) {
+	if tombstone, ok := obj.(cache.DeletedFinalStateUnknown); ok {
+		obj = tombstone.Obj // we don't care about the final state, so just using the last known state is fine.
+	}
 	h.sendResourceEvent(obj, nil, central.ResourceAction_REMOVE_RESOURCE)
 }
 
