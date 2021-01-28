@@ -13,7 +13,7 @@ class K8sEventDetectionTest extends BaseSpecification {
     // Deployment names
     static final private String NGINXDEPLOYMENT = "qanginx"
 
-    static final private String KUBECTL_EXEC_POLICY_NAME = "Kubectl Exec into Pod"
+    static final private String KUBECTL_EXEC_POLICY_NAME = "Kubernetes Actions: Exec into Pod"
 
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()

@@ -1,6 +1,6 @@
 {
   "id": "742e0361-bddd-4a2d-8758-f2af6197f61d",
-  "name": "Kubectl Port Forward to Pod",
+  "name": "Kubernetes Actions: Port Forward to Pod",
   "description": "Alerts when Kubernetes API receives port forward request",
   "severity": "MEDIUM_SEVERITY",
   "lifecycle_stages": [
@@ -16,16 +16,6 @@
     {
       "sectionName": "",
       "policyGroups": [
-        {
-          "fieldName": "Kubernetes API Verb",
-          "booleanOperator": "OR",
-          "negate": false,
-          "values": [
-            {
-              "value": "CREATE"
-            }
-          ]
-        },
         {
           "fieldName": "Kubernetes Resource",
           "booleanOperator": "OR",

@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -2323,39 +2324,52 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventDefaultPolicies() {
 		expectedViolations []*storage.Alert_Violation
 	}{
 		{
-			policyName:         "Kubectl Exec into Pod",
+			policyName:         "Kubernetes Actions: Exec into Pod",
 			event:              podExecEvent("p1", "c1", "apt-get"),
 			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "apt-get")},
 		},
 		{
-			policyName: "Kubectl Exec into Pod",
+			policyName: "Kubernetes Actions: Exec into Pod",
 			event:      podPortForwardEvent("p1", 8000),
 		},
+		// Event without CREATE.
 		{
-			policyName: "Kubectl Exec into Pod",
+			policyName: "Kubernetes Actions: Exec into Pod",
 			event: &storage.KubernetesEvent{
 				Object: &storage.KubernetesEvent_Object{
 					Name:     "p1",
 					Resource: storage.KubernetesEvent_Object_PODS_EXEC,
 				},
+				ObjectArgs: &storage.KubernetesEvent_PodExecArgs_{
+					PodExecArgs: &storage.KubernetesEvent_PodExecArgs{
+						Container: "c1",
+					},
+				},
 			},
+			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "")},
 		},
 		{
-			policyName: "Kubectl Port Forward to Pod",
+			policyName: "Kubernetes Actions: Port Forward to Pod",
 		},
 		{
-			policyName:         "Kubectl Port Forward to Pod",
+			policyName:         "Kubernetes Actions: Port Forward to Pod",
 			event:              podPortForwardEvent("p1", 8000),
 			expectedViolations: []*storage.Alert_Violation{podPortForwardViolationMsg("p1", 8000)},
 		},
 		{
-			policyName: "Kubectl Port Forward to Pod",
+			policyName: "Kubernetes Actions: Port Forward to Pod",
 			event: &storage.KubernetesEvent{
 				Object: &storage.KubernetesEvent_Object{
 					Name:     "p1",
 					Resource: storage.KubernetesEvent_Object_PODS_PORTFORWARD,
 				},
+				ObjectArgs: &storage.KubernetesEvent_PodPortForwardArgs_{
+					PodPortForwardArgs: &storage.KubernetesEvent_PodPortForwardArgs{
+						Ports: []int32{8000},
+					},
+				},
 			},
+			expectedViolations: []*storage.Alert_Violation{podPortForwardViolationMsg("p1", 8000)},
 		},
 	} {
 		suite.T().Run(fmt.Sprintf("%s:%s", c.policyName, kubernetes.EventAsString(c.event)), func(t *testing.T) {
@@ -2368,6 +2382,10 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventDefaultPolicies() {
 
 			assert.Nil(t, actualViolations.ProcessViolation)
 			if len(c.expectedViolations) == 0 {
+				for _, a := range actualViolations.AlertViolations {
+					fmt.Printf("%v", protoutils.NewWrapper(a))
+				}
+
 				assert.Nil(t, actualViolations.AlertViolations)
 			} else {
 				assert.ElementsMatch(t, c.expectedViolations, actualViolations.AlertViolations)
