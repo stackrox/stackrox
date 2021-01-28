@@ -3,24 +3,12 @@ import PropTypes from 'prop-types';
 import { format } from 'date-fns';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
+import KeyValue from 'Components/KeyValue';
 import ProcessComments from 'Containers/AnalystNotes/ProcessComments';
 import ProcessTags from 'Containers/AnalystNotes/ProcessTags';
 import FormCollapsibleButton from 'Containers/AnalystNotes/FormCollapsibleButton';
 
-function KeyValue({ label, value }) {
-    return (
-        <div>
-            <span className="font-700">{label}</span> {value}
-        </div>
-    );
-}
-
-KeyValue.propTypes = {
-    label: PropTypes.string.isRequired,
-    value: PropTypes.string.isRequired,
-};
-
-function ProcessMessage({ process, areAnalystNotesVisible, selectProcessId }) {
+function ProcessCardContent({ process, areAnalystNotesVisible, selectProcessId }) {
     const { id, deploymentId, containerName } = process;
     const { time, args, execFilePath, containerId, lineage, uid } = process.signal;
     const processTime = new Date(time);
@@ -88,7 +76,7 @@ function ProcessMessage({ process, areAnalystNotesVisible, selectProcessId }) {
     );
 }
 
-ProcessMessage.propTypes = {
+ProcessCardContent.propTypes = {
     process: PropTypes.shape({
         id: PropTypes.string.isRequired,
         deploymentId: PropTypes.string.isRequired,
@@ -106,4 +94,4 @@ ProcessMessage.propTypes = {
     selectProcessId: PropTypes.func.isRequired,
 };
 
-export default ProcessMessage;
+export default ProcessCardContent;

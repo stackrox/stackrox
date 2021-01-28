@@ -31,11 +31,6 @@ const ViolationsSidePanel = ({ selectedAlertId, setSelectedAlertId }) => {
         );
     }, [selectedAlertId, setSelectedAlert, setIsFetchingSelectedAlert]);
 
-    // If no alert is selected, nothing to render.
-    if (!selectedAlertId) {
-        return null;
-    }
-
     // We want to clear the selected alert id on close.
     function unselectAlert() {
         setSelectedAlertId(null);

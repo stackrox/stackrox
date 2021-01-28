@@ -92,10 +92,12 @@ function ViolationsPage({
                                     runtimeAlerts={runtimeAlerts}
                                 />
                             </div>
-                            <ViolationsSidePanel
-                                selectedAlertId={selectedAlertId}
-                                setSelectedAlertId={setSelectedAlertId}
-                            />
+                            {selectedAlertId && (
+                                <ViolationsSidePanel
+                                    selectedAlertId={selectedAlertId}
+                                    setSelectedAlertId={setSelectedAlertId}
+                                />
+                            )}
                         </>
                     )}
                 </div>

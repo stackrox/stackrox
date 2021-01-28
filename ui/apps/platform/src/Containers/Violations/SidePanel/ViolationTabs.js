@@ -26,6 +26,7 @@ function ViolationTabs({ alert }) {
                         violationId={alert.id}
                         violations={alert.violations}
                         processViolation={alert.processViolation}
+                        lifecycleStage={alert.lifecycleStage}
                     />
                 </div>
             </Tab>
@@ -51,6 +52,7 @@ function ViolationTabs({ alert }) {
 ViolationTabs.propTypes = {
     alert: PropTypes.shape({
         id: PropTypes.string.isRequired,
+        lifecycleStage: PropTypes.string.isRequired,
         violations: PropTypes.arrayOf(PropTypes.object),
         processViolation: PropTypes.shape({}),
         deployment: PropTypes.shape({}),

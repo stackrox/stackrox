@@ -4,7 +4,7 @@ import * as Icon from 'react-feather';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
 
-class ProcessesCollapsibleCard extends Component {
+class RuntimeViolationCollapsibleCard extends Component {
     static propTypes = {
         title: PropTypes.string.isRequired,
         children: PropTypes.node.isRequired,
@@ -36,4 +36,4 @@ class ProcessesCollapsibleCard extends Component {
     }
 }
 
-export default ProcessesCollapsibleCard;
+export default RuntimeViolationCollapsibleCard;
