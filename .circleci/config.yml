@@ -1664,6 +1664,8 @@ commands:
           command: |
             [[ ! -f FAIL ]]
 
+      - *waitForSensorK8s
+
       - *storeQATestResults
       - *storeQASpockReports
       - copy-gradle-files:
@@ -1673,7 +1675,6 @@ commands:
 
       - *backupCentral
       - *storeCentralBackupArtifact
-      - *restoreDB
 
       - *collectK8sLogs
       - get-and-store-debug-dump
