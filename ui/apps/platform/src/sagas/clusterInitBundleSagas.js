@@ -38,9 +38,7 @@ function* revokeClusterInitBundles({ ids }) {
         yield fork(getClusterInitBundles);
         yield put(
             notificationActions.addNotification(
-                `Successfully revoked ${ids.length} cluster init bundles${
-                    ids.length > 1 ? 's' : ''
-                }`
+                `Successfully revoked ${ids.length} cluster init bundle${ids.length > 1 ? 's' : ''}`
             )
         );
         yield put(notificationActions.removeOldestNotification());

@@ -11,7 +11,7 @@ import CheckboxTable from 'Components/CheckboxTable';
 import { rtTrActionsClassName } from 'Components/Table';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import Modal from 'Components/Modal';
-import Dialog from 'Components/Dialog';
+import CustomDialogue from 'Components/CustomDialogue';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import NoResultsMessage from 'Components/NoResultsMessage';
@@ -72,7 +72,9 @@ function ClusterInitBundlesModal({
     function onRevokeHandler(clusterInitBundle) {
         return (e: MouseEvent<HTMLButtonElement>) => {
             e.stopPropagation();
-            revokeBundles(clusterInitBundle);
+            const newSelection = [clusterInitBundle.id];
+            updateSelection(newSelection);
+            setShowConfirmationDialog(true);
         };
     }
 
@@ -102,6 +104,7 @@ function ClusterInitBundlesModal({
     }
 
     function hideConfirmationDialog() {
+        setSelection([]);
         setShowConfirmationDialog(false);
     }
 
@@ -294,15 +297,26 @@ function ClusterInitBundlesModal({
                 {renderForm()}
                 {renderDetails()}
             </div>
-            <Dialog
-                isOpen={showConfirmationDialog}
-                text={`Are you sure you want to revoke ${selection.length} cluster init ${pluralize(
-                    'bundle',
-                    selection.length
-                )}?`}
-                onConfirm={revokeBundles}
-                onCancel={hideConfirmationDialog}
-            />
+            {showConfirmationDialog && (
+                <CustomDialogue
+                    className="max-w-3/4 md:max-w-2/3 lg:max-w-1/2"
+                    title={`Confirm revoking ${pluralize('bundle', selection.length)}?`}
+                    onConfirm={revokeBundles}
+                    confirmText="Revoke"
+                    onCancel={hideConfirmationDialog}
+                    confirmStyle="alert"
+                >
+                    <div className="overflow-auto p-4">
+                        <p className="mb-2">{`Are you sure you want to revoke ${
+                            selection.length
+                        } cluster init ${pluralize('bundle', selection.length)}?`}</p>
+                        <p>
+                            <strong>Note:</strong> Revoking a cluster init bundle will cause the
+                            StackRox services installed with it in clusters to lose connectivity.
+                        </p>
+                    </div>
+                </CustomDialogue>
+            )}
         </Modal>
     );
 }
