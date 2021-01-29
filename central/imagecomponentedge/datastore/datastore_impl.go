@@ -3,22 +3,15 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/imagecomponentedge/index"
 	sacFilters "github.com/stackrox/rox/central/imagecomponentedge/sac"
 	"github.com/stackrox/rox/central/imagecomponentedge/search"
 	"github.com/stackrox/rox/central/imagecomponentedge/store"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/filtered"
-)
-
-var (
-	imagesSAC = sac.ForResource(resources.Image)
 )
 
 type datastoreImpl struct {
@@ -89,35 +82,6 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 		return nil, err
 	}
 	return edges, nil
-}
-
-func (ds *datastoreImpl) Upsert(ctx context.Context, edges ...*storage.ImageComponentEdge) error {
-	if len(edges) == 0 {
-		return nil
-	}
-	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return errors.New("permission denied")
-	}
-
-	if err := ds.storage.Upsert(edges...); err != nil {
-		return err
-	}
-	return ds.indexer.AddImageComponentEdges(edges)
-}
-
-func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
-	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return errors.New("permission denied")
-	}
-
-	if err := ds.storage.Delete(ids...); err != nil {
-		return err
-	}
-	return ds.indexer.DeleteImageComponentEdges(ids)
 }
 
 func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]string, error) {

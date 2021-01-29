@@ -23,9 +23,6 @@ type DataStore interface {
 	Get(ctx context.Context, id string) (*storage.ClusterCVEEdge, bool, error)
 	Count(ctx context.Context) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ClusterCVEEdge, error)
-
-	Upsert(ctx context.Context, edges ...*storage.ClusterCVEEdge) error
-	Delete(ctx context.Context, ids ...string) error
 }
 
 // New returns a new instance of a DataStore.

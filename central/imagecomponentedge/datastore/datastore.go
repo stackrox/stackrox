@@ -23,9 +23,6 @@ type DataStore interface {
 	Get(ctx context.Context, id string) (*storage.ImageComponentEdge, bool, error)
 	Count(ctx context.Context) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ImageComponentEdge, error)
-
-	Upsert(ctx context.Context, cve ...*storage.ImageComponentEdge) error
-	Delete(ctx context.Context, ids ...string) error
 }
 
 // New returns a new instance of a DataStore.

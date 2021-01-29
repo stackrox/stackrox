@@ -8,13 +8,10 @@ import (
 	"github.com/stackrox/rox/central/clustercveedge/store"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	pkgBatcher "github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
-
-const batchSize = 100
 
 type storeImpl struct {
 	dacky *dackbox.DackBox
@@ -133,70 +130,4 @@ func (b *storeImpl) GetBatch(ids []string) ([]*storage.ClusterCVEEdge, []int, er
 	}
 
 	return ret, missing, nil
-}
-
-func (b *storeImpl) Upsert(objs ...*storage.ClusterCVEEdge) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "ClusterCVEEdge")
-
-	batcher := pkgBatcher.New(len(objs), batchSize)
-	for {
-		start, end, valid := batcher.Next()
-		if !valid {
-			break
-		}
-
-		if err := b.upsertBatch(objs[start:end]...); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (b *storeImpl) Delete(ids ...string) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.RemoveMany, "ClusterCVEEdge")
-
-	batcher := pkgBatcher.New(len(ids), batchSize)
-	for {
-		start, end, valid := batcher.Next()
-		if !valid {
-			break
-		}
-
-		if err := b.deleteBatch(ids[start:end]...); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (b *storeImpl) upsertBatch(objs ...*storage.ClusterCVEEdge) error {
-	dackTxn, err := b.dacky.NewTransaction()
-	if err != nil {
-		return err
-	}
-	defer dackTxn.Discard()
-
-	for _, obj := range objs {
-		if err := b.upserter.UpsertIn(nil, obj, dackTxn); err != nil {
-			return err
-		}
-	}
-
-	return dackTxn.Commit()
-}
-
-func (b *storeImpl) deleteBatch(ids ...string) error {
-	dackTxn, err := b.dacky.NewTransaction()
-	if err != nil {
-		return err
-	}
-	defer dackTxn.Discard()
-
-	for _, id := range ids {
-		if err := b.deleter.DeleteIn(edgeDackBox.BucketHandler.GetKey(id), dackTxn); err != nil {
-			return err
-		}
-	}
-
-	return dackTxn.Commit()
 }

@@ -13,8 +13,6 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
-const batchSize = 100
-
 type storeImpl struct {
 	dacky *dackbox.DackBox
 
@@ -132,52 +130,4 @@ func (b *storeImpl) GetBatch(ids []string) ([]*storage.ComponentCVEEdge, []int, 
 	}
 
 	return ret, missing, nil
-}
-
-func (b *storeImpl) Upsert(edges ...*storage.ComponentCVEEdge) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "ComponentCVEEdge")
-
-	for batch := 0; batch < len(edges); batch += batchSize {
-		dackTxn, err := b.dacky.NewTransaction()
-		if err != nil {
-			return err
-		}
-		defer dackTxn.Discard()
-
-		for idx := batch; idx < len(edges) && idx < batch+batchSize; idx++ {
-			err := b.upserter.UpsertIn(nil, edges[idx], dackTxn)
-			if err != nil {
-				return err
-			}
-		}
-
-		if err := dackTxn.Commit(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (b *storeImpl) Delete(ids ...string) error {
-	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.RemoveMany, "ComponentCVEEdge")
-
-	for batch := 0; batch < len(ids); batch += batchSize {
-		dackTxn, err := b.dacky.NewTransaction()
-		if err != nil {
-			return err
-		}
-		defer dackTxn.Discard()
-
-		for idx := batch; idx < len(ids) && idx < batch+batchSize; idx++ {
-			err := b.deleter.DeleteIn(edgeDackBox.BucketHandler.GetKey(ids[idx]), dackTxn)
-			if err != nil {
-				return err
-			}
-		}
-
-		if err := dackTxn.Commit(); err != nil {
-			return err
-		}
-	}
-	return nil
 }
