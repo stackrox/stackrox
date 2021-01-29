@@ -16,7 +16,10 @@ function EnforcementDetails({ alert }) {
     const { lifecycleStage, processViolation, enforcement, policy } = alert;
     let enforcementCount = 0;
     if (lifecycleStage === 'RUNTIME') {
-        enforcementCount = enforcement ? getRuntimeEnforcementCount(processViolation) : 0;
+        enforcementCount =
+            enforcement && processViolation?.processes
+                ? getRuntimeEnforcementCount(processViolation)
+                : 0;
     } else if (lifecycleStage === 'DEPLOY') {
         enforcementCount = !!enforcement;
     }
@@ -28,7 +31,7 @@ function EnforcementDetails({ alert }) {
                         lifecycleStage={alert.lifecycleStage}
                         enforcementCount={enforcementCount}
                     />
-                    {enforcement && enforcementCount && (
+                    {enforcement && enforcementCount > 0 && (
                         <Explanation lifecycleStage={lifecycleStage} policyId={policy.id} />
                     )}
                 </div>
@@ -40,7 +43,9 @@ function EnforcementDetails({ alert }) {
 EnforcementDetails.propTypes = {
     alert: PropTypes.shape({
         lifecycleStage: PropTypes.string.isRequired,
-        processViolation: PropTypes.shape({}),
+        processViolation: PropTypes.shape({
+            processes: PropTypes.shape({}),
+        }),
         enforcement: PropTypes.shape({}),
         policy: PropTypes.shape({
             id: PropTypes.string.isRequired,
