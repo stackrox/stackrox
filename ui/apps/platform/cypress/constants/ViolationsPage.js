@@ -21,8 +21,15 @@ export const selectors = {
         getTabByName: (name) => `button[data-testid="tab"]:contains("${name}")`,
         enforcementDetailMessage: '[data-testid="enforcement-detail-message"]',
         enforcementExplanationMessage: '[data-testid="enforcement-explanation-message"]',
+        deploymentContainerConfiguration: scopeSelectors(
+            '[data-testid="deployment-container-configuration"]',
+            {
+                commands: '[data-testid="Commands"]',
+            }
+        ),
         ...scopeSelectors('div[data-testid="panel"]:eq(1)', {
             enforcementTab: 'button[data-testid="tab"]:contains("Enforcement")',
+            deploymentTab: 'button[data-testid="tab"]:contains("Deployment")',
             policyTab: 'button[data-testid="tab"]:contains("Policy")',
             getPropertyValue: (propertyName) =>
                 ` div:not(:has(*)):contains("${propertyName}:"):first + *`,

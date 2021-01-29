@@ -96,10 +96,29 @@ describe('Violations page', () => {
     });
 
     it('should close the side panel on search filter', () => {
-        cy.visit(violationsUrl);
+        mockGetAlert();
+        cy.get(ViolationsPageSelectors.firstTableRow).click();
+        cy.wait('@alertById');
+
+        // The side panel opens to display the first alert.
+        // Use tabs as the criterion, because both the main and side panels have
+        // [data-testid="panel"] nor [data-testid="panel-header"]
+        cy.get(ViolationsPageSelectors.sidePanel.tabs);
+
+        cy.fixture('alerts/alerts.json').then(({ alerts }) => {
+            // Omit the first alert because it does not match the search filter below.
+            cy.route('GET', api.alerts.alerts, { alerts: alerts.slice(1) }).as('alertsSearch');
+            cy.route('GET', api.alerts.alertscount, { count: alerts.length - 1 }).as(
+                'alertsCountSearch'
+            );
+        });
         cy.get(searchSelectors.pageSearch.input).type('Cluster:{enter}', { force: true });
-        cy.get(searchSelectors.pageSearch.input).type('remote{enter}', { force: true });
-        cy.get(ViolationsPageSelectors.panels).eq(1).should('not.be.visible');
+        cy.get(searchSelectors.pageSearch.input).type('zzz_remote{enter}', { force: true });
+        cy.get(searchSelectors.pageSearch.input).type('{esc}'); // close the drop-down menu
+        cy.wait(['@alertsSearch', '@alertsCountSearch']);
+
+        // The side panel closes because the first alert does not match the search filter.
+        cy.get(ViolationsPageSelectors.sidePanel.tabs).should('not.exist');
     });
 
     // TODO(ROX-3106)
@@ -219,8 +238,10 @@ describe('Violations page', () => {
         mockGetAlertWithEmptyContainerConfig();
         cy.get(ViolationsPageSelectors.lastTableRow).click();
         cy.wait('@alertWithEmptyContainerConfig');
-        cy.get(ViolationsPageSelectors.sidePanel.enforcementTab).click();
-        cy.get(ViolationsPageSelectors.securityBestPractices).should('not.have.text', 'Commands');
+        cy.get(ViolationsPageSelectors.sidePanel.deploymentTab).click();
+        cy.get(ViolationsPageSelectors.sidePanel.deploymentContainerConfiguration.commands).should(
+            'not.exist'
+        );
     });
 
     it('should have policy information in the Policy Details tab', () => {
@@ -236,7 +257,7 @@ describe('Violations page', () => {
         mockGetAlert();
         cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
         cy.wait('@alertById');
-        cy.get(ViolationsPageSelectors.panels).should('be.visible');
+        cy.get(ViolationsPageSelectors.sidePanel.tabs).should('be.visible');
 
         mockResolveAlert();
         mockGetAlert();
@@ -246,7 +267,7 @@ describe('Violations page', () => {
             .click({ force: true });
         cy.wait('@resolve');
 
-        cy.get(ViolationsPageSelectors.panels).eq(1).should('not.be.visible');
+        cy.get(ViolationsPageSelectors.sidePanel.tabs).should('not.exist');
     });
 
     it('should request the alerts in descending time order by default', () => {

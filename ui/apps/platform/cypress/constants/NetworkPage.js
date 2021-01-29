@@ -15,7 +15,7 @@ const networkEntityTabbedOverlay = '[data-testid="network-entity-tabbed-overlay"
 export const selectors = {
     cytoscapeContainer: '#cytoscapeContainer',
     network: 'nav.left-navigation li:contains("Network") a',
-    simulatorSuccessMessage: 'div:contains("Policies processed")',
+    simulatorSuccessMessage: 'div[data-testid="message-body"]:contains("Policies processed")',
     panels: networkPanels,
     legend: {
         deployments: '[data-testid="deployment-legend"] div',
@@ -41,6 +41,8 @@ export const selectors = {
         simulatorButtonOn: '[data-testid="simulator-button-on"]',
         simulatorButtonOff: '[data-testid="simulator-button-off"]',
         generateNetworkPolicies: 'button:contains("Generate and simulate network policies")',
+        applyNetworkPolicies: 'button:contains("Apply Network Policies")',
+        apply: 'div[aria-modal="true"] button:contains("Apply")',
         // Select buttons by data-testid attribute and contains text, because "allowed" and "all" are ambiguous:
         activeFilter: 'button[data-testid="network-connections-filter-active"]:contains("active")',
         allowedFilter:

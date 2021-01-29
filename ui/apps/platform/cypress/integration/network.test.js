@@ -1,5 +1,6 @@
 import { url as networkUrl, selectors as networkPageSelectors } from '../constants/NetworkPage';
 import { url as riskURL, selectors as riskPageSelectors } from '../constants/RiskPage';
+import toastSelectors from '../selectors/toast';
 
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
@@ -109,25 +110,29 @@ describe('Network page', () => {
         cy.get(networkPageSelectors.buttons.viewActiveYamlButton).should('be.visible');
         cy.get(networkPageSelectors.panels.creatorPanel).should('be.visible');
         cy.get(networkPageSelectors.buttons.simulatorButtonOn).click();
-        cy.get(networkPageSelectors.panels.creatorPanel).should('not.be.visible');
+        cy.get(networkPageSelectors.panels.creatorPanel).should('not.exist');
     });
 
-    it('should display error messages when uploaded wrong yaml', () => {
+    it('should display expected toast message when uploaded yaml without namespace', () => {
         navigateToNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
         uploadYAMLFile('network/policywithoutnamespace.yaml', 'input[type="file"]');
 
-        cy.get(networkPageSelectors.simulatorSuccessMessage).should('not.be.visible');
+        cy.get(networkPageSelectors.simulatorSuccessMessage);
+        cy.get(networkPageSelectors.buttons.applyNetworkPolicies).click();
+        cy.get(networkPageSelectors.buttons.apply).click();
+        cy.get(`${toastSelectors.body}:contains("network policy has empty namespace")`);
     });
 
-    it('should display success messages when uploaded right yaml', () => {
+    it('should display display policies processed message when uploaded yaml with namespace', () => {
         navigateToNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
         uploadYAMLFile('network/policywithnamespace.yaml', 'input[type="file"]');
 
-        cy.get(networkPageSelectors.simulatorSuccessMessage).should('be.visible');
+        cy.get(networkPageSelectors.simulatorSuccessMessage);
+        // Stop here because after Policies processed, local deployment differs from CI.
     });
 
     it('should show the network policy simulator screen after generating network policies', () => {

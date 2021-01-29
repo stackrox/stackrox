@@ -21,6 +21,7 @@ const sidePanelSelectors = scopeSelectors('[data-testid="panel"]:eq(1)', {
         comments: processCommentsSelectors,
     }),
 
+    tabs: 'button[data-testid="tab"]',
     riskIndicatorsTab: 'button[data-testid="tab"]:contains("Risk Indicators")',
     deploymentDetailsTab: 'button[data-testid="tab"]:contains("Deployment Details")',
     processDiscoveryTab: 'button[data-testid="tab"]:contains("Process Discovery")',

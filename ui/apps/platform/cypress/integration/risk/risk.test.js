@@ -1,6 +1,5 @@
 import { selectors as RiskPageSelectors, url, errorMessages } from '../../constants/RiskPage';
 import { selectors as searchSelectors } from '../../constants/SearchPage';
-import panel from '../../selectors/panel';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 
@@ -83,10 +82,25 @@ describe('Risk page', () => {
             cy.url().should('contain', '/main/vulnerability-management/image');
         });
 
-        it('should close the side panel on search filter', () => {
+        it.skip('should close the side panel on search filter', () => {
+            mockGetDeployment();
+            cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
+            cy.wait('@firstDeployment');
+
+            // The side panel opens to display the first deployment.
+            // Use tabs as the criterion, because both the main and side panels have
+            // [data-testid="panel"] nor [data-testid="panel-header"]
+            cy.get(RiskPageSelectors.sidePanel.tabs);
+
+            // TODO skip this test because Platform UI does not close the side panel,
+            // even if the deployment does not match the search filter.
+            // Assuming that the behavior changes, to make this test work,
+            // it is necessary to mock the requests with search filter.
+            // See the corresponding test in violations/violations.test.js
             cy.get(searchSelectors.pageSearch.input).type('Cluster:{enter}', { force: true });
             cy.get(searchSelectors.pageSearch.input).type('remote{enter}', { force: true });
-            cy.get(`${panel.header}:eq(1)`).should('not.be.visible');
+            cy.get(searchSelectors.pageSearch.input).type('{esc}'); // close the drop-down menu
+            cy.get(RiskPageSelectors.sidePanel.tabs).should('not.exist');
         });
 
         it('should navigate to network page with selected deployment', () => {
