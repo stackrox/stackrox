@@ -61,7 +61,7 @@ service DeploymentService {
         };
     }
 
-    // CountDeployments returns the list of deployments.
+    // CountDeployments returns the number of deployments.
     rpc CountDeployments (RawQuery) returns (CountDeploymentsResponse) {
         option (google.api.http) = {
             get: "/v1/deploymentscount"
