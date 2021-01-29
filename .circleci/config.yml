@@ -1764,54 +1764,15 @@ commands:
       - run:
           name: Deploy Sensor
           command: |
-            if [[ "<< parameters.sensor-deploy-flavor >>" == "kubectl" ]]; then
-              echo "Deploying sensor using kubectl ... "
-              <<# parameters.require-cluster-admin >>
-              kubectl create clusterrolebinding temporary-admin --clusterrole=cluster-admin --user circleci-rox@stackrox-ci.iam.gserviceaccount.com
-              <</ parameters.require-cluster-admin >>
-
-              deploy/<< parameters.orchestrator-flavor >>/sensor.sh
-              <<# parameters.require-cluster-admin >>
-              kubectl delete clusterrolebinding temporary-admin
-              <</ parameters.require-cluster-admin >>
+            if [[ "<< parameters.sensor-deploy-flavor >>" == "helm" ]]; then
+              echo "Deploying Sensor using Helm ..."
+              export SENSOR_HELM_DEPLOY=true
+              export ADMISSION_CONTROLLER=true
             else
-              echo "Deploying sensor using helm ... "
-              rox_auth_token="$(
-              curl -sk -u "${ROX_USERNAME}:${ROX_PASSWORD}" "https://${API_ENDPOINT}/v1/apitokens/generate" \
-                -X POST \
-                -d '{"name": "helm", "role": "Sensor Creator"}' \
-                | jq -r '.token // ""')"
-              export ROX_API_TOKEN=${rox_auth_token}
-              MAIN_TAG=$(make --quiet tag)
-              extra_args=()
-              if [[ << parameters.helm-from-repo >> == "true" ]]; then
-                cd /go/src/github.com/stackrox
-                git clone git@github.com:stackrox/helm-charts.git
-                BASE_DIR="/go/src/github.com/stackrox/helm-charts"
-                RENDERED_CHART_DIR="${BASE_DIR}/${MAIN_TAG}"
-                if [[ -d "$RENDERED_CHART_DIR/sensor" ]]; then
-                  RENDERED_CHART_DIR="$RENDERED_CHART_DIR/sensor"
-                fi
-                cd ${RENDERED_CHART_DIR}
-                sed -i -e 's/  name:/  name: remote/g' values.yaml
-                sed -i -e 's/    createService: false/    createService: true/g' values.yaml
-                cat values.yaml
-                ./scripts/setup.sh -f values.yaml -e ${API_ENDPOINT}
-              else
-                BASE_DIR="/go/src/github.com/stackrox/rox"
-                RENDERED_CHART_DIR="/tmp/${MAIN_TAG}"
-                make render-helm-yamls
-                # Copy values.yaml into generated tmp dir, run setup.sh and helm install
-                cd ${RENDERED_CHART_DIR}
-                cp ${BASE_DIR}/qa-tests-backend/helm/values.<< parameters.orchestrator-flavor >>.yaml values.yaml
-                ./scripts/setup.sh -f values.yaml -e ${API_ENDPOINT}
-                if [[ -f feature-flag-values.yaml ]]; then
-                    extra_args+=(-f feature-flag-values.yaml)
-                fi
-              fi
-              helm install --namespace stackrox -f values.yaml sensor . "${extra_args[@]}"
-              rm -rf "${RENDERED_CHART_DIR}"
+              echo "Deploying sensor using kubectl ... "
             fi
+
+            deploy/<< parameters.orchestrator-flavor >>/sensor.sh
 
       - when:
           condition: << parameters.validate-sensor-bundle >>
@@ -4553,9 +4514,6 @@ jobs:
       - run:
           name: Publish Helm charts to github repository stackrox/release-artifacts and create a PR
           command: |
-            MAIN_TAG=$(make --quiet tag)
-            make render-helm-yamls
-            deprecated_legacy_sensor_chart_dir="/tmp/${MAIN_TAG}"
             central_services_chart_dir="$(mktemp -d)"
             rmdir "$central_services_chart_dir"
             secured_cluster_services_chart_dir="$(mktemp -d)"
@@ -4563,8 +4521,7 @@ jobs:
             roxctl="./bin/$(uname | tr A-Z a-z)/roxctl"
             "$roxctl" helm output central-services --output-dir "${central_services_chart_dir}"
             "$roxctl" helm output secured-cluster-services --output-dir "${secured_cluster_services_chart_dir}"
-            .circleci/publish-helm-charts "$MAIN_TAG" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}" "${deprecated_legacy_sensor_chart_dir}"
-            rm -rf "${deprecated_legacy_sensor_chart_dir}"
+            .circleci/publish-helm-charts "$MAIN_TAG" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}"
 
       - run:
           name: Push image into ECR for AWS Marketplace
@@ -5040,15 +4997,15 @@ workflows:
             tags:
               only: /.*-nightly-.*/
 
-      - provision-test-helm-charts-repo:
-          <<: *runOnlyOnReleaseBuilds
-          context: docker-io-pull
-      - test-helm-charts-repo:
-          <<: *runOnlyOnReleaseBuilds
-          context: docker-io-pull
-          requires:
-            - push-release
-            - provision-test-helm-charts-repo
+#      - provision-test-helm-charts-repo:
+#          <<: *runOnlyOnReleaseBuilds
+#          context: docker-io-pull
+#      - test-helm-charts-repo:
+#          <<: *runOnlyOnReleaseBuilds
+#          context: docker-io-pull
+#          requires:
+#            - push-release
+#            - provision-test-helm-charts-repo
 
   update_dev_license_if_required:
     triggers:
