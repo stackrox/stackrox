@@ -107,9 +107,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 
 	// Inject desired Helm configuration, if any.
 	if features.SensorInstallationExperience.Enabled() {
-		helmManagedCfg := configHandler.GetHelmManagedConfig()
-
-		if helmManagedCfg.GetClusterId() == "" {
+		if helmManagedCfg := configHandler.GetHelmManagedConfig(); helmManagedCfg != nil && helmManagedCfg.GetClusterId() == "" {
 			cachedClusterID, err := helmconfig.LoadCachedClusterID()
 			if err != nil {
 				log.Warnf("Failed to load cached cluster ID: %s", err)
@@ -118,9 +116,9 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 				helmManagedCfg.ClusterId = cachedClusterID
 				log.Infof("Re-using cluster ID %s of previous run. If you see the connection to central failing, re-apply a new Helm configuration via 'helm upgrade', or delete the sensor pod.", cachedClusterID)
 			}
-		}
 
-		sensorHello.HelmManagedConfigInit = helmManagedCfg
+			sensorHello.HelmManagedConfigInit = helmManagedCfg
+		}
 	}
 
 	// Prepare outgoing context
@@ -198,7 +196,7 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 	clusterID := centralHello.GetClusterId()
 	clusterid.Set(clusterID)
 
-	if features.SensorInstallationExperience.Enabled() {
+	if features.SensorInstallationExperience.Enabled() && hello.HelmManagedConfigInit != nil {
 		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {
 			log.Warnf("Could not cache cluster ID: %v", err)
 		}
