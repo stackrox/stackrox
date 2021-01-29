@@ -339,7 +339,8 @@ function launch_sensor {
 
     if [[ -n "$COLLECTOR_IMAGE_REPO" ]]; then
         extra_config+=("--collector-image-repository=${COLLECTOR_IMAGE_REPO}")
-        extra_helm_config=(--set "image.collector.repository=${COLLECTOR_IMAGE_REPO}")
+        extra_json_config+=", \"collectorImage\": ${COLLECTOR_IMAGE_REPO}"
+        extra_helm_config+=(--set "image.collector.repository=${COLLECTOR_IMAGE_REPO}")
     fi
 
     # Disabled this special-case for now.
