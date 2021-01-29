@@ -161,10 +161,6 @@ func (ds *datastoreImpl) buildIndex() error {
 }
 
 func (ds *datastoreImpl) registerClusterForNetworkGraphExtSrcs() error {
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		return nil
-	}
-
 	var clusters []*storage.Cluster
 	if err := ds.clusterStorage.Walk(func(cluster *storage.Cluster) error {
 		clusters = append(clusters, cluster)
@@ -482,11 +478,8 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 		log.Errorf("failed to remove nodes for cluster %s: %v", cluster.GetId(), err)
 	}
 
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		err := ds.netEntityDataStore.DeleteExternalNetworkEntitiesForCluster(ctx, cluster.GetId())
-		if err != nil {
-			log.Errorf("failed to delete external network graph entities for removed cluster %s: %v", cluster.GetId(), err)
-		}
+	if err := ds.netEntityDataStore.DeleteExternalNetworkEntitiesForCluster(ctx, cluster.GetId()); err != nil {
+		log.Errorf("failed to delete external network graph entities for removed cluster %s: %v", cluster.GetId(), err)
 	}
 
 	if features.NetworkDetection.Enabled() {

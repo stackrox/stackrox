@@ -5,7 +5,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
@@ -69,11 +68,6 @@ func (b *graphBuilder) evaluatePeers(currentNS *storage.NamespaceMetadata, peers
 		// there could be many. Instead only all INTERNET node, which abstracts all the external sources.
 		allNodes := make([]*node, 0, len(b.allDeployments)+1)
 		allNodes = append(allNodes, b.allDeployments...)
-
-		if !features.NetworkGraphExternalSrcs.Enabled() {
-			return allNodes, true
-		}
-
 		allNodes = append(allNodes, b.internetSrc)
 		return allNodes, true
 	}
@@ -110,11 +104,6 @@ func (b *graphBuilder) evaluatePeer(currentNS *storage.NamespaceMetadata, peer *
 		//  look at Pod IPs. Which we actually could.
 		allNodes := make([]*node, 0, len(b.allDeployments)+1)
 		allNodes = append(allNodes, b.allDeployments...)
-
-		if !features.NetworkGraphExternalSrcs.Enabled() {
-			return allNodes
-		}
-
 		allNodes = append(allNodes, b.evaluateExternalPeer(peer.GetIpBlock())...)
 		return allNodes
 	}
@@ -436,10 +425,6 @@ func (b *graphBuilder) ToProto(includePorts bool) []*v1.NetworkNode {
 			}
 			srcNode.OutEdges[int32(tgtIdx)] = bundleForPorts(portsForEdge, includePorts)
 		}
-	}
-
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		return allNodes
 	}
 
 	for _, src := range allExternalNodes {

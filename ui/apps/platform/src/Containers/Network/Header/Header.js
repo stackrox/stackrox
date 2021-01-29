@@ -8,8 +8,6 @@ import { actions as searchActions } from 'reducers/network/search';
 
 import PageHeader from 'Components/PageHeader';
 import ReduxSearchInput from 'Containers/Search/ReduxSearchInput';
-import FeatureEnabled from 'Containers/FeatureEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import ClusterSelect from './ClusterSelect';
 import SimulatorButton from './SimulatorButton';
 import TimeWindowSelector from './TimeWindowSelector';
@@ -57,11 +55,7 @@ class Header extends Component {
                     <TimeWindowSelector />
                     <SimulatorButton />
                 </PageHeader>
-                <FeatureEnabled featureFlag={knownBackendFlags.ROX_NETWORK_GRAPH_EXTERNAL_SRCS}>
-                    {({ featureEnabled }) => {
-                        return featureEnabled && <CIDRFormButton />;
-                    }}
-                </FeatureEnabled>
+                <CIDRFormButton />
             </>
         );
     }

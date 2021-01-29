@@ -399,11 +399,6 @@ const NetworkGraph = ({
         );
 
         const namespaceEdgeNodes = getNamespaceEdgeNodes(namespaceList);
-        const showExternal = isBackendFeatureFlagEnabled(
-            featureFlags,
-            knownBackendFlags.ROX_NETWORK_GRAPH_EXTERNAL_SRCS,
-            false
-        );
 
         namespaceList.forEach((namespace) => {
             deploymentList.forEach((deployment) => {
@@ -419,25 +414,21 @@ const NetworkGraph = ({
         let allNodes = [...namespaceList, ...deploymentList, ...namespaceEdgeNodes];
         const allEdges = getEdges(configObj);
 
-        if (showExternal) {
-            const clusterNode = getClusterNode(selectedClusterName);
-            allNodes.push(clusterNode);
+        const clusterNode = getClusterNode(selectedClusterName);
+        allNodes.push(clusterNode);
 
-            const externalEntitiesNode = getExternalEntitiesNode(data, configObj);
-            if (externalEntitiesNode) {
-                const externalEntitiesEdgeNodes = getExternalEntitiesEdgeNodes(
-                    externalEntitiesNode
-                );
+        const externalEntitiesNode = getExternalEntitiesNode(data, configObj);
+        if (externalEntitiesNode) {
+            const externalEntitiesEdgeNodes = getExternalEntitiesEdgeNodes(externalEntitiesNode);
 
-                allNodes = allNodes.concat(externalEntitiesEdgeNodes, externalEntitiesNode);
-            }
+            allNodes = allNodes.concat(externalEntitiesEdgeNodes, externalEntitiesNode);
+        }
 
-            const cidrBlockNodes = getCIDRBlockNodes(data, configObj);
-            if (cidrBlockNodes?.length) {
-                const cidrBlockEdgeNodes = getCIDRBlockEdgeNodes(cidrBlockNodes);
+        const cidrBlockNodes = getCIDRBlockNodes(data, configObj);
+        if (cidrBlockNodes?.length) {
+            const cidrBlockEdgeNodes = getCIDRBlockEdgeNodes(cidrBlockNodes);
 
-                allNodes = allNodes.concat(cidrBlockEdgeNodes, cidrBlockNodes);
-            }
+            allNodes = allNodes.concat(cidrBlockEdgeNodes, cidrBlockNodes);
         }
 
         return {

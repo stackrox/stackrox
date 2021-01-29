@@ -1,7 +1,7 @@
 import entityTypes from 'constants/entityTypes';
 import { nodeTypes } from 'constants/networkGraph';
 import { filterModes } from 'constants/networkFilterModes';
-import { UIfeatureFlags, isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
+import { UIfeatureFlags } from 'utils/featureFlags';
 import {
     getIsNodeHoverable,
     getSourceTargetKey,
@@ -19,7 +19,7 @@ import {
  * @param {!string[]} featureFlags featureFlags
  * @returns {!Object[]}
  */
-export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, featureFlags) => {
+export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState) => {
     const filteredLinks = [];
     // a map of all the edges in the node set to know whether we need to add disallowed edges
     const filteredEdgeHashTable = {};
@@ -37,12 +37,6 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
         UIfeatureFlags.SHOW_DISALLOWED_CONNECTIONS &&
         isActive(edgeKey) &&
         !isAllowed(edgeKey, link);
-
-    const showExternalSources = isBackendFeatureFlagEnabled(
-        featureFlags,
-        knownBackendFlags.ROX_NETWORK_GRAPH_EXTERNAL_SRCS,
-        false
-    );
 
     nodes.forEach((node) => {
         const isHoverable = getIsNodeHoverable(node?.entity?.type);
@@ -122,9 +116,6 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState, fea
             const targetNode =
                 networkNodeMap[targetNodeId].active || networkNodeMap[targetNodeId].allowed;
             const { id: targetEntityId, type: targetNodeType } = targetNode.entity;
-            if (targetNodeType !== entityTypes.DEPLOYMENT && !showExternalSources) {
-                return;
-            }
             const edgeKey = getSourceTargetKey(sourceEntityId, targetEntityId);
             const targetNS = getNodeNamespace(targetNode);
             const targetName = getNodeName(targetNode);

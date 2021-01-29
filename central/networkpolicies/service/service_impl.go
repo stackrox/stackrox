@@ -433,10 +433,6 @@ func (s *serviceImpl) getDeployments(ctx context.Context, clusterID, query strin
 }
 
 func (s *serviceImpl) getNetworkTree(clusterID string) (tree.ReadOnlyNetworkTree, error) {
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		return nil, nil
-	}
-
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraphConfig)))

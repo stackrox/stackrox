@@ -48,11 +48,6 @@
                         "value": "true",
                         "envVarSource": "RAW"
                     },
-                    {
-                        "key": "ROX_NETWORK_GRAPH_EXTERNAL_SRCS",
-                        "value": "true",
-                        "envVarSource": "RAW"
-                    },
                     { "key": "ROX_NETWORK_GRAPH_PORTS", "value": "true", "envVarSource": "RAW" },
                     {
                         "key": "ROX_SENSOR_INSTALLATION_EXPERIENCE",

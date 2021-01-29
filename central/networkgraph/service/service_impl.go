@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -86,10 +85,6 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v1.GetExternalNetworkEntitiesRequest) (*v1.GetExternalNetworkEntitiesResponse, error) {
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "support for external sources in network graph is not enabled")
-	}
-
 	query, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -121,10 +116,6 @@ func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v
 }
 
 func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *v1.CreateNetworkEntityRequest) (*storage.NetworkEntity, error) {
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "support for external sources in network graph is not enabled")
-	}
-
 	// An error here implies one of the arguments is invalid.
 	id, err := externalsrcs.NewClusterScopedID(request.GetClusterId(), request.GetEntity().GetCidr())
 	if err != nil {
@@ -163,10 +154,6 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 }
 
 func (s *serviceImpl) DeleteExternalNetworkEntity(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "support for external sources in network graph is not enabled")
-	}
-
 	if _, err := s.getEntityAndValidateMutable(ctx, request.GetId()); err != nil {
 		return nil, err
 	}
@@ -182,10 +169,6 @@ func (s *serviceImpl) DeleteExternalNetworkEntity(ctx context.Context, request *
 }
 
 func (s *serviceImpl) PatchExternalNetworkEntity(ctx context.Context, request *v1.PatchNetworkEntityRequest) (*storage.NetworkEntity, error) {
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "support for external sources in network graph is not enabled")
-	}
-
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "network entity ID must be specified")
 	}
@@ -230,10 +213,6 @@ func (s *serviceImpl) getEntityAndValidateMutable(ctx context.Context, id string
 
 // GetNetworkGraphConfig updates Central's network graph config
 func (s *serviceImpl) GetNetworkGraphConfig(ctx context.Context, _ *v1.Empty) (*storage.NetworkGraphConfig, error) {
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "support for external sources in network graph is not enabled")
-	}
-
 	cfg, err := s.graphConfig.GetNetworkGraphConfig(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "could not obtain network graph configuration: %v", err)
@@ -243,10 +222,6 @@ func (s *serviceImpl) GetNetworkGraphConfig(ctx context.Context, _ *v1.Empty) (*
 
 // PutNetworkGraphConfig updates Central's network graph config
 func (s *serviceImpl) PutNetworkGraphConfig(ctx context.Context, req *v1.PutNetworkGraphConfigRequest) (*storage.NetworkGraphConfig, error) {
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "support for external sources in network graph is not enabled")
-	}
-
 	if req.GetConfig() == nil {
 		return nil, status.Error(codes.InvalidArgument, "network graph config must be specified")
 	}
@@ -284,9 +259,6 @@ func (s *serviceImpl) validateCluster(clusterID string) error {
 }
 
 func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.NetworkGraphRequest) (*v1.NetworkGraph, error) {
-	if !features.NetworkGraphPorts.Enabled() && request.GetIncludePorts() {
-		return nil, status.Error(codes.Unimplemented, "support for ports in network flow graph is not enabled")
-	}
 	return s.getNetworkGraph(ctx, request, request.GetIncludePorts())
 }
 
@@ -407,18 +379,15 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1
 		return err
 	}
 
-	var networkTree tree.ReadOnlyNetworkTree
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		networkTree = tree.NewMultiTreeWrapper(
-			s.networkTreeMgr.GetReadOnlyNetworkTree(ctx, request.GetClusterId()),
-			s.networkTreeMgr.GetDefaultNetworkTree(ctx),
-		)
+	networkTree := tree.NewMultiTreeWrapper(
+		s.networkTreeMgr.GetReadOnlyNetworkTree(ctx, request.GetClusterId()),
+		s.networkTreeMgr.GetDefaultNetworkTree(ctx),
+	)
 
-		// Aggregate all external conns into supernet conns for which external entities do not exists (as a result of deletion).
-		aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
-		utils.Should(err)
-		flows = aggr.Aggregate(flows)
-	}
+	// Aggregate all external conns into supernet conns for which external entities do not exists (as a result of deletion).
+	aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
+	utils.Should(err)
+	flows = aggr.Aggregate(flows)
 
 	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, deploymentsMap,
 		func(id string) *storage.NetworkEntityInfo {
@@ -429,11 +398,9 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1
 		},
 	)
 
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		// Aggregate all external flows by node names to control the number of external nodes.
-		flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
-		missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
-	}
+	// Aggregate all external flows by node names to control the number of external nodes.
+	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
+	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
 	graphBuilder.AddFlows(flows)
 
 	filteredFlows, maskedDeployments, err := filterFlowsAndMaskScopeAlienDeployments(ctx, request.GetClusterId(), missingInfoFlows, deploymentsMap, s.deployments, canSeeAllDeploymentsInCluster)

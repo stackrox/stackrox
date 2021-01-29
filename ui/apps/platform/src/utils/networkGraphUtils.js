@@ -1,6 +1,5 @@
 import uniq from 'lodash/uniq';
 
-import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 import entityTypes from 'constants/entityTypes';
 import { networkTraffic, networkConnections, nodeTypes } from 'constants/networkGraph';
 import { filterModes } from 'constants/networkFilterModes';
@@ -234,14 +233,12 @@ export const createPortsAndProtocolsSelector = (
 export const getNamespaceEdges = ({
     nodes = [],
     unfilteredLinks = [],
-    links = [],
     filterState,
     nodeSideMap,
     selectedNode,
     hoveredNode,
     hoveredEdge,
     networkNodeMap,
-    featureFlags,
 }) => {
     const visitedNodeLinks = {};
     const disallowedNamespaceLinks = {};
@@ -255,15 +252,7 @@ export const getNamespaceEdges = ({
         filterState
     );
 
-    const showExternalSources = isBackendFeatureFlagEnabled(
-        featureFlags,
-        knownBackendFlags.ROX_NETWORK_GRAPH_EXTERNAL_SRCS,
-        false
-    );
-
-    const linkArray = showExternalSources ? unfilteredLinks : links;
-
-    const filteredLinks = linkArray.filter(
+    const filteredLinks = unfilteredLinks.filter(
         ({ source, target, isActive, sourceNS, targetNS }) =>
             source &&
             target &&
@@ -480,14 +469,12 @@ const getIsInnerNamespaceEdge = (hoveredEdge, sourceNS, targetNS) => {
 export const getEdgesFromNode = ({
     filterState,
     unfilteredLinks,
-    links,
     nodes,
     nodeSideMap,
     hoveredNode,
     selectedNode,
     hoveredEdge,
     networkNodeMap,
-    featureFlags,
 }) => {
     // to prevent rerendering of duplicate edges
     const nodeLinks = {};
@@ -506,15 +493,7 @@ export const getEdgesFromNode = ({
         filterState
     );
 
-    const showExternalSources = isBackendFeatureFlagEnabled(
-        featureFlags,
-        knownBackendFlags.ROX_NETWORK_GRAPH_EXTERNAL_SRCS,
-        false
-    );
-
-    const linkArray = showExternalSources ? unfilteredLinks : links;
-
-    linkArray.forEach((link) => {
+    unfilteredLinks.forEach((link) => {
         const {
             source,
             sourceNS,
@@ -900,20 +879,12 @@ export const getDirectionalityEdges = (node, filterState) => {
  * @returns {!Object[]}
  */
 export const getDeploymentList = (filteredData, configObj = {}) => {
-    const { hoveredNode, selectedNode, filterState, networkNodeMap, featureFlags } = configObj;
+    const { hoveredNode, selectedNode, filterState, networkNodeMap } = configObj;
     const deploymentList = filteredData.map((datum) => {
         const { entity, ...datumProps } = datum;
         const { deployment, ...entityProps } = entity;
         const { namespace, ...deploymentProps } = deployment;
-
         const entityData = networkNodeMap[entity.id];
-
-        const showExternalSources = isBackendFeatureFlagEnabled(
-            featureFlags,
-            knownBackendFlags.ROX_NETWORK_GRAPH_EXTERNAL_SRCS,
-            false
-        );
-
         // need to change edges to include external sources
         const edges = getEdgesFromNode(configObj);
 
@@ -934,8 +905,7 @@ export const getDeploymentList = (filteredData, configObj = {}) => {
         const isNonIsolated = getIsNonIsolatedNode(datum);
         const isDisallowed =
             filterState !== filterModes.allowed && edges.some((edge) => edge.data.isDisallowed);
-        const isExternallyConnected =
-            showExternalSources && externallyConnected && filterState !== filterModes.allowed;
+        const isExternallyConnected = externallyConnected && filterState !== filterModes.allowed;
         const classes = getClasses({
             active: datum.isActive,
             selected: isSelected,

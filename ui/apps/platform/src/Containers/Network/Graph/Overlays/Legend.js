@@ -3,8 +3,7 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 
 import LegendTile from 'Components/LegendTile';
-import FeatureEnabled from 'Containers/FeatureEnabled';
-import { UIfeatureFlags, knownBackendFlags } from 'utils/featureFlags';
+import { UIfeatureFlags } from 'utils/featureFlags';
 
 const LegendContent = ({ isOpen, toggleLegend }) => {
     if (!isOpen) {
@@ -21,19 +20,11 @@ const LegendContent = ({ isOpen, toggleLegend }) => {
             <div className="bg-primary-100">
                 <div className="flex border-b border-base-400" data-testid="deployment-legend">
                     <LegendTile name="deployment" tooltip="Deployment" type="font" />
-                    <FeatureEnabled featureFlag={knownBackendFlags.ROX_NETWORK_GRAPH_EXTERNAL_SRCS}>
-                        {({ featureEnabled }) => {
-                            return (
-                                featureEnabled && (
-                                    <LegendTile
-                                        name="deployment-external-connections"
-                                        tooltip="Deployment with active external connections"
-                                        type="svg"
-                                    />
-                                )
-                            );
-                        }}
-                    </FeatureEnabled>
+                    <LegendTile
+                        name="deployment-external-connections"
+                        tooltip="Deployment with active external connections"
+                        type="svg"
+                    />
                     <LegendTile
                         name="deployment-allowed-connections"
                         tooltip="Deployment with allowed external connections"

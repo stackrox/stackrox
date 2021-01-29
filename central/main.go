@@ -318,10 +318,7 @@ func (defaultFactory) StartServices() {
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()
-
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		gatherer.Singleton().Start()
-	}
+	gatherer.Singleton().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -746,10 +743,7 @@ func waitForTerminationSignal() {
 		{reprocessor.Singleton(), "reprocessor loop"},
 		{suppress.Singleton(), "cve unsuppress loop"},
 		{pruning.Singleton(), "gargage collector"},
-	}
-
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		stoppables = append(stoppables, stoppableWithName{gatherer.Singleton(), "network graph default external sources gatherer"})
+		{gatherer.Singleton(), "network graph default external sources gatherer"},
 	}
 
 	var wg sync.WaitGroup

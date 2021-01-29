@@ -107,10 +107,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		processSignals,
 		telemetry.NewCommandHandler(client.Kubernetes()),
 		upgradeCmdHandler,
-	}
-
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		components = append(components, externalsrcs.Singleton())
+		externalsrcs.Singleton(),
 	}
 
 	if features.K8sEventDetection.Enabled() {

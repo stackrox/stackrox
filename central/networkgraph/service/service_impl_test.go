@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/test"
@@ -256,73 +255,48 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 
 	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(ts)).DoAndReturn(
 		func(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, _ *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
-			var flows []*storage.NetworkFlow
-			if features.NetworkGraphExternalSrcs.Enabled() {
-				flows = []*storage.NetworkFlow{depFlow("depA", "depB"),
-					depFlow("depA", "depD"),
-					depFlow("depA", "depE"),
-					depFlow("depA", "depX"),
-					depFlow("depA", "depY"),
-					depFlow("depA", "depZ"),
-					anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es1bID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es1cID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es2ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es5ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					depFlow("depB", "depA"),
-					depFlow("depB", "depX"),
-					depFlow("depB", "depW"),
-					depFlow("depC", "depA"),
-					depFlow("depC", "depW"),
-					anyFlow("depC", storage.NetworkEntityInfo_DEPLOYMENT, es4ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					depFlow("depD", "depA"),
-					depFlow("depD", "depE"),
-					depFlow("depD", "depZ"),
-					anyFlow("depD", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					depFlow("depE", "depD"),
-					depFlow("depE", "depX"),
-					depFlow("depE", "depB"),
-					depFlow("depF", "depB"),
-					anyFlow("depF", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					anyFlow("depF", storage.NetworkEntityInfo_DEPLOYMENT, es5ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					anyFlow("depQ", storage.NetworkEntityInfo_DEPLOYMENT, es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					anyFlow("depQ", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					anyFlow("depX", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					anyFlow("depX", storage.NetworkEntityInfo_DEPLOYMENT, networkgraph.InternetExternalSourceID, storage.NetworkEntityInfo_INTERNET),
-					anyFlow(es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depA", storage.NetworkEntityInfo_DEPLOYMENT),
-					anyFlow(es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
-					anyFlow(es2.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
-					anyFlow(es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
-					anyFlow(es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, es2ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-				}
-			} else {
-				flows = []*storage.NetworkFlow{depFlow("depA", "depB"),
-					depFlow("depA", "depD"),
-					depFlow("depA", "depE"),
-					depFlow("depA", "depX"),
-					depFlow("depA", "depY"),
-					depFlow("depA", "depZ"),
-					depFlow("depB", "depA"),
-					depFlow("depB", "depX"),
-					depFlow("depB", "depW"),
-					depFlow("depC", "depA"),
-					depFlow("depC", "depW"),
-					depFlow("depD", "depA"),
-					depFlow("depD", "depE"),
-					depFlow("depD", "depZ"),
-					depFlow("depE", "depD"),
-					depFlow("depE", "depX"),
-					depFlow("depE", "depB"),
-					depFlow("depF", "depB"),
-				}
+			flows := []*storage.NetworkFlow{depFlow("depA", "depB"),
+				depFlow("depA", "depD"),
+				depFlow("depA", "depE"),
+				depFlow("depA", "depX"),
+				depFlow("depA", "depY"),
+				depFlow("depA", "depZ"),
+				anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es1bID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es1cID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es2ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es5ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				depFlow("depB", "depA"),
+				depFlow("depB", "depX"),
+				depFlow("depB", "depW"),
+				depFlow("depC", "depA"),
+				depFlow("depC", "depW"),
+				anyFlow("depC", storage.NetworkEntityInfo_DEPLOYMENT, es4ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				depFlow("depD", "depA"),
+				depFlow("depD", "depE"),
+				depFlow("depD", "depZ"),
+				anyFlow("depD", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				depFlow("depE", "depD"),
+				depFlow("depE", "depX"),
+				depFlow("depE", "depB"),
+				depFlow("depF", "depB"),
+				anyFlow("depF", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				anyFlow("depF", storage.NetworkEntityInfo_DEPLOYMENT, es5ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				anyFlow("depQ", storage.NetworkEntityInfo_DEPLOYMENT, es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				anyFlow("depQ", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				anyFlow("depX", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				anyFlow("depX", storage.NetworkEntityInfo_DEPLOYMENT, networkgraph.InternetExternalSourceID, storage.NetworkEntityInfo_INTERNET),
+				anyFlow(es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depA", storage.NetworkEntityInfo_DEPLOYMENT),
+				anyFlow(es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
+				anyFlow(es2.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
+				anyFlow(es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
+				anyFlow(es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, es2ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
 			}
 			return networkgraph.FilterFlowsByPredicate(flows, pred), *types.TimestampNow(), nil
 		})
 
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(networkTree)
-		s.networkTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(networkTree)
-	}
+	s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(networkTree)
+	s.networkTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(networkTree)
 
 	s.deployments.EXPECT().Search(gomock.Not(ctxHasAllDeploymentsAccessMatcher), gomock.Any()).Return(
 		[]search.Result{
@@ -373,42 +347,24 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 		}
 	}
 
-	var expected []string
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		expected = []string{
-			"foo/depA <- foo/depB",
-			"foo/depA <- bar/depD",
-			"foo/depA <- bar/depE",
-			"foo/depA <- masked namespace #1/masked deployment #1",
-			"foo/depA <- masked namespace #1/masked deployment #2",
-			"foo/depA <- mycluster__net1",
-			"foo/depA <- " + es2ID.String(),
-			"foo/depA <- " + es3ID.String(), // non-existent es5 mapped to supernet es3
-			"foo/depB <- foo/depA",
-			"foo/depB <- masked namespace #1/masked deployment #1",
-			"foo/depB <- masked namespace #2/masked deployment #3",
-			"foo/depC <- foo/depA",
-			"foo/depC <- masked namespace #2/masked deployment #3",
-			"foo/depC <- " + networkgraph.InternetExternalSourceID,
-			"bar/depD <- foo/depA",
-			"bar/depE <- foo/depB",
-			"mycluster__net1 <- foo/depA",
-		}
-	} else {
-		expected = []string{
-			"foo/depA <- foo/depB",
-			"foo/depA <- bar/depD",
-			"foo/depA <- bar/depE",
-			"foo/depA <- masked namespace #1/masked deployment #1",
-			"foo/depA <- masked namespace #1/masked deployment #2",
-			"foo/depB <- foo/depA",
-			"foo/depB <- masked namespace #1/masked deployment #1",
-			"foo/depB <- masked namespace #2/masked deployment #3",
-			"foo/depC <- foo/depA",
-			"foo/depC <- masked namespace #2/masked deployment #3",
-			"bar/depD <- foo/depA",
-			"bar/depE <- foo/depB",
-		}
+	expected := []string{
+		"foo/depA <- foo/depB",
+		"foo/depA <- bar/depD",
+		"foo/depA <- bar/depE",
+		"foo/depA <- masked namespace #1/masked deployment #1",
+		"foo/depA <- masked namespace #1/masked deployment #2",
+		"foo/depA <- mycluster__net1",
+		"foo/depA <- " + es2ID.String(),
+		"foo/depA <- " + es3ID.String(), // non-existent es5 mapped to supernet es3
+		"foo/depB <- foo/depA",
+		"foo/depB <- masked namespace #1/masked deployment #1",
+		"foo/depB <- masked namespace #2/masked deployment #3",
+		"foo/depC <- foo/depA",
+		"foo/depC <- masked namespace #2/masked deployment #3",
+		"foo/depC <- " + networkgraph.InternetExternalSourceID,
+		"bar/depD <- foo/depA",
+		"bar/depE <- foo/depB",
+		"mycluster__net1 <- foo/depA",
 	}
 	sort.Strings(expected)
 	sort.Strings(flowStrings)
@@ -503,76 +459,47 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 
 	mockFlowStore.EXPECT().GetMatchingFlows(ctxHasClusterWideNetworkFlowAccessMatcher, gomock.Any(), gomock.Eq(ts)).DoAndReturn(
 		func(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, _ *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
-			var flows []*storage.NetworkFlow
-			if features.NetworkGraphExternalSrcs.Enabled() {
-				flows = []*storage.NetworkFlow{
-					depFlow("depA", "depB"),
-					depFlow("depA", "depD"),
-					depFlow("depA", "depE"),
-					depFlow("depA", "depX"),
-					depFlow("depA", "depY"),
-					depFlow("depA", "depZ"),
-					listenFlow("depA", 8443),
-					anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es1ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es2ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					depFlow("depB", "depA"),
-					depFlow("depB", "depX"),
-					depFlow("depB", "depW"),
-					depFlow("depC", "depA"),
-					depFlow("depC", "depW"),
-					anyFlow("depC", storage.NetworkEntityInfo_DEPLOYMENT, es4ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					depFlow("depD", "depA"),
-					depFlow("depD", "depE"),
-					depFlow("depD", "depZ"),
-					listenFlow("depD", 53),
-					listenFlow("depD", 8080),
-					anyFlow("depD", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					depFlow("depE", "depD"),
-					depFlow("depE", "depX"),
-					depFlow("depE", "depB"),
-					depFlow("depF", "depB"),
-					anyFlow("depF", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					anyFlow("depQ", storage.NetworkEntityInfo_DEPLOYMENT, es1ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					anyFlow("depQ", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					anyFlow("depX", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-					anyFlow(es1ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depA", storage.NetworkEntityInfo_DEPLOYMENT),
-					anyFlow(es1ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
-					anyFlow(es2ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
-					anyFlow(es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
-					anyFlow(es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, es1ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
-				}
-			} else {
-				flows = []*storage.NetworkFlow{
-					depFlow("depA", "depB"),
-					depFlow("depA", "depD"),
-					depFlow("depA", "depE"),
-					depFlow("depA", "depX"),
-					depFlow("depA", "depY"),
-					depFlow("depA", "depZ"),
-					listenFlow("depA", 8443),
-					depFlow("depB", "depA"),
-					depFlow("depB", "depX"),
-					depFlow("depB", "depW"),
-					depFlow("depC", "depA"),
-					depFlow("depC", "depW"),
-					depFlow("depD", "depA"),
-					depFlow("depD", "depE"),
-					depFlow("depD", "depZ"),
-					listenFlow("depD", 53),
-					listenFlow("depD", 8080),
-					depFlow("depE", "depD"),
-					depFlow("depE", "depX"),
-					depFlow("depE", "depB"),
-					depFlow("depF", "depB"),
-				}
+			flows := []*storage.NetworkFlow{
+				depFlow("depA", "depB"),
+				depFlow("depA", "depD"),
+				depFlow("depA", "depE"),
+				depFlow("depA", "depX"),
+				depFlow("depA", "depY"),
+				depFlow("depA", "depZ"),
+				listenFlow("depA", 8443),
+				anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es1ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es2ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				depFlow("depB", "depA"),
+				depFlow("depB", "depX"),
+				depFlow("depB", "depW"),
+				depFlow("depC", "depA"),
+				depFlow("depC", "depW"),
+				anyFlow("depC", storage.NetworkEntityInfo_DEPLOYMENT, es4ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				depFlow("depD", "depA"),
+				depFlow("depD", "depE"),
+				depFlow("depD", "depZ"),
+				listenFlow("depD", 53),
+				listenFlow("depD", 8080),
+				anyFlow("depD", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				depFlow("depE", "depD"),
+				depFlow("depE", "depX"),
+				depFlow("depE", "depB"),
+				depFlow("depF", "depB"),
+				anyFlow("depF", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				anyFlow("depQ", storage.NetworkEntityInfo_DEPLOYMENT, es1ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				anyFlow("depQ", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				anyFlow("depX", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				anyFlow(es1ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depA", storage.NetworkEntityInfo_DEPLOYMENT),
+				anyFlow(es1ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
+				anyFlow(es2ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
+				anyFlow(es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
+				anyFlow(es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, es1ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
 			}
 			return networkgraph.FilterFlowsByPredicate(flows, pred), *types.TimestampNow(), nil
 		})
 
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(networkTree)
-		s.networkTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(networkTree)
-	}
+	s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(networkTree)
+	s.networkTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(networkTree)
 
 	s.flows.EXPECT().GetFlowStore(ctxHasClusterWideNetworkFlowAccessMatcher, "mycluster").Return(mockFlowStore, nil)
 
@@ -614,39 +541,24 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 		s.ElementsMatch(srcDeploy.GetListenPorts(), expectedListenPorts[node.GetEntity().GetId()])
 	}
 
-	var expected []string
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		expected = []string{
-			"foo/depA <- foo/depB",
-			"foo/depA <- bar/depD",
-			"foo/depA <- bar/depE",
-			"foo/depA <- " + es1ID.String(),
-			"foo/depA <- " + es2ID.String(),
-			"foo/depB <- foo/depA",
-			"foo/depC <- foo/depA",
-			"foo/depC <- " + networkgraph.InternetExternalSourceID,
-			"bar/depD <- foo/depA",
-			"bar/depD <- bar/depE",
-			"bar/depD <- " + es3ID.String(),
-			"bar/depE <- foo/depB",
-			"bar/depE <- bar/depD",
-			es1ID.String() + " <- foo/depA",
-			es1ID.String() + " <- bar/depD",
-			es2ID.String() + " <- bar/depD",
-			es3ID.String() + " <- bar/depD",
-		}
-	} else {
-		expected = []string{
-			"foo/depA <- foo/depB",
-			"foo/depA <- bar/depD",
-			"foo/depA <- bar/depE",
-			"foo/depB <- foo/depA",
-			"foo/depC <- foo/depA",
-			"bar/depD <- foo/depA",
-			"bar/depD <- bar/depE",
-			"bar/depE <- foo/depB",
-			"bar/depE <- bar/depD",
-		}
+	expected := []string{
+		"foo/depA <- foo/depB",
+		"foo/depA <- bar/depD",
+		"foo/depA <- bar/depE",
+		"foo/depA <- " + es1ID.String(),
+		"foo/depA <- " + es2ID.String(),
+		"foo/depB <- foo/depA",
+		"foo/depC <- foo/depA",
+		"foo/depC <- " + networkgraph.InternetExternalSourceID,
+		"bar/depD <- foo/depA",
+		"bar/depD <- bar/depE",
+		"bar/depD <- " + es3ID.String(),
+		"bar/depE <- foo/depB",
+		"bar/depE <- bar/depD",
+		es1ID.String() + " <- foo/depA",
+		es1ID.String() + " <- bar/depD",
+		es2ID.String() + " <- bar/depD",
+		es3ID.String() + " <- bar/depD",
 	}
 	sort.Strings(expected)
 	sort.Strings(flowStrings)
@@ -654,10 +566,6 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 }
 
 func (s *NetworkGraphServiceTestSuite) TestCreateExternalNetworkEntity() {
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		s.T().Skip()
-	}
-
 	ctx := sac.WithAllAccess(context.Background())
 
 	// Validation failure-no cluster ID provided
@@ -696,10 +604,6 @@ func (s *NetworkGraphServiceTestSuite) TestCreateExternalNetworkEntity() {
 }
 
 func (s *NetworkGraphServiceTestSuite) TestDeleteExternalNetworkEntity() {
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		s.T().Skip()
-	}
-
 	ctx := sac.WithAllAccess(context.Background())
 
 	id, _ := sac.NewClusterScopeResourceID("c1", "id")
@@ -727,10 +631,6 @@ func (s *NetworkGraphServiceTestSuite) TestDeleteExternalNetworkEntity() {
 }
 
 func (s *NetworkGraphServiceTestSuite) TestPatchExternalNetworkEntity() {
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		s.T().Skip()
-	}
-
 	ctx := sac.WithAllAccess(context.Background())
 
 	// Store an entity first.
@@ -775,10 +675,6 @@ func (s *NetworkGraphServiceTestSuite) TestPatchExternalNetworkEntity() {
 }
 
 func (s *NetworkGraphServiceTestSuite) TestNetworkGraphConfiguration() {
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		s.T().Skip()
-	}
-
 	ctx := sac.WithAllAccess(context.Background())
 
 	s.graphConfig.EXPECT().GetNetworkGraphConfig(ctx).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: false}, nil)

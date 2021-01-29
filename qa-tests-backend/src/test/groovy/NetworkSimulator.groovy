@@ -6,7 +6,6 @@ import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.SlackNotifier
 import org.junit.experimental.categories.Category
-import services.FeatureFlagService
 import services.NetworkGraphService
 import services.NetworkPolicyService
 import spock.lang.Unroll
@@ -215,11 +214,11 @@ class NetworkSimulator extends BaseSpecification {
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, clientAppId).size() == 0
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, webAppId, null).size() == 0
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, clientAppId, null).size() == 1
-        if (FeatureFlagService.isFeatureFlagEnabled("ROX_NETWORK_GRAPH_EXTERNAL_SRCS")) {
-            // No connections from INTERNET to "qa" namespace; simulated graph is scoped to "qa" namespace.
-            assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, Constants.INTERNET_EXTERNAL_SOURCE_ID, null)
-                    .size() == 0
-        }
+        // No connections from INTERNET to "qa" namespace; simulated graph is scoped to "qa" namespace.
+        assert NetworkGraphUtil.findEdges(
+                simulation.simulatedGraph,
+                Constants.INTERNET_EXTERNAL_SOURCE_ID,
+                null).size() == 0
 
         assert simulation.simulatedGraph.nodesList.size() == 2
 
@@ -280,18 +279,14 @@ class NetworkSimulator extends BaseSpecification {
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, webAppId).size() == 1
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, webAppId, null).size() == 0
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, centralAppId, null).size() == 1
-
-        if (FeatureFlagService.isFeatureFlagEnabled("ROX_NETWORK_GRAPH_EXTERNAL_SRCS")) {
-            // from INTERNET
-            assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, centralAppId).size() == 1
-            // to Central
-            assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, Constants.INTERNET_EXTERNAL_SOURCE_ID, null)
-                    .size() == 1
-            assert simulation.simulatedGraph.nodesList.size() == 3
-        } else {
-            assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, centralAppId).size() == 0
-            assert simulation.simulatedGraph.nodesList.size() == 2
-        }
+        // from INTERNET
+        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, centralAppId).size() == 1
+        // to Central
+        assert NetworkGraphUtil.findEdges(
+                simulation.simulatedGraph,
+                Constants.INTERNET_EXTERNAL_SOURCE_ID,
+                null).size() == 1
+        assert simulation.simulatedGraph.nodesList.size() == 3
 
         assert simulation.policiesList.find { it.policy.name == "deny-all-traffic" }?.status ==
                 NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.UNCHANGED

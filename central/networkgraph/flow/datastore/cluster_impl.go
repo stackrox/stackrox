@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -64,10 +63,6 @@ func (cds *clusterDataStoreImpl) CreateFlowStore(ctx context.Context, clusterID 
 }
 
 func (cds *clusterDataStoreImpl) getAggregator(ctx context.Context, clusterID string) (aggregator.NetworkConnsAggregator, error) {
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		return nil, nil
-	}
-
 	networkTree := cds.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterID)
 	if networkTree == nil {
 		networkTree = cds.networkTreeMgr.CreateNetworkTree(ctx, clusterID)

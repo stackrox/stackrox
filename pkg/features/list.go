@@ -22,9 +22,6 @@ var (
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
 	NetworkFlowsSearchFilterUI = registerFeature("Enable client-side network flows search", "ROX_NETWORK_FLOWS_SEARCH_FILTER_UI", true)
 
-	// NetworkGraphExternalSrcs enables external sources feature in network graph.
-	NetworkGraphExternalSrcs = registerFeature("Enable external sources feature in network graph ", "ROX_NETWORK_GRAPH_EXTERNAL_SRCS", true)
-
 	// ComplianceInRocksDB switches compliance over to using RocksDB instead of Bolt
 	ComplianceInRocksDB = registerFeature("Switch compliance to using RocksDB", "ROX_COMPLIANCE_IN_ROCKSDB", true)
 

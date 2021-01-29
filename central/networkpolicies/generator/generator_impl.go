@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
@@ -152,19 +151,15 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 		return nil, errors.Wrapf(err, "could not obtain network flow information for cluster %q", clusterID)
 	}
 
-	var networkTree tree.ReadOnlyNetworkTree
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		networkTree := tree.NewMultiTreeWrapper(
-			g.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterID),
-			g.networkTreeMgr.GetDefaultNetworkTree(ctx),
-		)
+	networkTree := tree.NewMultiTreeWrapper(
+		g.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterID),
+		g.networkTreeMgr.GetDefaultNetworkTree(ctx),
+	)
 
-		// Aggregate all external conns into supernet conns for which external entities do not exists (as a result of deletion).
-		aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
-		utils.Should(err)
-		flows = aggr.Aggregate(flows)
-	}
-
+	// Aggregate all external conns into supernet conns for which external entities do not exists (as a result of deletion).
+	aggr, err := aggregator.NewSubnetToSupernetConnAggregator(networkTree)
+	utils.Should(err)
+	flows = aggr.Aggregate(flows)
 	flows, missingInfoFlows := networkgraph.UpdateFlowsWithEntityDesc(flows, objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments),
 		func(id string) *storage.NetworkEntityInfo {
 			if networkTree == nil {
@@ -174,12 +169,9 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 		},
 	)
 
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		// Aggregate all external flows by node names to control the number of external nodes.
-		flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
-		missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
-	}
-
+	// Aggregate all external flows by node names to control the number of external nodes.
+	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
+	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
 	return g.buildGraph(ctx, clusterID, relevantDeployments, flows, missingInfoFlows, includePorts)
 }
 

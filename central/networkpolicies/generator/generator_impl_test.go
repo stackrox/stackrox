@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sac"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
@@ -381,11 +380,8 @@ func (s *generatorTestSuite) TestGenerate() {
 			},
 		}, *types.TimestampNow(), nil)
 
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
-		s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)
-	}
-
+	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
+	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)
 	s.mockGlobalFlowDataStore.EXPECT().GetFlowStore(gomock.Any(), gomock.Eq("mycluster")).Return(mockFlowStore, nil)
 
 	generatedPolicies, toDelete, err := s.generator.Generate(s.hasReadCtx, req)
@@ -657,11 +653,8 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 			depFlow("depF", "depG"),
 		}, *types.TimestampNow(), nil)
 
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
-		s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)
-	}
-
+	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
+	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)
 	s.mockGlobalFlowDataStore.EXPECT().GetFlowStore(gomock.Any(), gomock.Eq("mycluster")).Return(mockFlowStore, nil)
 
 	// Expect a query for looking up deployments that were not selected as part of the initial query

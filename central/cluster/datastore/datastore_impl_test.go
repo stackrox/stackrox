@@ -94,11 +94,8 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.networkBaselineMgr = networkBaselineMocks.NewMockManager(suite.mockCtrl)
 
 	suite.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)
-		suite.netEntityDataStore.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
-	}
-
+	suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)
+	suite.netEntityDataStore.EXPECT().RegisterCluster(gomock.Any(), gomock.Any()).AnyTimes()
 	suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)
 	suite.healthStatuses.EXPECT().WalkAllWithID(gomock.Any()).Return(nil)
 	suite.indexer.EXPECT().AddClusters(nil).Return(nil)
@@ -166,9 +163,7 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	suite.deploymentDataStore.EXPECT().RemoveDeployment(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	suite.nodeDataStore.EXPECT().RemoveClusterNodeStores(gomock.Any(), gomock.Any()).Return(nil)
 	suite.secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(testSecrets, nil)
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil)
-	}
+	suite.netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), fakeClusterID).Return(nil)
 	if features.NetworkDetection.Enabled() {
 		suite.networkBaselineMgr.EXPECT().ProcessPostClusterDelete(gomock.Any()).Return(nil)
 	}
@@ -308,9 +303,7 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsRemove() {
 	suite.namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.deploymentDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.nodeDataStore.EXPECT().RemoveClusterNodeStores(gomock.Any(), gomock.Any()).Return(nil)
-	if features.NetworkGraphExternalSrcs.Enabled() {
-		suite.netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), gomock.Any()).Return(nil)
-	}
+	suite.netEntityDataStore.EXPECT().DeleteExternalNetworkEntitiesForCluster(gomock.Any(), gomock.Any()).Return(nil)
 	if features.NetworkDetection.Enabled() {
 		suite.networkBaselineMgr.EXPECT().ProcessPostClusterDelete(gomock.Any()).Return(nil)
 	}

@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -56,10 +55,6 @@ func (fds *flowDataStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*s
 }
 
 func (fds *flowDataStoreImpl) adjustFlowsForGraphConfig(ctx context.Context, flows []*storage.NetworkFlow) ([]*storage.NetworkFlow, error) {
-	if !features.NetworkGraphExternalSrcs.Enabled() {
-		return flows, nil
-	}
-
 	graphConfigReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraphConfig)))
