@@ -26,14 +26,15 @@
     $.Values, we apply some bootstrap defaults.
    */}}
 {{ $rox := deepCopy $.Values }}
-{{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
-{{ $_ := include "srox.mergeInto" (list $rox $configShape ($.Files.Get "internal/bootstrap-defaults.yaml" | fromYaml)) }}
-{{ $_ = set $ "_rox" $rox }}
+{{ $_ := set $ "_rox" $rox }}
 
 {{/* Global state (accessed from sub-templates) */}}
 {{ $generatedName := printf "stackrox-generated-%s" (randAlphaNum 6 | lower) }}
 {{ $state := dict "customCertGen" false "generated" dict "generatedName" $generatedName "notes" list "warnings" list "referencedImages" dict }}
 {{ $_ = set $._rox "_state" $state }}
+
+{{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
+{{ $_ = include "srox.mergeInto" (list $rox $configShape (tpl ($.Files.Get "internal/bootstrap-defaults.yaml.tpl") . | fromYaml)) }}
 
 {{/*
     General validation.

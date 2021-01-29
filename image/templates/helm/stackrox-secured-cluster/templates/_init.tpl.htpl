@@ -34,7 +34,7 @@
     $.Values, we apply some bootstrap defaults.
    */}}
 {{ $rox := deepCopy $values }}
-{{ $_ := include "srox.mergeInto" (list $rox ($.Files.Get "internal/config-shape.yaml" | fromYaml) ($.Files.Get "internal/bootstrap-defaults.yaml" | fromYaml)) }}
+{{ $_ := include "srox.mergeInto" (list $rox ($.Files.Get "internal/config-shape.yaml" | fromYaml)) }}
 {{ $_ = set $ "_rox" $rox }}
 
 {{/* Set the config fingerprint */}}
@@ -45,14 +45,36 @@
 {{ $_ = set $._rox "_state" $state }}
 
 {{/*
-    General validation (before merging in defaults).
+    API Server setup. The problem with `.Capabilities.APIVersions` is that Helm does not
+    allow setting overrides for those when using `helm template` or `--dry-run`. Thus,
+    if we rely on `.Capabilities.APIVersions` directly, we lose flexibility for our chart
+    in these settings. Therefore, we use custom fields such that a user in principle has
+    the option to inject via `--set`/`-f` everything we rely upon.
    */}}
+{{ $apiResources := list }}
+{{ if not (kindIs "invalid" $._rox.meta.apiServer.overrideAPIResources) }}
+  {{ $apiResources = $._rox.meta.apiServer.overrideAPIResources }}
+{{ else }}
+  {{ range $apiResource := $.Capabilities.APIVersions }}
+    {{ $apiResources = append $apiResources $apiResource }}
+  {{ end }}
+{{ end }}
+{{ if $._rox.meta.apiServer.extraAPIResources }}
+  {{ $apiResources = concat $apiResources $._rox.meta.apiServer.extraAPIResources }}
+{{ end }}
+{{ $apiServerVersion := coalesce $._rox.meta.apiServer.version $.Capabilities.KubeVersion.Version }}
+{{ $apiServer := dict "apiResources" $apiResources "version" $apiServerVersion }}
+{{ $_ = set $._rox "_apiServer" $apiServer }}
 
-[< if .RenderAsLegacyChart >]
-{{ $_ = set $._rox "_namespace" "stackrox" }}
-[< else >]
-{{ $_ = set $._rox "_namespace" (default $.Release.Namespace $._rox.meta.namespaceOverride) }}
-[< end >]
+{{ include "srox.applyDefaults" $ }}
+
+{{/* Expand applicable config values */}}
+{{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
+{{ include "srox.expandAll" (list $ $rox $expandables) }}
+
+{{/*
+    General validation of effective settings.
+   */}}
 
 {{ if not $.Release.IsUpgrade }}
 {{ if ne $._rox._namespace "stackrox" }}
@@ -88,34 +110,6 @@
 {{ end }}
 
 [< end >]
-
-{{/*
-    API Server setup. The problem with `.Capabilities.APIVersions` is that Helm does not
-    allow setting overrides for those when using `helm template` or `--dry-run`. Thus,
-    if we rely on `.Capabilities.APIVersions` directly, we lose flexibility for our chart
-    in these settings. Therefore, we use custom fields such that a user in principle has
-    the option to inject via `--set`/`-f` everything we rely upon.
-   */}}
-{{ $apiResources := list }}
-{{ if not (kindIs "invalid" $._rox.meta.apiServer.overrideAPIResources) }}
-  {{ $apiResources = $._rox.meta.apiServer.overrideAPIResources }}
-{{ else }}
-  {{ range $apiResource := $.Capabilities.APIVersions }}
-    {{ $apiResources = append $apiResources $apiResource }}
-  {{ end }}
-{{ end }}
-{{ if $._rox.meta.apiServer.extraAPIResources }}
-  {{ $apiResources = concat $apiResources $._rox.meta.apiServer.extraAPIResources }}
-{{ end }}
-{{ $apiServerVersion := coalesce $._rox.meta.apiServer.version $.Capabilities.KubeVersion.Version }}
-{{ $apiServer := dict "apiResources" $apiResources "version" $apiServerVersion }}
-{{ $_ = set $._rox "_apiServer" $apiServer }}
-
-{{ include "srox.applyDefaults" $ }}
-
-{{/* Expand applicable config values */}}
-{{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
-{{ include "srox.expandAll" (list $ $rox $expandables) }}
 
 {{/* Initial image pull secret setup. */}}
 {{ include "srox.mergeInto" (list $._rox.mainImagePullSecrets $._rox.imagePullSecrets) }}
