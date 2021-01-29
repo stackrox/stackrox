@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 
 import { filterModes } from 'constants/networkFilterModes';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import useFetchNetworkBaselines from './useFetchNetworkBaselines';
 
 import NetworkBaselines from '../NetworkBaselines';
@@ -19,6 +20,9 @@ function BaselineSettings({
     filterState,
     onNavigateToEntity,
 }: BaselineSettingsProps): ReactElement {
+    const isBaselineViolationEnabled = useFeatureFlagEnabled(
+        'ROX_NETWORK_DETECTION_BASELINE_VIOLATION'
+    );
     const {
         data: { networkBaselines, isAlertingEnabled },
         isLoading,
@@ -28,15 +32,14 @@ function BaselineSettings({
         filterState,
     });
 
+    const headerComponents = isBaselineViolationEnabled && (
+        <AlertBaselineViolations deploymentId={deploymentId} isEnabled={isAlertingEnabled} />
+    );
+
     return (
         <NetworkBaselines
             header="Baseline Settings"
-            headerComponents={
-                <AlertBaselineViolations
-                    deploymentId={deploymentId}
-                    isEnabled={isAlertingEnabled}
-                />
-            }
+            headerComponents={headerComponents}
             isLoading={isLoading}
             networkBaselines={networkBaselines}
             deploymentId={deploymentId}
