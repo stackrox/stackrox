@@ -235,9 +235,11 @@ function launch_central {
         )
       fi
 
-      helm lint "$unzip_dir/chart"
-      helm lint "$unzip_dir/chart" -n stackrox
-      helm lint "$unzip_dir/chart" -n stackrox "${helm_args[@]}"
+      if [[ -n "$CI" ]]; then
+        helm lint "$unzip_dir/chart"
+        helm lint "$unzip_dir/chart" -n stackrox
+        helm lint "$unzip_dir/chart" -n stackrox "${helm_args[@]}"
+      fi
       helm install -n stackrox stackrox-central-services "$unzip_dir/chart" \
           "${helm_args[@]}"
     else
@@ -403,9 +405,11 @@ function launch_sensor {
         helm_args+=(-f "$k8s_dir/sensor-deploy/chart/feature-flag-values.yaml")
       fi
 
-      helm lint "$k8s_dir/sensor-deploy/chart"
-      helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox
-      helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox "${helm_args[@]}" "${extra_helm_config[@]}"
+      if [[ -n "$CI" ]]; then
+        helm lint "$k8s_dir/sensor-deploy/chart"
+        helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox
+        helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox "${helm_args[@]}" "${extra_helm_config[@]}"
+      fi
       helm upgrade --install -n stackrox stackrox-secured-cluster-services "$k8s_dir/sensor-deploy/chart" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
     else
