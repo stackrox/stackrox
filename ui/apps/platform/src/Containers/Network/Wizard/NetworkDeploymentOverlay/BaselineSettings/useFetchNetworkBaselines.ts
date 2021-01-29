@@ -5,17 +5,9 @@ import { filterLabels } from 'constants/networkFilterModes';
 import { BaselineStatus, FlattenedNetworkBaseline } from 'Containers/Network/networkTypes';
 import { networkFlowStatus, nodeTypes } from 'constants/networkGraph';
 
-type FetchNetworkBaselinesResult = {
-    isLoading: boolean;
-    data: { networkBaselines: FlattenedNetworkBaseline[]; isAlertingEnabled: boolean };
-    error: string | null;
-};
+type Result = { isLoading: boolean; data: FlattenedNetworkBaseline[]; error: string | null };
 
-const defaultResultState = {
-    data: { networkBaselines: [], isAlertingEnabled: false },
-    error: null,
-    isLoading: true,
-};
+const defaultResultState = { data: [], error: null, isLoading: true };
 
 export function getPeerEntityName(peer): string {
     switch (peer.entity.info.type) {
@@ -32,59 +24,43 @@ export function getPeerEntityName(peer): string {
  * This hook does an API call to the baseline status API to get the baseline status
  * of the supplied peers
  */
-function useFetchNetworkBaselines({
-    selectedDeployment,
-    deploymentId,
-    filterState,
-}): FetchNetworkBaselinesResult {
-    const [result, setResult] = useState<FetchNetworkBaselinesResult>(defaultResultState);
+function useFetchNetworkBaselines({ selectedDeployment, deploymentId, filterState }): Result {
+    const [result, setResult] = useState<Result>(defaultResultState);
 
     useEffect(() => {
+        setResult(defaultResultState);
+
         const networkBaselinesPromise = fetchNetworkBaselines({ deploymentId });
 
         networkBaselinesPromise
             .then((response) => {
-                const { namespace, peers, locked } = response;
-                const networkBaselines = peers.reduce(
-                    (acc: FlattenedNetworkBaseline[], currPeer) => {
-                        currPeer.properties.forEach((property) => {
-                            const name = getPeerEntityName(currPeer);
-                            const peer = {
-                                entity: {
-                                    id: currPeer.entity.info.id,
-                                    type: currPeer.entity.info.type,
-                                    name,
-                                    namespace,
-                                },
-                                ingress: property.ingress,
-                                port: property.port,
-                                protocol: property.protocol,
-                                state: filterLabels[filterState],
-                            };
-                            acc.push({
-                                peer,
-                                status: networkFlowStatus.BASELINE as BaselineStatus,
-                            });
+                const { namespace, peers } = response;
+                const data = peers.reduce((acc: FlattenedNetworkBaseline[], currPeer) => {
+                    currPeer.properties.forEach((property) => {
+                        const name = getPeerEntityName(currPeer);
+                        const peer = {
+                            entity: {
+                                id: currPeer.entity.info.id,
+                                type: currPeer.entity.info.type,
+                                name,
+                                namespace,
+                            },
+                            ingress: property.ingress,
+                            port: property.port,
+                            protocol: property.protocol,
+                            state: filterLabels[filterState],
+                        };
+                        acc.push({
+                            peer,
+                            status: networkFlowStatus.BASELINE as BaselineStatus,
                         });
-                        return acc;
-                    },
-                    []
-                );
-                setResult({
-                    data: {
-                        networkBaselines,
-                        isAlertingEnabled: locked,
-                    },
-                    error: null,
-                    isLoading: false,
-                });
+                    });
+                    return acc;
+                }, []);
+                setResult({ data, error: null, isLoading: false });
             })
             .catch((error) => {
-                setResult({
-                    data: { networkBaselines: [], isAlertingEnabled: false },
-                    error,
-                    isLoading: false,
-                });
+                setResult({ data: [], error, isLoading: false });
             });
         // TODO: Possibly use another value other than selectedDeployment to ensure this logic
         // is executed again. See following comment: https://github.com/stackrox/rox/pull/7254#discussion_r555252326

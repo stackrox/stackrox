@@ -26,7 +26,6 @@ function getPanelId(filterState) {
 
 function NetworkBaselines({
     header,
-    headerComponents = null,
     isLoading,
     networkBaselines,
     deploymentId,
@@ -35,8 +34,10 @@ function NetworkBaselines({
     showAnomalousFlows = false,
 }) {
     const toggleBaselineStatuses = useToggleBaselineStatuses(deploymentId);
+
     const [page, setPage] = useState(0);
     const [searchOptions, setSearchOptions] = useState([]);
+
     const filteredNetworkBaselines = useSearchFilteredData(
         networkBaselines,
         searchOptions,
@@ -52,22 +53,19 @@ function NetworkBaselines({
     }
 
     const panelId = getPanelId(filterState);
-    const modifiedHeaderComponents = (
-        <>
-            {headerComponents}
-            <TablePagination
-                page={page}
-                dataLength={filteredNetworkBaselines.length}
-                setPage={setPage}
-            />
-        </>
+    const headerComponents = (
+        <TablePagination
+            page={page}
+            dataLength={filteredNetworkBaselines.length}
+            setPage={setPage}
+        />
     );
 
     return (
         <Panel
             id={panelId}
             header={header}
-            headerComponents={modifiedHeaderComponents}
+            headerComponents={headerComponents}
             bodyClassName="flex flex-1 flex-col"
         >
             <div className="p-2 border-b border-base-300">

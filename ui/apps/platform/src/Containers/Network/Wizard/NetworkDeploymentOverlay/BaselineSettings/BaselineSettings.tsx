@@ -4,7 +4,6 @@ import { filterModes } from 'constants/networkFilterModes';
 import useFetchNetworkBaselines from './useFetchNetworkBaselines';
 
 import NetworkBaselines from '../NetworkBaselines';
-import AlertBaselineViolations from './AlertBaselineViolations';
 
 export type BaselineSettingsProps = {
     selectedDeployment: unknown;
@@ -19,10 +18,7 @@ function BaselineSettings({
     filterState,
     onNavigateToEntity,
 }: BaselineSettingsProps): ReactElement {
-    const {
-        data: { networkBaselines, isAlertingEnabled },
-        isLoading,
-    } = useFetchNetworkBaselines({
+    const { data: networkBaselines, isLoading } = useFetchNetworkBaselines({
         selectedDeployment,
         deploymentId,
         filterState,
@@ -31,12 +27,6 @@ function BaselineSettings({
     return (
         <NetworkBaselines
             header="Baseline Settings"
-            headerComponents={
-                <AlertBaselineViolations
-                    deploymentId={deploymentId}
-                    isEnabled={isAlertingEnabled}
-                />
-            }
             isLoading={isLoading}
             networkBaselines={networkBaselines}
             deploymentId={deploymentId}
