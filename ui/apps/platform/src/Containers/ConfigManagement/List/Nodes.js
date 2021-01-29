@@ -79,7 +79,7 @@ const buildTableColumns = (match, location, entityContext) => {
             sortField: nodeSortFields.CONTAINER_RUNTIME,
         },
         {
-            Header: `Node join time`,
+            Header: `Node Join Time`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
