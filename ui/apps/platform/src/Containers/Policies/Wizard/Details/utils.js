@@ -31,14 +31,14 @@ export const formatScope = (scope, props) => {
         return '';
     }
     const values = [];
-    if (scope.cluster && scope.cluster !== '') {
+    if (scope.cluster) {
         let { cluster } = scope;
         if (props?.clustersById[scope.cluster]) {
             cluster = props.clustersById[scope.cluster].name;
         }
         values.push(`Cluster:${cluster}`);
     }
-    if (scope.namespace && scope.namespace !== '') {
+    if (scope.namespace) {
         values.push(`Namespace:${scope.namespace}`);
     }
     if (scope.label) {
@@ -49,11 +49,11 @@ export const formatScope = (scope, props) => {
 
 export const formatDeploymentExcludedScope = (excludedScope, props) => {
     const values = [];
-    if (excludedScope.name && excludedScope.name !== '') {
+    if (excludedScope.name) {
         values.push(`Deployment Name:${excludedScope.name}`);
     }
     const scopeVal = formatScope(excludedScope.scope, props);
-    if (scopeVal !== '') {
+    if (scopeVal) {
         values.push(scopeVal);
     }
     return values.join('; ');

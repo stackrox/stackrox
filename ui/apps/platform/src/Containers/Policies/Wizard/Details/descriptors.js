@@ -12,20 +12,20 @@ import { comparatorOp, formatResources, formatScope, formatDeploymentExcludedSco
 const fieldsMap = {
     id: {
         label: 'ID',
-        formatValue: (d) => d,
+        formatValue: (value) => value,
     },
     name: {
         label: 'Name',
-        formatValue: (d) => d,
+        formatValue: (value) => value,
     },
     lifecycleStages: {
         label: 'Lifecycle Stage',
-        formatValue: (d) => d.map((v) => lifecycleStageLabels[v]).join(', '),
+        formatValue: (values) => values.map((v) => lifecycleStageLabels[v]).join(', '),
     },
     severity: {
         label: 'Severity',
-        formatValue: (d) => {
-            switch (d) {
+        formatValue: (value) => {
+            switch (value) {
                 case 'CRITICAL_SEVERITY':
                     return 'Critical';
                 case 'HIGH_SEVERITY':
@@ -41,46 +41,46 @@ const fieldsMap = {
     },
     description: {
         label: 'Description',
-        formatValue: (d) => d,
+        formatValue: (value) => value,
     },
     rationale: {
         label: 'Rationale',
-        formatValue: (r) => r,
+        formatValue: (value) => value,
     },
     remediation: {
         label: 'Remediation',
-        formatValue: (r) => r,
+        formatValue: (value) => value,
     },
     notifiers: {
         label: 'Notifications',
-        formatValue: (d, props) =>
+        formatValue: (values, props) =>
             props.notifiers
-                .filter((n) => d.includes(n.id))
-                .map((n) => n.name)
+                .filter((notifier) => values.includes(notifier.id))
+                .map((notifier) => notifier.name)
                 .join(', '),
     },
     scope: {
         label: 'Restricted to Scopes',
-        formatValue: (d, props) =>
-            d && d.length ? d.map((scope) => formatScope(scope, props)) : null,
+        formatValue: (values, props) =>
+            values && values.length ? values.map((scope) => formatScope(scope, props)) : null,
     },
     enforcementActions: {
         label: 'Enforcement Action',
-        formatValue: (d) => d.map((v) => enforcementActionLabels[v]).join(', '),
+        formatValue: (values) => values.map((v) => enforcementActionLabels[v]).join(', '),
     },
     disabled: {
         label: 'Enabled',
-        formatValue: (d) => (d !== true ? 'Yes' : 'No'),
+        formatValue: (value) => (!value ? 'Yes' : 'No'),
     },
     categories: {
         label: 'Categories',
-        formatValue: (d) => d.join(', '),
+        formatValue: (values) => values.join(', '),
     },
     exclusions: {
         label: 'Exclusions',
-        formatValue: (d, props) => {
+        formatValue: (values, props) => {
             const exclusionObj = {};
-            const deploymentExcludedScopes = d
+            const deploymentExcludedScopes = values
                 .filter((obj) => obj.deployment && (obj.deployment.name || obj.deployment.scope))
                 .map((obj) => obj.deployment);
             if (deploymentExcludedScopes.length > 0) {
@@ -90,7 +90,7 @@ const fieldsMap = {
                     formatDeploymentExcludedScope(deploymentExcludedScope, props)
                 );
             }
-            const images = d
+            const images = values
                 .filter((obj) => obj.image && obj.image.name !== '')
                 .map((obj) => obj.image.name);
             if (images.length !== 0) {
@@ -101,16 +101,16 @@ const fieldsMap = {
     },
     imageName: {
         label: 'Image',
-        formatValue: (d) => {
-            const remote = d.remote ? `images named ${d.remote}` : 'any image';
-            const tag = d.tag ? `tag ${d.tag}` : 'any tag';
-            const registry = d.registry ? `registry ${d.registry}` : 'any registry';
+        formatValue: (value) => {
+            const remote = value.remote ? `images named ${value.remote}` : 'any image';
+            const tag = value.tag ? `tag ${value.tag}` : 'any tag';
+            const registry = value.registry ? `registry ${value.registry}` : 'any registry';
             return `Alert on ${remote} using ${tag} from ${registry}`;
         },
     },
     imageAgeDays: {
         label: 'Days since image was created',
-        formatValue: (d) => (d !== '0' ? `${Number(d)} Days ago` : ''),
+        formatValue: (value) => (value !== '0' ? `${Number(value)} Days ago` : ''),
     },
     noScanExists: {
         label: 'Image Scan Status',
@@ -118,129 +118,129 @@ const fieldsMap = {
     },
     scanAgeDays: {
         label: 'Days since image was last scanned',
-        formatValue: (d) => (d !== '0' ? `${Number(d)} Days ago` : ''),
+        formatValue: (value) => (value !== '0' ? `${Number(value)} Days ago` : ''),
     },
     imageUser: {
         label: 'Image User',
-        formatValue: (d) => d,
+        formatValue: (value) => value,
     },
     lineRule: {
         label: 'Dockerfile Line',
-        formatValue: (d) => `${d.instruction} ${d.value}`,
+        formatValue: (value) => `${value.instruction} ${value.value}`,
     },
     cvss: {
         label: 'CVSS',
-        formatValue: (d) => `${comparatorOp[d.op]} ${d.value}`,
+        formatValue: (value) => `${comparatorOp[value.op]} ${value.value}`,
     },
     cve: {
         label: 'CVE',
-        formatValue: (d) => d,
+        formatValue: (value) => value,
     },
     fixedBy: {
         label: 'Fixed By',
-        formatValue: (d) => d,
+        formatValue: (value) => value,
     },
     component: {
         label: 'Image Component',
-        formatValue: (d) => {
-            const name = d.name ? `${d.name}` : '';
-            const version = d.version ? d.version : '';
+        formatValue: (value) => {
+            const name = value.name ? `${value.name}` : '';
+            const version = value.version ? value.version : '';
             return `"${name}" with version "${version}"`;
         },
     },
     env: {
         label: 'Environment Variable',
-        formatValue: (d) => {
-            const key = d.key ? `${d.key}` : '';
-            const value = d.value ? d.value : '';
-            const valueFrom = !d.envVarSource
+        formatValue: (kvpolicy) => {
+            const key = kvpolicy.key ? `${kvpolicy.key}` : '';
+            const value = kvpolicy.value ? kvpolicy.value : '';
+            const valueFrom = !kvpolicy.envVarSource
                 ? ''
-                : ` Value From: ${envVarSrcLabels[d.envVarSource]}`;
+                : ` Value From: ${envVarSrcLabels[kvpolicy.envVarSource]}`;
             return `${key}=${value};${valueFrom}`;
         },
     },
     disallowedAnnotation: {
         label: 'Disallowed Annotation',
-        formatValue: (d) => {
-            const key = d.key ? `key=${d.key}` : '';
-            const value = d.value ? `value=${d.value}` : '';
-            const comma = d.key && d.value ? ', ' : '';
+        formatValue: (kvpolicy) => {
+            const key = kvpolicy.key ? `key=${kvpolicy.key}` : '';
+            const value = kvpolicy.value ? `value=${kvpolicy.value}` : '';
+            const comma = kvpolicy.key && kvpolicy.value ? ', ' : '';
             return `Alerts on deployments with the disallowed annotation ${key}${comma}${value}`;
         },
     },
     requiredLabel: {
         label: 'Required Label',
-        formatValue: (d) => {
-            const key = d.key ? `key=${d.key}` : '';
-            const value = d.value ? `value=${d.value}` : '';
-            const comma = d.key && d.value ? ', ' : '';
+        formatValue: (kvpolicy) => {
+            const key = kvpolicy.key ? `key=${kvpolicy.key}` : '';
+            const value = kvpolicy.value ? `value=${kvpolicy.value}` : '';
+            const comma = kvpolicy.key && kvpolicy.value ? ', ' : '';
             return `Alerts on deployments missing the required label ${key}${comma}${value}`;
         },
     },
     requiredAnnotation: {
         label: 'Required Annotation',
-        formatValue: (d) => {
-            const key = d.key ? `key=${d.key}` : '';
-            const value = d.value ? `value=${d.value}` : '';
-            const comma = d.key && d.value ? ', ' : '';
+        formatValue: (kvpolicy) => {
+            const key = kvpolicy.key ? `key=${kvpolicy.key}` : '';
+            const value = kvpolicy.value ? `value=${kvpolicy.value}` : '';
+            const comma = kvpolicy.key && kvpolicy.value ? ', ' : '';
             return `Alerts on deployments missing the required annotation ${key}${comma}${value}`;
         },
     },
     volumePolicy: {
         label: 'Volume Policy',
-        formatValue: (d) => {
+        formatValue: (value) => {
             const output = [];
-            if (d.name) {
-                output.push(`Name: ${d.name}`);
+            if (value.name) {
+                output.push(`Name: ${value.name}`);
             }
-            if (d.type) {
-                output.push(`Type: ${d.type}`);
+            if (value.type) {
+                output.push(`Type: ${value.type}`);
             }
-            if (d.source) {
-                output.push(`Source: ${d.source}`);
+            if (value.source) {
+                output.push(`Source: ${value.source}`);
             }
-            if (d.destination) {
-                output.push(`Dest: ${d.destination}`);
+            if (value.destination) {
+                output.push(`Dest: ${value.destination}`);
             }
-            output.push(d.readOnly ? 'Writable: No' : 'Writable: Yes');
+            output.push(value.readOnly ? 'Writable: No' : 'Writable: Yes');
             return output.join(', ');
         },
     },
     nodePortPolicy: {
         label: 'Node Port',
-        formatValue: (d) => {
-            const protocol = d.protocol ? `${d.protocol} ` : '';
-            const port = d.port ? d.port : '';
+        formatValue: (value) => {
+            const protocol = value.protocol ? `${value.protocol} ` : '';
+            const port = value.port ? value.port : '';
             return `${protocol}${port}`;
         },
     },
     portPolicy: {
         label: 'Port',
-        formatValue: (d) => {
-            const protocol = d.protocol ? `${d.protocol} ` : '';
-            const port = d.port ? d.port : '';
+        formatValue: (value) => {
+            const protocol = value.protocol ? `${value.protocol} ` : '';
+            const port = value.port ? value.port : '';
             return `${protocol}${port}`;
         },
     },
     dropCapabilities: {
         label: 'Drop Capabilities',
-        formatValue: (d) => d.join(', '),
+        formatValue: (values) => values.join(', '),
     },
     addCapabilities: {
         label: 'Add Capabilities',
-        formatValue: (d) => d.join(', '),
+        formatValue: (values) => values.join(', '),
     },
     privileged: {
         label: 'Privileged',
-        formatValue: (d) => (d === true ? 'Yes' : 'No'),
+        formatValue: (value) => (value ? 'Yes' : 'No'),
     },
     readOnlyRootFs: {
         label: 'Read Only Root Filesystem',
-        formatValue: (d) => (d === true ? 'Yes' : 'Not Enabled'),
+        formatValue: (value) => (value ? 'Yes' : 'Not Enabled'),
     },
     HostPid: {
         label: 'Host PID',
-        formatValue: (d) => (d === true ? 'Yes' : 'Not Enabled'),
+        formatValue: (value) => (value ? 'Yes' : 'Not Enabled'),
     },
     containerResourcePolicy: {
         label: 'Container Resources',
@@ -248,54 +248,54 @@ const fieldsMap = {
     },
     processPolicy: {
         label: 'Process Execution',
-        formatValue: (d) => {
-            const name = d.name ? `Process matches name "${d.name}"` : 'Process';
-            const args = d.args ? `and matches args "${d.args}"` : '';
-            const ancestor = d.ancestor ? `and has ancestor matching "${d.ancestor}"` : '';
-            const uid = d.uid ? `with uid ${d.uid}` : ``;
+        formatValue: (value) => {
+            const name = value.name ? `Process matches name "${value.name}"` : 'Process';
+            const args = value.args ? `and matches args "${value.args}"` : '';
+            const ancestor = value.ancestor ? `and has ancestor matching "${value.ancestor}"` : '';
+            const uid = value.uid ? `with uid ${value.uid}` : ``;
             return `${name} ${args} ${ancestor} ${uid}`;
         },
     },
     portExposurePolicy: {
         label: 'Port Exposure',
-        formatValue: (d) => {
-            const output = d.exposureLevels.map((element) => portExposureLabels[element]);
+        formatValue: (value) => {
+            const output = value.exposureLevels.map((element) => portExposureLabels[element]);
             return output.join(', ');
         },
     },
     hostMountPolicy: {
         label: 'Host Mount Policy',
-        formatValue: (d) => (d.readOnly ? 'Not Enabled' : 'Writable: Yes'),
+        formatValue: (value) => (value.readOnly ? 'Not Enabled' : 'Writable: Yes'),
     },
     whitelistEnabled: {
         label: 'Excluded Scopes Enabled',
-        formatValue: (d) => (d ? 'Yes' : 'No'),
+        formatValue: (value) => (value ? 'Yes' : 'No'),
     },
     permissionPolicy: {
         label: 'Minimum RBAC Permissions',
-        formatValue: (d) => rbacPermissionLabels[d.permissionLevel],
+        formatValue: (value) => rbacPermissionLabels[value.permissionLevel],
     },
     requiredImageLabel: {
         label: 'Required Image Label',
-        formatValue: (d) => {
-            const key = d.key ? `key=${d.key}` : '';
-            const value = d.value ? `value=${d.value}` : '';
-            const comma = d.key && d.value ? ', ' : '';
+        formatValue: (kvpolicy) => {
+            const key = kvpolicy.key ? `key=${kvpolicy.key}` : '';
+            const value = kvpolicy.value ? `value=${kvpolicy.value}` : '';
+            const comma = kvpolicy.key && kvpolicy.value ? ', ' : '';
             return `Alerts on deployments with images missing the required label ${key}${comma}${value}`;
         },
     },
     disallowedImageLabel: {
         label: 'Disallowed Image Label',
-        formatValue: (d) => {
-            const key = d.key ? `key=${d.key}` : '';
-            const value = d.value ? `value=${d.value}` : '';
-            const comma = d.key && d.value ? ', ' : '';
+        formatValue: (kvpolicy) => {
+            const key = kvpolicy.key ? `key=${kvpolicy.key}` : '';
+            const value = kvpolicy.value ? `value=${kvpolicy.value}` : '';
+            const comma = kvpolicy.key && kvpolicy.value ? ', ' : '';
             return `Alerts on deployments with disallowed image label ${key}${comma}${value}`;
         },
     },
     HostIPC: {
         label: 'Host IPC',
-        formatValue: (d) => (d === true ? 'Yes' : 'Not Enabled'),
+        formatValue: (value) => (value ? 'Yes' : 'Not Enabled'),
     },
 };
 
