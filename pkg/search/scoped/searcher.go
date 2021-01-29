@@ -39,7 +39,7 @@ func WithScoping(searcher search.Searcher, provider TransformationProvider) sear
 func scopeQuery(ctx context.Context, q *v1.Query, scope Scope, provider TransformationProvider) (*v1.Query, error) {
 	dstTransformer := provider.Get(scope.Level)
 	if dstTransformer == nil {
-		return nil, errors.Errorf("no scope transformations registered for %d", scope.Level)
+		return nil, errors.Errorf("no scope transformations registered for %s", scope.Level)
 	}
 	scopeIDs := dstTransformer(ctx, []byte(scope.ID))
 	if len(scopeIDs) == 0 {

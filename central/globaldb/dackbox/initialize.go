@@ -33,15 +33,18 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/debug"
+	"github.com/stackrox/rox/pkg/features"
 )
 
+type bucketRef struct {
+	bucket   []byte
+	reader   crud.Reader
+	category v1.SearchCategory
+	wrapper  indexer.Wrapper
+}
+
 var (
-	initializedBuckets = []struct {
-		bucket   []byte
-		reader   crud.Reader
-		category v1.SearchCategory
-		wrapper  indexer.Wrapper
-	}{
+	initializedBuckets = []bucketRef{
 		{
 			bucket:   cveDackBox.Bucket,
 			reader:   cveDackBox.Reader,
@@ -84,20 +87,27 @@ var (
 			category: v1.SearchCategory_DEPLOYMENTS,
 			wrapper:  deploymentIndex.Wrapper{},
 		},
-		{
-			bucket:   nodeComponentEdgeDackBox.Bucket,
-			reader:   nodeComponentEdgeDackBox.Reader,
-			category: v1.SearchCategory_NODE_COMPONENT_EDGE,
-			wrapper:  nodeComponentEdgeIndex.Wrapper{},
-		},
-		{
-			bucket:   nodeDackBox.Bucket,
-			reader:   nodeDackBox.Reader,
-			category: v1.SearchCategory_NODES,
-			wrapper:  nodeIndex.Wrapper{},
-		},
 	}
 )
+
+func init() {
+	if features.HostScanning.Enabled() {
+		initializedBuckets = append(initializedBuckets, []bucketRef{
+			{
+				bucket:   nodeComponentEdgeDackBox.Bucket,
+				reader:   nodeComponentEdgeDackBox.Reader,
+				category: v1.SearchCategory_NODE_COMPONENT_EDGE,
+				wrapper:  nodeComponentEdgeIndex.Wrapper{},
+			},
+			{
+				bucket:   nodeDackBox.Bucket,
+				reader:   nodeDackBox.Reader,
+				category: v1.SearchCategory_NODES,
+				wrapper:  nodeIndex.Wrapper{},
+			},
+		}...)
+	}
+}
 
 // RemoveReindexBucket removes all of the keys that are handled, so that all handled buckets will be re-indexed on next
 // restart.
