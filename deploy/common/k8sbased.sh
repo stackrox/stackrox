@@ -334,15 +334,20 @@ function launch_sensor {
     	extra_json_config+=', "admissionControllerUpdates": true'
     	extra_helm_config+=(--set "admissionControl.listenOnUpdates=true")
     fi
-    if [[ "$ADMISSION_CONTROLLER_POD_EVENTS" == "true" ]]; then
-    	extra_config+=("--admission-controller-listen-on-events=true")
-    	extra_json_config+=', "admissionControllerEvents": true'
-    	extra_helm_config+=(--set "admissionControl.listenOnEvents=true")
+    if [[ -n "$ADMISSION_CONTROLLER_POD_EVENTS" ]]; then
+      local bool_val
+      bool_val="$(echo "$ADMISSION_CONTROLLER_POD_EVENTS" | tr '[:upper:]' '[:lower:]')"
+      if [[ "$bool_val" != "true" ]]; then
+        bool_val="false"
+      fi
+      extra_config+=("--admission-controller-listen-on-events=${bool_val}")
+    	extra_json_config+=", \"admissionControllerEvents\": ${bool_val}"
+    	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
     fi
 
     if [[ -n "$COLLECTOR_IMAGE_REPO" ]]; then
         extra_config+=("--collector-image-repository=${COLLECTOR_IMAGE_REPO}")
-        extra_json_config+=", \"collectorImage\": ${COLLECTOR_IMAGE_REPO}"
+        extra_json_config+=", \"collectorImage\": \"${COLLECTOR_IMAGE_REPO}\""
         extra_helm_config+=(--set "image.collector.repository=${COLLECTOR_IMAGE_REPO}")
     fi
 
