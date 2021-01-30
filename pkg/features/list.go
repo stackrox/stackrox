@@ -48,4 +48,7 @@ var (
 
 	// IntegrationsAsConfig enables loading integrations from config
 	IntegrationsAsConfig = registerFeature("Enable loading integrations from config", "ROX_INTEGRATIONS_AS_CONFIG", false)
+
+	// ScopedAccessControl enables scoped access control in core product
+	ScopedAccessControl = registerFeature("Enable scoped access control in core product", "ROX_SCOPED_ACCESS_CONTROL_V2", false)
 )

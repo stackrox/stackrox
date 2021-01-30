@@ -2198,6 +2198,7 @@ jobs:
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_K8S_EVENTS_DETECTION: true
+      - ROX_SCOPED_ACCESS_CONTROL_V2: true
     steps:
       - checkout
 
@@ -2976,6 +2977,7 @@ jobs:
       - ROX_HOST_SCANNING: false
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_K8S_EVENTS_DETECTION: true
+      - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - SENSOR_HELM_DEPLOY: true
 
     steps:
@@ -3266,6 +3268,7 @@ jobs:
       - ROX_HOST_SCANNING: false
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_K8S_EVENTS_DETECTION: true
+      - ROX_SCOPED_ACCESS_CONTROL_V2: true
 
     steps:
       - checkout
@@ -3339,6 +3342,7 @@ jobs:
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_K8S_EVENTS_DETECTION: true
+      - ROX_SCOPED_ACCESS_CONTROL_V2: true
 
     steps:
       - run-qa-tests:
@@ -3370,6 +3374,7 @@ jobs:
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_K8S_EVENTS_DETECTION: true
+      - ROX_SCOPED_ACCESS_CONTROL_V2: true
 
     steps:
       - checkout
@@ -3406,6 +3411,7 @@ jobs:
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_K8S_EVENTS_DETECTION: true
+      - ROX_SCOPED_ACCESS_CONTROL_V2: true
 
     steps:
       - run-qa-tests:
@@ -3443,6 +3449,7 @@ jobs:
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_K8S_EVENTS_DETECTION: true
+      - ROX_SCOPED_ACCESS_CONTROL_V2: true
 
     steps:
       - run-qa-tests:
@@ -3460,6 +3467,7 @@ jobs:
       - LOAD_BALANCER: lb
       - ROX_HOST_SCANNING: false
       - ROX_K8S_EVENTS_DETECTION: true
+      - ROX_SCOPED_ACCESS_CONTROL_V2: true
 
     steps:
       - checkout
@@ -3988,6 +3996,7 @@ jobs:
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_K8S_EVENTS_DETECTION: true
+      - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - SENSOR_HELM_DEPLOY: true
 
     steps:
@@ -4016,6 +4025,7 @@ jobs:
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_K8S_EVENTS_DETECTION: true
+      - ROX_SCOPED_ACCESS_CONTROL_V2: true
 
     steps:
       - run-openshift-tests:
@@ -4042,6 +4052,7 @@ jobs:
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_K8S_EVENTS_DETECTION: true
+      - ROX_SCOPED_ACCESS_CONTROL_V2: true
 
     steps:
       - checkout
@@ -4140,6 +4151,7 @@ jobs:
       - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
       - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
       - ROX_K8S_EVENTS_DETECTION: true
+      - ROX_SCOPED_ACCESS_CONTROL_V2: true
 
     steps:
       - checkout
