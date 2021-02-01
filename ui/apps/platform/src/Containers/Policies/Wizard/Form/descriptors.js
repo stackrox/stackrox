@@ -787,7 +787,7 @@ const policyConfigurationDescriptor = [
         name: 'Drop Capabilities',
         jsonpath: 'fields.dropCapabilities',
         category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
-        type: 'multiselect',
+        type: 'select',
         options: [...capabilities],
         required: false,
         default: false,
@@ -798,7 +798,7 @@ const policyConfigurationDescriptor = [
         name: 'Add Capabilities',
         jsonpath: 'fields.addCapabilities',
         category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
-        type: 'multiselect',
+        type: 'select',
         options: [...capabilities],
         required: false,
         default: false,
@@ -858,7 +858,7 @@ const policyConfigurationDescriptor = [
         negatedName: 'Port Exposure Method is not',
         jsonpath: 'fields.portExposurePolicy.exposureLevels',
         category: policyCriteriaCategories.NETWORKING,
-        type: 'multiselect',
+        type: 'select',
         options: Object.keys(portExposureLabels)
             .filter((key) => key !== 'INTERNAL')
             .map((key) => ({
@@ -1022,14 +1022,14 @@ const k8sEventsDescriptor = [
         longName: 'Kubernetes Action',
         shortName: 'Kubernetes Action',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
-        type: 'multiselect',
+        type: 'select',
         options: [
             {
                 label: 'Pod Exec',
                 value: 'PODS_EXEC',
             },
             {
-                label: 'Port Forward',
+                label: 'Pods Port Forward',
                 value: 'PODS_PORTFORWARD',
             },
         ],
