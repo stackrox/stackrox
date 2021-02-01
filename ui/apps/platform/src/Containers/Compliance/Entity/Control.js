@@ -7,6 +7,7 @@ import { CONTROL_QUERY as QUERY } from 'queries/controls';
 import ControlDetails from 'Components/ControlDetails';
 import ControlRelatedResourceList from 'Containers/Compliance/widgets/ControlRelatedResourceList';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
+import useCases from 'constants/useCaseTypes';
 import { withRouter } from 'react-router-dom';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
@@ -38,7 +39,12 @@ const ControlPage = ({
                 }
 
                 if (!data || !data.results) {
-                    return <PageNotFound resourceType={entityTypes.CONTROL} />;
+                    return (
+                        <PageNotFound
+                            resourceType={entityTypes.CONTROL}
+                            useCase={useCases.COMPLIANCE}
+                        />
+                    );
                 }
 
                 const { results: control, complianceStandards: standards } = data;

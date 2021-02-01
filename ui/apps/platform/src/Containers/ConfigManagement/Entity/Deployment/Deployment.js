@@ -117,7 +117,12 @@ const Deployment = ({ id, entityContext, entityListType, query, pagination }) =>
                     return <Loader />;
                 }
                 if (!data || !data.deployment) {
-                    return <PageNotFound resourceType={entityTypes.DEPLOYMENT} />;
+                    return (
+                        <PageNotFound
+                            resourceType={entityTypes.DEPLOYMENT}
+                            useCase={useCases.CONFIG_MANAGEMENT}
+                        />
+                    );
                 }
                 const { deployment: entity } = data;
 

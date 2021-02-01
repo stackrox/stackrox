@@ -93,7 +93,12 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext, pagina
                 }
                 const { namespace } = data;
                 if (!namespace) {
-                    return <PageNotFound resourceType={entityTypes.NAMESPACE} />;
+                    return (
+                        <PageNotFound
+                            resourceType={entityTypes.NAMESPACE}
+                            useCase={useCases.CONFIG_MANAGEMENT}
+                        />
+                    );
                 }
 
                 if (entityListType) {

@@ -1,7 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import entityTypes from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
+
+import entityTypes from 'constants/entityTypes';
+import useCases from 'constants/useCaseTypes';
 
 import PageNotFound from 'Components/PageNotFound';
 import Namespaces from './Namespaces';
@@ -33,7 +35,7 @@ const entityComponentMap = {
 const EntityList = ({ entityListType, entityId, ...rest }) => {
     const Component = entityComponentMap[entityListType];
     if (!Component) {
-        return <PageNotFound resourceType={entityListType} />;
+        return <PageNotFound resourceType={entityListType} useCase={useCases.CONFIG_MANAGEMENT} />;
     }
     return <Component selectedRowId={entityId} {...rest} />;
 };

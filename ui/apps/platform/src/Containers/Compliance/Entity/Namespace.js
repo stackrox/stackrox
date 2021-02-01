@@ -21,6 +21,7 @@ import entityTypes, {
     resourceTypes,
     resourceTypeToApplicableStandards,
 } from 'constants/entityTypes';
+import useCases from 'constants/useCaseTypes';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
 import Header from './Header';
@@ -63,7 +64,12 @@ const NamespacePage = ({
                     return <Loader />;
                 }
                 if (!data.results) {
-                    return <PageNotFound resourceType={entityTypes.NAMESPACE} />;
+                    return (
+                        <PageNotFound
+                            resourceType={entityTypes.NAMESPACE}
+                            useCase={useCases.COMPLIANCE}
+                        />
+                    );
                 }
                 const namespace = processData(data);
                 const { name, id, clusterName, labels, numNetworkPolicies } = namespace;

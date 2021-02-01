@@ -13,6 +13,7 @@ import Table, { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import TablePagination from 'Components/TablePagination';
 import URLSearchInput from 'Components/URLSearchInput';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
+import useCases from 'constants/useCaseTypes';
 import entityLabels from 'messages/entity';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import isGQLLoading from 'utils/gqlLoading';
@@ -118,7 +119,12 @@ const ListFrontendPaginated = ({
                         return <Loader />;
                     }
                     if (!queryData) {
-                        return <PageNotFound resourceType={entityType} />;
+                        return (
+                            <PageNotFound
+                                resourceType={entityType}
+                                useCase={useCases.CONFIG_MANAGEMENT}
+                            />
+                        );
                     }
                     const tableRows = createTableRows(queryData) || [];
                     const headerComponents = getHeaderComponents(tableRows.length);

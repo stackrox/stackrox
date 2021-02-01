@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 
 import PageNotFound from 'Components/PageNotFound';
 import entityTypes from 'constants/entityTypes';
+import useCases from 'constants/useCaseTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import configMgmtPaginationContext from 'Containers/configMgmtPaginationContext';
 import { useTheme } from 'Containers/ThemeProvider';
@@ -51,7 +52,7 @@ const Entity = ({ entityType, entityId, entityListType, ...rest }) => {
 
     const Component = entityComponentMap[entityType];
     if (!Component) {
-        return <PageNotFound resourceType={entityType} />;
+        return <PageNotFound resourceType={entityType} useCase={useCases.CONFIG_MANAGEMENT} />;
     }
     return (
         <div

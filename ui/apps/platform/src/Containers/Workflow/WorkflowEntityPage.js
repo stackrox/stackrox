@@ -87,7 +87,7 @@ const WorkflowEntityPage = ({
         );
     }
     if (!data || !data.result) {
-        return <PageNotFound resourceType={entityType} />;
+        return <PageNotFound resourceType={entityType} useCase={useCase} />;
     }
     const { result } = data;
 

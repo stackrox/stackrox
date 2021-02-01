@@ -117,7 +117,12 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext, paginatio
                 }
                 const { policy: entity } = data;
                 if (!entity) {
-                    return <PageNotFound resourceType={entityTypes.POLICY} />;
+                    return (
+                        <PageNotFound
+                            resourceType={entityTypes.POLICY}
+                            useCase={useCases.CONFIG_MANAGEMENT}
+                        />
+                    );
                 }
 
                 if (entityListType) {

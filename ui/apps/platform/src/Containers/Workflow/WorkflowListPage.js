@@ -72,7 +72,7 @@ const WorkflowListPage = ({
         }
 
         if (!ownQueryData || !ownQueryData.results || error) {
-            return <PageNotFound resourceType={entityListType} />;
+            return <PageNotFound resourceType={entityListType} useCase={workflowState.useCase} />;
         }
         displayData = ownQueryData.results;
         // eslint-disable-next-line prefer-destructuring

@@ -233,13 +233,14 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext, paginatio
                     return <Loader />;
                 }
                 if (!data || !data.secret) {
-                    return <PageNotFound resourceType={entityTypes.SECRET} />;
+                    return (
+                        <PageNotFound
+                            resourceType={entityTypes.SECRET}
+                            useCase={useCases.CONFIG_MANAGEMENT}
+                        />
+                    );
                 }
                 const { secret } = data;
-                if (!secret) {
-                    return <PageNotFound resourceType={entityTypes.SECRET} />;
-                }
-
                 if (entityListType) {
                     return (
                         <EntityList

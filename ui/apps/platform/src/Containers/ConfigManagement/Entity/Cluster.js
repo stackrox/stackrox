@@ -110,7 +110,12 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext, paginati
                 }
                 const { cluster: entity } = data;
                 if (!entity) {
-                    return <PageNotFound resourceType={entityTypes.CLUSTER} />;
+                    return (
+                        <PageNotFound
+                            resourceType={entityTypes.CLUSTER}
+                            useCase={useCases.CONFIG_MANAGEMENT}
+                        />
+                    );
                 }
 
                 const { complianceResults = [] } = entity;

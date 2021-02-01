@@ -1,5 +1,6 @@
 import React from 'react';
 import entityTypes from 'constants/entityTypes';
+import useCases from 'constants/useCaseTypes';
 
 import PageNotFound from 'Components/PageNotFound';
 import VulnMgmtEntityDeployment from './Deployment/VulnMgmtEntityDeployment';
@@ -26,7 +27,7 @@ const VulnMgmtEntity = (props) => {
     const { entityType } = props;
     const Component = entityComponentMap[entityType];
     if (!Component) {
-        return <PageNotFound resourceType={entityType} />;
+        return <PageNotFound resourceType={entityType} useCase={useCases.VULN_MANAGEMENT} />;
     }
     return <Component {...props} />;
 };

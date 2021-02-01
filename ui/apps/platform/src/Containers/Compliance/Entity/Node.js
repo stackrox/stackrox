@@ -25,6 +25,7 @@ import ResourceTabs from 'Components/ResourceTabs';
 import ComplianceList from 'Containers/Compliance/List/List';
 import PageNotFound from 'Components/PageNotFound';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
+import useCases from 'constants/useCaseTypes';
 import isGQLLoading from 'utils/gqlLoading';
 import searchContext from 'Containers/searchContext';
 import Header from './Header';
@@ -65,7 +66,12 @@ const NodePage = ({
                 }
 
                 if (!data.node) {
-                    return <PageNotFound resourceType={entityTypes.NODE} />;
+                    return (
+                        <PageNotFound
+                            resourceType={entityTypes.NODE}
+                            useCase={useCases.COMPLIANCE}
+                        />
+                    );
                 }
                 const node = processData(data);
                 const {

@@ -15,6 +15,7 @@ import URLSearchInput from 'Components/URLSearchInput';
 import configMgmtPaginationContext from 'Containers/configMgmtPaginationContext';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
+import useCases from 'constants/useCaseTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import entityLabels from 'messages/entity';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
@@ -157,7 +158,12 @@ const List = ({
                         return <Loader />;
                     }
                     if (!queryData) {
-                        return <PageNotFound resourceType={entityType} />;
+                        return (
+                            <PageNotFound
+                                resourceType={entityType}
+                                useCase={useCases.CONFIG_MANAGEMENT}
+                            />
+                        );
                     }
                     const tableRows = createTableRows(queryData) || [];
                     const totalCount = queryData?.count || 0;

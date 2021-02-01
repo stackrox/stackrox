@@ -5,6 +5,7 @@ import PageNotFound from 'Components/PageNotFound';
 import isEqual from 'lodash/isEqual';
 import searchContext from 'Containers/searchContext';
 import { searchParams } from 'constants/searchParams';
+import useCases from 'constants/useCaseTypes';
 import Dashboard from './Dashboard/Page';
 import Entity from './Entity/Page';
 import List from './List/Page';
@@ -15,7 +16,9 @@ const Page = () => (
             <Route exact path={workflowPaths.DASHBOARD} component={Dashboard} />
             <Route path={workflowPaths.LIST} component={List} />
             <Route path={workflowPaths.ENTITY} component={Entity} />
-            <Route render={PageNotFound} />
+            <Route>
+                <PageNotFound useCase={useCases.COMPLIANCE} />
+            </Route>
         </Switch>
     </searchContext.Provider>
 );

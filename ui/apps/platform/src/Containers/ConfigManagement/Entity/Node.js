@@ -2,8 +2,9 @@ import React, { useContext } from 'react';
 import { gql } from '@apollo/client';
 import { format } from 'date-fns';
 
-import entityTypes from 'constants/entityTypes';
 import dateTimeFormat from 'constants/dateTimeFormat';
+import entityTypes from 'constants/entityTypes';
+import useCases from 'constants/useCaseTypes';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -75,7 +76,12 @@ const Node = ({ id, entityListType, entityId1, query, entityContext, pagination 
                     return <Loader />;
                 }
                 if (!data || !data.node) {
-                    return <PageNotFound resourceType={entityTypes.NODE} />;
+                    return (
+                        <PageNotFound
+                            resourceType={entityTypes.NODE}
+                            useCase={useCases.CONFIG_MANAGEMENT}
+                        />
+                    );
                 }
                 const { node } = data;
 

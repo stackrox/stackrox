@@ -116,7 +116,12 @@ const Image = ({ id, entityListType, entityId1, query, entityContext, pagination
                 }
                 const { image: entity } = data;
                 if (!entity) {
-                    return <PageNotFound resourceType={entityTypes.IMAGE} />;
+                    return (
+                        <PageNotFound
+                            resourceType={entityTypes.IMAGE}
+                            useCase={useCases.CONFIG_MANAGEMENT}
+                        />
+                    );
                 }
 
                 if (entityListType) {

@@ -105,7 +105,12 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext, p
                 }
                 const { serviceAccount: entity } = data;
                 if (!entity) {
-                    return <PageNotFound resourceType={entityTypes.SERVICE_ACCOUNT} />;
+                    return (
+                        <PageNotFound
+                            resourceType={entityTypes.SERVICE_ACCOUNT}
+                            useCase={useCases.CONFIG_MANAGEMENT}
+                        />
+                    );
                 }
 
                 if (entityListType) {

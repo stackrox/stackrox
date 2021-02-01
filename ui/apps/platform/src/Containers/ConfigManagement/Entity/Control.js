@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { gql } from '@apollo/client';
 import entityTypes from 'constants/entityTypes';
+import useCases from 'constants/useCaseTypes';
 import queryService from 'utils/queryService';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -60,7 +61,12 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                 }
 
                 if (!data || !data.results) {
-                    return <PageNotFound resourceType={entityTypes.CONTROL} />;
+                    return (
+                        <PageNotFound
+                            resourceType={entityTypes.CONTROL}
+                            useCase={useCases.CONFIG_MANAGEMENT}
+                        />
+                    );
                 }
 
                 const { results: entity } = data;

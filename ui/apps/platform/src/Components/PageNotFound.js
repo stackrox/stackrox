@@ -1,15 +1,12 @@
 import React from 'react';
-import { withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
 
-import URLService from 'utils/URLService';
+import { mainPath } from 'routePaths';
 import NotFoundMessage from 'Components/NotFoundMessage';
 
-const PageNotFound = ({ match, location, resourceType }) => {
-    const homeUrl = URLService.getURL(match, location).base().url();
-
+const PageNotFound = ({ resourceType, useCase }) => {
     const resourceTypeName = (resourceType || 'resource').toLowerCase();
+    const url = useCase ? `${mainPath}/${useCase}` : mainPath;
     const message = (
         <>
             <h2 className="text-tertiary-800 mb-2">
@@ -21,17 +18,17 @@ const PageNotFound = ({ match, location, resourceType }) => {
             </p>
         </>
     );
-    return <NotFoundMessage message={message} actionText="Go to dashboard" url={homeUrl} />;
+    return <NotFoundMessage message={message} actionText="Go to dashboard" url={url} />;
 };
 
 PageNotFound.propTypes = {
     resourceType: PropTypes.string,
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
+    useCase: PropTypes.string,
 };
 
 PageNotFound.defaultProps = {
-    resourceType: null,
+    resourceType: '',
+    useCase: '',
 };
 
-export default withRouter(PageNotFound);
+export default PageNotFound;
