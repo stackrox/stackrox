@@ -1,22 +1,32 @@
 import React, { useState, ReactElement } from 'react';
+import { connect } from 'react-redux';
 import { SuccessButton } from '@stackrox/ui-components';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
+import { actions as notificationActions } from 'reducers/notifications';
 import { downloadClusterHelmValuesYaml } from 'services/ClustersService';
 
 export type DownloadHelmValuesProps = {
     clusterId: string;
     description: string;
+    addToast: (message: string) => void;
+    removeToast: () => void;
 };
 
-const DownloadHelmValues = ({ clusterId, description }: DownloadHelmValuesProps): ReactElement => {
+const DownloadHelmValues = ({
+    clusterId,
+    description,
+    addToast,
+    removeToast,
+}: DownloadHelmValuesProps): ReactElement => {
     const [isFetchingValues, setIsFetchingValues] = useState(false);
 
     function downloadValues(): void {
         setIsFetchingValues(true);
         downloadClusterHelmValuesYaml(clusterId)
-            .catch(() => {
-                // TODO display message when there is a place for minor errors
+            .catch((err: { message: string }) => {
+                addToast(`Problem downloading the Helm values. Please try again. (${err.message})`);
+                setTimeout(removeToast, 5000);
             })
             .finally(() => {
                 setIsFetchingValues(false);
@@ -41,5 +51,9 @@ const DownloadHelmValues = ({ clusterId, description }: DownloadHelmValuesProps)
         </CollapsibleCard>
     );
 };
+const mapDispatchToProps = {
+    addToast: notificationActions.addNotification,
+    removeToast: notificationActions.removeOldestNotification,
+};
 
-export default DownloadHelmValues;
+export default connect(null, mapDispatchToProps)(DownloadHelmValues);
