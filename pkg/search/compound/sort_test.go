@@ -146,7 +146,7 @@ func (suite *SortingTestSuite) TestHandlesAnd() {
 }
 
 // If we have a top level conjunction of base requests, but non of the specification matches our search, we need to add
-// a new item to the conjuction to do the sorting.
+// a new item to the conjunction to do the sorting.
 func (suite *SortingTestSuite) TestHandlesAndWithoutMatch() {
 	searcherSpecs := []SearcherSpec{
 		{

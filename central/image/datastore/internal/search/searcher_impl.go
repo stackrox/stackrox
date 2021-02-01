@@ -44,6 +44,7 @@ var (
 			cveMappings.OptionsMap,
 		),
 	)
+	deploymentOnlyOptionsMap = search.Difference(deployments.OptionsMap, imageOnlyOptionsMap)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
@@ -201,7 +202,7 @@ func getCompoundImageSearcher(
 		{
 			Searcher:       scoped.WithScoping(deploymentSearcher, dackbox.ToCategory(v1.SearchCategory_DEPLOYMENTS)),
 			Transformation: dackbox.GraphTransformations[v1.SearchCategory_DEPLOYMENTS][v1.SearchCategory_IMAGES],
-			Options:        deployments.OptionsMap,
+			Options:        deploymentOnlyOptionsMap,
 			LinkToPrev:     dackbox.GraphTransformations[v1.SearchCategory_IMAGES][v1.SearchCategory_DEPLOYMENTS],
 		},
 	})

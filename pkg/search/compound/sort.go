@@ -18,7 +18,7 @@ func addSorting(rs *searchRequestSpec, p *v1.QueryPagination, specs []SearcherSp
 		return ret, nil
 	}
 
-	// If the top level is an and query, and one of those ands is a base query on the same searcher we are paginating
+	// If the top level is a conjunction query, and one of those conjuncts is a base query on the same searcher we are paginating
 	// with, we can stuff it there.
 	if ret, sorted := trySortAnd(rs, p); sorted {
 		return ret, nil
@@ -53,7 +53,7 @@ func trySortAnd(rs *searchRequestSpec, p *v1.QueryPagination) (*searchRequestSpe
 	return nil, false
 }
 
-// If the top level isn't a base, or a Conjunction with a base that operated on the searcher we want to sort with,
+// If the top level isn't a base nor a conjunction with a base that operated on the searcher we want to sort with,
 // then we need to do the sorting as a separate query.
 func trySortComplex(rs *searchRequestSpec, p *v1.QueryPagination, specs []SearcherSpec) (*searchRequestSpec, bool) {
 	// Add a layer with an and, and sort.
