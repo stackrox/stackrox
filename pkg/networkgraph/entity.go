@@ -17,13 +17,6 @@ var (
 			return InternetExternalSourceName
 		},
 	}
-
-	// ValidBaselinePeerEntityTypes is a set of valid peer entity types that we currently support in network baseline
-	ValidBaselinePeerEntityTypes = map[storage.NetworkEntityInfo_Type]struct{}{
-		storage.NetworkEntityInfo_DEPLOYMENT:      {},
-		storage.NetworkEntityInfo_EXTERNAL_SOURCE: {},
-		storage.NetworkEntityInfo_INTERNET:        {},
-	}
 )
 
 // Entity represents a network entity in a form that is suitable for use as a map key.

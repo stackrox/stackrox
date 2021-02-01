@@ -96,10 +96,12 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	indicators := make(chan *central.MsgFromSensor)
 	processPipeline := processsignal.NewProcessPipeline(indicators, clusterentities.StoreInstance(), processfilter.Singleton(), policyDetector)
 	processSignals := signalService.New(processPipeline, indicators)
+	networkFlowManager :=
+		manager.NewManager(clusterentities.StoreInstance(), externalsrcs.StoreInstance(), policyDetector)
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,
 		enforcer,
-		manager.Singleton(),
+		networkFlowManager,
 		networkpolicies.NewCommandHandler(client.Kubernetes()),
 		clusterstatus.NewUpdater(client.Kubernetes()),
 		clusterhealth.NewUpdater(client.Kubernetes(), 0),
@@ -131,11 +133,12 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	)
 
 	if workloadHandler != nil {
-		workloadHandler.SetSignalHandlers(processPipeline, manager.Singleton())
+		workloadHandler.SetSignalHandlers(processPipeline, networkFlowManager)
 	}
 
+	networkFlowService := service.NewService(networkFlowManager)
 	apiServices := []grpc.APIService{
-		service.Singleton(),
+		networkFlowService,
 		processSignals,
 		complianceService,
 		imageService,

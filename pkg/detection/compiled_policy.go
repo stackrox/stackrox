@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/scopecomp"
@@ -21,7 +22,7 @@ type CompiledPolicy interface {
 	MatchAgainstDeployment(cacheReceptacle *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (booleanpolicy.Violations, error)
 	MatchAgainstImage(cacheReceptacle *booleanpolicy.CacheReceptacle, image *storage.Image) (booleanpolicy.Violations, error)
 	MatchAgainstKubeResourceAndEvent(cacheReceptacle *booleanpolicy.CacheReceptacle, kubeEvent *storage.KubernetesEvent, kubeResource interface{}) (booleanpolicy.Violations, error)
-	MatchAgainstDeploymentAndNetworkFlow(cacheReceptable *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, flow *storage.NetworkFlow, flowNotInBaseline bool) (booleanpolicy.Violations, error)
+	MatchAgainstDeploymentAndNetworkFlow(cacheReceptable *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, flow *augmentedobjs.NetworkFlowDetails) (booleanpolicy.Violations, error)
 
 	Predicate
 }
@@ -201,13 +202,12 @@ func (cp *compiledPolicy) MatchAgainstDeploymentAndNetworkFlow(
 	cache *booleanpolicy.CacheReceptacle,
 	deployment *storage.Deployment,
 	images []*storage.Image,
-	flow *storage.NetworkFlow,
-	flowNotInBaseline bool,
+	flow *augmentedobjs.NetworkFlowDetails,
 ) (booleanpolicy.Violations, error) {
 	if cp.deploymentWithNetworkFlowMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %s against network baseline", cp.Policy().GetName())
 	}
-	return cp.deploymentWithNetworkFlowMatcher.MatchDeploymentWithNetworkFlowInfo(cache, deployment, images, flow, flowNotInBaseline)
+	return cp.deploymentWithNetworkFlowMatcher.MatchDeploymentWithNetworkFlowInfo(cache, deployment, images, flow)
 }
 
 func (cp *compiledPolicy) MatchAgainstDeployment(cache *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (booleanpolicy.Violations, error) {

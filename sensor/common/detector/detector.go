@@ -3,20 +3,26 @@ package detector
 import (
 	"sort"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/detector/baseline"
+	networkBaselineEval "github.com/stackrox/rox/sensor/common/detector/networkbaseline"
 	"github.com/stackrox/rox/sensor/common/detector/unified"
 	"github.com/stackrox/rox/sensor/common/enforcer"
+	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"google.golang.org/grpc"
 )
 
@@ -28,6 +34,7 @@ type Detector interface {
 
 	ProcessDeployment(deployment *storage.Deployment, action central.ResourceAction)
 	ProcessIndicator(indicator *storage.ProcessIndicator)
+	ProcessNetworkFlow(flow *storage.NetworkFlow)
 	SetClient(conn grpc.ClientConnInterface)
 }
 
@@ -40,11 +47,13 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		deploymentAlertOutputChan: make(chan outputResult),
 		deploymentProcessingMap:   make(map[string]int64),
 
-		enricher:        newEnricher(cache),
-		deploymentStore: newDeploymentStore(),
-		baselineEval:    baseline.NewBaselineEvaluator(),
-		deduper:         newDeduper(),
-		enforcer:        enforcer,
+		enricher:            newEnricher(cache),
+		deploymentStore:     newDeploymentStore(),
+		extSrcsStore:        externalsrcs.StoreInstance(),
+		baselineEval:        baseline.NewBaselineEvaluator(),
+		networkbaselineEval: networkBaselineEval.NewNetworkBaselineEvaluator(),
+		deduper:             newDeduper(),
+		enforcer:            enforcer,
 
 		admCtrlSettingsMgr: admCtrlSettingsMgr,
 
@@ -67,11 +76,13 @@ type detectorImpl struct {
 	// When a policy is updated, we will reflush the deployments cache back through detection
 	deploymentDetectionLock sync.Mutex
 
-	enricher        *enricher
-	deploymentStore *deploymentStore
-	baselineEval    baseline.Evaluator
-	enforcer        enforcer.Enforcer
-	deduper         *deduper
+	enricher            *enricher
+	deploymentStore     *deploymentStore
+	extSrcsStore        externalsrcs.Store
+	baselineEval        baseline.Evaluator
+	networkbaselineEval networkBaselineEval.Evaluator
+	enforcer            enforcer.Enforcer
+	deduper             *deduper
 
 	admCtrlSettingsMgr admissioncontroller.SettingsManager
 
@@ -357,4 +368,100 @@ func (d *detectorImpl) processIndicator(pi *storage.ProcessIndicator) {
 		return
 	case d.output <- createAlertResultsMsg(central.ResourceAction_CREATE_RESOURCE, alertResults):
 	}
+}
+
+func (d *detectorImpl) ProcessNetworkFlow(flow *storage.NetworkFlow) {
+	go d.processNetworkFlow(flow)
+}
+
+func (d *detectorImpl) getNetworkFlowEntityName(info *storage.NetworkEntityInfo) (string, error) {
+	switch info.GetType() {
+	case storage.NetworkEntityInfo_DEPLOYMENT:
+		deployment := d.deploymentStore.getDeployment(info.GetId())
+		if deployment == nil {
+			// Maybe the deployment is already removed. Don't run the flow through policy anymore
+			return "", errors.Errorf("Deployment with ID: %q not found while trying to run network flow policy", info.GetId())
+		}
+		return deployment.GetName(), nil
+	case storage.NetworkEntityInfo_EXTERNAL_SOURCE:
+		extsrc := d.extSrcsStore.LookupByID(info.GetId())
+		if extsrc == nil {
+			return "", errors.Errorf("External source with ID: %q not found while trying to run network flow policy", info.GetId())
+		}
+		return extsrc.GetExternalSource().GetName(), nil
+	case storage.NetworkEntityInfo_INTERNET:
+		return networkgraph.InternetExternalSourceName, nil
+	default:
+		return "", errors.Errorf("Unsupported network entity type: %q", info.GetType())
+	}
+}
+
+func (d *detectorImpl) processAlertsForFlowOnEntity(
+	entity *storage.NetworkEntityInfo,
+	flowDetails *augmentedobjs.NetworkFlowDetails,
+) {
+	if entity.GetType() != storage.NetworkEntityInfo_DEPLOYMENT {
+		return
+	}
+	deployment := d.deploymentStore.getDeployment(entity.GetId())
+	if deployment == nil {
+		// Probably the deployment was deleted just before we had fetched entity names.
+		log.Warnf("Stop processing alerts for network flow on deployment %q. No deployment was found", entity.GetId())
+		return
+	}
+
+	images := d.enricher.getImages(deployment)
+	alerts := d.unifiedDetector.DetectNetworkFlowForDeployment(deployment, images, flowDetails)
+	if len(alerts) == 0 {
+		// No need to process runtime alerts that have no violations
+		return
+	}
+	alertResults := &central.AlertResults{
+		DeploymentId: deployment.GetId(),
+		Alerts:       alerts,
+		Stage:        storage.LifecycleStage_RUNTIME,
+	}
+
+	d.enforcer.ProcessAlertResults(central.ResourceAction_CREATE_RESOURCE, storage.LifecycleStage_RUNTIME, alertResults)
+
+	select {
+	case <-d.alertStopSig.Done():
+		return
+	case d.output <- createAlertResultsMsg(central.ResourceAction_CREATE_RESOURCE, alertResults):
+	}
+}
+
+func (d *detectorImpl) processNetworkFlow(flow *storage.NetworkFlow) {
+	// Only run the flows through policies if the entity types are supported
+	_, srcTypeSupported := networkbaseline.ValidBaselinePeerEntityTypes[flow.GetProps().GetSrcEntity().GetType()]
+	_, dstTypeSupported := networkbaseline.ValidBaselinePeerEntityTypes[flow.GetProps().GetDstEntity().GetType()]
+	if !srcTypeSupported || !dstTypeSupported {
+		return
+	}
+
+	// First extract more information of the flow. Mainly entity names
+	srcName, err := d.getNetworkFlowEntityName(flow.GetProps().GetSrcEntity())
+	if err != nil {
+		log.Errorf("Error looking up source entity name while running network flow policy: %v", err)
+		return
+	}
+	dstName, err := d.getNetworkFlowEntityName(flow.GetProps().GetDstEntity())
+	if err != nil {
+		log.Errorf("Error looking up destination entity name while running network flow policy: %v", err)
+		return
+	}
+	// Check if flow is anomalous
+	flowIsNotInBaseline := d.networkbaselineEval.IsOutsideLockedBaseline(flow, srcName, dstName)
+	flowDetails := &augmentedobjs.NetworkFlowDetails{
+		SrcEntityName:        srcName,
+		SrcEntityType:        flow.GetProps().GetSrcEntity().GetType(),
+		DstEntityName:        dstName,
+		DstEntityType:        flow.GetProps().GetDstEntity().GetType(),
+		DstPort:              flow.GetProps().GetDstPort(),
+		L4Protocol:           flow.GetProps().GetL4Protocol(),
+		NotInNetworkBaseline: flowIsNotInBaseline,
+	}
+
+	d.processAlertsForFlowOnEntity(flow.GetProps().GetSrcEntity(), flowDetails)
+	d.processAlertsForFlowOnEntity(flow.GetProps().GetDstEntity(), flowDetails)
 }

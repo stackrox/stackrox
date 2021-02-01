@@ -26,6 +26,7 @@ type Store interface {
 	ExternalSrcsValueStream() concurrency.ReadOnlyValueStream
 	LookupByNetwork(ipNet pkgNet.IPNetwork) *storage.NetworkEntityInfo
 	LookupByAddress(ip pkgNet.IPAddress) *storage.NetworkEntityInfo
+	LookupByID(id string) *storage.NetworkEntityInfo
 }
 
 // Handler forwards the external network entities received from Central to Collectors.
@@ -39,7 +40,9 @@ type handlerImpl struct {
 
 	// `entities` stores the IPNetwork to entity object mappings. We allow only unique CIDRs in a cluster, which could
 	// be overlapping or not.
-	entities         map[pkgNet.IPNetwork]*storage.NetworkEntityInfo
+	entities map[pkgNet.IPNetwork]*storage.NetworkEntityInfo
+	// entitiesById is used for easy lookups during network flow policy evaluation
+	entitiesByID     map[string]*storage.NetworkEntityInfo
 	lastRequestSeqID int64
 	// `lastSeenList` stores the networks in descending lexical byte order. Since, the host identifier bits are all set
 	// to 0, this gives us highest-smallest to lowest-largest subnet ordering. e.g. 127.0.0.0/8, 10.10.0.0/24,
@@ -112,6 +115,7 @@ func (h *handlerImpl) saveEntitiesNoLock(entities []*storage.NetworkEntityInfo) 
 			continue
 		}
 		h.entities[ipNet] = entity
+		h.entitiesByID[entity.GetId()] = entity
 	}
 
 	if err := errList.ToError(); err != nil {
@@ -189,4 +193,11 @@ func (h *handlerImpl) LookupByAddress(ip pkgNet.IPAddress) *storage.NetworkEntit
 	}
 
 	return nil
+}
+
+func (h *handlerImpl) LookupByID(id string) *storage.NetworkEntityInfo {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
+	return h.entitiesByID[id]
 }

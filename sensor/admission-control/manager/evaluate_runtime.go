@@ -103,7 +103,7 @@ func (m *manager) evaluatePodEvent(s *state, event *storage.KubernetesEvent) ([]
 		}
 
 		getAlertsFunc := func(dep *storage.Deployment, imgs []*storage.Image) ([]*storage.Alert, error) {
-			return s.allRuntimePoliciesDetector.DetectForDeployment(dep, imgs, nil, false, event)
+			return s.allRuntimePoliciesDetector.DetectForDeploymentAndKubeEvent(deployment, imgs, event)
 		}
 
 		alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)
@@ -121,7 +121,7 @@ func (m *manager) evaluatePodEvent(s *state, event *storage.KubernetesEvent) ([]
 
 	go m.waitForDeploymentAndDetect(s, event)
 
-	alerts, err := s.runtimeDetectorForPoliciesWithoutDeployFields.DetectForDeployment(&storage.Deployment{}, nil, nil, false, event)
+	alerts, err := s.runtimeDetectorForPoliciesWithoutDeployFields.DetectForDeploymentAndKubeEvent(&storage.Deployment{}, nil, event)
 	if err != nil {
 		return nil, false, err
 	}
@@ -160,7 +160,7 @@ func (m *manager) waitForDeploymentAndDetect(s *state, event *storage.Kubernetes
 		}
 
 		getAlertsFunc := func(dep *storage.Deployment, imgs []*storage.Image) ([]*storage.Alert, error) {
-			return s.runtimeDetectorForPoliciesWithDeployFields.DetectForDeployment(dep, imgs, nil, false, event)
+			return s.runtimeDetectorForPoliciesWithDeployFields.DetectForDeploymentAndKubeEvent(dep, imgs, event)
 		}
 
 		alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/defaults"
@@ -2410,36 +2411,23 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 	suite.NoError(err)
 
 	srcName, dstName, port, protocol := "deployment-name", "ext-source-name", 1, storage.L4Protocol_L4_PROTOCOL_TCP
-	flow := &storage.NetworkFlow{
-		Props: &storage.NetworkFlowProperties{
-			SrcEntity: &storage.NetworkEntityInfo{
-				Type: storage.NetworkEntityInfo_DEPLOYMENT,
-				Id:   "deployment-id",
-				Desc: &storage.NetworkEntityInfo_Deployment_{
-					Deployment: &storage.NetworkEntityInfo_Deployment{
-						Name: srcName,
-					}},
-			},
-			DstEntity: &storage.NetworkEntityInfo{
-				Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
-				Id:   "ext-source-id",
-				Desc: &storage.NetworkEntityInfo_ExternalSource_{
-					ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-						Name: dstName,
-					}},
-			},
-			DstPort:    uint32(port),
-			L4Protocol: protocol,
-		},
-		LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
+	flow := &augmentedobjs.NetworkFlowDetails{
+		SrcEntityName:        srcName,
+		SrcEntityType:        storage.NetworkEntityInfo_DEPLOYMENT,
+		DstEntityName:        dstName,
+		DstEntityType:        storage.NetworkEntityInfo_DEPLOYMENT,
+		DstPort:              uint32(port),
+		L4Protocol:           protocol,
+		NotInNetworkBaseline: true,
 	}
 
-	violations, err := m.MatchDeploymentWithNetworkFlowInfo(nil, deployment, suite.getImagesForDeployment(deployment), flow, true)
+	violations, err := m.MatchDeploymentWithNetworkFlowInfo(nil, deployment, suite.getImagesForDeployment(deployment), flow)
 	suite.NoError(err)
 	suite.ElementsMatch(violations.AlertViolations, []*storage.Alert_Violation{networkBaselineMessage(srcName, dstName, port, protocol)})
 
 	// And if the flow is in the baseline, no violations should exist
-	violations, err = m.MatchDeploymentWithNetworkFlowInfo(nil, deployment, suite.getImagesForDeployment(deployment), flow, false)
+	flow.NotInNetworkBaseline = false
+	violations, err = m.MatchDeploymentWithNetworkFlowInfo(nil, deployment, suite.getImagesForDeployment(deployment), flow)
 	suite.NoError(err)
 	suite.Empty(violations)
 }

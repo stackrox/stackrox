@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
@@ -563,8 +564,8 @@ func (suite *ManagerTestSuite) TestDeleteWithExtSrcPeer() {
 }
 
 func (suite *ManagerTestSuite) TestValidEntityTypesMatch() {
-	validTypes := make([]storage.NetworkEntityInfo_Type, 0, len(networkgraph.ValidBaselinePeerEntityTypes))
-	for t := range networkgraph.ValidBaselinePeerEntityTypes {
+	validTypes := make([]storage.NetworkEntityInfo_Type, 0, len(networkbaseline.ValidBaselinePeerEntityTypes))
+	for t := range networkbaseline.ValidBaselinePeerEntityTypes {
 		validTypes = append(validTypes, t)
 	}
 
@@ -576,7 +577,7 @@ func (suite *ManagerTestSuite) TestValidEntityTypesMatch() {
 	suite.ElementsMatch(validTypes, types)
 
 	types = types[:0]
-	for t := range entityTypeToEntityInfoDesc {
+	for t := range networkbaseline.EntityTypeToEntityInfoDesc {
 		types = append(types, t)
 	}
 	suite.ElementsMatch(validTypes, types)

@@ -1,4 +1,4 @@
-package manager
+package networkbaseline
 
 import (
 	"sort"
@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	entityTypeToEntityInfoDesc = map[storage.NetworkEntityInfo_Type]func(name string, info *storage.NetworkEntityInfo){
+	// EntityTypeToEntityInfoDesc collects the functions to get names from corresponding network entity types
+	EntityTypeToEntityInfoDesc = map[storage.NetworkEntityInfo_Type]func(name string, info *storage.NetworkEntityInfo){
 		storage.NetworkEntityInfo_DEPLOYMENT: func(name string, info *storage.NetworkEntityInfo) {
 			info.Desc = &storage.NetworkEntityInfo_Deployment_{
 				Deployment: &storage.NetworkEntityInfo_Deployment{
@@ -29,14 +30,22 @@ var (
 			// No-op.
 		},
 	}
+
+	// ValidBaselinePeerEntityTypes is a set of valid peer entity types that we currently support in network baseline
+	ValidBaselinePeerEntityTypes = map[storage.NetworkEntityInfo_Type]struct{}{
+		storage.NetworkEntityInfo_DEPLOYMENT:      {},
+		storage.NetworkEntityInfo_EXTERNAL_SOURCE: {},
+		storage.NetworkEntityInfo_INTERNET:        {},
+	}
 )
 
-type peer struct {
-	isIngress bool
-	entity    networkgraph.Entity
-	name      string
-	dstPort   uint32
-	protocol  storage.L4Protocol
+// Peer is a in-memory representation of the network baseline peer
+type Peer struct {
+	IsIngress bool
+	Entity    networkgraph.Entity
+	Name      string
+	DstPort   uint32
+	Protocol  storage.L4Protocol
 }
 
 type entityWithName struct {
@@ -44,8 +53,9 @@ type entityWithName struct {
 	Name string
 }
 
-func convertPeersFromProto(protoPeers []*storage.NetworkBaselinePeer) (map[peer]struct{}, error) {
-	out := make(map[peer]struct{}, len(protoPeers))
+// ConvertPeersFromProto converts proto NetworkBaselinePeer to its in memory representation
+func ConvertPeersFromProto(protoPeers []*storage.NetworkBaselinePeer) (map[Peer]struct{}, error) {
+	out := make(map[Peer]struct{}, len(protoPeers))
 	for _, protoPeer := range protoPeers {
 		entity := networkgraph.Entity{ID: protoPeer.GetEntity().GetInfo().GetId(), Type: protoPeer.GetEntity().GetInfo().GetType()}
 
@@ -58,32 +68,33 @@ func convertPeersFromProto(protoPeers []*storage.NetworkBaselinePeer) (map[peer]
 
 		name := nameFn(protoPeer.GetEntity().GetInfo())
 		for _, props := range protoPeer.GetProperties() {
-			out[peer{
-				isIngress: props.GetIngress(),
-				entity:    entity,
-				name:      name,
-				dstPort:   props.GetPort(),
-				protocol:  props.GetProtocol(),
+			out[Peer{
+				IsIngress: props.GetIngress(),
+				Entity:    entity,
+				Name:      name,
+				DstPort:   props.GetPort(),
+				Protocol:  props.GetProtocol(),
 			}] = struct{}{}
 		}
 	}
 	return out, nil
 }
 
-func convertPeersToProto(peerSet map[peer]struct{}) ([]*storage.NetworkBaselinePeer, error) {
+// ConvertPeersToProto converts in-memory representation of network baseline peers to protos
+func ConvertPeersToProto(peerSet map[Peer]struct{}) ([]*storage.NetworkBaselinePeer, error) {
 	if len(peerSet) == 0 {
 		return nil, nil
 	}
 	propertiesByEntity := make(map[entityWithName][]*storage.NetworkBaselineConnectionProperties)
 	for peer := range peerSet {
 		entity := entityWithName{
-			Entity: peer.entity,
-			Name:   peer.name,
+			Entity: peer.Entity,
+			Name:   peer.Name,
 		}
 		propertiesByEntity[entity] = append(propertiesByEntity[entity], &storage.NetworkBaselineConnectionProperties{
-			Ingress:  peer.isIngress,
-			Port:     peer.dstPort,
-			Protocol: peer.protocol,
+			Ingress:  peer.IsIngress,
+			Port:     peer.DstPort,
+			Protocol: peer.Protocol,
 		})
 	}
 	out := make([]*storage.NetworkBaselinePeer, 0, len(propertiesByEntity))
@@ -103,7 +114,7 @@ func convertPeersToProto(peerSet map[peer]struct{}) ([]*storage.NetworkBaselineP
 			Type: entity.Type,
 			Id:   entity.ID,
 		}
-		infoDescFn, ok := entityTypeToEntityInfoDesc[entity.Type]
+		infoDescFn, ok := EntityTypeToEntityInfoDesc[entity.Type]
 		if !ok {
 			// Unsupported type
 			return nil, errors.Errorf("unsupported entity type in network baseline: %q", entity.Type)
@@ -122,31 +133,52 @@ func convertPeersToProto(peerSet map[peer]struct{}) ([]*storage.NetworkBaselineP
 	return out, nil
 }
 
-func peerFromV1Peer(v1Peer *v1.NetworkBaselineStatusPeer, peerName string) peer {
-	return peer{
-		isIngress: v1Peer.GetIngress(),
-		entity: networkgraph.Entity{
+// PeerFromV1Peer converts peer within v1 request to in-memory representation form
+func PeerFromV1Peer(v1Peer *v1.NetworkBaselineStatusPeer, peerName string) Peer {
+	return Peer{
+		IsIngress: v1Peer.GetIngress(),
+		Entity: networkgraph.Entity{
 			Type: v1Peer.GetEntity().GetType(),
 			ID:   v1Peer.GetEntity().GetId(),
 		},
-		name:     peerName,
-		dstPort:  v1Peer.GetPort(),
-		protocol: v1Peer.GetProtocol(),
+		Name:     peerName,
+		DstPort:  v1Peer.GetPort(),
+		Protocol: v1Peer.GetProtocol(),
 	}
 }
 
-// reversePeerView takes the passed peer, which is a peer with respect to the passed
+// PeerFromNetworkEntityInfo converts peer from storage.NetworkEntityInfo
+func PeerFromNetworkEntityInfo(
+	info *storage.NetworkEntityInfo,
+	peerName string,
+	dstPort uint32,
+	protocol storage.L4Protocol,
+	isIngressToBaselineEntity bool,
+) Peer {
+	return Peer{
+		IsIngress: isIngressToBaselineEntity,
+		Entity: networkgraph.Entity{
+			Type: info.GetType(),
+			ID:   info.GetId(),
+		},
+		Name:     peerName,
+		DstPort:  dstPort,
+		Protocol: protocol,
+	}
+}
+
+// ReversePeerView takes the passed peer, which is a peer with respect to the passed
 // referenceDeploymentID, and returns the peer object that this deployment is from the
 // _other_ deployment's point of view.
-func reversePeerView(referenceDeploymentID, referenceDeploymentName string, p *peer) peer {
-	return peer{
-		isIngress: !p.isIngress,
-		entity: networkgraph.Entity{
+func ReversePeerView(referenceDeploymentID, referenceDeploymentName string, p *Peer) Peer {
+	return Peer{
+		IsIngress: !p.IsIngress,
+		Entity: networkgraph.Entity{
 			Type: storage.NetworkEntityInfo_DEPLOYMENT,
 			ID:   referenceDeploymentID,
 		},
-		name:     referenceDeploymentName,
-		dstPort:  p.dstPort,
-		protocol: p.protocol,
+		Name:     referenceDeploymentName,
+		DstPort:  p.DstPort,
+		Protocol: p.Protocol,
 	}
 }

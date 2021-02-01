@@ -36,5 +36,5 @@ var (
 
 	KubeEventMeta = pathutil.NewAugmentedObjMeta((*storage.KubernetesEvent)(nil))
 
-	NetworkFlowMeta = pathutil.NewAugmentedObjMeta((*networkFlowDetails)(nil))
+	NetworkFlowMeta = pathutil.NewAugmentedObjMeta((*NetworkFlowDetails)(nil))
 )

@@ -2,6 +2,7 @@ package unified
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/detection/runtime"
@@ -18,6 +19,7 @@ type Detector interface {
 	DetectDeployment(ctx deploytime.DetectionContext, deployment *storage.Deployment, images []*storage.Image) []*storage.Alert
 	DetectProcess(deployment *storage.Deployment, images []*storage.Image, processIndicator *storage.ProcessIndicator, processNotInBaseline bool) []*storage.Alert
 	DetectKubeEventForDeployment(deployment *storage.Deployment, images []*storage.Image, kubeEvent *storage.KubernetesEvent) []*storage.Alert
+	DetectNetworkFlowForDeployment(deployment *storage.Deployment, images []*storage.Image, flow *augmentedobjs.NetworkFlowDetails) []*storage.Alert
 }
 
 // NewDetector returns a new detector.

@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -35,25 +36,13 @@ var (
 	log = logging.LoggerForModule()
 )
 
-type baselineInfo struct {
-	// Metadata that doesn't change.
-	clusterID      string
-	namespace      string
-	deploymentName string
-
-	observationPeriodEnd timestamp.MicroTS
-	userLocked           bool
-	baselinePeers        map[peer]struct{}
-	forbiddenPeers       map[peer]struct{}
-}
-
 type manager struct {
 	ds              datastore.DataStore
 	networkEntities networkEntityDS.EntityDataStore
 	deploymentDS    deploymentDS.DataStore
 	networkPolicyDS networkPolicyDS.DataStore
 
-	baselinesByDeploymentID map[string]*baselineInfo
+	baselinesByDeploymentID map[string]*networkbaseline.BaselineInfo
 	seenNetworkPolicies     set.Uint64Set
 	lock                    sync.Mutex
 }
@@ -65,7 +54,7 @@ func getNewObservationPeriodEnd() timestamp.MicroTS {
 func (m *manager) shouldUpdate(conn *networkgraph.NetworkConnIndicator, updateTS timestamp.MicroTS) bool {
 	var atLeastOneBaselineInObservationPeriod bool
 	for _, entity := range []*networkgraph.Entity{&conn.SrcEntity, &conn.DstEntity} {
-		if _, valid := networkgraph.ValidBaselinePeerEntityTypes[entity.Type]; !valid {
+		if _, valid := networkbaseline.ValidBaselinePeerEntityTypes[entity.Type]; !valid {
 			return false
 		}
 		if entity.ID == "" {
@@ -81,26 +70,26 @@ func (m *manager) shouldUpdate(conn *networkgraph.NetworkConnIndicator, updateTS
 			return false
 		}
 		// If even one baseline is user-locked, no updates based on flows.
-		if baselineInfo.userLocked {
+		if baselineInfo.UserLocked {
 			return false
 		}
-		if baselineInfo.observationPeriodEnd.After(updateTS) {
+		if baselineInfo.ObservationPeriodEnd.After(updateTS) {
 			atLeastOneBaselineInObservationPeriod = true
 		}
 	}
 	return atLeastOneBaselineInObservationPeriod
 }
 
-func (m *manager) maybeAddPeer(deploymentID string, p *peer, modifiedDeploymentIDs set.StringSet) {
-	_, isForbidden := m.baselinesByDeploymentID[deploymentID].forbiddenPeers[*p]
+func (m *manager) maybeAddPeer(deploymentID string, p *networkbaseline.Peer, modifiedDeploymentIDs set.StringSet) {
+	_, isForbidden := m.baselinesByDeploymentID[deploymentID].ForbiddenPeers[*p]
 	if isForbidden {
 		return
 	}
-	_, alreadyInBaseline := m.baselinesByDeploymentID[deploymentID].baselinePeers[*p]
+	_, alreadyInBaseline := m.baselinesByDeploymentID[deploymentID].BaselinePeers[*p]
 	if alreadyInBaseline {
 		return
 	}
-	m.baselinesByDeploymentID[deploymentID].baselinePeers[*p] = struct{}{}
+	m.baselinesByDeploymentID[deploymentID].BaselinePeers[*p] = struct{}{}
 	modifiedDeploymentIDs.Add(deploymentID)
 }
 
@@ -111,23 +100,23 @@ func (m *manager) persistNetworkBaselines(deploymentIDs set.StringSet) error {
 	baselines := make([]*storage.NetworkBaseline, 0, len(deploymentIDs))
 	for deploymentID := range deploymentIDs {
 		baselineInfo := m.baselinesByDeploymentID[deploymentID]
-		peers, err := convertPeersToProto(baselineInfo.baselinePeers)
+		peers, err := networkbaseline.ConvertPeersToProto(baselineInfo.BaselinePeers)
 		if err != nil {
 			return err
 		}
-		forbiddenPeers, err := convertPeersToProto(baselineInfo.forbiddenPeers)
+		forbiddenPeers, err := networkbaseline.ConvertPeersToProto(baselineInfo.ForbiddenPeers)
 		if err != nil {
 			return err
 		}
 		baselines = append(baselines, &storage.NetworkBaseline{
 			DeploymentId:         deploymentID,
-			ClusterId:            baselineInfo.clusterID,
-			Namespace:            baselineInfo.namespace,
+			ClusterId:            baselineInfo.ClusterID,
+			Namespace:            baselineInfo.Namespace,
 			Peers:                peers,
 			ForbiddenPeers:       forbiddenPeers,
-			ObservationPeriodEnd: baselineInfo.observationPeriodEnd.GogoProtobuf(),
-			Locked:               baselineInfo.userLocked,
-			DeploymentName:       baselineInfo.deploymentName,
+			ObservationPeriodEnd: baselineInfo.ObservationPeriodEnd.GogoProtobuf(),
+			Locked:               baselineInfo.UserLocked,
+			DeploymentName:       baselineInfo.DeploymentName,
 		})
 	}
 	return m.ds.UpsertNetworkBaselines(managerCtx, baselines)
@@ -148,7 +137,7 @@ func (m *manager) lookUpPeerName(entity networkgraph.Entity) string {
 			log.Warnf("baseline for deployment peer does not exist: %q", entity.ID)
 			return ""
 		}
-		return peerBaseline.deploymentName
+		return peerBaseline.DeploymentName
 	case storage.NetworkEntityInfo_EXTERNAL_SOURCE:
 		// Look it up from datastore since as of now the external source name can change without ID changing.
 		networkEntity, found, err := m.networkEntities.GetEntity(managerCtx, entity.ID)
@@ -180,24 +169,24 @@ func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 		if conn.SrcEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
 			peerName := m.lookUpPeerName(conn.DstEntity)
 			if peerName != "" {
-				m.maybeAddPeer(conn.SrcEntity.ID, &peer{
-					isIngress: false,
-					entity:    conn.DstEntity,
-					name:      peerName,
-					dstPort:   conn.DstPort,
-					protocol:  conn.Protocol,
+				m.maybeAddPeer(conn.SrcEntity.ID, &networkbaseline.Peer{
+					IsIngress: false,
+					Entity:    conn.DstEntity,
+					Name:      peerName,
+					DstPort:   conn.DstPort,
+					Protocol:  conn.Protocol,
 				}, modifiedDeploymentIDs)
 			}
 		}
 		if conn.DstEntity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
 			peerName := m.lookUpPeerName(conn.SrcEntity)
 			if peerName != "" {
-				m.maybeAddPeer(conn.DstEntity.ID, &peer{
-					isIngress: true,
-					entity:    conn.SrcEntity,
-					name:      peerName,
-					dstPort:   conn.DstPort,
-					protocol:  conn.Protocol,
+				m.maybeAddPeer(conn.DstEntity.ID, &networkbaseline.Peer{
+					IsIngress: true,
+					Entity:    conn.SrcEntity,
+					Name:      peerName,
+					DstPort:   conn.DstPort,
+					Protocol:  conn.Protocol,
 				}, modifiedDeploymentIDs)
 			}
 		}
@@ -210,14 +199,14 @@ func (m *manager) processDeploymentCreate(deploymentID, deploymentName, clusterI
 		return nil
 	}
 
-	m.baselinesByDeploymentID[deploymentID] = &baselineInfo{
-		clusterID:            clusterID,
-		namespace:            namespace,
-		deploymentName:       deploymentName,
-		observationPeriodEnd: getNewObservationPeriodEnd(),
-		userLocked:           false,
-		baselinePeers:        make(map[peer]struct{}),
-		forbiddenPeers:       make(map[peer]struct{}),
+	m.baselinesByDeploymentID[deploymentID] = &networkbaseline.BaselineInfo{
+		ClusterID:            clusterID,
+		Namespace:            namespace,
+		DeploymentName:       deploymentName,
+		ObservationPeriodEnd: getNewObservationPeriodEnd(),
+		UserLocked:           false,
+		BaselinePeers:        make(map[networkbaseline.Peer]struct{}),
+		ForbiddenPeers:       make(map[networkbaseline.Peer]struct{}),
 	}
 	return m.persistNetworkBaselines(set.NewStringSet(deploymentID))
 }
@@ -236,39 +225,39 @@ func (m *manager) processDeploymentDelete(deploymentID string) error {
 	}
 
 	modifiedDeployments := set.NewStringSet()
-	for peer := range deletingBaseline.baselinePeers {
+	for peer := range deletingBaseline.BaselinePeers {
 		// Delete the edge from that deployment to this deployment
-		peerBaseline, peerFound := m.baselinesByDeploymentID[peer.entity.ID]
+		peerBaseline, peerFound := m.baselinesByDeploymentID[peer.Entity.ID]
 		if !peerFound {
 			// Probably the peer is not a deployment
 			continue
 		}
-		reversedPeer := reversePeerView(deploymentID, deletingBaseline.deploymentName, &peer)
-		delete(peerBaseline.baselinePeers, reversedPeer)
-		modifiedDeployments.Add(peer.entity.ID)
+		reversedPeer := networkbaseline.ReversePeerView(deploymentID, deletingBaseline.DeploymentName, &peer)
+		delete(peerBaseline.BaselinePeers, reversedPeer)
+		modifiedDeployments.Add(peer.Entity.ID)
 	}
 	// For now delete this deployment record from the forbidden peers as well. If we need
 	// the records to be sticky for any reason, remove the following lines
-	for forbiddenPeer := range deletingBaseline.forbiddenPeers {
-		forbiddenPeerBaseline, found := m.baselinesByDeploymentID[forbiddenPeer.entity.ID]
+	for forbiddenPeer := range deletingBaseline.ForbiddenPeers {
+		forbiddenPeerBaseline, found := m.baselinesByDeploymentID[forbiddenPeer.Entity.ID]
 		if !found {
 			// Probably the forbidden peer is not a deployment
 			continue
 		}
-		reversedPeer := reversePeerView(deploymentID, deletingBaseline.deploymentName, &forbiddenPeer)
-		delete(forbiddenPeerBaseline.forbiddenPeers, reversedPeer)
-		modifiedDeployments.Add(forbiddenPeer.entity.ID)
+		reversedPeer := networkbaseline.ReversePeerView(deploymentID, deletingBaseline.DeploymentName, &forbiddenPeer)
+		delete(forbiddenPeerBaseline.ForbiddenPeers, reversedPeer)
+		modifiedDeployments.Add(forbiddenPeer.Entity.ID)
 	}
 
 	// Delete the records from other baselines first, then delete the wanted baseline after
 	err := m.persistNetworkBaselines(modifiedDeployments)
 	if err != nil {
-		return errors.Wrapf(err, "deleting baseline of deployment %q", deletingBaseline.deploymentName)
+		return errors.Wrapf(err, "deleting baseline of deployment %q", deletingBaseline.DeploymentName)
 	}
 
 	err = m.ds.DeleteNetworkBaseline(managerCtx, deploymentID)
 	if err != nil {
-		return errors.Wrapf(err, "deleting baseline of deployment %q", deletingBaseline.deploymentName)
+		return errors.Wrapf(err, "deleting baseline of deployment %q", deletingBaseline.DeploymentName)
 	}
 
 	// Clean up cache
@@ -293,7 +282,7 @@ func (m *manager) validatePeers(peers []*v1.NetworkBaselinePeerStatus) error {
 	var invalidPeerTypes []string
 	for _, p := range peers {
 		entity := p.GetPeer().GetEntity()
-		if _, valid := networkgraph.ValidBaselinePeerEntityTypes[entity.GetType()]; !valid {
+		if _, valid := networkbaseline.ValidBaselinePeerEntityTypes[entity.GetType()]; !valid {
 			invalidPeerTypes = append(invalidPeerTypes, entity.GetType().String())
 		}
 		if entity.GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
@@ -331,7 +320,7 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 	// It's not ideal to have to duplicate this check, but we do the permission check here upfront so that we know for sure
 	// what the end state of the in-memory data structures should be. Otherwise, if there is a permission denied error,
 	// we will need to come back and undo the in-memory changes, which is more complex.
-	if ok, err := networkBaselineSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.clusterID), sac.NamespaceScopeKey(baseline.namespace)); err != nil {
+	if ok, err := networkBaselineSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.ClusterID), sac.NamespaceScopeKey(baseline.Namespace)); err != nil {
 		return err
 	} else if !ok {
 		return status.Error(codes.PermissionDenied, sac.ErrPermissionDenied.Error())
@@ -345,41 +334,41 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 				Type: v1Peer.GetEntity().GetType(),
 				ID:   v1Peer.GetEntity().GetId(),
 			})
-		peer := peerFromV1Peer(v1Peer, peerName)
-		_, inBaseline := baseline.baselinePeers[peer]
-		_, inForbidden := baseline.forbiddenPeers[peer]
+		peer := networkbaseline.PeerFromV1Peer(v1Peer, peerName)
+		_, inBaseline := baseline.BaselinePeers[peer]
+		_, inForbidden := baseline.ForbiddenPeers[peer]
 		switch peerAndStatus.GetStatus() {
 		case v1.NetworkBaselinePeerStatus_BASELINE:
 			if inBaseline && !inForbidden {
 				// We wouldn't make any modifications in this case.
 				continue
 			}
-			baseline.baselinePeers[peer] = struct{}{}
-			delete(baseline.forbiddenPeers, peer)
+			baseline.BaselinePeers[peer] = struct{}{}
+			delete(baseline.ForbiddenPeers, peer)
 			modifiedDeploymentIDs.Add(deploymentID)
-			if peer.entity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-				reversePeer := reversePeerView(deploymentID, baseline.deploymentName, &peer)
+			if peer.Entity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
+				reversePeer := networkbaseline.ReversePeerView(deploymentID, baseline.DeploymentName, &peer)
 
-				otherBaseline := m.baselinesByDeploymentID[peer.entity.ID]
-				otherBaseline.baselinePeers[reversePeer] = struct{}{}
-				delete(otherBaseline.forbiddenPeers, reversePeer)
-				modifiedDeploymentIDs.Add(peer.entity.ID)
+				otherBaseline := m.baselinesByDeploymentID[peer.Entity.ID]
+				otherBaseline.BaselinePeers[reversePeer] = struct{}{}
+				delete(otherBaseline.ForbiddenPeers, reversePeer)
+				modifiedDeploymentIDs.Add(peer.Entity.ID)
 			}
 		case v1.NetworkBaselinePeerStatus_ANOMALOUS:
 			if !inBaseline && inForbidden {
 				// We wouldn't make any modifications in this case.
 				continue
 			}
-			delete(baseline.baselinePeers, peer)
-			baseline.forbiddenPeers[peer] = struct{}{}
+			delete(baseline.BaselinePeers, peer)
+			baseline.ForbiddenPeers[peer] = struct{}{}
 			modifiedDeploymentIDs.Add(deploymentID)
-			if peer.entity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
-				reversePeer := reversePeerView(deploymentID, baseline.deploymentName, &peer)
+			if peer.Entity.Type == storage.NetworkEntityInfo_DEPLOYMENT {
+				reversePeer := networkbaseline.ReversePeerView(deploymentID, baseline.DeploymentName, &peer)
 
-				otherBaseline := m.baselinesByDeploymentID[peer.entity.ID]
-				delete(otherBaseline.baselinePeers, reversePeer)
-				otherBaseline.forbiddenPeers[reversePeer] = struct{}{}
-				modifiedDeploymentIDs.Add(peer.entity.ID)
+				otherBaseline := m.baselinesByDeploymentID[peer.Entity.ID]
+				delete(otherBaseline.BaselinePeers, reversePeer)
+				otherBaseline.ForbiddenPeers[reversePeer] = struct{}{}
+				modifiedDeploymentIDs.Add(peer.Entity.ID)
 			}
 		default:
 			return utils.Should(errors.Errorf("unknown status: %v", peerAndStatus.GetStatus()))
@@ -418,7 +407,7 @@ func (m *manager) processNetworkPolicyUpdate(
 			// take care of setting the observation period
 			continue
 		}
-		baseline.observationPeriodEnd = getNewObservationPeriodEnd()
+		baseline.ObservationPeriodEnd = getNewObservationPeriodEnd()
 		modifiedDeploymentIDs.Add(deploymentID)
 	}
 
@@ -493,19 +482,19 @@ func (m *manager) processBaselineLockUpdate(ctx context.Context, deploymentID st
 		return status.Error(codes.InvalidArgument, "no baseline with given deployment ID found")
 	}
 	// Permission check before modifying in-memory data structures
-	if ok, err := networkBaselineSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.clusterID), sac.NamespaceScopeKey(baseline.namespace)); err != nil {
+	if ok, err := networkBaselineSAC.WriteAllowed(ctx, sac.ClusterScopeKey(baseline.ClusterID), sac.NamespaceScopeKey(baseline.Namespace)); err != nil {
 		return err
 	} else if !ok {
 		return status.Error(codes.PermissionDenied, sac.ErrPermissionDenied.Error())
 	}
 
 	// No error if already locked/unlocked
-	if baseline.userLocked == lockBaseline {
+	if baseline.UserLocked == lockBaseline {
 		// Already in the state which user specifies
 		return nil
 	}
 
-	baseline.userLocked = lockBaseline
+	baseline.UserLocked = lockBaseline
 	return m.persistNetworkBaselines(set.NewStringSet(deploymentID))
 }
 
@@ -518,7 +507,7 @@ func (m *manager) ProcessBaselineLockUpdate(ctx context.Context, deploymentID st
 func (m *manager) processPostClusterDelete(clusterID string) error {
 	deletingBaselines := set.NewStringSet()
 	for deploymentID, baseline := range m.baselinesByDeploymentID {
-		if baseline.clusterID == clusterID {
+		if baseline.ClusterID == clusterID {
 			deletingBaselines.Add(deploymentID)
 		}
 	}
@@ -531,15 +520,15 @@ func (m *manager) processPostClusterDelete(clusterID string) error {
 		}
 		// Baselines that are not deleted. Need to update their edges in case
 		// they are pointing to the deleting baselines.
-		for p := range baseline.baselinePeers {
-			if deletingBaselines.Contains(p.entity.ID) {
-				delete(baseline.baselinePeers, p)
+		for p := range baseline.BaselinePeers {
+			if deletingBaselines.Contains(p.Entity.ID) {
+				delete(baseline.BaselinePeers, p)
 				modifiedBaselines.Add(deploymentID)
 			}
 		}
-		for forbiddenP := range baseline.forbiddenPeers {
-			if deletingBaselines.Contains(forbiddenP.entity.ID) {
-				delete(baseline.forbiddenPeers, forbiddenP)
+		for forbiddenP := range baseline.ForbiddenPeers {
+			if deletingBaselines.Contains(forbiddenP.Entity.ID) {
+				delete(baseline.ForbiddenPeers, forbiddenP)
 				modifiedBaselines.Add(deploymentID)
 			}
 		}
@@ -571,25 +560,13 @@ func (m *manager) ProcessPostClusterDelete(clusterID string) error {
 
 func (m *manager) initFromStore() error {
 	seenClusterAndNamespace := make(map[clusterNamespacePair]struct{})
-	m.baselinesByDeploymentID = make(map[string]*baselineInfo)
+	m.baselinesByDeploymentID = make(map[string]*networkbaseline.BaselineInfo)
 	return m.ds.Walk(managerCtx, func(baseline *storage.NetworkBaseline) error {
-		peers, err := convertPeersFromProto(baseline.GetPeers())
+		baselineInfo, err := networkbaseline.ConvertBaselineInfoFromProto(baseline)
 		if err != nil {
 			return err
 		}
-		forbiddenPeers, err := convertPeersFromProto(baseline.GetForbiddenPeers())
-		if err != nil {
-			return err
-		}
-		m.baselinesByDeploymentID[baseline.GetDeploymentId()] = &baselineInfo{
-			clusterID:            baseline.GetClusterId(),
-			namespace:            baseline.GetNamespace(),
-			deploymentName:       baseline.GetDeploymentName(),
-			observationPeriodEnd: timestamp.FromProtobuf(baseline.GetObservationPeriodEnd()),
-			userLocked:           baseline.GetLocked(),
-			baselinePeers:        peers,
-			forbiddenPeers:       forbiddenPeers,
-		}
+		m.baselinesByDeploymentID[baseline.GetDeploymentId()] = baselineInfo
 
 		// Try loading all the network policies to build the seen network policies cache
 		curPair := clusterNamespacePair{ClusterID: baseline.GetClusterId(), Namespace: baseline.GetNamespace()}

@@ -27,6 +27,14 @@ const (
 	networkGraphExtSrcsCap = `network-graph-external-srcs`
 )
 
+// NewService creates a new streaming service with the collector. It should only be called once.
+func NewService(networkFlowManager manager.Manager) Service {
+	return &serviceImpl{
+		manager: networkFlowManager,
+	}
+
+}
+
 type serviceImpl struct {
 	manager manager.Manager
 }

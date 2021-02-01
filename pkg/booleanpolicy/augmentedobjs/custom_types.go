@@ -33,12 +33,16 @@ type baselineResult struct {
 	NotInBaseline bool `search:"Not In Baseline"`
 }
 
-type networkFlowDetails struct {
-	SrcEntityName        string             `search:"Network Flow Source Name"`
-	DstEntityName        string             `search:"Network Flow Destination Name"`
-	DstPort              uint32             `search:"Network Flow Destination Port"`
-	L4Protocol           storage.L4Protocol `search:"Network Flow L4 Protocol"`
-	NotInNetworkBaseline bool               `search:"Not In Network Baseline"`
+// NetworkFlowDetails captures information about a particular network flow.
+// Used with MatchAgainstDeploymentAndNetworkFlow to validate network flows
+type NetworkFlowDetails struct {
+	SrcEntityName        string                         `search:"Network Flow Source Name"`
+	SrcEntityType        storage.NetworkEntityInfo_Type `search:"Network Flow Source Type"`
+	DstEntityName        string                         `search:"Network Flow Destination Name"`
+	DstEntityType        storage.NetworkEntityInfo_Type `search:"Network Flow Destination Type"`
+	DstPort              uint32                         `search:"Network Flow Destination Port"`
+	L4Protocol           storage.L4Protocol             `search:"Network Flow L4 Protocol"`
+	NotInNetworkBaseline bool                           `search:"Not In Network Baseline"`
 }
 
 type envVar struct {

@@ -17,6 +17,7 @@ func newHandler() *handlerImpl {
 		stopSig:                  concurrency.NewSignal(),
 		updateSig:                concurrency.NewSignal(),
 		entities:                 make(map[net.IPNetwork]*storage.NetworkEntityInfo),
+		entitiesByID:             make(map[string]*storage.NetworkEntityInfo),
 		ipNetworkListProtoStream: concurrency.NewValueStream(nil),
 	}
 }

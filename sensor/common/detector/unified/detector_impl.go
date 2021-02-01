@@ -2,6 +2,7 @@ package unified
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/detection/runtime"
 	"github.com/stackrox/rox/pkg/features"
@@ -32,7 +33,7 @@ func (d *detectorImpl) DetectDeployment(ctx deploytime.DetectionContext, deploym
 }
 
 func (d *detectorImpl) DetectProcess(deployment *storage.Deployment, images []*storage.Image, process *storage.ProcessIndicator, processNotInBaseline bool) []*storage.Alert {
-	alerts, err := d.runtimeDetector.DetectForDeployment(deployment, images, process, processNotInBaseline, nil)
+	alerts, err := d.runtimeDetector.DetectForDeploymentAndProcess(deployment, images, process, processNotInBaseline)
 	if err != nil {
 		log.Errorf("Error running runtime policies for deployment %q and process %q: %v", deployment.GetName(), process.GetSignal().GetExecFilePath(), err)
 	}
@@ -45,9 +46,26 @@ func (d *detectorImpl) DetectKubeEventForDeployment(deployment *storage.Deployme
 		return nil
 	}
 
-	alerts, err := d.runtimeDetector.DetectForDeployment(deployment, images, nil, false, kubeEvent)
+	alerts, err := d.runtimeDetector.DetectForDeploymentAndKubeEvent(deployment, images, kubeEvent)
 	if err != nil {
 		log.Errorf("Error running runtime policies for kubernetes event %s: %v", kubernetes.EventAsString(kubeEvent), err)
+	}
+	return alerts
+}
+
+func (d *detectorImpl) DetectNetworkFlowForDeployment(
+	deployment *storage.Deployment,
+	images []*storage.Image,
+	flow *augmentedobjs.NetworkFlowDetails,
+) []*storage.Alert {
+	if !features.NetworkDetectionBaselineViolation.Enabled() {
+		log.Error("Cannot detect network flow. Support for network flow policies is not enabled.")
+		return nil
+	}
+
+	alerts, err := d.runtimeDetector.DetectForDeploymentAndNetworkFlow(deployment, images, flow)
+	if err != nil {
+		log.Errorf("Error running runtime policies for network flow %v: %v", flow, err)
 	}
 	return alerts
 }

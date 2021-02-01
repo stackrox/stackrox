@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
@@ -130,6 +131,25 @@ func (e *containerEndpoint) String() string {
 	return fmt.Sprintf("%s: %s", e.containerID, e.endpoint)
 }
 
+// NewManager creates a new instance of network flow manager
+func NewManager(
+	clusterEntities *clusterentities.Store,
+	externalSrcs externalsrcs.Store,
+	policyDetector detector.Detector,
+) Manager {
+	mgr := &networkFlowManager{
+		done:              concurrency.NewSignal(),
+		connectionsByHost: make(map[string]*hostConnections),
+		clusterEntities:   clusterEntities,
+		flowUpdates:       make(chan *central.MsgFromSensor),
+		publicIPs:         newPublicIPsManager(),
+		externalSrcs:      externalSrcs,
+		policyDetector:    policyDetector,
+	}
+
+	return mgr
+}
+
 type networkFlowManager struct {
 	connectionsByHost      map[string]*hostConnections
 	connectionsByHostMutex sync.Mutex
@@ -144,6 +164,8 @@ type networkFlowManager struct {
 	flowUpdates chan *central.MsgFromSensor
 
 	publicIPs *publicIPsManager
+
+	policyDetector detector.Detector
 }
 
 func (m *networkFlowManager) ProcessMessage(msg *central.MsgToSensor) error {
@@ -198,6 +220,13 @@ func (m *networkFlowManager) enrichAndSend() {
 		Updated:          updatedConns,
 		UpdatedEndpoints: updatedEndpoints,
 		Time:             types.TimestampNow(),
+	}
+
+	// Before sending, run the flows through policies asynchronously
+	if features.NetworkDetectionBaselineViolation.Enabled() {
+		for _, flow := range updatedConns {
+			m.policyDetector.ProcessNetworkFlow(flow)
+		}
 	}
 
 	metrics.IncrementTotalNetworkFlowsSentCounter(len(protoToSend.Updated))

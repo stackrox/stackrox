@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
-	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 )
 
 type processMatcherImpl struct {
@@ -100,16 +100,19 @@ type networkFlowMatcherImpl struct {
 	matcherImpl
 }
 
-func (m *networkFlowMatcherImpl) checkFlowEntitySupportsPolicy(info *storage.NetworkEntityInfo) bool {
+func (m *networkFlowMatcherImpl) checkFlowEntitySupportsPolicy(t storage.NetworkEntityInfo_Type) bool {
 	// For now we only support running policy checks on flows which we also support in network baselines
-	_, ok := networkgraph.ValidBaselinePeerEntityTypes[info.GetType()]
+	_, ok := networkbaseline.ValidBaselinePeerEntityTypes[t]
 	return ok
 }
 
-func (m *networkFlowMatcherImpl) checkWhetherFlowMatches(cache *CacheReceptacle, flow *storage.NetworkFlow, flowNotInBaseline bool) (bool, error) {
+func (m *networkFlowMatcherImpl) checkWhetherFlowMatches(
+	cache *CacheReceptacle,
+	flow *augmentedobjs.NetworkFlowDetails,
+) (bool, error) {
 	// First make sure both src and dst entities support policy checking
-	if !m.checkFlowEntitySupportsPolicy(flow.GetProps().GetSrcEntity()) ||
-		!m.checkFlowEntitySupportsPolicy(flow.GetProps().GetDstEntity()) {
+	if !m.checkFlowEntitySupportsPolicy(flow.SrcEntityType) ||
+		!m.checkFlowEntitySupportsPolicy(flow.DstEntityType) {
 		return false, nil
 	}
 
@@ -118,7 +121,7 @@ func (m *networkFlowMatcherImpl) checkWhetherFlowMatches(cache *CacheReceptacle,
 		augmentedNetworkFlow = cache.augmentedNetworkFlow
 	} else {
 		var err error
-		augmentedNetworkFlow, err = augmentedobjs.ConstructNetworkFlow(flow, flowNotInBaseline)
+		augmentedNetworkFlow, err = augmentedobjs.ConstructNetworkFlow(flow)
 		if err != nil {
 			return false, err
 		}
@@ -139,18 +142,17 @@ func (m *networkFlowMatcherImpl) MatchDeploymentWithNetworkFlowInfo(
 	cache *CacheReceptacle,
 	deployment *storage.Deployment,
 	images []*storage.Image,
-	flow *storage.NetworkFlow,
-	flowNotInBaseline bool,
+	flow *augmentedobjs.NetworkFlowDetails,
 ) (Violations, error) {
 	if cache == nil || cache.augmentedObj == nil {
-		processMatched, err := m.checkWhetherFlowMatches(cache, flow, flowNotInBaseline)
+		processMatched, err := m.checkWhetherFlowMatches(cache, flow)
 		if err != nil || !processMatched {
 			return Violations{}, err
 		}
 	}
 
 	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructDeploymentWithNetworkFlowInfo(deployment, images, flow, flowNotInBaseline)
+		return augmentedobjs.ConstructDeploymentWithNetworkFlowInfo(deployment, images, flow)
 	}, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err

@@ -65,7 +65,7 @@ type KubeEventMatcher interface {
 
 // A DeploymentWithNetworkFlowMatcher matches deployments, and a network flow against a policy.
 type DeploymentWithNetworkFlowMatcher interface {
-	MatchDeploymentWithNetworkFlowInfo(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, flow *storage.NetworkFlow, flowNotInNetworkBaseline bool) (Violations, error)
+	MatchDeploymentWithNetworkFlowInfo(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, flow *augmentedobjs.NetworkFlowDetails) (Violations, error)
 }
 
 type sectionAndEvaluator struct {

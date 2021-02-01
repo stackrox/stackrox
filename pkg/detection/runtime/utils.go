@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -16,15 +17,8 @@ func constructProcessAlert(policy *storage.Policy, deployment *storage.Deploymen
 	if len(violations.AlertViolations) == 0 && violations.ProcessViolation == nil {
 		return nil
 	}
-	alert := &storage.Alert{
-		Id:               uuid.NewV4().String(),
-		LifecycleStage:   storage.LifecycleStage_RUNTIME,
-		Entity:           convert.ToAlertDeployment(deployment),
-		Policy:           policy.Clone(),
-		Violations:       violations.AlertViolations,
-		ProcessViolation: violations.ProcessViolation,
-		Time:             ptypes.TimestampNow(),
-	}
+	alert := constructGenericRuntimeAlert(policy, deployment, violations.AlertViolations)
+	alert.ProcessViolation = violations.ProcessViolation
 	if action, msg := buildEnforcement(policy, deployment); action != storage.EnforcementAction_UNSET_ENFORCEMENT {
 		alert.Enforcement = &storage.Alert_Enforcement{
 			Action:  action,
@@ -44,14 +38,7 @@ func constructKubeEventAlert(
 		return nil
 	}
 
-	alert := &storage.Alert{
-		Id:             uuid.NewV4().String(),
-		LifecycleStage: storage.LifecycleStage_RUNTIME,
-		Entity:         convert.ToAlertDeployment(kubeResource.(*storage.Deployment)),
-		Policy:         policy.Clone(),
-		Violations:     violations.AlertViolations,
-		Time:           ptypes.TimestampNow(),
-	}
+	alert := constructGenericRuntimeAlert(policy, kubeResource.(*storage.Deployment), violations.AlertViolations)
 	if action, msg := buildKubeEventEnforcement(policy, kubeEvent); action != storage.EnforcementAction_UNSET_ENFORCEMENT {
 		alert.Enforcement = &storage.Alert_Enforcement{
 			Action:  action,
@@ -59,6 +46,35 @@ func constructKubeEventAlert(
 		}
 	}
 	return alert
+}
+
+func constructNetworkFlowAlert(
+	policy *storage.Policy,
+	deployment *storage.Deployment,
+	flow *augmentedobjs.NetworkFlowDetails,
+	violations booleanpolicy.Violations,
+) *storage.Alert {
+	if len(violations.AlertViolations) == 0 {
+		return nil
+	}
+	alert := constructGenericRuntimeAlert(policy, deployment, violations.AlertViolations)
+	// TODO: there is no network flow policy enforcement for now
+	return alert
+}
+
+func constructGenericRuntimeAlert(
+	policy *storage.Policy,
+	deployment *storage.Deployment,
+	violations []*storage.Alert_Violation,
+) *storage.Alert {
+	return &storage.Alert{
+		Id:             uuid.NewV4().String(),
+		Policy:         policy.Clone(),
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+		Entity:         convert.ToAlertDeployment(deployment),
+		Violations:     violations,
+		Time:           ptypes.TimestampNow(),
+	}
 }
 
 func buildEnforcement(policy *storage.Policy, deployment *storage.Deployment) (enforcement storage.EnforcementAction, message string) {

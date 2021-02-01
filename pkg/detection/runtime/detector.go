@@ -19,11 +19,9 @@ var (
 type Detector interface {
 	PolicySet() detection.PolicySet
 
-	DetectForDeployment(deployment *storage.Deployment,
-		images []*storage.Image,
-		process *storage.ProcessIndicator,
-		processNotInBaseline bool,
-		kubeEvent *storage.KubernetesEvent) ([]*storage.Alert, error)
+	DetectForDeploymentAndProcess(deployment *storage.Deployment, images []*storage.Image, process *storage.ProcessIndicator, processNotInBaseline bool) ([]*storage.Alert, error)
+	DetectForDeploymentAndKubeEvent(deployment *storage.Deployment, images []*storage.Image, kubeEvent *storage.KubernetesEvent) ([]*storage.Alert, error)
+	DetectForDeploymentAndNetworkFlow(deployment *storage.Deployment, images []*storage.Image, flow *augmentedobjs.NetworkFlowDetails) ([]*storage.Alert, error)
 }
 
 // NewDetector returns a new instance of a Detector.
@@ -42,13 +40,39 @@ func (d *detectorImpl) PolicySet() detection.PolicySet {
 	return d.policySet
 }
 
-// DetectForDeployment runs detection on a deployment, returning any generated alerts.
-func (d *detectorImpl) DetectForDeployment(
+func (d *detectorImpl) DetectForDeploymentAndProcess(
+	deployment *storage.Deployment,
+	images []*storage.Image,
+	process *storage.ProcessIndicator,
+	processNotInBaseline bool,
+) ([]*storage.Alert, error) {
+	return d.detectForDeployment(deployment, images, process, processNotInBaseline, nil, nil)
+}
+
+func (d *detectorImpl) DetectForDeploymentAndKubeEvent(
+	deployment *storage.Deployment,
+	images []*storage.Image,
+	kubeEvent *storage.KubernetesEvent,
+) ([]*storage.Alert, error) {
+	return d.detectForDeployment(deployment, images, nil, false, kubeEvent, nil)
+}
+
+func (d *detectorImpl) DetectForDeploymentAndNetworkFlow(
+	deployment *storage.Deployment,
+	images []*storage.Image,
+	flow *augmentedobjs.NetworkFlowDetails,
+) ([]*storage.Alert, error) {
+	return d.detectForDeployment(deployment, images, nil, false, nil, flow)
+}
+
+// detectForDeployment runs detection on a deployment, returning any generated alerts.
+func (d *detectorImpl) detectForDeployment(
 	deployment *storage.Deployment,
 	images []*storage.Image,
 	process *storage.ProcessIndicator,
 	processNotInBaseline bool,
 	kubeEvent *storage.KubernetesEvent,
+	flow *augmentedobjs.NetworkFlowDetails,
 ) ([]*storage.Alert, error) {
 	var alerts []*storage.Alert
 	var cacheReceptable booleanpolicy.CacheReceptacle
@@ -80,25 +104,30 @@ func (d *detectorImpl) DetectForDeployment(
 			}
 		}
 
-		if kubeEvent == nil {
-			return nil
+		if kubeEvent != nil && features.K8sEventDetection.Enabled() {
+			violation, err := compiled.MatchAgainstKubeResourceAndEvent(&cacheReceptable, kubeEvent, augmentedDeploy)
+			if err != nil {
+				return errors.Wrapf(err, "evaluating violations for policy %q; kubernetes request %s",
+					compiled.Policy().GetName(), kubernetes.EventAsString(kubeEvent))
+			}
+
+			if alert := constructKubeEventAlert(compiled.Policy(), kubeEvent, deployment, violation); alert != nil {
+				alerts = append(alerts, alert)
+			}
 		}
 
-		if !features.K8sEventDetection.Enabled() {
-			return errors.Errorf("cannot evaluate violations for policy %q; kubernetes request %s. "+
-				"Support for kubernetes event policies is not enabled",
-				compiled.Policy().GetName(), kubernetes.EventAsString(kubeEvent))
+		if flow != nil && features.NetworkDetectionBaselineViolation.Enabled() {
+			violation, err := compiled.MatchAgainstDeploymentAndNetworkFlow(&cacheReceptable, deployment, images, flow)
+			if err != nil {
+				return errors.Wrapf(err, "evaluating violations for policy %q; network flow %+v",
+					compiled.Policy().GetName(), flow)
+			}
+
+			if alert := constructNetworkFlowAlert(compiled.Policy(), deployment, flow, violation); alert != nil {
+				alerts = append(alerts, alert)
+			}
 		}
 
-		violation, err := compiled.MatchAgainstKubeResourceAndEvent(&cacheReceptable, kubeEvent, augmentedDeploy)
-		if err != nil {
-			return errors.Wrapf(err, "evaluating violations for policy %q; kubernetes request %s",
-				compiled.Policy().GetName(), kubernetes.EventAsString(kubeEvent))
-		}
-
-		if alert := constructKubeEventAlert(compiled.Policy(), kubeEvent, deployment, violation); alert != nil {
-			alerts = append(alerts, alert)
-		}
 		return nil
 	})
 	if err != nil {
