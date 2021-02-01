@@ -155,25 +155,24 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 accessor: 'deploymentCount',
                 sortField: clusterSortFields.DEPLOYMENT_COUNT,
             },
-            // TODO: Enable once ROX_HOST_SCANNING is enabled.
-            // {
-            //     Header: `Nodes`,
-            //     entityType: entityTypes.NODE,
-            //     headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            //     className: `w-1/10 ${defaultColumnClassName}`,
-            //     // eslint-disable-next-line
-            //     Cell: ({ original, pdf }) => (
-            //         <TableCountLink
-            //             entityType={entityTypes.NODE}
-            //             count={original.nodeCount}
-            //             textOnly={pdf}
-            //             selectedRowId={original.id}
-            //         />
-            //     ),
-            //     id: clusterSortFields.NODE_COUNT,
-            //     accessor: 'nodeCount',
-            //     sortField: clusterSortFields.NODE_COUNT,
-            // },
+            {
+                Header: `Nodes`,
+                entityType: entityTypes.NODE,
+                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                className: `w-1/10 ${defaultColumnClassName}`,
+                // eslint-disable-next-line
+                Cell: ({ original, pdf }) => (
+                    <TableCountLink
+                        entityType={entityTypes.NODE}
+                        count={original.nodeCount}
+                        textOnly={pdf}
+                        selectedRowId={original.id}
+                    />
+                ),
+                id: clusterSortFields.NODE_COUNT,
+                accessor: 'nodeCount',
+                sortField: clusterSortFields.NODE_COUNT,
+            },
             // @TODD, restore the Policy Counts column once its performance is improved,
             //   or remove the comment if we determine that it cannot be made performant
             //   (see https://stack-rox.atlassian.net/browse/ROX-4080)

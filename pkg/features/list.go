@@ -38,7 +38,7 @@ var (
 	NetworkDetectionBaselineViolation = registerFeature("Enable network detection baseline violation", "ROX_NETWORK_DETECTION_BASELINE_VIOLATION", false)
 
 	// HostScanning enables new features related to the new host scanning experience in VM.
-	HostScanning = registerFeature("Enable new host scanning experience", "ROX_HOST_SCANNING", false)
+	HostScanning = registerFeature("Enable new host scanning experience", "ROX_HOST_SCANNING", true)
 
 	// SensorTLSChallenge enables Sensor to receive Centrals configured additional-ca an default certs.
 	SensorTLSChallenge = registerFeature("Enable Sensor to receive default and additional CA certificates from Central", "ROX_SENSOR_TLS_CHALLENGE", true)

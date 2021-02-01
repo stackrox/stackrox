@@ -68,6 +68,7 @@ func (suite *loopTestSuite) expectCalls(times int, allowMore bool) {
 	}
 
 	timesSpec(suite.mockImage.EXPECT().Search(getAndWriteImagesContext, gomock.Any()).Return(nil, nil), times)
+	timesSpec(suite.mockNode.EXPECT().Search(getNodesContext, gomock.Any()).Return(nil, nil), times)
 	timesSpec(suite.mockManager.EXPECT().BroadcastMessage(&central.MsgToSensor{
 		Msg: &central.MsgToSensor_ReassessPolicies{
 			ReassessPolicies: &central.ReassessPolicies{},

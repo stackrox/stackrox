@@ -50,7 +50,7 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, pa
                 componentCount(query: $query)
                 imageCount(query: $query)
                 deploymentCount(query: $query)
-                # nodeCount(query: $query)
+                nodeCount(query: $query)
             }
         }
     `;

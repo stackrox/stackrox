@@ -58,7 +58,7 @@ const VulmMgmtEntityCluster = ({
                 }
                 istioEnabled
                 policyCount(query: $policyQuery)
-                #nodeCount TODO: Bring back once ROX_HOST_SCANNING is enabled
+                nodeCount
                 namespaceCount
                 deploymentCount
                 imageCount
