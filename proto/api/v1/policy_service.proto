@@ -17,11 +17,6 @@ message DryRunResponse {
         repeated string violations = 2;
     }
     repeated Alert alerts = 1;
-    message Excluded {
-        string deployment           = 1;
-        storage.Exclusion exclusion = 2;
-    }
-    repeated Excluded excluded     = 2;
 }
 
 message JobId {
