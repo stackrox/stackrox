@@ -25,7 +25,7 @@ export const selectors = {
         enableField: 'form input[name=disabled]',
         required: 'form span[data-testid="required"]',
         select: 'form select',
-        selectValue: 'form .react-select__multi-value__label',
+        selectValue: 'form .react-select__single-value',
     },
     configurationField: {
         select: '#policyConfigurationSelect',

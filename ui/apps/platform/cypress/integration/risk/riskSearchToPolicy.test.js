@@ -24,7 +24,7 @@ describe('Risk search to new policy', () => {
             'Add Capabilities:'
         );
         cy.get(
-            `${policySelectors.booleanPolicySection.policyFieldCard}:first .react-select__multi-value__label`
+            `${policySelectors.booleanPolicySection.policyFieldCard}:first .react-select__single-value`
         ).should('contain.text', 'NET_BIND_SERVICE');
     });
 

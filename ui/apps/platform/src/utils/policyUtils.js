@@ -125,16 +125,17 @@ export function transformPolicyCriteriaValuesToStrings(policy) {
               const newPolicyGroups = !section?.policyGroups
                   ? []
                   : section?.policyGroups.map((group) => {
-                        const newValues = !group.values
-                            ? null
-                            : group.values.map((valueObj) => {
-                                  const currentVal = valueObj.value;
-                                  const newVal =
-                                      typeof currentVal !== 'string'
-                                          ? currentVal.toString()
-                                          : currentVal;
-                                  return { ...valueObj, value: newVal };
-                              });
+                        let newValues = null;
+                        if (group?.values?.length) {
+                            newValues = group.values.map((valueObj) => {
+                                const currentVal = valueObj.value;
+                                let newVal = currentVal;
+                                if (typeof currentVal !== 'string') {
+                                    newVal = currentVal.toString();
+                                }
+                                return { ...valueObj, value: newVal };
+                            });
+                        }
                         return newValues ? { ...group, values: newValues } : group;
                     });
               return { ...section, policyGroups: newPolicyGroups };
