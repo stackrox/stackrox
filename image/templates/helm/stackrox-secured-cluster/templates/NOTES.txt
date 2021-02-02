@@ -4,12 +4,13 @@ StackRox Secured Cluster Services {{.Chart.AppVersion}} has been installed.
 
 Secured Cluster Configuration Summary:
 
-  Name:                              {{ ._rox.clusterName }}
-  Kubernetes Namespace:              {{ ._rox._namespace }}{{ if ne .Release.Namespace ._rox._namespace }} [NOTE: Helm release is attached to namespace {{ .Release.Namespace }}]{{ end }}
-  Helm Release Name:                 {{ .Release.Name }}
-  Central Endpoint:                  {{ ._rox.centralEndpoint }}
-  OpenShift Cluster:                 {{ ._rox.env.openshift }}
-  Admission Control Enforced:        {{ or ._rox.admissionControl.dynamic.enforceOnCreates ._rox.admissionControl.dynamic.enforceOnUpdates }}
+  Name:                                        {{ ._rox.clusterName }}
+  Kubernetes Namespace:                        {{ ._rox._namespace }}{{ if ne .Release.Namespace ._rox._namespace }} [NOTE: Helm release is attached to namespace {{ .Release.Namespace }}]{{ end }}
+  Helm Release Name:                           {{ .Release.Name }}
+  Central Endpoint:                            {{ ._rox.centralEndpoint }}
+  OpenShift Cluster:                           {{ ._rox.env.openshift }}
+  Admission Control Webhooks deployed:         {{ or ._rox.admissionControl.dynamic.listenOnCreates ._rox.admissionControl.dynamic.listenOnUpdates ._rox.admissionControl.dynamic.listenOnEvents}}
+  Admission Control Creates/Updates enforced:  {{ or ._rox.admissionControl.dynamic.enforceOnCreates ._rox.admissionControl.dynamic.enforceOnUpdates }}
 
 {{ if ._rox._state.notes -}}
 Please take note of the following:
