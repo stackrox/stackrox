@@ -674,6 +674,21 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	suite.addDepAndImages(restrictedHostPortDep)
 
+	mountPropagationDep := &storage.Deployment{
+		Id: "MOUNTPROPAGATIONDEP",
+		Containers: []*storage.Container{
+			{
+				Id: "MOUNTPROPAGATIONCONTAINER",
+				Volumes: []*storage.Volume{
+					{
+						MountPropagation: storage.Volume_BIDIRECTIONAL,
+					},
+				},
+			},
+		},
+	}
+	suite.addDepAndImages(mountPropagationDep)
+
 	// Index processes
 	bashLineage := []string{"/bin/bash"}
 	fixtureDepAptIndicator := suite.addIndicator(fixtureDep.GetId(), "apt", "", "/usr/bin/apt", bashLineage, 1)
@@ -907,6 +922,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				restrictedHostPortDep.GetId():                     {},
 				hostPIDDep.GetId():                                {},
 				hostIPCDep.GetId():                                {},
+				mountPropagationDep.GetId():                       {},
 			},
 			sampleViolationForMatched: "Image in container '%s' has not been scanned",
 		},
@@ -1163,6 +1179,14 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				hostIPCDep.GetId(): {
 					{Message: "Deployment uses the host's IPC namespace"},
+				},
+			},
+		},
+		{
+			policyName: "Ensure mount propagation mode is not enabled",
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				mountPropagationDep.GetId(): {
+					{Message: "Writable volume '' has mount propagation 'bidirectional'"},
 				},
 			},
 		},

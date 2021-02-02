@@ -34,6 +34,7 @@ var (
 	ImageTag                      = newFieldName("Image Tag")
 	ImageUser                     = newFieldName("Image User")
 	MinimumRBACPermissions        = newFieldName("Minimum RBAC Permissions")
+	MountPropagation              = newFieldName("Mount Propagation")
 	Namespace                     = newFieldName("Namespace")
 	PortExposure                  = newFieldName("Port Exposure Method")
 	PrivilegedContainer           = newFieldName("Privileged Container")

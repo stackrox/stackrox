@@ -82,11 +82,17 @@ message Resources {
 }
 
 message Volume {
-    string name        = 1 [(gogoproto.moretags) = "search:\"Volume Name,store\""];
-    string source      = 2 [(gogoproto.moretags) = "search:\"Volume Source,store\""];
-    string destination = 3 [(gogoproto.moretags) = "search:\"Volume Destination,store\""];
-    bool read_only     = 4 [(gogoproto.moretags) = "search:\"Volume ReadOnly,store\""];
-    string type        = 5 [(gogoproto.moretags) = "search:\"Volume Type,store\""];
+    enum MountPropagation {
+        NONE              = 0;
+        HOST_TO_CONTAINER = 1;
+        BIDIRECTIONAL     = 2;
+    }
+    string name                        = 1 [(gogoproto.moretags) = "search:\"Volume Name,store\""];
+    string source                      = 2 [(gogoproto.moretags) = "search:\"Volume Source,store\""];
+    string destination                 = 3 [(gogoproto.moretags) = "search:\"Volume Destination,store\""];
+    bool read_only                     = 4 [(gogoproto.moretags) = "search:\"Volume ReadOnly,store\""];
+    string type                        = 5 [(gogoproto.moretags) = "search:\"Volume Type,store\""];
+    MountPropagation mount_propagation = 6 [(gogoproto.moretags) = "policy:\"Mount Propagation\""];
 }
 
 // Pod represents information for a currently running pod or deleted pod in an active deployment.

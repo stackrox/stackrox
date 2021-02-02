@@ -104,6 +104,7 @@ var (
 	MaxExposureLevel              = newFieldLabel("Max Exposure Level")
 	MemoryLimit                   = newFieldLabel("Memory Limit (MB)")
 	MemoryRequest                 = newFieldLabel("Memory Request (MB)")
+	MountPropagation              = newFieldLabel("Mount Propagation")
 	Port                          = newFieldLabel("Port")
 	PortProtocol                  = newFieldLabel("Port Protocol")
 	Priority                      = newFieldLabel("Priority")

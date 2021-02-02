@@ -119,6 +119,7 @@ func init() {
 	registerFieldMetadata(fieldnames.ImageTag, querybuilders.ForFieldLabelRegex(search.ImageTag), violationmessages.ImageContextFields, stringValueRegex)
 	registerFieldMetadata(fieldnames.ImageUser, querybuilders.ForFieldLabelRegex(search.ImageUser), violationmessages.ImageContextFields, stringValueRegex)
 	registerFieldMetadata(fieldnames.MinimumRBACPermissions, querybuilders.ForK8sRBAC(), nil, rbacPermissionValueRegex, operatorsForbidden)
+	registerFieldMetadata(fieldnames.MountPropagation, querybuilders.ForFieldLabel(search.MountPropagation), violationmessages.ContainerContextFields, mountPropagationValueRegex)
 	registerFieldMetadata(fieldnames.Namespace, querybuilders.ForFieldLabelRegex(search.Namespace), nil, stringValueRegex)
 	registerFieldMetadata(fieldnames.ExposedNodePort, querybuilders.ForFieldLabel(search.ExposedNodePort), nil, comparatorDecimalValueRegex)
 	registerFieldMetadata(fieldnames.ExposedPort, querybuilders.ForFieldLabel(search.Port), violationmessages.PortContextFields, comparatorDecimalValueRegex)

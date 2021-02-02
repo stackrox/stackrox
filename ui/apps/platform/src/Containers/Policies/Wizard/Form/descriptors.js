@@ -4,6 +4,7 @@ import {
     envVarSrcLabels,
     rbacPermissionLabels,
     policyCriteriaCategories,
+    mountPropagationLabels,
 } from 'messages/common';
 import { knownBackendFlags } from 'utils/featureFlags';
 import { clientOnlyExclusionFieldNames } from './whitelistFieldNames';
@@ -649,6 +650,21 @@ const policyConfigurationDescriptor = [
         defaultValue: false,
         reverse: true,
         canBooleanLogic: false,
+    },
+    {
+        label: 'Mount Propagation',
+        name: 'Mount Propagation',
+        negatedName: 'Mount Propagation is not',
+        jsonpath: 'fields.volumePolicy.mountPropagation',
+        category: policyCriteriaCategories.STORAGE,
+        type: 'multiselect',
+        options: Object.keys(mountPropagationLabels).map((key) => ({
+            label: mountPropagationLabels[key],
+            value: key,
+        })),
+        required: false,
+        default: false,
+        canBooleanLogic: true,
     },
     {
         label: 'Protocol',

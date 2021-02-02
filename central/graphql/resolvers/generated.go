@@ -1218,6 +1218,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ViolationState(0)))
 	utils.Must(builder.AddType("Volume", []string{
 		"destination: String!",
+		"mountPropagation: Volume_MountPropagation!",
 		"name: String!",
 		"readOnly: Boolean!",
 		"source: String!",
@@ -1229,6 +1230,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"source: String!",
 		"type: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Volume_MountPropagation(0)))
 }
 
 type aWSProviderMetadataResolver struct {
@@ -10326,6 +10328,11 @@ func (resolver *volumeResolver) Destination(ctx context.Context) string {
 	return value
 }
 
+func (resolver *volumeResolver) MountPropagation(ctx context.Context) string {
+	value := resolver.data.GetMountPropagation()
+	return value.String()
+}
+
 func (resolver *volumeResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
@@ -10388,4 +10395,22 @@ func (resolver *volumePolicyResolver) Source(ctx context.Context) string {
 func (resolver *volumePolicyResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
 	return value
+}
+
+func toVolume_MountPropagation(value *string) storage.Volume_MountPropagation {
+	if value != nil {
+		return storage.Volume_MountPropagation(storage.Volume_MountPropagation_value[*value])
+	}
+	return storage.Volume_MountPropagation(0)
+}
+
+func toVolume_MountPropagations(values *[]string) []storage.Volume_MountPropagation {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Volume_MountPropagation, len(*values))
+	for i, v := range *values {
+		output[i] = toVolume_MountPropagation(&v)
+	}
+	return output
 }

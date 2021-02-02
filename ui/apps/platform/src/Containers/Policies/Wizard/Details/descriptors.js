@@ -203,6 +203,13 @@ const fieldsMap = {
                 output.push(`Dest: ${value.destination}`);
             }
             output.push(value.readOnly ? 'Writable: No' : 'Writable: Yes');
+            if (value.mountPropagation === 'HOST_TO_CONTAINER') {
+                output.push(`Mount Propagation: Host to Container`);
+            } else if (value.mountPropegation === 'BIDIRECTIONAL') {
+                output.push(`Mount Propagation: Bidirectional`);
+            } else {
+                output.push(`Mount Propagation: None`);
+            }
             return output.join(', ');
         },
     },

@@ -36,6 +36,9 @@ func volumePrinter(fieldMap map[string][]string) ([]string, error) {
 	if volumeType, err := getSingleValueFromFieldMap(search.VolumeType.String(), fieldMap); err == nil && volumeType != "" {
 		volumeDetails = append(volumeDetails, fmt.Sprintf("type '%s'", volumeType))
 	}
+	if mountPropagation, err := getSingleValueFromFieldMap(search.MountPropagation.String(), fieldMap); err == nil && mountPropagation != "" {
+		volumeDetails = append(volumeDetails, fmt.Sprintf("mount propagation '%s'", mountPropagation))
+	}
 	if len(volumeDetails) == 0 {
 		return nil, errors.New("missing volume details")
 	}

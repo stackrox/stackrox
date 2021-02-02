@@ -131,6 +131,21 @@ func SpecToPodTemplateSpec(spec reflect.Value) (v1.PodTemplateSpec, error) {
 	return podTemplate, nil
 }
 
+func getMountPropagation(mountPropagation *v1.MountPropagationMode) storage.Volume_MountPropagation {
+	if mountPropagation == nil {
+		return storage.Volume_NONE
+	}
+
+	switch *mountPropagation {
+	case v1.MountPropagationHostToContainer:
+		return storage.Volume_HOST_TO_CONTAINER
+	case v1.MountPropagationBidirectional:
+		return storage.Volume_BIDIRECTIONAL
+	default:
+		return storage.Volume_NONE
+	}
+}
+
 func (w *DeploymentWrap) populateFields(obj interface{}) {
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	spec := objValue.FieldByName("Spec")
@@ -425,11 +440,12 @@ func (w *DeploymentWrap) populateVolumesAndSecrets(podSpec v1.PodSpec) {
 			}
 
 			w.Deployment.Containers[i].Volumes = append(w.Deployment.Containers[i].Volumes, &storage.Volume{
-				Name:        v.Name,
-				Source:      sourceVolume.Source(),
-				Destination: v.MountPath,
-				ReadOnly:    v.ReadOnly,
-				Type:        sourceVolume.Type(),
+				Name:             v.Name,
+				Source:           sourceVolume.Source(),
+				Destination:      v.MountPath,
+				ReadOnly:         v.ReadOnly,
+				Type:             sourceVolume.Type(),
+				MountPropagation: getMountPropagation(v.MountPropagation),
 			})
 		}
 

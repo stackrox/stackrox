@@ -85,6 +85,12 @@ export const portExposureLabels = Object.freeze({
     UNSET: 'Exposure type is not set',
 });
 
+export const mountPropagationLabels = Object.freeze({
+    NONE: 'None',
+    HOST_TO_CONTAINER: 'Host to Container',
+    BIDIRECTIONAL: 'Bidirectional',
+});
+
 // For any update to rbacPermissionLabels, please also update policy.proto
 export const rbacPermissionLabels = Object.freeze({
     DEFAULT: 'Default Access',
