@@ -5,6 +5,7 @@ import {
     rbacPermissionLabels,
     policyCriteriaCategories,
     mountPropagationLabels,
+    seccompProfileTypeLabels,
 } from 'messages/common';
 import { knownBackendFlags } from 'utils/featureFlags';
 import { clientOnlyExclusionFieldNames } from './whitelistFieldNames';
@@ -750,6 +751,21 @@ const policyConfigurationDescriptor = [
         default: false,
         defaultValue: false,
         disabled: true,
+        canBooleanLogic: false,
+    },
+    {
+        label: 'Seccomp Profile Type',
+        name: 'Seccomp Profile Type',
+        negatedName: 'Seccomp Profile Type is not',
+        jsonpath: 'fields.SeccompProfileType',
+        category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
+        type: 'radioGroup',
+        radioButtons: Object.keys(seccompProfileTypeLabels).map((key) => ({
+            text: seccompProfileTypeLabels[key],
+            value: key,
+        })),
+        required: false,
+        default: false,
         canBooleanLogic: false,
     },
     {

@@ -689,6 +689,20 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.addDepAndImages(mountPropagationDep)
 
+	noSeccompProfileDep := &storage.Deployment{
+		Id: "NOSECCOMPPROFILEDEP",
+		Containers: []*storage.Container{
+			{
+				SecurityContext: &storage.SecurityContext{
+					SeccompProfile: &storage.SecurityContext_SeccompProfile{
+						Type: storage.SecurityContext_SeccompProfile_UNCONFINED,
+					},
+				},
+			},
+		},
+	}
+	suite.addDepAndImages(noSeccompProfileDep)
+
 	// Index processes
 	bashLineage := []string{"/bin/bash"}
 	fixtureDepAptIndicator := suite.addIndicator(fixtureDep.GetId(), "apt", "", "/usr/bin/apt", bashLineage, 1)
@@ -864,6 +878,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "Container 'cap-sys' uses a read-write root filesystem",
 					},
 				},
+				noSeccompProfileDep.GetId(): {
+					{
+						Message: "Container  uses a read-write root filesystem",
+					},
+				},
 			},
 		},
 		{
@@ -923,6 +942,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				hostPIDDep.GetId():                                {},
 				hostIPCDep.GetId():                                {},
 				mountPropagationDep.GetId():                       {},
+				noSeccompProfileDep.GetId():                       {},
 			},
 			sampleViolationForMatched: "Image in container '%s' has not been scanned",
 		},
@@ -1187,6 +1207,14 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				mountPropagationDep.GetId(): {
 					{Message: "Writable volume '' has mount propagation 'bidirectional'"},
+				},
+			},
+		},
+		{
+			policyName: "Ensure the default seccomp profile is not disabled",
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				noSeccompProfileDep.GetId(): {
+					{Message: "Container has Seccomp profile type 'unconfined'"},
 				},
 			},
 		},

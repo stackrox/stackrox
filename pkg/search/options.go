@@ -114,6 +114,7 @@ var (
 	SecretID                      = newFieldLabel("Secret ID")
 	SecretName                    = newFieldLabel("Secret")
 	SecretPath                    = newFieldLabel("Secret Path")
+	SeccompProfileType            = newFieldLabel("Seccomp Profile Type")
 	ServiceAccountName            = newFieldLabel("Service Account")
 	ServiceAccountPermissionLevel = newFieldLabel("Service Account Permission Level")
 	Created                       = newFieldLabel("Created")

@@ -233,6 +233,17 @@ message SecurityContext {
     repeated string drop_capabilities   = 3 [(gogoproto.moretags) = "search:\"Drop Capabilities,store\""];
     repeated string add_capabilities    = 4 [(gogoproto.moretags) = "search:\"Add Capabilities,store\""];
     bool read_only_root_filesystem      = 5 [(gogoproto.moretags) = "search:\"Read Only Root Filesystem,store\""];
+
+    message SeccompProfile {
+        enum ProfileType {
+            UNCONFINED      = 0;
+            RUNTIME_DEFAULT = 1;
+            LOCALHOST       = 2;
+        }
+        ProfileType type         = 1 [(gogoproto.moretags) = "policy:\"Seccomp Profile Type\""];
+        string localhost_profile = 2;
+    }
+    SeccompProfile seccomp_profile = 6;
 }
 
 // Next available tag: 9

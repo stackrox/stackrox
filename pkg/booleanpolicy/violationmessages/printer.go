@@ -56,6 +56,7 @@ var (
 			fieldnames.RequiredAnnotation:            {{required: set.NewStringSet(search.Annotation.String()), printerFuncKey: printer.RequiredAnnotationKey}},
 			fieldnames.RequiredImageLabel:            {{required: set.NewStringSet(search.ImageLabel.String()), printerFuncKey: printer.RequiredImageLabelKey}},
 			fieldnames.RequiredLabel:                 {{required: set.NewStringSet(search.Label.String()), printerFuncKey: printer.RequiredLabelKey}},
+			fieldnames.SeccompProfileType:            {{required: set.NewStringSet(search.SeccompProfileType.String()), printerFuncKey: printer.SeccompProfileTypeKey}},
 			fieldnames.ServiceAccount:                {{required: set.NewStringSet(search.ServiceAccountName.String()), printerFuncKey: printer.ServiceAccountKey}},
 			fieldnames.UnexpectedNetworkFlowDetected: {{required: set.NewStringSet(augmentedobjs.NotInNetworkBaselineCustomTag), printerFuncKey: printer.NetworkBaselineKey}},
 			fieldnames.UnexpectedProcessExecuted:     {{required: set.NewStringSet(augmentedobjs.NotInProcessBaselineCustomTag), printerFuncKey: printer.ProcessBaselineKey}},

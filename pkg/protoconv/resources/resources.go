@@ -146,6 +146,71 @@ func getMountPropagation(mountPropagation *v1.MountPropagationMode) storage.Volu
 	}
 }
 
+func getSeccompProfileType(profileType v1.SeccompProfileType) storage.SecurityContext_SeccompProfile_ProfileType {
+	switch profileType {
+	case v1.SeccompProfileTypeUnconfined:
+		return storage.SecurityContext_SeccompProfile_UNCONFINED
+	case v1.SeccompProfileTypeLocalhost:
+		return storage.SecurityContext_SeccompProfile_LOCALHOST
+	default:
+		return storage.SecurityContext_SeccompProfile_RUNTIME_DEFAULT
+	}
+}
+
+func makeSeccompProfileWithDefaults(s *v1.SecurityContext, podSec *v1.PodSecurityContext) *storage.SecurityContext_SeccompProfile {
+	if s != nil {
+		if profile := convertSeccompProfile(s.SeccompProfile); profile != nil {
+			return profile
+		}
+	}
+
+	if podSec != nil {
+		return convertSeccompProfile(podSec.SeccompProfile)
+	}
+
+	return nil
+}
+
+func convertSeccompProfile(sp *v1.SeccompProfile) *storage.SecurityContext_SeccompProfile {
+	if sp == nil {
+		return nil
+	}
+	seccompProfile := &storage.SecurityContext_SeccompProfile{
+		Type: getSeccompProfileType(sp.Type),
+	}
+	if sp.LocalhostProfile != nil {
+		seccompProfile.LocalhostProfile = *sp.LocalhostProfile
+	}
+	return seccompProfile
+}
+
+func makeSELinuxWithDefaults(s *v1.SecurityContext, podSec *v1.PodSecurityContext) *storage.SecurityContext_SELinux {
+	if s != nil {
+		if sel := convertSELinux(s.SELinuxOptions); sel != nil {
+			return sel
+		}
+	}
+
+	if podSec != nil {
+		return convertSELinux(podSec.SELinuxOptions)
+	}
+
+	return nil
+}
+
+func convertSELinux(SELinux *v1.SELinuxOptions) *storage.SecurityContext_SELinux {
+	if SELinux == nil {
+		return nil
+	}
+
+	return &storage.SecurityContext_SELinux{
+		User:  SELinux.User,
+		Role:  SELinux.Role,
+		Type:  SELinux.Type,
+		Level: SELinux.Level,
+	}
+}
+
 func (w *DeploymentWrap) populateFields(obj interface{}) {
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	spec := objValue.FieldByName("Spec")
@@ -359,22 +424,14 @@ func (w *DeploymentWrap) populateImages(podSpec v1.PodSpec) {
 func (w *DeploymentWrap) populateSecurityContext(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
 		sc := &storage.SecurityContext{}
-		if s := c.SecurityContext; s != nil {
+		s := c.SecurityContext
+		if s != nil {
 			if p := s.Privileged; p != nil {
 				sc.Privileged = *p
 			}
 
 			if p := s.ReadOnlyRootFilesystem; p != nil {
 				sc.ReadOnlyRootFilesystem = *p
-			}
-
-			if SELinux := s.SELinuxOptions; SELinux != nil {
-				sc.Selinux = &storage.SecurityContext_SELinux{
-					User:  SELinux.User,
-					Role:  SELinux.Role,
-					Type:  SELinux.Type,
-					Level: SELinux.Level,
-				}
 			}
 
 			if capabilities := s.Capabilities; capabilities != nil {
@@ -386,8 +443,10 @@ func (w *DeploymentWrap) populateSecurityContext(podSpec v1.PodSpec) {
 					sc.DropCapabilities = append(sc.DropCapabilities, string(drop))
 				}
 			}
-
 		}
+		sc.Selinux = makeSELinuxWithDefaults(s, podSpec.SecurityContext)
+		sc.SeccompProfile = makeSeccompProfileWithDefaults(s, podSpec.SecurityContext)
+
 		w.Deployment.Containers[i].SecurityContext = sc
 	}
 }

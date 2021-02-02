@@ -4,6 +4,7 @@ import {
     portExposureLabels,
     rbacPermissionLabels,
     envVarSrcLabels,
+    seccompProfileTypeLabels,
 } from 'messages/common';
 
 import { comparatorOp, formatResources, formatScope, formatDeploymentExcludedScope } from './utils';
@@ -244,6 +245,16 @@ const fieldsMap = {
     readOnlyRootFs: {
         label: 'Read Only Root Filesystem',
         formatValue: (value) => (value ? 'Yes' : 'Not Enabled'),
+    },
+    seccompProfileType: {
+        label: 'Seccomp Profile Type',
+        formatValue: (d) => {
+            return `Seccomp profile type: ${
+                seccompProfileTypeLabels[d.seccompProfileType] != null
+                    ? seccompProfileTypeLabels[d.seccompProfileType]
+                    : seccompProfileTypeLabels.RUNTIME_DEFAULT
+            }`;
+        },
     },
     HostPid: {
         label: 'Host PID',

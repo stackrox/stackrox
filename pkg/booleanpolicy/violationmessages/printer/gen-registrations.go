@@ -33,6 +33,7 @@ const (
 	RequiredImageLabelKey   = "requiredImageLabel"
 	RequiredLabelKey        = "requiredLabel"
 	ResourceKey             = "resource"
+	SeccompProfileTypeKey   = "seccompProfileType"
 	ServiceAccountKey       = "serviceAccount"
 	VolumeKey               = "volume"
 )
@@ -68,6 +69,7 @@ func init() {
 	registerFunc(RequiredImageLabelKey, requiredImageLabelPrinter)
 	registerFunc(RequiredLabelKey, requiredLabelPrinter)
 	registerFunc(ResourceKey, resourcePrinter)
+	registerFunc(SeccompProfileTypeKey, seccompProfileTypePrinter)
 	registerFunc(ServiceAccountKey, serviceAccountPrinter)
 	registerFunc(VolumeKey, volumePrinter)
 }

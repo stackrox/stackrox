@@ -1088,6 +1088,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"dropCapabilities: [String!]!",
 		"privileged: Boolean!",
 		"readOnlyRootFilesystem: Boolean!",
+		"seccompProfile: SecurityContext_SeccompProfile",
 		"selinux: SecurityContext_SELinux",
 	}))
 	utils.Must(builder.AddType("SecurityContext_SELinux", []string{
@@ -1096,6 +1097,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: String!",
 		"user: String!",
 	}))
+	utils.Must(builder.AddType("SecurityContext_SeccompProfile", []string{
+		"localhostProfile: String!",
+		"type: SecurityContext_SeccompProfile_ProfileType!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SecurityContext_SeccompProfile_ProfileType(0)))
 	utils.Must(builder.AddType("SensorDeploymentIdentification", []string{
 		"appNamespace: String!",
 		"appNamespaceId: String!",
@@ -9358,6 +9364,11 @@ func (resolver *securityContextResolver) ReadOnlyRootFilesystem(ctx context.Cont
 	return value
 }
 
+func (resolver *securityContextResolver) SeccompProfile(ctx context.Context) (*securityContext_SeccompProfileResolver, error) {
+	value := resolver.data.GetSeccompProfile()
+	return resolver.root.wrapSecurityContext_SeccompProfile(value, true, nil)
+}
+
 func (resolver *securityContextResolver) Selinux(ctx context.Context) (*securityContext_SELinuxResolver, error) {
 	value := resolver.data.GetSelinux()
 	return resolver.root.wrapSecurityContext_SELinux(value, true, nil)
@@ -9405,6 +9416,58 @@ func (resolver *securityContext_SELinuxResolver) Type(ctx context.Context) strin
 func (resolver *securityContext_SELinuxResolver) User(ctx context.Context) string {
 	value := resolver.data.GetUser()
 	return value
+}
+
+type securityContext_SeccompProfileResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.SecurityContext_SeccompProfile
+}
+
+func (resolver *Resolver) wrapSecurityContext_SeccompProfile(value *storage.SecurityContext_SeccompProfile, ok bool, err error) (*securityContext_SeccompProfileResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &securityContext_SeccompProfileResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapSecurityContext_SeccompProfiles(values []*storage.SecurityContext_SeccompProfile, err error) ([]*securityContext_SeccompProfileResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*securityContext_SeccompProfileResolver, len(values))
+	for i, v := range values {
+		output[i] = &securityContext_SeccompProfileResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *securityContext_SeccompProfileResolver) LocalhostProfile(ctx context.Context) string {
+	value := resolver.data.GetLocalhostProfile()
+	return value
+}
+
+func (resolver *securityContext_SeccompProfileResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
+}
+
+func toSecurityContext_SeccompProfile_ProfileType(value *string) storage.SecurityContext_SeccompProfile_ProfileType {
+	if value != nil {
+		return storage.SecurityContext_SeccompProfile_ProfileType(storage.SecurityContext_SeccompProfile_ProfileType_value[*value])
+	}
+	return storage.SecurityContext_SeccompProfile_ProfileType(0)
+}
+
+func toSecurityContext_SeccompProfile_ProfileTypes(values *[]string) []storage.SecurityContext_SeccompProfile_ProfileType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.SecurityContext_SeccompProfile_ProfileType, len(*values))
+	for i, v := range *values {
+		output[i] = toSecurityContext_SeccompProfile_ProfileType(&v)
+	}
+	return output
 }
 
 type sensorDeploymentIdentificationResolver struct {

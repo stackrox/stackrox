@@ -91,6 +91,12 @@ export const mountPropagationLabels = Object.freeze({
     BIDIRECTIONAL: 'Bidirectional',
 });
 
+export const seccompProfileTypeLabels = Object.freeze({
+    UNCONFINED: 'Unconfined',
+    RUNTIME_DEFAULT: 'Runtime Default',
+    LOCALHOST: 'Localhost',
+});
+
 // For any update to rbacPermissionLabels, please also update policy.proto
 export const rbacPermissionLabels = Object.freeze({
     DEFAULT: 'Default Access',

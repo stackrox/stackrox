@@ -154,3 +154,21 @@ func imageUserPrinter(fieldMap map[string][]string) ([]string, error) {
 	}
 	return executeTemplate(imageUserTemplate, r)
 }
+
+const (
+	seccompProfileTypeTemplate = `Container{{if .ContainerName}} '{{.ContainerName}}'{{end}} has Seccomp profile type '{{.SeccompProfileType}}'`
+)
+
+func seccompProfileTypePrinter(fieldMap map[string][]string) ([]string, error) {
+	type resultFields struct {
+		ContainerName      string
+		SeccompProfileType string
+	}
+	r := resultFields{}
+	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
+	var err error
+	if r.SeccompProfileType, err = getSingleValueFromFieldMap(search.SeccompProfileType.String(), fieldMap); err != nil {
+		return nil, err
+	}
+	return executeTemplate(seccompProfileTypeTemplate, r)
+}

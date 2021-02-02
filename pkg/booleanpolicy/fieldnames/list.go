@@ -46,6 +46,7 @@ var (
 	RequiredAnnotation            = newFieldName("Required Annotation")
 	RequiredImageLabel            = newFieldName("Required Image Label")
 	RequiredLabel                 = newFieldName("Required Label")
+	SeccompProfileType            = newFieldName("Seccomp Profile Type")
 	ServiceAccount                = newFieldName("Service Account")
 	UnexpectedNetworkFlowDetected = newFieldName("Unexpected Network Flow Detected")
 	UnexpectedProcessExecuted     = newFieldName("Unexpected Process Executed")
