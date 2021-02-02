@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -55,14 +54,10 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	countMetrics.IncrementTotalNetworkFlowsReceivedCounter(s.clusterID, len(update.GetUpdated()))
 
 	var allUpdatedFlows []*storage.NetworkFlow
-	if !features.NetworkGraphPorts.Enabled() {
-		allUpdatedFlows = update.GetUpdated()
-	} else {
-		allUpdatedFlows = make([]*storage.NetworkFlow, 0, len(update.GetUpdated())+len(update.GetUpdatedEndpoints()))
-		allUpdatedFlows = append(allUpdatedFlows, update.GetUpdated()...)
-		allUpdatedFlows = append(allUpdatedFlows, endpointsToListenFlows(update.GetUpdatedEndpoints())...)
-		countMetrics.IncrementTotalNetworkEndpointsReceivedCounter(s.clusterID, len(update.GetUpdatedEndpoints()))
-	}
+	allUpdatedFlows = make([]*storage.NetworkFlow, 0, len(update.GetUpdated())+len(update.GetUpdatedEndpoints()))
+	allUpdatedFlows = append(allUpdatedFlows, update.GetUpdated()...)
+	allUpdatedFlows = append(allUpdatedFlows, endpointsToListenFlows(update.GetUpdatedEndpoints())...)
+	countMetrics.IncrementTotalNetworkEndpointsReceivedCounter(s.clusterID, len(update.GetUpdatedEndpoints()))
 
 	if len(allUpdatedFlows) == 0 {
 		return nil

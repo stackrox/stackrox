@@ -6,7 +6,6 @@ import { DetailedTooltipOverlay } from '@stackrox/ui-components';
 import TooltipCardSection from 'Components/TooltipCardSection';
 import PortsAndProtocolsFields from './PortsAndProtocolsFields';
 
-// @TODO: Remove "showPortsAndProtocols" when the feature flag "ROX_NETWORK_GRAPH_PORTS" is defaulted to true
 const NodeTooltipOverlay = ({
     deploymentName,
     numIngressFlows,
@@ -14,7 +13,6 @@ const NodeTooltipOverlay = ({
     ingressPortsAndProtocols,
     egressPortsAndProtocols,
     listenPorts,
-    showPortsAndProtocols,
 }) => {
     return (
         <DetailedTooltipOverlay
@@ -29,7 +27,7 @@ const NodeTooltipOverlay = ({
                                 </div>
                             }
                         >
-                            {showPortsAndProtocols && ingressPortsAndProtocols.length !== 0 && (
+                            {ingressPortsAndProtocols.length !== 0 && (
                                 <PortsAndProtocolsFields
                                     portsAndProtocols={ingressPortsAndProtocols}
                                 />
@@ -44,7 +42,7 @@ const NodeTooltipOverlay = ({
                                 </div>
                             }
                         >
-                            {showPortsAndProtocols && egressPortsAndProtocols.length !== 0 && (
+                            {egressPortsAndProtocols.length !== 0 && (
                                 <PortsAndProtocolsFields
                                     portsAndProtocols={egressPortsAndProtocols}
                                 />
@@ -80,7 +78,6 @@ NodeTooltipOverlay.propTypes = {
     ingressPortsAndProtocols: PropTypes.arrayOf(PropTypes.shape()),
     egressPortsAndProtocols: PropTypes.arrayOf(PropTypes.shape()),
     listenPorts: PropTypes.arrayOf(PropTypes.shape),
-    showPortsAndProtocols: PropTypes.bool,
 };
 
 NodeTooltipOverlay.defaultProps = {
@@ -89,7 +86,6 @@ NodeTooltipOverlay.defaultProps = {
     ingressPortsAndProtocols: [],
     egressPortsAndProtocols: [],
     listenPorts: [],
-    showPortsAndProtocols: false,
 };
 
 export default NodeTooltipOverlay;

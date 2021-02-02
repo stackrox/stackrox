@@ -5,8 +5,6 @@ import { connect } from 'react-redux';
 
 import { selectors } from 'reducers';
 import { actions as wizardActions } from 'reducers/network/wizard';
-import FeatureEnabled from 'Containers/FeatureEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import wizardStages from '../../wizardStages';
 
 const GenerateButton = ({
@@ -26,27 +24,19 @@ const GenerateButton = ({
 
     return (
         <>
-            <FeatureEnabled featureFlag={knownBackendFlags.ROX_NETWORK_GRAPH_PORTS}>
-                {({ featureEnabled }) => {
-                    return (
-                        featureEnabled && (
-                            <div className="flex justify-center">
-                                <input
-                                    type="checkbox"
-                                    data-testid="checkbox-exclude-ports-protocols"
-                                    id="exclude-ports-protocols"
-                                    checked={!!excludePortsProtocols}
-                                    onChange={onChangeHandler}
-                                    aria-label="Exclude ports and protocols"
-                                />
-                                <label htmlFor="exclude-ports-protocols" className="pl-2">
-                                    Exclude ports & protocols
-                                </label>
-                            </div>
-                        )
-                    );
-                }}
-            </FeatureEnabled>
+            <div className="flex justify-center">
+                <input
+                    type="checkbox"
+                    data-testid="checkbox-exclude-ports-protocols"
+                    id="exclude-ports-protocols"
+                    checked={!!excludePortsProtocols}
+                    onChange={onChangeHandler}
+                    aria-label="Exclude ports and protocols"
+                />
+                <label htmlFor="exclude-ports-protocols" className="pl-2">
+                    Exclude ports & protocols
+                </label>
+            </div>
             <div className="flex m-3 py-2 items-center justify-center">
                 <button
                     type="button"

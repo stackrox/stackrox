@@ -52,7 +52,6 @@ import {
     getIsNodeHoverable,
 } from 'utils/networkGraphUtils';
 import { getNetworkFlows } from 'utils/networkUtils/getNetworkFlows';
-import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 
 import { defaultTippyTooltipProps } from '@stackrox/ui-components/lib/Tooltip';
 import NodeTooltipOverlay from './NodeTooltipOverlay';
@@ -111,13 +110,6 @@ const NetworkGraph = ({
         [data, networkEdgeMap, networkNodeMap, filterState, featureFlags]
     );
     const filteredLinks = useMemo(() => getFilteredLinks(links), [links]);
-
-    // @TODO: Remove "showPortsAndProtocols" when the feature flag "ROX_NETWORK_GRAPH_PORTS" is defaulted to true
-    const showPortsAndProtocols = isBackendFeatureFlagEnabled(
-        featureFlags,
-        knownBackendFlags.ROX_NETWORK_GRAPH_PORTS,
-        false
-    );
 
     function showTooltip(elm, component) {
         if (!elm || !component || !cyRef) {
@@ -180,7 +172,6 @@ const NetworkGraph = ({
                 ingressPortsAndProtocols={ingressPortsAndProtocols}
                 egressPortsAndProtocols={egressPortsAndProtocols}
                 listenPorts={listenPorts}
-                showPortsAndProtocols={showPortsAndProtocols}
             />
         );
 
@@ -220,7 +211,6 @@ const NetworkGraph = ({
                     numAllowedUnidirectionalLinks={numAllowedUnidirectionalLinks}
                     portsAndProtocols={portsAndProtocols}
                     filterState={filterState}
-                    showPortsAndProtocols={showPortsAndProtocols}
                 />
             );
         } else {
@@ -231,7 +221,6 @@ const NetworkGraph = ({
                     target={targetNodeName}
                     isBidirectional={isBidirectional}
                     portsAndProtocols={portsAndProtocols}
-                    showPortsAndProtocols={showPortsAndProtocols}
                 />
             );
         }

@@ -5,7 +5,6 @@ import toastSelectors from '../selectors/toast';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 import selectors from '../selectors/index';
-import checkFeatureFlag from '../helpers/features';
 
 function uploadYAMLFile(fileName, selector) {
     cy.fixture(fileName).then((fileContent) => {
@@ -208,9 +207,7 @@ describe('Network Flows Table', () => {
         cy.get(`${selectors.table.th}:contains('Namespace')`);
         cy.get(`${selectors.table.th}:contains('State')`);
 
-        if (checkFeatureFlag('ROX_NETWORK_GRAPH_PORTS', true)) {
-            cy.get(`${selectors.table.th}:contains('Protocol')`);
-            cy.get(`${selectors.table.th}:contains('Port')`);
-        }
+        cy.get(`${selectors.table.th}:contains('Protocol')`);
+        cy.get(`${selectors.table.th}:contains('Port')`);
     });
 });

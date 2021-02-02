@@ -24,7 +24,6 @@ import objects.NetworkPolicyTypes
 import objects.Service
 import org.junit.Assume
 import org.junit.experimental.categories.Category
-import services.FeatureFlagService
 import services.NetworkGraphService
 import spock.lang.Shared
 import spock.lang.Stepwise
@@ -322,19 +321,15 @@ class NetworkFlowTest extends BaseSpecification {
     @Category([BAT, RUNTIME, NetworkFlowVisualization])
     def "Verify listen port availability matches feature flag: #targetDeployment"() {
         given:
-        "Check feature flag setting"
-        def available = FeatureFlagService.isFeatureFlagEnabled("ROX_NETWORK_GRAPH_PORTS")
-
-        and:
         "Deployment with listening port"
         String targetUid = deployments.find { it.name == targetDeployment }?.deploymentUid
         assert targetUid
 
         expect:
         "Check for (absence of) listening port info"
-        def node = getNode(targetUid, available && expectedListenPorts.size() > 0)
+        def node = getNode(targetUid, expectedListenPorts.size() > 0)
         assert node
-        assert !available || (node.listenPorts(L4Protocol.L4_PROTOCOL_TCP)*.port as Set) == (expectedListenPorts as Set)
+        assert (node.listenPorts(L4Protocol.L4_PROTOCOL_TCP)*.port as Set) == (expectedListenPorts as Set)
 
         where:
         "Data is:"

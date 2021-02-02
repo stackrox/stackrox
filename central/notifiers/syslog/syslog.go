@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/version"
 )
@@ -71,9 +70,6 @@ var (
 )
 
 func init() {
-	if !features.SyslogIntegration.Enabled() {
-		return
-	}
 	notifiers.Add("syslog", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		return newSyslog(notifier)
 	})

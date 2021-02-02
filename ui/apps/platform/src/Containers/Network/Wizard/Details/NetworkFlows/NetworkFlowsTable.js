@@ -25,13 +25,7 @@ function renderPortsAndProtocols({ original }) {
     return null;
 }
 
-const NetworkFlowsTable = ({
-    networkFlows,
-    page,
-    filterState,
-    onNavigateToDeploymentById,
-    showPortsAndProtocols,
-}) => {
+const NetworkFlowsTable = ({ networkFlows, page, filterState, onNavigateToDeploymentById }) => {
     const filterStateString = filterState !== filterModes.all ? filterLabels[filterState] : '';
     const columns = [
         {
@@ -89,7 +83,6 @@ const NetworkFlowsTable = ({
                 }
                 return uniquePorts[0].port;
             },
-            hidden: !showPortsAndProtocols,
         },
         {
             headerClassName: `${defaultHeaderClassName} w-2`,
@@ -134,21 +127,15 @@ const NetworkFlowsTable = ({
             },
         },
     ];
-    const modifiedColumns = columns.filter((column) => {
-        return !(
-            (column.accessor === 'portsAndProtocols' || column.expander) &&
-            !showPortsAndProtocols
-        );
-    });
 
     return (
         <Table
             rows={networkFlows}
-            columns={modifiedColumns}
+            columns={columns}
             noDataText={`No ${filterStateString} deployment flows`}
             page={page}
             idAttribute="deploymentId"
-            SubComponent={showPortsAndProtocols ? renderPortsAndProtocols : null}
+            SubComponent={renderPortsAndProtocols}
             noHorizontalPadding
         />
     );

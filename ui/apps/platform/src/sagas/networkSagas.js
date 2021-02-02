@@ -24,7 +24,6 @@ import { types as locationActionTypes } from 'reducers/routes';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import timeWindowToDate from 'utils/timeWindows';
 import { getDeployment } from './deploymentSagas';
-import { knownBackendFlags, isBackendFeatureFlagEnabled } from '../utils/featureFlags';
 
 // get generators
 function* getNetworkGraphs(clusterId, query) {
@@ -32,12 +31,7 @@ function* getNetworkGraphs(clusterId, query) {
         const timeWindow = yield select(selectors.getNetworkActivityTimeWindow);
         const modification = yield select(selectors.getNetworkPolicyModification);
 
-        const featureFlags = yield select(selectors.getFeatureFlags);
-        const includePorts = isBackendFeatureFlagEnabled(
-            featureFlags,
-            knownBackendFlags.ROX_NETWORK_GRAPH_PORTS,
-            false
-        );
+        const includePorts = true;
 
         const [{ response: flowGraph }, { response: policyGraph }] = yield all([
             call(

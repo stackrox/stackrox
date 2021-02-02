@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
 	"go.uber.org/zap"
@@ -52,10 +51,6 @@ var (
 )
 
 func init() {
-	if !features.AwsSecurityHubIntegration.Enabled() {
-		return
-	}
-
 	notifiers.Add("awsSecurityHub", func(descriptor *storage.Notifier) (notifiers.Notifier, error) {
 		ctx, cancel := context.WithCancel(context.Background())
 		configuration := defaultConfiguration

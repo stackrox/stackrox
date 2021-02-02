@@ -24,7 +24,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -161,10 +160,6 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 }
 
 func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetworkGraphRequest) (*v1.NetworkGraph, error) {
-	if !features.NetworkGraphPorts.Enabled() && request.GetIncludePorts() {
-		return nil, status.Error(codes.Unimplemented, "support for ports in network policy graph is not enabled")
-	}
-
 	// Check that the cluster exists. If not there is nothing to we can process.
 	if err := s.clusterExists(ctx, request.GetClusterId()); err != nil {
 		return nil, err
@@ -235,10 +230,6 @@ func (s *serviceImpl) ApplyNetworkPolicy(ctx context.Context, request *v1.ApplyN
 }
 
 func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.SimulateNetworkGraphRequest) (*v1.SimulateNetworkGraphResponse, error) {
-	if !features.NetworkGraphPorts.Enabled() && request.GetIncludePorts() {
-		return nil, status.Error(codes.Unimplemented, "support for ports in network policy simulation is not enabled")
-	}
-
 	// Check that the cluster exists. If not there is nothing to we can process.
 	if err := s.clusterExists(ctx, request.GetClusterId()); err != nil {
 		return nil, err

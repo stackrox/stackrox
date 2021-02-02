@@ -33,7 +33,6 @@ const DirectionalTooltipCardSection = ({ numBidirectional, numUnidirectional, ty
     );
 };
 
-// @TODO: Remove "showPortsAndProtocols" when the feature flag "ROX_NETWORK_GRAPH_PORTS" is defaulted to true
 const NamespaceEdgeTooltipOverlay = ({
     numBidirectionalLinks,
     numUnidirectionalLinks,
@@ -43,7 +42,6 @@ const NamespaceEdgeTooltipOverlay = ({
     numAllowedUnidirectionalLinks,
     portsAndProtocols,
     filterState,
-    showPortsAndProtocols,
 }) => {
     const numConnections = numBidirectionalLinks + numUnidirectionalLinks;
     const title = `${numConnections} Network ${pluralize('Flow', numConnections)}`;
@@ -63,7 +61,7 @@ const NamespaceEdgeTooltipOverlay = ({
                     type="allowed"
                 />
             )}
-            {showPortsAndProtocols && portsAndProtocols.length !== 0 && (
+            {portsAndProtocols.length !== 0 && (
                 <TooltipCardSection header="Ports & Protocols">
                     <PortsAndProtocolsFields portsAndProtocols={portsAndProtocols} />
                 </TooltipCardSection>
@@ -82,7 +80,6 @@ NamespaceEdgeTooltipOverlay.propTypes = {
     numAllowedUnidirectionalLinks: PropTypes.number,
     portsAndProtocols: PropTypes.arrayOf(PropTypes.shape),
     filterState: PropTypes.oneOf(Object.values(filterModes)).isRequired,
-    showPortsAndProtocols: PropTypes.bool,
 };
 
 NamespaceEdgeTooltipOverlay.defaultProps = {
@@ -93,7 +90,6 @@ NamespaceEdgeTooltipOverlay.defaultProps = {
     numAllowedBidirectionalLinks: 0,
     numAllowedUnidirectionalLinks: 0,
     portsAndProtocols: [],
-    showPortsAndProtocols: false,
 };
 
 export default NamespaceEdgeTooltipOverlay;

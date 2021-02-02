@@ -24,7 +24,14 @@ import syslog from 'images/syslog.svg';
 import teams from 'images/teams.svg';
 import pagerduty from 'images/pagerduty.svg';
 import tenable from 'images/tenable.svg';
-import { knownBackendFlags } from 'utils/featureFlags';
+
+// Adding an integration tile behind a feature flag
+// To add a new integration, uncomment the following import
+
+// import { knownBackendFlags } from 'utils/featureFlags';
+
+// and then add the following property to the new tiles object definition in the list below:
+//     featureFlagDependency: knownBackendFlags.ROX_<flag_constant>,
 
 const integrationsList = {
     authProviders: [
@@ -224,14 +231,12 @@ const integrationsList = {
             type: 'awsSecurityHub',
             source: 'notifiers',
             image: awsSecurityHub,
-            featureFlagDependency: knownBackendFlags.ROX_AWS_SECURITY_HUB_INTEGRATION,
         },
         {
             label: 'Syslog',
             type: 'syslog',
             source: 'notifiers',
-            image: syslog, // TODO: replace with ref to Security Hub image when that becomes available
-            featureFlagDependency: knownBackendFlags.ROX_SYSLOG_INTEGRATION,
+            image: syslog,
         },
     ],
     backups: [
