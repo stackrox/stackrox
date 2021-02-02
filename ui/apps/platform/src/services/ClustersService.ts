@@ -23,19 +23,17 @@ export type Cluster = {
 //        into one function
 /**
  * Fetches list of registered clusters.
- *
- * @returns {Promise<Object, Error>} fulfilled with normalized list of clusters
  */
+// TODO specify return type after we rewrite without normalize
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function fetchClusters() {
-    return axios.get(clustersUrl).then((response) => ({
+    return axios.get<{ clusters: Cluster[] }>(clustersUrl).then((response) => ({
         response: normalize(response.data, { clusters: [clusterSchema] }),
     }));
 }
 
 /**
- * Fetches list of registered clusters as an Array.
- *
- * @returns {Promise<Object, Error>} fulfilled with normalized list of clusters
+ * Fetches list of registered clusters.
  */
 export function fetchClustersAsArray(options?: unknown[]): Promise<Cluster[]> {
     let queryString = '';
@@ -52,19 +50,17 @@ export function fetchClustersAsArray(options?: unknown[]): Promise<Cluster[]> {
             }
         );
     }
-    return axios.get(`${clustersUrl}${queryString}`).then((response) => {
-        return (response?.data?.clusters as Cluster[]) || [];
+    return axios.get<{ clusters: Cluster[] }>(`${clustersUrl}${queryString}`).then((response) => {
+        return response?.data?.clusters || [];
     });
 }
 
 /**
  * Fetches unwrapped cluster object by ID.
- *
- * @returns {Promise<Object, Error>} fulfilled with single cluster object
  */
 export function getClusterById(id: string): Promise<Cluster | null> {
-    return axios.get(`${clustersUrl}/${id}`).then((response) => {
-        return ((response && response.data && response.data.cluster) as Cluster) || null;
+    return axios.get<{ cluster: Cluster }>(`${clustersUrl}/${id}`).then((response) => {
+        return response?.data?.cluster || null;
     });
 }
 
@@ -74,19 +70,15 @@ export type AutoUpgradeConfig = {
 
 /**
  * Gets the cluster autoupgrade config.
- *
- * @returns {Promise<Object, Error>} fulfilled with autoupgrade config object
  */
 export function getAutoUpgradeConfig(): Promise<AutoUpgradeConfig> {
-    return axios.get(autoUpgradeConfigUrl).then((response) => {
-        return (response?.data?.config as AutoUpgradeConfig) || {};
+    return axios.get<{ config: AutoUpgradeConfig }>(autoUpgradeConfigUrl).then((response) => {
+        return response?.data?.config || {};
     });
 }
 
 /**
  * Saves the cluster autoupgrade config.
- *
- * @returns {Promise<Object, Error>} whose only value is resolved or rejected
  */
 export function saveAutoUpgradeConfig(config: AutoUpgradeConfig): Promise<AutoUpgradeConfig> {
     const wrappedObject = { config };
@@ -95,37 +87,30 @@ export function saveAutoUpgradeConfig(config: AutoUpgradeConfig): Promise<AutoUp
 
 /**
  * Manually start a sensor upgrade given the cluster ID.
- *
- * @returns {Promise<undefined, Error>} resolved if operation was successful
  */
-export function upgradeCluster(id: string) {
+export function upgradeCluster(id: string): Promise<Record<string, never>> {
     return axios.post(`${manualUpgradeUrl}/${id}`);
 }
 
 /**
  * Start a cluster cert rotation.
- *
- * @param id
- * @returns {Promise<undefined, Error>} resolved if operation was successful.
  */
-export function rotateClusterCerts(id: string) {
+export function rotateClusterCerts(id: string): Promise<Record<string, never>> {
     return axios.post(`${upgradesUrl}/rotateclustercerts/${id}`);
 }
 
 /**
  * Manually start a sensor upgrade for an array of clusters.
- *
- * @returns {Promise<Object, Error>} whose only value is resolved or rejected
  */
-export function upgradeClusters(ids = []) {
+export function upgradeClusters(ids = []): Promise<Record<string, never>[]> {
     return Promise.all(ids.map((id) => upgradeCluster(id)));
 }
 
 /**
  * Fetches cluster by its ID.
- *
- * @returns {Promise<Object, Error>} fulfilled with normalized cluster data
  */
+// TODO specify return type after we rewrite without normalize
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function fetchCluster(id: string) {
     return axios.get(`${clustersUrl}/${id}`).then((response) => ({
         response: normalize(response.data, { cluster: clusterSchema }),
@@ -133,28 +118,24 @@ export function fetchCluster(id: string) {
 }
 
 /**
- * Deletes cluster given the cluster ID.
- *
- * @returns {Promise<undefined, Error>} resolved if operation was successful
+ * Deletes cluster given the cluster ID. Returns an empty object.
  */
-export function deleteCluster(id: string) {
+export function deleteCluster(id: string): Promise<Record<string, never>> {
     return axios.delete(`${clustersUrl}/${id}`);
 }
 
 /**
  * Deletes clusters given a list of cluster IDs.
- *
- * @returns {Promise<undefined, Error>} resolved if operation was successful
  */
-export function deleteClusters(ids: string[] = []) {
+export function deleteClusters(ids: string[] = []): Promise<Record<string, never>[]> {
     return Promise.all(ids.map((id) => deleteCluster(id)));
 }
 
 /**
  * Creates or updates a cluster given the cluster fields.
- *
- * @returns {Promise<Object, Error>} fulfilled with a saved cluster data
  */
+// TODO specify return type after we rewrite without normalize
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function saveCluster(cluster: Cluster) {
     const promise = cluster.id
         ? axios.put(`${clustersUrl}/${cluster.id}`, cluster)
@@ -166,10 +147,8 @@ export function saveCluster(cluster: Cluster) {
 
 /**
  * Downloads cluster YAML configuration.
- *
- * @returns {Promise<undefined, Error>} resolved if operation was successful
  */
-export function downloadClusterYaml(id: string, createUpgraderSA = false) {
+export function downloadClusterYaml(id: string, createUpgraderSA = false): Promise<void> {
     return saveFile({
         method: 'post',
         url: '/api/extensions/clusters/zip',
@@ -179,10 +158,8 @@ export function downloadClusterYaml(id: string, createUpgraderSA = false) {
 
 /**
  * Downloads cluster Helm YAML configuration.
- *
- * @returns {Promise<undefined, Error>} resolved if operation was successful
  */
-export function downloadClusterHelmValuesYaml(id: string) {
+export function downloadClusterHelmValuesYaml(id: string): Promise<void> {
     return saveFile({
         method: 'post',
         url: '/api/extensions/clusters/helm-config.yaml',
@@ -192,8 +169,6 @@ export function downloadClusterHelmValuesYaml(id: string) {
 
 /**
  * Fetches the KernelSupportAvailable property.
- *
- * @returns {Promise<boolean, Error>} fulfilled with normalized cluster data
  */
 export function fetchKernelSupportAvailable(): Promise<boolean> {
     return axios.get(`${clustersEnvUrl}/kernel-support-available`).then((response) => {
