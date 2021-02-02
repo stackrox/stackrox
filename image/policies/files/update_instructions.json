@@ -15,8 +15,7 @@
   ],
   "remediation": "Use update instructions together with install instructions and version pinning for packages while installing them. This prevents caching and forces the extraction of the required versions.",
   "categories": [
-    "DevOps Best Practices",
-    "Security Best Practices"
+    "Docker CIS"
   ],
   "lifecycleStages": [
     "BUILD",

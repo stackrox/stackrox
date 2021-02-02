@@ -6,13 +6,12 @@
   "remediation": "You should not create a deployment with `hostIPC: true`",
   "disabled": false,
   "categories": [
-    "Security Best Practices"
+    "Docker CIS"
   ],
   "lifecycleStages": [
     "DEPLOY"
   ],
   "severity": "MEDIUM_SEVERITY",
-  "lastUpdated": "2021-01-12T22:31:43.702483800Z",
   "policyVersion": "1",
   "policySections": [
     {

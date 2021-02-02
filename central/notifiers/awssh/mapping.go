@@ -35,6 +35,7 @@ var (
 		"security best practices":  "TTPs",
 		"system modification":      "Effects",
 		"kubernetes events":        "Unusual Behaviors",
+		"docker cis":               "Software and Configuration Checks/Industry and Regulatory Standards",
 	}
 
 	defaultFindingType = "TTPs"

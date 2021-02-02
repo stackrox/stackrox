@@ -9,7 +9,7 @@
     "DEPLOY"
   ],
   "categories": [
-    "Security Best Practices"
+    "Docker CIS"
   ],
   "policySections": [
     {

@@ -23,8 +23,7 @@
   ],
   "remediation": "Ensure that the Dockerfile for each container switches from the root user",
   "categories": [
-    "DevOps Best Practices",
-    "Security Best Practices"
+    "Docker CIS"
   ],
   "lifecycleStages": [
     "BUILD",
