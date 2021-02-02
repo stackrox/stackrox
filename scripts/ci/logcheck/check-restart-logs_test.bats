@@ -30,7 +30,7 @@ TEST_FIXTURES="${BATS_TEST_DIRNAME}/test_fixtures"
     run "$CMD" "openshift-crio-api-e2e-tests" "${TEST_FIXTURES}/exception-collector-previous.log"
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "Checking for a restart exception in: ${TEST_FIXTURES}/exception-collector-previous.log" ]
-    [ "${lines[1]}" = "Ignoring this restart due to: collector initialization restart with openshift" ]
+    [ "${lines[1]}" = "Ignoring this restart due to: collector initialization restart with download failure" ]
 }
 
 @test "it can depend on process" {
@@ -39,7 +39,7 @@ TEST_FIXTURES="${BATS_TEST_DIRNAME}/test_fixtures"
 }
 
 @test "it can depend on CI job" {
-    run "$CMD" "another-job" "${TEST_FIXTURES}/exception-collector-previous.log"
+    run "$CMD" "another-job" "${TEST_FIXTURES}/rox-5861-exception-compliance-previous.log"
     [ "$status" -eq 2 ]
 }
 
@@ -76,6 +76,11 @@ TEST_FIXTURES="${BATS_TEST_DIRNAME}/test_fixtures"
 
 @test "this kernel flavor restart is OK" {
     run "$CMD" "gke-kernel-api-e2e-tests" "${TEST_FIXTURES}/kernel-collector-previous.log"
+    [ "$status" -eq 0 ]
+}
+
+@test "this ebpf flavor restart is OK" {
+    run "$CMD" "gke-api-e2e-tests" "${TEST_FIXTURES}/ebpf-collector-previous.log"
     [ "$status" -eq 0 ]
 }
 

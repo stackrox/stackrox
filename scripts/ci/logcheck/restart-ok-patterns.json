@@ -6,9 +6,9 @@
         "logline": "Fatal: error initializing stream to sensor"
     },
     {
-        "comment": "collector initialization restart with openshift",
-        "job": "openshift|kernel",
+        "comment": "collector initialization restart with download failure",
+        "job": ".*",
         "logfile": "collector-previous",
-        "logline": "All attempts to download the kernel module have failed."
+        "logline": "All attempts to download the (kernel module|eBPF probe) have failed."
     }
 ]

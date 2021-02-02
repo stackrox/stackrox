@@ -1,0 +1,17 @@
+Collector Version: 3.1.12
+Hostname: collector-7z68x
+OS: Container-Optimized OS from Google
+Kernel Version: 4.19.112+
+Module Version: b6745d795b8497aaf387843dc8aa07463c944d3ad67288389b754daaebea4b62
+Didn't find eBPF probe collector-ebpf-4.19.112-12371.1088.0-cos.o built-in.
+Attempting to download from https://sensor.stackrox:443/kernel-objects/b6745d795b8497aaf387843dc8aa07463c944d3ad67288389b754daaebea4b62/collector-ebpf-4.19.112-12371.1088.0-cos.o.gz...
+curl: (7) Failed to connect to sensor.stackrox port 443: No route to host
+Failed to download eBPF probe.
+All attempts to download the eBPF probe have failed.
+The ebpf probe may not have been compiled for version 4.19.112-12371.1088.0-cos.
+Error: Failed to find ebpf probe for kernel version 4.19.112-12371.1088.0-cos.
+
+Please provide this complete error message to StackRox support.
+This program will now exit and retry when it is next restarted.
+
+HTTP Status Code 000
