@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"context"
+	"os"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -10,10 +11,14 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/satoken"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/centralclient"
+	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
@@ -151,6 +156,24 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 	if admCtrlSettingsMgr != nil {
 		apiServices = append(apiServices, admissioncontroller.NewManagementService(admCtrlSettingsMgr, admissioncontroller.AlertHandlerSingleton()))
 	}
+
+	// This is guarded in `safe.Run` just to be extra conservative, as it was added last minute. Can be removed once
+	// it has proven to be stable.
+	_ = safe.Run(func() {
+		sensorNamespace, err := satoken.LoadNamespaceFromFile()
+		if err != nil {
+			log.Errorf("Failed to determine namespace from service account token file: %s", err)
+		}
+		if sensorNamespace == "" {
+			sensorNamespace = os.Getenv("POD_NAMESPACE")
+		}
+		if sensorNamespace == "" {
+			sensorNamespace = namespaces.StackRox
+			log.Warnf("Unable to determine Sensor namespace, defaulting to %s", sensorNamespace)
+		}
+
+		apiServices = append(apiServices, certdistribution.NewService(client.Kubernetes(), sensorNamespace))
+	})
 
 	s.AddAPIServices(apiServices...)
 	return s, nil

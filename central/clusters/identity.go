@@ -20,17 +20,18 @@ type CertBundle map[storage.ServiceType]*mtls.IssuedCert
 
 // CreateIdentity creates a new cluster identity for a service
 func CreateIdentity(clusterID string, serviceType storage.ServiceType, identityStore siDataStore.DataStore) (*mtls.IssuedCert, error) {
-	srvIDAllAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.ServiceIdentity)))
-
 	issuedCert, err := mtls.IssueNewCert(mtls.NewSubject(clusterID, serviceType))
 	if err != nil {
 		return nil, err
 	}
-	if err := identityStore.AddServiceIdentity(srvIDAllAccessCtx, issuedCert.ID); err != nil {
-		return nil, err
+	if identityStore != nil {
+		srvIDAllAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.ServiceIdentity)))
+		if err := identityStore.AddServiceIdentity(srvIDAllAccessCtx, issuedCert.ID); err != nil {
+			return nil, err
+		}
 	}
 
 	return issuedCert, nil

@@ -8,6 +8,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/safe"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -89,6 +91,18 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		centralHello := &central.CentralHello{
 			ClusterId: cluster.GetId(),
 		}
+
+		if err := safe.RunE(func() error {
+			certBundle, err := clusters.IssueSecuredClusterCertificates(cluster, nil)
+			if err != nil {
+				return errors.Wrapf(err, "issuing a certificate bundle for cluster %s", cluster.GetName())
+			}
+			centralHello.CertBundle = certBundle.FileMap()
+			return nil
+		}); err != nil {
+			log.Errorf("Could not include certificate bundle in sensor hello message: %s", err)
+		}
+
 		if err := server.Send(&central.MsgToSensor{Msg: &central.MsgToSensor_Hello{Hello: centralHello}}); err != nil {
 			return errors.Wrap(err, "sending CentralHello message to sensor")
 		}

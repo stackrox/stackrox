@@ -3880,6 +3880,22 @@ jobs:
       - *collectK8sLogs
       - get-and-store-debug-dump
       - pull-stackrox-api-data
+      - run:
+          name: Delete the sensor
+          command: |
+            ./sensor-remote/delete-sensor.sh
+      - run:
+          name: Install yq
+          command: |
+            sudo wget https://github.com/mikefarah/yq/releases/download/v4.4.1/yq_linux_amd64 -O /usr/bin/yq
+            sudo chmod 0755 /usr/bin/yq
+
+      - run:
+          name: Deploy from the sensor helm chart and perform upgrades to the current secured cluster services chart
+          command: |
+            ./scripts/ci/sensor-helm-upgrade-test.sh
+
+      - *collectK8sLogs
       - *storeK8sLogs
       - *storeQALogs
 

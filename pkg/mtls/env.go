@@ -20,6 +20,11 @@ var (
 	keyFilePathSetting   = env.RegisterSetting(KeyFileEnvName, env.WithDefault(defaultKeyFilePath))
 )
 
+// CAFilePath returns the path where the CA certificate is stored.
+func CAFilePath() string {
+	return caFilePathSetting.Setting()
+}
+
 // CertFilePath returns the path where the certificate is stored.
 func CertFilePath() string {
 	return certFilePathSetting.Setting()

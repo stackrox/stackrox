@@ -9,19 +9,18 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/sensor/admission-control/common"
 	"github.com/stackrox/rox/sensor/admission-control/manager"
 )
 
 const (
-	persistPath = `/var/lib/stackrox/admission-control/`
-
 	settingsFileName     = `settings.pb`
 	settingsTempFileName = `.settings-temp.pb`
 )
 
 var (
-	settingsPath     = filepath.Join(persistPath, settingsFileName)
-	settingsTempPath = filepath.Join(persistPath, settingsTempFileName)
+	settingsPath     = filepath.Join(common.TempStoragePath, settingsFileName)
+	settingsTempPath = filepath.Join(common.TempStoragePath, settingsTempFileName)
 )
 
 // RunSettingsPersister runs a component that reads persisted settings from a mounted directory once, and stores every

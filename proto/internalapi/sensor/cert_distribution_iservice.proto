@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "sensor";
+
+import "storage/service_identity.proto";
+import "google/protobuf/empty.proto";
+
+package sensor;
+
+message FetchCertificateRequest {
+  storage.ServiceType service_type = 1;
+  string service_account_token     = 2;
+}
+
+message FetchCertificateResponse {
+  string pem_cert = 1;
+  string pem_key  = 2;
+}
+
+service CertDistributionService {
+  rpc FetchCertificate(FetchCertificateRequest) returns (FetchCertificateResponse);
+}
