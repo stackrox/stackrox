@@ -248,3 +248,37 @@ roleRef:
   kind: ClusterRole
   name: stackrox:create-events
   apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:review-tokens
+  labels:
+    {{- include "srox.labels" (list . "clusterrole" "stackrox:review-tokens") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrole" "stackrox:review-tokens") | nindent 4 }}
+rules:
+- resources:
+  - tokenreviews
+  apiGroups: ["authentication.k8s.io"]
+  verbs:
+  - create
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:review-tokens-binding
+  labels:
+    {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:review-tokens-binding") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrolebinding" "stackrox:review-tokens-binding") | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{ ._rox._namespace }}
+roleRef:
+  kind: ClusterRole
+  name: stackrox:review-tokens
+  apiGroup: rbac.authorization.k8s.io

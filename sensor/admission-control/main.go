@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/admission-control/alerts"
@@ -46,6 +47,18 @@ func mainCmd() error {
 
 	sigC := make(chan os.Signal, 1)
 	signal.Notify(sigC, unix.SIGTERM, unix.SIGINT)
+
+	if err := safe.RunE(func() error {
+		if err := configureCA(); err != nil {
+			return err
+		}
+		if err := configureCerts(); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		log.Errorf("Failed to configure certificates: %v. Connection to sensor might fail.", err)
+	}
 
 	// Note that the following call returns immediately (connecting happens in the background), hence this does not
 	// delay readiness of the admission-control service even if sensor is unavailable.
