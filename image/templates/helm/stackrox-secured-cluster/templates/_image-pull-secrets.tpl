@@ -49,7 +49,7 @@
   {{ include "srox.fail" $msg }}
 {{ end }}
 
-{{ $imagePullSecretNames = concat $imagePullSecretNames $defaultSecretNames | uniq | sortAlpha }}
+{{ $imagePullSecretNames = concat (append $imagePullSecretNames $secretResourceName) $defaultSecretNames | uniq | sortAlpha }}
 {{ $_ := set $imagePullSecrets "_names" $imagePullSecretNames }}
 {{ $_ := set $imagePullSecrets "_creds" $imagePullCreds }}
 
