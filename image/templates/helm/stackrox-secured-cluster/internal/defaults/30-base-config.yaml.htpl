@@ -35,3 +35,11 @@ admissionControl:
 collector:
   collectionMethod: "KERNEL_MODULE"
   disableTaintTolerations: false
+
+---
+sensor:
+  exposeMonitoring: {{ ._rox.exposeMonitoring }}
+collector:
+  exposeMonitoring: {{ ._rox.exposeMonitoring }}
+admissionControl:
+  exposeMonitoring: {{ ._rox.exposeMonitoring }}
