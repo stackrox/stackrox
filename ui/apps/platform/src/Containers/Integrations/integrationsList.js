@@ -24,6 +24,8 @@ import syslog from 'images/syslog.svg';
 import teams from 'images/teams.svg';
 import pagerduty from 'images/pagerduty.svg';
 import tenable from 'images/tenable.svg';
+import gke from 'images/gke.svg';
+import eks from 'images/eks.svg';
 
 // Adding an integration tile behind a feature flag
 // To add a new integration, uncomment the following import
@@ -259,6 +261,20 @@ const integrationsList = {
             type: 'scopedAccess',
             source: 'authPlugins',
             image: logo,
+        },
+    ],
+    logConsumption: [
+        {
+            label: 'Amazon EKS Logging',
+            type: 'awsSecurityHub',
+            source: 'logConsumption',
+            image: eks,
+        },
+        {
+            label: 'Google GKE Logging',
+            type: 'awsSecurityHub',
+            source: 'logConsumption',
+            image: gke,
         },
     ],
 };

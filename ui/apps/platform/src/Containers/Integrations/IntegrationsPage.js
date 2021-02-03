@@ -1,11 +1,10 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import PageHeader from 'Components/PageHeader';
 
 import integrationsList from 'Containers/Integrations/integrationsList';
-import IntegrationModal from 'Containers/Integrations/IntegrationModal';
 import IntegrationTile from 'Containers/Integrations/IntegrationTile';
 import { actions as authActions } from 'reducers/auth';
 import { actions as apiTokenActions } from 'reducers/apitokens';
@@ -13,195 +12,123 @@ import { actions as clusterInitBundleActions } from 'reducers/clusterInitBundles
 import { actions as integrationActions } from 'reducers/integrations';
 import { selectors } from 'reducers';
 import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
-import APITokensModal from './APITokens/APITokensModal';
-import ClusterInitBundlesModal from './ClusterInitBundles/ClusterInitBundlesModal';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import IntegrationsSection from './IntegrationsSection';
+import GenericIntegrationModal from './GenericIntegrationModal';
 
-class IntegrationsPage extends Component {
-    static propTypes = {
-        authPlugins: PropTypes.arrayOf(
-            PropTypes.shape({
-                endpoint: PropTypes.string.isRequired,
-            })
-        ).isRequired,
-        authProviders: PropTypes.arrayOf(
-            PropTypes.shape({
-                name: PropTypes.string.isRequired,
-            })
-        ).isRequired,
-        apiTokens: PropTypes.arrayOf(
-            PropTypes.shape({
-                name: PropTypes.string.isRequired,
-                role: PropTypes.string.isRequired,
-            })
-        ).isRequired,
-        clusterInitBundles: PropTypes.arrayOf(
-            PropTypes.shape({
-                name: PropTypes.string.isRequired,
-            })
-        ).isRequired,
-        backups: PropTypes.arrayOf(
-            PropTypes.shape({
-                name: PropTypes.string.isRequired,
-            })
-        ).isRequired,
-        notifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
-        imageIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
-        fetchAuthPlugins: PropTypes.func.isRequired,
-        fetchAuthProviders: PropTypes.func.isRequired,
-        fetchAPITokens: PropTypes.func.isRequired,
-        fetchBackups: PropTypes.func.isRequired,
-        fetchClusterInitBundles: PropTypes.func.isRequired,
-        fetchNotifiers: PropTypes.func.isRequired,
-        fetchImageIntegrations: PropTypes.func.isRequired,
-        featureFlags: PropTypes.arrayOf(
-            PropTypes.shape({
-                envVar: PropTypes.string.isRequired,
-                enabled: PropTypes.bool.isRequired,
-            })
-        ).isRequired,
-    };
+const emptyTile = {
+    source: '',
+    type: '',
+    label: '',
+};
 
-    constructor(props) {
-        super(props);
+const IntegrationsPage = ({
+    apiTokens,
+    clusterInitBundles,
+    authProviders,
+    authPlugins,
+    backups,
+    imageIntegrations,
+    notifiers,
+    logConsumptions,
+    fetchAuthPlugins,
+    fetchAPITokens,
+    fetchClusterInitBundles,
+    fetchAuthProviders,
+    fetchImageIntegrations,
+    fetchNotifiers,
+    fetchBackups,
+    featureFlags,
+}) => {
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedTile, setSelectedTile] = useState(emptyTile);
+    const isHostScanningEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_HOST_SCANNING);
+    const isK8sAuditLoggingEnabled = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_K8S_EVENTS_DETECTION
+    );
 
-        this.state = {
-            modalOpen: false,
-            selectedSource: '',
-            selectedType: '',
-            selectedLabel: '',
-        };
-    }
-
-    getEntities = (source, type) => {
+    function getSelectedEntities() {
+        const { source, type } = selectedTile;
         switch (source) {
             case 'authPlugins':
-                this.props.fetchAuthPlugins();
+                fetchAuthPlugins();
                 break;
             case 'authProviders':
                 if (type === 'apitoken') {
-                    this.props.fetchAPITokens();
+                    fetchAPITokens();
                     break;
                 }
                 if (type === 'clusterInitBundle') {
-                    this.props.fetchClusterInitBundles();
+                    fetchClusterInitBundles();
                 }
-                this.props.fetchAuthProviders();
+                fetchAuthProviders();
                 break;
             case 'imageIntegrations':
-                this.props.fetchImageIntegrations();
+                fetchImageIntegrations();
                 break;
             case 'notifiers':
-                this.props.fetchNotifiers();
+                fetchNotifiers();
                 break;
             case 'backups':
-                this.props.fetchBackups();
+                fetchBackups();
                 break;
             default:
                 throw new Error(`Unknown source ${source}`);
         }
-    };
+    }
 
-    openIntegrationModal = (integrationCategory) => {
-        this.setState({
-            modalOpen: true,
-            selectedSource: integrationCategory.source,
-            selectedType: integrationCategory.type,
-            selectedLabel: integrationCategory.label,
-        });
-    };
+    function openIntegrationModal(selectedIntegrationTile) {
+        setModalOpen(true);
+        setSelectedTile(selectedIntegrationTile);
+    }
 
-    fetchEntitiesAndCloseModal = () => {
-        this.getEntities(this.state.selectedSource, this.state.selectedType);
-        this.setState({
-            modalOpen: false,
-            selectedSource: '',
-            selectedType: '',
-            selectedLabel: '',
-        });
-    };
+    function fetchEntitiesAndCloseModal() {
+        getSelectedEntities();
+        setModalOpen(false);
+        setSelectedTile(emptyTile);
+    }
 
-    findIntegrations = (source, type) => {
+    function findIntegrations(source, type) {
         const typeLowerMatches = (integration) =>
             integration.type.toLowerCase() === type.toLowerCase();
 
         switch (source) {
             case 'authPlugins': {
-                return this.props.authPlugins;
+                return authPlugins;
             }
             case 'authProviders': {
                 if (type === 'apitoken') {
-                    return this.props.apiTokens;
+                    return apiTokens;
                 }
                 if (type === 'clusterInitBundle') {
-                    return this.props.clusterInitBundles;
+                    return clusterInitBundles;
                 }
-                return this.props.authProviders.filter(typeLowerMatches);
+                return authProviders.filter(typeLowerMatches);
             }
             case 'notifiers': {
-                return this.props.notifiers.filter(typeLowerMatches);
+                return notifiers.filter(typeLowerMatches);
             }
             case 'backups': {
-                return this.props.backups.filter(typeLowerMatches);
+                return backups.filter(typeLowerMatches);
             }
             case 'imageIntegrations': {
-                return this.props.imageIntegrations.filter(typeLowerMatches);
+                return imageIntegrations.filter(typeLowerMatches);
+            }
+            case 'logConsumption': {
+                return logConsumptions;
             }
             default: {
                 throw new Error(`Unknown source ${source}`);
             }
         }
-    };
-
-    renderAPITokensModal() {
-        return (
-            <APITokensModal
-                tokens={this.props.apiTokens}
-                onRequestClose={this.fetchEntitiesAndCloseModal}
-            />
-        );
     }
 
-    renderClusterInitBundlesModal() {
-        return (
-            <ClusterInitBundlesModal
-                clusterInitBundles={this.props.clusterInitBundles}
-                onRequestClose={this.fetchEntitiesAndCloseModal}
-            />
-        );
-    }
-
-    renderIntegrationModal() {
-        const { modalOpen, selectedSource, selectedType, selectedLabel } = this.state;
-        if (!modalOpen) {
-            return null;
-        }
-
-        if (selectedSource === 'authProviders' && selectedType === 'apitoken') {
-            return this.renderAPITokensModal();
-        }
-
-        if (selectedSource === 'authProviders' && selectedType === 'clusterInitBundle') {
-            return this.renderClusterInitBundlesModal();
-        }
-
-        const integrations = this.findIntegrations(selectedSource, selectedType);
-        return (
-            <IntegrationModal
-                integrations={integrations}
-                source={selectedSource}
-                type={selectedType}
-                label={selectedLabel}
-                onRequestClose={this.fetchEntitiesAndCloseModal}
-            />
-        );
-    }
-
-    renderIntegrationTiles = (source) =>
-        integrationsList[source].map((tile) => {
+    function renderIntegrationTiles(source) {
+        return integrationsList[source].map((tile) => {
             if (tile.featureFlagDependency) {
                 if (
                     isBackendFeatureFlagEnabled(
-                        this.props.featureFlags,
+                        featureFlags,
                         tile.featureFlagDependency.featureFlag,
                         tile.featureFlagDependency.defaultValue
                     ) !== tile.featureFlagDependency.showIfValueIs
@@ -210,14 +137,7 @@ class IntegrationsPage extends Component {
                 }
             }
             // TODO: remove this manual check after ROX_HOST_SCANNING feature flag turned on
-            if (
-                tile.label === 'StackRox Scanner' &&
-                !isBackendFeatureFlagEnabled(
-                    this.props.featureFlags,
-                    knownBackendFlags.ROX_HOST_SCANNING,
-                    false
-                )
-            ) {
+            if (tile.label === 'StackRox Scanner' && !isHostScanningEnabled) {
                 // eslint-disable-next-line no-param-reassign
                 tile.categories = 'Scanner';
             }
@@ -227,77 +147,120 @@ class IntegrationsPage extends Component {
                 <IntegrationTile
                     key={tile.label}
                     integration={tile}
-                    onClick={this.openIntegrationModal}
-                    numIntegrations={this.findIntegrations(tile.source, tile.type).length}
+                    onClick={openIntegrationModal}
+                    numIntegrations={findIntegrations(tile.source, tile.type).length}
                 />
             );
         });
-
-    render() {
-        const imageIntegrations = this.renderIntegrationTiles('imageIntegrations');
-        const plugins = this.renderIntegrationTiles('plugins');
-        const authPlugins = this.renderIntegrationTiles('authPlugins');
-        const authProviders = this.renderIntegrationTiles('authProviders');
-        const backups = this.renderIntegrationTiles('backups');
-
-        return (
-            <div className="h-full flex flex-col md:w-full bg-base-200" id="integrationsPage">
-                <div className="flex flex-shrink-0">
-                    <PageHeader header="Integrations" subHeader="Setup & Configuration" />
-                </div>
-                <div className="w-full h-full overflow-auto">
-                    <section className="mb-6" id="image-integrations">
-                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
-                            Image Integrations
-                        </h2>
-                        <div className="flex flex-col items-center w-full">
-                            <div className="flex flex-wrap w-full -mx-6 p-3">
-                                {imageIntegrations}
-                            </div>
-                        </div>
-                    </section>
-
-                    <section className="mb-6" id="notifier-integrations">
-                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
-                            Notifier Integrations
-                        </h2>
-                        <div className="flex flex-col items-center w-full">
-                            <div className="flex flex-wrap w-full -mx-6 p-3">{plugins}</div>
-                        </div>
-                    </section>
-
-                    <section className="mb-6" id="backup-integrations">
-                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
-                            Backup Integrations
-                        </h2>
-                        <div className="flex flex-col items-center w-full">
-                            <div className="flex flex-wrap w-full -mx-6 p-3">{backups}</div>
-                        </div>
-                    </section>
-
-                    <section className="mb-6" id="token-integrations">
-                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
-                            Authentication Tokens
-                        </h2>
-                        <div className="flex flex-col items-center w-full">
-                            <div className="flex flex-wrap w-full -mx-6 p-3">{authProviders}</div>
-                        </div>
-                    </section>
-
-                    <section className="mb-6" id="auth-integrations">
-                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
-                            Authorization Plugins
-                        </h2>
-                        <div className="flex flex-col items-center w-full">
-                            <div className="flex flex-wrap w-full -mx-6 p-3">{authPlugins}</div>
-                        </div>
-                    </section>
-                </div>
-                {this.renderIntegrationModal()}
-            </div>
-        );
     }
-}
+
+    const imageIntegrationTiles = renderIntegrationTiles('imageIntegrations');
+    const pluginTiles = renderIntegrationTiles('plugins');
+    const authPluginTiles = renderIntegrationTiles('authPlugins');
+    const authProviderTiles = renderIntegrationTiles('authProviders');
+    const backupTiles = renderIntegrationTiles('backups');
+    const logConsumptionTiles = renderIntegrationTiles('logConsumption');
+
+    return (
+        <div className="h-full flex flex-col md:w-full bg-base-200" id="integrationsPage">
+            <div className="flex flex-shrink-0">
+                <PageHeader header="Integrations" subHeader="Setup & Configuration" />
+            </div>
+            <div className="w-full h-full overflow-auto">
+                <IntegrationsSection
+                    headerName="Image Integrations"
+                    tiles={imageIntegrationTiles}
+                    testId="image-integrations"
+                />
+                <IntegrationsSection
+                    headerName="Notifier Integrations"
+                    tiles={pluginTiles}
+                    testId="notifier-integrations"
+                />
+                <IntegrationsSection
+                    headerName="Backup Integrations"
+                    tiles={backupTiles}
+                    testId="backup-integrations"
+                />
+                <IntegrationsSection
+                    headerName="Authentication Tokens"
+                    tiles={authProviderTiles}
+                    testId="token-integrations"
+                />
+                <IntegrationsSection
+                    headerName="Authorization Plugins"
+                    tiles={authPluginTiles}
+                    testId="auth-integrations"
+                />
+                {isK8sAuditLoggingEnabled && (
+                    <IntegrationsSection
+                        headerName="Log Consumption"
+                        tiles={logConsumptionTiles}
+                        testId="log-integrations"
+                    />
+                )}
+            </div>
+            {modalOpen && (
+                <GenericIntegrationModal
+                    apiTokens={apiTokens}
+                    clusterInitBundles={clusterInitBundles}
+                    fetchEntitiesAndCloseModal={fetchEntitiesAndCloseModal}
+                    findIntegrations={findIntegrations}
+                    selectedTile={selectedTile}
+                />
+            )}
+        </div>
+    );
+};
+
+IntegrationsPage.propTypes = {
+    authPlugins: PropTypes.arrayOf(
+        PropTypes.shape({
+            endpoint: PropTypes.string.isRequired,
+        })
+    ).isRequired,
+    authProviders: PropTypes.arrayOf(
+        PropTypes.shape({
+            name: PropTypes.string.isRequired,
+        })
+    ).isRequired,
+    apiTokens: PropTypes.arrayOf(
+        PropTypes.shape({
+            name: PropTypes.string.isRequired,
+            role: PropTypes.string.isRequired,
+        })
+    ).isRequired,
+    clusterInitBundles: PropTypes.arrayOf(
+        PropTypes.shape({
+            name: PropTypes.string.isRequired,
+        })
+    ).isRequired,
+    backups: PropTypes.arrayOf(
+        PropTypes.shape({
+            name: PropTypes.string.isRequired,
+        })
+    ).isRequired,
+    notifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
+    logConsumptions: PropTypes.arrayOf(PropTypes.object),
+    imageIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
+    fetchAuthPlugins: PropTypes.func.isRequired,
+    fetchAuthProviders: PropTypes.func.isRequired,
+    fetchAPITokens: PropTypes.func.isRequired,
+    fetchBackups: PropTypes.func.isRequired,
+    fetchClusterInitBundles: PropTypes.func.isRequired,
+    fetchNotifiers: PropTypes.func.isRequired,
+    fetchImageIntegrations: PropTypes.func.isRequired,
+    featureFlags: PropTypes.arrayOf(
+        PropTypes.shape({
+            envVar: PropTypes.string.isRequired,
+            enabled: PropTypes.bool.isRequired,
+        })
+    ).isRequired,
+};
+
+IntegrationsPage.defaultProps = {
+    logConsumptions: [],
+};
 
 const mapStateToProps = createStructuredSelector({
     authPlugins: selectors.getAuthPlugins,
