@@ -703,6 +703,12 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.addDepAndImages(noSeccompProfileDep)
 
+	hostNetworkDep := &storage.Deployment{
+		Id:          "HOSTNETWORK",
+		HostNetwork: true,
+	}
+	suite.addDepAndImages(hostNetworkDep)
+
 	// Index processes
 	bashLineage := []string{"/bin/bash"}
 	fixtureDepAptIndicator := suite.addIndicator(fixtureDep.GetId(), "apt", "", "/usr/bin/apt", bashLineage, 1)
@@ -943,6 +949,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				hostIPCDep.GetId():                                {},
 				mountPropagationDep.GetId():                       {},
 				noSeccompProfileDep.GetId():                       {},
+				hostNetworkDep.GetId():                            {},
 			},
 			sampleViolationForMatched: "Image in container '%s' has not been scanned",
 		},
@@ -1215,6 +1222,14 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				noSeccompProfileDep.GetId(): {
 					{Message: "Container has Seccomp profile type 'unconfined'"},
+				},
+			},
+		},
+		{
+			policyName: "Ensure that the host's network namespace is not shared",
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				hostNetworkDep.GetId(): {
+					{Message: "Deployment uses the host's network namespace"},
 				},
 			},
 		},

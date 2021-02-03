@@ -256,6 +256,10 @@ const fieldsMap = {
             }`;
         },
     },
+    HostNetwork: {
+        label: 'Host Network',
+        formatValue: (d) => (d === true ? 'Yes' : 'Not Enabled'),
+    },
     HostPid: {
         label: 'Host PID',
         formatValue: (value) => (value ? 'Yes' : 'Not Enabled'),

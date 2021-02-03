@@ -24,6 +24,7 @@ var (
 	ExposedPortProtocol           = newFieldName("Exposed Port Protocol")
 	FixedBy                       = newFieldName("Fixed By")
 	HostIPC                       = newFieldName("Host IPC")
+	HostNetwork                   = newFieldName("Host Network")
 	HostPID                       = newFieldName("Host PID")
 	ImageAge                      = newFieldName("Image Age")
 	ImageComponent                = newFieldName("Image Component")

@@ -769,6 +769,29 @@ const policyConfigurationDescriptor = [
         canBooleanLogic: false,
     },
     {
+        label: 'Share Host Network Namespace',
+        name: 'Host Network',
+        longName: 'Host Network',
+        jsonpath: 'fields.hostNetwork',
+        category: policyCriteriaCategories.DEPLOYMENT_METADATA,
+        type: 'radioGroup',
+        radioButtons: [
+            {
+                text: 'Uses Host Network Namespace',
+                value: true,
+            },
+            {
+                text: 'Does Not Use Host Network Namespace',
+                value: false,
+            },
+        ],
+        required: false,
+        default: false,
+        defaultValue: true,
+        disabled: true,
+        canBooleanLogic: false,
+    },
+    {
         label: 'Share Host PID Namespace',
         name: 'Host PID',
         longName: 'Host PID',

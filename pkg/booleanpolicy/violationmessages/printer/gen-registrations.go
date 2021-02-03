@@ -12,6 +12,7 @@ const (
 	DropCapabilityKey       = "dropCapability"
 	EnvKey                  = "env"
 	HostIPCKey              = "hostIPC"
+	HostNetworkKey          = "hostNetwork"
 	HostPIDKey              = "hostPID"
 	ImageAgeKey             = "imageAge"
 	ImageDetailsKey         = "imageDetails"
@@ -48,6 +49,7 @@ func init() {
 	registerFunc(DropCapabilityKey, dropCapabilityPrinter)
 	registerFunc(EnvKey, envPrinter)
 	registerFunc(HostIPCKey, hostIPCPrinter)
+	registerFunc(HostNetworkKey, hostNetworkPrinter)
 	registerFunc(HostPIDKey, hostPIDPrinter)
 	registerFunc(ImageAgeKey, imageAgePrinter)
 	registerFunc(ImageDetailsKey, imageDetailsPrinter)

@@ -52,6 +52,7 @@ var (
 	DockerfileInstructionKeyword = newFieldLabel("Dockerfile Instruction Keyword")
 	DockerfileInstructionValue   = newFieldLabel("Dockerfile Instruction Value")
 	HostIPC                      = newFieldLabel("Host IPC")
+	HostNetwork                  = newFieldLabel("Host Network")
 	HostPID                      = newFieldLabel("Host PID")
 	ImageCreatedTime             = newFieldLabel("Image Created Time")
 	ImageName                    = newFieldLabel("Image")

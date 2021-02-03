@@ -38,7 +38,7 @@ message Deployment {
     string service_account                     = 18 [(gogoproto.moretags) = "search:\"Service Account\""];
     PermissionLevel service_account_permission_level = 28 [(gogoproto.moretags) = "search:\"Service Account Permission Level,store\""];
     bool automount_service_account_token       = 25;
-    bool host_network                          = 21;
+    bool host_network                          = 21 [(gogoproto.moretags) = "policy:\"Host Network\""];
     bool host_pid                              = 31 [(gogoproto.moretags) = "policy:\"Host PID\""];
     bool host_ipc                              = 32 [(gogoproto.moretags) = "policy:\"Host IPC\""];
     repeated Toleration tolerations            = 22 [(gogoproto.moretags) = "search:\"-\""];
