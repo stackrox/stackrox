@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+package storage;
+
+message LogIntegration {
+    message AWSConfig {
+        // TODO
+    }
+
+    message GCPConfig {
+        // TODO
+    }
+
+    string                    id               = 1;
+    string                    name             = 2;
+    // Denotes the time when the log integration was created.
+    google.protobuf.Timestamp created_at       = 3;
+    // Denotes the frequency of log collection. If not supplied, default polling interval shall be applied.
+    google.protobuf.Duration  polling_interval = 4;
+
+    oneof Config {
+        AWSConfig             eks_config       = 5;
+        GCPConfig             gke_config       = 6;
+    }
+}

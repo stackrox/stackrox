@@ -10,6 +10,7 @@ import (
 
 // All resource types that we want to define (for the purposes of enforcing
 // API permissions) must be defined here.
+// KEEP THE FOLLOWING LIST SORTED IN LEXICOGRAPHIC ORDER.
 var (
 	APIToken              = newResourceMetadata("APIToken", permissions.GlobalScope)
 	Alert                 = newResourceMetadata("Alert", permissions.NamespaceScope)
@@ -32,15 +33,20 @@ var (
 	ImageIntegration      = newResourceMetadata("ImageIntegration", permissions.GlobalScope)
 	ImbuedLogs            = newResourceMetadata("ImbuedLogs", permissions.GlobalScope)
 	Indicator             = newResourceMetadata("Indicator", permissions.NamespaceScope)
+	K8sRole               = newResourceMetadata("K8sRole", permissions.NamespaceScope)
+	K8sRoleBinding        = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
+	K8sSubject            = newResourceMetadata("K8sSubject", permissions.NamespaceScope)
 	Licenses              = newResourceMetadata("Licenses", permissions.GlobalScope)
+	LogIntegration        = newResourceMetadata("LogIntegration", permissions.GlobalScope)
 	Namespace             = newResourceMetadata("Namespace", permissions.NamespaceScope)
-	Node                  = newResourceMetadata("Node", permissions.ClusterScope)
-	Notifier              = newResourceMetadata("Notifier", permissions.GlobalScope)
 	NetworkBaseline       = newResourceMetadata("NetworkBaseline", permissions.NamespaceScope)
-	NetworkPolicy         = newResourceMetadata("NetworkPolicy", permissions.NamespaceScope)
 	NetworkGraph          = newResourceMetadata("NetworkGraph", permissions.NamespaceScope)
 	NetworkGraphConfig    = newResourceMetadata("NetworkGraphConfig", permissions.GlobalScope)
+	NetworkPolicy         = newResourceMetadata("NetworkPolicy", permissions.NamespaceScope)
+	Node                  = newResourceMetadata("Node", permissions.ClusterScope)
+	Notifier              = newResourceMetadata("Notifier", permissions.GlobalScope)
 	Policy                = newResourceMetadata("Policy", permissions.GlobalScope)
+	ProbeUpload           = newResourceMetadata("ProbeUpload", permissions.GlobalScope)
 	ProcessWhitelist      = newResourceMetadata("ProcessWhitelist", permissions.NamespaceScope)
 	Role                  = newResourceMetadata("Role", permissions.GlobalScope)
 	Risk                  = newResourceMetadata("Risk", permissions.NamespaceScope)
@@ -51,10 +57,6 @@ var (
 	ServiceAccount        = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
 	ServiceIdentity       = newResourceMetadata("ServiceIdentity", permissions.GlobalScope)
 	User                  = newResourceMetadata("User", permissions.GlobalScope)
-	K8sRole               = newResourceMetadata("K8sRole", permissions.NamespaceScope)
-	K8sRoleBinding        = newResourceMetadata("K8sRoleBinding", permissions.NamespaceScope)
-	K8sSubject            = newResourceMetadata("K8sSubject", permissions.NamespaceScope)
-	ProbeUpload           = newResourceMetadata("ProbeUpload", permissions.GlobalScope)
 
 	resourceToMetadata = make(map[permissions.Resource]permissions.ResourceMetadata)
 )

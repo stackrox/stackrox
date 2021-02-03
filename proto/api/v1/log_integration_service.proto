@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+import "storage/log_integration.proto";
+
+package v1;
+
+message GetLogIntegrationsResponse {
+    repeated storage.LogIntegration integrations = 1;
+}
+
+message UpdateLogIntegrationRequest {
+    storage.LogIntegration config          = 1;
+    // When false, use the stored credentials of an existing log integration given its ID.
+    bool                   update_password = 2;
+}
+
+message GetLogIntegrationResponse {
+    storage.LogIntegration log_integration = 1;
+}
+
+message CreateLogIntegrationRequest {
+    storage.LogIntegration log_integration = 1;
+}
+
+message CreateLogIntegrationResponse {
+    storage.LogIntegration log_integration = 1;
+}
+
+message TestLogIntegrationRequest {
+    storage.LogIntegration log_integration = 1;
+}
+
+// LogIntegrationService APIs manages log collection integrations.
+service LogIntegrationService {
+
+    // GetLogIntegration returns the log integration given its ID.
+    rpc GetLogIntegration (ResourceByID) returns (GetLogIntegrationResponse) {
+        option (google.api.http) = {
+            get: "/v1/logintegrations/{id}"
+        };
+    }
+
+    // GetLogintegrations returns all log integrations.
+    rpc GetLogIntegrations (Empty) returns (GetLogIntegrationsResponse) {
+        option (google.api.http) = {
+            get: "/v1/logintegrations"
+        };
+    }
+
+    // CreateLogIntegration creates a log integration.
+    rpc CreateLogIntegration (CreateLogIntegrationRequest) returns (CreateLogIntegrationResponse) {
+        option (google.api.http) = {
+            post: "/v1/logintegrations"
+            body: "*"
+        };
+    }
+
+    // TestLogIntegration checks if the given log integration is correctly configured,
+    // without using stored credential reconciliation.
+    rpc TestLogIntegration (TestLogIntegrationRequest) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/logintegrations/test"
+            body: "*"
+        };
+    }
+
+    // DeleteLogIntegration removes a log integration given its ID.
+    rpc DeleteLogIntegration (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/logintegrations/{id}"
+        };
+    }
+
+    // UpdateLogIntegration modifies a given image integration, with optional stored credential reconciliation.
+    rpc UpdateLogIntegration (UpdateLogIntegrationRequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/logintegrations/{config.id}"
+            body: "*"
+        };
+    }
+
+    // TestUpdatedLogIntegration checks if the given log integration is correctly configured,
+    // with optional stored credential reconciliation.
+    rpc TestUpdatedLogIntegration (UpdateLogIntegrationRequest) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/logintegrations/test/updated"
+            body: "*"
+        };
+    }
+}

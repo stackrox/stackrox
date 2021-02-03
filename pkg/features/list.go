@@ -38,4 +38,7 @@ var (
 
 	// ScopedAccessControl enables scoped access control in core product
 	ScopedAccessControl = registerFeature("Enable scoped access control in core product", "ROX_SCOPED_ACCESS_CONTROL_V2", false)
+
+	// K8sAuditLogDetection enables detection of kubernetes audit log based event detection.
+	K8sAuditLogDetection = registerFeature("Enable detection of kubernetes audit log based event detection", "ROX_K8S_AUDIT_LOG_DETECTION", false)
 )
