@@ -1,11 +1,19 @@
 ARG DATA_IMAGE_TAG=latest
 ARG BUILD_IMAGE=xxxxx
+ARG DEBUG_BUILD=no
 
 FROM stackrox-data:$DATA_IMAGE_TAG AS data
 
 FROM $BUILD_IMAGE as builder
 
-FROM alpine:3.11
+FROM alpine:3.11 as alpine-base-no-debug
+
+FROM builder as debugger
+RUN go get github.com/go-delve/delve/cmd/dlv
+FROM alpine-base-no-debug as alpine-base-yes-debug
+COPY --from=debugger /go/bin/dlv /go/bin/dlv
+
+FROM alpine-base-${DEBUG_BUILD}-debug
 ARG ALPINE_MIRROR=sjc.edge.kernel.org
 LABEL "com.vendor"="StackRox (support@stackrox.com)"
 

@@ -2482,7 +2482,11 @@ jobs:
 
       - run:
           name: Build main image
-          command: make docker-build-main-image      
+          command: make docker-build-main-image
+
+      - run:
+          name: Check debugger presence in the main image
+          command: make check-debugger
       
       - run:
           name: Build roxctl image

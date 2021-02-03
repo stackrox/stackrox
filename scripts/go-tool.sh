@@ -51,7 +51,10 @@ if [[ "${#x_def_errors[@]}" -gt 0 ]]; then
 	exit 1
 fi
 
-ldflags=(-s -w "${x_defs[@]}")
+ldflags=("${x_defs[@]}")
+if [[ "$DEBUG_BUILD" != "yes" ]]; then
+  ldflags+=(-s -w)
+fi
 
 if [[ "${CGO_ENABLED}" != 0 ]]; then
   echo >&2 "CGO_ENABLED is not 0. Compiling with -linkmode=external"
@@ -72,6 +75,11 @@ function go_build() (
   export GOOS="${GOOS:-${DEFAULT_GOOS}}"
   [[ -n "$GOOS" ]] || die "GOOS must be set"
 
+  local gcflags=()
+  if [[ "$DEBUG_BUILD" == "yes" ]]; then
+    gcflags+=(-gcflags "all=-N -l")
+  fi
+
   for main_srcdir in "$@"; do
     if ! [[ "${main_srcdir}" =~ ^\.?/ ]]; then
       main_srcdir="./${main_srcdir}"
@@ -83,7 +91,7 @@ function go_build() (
     fi
     mkdir -p "$(dirname "$output_file")"
     echo >&2 "Compiling Go source in ${main_srcdir} to ${output_file}"
-    invoke_go build -o "$output_file" "$main_srcdir"
+    invoke_go build "${gcflags[@]}" -o "$output_file" "$main_srcdir"
   done
 )
 

@@ -24,6 +24,11 @@ GOBUILD := $(CURDIR)/scripts/go-build.sh
 GOPATH_VOLUME_NAME := stackrox-rox-gopath
 GOCACHE_VOLUME_NAME := stackrox-rox-gocache
 
+# If git branch name contains substring "-debug", a debug build will be made, unless overridden by environment variable.
+ifneq (,$(findstring -debug,$(shell git rev-parse --abbrev-ref HEAD)))
+	DEBUG_BUILD ?= yes
+endif
+DEBUG_BUILD ?= no
 
 # Figure out whether to use standalone Docker volume for GOPATH/Go build cache, or bind
 # mount one from the host filesystem.
@@ -395,17 +400,17 @@ main-rhel-build: build-prep main-rhel-build-dockerized
 .PHONY: main-build-dockerized
 main-build-dockerized: main-builder-image
 	@echo "+ $@"
-	docker run --rm -e CI -e CIRCLE_TAG -e GOTAGS $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
+	docker run --rm -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
 .PHONY: sensor-build-dockerized
 sensor-build-dockerized: main-builder-image
 	@echo "+ $@"
-	docker run --rm -e CI -e CIRCLE_TAG -e GOTAGS $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
+	docker run --rm -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
 
 .PHONY: sensor-kubernetes-build-dockerized
 sensor-kubernetes-build-dockerized: main-builder-image
 	@echo "+ $@"
-	docker run -e CI -e CIRCLE_TAG -e GOTAGS $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
+	docker run -e CI -e CIRCLE_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
 
 .PHONY: sensor-build
 sensor-build:
@@ -558,7 +563,7 @@ deployer-image: build-prep
 # declare its dependencies explicitly.
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image
-	docker build -t stackrox/main:$(TAG) --build-arg BUILD_IMAGE=$(BUILD_IMAGE) --build-arg DATA_IMAGE_TAG=$(TAG) $(ALPINE_MIRROR_BUILD_ARG) image/
+	docker build -t stackrox/main:$(TAG) --build-arg BUILD_IMAGE=$(BUILD_IMAGE) --build-arg DATA_IMAGE_TAG=$(TAG) --build-arg DEBUG_BUILD=$(DEBUG_BUILD) $(ALPINE_MIRROR_BUILD_ARG) image/
 	@echo "Built main image with tag: $(TAG)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 
@@ -736,3 +741,10 @@ offline-bundle: clean-offline-bundle
 .PHONY: ui-publish-packages
 ui-publish-packages:
 	make -C ui publish-packages
+
+.PHONY: check-debugger
+check-debugger:
+	/usr/bin/env DEBUG_BUILD="$(DEBUG_BUILD)" CIRCLE_TAG="$(CIRCLE_TAG)" TAG="$(TAG)" ./scripts/check-debugger.sh
+ifeq ($(DEBUG_BUILD),yes)
+	$(warning Warning: DEBUG_BUILD is enabled. Don not use this for production builds)
+endif
