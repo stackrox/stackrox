@@ -54,6 +54,22 @@ func (s *serviceImpl) GetInitBundles(ctx context.Context, empty *v1.Empty) (*v1.
 	return &v1.InitBundleMetasResponse{Items: v1InitBundleMetas}, nil
 }
 
+func (s *serviceImpl) GetCAConfig(ctx context.Context, _ *v1.Empty) (*v1.GetCAConfigResponse, error) {
+	caConfig, err := s.backend.GetCAConfig(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "retrieving meta data for all ")
+	}
+
+	caConfigYAML, err := caConfig.RenderAsYAML()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to render CA config to YAML: %v", err)
+	}
+
+	return &v1.GetCAConfigResponse{
+		HelmValuesBundle: caConfigYAML,
+	}, nil
+}
+
 func (s *serviceImpl) GenerateInitBundle(ctx context.Context, request *v1.InitBundleGenRequest) (*v1.InitBundleGenResponse, error) {
 	generated, err := s.backend.Issue(ctx, request.GetName())
 	if err != nil {
@@ -68,8 +84,14 @@ func (s *serviceImpl) GenerateInitBundle(ctx context.Context, request *v1.InitBu
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "rendering init bundle as YAML: %s", err)
 	}
+	bundleK8sManifest, err := generated.RenderAsK8sSecrets()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "rendering init bundle as Kubernetes secrets: %s", err)
+	}
+
 	return &v1.InitBundleGenResponse{
 		HelmValuesBundle: bundleYaml,
+		KubectlBundle:    bundleK8sManifest,
 		Meta:             meta,
 	}, nil
 }

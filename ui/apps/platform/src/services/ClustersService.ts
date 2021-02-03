@@ -193,6 +193,14 @@ export type ClusterInitBundle = {
     expiresAt: string;
 };
 
+export function fetchCAConfig(): Promise<{ helmValuesBundle?: string }> {
+    return axios
+        .get<{ helmValuesBundle: string }>(`${clusterInitUrl}/ca-config`)
+        .then((response) => {
+            return response?.data;
+        });
+}
+
 export function fetchClusterInitBundles(): Promise<{ response: { items: ClusterInitBundle[] } }> {
     return axios
         .get<{ items: ClusterInitBundle[] }>(`${clusterInitUrl}/init-bundles`)
@@ -205,9 +213,11 @@ export function fetchClusterInitBundles(): Promise<{ response: { items: ClusterI
 
 export function generateClusterInitBundle(
     data: ClusterInitBundle
-): Promise<{ response: { meta?: ClusterInitBundle; helmValuesBundle?: string } }> {
+): Promise<{
+    response: { meta?: ClusterInitBundle; helmValuesBundle?: string; kubectlBundle?: string };
+}> {
     return axios
-        .post<{ meta: ClusterInitBundle; helmValuesBundle: string }>(
+        .post<{ meta: ClusterInitBundle; helmValuesBundle: string; kubectlBundle: string }>(
             `${clusterInitUrl}/init-bundles`,
             data
         )

@@ -508,7 +508,7 @@ h6 {
 }
 
 .btn-primary:hover {
-    @apply text-primary-600 bg-primary-100 bg-base-200 border-primary-400 !important;
+    @apply text-primary-600 bg-primary-100 border-primary-400 !important;
 }
 
 .btn-tertiary {
@@ -516,7 +516,7 @@ h6 {
 }
 
 .btn-tertiary:hover {
-    @apply text-tertiary-700 bg-tertiary-700 bg-base-200 border-tertiary-600 !important;
+    @apply text-tertiary-700 bg-base-300 border-tertiary-600 !important;
 }
 
 .btn-base {

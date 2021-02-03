@@ -1,9 +1,7 @@
 package backend
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/clusterinit/store"
@@ -11,83 +9,19 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/sac"
-	"gopkg.in/yaml.v3"
 )
 
-const (
-	initBundleHeader = `# This is a StackRox cluster init bundle.
-# This bundle can be used for setting up any number of StackRox secured clusters.
-# NOTE: This file contains secret data and needs to be handled and stored accordingly.
-`
-	initBundleHeaderMeta = `#
-#   name:      %q
-#   createdAt: %v
-#   expiresAt: %v
-#   id:        %s
-#
-`
-)
+// CAConfig is the configuration for the StackRox Service CA.
+type CAConfig struct {
+	CACert string
+}
 
 // InitBundleWithMeta contains an init bundle alongside its meta data.
 type InitBundleWithMeta struct {
+	CAConfig
 	CertBundle clusters.CertBundle
-	CaCert     string
 	Meta       *storage.InitBundleMeta
-}
-
-func serviceTLS(cert *mtls.IssuedCert) map[string]interface{} {
-	return map[string]interface{}{
-		"serviceTLS": map[string]interface{}{
-			"cert": string(cert.CertPEM),
-			"key":  string(cert.KeyPEM),
-		},
-	}
-}
-
-// RenderAsYAML renders the receiver init bundle as YAML.
-func (b *InitBundleWithMeta) RenderAsYAML() ([]byte, error) {
-	certBundle := b.CertBundle
-	sensorTLS := certBundle[storage.ServiceType_SENSOR_SERVICE]
-	if sensorTLS == nil {
-		return nil, errors.New("no sensor certificate in init bundle")
-	}
-	admissionControlTLS := certBundle[storage.ServiceType_ADMISSION_CONTROL_SERVICE]
-	if admissionControlTLS == nil {
-		return nil, errors.New("no admission control certificate in init bundle")
-	}
-	collectorTLS := certBundle[storage.ServiceType_COLLECTOR_SERVICE]
-	if collectorTLS == nil {
-		return nil, errors.New("no collector certificate in init bundle")
-	}
-
-	bundleMap := map[string]interface{}{
-		"ca": map[string]interface{}{
-			"cert": b.CaCert,
-		},
-		"sensor":           serviceTLS(sensorTLS),
-		"collector":        serviceTLS(collectorTLS),
-		"admissionControl": serviceTLS(admissionControlTLS),
-	}
-
-	bundleYaml, err := yaml.Marshal(bundleMap)
-	if err != nil {
-		return nil, errors.Wrap(err, "YAML marshalling of init bundle")
-	}
-
-	var bundleBuffer bytes.Buffer
-
-	fmt.Fprint(&bundleBuffer, initBundleHeader)
-	fmt.Fprintf(&bundleBuffer,
-		initBundleHeaderMeta,
-		b.Meta.GetName(),
-		b.Meta.GetCreatedAt(),
-		b.Meta.GetExpiresAt(),
-		b.Meta.GetId())
-	_, _ = bundleBuffer.Write(bundleYaml)
-
-	return bundleBuffer.Bytes(), nil
 }
 
 var (
@@ -98,6 +32,7 @@ var (
 // Backend is the backend for the cluster-init component.
 type Backend interface {
 	GetAll(ctx context.Context) ([]*storage.InitBundleMeta, error)
+	GetCAConfig(ctx context.Context) (*CAConfig, error)
 	Issue(ctx context.Context, name string) (*InitBundleWithMeta, error)
 	Revoke(ctx context.Context, id string) error
 	CheckRevoked(ctx context.Context, id string) error

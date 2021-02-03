@@ -290,6 +290,13 @@ can generate a **cluster init bundle** by using the `roxctl` CLI or the StackRox
 portal. You can use the same bundle to set up multiple StackRox secured
 clusters by providing it as an input to the `helm install` command.
 
+> **NOTE**:
+>
+> - The following sections assume that you have a safe way to pass secrets to
+>   the helm command.
+> - If not, you can decouple secret creation from installing or upgrading the
+>   Helm chart, see [Deployment with pre-created secrets](#deployment-with-pre-created-secrets) for more information.
+
 ### Generate cluster init bundle
 
 To generate a **cluster init bundle** by using the `roxctl` CLI, make sure that
@@ -598,4 +605,106 @@ customize:
       labels: {}
       annotations: {}
 ```
+
+## Deployment with pre-created secrets
+
+The init bundle that you pass to the `helm` command using the `-f` flag creates
+Kubernetes secrets for TLS certificates. If you don't want Helm to manage your
+Kubernetes secrets, you can deploy the Secured Cluster Services chart without
+creating secrets. However, it requires that you always specify the StackRox CA
+certificate while installing or upgrading the Helm chart. This certificate
+doesn't need to be kept secret.
+
+1. **Obtain the CA certificate configuration** either through the StackRox
+   portal or by using the `roxctl` CLI.
+   - **StackRox portal**:
+     1. Navigate to **Platform Configuration** > **Integrations**.
+     1. Under the **Authentication Tokens** section, select **Cluster Init Bundle**.
+     1. Select **Get CA Config** on the top right to download the configuration
+        file called `ca-config.yaml`.
+   - **`roxctl1 CLI**:
+     1. Run the following command:
+        ```sh
+        roxctl central init-bundles fetch-ca --output ca-config.yaml
+        ```
+        This command writes the CA certificate configuration in a file called
+        `ca-config.yaml`.
+1. **Use the CA certificate configuration in your Helm installation**. When you
+   run the `helm install` or the `helm upgrade` command,
+   pass the option `-f ca-config.yaml`:
+   ```sh
+   helm install -n stackrox stackrox-secured-cluster-services stackrox/secured-cluster-services \
+     -f ca-config.yaml \
+     <other options ...>
+   ```
+1. **Disable TLS secret creation**. To prevent Helm from creating Kubernetes
+   secrets for the StackRox service certificates, set the `createSecrets` option
+   to `false`. You can either specify `createSecrets` option in a YAML
+   configuration file (such as `values-public.yaml`) or pass it to the `helm`
+   command by adding the `--set createSecrets=false` option.
+
+### Required Kubernetes secrets
+
+The following list contains the Kubernetes `Secret` objects that you need to
+create in the `stackrox` namespace (or the custom namespace you are using) if
+you configure the Helm chart to not create TLS certificate secrets.
+
+- `sensor-tls` with data:
+  - `ca.pem`: PEM-encoded StackRox CA certificate
+  - `sensor-cert.pem`: PEM-encoded StackRox Sensor certificate
+  - `sensor-key.pem`: PEM-encoded private key for the StackRox Sensor certificate
+- `collector-tls` with data:
+  - `ca.pem`: PEM-encoded StackRox CA certificate
+  - `collector-cert.pem`: PEM-encoded StackRox Collector certificate
+  - `collector-key.pem`: PEM-encoded private key for the StackRox Collector certificate
+- `admission-control-tls` with data:
+  - `ca.pem`: PEM-encoded StackRox CA certificate
+  - `admission-control-cert.pem`: PEM-encoded StackRox Admission Control certificate
+  - `admission-control-key.pem`: PEM-encoded private key for the StackRox Admision Control certificate
+
+#### Obtaining secrets for an existing cluster
+
+If you upgrade from a previous Helm chart, you can create certificates specific
+to a particular cluster by using the following `roxctl` CLI command:
+
+```sh
+export ROX_API_TOKEN=<StackRox API token>
+roxctl -e <central endpoint and port> sensor generate-certs <cluster name>
+```
+Running this command create a file called `cluster-<cluster-name>-tls.yaml` in
+the current directory. The file contains YAML manifests for the
+[required Kubernetes secrets](#required-kubernetes-secrets).
+
+#### Obtaining secrets for an init bundle
+
+If you want to deploy multiple clusters using this Helm chart and want to create
+certificates that can be used to register new clusters on-the-fly, you can
+obtain the contents of an init bundle in the form of Kubernetes secrets. You can
+use the StackRox portal or the `roxctl` CLI for this.
+
+- **Using the StackRox portal**:
+  1. Navigate to **Platform Configuration** > **Integrations**.
+  1. Under the **Authentication Tokens** section, select **Cluster Init Bundle**.
+  1. Select the add **+** icon on the top left and enter a name for the new init
+     bundle.
+  1. Select **Generate**.
+  1. Select **Download Kubernetes Secrets File** at the bottom to save the
+     Kubernetes manifests to a file called
+     `<init-bundle-name>-cluster-init-secrets.yaml`.
+- **Using the `roxctl` CLI**:
+  1. run the following command:
+  ```sh
+  roxctl central init-bundles generate <name> --output-secrets cluster-init-secrets.yaml
+  ```
+  This command stores the Kubernetes secret manifests for the cluster init
+  certificates in a file called `cluster-init-secrets.yaml`.
+
+You can then use the YAML file to generate secrets through any method that you like, for example, using Sealed Secrets.
+
+> **NOTE**
+>
+> Even when you use the certificates from an init bundle, you still need to
+> specify the CA certificate configuration every time you install or upgrade the
+> Helm chart.
+
 [<- end >]

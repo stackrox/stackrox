@@ -21,6 +21,11 @@ message InitBundleMeta {
 message InitBundleGenResponse {
     InitBundleMeta meta               = 1;
     bytes          helm_values_bundle = 2;
+    bytes          kubectl_bundle     = 3;
+}
+
+message GetCAConfigResponse {
+    bytes helm_values_bundle = 1;
 }
 
 message InitBundleMetasResponse {
@@ -40,6 +45,12 @@ service ClusterInitService {
         option (google.api.http) = {
             patch: "/v1/cluster-init/init-bundles/revoke",
             body: "*"
+        };
+    }
+
+    rpc GetCAConfig(Empty) returns (GetCAConfigResponse) {
+        option (google.api.http) = {
+            get: "/v1/cluster-init/ca-config"
         };
     }
 

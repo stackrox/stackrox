@@ -43,13 +43,14 @@ const clusterInitBundles = (state = [], action) => {
 const clusterInitBundleGenerationWizard = (state = null, { type, response }) => {
     switch (type) {
         case types.START_CLUSTER_INIT_BUNDLE_GENERATION_WIZARD:
-            return { clusterInitBundle: '', helmValuesBundle: null };
+            return { clusterInitBundle: '', helmValuesBundle: null, kubectlBundle: null };
         case types.CLOSE_CLUSTER_INIT_BUNDLE_GENERATION_WIZARD:
             return null;
         case types.GENERATE_CLUSTER_INIT_BUNDLE.SUCCESS:
             return {
                 clusterInitBundle: response.meta,
                 helmValuesBundle: response.helmValuesBundle,
+                kubectlBundle: response.kubectlBundle,
             };
         default:
             return state;
@@ -71,12 +72,17 @@ const getCurrentGeneratedHelmValuesBundle = (state) =>
     state.clusterInitBundleGenerationWizard
         ? state.clusterInitBundleGenerationWizard.helmValuesBundle
         : null;
+const getCurrentGeneratedKubectlBundle = (state) =>
+    state.clusterInitBundleGenerationWizard
+        ? state.clusterInitBundleGenerationWizard.kubectlBundle
+        : null;
 
 export const selectors = {
     getClusterInitBundles,
     clusterInitBundleGenerationWizardOpen,
     getCurrentGeneratedClusterInitBundle,
     getCurrentGeneratedHelmValuesBundle,
+    getCurrentGeneratedKubectlBundle,
 };
 
 export default reducer;

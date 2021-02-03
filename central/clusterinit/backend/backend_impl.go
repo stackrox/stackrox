@@ -108,9 +108,26 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 	}
 
 	return &InitBundleWithMeta{
+		CAConfig: CAConfig{
+			CACert: caCert,
+		},
 		CertBundle: certBundle,
-		CaCert:     string(caCert),
 		Meta:       meta,
+	}, nil
+}
+
+func (b *backendImpl) GetCAConfig(ctx context.Context) (*CAConfig, error) {
+	if err := checkAccess(ctx, storage.Access_READ_ACCESS); err != nil {
+		return nil, err
+	}
+
+	caCert, err := b.certProvider.GetCA()
+	if err != nil {
+		return nil, err
+	}
+
+	return &CAConfig{
+		CACert: caCert,
 	}, nil
 }
 
