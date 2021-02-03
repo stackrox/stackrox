@@ -41,6 +41,7 @@ function ToggleSwitch({
                     id={id}
                     disabled={disabled}
                     className="toggle-switch-checkbox"
+                    data-testid="toggle-switch-checkbox"
                     aria-label={label}
                 />
                 <label className="toggle-switch-label" htmlFor={id} />

@@ -18,14 +18,17 @@ describe('Network Baseline Flows', () => {
 
         cy.route('GET', api.network.networkPoliciesGraph).as('networkPoliciesGraph');
         cy.route('GET', api.network.networkGraph).as('networkGraph');
+        cy.route('GET', api.network.networkBaseline).as('networkBaseline');
         cy.route('POST', api.network.networkBaselineStatus).as('networkBaselineStatus');
+        cy.route('PATCH', api.network.networkBaselineLock).as('networkBaselineLock');
+        cy.route('PATCH', api.network.networkBaselineUnlock).as('networkBaselineUnlock');
 
         cy.visit(networkUrl);
         cy.wait('@networkPoliciesGraph');
         cy.wait('@networkGraph');
     });
 
-    xdescribe('Navigating to Deployment', () => {
+    describe('Navigating to Deployment', () => {
         it('should navigate to a different deployment when clicking the "Navigate" button', () => {
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 const tabbedOverlayHeader = '[data-testid="network-entity-tabbed-overlay-header"]';
@@ -43,7 +46,7 @@ describe('Network Baseline Flows', () => {
         });
     });
 
-    xdescribe('Active Network Flows', () => {
+    describe('Active Network Flows', () => {
         it('should show anomalous flows section above the baseline flows', () => {
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 clickOnNodeByName(cytoscape, { type: 'DEPLOYMENT', name: 'central' });
@@ -54,7 +57,7 @@ describe('Network Baseline Flows', () => {
         });
     });
 
-    xdescribe('Toggling Status of Active Baseline Network Flows', () => {
+    describe('Toggling Status of Active Baseline Network Flows', () => {
         it('should be able to toggle status of a single flow', () => {
             cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
                 const addToBaselineButton = `${sensorTableRow} button:contains("Add to baseline")`;
@@ -181,6 +184,23 @@ describe('Network Baseline Flows', () => {
                         cy.wait('@networkBaselineStatus');
                         cy.get(postNumBaselineFlowsText);
                     });
+            });
+        });
+
+        it('should toggle the alert on baseline violations toggle', () => {
+            cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
+                const baselineViolationsToggle = '[data-testid="toggle-switch-checkbox"]';
+                clickOnNodeByName(cytoscape, { type: 'DEPLOYMENT', name: 'central' });
+                cy.get(baselineSettingsTab).click();
+                cy.get(baselineViolationsToggle).should('not.be.checked');
+                cy.get(baselineViolationsToggle).check({ force: true });
+                cy.wait('@networkBaselineLock');
+                cy.wait('@networkBaseline');
+                cy.get(baselineViolationsToggle).should('be.checked');
+                cy.get(baselineViolationsToggle).uncheck({ force: true });
+                cy.wait('@networkBaselineUnlock');
+                cy.wait('@networkBaseline');
+                cy.get(baselineViolationsToggle).should('not.be.checked');
             });
         });
     });
