@@ -27,6 +27,7 @@ func Command() *cobra.Command {
 		generateCommand(),
 		listCommand(),
 		revokeCommand(),
+		fetchCACommand(),
 	)
 
 	return c

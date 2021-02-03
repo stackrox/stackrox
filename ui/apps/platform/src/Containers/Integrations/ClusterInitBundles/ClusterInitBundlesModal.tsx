@@ -3,8 +3,10 @@ import { connect } from 'react-redux';
 import * as Icon from 'react-feather';
 import { createStructuredSelector } from 'reselect';
 import pluralize from 'pluralize';
+import { ClipLoader } from 'react-spinners';
 
 import { actions } from 'reducers/clusterInitBundles';
+import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';
 
 import CheckboxTable from 'Components/CheckboxTable';
@@ -16,8 +18,9 @@ import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import RowActionButton from 'Components/RowActionButton';
-import { ClusterInitBundle } from 'services/ClustersService';
+import { ClusterInitBundle, fetchCAConfig } from 'services/ClustersService';
 
+import FileSaver from 'file-saver';
 import ClusterInitBundleForm from './ClusterInitBundleForm';
 import ClusterInitBundleDetails from './ClusterInitBundleDetails';
 
@@ -30,8 +33,11 @@ export type ClusterInitBundlesModalProps = {
     closeClusterInitBundleGenerationWizard: () => void;
     generateClusterInitBundle: () => void;
     revokeClusterInitBundles: (string) => void;
+    addToast: (message: string) => void;
+    removeToast: () => void;
     currentGeneratedClusterInitBundle?: ClusterInitBundle | null;
     currentGeneratedHelmValuesBundle?: ClusterInitBundle | null;
+    currentGeneratedKubectlBundle?: ClusterInitBundle | null;
 };
 
 function ClusterInitBundlesModal({
@@ -43,13 +49,17 @@ function ClusterInitBundlesModal({
     closeClusterInitBundleGenerationWizard,
     generateClusterInitBundle,
     revokeClusterInitBundles,
+    addToast,
+    removeToast,
     currentGeneratedClusterInitBundle = null,
     currentGeneratedHelmValuesBundle = null,
+    currentGeneratedKubectlBundle = null,
 }: ClusterInitBundlesModalProps): ReactElement {
     const [selectedBundleId, setSelectedBundleId] = useState<string | null>(null);
     const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
     const [selection, setSelection] = useState<string[]>([]);
     const clusterInitBundleModalTable = useRef<CheckboxTable | null>(null);
+    const [downloadingCAConfig, setDownloadingCAConfig] = useState<boolean>(false);
 
     function onRowClick(row) {
         setSelectedBundleId(row.id);
@@ -57,6 +67,28 @@ function ClusterInitBundlesModal({
 
     function onSubmit() {
         generateClusterInitBundle();
+    }
+
+    function onFetchCAConfig() {
+        setDownloadingCAConfig(true);
+        fetchCAConfig()
+            .then((response) => {
+                if (!response.helmValuesBundle) {
+                    throw Error('server returned no data');
+                }
+                const bytes = atob(response.helmValuesBundle);
+                const file = new Blob([bytes], {
+                    type: 'application/x-yaml',
+                });
+                FileSaver.saveAs(file, 'ca-config.yaml');
+            })
+            .catch((err: { message: string }) => {
+                addToast(`Problem downloading the CA config. Please try again. (${err.message})`);
+                setTimeout(removeToast, 5000);
+            })
+            .finally(() => {
+                setDownloadingCAConfig(false);
+            });
     }
 
     function revokeBundles({ id }) {
@@ -186,17 +218,34 @@ function ClusterInitBundlesModal({
                     </PanelButton>
                 )}
                 {selectionCount === 0 && (
-                    <PanelButton
-                        icon={<Icon.Plus className="h-4 w-4 ml-1" />}
-                        className="btn btn-base"
-                        onClick={openForm}
-                        disabled={
-                            clusterInitBundleGenerationWizardOpen || selectedBundleId !== null
-                        }
-                        tooltip="Generate Cluster Init Bundle"
-                    >
-                        Generate Bundle
-                    </PanelButton>
+                    <>
+                        <PanelButton
+                            icon={
+                                downloadingCAConfig ? (
+                                    <ClipLoader loading size={14} />
+                                ) : (
+                                    <Icon.Save className="h-4 w-4" />
+                                )
+                            }
+                            className="btn-icon btn-tertiary mr-2"
+                            onClick={onFetchCAConfig}
+                            disabled={downloadingCAConfig}
+                            tooltip="Download CA Config (use with pre-created secrets)"
+                        >
+                            Get CA config
+                        </PanelButton>
+                        <PanelButton
+                            icon={<Icon.Plus className="h-4 w-4 ml-1" />}
+                            className="btn btn-base"
+                            onClick={openForm}
+                            disabled={
+                                clusterInitBundleGenerationWizardOpen || selectedBundleId !== null
+                            }
+                            tooltip="Generate Cluster Init Bundle"
+                        >
+                            Generate Bundle
+                        </PanelButton>
+                    </>
                 )}
             </>
         );
@@ -266,6 +315,7 @@ function ClusterInitBundlesModal({
                         authProviders={authProviders}
                         clusterInitBundle={currentGeneratedClusterInitBundle}
                         helmValuesBundle={currentGeneratedHelmValuesBundle}
+                        kubectlBundle={currentGeneratedKubectlBundle}
                     />
                 </Panel>
             );
@@ -281,6 +331,7 @@ function ClusterInitBundlesModal({
                             authProviders={authProviders}
                             clusterInitBundle={selectedBundleMetadata}
                             helmValuesBundle={currentGeneratedHelmValuesBundle}
+                            kubectlBundle={currentGeneratedKubectlBundle}
                         />
                     </Panel>
                 );
@@ -326,6 +377,7 @@ const mapStateToProps = createStructuredSelector({
     clusterInitBundleGenerationWizardOpen: selectors.clusterInitBundleGenerationWizardOpen,
     currentGeneratedClusterInitBundle: selectors.getCurrentGeneratedClusterInitBundle,
     currentGeneratedHelmValuesBundle: selectors.getCurrentGeneratedHelmValuesBundle,
+    currentGeneratedKubectlBundle: selectors.getCurrentGeneratedKubectlBundle,
 });
 
 const mapDispatchToProps = {
@@ -333,6 +385,8 @@ const mapDispatchToProps = {
     closeClusterInitBundleGenerationWizard: actions.closeClusterInitBundleGenerationWizard,
     generateClusterInitBundle: actions.generateClusterInitBundle.request as () => void,
     revokeClusterInitBundles: actions.revokeClusterInitBundles,
+    addToast: notificationActions.addNotification,
+    removeToast: notificationActions.removeOldestNotification,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(ClusterInitBundlesModal);

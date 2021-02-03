@@ -18,14 +18,17 @@ import (
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 const (
@@ -144,7 +147,7 @@ func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
 	certBundle, _, err := s.certProvider.GetBundle()
 	s.Require().NoError(err)
 
-	s.Require().Equal(initBundle.CaCert, caCert)
+	s.Require().Equal(initBundle.CACert, caCert)
 	s.Require().Equal(initBundle.CertBundle, certBundle)
 
 	// Verify YAML-rendered init bundle looks as expected.
@@ -188,6 +191,48 @@ func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
 		fmt.Fprintf(os.Stderr, "%s\n", prettyDiff)
 	}
 	s.Require().Nil(diff)
+
+	// Verify properties about the generated Kubernetes secreted
+	yamlBytes, err := initBundle.RenderAsK8sSecrets()
+	s.Require().NoError(err)
+
+	unstructuredObjs, err := k8sutil.UnstructuredFromYAMLMulti(string(yamlBytes))
+	s.Require().NoError(err)
+
+	for _, obj := range unstructuredObjs {
+		name := obj.GetName()
+		s.Require().True(stringutils.ConsumeSuffix(&name, "-tls"))
+		s.Equal(initBundle.Meta.GetName(), obj.GetAnnotations()["init-bundle.stackrox.io/name"])
+		s.Equal(initBundle.Meta.GetId(), obj.GetAnnotations()["init-bundle.stackrox.io/id"])
+		s.Equal(initBundle.Meta.GetCreatedAt().String(), obj.GetAnnotations()["init-bundle.stackrox.io/created-at"])
+		s.Equal(initBundle.Meta.GetExpiresAt().String(), obj.GetAnnotations()["init-bundle.stackrox.io/expires-at"])
+
+		val, ok, err := unstructured.NestedString(obj.UnstructuredContent(), "stringData", "ca.pem")
+		s.Require().NoError(err)
+		s.Require().True(ok)
+		s.Equal(caCert, val)
+
+		var svcType storage.ServiceType
+		switch name {
+		case "sensor":
+			svcType = storage.ServiceType_SENSOR_SERVICE
+		case "collector":
+			svcType = storage.ServiceType_COLLECTOR_SERVICE
+		case "admission-control":
+			svcType = storage.ServiceType_ADMISSION_CONTROL_SERVICE
+		}
+		s.Require().NotZerof(svcType, "invalid service name %s", name)
+
+		val, ok, err = unstructured.NestedString(obj.UnstructuredContent(), "stringData", name+"-cert.pem")
+		s.Require().NoError(err)
+		s.Require().True(ok)
+		s.Equal(string(initBundle.CertBundle[svcType].CertPEM), val)
+
+		val, ok, err = unstructured.NestedString(obj.UnstructuredContent(), "stringData", name+"-key.pem")
+		s.Require().NoError(err)
+		s.Require().True(ok)
+		s.Equal(string(initBundle.CertBundle[svcType].KeyPEM), val)
+	}
 
 	// Verify the newly generated bundle is listed.
 	initBundleMetas, err := s.backend.GetAll(ctx)

@@ -9,11 +9,17 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 )
 
-func generateInitBundle(name string, outputFile string) error {
+type output struct {
+	filename string
+	format   func(request *v1.InitBundleGenResponse) []byte
+}
+
+func generateInitBundle(name string, outputs []output) error {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), contextTimeout)
 	defer cancel()
 
@@ -24,17 +30,28 @@ func generateInitBundle(name string, outputFile string) error {
 	defer utils.IgnoreError(conn.Close)
 	svc := v1.NewClusterInitServiceClient(conn)
 
-	bundleOutput := os.Stdout
-	if outputFile != "" {
-		bundleOutput, err = os.OpenFile(outputFile, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
-		if err != nil {
-			return errors.Wrap(err, "opening output file for writing init bundle")
-		}
-		defer func() {
-			if outputFile != "" {
-				utils.Should(os.Remove(outputFile))
+	files := make([]*os.File, 0, len(outputs))
+	defer func() {
+		for _, f := range files {
+			if f != nil && f != os.Stdout {
+				name := f.Name()
+				_ = f.Close()
+				utils.Should(os.Remove(name))
 			}
-		}()
+		}
+	}()
+
+	// First try to open all files. Since creating a bundle has side effects, let's not attempt to do so
+	// before we have high confidence that the writing will succeed.
+	for _, out := range outputs {
+		outFile := os.Stdout
+		if out.filename != "" {
+			outFile, err = os.OpenFile(out.filename, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+			if err != nil {
+				return errors.Wrap(err, "opening output file for writing init bundle")
+			}
+		}
+		files = append(files, outFile)
 	}
 
 	req := v1.InitBundleGenRequest{Name: name}
@@ -55,16 +72,18 @@ func generateInitBundle(name string, outputFile string) error {
 
 `, meta.GetName(), meta.GetCreatedAt(), meta.GetExpiresAt(), getPrettyUser(meta.GetCreatedBy()), meta.GetId())
 
-	_, err = bundleOutput.Write(resp.GetHelmValuesBundle())
-	if err != nil {
-		return errors.Wrap(err, "writing init bundle")
-	}
-	if bundleOutput != os.Stdout {
-		fmt.Fprintf(os.Stderr, "The newly generated init bundle has been written to file %q.\n", outputFile)
-		if err := bundleOutput.Close(); err != nil {
-			return errors.Wrap(err, "closing output file for init bundle")
+	for i, out := range outputs {
+		outFile := files[i]
+		if _, err := outFile.Write(out.format(resp)); err != nil {
+			return errors.Wrapf(err, "writing init bundle to %s", stringutils.FirstNonEmpty(out.filename, "<stdout>"))
 		}
-		outputFile = "" // Make sure that file will not be deleted by deferred cleanup handler.
+		if outFile != os.Stdout {
+			fmt.Fprintf(os.Stderr, "The newly generated init bundle has been written to file %q.\n", outFile.Name())
+			if err := outFile.Close(); err != nil {
+				return errors.Wrapf(err, "closing output file %q", outFile.Name())
+			}
+		}
+		files[i] = nil
 	}
 
 	fmt.Fprintln(os.Stderr, `
@@ -76,21 +95,42 @@ Note: The init bundle needs to be stored securely, since it contains secrets.
 // generateCommand implements the command for generating new init bundles.
 func generateCommand() *cobra.Command {
 	var outputFile string
+	var secretsOutputFile string
+
+	var outputs []output
 
 	c := &cobra.Command{
 		Use:  "generate <init bundle name>",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
-			if outputFile == "" {
-				return errors.New("No output file specified with --output (for stdout, specify '-')")
-			} else if outputFile == "-" {
-				outputFile = ""
+			if outputFile != "" {
+				if outputFile == "-" {
+					outputFile = ""
+				}
+				outputs = append(outputs, output{
+					filename: outputFile,
+					format:   (*v1.InitBundleGenResponse).GetHelmValuesBundle,
+				})
 			}
-			return generateInitBundle(name, outputFile)
+			if secretsOutputFile != "" {
+				if secretsOutputFile == "-" {
+					secretsOutputFile = ""
+				}
+				outputs = append(outputs, output{
+					filename: secretsOutputFile,
+					format:   (*v1.InitBundleGenResponse).GetKubectlBundle,
+				})
+			}
+
+			if len(outputs) == 0 {
+				return errors.New("No output files specified with --output or --output-secrets (for stdout, specify '-')")
+			}
+			return generateInitBundle(name, outputs)
 		},
 	}
-	c.PersistentFlags().StringVar(&outputFile, "output", "", "file to be used for storing the newly generated init bundle")
+	c.PersistentFlags().StringVar(&outputFile, "output", "", "file to be used for storing the newly generated init bundle in Helm configuration form (- for stdout)")
+	c.PersistentFlags().StringVar(&secretsOutputFile, "output-secrets", "", "file to be used for storing the newly generated init bundle in Kubernetes secrets form (- for stdout)")
 
 	return c
 }
