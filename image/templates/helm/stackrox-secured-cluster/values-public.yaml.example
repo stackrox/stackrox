@@ -39,6 +39,7 @@
 # permissions. See
 # [Enable automatic upgrades for secured clusters](https://help.stackrox.com/docs/configure-stackrox/enable-automatic-upgrades/)
 # for more information.
+# Note that auto-upgrades for Helm-managed clusters are disabled.
 #createUpgraderServiceAccount: false
 #
 ## Configuration for image pull secrets.
@@ -64,12 +65,6 @@
 #  # if server-side lookups are enabled.
 #  useFromDefaultServiceAccount: true
 #
-## Common settings for all image properties
-#image:
-#  # The image registry to use. Unless overridden in the more specific configs, this
-#  # determines the base registry for each image referenced in this config file.
-#  registry: custom-image-registry
-#
 ## Settings regarding the installation environment
 #env:
 #  # Treat the environment as an OpenShift cluster. Leave this unset to use auto-detection
@@ -88,20 +83,25 @@
 #
 ## Image configuration
 #image:
+#  # The image registry to use. Unless overridden in the more specific configs, this
+#  # determines the base registry for each image referenced in this config file.
+#  registry: my.image-registry.io
 #
 #  # Configuration for the `main` image -- used by Sensor, Admission Control, Compliance.
 #  main:
-#    registry: null
-#    name: main
-#    tag: 3.0.48.x-121-g337915cd3d
-#    fullRef: null
+#    registry: null  # if set to null, use `image.registry`
+#    name: main      # the final image name is composed of the registry and the name, plus the tag below
+#    tag: null       # should be left as null - will get picked up from the Chart version.
+#    fullRef: null   # you can set a full image reference such as stackrox.io/main:1.2.3.4 here, but this is not
+#                    # recommended.
+#    # The default pull policy for this image. Can be overridden for each individual service.
 #    pullPolicy: IfNotPresent
 #
 #  # Configuration for the `collector` image -- used by Collector.
 #  collector:
 #    registry: null
 #    name: collector
-#    tag: 3.0.48.x-121-g337915cd3d
+#    tag: null
 #    fullRef: null
 #    pullPolicy: IfNotPresent
 #
@@ -127,7 +127,7 @@
 #
 #  # Address of the Sensor endpoint including port number. No trailing slash.
 #  # Rarely needs to be changed.
-#  endpoint: sensor.{{ .Release.Namespace }}.443
+#  endpoint: sensor.stackrox:443
 #
 ## Admission Control specific configuration.
 #admissionControl:
