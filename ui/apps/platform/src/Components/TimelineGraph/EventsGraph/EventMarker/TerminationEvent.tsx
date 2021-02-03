@@ -1,8 +1,10 @@
-/* eslint-disable react/display-name */
 import React, { forwardRef } from 'react';
-import PropTypes from 'prop-types';
 
-const TerminationEvent = forwardRef(({ size }, ref) => {
+type TerminationEventProps = {
+    size: number;
+};
+
+const TerminationEvent = forwardRef<SVGSVGElement, TerminationEventProps>(({ size }, ref) => {
     return (
         <svg
             data-testid="termination-event"
@@ -21,8 +23,6 @@ const TerminationEvent = forwardRef(({ size }, ref) => {
     );
 });
 
-TerminationEvent.propTypes = {
-    size: PropTypes.number.isRequired,
-};
+TerminationEvent.displayName = 'TerminationEvent';
 
 export default TerminationEvent;

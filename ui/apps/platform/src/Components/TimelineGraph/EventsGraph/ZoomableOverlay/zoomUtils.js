@@ -7,8 +7,8 @@ import timelineZoomSelector from 'Components/TimelineGraph/EventsGraph/ZoomableO
 
 /**
  * Initializes a d3 zoom object with the necessary pre-configured settings
- * @param {string} width - the width of the svg
- * @param {string} height - the height of the svg
+ * @param {Number} width - the width of the svg
+ * @param {Number} height - the height of the svg
  * @returns {Object}
  */
 export function getZoomConfig(width, height) {

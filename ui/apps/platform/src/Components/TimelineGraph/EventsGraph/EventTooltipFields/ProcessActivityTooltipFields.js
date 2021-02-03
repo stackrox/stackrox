@@ -11,7 +11,7 @@ const ProcessActivityTooltipFields = ({ name, args, uid, parentName, parentUid, 
     const isParentUidUnknown = parentName !== null && parentUid === -1;
     const hasUidChanged = parentUid !== uid;
 
-    const argsValue = args.length === 0 ? 'None' : args;
+    const argsValue = args === null || args.length === 0 ? 'None' : args;
     const parentNameValue = hasParent ? parentName : 'No Parent';
     const eventTimeValue = getDateTime(timestamp);
 

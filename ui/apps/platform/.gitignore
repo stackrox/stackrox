@@ -3,7 +3,6 @@ storybook-static/
 
 # testing
 /coverage
-/**/__snapshots__
 /cypress/test-results
 /.nyc_output
 

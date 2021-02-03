@@ -1,12 +1,15 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactElement } from 'react';
 
 import { eventTypes } from 'constants/timelineTypes';
-import { eventPropTypes, defaultEventPropTypes } from 'constants/propTypes/timelinePropTypes';
 import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
+import { Event } from './eventTypes';
 import ProcessActivityTooltipFields from './EventTooltipFields/ProcessActivityTooltipFields';
 import TerminationTooltipFields from './EventTooltipFields/TerminationTooltipFields';
 import DefaultTooltipFields from './EventTooltipFields/DefaultTooltipFields';
+
+export type EventTooltipProps = Event & {
+    children: ReactElement;
+};
 
 const EventTooltip = ({
     type,
@@ -18,14 +21,13 @@ const EventTooltip = ({
     reason,
     timestamp,
     children,
-}) => {
-    let tooltipBody = null;
+}: EventTooltipProps): ReactElement => {
+    let tooltipBody: ReactElement;
 
     switch (type) {
         case eventTypes.PROCESS_ACTIVITY:
             tooltipBody = (
                 <ProcessActivityTooltipFields
-                    type={type}
                     args={args}
                     uid={uid}
                     parentName={parentName}
@@ -35,9 +37,7 @@ const EventTooltip = ({
             );
             break;
         case eventTypes.TERMINATION:
-            tooltipBody = (
-                <TerminationTooltipFields type={type} reason={reason} timestamp={timestamp} />
-            );
+            tooltipBody = <TerminationTooltipFields reason={reason} timestamp={timestamp} />;
             break;
         default:
             tooltipBody = <DefaultTooltipFields type={type} timestamp={timestamp} />;
@@ -48,15 +48,6 @@ const EventTooltip = ({
             {children}
         </Tooltip>
     );
-};
-
-EventTooltip.propTypes = {
-    ...eventPropTypes,
-    children: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.node), PropTypes.node]).isRequired,
-};
-
-EventTooltip.defaultProps = {
-    ...defaultEventPropTypes,
 };
 
 export default EventTooltip;

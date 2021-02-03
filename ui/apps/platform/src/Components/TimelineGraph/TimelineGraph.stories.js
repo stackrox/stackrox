@@ -8,6 +8,8 @@ export default {
     component: TimelineGraph,
 };
 
+const goToNextView = () => {};
+
 export const basicUsage = () => {
     const [currentPage, onPageChange] = useState(1);
     const pageSize = 5;
@@ -45,6 +47,7 @@ export const basicUsage = () => {
             pageSize={pageSize}
             onPageChange={onPageChange}
             absoluteMaxTimeRange={60000}
+            goToNextView={goToNextView}
         />
     );
 };
@@ -53,7 +56,7 @@ export const withClusteredEvents = () => {
     const [currentPage, onPageChange] = useState(1);
     const pageSize = 5;
 
-    const clusteredEvents = [...Array(10).keys()].map((index) => {
+    const clusteredEvents = Array.from(Array(10).keys()).map((index) => {
         return {
             id: `event-${index}`,
             name: `event-${index}`,
@@ -77,7 +80,7 @@ export const withClusteredEvents = () => {
         differenceInMilliseconds: 3215,
     });
 
-    const multiClusteredEvents = [...Array(4).keys()].map((index) => {
+    const multiClusteredEvents = Array.from(Array(4).keys()).map((index) => {
         return {
             id: `event-${index}`,
             name: `event-${index}`,
@@ -87,6 +90,7 @@ export const withClusteredEvents = () => {
         };
     });
     multiClusteredEvents.push({
+        id: '',
         name: `event-5`,
         type: 'ProcessActivityEvent',
         timestamp: '2020-04-20T20:20:20.358227916Z',
@@ -121,6 +125,7 @@ export const withClusteredEvents = () => {
             pageSize={pageSize}
             onPageChange={onPageChange}
             absoluteMaxTimeRange={10000}
+            goToNextView={goToNextView}
         />
     );
 };

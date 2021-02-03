@@ -5,7 +5,7 @@ import getTimeDiffWithUnit from 'Components/TimelineGraph/timelineGraphUtils/get
 /**
  * Given an array of events, this function will give the time range between the earliest event
  * and the latest event in human readable text (ie. "1 hour and 2 minutes")
- * @param {Event} events - The timeline events
+ * @param {object[]} events - The timeline events
  * @returns {string} - The human readable time range
  */
 const getTimeRangeTextOfEvents = (events) => {

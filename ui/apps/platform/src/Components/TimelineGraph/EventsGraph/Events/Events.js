@@ -27,6 +27,7 @@ const Events = ({ events, height, translateX, minTimeRange, maxTimeRange, margin
         }) => (
             <EventMarker
                 key={id}
+                id={id}
                 name={name}
                 args={args}
                 uid={uid}

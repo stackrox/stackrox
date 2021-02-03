@@ -16,7 +16,7 @@ const GroupedEvents = ({
     isZooming,
 }) => {
     if (isZooming) {
-        return [];
+        return null;
     }
 
     const clusteredEventMarkerSize = Math.max(0, height / 2);
@@ -31,40 +31,44 @@ const GroupedEvents = ({
         partitionSize: clusteredEventMarkerSize,
     });
 
-    return groupedEvents.map((group) => {
-        const {
-            differenceInMilliseconds: groupedDifferenceInMilliseconds,
-            events: eventsFromGroup,
-        } = group;
-        // if there is more than one event in the group, we will render a clustered event
-        if (eventsFromGroup.length > 1) {
-            return (
-                <ClusteredEventMarker
-                    key={groupedDifferenceInMilliseconds}
-                    events={eventsFromGroup}
-                    differenceInMilliseconds={groupedDifferenceInMilliseconds}
-                    translateX={translateX}
-                    translateY={clusteredEventMarkerOffsetY}
-                    size={clusteredEventMarkerSize}
-                    minTimeRange={minTimeRange}
-                    maxTimeRange={maxTimeRange}
-                    margin={margin}
-                />
-            );
-        }
-        return (
-            <Events
-                key={groupedDifferenceInMilliseconds}
-                events={eventsFromGroup}
-                height={height}
-                translateX={translateX}
-                minTimeRange={minTimeRange}
-                maxTimeRange={maxTimeRange}
-                margin={margin}
-                isZooming={isZooming}
-            />
-        );
-    });
+    return (
+        <>
+            {groupedEvents.map((group) => {
+                const {
+                    differenceInMilliseconds: groupedDifferenceInMilliseconds,
+                    events: eventsFromGroup,
+                } = group;
+                // if there is more than one event in the group, we will render a clustered event
+                if (eventsFromGroup.length > 1) {
+                    return (
+                        <ClusteredEventMarker
+                            key={groupedDifferenceInMilliseconds}
+                            events={eventsFromGroup}
+                            differenceInMilliseconds={groupedDifferenceInMilliseconds}
+                            translateX={translateX}
+                            translateY={clusteredEventMarkerOffsetY}
+                            size={clusteredEventMarkerSize}
+                            minTimeRange={minTimeRange}
+                            maxTimeRange={maxTimeRange}
+                            margin={margin}
+                        />
+                    );
+                }
+                return (
+                    <Events
+                        key={groupedDifferenceInMilliseconds}
+                        events={eventsFromGroup}
+                        height={height}
+                        translateX={translateX}
+                        minTimeRange={minTimeRange}
+                        maxTimeRange={maxTimeRange}
+                        margin={margin}
+                        isZooming={isZooming}
+                    />
+                );
+            })}
+        </>
+    );
 };
 
 GroupedEvents.propTypes = {

@@ -8,7 +8,7 @@ export default {
 };
 
 export const clusteredEvent = () => {
-    const events = [...Array(9).keys()].map((index) => {
+    const events = Array.from(Array(9).keys()).map((index) => {
         return {
             name: `event-${index}`,
             type: 'PolicyViolationEvent',
@@ -36,7 +36,7 @@ export const clusteredEvent = () => {
 };
 
 export const clusteredPolicyViolationEvent = () => {
-    const events = [...Array(10).keys()].map((index) => {
+    const events = Array.from(Array(10).keys()).map((index) => {
         return {
             name: `event-${index}`,
             type: 'PolicyViolationEvent',
@@ -59,7 +59,7 @@ export const clusteredPolicyViolationEvent = () => {
 };
 
 export const clusteredProcessActivityEvent = () => {
-    const events = [...Array(10).keys()].map((index) => {
+    const events = Array.from(Array(10).keys()).map((index) => {
         return {
             name: `event-${index}`,
             type: 'ProcessActivityEvent',
@@ -86,7 +86,7 @@ export const clusteredProcessActivityEvent = () => {
 };
 
 export const clusteredProcessInBaselineActivityEvent = () => {
-    const events = [...Array(10).keys()].map((index) => {
+    const events = Array.from(Array(10).keys()).map((index) => {
         return {
             name: `event-${index}`,
             type: 'ProcessActivityEvent',
@@ -114,7 +114,7 @@ export const clusteredProcessInBaselineActivityEvent = () => {
 };
 
 export const clusteredRestartEvent = () => {
-    const events = [...Array(10).keys()].map((index) => {
+    const events = Array.from(Array(10).keys()).map((index) => {
         return {
             name: `event-${index}`,
             type: 'ContainerRestartEvent',
@@ -137,7 +137,7 @@ export const clusteredRestartEvent = () => {
 };
 
 export const clusteredTerminationEvent = () => {
-    const events = [...Array(10).keys()].map((index) => {
+    const events = Array.from(Array(10).keys()).map((index) => {
         return {
             name: `event-${index}`,
             type: 'ContainerTerminationEvent',
@@ -149,7 +149,6 @@ export const clusteredTerminationEvent = () => {
         <svg data-testid="timeline-main-view" width={50} height={50}>
             <ClusteredEventMarker
                 events={events}
-                type="ContainerTerminationEvent"
                 differenceInMilliseconds={50}
                 translateX={0}
                 translateY={25}

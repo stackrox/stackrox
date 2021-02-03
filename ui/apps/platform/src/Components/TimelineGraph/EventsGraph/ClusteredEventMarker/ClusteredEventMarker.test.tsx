@@ -1,23 +1,23 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 
+import { Event } from '../eventTypes';
 import ClusteredEventMarker from './ClusteredEventMarker';
 
-test('should show a clustered generic event marker', async () => {
-    const events = [...Array(9).keys()].map((index) => {
+test('should show a clustered generic event marker', () => {
+    const events: Event[] = Array.from(Array(9).keys()).map((index) => {
         return {
-            id: index,
+            id: `{index}`,
             name: `event-${index}`,
             type: 'PolicyViolationEvent',
             timestamp: '2020-04-20T20:20:20.358227916Z',
         };
     });
     events.push({
-        id: 10,
+        id: '10',
         name: `event-10`,
         type: 'ProcessActivityEvent',
         args: '-g daemon off;',
-        parentName: null,
         parentUid: -1,
         uid: 1000,
         timestamp: '2020-04-20T20:20:20.358227916Z',
@@ -39,8 +39,8 @@ test('should show a clustered generic event marker', async () => {
     expect(asFragment()).toMatchSnapshot();
 });
 
-test('should show a clustered policy violation event marker', async () => {
-    const events = [...Array(10).keys()].map((index) => {
+test('should show a clustered policy violation event marker', () => {
+    const events = Array.from(Array(10).keys()).map((index) => {
         return {
             id: index,
             name: `event-${index}`,
@@ -65,8 +65,8 @@ test('should show a clustered policy violation event marker', async () => {
     expect(asFragment()).toMatchSnapshot();
 });
 
-test('should show a clustered process activity event marker', async () => {
-    const events = [...Array(10).keys()].map((index) => {
+test('should show a clustered process activity event marker', () => {
+    const events = Array.from(Array(10).keys()).map((index) => {
         return {
             id: index,
             name: `event-${index}`,
@@ -95,8 +95,8 @@ test('should show a clustered process activity event marker', async () => {
     expect(asFragment()).toMatchSnapshot();
 });
 
-test('should show a clustered process in baseline activity event marker', async () => {
-    const events = [...Array(10).keys()].map((index) => {
+test('should show a clustered process in baseline activity event marker', () => {
+    const events = Array.from(Array(10).keys()).map((index) => {
         return {
             id: index,
             name: `event-${index}`,
@@ -126,8 +126,8 @@ test('should show a clustered process in baseline activity event marker', async 
     expect(asFragment()).toMatchSnapshot();
 });
 
-test('should show a clustered container restart event marker', async () => {
-    const events = [...Array(10).keys()].map((index) => {
+test('should show a clustered container restart event marker', () => {
+    const events = Array.from(Array(10).keys()).map((index) => {
         return {
             id: index,
             name: `event-${index}`,
@@ -152,8 +152,8 @@ test('should show a clustered container restart event marker', async () => {
     expect(asFragment()).toMatchSnapshot();
 });
 
-test('should show a container termination event marker', async () => {
-    const events = [...Array(10).keys()].map((index) => {
+test('should show a container termination event marker', () => {
+    const events = Array.from(Array(10).keys()).map((index) => {
         return {
             id: index,
             name: `event-${index}`,
@@ -166,7 +166,6 @@ test('should show a container termination event marker', async () => {
         <svg height={100} width={100} data-testid="timeline-main-view">
             <ClusteredEventMarker
                 events={events}
-                type="ContainerTerminationEvent"
                 differenceInMilliseconds={50}
                 translateX={0}
                 translateY={25}

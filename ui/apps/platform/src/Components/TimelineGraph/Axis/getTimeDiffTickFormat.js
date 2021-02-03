@@ -6,8 +6,8 @@ import getTimeDiffWithUnit from 'Components/TimelineGraph/timelineGraphUtils/get
  * N and M represent numbers
  * @param {Number} milliseconds - The GraphQL query/mutation errors
  * @param {Number} i - The current tick index
- * @param {Number} values - The tick values
- * @returns {String} - The formatted time difference
+ * @param {Number[]} values - The tick values
+ * @returns {?String} - The formatted time difference
  */
 function getTimeDiffTickFormat(milliseconds, i, values) {
     if (i !== 0 && i !== values.length - 1) {

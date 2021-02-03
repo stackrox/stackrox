@@ -6,7 +6,7 @@ import EventsRow from './EventsRow';
 const MockedEventsRow = () => {
     const entityName = 'Test';
     // we want to create 10 events between 0-9000ms equally spaced by 1000ms
-    const events = [...Array(10).keys()].map((index) => {
+    const events = Array.from(Array(10).keys()).map((index) => {
         return {
             id: `event-${index}`,
             name: `event-${index}`,

@@ -13,6 +13,7 @@ import ProcessActivityEvent from './ProcessActivityEvent';
 import TerminationEvent from './TerminationEvent';
 
 const EventMarker = ({
+    id,
     name,
     args,
     type,
@@ -56,6 +57,7 @@ const EventMarker = ({
             onUpdate={onUpdate}
         >
             <EventTooltip
+                id={id}
                 name={name}
                 args={args}
                 type={type}
@@ -80,6 +82,7 @@ const EventMarker = ({
 };
 
 EventMarker.propTypes = {
+    id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
     args: PropTypes.string,
     type: PropTypes.string.isRequired,

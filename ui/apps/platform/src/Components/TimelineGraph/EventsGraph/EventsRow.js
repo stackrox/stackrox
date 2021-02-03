@@ -54,7 +54,6 @@ const EventsRow = ({
                 <Events
                     events={eventsWithinView}
                     height={height}
-                    width={width}
                     translateX={translateX}
                     minTimeRange={minTimeRange}
                     maxTimeRange={maxTimeRange}

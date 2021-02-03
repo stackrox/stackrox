@@ -1,9 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { scaleLinear } from 'd3-scale';
-import uniqBy from 'lodash/uniqBy';
+import uniq from 'lodash/uniq';
 
-import { eventPropTypes } from 'constants/propTypes/timelinePropTypes';
 import { getWidth } from 'utils/d3Utils';
 import { clusteredEventTypes } from 'constants/timelineTypes';
 import mainViewSelector from 'Components/TimelineGraph/MainView/selectors';
@@ -18,10 +17,10 @@ import ClusteredTerminationEvent from './ClusteredTerminationEvent';
 /**
  * Determines the type of the clustered event based on the group of events
  * @param {Object[]} events
- * @returns {ClusteredEventType}
+ * @returns {clusteredEventTypes}
  */
 function getClusterEventType(events) {
-    const types = uniqBy(
+    const types = uniq(
         events.map((event) =>
             // if the event is a process in baseline activity, we should use a new type specific
             // to just clustered events
@@ -102,6 +101,19 @@ const ClusteredEventMarker = ({
             </ClusteredEventsTooltip>
         </D3Anchor>
     );
+};
+
+// TODO: replace with `Event` TS type once this module is migrated to TypeScript
+const eventPropTypes = {
+    name: PropTypes.string.isRequired,
+    args: PropTypes.string,
+    type: PropTypes.string.isRequired,
+    uid: PropTypes.number,
+    parentName: PropTypes.string,
+    parentUid: PropTypes.number,
+    reason: PropTypes.string,
+    timestamp: PropTypes.string.isRequired,
+    inBaseline: PropTypes.bool,
 };
 
 ClusteredEventMarker.propTypes = {

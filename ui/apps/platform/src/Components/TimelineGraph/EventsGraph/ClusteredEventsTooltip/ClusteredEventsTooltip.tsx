@@ -1,10 +1,9 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
+import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
 
 import { eventTypes } from 'constants/timelineTypes';
-import { eventPropTypes } from 'constants/propTypes/timelinePropTypes';
-import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
+import { Event } from '../eventTypes';
 import getTimeRangeTextOfEvents from './getTimeRangeTextOfEvents';
 import ProcessActivityTooltipFields from '../EventTooltipFields/ProcessActivityTooltipFields';
 import TerminationTooltipFields from '../EventTooltipFields/TerminationTooltipFields';
@@ -14,15 +13,23 @@ import ProcessActivityEvent from '../EventMarker/ProcessActivityEvent';
 import RestartEvent from '../EventMarker/RestartEvent';
 import TerminationEvent from '../EventMarker/TerminationEvent';
 
-const ClusteredEventsTooltip = ({ events, children }) => {
+type ClusteredEventsTooltipProps = {
+    events: Event[];
+    children: ReactElement;
+};
+
+const ClusteredEventsTooltip = ({
+    events = [],
+    children,
+}: ClusteredEventsTooltipProps): ReactElement => {
     const timeRangeTextOfEvents = getTimeRangeTextOfEvents(events);
     const tooltipTitle = `${events.length} ${pluralize(
         'Event',
         events.length
     )} within ${timeRangeTextOfEvents}`;
     const sections = events.map(
-        ({ id, type, name, args, uid, parentName, parentUid, timestamp, reason, inBaseline }) => {
-            let section = null;
+        ({ type, name, args, uid, parentName, parentUid, timestamp, reason, inBaseline }) => {
+            let section: ReactElement;
             switch (type) {
                 case eventTypes.PROCESS_ACTIVITY:
                     section = (
@@ -51,7 +58,7 @@ const ClusteredEventsTooltip = ({ events, children }) => {
                     );
             }
             return (
-                <li key={id} className="flex border-b border-base-300 border-primary-400 py-2">
+                <li key={name} className="flex border-b border-base-300 border-primary-400 py-2">
                     <div className="mt-1 mr-4">
                         {type === eventTypes.POLICY_VIOLATION && <PolicyViolationEvent size={15} />}
                         {type === eventTypes.PROCESS_ACTIVITY && (
@@ -77,15 +84,6 @@ const ClusteredEventsTooltip = ({ events, children }) => {
             {children}
         </Tooltip>
     );
-};
-
-ClusteredEventsTooltip.propTypes = {
-    events: PropTypes.arrayOf(PropTypes.shape(eventPropTypes)),
-    children: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.node), PropTypes.node]).isRequired,
-};
-
-ClusteredEventsTooltip.defaultProps = {
-    events: [],
 };
 
 export default ClusteredEventsTooltip;

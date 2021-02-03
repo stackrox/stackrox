@@ -1,8 +1,10 @@
-/* eslint-disable react/display-name */
 import React, { forwardRef } from 'react';
-import PropTypes from 'prop-types';
 
-const RestartEvent = forwardRef(({ size }, ref) => {
+type RestartEventProps = {
+    size: number;
+};
+
+const RestartEvent = forwardRef<SVGSVGElement, RestartEventProps>(({ size }, ref) => {
     return (
         <svg
             data-testid="restart-event"
@@ -24,8 +26,6 @@ const RestartEvent = forwardRef(({ size }, ref) => {
     );
 });
 
-RestartEvent.propTypes = {
-    size: PropTypes.number.isRequired,
-};
+RestartEvent.displayName = 'RestartEvent';
 
 export default RestartEvent;

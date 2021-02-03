@@ -8,7 +8,7 @@ import { scaleLinear } from 'd3-scale';
 
 /**
  * @typedef {Object} Params
- * @property {Events} events - The timeline events
+ * @property {object[]} events - The timeline events
  * @property {number} minDomain
  * @property {number} maxDomain
  * @property {number} minRange
@@ -17,13 +17,13 @@ import { scaleLinear } from 'd3-scale';
  */
 
 /**
- * @typedef {Array<GroupedEvents>>} Result
+ * @typedef {Array<GroupedEvents>} Result
  */
 
 /**
  * This function will group events, within a segment, based on a partition size
  * @param {Params} params
- * @returns {Result}
+ * @returns {object[]}
  */
 const getGroupedEvents = ({ events, minDomain, maxDomain, minRange, maxRange, partitionSize }) => {
     if (maxRange - minRange === 0) {

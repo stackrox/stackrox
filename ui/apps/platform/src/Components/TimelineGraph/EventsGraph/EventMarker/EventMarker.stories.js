@@ -12,6 +12,7 @@ export const policyViolationEvent = () => {
     return (
         <svg data-testid="timeline-main-view" width={50} height={50}>
             <EventMarker
+                id="1"
                 name="event"
                 type="PolicyViolationEvent"
                 timestamp="2020-04-20T20:20:20.358227916Z"
@@ -30,6 +31,7 @@ export const processActivityEvent = () => {
     return (
         <svg data-testid="timeline-main-view" width={50} height={50}>
             <EventMarker
+                id="1"
                 name="event"
                 type="ProcessActivityEvent"
                 args="-g daemon off;"
@@ -52,6 +54,7 @@ export const processInBaselineActivityEvent = () => {
     return (
         <svg data-testid="timeline-main-view" width={50} height={50}>
             <EventMarker
+                id="1"
                 name="event"
                 type="ProcessActivityEvent"
                 args="-g daemon off;"
@@ -75,6 +78,7 @@ export const restartEvent = () => {
     return (
         <svg data-testid="timeline-main-view" width={50} height={50}>
             <EventMarker
+                id="1"
                 name="event"
                 type="ContainerRestartEvent"
                 timestamp="2020-04-20T20:20:20.358227916Z"
@@ -93,6 +97,7 @@ export const terminationEvent = () => {
     return (
         <svg data-testid="timeline-main-view" width={50} height={50}>
             <EventMarker
+                id="1"
                 name="event"
                 type="ContainerTerminationEvent"
                 reason="Because of Covid-19"
