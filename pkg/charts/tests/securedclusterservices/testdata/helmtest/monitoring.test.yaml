@@ -1,0 +1,50 @@
+defs: |
+  def monitoringExposed(service):
+    [service.spec.ports[] | select(.port == 9090)] | (length == 1);
+
+tests:
+- name: monitoring should not be exposed by default
+  expect: |
+    monitoringExposed(.services.sensor) | assertThat(not)
+    .networkpolicys["sensor-monitoring"] | assertThat(. == null)
+    .networkpolicys["collector-monitoring"] | assertThat(. == null)
+    .networkpolicys["admission-control-monitoring"] | assertThat(. == null)
+
+- name: monitoring should be exposed when enabled
+  set:
+    exposeMonitoring: true
+  expect: |
+    monitoringExposed(.services.sensor)
+    .networkpolicys["sensor-monitoring"] | assertThat(. != null)
+    .networkpolicys["collector-monitoring"] | assertThat(. != null)
+    .networkpolicys["admission-control-monitoring"] | assertThat(. != null)
+
+- name: monitoring should be overridable on a per-component basis (sensor)
+  set:
+    exposeMonitoring: true
+    sensor.exposeMonitoring: false
+  expect: |
+    monitoringExposed(.services.sensor) | assertThat(not)
+    .networkpolicys["sensor-monitoring"] | assertThat(. == null)
+    .networkpolicys["collector-monitoring"] | assertThat(. != null)
+    .networkpolicys["admission-control-monitoring"] | assertThat(. != null)
+
+- name: monitoring should be overridable on a per-component basis (collector)
+  set:
+    exposeMonitoring: true
+    collector.exposeMonitoring: false
+  expect: |
+    monitoringExposed(.services.sensor)
+    .networkpolicys["sensor-monitoring"] | assertThat(. != null)
+    .networkpolicys["collector-monitoring"] | assertThat(. == null)
+    .networkpolicys["admission-control-monitoring"] | assertThat(. != null)
+
+- name: monitoring should be overridable on a per-component basis (admission control)
+  set:
+    exposeMonitoring: true
+    admissionControl.exposeMonitoring: false
+  expect: |
+    monitoringExposed(.services.sensor)
+    .networkpolicys["sensor-monitoring"] | assertThat(. != null)
+    .networkpolicys["collector-monitoring"] | assertThat(. != null)
+    .networkpolicys["admission-control-monitoring"] | assertThat(. == null)

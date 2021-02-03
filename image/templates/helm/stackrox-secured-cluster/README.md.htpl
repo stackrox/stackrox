@@ -529,7 +529,7 @@ non-standard environments:
 |`collector.imagePullPolicy`| Kubernetes image pull policy for Sensor. | `Always` when deploying in slim mode, otherwise `IfNotPresent`. |
 |`collector.complianceImagePullPolicy`| Kubernetes image pull policy for Sensor. | `IfNotPresent` |
 |`admissionControl.imagePullPolicy`| Kubernetes image pull policy for Admission Control. | `IfNotPresent` |
-|`exposeMonitoring`| This setting controls whether Sensor's monitoring port (TCP 9090) should be exposed. | `false` |
+|`exposeMonitoring`| This setting controls whether the monitoring port (TCP 9090) should be exposed on the services. | `false` |
 |`env.openshift`| This setting can be used for overwriting the auto-sensing of OpenShift environments. If enabled, the cluster is set up for an OpenShift environment. | Auto-sensed, depends on environment. |
 |`env.istio`| This setting can be used for overwriting the auto-sensing of Istio environments. If enabled, the cluster is set up for an Istio environment. | Auto-sensed, depends on environment. |
 

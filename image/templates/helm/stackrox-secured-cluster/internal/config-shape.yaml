@@ -52,6 +52,7 @@ sensor:
   serviceTLS:
     cert: null # string
     key: null # string
+  exposeMonitoring: null # bool
 admissionControl:
   listenOnCreates: null # bool
   listenOnUpdates: null # bool
@@ -67,6 +68,7 @@ admissionControl:
   serviceTLS:
     cert: null # string
     key: null # string
+  exposeMonitoring: null # bool
 collector:
   collectionMethod: null # string
   disableTaintTolerations: null # bool
@@ -78,6 +80,7 @@ collector:
   serviceTLS:
     cert: null # string
     key: null # string
+  exposeMonitoring: null # bool
 customize:
   labels: {} # dict
   annotations: {} # dict
