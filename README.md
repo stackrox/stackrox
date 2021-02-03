@@ -44,8 +44,8 @@ The following tools are necessary to build image(s):
   * Get the version specified in [EXPECTED_GO_VERSION](./EXPECTED_GO_VERSION).
 * Various Go linters and RocksDB dependencies that can be installed using `make reinstall-dev-tools`.
 * UI build tooling as specified in [ui/README.md](ui/README.md#Build-Tooling).
-* Docker
-* rocksdb
+* Docker (make sure you `docker login` to your company [DockerHub account](https://hub.docker.com/settings/security))
+* rocksdb (use `brew install rocksdb` on a Mac)
 * xcode command line tools (macOS only)
 
 ##### xcode - macOS only
@@ -99,8 +99,6 @@ $ git clone git@github.com:stackrox/rox.git
 
 #### Local development
 
-Development can either happen in GCP or locally with
-[Docker Desktop](https://docs.docker.com/docker-for-mac/#kubernetes) or [Minikube](https://minikube.sigs.k8s.io/docs/start/).  
 To sweeten your experience, install [the workflow scripts](#productivity) beforehand.
 
 ```bash
@@ -111,7 +109,13 @@ $ brew install rocksdb
 $ cd $GOPATH/src/github.com/stackrox
 $ make install-dev-tools
 $ make image
+```
 
+Now, you need to bring up a Kubernetes cluster *yourself* before proceeding.
+Development can either happen in GCP or locally with
+[Docker Desktop](https://docs.docker.com/docker-for-mac/#kubernetes) or [Minikube](https://minikube.sigs.k8s.io/docs/start/).
+
+```bash
 # To mount local StackRox binaries into your pods, enable hotreload:
 $ export HOTRELOAD=true
 
