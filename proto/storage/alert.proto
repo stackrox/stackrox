@@ -113,6 +113,7 @@ message ListAlertDeployment {
     string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
     string cluster_id                          = 6 [(gogoproto.moretags) = "search:\"Cluster ID,store\""];
     bool inactive                              = 7 [(gogoproto.moretags) = "search:\"Inactive Deployment\""];
+    string namespace_id                        = 8 [(gogoproto.moretags) = "search:\"Namespace ID\""];
 }
 
 enum ViolationState {

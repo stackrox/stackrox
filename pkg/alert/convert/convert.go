@@ -25,6 +25,7 @@ func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 			ClusterName: alert.GetDeployment().GetClusterName(),
 			ClusterId:   alert.GetDeployment().GetClusterId(),
 			Namespace:   alert.GetDeployment().GetNamespace(),
+			NamespaceId: alert.GetDeployment().GetNamespaceId(),
 			Inactive:    alert.GetDeployment().GetInactive(),
 		},
 		Tags: alert.GetTags(),
