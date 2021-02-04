@@ -4546,7 +4546,7 @@ jobs:
             roxctl="./bin/$(uname | tr A-Z a-z)/roxctl"
             "$roxctl" helm output central-services --output-dir "${central_services_chart_dir}"
             "$roxctl" helm output secured-cluster-services --output-dir "${secured_cluster_services_chart_dir}"
-            .circleci/publish-helm-charts "$MAIN_TAG" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}"
+            .circleci/publish-helm-charts "$(make --quiet tag)" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}"
 
       - run:
           name: Push image into ECR for AWS Marketplace
