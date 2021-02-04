@@ -28,7 +28,7 @@ const ClusteredEventsTooltip = ({
         events.length
     )} within ${timeRangeTextOfEvents}`;
     const sections = events.map(
-        ({ type, name, args, uid, parentName, parentUid, timestamp, reason, inBaseline }) => {
+        ({ id, type, name, args, uid, parentName, parentUid, timestamp, reason, inBaseline }) => {
             let section: ReactElement;
             switch (type) {
                 case eventTypes.PROCESS_ACTIVITY:
@@ -58,7 +58,7 @@ const ClusteredEventsTooltip = ({
                     );
             }
             return (
-                <li key={name} className="flex border-b border-base-300 border-primary-400 py-2">
+                <li key={id} className="flex border-b border-base-300 border-primary-400 py-2">
                     <div className="mt-1 mr-4">
                         {type === eventTypes.POLICY_VIOLATION && <PolicyViolationEvent size={15} />}
                         {type === eventTypes.PROCESS_ACTIVITY && (

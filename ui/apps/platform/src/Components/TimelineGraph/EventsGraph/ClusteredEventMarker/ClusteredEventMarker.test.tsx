@@ -7,7 +7,7 @@ import ClusteredEventMarker from './ClusteredEventMarker';
 test('should show a clustered generic event marker', () => {
     const events: Event[] = Array.from(Array(9).keys()).map((index) => {
         return {
-            id: `{index}`,
+            id: `${index}`,
             name: `event-${index}`,
             type: 'PolicyViolationEvent',
             timestamp: '2020-04-20T20:20:20.358227916Z',
