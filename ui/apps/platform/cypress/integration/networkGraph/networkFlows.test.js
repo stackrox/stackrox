@@ -3,6 +3,7 @@ import selectors from '../../selectors';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import { clickOnNodeByName } from '../../helpers/networkGraph';
+import checkFeatureFlag from '../../helpers/features';
 
 const tableDataRows = 'table tr[data-testid="data-row"]';
 const tableStatusHeaders = 'table tr[data-testid="subhead-row"]';
@@ -187,20 +188,28 @@ describe('Network Baseline Flows', () => {
             });
         });
 
-        it('should toggle the alert on baseline violations toggle', () => {
-            cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
-                const baselineViolationsToggle = '[data-testid="toggle-switch-checkbox"]';
-                clickOnNodeByName(cytoscape, { type: 'DEPLOYMENT', name: 'central' });
-                cy.get(baselineSettingsTab).click();
-                cy.get(baselineViolationsToggle).should('not.be.checked');
-                cy.get(baselineViolationsToggle).check({ force: true });
-                cy.wait('@networkBaselineLock');
-                cy.wait('@networkBaseline');
-                cy.get(baselineViolationsToggle).should('be.checked');
-                cy.get(baselineViolationsToggle).uncheck({ force: true });
-                cy.wait('@networkBaselineUnlock');
-                cy.wait('@networkBaseline');
-                cy.get(baselineViolationsToggle).should('not.be.checked');
+        describe('Cluster with Helm management', () => {
+            before(function beforeHook() {
+                if (checkFeatureFlag('ROX_NETWORK_DETECTION_BASELINE_VIOLATION', false)) {
+                    this.skip();
+                }
+            });
+
+            it('should toggle the alert on baseline violations toggle', () => {
+                cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
+                    const baselineViolationsToggle = '[data-testid="toggle-switch-checkbox"]';
+                    clickOnNodeByName(cytoscape, { type: 'DEPLOYMENT', name: 'central' });
+                    cy.get(baselineSettingsTab).click();
+                    cy.get(baselineViolationsToggle).should('not.be.checked');
+                    cy.get(baselineViolationsToggle).check({ force: true });
+                    cy.wait('@networkBaselineLock');
+                    cy.wait('@networkBaseline');
+                    cy.get(baselineViolationsToggle).should('be.checked');
+                    cy.get(baselineViolationsToggle).uncheck({ force: true });
+                    cy.wait('@networkBaselineUnlock');
+                    cy.wait('@networkBaseline');
+                    cy.get(baselineViolationsToggle).should('not.be.checked');
+                });
             });
         });
     });
