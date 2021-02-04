@@ -312,8 +312,32 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			Value:       "/run/secrets",
 		},
 	})
+	runSecretsArrayImage := imageWithLayers([]*storage.ImageLayer{
+		{
+			Instruction: "VOLUME",
+			Value:       "[/run/secrets]",
+		},
+	})
+	runSecretsListImage := imageWithLayers([]*storage.ImageLayer{
+		{
+			Instruction: "VOLUME",
+			Value:       "/var/something /run/secrets",
+		},
+	})
+	runSecretsArrayListImage := imageWithLayers([]*storage.ImageLayer{
+		{
+			Instruction: "VOLUME",
+			Value:       "[/var/something /run/secrets]",
+		},
+	})
 	runSecretsDep := deploymentWithImageAnyID(runSecretsImage)
+	runSecretsArrayDep := deploymentWithImageAnyID(runSecretsArrayImage)
+	runSecretsListDep := deploymentWithImageAnyID(runSecretsListImage)
+	runSecretsArrayListDep := deploymentWithImageAnyID(runSecretsArrayListImage)
 	suite.addDepAndImages(runSecretsDep, runSecretsImage)
+	suite.addDepAndImages(runSecretsArrayDep, runSecretsArrayImage)
+	suite.addDepAndImages(runSecretsListDep, runSecretsListImage)
+	suite.addDepAndImages(runSecretsArrayListDep, runSecretsArrayListImage)
 
 	oldImageCreationTime := time.Now().Add(-100 * 24 * time.Hour)
 	oldCreatedImage := &storage.Image{
@@ -909,6 +933,21 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "Dockerfile line 'VOLUME /run/secrets' found in container 'ASFASF'",
 					},
 				},
+				runSecretsArrayDep.GetId(): {
+					{
+						Message: "Dockerfile line 'VOLUME [/run/secrets]' found in container 'ASFASF'",
+					},
+				},
+				runSecretsListDep.GetId(): {
+					{
+						Message: "Dockerfile line 'VOLUME /var/something /run/secrets' found in container 'ASFASF'",
+					},
+				},
+				runSecretsArrayListDep.GetId(): {
+					{
+						Message: "Dockerfile line 'VOLUME [/var/something /run/secrets]' found in container 'ASFASF'",
+					},
+				},
 			},
 		},
 		{
@@ -1437,6 +1476,21 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				suite.imageIDFromDep(runSecretsDep): {
 					{
 						Message: "Dockerfile line 'VOLUME /run/secrets' found",
+					},
+				},
+				suite.imageIDFromDep(runSecretsArrayDep): {
+					{
+						Message: "Dockerfile line 'VOLUME [/run/secrets]' found",
+					},
+				},
+				suite.imageIDFromDep(runSecretsListDep): {
+					{
+						Message: "Dockerfile line 'VOLUME /var/something /run/secrets' found",
+					},
+				},
+				suite.imageIDFromDep(runSecretsArrayListDep): {
+					{
+						Message: "Dockerfile line 'VOLUME [/var/something /run/secrets]' found",
 					},
 				},
 			},
