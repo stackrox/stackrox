@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -215,6 +216,18 @@ func (d *detectorImpl) processBaselineSync(sync *central.BaselineSync) error {
 	return nil
 }
 
+func (d *detectorImpl) processNetworkBaselineSync(sync *central.NetworkBaselineSync) error {
+	errs := errorhelpers.NewErrorList("processing network baseline sync")
+	for _, baseline := range sync.GetNetworkBaselines() {
+		err := d.networkbaselineEval.AddBaseline(baseline)
+		// Remember the error and continue looping
+		if err != nil {
+			errs.AddError(err)
+		}
+	}
+	return errs.ToError()
+}
+
 func (d *detectorImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	switch {
 	case msg.GetPolicySync() != nil:
@@ -223,6 +236,8 @@ func (d *detectorImpl) ProcessMessage(msg *central.MsgToSensor) error {
 		return d.processReassessPolicies(msg.GetReassessPolicies())
 	case msg.GetBaselineSync() != nil:
 		return d.processBaselineSync(msg.GetBaselineSync())
+	case msg.GetNetworkBaselineSync() != nil:
+		return d.processNetworkBaselineSync(msg.GetNetworkBaselineSync())
 	}
 	return nil
 }

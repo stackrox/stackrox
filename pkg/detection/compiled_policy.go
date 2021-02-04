@@ -70,6 +70,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 				return booleanpolicy.SectionContainsOneOf(section, booleanpolicy.NetworkFlowFields)
 			})
 			if len(filtered.GetPolicySections()) > 0 {
+				compiled.hasNetworkFlowSection = true
 				deploymentWithNetworkFlowMatcher, err := booleanpolicy.BuildDeploymentWithNetworkFlowMatcher(filtered)
 				if err != nil {
 					return nil, errors.Wrapf(err, "building network baseline matcher for policy %q", policy.GetName())
@@ -163,8 +164,9 @@ type compiledPolicy struct {
 	deploymentMatcher                booleanpolicy.DeploymentMatcher
 	imageMatcher                     booleanpolicy.ImageMatcher
 
-	hasProcessSection    bool
-	hasKubeEventsSection bool
+	hasProcessSection     bool
+	hasKubeEventsSection  bool
+	hasNetworkFlowSection bool
 }
 
 func (cp *compiledPolicy) MatchAgainstKubeResourceAndEvent(
@@ -204,6 +206,9 @@ func (cp *compiledPolicy) MatchAgainstDeploymentAndNetworkFlow(
 	images []*storage.Image,
 	flow *augmentedobjs.NetworkFlowDetails,
 ) (booleanpolicy.Violations, error) {
+	if !cp.hasNetworkFlowSection {
+		return booleanpolicy.Violations{}, nil
+	}
 	if cp.deploymentWithNetworkFlowMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %s against network baseline", cp.Policy().GetName())
 	}

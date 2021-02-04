@@ -12,6 +12,7 @@ import (
 	networkEntityDSMock "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	networkPolicyMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
+	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -79,10 +80,11 @@ func TestManager(t *testing.T) {
 type ManagerTestSuite struct {
 	suite.Suite
 
-	ds              *fakeDS
-	networkEntities *networkEntityDSMock.MockEntityDataStore
-	deploymentDS    *deploymentMocks.MockDataStore
-	networkPolicyDS *networkPolicyMocks.MockDataStore
+	ds                *fakeDS
+	networkEntities   *networkEntityDSMock.MockEntityDataStore
+	deploymentDS      *deploymentMocks.MockDataStore
+	networkPolicyDS   *networkPolicyMocks.MockDataStore
+	connectionManager *connectionMocks.MockManager
 
 	m             Manager
 	currTestStart timestamp.MicroTS
@@ -96,6 +98,7 @@ func (suite *ManagerTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.deploymentDS = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.networkPolicyDS = networkPolicyMocks.NewMockDataStore(suite.mockCtrl)
+	suite.connectionManager = connectionMocks.NewMockManager(suite.mockCtrl)
 }
 
 func (suite *ManagerTestSuite) TearDownTest() {
@@ -109,7 +112,7 @@ func (suite *ManagerTestSuite) mustInitManager(initialBaselines ...*storage.Netw
 		suite.ds.baselines[baseline.GetDeploymentId()] = baseline
 	}
 	var err error
-	suite.m, err = New(suite.ds, suite.networkEntities, suite.deploymentDS, suite.networkPolicyDS)
+	suite.m, err = New(suite.ds, suite.networkEntities, suite.deploymentDS, suite.networkPolicyDS, suite.connectionManager)
 	suite.Require().NoError(err)
 }
 

@@ -70,6 +70,7 @@ import (
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
+	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
 	networkBaselineService "github.com/stackrox/rox/central/networkbaseline/service"
 	networkEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/gatherer"
@@ -388,6 +389,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		networkEntityDataStore.Singleton(),
 		policyDataStore.Singleton(),
 		processBaselineDataStore.Singleton(),
+		networkBaselineDataStore.Singleton(),
 		autoTriggerUpgrades,
 	); err != nil {
 		log.Panicf("Couldn't start sensor connection manager: %v", err)

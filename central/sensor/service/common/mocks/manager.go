@@ -182,6 +182,43 @@ func (mr *MockProcessBaselineManagerMockRecorder) WalkAll(ctx, fn interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkAll", reflect.TypeOf((*MockProcessBaselineManager)(nil).WalkAll), ctx, fn)
 }
 
+// MockNetworkBaselineManager is a mock of NetworkBaselineManager interface
+type MockNetworkBaselineManager struct {
+	ctrl     *gomock.Controller
+	recorder *MockNetworkBaselineManagerMockRecorder
+}
+
+// MockNetworkBaselineManagerMockRecorder is the mock recorder for MockNetworkBaselineManager
+type MockNetworkBaselineManagerMockRecorder struct {
+	mock *MockNetworkBaselineManager
+}
+
+// NewMockNetworkBaselineManager creates a new mock instance
+func NewMockNetworkBaselineManager(ctrl *gomock.Controller) *MockNetworkBaselineManager {
+	mock := &MockNetworkBaselineManager{ctrl: ctrl}
+	mock.recorder = &MockNetworkBaselineManagerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockNetworkBaselineManager) EXPECT() *MockNetworkBaselineManagerMockRecorder {
+	return m.recorder
+}
+
+// Walk mocks base method
+func (m *MockNetworkBaselineManager) Walk(ctx context.Context, fn func(*storage.NetworkBaseline) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Walk", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Walk indicates an expected call of Walk
+func (mr *MockNetworkBaselineManagerMockRecorder) Walk(ctx, fn interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockNetworkBaselineManager)(nil).Walk), ctx, fn)
+}
+
 // MockNetworkEntityManager is a mock of NetworkEntityManager interface
 type MockNetworkEntityManager struct {
 	ctrl     *gomock.Controller

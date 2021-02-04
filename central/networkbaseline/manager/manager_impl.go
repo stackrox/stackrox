@@ -9,11 +9,13 @@ import (
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -37,10 +39,11 @@ var (
 )
 
 type manager struct {
-	ds              datastore.DataStore
-	networkEntities networkEntityDS.EntityDataStore
-	deploymentDS    deploymentDS.DataStore
-	networkPolicyDS networkPolicyDS.DataStore
+	ds                datastore.DataStore
+	networkEntities   networkEntityDS.EntityDataStore
+	deploymentDS      deploymentDS.DataStore
+	networkPolicyDS   networkPolicyDS.DataStore
+	connectionManager connection.Manager
 
 	baselinesByDeploymentID map[string]*networkbaseline.BaselineInfo
 	seenNetworkPolicies     set.Uint64Set
@@ -119,7 +122,34 @@ func (m *manager) persistNetworkBaselines(deploymentIDs set.StringSet) error {
 			DeploymentName:       baselineInfo.DeploymentName,
 		})
 	}
-	return m.ds.UpsertNetworkBaselines(managerCtx, baselines)
+	err := m.ds.UpsertNetworkBaselines(managerCtx, baselines)
+	if err != nil {
+		return errors.Wrap(err, "upserting network baselines in manager")
+	}
+	if features.NetworkDetectionBaselineViolation.Enabled() {
+		m.sendNetworkBaselinesToSensor(baselines)
+	}
+	return nil
+}
+
+func (m *manager) sendNetworkBaselinesToSensor(baselines []*storage.NetworkBaseline) {
+	// First map baselines by clusters
+	clusterIDToBaselines := make(map[string][]*storage.NetworkBaseline, len(baselines))
+	for _, b := range baselines {
+		clusterIDToBaselines[b.GetClusterId()] = append(clusterIDToBaselines[b.GetClusterId()], b)
+	}
+	for clusterID, clusterBaselines := range clusterIDToBaselines {
+		err := m.connectionManager.SendMessage(clusterID, &central.MsgToSensor{
+			Msg: &central.MsgToSensor_NetworkBaselineSync{
+				NetworkBaselineSync: &central.NetworkBaselineSync{
+					NetworkBaselines: clusterBaselines,
+				},
+			},
+		})
+		if err != nil {
+			log.Errorf("error sending network baselines to cluster %q: %v", clusterID, err)
+		}
+	}
 }
 
 func (m *manager) lookUpPeerName(entity networkgraph.Entity) string {
@@ -598,12 +628,14 @@ func New(
 	networkEntities networkEntityDS.EntityDataStore,
 	deploymentDS deploymentDS.DataStore,
 	networkPolicyDS networkPolicyDS.DataStore,
+	connectionManager connection.Manager,
 ) (Manager, error) {
 	m := &manager{
 		ds:                  ds,
 		networkEntities:     networkEntities,
 		deploymentDS:        deploymentDS,
 		networkPolicyDS:     networkPolicyDS,
+		connectionManager:   connectionManager,
 		seenNetworkPolicies: set.NewUint64Set(),
 	}
 	if err := m.initFromStore(); err != nil {

@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -45,10 +46,11 @@ type sensorConnection struct {
 
 	eventPipeline pipeline.ClusterPipeline
 
-	clusterMgr       common.ClusterManager
-	networkEntityMgr common.NetworkEntityManager
-	policyMgr        common.PolicyManager
-	baselineMgr      common.ProcessBaselineManager
+	clusterMgr         common.ClusterManager
+	networkEntityMgr   common.NetworkEntityManager
+	policyMgr          common.PolicyManager
+	baselineMgr        common.ProcessBaselineManager
+	networkBaselineMgr common.NetworkBaselineManager
 
 	sensorHello  *central.SensorHello
 	capabilities centralsensor.SensorCapabilitySet
@@ -60,7 +62,9 @@ func newConnection(sensorHello *central.SensorHello,
 	clusterMgr common.ClusterManager,
 	networkEntityMgr common.NetworkEntityManager,
 	policyMgr common.PolicyManager,
-	baselineMgr common.ProcessBaselineManager) *sensorConnection {
+	baselineMgr common.ProcessBaselineManager,
+	networkBaselineMgr common.NetworkBaselineManager,
+) *sensorConnection {
 
 	conn := &sensorConnection{
 		stopSig:       concurrency.NewErrorSignal(),
@@ -69,11 +73,12 @@ func newConnection(sensorHello *central.SensorHello,
 		eventPipeline: eventPipeline,
 		queues:        make(map[string]*dedupingQueue),
 
-		clusterID:        cluster.GetId(),
-		clusterMgr:       clusterMgr,
-		policyMgr:        policyMgr,
-		networkEntityMgr: networkEntityMgr,
-		baselineMgr:      baselineMgr,
+		clusterID:          cluster.GetId(),
+		clusterMgr:         clusterMgr,
+		policyMgr:          policyMgr,
+		networkEntityMgr:   networkEntityMgr,
+		baselineMgr:        baselineMgr,
+		networkBaselineMgr: networkBaselineMgr,
 
 		sensorHello:  sensorHello,
 		capabilities: centralsensor.CapSetFromStringSlice(sensorHello.GetCapabilities()...),
@@ -279,6 +284,32 @@ func (c *sensorConnection) getPolicySyncMsg(ctx context.Context) (*central.MsgTo
 	}, nil
 }
 
+func (c *sensorConnection) getNetworkBaselineSyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
+	var networkBaselines []*storage.NetworkBaseline
+	err := c.networkBaselineMgr.Walk(ctx, func(baseline *storage.NetworkBaseline) error {
+		if !baseline.GetLocked() {
+			// Baseline not locked yet. No need to sync to sensor
+			return nil
+		}
+		if baseline.GetClusterId() != c.clusterID {
+			// Not a baseline of the cluster we are talking to
+			return nil
+		}
+		networkBaselines = append(networkBaselines, baseline)
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "could not list network baselines for Sensor connection")
+	}
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_NetworkBaselineSync{
+			NetworkBaselineSync: &central.NetworkBaselineSync{
+				NetworkBaselines: networkBaselines,
+			},
+		},
+	}, nil
+}
+
 func (c *sensorConnection) getBaselineSyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
 	var baselines []*storage.ProcessBaseline
 	err := c.baselineMgr.WalkAll(ctx, func(pw *storage.ProcessBaseline) error {
@@ -346,6 +377,16 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		}
 		if err := server.Send(msg); err != nil {
 			return errors.Wrapf(err, "unable to sync initial process baselines to cluster %q", c.clusterID)
+		}
+
+		if features.NetworkDetectionBaselineViolation.Enabled() {
+			msg, err = c.getNetworkBaselineSyncMsg(ctx)
+			if err != nil {
+				return errors.Wrapf(err, "unable to get network baseline sync msg for %q", c.clusterID)
+			}
+			if err := server.Send(msg); err != nil {
+				return errors.Wrapf(err, "unable to sync initial network baselines to cluster %q", c.clusterID)
+			}
 		}
 	}
 

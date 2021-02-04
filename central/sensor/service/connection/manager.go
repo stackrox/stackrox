@@ -18,6 +18,7 @@ type Manager interface {
 		netEntitiesMgr common.NetworkEntityManager,
 		policyMgr common.PolicyManager,
 		baselineMgr common.ProcessBaselineManager,
+		networkBaselineMgr common.NetworkBaselineManager,
 		autoTriggerUpgrades *concurrency.Flag) error
 
 	// Connection-related methods.

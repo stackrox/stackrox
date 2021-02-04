@@ -34,7 +34,7 @@ func (e *networkBaselineEvaluator) RemoveBaselineByDeploymentID(id string) {
 	delete(e.baselines, id)
 }
 
-// AddBaseline adds a baseline to the evaluatorm. We only store the locked baselines, as those
+// AddBaseline adds a baseline to the evaluator. We only store the locked baselines, as those
 // are the ones that matter in the context of evaluator
 func (e *networkBaselineEvaluator) AddBaseline(baseline *storage.NetworkBaseline) error {
 	if !baseline.GetLocked() {

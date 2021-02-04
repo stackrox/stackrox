@@ -58,6 +58,7 @@ type manager struct {
 	networkEntities     common.NetworkEntityManager
 	policies            common.PolicyManager
 	baselines           common.ProcessBaselineManager
+	networkBaselines    common.NetworkBaselineManager
 	autoTriggerUpgrades *concurrency.Flag
 }
 
@@ -91,11 +92,14 @@ func (m *manager) Start(clusterManager common.ClusterManager,
 	networkEntityManager common.NetworkEntityManager,
 	policyManager common.PolicyManager,
 	baselineManager common.ProcessBaselineManager,
-	autoTriggerUpgrades *concurrency.Flag) error {
+	networkBaselineManager common.NetworkBaselineManager,
+	autoTriggerUpgrades *concurrency.Flag,
+) error {
 	m.clusters = clusterManager
 	m.networkEntities = networkEntityManager
 	m.policies = policyManager
 	m.baselines = baselineManager
+	m.networkBaselines = networkBaselineManager
 	m.autoTriggerUpgrades = autoTriggerUpgrades
 	err := m.initializeUpgradeControllers()
 	if err != nil {
@@ -211,7 +215,16 @@ func (m *manager) replaceConnection(ctx context.Context, clusterID string, newCo
 }
 
 func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.SensorHello, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
-	conn := newConnection(sensorHello, cluster, eventPipeline, m.clusters, m.networkEntities, m.policies, m.baselines)
+	conn :=
+		newConnection(
+			sensorHello,
+			cluster,
+			eventPipeline,
+			m.clusters,
+			m.networkEntities,
+			m.policies,
+			m.baselines,
+			m.networkBaselines)
 	ctx = withConnection(ctx, conn)
 
 	clusterID := cluster.GetId()

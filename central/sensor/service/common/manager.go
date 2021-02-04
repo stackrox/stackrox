@@ -25,6 +25,11 @@ type ProcessBaselineManager interface {
 	WalkAll(ctx context.Context, fn func(baseline *storage.ProcessBaseline) error) error
 }
 
+// NetworkBaselineManager implements an interface to retrieve network baselines.
+type NetworkBaselineManager interface {
+	Walk(ctx context.Context, fn func(baseline *storage.NetworkBaseline) error) error
+}
+
 // NetworkEntityManager implements an interface to retrieve network entities.
 //go:generate mockgen-wrapper
 type NetworkEntityManager interface {
