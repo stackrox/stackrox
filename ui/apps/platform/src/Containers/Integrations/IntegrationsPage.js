@@ -30,7 +30,7 @@ const IntegrationsPage = ({
     backups,
     imageIntegrations,
     notifiers,
-    logConsumptions,
+    logIntegrations,
     fetchAuthPlugins,
     fetchAPITokens,
     fetchClusterInitBundles,
@@ -38,13 +38,14 @@ const IntegrationsPage = ({
     fetchImageIntegrations,
     fetchNotifiers,
     fetchBackups,
+    fetchLogIntegrations,
     featureFlags,
 }) => {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedTile, setSelectedTile] = useState(emptyTile);
     const isHostScanningEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_HOST_SCANNING);
     const isK8sAuditLoggingEnabled = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_K8S_EVENTS_DETECTION
+        knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION
     );
 
     function getSelectedEntities() {
@@ -71,6 +72,9 @@ const IntegrationsPage = ({
                 break;
             case 'backups':
                 fetchBackups();
+                break;
+            case 'logIntegrations':
+                fetchLogIntegrations();
                 break;
             default:
                 throw new Error(`Unknown source ${source}`);
@@ -114,8 +118,8 @@ const IntegrationsPage = ({
             case 'imageIntegrations': {
                 return imageIntegrations.filter(typeLowerMatches);
             }
-            case 'logConsumption': {
-                return logConsumptions;
+            case 'logIntegrations': {
+                return logIntegrations;
             }
             default: {
                 throw new Error(`Unknown source ${source}`);
@@ -159,7 +163,7 @@ const IntegrationsPage = ({
     const authPluginTiles = renderIntegrationTiles('authPlugins');
     const authProviderTiles = renderIntegrationTiles('authProviders');
     const backupTiles = renderIntegrationTiles('backups');
-    const logConsumptionTiles = renderIntegrationTiles('logConsumption');
+    const logIntegrationTiles = renderIntegrationTiles('logIntegrations');
 
     return (
         <div className="h-full flex flex-col md:w-full bg-base-200" id="integrationsPage">
@@ -195,7 +199,7 @@ const IntegrationsPage = ({
                 {isK8sAuditLoggingEnabled && (
                     <IntegrationsSection
                         headerName="Log Consumption"
-                        tiles={logConsumptionTiles}
+                        tiles={logIntegrationTiles}
                         testId="log-integrations"
                     />
                 )}
@@ -241,7 +245,7 @@ IntegrationsPage.propTypes = {
         })
     ).isRequired,
     notifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
-    logConsumptions: PropTypes.arrayOf(PropTypes.object),
+    logIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
     imageIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
     fetchAuthPlugins: PropTypes.func.isRequired,
     fetchAuthProviders: PropTypes.func.isRequired,
@@ -250,16 +254,13 @@ IntegrationsPage.propTypes = {
     fetchClusterInitBundles: PropTypes.func.isRequired,
     fetchNotifiers: PropTypes.func.isRequired,
     fetchImageIntegrations: PropTypes.func.isRequired,
+    fetchLogIntegrations: PropTypes.func.isRequired,
     featureFlags: PropTypes.arrayOf(
         PropTypes.shape({
             envVar: PropTypes.string.isRequired,
             enabled: PropTypes.bool.isRequired,
         })
     ).isRequired,
-};
-
-IntegrationsPage.defaultProps = {
-    logConsumptions: [],
 };
 
 const mapStateToProps = createStructuredSelector({
@@ -269,6 +270,7 @@ const mapStateToProps = createStructuredSelector({
     clusterInitBundles: selectors.getClusterInitBundles,
     notifiers: selectors.getNotifiers,
     imageIntegrations: selectors.getImageIntegrations,
+    logIntegrations: selectors.getLogIntegrations,
     backups: selectors.getBackups,
     featureFlags: selectors.getFeatureFlags,
 });
@@ -281,6 +283,7 @@ const mapDispatchToProps = (dispatch) => ({
     fetchBackups: () => dispatch(integrationActions.fetchBackups.request()),
     fetchNotifiers: () => dispatch(integrationActions.fetchNotifiers.request()),
     fetchImageIntegrations: () => dispatch(integrationActions.fetchImageIntegrations.request()),
+    fetchLogIntegrations: () => dispatch(integrationActions.fetchLogIntegrations.request()),
     fetchRegistries: () => dispatch(integrationActions.fetchRegistries.request()),
     fetchScanners: () => dispatch(integrationActions.fetchScanners.request()),
     fetchAuthPlugins: () => dispatch(integrationActions.fetchAuthPlugins.request()),

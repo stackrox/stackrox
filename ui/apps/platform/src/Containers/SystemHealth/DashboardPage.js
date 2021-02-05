@@ -1,19 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { HashLink } from 'react-router-hash-link';
 import { Message } from '@stackrox/ui-components';
 
 import PageHeader from 'Components/PageHeader';
 import Widget from 'Components/Widget';
 import integrationsList from 'Containers/Integrations/integrationsList';
 import useInterval from 'hooks/useInterval';
-import { clustersPath, integrationsPath } from 'routePaths';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
+import { clustersPath } from 'routePaths';
 import { fetchClustersAsArray } from 'services/ClustersService';
 import {
     fetchBackupIntegrationsHealth,
     fetchImageIntegrationsHealth,
     fetchPluginIntegrationsHealth,
     fetchVulnerabilityDefinitionsInfo,
+    fetchLogIntegrationsHealth,
 } from 'services/IntegrationHealthService';
 import { fetchIntegration } from 'services/IntegrationsService';
 
@@ -21,16 +23,19 @@ import ClusterOverview from './Components/ClusterOverview';
 import CollectorStatus from './Components/CollectorStatus';
 import CredentialExpiration from './Components/CredentialExpiration';
 import GenerateDiagnosticBundleButton from './Components/GenerateDiagnosticBundleButton';
-import IntegrationsHealth from './Components/IntegrationsHealth';
 import SensorStatus from './Components/SensorStatus';
 import SensorUpgrade from './Components/SensorUpgrade';
 import VulnerabilityDefinitions from './Components/VulnerabilityDefinitions';
+import IntegrationHealthWidget from './Components/IntegrationHealthWidget';
 
 import { mergeIntegrationResponses } from './utils/integrations';
 
 const smallButtonClassName = 'btn-sm btn-base flex-shrink-0 no-underline whitespace-nowrap';
 
 const SystemHealthDashboardPage = () => {
+    const isK8sAuditLoggingEnabled = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_K8S_AUDIT_LOG_DETECTION
+    );
     const [pollingCountFaster, setPollingCountFaster] = useState(0);
     const [pollingCountSlower, setPollingCountSlower] = useState(0);
     const [currentDatetime, setCurrentDatetime] = useState(null);
@@ -38,12 +43,14 @@ const SystemHealthDashboardPage = () => {
     const [clusters, setClusters] = useState([]);
     const [backupsMerged, setBackupsMerged] = useState([]);
     const [imageIntegrationsMerged, setImageIntegrationsMerged] = useState([]);
+    const [logIntegrationsMerged, setLogIntegrationsMerged] = useState([]);
     const [notifiersMerged, setNotifiersMerged] = useState([]);
     const [vulnerabilityDefinitionsInfo, setVulnerabilityDefinitionsInfo] = useState(null);
 
     const [clustersRequestHasError, setClustersRequestHasError] = useState(false);
     const [backupsRequestHasError, setBackupsRequestHasError] = useState(false);
     const [imageIntegrationsRequestHasError, setImageIntegrationsRequestHasError] = useState(false);
+    const [logIntegrationsRequestHasError, setLogIntegrationsRequestHasError] = useState(false);
     const [notifiersRequestHasError, setNotifiersRequestHasError] = useState(false);
     const [
         vulnerabilityDefinitionsRequestHasError,
@@ -90,6 +97,21 @@ const SystemHealthDashboardPage = () => {
             .catch(() => {
                 setImageIntegrationsMerged([]);
                 setImageIntegrationsRequestHasError(true);
+            });
+        Promise.all([fetchLogIntegrationsHealth(), fetchIntegration('logIntegrations')])
+            .then(([integrationsHealth, { response }]) => {
+                setLogIntegrationsMerged(
+                    mergeIntegrationResponses(
+                        integrationsHealth,
+                        response.integrations,
+                        integrationsList.logIntegrations
+                    )
+                );
+                setLogIntegrationsRequestHasError(false);
+            })
+            .catch(() => {
+                setLogIntegrationsMerged([]);
+                setLogIntegrationsRequestHasError(true);
             });
         Promise.all([fetchPluginIntegrationsHealth(), fetchIntegration('notifiers')])
             .then(([integrationsHealth, { response }]) => {
@@ -214,72 +236,36 @@ const SystemHealthDashboardPage = () => {
                     </Widget>
                 </div>
                 <div className="grid grid-columns-1 md:grid-columns-3 grid-gap-4 py-2 w-full">
-                    <Widget
-                        header="Image Integrations"
-                        headerComponents={
-                            <HashLink
-                                to={`${integrationsPath}#image-integrations`}
-                                className={smallButtonClassName}
-                            >
-                                View All
-                            </HashLink>
-                        }
+                    <IntegrationHealthWidget
+                        smallButtonClassName={smallButtonClassName}
                         id="image-integrations"
-                    >
-                        {imageIntegrationsRequestHasError ? (
-                            <div className="p-2 w-full">
-                                <Message type="error">
-                                    Request failed for Image Integrations
-                                </Message>
-                            </div>
-                        ) : (
-                            <IntegrationsHealth integrationsMerged={imageIntegrationsMerged} />
-                        )}
-                    </Widget>
-                    <Widget
-                        header="Notifier Integrations"
-                        headerComponents={
-                            <HashLink
-                                to={`${integrationsPath}#notifier-integrations`}
-                                className={smallButtonClassName}
-                            >
-                                View All
-                            </HashLink>
-                        }
+                        integrationText="Image Integrations"
+                        integrationsMerged={imageIntegrationsMerged}
+                        requestHasError={imageIntegrationsRequestHasError}
+                    />
+                    <IntegrationHealthWidget
+                        smallButtonClassName={smallButtonClassName}
                         id="notifier-integrations"
-                    >
-                        {notifiersRequestHasError ? (
-                            <div className="p-2 w-full">
-                                <Message type="error">
-                                    Request failed for Notifier Integrations
-                                </Message>
-                            </div>
-                        ) : (
-                            <IntegrationsHealth integrationsMerged={notifiersMerged} />
-                        )}
-                    </Widget>
-                    <Widget
-                        header="Backup Integrations"
-                        headerComponents={
-                            <HashLink
-                                to={`${integrationsPath}#backup-integrations`}
-                                className={smallButtonClassName}
-                            >
-                                View All
-                            </HashLink>
-                        }
+                        integrationText="Notifier Integrations"
+                        integrationsMerged={notifiersMerged}
+                        requestHasError={notifiersRequestHasError}
+                    />
+                    <IntegrationHealthWidget
+                        smallButtonClassName={smallButtonClassName}
                         id="backup-integrations"
-                    >
-                        {backupsRequestHasError ? (
-                            <div className="p-2 w-full">
-                                <Message type="error">
-                                    Request failed for Backup Integrations
-                                </Message>
-                            </div>
-                        ) : (
-                            <IntegrationsHealth integrationsMerged={backupsMerged} />
-                        )}
-                    </Widget>
+                        integrationText="Backup Integrations"
+                        integrationsMerged={backupsMerged}
+                        requestHasError={backupsRequestHasError}
+                    />
+                    {isK8sAuditLoggingEnabled && (
+                        <IntegrationHealthWidget
+                            smallButtonClassName={smallButtonClassName}
+                            id="log-integrations"
+                            integrationText="Audit Logging Integrations"
+                            integrationsMerged={logIntegrationsMerged}
+                            requestHasError={logIntegrationsRequestHasError}
+                        />
+                    )}
                 </div>
             </div>
         </section>

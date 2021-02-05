@@ -263,17 +263,17 @@ const integrationsList = {
             image: logo,
         },
     ],
-    logConsumption: [
+    logIntegrations: [
         {
             label: 'Amazon EKS Logging',
-            type: 'awsSecurityHub',
-            source: 'logConsumption',
+            type: 'eks',
+            source: 'logIntegrations',
             image: eks,
         },
         {
             label: 'Google GKE Logging',
-            type: 'awsSecurityHub',
-            source: 'logConsumption',
+            type: 'gke',
+            source: 'logIntegrations',
             image: gke,
         },
     ],

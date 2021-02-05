@@ -16,6 +16,11 @@ export const fetchImageIntegrationsHealth = () =>
         .get('/v1/integrationhealth/imageintegrations')
         .then((response) => response?.data?.integrationHealth ?? []);
 
+export const fetchLogIntegrationsHealth = () =>
+    axios
+        .get('/v1/integrationhealth/logintegrations')
+        .then((response) => response?.data?.integrationHealth ?? []);
+
 export const fetchPluginIntegrationsHealth = () =>
     axios
         .get('/v1/integrationhealth/notifiers')
