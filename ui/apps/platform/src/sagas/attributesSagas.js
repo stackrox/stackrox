@@ -7,7 +7,7 @@ import { actions } from 'reducers/attributes';
 function* getUsersAttributes() {
     try {
         const result = yield call(fetchUsersAttributes);
-        yield put(actions.fetchUsersAttributes.success(result.response));
+        yield put(actions.fetchUsersAttributes.success(result?.response || []));
     } catch (error) {
         yield put(actions.fetchUsersAttributes.failure(error));
     }

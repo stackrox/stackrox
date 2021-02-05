@@ -113,6 +113,15 @@ export const policies = {
 
 export const roles = {
     list: '/v1/roles/*',
+    mypermissions: 'v1/mypermissions',
+};
+
+export const groups = {
+    list: '/v1/groups/*',
+};
+
+export const userAttributes = {
+    list: '/v1/userattributes/*',
 };
 
 export const compliance = {

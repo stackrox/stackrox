@@ -11,7 +11,7 @@ import Raven from 'raven-js';
 function* getRuleGroups() {
     try {
         const result = yield call(service.fetchGroups);
-        yield put(actions.fetchGroups.success(result.response));
+        yield put(actions.fetchGroups.success(result?.response || []));
     } catch (error) {
         yield put(actions.fetchGroups.failure(error));
     }

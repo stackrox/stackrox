@@ -11,7 +11,7 @@ import { actions as notificationActions } from 'reducers/notifications';
 function* getRoles() {
     try {
         const result = yield call(service.fetchRoles);
-        yield put(actions.fetchRoles.success(result.response));
+        yield put(actions.fetchRoles.success(result?.response || []));
     } catch (error) {
         // do nothing
     }

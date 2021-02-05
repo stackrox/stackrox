@@ -69,7 +69,7 @@ function* watchNewAuthProviders() {
 export function* getLoginAuthProviders() {
     try {
         const result = yield call(AuthService.fetchLoginAuthProviders);
-        yield put(actions.fetchLoginAuthProviders.success(result.response));
+        yield put(actions.fetchLoginAuthProviders.success(result?.response || []));
     } catch (error) {
         yield put(actions.fetchLoginAuthProviders.failure(error));
     }
@@ -78,7 +78,7 @@ export function* getLoginAuthProviders() {
 export function* getAuthProviders() {
     try {
         const result = yield call(AuthService.fetchAuthProviders);
-        yield put(actions.fetchAuthProviders.success(result.response));
+        yield put(actions.fetchAuthProviders.success(result?.response || []));
     } catch (error) {
         yield put(actions.fetchAuthProviders.failure(error));
     }

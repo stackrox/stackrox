@@ -240,4 +240,26 @@ describe('Access Control Page', () => {
             cy.get(selectors.permissionsMatrix.rowByPermission('AllComments')).should('exist');
         });
     });
+
+    describe('with limited permissions', () => {
+        beforeEach(() => {
+            cy.server();
+
+            cy.fixture('auth/mypermissionsMinimalAccess.json').as('minimalPermissions');
+            cy.log('api.roles.mypermissions', api.roles.mypermissions);
+
+            cy.route('GET', api.roles.mypermissions, '@minimalPermissions').as('getMyPermissions');
+
+            cy.visit(url);
+            cy.wait('@getMyPermissions');
+        });
+
+        it('should show no access instead of auth providers', () => {
+            cy.get(selectors.message).contains(
+                'You do not have permission to view Access Control.'
+            );
+
+            cy.get(selectors.authProviders.addProviderSelect).should('not.exist');
+        });
+    });
 });
