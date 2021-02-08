@@ -43,7 +43,7 @@ const SamlDetails = ({ authProvider: { name, config } }) => {
             <Labeled label="IdP Issuer">{config.idp_issuer}</Labeled>
             <Labeled label="IdP SSO URL">{config.idp_sso_url}</Labeled>
             <Labeled label="Name/ID Format">{config.idp_nameid_format}</Labeled>
-            <Labeled label="IdP Certificate (PEM)">
+            <Labeled label="IdP Certificate(s) (PEM)">
                 <pre className="font-500 whitespace-pre-line">{config.idp_cert_pem}</pre>
             </Labeled>
         </>

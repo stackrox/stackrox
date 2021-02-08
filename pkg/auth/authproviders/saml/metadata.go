@@ -13,6 +13,7 @@ import (
 	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/russellhaering/gosaml2/types"
 	dsig "github.com/russellhaering/goxmldsig"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 func configureIDPFromMetadataURL(ctx context.Context, sp *saml2.SAMLServiceProvider, metadataURL string) error {
@@ -29,17 +30,27 @@ func fetchIDPMetadata(ctx context.Context, url string) (string, *types.IDPSSODes
 	if err != nil {
 		return "", nil, errors.Wrap(err, "could not create HTTP request")
 	}
-	resp, err := http.DefaultClient.Do(request.WithContext(ctx))
+
+	httpClient := http.DefaultClient
+	if stringutils.ConsumeSuffix(&request.URL.Scheme, "+insecure") {
+		httpClient = insecureHTTPClient
+	}
+
+	resp, err := httpClient.Do(request.WithContext(ctx))
 	if err != nil {
 		return "", nil, errors.Wrap(err, "fetching metadata")
 	}
 	defer func() {
 		_ = resp.Body.Close()
 	}()
-	var desc types.EntityDescriptor
-	if err := xml.NewDecoder(resp.Body).Decode(&desc); err != nil {
+	var descriptors entityDescriptors
+	if err := xml.NewDecoder(resp.Body).Decode(&descriptors); err != nil {
 		return "", nil, errors.Wrap(err, "parsing metadata XML")
 	}
+	if len(descriptors) != 1 {
+		return "", nil, errors.Errorf("invalid number of entity descriptors in metadata response: expected exactly one, got %d", len(descriptors))
+	}
+	desc := descriptors[0]
 	if desc.IDPSSODescriptor == nil {
 		return "", nil, errors.New("metadata contains no IdP SSO descriptor")
 	}

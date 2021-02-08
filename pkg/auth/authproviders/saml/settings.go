@@ -1,10 +1,7 @@
 package saml
 
 import (
-	"crypto/x509"
-	"encoding/pem"
-	"fmt"
-
+	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
 	saml2 "github.com/russellhaering/gosaml2"
 	dsig "github.com/russellhaering/goxmldsig"
@@ -15,20 +12,12 @@ func configureIDPFromSettings(sp *saml2.SAMLServiceProvider, idpIssuer, idpLogin
 	sp.IdentityProviderSSOURL = idpLoginURL
 	sp.NameIdFormat = nameIDFormat
 
-	certStore := &dsig.MemoryX509CertificateStore{}
-	certDERBlock, rest := pem.Decode([]byte(idpCertPEM))
-	if certDERBlock == nil || certDERBlock.Type != "CERTIFICATE" {
-		return errors.New("PEM data does not look like a certificate")
-	}
-	if len(rest) != 0 {
-		return fmt.Errorf("%d extra bytes in PEM data", len(rest))
-	}
-	parsedCert, err := x509.ParseCertificate(certDERBlock.Bytes)
+	certs, err := helpers.ParseCertificatesPEM([]byte(idpCertPEM))
 	if err != nil {
-		return errors.Wrap(err, "could not parse certificate")
+		return errors.Wrap(err, "parsing certificate PEM data")
 	}
-	certStore.Roots = append(certStore.Roots, parsedCert)
-	sp.IDPCertificateStore = certStore
+
+	sp.IDPCertificateStore = &dsig.MemoryX509CertificateStore{Roots: certs}
 
 	return nil
 }

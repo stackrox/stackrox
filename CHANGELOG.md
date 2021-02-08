@@ -5,6 +5,12 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+- SAML authentication providers:
+  - When using the "Dynamic configuration" option, the `IdP Metadata URL` can now specify a
+    scheme of `https+insecure://` to instruct StackRox to skip TLS validation when fetching
+    the metadata. It is **strongly** advised to limit the use of this to testing environments.
+  - When using the "Static configuration" option, the `IdP Certificate(s) (PEM)` option now
+    supports specifying multiple PEM-encoded certificates.
 
 ## [55.0]
 - The `/v1/metadata` endpoint redacts version information from unauthenticated users.
