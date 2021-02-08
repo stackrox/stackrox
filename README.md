@@ -230,7 +230,7 @@ If you would like to debug local or even remote deployment, follow the procedure
  5. Configure GoLand for remote debugging (should be done only once):
     1. Open `Run | Edit Configurations …`, click on the `+` icon to add new configuration, choose `Go Remote` template.
     2. Choose `Host:` `localhost` and `Port:` `40000`. Give this configuration some name.
-    3. Select `On disconnect:` `Stop remote Delve process` (this will prevent `dlv` getting stuck after GoLand disconnects).
+    3. Select `On disconnect:` `Leave it running` (this prevents GoLand forgetting breakpoints on reconnect).
  6. Attach GoLand to debugging port: select `Run | Debug…` and choose configuration you've created.  
     If all done right, you should see `Connected` message in the `Debug | Debugger | Variables` window at the lower part
     of the screen.

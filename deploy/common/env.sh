@@ -21,7 +21,7 @@ echo "MONITORING_SUPPORT set to ${MONITORING_SUPPORT}"
 export CLUSTER=${CLUSTER:-remote}
 echo "CLUSTER set to $CLUSTER"
 
-export STORAGE="${STORAGE:-none}"
+export STORAGE="${STORAGE:-pvc}"
 echo "STORAGE set to ${STORAGE}"
 
 export STORAGE_SIZE="${STORAGE_SIZE:-10}"
