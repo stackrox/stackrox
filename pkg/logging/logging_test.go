@@ -7,18 +7,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMappingZapLevelsValidLevels(t *testing.T) {
+	for k := range levelToZapLevel {
+		_, ok := validLevels[k]
+		assert.True(t, ok)
+	}
+}
+
+func TestMappingValidLevelsZapLevels(t *testing.T) {
+	for k := range validLevels {
+		_, ok := levelToZapLevel[k]
+		assert.True(t, ok)
+	}
+}
+
 func TestLevelForLabel(t *testing.T) {
-	for _, label := range []string{"Trace", "trace", "TRACE", "trAcE"} {
+	for _, label := range []string{"warn", "WARN", "WaRn"} {
 		lvl, ok := LevelForLabel(label)
-		assert.Equal(t, TraceLevel, lvl)
+		assert.Equal(t, WarnLevel, lvl)
 		assert.True(t, ok)
 	}
-	for _, label := range []string{"initretry", "INITRETRY", "InitRetry", "iNiTrEtRy"} {
-		lvl, ok := LevelForLabel(label)
-		assert.Equal(t, InitRetryLevel, lvl)
-		assert.True(t, ok)
-	}
-	for _, label := range []string{"foo", "bar", "something", "else", "WTF", "@$%@$&Y)(RW(*U(@Y$"} {
+	for _, label := range []string{"foo", "bar", "Trace", "something", "else", "WTF", "@$%@$&Y)(RW(*U(@Y$"} {
 		_, ok := LevelForLabel(label)
 		assert.False(t, ok)
 	}

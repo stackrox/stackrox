@@ -35,20 +35,19 @@ func TestForEachModuleVisitsIndividualModules(t *testing.T) {
 }
 
 func TestParseDefaultModuleLevels_Success(t *testing.T) {
-	levels, errs := parseDefaultModuleLevels("foo=Info,, bar =debug, qux = Trace,")
+	levels, errs := parseDefaultModuleLevels("foo=Info,, bar =debug,")
 	assert.Equal(t, levels, map[string]int32{
 		"foo": InfoLevel,
 		"bar": DebugLevel,
-		"qux": TraceLevel,
 	})
 	assert.Empty(t, errs)
 }
 
 func TestParseDefaultModuleLevels_Errs(t *testing.T) {
-	levels, errs := parseDefaultModuleLevels("foo=Info, baz , bar =random, qux=Trace,")
+	levels, errs := parseDefaultModuleLevels("foo=Info, baz , bar =random, qux=debug,")
 	assert.Equal(t, levels, map[string]int32{
 		"foo": InfoLevel,
-		"qux": TraceLevel,
+		"qux": DebugLevel,
 	})
 	assert.Len(t, errs, 2)
 }

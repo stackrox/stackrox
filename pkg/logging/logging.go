@@ -53,11 +53,6 @@ const (
 	InfoLevel int32 = 30
 	//DebugLevel log level
 	DebugLevel int32 = 20
-	//InitRetryLevel shows failures within loops
-	InitRetryLevel int32 = 15
-	//TraceLevel log level
-	TraceLevel int32 = 10
-
 	// defaultDestination is the default logging destination, which is currently os.Stderr
 	defaultDestination = "stderr"
 
@@ -125,15 +120,13 @@ var (
 
 	//validLevels is a map of all valid level severities to their name
 	validLevels = map[int32]string{
-		PanicLevel:     "Panic",
-		FatalLevel:     "Fatal",
-		ErrorLevel:     "Error",
-		WarnLevel:      "Warn",
-		InternalLevel:  "Internal",
-		InfoLevel:      "Info",
-		DebugLevel:     "Debug",
-		InitRetryLevel: "InitRetry",
-		TraceLevel:     "Trace",
+		PanicLevel:    "Panic",
+		FatalLevel:    "Fatal",
+		ErrorLevel:    "Error",
+		WarnLevel:     "Warn",
+		InternalLevel: "Internal",
+		InfoLevel:     "Info",
+		DebugLevel:    "Debug",
 	}
 
 	levelToZapLevel = map[int32]zapcore.Level{
