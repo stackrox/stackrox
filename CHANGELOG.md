@@ -11,6 +11,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     the metadata. It is **strongly** advised to limit the use of this to testing environments.
   - When using the "Static configuration" option, the `IdP Certificate(s) (PEM)` option now
     supports specifying multiple PEM-encoded certificates.
+- When creating a new Role, Namespace and Node have been added to the default minimal access specification.
 
 ## [55.0]
 - The `/v1/metadata` endpoint redacts version information from unauthenticated users.

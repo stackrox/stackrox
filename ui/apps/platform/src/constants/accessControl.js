@@ -52,8 +52,10 @@ export const defaultMinimalReadAccessResources = [
     'Config',
     'Deployment',
     'Image',
+    'Namespace',
     'NetworkPolicy',
     'NetworkGraph',
+    'Node',
     'Policy',
     'Secret',
 ];
