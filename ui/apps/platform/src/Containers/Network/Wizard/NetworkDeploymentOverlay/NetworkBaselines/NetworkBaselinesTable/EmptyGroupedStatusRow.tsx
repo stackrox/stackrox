@@ -1,22 +1,20 @@
 import React, { ReactElement } from 'react';
 
-import { networkFlowStatus } from 'constants/networkGraph';
 import { BaselineStatus } from 'Containers/Network/networkTypes';
 import { networkFlowStatusLabels } from 'messages/network';
+import { getEmptyFlowRowColors } from '../networkBaseline.utils';
 
 export type EmptyGroupedStatusRowProps = {
-    type: BaselineStatus;
+    baselineStatus: BaselineStatus;
     columnCount: number;
 };
-
 function EmptyGroupedStatusRow({
-    type,
+    baselineStatus,
     columnCount = 0,
 }: EmptyGroupedStatusRowProps): ReactElement {
-    const bgColor = type === networkFlowStatus.ANOMALOUS ? 'bg-alert-200' : '';
-    const borderColor = type === networkFlowStatus.ANOMALOUS ? 'border-alert-300' : '';
-    const textColor = type === networkFlowStatus.ANOMALOUS ? 'text-alert-800' : '';
-    const flowTypeText = networkFlowStatusLabels[type]?.toLowerCase();
+    const { bgColor, borderColor, textColor } = getEmptyFlowRowColors(baselineStatus);
+
+    const flowTypeText = networkFlowStatusLabels[baselineStatus]?.toLowerCase();
 
     return (
         <tr className={`relative border-b ${borderColor} ${bgColor} ${textColor}`}>

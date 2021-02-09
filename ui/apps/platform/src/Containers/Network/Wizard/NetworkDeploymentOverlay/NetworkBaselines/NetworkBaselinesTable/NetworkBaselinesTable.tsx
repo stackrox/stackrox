@@ -24,6 +24,14 @@ import EmptyGroupedStatusRow from './EmptyGroupedStatusRow';
 import checkboxSelectionPlugin from './checkboxSelectionPlugin';
 import expanderPlugin from './expanderPlugin';
 import { Row } from './tableTypes';
+import { getFlowRowColors, TableColorStyles } from '../networkBaseline.utils';
+
+export type NetworkBaselinesTableProps = {
+    networkBaselines: FlattenedNetworkBaseline[];
+    toggleBaselineStatuses: (networkBaselines: FlattenedNetworkBaseline[]) => void;
+    onNavigateToEntity: () => void;
+    showAnomalousFlows?: boolean;
+};
 
 function getEmptyGroupRow(status: BaselineStatus): Row {
     return {
@@ -53,13 +61,6 @@ function getEmptyGroupRow(status: BaselineStatus): Row {
         leafRows: [],
     };
 }
-
-export type NetworkBaselinesTableProps = {
-    networkBaselines: FlattenedNetworkBaseline[];
-    toggleBaselineStatuses: (networkBaselines: FlattenedNetworkBaseline[]) => void;
-    onNavigateToEntity: () => void;
-    showAnomalousFlows?: boolean;
-};
 
 function getAggregateText(leafValues: string[], multiplePhrase = 'Many'): string {
     const uniqValues = uniq(leafValues);
@@ -201,13 +202,15 @@ function NetworkBaselinesTable({
 
                         const { key } = row.getRowProps();
 
-                        // If the row is the grouped row or a sub row grouped by the ANOMALOUS status,
-                        // we want a colored background
-                        const colorType =
-                            (row.isGrouped && row.groupByVal === networkFlowStatus.ANOMALOUS) ||
-                            row.values.status === networkFlowStatus.ANOMALOUS
-                                ? 'alert'
-                                : null;
+                        // If the row is the grouped row, use the value of the group to determine it's color;
+                        // otherwise, use its individual row status
+                        const rowStatus =
+                            row.isGrouped &&
+                            (row.groupByVal === networkFlowStatus.ANOMALOUS ||
+                                row.groupByVal === networkFlowStatus.BLOCKED)
+                                ? row.groupByVal
+                                : row.values.status;
+                        const rowColorStyles: TableColorStyles = getFlowRowColors(rowStatus);
 
                         const GroupedRowComponent =
                             row.groupByID === 'status' ? (
@@ -259,20 +262,23 @@ function NetworkBaselinesTable({
                                 <TableRow
                                     key={key}
                                     row={row}
-                                    colorType={colorType}
+                                    colorStyles={rowColorStyles}
                                     HoveredRowComponent={HoveredRowComponent}
                                     HoveredGroupedRowComponent={HoveredGroupedRowComponent}
                                     GroupedRowComponent={GroupedRowComponent}
                                 >
                                     {row.isGrouped && row.groupByID === 'status' ? (
-                                        <GroupedStatusTableCell row={row} />
+                                        <GroupedStatusTableCell
+                                            colorStyles={rowColorStyles}
+                                            row={row}
+                                        />
                                     ) : (
                                         row.cells.map((cell) => {
                                             return (
                                                 <TableCell
                                                     key={cell.column.Header}
                                                     cell={cell}
-                                                    colorType={colorType}
+                                                    colorStyles={rowColorStyles}
                                                 />
                                             );
                                         })
@@ -283,7 +289,7 @@ function NetworkBaselinesTable({
                                     !row.subRows.length &&
                                     !row.leafRows.length && (
                                         <EmptyGroupedStatusRow
-                                            type={row.groupByVal}
+                                            baselineStatus={row.groupByVal}
                                             columnCount={columns.length}
                                         />
                                     )}

@@ -1,12 +1,13 @@
 import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
 
-import { networkFlowStatus } from 'constants/networkGraph';
+import { BaselineStatus } from 'Containers/Network/networkTypes';
 import { networkFlowStatusLabels } from 'messages/network';
 import { Cell } from './tableTypes';
 import { isExpanderCell } from './expanderPlugin';
 
 import TableCell from './TableCell';
+import { TableColorStyles } from '../networkBaseline.utils';
 
 export type GroupedStatusTableCellProps = {
     row: {
@@ -14,28 +15,24 @@ export type GroupedStatusTableCellProps = {
         leafRows: {
             length: number;
         };
-        groupByVal: 'ANOMALOUS' | 'BASELINE';
+        groupByVal: BaselineStatus;
     };
+    colorStyles: TableColorStyles;
 };
 
-function GroupedStatusTableCell({ row }: GroupedStatusTableCellProps): ReactElement {
+function GroupedStatusTableCell({ row, colorStyles }: GroupedStatusTableCellProps): ReactElement {
     const { cells, leafRows, groupByVal } = row;
-    const isAnomalous = row.groupByVal === networkFlowStatus.ANOMALOUS;
-    const colorType = isAnomalous ? 'alert' : null;
+    const { bgColor, borderColor, textColor } = colorStyles;
 
     const flowText = pluralize('Flow', leafRows.length);
     const text = `${leafRows.length} ${networkFlowStatusLabels[groupByVal]} ${flowText}`;
-    const className = `sticky z-1 top-8 text-left p-2 italic ${
-        isAnomalous
-            ? 'bg-alert-200 border-b border-t border-alert-300'
-            : 'bg-base-100 border-b border-t border-base-300'
-    }`;
+    const className = `sticky z-1 top-8 text-left p-2 italic border-b border-t ${bgColor} ${borderColor} ${textColor}`;
     const [expanderCell] = cells.filter(isExpanderCell);
     const colSpan = cells.length - (expanderCell ? 1 : 0);
 
     return (
         <>
-            {expanderCell && <TableCell cell={expanderCell} colorType={colorType} isSticky />}
+            {expanderCell && <TableCell cell={expanderCell} colorStyles={colorStyles} isSticky />}
             <td colSpan={colSpan} className={className}>
                 {text}
             </td>

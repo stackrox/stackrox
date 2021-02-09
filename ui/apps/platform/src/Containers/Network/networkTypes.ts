@@ -4,7 +4,7 @@ type Protocol = 'L4_PROTOCOL_TCP' | 'L4_PROTOCOL_UDP' | 'L4_PROTOCOL_ANY';
 
 type ConnectionState = 'active' | 'allowed';
 
-export type BaselineStatus = 'BASELINE' | 'ANOMALOUS';
+export type BaselineStatus = 'BASELINE' | 'ANOMALOUS' | 'BLOCKED';
 
 type Traffic = 'bidirectional' | 'ingress' | 'egress';
 

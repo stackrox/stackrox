@@ -72,4 +72,5 @@ export const nodeTypes = {
 export const networkFlowStatus = {
     ANOMALOUS: 'ANOMALOUS',
     BASELINE: 'BASELINE',
+    BLOCKED: 'BLOCKED',
 };

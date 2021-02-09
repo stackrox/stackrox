@@ -1,8 +1,6 @@
 import React, { ReactElement, ReactNode, useState } from 'react';
 
-const tableRowClassName = 'relative border-b';
-const baseTableRowClassName = `${tableRowClassName} border-base-300 bg-base-100`;
-const alertTableRowClassName = `${tableRowClassName} border-alert-300 bg-alert-200 text-alert-800`;
+import { TableColorStyles } from '../networkBaseline.utils';
 
 function onFocus(): number {
     return 0;
@@ -24,7 +22,7 @@ function TableRowOverlay({ isLayeredFirst = false, children }: TableRowOverlayPr
 }
 
 export type TableRowProps = {
-    colorType: 'alert' | null;
+    colorStyles: TableColorStyles;
     row: {
         isGrouped: boolean;
     };
@@ -35,7 +33,7 @@ export type TableRowProps = {
 };
 
 function TableRow({
-    colorType,
+    colorStyles,
     row,
     children,
     HoveredRowComponent = null,
@@ -44,7 +42,9 @@ function TableRow({
 }: TableRowProps): ReactElement {
     const [isHovered, setIsHovered] = useState(false);
 
-    const className = colorType === 'alert' ? alertTableRowClassName : baseTableRowClassName;
+    const { bgColor, borderColor, textColor } = colorStyles;
+
+    const tableRowClassName = `relative border-b ${bgColor} ${borderColor} ${textColor}`;
     const showGroupedRowComponent = row.isGrouped;
     const showHoveredRowComponent = !showGroupedRowComponent && isHovered;
     const showHoveredGroupedRowComponent = showGroupedRowComponent && isHovered;
@@ -72,7 +72,7 @@ function TableRow({
 
     return (
         <tr
-            className={className}
+            className={tableRowClassName}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             onFocus={onFocus}

@@ -27,4 +27,5 @@ export const networkConnectionLabels = {
 export const networkFlowStatusLabels = {
     [networkFlowStatus.ANOMALOUS]: 'Anomalous',
     [networkFlowStatus.BASELINE]: 'Baseline',
+    [networkFlowStatus.BLOCKED]: 'Blocked',
 };
