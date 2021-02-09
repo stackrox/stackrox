@@ -96,7 +96,7 @@ func (m *manager) maybeAddPeer(deploymentID string, p *networkbaseline.Peer, mod
 	modifiedDeploymentIDs.Add(deploymentID)
 }
 
-func (m *manager) persistNetworkBaselines(deploymentIDs set.StringSet) error {
+func (m *manager) persistNetworkBaselines(deploymentIDs set.StringSet, baselinesUnlocked set.StringSet) error {
 	if len(deploymentIDs) == 0 {
 		return nil
 	}
@@ -127,16 +127,19 @@ func (m *manager) persistNetworkBaselines(deploymentIDs set.StringSet) error {
 		return errors.Wrap(err, "upserting network baselines in manager")
 	}
 	if features.NetworkDetectionBaselineViolation.Enabled() {
-		m.sendNetworkBaselinesToSensor(baselines)
+		m.sendNetworkBaselinesToSensor(baselines, baselinesUnlocked)
 	}
 	return nil
 }
 
-func (m *manager) sendNetworkBaselinesToSensor(baselines []*storage.NetworkBaseline) {
+func (m *manager) sendNetworkBaselinesToSensor(baselines []*storage.NetworkBaseline, baselinesUnlocked set.StringSet) {
 	// First map baselines by clusters
 	clusterIDToBaselines := make(map[string][]*storage.NetworkBaseline, len(baselines))
 	for _, b := range baselines {
-		clusterIDToBaselines[b.GetClusterId()] = append(clusterIDToBaselines[b.GetClusterId()], b)
+		// Don't sync baselines if they were in the unlocked state before persist.
+		if b.GetLocked() || baselinesUnlocked.Contains(b.GetDeploymentId()) {
+			clusterIDToBaselines[b.GetClusterId()] = append(clusterIDToBaselines[b.GetClusterId()], b)
+		}
 	}
 	for clusterID, clusterBaselines := range clusterIDToBaselines {
 		err := m.connectionManager.SendMessage(clusterID, &central.MsgToSensor{
@@ -221,7 +224,7 @@ func (m *manager) processFlowUpdate(flows map[networkgraph.NetworkConnIndicator]
 			}
 		}
 	}
-	return m.persistNetworkBaselines(modifiedDeploymentIDs)
+	return m.persistNetworkBaselines(modifiedDeploymentIDs, nil)
 }
 
 func (m *manager) processDeploymentCreate(deploymentID, deploymentName, clusterID, namespace string) error {
@@ -238,7 +241,7 @@ func (m *manager) processDeploymentCreate(deploymentID, deploymentName, clusterI
 		BaselinePeers:        make(map[networkbaseline.Peer]struct{}),
 		ForbiddenPeers:       make(map[networkbaseline.Peer]struct{}),
 	}
-	return m.persistNetworkBaselines(set.NewStringSet(deploymentID))
+	return m.persistNetworkBaselines(set.NewStringSet(deploymentID), nil)
 }
 
 func (m *manager) ProcessDeploymentCreate(deploymentID, deploymentName, clusterID, namespace string) error {
@@ -280,7 +283,7 @@ func (m *manager) processDeploymentDelete(deploymentID string) error {
 	}
 
 	// Delete the records from other baselines first, then delete the wanted baseline after
-	err := m.persistNetworkBaselines(modifiedDeployments)
+	err := m.persistNetworkBaselines(modifiedDeployments, nil)
 	if err != nil {
 		return errors.Wrapf(err, "deleting baseline of deployment %q", deletingBaseline.DeploymentName)
 	}
@@ -404,7 +407,7 @@ func (m *manager) ProcessBaselineStatusUpdate(ctx context.Context, modifyRequest
 			return utils.Should(errors.Errorf("unknown status: %v", peerAndStatus.GetStatus()))
 		}
 	}
-	if err := m.persistNetworkBaselines(modifiedDeploymentIDs); err != nil {
+	if err := m.persistNetworkBaselines(modifiedDeploymentIDs, nil); err != nil {
 		return status.Errorf(codes.Internal, "failed to persist baseline to store: %v", err)
 	}
 	return nil
@@ -441,7 +444,7 @@ func (m *manager) processNetworkPolicyUpdate(
 		modifiedDeploymentIDs.Add(deploymentID)
 	}
 
-	err = m.persistNetworkBaselines(modifiedDeploymentIDs)
+	err = m.persistNetworkBaselines(modifiedDeploymentIDs, nil)
 	if err != nil {
 		return err
 	}
@@ -523,9 +526,14 @@ func (m *manager) processBaselineLockUpdate(ctx context.Context, deploymentID st
 		// Already in the state which user specifies
 		return nil
 	}
+	var baselinesUnlocked set.StringSet
+	if baseline.UserLocked && !lockBaseline {
+		// Baseline is currently locked but we are unlocking it. Need to sync to sensor
+		baselinesUnlocked = set.NewStringSet(deploymentID)
+	}
 
 	baseline.UserLocked = lockBaseline
-	return m.persistNetworkBaselines(set.NewStringSet(deploymentID))
+	return m.persistNetworkBaselines(set.NewStringSet(deploymentID), baselinesUnlocked)
 }
 
 func (m *manager) ProcessBaselineLockUpdate(ctx context.Context, deploymentID string, lockBaseline bool) error {
@@ -565,7 +573,7 @@ func (m *manager) processPostClusterDelete(clusterID string) error {
 	}
 
 	// Update the edges of other baselines first
-	err := m.persistNetworkBaselines(modifiedBaselines)
+	err := m.persistNetworkBaselines(modifiedBaselines, nil)
 	if err != nil {
 		return err
 	}

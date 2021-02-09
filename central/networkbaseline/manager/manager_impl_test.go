@@ -17,12 +17,14 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
 )
@@ -80,6 +82,7 @@ func TestManager(t *testing.T) {
 type ManagerTestSuite struct {
 	suite.Suite
 
+	envIsolator       *envisolator.EnvIsolator
 	ds                *fakeDS
 	networkEntities   *networkEntityDSMock.MockEntityDataStore
 	deploymentDS      *deploymentMocks.MockDataStore
@@ -92,6 +95,8 @@ type ManagerTestSuite struct {
 }
 
 func (suite *ManagerTestSuite) SetupTest() {
+	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
+	suite.envIsolator.Setenv("ROX_NETWORK_DETECTION_BASELINE_VIOLATION", "true")
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.networkEntities = networkEntityDSMock.NewMockEntityDataStore(suite.mockCtrl)
 	suite.currTestStart = timestamp.Now()
@@ -668,7 +673,13 @@ func (suite *ManagerTestSuite) TestLockBaseline() {
 		baselineWithPeers(1, depPeer(2, properties(false, 52))),
 		baselineWithPeers(2, depPeer(1, properties(true, 52))),
 	)
-	beforeLockUpdateState := suite.mustGetBaseline(1).GetLocked()
+	baseline1 := suite.mustGetBaseline(1)
+	beforeLockUpdateState := baseline1.GetLocked()
+	baseline1Copy := baseline1.Clone()
+	baseline1Copy.Locked = !beforeLockUpdateState
+	if features.NetworkDetectionBaselineViolation.Enabled() {
+		expectOneTimeCallToConnectionManagerWithBaseline(suite, baseline1Copy)
+	}
 	suite.Nil(suite.m.ProcessBaselineLockUpdate(managerCtx, depID(1), !beforeLockUpdateState))
 	afterLockUpdateState := suite.mustGetBaseline(1).GetLocked()
 	suite.NotEqual(beforeLockUpdateState, afterLockUpdateState)
@@ -727,7 +738,64 @@ func (suite *ManagerTestSuite) TestProcessPostClusterDelete() {
 	)
 }
 
+func (suite *ManagerTestSuite) TestBaselineSyncMsg() {
+	if !features.NetworkDetectionBaselineViolation.Enabled() {
+		return
+	}
+	suite.networkPolicyDS.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	suite.mustInitManager(
+		baselineWithPeers(1, depPeer(2, properties(false, 52))),
+		baselineWithPeers(2, depPeer(1, properties(true, 52))),
+	)
+	suite.assertBaselinesAre(
+		baselineWithPeers(1, depPeer(2, properties(false, 52))),
+		baselineWithPeers(2, depPeer(1, properties(true, 52))),
+	)
+	// Lock state unchanged (unlocked). Does not expect a call to connection manager
+	suite.Nil(suite.m.ProcessBaselineLockUpdate(managerCtx, depID(1), false))
+
+	baseline1 := suite.mustGetBaseline(1)
+	baseline1Copy := baseline1.Clone()
+	baseline1Copy.Locked = true
+	// Lock state changed from unlocked to locked, we should sync this baseline to sensor now
+	expectOneTimeCallToConnectionManagerWithBaseline(suite, baseline1Copy)
+	suite.Nil(suite.m.ProcessBaselineLockUpdate(managerCtx, depID(1), true))
+	afterLockUpdateState := suite.mustGetBaseline(1).GetLocked()
+	suite.True(afterLockUpdateState)
+
+	// If it stays as locked, and some updates are made to the baseline, then we should also sync to sensor
+	modifiedBaseline := baselineWithPeers(1)
+	modifiedBaseline.Locked = baseline1Copy.GetLocked()
+	modifiedBaseline.ObservationPeriodEnd = baseline1.ObservationPeriodEnd
+	expectOneTimeCallToConnectionManagerWithBaseline(suite, modifiedBaseline)
+	suite.Nil(suite.m.ProcessDeploymentDelete(depID(2)))
+
+	// If baseline changed from locked to unlocked, we should also sync to sensor
+	modifiedBaseline.Locked = false
+	expectOneTimeCallToConnectionManagerWithBaseline(suite, modifiedBaseline)
+	suite.Nil(suite.m.ProcessBaselineLockUpdate(managerCtx, depID(1), false))
+	// And locked state should be updated
+	afterLockUpdateState = suite.mustGetBaseline(1).GetLocked()
+	suite.False(afterLockUpdateState)
+}
+
 ///// Helper functions to make test code less verbose.
+
+func expectOneTimeCallToConnectionManagerWithBaseline(suite *ManagerTestSuite, baseline *storage.NetworkBaseline) {
+	suite.
+		connectionManager.
+		EXPECT().
+		SendMessage(
+			baseline.GetClusterId(),
+			&central.MsgToSensor{
+				Msg: &central.MsgToSensor_NetworkBaselineSync{
+					NetworkBaselineSync: &central.NetworkBaselineSync{
+						NetworkBaselines: []*storage.NetworkBaseline{baseline},
+					},
+				},
+			}).
+		Return(nil)
+}
 
 func ctxWithAccessToWrite(id int) context.Context {
 	return sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
