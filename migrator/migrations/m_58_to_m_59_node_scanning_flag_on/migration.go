@@ -1,4 +1,4 @@
-package m55tom56
+package m58tom59
 
 import (
 	"fmt"
@@ -22,13 +22,12 @@ var (
 	writeOpts = gorocksdb.NewDefaultWriteOptions()
 
 	migration = types.Migration{
-		StartingSeqNum: 55,
-		VersionAfter:   storage.Version{SeqNum: 56},
+		StartingSeqNum: 58,
+		VersionAfter:   storage.Version{SeqNum: 59},
 		Run: func(databases *types.Databases) error {
 			if !features.HostScanning.Enabled() {
 				return nil
 			}
-
 			if err := migrateNodes(databases.BoltDB, databases.RocksDB); err != nil {
 				return err
 			}

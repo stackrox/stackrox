@@ -41,7 +41,8 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_52_to_m_53_aws_endpoints"
 	_ "github.com/stackrox/rox/migrator/migrations/m_53_to_m_54_enable_exec_webhook"
 	_ "github.com/stackrox/rox/migrator/migrations/m_54_to_m_55_deprecate_policy_whitelist"
-	_ "github.com/stackrox/rox/migrator/migrations/m_55_to_m_56_node_scanning"
+	_ "github.com/stackrox/rox/migrator/migrations/m_55_to_m_56_node_scanning_empty"
 	_ "github.com/stackrox/rox/migrator/migrations/m_56_to_m_57_compliance_policy_categories"
 	_ "github.com/stackrox/rox/migrator/migrations/m_57_to_m_58_update_run_secrets_volume_policy_regex"
+	_ "github.com/stackrox/rox/migrator/migrations/m_58_to_m_59_node_scanning_flag_on"
 )
