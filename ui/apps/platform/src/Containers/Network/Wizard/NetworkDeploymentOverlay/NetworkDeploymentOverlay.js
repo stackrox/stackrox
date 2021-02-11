@@ -11,7 +11,9 @@ import useNavigateToEntity from 'hooks/useNavigateToEntity';
 import Tab from 'Components/Tab';
 import NetworkEntityTabbedOverlay from 'Components/NetworkEntityTabbedOverlay';
 import BinderTabs from 'Components/BinderTabs';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import NetworkFlows from './NetworkFlows';
+import BlockedFlows from './BlockedFlows';
 import BaselineSettings from './BaselineSettings';
 import DeploymentDetails from './DeploymentDetails';
 import NetworkPoliciesDetail from './NetworkPoliciesDetail';
@@ -27,6 +29,7 @@ function getDeploymentEdges(deployment) {
 }
 
 function NetworkDeploymentOverlay({ selectedDeployment, filterState, lastUpdatedTimestamp }) {
+    const showBlockedFlows = useFeatureFlagEnabled('ROX_NETWORK_DETECTION_BLOCKED_FLOWS');
     const onNavigateToEntity = useNavigateToEntity();
     const { deploymentId } = useParams();
 
@@ -48,11 +51,22 @@ function NetworkDeploymentOverlay({ selectedDeployment, filterState, lastUpdated
                             lastUpdatedTimestamp={lastUpdatedTimestamp}
                         />
                     </Tab>
+                    {showBlockedFlows && (
+                        <Tab title="Blocked Flows">
+                            <BlockedFlows
+                                selectedDeployment={selectedDeployment}
+                                deploymentId={deploymentId}
+                                filterState={filterState}
+                                onNavigateToEntity={onNavigateToEntity}
+                            />
+                        </Tab>
+                    )}
                     <Tab title="Baseline Settings">
                         <BaselineSettings
                             selectedDeployment={selectedDeployment}
                             deploymentId={deploymentId}
                             filterState={filterState}
+                            onNavigateToEntity={onNavigateToEntity}
                         />
                     </Tab>
                 </BinderTabs>

@@ -43,6 +43,8 @@ export type FlattenedNetworkBaseline = {
     status: BaselineStatus;
 };
 
+export type FlattenedBlockedFlows = FlattenedNetworkBaseline;
+
 export type NetworkBaseline = {
     peer: Peer;
     status: BaselineStatus;
