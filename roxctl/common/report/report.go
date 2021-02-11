@@ -87,8 +87,8 @@ func Pretty(output io.Writer, alerts []*storage.Alert, enforcementStage storage.
 	return PrettyWithResourceName(output, alerts, enforcementStage, resourceType, "")
 }
 
-// EnforcementFailedBuild returns true if the given policy has an enforcement
-// action that fails the CI build. Intended to be uses as a test template
+// EnforcementFailedBuild returns a function which returns true if the given policy has an enforcement
+// action that fails the CI build. Intended to be used as a test template
 // function.
 func EnforcementFailedBuild(enforcementAction storage.EnforcementAction) func(policy *storage.Policy) bool {
 	return func(policy *storage.Policy) bool {

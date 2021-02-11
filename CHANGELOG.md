@@ -13,6 +13,12 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     supports specifying multiple PEM-encoded certificates.
 - When creating a new Role, Namespace and Node have been added to the default minimal access specification.
 
+- `roxctl image check` now has a `--json-fail-on-policy-violations` flag. Its current default value
+   is `false` which preserves the legacy behavior of `--json` flag: the command does *not*
+   exit with an error code, even if policy violations are present.
+
+   This default value of `false` is also now deprecated and will change in three releases.
+
 ## [55.0]
 - The `/v1/metadata` endpoint redacts version information from unauthenticated users.
 - API changes/deprecations:

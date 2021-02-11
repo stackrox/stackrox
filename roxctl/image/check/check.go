@@ -21,35 +21,54 @@ import (
 
 // Command checks the image against image build lifecycle policies
 func Command() *cobra.Command {
+	const (
+		jsonFlagName     = "json"
+		jsonFailFlagName = "json-fail-on-policy-violations"
+	)
 	var (
-		image             string
-		json              bool
-		retryDelay        int
-		retryCount        int
-		sendNotifications bool
+		image                  string
+		json                   bool
+		failViolationsWithJSON bool
+		retryDelay             int
+		retryCount             int
+		sendNotifications      bool
 	)
 	c := &cobra.Command{
 		Use: "check",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			return checkImageWithRetry(image, json, sendNotifications, flags.Timeout(c), retryDelay, retryCount)
+			return checkImageWithRetry(image, json, failViolationsWithJSON, sendNotifications, flags.Timeout(c), retryDelay, retryCount)
 		}),
+		PreRun: func(c *cobra.Command, args []string) {
+			jsonFlag := c.Flag(jsonFlagName)
+			jsonFailFlag := c.Flag(jsonFailFlagName)
+			if jsonFlag.Changed && !jsonFailFlag.Changed {
+				fmt.Fprintf(os.Stderr, "Warning: the default value for --%s will change in a future release, you might want to specify it explicitly now.\n", jsonFailFlag.Name)
+			} else if !jsonFlag.Changed && jsonFailFlag.Changed {
+				fmt.Fprintf(os.Stderr, "Note: --%s has no effect when --%s is not specified.\n", jsonFailFlag.Name, jsonFlag.Name)
+			}
+		},
 	}
 
 	c.Flags().StringVarP(&image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
 	pkgUtils.Must(c.MarkFlagRequired("image"))
 
-	c.Flags().BoolVar(&json, "json", false, "output policy results as json.")
-	c.Flags().IntVarP(&retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
-	c.Flags().IntVarP(&retryCount, "retries", "r", 0, "Number of retries before exiting as error")
+	c.Flags().BoolVar(&json, jsonFlagName, false, "Output policy results as JSON")
+	// TODO(ROX-6573): when changing the default in a future release, also remove the warning in PreRun.
+	c.Flags().BoolVar(&failViolationsWithJSON, jsonFailFlagName, false,
+		"Whether policy violations should cause the command to exit non-zero in JSON output mode too. "+
+			"This flag only has effect when --json is also specified. "+
+			"The default for this flag will change in a future release")
+	c.Flags().IntVarP(&retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds.")
+	c.Flags().IntVarP(&retryCount, "retries", "r", 0, "number of retries before exiting as error.")
 	c.Flags().BoolVar(&sendNotifications, "send-notifications", false,
 		"whether to send notifications for violations (notifications will be sent to the notifiers "+
-			"configured in each violated policy)")
+			"configured in each violated policy).")
 	return c
 }
 
-func checkImageWithRetry(image string, json bool, sendNotifications bool, timeout time.Duration, retryDelay int, retryCount int) error {
+func checkImageWithRetry(image string, json bool, failViolationsWithJSON bool, sendNotifications bool, timeout time.Duration, retryDelay int, retryCount int) error {
 	err := retry.WithRetry(func() error {
-		return checkImage(image, json, sendNotifications, timeout)
+		return checkImage(image, json, failViolationsWithJSON, sendNotifications, timeout)
 	},
 		retry.Tries(retryCount+1),
 		retry.OnFailedAttempts(func(err error) {
@@ -62,7 +81,7 @@ func checkImageWithRetry(image string, json bool, sendNotifications bool, timeou
 	return nil
 }
 
-func checkImage(image string, json bool, sendNotifications bool, timeout time.Duration) error {
+func checkImage(image string, json bool, failViolationsWithJSON bool, sendNotifications bool, timeout time.Duration) error {
 	// Get the violated policies for the input data.
 	req, err := buildRequest(image, sendNotifications)
 	if err != nil {
@@ -73,16 +92,32 @@ func checkImage(image string, json bool, sendNotifications bool, timeout time.Du
 		return err
 	}
 
-	// If json mode was given, print results (as json) and immediately return.
+	return reportCheckResults(image, json, failViolationsWithJSON, alerts)
+}
+
+func reportCheckResults(image string, json bool, failViolationsWithJSON bool, alerts []*storage.Alert) error {
+	// If json mode was given, print results (as json) and either immediately return or check policy,
+	// depending on a flag.
 	if json {
-		return report.JSON(os.Stdout, alerts)
+		err := report.JSON(os.Stdout, alerts)
+		if err != nil {
+			return err
+		}
+		if failViolationsWithJSON {
+			return checkPolicyFailures(alerts)
+		}
+		return nil
 	}
 
 	// Print results in human readable mode.
-	if err = report.PrettyWithResourceName(os.Stdout, alerts, storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT, "Image", image); err != nil {
+	if err := report.PrettyWithResourceName(os.Stdout, alerts, storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT, "Image", image); err != nil {
 		return err
 	}
 
+	return checkPolicyFailures(alerts)
+}
+
+func checkPolicyFailures(alerts []*storage.Alert) error {
 	// Check if any of the violated policies have an enforcement action that
 	// fails the CI build.
 	for _, alert := range alerts {
