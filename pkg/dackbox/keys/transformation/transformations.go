@@ -16,16 +16,24 @@ import (
 type OneToOne func(ctx context.Context, keys []byte) []byte
 
 // Then chains the input OneToOne function, outputting a new OneToOne function that combines the two.
-func (otm OneToOne) Then(fn OneToOne) OneToOne {
+func (oto OneToOne) Then(fn OneToOne) OneToOne {
 	return func(ctx context.Context, key []byte) []byte {
-		return fn(ctx, otm(ctx, key))
+		return fn(ctx, oto(ctx, key))
 	}
 }
 
 // ThenMapToMany chains the input OneToMany function.
-func (otm OneToOne) ThenMapToMany(fn OneToMany) OneToMany {
+func (oto OneToOne) ThenMapToMany(fn OneToMany) OneToMany {
 	return func(ctx context.Context, key []byte) [][]byte {
-		return fn(ctx, otm(ctx, key))
+		return fn(ctx, oto(ctx, key))
+	}
+}
+
+// ThenMapToBool takes in a OneToBool and returns a function which
+// is a passed a context and key and determines if a key matches the check
+func (oto OneToOne) ThenMapToBool(fn OneToBool) OneToBool {
+	return func(ctx context.Context, key []byte) bool {
+		return fn(ctx, oto(ctx, key))
 	}
 }
 
@@ -86,6 +94,9 @@ func Decode() OneToOne {
 	}
 }
 
+// OneToBool is a function that takes in a key and returns a bool
+type OneToBool func(ctx context.Context, key []byte) bool
+
 // OneToMany is a transformation that changes one key into many new keys
 type OneToMany func(ctx context.Context, key []byte) [][]byte
 
@@ -93,6 +104,18 @@ type OneToMany func(ctx context.Context, key []byte) [][]byte
 func (otm OneToMany) Then(fn ManyToMany) OneToMany {
 	return func(ctx context.Context, key []byte) [][]byte {
 		return fn(ctx, otm(ctx, key))
+	}
+}
+
+// ThenMapEachToBool takes in a OneToBool and returns a OneToBool based on the given input.
+func (otm OneToMany) ThenMapEachToBool(fn OneToBool) OneToBool {
+	return func(ctx context.Context, key []byte) bool {
+		for _, k := range otm(ctx, key) {
+			if fn(ctx, k) {
+				return true
+			}
+		}
+		return false
 	}
 }
 
@@ -232,6 +255,28 @@ func BackwardFromContext() OneToMany {
 			return nil
 		}
 		return g.GetRefsTo(key)
+	}
+}
+
+// BackwardFromContextWithPrefix gets the references to the key filtered by the specified prefix
+func BackwardFromContextWithPrefix(prefix []byte) OneToMany {
+	return func(ctx context.Context, key []byte) [][]byte {
+		g := graph.GetGraph(ctx)
+		if g == nil {
+			return nil
+		}
+		return g.GetRefsFromPrefix(key, prefix)
+	}
+}
+
+// BackwardExistence returns if any key with the specified prefix exists.
+func BackwardExistence(prefix []byte) func(ctx context.Context, key []byte) bool {
+	return func(ctx context.Context, key []byte) bool {
+		g := graph.GetGraph(ctx)
+		if g == nil {
+			return false
+		}
+		return g.ReferencedFromPrefix(key, prefix)
 	}
 }
 

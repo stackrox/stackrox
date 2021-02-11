@@ -120,3 +120,23 @@ principal.attributes["name"][0] == "stackrox-compliance" && \
     ) \
   ) \
 )
+
+# SAC Testing for Vulnerability Management
+
+principal.authProvider.type == "api-token" && principal.attributes["name"][0] == "nodes-only" && \
+    (scope.verb == "view" && scope.noun == "Node")
+
+principal.authProvider.type == "api-token" && principal.attributes["name"][0] == "nodes-only-cluster-remote" && \
+    (scope.verb == "view" && scope.noun == "Node" && scope.attributes.cluster.name == "remote")
+
+principal.authProvider.type == "api-token" && principal.attributes["name"][0] == "images-only" && \
+    (scope.verb == "view" && scope.noun == "Image")
+
+principal.authProvider.type == "api-token" && principal.attributes["name"][0] == "images-only-cluster-remote" && \
+    (scope.verb == "view" && scope.noun == "Image" && scope.attributes.cluster.name == "remote")
+
+principal.authProvider.type == "api-token" && principal.attributes["name"][0] == "images-only-cluster-remote-namespace-qa" && \
+    (scope.verb == "view" && scope.noun == "Image" && scope.attributes.cluster.name == "remote" && scope.attributes.namespace == "qa")
+
+principal.authProvider.type == "api-token" && principal.attributes["name"][0] == "images-and-nodes-only" && \
+    (scope.verb == "view" && (scope.noun == "Image" || scope.noun == "Node"))

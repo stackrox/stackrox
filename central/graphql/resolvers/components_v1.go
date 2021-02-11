@@ -250,7 +250,7 @@ func (eicr *EmbeddedImageScanComponentResolver) DeploymentCount(ctx context.Cont
 // Nodes are the nodes that contain the Component.
 func (eicr *EmbeddedImageScanComponentResolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
 	if err := readNodes(ctx); err != nil {
-		return nil, err
+		return []*nodeResolver{}, nil
 	}
 	// Convert to query, but link the fields for the search.
 	query, err := args.AsV1QueryOrEmpty()
@@ -278,7 +278,7 @@ func (eicr *EmbeddedImageScanComponentResolver) Nodes(ctx context.Context, args 
 // NodeCount is the number of nodes that contain the Component.
 func (eicr *EmbeddedImageScanComponentResolver) NodeCount(ctx context.Context, args RawQuery) (int32, error) {
 	if err := readNodes(ctx); err != nil {
-		return 0, err
+		return 0, nil
 	}
 	nodeLoader, err := loaders.GetNodeLoader(ctx)
 	if err != nil {

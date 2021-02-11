@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/utils"
@@ -86,29 +87,32 @@ type ComponentResolver interface {
 // Component returns an image scan component based on an input id (name:version)
 func (resolver *Resolver) Component(ctx context.Context, args idQuery) (ComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponent")
-	if err := readImages(ctx); err != nil {
-		return nil, err
+	if !features.HostScanning.Enabled() {
+		if err := readImages(ctx); err != nil {
+			return nil, err
+		}
 	}
-
 	return resolver.componentV2(ctx, args)
 }
 
 // Components returns the image scan components that match the input query.
 func (resolver *Resolver) Components(ctx context.Context, q PaginatedQuery) ([]ComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponents")
-	if err := readImages(ctx); err != nil {
-		return nil, err
+	if !features.HostScanning.Enabled() {
+		if err := readImages(ctx); err != nil {
+			return nil, err
+		}
 	}
-
 	return resolver.componentsV2(ctx, q)
 }
 
 // ComponentCount returns count of all clusters across infrastructure
 func (resolver *Resolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComponentCount")
-	if err := readImages(ctx); err != nil {
-		return 0, err
+	if !features.HostScanning.Enabled() {
+		if err := readImages(ctx); err != nil {
+			return 0, err
+		}
 	}
-
 	return resolver.componentCountV2(ctx, args)
 }

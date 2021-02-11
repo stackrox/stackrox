@@ -1,6 +1,8 @@
 package graph
 
 import (
+	"bytes"
+
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox/utils"
 )
@@ -16,6 +18,9 @@ type RGraph interface {
 
 	GetRefsFrom(from []byte) [][]byte
 	GetRefsTo(to []byte) [][]byte
+
+	GetRefsFromPrefix(to, prefix []byte) [][]byte
+	ReferencedFromPrefix(to, prefix []byte) bool
 }
 
 // RWGraph is a read-write view of a Graph.
@@ -97,6 +102,33 @@ func (s *Graph) GetRefsTo(to []byte) [][]byte {
 		return append([][]byte{}, keys...)
 	}
 	return nil
+}
+
+// GetRefsFromPrefix returns the keys that have the passed prefix that reference the passed key
+func (s *Graph) GetRefsFromPrefix(to, prefix []byte) [][]byte {
+	if keys, exist := s.backward[string(to)]; exist {
+		var filtered [][]byte
+		for _, key := range keys {
+			if bytes.HasPrefix(key, prefix) {
+				filtered = append(filtered, key)
+			}
+		}
+		return filtered
+	}
+	return nil
+}
+
+// ReferencedFromPrefix returns whether a reference to the current key
+// with the specified prefix exists in the graph.
+func (s *Graph) ReferencedFromPrefix(to []byte, prefix []byte) bool {
+	if keys, exists := s.backward[string(to)]; exists {
+		for _, key := range keys {
+			if bytes.HasPrefix(key, prefix) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // SetRefs sets the children of 'from' to be the input list of keys 'to'.

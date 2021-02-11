@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -101,8 +102,10 @@ type VulnerabilityResolver interface {
 // Vulnerability resolves a single vulnerability based on an id (the CVE value).
 func (resolver *Resolver) Vulnerability(ctx context.Context, args idQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Vulnerability")
-	if err := readImages(ctx); err != nil {
-		return nil, err
+	if !features.HostScanning.Enabled() {
+		if err := readImages(ctx); err != nil {
+			return nil, err
+		}
 	}
 	return resolver.vulnerabilityV2(ctx, args)
 }
@@ -110,8 +113,10 @@ func (resolver *Resolver) Vulnerability(ctx context.Context, args idQuery) (Vuln
 // Vulnerabilities resolves a set of vulnerabilities based on a query.
 func (resolver *Resolver) Vulnerabilities(ctx context.Context, q PaginatedQuery) ([]VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Vulnerabilities")
-	if err := readImages(ctx); err != nil {
-		return nil, err
+	if !features.HostScanning.Enabled() {
+		if err := readImages(ctx); err != nil {
+			return nil, err
+		}
 	}
 	return resolver.vulnerabilitiesV2(ctx, q)
 }
@@ -119,8 +124,10 @@ func (resolver *Resolver) Vulnerabilities(ctx context.Context, q PaginatedQuery)
 // VulnerabilityCount returns count of all clusters across infrastructure
 func (resolver *Resolver) VulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "VulnerabilityCount")
-	if err := readImages(ctx); err != nil {
-		return 0, err
+	if !features.HostScanning.Enabled() {
+		if err := readImages(ctx); err != nil {
+			return 0, err
+		}
 	}
 	return resolver.vulnerabilityCountV2(ctx, args)
 }
@@ -128,8 +135,10 @@ func (resolver *Resolver) VulnerabilityCount(ctx context.Context, args RawQuery)
 // VulnCounter returns a VulnerabilityCounterResolver for the input query.s
 func (resolver *Resolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "VulnCounter")
-	if err := readImages(ctx); err != nil {
-		return nil, err
+	if !features.HostScanning.Enabled() {
+		if err := readImages(ctx); err != nil {
+			return nil, err
+		}
 	}
 	return resolver.vulnCounterV2(ctx, args)
 }
@@ -141,7 +150,7 @@ func (resolver *Resolver) VulnCounter(ctx context.Context, args RawQuery) (*Vuln
 // K8sVulnerability resolves a single k8s vulnerability based on an id (the CVE value).
 func (resolver *Resolver) K8sVulnerability(ctx context.Context, args idQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sVulnerability")
-	if err := readImages(ctx); err != nil {
+	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
 
@@ -151,7 +160,7 @@ func (resolver *Resolver) K8sVulnerability(ctx context.Context, args idQuery) (V
 // K8sVulnerabilities resolves a set of k8s vulnerabilities based on a query.
 func (resolver *Resolver) K8sVulnerabilities(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sVulnerabilities")
-	if err := readImages(ctx); err != nil {
+	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
 
@@ -161,7 +170,7 @@ func (resolver *Resolver) K8sVulnerabilities(ctx context.Context, args Paginated
 // IstioVulnerability resolves a single istio vulnerability based on an id (the CVE value).
 func (resolver *Resolver) IstioVulnerability(ctx context.Context, args idQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "IstioVulnerability")
-	if err := readImages(ctx); err != nil {
+	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
 
@@ -171,7 +180,7 @@ func (resolver *Resolver) IstioVulnerability(ctx context.Context, args idQuery) 
 // IstioVulnerabilities resolves a set of istio vulnerabilities based on a query.
 func (resolver *Resolver) IstioVulnerabilities(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "IstioVulnerabilities")
-	if err := readImages(ctx); err != nil {
+	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
 

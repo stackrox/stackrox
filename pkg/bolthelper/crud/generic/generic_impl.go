@@ -192,7 +192,7 @@ func (c *crudImpl) Create(x interface{}, nesting ...Key) error {
 			return err
 		}
 		if innermostBucket.Get(key) != nil {
-			return fmt.Errorf("entry with key %v already exists", key)
+			return fmt.Errorf("entry with key %s already exists", key)
 		}
 		return innermostBucket.Put(key, bytes)
 	})
@@ -225,7 +225,7 @@ func (c *crudImpl) CreateBatch(entries []Entry, nestingPrefix ...Key) error {
 				return err
 			}
 			if innermostBucket.Get(kv.Key) != nil {
-				return fmt.Errorf("entry with key %v already exists", entries[i].Nesting)
+				return fmt.Errorf("entry with key %s already exists", entries[i].Nesting)
 			}
 			if err := innermostBucket.Put(kv.Key, kv.Value); err != nil {
 				return err
@@ -296,7 +296,7 @@ func (c *crudImpl) UpdateBatch(entries []Entry, nestingPrefix ...Key) (uint64, u
 				return fmt.Errorf("bucket for key %v does not exist", entries[i].Nesting)
 			}
 			if innermostBucket.Get(kv.Key) == nil {
-				return fmt.Errorf("entry with key %v does not exist", entries[i].Nesting)
+				return fmt.Errorf("entry with key %s does not exist", entries[i].Nesting)
 			}
 			if err := innermostBucket.Put(kv.Key, kv.Value); err != nil {
 				return err

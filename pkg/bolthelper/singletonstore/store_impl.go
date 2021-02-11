@@ -37,7 +37,7 @@ func (s *singletonStore) Create(val proto.Message) error {
 	}
 	return s.bucketRef.Update(func(b *bbolt.Bucket) error {
 		if b.Get(singletonKey) != nil {
-			return fmt.Errorf("entry with key %v already exists", singletonKey)
+			return fmt.Errorf("entry with key %s already exists", singletonKey)
 		}
 		return b.Put(singletonKey, marshalled)
 	})

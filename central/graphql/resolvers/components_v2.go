@@ -294,6 +294,10 @@ func (eicr *imageComponentResolver) DeploymentCount(ctx context.Context, args Ra
 
 // Nodes are the nodes that contain the Component.
 func (eicr *imageComponentResolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
+	if err := readNodes(ctx); err != nil {
+		return []*nodeResolver{}, nil
+	}
+
 	nodeLoader, err := loaders.GetNodeLoader(ctx)
 	if err != nil {
 		return nil, err
@@ -313,6 +317,9 @@ func (eicr *imageComponentResolver) Nodes(ctx context.Context, args PaginatedQue
 
 // NodeCount is the number of nodes that contain the Component.
 func (eicr *imageComponentResolver) NodeCount(ctx context.Context, args RawQuery) (int32, error) {
+	if err := readNodes(ctx); err != nil {
+		return 0, nil
+	}
 	nodeLoader, err := loaders.GetNodeLoader(ctx)
 	if err != nil {
 		return 0, err

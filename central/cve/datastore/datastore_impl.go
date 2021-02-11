@@ -22,7 +22,8 @@ import (
 )
 
 var (
-	imagesSAC = sac.ForResource(resources.Image)
+	imagesSAC   = sac.ForResource(resources.Image)
+	clustersSAC = sac.ForResource(resources.Cluster)
 
 	getCVECtx = sac.WithAllAccess(context.Background())
 
@@ -166,7 +167,7 @@ func (ds *datastoreImpl) UpsertClusterCVEs(ctx context.Context, parts ...convert
 		return nil
 	}
 
-	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := clustersSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return errors.New("permission denied")
@@ -197,6 +198,7 @@ func (ds *datastoreImpl) UpsertClusterCVEs(ctx context.Context, parts ...convert
 
 func (ds *datastoreImpl) Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, ids ...string) error {
 	// Check global write permissions since this may effect images risk/visibility in in places the user does not have read access.
+	// TODO: What about cluster or node CVEs...?
 	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -236,6 +238,7 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start *types.Timestamp, d
 
 func (ds *datastoreImpl) Unsuppress(ctx context.Context, ids ...string) error {
 	// Check global write permissions since this may effect images risk/visibility in in places the user does not have read access.
+	// TODO: What about cluster or node CVEs...?
 	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {

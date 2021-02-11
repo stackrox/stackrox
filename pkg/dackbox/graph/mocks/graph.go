@@ -116,6 +116,34 @@ func (mr *MockRGraphMockRecorder) GetRefsTo(to interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefsTo", reflect.TypeOf((*MockRGraph)(nil).GetRefsTo), to)
 }
 
+// GetRefsFromPrefix mocks base method
+func (m *MockRGraph) GetRefsFromPrefix(to, prefix []byte) [][]byte {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRefsFromPrefix", to, prefix)
+	ret0, _ := ret[0].([][]byte)
+	return ret0
+}
+
+// GetRefsFromPrefix indicates an expected call of GetRefsFromPrefix
+func (mr *MockRGraphMockRecorder) GetRefsFromPrefix(to, prefix interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefsFromPrefix", reflect.TypeOf((*MockRGraph)(nil).GetRefsFromPrefix), to, prefix)
+}
+
+// ReferencedFromPrefix mocks base method
+func (m *MockRGraph) ReferencedFromPrefix(to, prefix []byte) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReferencedFromPrefix", to, prefix)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ReferencedFromPrefix indicates an expected call of ReferencedFromPrefix
+func (mr *MockRGraphMockRecorder) ReferencedFromPrefix(to, prefix interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReferencedFromPrefix", reflect.TypeOf((*MockRGraph)(nil).ReferencedFromPrefix), to, prefix)
+}
+
 // MockRWGraph is a mock of RWGraph interface
 type MockRWGraph struct {
 	ctrl     *gomock.Controller
@@ -221,6 +249,34 @@ func (m *MockRWGraph) GetRefsTo(to []byte) [][]byte {
 func (mr *MockRWGraphMockRecorder) GetRefsTo(to interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefsTo", reflect.TypeOf((*MockRWGraph)(nil).GetRefsTo), to)
+}
+
+// GetRefsFromPrefix mocks base method
+func (m *MockRWGraph) GetRefsFromPrefix(to, prefix []byte) [][]byte {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRefsFromPrefix", to, prefix)
+	ret0, _ := ret[0].([][]byte)
+	return ret0
+}
+
+// GetRefsFromPrefix indicates an expected call of GetRefsFromPrefix
+func (mr *MockRWGraphMockRecorder) GetRefsFromPrefix(to, prefix interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefsFromPrefix", reflect.TypeOf((*MockRWGraph)(nil).GetRefsFromPrefix), to, prefix)
+}
+
+// ReferencedFromPrefix mocks base method
+func (m *MockRWGraph) ReferencedFromPrefix(to, prefix []byte) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReferencedFromPrefix", to, prefix)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ReferencedFromPrefix indicates an expected call of ReferencedFromPrefix
+func (mr *MockRWGraphMockRecorder) ReferencedFromPrefix(to, prefix interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReferencedFromPrefix", reflect.TypeOf((*MockRWGraph)(nil).ReferencedFromPrefix), to, prefix)
 }
 
 // setFrom mocks base method
@@ -508,6 +564,34 @@ func (m *MockDiscardableRGraph) GetRefsTo(to []byte) [][]byte {
 func (mr *MockDiscardableRGraphMockRecorder) GetRefsTo(to interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefsTo", reflect.TypeOf((*MockDiscardableRGraph)(nil).GetRefsTo), to)
+}
+
+// GetRefsFromPrefix mocks base method
+func (m *MockDiscardableRGraph) GetRefsFromPrefix(to, prefix []byte) [][]byte {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRefsFromPrefix", to, prefix)
+	ret0, _ := ret[0].([][]byte)
+	return ret0
+}
+
+// GetRefsFromPrefix indicates an expected call of GetRefsFromPrefix
+func (mr *MockDiscardableRGraphMockRecorder) GetRefsFromPrefix(to, prefix interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefsFromPrefix", reflect.TypeOf((*MockDiscardableRGraph)(nil).GetRefsFromPrefix), to, prefix)
+}
+
+// ReferencedFromPrefix mocks base method
+func (m *MockDiscardableRGraph) ReferencedFromPrefix(to, prefix []byte) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReferencedFromPrefix", to, prefix)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ReferencedFromPrefix indicates an expected call of ReferencedFromPrefix
+func (mr *MockDiscardableRGraphMockRecorder) ReferencedFromPrefix(to, prefix interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReferencedFromPrefix", reflect.TypeOf((*MockDiscardableRGraph)(nil).ReferencedFromPrefix), to, prefix)
 }
 
 // Discard mocks base method

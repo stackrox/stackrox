@@ -129,6 +129,14 @@ var (
 							Then(transformation.Dedupe()).
 							Then(transformation.HasPrefix(clusterDackBox.Bucket)).
 							ThenMapEachToOne(transformation.StripPrefix(clusterDackBox.Bucket)))
+
+	// ComponentToImageExistenceTransformation maps a component to whether an image exists that contains that component.
+	ComponentToImageExistenceTransformation = transformation.AddPrefix(componentDackBox.Bucket).
+						ThenMapToBool(transformation.BackwardExistence(imageDackBox.Bucket))
+
+	// ComponentToNodeExistenceTransformation maps a component to whether a node exists that contains that component.
+	ComponentToNodeExistenceTransformation = transformation.AddPrefix(componentDackBox.Bucket).
+						ThenMapToBool(transformation.BackwardExistence(nodeDackBox.Bucket))
 )
 
 func init() {

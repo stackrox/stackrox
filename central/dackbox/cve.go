@@ -159,6 +159,20 @@ var (
 						Then(transformation.Dedupe()).
 						Then(transformation.HasPrefix(clusterDackBox.Bucket)).
 						ThenMapEachToOne(transformation.StripPrefix(clusterDackBox.Bucket)))
+
+	// CVEToImageExistenceTransformation maps a cve to whether or not an image exists that contains that cve
+	CVEToImageExistenceTransformation = transformation.AddPrefix(cveDackBox.Bucket).
+						ThenMapToMany(transformation.BackwardFromContextWithPrefix(componentDackBox.Bucket)).
+						ThenMapEachToBool(transformation.BackwardExistence(imageDackBox.Bucket))
+
+	// CVEToNodeExistenceTransformation maps a cve to whether or not a node exists that contains that cve
+	CVEToNodeExistenceTransformation = transformation.AddPrefix(cveDackBox.Bucket).
+						ThenMapToMany(transformation.BackwardFromContextWithPrefix(componentDackBox.Bucket)).
+						ThenMapEachToBool(transformation.BackwardExistence(nodeDackBox.Bucket))
+
+	// CVEToClusterExistenceTransformation maps a cve to whether or not a cluster exists that contains that cve
+	CVEToClusterExistenceTransformation = transformation.AddPrefix(cveDackBox.Bucket).
+						ThenMapToBool(transformation.BackwardExistence(clusterDackBox.Bucket))
 )
 
 func init() {

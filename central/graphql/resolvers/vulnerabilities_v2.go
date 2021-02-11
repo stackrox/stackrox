@@ -348,6 +348,10 @@ func (resolver *cVEResolver) ComponentCount(ctx context.Context, args RawQuery) 
 
 // Images are the images that contain the CVE/Vulnerability.
 func (resolver *cVEResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+	if err := readImages(ctx); err != nil {
+		return []*imageResolver{}, nil
+	}
+
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -362,6 +366,9 @@ func (resolver *cVEResolver) Images(ctx context.Context, args PaginatedQuery) ([
 
 // ImageCount is the number of images that contain the CVE/Vulnerability.
 func (resolver *cVEResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
+	if err := readImages(ctx); err != nil {
+		return 0, nil
+	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
@@ -410,7 +417,7 @@ func (resolver *cVEResolver) DeploymentCount(ctx context.Context, args RawQuery)
 // Nodes are the nodes that contain the CVE/Vulnerability.
 func (resolver *cVEResolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
 	if err := readNodes(ctx); err != nil {
-		return nil, err
+		return []*nodeResolver{}, nil
 	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
@@ -427,7 +434,7 @@ func (resolver *cVEResolver) Nodes(ctx context.Context, args PaginatedQuery) ([]
 // NodeCount is the number of nodes that contain the CVE/Vulnerability.
 func (resolver *cVEResolver) NodeCount(ctx context.Context, args RawQuery) (int32, error) {
 	if err := readNodes(ctx); err != nil {
-		return 0, err
+		return 0, nil
 	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {

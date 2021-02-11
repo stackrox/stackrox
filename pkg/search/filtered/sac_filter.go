@@ -23,7 +23,7 @@ func NewSACFilter(opts ...SACFilterOption) (Filter, error) {
 	return compile(fb)
 }
 
-// WithResourceHelper uses the input ForResourceHelper to do SAC checks on ourput results.
+// WithResourceHelper uses the input ForResourceHelper to do SAC checks on output results.
 func WithResourceHelper(resourceHelper sac.ForResourceHelper) SACFilterOption {
 	return func(filter *filterBuilder) {
 		filter.resourceHelper = &resourceHelper

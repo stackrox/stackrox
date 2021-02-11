@@ -262,6 +262,6 @@ func wrapDerivedFieldSearcher(graphProvider graph.Provider, searcher search.Sear
 		search.DeploymentCount.String(): counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.CVEToDeploymentPath, deploymentSAC.GetSACFilter()),
 		search.ImageCount.String():      counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.CVEToImagePath, imageSAC.GetSACFilter()),
 		search.NodeCount.String():       counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.CVEToNodePath, nodeSAC.GetSACFilter()),
-		search.ComponentCount.String():  counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.CVEToComponentPath, componentSAC.GetSACFilters()...),
+		search.ComponentCount.String():  counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.CVEToComponentPath, componentSAC.GetSACFilter()),
 	})
 }
