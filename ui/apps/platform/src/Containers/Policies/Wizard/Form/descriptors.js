@@ -1068,6 +1068,18 @@ const policyConfigurationDescriptor = [
         default: false,
         canBooleanLogic: true,
     },
+    {
+        label: 'AppArmor Profile',
+        name: 'AppArmor Profile',
+        longName: 'AppArmor Profile',
+        negatedName: `AppArmor Profile doesn't match`,
+        category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
+        type: 'text',
+        placeholder: 'default',
+        required: false,
+        default: false,
+        canBooleanLogic: true,
+    },
 ];
 
 const k8sEventsDescriptor = [

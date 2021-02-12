@@ -172,3 +172,21 @@ func seccompProfileTypePrinter(fieldMap map[string][]string) ([]string, error) {
 	}
 	return executeTemplate(seccompProfileTypeTemplate, r)
 }
+
+const (
+	appArmorProfileTemplate = `Container{{if .ContainerName}} '{{.ContainerName}}'{{end}} has AppArmor profile type '{{.AppArmorProfile}}'`
+)
+
+func appArmorProfilePrinter(fieldMap map[string][]string) ([]string, error) {
+	type resultFields struct {
+		ContainerName   string
+		AppArmorProfile string
+	}
+	r := resultFields{}
+	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
+	var err error
+	if r.AppArmorProfile, err = getSingleValueFromFieldMap(search.AppArmorProfile.String(), fieldMap); err != nil {
+		return nil, err
+	}
+	return executeTemplate(appArmorProfileTemplate, r)
+}

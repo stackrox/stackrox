@@ -733,6 +733,19 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.addDepAndImages(hostNetworkDep)
 
+	noAppArmorProfileDep := &storage.Deployment{
+		Id: "NOAPPARMORPROFILEDEP",
+		Containers: []*storage.Container{
+			{
+				Name: "No AppArmor Profile",
+				Config: &storage.ContainerConfig{
+					AppArmorProfile: "unconfined",
+				},
+			},
+		},
+	}
+	suite.addDepAndImages(noAppArmorProfileDep)
+
 	// Index processes
 	bashLineage := []string{"/bin/bash"}
 	fixtureDepAptIndicator := suite.addIndicator(fixtureDep.GetId(), "apt", "", "/usr/bin/apt", bashLineage, 1)
@@ -989,6 +1002,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				mountPropagationDep.GetId():                       {},
 				noSeccompProfileDep.GetId():                       {},
 				hostNetworkDep.GetId():                            {},
+				noAppArmorProfileDep.GetId():                      {},
 			},
 			sampleViolationForMatched: "Image in container '%s' has not been scanned",
 		},
@@ -1269,6 +1283,14 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				hostNetworkDep.GetId(): {
 					{Message: "Deployment uses the host's network namespace"},
+				},
+			},
+		},
+		{
+			policyName: "Docker CIS 5.1 Ensure that, if applicable, an AppArmor Profile is enabled",
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				noAppArmorProfileDep.GetId(): {
+					{Message: "Container 'No AppArmor Profile' has AppArmor profile type 'unconfined'"},
 				},
 			},
 		},

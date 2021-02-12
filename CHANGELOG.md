@@ -18,6 +18,17 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
    exit with an error code, even if policy violations are present.
 
    This default value of `false` is also now deprecated and will change in three releases.
+- New default policies:
+  - Added default policies for Docker CIS checks
+    - 4.1
+    - 4.7
+    - 5.1
+    - 5.7
+    - 5.15
+    - 5.16
+    - 5.19
+    - 5.20
+    - 5.21
 
 ## [55.0]
 - The `/v1/metadata` endpoint redacts version information from unauthenticated users.

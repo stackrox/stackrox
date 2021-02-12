@@ -4,6 +4,7 @@ package printer
 
 const (
 	AddCapabilityKey        = "addCapability"
+	AppArmorProfileKey      = "appArmorProfile"
 	ComponentKey            = "component"
 	ContainerNameKey        = "containerName"
 	CveKey                  = "cve"
@@ -41,6 +42,7 @@ const (
 
 func init() {
 	registerFunc(AddCapabilityKey, addCapabilityPrinter)
+	registerFunc(AppArmorProfileKey, appArmorProfilePrinter)
 	registerFunc(ComponentKey, componentPrinter)
 	registerFunc(ContainerNameKey, containerNamePrinter)
 	registerFunc(CveKey, cvePrinter)

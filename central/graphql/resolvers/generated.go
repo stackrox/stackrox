@@ -415,6 +415,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"volumes: [Volume]!",
 	}))
 	utils.Must(builder.AddType("ContainerConfig", []string{
+		"appArmorProfile: String!",
 		"args: [String!]!",
 		"command: [String!]!",
 		"directory: String!",
@@ -4363,6 +4364,11 @@ func (resolver *Resolver) wrapContainerConfigs(values []*storage.ContainerConfig
 		output[i] = &containerConfigResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *containerConfigResolver) AppArmorProfile(ctx context.Context) string {
+	value := resolver.data.GetAppArmorProfile()
+	return value
 }
 
 func (resolver *containerConfigResolver) Args(ctx context.Context) []string {

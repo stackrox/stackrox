@@ -78,6 +78,7 @@ var (
 	NodeTopCVSS                  = newFieldLabel("Node Top CVSS")
 
 	AddCapabilities      = newFieldLabel("Add Capabilities")
+	AppArmorProfile      = newFieldLabel("AppArmor Profile")
 	Annotation           = newFieldLabel("Annotation")
 	CPUCoresLimit        = newFieldLabel("CPU Cores Limit")
 	CPUCoresRequest      = newFieldLabel("CPU Cores Request")

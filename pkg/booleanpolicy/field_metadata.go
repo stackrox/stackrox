@@ -86,6 +86,7 @@ func registerFieldMetadataConditionally(
 
 func init() {
 	registerFieldMetadata(fieldnames.AddCaps, querybuilders.ForFieldLabelExact(search.AddCapabilities), violationmessages.ContainerContextFields, capabilitiesValueRegex, negationForbidden)
+	registerFieldMetadata(fieldnames.AppArmorProfile, querybuilders.ForFieldLabelRegex(search.AppArmorProfile), violationmessages.ContainerContextFields, stringValueRegex)
 	registerFieldMetadata(fieldnames.CVE, querybuilders.ForCVE(), violationmessages.VulnContextFields, stringValueRegex)
 	registerFieldMetadata(fieldnames.CVSS, querybuilders.ForCVSS(), violationmessages.VulnContextFields, comparatorDecimalValueRegex, negationForbidden)
 	registerFieldMetadata(fieldnames.ContainerCPULimit, querybuilders.ForFieldLabel(search.CPUCoresLimit), violationmessages.ResourceContextFields, comparatorDecimalValueRegex, negationForbidden)

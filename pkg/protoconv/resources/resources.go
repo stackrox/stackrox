@@ -25,6 +25,7 @@ import (
 
 const (
 	openshiftEncodedDeploymentConfigAnnotation = `openshift.io/encoded-deployment-config`
+	appArmorAnnotationTemplate                 = `container.apparmor.security.beta.kubernetes.io/%s`
 )
 
 var (
@@ -400,6 +401,10 @@ func (w *DeploymentWrap) populateContainerConfigs(podSpec v1.PodSpec) {
 				config.Uid = *uid
 			}
 		}
+
+		appArmorAnnotation := fmt.Sprintf(appArmorAnnotationTemplate, c.Name)
+		appArmorProfile := w.Annotations[appArmorAnnotation]
+		config.AppArmorProfile = appArmorProfile
 
 		w.Deployment.Containers[i].Config = config
 	}

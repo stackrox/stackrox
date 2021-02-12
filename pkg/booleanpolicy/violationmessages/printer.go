@@ -21,6 +21,7 @@ var (
 	policyFieldsToPrinters = map[storage.LifecycleStage]map[string][]violationPrinter{
 		storage.LifecycleStage_DEPLOY: {
 			fieldnames.AddCaps:                       {{required: set.NewStringSet(search.AddCapabilities.String()), printerFuncKey: printer.AddCapabilityKey}},
+			fieldnames.AppArmorProfile:               {{required: set.NewStringSet(search.AppArmorProfile.String()), printerFuncKey: printer.AppArmorProfileKey}},
 			fieldnames.CVE:                           {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
 			fieldnames.CVSS:                          {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
 			fieldnames.ContainerCPULimit:             {{required: set.NewStringSet(search.CPUCoresLimit.String()), printerFuncKey: printer.ResourceKey}},

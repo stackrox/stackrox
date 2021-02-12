@@ -7,6 +7,7 @@ var (
 // This block enumerates all known field names.
 var (
 	AddCaps                       = newFieldName("Add Capabilities")
+	AppArmorProfile               = newFieldName("AppArmor Profile")
 	CVE                           = newFieldName("CVE")
 	CVSS                          = newFieldName("CVSS")
 	ContainerCPULimit             = newFieldName("Container CPU Limit")

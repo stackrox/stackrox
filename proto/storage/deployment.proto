@@ -219,6 +219,7 @@ message ContainerConfig {
     string directory                = 4;
     string user                     = 5;
     int64 uid                       = 6;
+    string app_armor_profile        = 7 [(gogoproto.moretags) = "policy:\"AppArmor Profile\""];
 }
 
 message SecurityContext {
