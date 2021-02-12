@@ -157,7 +157,7 @@ const EntityList = ({
 
     return (
         <Panel
-            className={selectedRowId ? 'bg-base-100 overlay' : ''}
+            className={selectedRowId ? 'bg-base-100' : ''}
             header={header}
             headerComponents={headerComponents}
         >

@@ -5,7 +5,7 @@ import startCase from 'lodash/startCase';
 
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
-import SidePanelAnimatedDiv from 'Components/animations/SidePanelAnimatedDiv';
+import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import PageHeader from 'Components/PageHeader';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import ExportButton from 'Components/ExportButton';
@@ -83,7 +83,6 @@ const ListPage = ({ match, location, history }) => {
             <div className="flex flex-1 h-full relative z-0">
                 <configMgmtPaginationContext.Provider value={MAIN_PAGINATION_PARAMS}>
                     <EntityList
-                        className={entityId1 ? 'overlay' : ''}
                         entityListType={pageEntityListType}
                         entityId={entityId1}
                         onRowClick={onRowClick}
@@ -92,9 +91,8 @@ const ListPage = ({ match, location, history }) => {
                 </configMgmtPaginationContext.Provider>
                 <searchContext.Provider value={searchParams.sidePanel}>
                     <configMgmtPaginationContext.Provider value={SIDEPANEL_PAGINATION_PARAMS}>
-                        <SidePanelAnimatedDiv isOpen={!!entityId1}>
+                        <SidePanelAnimatedArea isOpen={!!entityId1}>
                             <SidePanel
-                                className="w-full h-full bg-base-100 border-l border-base-400 shadow-sidepanel"
                                 entityType1={pageEntityListType}
                                 entityId1={entityId1}
                                 entityType2={entityType2}
@@ -102,7 +100,7 @@ const ListPage = ({ match, location, history }) => {
                                 entityId2={entityId2}
                                 query={query}
                             />
-                        </SidePanelAnimatedDiv>
+                        </SidePanelAnimatedArea>
                     </configMgmtPaginationContext.Provider>
                 </searchContext.Provider>
             </div>

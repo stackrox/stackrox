@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 
-import SidePanelAnimatedDiv from 'Components/animations/SidePanelAnimatedDiv';
+import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import { searchParams } from 'constants/searchParams';
 import configMgmtPaginationContext, {
     MAIN_PAGINATION_PARAMS,
@@ -42,7 +42,6 @@ const EntityPage = ({ match, location }) => {
         entityId2,
         query,
     } = params;
-    const overlay = !!entityId1;
     const [fadeIn, setFadeIn] = useState(false);
 
     useEffect(() => setFadeIn(false), [pageEntityId]);
@@ -73,14 +72,11 @@ const EntityPage = ({ match, location }) => {
                     pageEntityId={pageEntityId}
                     entityType={pageEntityType}
                     entityListType={entityListType1}
-                    disabled={!!overlay}
+                    disabled={!!entityId1}
                 />
                 <div className="flex flex-1 w-full h-full relative z-0 overflow-hidden">
                     <configMgmtPaginationContext.Provider value={MAIN_PAGINATION_PARAMS}>
-                        <div
-                            className={`${overlay ? 'overlay' : ''} h-full w-full overflow-auto`}
-                            id="capture-list"
-                        >
+                        <div className="h-full w-full overflow-auto" id="capture-list">
                             <Entity
                                 entityType={pageEntityType}
                                 entityId={pageEntityId}
@@ -92,9 +88,8 @@ const EntityPage = ({ match, location }) => {
                     </configMgmtPaginationContext.Provider>
                     <searchContext.Provider value={searchParams.sidePanel}>
                         <configMgmtPaginationContext.Provider value={SIDEPANEL_PAGINATION_PARAMS}>
-                            <SidePanelAnimatedDiv isOpen={!!entityId1}>
+                            <SidePanelAnimatedArea isOpen={!!entityId1}>
                                 <SidePanel
-                                    className="w-full h-full border-l border-base-400 shadow-sidepanel"
                                     contextEntityId={pageEntityId}
                                     contextEntityType={pageEntityType}
                                     entityListType1={entityListType1}
@@ -105,7 +100,7 @@ const EntityPage = ({ match, location }) => {
                                     entityId2={entityId2}
                                     query={query}
                                 />
-                            </SidePanelAnimatedDiv>
+                            </SidePanelAnimatedArea>
                         </configMgmtPaginationContext.Provider>
                     </searchContext.Provider>
                 </div>

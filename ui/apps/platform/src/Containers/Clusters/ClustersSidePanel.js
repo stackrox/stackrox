@@ -11,7 +11,7 @@ import { Message } from '@stackrox/ui-components';
 
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
-import SidePanelAnimatedDiv from 'Components/animations/SidePanelAnimatedDiv';
+import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import { useTheme } from 'Containers/ThemeProvider';
 import useInterval from 'hooks/useInterval';
 import {
@@ -277,65 +277,59 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
     );
 
     return (
-        <SidePanelAnimatedDiv isOpen={!!selectedClusterId}>
-            <div
-                className={`w-full h-full bg-base-100 rounded-tl-lg shadow-sidepanel ${
-                    !isDarkMode ? '' : 'border-l border-base-400'
+        <SidePanelAnimatedArea isOpen={!!selectedClusterId}>
+            <Panel
+                id="clusters-side-panel"
+                header={selectedClusterName}
+                headerComponents={panelButtons}
+                headerClassName={`flex w-full h-14 overflow-y-hidden bg-primary-200 rounded-tl-lg border-b ${
+                    !isDarkMode ? 'border-base-100' : 'border-primary-400'
                 }`}
+                bodyClassName={isDarkMode ? 'bg-base-0' : 'bg-primary-200'}
+                onClose={unselectCluster}
             >
-                <Panel
-                    id="clusters-side-panel"
-                    header={selectedClusterName}
-                    headerComponents={panelButtons}
-                    headerClassName={`flex w-full h-14 overflow-y-hidden bg-primary-200 rounded-tl-lg border-b ${
-                        !isDarkMode ? 'border-base-100' : 'border-primary-400'
-                    }`}
-                    bodyClassName={isDarkMode ? 'bg-base-0' : 'bg-primary-200'}
-                    onClose={unselectCluster}
-                >
-                    {!!messageState && (
-                        <div className="m-4">
-                            <Message type={messageState.type}>{messageState.message}</Message>
+                {!!messageState && (
+                    <div className="m-4">
+                        <Message type={messageState.type}>{messageState.message}</Message>
+                    </div>
+                )}
+                {submissionError && submissionError.length > 0 && (
+                    <div className="w-full">
+                        <div className="mb-4 mx-4">
+                            <Message type="error">{submissionError}</Message>
                         </div>
-                    )}
-                    {submissionError && submissionError.length > 0 && (
-                        <div className="w-full">
-                            <div className="mb-4 mx-4">
-                                <Message type="error">{submissionError}</Message>
-                            </div>
-                        </div>
-                    )}
-                    {!isBlocked && wizardStep === wizardSteps.FORM && (
-                        <ClusterEditForm
-                            centralEnv={centralEnv}
-                            centralVersion={metadata.version}
-                            selectedCluster={selectedCluster}
-                            handleChange={onChange}
-                            isLoading={loadingCounter > 0}
+                    </div>
+                )}
+                {!isBlocked && wizardStep === wizardSteps.FORM && (
+                    <ClusterEditForm
+                        centralEnv={centralEnv}
+                        centralVersion={metadata.version}
+                        selectedCluster={selectedCluster}
+                        handleChange={onChange}
+                        isLoading={loadingCounter > 0}
+                    />
+                )}
+                {!isBlocked && wizardStep === wizardSteps.DEPLOYMENT && (
+                    <div className="flex flex-col md:flex-row p-4">
+                        <ClusterDeployment
+                            editing={!!selectedCluster}
+                            createUpgraderSA={createUpgraderSA}
+                            toggleSA={toggleSA}
+                            onFileDownload={onDownload}
+                            clusterCheckedIn={!!selectedCluster?.healthStatus?.lastContact}
                         />
-                    )}
-                    {!isBlocked && wizardStep === wizardSteps.DEPLOYMENT && (
-                        <div className="flex flex-col md:flex-row p-4">
-                            <ClusterDeployment
-                                editing={!!selectedCluster}
-                                createUpgraderSA={createUpgraderSA}
-                                toggleSA={toggleSA}
-                                onFileDownload={onDownload}
-                                clusterCheckedIn={!!selectedCluster?.healthStatus?.lastContact}
-                            />
-                            <DownloadHelmValues
-                                clusterId={selectedClusterId}
-                                description={
-                                    selectedCluster?.helmConfig
-                                        ? 'Download the required YAML to update your Helm values.'
-                                        : 'To start managing this cluster with a Helm chart, you can download the cluster’s current configuration values in Helm format.'
-                                }
-                            />
-                        </div>
-                    )}
-                </Panel>
-            </div>
-        </SidePanelAnimatedDiv>
+                        <DownloadHelmValues
+                            clusterId={selectedClusterId}
+                            description={
+                                selectedCluster?.helmConfig
+                                    ? 'Download the required YAML to update your Helm values.'
+                                    : 'To start managing this cluster with a Helm chart, you can download the cluster’s current configuration values in Helm format.'
+                            }
+                        />
+                    </div>
+                )}
+            </Panel>
+        </SidePanelAnimatedArea>
     );
 }
 

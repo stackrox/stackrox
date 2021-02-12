@@ -1201,25 +1201,6 @@ h6 {
     left: 50%;
 }
 
-.overlay:after {
-    content: '';
-    background: hsl(210, 15%, 34%);
-    position: absolute !important;
-    top: 0;
-    left: 0;
-    width: 100%;
-    transition: opacity 0.25s ease-in-out;
-    height: 100%;
-    opacity: 0.5;
-    z-index: 10;
-    cursor: pointer;
-}
-
-.overlay:focus:after,
-.overlay:hover:after {
-    opacity: 0.6;
-}
-
 .bg-side-panel-wave {
     background: url('images/side-panel-icons/sidepanel-wave.svg') no-repeat, var(--base-200) !important;
     background-size: 100% !important;

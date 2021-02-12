@@ -79,7 +79,7 @@ Panel.defaultProps = {
     header: ' ',
     headerTextComponent: null,
     headerClassName,
-    bodyClassName: null,
+    bodyClassName: '',
     className: '',
     onClose: null,
     closeButtonClassName: 'border-base-400 border-l',

@@ -7,6 +7,7 @@ import { knownBackendFlags } from 'utils/featureFlags';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import PageHeader from 'Components/PageHeader';
 import { useTheme } from 'Containers/ThemeProvider';
+import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import ExportButton from 'Components/ExportButton';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import entityLabels from 'messages/entity';
@@ -111,8 +112,8 @@ const WorkflowListPageLayout = ({ location }) => {
                         refreshTrigger={refreshTrigger}
                         setRefreshTrigger={setRefreshTrigger}
                     />
-                    <WorkflowSidePanel isOpen={!!sidePanelEntityId}>
-                        {sidePanelEntityId ? (
+                    <SidePanelAnimatedArea isOpen={!!sidePanelEntityId}>
+                        <WorkflowSidePanel>
                             <EntityComponent
                                 entityId={sidePanelEntityId}
                                 entityType={sidePanelEntityType}
@@ -124,10 +125,8 @@ const WorkflowListPageLayout = ({ location }) => {
                                 refreshTrigger={refreshTrigger}
                                 setRefreshTrigger={setRefreshTrigger}
                             />
-                        ) : (
-                            <span />
-                        )}
-                    </WorkflowSidePanel>
+                        </WorkflowSidePanel>
+                    </SidePanelAnimatedArea>
                 </div>
             </div>
         </workflowStateContext.Provider>

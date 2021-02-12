@@ -4,6 +4,7 @@ import startCase from 'lodash/startCase';
 
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
+import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import PageHeader from 'Components/PageHeader';
 import EntityTabs from 'Components/workflow/EntityTabs';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
@@ -118,12 +119,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
                 </PageHeader>
                 <EntityTabs entityType={pageEntityType} activeTab={pageListType} />
                 <div className="flex flex-1 w-full h-full relative z-0 overflow-hidden">
-                    <div
-                        className={`${
-                            sidePanelEntityId ? 'overlay' : ''
-                        } h-full w-full overflow-auto`}
-                        id={pdfId}
-                    >
+                    <div className="h-full w-full overflow-auto" id={pdfId}>
                         <EntityComponent
                             entityType={pageEntityType}
                             entityId={pageEntityId}
@@ -137,8 +133,8 @@ const WorkflowEntityPageLayout = ({ location }) => {
                         />
                     </div>
 
-                    <WorkflowSidePanel isOpen={!!sidePanelEntityId}>
-                        {sidePanelEntityId ? (
+                    <SidePanelAnimatedArea isOpen={!!sidePanelEntityId}>
+                        <WorkflowSidePanel>
                             <EntityComponent
                                 entityId={sidePanelEntityId}
                                 entityType={sidePanelEntityType}
@@ -150,10 +146,8 @@ const WorkflowEntityPageLayout = ({ location }) => {
                                 refreshTrigger={refreshTrigger}
                                 setRefreshTrigger={setRefreshTrigger}
                             />
-                        ) : (
-                            <span />
-                        )}
-                    </WorkflowSidePanel>
+                        </WorkflowSidePanel>
+                    </SidePanelAnimatedArea>
                 </div>
             </div>
         </workflowStateContext.Provider>

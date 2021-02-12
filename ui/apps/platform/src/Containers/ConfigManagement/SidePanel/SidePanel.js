@@ -18,7 +18,6 @@ const SidePanel = ({
     match,
     location,
     history,
-    className,
     contextEntityType,
     contextEntityId,
     entityListType1,
@@ -99,40 +98,38 @@ const SidePanel = ({
     }
     return (
         <workflowStateContext.Provider value={workflowState}>
-            <div className={`rounded-tl-lg ${className}`}>
-                <Panel
-                    id="side-panel"
-                    headerClassName={`flex w-full h-14 rounded-tl-lg overflow-y-hidden border-b ${
-                        !isDarkMode
-                            ? 'bg-side-panel-wave border-base-100'
-                            : 'bg-primary-200 border-primary-400'
-                    }`}
-                    bodyClassName={isDarkMode ? 'bg-base-0' : 'bg-base-100'}
-                    headerTextComponent={
-                        <BreadCrumbs
-                            className="font-700 leading-normal text-base-600 tracking-wide truncate"
-                            entityType1={entityType1 || entityListType1}
-                            entityId1={entityId1}
-                            entityType2={entityType2}
-                            entityListType2={entityListType2}
-                            entityId2={entityId2}
-                        />
-                    }
-                    headerComponents={externalLink}
-                    onClose={onClose}
-                    closeButtonClassName={
-                        isDarkMode ? 'border-l border-base-400' : 'border-l border-base-100'
-                    }
-                >
-                    <Entity
-                        entityContext={entityContext}
-                        entityType={entityType}
-                        entityId={entityId}
-                        entityListType={listType}
-                        query={query}
+            <Panel
+                id="side-panel"
+                headerClassName={`flex w-full h-14 rounded-tl-lg overflow-y-hidden border-b ${
+                    !isDarkMode
+                        ? 'bg-side-panel-wave border-base-100'
+                        : 'bg-primary-200 border-primary-400'
+                }`}
+                bodyClassName={isDarkMode ? 'bg-base-0' : 'bg-base-100'}
+                headerTextComponent={
+                    <BreadCrumbs
+                        className="font-700 leading-normal text-base-600 tracking-wide truncate"
+                        entityType1={entityType1 || entityListType1}
+                        entityId1={entityId1}
+                        entityType2={entityType2}
+                        entityListType2={entityListType2}
+                        entityId2={entityId2}
                     />
-                </Panel>
-            </div>
+                }
+                headerComponents={externalLink}
+                onClose={onClose}
+                closeButtonClassName={
+                    isDarkMode ? 'border-l border-base-400' : 'border-l border-base-100'
+                }
+            >
+                <Entity
+                    entityContext={entityContext}
+                    entityType={entityType}
+                    entityId={entityId}
+                    entityListType={listType}
+                    query={query}
+                />
+            </Panel>
         </workflowStateContext.Provider>
     );
 };
@@ -141,7 +138,6 @@ SidePanel.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     history: ReactRouterPropTypes.history.isRequired,
-    className: PropTypes.string,
     contextEntityType: PropTypes.string,
     contextEntityId: PropTypes.string,
     entityType1: PropTypes.string,
@@ -154,7 +150,6 @@ SidePanel.propTypes = {
 };
 
 SidePanel.defaultProps = {
-    className: '',
     contextEntityType: null,
     contextEntityId: null,
     entityType1: null,
