@@ -66,6 +66,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private List<String> WHITELISTED_KUBE_SYSTEM_DEPLOYMENTS_AND_POLICIES = [
             "tunnelfront - Secure Shell Server (sshd) Execution",
             "tunnelfront - Alert on Update Instruction",
+            "webhookserver - Kubernetes Actions: Port Forward to Pod",
     ]
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
