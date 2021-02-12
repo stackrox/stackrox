@@ -10,11 +10,9 @@ import (
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
@@ -46,37 +44,19 @@ func init() {
 	)
 }
 
-var (
-	clusterReadAccessForNodeStoreCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-		sac.ResourceScopeKeys(resources.Cluster),
-	))
-)
-
 // Node returns a resolver for a matching node, or nil if no node is found in any cluster
 func (resolver *Resolver) Node(ctx context.Context, args struct{ graphql.ID }) (*nodeResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Node")
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-	clusters, err := resolver.ClusterDataStore.GetClusters(clusterReadAccessForNodeStoreCtx)
+
+	nodeLoader, err := loaders.GetNodeLoader(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for _, cluster := range clusters {
-		store, err := resolver.NodeGlobalDataStore.GetClusterNodeStore(ctx, cluster.GetId(), false)
-		if err != nil {
-			return nil, err
-		}
-		node, err := store.GetNode(string(args.ID))
-		if err != nil {
-			return nil, err
-		}
-		if node != nil {
-			return &nodeResolver{root: resolver, data: node}, nil
-		}
-	}
-	return nil, nil
+	node, err := nodeLoader.FromID(ctx, string(args.ID))
+	return resolver.wrapNode(node, node != nil, err)
 }
 
 // Nodes returns resolvers for a matching nodes, or nil if no node is found in any cluster
@@ -85,26 +65,16 @@ func (resolver *Resolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*no
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-	query, err := args.AsV1QueryOrEmpty()
+
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-
-	var nodeResolvers []*nodeResolver
-	nodes, err := resolver.NodeGlobalDataStore.SearchRawNodes(ctx, query)
+	nodeLoader, err := loaders.GetNodeLoader(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	for _, node := range nodes {
-		nodeResolvers = append(nodeResolvers, &nodeResolver{root: resolver, data: node})
-	}
-
-	resolvers, err := paginationWrapper{
-		pv: query.Pagination,
-	}.paginate(nodeResolvers, nil)
-
-	return resolvers.([]*nodeResolver), err
+	return resolver.wrapNodes(nodeLoader.FromQuery(ctx, q))
 }
 
 // NodeCount returns count of nodes across clusters
