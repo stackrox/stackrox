@@ -188,7 +188,7 @@ class ImageScanningTest extends BaseSpecification {
         then:
         "validate scan results for the image"
         Timer t = new Timer(20, 3)
-        while (imageDetail.scan?.componentsCount == 0 && t.IsValid()) {
+        while (imageDetail?.scan?.componentsCount == 0 && t.IsValid()) {
             println "waiting on scan details..."
             sleep 3000
             ImageService.scanImage(deployment.image)
