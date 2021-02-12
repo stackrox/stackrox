@@ -49,7 +49,7 @@ func Get() string {
 func Set(value string) {
 	effectiveClusterID, err := centralsensor.GetClusterID(value, clusterIDFromCert())
 	if err != nil {
-		log.Panic("Invalid dynamic cluster ID value %q: %v", value, err)
+		log.Panicf("Invalid dynamic cluster ID value %q: %v", value, err)
 	}
 	if value != "" {
 		log.Infof("Received dynamic cluster ID %q", value)
