@@ -214,27 +214,23 @@ If you would like to debug local or even remote deployment, follow the procedure
     ```
     Alternatively, debug build will also be created when the branch name contains `-debug` substring. This works locally with `make image` and in CircleCI.
  2. Deploy the image using instructions from this README file. Works both with `deploy-local.sh` and `deploy.sh`.
- 3. If working with local deployment on Docker and MacOS, run the following to prevent `Could not attach to pid 1` error:
+ 3. Start the debugger (and port forwarding) in the target pod using `roxdebug` command from `workflow` repo.
     ```bash
-    $ kubectl --namespace stackrox run --privileged --rm -it --restart=Never --image=alpine debug-enabler -- /bin/sh -c 'echo 0 > /proc/sys/kernel/yama/ptrace_scope'
+    # For central
+    $ roxdebug
+    # For sensor
+    $ roxdebug deploy/sensor
+    # See usage help
+    $ roxdebug --help
     ```
- 4. Launch and expose `dlv` debugger in the target container. For central this would be:
-    ```bash
-    # Forward debugger port to localhost
-    $ kubectl --namespace stackrox port-forward deploy/central 40000:40000 &
-    # Launch and attach debugger to the main process in the container
-    $ kubectl --namespace stackrox exec -it deploy/central -- /go/bin/dlv --headless --listen=:40000 --api-version=2 --accept-multiclient attach 1 --continue
-    ```
-    Swap `deploy/central` with `deploy/sensor` if you'd like to debug sensor instead.  
-    To stop debugger and port forwarding: hit `Control+C`, run `fg`, and hit `Control+C` again.
- 5. Configure GoLand for remote debugging (should be done only once):
+ 4. Configure GoLand for remote debugging (should be done only once):
     1. Open `Run | Edit Configurations …`, click on the `+` icon to add new configuration, choose `Go Remote` template.
     2. Choose `Host:` `localhost` and `Port:` `40000`. Give this configuration some name.
-    3. Select `On disconnect:` `Stop remote Delve process` (this will prevent `dlv` getting stuck after GoLand disconnects).
- 6. Attach GoLand to debugging port: select `Run | Debug…` and choose configuration you've created.  
+    3. Select `On disconnect:` `Leave it running` (this prevents GoLand forgetting breakpoints on reconnect).
+ 5. Attach GoLand to debugging port: select `Run | Debug…` and choose configuration you've created.  
     If all done right, you should see `Connected` message in the `Debug | Debugger | Variables` window at the lower part
     of the screen.
- 7. Set some code breakpoints, trigger corresponding actions and happy debugging!
+ 6. Set some code breakpoints, trigger corresponding actions and happy debugging!
 
 See <https://stack-rox.atlassian.net/wiki/spaces/ENGKB/pages/1840382021/Debugging+go+code+running+in+Kubernetes> for
 more info.
