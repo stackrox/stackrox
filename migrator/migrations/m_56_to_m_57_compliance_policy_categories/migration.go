@@ -16,6 +16,11 @@ const (
 	dockerCIS             = "Docker CIS"
 )
 
+type policyUpdate struct {
+	newName          string
+	removeCategories []string
+}
+
 var (
 	migration = types.Migration{
 		StartingSeqNum: 56,
@@ -28,23 +33,56 @@ var (
 	policyBucket = []byte("policies")
 
 	// This maps the policy IDs I want to update to the categories I want to remove from that .policy
-	policiesToMigrate = map[string][]string{
+	policyChanges = map[string]policyUpdate{
 		"47cb9e0a-879a-417b-9a8f-de644d7c8a77": {
-			securityBestPractices,
+			newName: "Docker CIS 5.16: Ensure that the host's IPC namespace is not shared",
+			removeCategories: []string{
+				securityBestPractices,
+			},
 		},
 		"436811e7-892f-4da6-a0f5-8cc459f1b954": {
-			securityBestPractices,
+			newName: "Docker CIS 5.15: Ensure that the host's process namespace is not shared",
+			removeCategories: []string{
+				securityBestPractices,
+			},
 		},
 		"6abcaa13-9ed6-4109-a1a7-be2e8280e49e": {
-			securityBestPractices,
+			newName: "Docker CIS 5.7: Ensure privileged ports are not mapped within containers",
+			removeCategories: []string{
+				securityBestPractices,
+			},
 		},
 		"dce17697-1b72-49d2-b18a-05d893cd9368": {
-			securityBestPractices,
-			devOpsBestPractices,
+			newName: "Docker CIS 4.1: Ensure That a User for the Container Has Been Created",
+			removeCategories: []string{
+				securityBestPractices,
+				devOpsBestPractices,
+			},
 		},
 		"9a91b4de-d52e-4d4d-a65e-1e785c3501b1": {
-			securityBestPractices,
-			devOpsBestPractices,
+			newName: "Docker CIS 4.7: Alert on Update Instruction",
+			removeCategories: []string{
+				securityBestPractices,
+				devOpsBestPractices,
+			},
+		},
+		"32d770b9-c6ba-4398-b48a-0c3e807644ed": {
+			newName: "Docker CIS 5.19: Ensure mount propagation mode is not enabled",
+			removeCategories: []string{
+				securityBestPractices,
+			},
+		},
+		"6226d4ad-7619-4a0b-a160-46373cfcee66": {
+			newName: "Docker CIS 5.9 and 5.20: Ensure that the host's network namespace is not shared",
+			removeCategories: []string{
+				securityBestPractices,
+			},
+		},
+		"41e5153f-98d1-4830-9f80-983afcbe73c1": {
+			newName: "Docker CIS 5.21: Ensure the default seccomp profile is not disabled",
+			removeCategories: []string{
+				securityBestPractices,
+			},
 		},
 	}
 )
@@ -60,7 +98,7 @@ func migrateNewPolicyCategories(db *bolt.DB) error {
 			return errors.Errorf("bucket %q not found", policyBucket)
 		}
 
-		for migrateID, removeCategories := range policiesToMigrate {
+		for migrateID, policyChange := range policyChanges {
 			policyBytes := bucket.Get([]byte(migrateID))
 			if policyBytes == nil {
 				log.WriteToStderrf("no policy exists for ID %s in policy category migration.  Continuing", migrateID)
@@ -72,7 +110,10 @@ func migrateNewPolicyCategories(db *bolt.DB) error {
 				// Unclear how to recover from unmarshal error, abort the transaction.
 				return errors.Wrapf(err, "failed to unmarshal policy data for key %q", migrateID)
 			}
-			migratePolicy(policy, removeCategories)
+			migratePolicy(policy, policyChange.removeCategories)
+			if policyChange.newName != "" {
+				policy.Name = policyChange.newName
+			}
 
 			obj, err := proto.Marshal(policy)
 			if err != nil {

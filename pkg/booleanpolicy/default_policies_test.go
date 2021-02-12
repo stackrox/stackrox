@@ -1203,7 +1203,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Ensure That a User for the Container Has Been Created",
+			policyName: "Docker CIS 4.1: Ensure That a User for the Container Has Been Created",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				depWithRootUser.GetId(): {
 					{
@@ -1213,7 +1213,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Alert on Update Instruction",
+			policyName: "Docker CIS 4.7: Alert on Update Instruction",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				depWithUpdate.GetId(): {
 					{
@@ -1223,7 +1223,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Ensure privileged ports are not mapped within containers",
+			policyName: "Docker CIS 5.7: Ensure privileged ports are not mapped within containers",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				restrictedHostPortDep.GetId(): {
 					{
@@ -1233,7 +1233,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Ensure that the host's process namespace is not shared",
+			policyName: "Docker CIS 5.15: Ensure that the host's process namespace is not shared",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				hostPIDDep.GetId(): {
 					{Message: "Deployment uses the host's process ID namespace"},
@@ -1241,7 +1241,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Ensure that the host's IPC namespace is not shared",
+			policyName: "Docker CIS 5.16: Ensure that the host's IPC namespace is not shared",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				hostIPCDep.GetId(): {
 					{Message: "Deployment uses the host's IPC namespace"},
@@ -1249,7 +1249,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Ensure mount propagation mode is not enabled",
+			policyName: "Docker CIS 5.19: Ensure mount propagation mode is not enabled",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				mountPropagationDep.GetId(): {
 					{Message: "Writable volume '' has mount propagation 'bidirectional'"},
@@ -1257,7 +1257,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Ensure the default seccomp profile is not disabled",
+			policyName: "Docker CIS 5.21: Ensure the default seccomp profile is not disabled",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				noSeccompProfileDep.GetId(): {
 					{Message: "Container has Seccomp profile type 'unconfined'"},
@@ -1265,7 +1265,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Ensure that the host's network namespace is not shared",
+			policyName: "Docker CIS 5.9 and 5.20: Ensure that the host's network namespace is not shared",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				hostNetworkDep.GetId(): {
 					{Message: "Deployment uses the host's network namespace"},

@@ -1,6 +1,6 @@
 {
   "id": "9a91b4de-d52e-4d4d-a65e-1e785c3501b1",
-  "name": "Alert on Update Instruction",
+  "name": "Docker CIS 4.7: Alert on Update Instruction",
   "description": "Ensure update instructions are not used alone in the Dockerfile",
   "rationale": "Adding update instructions in a single line on the Dockerfile will cause the update layer to be cached. When you then build any image later using the same instruction, this will cause the previously cached update layer to be used, potentially preventing any fresh updates from being applied to later builds.",
   "whitelists": [

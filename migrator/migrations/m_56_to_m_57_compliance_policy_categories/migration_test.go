@@ -13,6 +13,7 @@ import (
 
 var (
 	someOtherCategory = "some other category"
+	testName          = "bla bla bla"
 )
 
 func TestPolicyMigration(t *testing.T) {
@@ -24,10 +25,11 @@ func TestPolicyMigration(t *testing.T) {
 			return err
 		}
 
-		for id, categories := range policiesToMigrate {
+		for id, policyChange := range policyChanges {
 			testPolicy := &storage.Policy{
 				Id:         id,
-				Categories: append(categories, someOtherCategory),
+				Name:       testName,
+				Categories: append(policyChange.removeCategories, someOtherCategory),
 			}
 			bytes, err := proto.Marshal(testPolicy)
 			if err != nil {
@@ -62,10 +64,11 @@ func TestPolicyMigration(t *testing.T) {
 	})
 	require.NoError(t, err, "Read migrated policies from the bucket")
 
-	require.Len(t, migratedPolicies, len(policiesToMigrate))
+	require.Len(t, migratedPolicies, len(policyChanges))
 	for _, policy := range migratedPolicies {
 		require.Len(t, policy.GetCategories(), 2)
 		require.Contains(t, policy.GetCategories(), dockerCIS)
 		require.Contains(t, policy.GetCategories(), someOtherCategory)
+		require.NotEqual(t, testName, policy.Name)
 	}
 }
