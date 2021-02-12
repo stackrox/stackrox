@@ -1,41 +1,53 @@
 import * as Icon from 'react-feather';
 
+import {
+    dashboardPath,
+    networkBasePath,
+    violationsBasePath,
+    configManagementPath,
+    complianceBasePath,
+    vulnManagementPath,
+    riskBasePath,
+    apidocsPath,
+    productDocsPath,
+    basePathToLabelMap,
+} from 'routePaths';
 import { configureLinks } from './NavigationPanel';
 
 export const navLinks = [
     {
-        text: 'Dashboard',
-        to: '/main/dashboard',
+        text: basePathToLabelMap[dashboardPath],
+        to: dashboardPath,
         Icon: Icon.BarChart2,
     },
     {
-        text: 'Network Graph',
-        to: '/main/network',
+        text: basePathToLabelMap[networkBasePath],
+        to: networkBasePath,
         Icon: Icon.Share2,
     },
     {
-        text: 'Violations',
-        to: '/main/violations',
+        text: basePathToLabelMap[violationsBasePath],
+        to: violationsBasePath,
         Icon: Icon.AlertTriangle,
     },
     {
-        text: 'Compliance',
-        to: '/main/compliance',
+        text: basePathToLabelMap[complianceBasePath],
+        to: complianceBasePath,
         Icon: Icon.CheckSquare,
     },
     {
-        text: 'Vulnerability Management',
-        to: '/main/vulnerability-management',
+        text: basePathToLabelMap[vulnManagementPath],
+        to: vulnManagementPath,
         Icon: Icon.Layers,
     },
     {
-        text: 'Configuration Management',
-        to: '/main/configmanagement',
+        text: basePathToLabelMap[configManagementPath],
+        to: configManagementPath,
         Icon: Icon.UserCheck,
     },
     {
-        text: 'Risk',
-        to: '/main/risk',
+        text: basePathToLabelMap[riskBasePath],
+        to: riskBasePath,
         Icon: Icon.ShieldOff,
     },
     {
@@ -49,13 +61,13 @@ export const navLinks = [
 ];
 
 export const apidocsLink = {
-    text: 'API Reference',
-    to: '/main/apidocs',
+    text: basePathToLabelMap[apidocsPath],
+    to: apidocsPath,
     Icon: Icon.Server,
 };
 
 export const productdocsLink = {
-    text: 'Help Center',
-    to: '/docs/product',
+    text: basePathToLabelMap[productDocsPath],
+    to: productDocsPath,
     Icon: Icon.HelpCircle,
 };

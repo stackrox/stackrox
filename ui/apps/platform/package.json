@@ -56,6 +56,7 @@
         "react-dom": "^17.0.1",
         "react-dropzone": "^11.2.4",
         "react-feather": "^2.0.9",
+        "react-helmet": "^6.1.0",
         "react-modal": "^3.12.1",
         "react-numeric-input": "^2.2.3",
         "react-onclickoutside": "^6.8.0",

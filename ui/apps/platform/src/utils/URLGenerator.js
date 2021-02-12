@@ -6,7 +6,7 @@ import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import useCases from 'constants/useCaseTypes';
 import {
     workflowPaths,
-    clustersPath,
+    clustersBasePath,
     clustersPathWithParam,
     riskPath,
     secretsPath,
@@ -24,8 +24,8 @@ const defaultPathMap = {
 const legacyPathMap = {
     [useCases.CLUSTERS]: {
         [pageTypes.ENTITY]: clustersPathWithParam,
-        [pageTypes.LIST]: clustersPath,
-        [pageTypes.DASHBOARD]: clustersPath,
+        [pageTypes.LIST]: clustersBasePath,
+        [pageTypes.DASHBOARD]: clustersBasePath,
     },
     [useCases.RISK]: {
         [pageTypes.ENTITY]: riskPath,

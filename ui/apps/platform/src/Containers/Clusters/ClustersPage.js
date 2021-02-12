@@ -15,7 +15,7 @@ import { knownBackendFlags } from 'utils/featureFlags';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import { actions as clustersActions } from 'reducers/clusters';
 import { selectors } from 'reducers';
-import { clustersPath, clustersPathWithParam, integrationsPath } from 'routePaths';
+import { clustersBasePath, clustersPathWithParam, integrationsPath } from 'routePaths';
 import parseURL from 'utils/URLParser';
 
 import ClustersTablePanel from './ClustersTablePanel';
@@ -62,7 +62,7 @@ const ClustersPage = ({
     useEffect(() => {
         const newPath = selectedClusterId
             ? generatePath(clustersPathWithParam, { clusterId: selectedClusterId })
-            : clustersPath;
+            : clustersBasePath;
         history.push({
             pathname: newPath,
             search,

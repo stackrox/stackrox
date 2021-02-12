@@ -6,7 +6,7 @@ import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 
 import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
-import { clustersPath } from 'routePaths';
+import { clustersBasePath } from 'routePaths';
 
 const bgHoverDefault = 'hover:bg-base-200';
 const fgColorDefault = 'text-base-600';
@@ -104,7 +104,7 @@ const ClusterStatusButton = ({ degraded, unhealthy, history }) => {
 
     const onClick = () => {
         history.push({
-            pathname: clustersPath,
+            pathname: clustersBasePath,
             search: '',
             // TODO after ClustersPage sets search filter according to search query string in URL:
             // If any clusters have problems, then Clusters list has search filter.

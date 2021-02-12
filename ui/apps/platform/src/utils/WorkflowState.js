@@ -146,6 +146,10 @@ export class WorkflowState {
         return new WorkflowState(useCase, stateStack, search, sort, paging);
     }
 
+    getUseCase() {
+        return this.useCase;
+    }
+
     // Returns current entity (top of stack)
     getCurrentEntity() {
         if (!this.stateStack.length) {
@@ -177,6 +181,16 @@ export class WorkflowState {
             return null;
         }
         return this.stateStack[0];
+    }
+
+    getBaseEntityType() {
+        const baseEntity = this.getBaseEntity();
+
+        if (!baseEntity) {
+            return '';
+        }
+
+        return baseEntity.t;
     }
 
     // Returns workflow entities related to page level

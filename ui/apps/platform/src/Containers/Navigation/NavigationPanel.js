@@ -6,39 +6,40 @@ import { connect } from 'react-redux';
 
 import { selectors } from 'reducers';
 import {
-    clustersPath,
-    policiesListPath,
+    clustersBasePath,
+    policiesBasePath,
     integrationsPath,
     accessControlPath,
     systemConfigPath,
     systemHealthPath,
+    basePathToLabelMap,
 } from 'routePaths';
 import { filterLinksByFeatureFlag } from './navHelpers';
 
 export const configureLinks = [
     {
-        text: 'Clusters',
-        to: clustersPath,
+        text: basePathToLabelMap[clustersBasePath],
+        to: clustersBasePath,
     },
     {
-        text: 'System Policies',
-        to: policiesListPath,
+        text: basePathToLabelMap[policiesBasePath],
+        to: policiesBasePath,
     },
     {
-        text: 'Integrations',
+        text: basePathToLabelMap[integrationsPath],
         to: integrationsPath,
     },
     {
-        text: 'Access Control',
+        text: basePathToLabelMap[accessControlPath],
         to: accessControlPath,
     },
     {
-        text: 'System Configuration',
+        text: basePathToLabelMap[systemConfigPath],
         to: systemConfigPath,
         data: 'system-config',
     },
     {
-        text: 'System Health',
+        text: basePathToLabelMap[systemHealthPath],
         to: systemHealthPath,
     },
 ];

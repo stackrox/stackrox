@@ -8,7 +8,7 @@ import integrationsList from 'Containers/Integrations/integrationsList';
 import useInterval from 'hooks/useInterval';
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
-import { clustersPath } from 'routePaths';
+import { clustersBasePath } from 'routePaths';
 import { fetchClustersAsArray } from 'services/ClustersService';
 import {
     fetchBackupIntegrationsHealth,
@@ -163,7 +163,7 @@ const SystemHealthDashboardPage = () => {
                         className="sx-2"
                         header="Cluster Health"
                         headerComponents={
-                            <Link to={clustersPath} className={smallButtonClassName}>
+                            <Link to={clustersBasePath} className={smallButtonClassName}>
                                 View All
                             </Link>
                         }

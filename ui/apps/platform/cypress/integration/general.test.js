@@ -17,11 +17,51 @@ describe('General sanity checks', () => {
         cy.route('GET', api.alerts.countsByCluster).as('alertsByCluster');
     });
 
-    it('should have correct <title>', () => {
-        cy.visit('/');
-        cy.wait('@alertsByCluster');
+    describe('should have correct page titles based on URL', () => {
+        it('for Dashboard', () => {
+            cy.visit('/main');
+            cy.title().should('eq', 'Dashboard | StackRox');
+        });
 
-        cy.title().should('eq', 'StackRox');
+        it('for Network Graph', () => {
+            cy.visit('/main/network');
+            cy.title().should('eq', 'Network Graph | StackRox');
+        });
+
+        it('for Violations', () => {
+            cy.visit('/main/violations');
+            cy.title().should('eq', 'Violations | StackRox');
+        });
+
+        it('for Violations with side panel open', () => {
+            cy.visit('/main/violations/1234');
+            cy.title().should('eq', 'Violations | StackRox');
+        });
+
+        it('for Compliance Dashboard', () => {
+            cy.visit('/main/compliance');
+            cy.title().should('eq', 'Compliance | StackRox');
+        });
+
+        it('for Compliance Namespaces', () => {
+            cy.visit('/main/compliance/namespaces');
+            cy.title().should('eq', 'Compliance - Namespace | StackRox');
+        });
+
+        it('for API Docs', () => {
+            cy.visit('/main/apidocs');
+            cy.title().should('eq', 'API Reference | StackRox');
+        });
+
+        it('for User Page', () => {
+            cy.visit('/main/user');
+            cy.title().should('eq', 'User Page | StackRox');
+        });
+
+        it('for License Page', () => {
+            cy.visit('/main/license');
+            cy.title().should('eq', 'License | StackRox');
+        });
     });
 
     it('should render navbar with Dashboard selected', () => {

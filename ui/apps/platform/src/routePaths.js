@@ -12,14 +12,17 @@ export const licenseStartUpPath = `/license`;
 export const authResponsePrefix = '/auth/response/';
 
 export const dashboardPath = `${mainPath}/dashboard`;
-export const networkPath = `${mainPath}/network/:deploymentId?/:externalType?`;
-export const violationsPath = `${mainPath}/violations/:alertId?`;
-export const clustersPath = `${mainPath}/clusters`;
-export const clustersPathWithParam = `${clustersPath}/:clusterId?`;
+export const networkBasePath = `${mainPath}/network`;
+export const networkPath = `${networkBasePath}/:deploymentId?/:externalType?`;
+export const violationsBasePath = `${mainPath}/violations`;
+export const violationsPath = `${violationsBasePath}/:alertId?`;
+export const clustersBasePath = `${mainPath}/clusters`;
+export const clustersPathWithParam = `${clustersBasePath}/:clusterId?`;
 export const integrationsPath = `${mainPath}/integrations`;
-export const policiesListPath = `${mainPath}/policies`;
-export const policiesPath = `${policiesListPath}/:policyId?/:command?`;
-export const riskPath = `${mainPath}/risk/:deploymentId?`;
+export const policiesBasePath = `${mainPath}/policies`;
+export const policiesPath = `${policiesBasePath}/:policyId?/:command?`;
+export const riskBasePath = `${mainPath}/risk`;
+export const riskPath = `${riskBasePath}/:deploymentId?`;
 export const imagesPath = `${mainPath}/images/:imageId?`;
 export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
 export const apidocsPath = `${mainPath}/apidocs`;
@@ -28,11 +31,13 @@ export const accessControlPathV2 = `${mainPath}/access-control`;
 export const licensePath = `${mainPath}/license`;
 export const userPath = `${mainPath}/user`;
 export const systemConfigPath = `${mainPath}/systemconfig`;
+export const complianceBasePath = `${mainPath}/compliance`;
 export const compliancePath = `${mainPath}/:context(compliance)`;
 export const configManagementPath = `${mainPath}/configmanagement`;
 export const vulnManagementPath = `${mainPath}/vulnerability-management`;
 export const dataRetentionPath = `${mainPath}/retention`;
 export const systemHealthPath = `${mainPath}/system-health`;
+export const productDocsPath = '/docs/product';
 
 /**
  * New Framwork-related route paths
@@ -73,6 +78,28 @@ export const urlEntityTypes = {
 
 export const useCasePaths = {
     [useCaseTypes.VULN_MANAGEMENT]: 'vulnerability-management',
+};
+
+export const basePathToLabelMap = {
+    [dashboardPath]: 'Dashboard',
+    [networkBasePath]: 'Network Graph',
+    [violationsBasePath]: 'Violations',
+    [complianceBasePath]: 'Compliance',
+    [vulnManagementPath]: 'Vulnerability Management',
+    [configManagementPath]: 'Configuration Management',
+    [riskBasePath]: 'Risk',
+    [apidocsPath]: 'API Reference',
+    [productDocsPath]: 'Help Center',
+    [clustersBasePath]: 'Clusters',
+    [policiesBasePath]: 'System Policies',
+    [integrationsPath]: 'Integrations',
+    [accessControlPath]: 'Access Control',
+    [systemConfigPath]: 'System Configuration',
+    [systemHealthPath]: 'System Health',
+    [loginPath]: 'Log In',
+    [licensePath]: 'License',
+    [licenseStartUpPath]: 'License',
+    [userPath]: 'User Page',
 };
 
 const entityListTypeMatcher = `(${Object.values(urlEntityListTypes).join('|')})`;

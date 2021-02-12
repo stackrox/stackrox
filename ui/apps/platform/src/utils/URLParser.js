@@ -11,6 +11,8 @@ import {
     urlEntityTypes,
     clustersPathWithParam,
     riskPath,
+    violationsPath,
+    policiesPath,
 } from '../routePaths';
 
 function getTypeKeyFromParamValue(value, listOnly) {
@@ -111,19 +113,47 @@ function parseURL(location) {
         path: clustersPathWithParam,
         exact: true,
     });
-    const legacyParams = matchedRiskParams
-        ? {
-              params: {
-                  ...matchedRiskParams,
-                  context: useCases.RISK,
-              },
-          }
-        : {
-              params: {
-                  ...matchedClustersParams,
-                  context: useCases.CLUSTERS,
-              },
-          };
+    const matchedViolationsParams = matchPath(pathname, {
+        path: violationsPath,
+        exact: true,
+    });
+    const matchedPoliciesParams = matchPath(pathname, {
+        path: policiesPath,
+        exact: true,
+    });
+    let legacyParams = { params: {} };
+    if (matchedRiskParams) {
+        legacyParams = {
+            params: {
+                ...matchedRiskParams,
+                context: useCases.RISK,
+            },
+        };
+    }
+    if (matchedClustersParams) {
+        legacyParams = {
+            params: {
+                ...matchedClustersParams,
+                context: useCases.CLUSTERS,
+            },
+        };
+    }
+    if (matchedViolationsParams) {
+        legacyParams = {
+            params: {
+                ...matchedViolationsParams,
+                context: useCases.VIOLATIONS,
+            },
+        };
+    }
+    if (matchedPoliciesParams) {
+        legacyParams = {
+            params: {
+                ...matchedPoliciesParams,
+                context: useCases.POLICIES,
+            },
+        };
+    }
 
     const { params } = entityParams || listParams || dashboardParams || legacyParams;
     const queryStr = search ? qs.parse(search, { ignoreQueryPrefix: true }) : {};

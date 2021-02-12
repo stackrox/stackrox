@@ -1,14 +1,23 @@
 import useCaseTypes from 'constants/useCaseTypes';
 
+const legacyPageLabels = {
+    [useCaseTypes.CLUSTERS]: 'Clusters',
+    [useCaseTypes.RISK]: 'Risk',
+    [useCaseTypes.VIOLATIONS]: 'Violations',
+    [useCaseTypes.POLICIES]: 'System Policies',
+};
+
 const useCaseLabels = {
     [useCaseTypes.CONFIG_MANAGEMENT]: 'Configuration Management',
     [useCaseTypes.VULN_MANAGEMENT]: 'Vulnerability Management',
+    [useCaseTypes.COMPLIANCE]: 'Compliance',
     COMPLIANCE: 'Compliance',
     RISK: 'Risk',
     SECRET: 'Secret',
     POLICY: 'Policy',
     SERVICE_ACCOUNT: 'Service Account',
     DEPLOYMENT: 'Deployment',
+    ...legacyPageLabels,
 };
 
 export const useCaseShortLabels = {
