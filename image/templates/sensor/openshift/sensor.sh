@@ -19,7 +19,7 @@ echo "Creating sensor security context constraints..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-scc.yaml"
 echo "Creating sensor network policies..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-netpol.yaml"
-echo "Creating sensor pod security policues..."
+echo "Creating sensor pod security policies..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-pod-security.yaml"
 
 # OpenShift roles can be delayed to be added
@@ -42,7 +42,7 @@ type: kubernetes.io/dockerconfigjson
 EOF
 fi
 
-${KUBE_COMMAND} secrets add serviceaccount/sensor secrets/stackrox --for=pull
+${KUBE_COMMAND} secrets link serviceaccount/sensor secrets/stackrox --for=pull
 
 if ! ${KUBE_COMMAND} get secret/collector-stackrox -n stackrox &>/dev/null; then
   registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.CollectorRegistry}}")"
