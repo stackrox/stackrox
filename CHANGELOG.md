@@ -24,6 +24,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     - 4.7
     - 5.1
     - 5.7
+    - 5.9
     - 5.15
     - 5.16
     - 5.19
