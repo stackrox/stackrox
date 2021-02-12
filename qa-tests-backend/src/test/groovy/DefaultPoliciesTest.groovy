@@ -58,14 +58,14 @@ class DefaultPoliciesTest extends BaseSpecification {
             "Curl in Image",
             "Wget in Image",
             "Mount Docker Socket",
-            "Ensure that the host's process namespace is not shared",
-            "Ensure privileged ports are not mapped within containers",
+            "Docker CIS 5.15: Ensure that the host's process namespace is not shared",
+            "Docker CIS 5.7: Ensure privileged ports are not mapped within containers",
             Constants.ANY_FIXED_VULN_POLICY,
     ]
 
     static final private List<String> WHITELISTED_KUBE_SYSTEM_DEPLOYMENTS_AND_POLICIES = [
             "tunnelfront - Secure Shell Server (sshd) Execution",
-            "tunnelfront - Alert on Update Instruction",
+            "tunnelfront - Docker CIS 4.7: Alert on Update Instruction",
             "webhookserver - Kubernetes Actions: Port Forward to Pod",
     ]
 
