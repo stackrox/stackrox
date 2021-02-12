@@ -44,7 +44,7 @@ message Node {
 
     google.protobuf.Timestamp last_updated = 25 [(gogoproto.moretags) = "search:\"Last Updated,hidden\""];
     // Time we received an update from Kubernetes.
-    google.protobuf.Timestamp k8s_updated  = 26;
+    google.protobuf.Timestamp k8s_updated  = 26 [(gogoproto.moretags) = "sensorhash:\"ignore\""];
 
     NodeScan scan                          = 18 [(gogoproto.moretags) = "policy:\"Node Scan\""];
     oneof set_components {
