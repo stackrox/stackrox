@@ -3,13 +3,13 @@ package blevesearch
 import (
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/parse"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/utils"
@@ -150,7 +150,7 @@ func newBoolQuery(_ v1.SearchCategory, field string, value string, modifiers ...
 	if len(modifiers) > 0 {
 		return nil, errors.Errorf("modifiers for bool query not allowed: %+v", modifiers)
 	}
-	b, err := strconv.ParseBool(value)
+	b, err := parse.FriendlyParseBool(value)
 	if err != nil {
 		return nil, err
 	}
@@ -171,6 +171,7 @@ func newEnumQuery(_ v1.SearchCategory, field, value string, queryModifiers ...qu
 			if err != nil {
 				return nil, errors.Wrap(err, "invalid regex")
 			}
+
 			enumValues = enumregistry.GetComplementOfValuesMatchingRegex(field, re)
 			break
 		}
