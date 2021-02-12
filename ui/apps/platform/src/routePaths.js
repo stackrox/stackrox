@@ -24,6 +24,7 @@ export const imagesPath = `${mainPath}/images/:imageId?`;
 export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
 export const apidocsPath = `${mainPath}/apidocs`;
 export const accessControlPath = `${mainPath}/access`;
+export const accessControlPathV2 = `${mainPath}/access-control`;
 export const licensePath = `${mainPath}/license`;
 export const userPath = `${mainPath}/user`;
 export const systemConfigPath = `${mainPath}/systemconfig`;

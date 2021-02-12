@@ -1,4 +1,20 @@
+/*
+export type UseCase =
+    | 'ACCESS_CONTROL'
+    | 'CLUSTERS'
+    | 'COMPLIANCE'
+    | 'CONFIG_MANAGEMENT'
+    | 'DEPLOYMENT'
+    | 'POLICY'
+    | 'RISK'
+    | 'SECRET'
+    | 'SERVICE_ACCOUNT'
+    | 'VULN_MANAGEMENT';
+*/
+
+// TODO compare to routePaths
 const useCaseTypes = {
+    ACCESS_CONTROL: 'access-control',
     CONFIG_MANAGEMENT: 'configmanagement',
     VULN_MANAGEMENT: 'vulnerability-management',
     COMPLIANCE: 'compliance',

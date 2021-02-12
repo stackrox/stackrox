@@ -17,6 +17,7 @@ import {
     riskPath,
     apidocsPath,
     accessControlPath,
+    accessControlPathV2,
     licensePath,
     userPath,
     systemConfigPath,
@@ -27,6 +28,7 @@ import {
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { actions as cliSearchActions } from 'reducers/cli';
+import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 
 import asyncComponent from 'Components/AsyncComponent';
 import Button from 'Components/Button';
@@ -55,6 +57,9 @@ const AsyncPoliciesPage = asyncComponent(() => import('Containers/Policies/Page'
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
 const AsyncAccessControlPage = asyncComponent(() => import('Containers/AccessControl/Page'));
+const AsyncAccessControlRoutes = asyncComponent(() =>
+    import('Containers/AccessControl/AccessControlRoutes')
+);
 const AsyncLicensePage = asyncComponent(() => import('Containers/License/Page'));
 const AsyncUserPage = asyncComponent(() => import('Containers/User/UserPage'));
 const AsyncSystemConfigPage = asyncComponent(() => import('Containers/SystemConfig/Page'));
@@ -123,6 +128,15 @@ class MainPage extends Component {
                     <ProtectedRoute path={policiesPath} component={AsyncPoliciesPage} />
                     <ProtectedRoute path={riskPath} component={AsyncRiskPage} />
                     <ProtectedRoute path={accessControlPath} component={AsyncAccessControlPage} />
+                    <ProtectedRoute
+                        path={accessControlPathV2}
+                        component={AsyncAccessControlRoutes}
+                        featureFlagEnabled={isBackendFeatureFlagEnabled(
+                            this.props.featureFlags,
+                            knownBackendFlags.ROX_SCOPED_ACCESS_CONTROL,
+                            false
+                        )}
+                    />
                     <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />
                     <ProtectedRoute
                         path={licensePath}

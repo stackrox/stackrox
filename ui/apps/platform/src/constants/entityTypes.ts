@@ -33,6 +33,8 @@ export const rbacConfigTypes: Record<RbacConfigType, RbacConfigType> = {
     ROLE: 'ROLE',
 };
 
+export type AccessControlEntityType = 'ACCESS_SCOPE' | 'AUTH_PROVIDER' | 'PERMISSION_SET' | 'ROLE';
+
 export type StandardEntityType = 'CONTROL' | 'CATEGORY' | 'STANDARD' | 'CHECK';
 
 export const standardEntityTypes: Record<StandardEntityType, StandardEntityType> = {

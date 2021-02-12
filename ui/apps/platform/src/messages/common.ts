@@ -1,4 +1,4 @@
-import { RbacConfigType } from 'constants/entityTypes';
+import { AccessControlEntityType, RbacConfigType } from 'constants/entityTypes';
 
 export const severityLabels = Object.freeze({
     CRITICAL_SEVERITY: 'Critical',
@@ -68,6 +68,13 @@ export const rbacConfigLabels: Record<RbacConfigType, string> = Object.freeze({
     SERVICE_ACCOUNT: 'service account',
     ROLE: 'role',
 });
+
+export const accessControlLabels: Record<AccessControlEntityType, string> = {
+    ACCESS_SCOPE: 'Access Scope',
+    AUTH_PROVIDER: 'Auth Provider',
+    PERMISSION_SET: 'Permission Set',
+    ROLE: 'Role',
+};
 
 export const stackroxSupport = Object.freeze({
     phoneNumber: {

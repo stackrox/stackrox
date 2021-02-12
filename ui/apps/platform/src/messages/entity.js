@@ -1,6 +1,7 @@
-import { rbacConfigLabels, resourceLabels } from './common';
+import { accessControlLabels, rbacConfigLabels, resourceLabels } from './common';
 
 export default {
+    ...accessControlLabels,
     ...rbacConfigLabels,
     ...resourceLabels,
 };
