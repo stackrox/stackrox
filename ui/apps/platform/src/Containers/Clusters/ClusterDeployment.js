@@ -82,7 +82,7 @@ const ClusterDeploymentPage = ({
         {(!editing || !clusterCheckedIn) && (
             <div className="flex flex-col text-primary-500 p-4">
                 {clusterCheckedIn ? (
-                    <div className="flex flex text-success-600 bg-success-200 border border-solid border-success-400 p-4 items-center">
+                    <div className="flex text-success-600 bg-success-200 border border-solid border-success-400 p-4 items-center">
                         <div className="flex-1 text-center">
                             <CheckCircle />
                         </div>
@@ -91,7 +91,7 @@ const ClusterDeploymentPage = ({
                         </div>
                     </div>
                 ) : (
-                    <div className="flex flex text-primary-600 bg-primary-200 border border-solid border-primary-400 p-4 items-center">
+                    <div className="flex text-primary-600 bg-primary-200 border border-solid border-primary-400 p-4 items-center">
                         <div className="text-center px-4">
                             <ClipLoader color="currentColor" loading size={20} />
                         </div>

@@ -318,14 +318,16 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
                             onFileDownload={onDownload}
                             clusterCheckedIn={!!selectedCluster?.healthStatus?.lastContact}
                         />
-                        <DownloadHelmValues
-                            clusterId={selectedClusterId}
-                            description={
-                                selectedCluster?.helmConfig
-                                    ? 'Download the required YAML to update your Helm values.'
-                                    : 'To start managing this cluster with a Helm chart, you can download the cluster’s current configuration values in Helm format.'
-                            }
-                        />
+                        {!!selectedCluster.id && (
+                            <DownloadHelmValues
+                                clusterId={selectedCluster.id}
+                                description={
+                                    selectedCluster?.helmConfig
+                                        ? 'Download the required YAML to update your Helm values.'
+                                        : 'To start managing this cluster with a Helm chart, you can download the cluster’s current configuration values in Helm format.'
+                                }
+                            />
+                        )}
                     </div>
                 )}
             </Panel>
