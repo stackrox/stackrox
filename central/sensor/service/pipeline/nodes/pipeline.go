@@ -104,9 +104,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	if features.HostScanning.Enabled() {
-		err := p.enricher.EnrichNode(enricher.EnrichmentContext{
-			FetchOpt: enricher.UseCachesIfPossible,
-		}, node)
+		err := p.enricher.EnrichNode(node)
 		if err != nil {
 			log.Warnf("enriching node %s:%s: %v", node.GetClusterName(), node.GetName(), err)
 		}

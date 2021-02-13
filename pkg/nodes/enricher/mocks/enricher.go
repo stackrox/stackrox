@@ -7,7 +7,6 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
-	enricher "github.com/stackrox/rox/pkg/nodes/enricher"
 	types "github.com/stackrox/rox/pkg/scanners/types"
 	reflect "reflect"
 )
@@ -36,17 +35,17 @@ func (m *MockNodeEnricher) EXPECT() *MockNodeEnricherMockRecorder {
 }
 
 // EnrichNode mocks base method
-func (m *MockNodeEnricher) EnrichNode(ctx enricher.EnrichmentContext, node *storage.Node) error {
+func (m *MockNodeEnricher) EnrichNode(node *storage.Node) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnrichNode", ctx, node)
+	ret := m.ctrl.Call(m, "EnrichNode", node)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // EnrichNode indicates an expected call of EnrichNode
-func (mr *MockNodeEnricherMockRecorder) EnrichNode(ctx, node interface{}) *gomock.Call {
+func (mr *MockNodeEnricherMockRecorder) EnrichNode(node interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNode", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNode), ctx, node)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNode", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNode), node)
 }
 
 // CreateNodeScanner mocks base method

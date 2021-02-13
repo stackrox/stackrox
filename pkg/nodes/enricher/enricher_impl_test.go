@@ -2,11 +2,9 @@ package enricher
 
 import (
 	"testing"
-	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stretchr/testify/assert"
@@ -67,72 +65,13 @@ func (f *fakeCVESuppressor) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
 
 func TestEnricherFlow(t *testing.T) {
 	cases := []struct {
-		name                string
-		ctx                 EnrichmentContext
-		inScanCache         bool
-		shortCircuitScanner bool
-		node                *storage.Node
+		name string
+		node *storage.Node
 
 		fns *fakeNodeScanner
 	}{
 		{
-			name: "nothing in the cache",
-			ctx: EnrichmentContext{
-				FetchOpt: UseCachesIfPossible,
-			},
-			inScanCache: false,
-			node:        &storage.Node{Id: "id"},
-
-			fns: &fakeNodeScanner{
-				requestedScan: true,
-			},
-		},
-		{
-			name: "scan in cache",
-			ctx: EnrichmentContext{
-				FetchOpt: UseCachesIfPossible,
-			},
-			inScanCache:         true,
-			shortCircuitScanner: true,
-			node:                &storage.Node{Id: "id"},
-
-			fns: &fakeNodeScanner{
-				requestedScan: false,
-			},
-		},
-		{
-			name: "data in cache, but force refetch",
-			ctx: EnrichmentContext{
-				FetchOpt: ForceRefetch,
-			},
-			inScanCache: true,
-			node:        &storage.Node{Id: "id"},
-
-			fns: &fakeNodeScanner{
-				requestedScan: true,
-			},
-		},
-		{
-			name: "data not in cache, but node already has scan",
-			ctx: EnrichmentContext{
-				FetchOpt: UseCachesIfPossible,
-			},
-			inScanCache:         false,
-			shortCircuitScanner: true,
-			node: &storage.Node{
-				Id:   "id",
-				Scan: &storage.NodeScan{},
-			},
-			fns: &fakeNodeScanner{
-				requestedScan: false,
-			},
-		},
-		{
-			name: "data not in cache and ignore existing nodes",
-			ctx: EnrichmentContext{
-				FetchOpt: IgnoreExistingNodes,
-			},
-			inScanCache: false,
+			name: "node already has scan",
 			node: &storage.Node{
 				Id:   "id",
 				Scan: &storage.NodeScan{},
@@ -142,18 +81,12 @@ func TestEnricherFlow(t *testing.T) {
 			},
 		},
 		{
-			name: "data in cache and ignore existing nodes",
-			ctx: EnrichmentContext{
-				FetchOpt: IgnoreExistingNodes,
-			},
-			inScanCache:         true,
-			shortCircuitScanner: true,
+			name: "node does not have scan",
 			node: &storage.Node{
-				Id:   "id",
-				Scan: &storage.NodeScan{},
+				Id: "id",
 			},
 			fns: &fakeNodeScanner{
-				requestedScan: false,
+				requestedScan: true,
 			},
 		},
 	}
@@ -170,14 +103,10 @@ func TestEnricherFlow(t *testing.T) {
 				scanners: map[string]types.NodeScannerWithDataSource{
 					fns.Type(): fns,
 				},
-				scanCache: expiringcache.NewExpiringCache(1 * time.Minute),
-				metrics:   newMetrics(pkgMetrics.CentralSubsystem),
+				metrics: newMetrics(pkgMetrics.CentralSubsystem),
 			}
 
-			if c.inScanCache {
-				enricherImpl.scanCache.Add(c.node.GetId(), c.node.GetScan())
-			}
-			err := enricherImpl.EnrichNode(c.ctx, c.node)
+			err := enricherImpl.EnrichNode(c.node)
 			require.NoError(t, err)
 
 			assert.Equal(t, c.fns, fns)
@@ -196,12 +125,11 @@ func TestCVESuppression(t *testing.T) {
 		scanners: map[string]types.NodeScannerWithDataSource{
 			fns.Type(): fns,
 		},
-		scanCache: expiringcache.NewExpiringCache(1 * time.Minute),
-		metrics:   newMetrics(pkgMetrics.CentralSubsystem),
+		metrics: newMetrics(pkgMetrics.CentralSubsystem),
 	}
 
 	node := &storage.Node{Id: "id"}
-	err := enricherImpl.EnrichNode(EnrichmentContext{}, node)
+	err := enricherImpl.EnrichNode(node)
 	require.NoError(t, err)
 	assert.True(t, node.Scan.Components[0].Vulns[0].Suppressed)
 }
@@ -211,14 +139,13 @@ func TestZeroIntegrations(t *testing.T) {
 	defer ctrl.Finish()
 
 	enricherImpl := &enricherImpl{
-		cves:      &fakeCVESuppressor{},
-		scanners:  make(map[string]types.NodeScannerWithDataSource),
-		scanCache: expiringcache.NewExpiringCache(1 * time.Minute),
-		metrics:   newMetrics(pkgMetrics.CentralSubsystem),
+		cves:     &fakeCVESuppressor{},
+		scanners: make(map[string]types.NodeScannerWithDataSource),
+		metrics:  newMetrics(pkgMetrics.CentralSubsystem),
 	}
 
 	node := &storage.Node{Id: "id", ClusterName: "cluster", Name: "node"}
-	err := enricherImpl.EnrichNode(EnrichmentContext{}, node)
+	err := enricherImpl.EnrichNode(node)
 	assert.Error(t, err)
 	expectedErrMsg := "error scanning node cluster:node error: no node scanners are integrated"
 	assert.Equal(t, expectedErrMsg, err.Error())

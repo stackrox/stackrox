@@ -10,26 +10,11 @@ import (
 
 // This interface encapsulates the metrics this package needs.
 type metrics interface {
-	IncrementScanCacheHit()
-
-	IncrementScanCacheMiss()
-
 	SetScanDurationTime(start time.Time, scanner string, err error)
 }
 
 type metricsImpl struct {
-	scanCacheHits   prometheus.Counter
-	scanCacheMisses prometheus.Counter
-
 	scanTimeDuration *prometheus.HistogramVec
-}
-
-func (m *metricsImpl) IncrementScanCacheHit() {
-	m.scanCacheHits.Inc()
-}
-
-func (m *metricsImpl) IncrementScanCacheMiss() {
-	m.scanCacheMisses.Inc()
 }
 
 func startTimeToMS(t time.Time) float64 {
@@ -42,18 +27,6 @@ func (m *metricsImpl) SetScanDurationTime(start time.Time, scanner string, err e
 
 func newMetrics(subsystem pkgMetrics.Subsystem) metrics {
 	m := &metricsImpl{
-		scanCacheHits: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: pkgMetrics.PrometheusNamespace,
-			Subsystem: subsystem.String(),
-			Name:      "node_scan_cache_hits",
-			Help:      "Number of cache hits in the node scan cache",
-		}),
-		scanCacheMisses: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: pkgMetrics.PrometheusNamespace,
-			Subsystem: subsystem.String(),
-			Name:      "node_scan_cache_misses",
-			Help:      "Number of cache misses in the node scan cache",
-		}),
 		scanTimeDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: pkgMetrics.PrometheusNamespace,
 			Subsystem: subsystem.String(),
@@ -64,8 +37,6 @@ func newMetrics(subsystem pkgMetrics.Subsystem) metrics {
 	}
 
 	pkgMetrics.EmplaceCollector(
-		m.scanCacheHits,
-		m.scanCacheMisses,
 		m.scanTimeDuration,
 	)
 

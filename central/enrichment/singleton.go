@@ -28,16 +28,12 @@ var (
 	metadataCacheOnce sync.Once
 	metadataCache     expiringcache.Cache
 
-	nodeScanCacheOnce sync.Once
-	nodeScanCache     expiringcache.Cache
-
 	imageCacheExpiryDuration = 4 * time.Hour
-	nodeCacheExpiryDuration  = 4 * time.Hour
 )
 
 func initialize() {
 	ie = imageEnricher.New(cveDataStore.Singleton(), imageintegration.Set(), metrics.CentralSubsystem, ImageMetadataCacheSingleton(), ImageScanCacheSingleton(), reporter.Singleton())
-	ne = nodeEnricher.New(cveDataStore.Singleton(), metrics.CentralSubsystem, NodeScanCacheSingleton())
+	ne = nodeEnricher.New(cveDataStore.Singleton(), metrics.CentralSubsystem)
 	en = New(datastore.Singleton(), ie)
 	manager = newManager(imageintegration.Set(), ne)
 }
@@ -74,14 +70,6 @@ func ImageMetadataCacheSingleton() expiringcache.Cache {
 func NodeEnricherSingleton() nodeEnricher.NodeEnricher {
 	once.Do(initialize)
 	return ne
-}
-
-// NodeScanCacheSingleton returns the cache for node scans
-func NodeScanCacheSingleton() expiringcache.Cache {
-	nodeScanCacheOnce.Do(func() {
-		nodeScanCache = expiringcache.NewExpiringCache(nodeCacheExpiryDuration)
-	})
-	return nodeScanCache
 }
 
 // ManagerSingleton returns the multiplexing manager

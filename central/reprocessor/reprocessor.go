@@ -306,7 +306,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	}
 }
 
-func (l *loopImpl) reprocessNode(id string, sema *semaphore.Weighted, wg *concurrency.WaitGroup, fetchOpt nodeEnricher.FetchOption) bool {
+func (l *loopImpl) reprocessNode(id string, sema *semaphore.Weighted, wg *concurrency.WaitGroup) bool {
 	defer sema.Release(1)
 	defer wg.Add(-1)
 
@@ -320,9 +320,7 @@ func (l *loopImpl) reprocessNode(id string, sema *semaphore.Weighted, wg *concur
 		return false
 	}
 
-	err = l.nodeEnricher.EnrichNode(nodeEnricher.EnrichmentContext{
-		FetchOpt: fetchOpt,
-	}, node)
+	err = l.nodeEnricher.EnrichNode(node)
 	if err != nil {
 		log.Errorf("error enriching node %s: %v", node.GetName(), err)
 		return false
@@ -336,7 +334,7 @@ func (l *loopImpl) reprocessNode(id string, sema *semaphore.Weighted, wg *concur
 	return true
 }
 
-func (l *loopImpl) reprocessNodes(fetchOpt nodeEnricher.FetchOption) {
+func (l *loopImpl) reprocessNodes() {
 	if l.stopSig.IsDone() {
 		return
 	}
@@ -362,7 +360,7 @@ func (l *loopImpl) reprocessNodes(fetchOpt nodeEnricher.FetchOption) {
 		}
 
 		go func(id string) {
-			if l.reprocessNode(id, nodeSemaphore, &wg, fetchOpt) {
+			if l.reprocessNode(id, nodeSemaphore, &wg) {
 				nReprocessed.Inc()
 			}
 		}(nodeID)
@@ -377,7 +375,7 @@ func (l *loopImpl) reprocessNodes(fetchOpt nodeEnricher.FetchOption) {
 	log.Infof("Successfully reprocessed %d/%d nodes...", nReprocessed.Load(), nodeIDs.Cardinality())
 }
 
-func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption, nodeFetchOpt nodeEnricher.FetchOption) {
+func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 	l.reprocessingComplete.Reset()
 	l.reprocessingStarted.Signal()
 
@@ -389,7 +387,7 @@ func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption, node
 	go func() {
 		defer wg.Add(-1)
 		if features.HostScanning.Enabled() {
-			l.reprocessNodes(nodeFetchOpt)
+			l.reprocessNodes()
 		}
 	}()
 
@@ -405,16 +403,16 @@ func (l *loopImpl) enrichLoop() {
 
 	// Call runReprocessing with ForceRefetch on start to ensure that the image metadata reflects any changes
 	// in the proto and to ensure that the images and nodes are pulling new scans on <= the reprocessing interval
-	l.runReprocessing(imageEnricher.ForceRefetch, nodeEnricher.ForceRefetch)
+	l.runReprocessing(imageEnricher.ForceRefetch)
 	for !l.stopSig.IsDone() {
 		select {
 		case <-l.stopSig.Done():
 			return
 		case <-l.shortCircuitSig.Done():
 			l.shortCircuitSig.Reset()
-			l.runReprocessing(imageEnricher.UseCachesIfPossible, nodeEnricher.UseCachesIfPossible)
+			l.runReprocessing(imageEnricher.UseCachesIfPossible)
 		case <-l.enrichAndDetectTicker.C:
-			l.runReprocessing(imageEnricher.ForceRefetchScansOnly, nodeEnricher.ForceRefetch)
+			l.runReprocessing(imageEnricher.ForceRefetchScansOnly)
 		}
 	}
 }

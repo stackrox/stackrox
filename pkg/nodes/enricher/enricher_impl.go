@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/sync"
@@ -21,8 +20,6 @@ type enricherImpl struct {
 	scanners map[string]types.NodeScannerWithDataSource
 
 	creators map[string]scanners.NodeScannerCreator
-
-	scanCache expiringcache.Cache
 
 	metrics metrics
 }
@@ -51,23 +48,15 @@ func (e *enricherImpl) RemoveNodeIntegration(id string) {
 }
 
 // EnrichNode enriches a node with the integration set present.
-func (e *enricherImpl) EnrichNode(ctx EnrichmentContext, node *storage.Node) error {
-	err := e.enrichWithScan(ctx, node)
+func (e *enricherImpl) EnrichNode(node *storage.Node) error {
+	err := e.enrichWithScan(node)
 
 	e.cves.EnrichNodeWithSuppressedCVEs(node)
 
 	return err
 }
 
-func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, node *storage.Node) error {
-	// Attempt to short-circuit before checking scanners.
-	if ctx.FetchOnlyIfScanEmpty() && node.Scan != nil {
-		return nil
-	}
-	if e.populateFromCache(ctx, node) {
-		return nil
-	}
-
+func (e *enricherImpl) enrichWithScan(node *storage.Node) error {
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning node %s:%s", node.GetClusterName(), node.GetName()))
 	if len(e.scanners) == 0 {
 		errorList.AddError(errors.New("no node scanners are integrated"))
@@ -84,22 +73,6 @@ func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, node *storage.Node)
 	}
 
 	return errorList.ToError()
-}
-
-func (e *enricherImpl) populateFromCache(ctx EnrichmentContext, node *storage.Node) bool {
-	if ctx.FetchOpt == ForceRefetch {
-		return false
-	}
-	scanValue := e.scanCache.Get(node.GetId())
-	if scanValue == nil {
-		e.metrics.IncrementScanCacheMiss()
-		return false
-	}
-
-	e.metrics.IncrementScanCacheHit()
-	node.Scan = scanValue.(*storage.NodeScan).Clone()
-	FillScanStats(node)
-	return true
 }
 
 func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, scanner types.NodeScanner) error {
@@ -119,10 +92,6 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, scanner types.N
 
 	node.Scan = scan
 	FillScanStats(node)
-
-	// Clone the cachedScan because the scan is used within the node leading to race conditions
-	cachedScan := scan.Clone()
-	e.scanCache.Add(node.GetId(), cachedScan)
 
 	return nil
 }
