@@ -82,3 +82,32 @@ func TestRegistryPurgesModulesWithRefCountOfZero(t *testing.T) {
 
 	assert.NotContains(t, modules.modules, name)
 }
+
+func TestLoggerCreatedFromModuleUpdatesLogLevel(t *testing.T) {
+	for level, zapLevel := range levelToZapLevel {
+		module := newModule(uuid.NewV4().String(), zap.NewAtomicLevelAt(zapcore.InfoLevel))
+		logger := module.Logger()
+		module.SetLogLevel(level)
+		assert.True(t, logger.Desugar().Core().Enabled(zapLevel))
+		// uses internal knowledge of how Enabled(level) method works
+		assert.False(t, logger.Desugar().Core().Enabled(zapLevel-1))
+	}
+}
+
+func TestLoggerLevelUpdatesWithGlobalLevel(t *testing.T) {
+	module := ModuleForName(uuid.NewV4().String())
+	logger := module.Logger()
+	level := GetGlobalLogLevel()
+
+	module.SetLogLevel(zapLevelToLevel[zapcore.DebugLevel])
+
+	// verify the global level remains unchanged
+	assert.Equal(t, level, GetGlobalLogLevel())
+	assert.True(t, logger.Desugar().Core().Enabled(zapcore.DebugLevel))
+
+	SetGlobalLogLevel(zapLevelToLevel[zapcore.WarnLevel])
+	// verify logger level changes with global level
+	assert.Equal(t, zapLevelToLevel[zapcore.WarnLevel], GetGlobalLogLevel())
+	assert.True(t, logger.Desugar().Core().Enabled(zapcore.WarnLevel))
+	assert.False(t, logger.Desugar().Core().Enabled(zapcore.InfoLevel))
+}

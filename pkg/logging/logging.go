@@ -400,7 +400,7 @@ func levelToZapLevelOrDefault(level int32, defaultLevel zapcore.Level) zapcore.L
 // createLogger creates (but does not register) a new logger instance.
 func createLogger(module *Module) *Logger {
 	lc := config
-	lc.Level = zap.NewAtomicLevelAt(module.logLevel.Level())
+	lc.Level = module.logLevel
 
 	logger, err := lc.Build(zap.AddCallerSkip(0))
 	if err != nil {
