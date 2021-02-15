@@ -154,6 +154,7 @@ spec:
       - name: helm-cluster-config
         secret:
           secretName: helm-cluster-config
+          optional: true
       [<- end >]
 ---
 apiVersion: v1
