@@ -78,6 +78,10 @@ func (s *splunk) postAlert(ctx context.Context, alert *storage.Alert) error {
 	// Removing some of the fields here to make it smaller
 	// More details on HEC limitation: https://developers.perfectomobile.com/display/TT/Splunk+-+Configure+HTTP+Event+Collector
 	// Check section on "Increasing the Event Data Truncate Limit"
+	clonedAlert.Policy.Description = ""
+	clonedAlert.Policy.Rationale = ""
+	clonedAlert.Policy.Remediation = ""
+	clonedAlert.Policy.Exclusions = nil
 	notifiers.PruneAlert(clonedAlert, int(s.conf.GetTruncate()))
 
 	return retry.WithRetry(
