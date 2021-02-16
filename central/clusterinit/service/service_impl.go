@@ -96,14 +96,17 @@ func (s *serviceImpl) GenerateInitBundle(ctx context.Context, request *v1.InitBu
 	}, nil
 }
 
-func (s *serviceImpl) RevokeInitBundle(ctx context.Context, request *v1.InitBundleRevokeRequest) (*v1.Empty, error) {
+func (s *serviceImpl) RevokeInitBundle(ctx context.Context, request *v1.InitBundleRevokeRequest) (*v1.InitBundleRevokeResponse, error) {
+	var failed []*v1.InitBundleRevokeResponse_InitBundleRevocationError
+	var revoked []string
+
 	for _, id := range request.GetIds() {
 		if err := s.backend.Revoke(ctx, id); err != nil {
-			if errors.Is(err, store.ErrInitBundleNotFound) {
-				return nil, status.Errorf(codes.NotFound, "revoking %q failed: %s", id, err)
-			}
-			return nil, status.Errorf(codes.Internal, "revoking %q failed: %s", id, err)
+			failed = append(failed, &v1.InitBundleRevokeResponse_InitBundleRevocationError{Id: id, Error: err.Error()})
+		} else {
+			revoked = append(revoked, id)
 		}
 	}
-	return &v1.Empty{}, nil
+
+	return &v1.InitBundleRevokeResponse{InitBundleRevokedIds: revoked, InitBundleRevocationErrors: failed}, nil
 }

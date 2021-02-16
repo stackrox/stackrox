@@ -40,8 +40,19 @@ message InitBundleRevokeRequest {
     repeated string ids = 1;
 }
 
+
+message InitBundleRevokeResponse {
+    message InitBundleRevocationError {
+        string id = 1;
+        string error = 2;
+    }
+
+    repeated InitBundleRevocationError init_bundle_revocation_errors = 2;
+    repeated string init_bundle_revoked_ids = 3;
+}
+
 service ClusterInitService {
-    rpc RevokeInitBundle(InitBundleRevokeRequest) returns (Empty) {
+    rpc RevokeInitBundle(InitBundleRevokeRequest) returns (InitBundleRevokeResponse) {
         option (google.api.http) = {
             patch: "/v1/cluster-init/init-bundles/revoke",
             body: "*"
