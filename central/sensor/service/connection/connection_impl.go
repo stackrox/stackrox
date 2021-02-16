@@ -252,7 +252,7 @@ func (c *sensorConnection) getPolicySyncMsg(ctx context.Context) (*central.MsgTo
 	} else {
 		// Downgrade all policies if necessary. If we can't downgrade one,
 		// we likely can't convert any of them, so no need to spam the log.
-		if policyversion.Compare(policyversion.CurrentVersion(), sensorPolicyVersion) >= 0 {
+		if policyversion.Compare(policyversion.CurrentVersion(), sensorPolicyVersion) > 0 {
 			log.Infof("Downgrading %d policies from central's version %q to sensor's version %q",
 				len(policies), policyversion.CurrentVersion().String(), sensorPolicyVersion.String())
 
