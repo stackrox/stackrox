@@ -2,8 +2,10 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 
+const UNKNOWN_FLAG = -1;
+
 const NumberBox = ({ label, value, suffix }) => (
-    <div className="min-h-32 w-full md:w-1/4 px-2 pb-4 md:pb-0" data-testid="number-box">
+    <div className="min-h-32 w-full md:w-1/4 px-2 py-4 md:pb-0" data-testid="number-box">
         <div className="border border-base-400 rounded bg-tertiary-200 flex flex-col min-h-32 items-center justify-between">
             <header className="w-full">
                 <h1 className="flex flex-col w-full border-b border-base-400 font-700 h-12 px-2 justify-center text-center capitalize leading-tight">
@@ -11,6 +13,7 @@ const NumberBox = ({ label, value, suffix }) => (
                 </h1>
             </header>
             <div className="flex flex-col justify-center flex-grow font-600 text-primary-700 text-5xl">
+                {value === UNKNOWN_FLAG && `Unknown`}
                 {!value && `Never deleted`}
                 {value > 0 && `${value} ${pluralize(suffix, value)}`}
             </div>
@@ -25,8 +28,8 @@ NumberBox.propTypes = {
 };
 
 NumberBox.defaultProps = {
-    value: 0,
     suffix: '',
+    value: UNKNOWN_FLAG,
 };
 
 const DataRetentionDetailWidget = ({ config }) => {
@@ -39,7 +42,7 @@ const DataRetentionDetailWidget = ({ config }) => {
             <div className="py-2 px-4 border-b border-base-300 text-base-600 font-700 text-lg capitalize flex justify-between items-center h-10">
                 Data Retention Configuration
             </div>
-            <div className="flex sm:flex-col md:flex-row flex-wrap px-2 py-4 w-full">
+            <div className="flex sm:flex-col md:flex-row flex-wrap px-2 pb-4 w-full">
                 <NumberBox
                     label="All Runtime Violations"
                     value={alertConfig.allRuntimeRetentionDurationDays}
@@ -53,6 +56,16 @@ const DataRetentionDetailWidget = ({ config }) => {
                 <NumberBox
                     label="Resolved Deploy-Phase Violations"
                     value={alertConfig.resolvedDeployRetentionDurationDays}
+                    suffix="Day"
+                />
+                <NumberBox
+                    label="Attempted Deploy-Phase Violations"
+                    value={alertConfig.attemptedDeployRetentionDurationDays}
+                    suffix="Day"
+                />
+                <NumberBox
+                    label="Attempted Runtime Violations"
+                    value={alertConfig.attemptedRuntimeRetentionDurationDays}
                     suffix="Day"
                 />
                 <NumberBox

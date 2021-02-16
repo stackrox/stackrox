@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/detection/runtime"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/generated/storage"
+	pkgAlert "github.com/stackrox/rox/pkg/alert"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -211,8 +212,15 @@ func mergeAlerts(old, newAlert *storage.Alert) *storage.Alert {
 }
 
 // MergeManyAlerts merges two alerts.
-func (d *alertManagerImpl) mergeManyAlerts(ctx context.Context, presentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (newAlerts, updatedAlerts, staleAlerts []*storage.Alert, err error) {
-	qb := search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
+func (d *alertManagerImpl) mergeManyAlerts(
+	ctx context.Context,
+	presentAlerts []*storage.Alert,
+	oldAlertFilters ...AlertFilterOption,
+) (newAlerts, updatedAlerts, staleAlerts []*storage.Alert, err error) {
+	qb := search.NewQueryBuilder().AddStrings(
+		search.ViolationState,
+		storage.ViolationState_ACTIVE.String(),
+		storage.ViolationState_ATTEMPTED.String())
 	for _, filter := range oldAlertFilters {
 		filter.apply(qb)
 	}
@@ -224,6 +232,12 @@ func (d *alertManagerImpl) mergeManyAlerts(ctx context.Context, presentAlerts []
 
 	// Merge any alerts that have new and old alerts.
 	for _, alert := range presentAlerts {
+		if pkgAlert.IsDeployTimeAttemptedAlert(alert) {
+			alert.FirstOccurred = ptypes.TimestampNow()
+			newAlerts = append(newAlerts, alert)
+			continue
+		}
+
 		if matchingOld := findAlert(alert, previousAlerts); matchingOld != nil {
 			mergedAlert := mergeAlerts(matchingOld, alert)
 			if mergedAlert != matchingOld && !proto.Equal(mergedAlert, matchingOld) {
@@ -253,6 +267,11 @@ func (d *alertManagerImpl) mergeManyAlerts(ctx context.Context, presentAlerts []
 }
 
 func (d *alertManagerImpl) shouldMarkAlertStale(alert *storage.Alert, presentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) bool {
+	// Do not mark any attempted alerts as stale. All attempted alerts must be resolved by users.
+	if pkgAlert.IsAttemptedAlert(alert) {
+		return false
+	}
+
 	// If the alert is still being produced, don't mark it stale.
 	if matchingNew := findAlert(alert, presentAlerts); matchingNew != nil {
 		return false
@@ -303,5 +322,7 @@ func findAlert(toFind *storage.Alert, alerts []*storage.Alert) *storage.Alert {
 }
 
 func alertsAreForSamePolicyAndDeployment(a1, a2 *storage.Alert) bool {
-	return a1.GetPolicy().GetId() == a2.GetPolicy().GetId() && a1.GetDeployment().GetId() == a2.GetDeployment().GetId()
+	return a1.GetPolicy().GetId() == a2.GetPolicy().GetId() &&
+		a1.GetDeployment().GetId() == a2.GetDeployment().GetId() &&
+		a1.GetState() == a2.GetState()
 }

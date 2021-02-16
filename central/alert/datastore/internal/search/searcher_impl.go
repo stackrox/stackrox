@@ -140,7 +140,10 @@ func (ds *defaultViolationStateSearcher) Search(ctx context.Context, q *v1.Query
 
 	// By default, set stale to false.
 	if !querySpecifiesStateField {
-		cq := search.ConjunctionQuery(q, search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
+		cq := search.ConjunctionQuery(q, search.NewQueryBuilder().AddStrings(
+			search.ViolationState,
+			storage.ViolationState_ACTIVE.String(),
+			storage.ViolationState_ATTEMPTED.String()).ProtoQuery())
 		cq.Pagination = q.GetPagination()
 		q = cq
 	}

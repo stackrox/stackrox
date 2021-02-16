@@ -9,6 +9,11 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
+// Label key used for unsatisfiable node constraint enforcement.
+const (
+	UnsatisfiableNodeConstraintKey = `BlockedByStackRox`
+)
+
 // PolicyDeploymentAndViolationsToAlert constructs an alert.
 func PolicyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *storage.Deployment, violations []*storage.Alert_Violation) *storage.Alert {
 	if len(violations) == 0 {
@@ -36,10 +41,12 @@ func PolicyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *st
 func buildEnforcement(policy *storage.Policy, deployment *storage.Deployment) (enforcement storage.EnforcementAction, message string) {
 	for _, enforcementAction := range policy.GetEnforcementActions() {
 		if enforcementAction == storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT && scaleToZeroEnabled(deployment) {
-			return storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT, fmt.Sprintf("Deployment %s scaled to 0 replicas in response to policy violation", deployment.GetName())
+			return storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
+				"Deployment scaled to 0 replicas in response to this policy violation."
 		}
 		if enforcementAction == storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT {
-			return storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, fmt.Sprintf("Unsatisfiable node constraint applied to deployment %s", deployment.GetName())
+			return storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
+				fmt.Sprintf("Unsatisfiable node constraint %s applied to deployment %s.", UnsatisfiableNodeConstraintKey, deployment.GetName())
 		}
 	}
 	return storage.EnforcementAction_UNSET_ENFORCEMENT, ""

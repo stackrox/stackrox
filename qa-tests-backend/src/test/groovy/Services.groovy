@@ -184,7 +184,14 @@ class Services extends BaseService {
         return getViolationsHelper("Deployment:${deploymentName}+Policy:${policyName}", policyName, timeoutSeconds)
     }
 
-    static getViolationsByDeploymentID(String deploymentID, String policyName, int timeoutSeconds) {
+    static getViolationsByDeploymentID(String deploymentID, String policyName, boolean includeAttempted,
+                                       int timeoutSeconds) {
+        if (!includeAttempted) {
+            return getViolationsHelper(
+                    "Deployment Id:${deploymentID}+Policy:${policyName}+Violation State:Active",
+                    policyName, timeoutSeconds)
+        }
+        // By default active and attempted violations are queried.
         return getViolationsHelper("Deployment Id:${deploymentID}+Policy:${policyName}", policyName, timeoutSeconds)
     }
 
@@ -194,7 +201,7 @@ class Services extends BaseService {
     }
 
     static checkForNoViolationsByDeploymentID(String deploymentID, String policyName, int checkSeconds = 5) {
-        def violations = getViolationsByDeploymentID(deploymentID, policyName, checkSeconds)
+        def violations = getViolationsByDeploymentID(deploymentID, policyName, false, checkSeconds)
         return violations == null || violations.size() == 0
     }
 

@@ -342,18 +342,20 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 	}
 }
 
-func getConfigValues(config *storage.PrivateConfig) (pruneResolvedDeployAfter, pruneAllRuntimeAfter, pruneDeletedRuntimeAfter int32) {
+func getConfigValues(config *storage.PrivateConfig) (pruneResolvedDeployAfter, pruneAllRuntimeAfter, pruneDeletedRuntimeAfter, pruneAttemptedDeployAfter, pruneAttemptedRuntimeAfter int32) {
 	alertRetention := config.GetAlertRetention()
 	if val, ok := alertRetention.(*storage.PrivateConfig_DEPRECATEDAlertRetentionDurationDays); ok {
 		global := val.DEPRECATEDAlertRetentionDurationDays
-		return global, global, global
+		return global, global, global, global, global
 
 	} else if val, ok := alertRetention.(*storage.PrivateConfig_AlertConfig); ok {
 		return val.AlertConfig.GetResolvedDeployRetentionDurationDays(),
 			val.AlertConfig.GetAllRuntimeRetentionDurationDays(),
-			val.AlertConfig.GetDeletedRuntimeRetentionDurationDays()
+			val.AlertConfig.GetDeletedRuntimeRetentionDurationDays(),
+			val.AlertConfig.GetAttemptedDeployRetentionDurationDays(),
+			val.AlertConfig.GetAttemptedRuntimeRetentionDurationDays()
 	}
-	return 0, 0, 0
+	return 0, 0, 0, 0, 0
 }
 
 func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
@@ -363,7 +365,11 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 		return
 	}
 
-	pruneResolvedDeployAfter, pruneAllRuntimeAfter, pruneDeletedRuntimeAfter := getConfigValues(config)
+	pruneResolvedDeployAfter,
+		pruneAllRuntimeAfter,
+		pruneDeletedRuntimeAfter,
+		pruneAttemptedDeployAfter,
+		pruneAttemptedRuntimeAfter := getConfigValues(config)
 
 	var queries []*v1.Query
 
@@ -389,6 +395,24 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 			AddStrings(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
 			AddDays(search.ViolationTime, int64(pruneDeletedRuntimeAfter)).
 			AddBools(search.Inactive, true).
+			ProtoQuery()
+		queries = append(queries, q)
+	}
+
+	if pruneAttemptedDeployAfter > 0 {
+		q := search.NewQueryBuilder().
+			AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
+			AddStrings(search.ViolationState, storage.ViolationState_ATTEMPTED.String()).
+			AddDays(search.ViolationTime, int64(pruneAttemptedDeployAfter)).
+			ProtoQuery()
+		queries = append(queries, q)
+	}
+
+	if pruneAttemptedRuntimeAfter > 0 {
+		q := search.NewQueryBuilder().
+			AddStrings(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
+			AddStrings(search.ViolationState, storage.ViolationState_ATTEMPTED.String()).
+			AddDays(search.ViolationTime, int64(pruneAttemptedRuntimeAfter)).
 			ProtoQuery()
 		queries = append(queries, q)
 	}

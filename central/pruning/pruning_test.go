@@ -34,6 +34,7 @@ import (
 	riskDatastore "github.com/stackrox/rox/central/risk/datastore"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -56,9 +57,11 @@ import (
 )
 
 const (
-	testRetentionResolvedDeploy = 7
-	testRetentionAllRuntime     = 6
-	testRetentionDeletedRuntime = 3
+	testRetentionAttemptedDeploy  = 15
+	testRetentionAttemptedRuntime = 15
+	testRetentionResolvedDeploy   = 7
+	testRetentionAllRuntime       = 6
+	testRetentionDeletedRuntime   = 3
 )
 
 var (
@@ -66,9 +69,11 @@ var (
 		PrivateConfig: &storage.PrivateConfig{
 			AlertRetention: &storage.PrivateConfig_AlertConfig{
 				AlertConfig: &storage.AlertRetentionConfig{
-					AllRuntimeRetentionDurationDays:     testRetentionAllRuntime,
-					DeletedRuntimeRetentionDurationDays: testRetentionDeletedRuntime,
-					ResolvedDeployRetentionDurationDays: testRetentionResolvedDeploy,
+					AllRuntimeRetentionDurationDays:       testRetentionAllRuntime,
+					DeletedRuntimeRetentionDurationDays:   testRetentionDeletedRuntime,
+					ResolvedDeployRetentionDurationDays:   testRetentionResolvedDeploy,
+					AttemptedRuntimeRetentionDurationDays: testRetentionAttemptedRuntime,
+					AttemptedDeployRetentionDurationDays:  testRetentionAttemptedDeploy,
 				},
 			},
 			ImageRetentionDurationDays: configDatastore.DefaultImageRetention,
@@ -454,8 +459,10 @@ func TestAlertPruning(t *testing.T) {
 			alerts: []*storage.Alert{
 				newAlertInstance("id1", 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ACTIVE),
 				newAlertInstance("id2", 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_RESOLVED),
+				newAlertInstance("id3", 1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ATTEMPTED),
+				newAlertInstance("id4", 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED),
 			},
-			expectedIDsRemaining: []string{"id1", "id2"},
+			expectedIDsRemaining: []string{"id1", "id2", "id3", "id4"},
 		},
 		{
 			name: "One old alert, and one new alert",
@@ -498,6 +505,41 @@ func TestAlertPruning(t *testing.T) {
 			},
 			expectedIDsRemaining: []string{},
 		},
+		{
+			name: "One old attempted deploy alert, and one new attempted deploy alert",
+			alerts: []*storage.Alert{
+				newAlertInstance("id1", 1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ATTEMPTED),
+				newAlertInstance("id2", testRetentionAttemptedDeploy+1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ATTEMPTED),
+			},
+			expectedIDsRemaining: []string{"id1"},
+		},
+		{
+			name: "Attempted runtime retention > deleted runtime retention",
+			alerts: []*storage.Alert{
+				newAlertInstance("id1", 1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED),
+				newAlertInstance("id2", testRetentionDeletedRuntime-1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED),
+				newAlertInstance("id3", testRetentionAttemptedRuntime-1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED),
+			},
+			expectedIDsRemaining: []string{"id1", "id2"},
+		},
+		{
+			name: "Attempted runtime alert with no deployment",
+			alerts: []*storage.Alert{
+				newAlertInstance("id2", testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED),
+			},
+			expectedIDsRemaining: []string{},
+		},
+		{
+			name: "Attempted runtime alerts, one with no deployment",
+			alerts: []*storage.Alert{
+				newAlertInstanceWithDeployment("id1", testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED, nil),
+				newAlertInstanceWithDeployment("id2", testRetentionDeletedRuntime+1, storage.LifecycleStage_RUNTIME, storage.ViolationState_ATTEMPTED, existsDeployment),
+			},
+			expectedIDsRemaining: []string{"id2"},
+			deployments: []*storage.Deployment{
+				existsDeployment,
+			},
+		},
 	}
 	scc := sac.OneStepSCC{
 		sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.AllowFixedScopes(
@@ -524,7 +566,7 @@ func TestAlertPruning(t *testing.T) {
 			for _, deployment := range c.deployments {
 				require.NoError(t, deployments.UpsertDeployment(ctx, deployment))
 			}
-			all, err := alerts.Search(ctx, search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_RESOLVED.String()).ProtoQuery())
+			all, err := alerts.Search(ctx, getAllAlerts())
 			if err != nil {
 				t.Error(err)
 			}
@@ -536,10 +578,8 @@ func TestAlertPruning(t *testing.T) {
 			// Garbage collect all of the alerts
 			gc.collectAlerts(conf.GetPrivateConfig())
 
-			q := search.NewQueryBuilder().AddStrings(search.ViolationState,
-				storage.ViolationState_ACTIVE.String(), storage.ViolationState_RESOLVED.String()).ProtoQuery()
 			// Grab the actual remaining alerts and make sure they match the alerts expected to be remaining
-			remainingAlerts, err := alerts.SearchListAlerts(ctx, q)
+			remainingAlerts, err := alerts.SearchListAlerts(ctx, getAllAlerts())
 			require.NoError(t, err)
 
 			log.Infof("Remaining alerts: %v", remainingAlerts)
@@ -1091,4 +1131,13 @@ func testDackBoxInstance(t *testing.T, db *rocksdb.RocksDB, index bleve.Index) (
 	lazy.Start()
 
 	return dacky, reg, indexingQ
+}
+
+func getAllAlerts() *v1.Query {
+	return search.NewQueryBuilder().AddStrings(
+		search.ViolationState,
+		storage.ViolationState_ACTIVE.String(),
+		storage.ViolationState_RESOLVED.String(),
+		storage.ViolationState_ATTEMPTED.String(),
+	).ProtoQuery()
 }

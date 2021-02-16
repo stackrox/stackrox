@@ -79,13 +79,16 @@ func (m *manager) evaluateRuntimeAdmissionRequest(s *state, req *admission.Admis
 	}
 
 	if failReviewRequest(alerts...) {
-		// TODO: Mark enforced violations as attempted and send to Sensor.
+		if enrichedWithDeployment {
+			go m.filterAndPutAttemptedAlertsOnChan(req.Operation, alerts...)
+		}
 		return fail(req.UID, message(alerts, false)), nil
 	}
 
 	if enrichedWithDeployment {
 		go m.putAlertsOnChan(alerts)
 	}
+
 	return pass(req.UID), nil
 }
 

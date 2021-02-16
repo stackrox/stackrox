@@ -46,6 +46,11 @@ const DataRetentionFormWidget = ({ privateConfig }) => {
                         jsonPath="privateConfig.alertConfig.deletedRuntimeRetentionDurationDays"
                         value={privateConfig.alertConfig.deletedRuntimeRetentionDurationDays}
                     />
+                    <DayDurationFormField
+                        label="Attempted Deploy-Phase Violations"
+                        jsonPath="privateConfig.alertConfig.attemptedDeployRetentionDurationDays"
+                        value={privateConfig.alertConfig.attemptedDeployRetentionDurationDays}
+                    />
                 </div>
                 <div className="flex-auto pr-0 md:pr-8 w-full md:w-1/2">
                     <DayDurationFormField
@@ -57,6 +62,11 @@ const DataRetentionFormWidget = ({ privateConfig }) => {
                         label="Images No Longer Deployed"
                         jsonPath="privateConfig.imageRetentionDurationDays"
                         value={privateConfig.imageRetentionDurationDays}
+                    />
+                    <DayDurationFormField
+                        label="Attempted Runtime Violations"
+                        jsonPath="privateConfig.alertConfig.attemptedRuntimeRetentionDurationDays"
+                        value={privateConfig.alertConfig.attemptedRuntimeRetentionDurationDays}
                     />
                 </div>
             </div>
@@ -70,6 +80,8 @@ DataRetentionFormWidget.propTypes = {
             allRuntimeRetentionDurationDays: PropTypes.number,
             deletedRuntimeRetentionDurationDays: PropTypes.number,
             resolvedDeployRetentionDurationDays: PropTypes.number,
+            attemptedDeployRetentionDurationDays: PropTypes.number,
+            attemptedRuntimeRetentionDurationDays: PropTypes.number,
         }),
         imageRetentionDurationDays: PropTypes.number,
     }).isRequired,

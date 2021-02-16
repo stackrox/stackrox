@@ -3,6 +3,7 @@ package common
 import (
 	"testing"
 
+	"github.com/stackrox/rox/pkg/detection/deploytime"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stretchr/testify/assert"
 	appsV1 "k8s.io/api/apps/v1"
@@ -40,8 +41,8 @@ func TestApplyNodeConstraint(t *testing.T) {
 	for resourceType, constraint := range nodeConstraints {
 		t.Run(resourceType, func(t *testing.T) {
 			assert.NotNil(t, constraint)
-			assert.Contains(t, constraint, UnsatisfiableNodeConstraintKey)
-			assert.Equal(t, constraint[UnsatisfiableNodeConstraintKey], "alertID")
+			assert.Contains(t, constraint, deploytime.UnsatisfiableNodeConstraintKey)
+			assert.Equal(t, constraint[deploytime.UnsatisfiableNodeConstraintKey], "alertID")
 		})
 	}
 }

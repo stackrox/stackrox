@@ -14,6 +14,8 @@ import {
     defaultColumnClassName,
     rtTrActionsClassName,
 } from 'Components/Table';
+import { ENFORCEMENT_ACTIONS_AS_PAST_TENSE } from 'constants/enforcementActions';
+import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import ViolationActionButtons from './ViolationActionButtons';
 
 // Simple string value column.
@@ -78,11 +80,17 @@ PolicyColumn.propTypes = {
 // Display the enforcement.
 // ////////////////////////
 function EnforcementColumn({ original }) {
+    if (original?.state === 'ATTEMPTED') {
+        const message = `${ENFORCEMENT_ACTIONS_AS_PAST_TENSE[original?.enforcementAction]}`;
+        return <div className="text-alert-700">{message}</div>;
+    }
+
     const count = original?.enforcementCount;
-    if (original?.lifecycleStage === 'DEPLOY') {
+    if (original?.lifecycleStage === LIFECYCLE_STAGES.DEPLOY) {
         const message = count === 0 ? 'No' : 'Yes';
         return <span>{message}</span>;
     }
+
     const countMessage = `${count} ${pluralize('time', count)}`;
     const message = count === 0 ? 'No' : countMessage;
     return <span>{message}</span>;
@@ -92,6 +100,8 @@ EnforcementColumn.propTypes = {
     original: PropTypes.shape({
         lifecycleStage: PropTypes.string.isRequired,
         enforcementCount: PropTypes.number.isRequired,
+        enforcementAction: PropTypes.string.isRequired,
+        state: PropTypes.string.isRequired,
     }).isRequired,
 };
 

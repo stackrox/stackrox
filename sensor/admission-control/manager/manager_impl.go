@@ -212,17 +212,6 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 		return // no update
 	}
 
-	deployTimePolicySet := detection.NewPolicySet()
-	for _, policy := range newSettings.GetEnforcedDeployTimePolicies().GetPolicies() {
-		if policyfields.ContainsUnscannedImageField(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
-			log.Warnf(errors.ImageScanUnavailableMsg(policy))
-			continue
-		}
-		if err := deployTimePolicySet.UpsertPolicy(policy); err != nil {
-			log.Errorf("Unable to upsert policy %q (%s), will not be able to enforce", policy.GetName(), policy.GetId())
-		}
-	}
-
 	allRuntimePolicySet := detection.NewPolicySet()
 	runtimePoliciesWithDeployFields, runtimePoliciesWithoutDeployFields := detection.NewPolicySet(), detection.NewPolicySet()
 	for _, policy := range newSettings.GetRuntimePolicies().GetPolicies() {
@@ -247,13 +236,21 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 		log.Debugf("Upserted policy %q (%s)", policy.GetName(), policy.GetId())
 	}
 
-	var deployTimeDetector deploytime.Detector
-	if newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnabled() && len(deployTimePolicySet.GetCompiledPolicies()) > 0 {
-		deployTimeDetector = deploytime.NewDetector(deployTimePolicySet)
-	}
+	enforcedOperations := make(map[admission.Operation]struct{})
 
-	enforcedOperations := map[admission.Operation]struct{}{
-		admission.Create: {},
+	deployTimePolicySet := detection.NewPolicySet()
+	if newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnabled() {
+		enforcedOperations[admission.Create] = struct{}{}
+
+		for _, policy := range newSettings.GetEnforcedDeployTimePolicies().GetPolicies() {
+			if policyfields.ContainsUnscannedImageField(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
+				log.Warnf(errors.ImageScanUnavailableMsg(policy))
+				continue
+			}
+			if err := deployTimePolicySet.UpsertPolicy(policy); err != nil {
+				log.Errorf("Unable to upsert policy %q (%s), will not be able to enforce", policy.GetName(), policy.GetId())
+			}
+		}
 	}
 
 	if newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates() {
@@ -263,7 +260,7 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 	oldState := m.currentState()
 	newState := &state{
 		AdmissionControlSettings:                      newSettings,
-		deploytimeDetector:                            deployTimeDetector,
+		deploytimeDetector:                            deploytime.NewDetector(deployTimePolicySet),
 		allRuntimePoliciesDetector:                    runtime.NewDetector(allRuntimePolicySet),
 		runtimeDetectorForPoliciesWithDeployFields:    runtime.NewDetector(runtimePoliciesWithDeployFields),
 		runtimeDetectorForPoliciesWithoutDeployFields: runtime.NewDetector(runtimePoliciesWithoutDeployFields),
@@ -351,6 +348,41 @@ func (m *manager) SensorConnStatusFlag() *concurrency.Flag {
 
 func (m *manager) Alerts() <-chan []*storage.Alert {
 	return m.alertsC
+}
+
+func (m *manager) filterAndPutAttemptedAlertsOnChan(op admission.Operation, alerts ...*storage.Alert) {
+	var filtered []*storage.Alert
+	for _, alert := range alerts {
+		if alert.GetDeployment() == nil {
+			continue
+		}
+
+		if alert.GetEnforcement() == nil {
+			continue
+		}
+
+		// Update enforcement for deploy time policy enforcements.
+		if op == admission.Create {
+			alert.GetDeployment().Inactive = true
+			alert.Enforcement = &storage.Alert_Enforcement{
+				Action:  storage.EnforcementAction_FAIL_DEPLOYMENT_CREATE_ENFORCEMENT,
+				Message: "Failed deployment create in response to this policy violation.",
+			}
+		} else if op == admission.Update {
+			alert.Enforcement = &storage.Alert_Enforcement{
+				Action:  storage.EnforcementAction_FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT,
+				Message: "Failed deployment update in response to this policy violation.",
+			}
+		}
+
+		alert.State = storage.ViolationState_ATTEMPTED
+
+		filtered = append(filtered, alert)
+	}
+
+	if len(filtered) > 0 {
+		go m.putAlertsOnChan(filtered)
+	}
 }
 
 func (m *manager) putAlertsOnChan(alerts []*storage.Alert) {

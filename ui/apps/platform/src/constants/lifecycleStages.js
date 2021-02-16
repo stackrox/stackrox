@@ -1,0 +1,7 @@
+const LIFECYCLE_STAGES = {
+    BUILD: 'BUILD',
+    DEPLOY: 'DEPLOY',
+    RUNTIME: 'RUNTIME',
+};
+
+export default LIFECYCLE_STAGES;

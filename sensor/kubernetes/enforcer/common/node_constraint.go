@@ -4,11 +4,7 @@ import (
 	"reflect"
 
 	"github.com/pkg/errors"
-)
-
-// Label key used for unsatisfiable node constraint enforcement.
-const (
-	UnsatisfiableNodeConstraintKey = `BlockedByStackRox`
+	"github.com/stackrox/rox/pkg/detection/deploytime"
 )
 
 // ApplyNodeConstraintToObj modifies some input type (Assuming it has a spec field) and updates it to have an
@@ -42,6 +38,6 @@ func ApplyNodeConstraintToObj(obj interface{}, alertID string) (err error) {
 		nodeSelector.Set(reflect.MakeMap(nodeSelector.Type()))
 	}
 
-	nodeSelector.SetMapIndex(reflect.ValueOf(UnsatisfiableNodeConstraintKey), reflect.ValueOf(alertID))
+	nodeSelector.SetMapIndex(reflect.ValueOf(deploytime.UnsatisfiableNodeConstraintKey), reflect.ValueOf(alertID))
 	return
 }

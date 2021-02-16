@@ -1,14 +1,11 @@
 package runtime
 
 import (
-	"fmt"
-
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
-	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -80,7 +77,8 @@ func constructGenericRuntimeAlert(
 func buildEnforcement(policy *storage.Policy, deployment *storage.Deployment) (enforcement storage.EnforcementAction, message string) {
 	for _, enforcementAction := range policy.GetEnforcementActions() {
 		if enforcementAction == storage.EnforcementAction_KILL_POD_ENFORCEMENT {
-			return storage.EnforcementAction_KILL_POD_ENFORCEMENT, fmt.Sprintf("Deployment %s has pods killed in response to policy violation", deployment.GetName())
+			return storage.EnforcementAction_KILL_POD_ENFORCEMENT,
+				"StackRox killed pods in deployment in response to this policy violation."
 		}
 	}
 	return storage.EnforcementAction_UNSET_ENFORCEMENT, ""
@@ -90,7 +88,7 @@ func buildKubeEventEnforcement(policy *storage.Policy, kubeEvent *storage.Kubern
 	for _, enforcementAction := range policy.GetEnforcementActions() {
 		if enforcementAction == storage.EnforcementAction_FAIL_KUBE_REQUEST_ENFORCEMENT {
 			return storage.EnforcementAction_FAIL_KUBE_REQUEST_ENFORCEMENT,
-				fmt.Sprintf("Kubernetes request %s failed in response to policy violation", kubernetes.EventAsString(kubeEvent))
+				"StackRox failed Kubernetes request in response to this policy violation."
 		}
 	}
 	return storage.EnforcementAction_UNSET_ENFORCEMENT, ""

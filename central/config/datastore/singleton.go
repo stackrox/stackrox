@@ -22,6 +22,10 @@ const (
 	DefaultDeletedRuntimeAlertRetention = 7
 	// DefaultImageRetention is the number of days to retain images for
 	DefaultImageRetention = 7
+	// DefaultAttemptedDeployAlertRetention is the number of days to retain all attempted deploy-time alerts
+	DefaultAttemptedDeployAlertRetention = 7
+	// DefaultAttemptedRuntimeAlertRetention is the number of days to retain all attempted run-time alerts
+	DefaultAttemptedRuntimeAlertRetention = 7
 )
 
 var (
@@ -33,9 +37,11 @@ var (
 		ImageRetentionDurationDays: DefaultImageRetention,
 		AlertRetention: &storage.PrivateConfig_AlertConfig{
 			AlertConfig: &storage.AlertRetentionConfig{
-				ResolvedDeployRetentionDurationDays: DefaultDeployAlertRetention,
-				DeletedRuntimeRetentionDurationDays: DefaultDeletedRuntimeAlertRetention,
-				AllRuntimeRetentionDurationDays:     DefaultRuntimeAlertRetention,
+				ResolvedDeployRetentionDurationDays:   DefaultDeployAlertRetention,
+				DeletedRuntimeRetentionDurationDays:   DefaultDeletedRuntimeAlertRetention,
+				AllRuntimeRetentionDurationDays:       DefaultRuntimeAlertRetention,
+				AttemptedDeployRetentionDurationDays:  DefaultAttemptedDeployAlertRetention,
+				AttemptedRuntimeRetentionDurationDays: DefaultAttemptedRuntimeAlertRetention,
 			},
 		},
 	}

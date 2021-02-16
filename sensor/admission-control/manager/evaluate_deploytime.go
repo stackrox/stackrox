@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/enforcers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
@@ -24,9 +25,8 @@ var (
 )
 
 func (m *manager) shouldBypass(s *state, req *admission.AdmissionRequest) bool {
-	// If enforcement is disabled (or there are no enforced policies), mark this as pass.
-	if s.deploytimeDetector == nil {
-		log.Debugf("Enforcement disabled, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
+	if !s.activeForOperation(req.Operation) {
+		log.Debugf("Not enforcing on operation, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
 		return true
 	}
 
@@ -39,11 +39,6 @@ func (m *manager) shouldBypass(s *state, req *admission.AdmissionRequest) bool {
 	// We don't enforce on subresources.
 	if req.SubResource != "" {
 		log.Debugf("Request is for a subresource, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
-		return true
-	}
-
-	if !s.activeForOperation(req.Operation) {
-		log.Debugf("Not enforcing on operation, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
 		return true
 	}
 
@@ -153,10 +148,9 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 		return pass(req.UID), nil
 	}
 
-	// TODO: Mark enforced violations as attempted
-	//if features.K8sEventDetection.Enabled() {
-	//	go m.putAlertsOnChan(alerts)
-	//}
+	if features.K8sEventDetection.Enabled() {
+		go m.filterAndPutAttemptedAlertsOnChan(req.Operation, alerts...)
+	}
 
 	return fail(req.UID, message(alerts, !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass())), nil
 }

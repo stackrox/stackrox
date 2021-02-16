@@ -58,7 +58,7 @@ class K8sEventDetectionTest extends BaseSpecification {
             def violatingDeployment = DEPLOYMENTS.find { it.name == violatingDeploymentName }
             assert violatingDeployment
             def violations = Services.getViolationsByDeploymentID(
-                violatingDeployment.deploymentUid, KUBECTL_EXEC_POLICY_NAME, 60)
+                    violatingDeployment.deploymentUid, KUBECTL_EXEC_POLICY_NAME, false, 60)
             assert violations != null && violations.size() == 1
             def fullViolation = AlertService.getViolation(violations.get(0).getId())
             assert fullViolation

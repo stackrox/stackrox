@@ -32,10 +32,15 @@ message PublicConfig {
 }
 
 message AlertRetentionConfig {
-    int32 resolved_deploy_retention_duration_days = 1;
-    int32 deleted_runtime_retention_duration_days = 2;
-    int32 all_runtime_retention_duration_days = 3;
-
+    int32 resolved_deploy_retention_duration_days   = 1;
+    // This runtime alert retention configuration takes precedence after `allRuntimeRetentionDurationDays`.
+    int32 deleted_runtime_retention_duration_days   = 2;
+    // This runtime alert retention configuration has highest precedence. All runtime alerts, including attempted
+    // alerts and deleted deployment alerts, are deleted even if respective retention is longer.
+    int32 all_runtime_retention_duration_days       = 3;
+    int32 attempted_deploy_retention_duration_days  = 4;
+    // This runtime alert retention configuration has lowest precedence.
+    int32 attempted_runtime_retention_duration_days = 5;
 }
 
 // next available tag: 4

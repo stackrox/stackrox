@@ -652,14 +652,18 @@ class Enforcement extends BaseSpecification {
 
         [LifecycleStage.DEPLOY,]                       |
                 [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,
-                 EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT]  |
+                 EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
+                 EnforcementAction.FAIL_DEPLOYMENT_CREATE_ENFORCEMENT,
+                 EnforcementAction.FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT]  |
                 LATEST_TAG
 
         [LifecycleStage.BUILD,
          LifecycleStage.DEPLOY]                        |
                 [EnforcementAction.FAIL_BUILD_ENFORCEMENT,
                  EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,
-                 EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT]  |
+                 EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
+                 EnforcementAction.FAIL_DEPLOYMENT_CREATE_ENFORCEMENT,
+                 EnforcementAction.FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT]  |
                 LATEST_TAG
 
         [LifecycleStage.RUNTIME,]                      |

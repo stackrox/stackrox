@@ -47,7 +47,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
     def assertAlertExistsForDeploymentUidAndGetViolations(String policyName, String deploymentUid) {
         checkPolicyExists(APTGETPOLICY)
-        def violations = Services.getViolationsByDeploymentID(deploymentUid, policyName, 66)
+        def violations = Services.getViolationsByDeploymentID(deploymentUid, policyName, false, 66)
         assert !violations?.empty
 
         for (def violation : violations) {
@@ -124,7 +124,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
         when:
         "Get initial violations"
-        def aptGetViolations = getViolationsByDeploymentID(DEPLOYMENT.getDeploymentUid(), APTGETPOLICY, 60)
+        def aptGetViolations = getViolationsByDeploymentID(DEPLOYMENT.getDeploymentUid(), APTGETPOLICY, false, 60)
 
         then:
         "Verify initial violation is triggered and has the properties we expect"
