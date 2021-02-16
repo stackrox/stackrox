@@ -20,9 +20,10 @@ var (
 	PodLabel     = newFieldLabel("Pod Label")
 
 	// cluster health search fields
-	ClusterStatus   = newFieldLabel("Cluster Status")
-	SensorStatus    = newFieldLabel("Sensor Status")
-	CollectorStatus = newFieldLabel("Collector Status")
+	ClusterStatus          = newFieldLabel("Cluster Status")
+	SensorStatus           = newFieldLabel("Sensor Status")
+	CollectorStatus        = newFieldLabel("Collector Status")
+	AdmissionControlStatus = newFieldLabel("Admission Control Status")
 
 	PolicyID       = newFieldLabel("Policy ID")
 	Enforcement    = newFieldLabel("Enforcement")

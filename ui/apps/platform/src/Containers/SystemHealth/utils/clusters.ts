@@ -21,6 +21,12 @@ export type CollectorStatus =
     | 'UNAVAILABLE' // not relevant in System Health
     | 'DEGRADED'
     | 'UNHEALTHY';
+export type AdmissionControlStatus =
+    | 'HEALTHY'
+    | 'UNINITIALIZED' // not relevant in System Health
+    | 'UNAVAILABLE' // not relevant in System Health
+    | 'DEGRADED'
+    | 'UNHEALTHY';
 type SensorUpgradeKey = 'current' | 'download' | 'intervention' | 'failure'; // progress in not relevant
 
 export const clusterStatusHealthyKey: ClusterStatus = 'HEALTHY';
@@ -31,6 +37,7 @@ export interface Cluster {
     healthStatus?: {
         sensorHealthStatus: ClusterStatus;
         collectorHealthStatus: CollectorStatus;
+        admissionControlHealthStatus: AdmissionControlStatus;
         overallHealthStatus: ClusterStatus;
     };
     status?: {
@@ -88,6 +95,23 @@ export const getCollectorStatusCountMap = (clusters: Cluster[]): CountMap => {
 
     clusters.forEach((cluster) => {
         const status = cluster.healthStatus?.collectorHealthStatus;
+        if (status != null && countMap[status] !== undefined) {
+            countMap[status] += 1;
+        }
+    });
+
+    return countMap;
+};
+
+export const getAdmissionControlStatusCountMap = (clusters: Cluster[]): CountMap => {
+    const countMap: CountMap = {
+        HEALTHY: 0,
+        DEGRADED: 0,
+        UNHEALTHY: 0,
+    };
+
+    clusters.forEach((cluster) => {
+        const status = cluster.healthStatus?.admissionControlHealthStatus;
         if (status != null && countMap[status] !== undefined) {
             countMap[status] += 1;
         }

@@ -157,6 +157,13 @@ export const delayedCollectorStatusStyle = {
     fgColor: 'text-base-700',
 };
 
+// Special case for Admission Control when Sensor is UNHEALTHY or DELAYED.
+export const delayedAdmissionControlStatusStyle = {
+    Icon: Info,
+    bgColor: 'bg-base-200',
+    fgColor: 'text-base-700',
+};
+
 export const sensorUpgradeStyles = {
     current: styleHealthy,
     progress: {

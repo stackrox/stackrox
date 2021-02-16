@@ -35,6 +35,8 @@
             },
             "priority": "2",
             "healthStatus": {
+                "admissionControlHealthInfo": null,
+                "admissionControlHealthStatus": "UNINITIALIZED",
                 "collectorHealthInfo": null,
                 "sensorHealthStatus": "UNINITIALIZED",
                 "collectorHealthStatus": "UNINITIALIZED",
@@ -163,6 +165,11 @@
             },
             "priority": "1",
             "healthStatus": {
+                "admissionControlHealthStatus": "HEALTHY",
+                "admissionControlHealthInfo": {
+                    "totalReadyPods": 3,
+                    "totalDesiredPods": 3
+                },
                 "collectorHealthInfo": {
                     "totalReadyPods": 10,
                     "totalDesiredPods": 10,
@@ -224,6 +231,11 @@
             },
             "priority": "1",
             "healthStatus": {
+                "admissionControlHealthStatus": "UNHEALTHY",
+                "admissionControlHealthInfo": {
+                    "totalReadyPods":1,
+                    "totalDesiredPods": 3
+                },
                 "collectorHealthInfo": {
                     "totalReadyPods": 3,
                     "totalDesiredPods": 5,
@@ -286,6 +298,11 @@
             },
             "priority": "1",
             "healthStatus": {
+                "admissionControlHealthStatus": "HEALTHY",
+                "admissionControlHealthInfo": {
+                    "totalReadyPods": 3,
+                    "totalDesiredPods": 3
+                },
                 "collectorHealthInfo": {
                     "totalReadyPods": 10,
                     "totalDesiredPods": 10,
@@ -355,6 +372,11 @@
             },
             "priority": "1",
             "healthStatus": {
+                "admissionControlHealthStatus": "HEALTHY",
+                "admissionControlHealthInfo": {
+                    "totalReadyPods": 3,
+                    "totalDesiredPods": 3
+                },
                 "collectorHealthInfo": {
                     "totalReadyPods": 8,
                     "totalDesiredPods": 10,
@@ -416,6 +438,8 @@
             },
             "priority": "1",
             "healthStatus": {
+                "admissionControlHealthStatus": "UNAVAILABLE",
+                "admissionControlHealthInfo": null,
                 "collectorHealthInfo": null,
                 "sensorHealthStatus": "HEALTHY",
                 "collectorHealthStatus": "UNAVAILABLE",
@@ -480,6 +504,11 @@
             },
             "priority": "1",
             "healthStatus": {
+                "admissionControlHealthStatus": "HEALTHY",
+                "admissionControlHealthInfo": {
+                    "totalReadyPods": 3,
+                    "totalDesiredPods": 3
+                },
                 "collectorHealthInfo": {
                     "totalReadyPods": 7,
                     "totalDesiredPods": 7,

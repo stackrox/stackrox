@@ -13,6 +13,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - When using the "Static configuration" option, the `IdP Certificate(s) (PEM)` option now
     supports specifying multiple PEM-encoded certificates.
 - When creating a new Role, Namespace and Node have been added to the default minimal access specification.
+- Admission Control health status is now available as part of Cluster Health in System Health, and in the
+in the Platform Configuration -> Clusters View.
 
 - `roxctl image check` now has a `--json-fail-on-policy-violations` flag. Its current default value
    is `false` which preserves the legacy behavior of `--json` flag: the command does *not*

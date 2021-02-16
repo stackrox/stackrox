@@ -12,6 +12,7 @@ import {
 import { formatCloudProvider } from './cluster.helpers';
 import ClusterStatus from './Components/ClusterStatus';
 import CollectorStatus from './Components/CollectorStatus';
+import AdmissionControlStatus from './Components/AdmissionControlStatus';
 import CredentialExpiration from './Components/CredentialExpiration';
 import SensorStatus from './Components/SensorStatus';
 import SensorUpgrade from './Components/SensorUpgrade';
@@ -31,8 +32,8 @@ export function getColumnsForClusters({ metadata, rowActions, newSensorInstallat
         );
     }
 
-    // Because of fixed checkbox width, total of column ratios must be less than 100%
-    // 2/6 + 2/7 + 2/8 + 1/10 = 96.90674%
+    // Because of fixed checkbox width, total of column ratios must be less than 1
+    // 6/8 + 1/9 + 1/10 = 0.961
     const clusterColumnsWithHealth = [
         {
             accessor: 'name',
@@ -54,8 +55,8 @@ export function getColumnsForClusters({ metadata, rowActions, newSensorInstallat
             Header: 'Cloud Provider',
             // eslint-disable-next-line react/prop-types
             Cell: ({ original }) => formatCloudProvider(original.status?.providerMetadata),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
+            headerClassName: `w-1/9 ${defaultHeaderClassName}`,
+            className: `w-1/9 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             Header: 'Cluster Status',
@@ -70,8 +71,8 @@ export function getColumnsForClusters({ metadata, rowActions, newSensorInstallat
             Cell: ({ original }) => (
                 <SensorStatus healthStatus={original.healthStatus} currentDatetime={new Date()} />
             ),
-            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             Header: 'Collector Status',
@@ -82,8 +83,20 @@ export function getColumnsForClusters({ metadata, rowActions, newSensorInstallat
                     isList
                 />
             ),
-            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
+        },
+        {
+            Header: 'Admission Control Status',
+            Cell: ({ original }) => (
+                <AdmissionControlStatus
+                    healthStatus={original.healthStatus}
+                    currentDatetime={new Date()}
+                    isList
+                />
+            ),
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             Header: 'Sensor Upgrade',
@@ -99,8 +112,8 @@ export function getColumnsForClusters({ metadata, rowActions, newSensorInstallat
                     }}
                 />
             ),
-            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             Header: 'Credential Expiration',
@@ -111,8 +124,8 @@ export function getColumnsForClusters({ metadata, rowActions, newSensorInstallat
                     isList
                 />
             ),
-            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             Header: '',

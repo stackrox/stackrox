@@ -8,7 +8,7 @@ import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import HealthStatus from './HealthStatus';
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
 import {
-    delayedCollectorStatusStyle,
+    delayedAdmissionControlStatusStyle,
     healthStatusStyles,
     isDelayedSensorHealthStatus,
 } from '../cluster.helpers';
@@ -18,29 +18,29 @@ const thClassName = 'font-600 pl-0 pr-1 py-0 text-left';
 const tdClassName = 'p-0 text-right';
 const tdErrorsClassName = 'font-600 pb-0 pl-0 pr-1 pt-2 text-left'; // pt for gap above errors
 
-const testId = 'collectorStatus';
+const testId = 'admissionControlStatus';
 
 /*
- * Collector Status in Clusters list if `isList={true}` or Cluster side panel if `isList={false}`
+ * Admission Control Status in Clusters list if `isList={true}` or Cluster side panel if `isList={false}`
  *
  * Caller is responsible for optional chaining in case healthStatus is null.
  */
-const CollectorStatus = ({ healthStatus, currentDatetime, isList }) => {
-    if (healthStatus?.collectorHealthStatus) {
+const AdmissionControlStatus = ({ healthStatus, currentDatetime, isList }) => {
+    if (healthStatus?.admissionControlHealthStatus) {
         const {
-            collectorHealthStatus,
-            collectorHealthInfo,
+            admissionControlHealthStatus,
+            admissionControlHealthInfo,
             healthInfoComplete,
             sensorHealthStatus,
             lastContact,
         } = healthStatus;
         const { Icon, bgColor, fgColor } =
             lastContact && isDelayedSensorHealthStatus(sensorHealthStatus)
-                ? delayedCollectorStatusStyle
-                : healthStatusStyles[collectorHealthStatus];
+                ? delayedAdmissionControlStatusStyle
+                : healthStatusStyles[admissionControlHealthStatus];
         const labelElement = (
             <span className={`${bgColor} ${fgColor}`}>
-                {healthStatusLabels[collectorHealthStatus]}
+                {healthStatusLabels[admissionControlHealthStatus]}
             </span>
         );
 
@@ -60,29 +60,15 @@ const CollectorStatus = ({ healthStatus, currentDatetime, isList }) => {
                 <div data-testid={testId}>{labelElement}</div>
             );
 
-        if (collectorHealthInfo) {
+        if (admissionControlHealthInfo) {
             const notAvailable = 'n/a';
-            const {
-                totalReadyPods,
-                totalDesiredPods,
-                totalRegisteredNodes,
-                version,
-                statusErrors,
-            } = collectorHealthInfo;
+            const { totalReadyPods, totalDesiredPods, statusErrors } = admissionControlHealthInfo;
             const totalsElement = (
-                <table data-testid="collectorHealthInfo">
+                <table data-testid="admissionControlHealthInfo">
                     <tbody>
-                        <tr className={trClassName} key="version">
-                            <th className={thClassName} scope="row">
-                                Collector version:
-                            </th>
-                            <td className={tdClassName} data-testid="version">
-                                {version || notAvailable}
-                            </td>
-                        </tr>
                         <tr className={trClassName} key="totalReadyPods">
                             <th className={thClassName} scope="row">
-                                Collector pods ready:
+                                Admission Control pods ready:
                             </th>
                             <td className={tdClassName} data-testid="totalReadyPods">
                                 <span className={`${bgColor} ${fgColor}`}>
@@ -92,20 +78,12 @@ const CollectorStatus = ({ healthStatus, currentDatetime, isList }) => {
                         </tr>
                         <tr className={trClassName} key="totalDesiredPods">
                             <th className={thClassName} scope="row">
-                                Collector pods expected:
+                                Admission Control pods expected:
                             </th>
                             <td className={tdClassName} data-testid="totalDesiredPods">
                                 <span className={`${bgColor} ${fgColor}`}>
                                     {totalDesiredPods == null ? notAvailable : totalDesiredPods}
                                 </span>
-                            </td>
-                        </tr>
-                        <tr className={trClassName} key="totalRegisteredNodes">
-                            <th className={thClassName} scope="row">
-                                Registered nodes in cluster:
-                            </th>
-                            <td className={tdClassName} data-testid="totalRegisteredNodes">
-                                {totalRegisteredNodes == null ? notAvailable : totalRegisteredNodes}
                             </td>
                         </tr>
                         {statusErrors && statusErrors.length > 0 && (
@@ -138,8 +116,9 @@ const CollectorStatus = ({ healthStatus, currentDatetime, isList }) => {
             ) : (
                 <div>
                     {totalsElement}
-                    <div data-testid="collectorInfoComplete">
-                        <strong>Upgrade Sensor</strong> to get complete Collector health information
+                    <div data-testid="admissionControlInfoComplete">
+                        <strong>Upgrade Sensor</strong> to get complete Admission Control health
+                        information
                     </div>
                 </div>
             );
@@ -148,7 +127,7 @@ const CollectorStatus = ({ healthStatus, currentDatetime, isList }) => {
                 <Tooltip
                     content={
                         <DetailedTooltipOverlay
-                            title="Collector Health Information"
+                            title="Admission Control Health Information"
                             body={infoElement}
                         />
                     }
@@ -169,10 +148,10 @@ const CollectorStatus = ({ healthStatus, currentDatetime, isList }) => {
             );
         }
 
-        if (collectorHealthStatus === 'UNAVAILABLE') {
+        if (admissionControlHealthStatus === 'UNAVAILABLE') {
             const reasonUnavailable = (
-                <div data-testid="collectorInfoComplete">
-                    <strong>Upgrade Sensor</strong> to get Collector health information
+                <div data-testid="admissionControlInfoComplete">
+                    <strong>Upgrade Sensor</strong> to get Admission Control health information
                 </div>
             );
 
@@ -205,20 +184,18 @@ const CollectorStatus = ({ healthStatus, currentDatetime, isList }) => {
     return <HealthStatusNotApplicable testId={testId} />;
 };
 
-CollectorStatus.propTypes = {
+AdmissionControlStatus.propTypes = {
     healthStatus: PropTypes.shape({
-        collectorHealthStatus: PropTypes.oneOf([
+        admissionControlHealthStatus: PropTypes.oneOf([
             'UNINITIALIZED',
             'UNAVAILABLE',
             'UNHEALTHY',
             'DEGRADED',
             'HEALTHY',
         ]),
-        collectorHealthInfo: PropTypes.shape({
-            version: PropTypes.string,
+        admissionControlHealthInfo: PropTypes.shape({
             totalDesiredPods: PropTypes.number,
             totalReadyPods: PropTypes.number,
-            totalRegisteredNodes: PropTypes.number,
             statusErrors: PropTypes.arrayOf(PropTypes.string),
         }),
         healthInfoComplete: PropTypes.bool,
@@ -229,8 +206,8 @@ CollectorStatus.propTypes = {
     isList: PropTypes.bool.isRequired,
 };
 
-CollectorStatus.defaultProps = {
+AdmissionControlStatus.defaultProps = {
     healthStatus: null,
 };
 
-export default CollectorStatus;
+export default AdmissionControlStatus;

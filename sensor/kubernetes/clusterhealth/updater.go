@@ -24,6 +24,9 @@ const (
 	defaultInterval        = 30 * time.Second
 	collectorDaemonsetName = "collector"
 	collectorContainerName = "collector"
+
+	admissionControlDeploymentName = "admission-control"
+	admissionControlContainerName  = "admission-control"
 )
 
 var (
@@ -67,11 +70,13 @@ func (u *updaterImpl) run() {
 		select {
 		case <-ticker.C:
 			collectorHealthInfo := u.getCollectorInfo()
+			admissionControlHealthInfo := u.getAdmissionControlInfo()
 			select {
 			case u.updates <- &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_ClusterHealthInfo{
 					ClusterHealthInfo: &central.RawClusterHealthInfo{
-						CollectorHealthInfo: collectorHealthInfo,
+						CollectorHealthInfo:        collectorHealthInfo,
+						AdmissionControlHealthInfo: admissionControlHealthInfo,
 					},
 				},
 			}:
@@ -127,6 +132,28 @@ func (u *updaterImpl) getCollectorInfo() *storage.CollectorHealthInfo {
 		log.Errorf("Errors while getting collector info: %v", result.StatusErrors)
 	}
 
+	return &result
+}
+
+func (u *updaterImpl) getAdmissionControlInfo() *storage.AdmissionControlHealthInfo {
+	result := storage.AdmissionControlHealthInfo{}
+	// Admission Control deployment is looked up in the same namespace as Sensor because that is how they should be deployed.
+	admissionControl, err := u.client.AppsV1().Deployments(u.namespace).Get(u.ctx(), admissionControlDeploymentName, metav1.GetOptions{})
+	if err != nil {
+		err = errors.Wrap(err, fmt.Sprintf("unable to find admission control deployments in namespace %q", u.namespace))
+		result.StatusErrors = append(result.StatusErrors, fmt.Sprintf("unable to find admission control deployments in namespace %q: %v", u.namespace, err))
+	} else {
+		result.TotalDesiredPodsOpt = &storage.AdmissionControlHealthInfo_TotalDesiredPods{
+			TotalDesiredPods: admissionControl.Status.Replicas,
+		}
+		result.TotalReadyPodsOpt = &storage.AdmissionControlHealthInfo_TotalReadyPods{
+			TotalReadyPods: admissionControl.Status.ReadyReplicas,
+		}
+	}
+
+	if len(result.StatusErrors) > 0 {
+		log.Errorf("Errors while getting admission control info: %v", result.StatusErrors)
+	}
 	return &result
 }
 

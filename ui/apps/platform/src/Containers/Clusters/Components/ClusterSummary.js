@@ -7,6 +7,7 @@ import Widget from 'Components/Widget';
 
 import ClusterStatus from './ClusterStatus';
 import CollectorStatus from './CollectorStatus';
+import AdmissionControlStatus from './AdmissionControlStatus';
 import CredentialExpiration from './CredentialExpiration';
 import CredentialInteraction from './CredentialInteraction';
 import SensorStatus from './SensorStatus';
@@ -87,6 +88,18 @@ const ClusterSummary = ({ healthStatus, status, centralVersion, currentDatetime,
                                     />
                                 </td>
                             </tr>
+                            <tr className={trClass} key="Admission Control">
+                                <th className={thClass} scope="row">
+                                    Admission Control
+                                </th>
+                                <td className={tdClass}>
+                                    <AdmissionControlStatus
+                                        healthStatus={healthStatus}
+                                        currentDatetime={currentDatetime}
+                                        isList={false}
+                                    />
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </Widget>
@@ -135,6 +148,7 @@ ClusterSummary.propTypes = {
         }),
         sensorHealthStatus: PropTypes.string,
         collectorHealthStatus: PropTypes.string,
+        admissionControlHealthStatus: PropTypes.string,
         overallHealthStatus: PropTypes.string,
         lastContact: PropTypes.string, // ISO 8601
         healthInfoComplete: PropTypes.bool,

@@ -3,6 +3,7 @@ import React from 'react';
 
 import ClusterStatus from './ClusterStatus';
 import CollectorStatus from './CollectorStatus';
+import AdmissionControlStatus from './AdmissionControlStatus';
 import CredentialExpiration from './CredentialExpiration';
 import SensorStatus from './SensorStatus';
 import SensorUpgrade from './SensorUpgrade';
@@ -51,6 +52,18 @@ const ClusterHealth = ({ healthStatus, status, centralVersion, currentDatetime }
                         />
                     </td>
                 </tr>
+                <tr className={trClass} key="Admission Control Status">
+                    <th className={thClass} scope="row">
+                        Admission Control Status
+                    </th>
+                    <td className={tdClass}>
+                        <AdmissionControlStatus
+                            healthStatus={healthStatus}
+                            currentDatetime={currentDatetime}
+                            isList={false}
+                        />
+                    </td>
+                </tr>
                 <tr className={trClass} key="Sensor Upgrade">
                     <th className={thClass} scope="row">
                         Sensor Upgrade
@@ -90,6 +103,12 @@ ClusterHealth.propTypes = {
             totalDesiredPods: PropTypes.number,
             totalReadyPods: PropTypes.number,
             totalRegisteredNodes: PropTypes.number,
+            statusErrors: PropTypes.arrayOf(PropTypes.string),
+        }),
+        admissionControlHealthStatus: PropTypes.string,
+        admissionControlHealthInfo: PropTypes.shape({
+            totalDesiredPods: PropTypes.number,
+            totalReadyPods: PropTypes.number,
             statusErrors: PropTypes.arrayOf(PropTypes.string),
         }),
         healthInfoComplete: PropTypes.bool,

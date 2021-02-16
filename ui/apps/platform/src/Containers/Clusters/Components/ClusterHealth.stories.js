@@ -18,6 +18,8 @@ export const ClusterStatusUninitialized = () => (
             healthStatus={{
                 collectorHealthStatus: 'UNINITIALIZED',
                 collectorHealthInfo: null,
+                admissionControlHealthStatus: 'UNINITIALIZED',
+                admissionControlHealthInfo: null,
                 healthInfoComplete: false,
                 overallHealthStatus: 'UNINITIALIZED',
                 sensorHealthStatus: 'UNINITIALIZED',
@@ -43,6 +45,11 @@ export const SensorStatusUnhealthy = () => (
                     totalReadyPods: 10,
                     totalDesiredPods: 10,
                     totalRegisteredNodes: 12,
+                },
+                admissionControlHealthStatus: 'HEALTHY',
+                admissionControlHealthInfo: {
+                    totalReadyPods: 3,
+                    totalDesiredPods: 3,
                 },
                 healthInfoComplete: true,
                 overallHealthStatus: 'UNHEALTHY',
@@ -70,6 +77,11 @@ export const CollectorStatusUnhealthy = () => (
                     totalDesiredPods: 5,
                     totalRegisteredNodes: 6,
                 },
+                admissionControlHealthStatus: 'HEALTHY',
+                admissionControlHealthInfo: {
+                    totalReadyPods: 3,
+                    totalDesiredPods: 3,
+                },
                 healthInfoComplete: true,
                 overallHealthStatus: 'UNHEALTHY',
                 sensorHealthStatus: 'HEALTHY',
@@ -95,6 +107,11 @@ export const SensorStatusDegraded = () => (
                     totalReadyPods: 10,
                     totalDesiredPods: 10,
                     totalRegisteredNodes: 12,
+                },
+                admissionControlHealthStatus: 'HEALTHY',
+                admissionControlHealthInfo: {
+                    totalReadyPods: 3,
+                    totalDesiredPods: 3,
                 },
                 healthInfoComplete: true,
                 overallHealthStatus: 'DEGRADED',
@@ -122,6 +139,11 @@ export const CollectorStatusDegraded = () => (
                     totalDesiredPods: 10,
                     totalRegisteredNodes: 12,
                 },
+                admissionControlHealthStatus: 'HEALTHY',
+                admissionControlHealthInfo: {
+                    totalReadyPods: 3,
+                    totalDesiredPods: 3,
+                },
                 healthInfoComplete: true,
                 overallHealthStatus: 'DEGRADED',
                 sensorHealthStatus: 'HEALTHY',
@@ -144,6 +166,11 @@ export const CollectorStatusUnavailable = () => (
             healthStatus={{
                 collectorHealthStatus: 'UNAVAILABLE',
                 collectorHealthInfo: null,
+                admissionControlHealthStatus: 'HEALTHY',
+                admissionControlHealthInfo: {
+                    totalReadyPods: 3,
+                    totalDesiredPods: 3,
+                },
                 healthInfoComplete: false,
                 overallHealthStatus: 'HEALTHY',
                 sensorHealthStatus: 'HEALTHY',
@@ -170,6 +197,11 @@ export const ClusterStatusHealthy = () => (
                     totalDesiredPods: 7,
                     totalRegisteredNodes: 7,
                 },
+                admissionControlHealthStatus: 'HEALTHY',
+                admissionControlHealthInfo: {
+                    totalReadyPods: 3,
+                    totalDesiredPods: 3,
+                },
                 healthInfoComplete: true,
                 overallHealthStatus: 'HEALTHY',
                 sensorHealthStatus: 'HEALTHY',
@@ -182,6 +214,92 @@ export const ClusterStatusHealthy = () => (
             }}
             centralVersion="3.50.0.0"
             currentDatetime={new Date('2020-06-01T14:00:00Z')}
+        />
+    </AtSide>
+);
+
+export const AdmissionControlStatusUnhealthy = () => (
+    <AtSide>
+        <ClusterHealth
+            healthStatus={{
+                collectorHealthStatus: 'HEALTHY',
+                collectorHealthInfo: {
+                    totalReadyPods: 12,
+                    totalDesiredPods: 12,
+                    totalRegisteredNodes: 12,
+                },
+                admissionControlHealthStatus: 'UNHEALTHY',
+                admissionControlHealthInfo: {
+                    totalReadyPods: 1,
+                    totalDesiredPods: 3,
+                },
+                healthInfoComplete: true,
+                overallHealthStatus: 'UNHEALTHY',
+                sensorHealthStatus: 'HEALTHY',
+                lastContact: '2020-06-01T13:58:01Z',
+            }}
+            status={{
+                certExpiryStatus: { sensorCertExpiry: '2020-07-31T21:59:00Z' },
+                sensorVersion: '3.50.0.0',
+                upgradeStatus: { upgradability: 'UP_TO_DATE' },
+            }}
+            centralVersion="3.50.0.0"
+            currentDatetime={new Date('2020-06-01T14:00:00Z')}
+        />
+    </AtSide>
+);
+
+export const AdmissionControlStatusDegraded = () => (
+    <AtSide>
+        <ClusterHealth
+            healthStatus={{
+                collectorHealthStatus: 'HEALTHY',
+                collectorHealthInfo: {
+                    totalReadyPods: 10,
+                    totalDesiredPods: 10,
+                    totalRegisteredNodes: 12,
+                },
+                admissionControlHealthStatus: 'DEGRADED',
+                admissionControlHealthInfo: {
+                    totalReadyPods: 2,
+                    totalDesiredPods: 3,
+                },
+                healthInfoComplete: true,
+                overallHealthStatus: 'DEGRADED',
+                sensorHealthStatus: 'HEALTHY',
+                lastContact: '2020-06-01T13:58:01Z',
+            }}
+            status={{
+                certExpiryStatus: { sensorCertExpiry: '2020-07-31T21:59:00Z' },
+                sensorVersion: '3.48.0.0',
+                upgradeStatus: { upgradability: 'AUTO_UPGRADE_POSSIBLE' },
+            }}
+            centralVersion="3.50.0.0"
+            currentDatetime={new Date('2020-06-01T14:00:00Z')}
+        />
+    </AtSide>
+);
+
+export const AdmissionControlStatusUnavailable = () => (
+    <AtSide>
+        <ClusterHealth
+            healthStatus={{
+                collectorHealthStatus: 'UNAVAILABLE',
+                collectorHealthInfo: null,
+                admissionControlHealthStatus: 'UNAVAILABLE',
+                admissionControlHealthInfo: null,
+                healthInfoComplete: false,
+                overallHealthStatus: 'HEALTHY',
+                sensorHealthStatus: 'HEALTHY',
+                lastContact: '2020-07-24T21:59:01Z',
+            }}
+            status={{
+                certExpiryStatus: { sensorCertExpiry: '2020-07-31T21:59:00Z' },
+                sensorVersion: '3.47.0.0',
+                upgradeStatus: { upgradability: 'AUTO_UPGRADE_POSSIBLE' },
+            }}
+            centralVersion="3.50.0.0"
+            currentDatetime={new Date('2020-07-24T22:00:00Z')}
         />
     </AtSide>
 );

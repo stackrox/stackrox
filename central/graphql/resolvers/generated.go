@@ -28,6 +28,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"secretAccessKey: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Access(0)))
+	utils.Must(builder.AddType("AdmissionControlHealthInfo", []string{
+		"statusErrors: [String!]!",
+	}))
 	utils.Must(builder.AddType("AdmissionControllerConfig", []string{
 		"disableBypass: Boolean!",
 		"enabled: Boolean!",
@@ -214,6 +217,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"sensorCertExpiry: Time",
 	}))
 	utils.Must(builder.AddType("ClusterHealthStatus", []string{
+		"admissionControlHealthInfo: AdmissionControlHealthInfo",
+		"admissionControlHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 		"collectorHealthInfo: CollectorHealthInfo",
 		"collectorHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 		"healthInfoComplete: Boolean!",
@@ -1358,6 +1363,35 @@ func toAccesses(values *[]string) []storage.Access {
 		output[i] = toAccess(&v)
 	}
 	return output
+}
+
+type admissionControlHealthInfoResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.AdmissionControlHealthInfo
+}
+
+func (resolver *Resolver) wrapAdmissionControlHealthInfo(value *storage.AdmissionControlHealthInfo, ok bool, err error) (*admissionControlHealthInfoResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &admissionControlHealthInfoResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAdmissionControlHealthInfos(values []*storage.AdmissionControlHealthInfo, err error) ([]*admissionControlHealthInfoResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*admissionControlHealthInfoResolver, len(values))
+	for i, v := range values {
+		output[i] = &admissionControlHealthInfoResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *admissionControlHealthInfoResolver) StatusErrors(ctx context.Context) []string {
+	value := resolver.data.GetStatusErrors()
+	return value
 }
 
 type admissionControllerConfigResolver struct {
@@ -2823,6 +2857,16 @@ func (resolver *Resolver) wrapClusterHealthStatuses(values []*storage.ClusterHea
 		output[i] = &clusterHealthStatusResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *clusterHealthStatusResolver) AdmissionControlHealthInfo(ctx context.Context) (*admissionControlHealthInfoResolver, error) {
+	value := resolver.data.GetAdmissionControlHealthInfo()
+	return resolver.root.wrapAdmissionControlHealthInfo(value, true, nil)
+}
+
+func (resolver *clusterHealthStatusResolver) AdmissionControlHealthStatus(ctx context.Context) string {
+	value := resolver.data.GetAdmissionControlHealthStatus()
+	return value.String()
 }
 
 func (resolver *clusterHealthStatusResolver) CollectorHealthInfo(ctx context.Context) (*collectorHealthInfoResolver, error) {

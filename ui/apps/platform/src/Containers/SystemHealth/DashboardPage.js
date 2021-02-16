@@ -21,6 +21,7 @@ import { fetchIntegration } from 'services/IntegrationsService';
 
 import ClusterOverview from './Components/ClusterOverview';
 import CollectorStatus from './Components/CollectorStatus';
+import AdmissionControlStatus from './Components/AdmissionControlStatus';
 import CredentialExpiration from './Components/CredentialExpiration';
 import GenerateDiagnosticBundleButton from './Components/GenerateDiagnosticBundleButton';
 import SensorStatus from './Components/SensorStatus';
@@ -188,6 +189,13 @@ const SystemHealthDashboardPage = () => {
                                     id="collector-status"
                                 >
                                     <CollectorStatus clusters={clusters} />
+                                </Widget>
+                                <Widget
+                                    className="h-48 m-2 text-center w-48"
+                                    header="Admission Control Status"
+                                    id="admissionControl-status"
+                                >
+                                    <AdmissionControlStatus clusters={clusters} />
                                 </Widget>
                                 <Widget
                                     className="h-48 m-2 text-center w-48"

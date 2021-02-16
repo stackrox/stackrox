@@ -32,6 +32,7 @@ describe('Clusters page', () => {
                 'Cluster Status',
                 'Sensor Status',
                 'Collector Status',
+                'Admission Control Status',
                 'Sensor Upgrade',
                 'Credential Expiration',
             ];
@@ -340,13 +341,13 @@ describe('Cluster Health', () => {
                 clusterStatus: 'Uninitialized',
                 sensorStatus: 'Uninitialized',
                 collectorStatus: 'Uninitialized',
+                admissionControlStatus: 'Uninitialized',
                 sensorUpgrade: 'Not applicable',
                 credentialExpiration: 'Not applicable',
             },
             expectedInSide: {
-                totalReadyPods: null,
-                totalDesiredPods: null,
-                totalRegisteredNodes: null,
+                admissionControlHealthInfo: null,
+                collectorHealthInfo: null,
                 healthInfoComplete: null,
                 sensorVersion: null,
                 centralVersion: null,
@@ -359,13 +360,20 @@ describe('Cluster Health', () => {
                 clusterStatus: 'Unhealthy',
                 sensorStatus: 'Unhealthy for 1 hour',
                 collectorStatus: 'Healthy 1 hour ago',
+                admissionControlStatus: 'Healthy 1 hour ago',
                 sensorUpgrade: 'Upgrade available',
                 credentialExpiration: 'in 6 days on Monday',
             },
             expectedInSide: {
-                totalReadyPods: '10',
-                totalDesiredPods: '10',
-                totalRegisteredNodes: '12',
+                admissionControlHealthInfo: {
+                    totalReadyPods: '3',
+                    totalDesiredPods: '3',
+                },
+                collectorHealthInfo: {
+                    totalReadyPods: '10',
+                    totalDesiredPods: '10',
+                    totalRegisteredNodes: '12',
+                },
                 healthInfoComplete: null,
                 sensorVersion: '3.0.48.0',
                 centralVersion: '3.0.50.0',
@@ -378,13 +386,20 @@ describe('Cluster Health', () => {
                 clusterStatus: 'Unhealthy',
                 sensorStatus: 'Healthy',
                 collectorStatus: 'Unhealthy',
+                admissionControlStatus: 'Unhealthy',
                 sensorUpgrade: 'Up to date with Central',
                 credentialExpiration: 'in 29 days on 09/29/2020',
             },
             expectedInSide: {
-                totalReadyPods: '3',
-                totalDesiredPods: '5',
-                totalRegisteredNodes: '6',
+                admissionControlHealthInfo: {
+                    totalReadyPods: '1',
+                    totalDesiredPods: '3',
+                },
+                collectorHealthInfo: {
+                    totalReadyPods: '3',
+                    totalDesiredPods: '5',
+                    totalRegisteredNodes: '6',
+                },
                 healthInfoComplete: null,
                 sensorVersion: '3.0.50.0',
                 centralVersion: '3.0.50.0',
@@ -397,13 +412,20 @@ describe('Cluster Health', () => {
                 clusterStatus: 'Degraded',
                 sensorStatus: 'Degraded for 2 minutes',
                 collectorStatus: 'Healthy 2 minutes ago',
+                admissionControlStatus: 'Healthy 2 minutes ago',
                 sensorUpgrade: 'Up to date with Central',
                 credentialExpiration: 'in 1 month',
             },
             expectedInSide: {
-                totalReadyPods: '10',
-                totalDesiredPods: '10',
-                totalRegisteredNodes: '12',
+                admissionControlHealthInfo: {
+                    totalReadyPods: '3',
+                    totalDesiredPods: '3',
+                },
+                collectorHealthInfo: {
+                    totalReadyPods: '10',
+                    totalDesiredPods: '10',
+                    totalRegisteredNodes: '12',
+                },
                 healthInfoComplete: null,
                 sensorVersion: '3.0.50.0',
                 centralVersion: '3.0.50.0',
@@ -416,13 +438,20 @@ describe('Cluster Health', () => {
                 clusterStatus: 'Degraded',
                 sensorStatus: 'Healthy',
                 collectorStatus: 'Degraded',
+                admissionControlStatus: 'Healthy',
                 sensorUpgrade: 'Up to date with Central',
                 credentialExpiration: 'in 2 months',
             },
             expectedInSide: {
-                totalReadyPods: '8',
-                totalDesiredPods: '10',
-                totalRegisteredNodes: '12',
+                admissionControlHealthInfo: {
+                    totalReadyPods: '3',
+                    totalDesiredPods: '3',
+                },
+                collectorHealthInfo: {
+                    totalReadyPods: '8',
+                    totalDesiredPods: '10',
+                    totalRegisteredNodes: '12',
+                },
                 healthInfoComplete: null,
                 sensorVersion: '3.0.50.0',
                 centralVersion: '3.0.50.0',
@@ -435,14 +464,17 @@ describe('Cluster Health', () => {
                 clusterStatus: 'Healthy',
                 sensorStatus: 'Healthy',
                 collectorStatus: 'Unavailable',
+                admissionControlStatus: 'Unavailable',
                 sensorUpgrade: 'Upgrade available',
                 credentialExpiration: 'in 12 months',
             },
             expectedInSide: {
-                totalReadyPods: null,
-                totalDesiredPods: null,
-                totalRegisteredNodes: null,
-                healthInfoComplete: 'Upgrade Sensor to get Collector health information',
+                admissionControlHealthInfo: null,
+                collectorHealthInfo: null,
+                healthInfoComplete: {
+                    admissionControl: 'Upgrade Sensor to get Admission Control health information',
+                    collector: 'Upgrade Sensor to get Collector health information',
+                },
                 sensorVersion: '3.0.47.0',
                 centralVersion: '3.0.50.0',
             },
@@ -454,13 +486,20 @@ describe('Cluster Health', () => {
                 clusterStatus: 'Healthy',
                 sensorStatus: 'Healthy',
                 collectorStatus: 'Healthy',
+                admissionControlStatus: 'Healthy',
                 sensorUpgrade: 'Up to date with Central',
                 credentialExpiration: 'in 1 year',
             },
             expectedInSide: {
-                totalReadyPods: '7',
-                totalDesiredPods: '7',
-                totalRegisteredNodes: '7',
+                admissionControlHealthInfo: {
+                    totalReadyPods: '3',
+                    totalDesiredPods: '3',
+                },
+                collectorHealthInfo: {
+                    totalReadyPods: '7',
+                    totalDesiredPods: '7',
+                    totalRegisteredNodes: '7',
+                },
                 healthInfoComplete: null,
                 sensorVersion: '3.0.50.0',
                 centralVersion: '3.0.50.0',
@@ -491,13 +530,13 @@ describe('Cluster Health', () => {
             clusterStatus,
             sensorStatus,
             collectorStatus,
+            admissionControlStatus,
             sensorUpgrade,
             credentialExpiration,
         } = expectedInListAndSide;
         const {
-            totalReadyPods,
-            totalDesiredPods,
-            totalRegisteredNodes,
+            admissionControlHealthInfo,
+            collectorHealthInfo,
             healthInfoComplete,
             sensorVersion,
             centralVersion,
@@ -519,25 +558,49 @@ describe('Cluster Health', () => {
 
             // Collector Status
             cy.get(selectors.clusterHealth.collectorStatus).should('have.text', collectorStatus);
-            if (typeof totalReadyPods === 'string') {
-                cy.get(selectors.clusterHealth.totalReadyPods).should('have.text', totalReadyPods);
-            }
-            if (typeof totalDesiredPods === 'string') {
-                cy.get(selectors.clusterHealth.totalDesiredPods).should(
+            if (collectorHealthInfo !== null) {
+                const {
+                    totalReadyPods,
+                    totalDesiredPods,
+                    totalRegisteredNodes,
+                } = collectorHealthInfo;
+                cy.get(selectors.clusterHealth.collectorHealthInfo.totalReadyPods).should(
+                    'have.text',
+                    totalReadyPods
+                );
+                cy.get(selectors.clusterHealth.collectorHealthInfo.totalDesiredPods).should(
                     'have.text',
                     totalDesiredPods
                 );
-            }
-            if (typeof totalRegisteredNodes === 'string') {
-                cy.get(selectors.clusterHealth.totalRegisteredNodes).should(
+                cy.get(selectors.clusterHealth.collectorHealthInfo.totalRegisteredNodes).should(
                     'have.text',
                     totalRegisteredNodes
                 );
             }
-            if (typeof healthInfoComplete === 'string') {
-                cy.get(selectors.clusterHealth.healthInfoComplete).should(
+            // Admission Control Status
+            cy.get(selectors.clusterHealth.admissionControlStatus).should(
+                'have.text',
+                admissionControlStatus
+            );
+            if (admissionControlHealthInfo !== null) {
+                const { totalReadyPods, totalDesiredPods } = admissionControlHealthInfo;
+                cy.get(selectors.clusterHealth.admissionControlHealthInfo.totalReadyPods).should(
                     'have.text',
-                    healthInfoComplete
+                    totalReadyPods
+                );
+                cy.get(selectors.clusterHealth.admissionControlHealthInfo.totalDesiredPods).should(
+                    'have.text',
+                    totalDesiredPods
+                );
+            }
+            if (healthInfoComplete !== null) {
+                cy.get(selectors.clusterHealth.admissionControlInfoComplete).should(
+                    'have.text',
+                    healthInfoComplete.admissionControl
+                );
+                cy.get(selectors.clusterHealth.collectorInfoComplete).should(
+                    'have.text',
+                    healthInfoComplete.collector
                 );
             }
 
