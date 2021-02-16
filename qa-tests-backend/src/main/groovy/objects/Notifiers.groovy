@@ -339,9 +339,6 @@ class SplunkNotifier extends Notifier {
         assert response.find { it.deployment.namespace == deployment.namespace }
         assert response.find { it.deployment.type == "Deployment" }
         assert response.find { it.policy.name == policy.name }
-        assert response.find { it.policy.description == policy.description }
-        assert response.find { it.policy.remediation == policy.remediation }
-        assert response.find { it.policy.rationale == policy.rationale }
     }
 }
 

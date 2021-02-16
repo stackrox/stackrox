@@ -31,6 +31,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     - 5.19
     - 5.20
     - 5.21
+ - Splunk alert events send to HEC will no longer include policy description, remediation and rationale
+   in order to allow for more violations underneath the HEC limit.
 
 ## [55.0]
 - The `/v1/metadata` endpoint redacts version information from unauthenticated users.
