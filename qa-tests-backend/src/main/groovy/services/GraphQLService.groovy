@@ -35,7 +35,15 @@ class GraphQLService {
 
     Response Call(String query, Map variables) {
         def sampleMap = ["query": query, "variables": variables]
-        return this.aPoster.CallPost(sampleMap)
+        Response response = this.aPoster.CallPost(sampleMap)
+        if (response.hasNoErrors()) {
+            return response
+        }
+
+        println "There were errors in the graph QL response:"
+        response.print()
+
+        return response
     }
 
     // Response value type for GQL requests. Since the return is not tied to any data structure,
@@ -67,6 +75,15 @@ class GraphQLService {
 
         Boolean hasNoErrors() {
             return this.code == 200 && (this.errors == null || this.errors.size() == 0)
+        }
+
+        void print() {
+            println "code: "
+            println this.code
+            println "value: "
+            println this.value
+            println "errors: "
+            println this.errors
         }
     }
 
