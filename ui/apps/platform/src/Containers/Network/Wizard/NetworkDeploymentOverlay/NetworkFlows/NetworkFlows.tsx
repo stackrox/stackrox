@@ -3,6 +3,7 @@ import pluralize from 'pluralize';
 
 import { filterModes } from 'constants/networkFilterModes';
 import { Edge } from 'Containers/Network/networkTypes';
+import { networkFlowStatus } from 'constants/networkGraph';
 import useFetchNetworkBaselines from './useFetchNetworkBaselines';
 
 import NetworkBaselines from '../NetworkBaselines';
@@ -50,7 +51,7 @@ function NetworkFlows({
             deploymentId={deploymentId}
             filterState={filterModes}
             onNavigateToEntity={onNavigateToEntity}
-            showAnomalousFlows
+            includedBaselineStatuses={[networkFlowStatus.ANOMALOUS, networkFlowStatus.BASELINE]}
         />
     );
 }

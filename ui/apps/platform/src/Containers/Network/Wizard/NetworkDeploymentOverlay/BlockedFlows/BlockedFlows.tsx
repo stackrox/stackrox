@@ -2,6 +2,7 @@ import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
 
 import { filterModes } from 'constants/networkFilterModes';
+import { networkFlowStatus } from 'constants/networkGraph';
 import useFetchBlockedFlows from './useFetchBlockedFlows';
 
 import NetworkBaselines from '../NetworkBaselines';
@@ -43,7 +44,7 @@ function BlockedFlows({
             deploymentId={deploymentId}
             filterState={filterModes}
             onNavigateToEntity={onNavigateToEntity}
-            showAnomalousFlows={false}
+            includedBaselineStatuses={[networkFlowStatus.BLOCKED]}
         />
     );
 }

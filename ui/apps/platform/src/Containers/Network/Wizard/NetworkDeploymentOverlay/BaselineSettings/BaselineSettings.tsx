@@ -2,6 +2,7 @@ import React, { ReactElement } from 'react';
 
 import { filterModes } from 'constants/networkFilterModes';
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { networkFlowStatus } from 'constants/networkGraph';
 import useFetchNetworkBaselines from './useFetchNetworkBaselines';
 
 import NetworkBaselines from '../NetworkBaselines';
@@ -45,7 +46,7 @@ function BaselineSettings({
             deploymentId={deploymentId}
             filterState={filterModes}
             onNavigateToEntity={onNavigateToEntity}
-            showAnomalousFlows={false}
+            includedBaselineStatuses={[networkFlowStatus.BASELINE]}
         />
     );
 }

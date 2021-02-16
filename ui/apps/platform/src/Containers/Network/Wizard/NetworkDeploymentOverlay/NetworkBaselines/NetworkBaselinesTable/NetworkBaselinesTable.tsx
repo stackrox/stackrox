@@ -30,7 +30,7 @@ export type NetworkBaselinesTableProps = {
     networkBaselines: FlattenedNetworkBaseline[];
     toggleBaselineStatuses: (networkBaselines: FlattenedNetworkBaseline[]) => void;
     onNavigateToEntity: () => void;
-    showAnomalousFlows?: boolean;
+    includedBaselineStatuses: BaselineStatus[];
 };
 
 function getEmptyGroupRow(status: BaselineStatus): Row {
@@ -148,7 +148,7 @@ function NetworkBaselinesTable({
     networkBaselines,
     toggleBaselineStatuses,
     onNavigateToEntity,
-    showAnomalousFlows = false,
+    includedBaselineStatuses,
 }: NetworkBaselinesTableProps): ReactElement {
     const { headerGroups, rows, prepareRow, selectedFlatRows } = useTable(
         {
@@ -163,8 +163,9 @@ function NetworkBaselinesTable({
                 ],
                 groupBy: ['status', 'entity'],
                 expanded: {
-                    'status:ANOMALOUS': true,
-                    'status:BASELINE': true,
+                    [`status:${networkFlowStatus.ANOMALOUS}`]: true,
+                    [`status:${networkFlowStatus.BASELINE}`]: true,
+                    [`status:${networkFlowStatus.BLOCKED}`]: true,
                 },
                 hiddenColumns: ['status'],
             },
@@ -178,7 +179,7 @@ function NetworkBaselinesTable({
     );
 
     if (
-        showAnomalousFlows &&
+        includedBaselineStatuses.includes(networkFlowStatus.ANOMALOUS as BaselineStatus) &&
         !rows.some((row: { id: string }) => row.id.includes(networkFlowStatus.ANOMALOUS))
     ) {
         const emptyAnomalousRow = getEmptyGroupRow(networkFlowStatus.ANOMALOUS as BaselineStatus);
@@ -186,7 +187,19 @@ function NetworkBaselinesTable({
         rows.unshift(emptyAnomalousRow);
     }
 
-    if (!rows.some((row: { id: string }) => row.id.includes(networkFlowStatus.BASELINE))) {
+    if (
+        includedBaselineStatuses.includes(networkFlowStatus.BLOCKED as BaselineStatus) &&
+        !rows.some((row: { id: string }) => row.id.includes(networkFlowStatus.BLOCKED))
+    ) {
+        const emptyBlockedRow = getEmptyGroupRow(networkFlowStatus.BLOCKED as BaselineStatus);
+
+        rows.unshift(emptyBlockedRow);
+    }
+
+    if (
+        includedBaselineStatuses.includes(networkFlowStatus.BASELINE as BaselineStatus) &&
+        !rows.some((row: { id: string }) => row.id.includes(networkFlowStatus.BASELINE))
+    ) {
         const emptyBaselineRow = getEmptyGroupRow(networkFlowStatus.BASELINE as BaselineStatus);
 
         rows.push(emptyBaselineRow);
