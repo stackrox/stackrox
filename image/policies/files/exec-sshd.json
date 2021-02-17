@@ -3,7 +3,8 @@
   "name": "Secure Shell Server (sshd) Execution",
   "description": "Detects container running the SSH daemon",
   "categories": [
-    "Network Tools"
+    "Network Tools",
+    "Docker CIS"
   ],
   "severity": "HIGH_SEVERITY",
   "lifecycle_stages": [

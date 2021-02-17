@@ -7,7 +7,8 @@
     "DEPLOY"
   ],
   "categories": [
-    "Privileges"
+    "Privileges",
+    "Docker CIS"
   ],
   "fields": {
     "privileged": true

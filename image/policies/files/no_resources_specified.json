@@ -7,7 +7,8 @@
     "DEPLOY"
   ],
   "categories": [
-    "DevOps Best Practices"
+    "DevOps Best Practices",
+    "Docker CIS"
   ],
   "fields": {
     "containerResourcePolicy": {

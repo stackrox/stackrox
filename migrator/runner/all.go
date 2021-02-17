@@ -45,4 +45,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_56_to_m_57_compliance_policy_categories"
 	_ "github.com/stackrox/rox/migrator/migrations/m_57_to_m_58_update_run_secrets_volume_policy_regex"
 	_ "github.com/stackrox/rox/migrator/migrations/m_58_to_m_59_node_scanning_flag_on"
+	_ "github.com/stackrox/rox/migrator/migrations/m_59_to_m_60_add_docker_cis_category_to_existing"
 )
