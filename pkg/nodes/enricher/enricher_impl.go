@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/scanners"
+	pkgScanners "github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -16,10 +16,10 @@ import (
 type enricherImpl struct {
 	cves cveSuppressor
 
-	lock     sync.Mutex
+	lock     sync.RWMutex
 	scanners map[string]types.NodeScannerWithDataSource
 
-	creators map[string]scanners.NodeScannerCreator
+	creators map[string]pkgScanners.NodeScannerCreator
 
 	metrics metrics
 }
@@ -58,12 +58,20 @@ func (e *enricherImpl) EnrichNode(node *storage.Node) error {
 
 func (e *enricherImpl) enrichWithScan(node *storage.Node) error {
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning node %s:%s", node.GetClusterName(), node.GetName()))
-	if len(e.scanners) == 0 {
+
+	e.lock.RLock()
+	scanners := make([]types.NodeScannerWithDataSource, 0, len(e.scanners))
+	for _, scanner := range e.scanners {
+		scanners = append(scanners, scanner)
+	}
+	e.lock.RUnlock()
+
+	if len(scanners) == 0 {
 		errorList.AddError(errors.New("no node scanners are integrated"))
 		return errorList.ToError()
 	}
 
-	for _, scanner := range e.scanners {
+	for _, scanner := range scanners {
 		if err := e.enrichNodeWithScanner(node, scanner); err != nil {
 			errorList.AddError(err)
 			continue
