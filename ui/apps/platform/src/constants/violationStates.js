@@ -1,0 +1,8 @@
+const VIOLATION_STATES = {
+    ACTIVE: 'ACTIVE',
+    ATTEMPTED: 'ATTEMPTED',
+    RESOLVED: 'RESOLVED',
+    SNOOZED: 'SNOOZED',
+};
+
+export default VIOLATION_STATES;

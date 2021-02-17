@@ -3,6 +3,9 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 
 import MessageCentered from 'Components/MessageCentered';
 import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
+import LIFECYCLE_STAGES from 'constants/lifecycleStages';
+import VIOLATION_STATES from 'constants/violationStates';
+import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import dialogues from './dialogues';
 
 import ViolationsPageHeader from './ViolationsPageHeader';
@@ -47,12 +50,23 @@ function ViolationsPage({
         });
     }, [selectedAlertId, history, search]);
 
-    // We need to be able to identify which alerts are runtime and which are not by id.
-    const runtimeAlerts = new Set(
+    // We need to be able to identify which alerts are runtime or attempted, and which are not by id.
+    const resolvableAlerts = new Set(
         currentPageAlerts
-            .filter((alert) => alert.lifecycleStage === 'RUNTIME')
+            .filter(
+                (alert) =>
+                    alert.lifecycleStage === LIFECYCLE_STAGES.RUNTIME ||
+                    alert.state === VIOLATION_STATES.ATTEMPTED
+            )
             .map((alert) => alert.id)
     );
+
+    const excludableAlerts = currentPageAlerts.filter(
+        (alert) =>
+            alert.enforcementAction !== ENFORCEMENT_ACTIONS.FAIL_DEPLOYMENT_CREATE_ENFORCEMENT
+    );
+
+    const excludableAlertIds = new Set(excludableAlerts.map((alert) => alert.id));
 
     return (
         <section className="flex flex-1 flex-col h-full">
@@ -89,7 +103,8 @@ function ViolationsPage({
                                     currentPage={currentPage}
                                     setCurrentPage={setCurrentPage}
                                     setSortOption={setSortOption}
-                                    runtimeAlerts={runtimeAlerts}
+                                    resolvableAlerts={resolvableAlerts}
+                                    excludableAlertIds={excludableAlertIds}
                                 />
                             </div>
                             {selectedAlertId && (
@@ -105,7 +120,7 @@ function ViolationsPage({
             {dialogue === dialogues.excludeScopes && (
                 <ExcludeConfirmation
                     setDialogue={setDialogue}
-                    alerts={currentPageAlerts}
+                    excludableAlerts={excludableAlerts}
                     checkedAlertIds={checkedAlertIds}
                     setCheckedAlertIds={setCheckedAlertIds}
                 />
@@ -115,7 +130,7 @@ function ViolationsPage({
                     setDialogue={setDialogue}
                     checkedAlertIds={checkedAlertIds}
                     setCheckedAlertIds={setCheckedAlertIds}
-                    runtimeAlerts={runtimeAlerts}
+                    resolvableAlerts={resolvableAlerts}
                 />
             )}
             {dialogue === dialogues.tag && (

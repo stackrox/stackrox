@@ -28,7 +28,12 @@ ViolationsTablePanelTextHeader.propTypes = {
     checkedAlertIds: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
-function ViolationsTablePanelButtons({ setDialogue, checkedAlertIds, runtimeAlerts }) {
+function ViolationsTablePanelButtons({
+    setDialogue,
+    checkedAlertIds,
+    resolvableAlerts,
+    excludableAlertIds,
+}) {
     // Handle dialogue pop ups.
     function showResolveConfirmationDialog() {
         setDialogue(dialogues.resolve);
@@ -40,17 +45,23 @@ function ViolationsTablePanelButtons({ setDialogue, checkedAlertIds, runtimeAler
         setDialogue(dialogues.tag);
     }
 
-    let checkedRuntimeAlerts = 0;
+    let checkedResolvableAlerts = 0;
     checkedAlertIds.forEach((id) => {
-        if (runtimeAlerts.has(id)) {
-            checkedRuntimeAlerts += 1;
+        if (resolvableAlerts.has(id)) {
+            checkedResolvableAlerts += 1;
         }
     });
     const numCheckedAlertIds = checkedAlertIds.length;
-    const scopesToExcludeCount = numCheckedAlertIds;
+    let scopesToExcludeCount = 0;
+    checkedAlertIds.forEach((id) => {
+        if (excludableAlertIds.has(id)) {
+            scopesToExcludeCount += 1;
+        }
+    });
+
     return (
         <>
-            {numCheckedAlertIds !== 0 && (
+            {numCheckedAlertIds > 0 && (
                 <PanelButton
                     icon={<Tag className="h-4 ml-1" />}
                     dataTestId="bulk-add-tags-button"
@@ -67,17 +78,17 @@ function ViolationsTablePanelButtons({ setDialogue, checkedAlertIds, runtimeAler
                     )} (${numCheckedAlertIds})`}
                 </PanelButton>
             )}
-            {checkedRuntimeAlerts !== 0 && (
+            {checkedResolvableAlerts > 0 && (
                 <PanelButton
                     icon={<Check className="h-4 ml-1" />}
                     className="btn btn-base ml-2"
                     onClick={showResolveConfirmationDialog}
-                    tooltip={`Mark as Resolved (${checkedRuntimeAlerts})`}
+                    tooltip={`Mark as Resolved (${checkedResolvableAlerts})`}
                 >
-                    {`Mark as Resolved (${checkedRuntimeAlerts})`}
+                    {`Mark as Resolved (${checkedResolvableAlerts})`}
                 </PanelButton>
             )}
-            {scopesToExcludeCount !== 0 && (
+            {scopesToExcludeCount > 0 && (
                 <PanelButton
                     icon={<BellOff className="h-4 ml-1" />}
                     className="btn btn-base ml-2"
@@ -94,7 +105,8 @@ function ViolationsTablePanelButtons({ setDialogue, checkedAlertIds, runtimeAler
 ViolationsTablePanelButtons.propTypes = {
     setDialogue: PropTypes.func.isRequired,
     checkedAlertIds: PropTypes.arrayOf(PropTypes.string).isRequired,
-    runtimeAlerts: PropTypes.shape({
+    excludableAlertIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+    resolvableAlerts: PropTypes.shape({
         has: PropTypes.func.isRequired,
     }).isRequired,
 };
@@ -111,7 +123,8 @@ function ViolationsTablePanel({
     currentPage,
     setCurrentPage,
     setSortOption,
-    runtimeAlerts,
+    resolvableAlerts,
+    excludableAlertIds,
 }) {
     // Currently selected rows in the table.
     const headerTextComponent = (
@@ -135,7 +148,8 @@ function ViolationsTablePanel({
             <ViolationsTablePanelButtons
                 setDialogue={setDialogue}
                 checkedAlertIds={checkedAlertIds}
-                runtimeAlerts={runtimeAlerts}
+                resolvableAlerts={resolvableAlerts}
+                excludableAlertIds={excludableAlertIds}
             />
             <TablePagination pageCount={pageCount} page={currentPage} setPage={changePage} />
         </>
@@ -169,7 +183,10 @@ ViolationsTablePanel.propTypes = {
     currentPage: PropTypes.number.isRequired,
     setCurrentPage: PropTypes.func.isRequired,
     setSortOption: PropTypes.func.isRequired,
-    runtimeAlerts: PropTypes.shape({
+    resolvableAlerts: PropTypes.shape({
+        has: PropTypes.func.isRequired,
+    }).isRequired,
+    excludableAlertIds: PropTypes.shape({
         has: PropTypes.func.isRequired,
     }).isRequired,
 };

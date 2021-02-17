@@ -4,14 +4,19 @@ import { resolveAlerts } from 'services/AlertsService';
 import pluralize from 'pluralize';
 import Dialog from 'Components/Dialog';
 
-function ResolveConfirmation({ setDialogue, checkedAlertIds, setCheckedAlertIds, runtimeAlerts }) {
+function ResolveConfirmation({
+    setDialogue,
+    checkedAlertIds,
+    setCheckedAlertIds,
+    resolvableAlerts,
+}) {
     function closeAndClear() {
         setDialogue(null);
         setCheckedAlertIds([]);
     }
 
     function resolveAlertsAction() {
-        const resolveSelection = checkedAlertIds.filter((id) => runtimeAlerts.has(id));
+        const resolveSelection = checkedAlertIds.filter((id) => resolvableAlerts.has(id));
         resolveAlerts(resolveSelection).then(closeAndClear, closeAndClear);
     }
 
@@ -20,7 +25,7 @@ function ResolveConfirmation({ setDialogue, checkedAlertIds, setCheckedAlertIds,
     }
 
     const numSelectedRows = checkedAlertIds.reduce(
-        (acc, id) => (runtimeAlerts.has(id) ? acc + 1 : acc),
+        (acc, id) => (resolvableAlerts.has(id) ? acc + 1 : acc),
         0
     );
     return (
@@ -40,7 +45,7 @@ ResolveConfirmation.propTypes = {
     setDialogue: PropTypes.func.isRequired,
     checkedAlertIds: PropTypes.arrayOf(PropTypes.string).isRequired,
     setCheckedAlertIds: PropTypes.func.isRequired,
-    runtimeAlerts: PropTypes.shape({
+    resolvableAlerts: PropTypes.shape({
         has: PropTypes.func.isRequired,
     }).isRequired,
 };

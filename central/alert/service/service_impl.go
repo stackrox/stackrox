@@ -2,13 +2,13 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math"
 	"sort"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	baselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
@@ -199,6 +199,7 @@ func (s *serviceImpl) GetAlertTimeseries(ctx context.Context, req *v1.ListAlerts
 func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequest) (*v1.Empty, error) {
 	alert, exists, err := s.dataStore.GetAlert(ctx, req.GetId())
 	if err != nil {
+		err = errors.Wrap(err, "could not change alert state to RESOLVED")
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -235,18 +236,19 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 				},
 			})
 			if err != nil {
-				log.Errorf("error syncing baseline with cluster %q: %v", alert.GetDeployment().GetClusterId(), err)
+				log.Errorf("Error syncing baseline with cluster %q: %v", alert.GetDeployment().GetClusterId(), err)
 			}
 		}
 	}
 
-	if alert.LifecycleStage == storage.LifecycleStage_RUNTIME {
-		err = s.changeAlertState(ctx, alert, storage.ViolationState_RESOLVED)
+	if alert.State == storage.ViolationState_ATTEMPTED || alert.LifecycleStage == storage.LifecycleStage_RUNTIME {
+		if err := s.changeAlertState(ctx, alert, storage.ViolationState_RESOLVED); err != nil {
+			err = errors.Wrap(err, "could not change alert state to RESOLVED")
+			log.Error(err)
+			return nil, status.Error(codes.Internal, err.Error())
+		}
 	}
-	if err != nil {
-		log.Error(err)
-		return nil, status.Error(codes.Internal, err.Error())
-	}
+
 	return &v1.Empty{}, nil
 }
 

@@ -4,13 +4,13 @@ import { excludeDeployments } from 'services/PoliciesService';
 import pluralize from 'pluralize';
 import Dialog from 'Components/Dialog';
 
-// Filter the alerts displayed down to the ones checked, and group them into a map from policy ID to a list of
+// Filter the excludableAlerts displayed down to the ones checked, and group them into a map from policy ID to a list of
 // deployment names, then exclude every policy ID, deployment name pair in the map.
-function excludeAlerts(checkedAlertIds, alerts) {
+function excludeAlerts(checkedAlertIds, excludableAlerts) {
     const checkedAlertsSet = new Set(checkedAlertIds);
 
     const policyToDeployments = {};
-    alerts
+    excludableAlerts
         .filter(({ id }) => checkedAlertsSet.has(id))
         .forEach(({ policy, deployment }) => {
             if (!policyToDeployments[policy.id]) {
@@ -27,14 +27,19 @@ function excludeAlerts(checkedAlertIds, alerts) {
     );
 }
 
-function ExcludeConfirmation({ setDialogue, alerts, checkedAlertIds, setCheckedAlertIds }) {
+function ExcludeConfirmation({
+    setDialogue,
+    excludableAlerts,
+    checkedAlertIds,
+    setCheckedAlertIds,
+}) {
     function closeAndClear() {
         setDialogue(null);
         setCheckedAlertIds([]);
     }
 
     function excludeDeploymentsAction() {
-        excludeAlerts(checkedAlertIds, alerts).then(closeAndClear, closeAndClear);
+        excludeAlerts(checkedAlertIds, excludableAlerts).then(closeAndClear, closeAndClear);
     }
 
     function close() {
@@ -57,7 +62,7 @@ function ExcludeConfirmation({ setDialogue, alerts, checkedAlertIds, setCheckedA
 
 ExcludeConfirmation.propTypes = {
     setDialogue: PropTypes.func.isRequired,
-    alerts: PropTypes.arrayOf(
+    excludableAlerts: PropTypes.arrayOf(
         PropTypes.shape({
             policy: PropTypes.shape({
                 id: PropTypes.string.isRequired,
