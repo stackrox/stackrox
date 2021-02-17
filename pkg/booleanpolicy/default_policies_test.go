@@ -173,7 +173,7 @@ func deploymentWithImage(id string, img *storage.Image) *storage.Deployment {
 	containerName := alphaOnly.ReplaceAllString(remoteSplit[len(remoteSplit)-1], "")
 	return &storage.Deployment{
 		Id:         id,
-		Containers: []*storage.Container{{Name: containerName, Image: types.ToContainerImage(img)}},
+		Containers: []*storage.Container{{Id: img.Id, Name: containerName, Image: types.ToContainerImage(img)}},
 	}
 }
 
@@ -213,8 +213,9 @@ type testCase struct {
 	// If shouldNotMatch is specified (which is the case for policies that check for the absence of something), we verify that
 	// it matches everything except shouldNotMatch.
 	// If sampleViolationForMatched is provided, we verify that all the matches are the string provided in sampleViolationForMatched.
-	shouldNotMatch            map[string]struct{}
-	sampleViolationForMatched string
+	shouldNotMatch             map[string]struct{}
+	sampleViolationForMatched  string
+	allowUnvalidatedViolations bool
 }
 
 func (suite *DefaultPoliciesTestSuite) getImagesForDeployment(deployment *storage.Deployment) []*storage.Image {
@@ -1295,6 +1296,37 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				},
 			},
 		},
+		{
+			policyName:                 "Docker CIS 4.4: Ensure images are scanned and rebuilt to include security patches",
+			allowUnvalidatedViolations: true,
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				strutsDep.GetId(): {
+					{
+						Message: "Fixable CVE-2017-5638 (CVSS 8) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
+					},
+				},
+				heartbleedDep.GetId(): {
+					{
+						Message: "Fixable CVE-2014-0160 (CVSS 6) found in component 'heartbleed' (version 1.2) in container 'nginx', resolved by version v1.2",
+					},
+				},
+				fixtureDep.GetId(): {
+					{
+						Message: "Fixable CVE-2014-6200 (CVSS 5) found in component 'name' (version 1.2.3.4) in container 'supervulnerable', resolved by version abcdefg",
+					},
+				},
+				fixtures.LightweightDeployment().GetId(): {
+					{
+						Message: "Fixable CVE-2014-6200 (CVSS 5) found in component 'name' (version 1.2.3.4) in container 'supervulnerable', resolved by version abcdefg",
+					},
+				},
+				strutsDepSuppressed.GetId(): {
+					{
+						Message: "Fixable CVE-2017-5638 (CVSS 8) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
+					},
+				},
+			},
+		},
 	}
 
 	for _, c := range deploymentTestCases {
@@ -1370,7 +1402,15 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				violations, expected := c.expectedViolations[id]
 				if expected {
 					assert.Contains(t, actualViolations, id)
-					assert.Equal(t, violations, actualViolations[id])
+
+					if c.allowUnvalidatedViolations {
+						assert.NotEmpty(t, violations)
+						for _, violation := range violations {
+							assert.Contains(t, actualViolations[id], violation)
+						}
+					} else {
+						assert.Equal(t, violations, actualViolations[id])
+					}
 				} else {
 					assert.NotContains(t, actualViolations, id)
 				}

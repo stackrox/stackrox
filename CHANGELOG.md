@@ -24,6 +24,7 @@ in the Platform Configuration -> Clusters View.
 - New default policies:
   - Added default policies for Docker CIS checks
     - 4.1
+    - 4.4
     - 4.7
     - 5.1
     - 5.7
