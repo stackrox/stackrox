@@ -776,7 +776,7 @@ class NetworkFlowTest extends BaseSpecification {
         return match
     }
 
-    private waitForEdgeUpdate(Edge edge, int timeoutSeconds = 60, int addSecondsToEdgeTimestamp = 0.01) {
+    private waitForEdgeUpdate(Edge edge, int timeoutSeconds = 60, float addSecondsToEdgeTimestamp = 0.01) {
         int intervalSeconds = 1
         int waitTime
         def startTime = System.currentTimeMillis()
