@@ -94,6 +94,10 @@ func TestConvertVulnResponseToNodeScan(t *testing.T) {
 				KubeproxyVersion: "v1.17.14-gke.400",
 			},
 			resp: &v1.GetNodeVulnerabilitiesResponse{
+				KernelComponent: &v1.GetNodeVulnerabilitiesResponse_KernelComponent{
+					Name:    "kernel",
+					Version: "4.9.184-linuxkit",
+				},
 				RuntimeVulnerabilities: []*v1.Vulnerability{
 					{
 						Name:    "CVE-2020-0000",

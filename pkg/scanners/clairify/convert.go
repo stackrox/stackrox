@@ -56,8 +56,8 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 		ScanTime: gogoProto.TimestampNow(),
 		Components: []*storage.EmbeddedNodeScanComponent{
 			{
-				Name:    "kernel",
-				Version: req.GetKernelVersion(),
+				Name:    stringutils.OrDefault(resp.GetKernelComponent().GetName(), "kernel"),
+				Version: resp.GetKernelComponent().GetVersion(),
 				Vulns:   convertVulns(resp.GetKernelVulnerabilities()),
 			},
 			{
