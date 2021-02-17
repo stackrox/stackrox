@@ -27,6 +27,9 @@ var (
 
 	firstKubeEventViolation  = getKubeEventViolation("1", protoconv.ConvertTimeToTimestamp(time.Now().Add(-24*time.Hour)))
 	secondKubeEventViolation = getKubeEventViolation("2", ptypes.TimestampNow())
+
+	firstNetworkFlowViolation  = getNetworkFlowViolation("1", protoconv.ConvertTimeToTimestamp(time.Now().Add(-24*time.Hour)))
+	secondNetworkFlowViolation = getNetworkFlowViolation("2", ptypes.TimestampNow())
 )
 
 func getKubeEventViolation(msg string, timestamp *ptypes.Timestamp) *storage.Alert_Violation {
@@ -34,6 +37,25 @@ func getKubeEventViolation(msg string, timestamp *ptypes.Timestamp) *storage.Ale
 		Message: msg,
 		Type:    storage.Alert_Violation_K8S_EVENT,
 		Time:    timestamp,
+	}
+}
+
+func getNetworkFlowViolation(msg string, networkFlowTimestamp *ptypes.Timestamp) *storage.Alert_Violation {
+	return &storage.Alert_Violation{
+		Message: msg,
+		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+					{
+						Key: "NetworkFlowTimestamp",
+						Value: protoconv.
+							ConvertTimestampToTimeOrNow(networkFlowTimestamp).
+							Format("2006-01-02 15:04:05 UTC"),
+					},
+				},
+			},
+		},
+		Type: storage.Alert_Violation_NETWORK_FLOW,
 	}
 }
 
@@ -293,6 +315,27 @@ func TestMergeRunTimeAlerts(t *testing.T) {
 			old:            getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess),
 			new:            appendViolations(getFakeRuntimeAlert(yesterdayProcess, nowProcess), firstKubeEventViolation, secondKubeEventViolation),
 			expectedNew:    appendViolations(getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess, nowProcess), firstKubeEventViolation, secondKubeEventViolation),
+			expectedOutput: true,
+		},
+		{
+			desc:           "No process; new network flow",
+			old:            getFakeRuntimeAlert(),
+			new:            appendViolations(getFakeRuntimeAlert(), firstNetworkFlowViolation),
+			expectedNew:    appendViolations(getFakeRuntimeAlert(), firstNetworkFlowViolation),
+			expectedOutput: true,
+		},
+		{
+			desc:           "Old process with old flow; new network flow",
+			old:            appendViolations(getFakeRuntimeAlert(nowProcess), firstNetworkFlowViolation),
+			new:            appendViolations(getFakeRuntimeAlert(nowProcess), secondNetworkFlowViolation),
+			expectedNew:    appendViolations(getFakeRuntimeAlert(nowProcess), secondNetworkFlowViolation, firstNetworkFlowViolation),
+			expectedOutput: true,
+		},
+		{
+			desc:           "Many new process; many new flow",
+			old:            appendViolations(getFakeRuntimeAlert(twoDaysAgoProcess)),
+			new:            appendViolations(getFakeRuntimeAlert(yesterdayProcess, nowProcess), firstNetworkFlowViolation, secondNetworkFlowViolation),
+			expectedNew:    appendViolations(getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess, nowProcess), firstNetworkFlowViolation, secondNetworkFlowViolation),
 			expectedOutput: true,
 		},
 	} {

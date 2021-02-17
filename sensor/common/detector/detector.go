@@ -475,6 +475,7 @@ func (d *detectorImpl) processNetworkFlow(flow *storage.NetworkFlow) {
 		DstPort:              flow.GetProps().GetDstPort(),
 		L4Protocol:           flow.GetProps().GetL4Protocol(),
 		NotInNetworkBaseline: flowIsNotInBaseline,
+		LastSeenTimestamp:    flow.GetLastSeenTimestamp(),
 	}
 
 	d.processAlertsForFlowOnEntity(flow.GetProps().GetSrcEntity(), flowDetails)

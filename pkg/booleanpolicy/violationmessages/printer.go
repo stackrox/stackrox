@@ -20,55 +20,54 @@ type violationPrinter struct {
 var (
 	policyFieldsToPrinters = map[storage.LifecycleStage]map[string][]violationPrinter{
 		storage.LifecycleStage_DEPLOY: {
-			fieldnames.AddCaps:                       {{required: set.NewStringSet(search.AddCapabilities.String()), printerFuncKey: printer.AddCapabilityKey}},
-			fieldnames.AppArmorProfile:               {{required: set.NewStringSet(search.AppArmorProfile.String()), printerFuncKey: printer.AppArmorProfileKey}},
-			fieldnames.CVE:                           {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
-			fieldnames.CVSS:                          {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
-			fieldnames.ContainerCPULimit:             {{required: set.NewStringSet(search.CPUCoresLimit.String()), printerFuncKey: printer.ResourceKey}},
-			fieldnames.ContainerCPURequest:           {{required: set.NewStringSet(search.CPUCoresRequest.String()), printerFuncKey: printer.ResourceKey}},
-			fieldnames.ContainerMemLimit:             {{required: set.NewStringSet(search.MemoryLimit.String()), printerFuncKey: printer.ResourceKey}},
-			fieldnames.ContainerMemRequest:           {{required: set.NewStringSet(search.MemoryRequest.String()), printerFuncKey: printer.ResourceKey}},
-			fieldnames.ContainerName:                 {{required: set.NewStringSet(search.ContainerName.String()), printerFuncKey: printer.ContainerNameKey}},
-			fieldnames.DisallowedAnnotation:          {{required: set.NewStringSet(search.Annotation.String()), printerFuncKey: printer.DisallowedAnnotationKey}},
-			fieldnames.DisallowedImageLabel:          {{required: set.NewStringSet(search.ImageLabel.String()), printerFuncKey: printer.DisallowedImageLabelKey}},
-			fieldnames.DockerfileLine:                {{required: set.NewStringSet(augmentedobjs.DockerfileLineCustomTag), printerFuncKey: printer.LineKey}},
-			fieldnames.DropCaps:                      {{required: set.NewStringSet(search.DropCapabilities.String()), printerFuncKey: printer.DropCapabilityKey}},
-			fieldnames.EnvironmentVariable:           {{required: set.NewStringSet(augmentedobjs.EnvironmentVarCustomTag), printerFuncKey: printer.EnvKey}},
-			fieldnames.ExposedNodePort:               {{required: set.NewStringSet(search.ExposedNodePort.String()), printerFuncKey: printer.NodePortKey}},
-			fieldnames.ExposedPort:                   {{required: set.NewStringSet(search.Port.String()), printerFuncKey: printer.PortKey}},
-			fieldnames.FixedBy:                       {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
-			fieldnames.HostIPC:                       {{required: set.NewStringSet(search.HostIPC.String()), printerFuncKey: printer.HostIPCKey}},
-			fieldnames.HostNetwork:                   {{required: set.NewStringSet(search.HostNetwork.String()), printerFuncKey: printer.HostNetworkKey}},
-			fieldnames.HostPID:                       {{required: set.NewStringSet(search.HostPID.String()), printerFuncKey: printer.HostPIDKey}},
-			fieldnames.ImageAge:                      {{required: set.NewStringSet(search.ImageCreatedTime.String()), printerFuncKey: printer.ImageAgeKey}},
-			fieldnames.ImageComponent:                {{required: set.NewStringSet(augmentedobjs.ComponentAndVersionCustomTag), printerFuncKey: printer.ComponentKey}},
-			fieldnames.ImageOS:                       {{required: set.NewStringSet(search.ImageOS.String()), printerFuncKey: printer.ImageOSKey}},
-			fieldnames.ImageRegistry:                 {{required: set.StringSet{}, printerFuncKey: printer.ImageDetailsKey}},
-			fieldnames.ImageRemote:                   {{required: set.StringSet{}, printerFuncKey: printer.ImageDetailsKey}},
-			fieldnames.ImageScanAge:                  {{required: set.NewStringSet(search.ImageScanTime.String()), printerFuncKey: printer.ImageScanAgeKey}},
-			fieldnames.ImageTag:                      {{required: set.StringSet{}, printerFuncKey: printer.ImageDetailsKey}},
-			fieldnames.ImageUser:                     {{required: set.StringSet{}, printerFuncKey: printer.ImageUserKey}},
-			fieldnames.MinimumRBACPermissions:        {{required: set.NewStringSet(search.ServiceAccountPermissionLevel.String()), printerFuncKey: printer.RbacKey}},
-			fieldnames.MountPropagation:              {{required: set.NewStringSet(search.MountPropagation.String()), printerFuncKey: printer.VolumeKey}},
-			fieldnames.Namespace:                     {{required: set.NewStringSet(search.Namespace.String()), printerFuncKey: printer.NamespaceKey}},
-			fieldnames.PortExposure:                  {{required: set.NewStringSet(search.ExposureLevel.String()), printerFuncKey: printer.PortExposureKey}},
-			fieldnames.PrivilegedContainer:           {{required: set.NewStringSet(search.Privileged.String()), printerFuncKey: printer.PrivilegedKey}},
-			fieldnames.ExposedPortProtocol:           {{required: set.NewStringSet(search.Port.String()), printerFuncKey: printer.PortKey}},
-			fieldnames.ReadOnlyRootFS:                {{required: set.NewStringSet(search.ReadOnlyRootFilesystem.String()), printerFuncKey: printer.ReadOnlyRootFSKey}},
-			fieldnames.RequiredAnnotation:            {{required: set.NewStringSet(search.Annotation.String()), printerFuncKey: printer.RequiredAnnotationKey}},
-			fieldnames.RequiredImageLabel:            {{required: set.NewStringSet(search.ImageLabel.String()), printerFuncKey: printer.RequiredImageLabelKey}},
-			fieldnames.RequiredLabel:                 {{required: set.NewStringSet(search.Label.String()), printerFuncKey: printer.RequiredLabelKey}},
-			fieldnames.SeccompProfileType:            {{required: set.NewStringSet(search.SeccompProfileType.String()), printerFuncKey: printer.SeccompProfileTypeKey}},
-			fieldnames.ServiceAccount:                {{required: set.NewStringSet(search.ServiceAccountName.String()), printerFuncKey: printer.ServiceAccountKey}},
-			fieldnames.UnexpectedNetworkFlowDetected: {{required: set.NewStringSet(augmentedobjs.NotInNetworkBaselineCustomTag), printerFuncKey: printer.NetworkBaselineKey}},
-			fieldnames.UnexpectedProcessExecuted:     {{required: set.NewStringSet(augmentedobjs.NotInProcessBaselineCustomTag), printerFuncKey: printer.ProcessBaselineKey}},
-			fieldnames.UnscannedImage:                {{required: set.NewStringSet(augmentedobjs.ImageScanCustomTag), printerFuncKey: printer.ImageScanKey}},
-			fieldnames.VolumeDestination:             {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
-			fieldnames.VolumeName:                    {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
-			fieldnames.VolumeSource:                  {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
-			fieldnames.VolumeType:                    {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
-			fieldnames.WritableHostMount:             {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
-			fieldnames.WritableMountedVolume:         {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
+			fieldnames.AddCaps:                   {{required: set.NewStringSet(search.AddCapabilities.String()), printerFuncKey: printer.AddCapabilityKey}},
+			fieldnames.AppArmorProfile:           {{required: set.NewStringSet(search.AppArmorProfile.String()), printerFuncKey: printer.AppArmorProfileKey}},
+			fieldnames.CVE:                       {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
+			fieldnames.CVSS:                      {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
+			fieldnames.ContainerCPULimit:         {{required: set.NewStringSet(search.CPUCoresLimit.String()), printerFuncKey: printer.ResourceKey}},
+			fieldnames.ContainerCPURequest:       {{required: set.NewStringSet(search.CPUCoresRequest.String()), printerFuncKey: printer.ResourceKey}},
+			fieldnames.ContainerMemLimit:         {{required: set.NewStringSet(search.MemoryLimit.String()), printerFuncKey: printer.ResourceKey}},
+			fieldnames.ContainerMemRequest:       {{required: set.NewStringSet(search.MemoryRequest.String()), printerFuncKey: printer.ResourceKey}},
+			fieldnames.ContainerName:             {{required: set.NewStringSet(search.ContainerName.String()), printerFuncKey: printer.ContainerNameKey}},
+			fieldnames.DisallowedAnnotation:      {{required: set.NewStringSet(search.Annotation.String()), printerFuncKey: printer.DisallowedAnnotationKey}},
+			fieldnames.DisallowedImageLabel:      {{required: set.NewStringSet(search.ImageLabel.String()), printerFuncKey: printer.DisallowedImageLabelKey}},
+			fieldnames.DockerfileLine:            {{required: set.NewStringSet(augmentedobjs.DockerfileLineCustomTag), printerFuncKey: printer.LineKey}},
+			fieldnames.DropCaps:                  {{required: set.NewStringSet(search.DropCapabilities.String()), printerFuncKey: printer.DropCapabilityKey}},
+			fieldnames.EnvironmentVariable:       {{required: set.NewStringSet(augmentedobjs.EnvironmentVarCustomTag), printerFuncKey: printer.EnvKey}},
+			fieldnames.ExposedNodePort:           {{required: set.NewStringSet(search.ExposedNodePort.String()), printerFuncKey: printer.NodePortKey}},
+			fieldnames.ExposedPort:               {{required: set.NewStringSet(search.Port.String()), printerFuncKey: printer.PortKey}},
+			fieldnames.FixedBy:                   {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
+			fieldnames.HostIPC:                   {{required: set.NewStringSet(search.HostIPC.String()), printerFuncKey: printer.HostIPCKey}},
+			fieldnames.HostNetwork:               {{required: set.NewStringSet(search.HostNetwork.String()), printerFuncKey: printer.HostNetworkKey}},
+			fieldnames.HostPID:                   {{required: set.NewStringSet(search.HostPID.String()), printerFuncKey: printer.HostPIDKey}},
+			fieldnames.ImageAge:                  {{required: set.NewStringSet(search.ImageCreatedTime.String()), printerFuncKey: printer.ImageAgeKey}},
+			fieldnames.ImageComponent:            {{required: set.NewStringSet(augmentedobjs.ComponentAndVersionCustomTag), printerFuncKey: printer.ComponentKey}},
+			fieldnames.ImageOS:                   {{required: set.NewStringSet(search.ImageOS.String()), printerFuncKey: printer.ImageOSKey}},
+			fieldnames.ImageRegistry:             {{required: set.StringSet{}, printerFuncKey: printer.ImageDetailsKey}},
+			fieldnames.ImageRemote:               {{required: set.StringSet{}, printerFuncKey: printer.ImageDetailsKey}},
+			fieldnames.ImageScanAge:              {{required: set.NewStringSet(search.ImageScanTime.String()), printerFuncKey: printer.ImageScanAgeKey}},
+			fieldnames.ImageTag:                  {{required: set.StringSet{}, printerFuncKey: printer.ImageDetailsKey}},
+			fieldnames.ImageUser:                 {{required: set.StringSet{}, printerFuncKey: printer.ImageUserKey}},
+			fieldnames.MinimumRBACPermissions:    {{required: set.NewStringSet(search.ServiceAccountPermissionLevel.String()), printerFuncKey: printer.RbacKey}},
+			fieldnames.MountPropagation:          {{required: set.NewStringSet(search.MountPropagation.String()), printerFuncKey: printer.VolumeKey}},
+			fieldnames.Namespace:                 {{required: set.NewStringSet(search.Namespace.String()), printerFuncKey: printer.NamespaceKey}},
+			fieldnames.PortExposure:              {{required: set.NewStringSet(search.ExposureLevel.String()), printerFuncKey: printer.PortExposureKey}},
+			fieldnames.PrivilegedContainer:       {{required: set.NewStringSet(search.Privileged.String()), printerFuncKey: printer.PrivilegedKey}},
+			fieldnames.ExposedPortProtocol:       {{required: set.NewStringSet(search.Port.String()), printerFuncKey: printer.PortKey}},
+			fieldnames.ReadOnlyRootFS:            {{required: set.NewStringSet(search.ReadOnlyRootFilesystem.String()), printerFuncKey: printer.ReadOnlyRootFSKey}},
+			fieldnames.RequiredAnnotation:        {{required: set.NewStringSet(search.Annotation.String()), printerFuncKey: printer.RequiredAnnotationKey}},
+			fieldnames.RequiredImageLabel:        {{required: set.NewStringSet(search.ImageLabel.String()), printerFuncKey: printer.RequiredImageLabelKey}},
+			fieldnames.RequiredLabel:             {{required: set.NewStringSet(search.Label.String()), printerFuncKey: printer.RequiredLabelKey}},
+			fieldnames.SeccompProfileType:        {{required: set.NewStringSet(search.SeccompProfileType.String()), printerFuncKey: printer.SeccompProfileTypeKey}},
+			fieldnames.ServiceAccount:            {{required: set.NewStringSet(search.ServiceAccountName.String()), printerFuncKey: printer.ServiceAccountKey}},
+			fieldnames.UnexpectedProcessExecuted: {{required: set.NewStringSet(augmentedobjs.NotInProcessBaselineCustomTag), printerFuncKey: printer.ProcessBaselineKey}},
+			fieldnames.UnscannedImage:            {{required: set.NewStringSet(augmentedobjs.ImageScanCustomTag), printerFuncKey: printer.ImageScanKey}},
+			fieldnames.VolumeDestination:         {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
+			fieldnames.VolumeName:                {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
+			fieldnames.VolumeSource:              {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
+			fieldnames.VolumeType:                {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
+			fieldnames.WritableHostMount:         {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
+			fieldnames.WritableMountedVolume:     {{required: set.NewStringSet(search.VolumeName.String()), printerFuncKey: printer.VolumeKey}},
 		},
 		storage.LifecycleStage_BUILD: {
 			fieldnames.CVE:                  {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
@@ -92,7 +91,8 @@ var (
 	// runtime policy fields
 	requiredProcessFields = set.NewFrozenStringSet(search.ProcessName.String(), search.ProcessAncestor.String(),
 		search.ProcessUID.String(), search.ProcessArguments.String(), augmentedobjs.NotInProcessBaselineCustomTag)
-	requiredKubeEventFields = set.NewFrozenStringSet(augmentedobjs.KubernetesAPIVerbCustomTag, augmentedobjs.KubernetesResourceCustomTag)
+	requiredKubeEventFields   = set.NewFrozenStringSet(augmentedobjs.KubernetesAPIVerbCustomTag, augmentedobjs.KubernetesResourceCustomTag)
+	requiredNetworkFlowFields = set.NewFrozenStringSet(augmentedobjs.NotInNetworkBaselineCustomTag)
 )
 
 func containsAllRequiredFields(fieldMap map[string][]string, required set.StringSet) bool {
@@ -145,6 +145,17 @@ func checkForKubeEventViolation(result *evaluator.Result) bool {
 	return false
 }
 
+func checkForNetworkFlowViolation(result *evaluator.Result) bool {
+	for _, fieldMap := range result.Matches {
+		for k := range fieldMap {
+			if requiredNetworkFlowFields.Contains(k) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // Render creates violation messages based on evaluation results
 func Render(
 	stage storage.LifecycleStage,
@@ -152,7 +163,8 @@ func Render(
 	result *evaluator.Result,
 	indicator *storage.ProcessIndicator,
 	kubeEvent *storage.KubernetesEvent,
-) ([]*storage.Alert_Violation, bool, bool, error) {
+	networkFlow *augmentedobjs.NetworkFlowDetails,
+) ([]*storage.Alert_Violation, bool, bool, bool, error) {
 	errorList := errorhelpers.NewErrorList("violation printer")
 	messages := set.NewStringSet()
 	for _, fieldMap := range result.Matches {
@@ -172,7 +184,8 @@ func Render(
 
 	isProcessViolation := indicator != nil && checkForProcessViolation(result)
 	isKubeEventViolation := kubeEvent != nil && checkForKubeEventViolation(result)
-	if len(messages) == 0 && !isProcessViolation && !isKubeEventViolation {
+	isNetworkFlowViolation := networkFlow != nil && checkForNetworkFlowViolation(result)
+	if len(messages) == 0 && !isProcessViolation && !isKubeEventViolation && !isNetworkFlowViolation {
 		errorList.AddError(errors.New("missing messages"))
 	}
 
@@ -184,5 +197,5 @@ func Render(
 	}) {
 		alertViolations = append(alertViolations, &storage.Alert_Violation{Message: message})
 	}
-	return alertViolations, isProcessViolation, isKubeEventViolation, errorList.ToError()
+	return alertViolations, isProcessViolation, isKubeEventViolation, isNetworkFlowViolation, errorList.ToError()
 }

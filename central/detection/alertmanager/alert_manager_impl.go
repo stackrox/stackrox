@@ -140,49 +140,61 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 	return
 }
 
+// Since we are only generating one alert per flow instance (we could be generating multiple violations on the same
+// "flow", but those are still for different flow instances), we can just sort by latest first.
+func mergeNetworkFlowViolations(old, new *storage.Alert) bool {
+	return mergeAlertsByLatestFirst(old, new, storage.Alert_Violation_NETWORK_FLOW)
+}
+
 // mergeRunTimeAlerts merges run-time alerts, and returns true if new alert has at least one new run-time violation.
 func mergeRunTimeAlerts(old, newAlert *storage.Alert) bool {
 	newAlertHasNewProcesses := mergeProcessesFromOldIntoNew(old, newAlert)
 	newAlertHasNewEventViolations := mergeK8sEventViolations(old, newAlert)
-	return newAlertHasNewProcesses || newAlertHasNewEventViolations
+	newAlertHasNewNetworkFlowViolations := mergeNetworkFlowViolations(old, newAlert)
+	return newAlertHasNewProcesses || newAlertHasNewEventViolations || newAlertHasNewNetworkFlowViolations
 }
 
 // Given the nature of an event, each event it anticipated to generate exactly one alert (one or more violations).
 // Therefore, event violations seen in new alerts are assumed to be distinct from the old.
-// For k8s event violations we want to *always* show the recent events. This approach is different from they way process
+// For k8s event violations we want to *always* show the recent events. This approach is different from the way process
 // violations are dealt where longest running processes take precedence over new processes.
 func mergeK8sEventViolations(old, new *storage.Alert) bool {
-	var newK8sViolations []*storage.Alert_Violation
+	return mergeAlertsByLatestFirst(old, new, storage.Alert_Violation_K8S_EVENT)
+}
+
+// mergeAlertsByLatestFirst is for alert violations that are NOT aggregated under one drop-down.
+func mergeAlertsByLatestFirst(old, new *storage.Alert, alertType storage.Alert_Violation_Type) bool {
+	var newViolations []*storage.Alert_Violation
 	for _, v := range new.GetViolations() {
-		if v.GetType() == storage.Alert_Violation_K8S_EVENT {
-			newK8sViolations = append(newK8sViolations, v)
+		if v.GetType() == alertType {
+			newViolations = append(newViolations, v)
 		}
 	}
 
-	if len(newK8sViolations) == 0 {
+	if len(newViolations) == 0 {
 		return false
 	}
 
 	// New alert takes precedence. Do not merge any old event violations into new alert if we are already at threshold.
-	if len(newK8sViolations) >= maxRunTimeViolationsPerAlert {
+	if len(newViolations) >= maxRunTimeViolationsPerAlert {
 		return true
 	}
 
-	var oldK8sViolations []*storage.Alert_Violation
+	var oldViolations []*storage.Alert_Violation
 	// Append old violations to the end of the list so that they appear at bottom in UI.
 	for _, v := range old.GetViolations() {
-		if v.GetType() == storage.Alert_Violation_K8S_EVENT {
-			oldK8sViolations = append(oldK8sViolations, v)
+		if v.GetType() == alertType {
+			oldViolations = append(oldViolations, v)
 		}
 	}
 
-	newK8sViolations = append(newK8sViolations, oldK8sViolations...)
+	newViolations = append(newViolations, oldViolations...)
 
-	if len(newK8sViolations) > maxRunTimeViolationsPerAlert {
-		newK8sViolations = newK8sViolations[:maxRunTimeViolationsPerAlert]
+	if len(newViolations) > maxRunTimeViolationsPerAlert {
+		newViolations = newViolations[:maxRunTimeViolationsPerAlert]
 	}
-	new.Violations = newK8sViolations
-	// K8s event violations are not aggregated under one drop-down. Therefore, no other message changes required.
+	new.Violations = newViolations
+	// Since violations are not aggregated under one drop-down, no other message changes required.
 
 	return true
 }

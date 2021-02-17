@@ -1,6 +1,7 @@
 package booleanpolicy
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
@@ -48,7 +49,7 @@ func (p *processMatcherImpl) MatchDeploymentWithProcess(cache *CacheReceptacle, 
 
 	violations, err := p.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructDeploymentWithProcess(deployment, images, indicator, processNotInBaseline)
-	}, indicator, nil)
+	}, indicator, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}
@@ -69,7 +70,7 @@ func (m *kubeEventMatcherImpl) MatchKubeEvent(cache *CacheReceptacle, event *sto
 
 	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructKubeResourceWithEvent(kubeResource, event)
-	}, nil, event)
+	}, nil, event, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}
@@ -153,7 +154,7 @@ func (m *networkFlowMatcherImpl) MatchDeploymentWithNetworkFlowInfo(
 
 	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructDeploymentWithNetworkFlowInfo(deployment, images, flow)
-	}, nil, nil)
+	}, nil, nil, flow)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}
@@ -176,7 +177,7 @@ func matchWithEvaluator(sectionAndEval sectionAndEvaluator, obj *pathutil.Augmen
 func (m *matcherImpl) MatchImage(cache *CacheReceptacle, image *storage.Image) (Violations, error) {
 	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructImage(image)
-	}, nil, nil)
+	}, nil, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}
@@ -205,6 +206,7 @@ func (m *matcherImpl) getViolations(
 	constructor func() (*pathutil.AugmentedObj, error),
 	indicator *storage.ProcessIndicator,
 	kubeEvent *storage.KubernetesEvent,
+	networkFlow *augmentedobjs.NetworkFlowDetails,
 ) (*Violations, error) {
 	obj, err := getOrConstructAugmentedObj(cache, constructor)
 	if err != nil {
@@ -212,7 +214,7 @@ func (m *matcherImpl) getViolations(
 	}
 	v := &Violations{}
 	var atLeastOneMatched bool
-	var processIndicatorMatched, kubeEventMatched bool
+	var processIndicatorMatched, kubeEventMatched, networkFlowMatched bool
 	for _, eval := range m.evaluators {
 		result, err := matchWithEvaluator(eval, obj)
 		if err != nil {
@@ -222,8 +224,8 @@ func (m *matcherImpl) getViolations(
 			continue
 		}
 
-		alertViolations, isProcessViolation, isKubeEventViolation, err :=
-			violationmessages.Render(m.stage, eval.section, result, indicator, kubeEvent)
+		alertViolations, isProcessViolation, isKubeEventViolation, isNetworkFlowViolation, err :=
+			violationmessages.Render(m.stage, eval.section, result, indicator, kubeEvent, networkFlow)
 		if err != nil {
 			return nil, err
 		}
@@ -234,11 +236,13 @@ func (m *matcherImpl) getViolations(
 			processIndicatorMatched = true
 		} else if isKubeEventViolation {
 			kubeEventMatched = true
+		} else if isNetworkFlowViolation {
+			networkFlowMatched = true
 		}
 
 		v.AlertViolations = append(v.AlertViolations, alertViolations...)
 	}
-	if !atLeastOneMatched && !processIndicatorMatched && !kubeEventMatched {
+	if !atLeastOneMatched && !processIndicatorMatched && !kubeEventMatched && !networkFlowMatched {
 		return nil, nil
 	}
 
@@ -247,6 +251,12 @@ func (m *matcherImpl) getViolations(
 		printer.UpdateProcessAlertViolationMessage(v.ProcessViolation)
 	} else if kubeEventMatched {
 		v.AlertViolations = append(v.AlertViolations, printer.GenerateKubeEventViolationMsg(kubeEvent))
+	} else if networkFlowMatched {
+		networkFlowViolationMsg, err := printer.GenerateNetworkFlowViolation(networkFlow)
+		if err != nil {
+			return nil, errors.Wrap(err, "generating network flow violation message")
+		}
+		v.AlertViolations = append(v.AlertViolations, networkFlowViolationMsg)
 	}
 	return v, nil
 }
@@ -255,7 +265,7 @@ func (m *matcherImpl) getViolations(
 func (m *matcherImpl) MatchDeployment(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (Violations, error) {
 	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructDeployment(deployment, images)
-	}, nil, nil)
+	}, nil, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}

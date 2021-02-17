@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -1780,12 +1781,13 @@ func processBaselineMessage(dep *storage.Deployment, baseline bool, privileged b
 	return violations
 }
 
-func networkBaselineMessage(srcName, dstName string, port int, protocol storage.L4Protocol) *storage.Alert_Violation {
-	return &storage.Alert_Violation{
-		Message: fmt.Sprintf(
-			"Unexpected network flow found in deployment. Source name: '%s'. Destination name: '%s'. Destination port: '%d'. Protocol: '%s'.",
-			srcName, dstName, port, protocol.String()),
-	}
+func networkBaselineMessage(
+	suite *DefaultPoliciesTestSuite,
+	flow *augmentedobjs.NetworkFlowDetails,
+) *storage.Alert_Violation {
+	violation, err := printer.GenerateNetworkFlowViolation(flow)
+	suite.Nil(err)
+	return violation
 }
 
 func privilegedMessage(dep *storage.Deployment) []*storage.Alert_Violation {
@@ -2554,6 +2556,8 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 	suite.NoError(err)
 
 	srcName, dstName, port, protocol := "deployment-name", "ext-source-name", 1, storage.L4Protocol_L4_PROTOCOL_TCP
+	timestamp, err := gogoTypes.TimestampProto(time.Now())
+	suite.Nil(err)
 	flow := &augmentedobjs.NetworkFlowDetails{
 		SrcEntityName:        srcName,
 		SrcEntityType:        storage.NetworkEntityInfo_DEPLOYMENT,
@@ -2562,11 +2566,14 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 		DstPort:              uint32(port),
 		L4Protocol:           protocol,
 		NotInNetworkBaseline: true,
+		LastSeenTimestamp:    timestamp,
 	}
 
 	violations, err := m.MatchDeploymentWithNetworkFlowInfo(nil, deployment, suite.getImagesForDeployment(deployment), flow)
 	suite.NoError(err)
-	suite.ElementsMatch(violations.AlertViolations, []*storage.Alert_Violation{networkBaselineMessage(srcName, dstName, port, protocol)})
+	suite.ElementsMatch(
+		violations.AlertViolations,
+		[]*storage.Alert_Violation{networkBaselineMessage(suite, flow)})
 
 	// And if the flow is in the baseline, no violations should exist
 	flow.NotInNetworkBaseline = false
