@@ -118,6 +118,8 @@ func (k IntSet) Cardinality() int {
 }
 
 // IsEmpty returns whether the underlying set is empty (includes uninitialized).
+//
+// Deprecated: use Cardinality() == 0 instead
 func (k IntSet) IsEmpty() bool {
 	return len(k) == 0
 }

@@ -127,7 +127,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	}
 
 	utils.FilterSuppressedCVEsNoClone(img)
-	alerts, err := s.buildTimeDetector.Detect(img)
+	alerts, err := s.buildTimeDetector.Detect(img, req.GetPolicyCategories())
 	if err != nil {
 		return nil, err
 	}

@@ -118,6 +118,8 @@ func (k Uint64Set) Cardinality() int {
 }
 
 // IsEmpty returns whether the underlying set is empty (includes uninitialized).
+//
+// Deprecated: use Cardinality() == 0 instead
 func (k Uint64Set) IsEmpty() bool {
 	return len(k) == 0
 }

@@ -1,12 +1,16 @@
 package buildtime
 
 import (
+	"fmt"
+	"strings"
+
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -14,16 +18,30 @@ type detectorImpl struct {
 	policySet detection.PolicySet
 }
 
-// Detect runs detection on an image, returning any generated alerts.
-func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
+// Detect runs detection on an image, returning any generated alerts.  If policy categories are specified, we will only
+// run policies with the specified categories
+func (d *detectorImpl) Detect(image *storage.Image, policyCategories []string) ([]*storage.Alert, error) {
 	if image == nil {
 		return nil, errors.New("cannot detect on a nil image")
+	}
+
+	allowedCategorySet := set.NewStringSet()
+	// Keep track of the categories which haven't been used yet.  We want to return an error if categories are specified
+	// that don't exist.
+	unusedCategorySet := set.NewStringSet()
+	for _, category := range policyCategories {
+		lowercaseCategory := strings.ToLower(category)
+		allowedCategorySet.Add(lowercaseCategory)
+		unusedCategorySet.Add(lowercaseCategory)
 	}
 
 	var alerts []*storage.Alert
 	var cacheReceptacle booleanpolicy.CacheReceptacle
 	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
 		if compiled.Policy().GetDisabled() {
+			return nil
+		}
+		if !hasAllowedCatgories(allowedCategorySet, unusedCategorySet, compiled.Policy().Categories) {
 			return nil
 		}
 		if !compiled.AppliesTo(image) {
@@ -42,6 +60,9 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 	if err != nil {
 		return nil, err
 	}
+	if unusedCategorySet.Cardinality() > 0 {
+		return nil, fmt.Errorf("allowed categories %v did not match any policy categories", unusedCategorySet.AsSlice())
+	}
 	return alerts, nil
 }
 
@@ -58,4 +79,22 @@ func policyViolationsAndImageToAlert(policy *storage.Policy, violations []*stora
 		Time:           ptypes.TimestampNow(),
 	}
 	return alert
+}
+
+func hasAllowedCatgories(categorySet set.StringSet, unmatchedSet set.StringSet, policyCategories []string) bool {
+	// If categorySet is empty we default to all categories
+	if categorySet.Cardinality() == 0 {
+		return true
+	}
+
+	matched := false
+	for _, category := range policyCategories {
+		lowercaseCategory := strings.ToLower(category)
+		if categorySet.Contains(lowercaseCategory) {
+			matched = true
+			unmatchedSet.Remove(lowercaseCategory)
+		}
+	}
+
+	return matched
 }

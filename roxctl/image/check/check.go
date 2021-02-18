@@ -32,11 +32,12 @@ func Command() *cobra.Command {
 		retryDelay             int
 		retryCount             int
 		sendNotifications      bool
+		policyCategories       []string
 	)
 	c := &cobra.Command{
 		Use: "check",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			return checkImageWithRetry(image, json, failViolationsWithJSON, sendNotifications, flags.Timeout(c), retryDelay, retryCount)
+			return checkImageWithRetry(image, json, failViolationsWithJSON, sendNotifications, flags.Timeout(c), retryDelay, retryCount, policyCategories)
 		}),
 		PreRun: func(c *cobra.Command, args []string) {
 			jsonFlag := c.Flag(jsonFlagName)
@@ -63,12 +64,13 @@ func Command() *cobra.Command {
 	c.Flags().BoolVar(&sendNotifications, "send-notifications", false,
 		"whether to send notifications for violations (notifications will be sent to the notifiers "+
 			"configured in each violated policy).")
+	c.Flags().StringSliceVarP(&policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
 	return c
 }
 
-func checkImageWithRetry(image string, json bool, failViolationsWithJSON bool, sendNotifications bool, timeout time.Duration, retryDelay int, retryCount int) error {
+func checkImageWithRetry(image string, json bool, failViolationsWithJSON bool, sendNotifications bool, timeout time.Duration, retryDelay int, retryCount int, policyCategories []string) error {
 	err := retry.WithRetry(func() error {
-		return checkImage(image, json, failViolationsWithJSON, sendNotifications, timeout)
+		return checkImage(image, json, failViolationsWithJSON, sendNotifications, timeout, policyCategories)
 	},
 		retry.Tries(retryCount+1),
 		retry.OnFailedAttempts(func(err error) {
@@ -81,9 +83,9 @@ func checkImageWithRetry(image string, json bool, failViolationsWithJSON bool, s
 	return nil
 }
 
-func checkImage(image string, json bool, failViolationsWithJSON bool, sendNotifications bool, timeout time.Duration) error {
+func checkImage(image string, json bool, failViolationsWithJSON bool, sendNotifications bool, timeout time.Duration, policyCategories []string) error {
 	// Get the violated policies for the input data.
-	req, err := buildRequest(image, sendNotifications)
+	req, err := buildRequest(image, sendNotifications, policyCategories)
 	if err != nil {
 		return err
 	}
@@ -151,7 +153,7 @@ func sendRequestAndGetAlerts(req *v1.BuildDetectionRequest, timeout time.Duratio
 }
 
 // Use inputs to generate an image name for request.
-func buildRequest(image string, sendNotifications bool) (*v1.BuildDetectionRequest, error) {
+func buildRequest(image string, sendNotifications bool, policyCategories []string) (*v1.BuildDetectionRequest, error) {
 	img, err := utils.GenerateImageFromString(image)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not parse image '%s'", image)
@@ -159,5 +161,6 @@ func buildRequest(image string, sendNotifications bool) (*v1.BuildDetectionReque
 	return &v1.BuildDetectionRequest{
 		Resource:          &v1.BuildDetectionRequest_Image{Image: img},
 		SendNotifications: sendNotifications,
+		PolicyCategories:  policyCategories,
 	}, nil
 }

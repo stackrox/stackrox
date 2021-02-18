@@ -34,11 +34,11 @@ in the Platform Configuration -> Clusters View.
     - 5.19
     - 5.20
     - 5.21
- - Splunk alert events send to HEC will no longer include policy description, remediation and rationale
-   in order to allow for more violations underneath the HEC limit.
-  - The ROX_NETWORK_DETECTION_BASELINE_VIOLATION feature flag is now on by default: a deployment with network flows that
-  are outside of its network baseline can now raise violations
- 
+- Splunk alert events send to HEC will no longer include policy description, remediation and rationale
+ in order to allow for more violations underneath the HEC limit.
+- The ROX_NETWORK_DETECTION_BASELINE_VIOLATION feature flag is now on by default: a deployment with network flows that
+are outside of its network baseline can now raise violations
+- New roxctl option for roxctl image check: --categories.  Specifying a comma separated list of categories will only run policies with categories in the specified list.
 
 ## [55.0]
 - The `/v1/metadata` endpoint redacts version information from unauthenticated users.

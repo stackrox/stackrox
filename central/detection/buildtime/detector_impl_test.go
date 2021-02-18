@@ -41,8 +41,10 @@ func TestDetector(t *testing.T) {
 	require.NoError(t, policySet.UpsertPolicy(policyToTest))
 
 	for _, testCase := range []struct {
-		image          *storage.Image
-		expectedAlerts int
+		image             *storage.Image
+		allowedCategories []string
+		expectedAlerts    int
+		expectedError     bool
 	}{
 		{
 			image:          &storage.Image{Name: &storage.ImageName{Tag: "latest"}},
@@ -56,10 +58,25 @@ func TestDetector(t *testing.T) {
 			image:          &storage.Image{Id: "AAA", Name: &storage.ImageName{Tag: "OLDEST"}},
 			expectedAlerts: 0,
 		},
+		{
+			image:             &storage.Image{Name: &storage.ImageName{Tag: "latest"}},
+			allowedCategories: []string{"Not a category"},
+			expectedAlerts:    0,
+			expectedError:     true,
+		},
+		{
+			image:             &storage.Image{Name: &storage.ImageName{Tag: "latest"}},
+			allowedCategories: []string{"DevOps Best Practices"},
+			expectedAlerts:    1,
+		},
 	} {
 		t.Run(proto.MarshalTextString(testCase.image), func(t *testing.T) {
-			alerts, err := detector.Detect(testCase.image)
-			require.NoError(t, err)
+			alerts, err := detector.Detect(testCase.image, testCase.allowedCategories)
+			if testCase.expectedError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
 			assert.Len(t, alerts, testCase.expectedAlerts)
 		})
 
