@@ -5,6 +5,7 @@ const COMPONENT_NAME = gql`
         component(id: $id) {
             id
             name
+            version
         }
     }
 `;

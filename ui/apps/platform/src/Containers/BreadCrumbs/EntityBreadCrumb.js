@@ -2,9 +2,9 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 
-import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
 import useEntityName from 'hooks/useEntityName';
+import { shouldUseOriginalCase } from 'utils/workflowUtils';
 
 const EntityBreadCrumb = ({ workflowEntity, url }) => {
     const { entityId, entityType } = workflowEntity;
@@ -13,8 +13,8 @@ const EntityBreadCrumb = ({ workflowEntity, url }) => {
     const { entityName } = useEntityName(entityType, entityId, !entityId);
     const title = entityName || pluralize(typeLabel);
 
-    const useFullLowercase = entityName && entityType === entityTypes.IMAGE;
-    const extraClasses = useFullLowercase ? '' : 'uppercase truncate';
+    const useOriginalCase = shouldUseOriginalCase(entityName, entityType);
+    const extraClasses = useOriginalCase ? '' : 'uppercase truncate';
 
     return (
         <span className="flex flex-col max-w-full" data-testid="breadcrumb-link-text">

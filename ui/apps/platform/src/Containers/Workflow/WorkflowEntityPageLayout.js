@@ -12,7 +12,6 @@ import ExportButton from 'Components/ExportButton';
 import workflowStateContext from 'Containers/workflowStateContext';
 import parseURL from 'utils/URLParser';
 import getSidePanelEntity from 'utils/getSidePanelEntity';
-import entityTypes from 'constants/entityTypes';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import { WorkflowState } from 'utils/WorkflowState';
 import { getUseCaseEntityMap } from 'utils/entityRelationships';
@@ -20,6 +19,7 @@ import entityLabels from 'messages/entity';
 import useCaseLabels from 'messages/useCase';
 import useEntityName from 'hooks/useEntityName';
 import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
+import { shouldUseOriginalCase } from 'utils/workflowUtils';
 import WorkflowSidePanel from './WorkflowSidePanel';
 import { EntityComponentMap } from './UseCaseComponentMaps';
 
@@ -80,7 +80,8 @@ const WorkflowEntityPageLayout = ({ location }) => {
     const subheaderText = entityLabels[pageEntityType];
     const { entityName = '' } = useEntityName(pageEntityType, pageEntityId);
     const entityContext = {};
-    const useLowercase = pageEntityType === entityTypes.IMAGE;
+    // const useLowercase = pageEntityType === entityTypes.IMAGE;
+    const useOriginalCase = shouldUseOriginalCase(entityName, pageEntityType);
 
     const exportFilename = `${useCaseLabels[useCase]} ${startCase(
         subheaderText
@@ -99,7 +100,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
                     header={entityName}
                     subHeader={subheaderText}
                     classes="pr-0 ignore-react-onclickoutside"
-                    lowercaseTitle={useLowercase}
+                    lowercaseTitle={useOriginalCase}
                 >
                     <div className="flex flex-1 justify-end h-full">
                         <div className="flex items-center pr-2">
