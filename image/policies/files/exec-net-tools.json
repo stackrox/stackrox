@@ -11,7 +11,7 @@
   ],
   "fields": {
     "process_policy": {
-      "name": "([a-z])ip|ifrename|ethtool|ifconfig|([a-z])arp|ipmaddr|iptunnel|route|nameif|mii-tool"
+      "name": "ip|ifrename|ethtool|ifconfig|arp|ipmaddr|iptunnel|route|nameif|mii-tool"
     }
   },
   "rationale": "Network management tools can be used for a variety of tasks, including mapping out your network, overwriting iptables rules, or ssh tunneling to name a few.",

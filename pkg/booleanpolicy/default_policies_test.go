@@ -761,6 +761,17 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	nmapIndicatorfixtureDep2 := suite.addIndicator(fixtureDep.GetId(), "nmap", "blah2", "/usr/bin/nmap", bashLineage, 1)
 	nmapIndicatorNginx110Dep := suite.addIndicator(nginx110Dep.GetId(), "nmap", "", "/usr/bin/nmap", bashLineage, 1)
 
+	ifconfigIndicatorfixtureDep1 := suite.addIndicator(fixtureDep.GetId(), "ifconfig", "blah", "/sbin/ifconfig", bashLineage, 1)
+	ifconfigIndicatorfixtureDep2 := suite.addIndicator(fixtureDep.GetId(), "ifconfig", "blah2", "/usr/bin/ifconfig", bashLineage, 1)
+	ipIndicatorfixtureDep := suite.addIndicator(fixtureDep.GetId(), "ip", "", "/sbin/ip", bashLineage, 1)
+	arpIndicatorfixtureDep := suite.addIndicator(fixtureDep.GetId(), "arp", "", "/usr/sbin/arp", bashLineage, 1)
+	ifconfigIndicatorNginx110Dep := suite.addIndicator(nginx110Dep.GetId(), "ifconfig", "", "/sbin/ifconfig", bashLineage, 1)
+	ipIndicatorNginx110Dep := suite.addIndicator(nginx110Dep.GetId(), "ip", "", "/sbin/ip", bashLineage, 1)
+	arpIndicatorNginx110Dep := suite.addIndicator(nginx110Dep.GetId(), "arp", "", "/usr/sbin/arp", bashLineage, 1)
+	// These two should not match for the Network Management Execution policy. See ROX-6011
+	suite.addIndicator(fixtureDep.GetId(), "pip", "", "/usr/bin/pip", bashLineage, 1)
+	suite.addIndicator(nginx110Dep.GetId(), "pip", "", "/usr/bin/pip", bashLineage, 1)
+
 	javaLineage := []string{"/bin/bash", "/mnt/scripts/run_server.sh", "/bin/java"}
 	fixtureDepJavaIndicator := suite.addIndicator(fixtureDep.GetId(), "/bin/bash", "-attack", "/bin/bash", javaLineage, 0)
 
@@ -1188,6 +1199,13 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			policyName: "Shell Spawned by Java Application",
 			expectedProcessViolations: map[string][]*storage.ProcessIndicator{
 				fixtureDep.GetId(): {fixtureDepJavaIndicator},
+			},
+		},
+		{
+			policyName: "Network Management Execution",
+			expectedProcessViolations: map[string][]*storage.ProcessIndicator{
+				fixtureDep.GetId():  {ifconfigIndicatorfixtureDep1, ifconfigIndicatorfixtureDep2, ipIndicatorfixtureDep, arpIndicatorfixtureDep},
+				nginx110Dep.GetId(): {ifconfigIndicatorNginx110Dep, ipIndicatorNginx110Dep, arpIndicatorNginx110Dep},
 			},
 		},
 		{
