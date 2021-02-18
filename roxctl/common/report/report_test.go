@@ -53,6 +53,41 @@ var (
 			},
 		},
 	}
+	imageAlertThree = storage.Alert{
+		Policy: &storage.Policy{
+			Name:        "CI Test Policy Three",
+			Description: "CI policy three that is used for tests",
+			Severity:    storage.Severity_MEDIUM_SEVERITY,
+			Rationale:   "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean eleifend ac purus id vehicula. Vivamus malesuada eros at malesuada scelerisque. Praesent pellentesque ipsum mauris, eu tempus diam interdum quis.",
+			Remediation: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nec vehicula magna.",
+		},
+		Violations: []*storage.Alert_Violation{
+			{Message: "This is cool"},
+			{Message: "This is more cool"},
+			{Message: "This is another violation"},
+			{Message: "This is a lot of violations"},
+			{Message: "This would be neat if I could come up with"},
+			{Message: "A lot of unique violations"},
+			{Message: "This might make the code reviewers laugh"},
+			{Message: "But I have run out of words"},
+			{Message: "nine"},
+			{Message: "ten"},
+			{Message: "eleven"},
+			{Message: "twelve"},
+			{Message: "thirteen"},
+			{Message: "fourteen"},
+			{Message: "fifteen"},
+			{Message: "sixteen"},
+			{Message: "seventeen"},
+			{Message: "eighteen"},
+			{Message: "ninteen"},
+			{Message: "twenty"},
+			{Message: "twenty one"},
+			{Message: "twenty two"},
+			{Message: "twenty three"},
+			{Message: "twenty four"},
+		},
+	}
 
 	deploymentAlertOne = storage.Alert{
 		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{
@@ -159,6 +194,13 @@ func TestReport(t *testing.T) {
 			resourceType: "Deployment",
 			alerts:       []*storage.Alert{&deploymentAlertOne, &deploymentAlertTwo},
 			goldenFile:   "testdata/two-deployments.txt",
+		},
+		{
+			name:         "hit violation cutoff",
+			resourceType: "Image",
+			resourceName: "nginx",
+			alerts:       []*storage.Alert{&imageAlertThree},
+			goldenFile:   "testdata/many-violations.txt",
 		},
 	}
 

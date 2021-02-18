@@ -13,22 +13,23 @@ import (
 const (
 	// failedTemplate is a (raw) template for displaying when there are failed
 	// policies.
-	failedTemplate = `{{- range .Alerts}}
-{{if .GetDeployment}}
-✗ Deployment {{.GetDeployment.Name}} failed policy '{{.Policy.Name}}' {{if failedFunc .Policy}}(policy enforcement caused failure){{end}}
+	failedTemplate = `{{- range .AlertTemplateObjects}}
+{{if .Alert.GetDeployment}}
+✗ Deployment {{.Alert.GetDeployment.Name}} failed policy '{{.Alert.Policy.Name}}' {{if failedFunc .Alert.Policy}}(policy enforcement caused failure){{end}}
 {{else}}
-✗ Image {{$.ResourceName}} failed policy '{{.Policy.Name}}' {{if failedFunc .Policy}}(policy enforcement caused failure){{end}}
+✗ Image {{$.ResourceName}} failed policy '{{.Alert.Policy.Name}}' {{if failedFunc .Alert.Policy}}(policy enforcement caused failure){{end}}
 {{end -}}
 - Description:
-    ↳ {{wrap .Policy.Description}}
+    ↳ {{wrap .Alert.Policy.Description}}
 - Rationale:
-    ↳ {{wrap .Policy.Rationale}}
+    ↳ {{wrap .Alert.Policy.Rationale}}
 - Remediation:
-    ↳ {{wrap .Policy.Remediation}}
+    ↳ {{wrap .Alert.Policy.Remediation}}
 - Violations:
-    {{- range .Violations}}
+    {{- range .PrintedViolations}}
     - {{.Message}}
-    {{- end}}
+    {{- end}}{{if gt .RemainingViolations 0}}
+      +{{.RemainingViolations}} more{{end}}
 {{- end}}
 
 `
@@ -37,7 +38,15 @@ const (
 	// failed policies.
 	passedTemplate = `✔ The scanned resources passed all policies
 `
+
+	maxPrintedViolations = 20
 )
+
+type alertTemplateObject struct {
+	Alert               *storage.Alert
+	PrintedViolations   []*storage.Alert_Violation
+	RemainingViolations int
+}
 
 // JSON renders the given list of policies as JSON, and writes that to the
 // output stream.
@@ -62,10 +71,11 @@ func JSON(output io.Writer, alerts []*storage.Alert) error {
 // PrettyWithResourceName renders the given list of policies in a human-friendly format, and
 // writes that to the output stream.
 func PrettyWithResourceName(output io.Writer, alerts []*storage.Alert, enforcementStage storage.EnforcementAction, resourceType, resourceName string) error {
+	alertTemplateObjects := makeAlertTemplateObjects(alerts)
 	var templateMap = map[string]interface{}{
-		"Alerts":       alerts,
-		"ResourceType": resourceType,
-		"ResourceName": resourceName,
+		"AlertTemplateObjects": alertTemplateObjects,
+		"ResourceType":         resourceType,
+		"ResourceName":         resourceName,
 	}
 
 	funcMap := template.FuncMap{
@@ -99,4 +109,20 @@ func EnforcementFailedBuild(enforcementAction storage.EnforcementAction) func(po
 		}
 		return false
 	}
+}
+
+func makeAlertTemplateObjects(alerts []*storage.Alert) []*alertTemplateObject {
+	alertTemplateObjects := make([]*alertTemplateObject, len(alerts))
+	for i, alert := range alerts {
+		printedViolations := alert.GetViolations()
+		if len(printedViolations) > maxPrintedViolations {
+			printedViolations = printedViolations[:maxPrintedViolations]
+		}
+		alertTemplateObjects[i] = &alertTemplateObject{
+			Alert:               alert,
+			PrintedViolations:   printedViolations,
+			RemainingViolations: len(alert.GetViolations()) - maxPrintedViolations,
+		}
+	}
+	return alertTemplateObjects
 }
