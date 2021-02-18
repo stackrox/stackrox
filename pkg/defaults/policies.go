@@ -53,6 +53,9 @@ func Policies() (policies []*storage.Policy, err error) {
 				continue
 			}
 		}
+		if !features.NetworkDetectionBaselineViolation.Enabled() && p.GetId() == "1b74ffdd-8e67-444c-9814-1c23863c8ccb" {
+			continue
+		}
 
 		if err := policyversion.EnsureConvertedToLatest(p); err != nil {
 			errList.AddWrapf(err, "converting policy %s", p.GetName())
