@@ -13,9 +13,10 @@ const multiSelect = {
 };
 
 const singleSelect = {
-    input: '.react-select__control',
+    input: '.react-select__control input',
     value: '.react-select__single-value',
     options: '.react-select__option',
+    menu: '.select__menu',
 };
 
 const selectors = {

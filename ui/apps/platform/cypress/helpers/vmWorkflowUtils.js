@@ -117,6 +117,7 @@ function validateFixableCVELinks(urlBack) {
         .eq(0)
         .invoke('text')
         .then((value) => {
+            cy.wait(1000);
             cy.get(`${vulnManagementSelectors.fixableCVELink}`).eq(0).click({ force: true });
             if (parseInt(value, 10) === 1) {
                 validateDataInEntityListPage(`${parseInt(value, 10)} CVE`, urlBack);

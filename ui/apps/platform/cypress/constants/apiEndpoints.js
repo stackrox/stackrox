@@ -35,6 +35,7 @@ export const alerts = {
     pageSearchAutocomplete: (searchObj) => search.autocompleteBySearch(searchObj, 'ALERTS'),
     graphqlOps: {
         getTags: 'getAlertTags',
+        addAlertTags: 'addAlertTags',
         tagsAutocomplete: 'autocomplete',
         bulkAddAlertTags: 'bulkAddAlertTags',
         getComments: 'getAlertComments',
