@@ -43,12 +43,16 @@ var (
 		user.With(permissions.View(resources.NetworkGraph)): {
 			"/v1.NetworkGraphService/GetNetworkGraph",
 			"/v1.NetworkGraphService/GetExternalNetworkEntities",
-			"/v1.NetworkGraphService/GetNetworkGraphConfig",
 		},
 		user.With(permissions.Modify(resources.NetworkGraph)): {
 			"/v1.NetworkGraphService/CreateExternalNetworkEntity",
 			"/v1.NetworkGraphService/DeleteExternalNetworkEntity",
 			"/v1.NetworkGraphService/PatchExternalNetworkEntity",
+		},
+		user.With(permissions.View(resources.NetworkGraphConfig)): {
+			"/v1.NetworkGraphService/GetNetworkGraphConfig",
+		},
+		user.With(permissions.Modify(resources.NetworkGraphConfig)): {
 			"/v1.NetworkGraphService/PutNetworkGraphConfig",
 		},
 	})
