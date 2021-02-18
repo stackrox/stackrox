@@ -22,7 +22,7 @@ var (
 	NetworkDetection = registerFeature("Enable new network detection experience", "ROX_NETWORK_DETECTION", true)
 
 	// NetworkDetectionBaselineViolation enables new features related to the baseline violation part of the network detection experience.
-	NetworkDetectionBaselineViolation = registerFeature("Enable network detection baseline violation", "ROX_NETWORK_DETECTION_BASELINE_VIOLATION", false)
+	NetworkDetectionBaselineViolation = registerFeature("Enable network detection baseline violation", "ROX_NETWORK_DETECTION_BASELINE_VIOLATION", true)
 
 	// NetworkDetectionBlockedFlows enables new features related to the blocked flows part of the network detection experience.
 	NetworkDetectionBlockedFlows = registerFeature("Enable blocked network flows experience", "ROX_NETWORK_DETECTION_BLOCKED_FLOWS", false)
