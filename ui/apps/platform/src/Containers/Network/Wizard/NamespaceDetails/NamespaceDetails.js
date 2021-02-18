@@ -169,7 +169,7 @@ class NamespaceDetails extends Component {
                     header={subHeaderText}
                     headerComponents={paginationComponent}
                     isUpperCase={false}
-                    className="w-full h-full bg-base-100"
+                    className="bg-base-100"
                 >
                     <div className="w-full h-full">{content}</div>
                 </Panel>

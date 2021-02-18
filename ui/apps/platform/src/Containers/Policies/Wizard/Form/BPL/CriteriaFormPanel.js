@@ -13,7 +13,6 @@ function CriteriaFormPanel({ header, onClose }) {
             headerComponents={<CriteriaFormButtons />}
             onClose={onClose}
             id="side-panel"
-            className="w-1/2"
         >
             <div className="w-full h-full">
                 <FormMessages />

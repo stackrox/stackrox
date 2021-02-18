@@ -27,7 +27,6 @@ import URLService from 'utils/URLService';
 const serverSidePagination = true;
 
 const List = ({
-    className,
     headerText,
     query,
     variables,
@@ -69,7 +68,7 @@ const List = ({
         )}`;
 
         return (
-            <Panel className={className} header={header} headerComponents={headerComponents}>
+            <Panel header={header} headerComponents={headerComponents}>
                 <Table
                     rows={tableRows}
                     columns={tableColumns}
@@ -180,7 +179,6 @@ const List = ({
 };
 
 List.propTypes = {
-    className: PropTypes.string,
     query: PropTypes.shape().isRequired,
     variables: PropTypes.shape(),
     entityType: PropTypes.string.isRequired,
@@ -201,7 +199,6 @@ List.propTypes = {
 };
 
 List.defaultProps = {
-    className: '',
     variables: {},
     headerText: '',
     selectedRowId: null,

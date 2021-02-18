@@ -56,7 +56,6 @@ function PreviewPanel({ header, dryRun, policyDisabled, onClose }) {
             headerComponents={<PreviewButtons />}
             onClose={onClose}
             id="side-panel"
-            className="w-1/2"
         >
             <div className="bg-primary-100 h-full">{content}</div>
         </Panel>

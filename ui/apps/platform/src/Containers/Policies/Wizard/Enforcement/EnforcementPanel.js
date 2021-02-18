@@ -92,7 +92,6 @@ function EnforcementPanel({ header, onClose, wizardPolicy, setWizardPolicy }) {
             headerComponents={<EnforcementButtons />}
             onClose={onClose}
             id="side-panel"
-            className="w-1/2"
         >
             <div className="flex flex-col overflow-y-scroll w-full h-1/3 bg-primary-100">
                 <h2 className="font-700 flex justify-center top-0 py-4 px-8 sticky text-xs text-base-600 uppercase items-center tracking-wide leading-normal font-700">

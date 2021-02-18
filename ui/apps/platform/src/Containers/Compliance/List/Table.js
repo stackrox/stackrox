@@ -350,11 +350,7 @@ const ListTable = ({
                     );
                 }
                 return (
-                    <Panel
-                        header={headerText}
-                        headerComponents={headerComponent}
-                        className="w-full"
-                    >
+                    <Panel header={headerText} headerComponents={headerComponent}>
                         {contents}
                     </Panel>
                 );

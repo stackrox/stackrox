@@ -64,12 +64,7 @@ const SideBar = ({
         },
     ];
     return (
-        <Panel
-            header={header}
-            className="border z-1 relative"
-            headerClassName={panelHeaderClassName}
-            short={short}
-        >
+        <Panel header={header} headerClassName={panelHeaderClassName} short={short}>
             <div className="flex flex-col w-full h-full bg-base-100">
                 <div className="overflow-auto table-reset-padding">
                     <List

@@ -50,7 +50,6 @@ const Permissions = ({
     return (
         <Panel
             header={headerText}
-            className="border"
             headerClassName={panelHeaderClassName}
             headerComponents={headerComponents}
         >

@@ -46,7 +46,7 @@ function Wizard({
     const initialValues = wizardPolicy && preFormatPolicyFields(wizardPolicy);
 
     return (
-        <div className="w-full">
+        <div className="border-l border-base-400 w-full">
             <WizardPanel
                 initialValues={initialValues}
                 fieldGroups={fieldGroups}

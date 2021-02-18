@@ -8,13 +8,7 @@ import FormMessages from './FormMessages';
 
 function FormPanel({ header, fieldGroups, onClose, initialValues }) {
     return (
-        <Panel
-            header={header}
-            headerComponents={<FormButtons />}
-            onClose={onClose}
-            id="side-panel"
-            className="w-1/2"
-        >
+        <Panel header={header} headerComponents={<FormButtons />} onClose={onClose} id="side-panel">
             <div className="w-full h-full">
                 <FormMessages />
                 <form className="flex flex-col w-full overflow-auto pb-5">

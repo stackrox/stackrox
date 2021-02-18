@@ -12,7 +12,6 @@ function PolicyDetailsPanel({ header, onClose, policy }) {
             headerComponents={<DetailsButtons />}
             onClose={onClose}
             id="side-panel"
-            className="w-1/2"
         >
             <PolicyDetails policy={policy} />
         </Panel>

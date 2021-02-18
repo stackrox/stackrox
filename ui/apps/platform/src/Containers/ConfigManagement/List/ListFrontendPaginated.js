@@ -21,7 +21,6 @@ import createPDFTable from 'utils/pdfUtils';
 import URLService from 'utils/URLService';
 
 const ListFrontendPaginated = ({
-    className,
     headerText,
     query,
     variables,
@@ -56,7 +55,7 @@ const ListFrontendPaginated = ({
         )}`;
 
         return (
-            <Panel className={className} header={header} headerComponents={headerComponents}>
+            <Panel header={header} headerComponents={headerComponents}>
                 <Table
                     rows={tableRows}
                     columns={tableColumns}
@@ -140,7 +139,6 @@ const ListFrontendPaginated = ({
 };
 
 ListFrontendPaginated.propTypes = {
-    className: PropTypes.string,
     query: PropTypes.shape().isRequired,
     variables: PropTypes.shape(),
     entityType: PropTypes.string.isRequired,
@@ -160,7 +158,6 @@ ListFrontendPaginated.propTypes = {
 };
 
 ListFrontendPaginated.defaultProps = {
-    className: '',
     variables: {},
     headerText: '',
     selectedRowId: null,

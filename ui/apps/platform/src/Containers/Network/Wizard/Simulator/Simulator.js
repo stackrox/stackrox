@@ -24,7 +24,6 @@ const Simulator = ({ onClose, setModification, modificationState }) => {
             className="w-full h-full absolute right-0 bottom-0 pt-1 pb-1 pr-1 shadow-md bg-base-200"
         >
             <Panel
-                className="border-t-0 border-r-0 border-b-0"
                 header="Network Policy Simulator"
                 onClose={onCloseHandler}
                 closeButtonClassName={`bg-${colorType}-600 hover:bg-${colorType}-700`}

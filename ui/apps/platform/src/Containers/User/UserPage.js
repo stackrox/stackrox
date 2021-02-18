@@ -47,16 +47,18 @@ const UserPage = ({ userData, resourceToAccessByRole }) => {
                             StackRox User Permissions
                             <ArrowRightCircle className="w-5" />
                         </button>
-                        <SideBar
-                            header="StackRox User Roles"
-                            rows={user.roles}
-                            selected={selectedPage}
-                            onSelectRow={setSelectedPage}
-                            type="role"
-                            short
-                        />
+                        <div className="border border-base-400">
+                            <SideBar
+                                header="StackRox User Roles"
+                                rows={user.roles}
+                                selected={selectedPage}
+                                onSelectRow={setSelectedPage}
+                                type="role"
+                                short
+                            />
+                        </div>
                     </div>
-                    <div className="md:w-3/4 w-full my-4 mr-4">
+                    <div className="border border-base-400 md:w-3/4 w-full my-4 mr-4">
                         <Permissions
                             resources={selectedPage.resourceToAccess}
                             selectedRole={selectedPage}
