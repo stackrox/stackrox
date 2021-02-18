@@ -30,18 +30,24 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyComponent, ...data };
 
-    const { version, priority, topVuln, id } = safeData;
+    const { version, priority, topVuln, id, location } = safeData;
 
     const metadataKeyValuePairs = [
         {
             key: 'Component Version',
             value: version,
         },
-        {
-            key: 'Location',
-            value: 'N/A',
-        },
     ];
+
+    // check if this component is scoped to an image higher up in the hierarchy
+    const hasImageAsAncestor = workflowState.getSingleAncestorOfType(entityTypes.IMAGE);
+    // if scoped under an image, try to show component Location
+    if (hasImageAsAncestor) {
+        metadataKeyValuePairs.push({
+            key: 'Location',
+            value: location || 'N/A',
+        });
+    }
 
     const componentStats = [<RiskScore key="risk-score" score={priority} />];
     if (topVuln) {
@@ -74,7 +80,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Component Findings">
-                    <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                    <div className="flex pdf-page pdf-stretch shadow rounded relative bg-base-100 mb-4 ml-4 mr-4">
                         <TableWidgetFixableCves
                             workflowState={workflowState}
                             entityContext={entityContext}
