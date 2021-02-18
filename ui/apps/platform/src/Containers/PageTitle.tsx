@@ -28,7 +28,8 @@ const getPageTitleText = (location: Location): string => {
         return `${topPageLabel} | ${baseTitleText}`;
     }
     const workflowState = parseURL(location);
-    if (workflowState) {
+    const useCase = workflowState.getUseCase();
+    if (workflowState && useCase) {
         const workflowPageLabel = getTitleFromWorkflowState(workflowState);
         return `${workflowPageLabel} | ${baseTitleText}`;
     }
