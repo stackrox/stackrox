@@ -2666,7 +2666,7 @@ jobs:
       - provision-openshift-cluster:
           crio: false
           suffix: -rhel
-          version: 0.1.1
+          version: 0.2.4
 
   provision-gke-rhel-api-e2e-tests:
     executor: custom
@@ -2775,7 +2775,7 @@ jobs:
       - provision-openshift-cluster:
           crio: false
           gate-label: ci-openshift-tests
-          version: 0.1.1
+          version: 0.2.4
 
   provision-openshift-crio-api-e2e-tests:
     machine: true
@@ -2784,7 +2784,7 @@ jobs:
           crio: true
           gate-label: ci-openshift-crio-tests
           suffix: -crio
-          version: 0.1.1
+          version: 0.2.4
 
   provision-eks-api-e2e-tests:
     executor: custom
