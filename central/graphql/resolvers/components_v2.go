@@ -350,16 +350,24 @@ func (eicr *imageComponentResolver) componentRawQuery() string {
 // version instead.
 
 // Location returns the location of the component.
-func (eicr *imageComponentResolver) Location(ctx context.Context) (string, error) {
+func (eicr *imageComponentResolver) Location(ctx context.Context, args RawQuery) (string, error) {
+	var imageID string
 	scope, hasScope := scoped.GetScope(eicr.ctx)
-	if !hasScope {
-		return "", nil
+	if hasScope && scope.Level == v1.SearchCategory_IMAGES {
+		imageID = scope.ID
+	} else if !hasScope || scope.Level != v1.SearchCategory_IMAGES {
+		var err error
+		imageID, err = getImageIDFromIfImageShaQuery(ctx, eicr.root, args)
+		if err != nil {
+			return "", errors.Wrap(err, "could not determine component location")
+		}
 	}
-	if scope.Level != v1.SearchCategory_IMAGES {
+
+	if imageID == "" {
 		return "", nil
 	}
 
-	edgeID := edges.EdgeID{ParentID: scope.ID, ChildID: eicr.data.GetId()}.ToString()
+	edgeID := edges.EdgeID{ParentID: imageID, ChildID: eicr.data.GetId()}.ToString()
 	edge, found, err := eicr.root.ImageComponentEdgeDataStore.Get(ctx, edgeID)
 	if err != nil || !found {
 		return "", err

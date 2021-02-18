@@ -2,11 +2,12 @@ package resolvers
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"sort"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -300,4 +301,37 @@ func (pw paginationWrapper) paginate(datSlice interface{}, err error) (interface
 		end = offset + limit
 	}
 	return datValue.Slice(offset, end).Interface(), nil
+}
+
+func getImageIDFromIfImageShaQuery(ctx context.Context, resolver *Resolver, args RawQuery) (string, error) {
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return "", err
+	}
+
+	query, filtered := search.FilterQuery(query, func(bq *v1.BaseQuery) bool {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if ok {
+			if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), search.ImageSHA.String()) {
+				return true
+			}
+		}
+		return false
+	})
+
+	if !filtered || query == search.EmptyQuery() {
+		return "", nil
+	}
+
+	res, err := resolver.ImageDataStore.Search(ctx, query)
+	if err != nil {
+		return "", err
+	}
+	if len(res) != 1 {
+		return "", errors.Errorf(
+			"received %d images in query response when 1 image was expected. Please check the query",
+			len(res))
+	}
+
+	return res[0].ID, nil
 }

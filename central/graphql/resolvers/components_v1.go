@@ -95,7 +95,7 @@ func (eicr *EmbeddedImageScanComponentResolver) Source(ctx context.Context) stri
 }
 
 // Location returns the location of the component.
-func (eicr *EmbeddedImageScanComponentResolver) Location(ctx context.Context) (string, error) {
+func (eicr *EmbeddedImageScanComponentResolver) Location(ctx context.Context, _ RawQuery) (string, error) {
 	return eicr.data.GetLocation(), nil
 }
 

@@ -27,11 +27,12 @@ const VulnMgmtComponent = ({
     const workflowState = useContext(workflowStateContext);
 
     const overviewQuery = gql`
-        query getComponent($id: ID!, $query: String) {
+        query getComponent($id: ID!, $query: String, $scopeQuery: String) {
             result: component(id: $id) {
                 id
                 name
                 version
+                location(query: $scopeQuery)
                 priority
                 vulnCount(query: $query)
                 deploymentCount(query: $query)

@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -507,44 +506,20 @@ func (resolver *cVEResolver) DiscoveredAtImage(ctx context.Context, args RawQuer
 		return nil, nil
 	}
 
+	var imageID string
 	scope, hasScope := scoped.GetScope(resolver.ctx)
-	if !hasScope {
-		return nil, nil
+	if hasScope && scope.Level == v1.SearchCategory_IMAGES {
+		imageID = scope.ID
+	} else if !hasScope || scope.Level != v1.SearchCategory_IMAGES {
+		var err error
+		imageID, err = getImageIDFromIfImageShaQuery(ctx, resolver.root, args)
+		if err != nil {
+			return nil, errors.Wrap(err, "could not determine vulnerability discovered time in image")
+		}
 	}
 
-	imageID := scope.ID
-
-	if scope.Level != v1.SearchCategory_IMAGES {
-		query, err := args.AsV1QueryOrEmpty()
-		if err != nil {
-			return nil, err
-		}
-
-		query, filtered := search.FilterQuery(query, func(bq *v1.BaseQuery) bool {
-			matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
-			if ok {
-				if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), search.ImageSHA.String()) {
-					return true
-				}
-			}
-			return false
-		})
-
-		if !filtered || query == search.EmptyQuery() {
-			return nil, nil
-		}
-
-		res, err := resolver.root.ImageDataStore.SearchImages(ctx, query)
-		if err != nil {
-			return nil, err
-		}
-		if len(res) != 1 {
-			return nil, errors.Errorf(
-				"received %d images in query response when 1 image was expected. Please check the query",
-				len(res))
-		}
-
-		imageID = res[0].Id
+	if imageID == "" {
+		return nil, nil
 	}
 
 	edgeID := edges.EdgeID{
