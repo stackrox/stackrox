@@ -1,8 +1,8 @@
-const VIOLATION_STATES = {
+const VIOLATION_STATES = Object.freeze({
     ACTIVE: 'ACTIVE',
     ATTEMPTED: 'ATTEMPTED',
     RESOLVED: 'RESOLVED',
     SNOOZED: 'SNOOZED',
-};
+});
 
 export default VIOLATION_STATES;

@@ -14,7 +14,10 @@ import {
     defaultColumnClassName,
     rtTrActionsClassName,
 } from 'Components/Table';
-import { ENFORCEMENT_ACTIONS_AS_PAST_TENSE } from 'constants/enforcementActions';
+import {
+    BLOCKING_ENFORCEMENT_ACTIONS,
+    ENFORCEMENT_ACTIONS_AS_PAST_TENSE,
+} from 'constants/enforcementActions';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import ViolationActionButtons from './ViolationActionButtons';
 
@@ -80,7 +83,7 @@ PolicyColumn.propTypes = {
 // Display the enforcement.
 // ////////////////////////
 function EnforcementColumn({ original }) {
-    if (original?.state === 'ATTEMPTED') {
+    if (BLOCKING_ENFORCEMENT_ACTIONS.has(original.enforcementAction)) {
         const message = `${ENFORCEMENT_ACTIONS_AS_PAST_TENSE[original?.enforcementAction]}`;
         return <div className="text-alert-700">{message}</div>;
     }
