@@ -14403,10 +14403,10 @@ jsonpointer@^4.0.1:
   resolved "https://registry.yarnpkg.com/jsonpointer/-/jsonpointer-4.0.1.tgz#4fd92cb34e0e9db3c89c8622ecf51f9b978c6cb9"
   integrity sha1-T9kss04OnbPInIYi7PUfm5eMbLk=
 
-jspdf-autotable@^3.5.9:
-  version "3.5.9"
-  resolved "https://registry.yarnpkg.com/jspdf-autotable/-/jspdf-autotable-3.5.9.tgz#8a625ef2aead44271da95e9f649843c401536925"
-  integrity sha512-ZRfiI5P7leJuWmvC0jGVXu227m68C2Jfz1dkDckshmDYDeVFCGxwIBYdCUXJ8Eb2CyFQC2ok82fEWO+xRDovDQ==
+jspdf-autotable@^3.5.13:
+  version "3.5.13"
+  resolved "https://registry.yarnpkg.com/jspdf-autotable/-/jspdf-autotable-3.5.13.tgz#2808db99affc2fe2a6e27cb308bcb0b3d541c9bd"
+  integrity sha512-0oF5eHefuBjlKm60tNpPMmMS2oDNhY5U7vPkMh+s4/JZbnSjsmcUcP4j2r3k0sDvQz4ysmAi3MoOii9niJn7Og==
 
 jspdf@^2.1.1:
   version "2.1.1"
