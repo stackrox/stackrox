@@ -126,6 +126,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"suppressExpiry: Time",
 		"suppressed: Boolean!",
 		"type: CVE_CVEType!",
+		"types: [CVE_CVEType!]!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVE_CVEType(0)))
 	utils.Must(builder.AddType("CVE_Reference", []string{
@@ -2108,6 +2109,11 @@ func (resolver *cVEResolver) Suppressed(ctx context.Context) bool {
 func (resolver *cVEResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
 	return value.String()
+}
+
+func (resolver *cVEResolver) Types(ctx context.Context) []string {
+	value := resolver.data.GetTypes()
+	return stringSlice(value)
 }
 
 func toCVE_CVEType(value *string) storage.CVE_CVEType {

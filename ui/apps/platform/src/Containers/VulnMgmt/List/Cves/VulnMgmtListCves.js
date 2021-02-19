@@ -73,15 +73,15 @@ export function getCveTableColumns(workflowState) {
             headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
-            Cell: ({ original }) => {
+            Cell: ({original}) => {
                 return (
                     <span className="mx-auto" data-testid="cve-type">
-                        <CveType type={original.vulnerabilityType} />
+                        <CveType types={original.vulnerabilityTypes} />
                     </span>
                 );
             },
             id: cveSortFields.CVE_TYPE,
-            accessor: 'vulnerabilityType',
+            accessor: 'vulnerabilityTypes',
             sortField: cveSortFields.CVE_TYPE,
             sortable: true,
         },
@@ -162,6 +162,7 @@ export function getCveTableColumns(workflowState) {
             Cell: ({ original, pdf }) => (
                 <TableCountLinks row={original} textOnly={inFindingsSection || pdf} />
             ),
+            accessor: 'entities',
             sortable: false,
         },
         {

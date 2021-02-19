@@ -131,6 +131,15 @@ func (evr *EmbeddedVulnerabilityResolver) VulnerabilityType() string {
 	return evr.data.VulnerabilityType.String()
 }
 
+// VulnerabilityTypes returns the types of the vulnerability
+func (evr *EmbeddedVulnerabilityResolver) VulnerabilityTypes() []string {
+	vulnTypes := make([]string, 0, len(evr.data.GetVulnerabilityTypes()))
+	for _, vulnType := range evr.data.GetVulnerabilityTypes() {
+		vulnTypes = append(vulnTypes, vulnType.String())
+	}
+	return vulnTypes
+}
+
 // Components are the components that contain the CVE/Vulnerability.
 func (evr *EmbeddedVulnerabilityResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "Components")
@@ -266,32 +275,28 @@ func (evr *EmbeddedVulnerabilityResolver) NodeCount(ctx context.Context, args Ra
 	return nodeLoader.CountFromQuery(ctx, query)
 }
 
-func (resolver *Resolver) getAffectedClusterPercentage(ctx context.Context, cve *schema.NVDCVEFeedJSON10DefCVEItem, ct converter.CVEType) (float64, error) {
+func (resolver *Resolver) getComponentsForAffectedCluster(ctx context.Context, cve *schema.NVDCVEFeedJSON10DefCVEItem, ct converter.CVEType) (int, int, error) {
 	clusters, err := resolver.ClusterDataStore.GetClusters(ctx)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	if len(clusters) == 0 {
-		return float64(0), nil
+		return 0, 0, nil
 	}
 
 	affectedClusters, err := resolver.cveMatcher.GetAffectedClusters(cve)
 	if err != nil {
-		return 0.0, errors.Errorf("unknown CVE type: %d", ct)
+		return 0, 0, errors.Errorf("unknown CVE type: %s", ct)
 	}
-	return float64(len(affectedClusters)) / float64(len(clusters)), nil
+	return len(affectedClusters), len(clusters), nil
 }
 
-func (evr *EmbeddedVulnerabilityResolver) getEnvImpactForK8sIstioVuln(ctx context.Context, ct converter.CVEType) (float64, error) {
+func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForK8sIstioVuln(ctx context.Context, ct converter.CVEType) (int, int, error) {
 	cve := evr.root.k8sIstioCVEManager.GetNVDCVE(evr.data.Cve)
 	if cve == nil {
-		return 0.0, errors.Errorf("cve: %q not found", evr.data.Cve)
+		return 0, 0, errors.Errorf("CVE: %q not found", evr.data.Cve)
 	}
-	p, err := evr.root.getAffectedClusterPercentage(ctx, cve, ct)
-	if err != nil {
-		return 0.0, err
-	}
-	return p, nil
+	return evr.root.getComponentsForAffectedCluster(ctx, cve, ct)
 }
 
 func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForImages(ctx context.Context) (numerator, denominator int, err error) {
@@ -341,32 +346,37 @@ func (evr *EmbeddedVulnerabilityResolver) scopeContext(ctx context.Context) cont
 
 // EnvImpact is the fraction of deployments that contains the CVE
 func (evr *EmbeddedVulnerabilityResolver) EnvImpact(ctx context.Context) (float64, error) {
-	log.Infof("ENV impact in v1 vulns")
-	switch evr.data.GetVulnerabilityType() {
-	case storage.EmbeddedVulnerability_K8S_VULNERABILITY:
-		return evr.getEnvImpactForK8sIstioVuln(ctx, converter.K8s)
-	case storage.EmbeddedVulnerability_ISTIO_VULNERABILITY:
-		return evr.getEnvImpactForK8sIstioVuln(ctx, converter.Istio)
-	case storage.EmbeddedVulnerability_IMAGE_VULNERABILITY:
-		numerator, denominator, err := evr.getEnvImpactComponentsForImages(ctx)
+	var numerator, denominator int
+	for _, vulnType := range evr.data.GetVulnerabilityTypes() {
+		var n, d int
+		var err error
+
+		switch vulnType {
+		case storage.EmbeddedVulnerability_K8S_VULNERABILITY:
+			n, d, err = evr.getEnvImpactComponentsForK8sIstioVuln(ctx, converter.K8s)
+		case storage.EmbeddedVulnerability_ISTIO_VULNERABILITY:
+			n, d, err = evr.getEnvImpactComponentsForK8sIstioVuln(ctx, converter.Istio)
+		case storage.EmbeddedVulnerability_IMAGE_VULNERABILITY:
+			n, d, err = evr.getEnvImpactComponentsForImages(ctx)
+		case storage.EmbeddedVulnerability_NODE_VULNERABILITY:
+			n, d, err = evr.getEnvImpactComponentsForNodes(ctx)
+		default:
+			return 0, errors.Errorf("unknown CVE type: %s", evr.data.GetVulnerabilityType())
+		}
+
 		if err != nil {
 			return 0, err
 		}
-		if denominator == 0 {
-			return 0, nil
-		}
-		return float64(numerator) / float64(denominator), nil
-	case storage.EmbeddedVulnerability_NODE_VULNERABILITY:
-		numerator, denominator, err := evr.getEnvImpactComponentsForNodes(ctx)
-		if err != nil {
-			return 0, err
-		}
-		if denominator == 0 {
-			return 0, nil
-		}
-		return float64(numerator) / float64(denominator), nil
+
+		numerator += n
+		denominator += d
 	}
-	return 0, errors.Errorf("unknown cve type: %s", evr.data.GetVulnerabilityType())
+
+	if denominator == 0 {
+		return 0, nil
+	}
+
+	return float64(numerator) / float64(denominator), nil
 }
 
 // Severity return the severity of the vulnerability (CVSSv3 or CVSSv2).

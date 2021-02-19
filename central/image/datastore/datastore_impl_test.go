@@ -130,6 +130,8 @@ func (suite *ImageDataStoreTestSuite) TestSearch() {
 		for _, cve := range component.GetVulns() {
 			cve.FirstSystemOccurrence = images[0].GetLastUpdated()
 			cve.FirstImageOccurrence = images[0].GetLastUpdated()
+			cve.VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
+			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 		}
 	}
 	suite.Equal(image, images[0])
@@ -171,7 +173,6 @@ func (suite *ImageDataStoreTestSuite) TestSearch() {
 	images, err = suite.datastore.SearchRawImages(scopedCtx, pkgSearch.EmptyQuery())
 	suite.NoError(err)
 	suite.Len(images, 2)
-	// TODO: incorrect
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
 		ID:    "cve3",
 		Level: v1.SearchCategory_VULNERABILITIES,

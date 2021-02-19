@@ -7,13 +7,18 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/cve/converter"
 	indexMocks "github.com/stackrox/rox/central/cve/index/mocks"
 	searchMocks "github.com/stackrox/rox/central/cve/search/mocks"
+	store "github.com/stackrox/rox/central/cve/store/dackbox"
 	storeMocks "github.com/stackrox/rox/central/cve/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dackbox"
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -245,4 +250,80 @@ func (suite *CVEDataStoreSuite) TestSuppressionCacheNodes() {
 	suite.NoError(err)
 	suite.datastore.EnrichNodeWithSuppressedCVEs(node)
 	suite.verifySuppressionStateNode(node, []string{"CVE-ABC", "CVE-DEF"}, []string{"CVE-GHI"})
+}
+
+func (suite *CVEDataStoreSuite) TestMultiTypedCVEs() {
+	rocksDB := rocksdbtest.RocksDBForT(suite.T())
+	defer rocksdbtest.TearDownRocksDB(rocksDB)
+	dacky, err := dackbox.NewRocksDBDackBox(rocksDB, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
+	suite.Require().NoError(err)
+	suite.searcher.EXPECT().SearchRawCVEs(getCVECtx, testSuppressionQuery).Return([]*storage.CVE{}, nil)
+	datastore, err := New(dacky, store.New(dacky, concurrency.NewKeyFence()), suite.indexer, suite.searcher)
+	suite.Require().NoError(err)
+
+	ctx := sac.WithAllAccess(context.Background())
+
+	cve := &storage.CVE{
+		Id:   "CVE-2021-1234",
+		Type: storage.CVE_NODE_CVE,
+	}
+	suite.NoError(datastore.UpsertClusterCVEs(ctx, converter.ClusterCVEParts{CVE: cve}))
+
+	expectedCVE := &storage.CVE{
+		Id:    "CVE-2021-1234",
+		Types: []storage.CVE_CVEType{storage.CVE_NODE_CVE},
+	}
+	storedCVE, exists, err := datastore.Get(ctx, cve.GetId())
+	suite.NoError(err)
+	suite.True(exists)
+	suite.Equal(expectedCVE, storedCVE)
+
+	// Add a second type for this CVE.
+	cve = &storage.CVE{
+		Id:   "CVE-2021-1234",
+		Type: storage.CVE_IMAGE_CVE,
+	}
+	suite.NoError(datastore.UpsertClusterCVEs(ctx, converter.ClusterCVEParts{CVE: cve}))
+
+	expectedCVE = &storage.CVE{
+		Id:    "CVE-2021-1234",
+		Types: []storage.CVE_CVEType{storage.CVE_NODE_CVE, storage.CVE_IMAGE_CVE},
+	}
+	storedCVE, exists, err = datastore.Get(ctx, cve.GetId())
+	suite.NoError(err)
+	suite.True(exists)
+	suite.Equal(expectedCVE, storedCVE)
+
+	// One more time.
+	cve = &storage.CVE{
+		Id:   "CVE-2021-1234",
+		Type: storage.CVE_K8S_CVE,
+	}
+	cve2 := &storage.CVE{
+		Id:   "CVE-2021-1235",
+		Type: storage.CVE_IMAGE_CVE,
+	}
+	suite.NoError(datastore.UpsertClusterCVEs(ctx, converter.ClusterCVEParts{CVE: cve}))
+	suite.NoError(datastore.UpsertClusterCVEs(ctx, converter.ClusterCVEParts{CVE: cve2}))
+
+	expectedCVE = &storage.CVE{
+		Id:    "CVE-2021-1234",
+		Types: []storage.CVE_CVEType{storage.CVE_NODE_CVE, storage.CVE_IMAGE_CVE, storage.CVE_K8S_CVE},
+	}
+	expectedCVE2 := &storage.CVE{
+		Id:    "CVE-2021-1235",
+		Types: []storage.CVE_CVEType{storage.CVE_IMAGE_CVE},
+	}
+	storedCVEs, err := datastore.GetBatch(ctx, []string{cve.GetId(), cve2.GetId()})
+	suite.NoError(err)
+	suite.Len(storedCVEs, 2)
+	suite.Equal(expectedCVE, storedCVEs[0])
+	suite.Equal(expectedCVE2, storedCVEs[1])
+
+	// Delete CVE.
+
+	suite.NoError(datastore.Delete(ctx, cve.GetId()))
+	_, exists, err = datastore.Get(ctx, cve.GetId())
+	suite.NoError(err)
+	suite.False(exists)
 }

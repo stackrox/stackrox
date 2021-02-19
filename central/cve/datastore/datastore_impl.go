@@ -128,40 +128,6 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 	return cves, nil
 }
 
-func (ds *datastoreImpl) Upsert(ctx context.Context, cves ...*storage.CVE) error {
-	if len(cves) == 0 {
-		return nil
-	}
-
-	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return errors.New("permission denied")
-	}
-
-	// Load the suppressed value for any CVEs already present.
-	ids := make([]string, 0, len(cves))
-	for _, cve := range cves {
-		ids = append(ids, cve.GetId())
-	}
-	currentCVEs, _, err := ds.storage.GetBatch(ids)
-	if err != nil {
-		return err
-	}
-	var currentIndex int
-	for newIndex := 0; newIndex < len(cves) && currentIndex < len(currentCVEs); newIndex++ {
-		if currentCVEs[currentIndex].GetId() == cves[newIndex].GetId() {
-			cves[newIndex].Suppressed = currentCVEs[currentIndex].Suppressed
-			cves[newIndex].SuppressActivation = currentCVEs[currentIndex].SuppressActivation
-			cves[newIndex].SuppressExpiry = currentCVEs[currentIndex].SuppressExpiry
-			currentIndex++
-		}
-	}
-
-	// Store the new CVE data.
-	return ds.storage.Upsert(cves...)
-}
-
 func (ds *datastoreImpl) UpsertClusterCVEs(ctx context.Context, parts ...converter.ClusterCVEParts) error {
 	if len(parts) == 0 {
 		return nil
@@ -171,25 +137,6 @@ func (ds *datastoreImpl) UpsertClusterCVEs(ctx context.Context, parts ...convert
 		return err
 	} else if !ok {
 		return errors.New("permission denied")
-	}
-
-	// Load the suppressed value for any CVEs already present.
-	ids := make([]string, 0, len(parts))
-	for _, p := range parts {
-		ids = append(ids, p.CVE.GetId())
-	}
-	currentCVEs, _, err := ds.storage.GetBatch(ids)
-	if err != nil {
-		return err
-	}
-	var currentIndex int
-	for newIndex := 0; newIndex < len(parts) && currentIndex < len(currentCVEs); newIndex++ {
-		if currentCVEs[currentIndex].GetId() == parts[newIndex].CVE.GetId() {
-			parts[newIndex].CVE.Suppressed = currentCVEs[currentIndex].Suppressed
-			parts[newIndex].CVE.SuppressActivation = currentCVEs[currentIndex].SuppressActivation
-			parts[newIndex].CVE.SuppressExpiry = currentCVEs[currentIndex].SuppressExpiry
-			currentIndex++
-		}
 	}
 
 	// Store the new CVE data.
@@ -295,7 +242,7 @@ func (ds *datastoreImpl) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
 }
 
 func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
-	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := clustersSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return errors.New("permission denied")

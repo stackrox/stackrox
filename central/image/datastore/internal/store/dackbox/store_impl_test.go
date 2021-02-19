@@ -143,6 +143,8 @@ func (suite *ImageStoreTestSuite) TestImages() {
 			for _, vuln := range component.GetVulns() {
 				vuln.FirstSystemOccurrence = got.GetLastUpdated()
 				vuln.FirstImageOccurrence = got.GetLastUpdated()
+				vuln.VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
+				vuln.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 			}
 		}
 		suite.Equal(d, got)
@@ -254,6 +256,8 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	suite.True(exists)
 	images[1].GetScan().GetComponents()[0].GetVulns()[0].FirstSystemOccurrence = images[0].GetScan().GetComponents()[1].GetVulns()[0].FirstSystemOccurrence
 	images[1].GetScan().GetComponents()[0].GetVulns()[0].FirstImageOccurrence = got.GetLastUpdated()
+	images[1].GetScan().GetComponents()[0].GetVulns()[0].VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
+	images[1].GetScan().GetComponents()[0].GetVulns()[0].VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 	suite.Equal(images[1], got)
 
 	// Test second occurrence of a CVE in an image
@@ -270,6 +274,8 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	suite.True(exists)
 	images[0].GetScan().GetComponents()[0].GetVulns()[0].FirstSystemOccurrence = images[0].GetScan().GetComponents()[1].GetVulns()[0].FirstSystemOccurrence
 	images[0].GetScan().GetComponents()[0].GetVulns()[0].FirstImageOccurrence = images[0].GetScan().GetComponents()[1].GetVulns()[0].FirstImageOccurrence
+	images[0].GetScan().GetComponents()[0].GetVulns()[0].VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
+	images[0].GetScan().GetComponents()[0].GetVulns()[0].VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 	suite.Equal(images[0], got)
 
 	// Test Delete

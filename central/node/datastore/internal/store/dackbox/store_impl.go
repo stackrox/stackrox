@@ -7,9 +7,9 @@ import (
 	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
 	componentCVEEdgeDackBox "github.com/stackrox/rox/central/componentcveedge/dackbox"
 	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
+	cveUtil "github.com/stackrox/rox/central/cve/utils"
 	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
 	"github.com/stackrox/rox/central/metrics"
-	namespaceDackBox "github.com/stackrox/rox/central/namespace/dackbox"
 	nodeDackBox "github.com/stackrox/rox/central/node/dackbox"
 	"github.com/stackrox/rox/central/node/datastore/internal/store"
 	nodeComponentEdgeDackBox "github.com/stackrox/rox/central/nodecomponentedge/dackbox"
@@ -391,9 +391,17 @@ func (b *storeImpl) writeCVEParts(txn *dackbox.Transaction, parts *CVEParts, iTi
 		parts.cve.CreatedAt = currCVE.GetCreatedAt()
 		parts.cve.SuppressActivation = currCVE.GetSuppressActivation()
 		parts.cve.SuppressExpiry = currCVE.GetSuppressExpiry()
+
+		parts.cve.Types = cveUtil.AddCVETypeIfAbsent(currCVE.GetTypes(), storage.CVE_NODE_CVE)
 	} else {
 		parts.cve.CreatedAt = iTime
+
+		// Populate the types slice for the new CVE.
+		parts.cve.Types = []storage.CVE_CVEType{storage.CVE_NODE_CVE}
 	}
+
+	parts.cve.Type = storage.CVE_UNKNOWN_CVE
+
 	if err := cveDackBox.Upserter.UpsertIn(nil, parts.cve, txn); err != nil {
 		return nil, err
 	}
@@ -405,32 +413,30 @@ func (b *storeImpl) writeCVEParts(txn *dackbox.Transaction, parts *CVEParts, iTi
 
 func (b *storeImpl) deleteNodeKeys(keys *nodeKeySet) error {
 	// Delete the keys
-	upsertTxn, err := b.dacky.NewTransaction()
+	deleteTxn, err := b.dacky.NewTransaction()
 	if err != nil {
 		return err
 	}
-	defer upsertTxn.Discard()
+	defer deleteTxn.Discard()
 
-	// Cluster deletion is handled by the deployment datastore instead of here.
-	// It deletes a cluster once all namespaces are deleted.
-
-	err = nodeDackBox.Deleter.DeleteIn(keys.nodeKey, upsertTxn)
+	err = nodeDackBox.Deleter.DeleteIn(keys.nodeKey, deleteTxn)
 	if err != nil {
 		return err
 	}
 	for _, component := range keys.componentKeys {
-		if err := nodeComponentEdgeDackBox.Deleter.DeleteIn(component.nodeComponentEdgeKey, upsertTxn); err != nil {
+		if err := nodeComponentEdgeDackBox.Deleter.DeleteIn(component.nodeComponentEdgeKey, deleteTxn); err != nil {
 			return err
 		}
-		if upsertTxn.Graph().CountRefsTo(component.componentKey) == 0 {
-			if err := componentDackBox.Deleter.DeleteIn(component.componentKey, upsertTxn); err != nil {
+		// Only delete component and CVEs if there are no more references to it.
+		if deleteTxn.Graph().CountRefsTo(component.componentKey) == 0 {
+			if err := componentDackBox.Deleter.DeleteIn(component.componentKey, deleteTxn); err != nil {
 				return err
 			}
 			for _, cve := range component.cveKeys {
-				if err := componentCVEEdgeDackBox.Deleter.DeleteIn(cve.componentCVEEdgeKey, upsertTxn); err != nil {
+				if err := componentCVEEdgeDackBox.Deleter.DeleteIn(cve.componentCVEEdgeKey, deleteTxn); err != nil {
 					return err
 				}
-				if err := cveDackBox.Deleter.DeleteIn(cve.cveKey, upsertTxn); err != nil {
+				if err := cveDackBox.Deleter.DeleteIn(cve.cveKey, deleteTxn); err != nil {
 					return err
 				}
 			}
@@ -438,20 +444,17 @@ func (b *storeImpl) deleteNodeKeys(keys *nodeKeySet) error {
 	}
 
 	for _, nodeCVEEdgeKey := range keys.nodeCVEEdgeKeys {
-		if err := nodeCVEEdgeDackBox.Deleter.DeleteIn(nodeCVEEdgeKey, upsertTxn); err != nil {
+		if err := nodeCVEEdgeDackBox.Deleter.DeleteIn(nodeCVEEdgeKey, deleteTxn); err != nil {
 			return err
 		}
 	}
 
-	// If the cluster has no more namespaces nor nodes, remove its refs. (Clusters only have forward refs)
-	if keys.clusterKey != nil && len(namespaceDackBox.BucketHandler.FilterKeys(upsertTxn.Graph().GetRefsFrom(keys.clusterKey))) == 0 &&
-		len(nodeDackBox.BucketHandler.FilterKeys(upsertTxn.Graph().GetRefsFrom(keys.clusterKey))) == 0 {
-		if err := upsertTxn.Graph().DeleteRefsFrom(keys.clusterKey); err != nil {
-			return err
-		}
+	// Delete the references from cluster to node.
+	if err := deleteTxn.Graph().DeleteRefsTo(keys.nodeKey); err != nil {
+		return err
 	}
 
-	return upsertTxn.Commit()
+	return deleteTxn.Commit()
 }
 
 // Reading a node from the DB.

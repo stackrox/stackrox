@@ -6,6 +6,7 @@ import (
 	protoTypes "github.com/gogo/protobuf/types"
 	componentCVEEdgeDackBox "github.com/stackrox/rox/central/componentcveedge/dackbox"
 	cveDackBox "github.com/stackrox/rox/central/cve/dackbox"
+	cveUtil "github.com/stackrox/rox/central/cve/utils"
 	imageDackBox "github.com/stackrox/rox/central/image/dackbox"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
@@ -380,9 +381,17 @@ func (b *storeImpl) writeCVEParts(txn *dackbox.Transaction, parts *CVEParts, iTi
 		parts.cve.CreatedAt = currCVE.GetCreatedAt()
 		parts.cve.SuppressActivation = currCVE.GetSuppressActivation()
 		parts.cve.SuppressExpiry = currCVE.GetSuppressExpiry()
+
+		parts.cve.Types = cveUtil.AddCVETypeIfAbsent(currCVE.GetTypes(), storage.CVE_IMAGE_CVE)
 	} else {
 		parts.cve.CreatedAt = iTime
+
+		// Populate the types slice for the new CVE.
+		parts.cve.Types = []storage.CVE_CVEType{storage.CVE_IMAGE_CVE}
 	}
+
+	parts.cve.Type = storage.CVE_UNKNOWN_CVE
+
 	if err := cveDackBox.Upserter.UpsertIn(nil, parts.cve, txn); err != nil {
 		return nil, err
 	}
@@ -394,33 +403,34 @@ func (b *storeImpl) writeCVEParts(txn *dackbox.Transaction, parts *CVEParts, iTi
 
 func (b *storeImpl) deleteImageKeys(keys *imageKeySet) error {
 	// Delete the keys
-	upsertTxn, err := b.dacky.NewTransaction()
+	deleteTxn, err := b.dacky.NewTransaction()
 	if err != nil {
 		return err
 	}
-	defer upsertTxn.Discard()
+	defer deleteTxn.Discard()
 
-	err = imageDackBox.Deleter.DeleteIn(keys.imageKey, upsertTxn)
+	err = imageDackBox.Deleter.DeleteIn(keys.imageKey, deleteTxn)
 	if err != nil {
 		return err
 	}
-	err = imageDackBox.ListDeleter.DeleteIn(keys.listImageKey, upsertTxn)
+	err = imageDackBox.ListDeleter.DeleteIn(keys.listImageKey, deleteTxn)
 	if err != nil {
 		return err
 	}
 	for _, component := range keys.componentKeys {
-		if err := imageComponentEdgeDackBox.Deleter.DeleteIn(component.imageComponentEdgeKey, upsertTxn); err != nil {
+		if err := imageComponentEdgeDackBox.Deleter.DeleteIn(component.imageComponentEdgeKey, deleteTxn); err != nil {
 			return err
 		}
-		if upsertTxn.Graph().CountRefsTo(component.componentKey) == 0 {
-			if err := componentDackBox.Deleter.DeleteIn(component.componentKey, upsertTxn); err != nil {
+		// Only delete component and CVEs if there are no more references to it.
+		if deleteTxn.Graph().CountRefsTo(component.componentKey) == 0 {
+			if err := componentDackBox.Deleter.DeleteIn(component.componentKey, deleteTxn); err != nil {
 				return err
 			}
 			for _, cve := range component.cveKeys {
-				if err := componentCVEEdgeDackBox.Deleter.DeleteIn(cve.componentCVEEdgeKey, upsertTxn); err != nil {
+				if err := componentCVEEdgeDackBox.Deleter.DeleteIn(cve.componentCVEEdgeKey, deleteTxn); err != nil {
 					return err
 				}
-				if err := cveDackBox.Deleter.DeleteIn(cve.cveKey, upsertTxn); err != nil {
+				if err := cveDackBox.Deleter.DeleteIn(cve.cveKey, deleteTxn); err != nil {
 					return err
 				}
 			}
@@ -428,11 +438,11 @@ func (b *storeImpl) deleteImageKeys(keys *imageKeySet) error {
 	}
 
 	for _, imageCVEEdgeKey := range keys.imageCVEEdgeKeys {
-		if err := imageCVEEdgeDackBox.Deleter.DeleteIn(imageCVEEdgeKey, upsertTxn); err != nil {
+		if err := imageCVEEdgeDackBox.Deleter.DeleteIn(imageCVEEdgeKey, deleteTxn); err != nil {
 			return err
 		}
 	}
-	return upsertTxn.Commit()
+	return deleteTxn.Commit()
 }
 
 // Reading an image from the DB.

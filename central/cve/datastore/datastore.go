@@ -31,7 +31,6 @@ type DataStore interface {
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
 	EnrichNodeWithSuppressedCVEs(node *storage.Node)
 
-	Upsert(ctx context.Context, cves ...*storage.CVE) error
 	UpsertClusterCVEs(ctx context.Context, cves ...converter.ClusterCVEParts) error
 	Delete(ctx context.Context, ids ...string) error
 }
