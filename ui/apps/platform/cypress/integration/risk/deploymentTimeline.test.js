@@ -75,7 +75,6 @@ describe('Risk Page Deployment Event Timeline', () => {
 
             cy.wait('@getDeploymentEventTimeline');
 
-            cy.wait(1000);
             cy.get(selectors.eventTimeline.timeline.mainView.clusteredEvent.generic).click();
 
             cy.get(selectors.tooltip.title).should('contain', '3 Events within 0 ms');
@@ -117,7 +116,6 @@ describe('Risk Page Deployment Event Timeline', () => {
             cy.get(selectors.eventTimeline.timeline.mainView.event.policyViolation);
 
             // filter by something else
-            cy.wait(1000);
             cy.get(selectors.eventTimeline.select.input).click();
             cy.get(
                 `${selectors.eventTimeline.select.options}:eq(${FILTER_OPTIONS.PROCESS_ACTIVITIES})`
@@ -148,8 +146,7 @@ describe('Risk Page Deployment Event Timeline', () => {
             cy.get(selectors.eventTimeline.timeline.mainView.event.processInBaselineActivity);
 
             // filter by something else
-            cy.wait(1000);
-            cy.get(selectors.eventTimeline.select.input).click({ force: true });
+            cy.get(selectors.eventTimeline.select.input).click();
             cy.get(
                 `${selectors.eventTimeline.select.options}:eq(${FILTER_OPTIONS.POLICY_VIOLATIONS})`
             ).click({ force: true });
@@ -181,8 +178,7 @@ describe('Risk Page Deployment Event Timeline', () => {
             cy.get(selectors.eventTimeline.timeline.mainView.event.restart);
 
             // filter by something else
-            cy.wait(1000);
-            cy.get(selectors.eventTimeline.select.input).click({ force: true });
+            cy.get(selectors.eventTimeline.select.input).click();
             cy.get(
                 `${selectors.eventTimeline.select.options}:eq(${FILTER_OPTIONS.POLICY_VIOLATIONS})`
             ).click({ force: true });
@@ -209,8 +205,7 @@ describe('Risk Page Deployment Event Timeline', () => {
             cy.get(selectors.eventTimeline.timeline.mainView.event.termination);
 
             // filter by something else
-            cy.wait(1000);
-            cy.get(selectors.eventTimeline.select.input).click({ force: true });
+            cy.get(selectors.eventTimeline.select.input).click();
             cy.get(
                 `${selectors.eventTimeline.select.options}:eq(${FILTER_OPTIONS.POLICY_VIOLATIONS})`
             ).click({ force: true });
@@ -283,7 +278,6 @@ describe('Risk Page Deployment Event Timeline', () => {
             cy.wait('@getDeploymentEventTimeline');
 
             // trigger the tooltip
-            cy.wait(1000);
             cy.get(selectors.eventTimeline.timeline.mainView.event.policyViolation).trigger(
                 'mouseenter'
             );
@@ -314,7 +308,6 @@ describe('Risk Page Deployment Event Timeline', () => {
             cy.wait('@getDeploymentEventTimeline');
 
             // trigger the tooltip
-            cy.wait(1000);
             cy.get(
                 `${selectors.eventTimeline.timeline.mainView.event.processActivity}:eq(0)`
             ).trigger('mouseenter');
@@ -351,7 +344,6 @@ describe('Risk Page Deployment Event Timeline', () => {
             cy.wait('@getDeploymentEventTimeline');
 
             // trigger the tooltip
-            cy.wait(1000);
             cy.get(
                 `${selectors.eventTimeline.timeline.mainView.event.processActivity}:eq(1)`
             ).trigger('mouseenter');
@@ -391,7 +383,6 @@ describe('Risk Page Deployment Event Timeline', () => {
             cy.wait('@getDeploymentEventTimeline');
 
             // trigger the tooltip
-            cy.wait(1000);
             cy.get(
                 `${selectors.eventTimeline.timeline.mainView.event.processActivity}:eq(2)`
             ).trigger('mouseenter');
@@ -430,7 +421,6 @@ describe('Risk Page Deployment Event Timeline', () => {
             cy.wait('@getDeploymentEventTimeline');
 
             // trigger the tooltip
-            cy.wait(1000);
             cy.get(
                 `${selectors.eventTimeline.timeline.mainView.event.processActivity}:eq(3)`
             ).trigger('mouseenter');
@@ -469,7 +459,6 @@ describe('Risk Page Deployment Event Timeline', () => {
             cy.wait('@getDeploymentEventTimeline');
 
             // trigger the tooltip
-            cy.wait(1000);
             cy.get(
                 selectors.eventTimeline.timeline.mainView.event.processInBaselineActivity
             ).trigger('mouseenter');
@@ -502,7 +491,6 @@ describe('Risk Page Deployment Event Timeline', () => {
             cy.wait('@getDeploymentEventTimeline');
 
             // trigger the tooltip
-            cy.wait(1000);
             cy.get(selectors.eventTimeline.timeline.mainView.event.restart).trigger('mouseenter');
 
             // the header should include the event name
@@ -531,7 +519,6 @@ describe('Risk Page Deployment Event Timeline', () => {
             cy.wait('@getDeploymentEventTimeline');
 
             // trigger the tooltip
-            cy.wait(1000);
             cy.get(selectors.eventTimeline.timeline.mainView.event.termination).trigger(
                 'mouseenter'
             );
@@ -645,7 +632,6 @@ describe('Risk Page Deployment Event Timeline', () => {
 
             cy.wait('@getDeploymentEventTimeline');
 
-            cy.wait(1000);
             cy.get(selectors.eventTimeline.timeline.namesList.drillDownButtonInFirstRow).trigger(
                 'mouseenter'
             );
