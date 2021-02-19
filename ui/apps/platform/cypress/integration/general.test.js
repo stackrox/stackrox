@@ -18,48 +18,70 @@ describe('General sanity checks', () => {
     });
 
     describe('should have correct page titles based on URL', () => {
+        beforeEach(() => {
+            cy.route('GET', api.metadata).as('metadata');
+        });
+
         it('for Dashboard', () => {
             cy.visit('/main');
+            cy.wait('@metadata');
+
             cy.title().should('eq', 'Dashboard | StackRox');
         });
 
         it('for Network Graph', () => {
             cy.visit('/main/network');
+            cy.wait('@metadata');
+
             cy.title().should('eq', 'Network Graph | StackRox');
         });
 
         it('for Violations', () => {
             cy.visit('/main/violations');
+            cy.wait('@metadata');
+
             cy.title().should('eq', 'Violations | StackRox');
         });
 
         it('for Violations with side panel open', () => {
             cy.visit('/main/violations/1234');
+            cy.wait('@metadata');
+
             cy.title().should('eq', 'Violations | StackRox');
         });
 
         it('for Compliance Dashboard', () => {
             cy.visit('/main/compliance');
+            cy.wait('@metadata');
+
             cy.title().should('eq', 'Compliance | StackRox');
         });
 
         it('for Compliance Namespaces', () => {
             cy.visit('/main/compliance/namespaces');
+            cy.wait('@metadata');
+
             cy.title().should('eq', 'Compliance - Namespace | StackRox');
         });
 
         it('for API Docs', () => {
             cy.visit('/main/apidocs');
+            cy.wait('@metadata');
+
             cy.title().should('eq', 'API Reference | StackRox');
         });
 
         it('for User Page', () => {
             cy.visit('/main/user');
+            cy.wait('@metadata');
+
             cy.title().should('eq', 'User Page | StackRox');
         });
 
         it('for License Page', () => {
             cy.visit('/main/license');
+            cy.wait('@metadata');
+
             cy.title().should('eq', 'License | StackRox');
         });
     });
