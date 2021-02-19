@@ -13,7 +13,6 @@ function setAlertRoutes() {
     cy.route('GET', api.alerts.alerts).as('alerts');
     cy.route('GET', api.alerts.alertById).as('alertById');
     cy.route('POST', api.graphql(api.alerts.graphqlOps.getTags)).as('getTags');
-    cy.route('POST', api.graphql(api.alerts.graphqlOps.addAlertTags)).as('addAlertTags');
     cy.route('POST', api.graphql(api.alerts.graphqlOps.tagsAutocomplete)).as('tagsAutocomplete');
     cy.route('POST', api.graphql(api.alerts.graphqlOps.bulkAddAlertTags)).as('bulkAddAlertTags');
 }
@@ -58,13 +57,12 @@ describe('Violation Page: Tags', () => {
 
         const tag = randomstring.generate(7);
         cy.get(selectors.sidePanel.tags.input).type(`${tag}{enter}`);
-        cy.wait(['@addAlertTags', '@getTags', '@tagsAutocomplete']);
         // do it again to check that no duplicate tags can be added
         cy.get(selectors.sidePanel.tags.input).type(`${tag}{enter}`);
         cy.wait(['@getTags', '@tagsAutocomplete']);
 
         // pressing {enter} won't save the tag, only one would be displayed as tag chip
-        cy.get(`${selectors.sidePanel.tags.values}:contains("${tag}")`).should('have.length', 1);
+        cy.get(selectors.sidePanel.tags.values).contains(tag).should('have.length', 1);
     });
 
     it('should add tag without allowing duplicates with leading/trailing whitespace', () => {
@@ -73,13 +71,12 @@ describe('Violation Page: Tags', () => {
 
         const tag = randomstring.generate(7);
         cy.get(selectors.sidePanel.tags.input).type(`${tag}{enter}`);
-        cy.wait(['@addAlertTags', '@getTags', '@tagsAutocomplete']);
         // do it again to check that no duplicate tags can be added
-        cy.get(selectors.sidePanel.tags.input).type(` ${tag} {enter}`);
+        cy.get(selectors.sidePanel.tags.input).type(`   ${tag}   {enter}`);
         cy.wait(['@getTags', '@tagsAutocomplete']);
 
         // pressing {enter} won't save the tag, only one would be displayed as tag chip
-        cy.get(`${selectors.sidePanel.tags.values}:contains("${tag}")`).should('have.length', 1);
+        cy.get(selectors.sidePanel.tags.values).contains(tag).should('have.length', 1);
     });
 
     it('should add bulk tags without duplication and search by a tag', () => {
