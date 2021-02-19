@@ -1,6 +1,8 @@
 package data
 
-import "time"
+import (
+	"time"
+)
 
 // NodeResourceInfo contains telemetry data about the resources belonging to a node in a Kubernetes cluster
 type NodeResourceInfo struct {
@@ -60,8 +62,8 @@ type SensorInfo struct {
 
 // ClusterInfo contains telemetry data about a Kubernetes cluster
 type ClusterInfo struct {
-	ID string `json:"id"`
-
+	ID            string            `json:"id"`
+	HelmManaged   bool              `json:"helmManaged"`
 	Sensor        *SensorInfo       `json:"sensor,omitempty"`
 	Orchestrator  *OrchestratorInfo `json:"orchestrator,omitempty"`
 	Nodes         []*NodeInfo       `json:"nodes,omitempty"`

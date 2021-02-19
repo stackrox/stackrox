@@ -1,14 +1,18 @@
 package gatherers
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
 	"github.com/blevesearch/bleve"
 	"github.com/dgraph-io/badger"
+	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/grpc/metrics"
 	installation "github.com/stackrox/rox/central/installation/store"
+	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore/mocks"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -26,6 +30,7 @@ func TestGatherers(t *testing.T) {
 
 type gathererTestSuite struct {
 	suite.Suite
+	mockCtrl *gomock.Controller
 
 	bolt      *bbolt.DB
 	badger    *badger.DB
@@ -33,10 +38,13 @@ type gathererTestSuite struct {
 	rocks     *rocksdb.RocksDB
 	index     bleve.Index
 
-	gatherer *CentralGatherer
+	gatherer                     *CentralGatherer
+	sensorUpgradeConfigDatastore *mocks.MockDataStore
 }
 
 func (s *gathererTestSuite) SetupSuite() {
+	s.mockCtrl = gomock.NewController(s.T())
+
 	boltDB, err := bolthelper.NewTemp("gatherer_test.db")
 	s.Require().NoError(err, "Failed to make BoltDB: %s", err)
 	s.bolt = boltDB
@@ -57,7 +65,11 @@ func (s *gathererTestSuite) SetupSuite() {
 	installationStore := installation.New(s.bolt)
 	s.Require().NoError(err, "Failed to make installation store")
 
-	s.gatherer = newCentralGatherer(nil, installationStore, newDatabaseGatherer(newRocksDBGatherer(s.rocks), newBoltGatherer(s.bolt), newBleveGatherer(s.index)), newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()), gatherers.NewComponentInfoGatherer())
+	s.sensorUpgradeConfigDatastore = mocks.NewMockDataStore(s.mockCtrl)
+	s.sensorUpgradeConfigDatastore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Return(&storage.SensorUpgradeConfig{
+		EnableAutoUpgrade: true,
+	}, nil)
+	s.gatherer = newCentralGatherer(nil, installationStore, newDatabaseGatherer(newRocksDBGatherer(s.rocks), newBoltGatherer(s.bolt), newBleveGatherer(s.index)), newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()), gatherers.NewComponentInfoGatherer(), s.sensorUpgradeConfigDatastore)
 }
 
 func (s *gathererTestSuite) TearDownSuite() {
@@ -73,7 +85,7 @@ func (s *gathererTestSuite) TearDownSuite() {
 }
 
 func (s *gathererTestSuite) TestJSONSerialization() {
-	metrics := s.gatherer.Gather()
+	metrics := s.gatherer.Gather(context.Background())
 
 	bytes, err := json.Marshal(metrics)
 	s.NoError(err)

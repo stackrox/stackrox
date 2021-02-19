@@ -63,7 +63,7 @@ func (c *ClusterGatherer) Gather(ctx context.Context, pullFromSensors bool) []*d
 
 	if pullFromSensors {
 		for _, sensorConn := range c.sensorConnMgr.GetActiveConnections() {
-			go c.clusterFromSensor(ctx, sensorConn, clusterRetC)
+			go c.clusterFromSensor(ctx, sensorConn, clusterRetC, clusterMap)
 			outstanding++
 		}
 	}
@@ -98,8 +98,8 @@ type clusterFromSensorResponse struct {
 	err         error
 }
 
-func (c *ClusterGatherer) clusterFromSensor(ctx context.Context, sensorConn connection.SensorConnection, outC chan<- clusterFromSensorResponse) {
-	clusterInfo, err := c.fetchClusterFromSensor(ctx, sensorConn)
+func (c *ClusterGatherer) clusterFromSensor(ctx context.Context, sensorConn connection.SensorConnection, outC chan<- clusterFromSensorResponse, clusterMap map[string]*storage.Cluster) {
+	clusterInfo, err := c.fetchClusterFromSensor(ctx, sensorConn, clusterMap)
 	select {
 	case <-ctx.Done():
 	case outC <- clusterFromSensorResponse{
@@ -110,7 +110,7 @@ func (c *ClusterGatherer) clusterFromSensor(ctx context.Context, sensorConn conn
 	}
 }
 
-func (c *ClusterGatherer) fetchClusterFromSensor(ctx context.Context, sensorConn connection.SensorConnection) (*data.ClusterInfo, error) {
+func (c *ClusterGatherer) fetchClusterFromSensor(ctx context.Context, sensorConn connection.SensorConnection, clusterMap map[string]*storage.Cluster) (*data.ClusterInfo, error) {
 	var clusterBytes []byte
 	callback := func(ctx concurrency.ErrorWaitable, sensorInfo *central.TelemetryResponsePayload_ClusterInfo) error {
 		clusterBytes = append(clusterBytes, sensorInfo.Chunk...)
@@ -131,6 +131,7 @@ func (c *ClusterGatherer) fetchClusterFromSensor(ctx context.Context, sensorConn
 		return nil, err
 	}
 	cluster.ID = sensorConn.ClusterID()
+	cluster.HelmManaged = clusterMap[cluster.ID].GetHelmConfig() != nil
 	if cluster.Sensor != nil {
 		curTime := time.Now()
 		cluster.Sensor.LastCheckIn = &curTime
@@ -145,7 +146,8 @@ func (c *ClusterGatherer) clusterFromDatastores(ctx context.Context, cluster *st
 	providerMetadata := status.GetProviderMetadata()
 	namespaces, errList := c.namespaceGatherer.Gather(ctx, cluster.GetId())
 	clusterInfo := &data.ClusterInfo{
-		ID: cluster.GetId(),
+		ID:          cluster.GetId(),
+		HelmManaged: cluster.GetHelmConfig() != nil,
 		Sensor: &data.SensorInfo{
 			RoxComponentInfo: &data.RoxComponentInfo{
 				Version:  status.GetSensorVersion(),

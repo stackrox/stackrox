@@ -96,10 +96,11 @@ type CentralInfo struct {
 	ID               string     `json:"id,omitempty"`
 	InstallationTime *time.Time `json:"installationTime,omitempty"`
 
-	License      *LicenseJSON      `json:"license,omitempty"`
-	Storage      *StorageInfo      `json:"storage,omitempty"`
-	APIStats     *APIStats         `json:"apiStats,omitempty"`
-	Orchestrator *OrchestratorInfo `json:"orchestrator,omitempty"`
+	License            *LicenseJSON      `json:"license,omitempty"`
+	Storage            *StorageInfo      `json:"storage,omitempty"`
+	APIStats           *APIStats         `json:"apiStats,omitempty"`
+	Orchestrator       *OrchestratorInfo `json:"orchestrator,omitempty"`
+	AutoUpgradeEnabled bool              `json:"autoUpgradeEnabled,omitempty"`
 
 	Errors []string `json:"errors,omitempty"`
 }
