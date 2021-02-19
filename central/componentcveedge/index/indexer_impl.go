@@ -68,6 +68,11 @@ func (b *indexerImpl) processBatch(componentcveedges []*storage.ComponentCVEEdge
 	return b.index.Batch(batch)
 }
 
+func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ComponentCVEEdge")
+	return blevesearch.RunCountRequest(v1.SearchCategory_COMPONENT_VULN_EDGE, q, b.index, mappings.OptionsMap, opts...)
+}
+
 func (b *indexerImpl) DeleteComponentCVEEdge(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "ComponentCVEEdge")
 	if err := b.index.Delete(id); err != nil {

@@ -68,6 +68,11 @@ func (b *indexerImpl) processBatch(cves []*storage.CVE) error {
 	return b.index.Batch(batch)
 }
 
+func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "CVE")
+	return blevesearch.RunCountRequest(v1.SearchCategory_VULNERABILITIES, q, b.index, mappings.OptionsMap, opts...)
+}
+
 func (b *indexerImpl) DeleteCVE(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "CVE")
 	if err := b.index.Delete(id); err != nil {

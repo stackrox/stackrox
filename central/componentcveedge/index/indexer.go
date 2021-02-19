@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddComponentCVEEdge(componentcveedge *storage.ComponentCVEEdge) error
 	AddComponentCVEEdges(componentcveedges []*storage.ComponentCVEEdge) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteComponentCVEEdge(id string) error
 	DeleteComponentCVEEdges(ids []string) error
 	MarkInitialIndexingComplete() error

@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddServiceAccount(serviceaccount *storage.ServiceAccount) error
 	AddServiceAccounts(serviceaccounts []*storage.ServiceAccount) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteServiceAccount(id string) error
 	DeleteServiceAccounts(ids []string) error
 	MarkInitialIndexingComplete() error

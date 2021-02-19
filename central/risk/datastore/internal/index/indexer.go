@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddRisk(risk *storage.Risk) error
 	AddRisks(risks []*storage.Risk) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteRisk(id string) error
 	DeleteRisks(ids []string) error
 	MarkInitialIndexingComplete() error

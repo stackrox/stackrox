@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mathutil"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch/validpositions"
 )
@@ -285,6 +286,44 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index
 		return nil, err
 	}
 	return runQuery(ctx, bleveQuery, index, highlightContext)
+}
+
+// RunCountRequest builds a query and runs it to get the count of matches against the index.
+func RunCountRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index, optionsMap searchPkg.OptionsMap, searchOpts ...SearchOption) (int, error) {
+	ctx := bleveContext{
+		filters: make(map[v1.SearchCategory]query.Query),
+	}
+
+	var opts opts
+	for _, opt := range searchOpts {
+		if err := opt(&opts); err != nil {
+			return 0, errors.Wrap(err, "could not apply search option")
+		}
+	}
+
+	if opts.hook != nil {
+		ctx.hook = opts.hook(category)
+	}
+
+	for k, v := range q.GetOptions().GetCategoryToIds() {
+		ctx.filters[v1.SearchCategory(k)] = bleve.NewDocIDQuery(v.GetIds())
+	}
+
+	bleveQuery, _, err := buildQuery(ctx, index, category, q, optionsMap)
+	if err != nil {
+		return 0, err
+	}
+	searchRequest := bleve.NewSearchRequest(bleveQuery)
+	searchRequest.Size = 0
+
+	result, err := index.Search(searchRequest)
+	if err != nil {
+		return 0, err
+	}
+	if result.Total > uint64(mathutil.MaxIntVal) {
+		return 0, errors.Errorf("the count is out of range, max: %v got: %v", mathutil.MaxIntVal, result.Total)
+	}
+	return int(result.Total), nil
 }
 
 func getSortOrder(pagination *v1.QueryPagination, optionsMap searchPkg.OptionsMap) (search.SortOrder, error) {

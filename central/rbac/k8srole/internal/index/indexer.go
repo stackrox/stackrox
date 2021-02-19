@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddK8SRole(k8srole *storage.K8SRole) error
 	AddK8SRoles(k8sroles []*storage.K8SRole) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteK8SRole(id string) error
 	DeleteK8SRoles(ids []string) error
 	MarkInitialIndexingComplete() error

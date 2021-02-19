@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddImageComponentEdge(imagecomponentedge *storage.ImageComponentEdge) error
 	AddImageComponentEdges(imagecomponentedges []*storage.ImageComponentEdge) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteImageComponentEdge(id string) error
 	DeleteImageComponentEdges(ids []string) error
 	MarkInitialIndexingComplete() error

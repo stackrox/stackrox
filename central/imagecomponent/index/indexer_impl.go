@@ -68,6 +68,11 @@ func (b *indexerImpl) processBatch(imagecomponents []*storage.ImageComponent) er
 	return b.index.Batch(batch)
 }
 
+func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ImageComponent")
+	return blevesearch.RunCountRequest(v1.SearchCategory_IMAGE_COMPONENTS, q, b.index, mappings.OptionsMap, opts...)
+}
+
 func (b *indexerImpl) DeleteImageComponent(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "ImageComponent")
 	if err := b.index.Delete(id); err != nil {

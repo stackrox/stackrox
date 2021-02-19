@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddNamespaceMetadata(namespacemetadata *storage.NamespaceMetadata) error
 	AddNamespaceMetadatas(namespacemetadatas []*storage.NamespaceMetadata) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteNamespaceMetadata(id string) error
 	DeleteNamespaceMetadatas(ids []string) error
 	MarkInitialIndexingComplete() error

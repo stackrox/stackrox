@@ -68,6 +68,11 @@ func (b *indexerImpl) processBatch(pods []*storage.Pod) error {
 	return b.index.Batch(batch)
 }
 
+func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "Pod")
+	return blevesearch.RunCountRequest(v1.SearchCategory_PODS, q, b.index, mappings.OptionsMap, opts...)
+}
+
 func (b *indexerImpl) DeletePod(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "Pod")
 	if err := b.index.Delete(id); err != nil {

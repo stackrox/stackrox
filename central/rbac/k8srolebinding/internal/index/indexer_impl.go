@@ -68,6 +68,11 @@ func (b *indexerImpl) processBatch(k8srolebindings []*storage.K8SRoleBinding) er
 	return b.index.Batch(batch)
 }
 
+func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "K8SRoleBinding")
+	return blevesearch.RunCountRequest(v1.SearchCategory_ROLEBINDINGS, q, b.index, mappings.OptionsMap, opts...)
+}
+
 func (b *indexerImpl) DeleteK8sRoleBinding(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "K8SRoleBinding")
 	if err := b.index.Delete(id); err != nil {

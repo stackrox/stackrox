@@ -68,6 +68,11 @@ func (b *indexerImpl) processBatch(clusters []*storage.Cluster) error {
 	return b.index.Batch(batch)
 }
 
+func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "Cluster")
+	return blevesearch.RunCountRequest(v1.SearchCategory_CLUSTERS, q, b.index, mappings.OptionsMap, opts...)
+}
+
 func (b *indexerImpl) DeleteCluster(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "Cluster")
 	if err := b.index.Delete(id); err != nil {

@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddBaseline(baseline *storage.ProcessBaseline) error
 	AddBaselines(baselines []*storage.ProcessBaseline) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteBaseline(id string) error
 	DeleteBaselines(ids []string) error
 	MarkInitialIndexingComplete() error

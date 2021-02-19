@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddCVE(cve *storage.CVE) error
 	AddCVEs(cves []*storage.CVE) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteCVE(id string) error
 	DeleteCVEs(ids []string) error
 	MarkInitialIndexingComplete() error

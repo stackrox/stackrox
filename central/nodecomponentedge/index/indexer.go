@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddNodeComponentEdge(nodecomponentedge *storage.NodeComponentEdge) error
 	AddNodeComponentEdges(nodecomponentedges []*storage.NodeComponentEdge) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteNodeComponentEdge(id string) error
 	DeleteNodeComponentEdges(ids []string) error
 	MarkInitialIndexingComplete() error

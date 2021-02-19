@@ -68,6 +68,11 @@ func (b *indexerImpl) processBatch(listalerts []*storage.ListAlert) error {
 	return b.index.Batch(batch)
 }
 
+func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ListAlert")
+	return blevesearch.RunCountRequest(v1.SearchCategory_ALERTS, q, b.index, mappings.OptionsMap, opts...)
+}
+
 func (b *indexerImpl) DeleteListAlert(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "ListAlert")
 	if err := b.index.Delete(id); err != nil {

@@ -68,6 +68,11 @@ func (b *indexerImpl) processBatch(clustercveedges []*storage.ClusterCVEEdge) er
 	return b.index.Batch(batch)
 }
 
+func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ClusterCVEEdge")
+	return blevesearch.RunCountRequest(v1.SearchCategory_CLUSTER_VULN_EDGE, q, b.index, mappings.OptionsMap, opts...)
+}
+
 func (b *indexerImpl) DeleteClusterCVEEdge(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "ClusterCVEEdge")
 	if err := b.index.Delete(id); err != nil {

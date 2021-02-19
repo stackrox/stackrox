@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddNode(node *storage.Node) error
 	AddNodes(nodes []*storage.Node) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteNode(id string) error
 	DeleteNodes(ids []string) error
 	MarkInitialIndexingComplete() error

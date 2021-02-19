@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddPod(pod *storage.Pod) error
 	AddPods(pods []*storage.Pod) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeletePod(id string) error
 	DeletePods(ids []string) error
 	MarkInitialIndexingComplete() error

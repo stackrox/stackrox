@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddCluster(cluster *storage.Cluster) error
 	AddClusters(clusters []*storage.Cluster) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteCluster(id string) error
 	DeleteClusters(ids []string) error
 	MarkInitialIndexingComplete() error

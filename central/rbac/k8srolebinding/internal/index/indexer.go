@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddK8sRoleBinding(k8srolebinding *storage.K8SRoleBinding) error
 	AddK8sRoleBindings(k8srolebindings []*storage.K8SRoleBinding) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteK8sRoleBinding(id string) error
 	DeleteK8sRoleBindings(ids []string) error
 	MarkInitialIndexingComplete() error

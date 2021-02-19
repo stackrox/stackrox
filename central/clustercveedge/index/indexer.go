@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddClusterCVEEdge(clustercveedge *storage.ClusterCVEEdge) error
 	AddClusterCVEEdges(clustercveedges []*storage.ClusterCVEEdge) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteClusterCVEEdge(id string) error
 	DeleteClusterCVEEdges(ids []string) error
 	MarkInitialIndexingComplete() error

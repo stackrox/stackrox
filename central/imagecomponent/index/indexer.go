@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddImageComponent(imagecomponent *storage.ImageComponent) error
 	AddImageComponents(imagecomponents []*storage.ImageComponent) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteImageComponent(id string) error
 	DeleteImageComponents(ids []string) error
 	MarkInitialIndexingComplete() error

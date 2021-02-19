@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddSecret(secret *storage.Secret) error
 	AddSecrets(secrets []*storage.Secret) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteSecret(id string) error
 	DeleteSecrets(ids []string) error
 	MarkInitialIndexingComplete() error

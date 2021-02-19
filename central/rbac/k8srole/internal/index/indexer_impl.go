@@ -68,6 +68,11 @@ func (b *indexerImpl) processBatch(k8sroles []*storage.K8SRole) error {
 	return b.index.Batch(batch)
 }
 
+func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "K8SRole")
+	return blevesearch.RunCountRequest(v1.SearchCategory_ROLES, q, b.index, mappings.OptionsMap, opts...)
+}
+
 func (b *indexerImpl) DeleteK8SRole(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "K8SRole")
 	if err := b.index.Delete(id); err != nil {

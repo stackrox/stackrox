@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddPolicy(policy *storage.Policy) error
 	AddPolicies(policies []*storage.Policy) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeletePolicy(id string) error
 	DeletePolicies(ids []string) error
 	MarkInitialIndexingComplete() error

@@ -13,6 +13,7 @@ import (
 type Indexer interface {
 	AddListAlert(listalert *storage.ListAlert) error
 	AddListAlerts(listalerts []*storage.ListAlert) error
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 	DeleteListAlert(id string) error
 	DeleteListAlerts(ids []string) error
 	MarkInitialIndexingComplete() error

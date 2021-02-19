@@ -68,6 +68,11 @@ func (b *indexerImpl) processBatch(baselines []*storage.ProcessBaseline) error {
 	return b.index.Batch(batch)
 }
 
+func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ProcessBaseline")
+	return blevesearch.RunCountRequest(v1.SearchCategory_PROCESS_BASELINES, q, b.index, mappings.OptionsMap, opts...)
+}
+
 func (b *indexerImpl) DeleteBaseline(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "ProcessBaseline")
 	if err := b.index.Delete(id); err != nil {
