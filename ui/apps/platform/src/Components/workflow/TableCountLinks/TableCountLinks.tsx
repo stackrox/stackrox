@@ -6,6 +6,7 @@ import workflowStateContext from 'Containers/workflowStateContext';
 
 type TableCountLinksProps = {
     row: {
+        vulnerabilityTypes: string[];
         deploymentCount: number;
         imageCount: number;
         componentCount: number;
@@ -17,26 +18,33 @@ type TableCountLinksProps = {
 function TableCountLinks({ row, textOnly }: TableCountLinksProps): ReactElement {
     const workflowState = useContext(workflowStateContext);
     const entityContext = workflowState.getEntityContext() as Record<ResourceType, string>;
-    const { deploymentCount, imageCount, componentCount, id } = row;
+    const { vulnerabilityTypes, deploymentCount, imageCount, componentCount, id } = row;
 
+    const isImageVuln = vulnerabilityTypes.includes('IMAGE_CVE');
+
+    // Only show entity counts on relevant pages. Node count is not currently supported.
     return (
         <div className="flex-col">
-            {!entityContext[resourceTypes.DEPLOYMENT] && (
-                <TableCountLink
-                    entityType={resourceTypes.DEPLOYMENT}
-                    count={deploymentCount}
-                    textOnly={textOnly}
-                    selectedRowId={id}
-                />
-            )}
-            {!entityContext[resourceTypes.IMAGE] && (
-                <TableCountLink
-                    entityType={resourceTypes.IMAGE}
-                    count={imageCount}
-                    textOnly={textOnly}
-                    selectedRowId={id}
-                />
-            )}
+            {isImageVuln &&
+                !entityContext[resourceTypes.DEPLOYMENT] &&
+                !entityContext[resourceTypes.NODE] && (
+                    <TableCountLink
+                        entityType={resourceTypes.DEPLOYMENT}
+                        count={deploymentCount}
+                        textOnly={textOnly}
+                        selectedRowId={id}
+                    />
+                )}
+            {isImageVuln &&
+                !entityContext[resourceTypes.IMAGE] &&
+                !entityContext[resourceTypes.NODE] && (
+                    <TableCountLink
+                        entityType={resourceTypes.IMAGE}
+                        count={imageCount}
+                        textOnly={textOnly}
+                        selectedRowId={id}
+                    />
+                )}
             {!entityContext[resourceTypes.COMPONENT] && (
                 <TableCountLink
                     entityType={resourceTypes.COMPONENT}

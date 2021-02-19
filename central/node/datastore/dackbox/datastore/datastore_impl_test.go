@@ -128,6 +128,8 @@ func (suite *NodeDataStoreTestSuite) TestBasicOps() {
 		for _, cve := range component.GetVulns() {
 			cve.FirstSystemOccurrence = storedNode.GetLastUpdated()
 			cve.FirstNodeOccurrence = storedNode.GetLastUpdated()
+			cve.VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
+			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_NODE_VULNERABILITY}
 		}
 	}
 	suite.Equal(node, storedNode)
@@ -247,6 +249,8 @@ func (suite *NodeDataStoreTestSuite) TestBasicSearch() {
 		for _, cve := range component.GetVulns() {
 			cve.FirstSystemOccurrence = nodes[0].GetLastUpdated()
 			cve.FirstNodeOccurrence = nodes[0].GetLastUpdated()
+			cve.VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
+			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_NODE_VULNERABILITY}
 		}
 	}
 	suite.Equal(node, nodes[0])

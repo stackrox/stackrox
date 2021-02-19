@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/cve/converter"
 	vulnDackBox "github.com/stackrox/rox/central/cve/dackbox"
 	"github.com/stackrox/rox/central/cve/store"
+	cveUtil "github.com/stackrox/rox/central/cve/utils"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
@@ -100,7 +101,7 @@ func (b *storeImpl) Get(id string) (cve *storage.CVE, exists bool, err error) {
 		return nil, false, err
 	}
 
-	return msg.(*storage.CVE), msg != nil, err
+	return msg.(*storage.CVE), true, err
 }
 
 func (b *storeImpl) GetBatch(ids []string) ([]*storage.CVE, []int, error) {
@@ -219,6 +220,25 @@ func (b *storeImpl) upsertClusterCVEsNoBatch(parts ...converter.ClusterCVEParts)
 			}
 		}
 
+		currCVEMsg, err := vulnDackBox.Reader.ReadIn(vulnDackBox.BucketHandler.GetKey(clusterCVE.CVE.GetId()), dackTxn)
+		if err != nil {
+			return err
+		}
+		if currCVEMsg == nil {
+			// Populate the types slice for the new CVE.
+			clusterCVE.CVE.Types = []storage.CVE_CVEType{clusterCVE.CVE.GetType()}
+		} else {
+			currCVE := currCVEMsg.(*storage.CVE)
+			clusterCVE.CVE.Suppressed = currCVE.GetSuppressed()
+			clusterCVE.CVE.CreatedAt = currCVE.GetCreatedAt()
+			clusterCVE.CVE.SuppressActivation = currCVE.GetSuppressActivation()
+			clusterCVE.CVE.SuppressExpiry = currCVE.GetSuppressExpiry()
+
+			clusterCVE.CVE.Types = cveUtil.AddCVETypeIfAbsent(currCVE.GetTypes(), clusterCVE.CVE.GetType())
+		}
+
+		clusterCVE.CVE.Type = storage.CVE_UNKNOWN_CVE
+
 		if err := vulnDackBox.Upserter.UpsertIn(nil, clusterCVE.CVE, dackTxn); err != nil {
 			return err
 		}
@@ -260,8 +280,7 @@ func (b *storeImpl) deleteNoBatch(ids ...string) error {
 	defer dackTxn.Discard()
 
 	for _, id := range ids {
-		err := vulnDackBox.Deleter.DeleteIn(vulnDackBox.BucketHandler.GetKey(id), dackTxn)
-		if err != nil {
+		if err := vulnDackBox.Deleter.DeleteIn(vulnDackBox.BucketHandler.GetKey(id), dackTxn); err != nil {
 			return err
 		}
 	}

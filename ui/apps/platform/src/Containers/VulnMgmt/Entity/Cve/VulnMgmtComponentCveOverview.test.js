@@ -23,7 +23,7 @@ describe('VulnMgmtComponentCveOverview', () => {
         const data = {
             cve: 'CVE-2019-9923',
             envImpact: 0.375,
-            vulnerabilityType: 'IMAGE_CVE',
+            vulnerabilityTypes: ['IMAGE_CVE'],
             cvss: 7.5,
             scoreVersion: 'V3',
             link: mockExternalLink,

@@ -9,6 +9,7 @@ import (
 	clusterIndexer "github.com/stackrox/rox/central/cluster/index"
 	clusterCVEEdgeIndexer "github.com/stackrox/rox/central/clustercveedge/index"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
+	"github.com/stackrox/rox/central/cve/converter"
 	cveDackbox "github.com/stackrox/rox/central/cve/dackbox"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	cveIndex "github.com/stackrox/rox/central/cve/index"
@@ -37,21 +38,25 @@ func TestUnsuppressCVEs(t *testing.T) {
 		{
 			Id:             "cve1",
 			Suppressed:     true,
+			Type:           storage.CVE_K8S_CVE,
 			SuppressExpiry: &types.Timestamp{Seconds: time.Now().Unix() - int64(3*24*time.Hour)},
 		},
 		{
 			Id:             "cve2",
 			Suppressed:     true,
+			Type:           storage.CVE_K8S_CVE,
 			SuppressExpiry: &types.Timestamp{Seconds: time.Now().Unix() - int64(2*24*time.Hour)},
 		},
 		{
 			Id:             "cve3",
 			Suppressed:     true,
+			Type:           storage.CVE_K8S_CVE,
 			SuppressExpiry: &types.Timestamp{Seconds: time.Now().Unix() - int64(24*time.Hour)},
 		},
 		{
 			Id:             "cve4",
 			Suppressed:     false,
+			Type:           storage.CVE_K8S_CVE,
 			SuppressExpiry: &types.Timestamp{},
 		},
 	}
@@ -61,16 +66,19 @@ func TestUnsuppressCVEs(t *testing.T) {
 		{
 			Id:             "cve5",
 			Suppressed:     true,
+			Type:           storage.CVE_K8S_CVE,
 			SuppressExpiry: &types.Timestamp{Seconds: later},
 		},
 		{
 			Id:             "cve6",
 			Suppressed:     true,
+			Type:           storage.CVE_K8S_CVE,
 			SuppressExpiry: &types.Timestamp{Seconds: time.Now().Unix()},
 		},
 		{
 			Id:             "cve7",
 			Suppressed:     true,
+			Type:           storage.CVE_K8S_CVE,
 			SuppressExpiry: &types.Timestamp{Seconds: time.Now().Unix() + int64(24*time.Hour)},
 		},
 	}
@@ -85,7 +93,14 @@ func TestUnsuppressCVEs(t *testing.T) {
 
 	ds := createDataStore(t, dacky, bleveIndex)
 
-	err = ds.Upsert(reprocessorCtx, append(expiredCVEs, unexpiredCVEs...)...)
+	parts := make([]converter.ClusterCVEParts, 0, len(expiredCVEs)+len(unexpiredCVEs))
+	for _, expiredCVE := range expiredCVEs {
+		parts = append(parts, converter.ClusterCVEParts{CVE: expiredCVE})
+	}
+	for _, unexpiredCVE := range unexpiredCVEs {
+		parts = append(parts, converter.ClusterCVEParts{CVE: unexpiredCVE})
+	}
+	err = ds.UpsertClusterCVEs(reprocessorCtx, parts...)
 	require.NoError(t, err)
 
 	// ensure the cves are indexed

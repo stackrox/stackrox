@@ -30,7 +30,7 @@ const emptyCve = {
     scoreVersion: '',
     summary: '',
     vectors: {},
-    vulnerabilityType: '',
+    vulnerabilityTypes: [],
 };
 
 const VulnMgmtCveOverview = ({ data, entityContext }) => {
@@ -50,7 +50,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         publishedOn,
         lastModified,
         scoreVersion,
-        vulnerabilityType,
+        vulnerabilityTypes,
     } = safeData;
 
     const linkToMoreInfo = isValidURL(link) ? (
@@ -148,7 +148,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                                             className="w-full md:w-auto p-4 border-base-400 border-l"
                                             data-testid="cve-type"
                                         >
-                                            <CveType context="callout" type={vulnerabilityType} />
+                                            <CveType context="callout" types={vulnerabilityTypes} />
                                         </span>
                                         <span className="w-full md:w-auto p-4 border-base-400 border-l">
                                             <LabelChip

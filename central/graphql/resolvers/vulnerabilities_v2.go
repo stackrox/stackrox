@@ -215,43 +215,46 @@ func (resolver *cVEResolver) getEnvImpactComponentsForNodes(ctx context.Context)
 
 // EnvImpact is the fraction of deployments that contains the CVE
 func (resolver *cVEResolver) EnvImpact(ctx context.Context) (float64, error) {
-	switch resolver.data.GetType() {
-	case storage.CVE_K8S_CVE:
-		return resolver.getEnvImpactForK8sIstioVuln(ctx, converter.K8s)
-	case storage.CVE_ISTIO_CVE:
-		return resolver.getEnvImpactForK8sIstioVuln(ctx, converter.Istio)
-	case storage.CVE_IMAGE_CVE:
-		numerator, denominator, err := resolver.getEnvImpactComponentsForImages(ctx)
+	var numerator, denominator int
+
+	for _, vulnType := range resolver.data.GetTypes() {
+		var n, d int
+		var err error
+
+		switch vulnType {
+		case storage.CVE_K8S_CVE:
+			n, d, err = resolver.getEnvImpactComponentsForK8sIstioVuln(ctx, converter.K8s)
+		case storage.CVE_ISTIO_CVE:
+			n, d, err = resolver.getEnvImpactComponentsForK8sIstioVuln(ctx, converter.Istio)
+		case storage.CVE_IMAGE_CVE:
+			n, d, err = resolver.getEnvImpactComponentsForImages(ctx)
+		case storage.CVE_NODE_CVE:
+			n, d, err = resolver.getEnvImpactComponentsForNodes(ctx)
+		default:
+			return 0, errors.Errorf("unknown CVE type: %s", vulnType)
+		}
+
 		if err != nil {
 			return 0, err
 		}
-		if denominator == 0 {
-			return 0, nil
-		}
-		return float64(numerator) / float64(denominator), nil
-	case storage.CVE_NODE_CVE:
-		numerator, denominator, err := resolver.getEnvImpactComponentsForNodes(ctx)
-		if err != nil {
-			return 0, err
-		}
-		if denominator == 0 {
-			return 0, nil
-		}
-		return float64(numerator) / float64(denominator), nil
+
+		numerator += n
+		denominator += d
 	}
-	return 0, errors.Errorf("unknown cve type: %s", resolver.data.GetType())
+
+	if denominator == 0 {
+		return 0, nil
+	}
+
+	return float64(numerator) / float64(denominator), nil
 }
 
-func (resolver *cVEResolver) getEnvImpactForK8sIstioVuln(ctx context.Context, ct converter.CVEType) (float64, error) {
+func (resolver *cVEResolver) getEnvImpactComponentsForK8sIstioVuln(ctx context.Context, ct converter.CVEType) (int, int, error) {
 	cve := resolver.root.k8sIstioCVEManager.GetNVDCVE(resolver.data.GetId())
 	if cve == nil {
-		return 0.0, fmt.Errorf("cve: %q not found", resolver.data.GetId())
+		return 0, 0, fmt.Errorf("CVE: %q not found", resolver.data.GetId())
 	}
-	p, err := resolver.root.getAffectedClusterPercentage(ctx, cve, ct)
-	if err != nil {
-		return 0.0, err
-	}
-	return p, nil
+	return resolver.root.getComponentsForAffectedCluster(ctx, cve, ct)
 }
 
 // LastScanned is the last time the vulnerability was scanned in an image.
@@ -306,6 +309,14 @@ func (resolver *cVEResolver) Severity(ctx context.Context) string {
 
 func (resolver *cVEResolver) VulnerabilityType() string {
 	return resolver.data.GetType().String()
+}
+
+func (resolver *cVEResolver) VulnerabilityTypes() []string {
+	vulnTypes := make([]string, 0, len(resolver.data.GetTypes()))
+	for _, vulnType := range resolver.data.GetTypes() {
+		vulnTypes = append(vulnTypes, vulnType.String())
+	}
+	return vulnTypes
 }
 
 // Components are the components that contain the CVE/Vulnerability.
@@ -461,7 +472,7 @@ func (resolver *cVEResolver) UnusedVarSink(ctx context.Context, args RawQuery) *
 }
 
 func (resolver *cVEResolver) getCVEFixedByVersion(ctx context.Context) (string, error) {
-	if resolver.data.GetType() == storage.CVE_IMAGE_CVE || resolver.data.GetType() == storage.CVE_NODE_CVE {
+	if containsAtLeastOneOfCVEType(resolver.data.GetTypes(), storage.CVE_IMAGE_CVE, storage.CVE_NODE_CVE) {
 		return resolver.getComponentFixedByVersion(ctx)
 	}
 	return resolver.getClusterFixedByVersion(ctx)
@@ -502,7 +513,7 @@ func (resolver *cVEResolver) getClusterFixedByVersion(_ context.Context) (string
 }
 
 func (resolver *cVEResolver) DiscoveredAtImage(ctx context.Context, args RawQuery) (*graphql.Time, error) {
-	if resolver.data.GetType() != storage.CVE_IMAGE_CVE {
+	if !containsCVEType(resolver.data.GetTypes(), storage.CVE_IMAGE_CVE) {
 		return nil, nil
 	}
 
@@ -532,4 +543,23 @@ func (resolver *cVEResolver) DiscoveredAtImage(ctx context.Context, args RawQuer
 		return nil, err
 	}
 	return timestamp(edge.GetFirstImageOccurrence())
+}
+
+func containsCVEType(cveTypes []storage.CVE_CVEType, cveType storage.CVE_CVEType) bool {
+	return containsAtLeastOneOfCVEType(cveTypes, cveType)
+}
+
+func containsAtLeastOneOfCVEType(cveTypes []storage.CVE_CVEType, types ...storage.CVE_CVEType) bool {
+	typeSet := make(map[storage.CVE_CVEType]struct{}, len(cveTypes))
+	for _, cveType := range cveTypes {
+		typeSet[cveType] = struct{}{}
+	}
+
+	for _, cveType := range types {
+		if _, ok := typeSet[cveType]; ok {
+			return true
+		}
+	}
+
+	return false
 }

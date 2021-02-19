@@ -23,7 +23,7 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, pa
             result: vulnerability(id: $id) {
                 id: cve
                 cve
-                vulnerabilityType
+                vulnerabilityTypes
                 envImpact
                 cvss
                 scoreVersion

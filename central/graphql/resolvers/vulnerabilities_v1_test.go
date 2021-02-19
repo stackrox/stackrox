@@ -182,8 +182,9 @@ func TestK8sCVEEnvImpact(t *testing.T) {
 	}
 
 	for i, cve := range cves {
-		actual, err := resolver.getAffectedClusterPercentage(context.Background(), cve, converter.K8s)
+		numerator, denominator, err := resolver.getComponentsForAffectedCluster(context.Background(), cve, converter.K8s)
 		assert.Nil(t, err)
-		assert.Equal(t, actual, expected[i])
+
+		assert.Equal(t, float64(numerator)/float64(denominator), expected[i])
 	}
 }

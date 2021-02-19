@@ -11,23 +11,32 @@ const cveTypeMap = {
     NODE_CVE: 'Node CVE',
 };
 
-const CveType = ({ type, context }) => {
-    const typeText = cveTypeMap[type] || 'Unknown';
+const CveType = ({ types, context }) => {
+    const sortedTypes = types.map((x) => cveTypeMap[x] || 'Unknown').sort();
 
     return context === 'callout' ? (
-        <LabelChip type="base" text={`Type: ${typeText}`} />
+        <LabelChip type="base" text={`Type: ${sortedTypes.join(', ')}`} />
     ) : (
-        <span>{typeText}</span>
+        <span>
+            <div className="flex flex-col">
+                {sortedTypes.map((cveType) => (
+                    // eslint-disable-next-line react/jsx-key
+                    <div className="flex justify-center" key={cveType}>
+                        {cveType}
+                    </div>
+                ))}
+            </div>
+        </span>
     );
 };
 
 CveType.propTypes = {
-    type: PropTypes.oneOf(cveTypes),
+    types: PropTypes.arrayOf(PropTypes.oneOf(cveTypes)),
     context: PropTypes.oneOf(['callout', 'bare']),
 };
 
 CveType.defaultProps = {
-    type: '',
+    types: [],
     context: 'bare',
 };
 

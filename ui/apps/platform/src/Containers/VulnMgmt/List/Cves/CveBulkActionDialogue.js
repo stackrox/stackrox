@@ -52,7 +52,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
                 id: cve
                 cve
                 summary
-                vulnerabilityType
+                vulnerabilityTypes
             }
         }
     `;

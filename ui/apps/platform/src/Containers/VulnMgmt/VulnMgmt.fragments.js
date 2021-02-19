@@ -61,7 +61,7 @@ export const VULN_CVE_LIST_FRAGMENT = gql`
         id: cve
         cve
         cvss
-        vulnerabilityType
+        vulnerabilityTypes
         scoreVersion
         envImpact
         impactScore

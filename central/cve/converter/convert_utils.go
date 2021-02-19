@@ -26,6 +26,16 @@ const (
 	Istio
 )
 
+func (c CVEType) String() string {
+	switch c {
+	case K8s:
+		return "Kubernetes"
+	case Istio:
+		return "Istio"
+	}
+	return "Unknown"
+}
+
 // NvdCVEToProtoCVE converts a nvd.CVEEntry object to *storage.CVE object
 func NvdCVEToProtoCVE(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType) (*storage.CVE, error) {
 	protoCVE := &storage.CVE{
@@ -239,7 +249,10 @@ func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability
 	} else {
 		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V2
 	}
-	embeddedCVE.VulnerabilityType = protoToEmbeddedVulnType(protoCVE.Type)
+	embeddedCVE.VulnerabilityType = protoToEmbeddedVulnType(protoCVE.GetType())
+	for _, vulnType := range protoCVE.GetTypes() {
+		embeddedCVE.VulnerabilityTypes = append(embeddedCVE.VulnerabilityTypes, protoToEmbeddedVulnType(vulnType))
+	}
 	return embeddedCVE
 }
 

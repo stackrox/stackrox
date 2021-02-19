@@ -47,4 +47,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_58_to_m_59_node_scanning_flag_on"
 	_ "github.com/stackrox/rox/migrator/migrations/m_59_to_m_60_add_docker_cis_category_to_existing"
 	_ "github.com/stackrox/rox/migrator/migrations/m_60_to_m_61_update_network_management_policy_regex"
+	_ "github.com/stackrox/rox/migrator/migrations/m_61_to_m_62_multiple_cve_types"
 )

@@ -43,6 +43,7 @@ func init() {
 			"lastModified: Time",
 			"impactScore: Float!",
 			"vulnerabilityType: String!",
+			"vulnerabilityTypes: [String!]!",
 			"suppressed: Boolean!",
 			"suppressActivation: Time",
 			"suppressExpiry: Time",
@@ -79,6 +80,7 @@ type VulnerabilityResolver interface {
 	Vectors() *EmbeddedVulnerabilityVectorsResolver
 	Severity(ctx context.Context) string
 	VulnerabilityType() string
+	VulnerabilityTypes() []string
 
 	Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error)
 	ComponentCount(ctx context.Context, args RawQuery) (int32, error)

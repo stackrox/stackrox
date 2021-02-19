@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	clusterCVEEdgeMappings "github.com/stackrox/rox/central/clustercveedge/mappings"
@@ -15,6 +16,7 @@ import (
 	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
 	nsMappings "github.com/stackrox/rox/central/namespace/index/mappings"
+	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -48,12 +50,23 @@ var (
 		),
 	)
 
+	nodeOnlyOptionsMap = search.Difference(
+		nodeMappings.OptionsMap,
+		search.CombineOptionsMaps(
+			imageComponentEdgeMappings.OptionsMap,
+			componentMappings.OptionsMap,
+			componentCVEEdgeMappings.OptionsMap,
+			cveMappings.OptionsMap,
+		),
+	)
+
 	// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
 	scopeLevels = []scopeLevel{
 		{v1.SearchCategory_IMAGE_COMPONENTS, componentMappings.OptionsMap},
 		{v1.SearchCategory_IMAGES, imageOnlyOptionsMap},
 		{v1.SearchCategory_DEPLOYMENTS, deploymentOnlyOptionsMap},
 		{v1.SearchCategory_NAMESPACES, nsOnlyOptionsMap},
+		{v1.SearchCategory_NODES, nodeOnlyOptionsMap},
 		{v1.SearchCategory_CLUSTERS, clusterMappings.OptionsMap},
 	}
 
@@ -62,6 +75,7 @@ var (
 		search.NamespaceID.String(),
 		search.DeploymentID.String(),
 		search.ImageSHA.String(),
+		search.NodeID.String(),
 		search.ComponentID.String())
 )
 
@@ -72,12 +86,14 @@ type scopeLevel struct {
 
 type cveRow struct {
 	cveID           string
+	cveTypes        string
 	fixable         string
 	cvssScore       string
 	envImpact       string
 	impactScore     string
 	deploymentCount string
 	imageCount      string
+	nodeCount       string
 	componentCount  string
 	scannedTime     string
 	publishedTime   string
@@ -95,15 +111,17 @@ func newCSVResults(header []string) csvResults {
 }
 
 func (c *csvResults) addRow(row cveRow) {
-	// cve, fixable, cvss score, env impact, impact score, deployments, images, components, scanned time, published time, summary
+	// cve, cveTypes, fixable, cvss score, env impact, impact score, deployments, images, nodes, components, scanned time, published time, summary
 	value := []string{
 		row.cveID,
+		row.cveTypes,
 		row.fixable,
 		row.cvssScore,
 		row.envImpact,
 		row.impactScore,
 		row.deploymentCount,
 		row.imageCount,
+		row.nodeCount,
 		row.componentCount,
 		row.scannedTime,
 		row.publishedTime,
@@ -135,11 +153,12 @@ func CVECSVHandler() http.HandlerFunc {
 		queryString := r.URL.Query().Get("query")
 		rawQuery := resolvers.RawQuery{Query: &queryString}
 
-		output := newCSVResults([]string{"CVE", "Fixable", "CVSS Score", "Env Impact (%)", "Impact Score", "Deployments", "Images", "Components", "Scanned", "Published", "Summary"})
+		output := newCSVResults([]string{"CVE", "CVE Type(s)", "Fixable", "CVSS Score", "Env Impact (%)", "Impact Score", "Deployments", "Images", "Nodes", "Components", "Scanned", "Published", "Summary"})
 		for _, d := range vulnResolvers {
 			var errorList errorhelpers.ErrorList
 			dataRow := cveRow{}
 			dataRow.cveID = d.Cve(ctx)
+			dataRow.cveTypes = strings.Join(d.VulnerabilityTypes(), " ")
 			isFixable, err := d.IsFixable(ctx, rawQuery)
 			if err != nil {
 				errorList.AddError(err)
@@ -162,6 +181,11 @@ func CVECSVHandler() http.HandlerFunc {
 				errorList.AddError(err)
 			}
 			dataRow.imageCount = fmt.Sprint(imageCount)
+			nodeCount, err := d.NodeCount(ctx, rawQuery)
+			if err != nil {
+				errorList.AddError(err)
+			}
+			dataRow.nodeCount = fmt.Sprint(nodeCount)
 			componentCount, err := d.ComponentCount(ctx, rawQuery)
 			if err != nil {
 				errorList.AddError(err)
@@ -268,6 +292,8 @@ func getScopeIDs(ctx context.Context, resolver *resolvers.Resolver, category v1.
 	var results []search.Result
 	if category == v1.SearchCategory_IMAGE_COMPONENTS {
 		results, err = resolver.ImageComponentDataStore.Search(ctx, query)
+	} else if category == v1.SearchCategory_NODES {
+		results, err = resolver.NodeGlobalDataStore.Search(ctx, query)
 	} else if category == v1.SearchCategory_IMAGES {
 		results, err = resolver.ImageDataStore.Search(ctx, query)
 	} else if category == v1.SearchCategory_DEPLOYMENTS {

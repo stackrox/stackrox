@@ -12,6 +12,7 @@ import (
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	componentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	nsMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -32,6 +33,7 @@ type CVEScopingTestSuite struct {
 	nsDataStore         *nsMocks.MockDataStore
 	deploymentDataStore *deploymentMocks.MockDataStore
 	imageDataStore      *imageMocks.MockDataStore
+	nodeDataStore       *nodeMocks.MockGlobalDataStore
 	componentDataStore  *componentMocks.MockDataStore
 	cveDataStore        *cveMocks.MockDataStore
 	resolver            *resolvers.Resolver
@@ -43,6 +45,7 @@ func (suite *CVEScopingTestSuite) SetupTest() {
 	suite.nsDataStore = nsMocks.NewMockDataStore(suite.mockCtrl)
 	suite.deploymentDataStore = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.imageDataStore = imageMocks.NewMockDataStore(suite.mockCtrl)
+	suite.nodeDataStore = nodeMocks.NewMockGlobalDataStore(suite.mockCtrl)
 	suite.componentDataStore = componentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.cveDataStore = cveMocks.NewMockDataStore(suite.mockCtrl)
 
@@ -51,6 +54,7 @@ func (suite *CVEScopingTestSuite) SetupTest() {
 		NamespaceDataStore:      suite.nsDataStore,
 		DeploymentDataStore:     suite.deploymentDataStore,
 		ImageDataStore:          suite.imageDataStore,
+		NodeGlobalDataStore:     suite.nodeDataStore,
 		ImageComponentDataStore: suite.componentDataStore,
 		CVEDataStore:            suite.cveDataStore,
 	}
@@ -111,6 +115,55 @@ func (suite *CVEScopingTestSuite) TestGetVulnsWithScoping() {
 	}
 }
 
+func (suite *CVEScopingTestSuite) TestGetNodeVulnsWithScoping() {
+	nodeID := "node1"
+
+	query := &v1.Query{
+		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+			Queries: []*v1.Query{
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.NodeID.String(), Value: nodeID},
+						},
+					},
+				}},
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.Fixable.String(), Value: "true"},
+						},
+					},
+				}},
+			},
+		}},
+	}
+
+	expectedVulns := []search.Result{
+		{
+			ID: "cve1",
+		},
+		{
+			ID: "cve2",
+		},
+	}
+
+	suite.nodeDataStore.EXPECT().Search(suite.ctx, query).Return([]search.Result{{ID: nodeID}}, nil)
+
+	scopedCtx := scoped.Context(suite.ctx, scoped.Scope{
+		Level: v1.SearchCategory_NODES,
+		ID:    nodeID,
+	})
+	suite.cveDataStore.EXPECT().Search(scopedCtx, query).Return(expectedVulns, nil)
+
+	actual, err := runAsScopedQuery(suite.ctx, suite.resolver, query)
+	suite.NoError(err)
+
+	for i, vuln := range actual {
+		suite.Equal(expectedVulns[i].ID, vuln.ID)
+	}
+}
+
 func (suite *CVEScopingTestSuite) TestGetVulnsWithoutScoping() {
 	imageID := "image1"
 
@@ -128,6 +181,49 @@ func (suite *CVEScopingTestSuite) TestGetVulnsWithoutScoping() {
 					BaseQuery: &v1.BaseQuery{
 						Query: &v1.BaseQuery_MatchFieldQuery{
 							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.ImageSHA.String(), Value: imageID},
+						},
+					},
+				}},
+			},
+		}},
+	}
+
+	expectedVulns := []search.Result{
+		{
+			ID: "cve1",
+		},
+		{
+			ID: "cve2",
+		},
+	}
+
+	suite.cveDataStore.EXPECT().Search(suite.ctx, query).Return(expectedVulns, nil)
+
+	actual, err := runAsScopedQuery(suite.ctx, suite.resolver, query)
+	suite.NoError(err)
+
+	for i, vuln := range actual {
+		suite.Equal(expectedVulns[i].ID, vuln.ID)
+	}
+}
+
+func (suite *CVEScopingTestSuite) TestGetNodeVulnsWithoutScoping() {
+	nodeID := "node1"
+
+	query := &v1.Query{
+		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+			Queries: []*v1.Query{
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.Cluster.String(), Value: "any"},
+						},
+					},
+				}},
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.NodeID.String(), Value: nodeID},
 						},
 					},
 				}},
@@ -193,6 +289,56 @@ func (suite *CVEScopingTestSuite) TestGetVulnsWithScopingOrder() {
 	scopedCtx := scoped.Context(suite.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
 		ID:    imageID,
+	})
+	suite.cveDataStore.EXPECT().Search(scopedCtx, query).Return(expectedVulns, nil)
+
+	actual, err := runAsScopedQuery(suite.ctx, suite.resolver, query)
+	suite.NoError(err)
+
+	for i, vuln := range actual {
+		suite.Equal(expectedVulns[i].ID, vuln.ID)
+	}
+}
+
+func (suite *CVEScopingTestSuite) TestGetNodeVulnsWithScopingOrder() {
+	clusterID := "cluster1"
+	nodeID := "node1"
+
+	query := &v1.Query{
+		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+			Queries: []*v1.Query{
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.ClusterID.String(), Value: clusterID},
+						},
+					},
+				}},
+				{Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{Field: search.NodeID.String(), Value: nodeID},
+						},
+					},
+				}},
+			},
+		}},
+	}
+
+	expectedVulns := []search.Result{
+		{
+			ID: "cve1",
+		},
+		{
+			ID: "cve2",
+		},
+	}
+
+	suite.nodeDataStore.EXPECT().Search(suite.ctx, query).Return([]search.Result{{ID: nodeID}}, nil)
+
+	scopedCtx := scoped.Context(suite.ctx, scoped.Scope{
+		Level: v1.SearchCategory_NODES,
+		ID:    nodeID,
 	})
 	suite.cveDataStore.EXPECT().Search(scopedCtx, query).Return(expectedVulns, nil)
 
