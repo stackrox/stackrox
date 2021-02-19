@@ -92,7 +92,7 @@ func (idl *componentLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Qu
 }
 
 func (idl *componentLoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := idl.ds.Count(ctx)
+	count, err := idl.ds.CountWithoutQuery(ctx)
 	return int32(count), err
 }
 

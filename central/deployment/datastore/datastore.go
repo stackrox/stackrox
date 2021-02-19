@@ -35,6 +35,7 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	SearchDeployments(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error)
 	SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error)

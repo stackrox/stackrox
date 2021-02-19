@@ -20,6 +20,7 @@ var (
 type Searcher interface {
 	SearchRawProcessBaselines(ctx context.Context, q *v1.Query) ([]*storage.ProcessBaseline, error)
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.

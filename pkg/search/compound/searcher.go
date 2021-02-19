@@ -78,3 +78,9 @@ func (cs *compoundSearcherImpl) Search(ctx context.Context, q *v1.Query) ([]sear
 	// Execute the tree.
 	return execute(ctx, sorted)
 }
+
+// Count uses Search function to get the search results and then count them
+func (cs *compoundSearcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	results, err := cs.Search(ctx, q)
+	return len(results), err
+}

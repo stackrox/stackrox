@@ -165,6 +165,12 @@ func (s *SubjectSearcher) Search(ctx context.Context, q *v1.Query) ([]search.Res
 	return results, nil
 }
 
+// Count returns the number of search results from the query
+func (s *SubjectSearcher) Count(ctx context.Context, q *v1.Query) (int, error) {
+	results, err := s.Search(ctx, q)
+	return len(results), err
+}
+
 // SearchSubjects implements the search interface that returns v1.SearchResult
 func (s *SubjectSearcher) SearchSubjects(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	subjectQuery, _ := search.FilterQueryWithMap(q, mapping.OptionsMap)

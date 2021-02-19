@@ -116,6 +116,14 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) (res []search.R
 	return res, err
 }
 
+// Count returns the number of search results from the query
+func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (count int, err error) {
+	graph.Context(ctx, ds.graphProvider, func(inner context.Context) {
+		count, err = ds.searcher.Count(inner, q)
+	})
+	return count, err
+}
+
 // ConvertImage returns proto search result from a image object and the internal search result
 func convertImage(image *storage.ListImage, result search.Result) *v1.SearchResult {
 	return &v1.SearchResult{

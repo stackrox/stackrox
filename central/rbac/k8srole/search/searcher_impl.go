@@ -38,6 +38,11 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 	return ds.getSearchResults(ctx, q)
 }
 
+// Count returns the number of search results from the query
+func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return ds.getCountResults(ctx, q)
+}
+
 // SearchSecrets returns the secrets and relationships that match the query.
 func (ds *searcherImpl) SearchRawRoles(ctx context.Context, q *v1.Query) ([]*storage.K8SRole, error) {
 	roles, _, err := ds.searchRoles(ctx, q)
@@ -62,6 +67,10 @@ func (ds *searcherImpl) searchRoles(ctx context.Context, q *v1.Query) ([]*storag
 
 func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	return k8sRolesSACSearchHelper.Apply(ds.indexer.Search)(ctx, q)
+}
+
+func (ds *searcherImpl) getCountResults(ctx context.Context, q *v1.Query) (int, error) {
+	return k8sRolesSACSearchHelper.ApplyCount(ds.indexer.Count)(ctx, q)
 }
 
 func convertMany(roles []*storage.K8SRole, results []search.Result) []*v1.SearchResult {

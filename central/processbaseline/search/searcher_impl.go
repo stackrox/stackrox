@@ -73,6 +73,11 @@ func (s *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result
 	return s.formattedSearcher.Search(ctx, q)
 }
 
+// Count returns the number of search results from the query
+func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return s.formattedSearcher.Count(ctx, q)
+}
+
 // Helper functions which format our searching.
 ///////////////////////////////////////////////
 

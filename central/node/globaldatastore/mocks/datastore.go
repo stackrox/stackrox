@@ -37,6 +37,21 @@ func (m *MockGlobalDataStore) EXPECT() *MockGlobalDataStoreMockRecorder {
 	return m.recorder
 }
 
+// Count mocks base method
+func (m *MockGlobalDataStore) Count(arg0 context.Context, arg1 *v1.Query) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Count", arg0, arg1)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Count indicates an expected call of Count
+func (mr *MockGlobalDataStoreMockRecorder) Count(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockGlobalDataStore)(nil).Count), arg0, arg1)
+}
+
 // CountAllNodes mocks base method
 func (m *MockGlobalDataStore) CountAllNodes(arg0 context.Context) (int, error) {
 	m.ctrl.T.Helper()

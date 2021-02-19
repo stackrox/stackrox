@@ -49,8 +49,17 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 	return ds.getSearchResults(ctx, q)
 }
 
+// Count returns the number of search results from the query
+func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return ds.getCount(ctx, q)
+}
+
 func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	return serviceAccountsSACSearchHelper.Apply(ds.indexer.Search)(ctx, q)
+}
+
+func (ds *searcherImpl) getCount(ctx context.Context, q *v1.Query) (int, error) {
+	return serviceAccountsSACSearchHelper.ApplyCount(ds.indexer.Count)(ctx, q)
 }
 
 func (ds *searcherImpl) searchServiceAccounts(ctx context.Context, q *v1.Query) ([]*storage.ServiceAccount, []search.Result, error) {

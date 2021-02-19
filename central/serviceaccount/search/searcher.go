@@ -19,6 +19,7 @@ var (
 //go:generate mockgen-wrapper
 type Searcher interface {
 	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)
+	Count(ctx context.Context, query *v1.Query) (int, error)
 	SearchServiceAccounts(context.Context, *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawServiceAccounts(context.Context, *v1.Query) ([]*storage.ServiceAccount, error)
 }

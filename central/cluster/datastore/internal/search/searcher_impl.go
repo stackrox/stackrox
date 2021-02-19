@@ -76,6 +76,11 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 	return ds.formattedSearcher.Search(ctx, q)
 }
 
+// Count returns the number of search results from the query
+func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return ds.formattedSearcher.Count(ctx, q)
+}
+
 func convertCluster(cluster *storage.Cluster, result search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_CLUSTERS,

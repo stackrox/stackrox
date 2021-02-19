@@ -23,17 +23,30 @@ type TransformationProvider interface {
 // if ids for the type we are currently searching. We need to limit the search to just those ids, so we add them as a
 // set of DocIDs in a conjunction with the input query.
 func WithScoping(searcher search.Searcher, provider TransformationProvider) search.Searcher {
-	return search.Func(func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-		scope, hasScope := GetScope(ctx)
-		if hasScope {
-			var err error
-			q, err = scopeQuery(ctx, q, scope, provider)
-			if err != nil || q == nil {
-				return nil, err
+	return search.FuncSearcher{
+		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+			scope, hasScope := GetScope(ctx)
+			if hasScope {
+				var err error
+				q, err = scopeQuery(ctx, q, scope, provider)
+				if err != nil || q == nil {
+					return nil, err
+				}
 			}
-		}
-		return searcher.Search(ctx, q)
-	})
+			return searcher.Search(ctx, q)
+		},
+		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
+			scope, hasScope := GetScope(ctx)
+			if hasScope {
+				var err error
+				q, err = scopeQuery(ctx, q, scope, provider)
+				if err != nil || q == nil {
+					return 0, err
+				}
+			}
+			return searcher.Count(ctx, q)
+		},
+	}
 }
 
 func scopeQuery(ctx context.Context, q *v1.Query, scope Scope, provider TransformationProvider) (*v1.Query, error) {

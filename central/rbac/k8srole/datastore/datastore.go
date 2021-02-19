@@ -16,6 +16,7 @@ import (
 //go:generate mockgen-wrapper DataStore
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	SearchRoles(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawRoles(ctx context.Context, q *v1.Query) ([]*storage.K8SRole, error)
 

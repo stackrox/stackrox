@@ -16,50 +16,60 @@ type Filter interface {
 
 // UnsafeSearcher generates a Searcher from an UnsafeSearcher by filtering its outputs with the input filter.
 func UnsafeSearcher(searcher blevesearch.UnsafeSearcher, filters ...Filter) search.Searcher {
-	return search.Func(func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-		results, err := searcher.Search(q)
-		if err != nil {
-			return results, err
-		}
-
-		allFiltered, err := ApplySACFilters(ctx, search.ResultsToIDs(results), filters...)
-		if err != nil {
-			return nil, err
-		}
-
-		filteredResults := results[:0]
-		filteredSet := set.NewStringSet(allFiltered...)
-		for _, result := range results {
-			if filteredSet.Contains(result.ID) {
-				filteredResults = append(filteredResults, result)
+	return search.FuncSearcher{
+		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+			results, err := searcher.Search(q)
+			if err != nil {
+				return results, err
 			}
-		}
-		return filteredResults, nil
-	})
+
+			allFiltered, err := ApplySACFilters(ctx, search.ResultsToIDs(results), filters...)
+			if err != nil {
+				return nil, err
+			}
+
+			filteredResults := results[:0]
+			filteredSet := set.NewStringSet(allFiltered...)
+			for _, result := range results {
+				if filteredSet.Contains(result.ID) {
+					filteredResults = append(filteredResults, result)
+				}
+			}
+			return filteredResults, nil
+		},
+		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
+			return searcher.Count(q)
+		},
+	}
 }
 
 // Searcher returns a new searcher based on the filtered output from the input Searcher.
 func Searcher(searcher search.Searcher, filters ...Filter) search.Searcher {
-	return search.Func(func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-		results, err := searcher.Search(ctx, q)
-		if err != nil {
-			return results, err
-		}
-
-		allFiltered, err := ApplySACFilters(ctx, search.ResultsToIDs(results), filters...)
-		if err != nil {
-			return nil, err
-		}
-
-		filteredResults := results[:0]
-		filteredSet := set.NewStringSet(allFiltered...)
-		for _, result := range results {
-			if filteredSet.Contains(result.ID) {
-				filteredResults = append(filteredResults, result)
+	return search.FuncSearcher{
+		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+			results, err := searcher.Search(ctx, q)
+			if err != nil {
+				return results, err
 			}
-		}
-		return filteredResults, nil
-	})
+
+			allFiltered, err := ApplySACFilters(ctx, search.ResultsToIDs(results), filters...)
+			if err != nil {
+				return nil, err
+			}
+
+			filteredResults := results[:0]
+			filteredSet := set.NewStringSet(allFiltered...)
+			for _, result := range results {
+				if filteredSet.Contains(result.ID) {
+					filteredResults = append(filteredResults, result)
+				}
+			}
+			return filteredResults, nil
+		},
+		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
+			return searcher.Count(ctx, q)
+		},
+	}
 }
 
 // ApplySACFilters filters ids with sac filters

@@ -17,6 +17,7 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	SearchRawRisks(ctx context.Context, q *v1.Query) ([]*storage.Risk, error)
 
 	GetRisk(ctx context.Context, subjectID string, subjectType storage.RiskSubjectType) (*storage.Risk, bool, error)

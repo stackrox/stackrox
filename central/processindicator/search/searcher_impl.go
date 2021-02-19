@@ -36,3 +36,8 @@ func (s *searcherImpl) SearchRawProcessIndicators(ctx context.Context, q *v1.Que
 func (s *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	return indicatorSACSearchHelper.Apply(s.indexer.Search)(ctx, q)
 }
+
+// Count returns the number of search results from the query
+func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return indicatorSACSearchHelper.ApplyCount(s.indexer.Count)(ctx, q)
+}

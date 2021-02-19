@@ -23,7 +23,9 @@ type DataStore interface {
 
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.CVE, bool, error)
-	Count(ctx context.Context) (int, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
+	// TODO(cdu): Rename the func name temporarily and this should be removed in the 3rd batch.
+	CountWithoutQuery(ctx context.Context) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.CVE, error)
 
 	Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, ids ...string) error

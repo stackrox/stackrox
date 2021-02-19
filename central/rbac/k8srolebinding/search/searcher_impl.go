@@ -37,6 +37,11 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 	return k8sRoleBindingsSACSearchHelper.Apply(ds.index.Search)(ctx, q)
 }
 
+// Count returns the number of search results from the query
+func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return k8sRoleBindingsSACSearchHelper.ApplyCount(ds.index.Count)(ctx, q)
+}
+
 // SearchRawRoleBindings returns the rolebindings  that match the query.
 func (ds *searcherImpl) SearchRawRoleBindings(ctx context.Context, q *v1.Query) ([]*storage.K8SRoleBinding, error) {
 	bindings, _, err := ds.searchRoleBindings(ctx, q)

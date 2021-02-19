@@ -54,3 +54,23 @@ func (mr *MockUnsafeSearcherMockRecorder) Search(q interface{}, opts ...interfac
 	varargs := append([]interface{}{q}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockUnsafeSearcher)(nil).Search), varargs...)
 }
+
+// Count mocks base method
+func (m *MockUnsafeSearcher) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{q}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Count", varargs...)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Count indicates an expected call of Count
+func (mr *MockUnsafeSearcherMockRecorder) Count(q interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{q}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockUnsafeSearcher)(nil).Count), varargs...)
+}

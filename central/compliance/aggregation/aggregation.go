@@ -79,6 +79,9 @@ type Aggregator interface {
 
 	// Search runs search requests in the context of the aggregator.
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
+
+	// Count runs requests in the context of the aggregator and return the count of results.
+	Count(ctx context.Context, q *v1.Query) (int, error)
 }
 
 // New returns a new aggregator
@@ -121,6 +124,12 @@ func (a *aggregatorImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resu
 		allResults = append(allResults, results...)
 	}
 	return allResults, nil
+}
+
+// Count returns the number of search results from the query
+func (a *aggregatorImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	results, err := a.Search(ctx, q)
+	return len(results), err
 }
 
 type passFailCounts struct {

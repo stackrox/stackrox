@@ -17,6 +17,7 @@ type Indexer interface {
 	MarkInitialIndexingComplete() error
 	NeedsInitialIndexing() (bool, error)
 	Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error)
+	Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error)
 }
 
 // New creates a new deployment indexer

@@ -19,6 +19,7 @@ var (
 //go:generate mockgen-wrapper Searcher
 type Searcher interface {
 	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)
+	Count(ctx context.Context, query *v1.Query) (int, error)
 	SearchRoleBindings(context.Context, *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawRoleBindings(ctx context.Context, query *v1.Query) ([]*storage.K8SRoleBinding, error)
 }

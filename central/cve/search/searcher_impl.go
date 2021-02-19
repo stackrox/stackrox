@@ -88,6 +88,11 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 	return ds.getSearchResults(ctx, q)
 }
 
+// Count returns the number of search results from the query
+func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return ds.getCount(ctx, q)
+}
+
 func (ds *searcherImpl) SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.CVE, error) {
 	return ds.searchCVEs(ctx, q)
 }
@@ -97,6 +102,13 @@ func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) (res 
 		res, err = ds.searcher.Search(inner, q)
 	})
 	return res, err
+}
+
+func (ds *searcherImpl) getCount(ctx context.Context, q *v1.Query) (count int, err error) {
+	graph.Context(ctx, ds.graphProvider, func(inner context.Context) {
+		count, err = ds.searcher.Count(inner, q)
+	})
+	return count, err
 }
 
 func (ds *searcherImpl) resultsToCVEs(results []search.Result) ([]*storage.CVE, []int, error) {

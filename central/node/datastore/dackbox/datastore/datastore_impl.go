@@ -70,6 +70,13 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.R
 	return ds.searcher.Search(ctx, q)
 }
 
+// Count returns the number of search results from the query
+func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), typ, "Count")
+
+	return ds.searcher.Count(ctx, q)
+}
+
 func (ds *datastoreImpl) SearchNodes(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), typ, "SearchNodes")
 

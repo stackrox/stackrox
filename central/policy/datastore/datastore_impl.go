@@ -42,6 +42,14 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.R
 	return ds.searcher.Search(ctx, q)
 }
 
+// Count returns the number of search results from the query
+func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
+		return 0, err
+	}
+	return ds.searcher.Count(ctx, q)
+}
+
 // SearchPolicies
 func (ds *datastoreImpl) SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	return ds.searcher.SearchPolicies(ctx, q)

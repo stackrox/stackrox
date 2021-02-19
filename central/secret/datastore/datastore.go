@@ -16,6 +16,7 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	SearchSecrets(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawSecrets(ctx context.Context, q *v1.Query) ([]*storage.Secret, error)
 	SearchListSecrets(ctx context.Context, q *v1.Query) ([]*storage.ListSecret, error)

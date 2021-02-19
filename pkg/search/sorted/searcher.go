@@ -17,35 +17,40 @@ type Ranker interface {
 
 // Searcher returns a Searcher that applies the sort for the custom field if it exists in the input query.
 func Searcher(searcher search.Searcher, field search.FieldLabel, ranker Ranker) search.Searcher {
-	return search.Func(func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-		var indexQuery *v1.Query
-		var sortByRank bool
-		var reversed bool
-		if q.GetPagination() != nil && len(q.GetPagination().GetSortOptions()) == 1 {
-			if q.GetPagination().GetSortOptions()[0].GetField() == field.String() {
-				indexQuery = q.Clone()
-				sortByRank = true
-				reversed = indexQuery.GetPagination().GetSortOptions()[0].GetReversed()
-				indexQuery.Pagination = nil
+	return search.FuncSearcher{
+		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+			var indexQuery *v1.Query
+			var sortByRank bool
+			var reversed bool
+			if q.GetPagination() != nil && len(q.GetPagination().GetSortOptions()) == 1 {
+				if q.GetPagination().GetSortOptions()[0].GetField() == field.String() {
+					indexQuery = q.Clone()
+					sortByRank = true
+					reversed = indexQuery.GetPagination().GetSortOptions()[0].GetReversed()
+					indexQuery.Pagination = nil
+				}
 			}
-		}
-		if !sortByRank {
-			indexQuery = q
-		}
-
-		results, err := searcher.Search(ctx, indexQuery)
-		if err != nil || !sortByRank {
-			return results, err
-		}
-
-		sort.SliceStable(results, func(i, j int) bool {
-			if reversed {
-				i, j = j, i
+			if !sortByRank {
+				indexQuery = q
 			}
-			rankI := ranker.GetRankForID(results[i].ID)
-			rankJ := ranker.GetRankForID(results[j].ID)
-			return rankI < rankJ
-		})
-		return results, nil
-	})
+
+			results, err := searcher.Search(ctx, indexQuery)
+			if err != nil || !sortByRank {
+				return results, err
+			}
+
+			sort.SliceStable(results, func(i, j int) bool {
+				if reversed {
+					i, j = j, i
+				}
+				rankI := ranker.GetRankForID(results[i].ID)
+				rankJ := ranker.GetRankForID(results[j].ID)
+				return rankI < rankJ
+			})
+			return results, nil
+		},
+		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
+			return searcher.Count(ctx, q)
+		},
+	}
 }

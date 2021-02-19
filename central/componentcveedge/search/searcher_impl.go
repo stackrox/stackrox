@@ -33,6 +33,11 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 	return ds.getSearchResults(ctx, q)
 }
 
+// Count returns the number of search results from the query
+func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return ds.searcher.Count(ctx, q)
+}
+
 // SearchRawComponentCVEEdges retrieves cves from the indexer and storage
 func (ds *searcherImpl) SearchRawEdges(ctx context.Context, q *v1.Query) ([]*storage.ComponentCVEEdge, error) {
 	return ds.searchComponentCVEEdges(ctx, q)

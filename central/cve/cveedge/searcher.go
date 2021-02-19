@@ -16,17 +16,30 @@ var (
 
 // HandleCVEEdgeSearchQuery handles the query cve edge query
 func HandleCVEEdgeSearchQuery(searcher search.Searcher) search.Searcher {
-	return search.Func(func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-		// Local copy to avoid changing input.
-		local := q.Clone()
-		pagination := local.GetPagination()
-		local.Pagination = nil
+	return search.FuncSearcher{
+		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+			// Local copy to avoid changing input.
+			local := q.Clone()
+			pagination := local.GetPagination()
+			local.Pagination = nil
 
-		getCVEEdgeQuery(local)
+			getCVEEdgeQuery(local)
 
-		local.Pagination = pagination
-		return searcher.Search(ctx, local)
-	})
+			local.Pagination = pagination
+			return searcher.Search(ctx, local)
+		},
+		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
+			// Local copy to avoid changing input.
+			local := q.Clone()
+			pagination := local.GetPagination()
+			local.Pagination = nil
+
+			getCVEEdgeQuery(local)
+
+			local.Pagination = pagination
+			return searcher.Count(ctx, local)
+		},
+	}
 }
 
 func getCVEEdgeQuery(q *v1.Query) {

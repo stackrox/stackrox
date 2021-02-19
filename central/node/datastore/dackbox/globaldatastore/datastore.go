@@ -193,3 +193,8 @@ func (s *globalDataStore) SearchRawNodes(ctx context.Context, q *v1.Query) ([]*s
 func (s *globalDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	return s.datastore.Search(ctx, q)
 }
+
+// Count returns the number of nodes matches the query
+func (s *globalDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return s.datastore.Count(ctx, q)
+}

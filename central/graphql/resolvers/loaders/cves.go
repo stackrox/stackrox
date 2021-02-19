@@ -92,7 +92,7 @@ func (idl *cveLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) (
 }
 
 func (idl *cveLoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := idl.ds.Count(ctx)
+	count, err := idl.ds.CountWithoutQuery(ctx)
 	return int32(count), err
 }
 

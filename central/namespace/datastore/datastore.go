@@ -40,6 +40,7 @@ type DataStore interface {
 
 	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	SearchNamespaces(ctx context.Context, q *v1.Query) ([]*storage.NamespaceMetadata, error)
 }
 
@@ -179,6 +180,11 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 
 func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	return b.formattedSearcher.Search(ctx, q)
+}
+
+// Count returns the number of search results from the query
+func (b *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return b.formattedSearcher.Count(ctx, q)
 }
 
 func (b *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {

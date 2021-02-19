@@ -112,3 +112,8 @@ func (d *datastoreImpl) RemoveSecret(ctx context.Context, id string) error {
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
 	return d.searcher.Search(ctx, q)
 }
+
+// Count returns the number of search results from the query
+func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return d.searcher.Count(ctx, q)
+}

@@ -51,6 +51,21 @@ func (mr *MockSearcherMockRecorder) Search(ctx, query interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), ctx, query)
 }
 
+// Count mocks base method
+func (m *MockSearcher) Count(ctx context.Context, query *v1.Query) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Count", ctx, query)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Count indicates an expected call of Count
+func (mr *MockSearcherMockRecorder) Count(ctx, query interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockSearcher)(nil).Count), ctx, query)
+}
+
 // SearchServiceAccounts mocks base method
 func (m *MockSearcher) SearchServiceAccounts(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
 	m.ctrl.T.Helper()

@@ -14,6 +14,7 @@ import (
 //go:generate mockgen-wrapper
 type Searcher interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	SearchRawRisks(ctx context.Context, q *v1.Query) ([]*storage.Risk, error)
 }
 

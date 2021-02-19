@@ -103,3 +103,9 @@ func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]s
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ProcessIndicator")
 	return blevesearch.RunSearchRequest(v1.SearchCategory_PROCESS_INDICATORS, q, b.index, mappings.OptionsMap, opts...)
 }
+
+// Count returns the number of search results from the query
+func (b *indexerImpl) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ProcessIndicator")
+	return blevesearch.RunCountRequest(v1.SearchCategory_PROCESS_INDICATORS, q, b.index, mappings.OptionsMap, opts...)
+}

@@ -29,6 +29,7 @@ type DataStore interface {
 	ListImage(ctx context.Context, sha string) (*storage.ListImage, bool, error)
 
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	SearchImages(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawImages(ctx context.Context, q *v1.Query) ([]*storage.Image, error)
 

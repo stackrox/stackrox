@@ -105,6 +105,14 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) (res []search.R
 	return res, err
 }
 
+// Count returns the number of search results from the query
+func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (res int, err error) {
+	graph.Context(ctx, ds.graphProvider, func(inner context.Context) {
+		res, err = ds.searcher.Count(inner, q)
+	})
+	return res, err
+}
+
 // convertNode returns proto search result from a node object and the internal search result
 func convertNode(node *storage.Node, result search.Result) *v1.SearchResult {
 	return &v1.SearchResult{

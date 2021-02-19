@@ -264,3 +264,8 @@ func (s *globalDataStore) SearchRawNodes(ctx context.Context, q *v1.Query) ([]*s
 func (s *globalDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	return nodesSACSearchHelper.Apply(s.indexer.Search)(ctx, q)
 }
+
+// Count returns the number of search results from the query
+func (s *globalDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return nodesSACSearchHelper.ApplyCount(s.indexer.Count)(ctx, q)
+}

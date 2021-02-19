@@ -41,6 +41,11 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.R
 	return ds.searcher.Search(ctx, q)
 }
 
+// Count returns the number of search results from the query
+func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return ds.searcher.Count(ctx, q)
+}
+
 func (ds *datastoreImpl) SearchImageComponents(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	return ds.searcher.SearchImageComponents(ctx, q)
 }
@@ -54,7 +59,7 @@ func (ds *datastoreImpl) SearchRawImageComponents(ctx context.Context, q *v1.Que
 	return components, nil
 }
 
-func (ds *datastoreImpl) Count(ctx context.Context) (int, error) {
+func (ds *datastoreImpl) CountWithoutQuery(ctx context.Context) (int, error) {
 	results, err := ds.searcher.Search(ctx, pkgSearch.EmptyQuery())
 	if err != nil {
 		return 0, err

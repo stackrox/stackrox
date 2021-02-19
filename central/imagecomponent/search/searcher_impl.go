@@ -77,6 +77,11 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 	return ds.getSearchResults(ctx, q)
 }
 
+// Count returns the number of search results from the query
+func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return ds.getCountResults(ctx, q)
+}
+
 func (ds *searcherImpl) SearchImageComponents(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	results, err := ds.getSearchResults(ctx, q)
 	if err != nil {
@@ -108,6 +113,13 @@ func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) (res 
 		res, err = ds.searcher.Search(inner, q)
 	})
 	return res, err
+}
+
+func (ds *searcherImpl) getCountResults(ctx context.Context, q *v1.Query) (count int, err error) {
+	graph.Context(ctx, ds.graphProvider, func(inner context.Context) {
+		count, err = ds.searcher.Count(inner, q)
+	})
+	return count, err
 }
 
 func (ds *searcherImpl) resultsToImageComponents(results []search.Result) ([]*storage.ImageComponent, []int, error) {

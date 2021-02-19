@@ -59,6 +59,7 @@ type DataStore interface {
 	UpdateSensorDeploymentIdentification(ctx context.Context, id string, identification *storage.SensorDeploymentIdentification) error
 
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
+	Count(ctx context.Context, q *v1.Query) (int, error)
 	SearchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error)
 	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 

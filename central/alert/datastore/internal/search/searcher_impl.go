@@ -90,6 +90,11 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 	return ds.formattedSearcher.Search(ctx, q)
 }
 
+// Count returns the number of search results from the query
+func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return ds.formattedSearcher.Count(ctx, q)
+}
+
 // ConvertAlert returns proto search result from an alert object and the internal search result
 func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResult {
 	deployment := alert.GetDeployment()
@@ -149,4 +154,26 @@ func (ds *defaultViolationStateSearcher) Search(ctx context.Context, q *v1.Query
 	}
 
 	return ds.searcher.Search(ctx, q)
+}
+
+func (ds *defaultViolationStateSearcher) Count(ctx context.Context, q *v1.Query) (int, error) {
+	var querySpecifiesStateField bool
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.ViolationState.String() {
+			querySpecifiesStateField = true
+		}
+	})
+
+	// By default, set stale to false.
+	if !querySpecifiesStateField {
+		cq := search.ConjunctionQuery(q, search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
+		cq.Pagination = q.GetPagination()
+		q = cq
+	}
+
+	return ds.searcher.Count(ctx, q)
 }

@@ -81,7 +81,14 @@ func (ds *datastoreImpl) SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*sto
 	return cves, nil
 }
 
-func (ds *datastoreImpl) Count(ctx context.Context) (int, error) {
+func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	if q == nil {
+		q = searchPkg.EmptyQuery()
+	}
+	return ds.searcher.Count(ctx, q)
+}
+
+func (ds *datastoreImpl) CountWithoutQuery(ctx context.Context) (int, error) {
 	results, err := ds.searcher.Search(ctx, searchPkg.EmptyQuery())
 	if err != nil {
 		return 0, err
