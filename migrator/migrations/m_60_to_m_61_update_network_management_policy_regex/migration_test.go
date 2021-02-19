@@ -92,6 +92,7 @@ func (suite *networkManagementExecutionPolicyTestSuite) TestUpdateNetworkManagem
 		return proto.Unmarshal(v, &newPolicy)
 	}))
 	policy.PolicySections[0].PolicyGroups[0].Values[0].Value = newPolicyCriteria
+	policy.Exclusions = append(policy.Exclusions, newExclusions...)
 	suite.EqualValues(policy, &newPolicy)
 
 	// Test that a policy that matches id, field name _but not_ criteria is not updated
@@ -186,6 +187,42 @@ func (suite *networkManagementExecutionPolicyTestSuite) TestUpdateNetworkManagem
 							},
 						},
 					},
+				},
+			},
+		},
+	}
+
+	suite.NoError(insertPolicy(bucket, policy.GetId(), policy))
+	suite.NoError(updateNetworkManagementExecutionPolicy(suite.db))
+	suite.NoError(bucket.View(func(b *bolt.Bucket) error {
+		v := b.Get([]byte(policy.GetId()))
+		return proto.Unmarshal(v, &newPolicy)
+	}))
+	suite.EqualValues(policy, &newPolicy)
+
+	// Test that a policy that matches id and value but already has exclusions is not updated
+	policy = &storage.Policy{
+		Id: policyID,
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: policyFieldName,
+						Values: []*storage.PolicyValue{
+							{
+								Value: oldPolicyCriteria,
+							},
+						},
+					},
+				},
+			},
+		},
+		Exclusions: []*storage.Exclusion{
+			{
+				Name: "Blah",
+				Deployment: &storage.Exclusion_Deployment{
+					Name: "blah",
 				},
 			},
 		},

@@ -28,6 +28,24 @@ var (
 	oldPolicyCriteria = "([a-z])ip|ifrename|ethtool|ifconfig|([a-z])arp|ipmaddr|iptunnel|route|nameif|mii-tool"
 	newPolicyCriteria = "ip|ifrename|ethtool|ifconfig|arp|ipmaddr|iptunnel|route|nameif|mii-tool"
 	policyFieldName   = "Process Name"
+	newExclusions     = []*storage.Exclusion{
+		{
+			Name: "Don't alert on kube-system namespace",
+			Deployment: &storage.Exclusion_Deployment{
+				Scope: &storage.Scope{
+					Namespace: "kube-system",
+				},
+			},
+		},
+		{
+			Name: "Don't alert on openshift namespaces",
+			Deployment: &storage.Exclusion_Deployment{
+				Scope: &storage.Scope{
+					Namespace: "openshift-.*",
+				},
+			},
+		},
+	}
 )
 
 func updateNetworkManagementExecutionPolicy(db *bolt.DB) error {
@@ -81,8 +99,16 @@ func updateNetworkManagementExecutionPolicy(db *bolt.DB) error {
 			return nil
 		}
 
+		// Next check that the policy doesn't have exclusions and whitelists already
+		if len(policy.GetExclusions()) > 0 {
+			return nil
+		}
+
 		// Update to the newer policy criteria
 		value.Value = newPolicyCriteria
+
+		// Add new exclusion
+		policy.Exclusions = append(policy.Exclusions, newExclusions...)
 
 		policyBytes, err := proto.Marshal(&policy)
 		if err != nil {
