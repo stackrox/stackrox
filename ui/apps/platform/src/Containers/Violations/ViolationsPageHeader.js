@@ -38,6 +38,7 @@ function ViolationsPageHeader({
 }) {
     // To handle page/count refreshing.
     const [pollEpoch, setPollEpoch] = useState(0);
+    const [isFetching, setIsFetching] = useState(false);
 
     // Update the isViewFiltered and the value of the selectedAlertId based on changes in search options.
     const hasExecutableFilter =
@@ -59,9 +60,13 @@ function ViolationsPageHeader({
 
     // When any of the deps to this effect change, we want to reload the alerts and count.
     useEffect(() => {
-        if (!searchOptions.length || !searchOptions[searchOptions.length - 1].type) {
+        if (
+            !isFetching &&
+            (!searchOptions.length || !searchOptions[searchOptions.length - 1].type)
+        ) {
             // Get the alerts that match the search request for the current page.
             setCurrentPageAlertsErrorMessage('');
+            setIsFetching(true);
             fetchAlerts(searchOptions, sortOption, currentPage, pageSize)
                 .then((alerts) => {
                     setCurrentPageAlerts(alerts);
@@ -71,6 +76,9 @@ function ViolationsPageHeader({
                     setCurrentPageAlertsErrorMessage(
                         error.message || 'An unknown error has occurred.'
                     );
+                })
+                .finally(() => {
+                    setIsFetching(false);
                 });
             // Get the total count of alerts that match the search request.
             fetchAlertCount(searchOptions).then(setAlertCount);
