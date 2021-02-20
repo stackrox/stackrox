@@ -67,7 +67,20 @@ func Searcher(searcher search.Searcher, filters ...Filter) search.Searcher {
 			return filteredResults, nil
 		},
 		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			return searcher.Count(ctx, q)
+			if len(filters) == 0 {
+				return searcher.Count(ctx, q)
+			}
+			// If we have SAC filters configured, we count search results.
+			results, err := searcher.Search(ctx, q)
+			if err != nil {
+				return 0, err
+			}
+
+			filtered, err := ApplySACFilters(ctx, search.ResultsToIDs(results), filters...)
+			if err != nil {
+				return 0, err
+			}
+			return len(filtered), nil
 		},
 	}
 }

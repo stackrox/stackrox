@@ -133,11 +133,11 @@ func (s *serviceImpl) CountAlerts(ctx context.Context, request *v1.RawQuery) (*v
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	alerts, err := s.dataStore.Search(ctx, parsedQuery)
+	count, err := s.dataStore.Count(ctx, parsedQuery)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	return &v1.CountAlertsResponse{Count: int32(len(alerts))}, nil
+	return &v1.CountAlertsResponse{Count: int32(count)}, nil
 }
 
 func ensureAllAlertsAreFetched(req *v1.ListAlertsRequest) *v1.ListAlertsRequest {

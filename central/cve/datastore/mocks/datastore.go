@@ -53,21 +53,6 @@ func (mr *MockDataStoreMockRecorder) Count(arg0, arg1 interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), arg0, arg1)
 }
 
-// CountWithoutQuery mocks base method
-func (m *MockDataStore) CountWithoutQuery(arg0 context.Context) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountWithoutQuery", arg0)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountWithoutQuery indicates an expected call of CountWithoutQuery
-func (mr *MockDataStoreMockRecorder) CountWithoutQuery(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountWithoutQuery", reflect.TypeOf((*MockDataStore)(nil).CountWithoutQuery), arg0)
-}
-
 // Delete mocks base method
 func (m *MockDataStore) Delete(arg0 context.Context, arg1 ...string) error {
 	m.ctrl.T.Helper()

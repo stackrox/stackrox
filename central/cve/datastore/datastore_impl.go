@@ -88,14 +88,6 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return ds.searcher.Count(ctx, q)
 }
 
-func (ds *datastoreImpl) CountWithoutQuery(ctx context.Context) (int, error) {
-	results, err := ds.searcher.Search(ctx, searchPkg.EmptyQuery())
-	if err != nil {
-		return 0, err
-	}
-	return len(results), nil
-}
-
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.CVE, bool, error) {
 	filteredIDs, err := ds.filterReadable(ctx, []string{id})
 	if err != nil || len(filteredIDs) != 1 {

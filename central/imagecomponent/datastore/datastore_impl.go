@@ -59,14 +59,6 @@ func (ds *datastoreImpl) SearchRawImageComponents(ctx context.Context, q *v1.Que
 	return components, nil
 }
 
-func (ds *datastoreImpl) CountWithoutQuery(ctx context.Context) (int, error) {
-	results, err := ds.searcher.Search(ctx, pkgSearch.EmptyQuery())
-	if err != nil {
-		return 0, err
-	}
-	return len(results), nil
-}
-
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageComponent, bool, error) {
 	filteredIDs, err := ds.filterReadable(ctx, []string{id})
 	if err != nil || len(filteredIDs) != 1 {
