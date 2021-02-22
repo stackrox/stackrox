@@ -13,6 +13,12 @@ function searchObjToQuery(searchObj) {
     return encodeURI(result);
 }
 
+export const general = {
+    graphqlOps: {
+        summaryCounts: 'summary_counts',
+    },
+};
+
 export const search = {
     globalSearchWithResults: '/v1/search?query=Cluster:remote',
     globalSearchWithNoResults: '/v1/search?query=Cluster:',
@@ -125,6 +131,10 @@ export const userAttributes = {
 };
 
 export const compliance = {
+    graphqlOps: {
+        getAggregatedResults: 'getAggregatedResults',
+        namespaces: 'namespaceList',
+    },
     export: {
         csv: '/api/compliance/export/csv',
     },
@@ -178,4 +188,8 @@ export const extensions = {
 
 export const permissions = {
     mypermissions: '/v1/mypermissions',
+};
+
+export const apiDocs = {
+    docs: '/api/docs/swagger',
 };
