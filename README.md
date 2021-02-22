@@ -38,7 +38,7 @@ documentation.
 
 #### Build Tooling
 
-The following tools are necessary to build image(s):
+The following tools are necessary to test code and build image(s):
 
 * [Make](https://www.gnu.org/software/make/)
 * [Go](https://golang.org/dl/)
@@ -48,6 +48,8 @@ The following tools are necessary to build image(s):
 * Docker (make sure you `docker login` to your company [DockerHub account](https://hub.docker.com/settings/security))
 * rocksdb (use `brew install rocksdb` on a Mac)
 * xcode command line tools (macOS only)
+* [Bats](https://github.com/sstephenson/bats) is used to run certain shell tests.
+  You can obtain it with `brew install bats` or `npm install -g bats`.
 
 ##### xcode - macOS only
 
