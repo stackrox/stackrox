@@ -4,6 +4,7 @@ import { Download } from 'react-feather';
 import Button from 'Components/Button';
 import CollapsibleCard from 'Components/CollapsibleCard';
 import Loader from 'Components/Loader';
+import NoResultsMessage from 'Components/NoResultsMessage';
 import { fetchNetworkPolicies } from 'services/NetworkService';
 import download from 'utils/download';
 
@@ -41,8 +42,15 @@ function NetworkPoliciesDetail({ policyIds }: NetworkPoliciesDetailProps): React
     }, [policyIds, setNetworkPolicies]);
 
     return (
-        <div className="flex flex-col bg-base-100 rounded border border-base-400 overflow-y-scroll p-3 w-full h-full">
+        <div className="flex flex-col bg-base-100 rounded border border-base-400 overflow-y-auto p-3 w-full h-full">
             {isLoading && <Loader />}
+            {!isLoading && networkPolicies.length < 1 && (
+                <NoResultsMessage
+                    message="No network policies defined for this deployment"
+                    className="text-lg"
+                    icon="warn"
+                />
+            )}
             {networkPolicies.map((networkPolicy) => {
                 const { id, name, yaml } = networkPolicy;
                 return (
