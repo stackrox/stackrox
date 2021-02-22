@@ -87,6 +87,7 @@ function ToggleSelectedBaselineStatuses({
             const allBaselineRows = getAllRowsByType(rows, networkFlowStatus.BASELINE);
             toggleBaselineStatuses(allBaselineRows);
         }
+        cancelMovingFlows();
     }
 
     function onClickHandler(): void {
