@@ -1848,6 +1848,26 @@ func networkBaselineMessage(
 	return violation
 }
 
+func assertNetworkBaselineMessagesEqual(
+	suite *DefaultPoliciesTestSuite,
+	this []*storage.Alert_Violation,
+	that []*storage.Alert_Violation,
+) {
+	thisWithoutTime := make([]*storage.Alert_Violation, 0, len(this))
+	thatWithoutTime := make([]*storage.Alert_Violation, 0, len(that))
+	for _, violation := range this {
+		cp := violation.Clone()
+		cp.Time = nil
+		thisWithoutTime = append(thisWithoutTime, cp)
+	}
+	for _, violation := range that {
+		cp := violation.Clone()
+		cp.Time = nil
+		thatWithoutTime = append(thatWithoutTime, cp)
+	}
+	suite.ElementsMatch(thisWithoutTime, thatWithoutTime)
+}
+
 func privilegedMessage(dep *storage.Deployment) []*storage.Alert_Violation {
 	containerName := dep.GetContainers()[0].GetName()
 	return []*storage.Alert_Violation{{Message: fmt.Sprintf("Container '%s' is privileged", containerName)}}
@@ -2629,7 +2649,8 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
 
 	violations, err := m.MatchDeploymentWithNetworkFlowInfo(nil, deployment, suite.getImagesForDeployment(deployment), flow)
 	suite.NoError(err)
-	suite.ElementsMatch(
+	assertNetworkBaselineMessagesEqual(
+		suite,
 		violations.AlertViolations,
 		[]*storage.Alert_Violation{networkBaselineMessage(suite, flow)})
 

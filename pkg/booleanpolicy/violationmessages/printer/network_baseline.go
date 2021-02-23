@@ -58,6 +58,7 @@ func GenerateNetworkFlowViolation(networkFlow *augmentedobjs.NetworkFlowDetails)
 			},
 		},
 		Type: storage.Alert_Violation_NETWORK_FLOW,
+		Time: protoconv.ConvertTimeToTimestamp(time.Now()),
 	}, nil
 }
 
