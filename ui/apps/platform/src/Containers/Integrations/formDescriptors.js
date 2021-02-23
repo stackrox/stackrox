@@ -589,10 +589,27 @@ const formDescriptors = {
                 type: 'toggle',
             },
             {
-                label: 'Derived Source Type (instead of using _json)',
-                jsonpath: 'splunk.derivedSourceType',
-                type: 'toggle',
-                default: true,
+                label: 'Source Type for Alert',
+                jsonpath: 'splunk.sourceTypes.alert',
+                type: 'text',
+                placeholder: '',
+                default: 'stackrox-alert',
+            },
+            {
+                label: 'Source Type for Audit',
+                jsonpath: 'splunk.sourceTypes.audit',
+                type: 'text',
+                placeholder: '',
+                default: 'stackrox-audit-message',
+            },
+            {
+                html: (
+                    <p className="my-2">
+                        <strong>Note:</strong> Delete the suggested source type and leave blank to
+                        use the server default value for that type.
+                    </p>
+                ),
+                type: 'html',
             },
         ],
         sumologic: [

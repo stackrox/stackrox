@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -18,20 +17,26 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/wrapper"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
+	integrationType = "splunk"
+
 	source                    = "stackrox"
 	splunkHECDefaultDataLimit = 10000
 	splunkHECHealthEndpoint   = "/services/collector/health/1.0"
 	splunkHECEventEndpoint    = "/services/collector/event/1.0"
+
+	alertSourceTypeKey = "alert"
+	auditSourceTypeKey = "audit"
+	jsonSourceType     = "_json"
 )
 
 var (
@@ -40,6 +45,11 @@ var (
 	timeout = 5 * time.Second
 
 	baseURLPattern = regexp.MustCompile(`^(https?://)?[^/]+/*$`)
+
+	defaultSourceTypeMap = map[string]string{
+		alertSourceTypeKey: "stackrox-alert",
+		auditSourceTypeKey: "stackrox-audit-message",
+	}
 )
 
 type splunk struct {
@@ -86,7 +96,7 @@ func (s *splunk) postAlert(ctx context.Context, alert *storage.Alert) error {
 
 	return retry.WithRetry(
 		func() error {
-			return s.sendEvent(ctx, clonedAlert)
+			return s.sendEvent(ctx, clonedAlert, alertSourceTypeKey)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -97,21 +107,16 @@ func (s *splunk) postAlert(ctx context.Context, alert *storage.Alert) error {
 	)
 }
 
-func (s *splunk) getSplunkEvent(msg proto.Message) (*wrapper.SplunkEvent, error) {
+func (s *splunk) getSplunkEvent(msg proto.Message, sourceTypeKey string) (*wrapper.SplunkEvent, error) {
 	any, err := protoutils.MarshalAny(msg)
 	if err != nil {
 		return nil, err
-	}
-	sourceType := "_json"
-	if s.conf.GetDerivedSourceType() {
-		_, name := stringutils.Split2(any.GetTypeUrl(), ".")
-		sourceType = "stackrox-" + strings.ToLower(strings.Replace(name, ".", "-", -1))
 	}
 
 	return &wrapper.SplunkEvent{
 		Event:      any,
 		Source:     source,
-		Sourcetype: sourceType,
+		Sourcetype: s.conf.SourceTypes[sourceTypeKey],
 	}, nil
 }
 
@@ -126,7 +131,7 @@ func (s *splunk) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) er
 
 	return retry.WithRetry(
 		func() error {
-			return s.sendEvent(ctx, msg)
+			return s.sendEvent(ctx, msg, auditSourceTypeKey)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -141,8 +146,8 @@ func (s *splunk) AuditLoggingEnabled() bool {
 	return s.GetSplunk().GetAuditLoggingEnabled()
 }
 
-func (s *splunk) sendEvent(ctx context.Context, msg proto.Message) error {
-	splunkEvent, err := s.getSplunkEvent(msg)
+func (s *splunk) sendEvent(ctx context.Context, msg proto.Message, sourceTypeKey string) error {
+	splunkEvent, err := s.getSplunkEvent(msg, sourceTypeKey)
 	if err != nil {
 		return err
 	}
@@ -187,7 +192,7 @@ func (s *splunk) sendHTTPPayload(ctx context.Context, method, path string, data 
 }
 
 func init() {
-	notifiers.Add("splunk", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(integrationType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		s, err := newSplunk(notifier)
 		return s, err
 	})
@@ -219,14 +224,39 @@ func newSplunk(notifier *storage.Notifier) (*splunk, error) {
 }
 
 func validate(conf *storage.Splunk) error {
+	errorList := errorhelpers.NewErrorList("Splunk config validation")
 	if len(conf.HttpToken) == 0 {
-		return errors.New("Splunk HTTP Event Collector(HEC) token must be specified")
+		errorList.AddString("Splunk HTTP Event Collector(HEC) token must be specified")
 	}
 	if len(conf.HttpEndpoint) == 0 {
-		return errors.New("Splunk HTTP endpoint must be specified")
+		errorList.AddString("Splunk HTTP endpoint must be specified")
 	}
 	if conf.GetTruncate() == 0 {
 		conf.Truncate = splunkHECDefaultDataLimit
 	}
-	return nil
+	for sourceTypeKey := range defaultSourceTypeMap {
+		if _, ok := conf.SourceTypes[sourceTypeKey]; !ok {
+			errorList.AddStringf("Source type key %s must be specified", sourceTypeKey)
+		}
+	}
+	return errorList.ToError()
+}
+
+// UpgradeNotifierConfig applies changes to the current notifier to make it backwards compatible
+func UpgradeNotifierConfig(notifier *storage.Notifier) {
+	if notifier.GetType() == integrationType {
+		if notifier.GetSplunk().GetDerivedSourceTypeDeprecated() != nil {
+			splunk := notifier.GetSplunk()
+			// Handle backwards compatibility for derived source type field
+			if splunk.GetDerivedSourceType() {
+				splunk.SourceTypes = defaultSourceTypeMap
+			} else {
+				splunk.SourceTypes = make(map[string]string)
+				for k := range defaultSourceTypeMap {
+					splunk.SourceTypes[k] = jsonSourceType
+				}
+			}
+			splunk.DerivedSourceTypeDeprecated = nil
+		}
+	}
 }

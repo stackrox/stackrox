@@ -92,6 +92,31 @@ func TestScrubEmbeddedConfigWithReplacement(t *testing.T) {
 	assert.Equal(t, dtrIntegration.GetDtr().GetPassword(), ScrubReplacementStr)
 }
 
+func TestScrubFromStructWithOneOf(t *testing.T) {
+	impl := &oneOfImplementation{
+		Secret: "iamasecret",
+	}
+	wrapper := OneOfWrapper{
+		SecretInterface: impl,
+	}
+	ScrubSecretsFromStructWithReplacement(wrapper, ScrubReplacementStr)
+	assert.Equal(t, impl.Secret, ScrubReplacementStr)
+}
+
+type OneOfInterface interface {
+	isOneOf()
+}
+
+type OneOfWrapper struct {
+	SecretInterface OneOfInterface
+}
+
+type oneOfImplementation struct {
+	Secret string `scrub:"always"`
+}
+
+func (o *oneOfImplementation) isOneOf() {}
+
 // validateStructTagsOnType returns error if a non-string struct field type has tag scrub:always or
 // if struct field is of type interface{}
 func validateStructTagsOnType(ty reflect.Type) error {
@@ -103,10 +128,7 @@ func validateStructTagsOnTypeHelper(ty reflect.Type, visited map[reflect.Type]st
 	if ty.Kind() == reflect.Ptr {
 		ty = ty.Elem()
 	}
-	if ty.Kind() == reflect.Interface {
-		return errors.Errorf("cannot walk interface field %s", ty.Name())
-	}
-	if ty.Kind() != reflect.Struct {
+	if ty.Kind() == reflect.Interface || ty.Kind() != reflect.Struct {
 		return nil
 	}
 	if _, ok := visited[ty]; ok {
@@ -159,7 +181,7 @@ func TestNonStringPanic(t *testing.T) {
 }
 
 func TestValidateScrubTagTypes(t *testing.T) {
-	assert.Error(t, validateStructTagsOnType(reflect.TypeOf(storage.ImageIntegration{})))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ImageIntegration{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.DTRConfig{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ClairifyConfig{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.DockerConfig{})))
@@ -171,7 +193,7 @@ func TestValidateScrubTagTypes(t *testing.T) {
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.AnchoreConfig{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.IBMRegistryConfig{})))
 
-	assert.Error(t, validateStructTagsOnType(reflect.TypeOf(storage.Notifier{})))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Notifier{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Jira{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Email{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.CSCC{})))

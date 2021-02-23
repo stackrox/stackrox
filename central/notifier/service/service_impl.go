@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/central/notifiers/splunk"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -135,6 +136,7 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 	if !ok {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("notifier type %v is not a valid notifier type", request.GetNotifier().GetType()))
 	}
+	upgradeNotifierConfig(request.GetNotifier())
 	notifier, err := notifierCreator(request.GetNotifier())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -154,6 +156,7 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "id field should be empty when posting a new notifier")
 	}
+	upgradeNotifierConfig(request)
 	notifier, err := notifiers.CreateNotifier(request)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -276,4 +279,10 @@ func reconcileNotifierConfigWithExisting(updated, existing *storage.Notifier) er
 		return errors.New("the request doesn't have a valid notifier config")
 	}
 	return secrets.ReconcileScrubbedStructWithExisting(updated, existing)
+}
+
+func upgradeNotifierConfig(notifier *storage.Notifier) {
+	// UpgradeNotifierConfig applies upgrades to allow for legacy requests to be
+	// converted to new formats
+	splunk.UpgradeNotifierConfig(notifier)
 }

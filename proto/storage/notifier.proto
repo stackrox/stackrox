@@ -81,12 +81,16 @@ message Email {
 
 message Splunk {
     // The HTTP token for the integration. The server will mask the value of this credential in responses and logs.
-    string http_token          = 1 [(gogoproto.moretags) = "scrub:\"always\""];
-    string http_endpoint       = 2 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
-    bool insecure              = 3;
-    int64 truncate             = 4;
-    bool audit_logging_enabled = 5;
-    bool derived_source_type   = 6;
+    string http_token                 = 1 [(gogoproto.moretags) = "scrub:\"always\""];
+    string http_endpoint              = 2 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
+    bool insecure                     = 3;
+    int64 truncate                    = 4;
+    bool audit_logging_enabled        = 5;
+    oneof derived_source_type_deprecated {
+        // derived_source_type is deprecated in lieu of source_types
+        bool derived_source_type      = 6 [deprecated = true];
+    }
+    map<string, string> source_types  = 7;
 }
 
 message PagerDuty {
