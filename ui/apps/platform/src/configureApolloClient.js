@@ -29,6 +29,7 @@ const httpLink = new HttpLink({
 const defaultOptions = {
     watchQuery: {
         fetchPolicy: 'cache-and-network',
+        nextFetchPolicy: 'cache-first',
     },
 };
 
