@@ -207,6 +207,11 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		return nil, errors.New("OIDC requires a default UI endpoint")
 	}
 
+	clientID := config[clientIDConfigKey]
+	if clientID == "" {
+		return nil, errors.New("no client ID provided")
+	}
+
 	issuer := config[issuerConfigKey]
 	if issuer == "" {
 		return nil, errors.New("no issuer provided")
@@ -225,26 +230,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		return nil, errors.New("unencrypted http is not allowed for OIDC issuers")
 	}
 
-	urlForDiscovery := &url.URL{
-		Opaque:  issuerURL.Opaque,
-		Scheme:  issuerURL.Scheme,
-		Host:    issuerURL.Host,
-		Path:    issuerURL.Path,
-		RawPath: issuerURL.RawPath,
-	}
-
-	httpClient := http.DefaultClient
-	if stringutils.ConsumeSuffix(&urlForDiscovery.Scheme, "+insecure") {
-		httpClient = insecureHTTPClient
-	}
-
-	oidcCfg := oidc.Config{
-		ClientID: config[clientIDConfigKey],
-	}
-
-	if oidcCfg.ClientID == "" {
-		return nil, errors.New("no client ID provided")
-	}
+	urlForDiscovery, httpClient := discoveryURLAndClient(issuerURL)
 
 	oidcProvider, _, err := createOIDCProvider(context.WithValue(ctx, oauth2.HTTPClient, httpClient), urlForDiscovery.String())
 	if err != nil {
@@ -253,7 +239,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 
 	provider := wrapProvider(oidcProvider)
 
-	p := &backendImpl{
+	b := &backendImpl{
 		id: id,
 		noncePool: cryptoutils.NewThreadSafeNoncePool(
 			cryptoutils.NewNonceGenerator(nonceByteLen, rand.Reader), nonceTTL),
@@ -263,7 +249,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		httpClient:         httpClient,
 	}
 
-	p.baseRedirectURL = url.URL{
+	b.baseRedirectURL = url.URL{
 		Scheme: "https",
 	}
 
@@ -293,13 +279,13 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 	var responseMode string
 	switch mode {
 	case "fragment":
-		p.baseRedirectURL.Path = fragmentCallbackURLPath
+		b.baseRedirectURL.Path = fragmentCallbackURLPath
 		responseMode = "fragment"
 	case "query":
-		p.baseRedirectURL.Path = callbackURLPath
+		b.baseRedirectURL.Path = callbackURLPath
 		responseMode = "query"
 	case "post":
-		p.baseRedirectURL.Path = callbackURLPath
+		b.baseRedirectURL.Path = callbackURLPath
 		responseMode = "form_post"
 	default:
 		return nil, errors.Errorf("invalid mode %q", mode)
@@ -308,49 +294,73 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 	if !provider.SupportsResponseMode(responseMode) {
 		return nil, errors.Errorf("invalid response mode %q, supported modes: %s", responseMode, strings.Join(provider.ResponseModesSupported, ", "))
 	}
-	p.baseOptions = append(p.baseOptions, oauth2.SetAuthURLParam("response_mode", responseMode))
-	p.responseMode = responseMode
+	b.baseOptions = append(b.baseOptions, oauth2.SetAuthURLParam("response_mode", responseMode))
+	b.responseMode = responseMode
 
 	responseType, err := provider.SelectResponseType(responseMode, clientSecret != "")
 	if err != nil {
 		return nil, errors.Wrap(err, "determining response type")
 	}
-	p.responseTypes = set.NewFrozenStringSet(strings.Split(responseType, " ")...)
+	b.responseTypes = set.NewFrozenStringSet(strings.Split(responseType, " ")...)
 
-	p.baseOptions = append(p.baseOptions, oauth2.SetAuthURLParam("response_type", responseType))
+	b.baseOptions = append(b.baseOptions, oauth2.SetAuthURLParam("response_type", responseType))
 
-	p.idTokenVerifier = oidcProvider.Verifier(&oidcCfg)
+	b.idTokenVerifier = oidcProvider.Verifier(&oidc.Config{ClientID: clientID})
 
-	p.baseOauthConfig = oauth2.Config{
-		ClientID:     oidcCfg.ClientID,
+	b.baseOauthConfig, err = createBaseOAuthConfig(clientID, clientSecret, oidcProvider.Endpoint(), issuerURL, provider.SupportsScope(oidc.ScopeOfflineAccess))
+	if err != nil {
+		return nil, err
+	}
+
+	b.config = map[string]string{
+		issuerConfigKey:       issuer,
+		clientIDConfigKey:     clientID,
+		clientSecretConfigKey: clientSecret,
+		modeConfigKey:         mode,
+	}
+
+	return b, nil
+}
+
+func discoveryURLAndClient(issuerURL *url.URL) (*url.URL, *http.Client) {
+	urlForDiscovery := &url.URL{
+		Opaque:  issuerURL.Opaque,
+		Scheme:  issuerURL.Scheme,
+		Host:    issuerURL.Host,
+		Path:    issuerURL.Path,
+		RawPath: issuerURL.RawPath,
+	}
+
+	httpClient := http.DefaultClient
+	if stringutils.ConsumeSuffix(&urlForDiscovery.Scheme, "+insecure") {
+		httpClient = insecureHTTPClient
+	}
+	return urlForDiscovery, httpClient
+}
+
+func createBaseOAuthConfig(clientID string, clientSecret string, endpoint oauth2.Endpoint, issuerURL *url.URL, offlineAccessSupported bool) (oauth2.Config, error) {
+	baseConfig := oauth2.Config{
+		ClientID:     clientID,
 		ClientSecret: clientSecret,
-		Endpoint:     oidcProvider.Endpoint(),
+		Endpoint:     endpoint,
 		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 	}
-	if clientSecret != "" && provider.SupportsScope(oidc.ScopeOfflineAccess) {
-		p.baseOauthConfig.Scopes = append(p.baseOauthConfig.Scopes, oidc.ScopeOfflineAccess)
+	if clientSecret != "" && offlineAccessSupported {
+		baseConfig.Scopes = append(baseConfig.Scopes, oidc.ScopeOfflineAccess)
 	}
 
 	// Adjust the auth URL endpoint to incorporate the query string and fragment from the issuer URL.
-	authURL, err := url.Parse(p.baseOauthConfig.Endpoint.AuthURL)
+	authURL, err := url.Parse(baseConfig.Endpoint.AuthURL)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unparseable OAuth2 auth URL %q", p.baseOauthConfig.Endpoint.AuthURL)
+		return oauth2.Config{}, errors.Wrapf(err, "unparseable OAuth2 auth URL %q", baseConfig.Endpoint.AuthURL)
 	}
 
 	authURL.RawQuery = stringutils.JoinNonEmpty("&", authURL.RawQuery, issuerURL.RawQuery)
 	authURL.ForceQuery = authURL.ForceQuery || issuerURL.ForceQuery
 	authURL.Fragment = stringutils.JoinNonEmpty("&", authURL.Fragment, issuerURL.Fragment)
 
-	p.baseOauthConfig.Endpoint.AuthURL = authURL.String()
-
-	p.config = map[string]string{
-		issuerConfigKey:       issuer,
-		clientIDConfigKey:     oidcCfg.ClientID,
-		clientSecretConfigKey: clientSecret,
-		modeConfigKey:         mode,
-	}
-
-	return p, nil
+	baseConfig.Endpoint.AuthURL = authURL.String()
+	return baseConfig, nil
 }
 
 func (p *backendImpl) Config() map[string]string {

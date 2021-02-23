@@ -23,6 +23,7 @@ type Provider interface {
 	MergeConfigInto(newCfg map[string]string) map[string]string
 
 	// StorageView returns a description of the authentication provider in protobuf format.
+	// Any secrets are redacted.
 	StorageView() *storage.AuthProvider
 
 	BackendFactory() BackendFactory
