@@ -40,6 +40,11 @@ class StackroxScannerIntegration implements ImageIntegration {
                 name: Constants.AUTO_REGISTERED_STACKROX_SCANNER_INTEGRATION,
                 endpoint: "https://scanner.stackrox:8080",
         ]
+        if (FeatureFlagService.isFeatureFlagEnabled("ROX_HOST_SCANNING")) {
+            defaultArgs += [
+                    gRPCEndpoint: "scanner.stackrox:8443",
+            ]
+        }
         Map args = defaultArgs + customArgs
 
         ImageIntegrationOuterClass.ClairifyConfig.Builder config =
@@ -49,6 +54,8 @@ class StackroxScannerIntegration implements ImageIntegration {
         def categories = [ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER]
         if (FeatureFlagService.isFeatureFlagEnabled("ROX_HOST_SCANNING")) {
             categories.add(ImageIntegrationOuterClass.ImageIntegrationCategory.NODE_SCANNER)
+
+            config.setGrpcEndpoint(args.gRPCEndpoint)
         }
 
         return ImageIntegrationOuterClass.ImageIntegration.newBuilder()

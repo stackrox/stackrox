@@ -132,5 +132,6 @@ var (
 func init() {
 	if features.HostScanning.Enabled() {
 		defaultScanner.Categories = append(defaultScanner.Categories, storage.ImageIntegrationCategory_NODE_SCANNER)
+		defaultScanner.GetClairify().GrpcEndpoint = fmt.Sprintf("%s:8443", scannerEndpoint)
 	}
 }
