@@ -277,15 +277,15 @@ func SetGlobalLogLevel(level int32) {
 	}
 
 	atomic.StoreInt32(&defaultLevel, level)
-
-	if thisModuleLogger != nil {
-		thisModuleLogger.Debugf("Set log level to: %s", l)
-	}
-
 	config.Level.SetLevel(l)
 	ForEachModule(func(name string, m *Module) {
 		m.SetLogLevel(level)
 	}, SelectAll)
+
+	// Don't log the log level change when switching to Panic or Fatal.
+	if thisModuleLogger != nil && level <= ErrorLevel {
+		thisModuleLogger.Logf(level, "Log level is set to: %s", l)
+	}
 }
 
 // GetGlobalLogLevel returns the global log level (it is still possible that module loggers log at a different level).
