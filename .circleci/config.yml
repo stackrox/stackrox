@@ -2201,6 +2201,7 @@ jobs:
       - ROX_K8S_EVENTS_DETECTION: true
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
+      - ROX_INACTIVE_IMAGE_SCANNING_UI: true
     steps:
       - checkout
 
@@ -2985,6 +2986,7 @@ jobs:
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - SENSOR_HELM_DEPLOY: true
+      - ROX_INACTIVE_IMAGE_SCANNING_UI: true
 
     steps:
       - checkout
@@ -3275,6 +3277,7 @@ jobs:
       - ROX_K8S_EVENTS_DETECTION: true
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
+      - ROX_INACTIVE_IMAGE_SCANNING_UI: true
 
     steps:
       - checkout
@@ -3349,6 +3352,7 @@ jobs:
       - ROX_K8S_EVENTS_DETECTION: true
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
+      - ROX_INACTIVE_IMAGE_SCANNING_UI: true
 
     steps:
       - run-qa-tests:
@@ -3381,6 +3385,7 @@ jobs:
       - ROX_K8S_EVENTS_DETECTION: true
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
+      - ROX_INACTIVE_IMAGE_SCANNING_UI: true
 
     steps:
       - checkout
@@ -3418,6 +3423,7 @@ jobs:
       - ROX_K8S_EVENTS_DETECTION: true
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
+      - ROX_INACTIVE_IMAGE_SCANNING_UI: true
 
     steps:
       - run-qa-tests:
@@ -3456,6 +3462,7 @@ jobs:
       - ROX_K8S_EVENTS_DETECTION: true
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
+      - ROX_INACTIVE_IMAGE_SCANNING_UI: true
 
     steps:
       - run-qa-tests:
@@ -4021,6 +4028,7 @@ jobs:
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
       - SENSOR_HELM_DEPLOY: true
+      - ROX_INACTIVE_IMAGE_SCANNING_UI: true
 
     steps:
       - run-openshift-tests:
@@ -4049,6 +4057,7 @@ jobs:
       - ROX_K8S_EVENTS_DETECTION: true
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
+      - ROX_INACTIVE_IMAGE_SCANNING_UI: true
 
     steps:
       - run-openshift-tests:
@@ -4077,6 +4086,7 @@ jobs:
       - ROX_K8S_EVENTS_DETECTION: true
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
+      - ROX_INACTIVE_IMAGE_SCANNING_UI: true
 
     steps:
       - checkout
@@ -4178,6 +4188,7 @@ jobs:
       - ROX_K8S_EVENTS_DETECTION: true
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
+      - ROX_INACTIVE_IMAGE_SCANNING_UI: true
 
     steps:
       - checkout
