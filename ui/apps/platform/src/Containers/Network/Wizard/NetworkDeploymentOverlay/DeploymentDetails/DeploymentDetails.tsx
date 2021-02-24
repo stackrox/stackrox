@@ -57,7 +57,7 @@ function DeploymentDetails({ deploymentId }: DeploymentDetailsProps): ReactEleme
         );
     }, [deploymentId, setDeplopymentDetails]);
     return (
-        <div className="flex flex-col bg-base-100 rounded border border-base-400 overflow-y-scroll p-3 w-full h-full">
+        <div className="flex flex-col bg-base-100 rounded border border-base-400 overflow-auto p-3 w-full h-full">
             <CollapsibleCard title="Overview" cardClassName="border border-base-400 mb-3">
                 <div className="h-full px-3 word-break">
                     <KeyValuePairs data={deploymentDetails} keyValueMap={deploymentDetailsMap} />
