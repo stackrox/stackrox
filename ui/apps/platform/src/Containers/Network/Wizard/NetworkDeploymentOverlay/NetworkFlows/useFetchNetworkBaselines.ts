@@ -105,7 +105,11 @@ function useFetchNetworkBaselines({
 
         const { networkFlows } = getNetworkFlows(edges, filterState);
         const peers = getPeersFromNetworkFlows(networkFlows);
-        const baselineStatusPromise = fetchNetworkBaselineStatuses({ deploymentId, peers });
+        const peersToSend = peers.filter((peer) => peer.port !== '*');
+        const baselineStatusPromise = fetchNetworkBaselineStatuses({
+            deploymentId,
+            peers: peersToSend,
+        });
 
         baselineStatusPromise
             .then((response) => {
@@ -132,7 +136,7 @@ function useFetchNetworkBaselines({
                         port: peer.port,
                         protocol: peer.protocol,
                     });
-                    const status = baselineStatusMap[key];
+                    const status = baselineStatusMap[key] || 'ANOMALOUS';
                     acc.push({
                         peer,
                         status,
