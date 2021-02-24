@@ -24,7 +24,6 @@ import { pluralizeHas } from 'utils/textUtils';
 import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
-import PolicyConfigurationFields from './PolicyConfigurationFields';
 
 const emptyPolicy = {
     categories: [],
@@ -69,7 +68,6 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
         lastUpdated,
         enforcementActions,
         lifecycleStages,
-        fields,
         policySections,
         scope,
         exclusions,
@@ -302,12 +300,6 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                                 className="h-full w-full min-w-48 bg-base-100 pdf-page"
                                 keyValuePairs={details}
                                 title="Details"
-                            />
-                        </div>
-                        <div className="s-1">
-                            <PolicyConfigurationFields
-                                className="flex-1 min-w-48 bg-base-100 min-h-48 pdf-page h-full"
-                                fields={fields}
                             />
                         </div>
                         <div className="s-1">
