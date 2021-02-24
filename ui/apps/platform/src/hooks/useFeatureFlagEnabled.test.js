@@ -24,7 +24,6 @@ describe('useFeatureFlagEnabled', () => {
         const store = configureStore(initialStore, history);
 
         const { result } = renderHook(() => useFeatureFlagEnabled('ROX_FEATURE_ENABLED'), {
-            // eslint-disable-next-line react/display-name
             wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
         });
 
@@ -35,7 +34,6 @@ describe('useFeatureFlagEnabled', () => {
         const store = configureStore(initialStore, history);
 
         const { result } = renderHook(() => useFeatureFlagEnabled('ROX_FEATURE_DISABLED'), {
-            // eslint-disable-next-line react/display-name
             wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
         });
 
@@ -69,7 +67,6 @@ describe('useFeatureFlagEnabled', () => {
                 const store = configureStore(initialStore, history);
 
                 const { result } = renderHook(() => useFeatureFlagEnabled(unknownFeature), {
-                    // eslint-disable-next-line react/display-name
                     wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
                 });
 

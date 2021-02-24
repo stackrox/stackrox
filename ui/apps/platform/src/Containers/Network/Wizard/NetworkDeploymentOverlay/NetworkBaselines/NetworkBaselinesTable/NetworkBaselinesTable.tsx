@@ -1,4 +1,3 @@
-/* eslint-disable react/display-name */
 import React, { ReactElement } from 'react';
 import { useTable, useSortBy, useGroupBy, useExpanded, useRowSelect } from 'react-table';
 import uniq from 'lodash/uniq';

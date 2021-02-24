@@ -13,14 +13,12 @@ const InfoList = ({ items, renderItem, extraClassNames }) => {
 
 InfoList.propTypes = {
     extraClassNames: PropTypes.string,
-    items: PropTypes.arrayOf(PropTypes.any),
-    renderItem: PropTypes.func,
+    items: PropTypes.arrayOf(PropTypes.any).isRequired,
+    renderItem: PropTypes.func.isRequired,
 };
 
 InfoList.defaultProps = {
     extraClassNames: '',
-    items: [],
-    renderItem: (item) => <li key={item.id}>{item.toString()}</li>,
 };
 
 export default InfoList;

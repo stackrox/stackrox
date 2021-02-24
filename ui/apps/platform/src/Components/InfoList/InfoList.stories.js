@@ -8,12 +8,6 @@ export default {
     component: InfoList,
 };
 
-export const basicInfoList = () => {
-    const data = ['CVE-2005-2541', 'CVE-2017-12424', 'CVE-2018-16402'];
-
-    return <InfoList items={data} />;
-};
-
 export const withCustomItemRenderer = () => {
     const data = [
         {

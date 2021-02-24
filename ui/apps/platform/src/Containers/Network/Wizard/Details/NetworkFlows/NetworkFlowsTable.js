@@ -1,4 +1,3 @@
-/* eslint-disable react/display-name */
 import React from 'react';
 import * as Icon from 'react-feather';
 import uniqBy from 'lodash/uniqBy';
@@ -72,7 +71,6 @@ const NetworkFlowsTable = ({ networkFlows, page, filterState, onNavigateToDeploy
             className: `${defaultColumnClassName} w-2 break-all`,
             Header: 'Ports',
             accessor: 'portsAndProtocols',
-            // eslint-disable-next-line react/prop-types
             Cell: ({ value }) => {
                 if (value.length === 0) {
                     return '-';
@@ -89,7 +87,6 @@ const NetworkFlowsTable = ({ networkFlows, page, filterState, onNavigateToDeploy
             className: `${defaultColumnClassName} w-2 break-all`,
             Header: 'Protocols',
             accessor: 'portsAndProtocols',
-            // eslint-disable-next-line react/prop-types
             Cell: ({ value }) => {
                 if (value.length === 0) {
                     return '-';

@@ -43,14 +43,12 @@ const riskTableColumnDescriptors = [
         Header: 'Name',
         accessor: 'deployment.name',
         searchField: 'Deployment',
-        // eslint-disable-next-line react/prop-types
         Cell: DeploymentNameColumn,
     },
     {
         Header: 'Created',
         accessor: 'deployment.created',
         searchField: 'Created',
-        // eslint-disable-next-line react/prop-types
         Cell: ({ value }) => <span>{dateFns.format(value, dateTimeFormat)}</span>,
         sortMethod: sortDate,
     },
