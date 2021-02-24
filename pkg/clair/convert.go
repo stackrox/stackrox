@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
@@ -16,7 +17,8 @@ import (
 )
 
 const (
-	timeFormat = "2006-01-02T15:04Z"
+	timeFormat         = "2006-01-02T15:04Z"
+	extendedTimeFormat = "2006-01-02T15:04:03Z"
 )
 
 var (
@@ -80,16 +82,8 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 	if err := json.Unmarshal(d, &m); err != nil {
 		return vul
 	}
-	if m.PublishedOn != "" {
-		if ts, err := time.Parse(timeFormat, m.PublishedOn); err == nil {
-			vul.PublishedOn = protoconv.ConvertTimeToTimestamp(ts)
-		}
-	}
-	if m.LastModified != "" {
-		if ts, err := time.Parse(timeFormat, m.LastModified); err == nil {
-			vul.LastModified = protoconv.ConvertTimeToTimestamp(ts)
-		}
-	}
+	vul.PublishedOn = ConvertTime(m.PublishedOn)
+	vul.LastModified = ConvertTime(m.LastModified)
 
 	if m.CvssV2 != nil && m.CvssV2.Vectors != "" {
 		if cvssV2, err := cvssv2.ParseCVSSV2(m.CvssV2.Vectors); err == nil {
@@ -186,4 +180,17 @@ func ConvertFeatures(image *storage.Image, features []clairV1.Feature) (componen
 		components = append(components, convertedComponent)
 	}
 	return
+}
+
+// ConvertTime converts a vulnerability time string into a proto timestamp
+func ConvertTime(str string) *timestamp.Timestamp {
+	if str == "" {
+		return nil
+	}
+	if ts, err := time.Parse(timeFormat, str); err == nil {
+		return protoconv.ConvertTimeToTimestamp(ts)
+	} else if ts, err := time.Parse(extendedTimeFormat, str); err == nil {
+		return protoconv.ConvertTimeToTimestamp(ts)
+	}
+	return nil
 }

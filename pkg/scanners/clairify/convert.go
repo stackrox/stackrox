@@ -1,20 +1,14 @@
 package clairify
 
 import (
-	"time"
-
 	gogoProto "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scans"
 	"github.com/stackrox/rox/pkg/stringutils"
 	v1 "github.com/stackrox/scanner/generated/shared/api/v1"
-)
-
-const (
-	timeFormat = "2006-01-02T15:04Z"
 )
 
 func convertNodeToVulnRequest(node *storage.Node) *v1.GetNodeVulnerabilitiesRequest {
@@ -109,17 +103,9 @@ func convertNodeVulnerability(v *v1.Vulnerability) *storage.EmbeddedVulnerabilit
 
 	if v.GetMetadataV2() != nil {
 		m := v.GetMetadataV2()
-		if m.GetPublishedDateTime() != "" {
-			if ts, err := time.Parse(timeFormat, m.GetPublishedDateTime()); err == nil {
-				vuln.PublishedOn = protoconv.ConvertTimeToTimestamp(ts)
-			}
-		}
-		if m.GetLastModifiedDateTime() != "" {
-			if ts, err := time.Parse(timeFormat, m.GetLastModifiedDateTime()); err == nil {
-				vuln.LastModified = protoconv.ConvertTimeToTimestamp(ts)
-			}
-		}
 
+		vuln.PublishedOn = clair.ConvertTime(m.GetPublishedDateTime())
+		vuln.LastModified = clair.ConvertTime(m.GetLastModifiedDateTime())
 		if m.GetCvssV2() != nil && m.GetCvssV2().Vector != "" {
 			if cvssV2, err := cvssv2.ParseCVSSV2(m.GetCvssV2().GetVector()); err == nil {
 				cvssV2.ExploitabilityScore = m.GetCvssV2().GetExploitabilityScore()

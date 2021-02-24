@@ -3,6 +3,7 @@ package clair
 import (
 	"testing"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
 	clairV1 "github.com/stackrox/scanner/api/v1"
@@ -146,6 +147,39 @@ func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
 			for i := range convertedComponents {
 				assert.Equal(t, c.expectedComponents[i], convertedComponents[i])
 			}
+		})
+	}
+}
+
+func TestConvertTime(t *testing.T) {
+	cases := []struct {
+		input  string
+		output *types.Timestamp
+	}{
+		{
+			input:  "",
+			output: nil,
+		},
+		{
+			input:  "malformed",
+			output: nil,
+		},
+		{
+			input: "2018-02-07T23:29Z",
+			output: &types.Timestamp{
+				Seconds: 1518046140,
+			},
+		},
+		{
+			input: "2019-01-20T00:00:00Z",
+			output: &types.Timestamp{
+				Seconds: 1547942400,
+			},
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.input, func(t *testing.T) {
+			assert.Equal(t, c.output, ConvertTime(c.input))
 		})
 	}
 }

@@ -5,6 +5,7 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+- The published time for CVEs in RHEL and CentOS images is now populated correctly.
 
 ## [56.0]
 - Page titles now reflect the URL location of the user within the app in the browser tab and history.
