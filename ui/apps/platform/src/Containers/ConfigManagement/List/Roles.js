@@ -8,6 +8,7 @@ import {
     defaultColumnClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
+import TableCellLink from 'Components/TableCellLink';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
@@ -16,7 +17,6 @@ import { K8S_ROLES_QUERY } from 'queries/role';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import List from './List';
-import TableCellLink from './Link';
 
 export const defaultRoleSort = [
     {
@@ -89,7 +89,11 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(id)
                           .push(entityTypes.CLUSTER, clusterId)
                           .url();
-                      return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
+                      return (
+                          <TableCellLink pdf={pdf} url={url}>
+                              {clusterName}
+                          </TableCellLink>
+                      );
                   },
                   id: roleSortFields.CLUSTER,
                   sortField: roleSortFields.CLUSTER,
@@ -111,7 +115,11 @@ const buildTableColumns = (match, location, entityContext) => {
                     .push(id)
                     .push(entityTypes.NAMESPACE, namespaceId)
                     .url();
-                return <TableCellLink pdf={pdf} url={url} text={name} />;
+                return (
+                    <TableCellLink pdf={pdf} url={url}>
+                        {name}
+                    </TableCellLink>
+                );
             },
             accessor: 'roleNamespace.metadata.name',
             sortable: false,
@@ -137,20 +145,20 @@ const buildTableColumns = (match, location, entityContext) => {
                     .push(original.id)
                     .push(entityTypes.SUBJECT)
                     .url();
+                const text = `${subjectsLength} ${pluralize('Users & Groups', subjectsLength)}`;
                 if (subjectsLength > 1) {
                     return (
-                        <TableCellLink
-                            pdf={pdf}
-                            url={url}
-                            text={`${subjectsLength} ${pluralize(
-                                'Users & Groups',
-                                subjectsLength
-                            )}`}
-                        />
+                        <TableCellLink pdf={pdf} url={url}>
+                            {text}
+                        </TableCellLink>
                     );
                 }
                 const subject = subjects[0];
-                return <TableCellLink pdf={pdf} url={url} text={subject.name} />;
+                return (
+                    <TableCellLink pdf={pdf} url={url}>
+                        {subject.name}
+                    </TableCellLink>
+                );
             },
             id: 'subjects',
             accessor: (d) => d.subjects,
@@ -179,20 +187,23 @@ const buildTableColumns = (match, location, entityContext) => {
                     .push(id)
                     .push(entityTypes.SERVICE_ACCOUNT)
                     .url();
+                const text = `${serviceAccountsLength} ${pluralize(
+                    'Service Accounts',
+                    serviceAccountsLength
+                )}`;
                 if (serviceAccountsLength > 1) {
                     return (
-                        <TableCellLink
-                            pdf={pdf}
-                            url={url}
-                            text={`${serviceAccountsLength} ${pluralize(
-                                'Service Accounts',
-                                serviceAccountsLength
-                            )}`}
-                        />
+                        <TableCellLink pdf={pdf} url={url}>
+                            {text}
+                        </TableCellLink>
                     );
                 }
                 const serviceAccount = serviceAccounts[0];
-                return <TableCellLink pdf={pdf} url={url} text={serviceAccount.name} />;
+                return (
+                    <TableCellLink pdf={pdf} url={url}>
+                        {serviceAccount.name}
+                    </TableCellLink>
+                );
             },
             accessor: 'serviceAccounts',
             sortable: false,

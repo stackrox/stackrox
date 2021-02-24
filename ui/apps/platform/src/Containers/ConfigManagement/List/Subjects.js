@@ -6,6 +6,7 @@ import {
     defaultColumnClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
+import TableCellLink from 'Components/TableCellLink';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
 import { subjectSortFields } from 'constants/sortFields';
@@ -13,7 +14,6 @@ import { SUBJECTS_QUERY } from 'queries/subject';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import List from './List';
-import TableCellLink from './Link';
 
 export const defaultSubjectSort = [
     {
@@ -80,7 +80,11 @@ const buildTableColumns = (match, location) => {
                     .url();
                 const text =
                     length === 1 ? k8sRoles[0].name : `${length} ${pluralize('Role', length)}`;
-                return <TableCellLink pdf={pdf} url={url} text={text} />;
+                return (
+                    <TableCellLink pdf={pdf} url={url}>
+                        {text}
+                    </TableCellLink>
+                );
             },
             accessor: 'k8sRoles',
             sortable: false,

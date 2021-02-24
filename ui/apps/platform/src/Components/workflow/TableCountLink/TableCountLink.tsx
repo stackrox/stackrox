@@ -41,12 +41,9 @@ function TableCountLink({
     const urlWithSearch = newState.setSearch(search).toUrl();
 
     return (
-        <TableCellLink
-            pdf={textOnly}
-            url={urlWithSearch}
-            text={text}
-            dataTestId={`${camelCase(type)}CountLink`}
-        />
+        <TableCellLink pdf={textOnly} url={urlWithSearch} testid={`${camelCase(type)}CountLink`}>
+            {text}
+        </TableCellLink>
     );
 }
 

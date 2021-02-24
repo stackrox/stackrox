@@ -7,6 +7,7 @@ import {
     defaultColumnClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
+import TableCellLink from 'Components/TableCellLink';
 import LabelChip from 'Components/LabelChip';
 import StatusChip from 'Components/StatusChip';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
@@ -16,7 +17,6 @@ import { clusterSortFields } from 'constants/sortFields';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import List from './List';
-import TableCellLink from './Link';
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
 
 const CLUSTERS_QUERY = gql`
@@ -109,12 +109,11 @@ const buildTableColumns = (match, location) => {
                     .push(original.id)
                     .push(entityTypes.CONTROL)
                     .url();
+                const text = `${totalCount} ${pluralize('Controls', totalCount)}`;
                 return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${totalCount} ${pluralize('Controls', totalCount)}`}
-                    />
+                    <TableCellLink pdf={pdf} url={url}>
+                        {text}
+                    </TableCellLink>
                 );
             },
             sortable: false,
@@ -133,12 +132,11 @@ const buildTableColumns = (match, location) => {
                     .push(original.id)
                     .push(entityTypes.SUBJECT)
                     .url();
+                const text = `${subjectCount} ${pluralize('Users & Groups', subjectCount)}`;
                 return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${subjectCount} ${pluralize('Users & Groups', subjectCount)}`}
-                    />
+                    <TableCellLink pdf={pdf} url={url}>
+                        {text}
+                    </TableCellLink>
                 );
             },
             id: 'subjectCount',
@@ -159,15 +157,14 @@ const buildTableColumns = (match, location) => {
                     .push(original.id)
                     .push(entityTypes.SERVICE_ACCOUNT)
                     .url();
+                const text = `${serviceAccountCount} ${pluralize(
+                    'Service Accounts',
+                    serviceAccountCount
+                )}`;
                 return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${serviceAccountCount} ${pluralize(
-                            'Service Accounts',
-                            serviceAccountCount
-                        )}`}
-                    />
+                    <TableCellLink pdf={pdf} url={url}>
+                        {text}
+                    </TableCellLink>
                 );
             },
             id: 'serviceAccountCount',
@@ -188,12 +185,11 @@ const buildTableColumns = (match, location) => {
                     .push(original.id)
                     .push(entityTypes.ROLE)
                     .url();
+                const text = `${k8sRoleCount} ${pluralize('Roles', k8sRoleCount)}`;
                 return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${k8sRoleCount} ${pluralize('Roles', k8sRoleCount)}`}
-                    />
+                    <TableCellLink pdf={pdf} url={url}>
+                        {text}
+                    </TableCellLink>
                 );
             },
             id: 'k8sRoleCount',

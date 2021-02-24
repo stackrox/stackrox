@@ -6,6 +6,7 @@ import {
     defaultColumnClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
+import TableCellLink from 'Components/TableCellLink';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
 import { serviceAccountSortFields } from 'constants/sortFields';
@@ -14,7 +15,6 @@ import { sortValueByLength } from 'sorters/sorters';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import List from './List';
-import TableCellLink from './Link';
 
 export const defaultServiceAccountSort = [
     {
@@ -63,7 +63,11 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(id)
                           .push(entityTypes.CLUSTER, clusterId)
                           .url();
-                      return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
+                      return (
+                          <TableCellLink pdf={pdf} url={url}>
+                              {clusterName}
+                          </TableCellLink>
+                      );
                   },
                   id: serviceAccountSortFields.CLUSTER,
                   sortField: serviceAccountSortFields.CLUSTER,
@@ -89,7 +93,11 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(id)
                           .push(entityTypes.NAMESPACE, namespaceId)
                           .url();
-                      return <TableCellLink pdf={pdf} url={url} text={name} />;
+                      return (
+                          <TableCellLink pdf={pdf} url={url}>
+                              {name}
+                          </TableCellLink>
+                      );
                   },
                   id: serviceAccountSortFields.NAMESPACE,
                   sortField: serviceAccountSortFields.NAMESPACE,
@@ -109,12 +117,11 @@ const buildTableColumns = (match, location, entityContext) => {
                     .push(entityTypes.ROLE)
                     .url();
                 if (length > 1) {
+                    const text = `${length} ${pluralize('Roles', length)}`;
                     return (
-                        <TableCellLink
-                            pdf={pdf}
-                            url={url}
-                            text={`${length} ${pluralize('Roles', length)}`}
-                        />
+                        <TableCellLink pdf={pdf} url={url}>
+                            {text}
+                        </TableCellLink>
                     );
                 }
                 return original.k8sRoles[0].name;
@@ -137,12 +144,11 @@ const buildTableColumns = (match, location, entityContext) => {
                     .push(id)
                     .push(entityTypes.DEPLOYMENT)
                     .url();
+                const text = `${deploymentCount} ${pluralize('Deployment', deploymentCount)}`;
                 return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${deploymentCount} ${pluralize('Deployment', deploymentCount)}`}
-                    />
+                    <TableCellLink pdf={pdf} url={url}>
+                        {text}
+                    </TableCellLink>
                 );
             },
             accessor: 'deploymentCount',

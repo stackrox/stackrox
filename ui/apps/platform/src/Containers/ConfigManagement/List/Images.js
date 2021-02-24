@@ -7,6 +7,7 @@ import {
     defaultColumnClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
+import TableCellLink from 'Components/TableCellLink';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
@@ -14,7 +15,6 @@ import { imageSortFields } from 'constants/sortFields';
 import { IMAGES_QUERY } from 'queries/image';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
-import TableCellLink from './Link';
 import List from './List';
 
 export const defaultImageSort = [
@@ -72,7 +72,11 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(id)
                           .push(entityTypes.DEPLOYMENT)
                           .url();
-                      return <TableCellLink pdf={pdf} url={url} text={text} />;
+                      return (
+                          <TableCellLink pdf={pdf} url={url}>
+                              {text}
+                          </TableCellLink>
+                      );
                   },
                   accessor: 'deployments',
                   sortable: false,

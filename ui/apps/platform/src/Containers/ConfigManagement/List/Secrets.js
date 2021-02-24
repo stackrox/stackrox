@@ -8,6 +8,7 @@ import {
     defaultColumnClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
+import TableCellLink from 'Components/TableCellLink';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
@@ -16,7 +17,6 @@ import { secretSortFields } from 'constants/sortFields';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import List from './List';
-import TableCellLink from './Link';
 
 const secretTypeEnumMapping = {
     UNDETERMINED: 'Undetermined',
@@ -101,7 +101,11 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(id)
                           .push(entityTypes.CLUSTER, clusterId)
                           .url();
-                      return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
+                      return (
+                          <TableCellLink pdf={pdf} url={url}>
+                              {clusterName}
+                          </TableCellLink>
+                      );
                   },
                   id: secretSortFields.CLUSTER,
                   sortField: secretSortFields.CLUSTER,
@@ -122,7 +126,11 @@ const buildTableColumns = (match, location, entityContext) => {
                     .push(entityTypes.DEPLOYMENT)
                     .url();
                 const text = `${deploymentCount} ${pluralize('Deployment', deploymentCount)}`;
-                return <TableCellLink dataTestId="deployment" pdf={pdf} url={url} text={text} />;
+                return (
+                    <TableCellLink testid="deployment" pdf={pdf} url={url}>
+                        {text}
+                    </TableCellLink>
+                );
             },
             sortable: false,
         },

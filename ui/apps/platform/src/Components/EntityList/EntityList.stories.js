@@ -60,7 +60,11 @@ function getTableColumns() {
             Cell: ({ original, pdf }) => {
                 const { clusterName } = original;
                 const url = 'https://stackrow.com';
-                return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
+                return (
+                    <TableCellLink pdf={pdf} url={url}>
+                        {clusterName}
+                    </TableCellLink>
+                );
             },
         },
         {
@@ -72,7 +76,11 @@ function getTableColumns() {
             Cell: ({ original, pdf }) => {
                 const { namespace } = original;
                 const url = 'https://wikipedia.org';
-                return <TableCellLink pdf={pdf} url={url} text={namespace} />;
+                return (
+                    <TableCellLink pdf={pdf} url={url}>
+                        {namespace}
+                    </TableCellLink>
+                );
             },
         },
         {
@@ -98,12 +106,11 @@ function getTableColumns() {
                     return 'No images';
                 }
                 const url = 'https://google.com';
+                const text = `${imageCount} ${pluralize('image', imageCount)}`;
                 return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${imageCount} ${pluralize('image', imageCount)}`}
-                    />
+                    <TableCellLink pdf={pdf} url={url}>
+                        {text}
+                    </TableCellLink>
                 );
             },
             accessor: 'imageCount',

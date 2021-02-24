@@ -13,8 +13,9 @@ export const basicTableCellLink = () => (
         <TableCellLink
             pdf={false}
             url="/main/configmanagement/cluster/88d17fde-3b80-48dc-a4f3-1c8068e95f28"
-            text="remote"
-        />
+        >
+            remote
+        </TableCellLink>
     </MemoryRouter>
 );
 
@@ -23,8 +24,9 @@ export const withPDFflagSet = () => (
         <TableCellLink
             pdf
             url="/main/configmanagement/cluster/88d17fde-3b80-48dc-a4f3-1c8068e95f28"
-            text="cluster_on_pdf"
-        />
+        >
+            cluster_on_pdf
+        </TableCellLink>
     </MemoryRouter>
 );
 
@@ -147,30 +149,27 @@ export const inATable = () => (
                                 role="gridcell"
                                 style={{ flex: '100 0 auto', width: '100px' }}
                             >
-                                <TableCellLink
-                                    url="/main/configmanagement/clusters/88d17fde-3b80-48dc-a4f3-1c8068e95f28/subjects"
-                                    text="10 Users & Groups"
-                                />
+                                <TableCellLink url="/main/configmanagement/clusters/88d17fde-3b80-48dc-a4f3-1c8068e95f28/subjects">
+                                    10 Users & Groups
+                                </TableCellLink>
                             </div>
                             <div
                                 className="rt-td w-1/8 p-2 flex items-center font-600 text-base-600 text-left border-r-0 leading-normal"
                                 role="gridcell"
                                 style={{ flex: '100 0 auto', width: '100px' }}
                             >
-                                <TableCellLink
-                                    url="/main/configmanagement/clusters/88d17fde-3b80-48dc-a4f3-1c8068e95f28/serviceaccounts"
-                                    text="40 Service Accounts"
-                                />
+                                <TableCellLink url="/main/configmanagement/clusters/88d17fde-3b80-48dc-a4f3-1c8068e95f28/serviceaccounts">
+                                    40 Service Accounts
+                                </TableCellLink>
                             </div>
                             <div
                                 className="rt-td w-1/8 p-2 flex items-center font-600 text-base-600 text-left border-r-0 leading-normal"
                                 role="gridcell"
                                 style={{ flex: '100 0 auto', width: '100px' }}
                             >
-                                <TableCellLink
-                                    url="/main/configmanagement/clusters/88d17fde-3b80-48dc-a4f3-1c8068e95f28/roles"
-                                    text="80 Roles"
-                                />
+                                <TableCellLink url="/main/configmanagement/clusters/88d17fde-3b80-48dc-a4f3-1c8068e95f28/roles">
+                                    80 Roles
+                                </TableCellLink>
                             </div>
                         </div>
                     </div>

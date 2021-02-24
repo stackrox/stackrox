@@ -146,7 +146,9 @@ export function getDeploymentTableColumns(workflowState) {
                     .pushRelatedEntity(entityTypes.CLUSTER, clusterId)
                     .toUrl();
                 return (
-                    <TableCellLink pdf={inFindingsSection || pdf} url={url} text={clusterName} />
+                    <TableCellLink pdf={inFindingsSection || pdf} url={url}>
+                        {clusterName}
+                    </TableCellLink>
                 );
             },
             id: deploymentSortFields.CLUSTER,
@@ -164,7 +166,11 @@ export function getDeploymentTableColumns(workflowState) {
                     .pushListItem(id)
                     .pushRelatedEntity(entityTypes.NAMESPACE, namespaceId)
                     .toUrl();
-                return <TableCellLink pdf={inFindingsSection || pdf} url={url} text={namespace} />;
+                return (
+                    <TableCellLink pdf={inFindingsSection || pdf} url={url}>
+                        {namespace}
+                    </TableCellLink>
+                );
             },
             id: deploymentSortFields.NAMESPACE,
             accessor: 'namespace',

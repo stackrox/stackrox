@@ -6,6 +6,7 @@ import {
     defaultColumnClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
+import TableCellLink from 'Components/TableCellLink';
 import StatusChip from 'Components/StatusChip';
 import searchContext from 'Containers/searchContext';
 import entityTypes from 'constants/entityTypes';
@@ -16,7 +17,6 @@ import { DEPLOYMENTS_QUERY } from 'queries/deployment';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import List from './List';
-import TableCellLink from './Link';
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
 
 export const defaultDeploymentSort = [
@@ -56,7 +56,11 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(id)
                           .push(entityTypes.CLUSTER, clusterId)
                           .url();
-                      return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
+                      return (
+                          <TableCellLink pdf={pdf} url={url}>
+                              {clusterName}
+                          </TableCellLink>
+                      );
                   },
                   id: deploymentSortFields.CLUSTER,
                   sortField: deploymentSortFields.CLUSTER,
@@ -75,7 +79,11 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(id)
                           .push(entityTypes.NAMESPACE, namespaceId)
                           .url();
-                      return <TableCellLink pdf={pdf} url={url} text={namespace} />;
+                      return (
+                          <TableCellLink pdf={pdf} url={url}>
+                              {namespace}
+                          </TableCellLink>
+                      );
                   },
                   id: deploymentSortFields.NAMESPACE,
                   sortField: deploymentSortFields.NAMESPACE,
@@ -107,12 +115,11 @@ const buildTableColumns = (match, location, entityContext) => {
                     .push(id)
                     .push(entityTypes.IMAGE)
                     .url();
+                const text = `${imageCount} ${pluralize('image', imageCount)}`;
                 return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${imageCount} ${pluralize('image', imageCount)}`}
-                    />
+                    <TableCellLink pdf={pdf} url={url}>
+                        {text}
+                    </TableCellLink>
                 );
             },
             accessor: 'imageCount',
@@ -132,12 +139,11 @@ const buildTableColumns = (match, location, entityContext) => {
                     .push(id)
                     .push(entityTypes.SECRET)
                     .url();
+                const text = `${secretCount} ${pluralize('secret', secretCount)}`;
                 return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${secretCount} ${pluralize('secret', secretCount)}`}
-                    />
+                    <TableCellLink pdf={pdf} url={url}>
+                        {text}
+                    </TableCellLink>
                 );
             },
             accessor: 'secretCount',
@@ -157,7 +163,11 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(id)
                           .push(entityTypes.SERVICE_ACCOUNT, serviceAccountID)
                           .url();
-                      return <TableCellLink pdf={pdf} url={url} text={serviceAccount} />;
+                      return (
+                          <TableCellLink pdf={pdf} url={url}>
+                              {serviceAccount}
+                          </TableCellLink>
+                      );
                   },
                   id: deploymentSortFields.SERVICE_ACCOUNT,
                   sortField: deploymentSortFields.SERVICE_ACCOUNT,

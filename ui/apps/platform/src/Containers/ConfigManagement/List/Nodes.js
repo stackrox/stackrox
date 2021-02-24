@@ -10,6 +10,7 @@ import {
     defaultColumnClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
+import TableCellLink from 'Components/TableCellLink';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
@@ -17,7 +18,6 @@ import { nodeSortFields } from 'constants/sortFields';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import List from './List';
-import TableCellLink from './Link';
 
 const QUERY = gql`
     query nodes($query: String, $pagination: Pagination) {
@@ -107,7 +107,11 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(id)
                           .push(entityTypes.CLUSTER, clusterId)
                           .url();
-                      return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
+                      return (
+                          <TableCellLink pdf={pdf} url={url}>
+                              {clusterName}
+                          </TableCellLink>
+                      );
                   },
                   id: nodeSortFields.CLUSTER,
                   sortField: nodeSortFields.CLUSTER,
@@ -135,12 +139,11 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(original.id)
                           .push(entityTypes.CONTROL)
                           .url();
+                      const text = `${controlCount} ${pluralize('Controls', controlCount)}`;
                       return (
-                          <TableCellLink
-                              pdf={pdf}
-                              url={url}
-                              text={`${controlCount} ${pluralize('Controls', controlCount)}`}
-                          />
+                          <TableCellLink pdf={pdf} url={url}>
+                              {text}
+                          </TableCellLink>
                       );
                   },
                   sortable: false,

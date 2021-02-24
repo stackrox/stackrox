@@ -100,7 +100,11 @@ export function getImageTableColumns(workflowState) {
                     .pushListItem(id)
                     .pushRelatedEntity(entityTypes.CLUSTER, clusterId)
                     .toUrl();
-                return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
+                return (
+                    <TableCellLink pdf={pdf} url={url}>
+                        {clusterName}
+                    </TableCellLink>
+                );
             },
             id: nodeSortFields.CLUSTER,
             accessor: 'clusterName',

@@ -7,6 +7,7 @@ import {
     defaultColumnClassName,
     nonSortableHeaderClassName,
 } from 'Components/Table';
+import TableCellLink from 'Components/TableCellLink';
 import searchContext from 'Containers/searchContext';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
@@ -16,7 +17,6 @@ import { NAMESPACES_NO_POLICIES_QUERY } from 'queries/namespace';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import List from './List';
-import TableCellLink from './Link';
 
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
 
@@ -61,7 +61,11 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(id)
                           .push(entityTypes.CLUSTER, clusterId)
                           .url();
-                      return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
+                      return (
+                          <TableCellLink pdf={pdf} url={url}>
+                              {clusterName}
+                          </TableCellLink>
+                      );
                   },
                   id: namespaceSortFields.CLUSTER,
                   sortField: namespaceSortFields.CLUSTER,
@@ -94,12 +98,11 @@ const buildTableColumns = (match, location, entityContext) => {
                     .push(id)
                     .push(entityTypes.SECRET)
                     .url();
+                const text = `${numSecrets} ${pluralize('Secrets', numSecrets)}`;
                 return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${numSecrets} ${pluralize('Secrets', numSecrets)}`}
-                    />
+                    <TableCellLink pdf={pdf} url={url}>
+                        {text}
+                    </TableCellLink>
                 );
             },
             id: 'numSecrets',
@@ -121,12 +124,11 @@ const buildTableColumns = (match, location, entityContext) => {
                     .push(id)
                     .push(entityTypes.SUBJECT)
                     .url();
+                const text = `${subjectsCount} ${pluralize('Users & Groups', subjectsCount)}`;
                 return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${subjectsCount} ${pluralize('Users & Groups', subjectsCount)}`}
-                    />
+                    <TableCellLink pdf={pdf} url={url}>
+                        {text}
+                    </TableCellLink>
                 );
             },
             accessor: 'subjectCount',
@@ -147,15 +149,14 @@ const buildTableColumns = (match, location, entityContext) => {
                     .push(id)
                     .push(entityTypes.SERVICE_ACCOUNT)
                     .url();
+                const text = `${serviceAccountCount} ${pluralize(
+                    'Service Accounts',
+                    serviceAccountCount
+                )}`;
                 return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${serviceAccountCount} ${pluralize(
-                            'Service Accounts',
-                            serviceAccountCount
-                        )}`}
-                    />
+                    <TableCellLink pdf={pdf} url={url}>
+                        {text}
+                    </TableCellLink>
                 );
             },
             accessor: 'serviceAccountCount',
@@ -176,12 +177,11 @@ const buildTableColumns = (match, location, entityContext) => {
                     .push(id)
                     .push(entityTypes.ROLE)
                     .url();
+                const text = `${k8sRoleCount} ${pluralize('Roles', k8sRoleCount)}`;
                 return (
-                    <TableCellLink
-                        pdf={pdf}
-                        url={url}
-                        text={`${k8sRoleCount} ${pluralize('Roles', k8sRoleCount)}`}
-                    />
+                    <TableCellLink pdf={pdf} url={url}>
+                        {text}
+                    </TableCellLink>
                 );
             },
             accessor: 'k8sRoleCount',

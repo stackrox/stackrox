@@ -85,7 +85,11 @@ export function getNamespaceTableColumns(workflowState) {
                     .pushRelatedEntity(entityTypes.CLUSTER, clusterId)
                     .toUrl();
 
-                return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
+                return (
+                    <TableCellLink pdf={pdf} url={url}>
+                        {clusterName}
+                    </TableCellLink>
+                );
             },
             id: namespaceSortFields.CLUSTER,
             accessor: 'metadata.clusterName',

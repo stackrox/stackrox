@@ -9,7 +9,9 @@ describe('TableCellLink', () => {
         const link = '/main/configmanagement/cluster/88d17fde-3b80-48dc-a4f3-1c8068e95f28';
 
         const { getByText } = renderWithRouter(
-            <TableCellLink pdf={false} url={link} text={text} />
+            <TableCellLink pdf={false} url={link}>
+                {text}
+            </TableCellLink>
         );
 
         const el = getByText(text);
@@ -20,7 +22,11 @@ describe('TableCellLink', () => {
         const text = 'rempote';
         const link = '/main/configmanagement/cluster/88d17fde-3b80-48dc-a4f3-1c8068e95f28';
 
-        const { getByText } = renderWithRouter(<TableCellLink pdf url={link} text={text} />);
+        const { getByText } = renderWithRouter(
+            <TableCellLink pdf url={link}>
+                {text}
+            </TableCellLink>
+        );
 
         const el = getByText(text);
         expect(el.href).toBeFalsy();
