@@ -5,6 +5,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
@@ -32,6 +33,16 @@ type ParseQueryOption func(parser *generalQueryParser)
 func MatchAllIfEmpty() ParseQueryOption {
 	return func(parser *generalQueryParser) {
 		parser.MatchAllIfEmpty = true
+	}
+}
+
+// ExcludeFieldLabel removes a specific options key from the search if it exists
+func ExcludeFieldLabel(k FieldLabel) ParseQueryOption {
+	return func(parser *generalQueryParser) {
+		if parser.ExcludedFieldLabels == nil {
+			parser.ExcludedFieldLabels = set.NewStringSet()
+		}
+		parser.ExcludedFieldLabels.Add(k.String())
 	}
 }
 

@@ -58,11 +58,12 @@ type RawQuery struct {
 }
 
 // AsV1QueryOrEmpty returns a proto query or empty proto query if raw query is empty
-func (r RawQuery) AsV1QueryOrEmpty() (*v1.Query, error) {
+func (r RawQuery) AsV1QueryOrEmpty(opts ...search.ParseQueryOption) (*v1.Query, error) {
 	if r.Query == nil {
 		return search.EmptyQuery(), nil
 	}
-	return search.ParseQuery(*r.Query, search.MatchAllIfEmpty())
+	opts = append(opts, search.MatchAllIfEmpty())
+	return search.ParseQuery(*r.Query, opts...)
 }
 
 // String returns a String representation of RawQuery

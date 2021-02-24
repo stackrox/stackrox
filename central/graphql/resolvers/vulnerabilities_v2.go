@@ -144,7 +144,8 @@ func (resolver *cVEResolver) getCVEQuery() *v1.Query {
 
 // IsFixable returns whether vulnerability is fixable by any component.
 func (resolver *cVEResolver) IsFixable(_ context.Context, args RawQuery) (bool, error) {
-	q, err := args.AsV1QueryOrEmpty()
+	// CVE is used in scoping but it's not relevant to IsFixable because it is already scoped to a CVE
+	q, err := args.AsV1QueryOrEmpty(search.ExcludeFieldLabel(search.CVE))
 	if err != nil {
 		return false, err
 	}

@@ -109,6 +109,46 @@ class CVETest extends BaseSpecification {
     }
     """
 
+    private static final FIXABLE_CVES_BY_ENTITY_QUERY = """
+    query getFixableCvesForEntity(\$id: ID!, \$query: String, \$scopeQuery: String, \$vulnQuery: String,
+     \$vulnPagination: Pagination) {
+      result: image(id: \$id) {
+        id
+        vulnCounter {
+          all {
+            fixable
+            __typename
+          }
+          __typename
+        }
+        vulnerabilities: vulns(query: \$vulnQuery, pagination: \$vulnPagination) {
+          ...cveFields
+          __typename
+        }
+        __typename
+      }
+    }
+
+    fragment cveFields on EmbeddedVulnerability {
+      id: cve
+      cve
+      cvss
+      vulnerabilityType
+      scoreVersion
+      envImpact
+      impactScore
+      summary
+      fixedByVersion
+      isFixable(query: \$scopeQuery)
+      createdAt
+      publishedOn
+      deploymentCount(query: \$query)
+      imageCount(query: \$query)
+      componentCount(query: \$query)
+      __typename
+    }
+    """
+
     static final private String CVE_DEPLOYMENT_NAME = "cve-deployment"
 
     static final private Deployment CVE_DEPLOYMENT = new Deployment()
@@ -358,5 +398,23 @@ class CVETest extends BaseSpecification {
         and:
         "Verify CVE discovery time (Image) of component-cve query is same as image-cve query"
         assert ret.value.result.vulns[0].discoveredAtImage == centosRet.value.result.vulns[0].discoveredAtImage
+    }
+
+    @Category(BAT)
+    def "Verify IsFixable for entities when scoped by CVE is still correct"() {
+        when:
+        "Query fixable CVEs by a specific CVE in the image"
+        def gqlService = new GraphQLService()
+        def ret = gqlService.Call(FIXABLE_CVES_BY_ENTITY_QUERY, [
+                id: "sha256:4ec83eee30dfbaba2e93f59d36cc360660d13f73c71af179eeb9456dd95d1798",
+                query: "",
+                scopeQuery: "CVE:CVE-2020-8285",
+                vulnQuery: "Fixable:true",
+        ])
+
+        then:
+        "Ensure that other CVEs are fixable despite the CVE scope"
+        ret.getCode() == 200
+        ret.value.result.vulnerabilities.toList().findAll { x -> x.isFixable }.size() > 1
     }
 }

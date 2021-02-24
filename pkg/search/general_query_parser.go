@@ -6,11 +6,13 @@ import (
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // generalQueryParser provides parsing functionality for search requests.
 type generalQueryParser struct {
-	MatchAllIfEmpty bool
+	MatchAllIfEmpty     bool
+	ExcludedFieldLabels set.StringSet
 }
 
 // ParseFieldMap parses a query string into a map of field label to a list of field value strings
@@ -60,6 +62,9 @@ func (pi generalQueryParser) parseInternal(query string) (*v1.Query, error) {
 	}
 	qb := NewQueryBuilder()
 	for fieldLabel, fieldValues := range fieldMap {
+		if pi.ExcludedFieldLabels.Contains(fieldLabel.String()) {
+			continue
+		}
 		qb.AddStrings(fieldLabel, fieldValues...)
 	}
 	return qb.ProtoQuery(), nil
