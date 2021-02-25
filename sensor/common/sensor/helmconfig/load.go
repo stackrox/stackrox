@@ -3,6 +3,7 @@ package helmconfig
 import (
 	"bytes"
 	"io/ioutil"
+	"strings"
 
 	"github.com/ghodss/yaml"
 	"github.com/golang/protobuf/jsonpb"
@@ -11,7 +12,8 @@ import (
 )
 
 const (
-	configFile = "/run/secrets/stackrox.io/helm-cluster-config/config.yaml"
+	configFile      = "/run/secrets/stackrox.io/helm-cluster-config/config.yaml"
+	clusterNameFile = "/run/secrets/stackrox.io/helm-effective-cluster-name/cluster-name"
 )
 
 // Load loads the cluster configuration for Helm-managed cluster from its canonical location.
@@ -32,4 +34,13 @@ func Load() (*central.HelmManagedConfigInit, error) {
 	}
 
 	return &config, nil
+}
+
+// GetEffectiveClusterName returns the cluster name which is currently used within central.
+func getEffectiveClusterName() (string, error) {
+	name, err := ioutil.ReadFile(clusterNameFile)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(name)), nil
 }

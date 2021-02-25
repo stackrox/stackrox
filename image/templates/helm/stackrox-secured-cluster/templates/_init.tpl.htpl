@@ -86,6 +86,11 @@
 {{ end }}
 {{ end }}
 
+{{/* If a cluster name should change the confirmNewClusterName value must match clusterName. */}}
+{{ if and $._rox.confirmNewClusterName (ne $._rox.confirmNewClusterName $._rox.clusterName) }}
+    {{ include "srox.fail"  (printf "Failed to change cluster name. Values for confirmNewClusterName '%s' did not match clusterName '%s'." $._rox.confirmNewClusterName $._rox.clusterName) }}
+{{ end }}
+
 [< if not .RenderAsLegacyChart >]
 {{ if not $.Release.IsUpgrade }}
 {{ if ne $.Release.Name $.Chart.Name }}

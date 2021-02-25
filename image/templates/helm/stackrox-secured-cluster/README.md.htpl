@@ -475,6 +475,25 @@ You can also specify configuration values using the `--set` or `--set-file`
 parameters. However, these options aren't saved, and you'll have to specify all
 the options again manually.
 
+#### Changing cluster name after deployment
+
+To change the name of the cluster shown in the StackRox portal, you must specify
+values for both the `--clusterName` and the `--confirmNewClusterName` options:
+
+```sh
+helm upgrade -n stackrox stackrox-secured-cluster-services --clusterName=<new-cluster-name> --confirmNewClusterName=<new-cluster-name>
+```
+
+> **NOTE:**
+>
+> When you change the cluster name:
+> - The StackRox Kubernetes Security Platform either creates a new cluster or
+>   reuses an existing cluster if a cluster with the same name already exists.
+> - The StackRox Kubernetes Security Platform doesn't rename the old cluster.
+>   The old cluster still shows up in the StackRox portal, but it doesn't
+>   receive any data. You must remove the old cluster if you don't want to see
+>   it in the StackRox portal.
+
 ### Configuration
 
 The following table lists some common configuration parameters of this Helm
@@ -483,6 +502,7 @@ chart and their default values:
 |Parameter |Description | Default value |
 |:---------|:-----------|:--------------|
 |`clusterName`| Name of your cluster. | |
+|`confirmNewClusterName`| You don't need to change this unless you upgrade and change the value for `clusterName`. In this case, set it to the new value of `clusterName`. This option exists to prevent you from [accidentally creating a new cluster with a different name](#changing-cluster-after-deployment). | `null` |
 |`centralEndpoint`| Address of the Central endpoint, including the port number (without a trailing slash). If you are using a non-gRPC capable LoadBalancer, use the WebSocket protocol by prefixing the endpoint address with `wss://`. |`central.stackrox:443` |
 |`additionalCAs`| Use it to add (named) PEM-encoded CA certificates for Sensor. | `{}` |
 |`imagePullSecrets.username`| Specify username for accessing image registry. |`null`|

@@ -26,3 +26,4 @@ templates/cluster-config.yaml
 feature-flag-values.yaml
 [< end >]
 main.go
+*.swp

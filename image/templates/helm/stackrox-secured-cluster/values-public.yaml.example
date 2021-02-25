@@ -20,6 +20,12 @@
 ## when deploying this Helm chart. Make sure that this name is unique among the set of secured clusters.
 #clusterName: null
 #
+## To change the cluster name, confirm the new cluster name in this field. It should match the `clusterName` value.
+## You don't need to change this unless you upgrade and change the value for clusterName.
+## In this case, set it to the new value of clusterName. This option exists to prevent you from accidentally
+## creating a new cluster with a different name.
+#confirmNewClusterName: null
+#
 ## The gRPC endpoint for accessing StackRox Central.
 #centralEndpoint: central.{{ .Release.Namespace }}:443
 #

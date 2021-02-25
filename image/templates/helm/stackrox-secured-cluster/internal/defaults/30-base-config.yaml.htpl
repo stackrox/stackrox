@@ -11,6 +11,9 @@ exposeMonitoring: false
 
 helmManaged: [< not .KubectlOutput >]
 
+clusterName: ""
+confirmNewClusterName: ""
+
 imagePullSecrets:
   allowNone: [< or .KubectlOutput .RenderAsLegacyChart | not | not >]
   useExisting: []
