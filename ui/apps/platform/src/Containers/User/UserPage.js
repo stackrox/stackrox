@@ -54,7 +54,6 @@ const UserPage = ({ userData, resourceToAccessByRole }) => {
                                 selected={selectedPage}
                                 onSelectRow={setSelectedPage}
                                 type="role"
-                                short
                             />
                         </div>
                     </div>

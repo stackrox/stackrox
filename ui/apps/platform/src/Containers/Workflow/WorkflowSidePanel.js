@@ -1,12 +1,20 @@
 import React from 'react';
 import { withRouter, Link } from 'react-router-dom';
-import parseURL from 'utils/URLParser';
+import { ExternalLink } from 'react-feather';
 import onClickOutside from 'react-onclickoutside';
+
+import CloseButton from 'Components/CloseButton';
+import {
+    getSidePanelHeadBorderColor,
+    PanelNew,
+    PanelBody,
+    PanelHead,
+    PanelHeadEnd,
+} from 'Components/Panel';
+import EntityBreadCrumbs from 'Containers/BreadCrumbs/EntityBreadCrumbs';
 import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { ExternalLink as ExternalLinkIcon } from 'react-feather';
-import Panel from 'Components/Panel';
-import EntityBreadCrumbs from 'Containers/BreadCrumbs/EntityBreadCrumbs';
+import parseURL from 'utils/URLParser';
 
 const WorkflowSidePanel = ({ history, location, children }) => {
     const { isDarkMode } = useTheme();
@@ -27,39 +35,31 @@ const WorkflowSidePanel = ({ history, location, children }) => {
     };
 
     const url = workflowState.getSkimmedStack().toUrl();
+    const borderColor = getSidePanelHeadBorderColor(isDarkMode);
     const externalLink = (
         <div className="flex items-center h-full hover:bg-base-300">
             <Link
                 to={url}
                 data-testid="external-link"
-                className={`${
-                    !isDarkMode ? 'border-base-100' : 'border-base-400'
-                } border-l h-full p-4`}
+                className={`${borderColor} border-l h-full p-4`}
             >
-                <ExternalLinkIcon className="h-6 w-6 text-base-600" />
+                <ExternalLink className="h-6 w-6 text-base-600" />
             </Link>
         </div>
     );
 
     return (
         <workflowStateContext.Provider value={workflowState}>
-            <Panel
-                id="side-panel"
-                headerClassName={`flex w-full h-14 rounded-tl-lg overflow-y-hidden border-b ${
-                    !isDarkMode
-                        ? 'bg-side-panel-wave border-base-100'
-                        : 'bg-primary-200 border-primary-400'
-                }`}
-                bodyClassName={isDarkMode ? 'bg-base-0' : 'bg-base-100'}
-                headerTextComponent={<EntityBreadCrumbs workflowEntities={breadCrumbEntities} />}
-                headerComponents={externalLink}
-                onClose={onClose}
-                closeButtonClassName={
-                    isDarkMode ? 'border-l border-base-400' : 'border-l border-base-100'
-                }
-            >
-                {children}
-            </Panel>
+            <PanelNew testid="side-panel">
+                <PanelHead isDarkMode={isDarkMode} isSidePanel>
+                    <EntityBreadCrumbs workflowEntities={breadCrumbEntities} />
+                    <PanelHeadEnd>
+                        {externalLink}
+                        <CloseButton onClose={onClose} className={`${borderColor} border-l`} />
+                    </PanelHeadEnd>
+                </PanelHead>
+                <PanelBody>{children}</PanelBody>
+            </PanelNew>
         </workflowStateContext.Provider>
     );
 };

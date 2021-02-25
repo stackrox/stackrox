@@ -12,7 +12,7 @@ import CloseButton from 'Components/CloseButton';
 import Dialog from 'Components/Dialog';
 import PanelButton from 'Components/PanelButton';
 import TableHeader from 'Components/TableHeader';
-import Panel from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import { searchParams } from 'constants/searchParams';
 import workflowStateContext from 'Containers/workflowStateContext';
 import useInterval from 'hooks/useInterval';
@@ -243,29 +243,35 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
 
     return (
         <div className="overflow-hidden w-full">
-            <Panel headerTextComponent={headerComponent} headerComponents={headerActions}>
-                {messages.length > 0 && (
-                    <div className="flex flex-col w-full items-center bg-warning-200 text-warning-8000 justify-center font-700 text-center">
-                        {messages}
+            <PanelNew testid="panel">
+                <PanelHead>
+                    {headerComponent}
+                    <PanelHeadEnd>{headerActions}</PanelHeadEnd>
+                </PanelHead>
+                <PanelBody>
+                    {messages.length > 0 && (
+                        <div className="flex flex-col w-full items-center bg-warning-200 text-warning-8000 justify-center font-700 text-center">
+                            {messages}
+                        </div>
+                    )}
+                    <div data-testid="clusters-table" className="h-full w-full">
+                        <CheckboxTable
+                            ref={(table) => {
+                                setTableRef(table);
+                            }}
+                            rows={currentClusters}
+                            columns={clusterColumns}
+                            onRowClick={setSelectedClusterId}
+                            toggleRow={toggleCluster}
+                            toggleSelectAll={toggleAllClusters}
+                            selection={checkedClusterIds}
+                            selectedRowId={selectedClusterId}
+                            noDataText="No clusters to show."
+                            minRows={20}
+                        />
                     </div>
-                )}
-                <div data-testid="clusters-table" className="h-full w-full">
-                    <CheckboxTable
-                        ref={(table) => {
-                            setTableRef(table);
-                        }}
-                        rows={currentClusters}
-                        columns={clusterColumns}
-                        onRowClick={setSelectedClusterId}
-                        toggleRow={toggleCluster}
-                        toggleSelectAll={toggleAllClusters}
-                        selection={checkedClusterIds}
-                        selectedRowId={selectedClusterId}
-                        noDataText="No clusters to show."
-                        minRows={20}
-                    />
-                </div>
-            </Panel>
+                </PanelBody>
+            </PanelNew>
             <Dialog
                 className="w-1/3"
                 isOpen={showDialog}

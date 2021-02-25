@@ -1,11 +1,24 @@
-import React, { ReactElement, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { ReactElement, useCallback } from 'react';
+import { useHistory, useParams } from 'react-router-dom';
 
+import CloseButton from 'Components/CloseButton';
+import {
+    getSidePanelHeadBorderColor,
+    PanelNew,
+    PanelBody,
+    PanelHead,
+    PanelHeadEnd,
+    PanelTitle,
+} from 'Components/Panel';
 import { defaultColumnClassName, nonSortableHeaderClassName } from 'Components/Table';
+import { AccessControlEntityType } from 'constants/entityTypes';
+import { useTheme } from 'Containers/ThemeProvider';
 
 import AccessControlListPage from '../AccessControlListPage';
+import { getEntityPath } from '../accessControlPaths';
 import { Column, PermissionSet } from '../accessControlTypes';
 
+// The total of column width ratios must be less than or equal to 1.0
 // 2/4 + 2/5 + 1/10 = 0.5 + 0.4 + 0.1 = 1.0
 const columns: Column[] = [
     {
@@ -102,31 +115,52 @@ export const rows: PermissionSet[] = [
     },
 ];
 
-function AuthProvidersList(): ReactElement {
+const entityType: AccessControlEntityType = 'PERMISSION_SET';
+
+function PermissionSetsList(): ReactElement {
+    const history = useHistory();
+    // const { search } = useLocation();
     const { entityId } = useParams();
-    const [selectedRowId, setSelectedRowId] = useState<string | undefined>(entityId);
+    const { isDarkMode } = useTheme();
+
+    const setEntityId = useCallback(
+        (id) => {
+            const url = getEntityPath(entityType, id);
+            history.push(url);
+        },
+        [history]
+    );
 
     // TODO request data
+    const row = rows.find(({ id }) => id === entityId);
 
+    function onClose() {
+        setEntityId(undefined);
+    }
+
+    const borderColor = getSidePanelHeadBorderColor(isDarkMode);
     return (
         <AccessControlListPage
             columns={columns}
-            entityType="PERMISSION_SET"
+            entityType={entityType}
+            isDarkMode={isDarkMode}
             rows={rows}
-            selectedRowId={selectedRowId}
-            setSelectedRowId={setSelectedRowId}
+            selectedRowId={entityId}
+            setSelectedRowId={setEntityId}
         >
-            <div className="flex h-full items-center justify-center">
-                <code>
-                    {JSON.stringify(
-                        rows.find(({ id }) => id === selectedRowId),
-                        null,
-                        2
-                    )}
-                </code>
-            </div>
+            <PanelNew testid="side-panel">
+                <PanelHead isDarkMode={isDarkMode} isSidePanel>
+                    <PanelTitle isUpperCase={false} testid="head-text" text={row?.name ?? ''} />
+                    <PanelHeadEnd>
+                        <CloseButton onClose={onClose} className={`${borderColor} border-l`} />
+                    </PanelHeadEnd>
+                </PanelHead>
+                <PanelBody>
+                    <code>{JSON.stringify(row, null, 2)}</code>
+                </PanelBody>
+            </PanelNew>
         </AccessControlListPage>
     );
 }
 
-export default AuthProvidersList;
+export default PermissionSetsList;

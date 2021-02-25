@@ -9,7 +9,15 @@ import get from 'lodash/get';
 import set from 'lodash/set';
 import { Message } from '@stackrox/ui-components';
 
-import Panel from 'Components/Panel';
+import CloseButton from 'Components/CloseButton';
+import {
+    getSidePanelHeadBorderColor,
+    PanelNew,
+    PanelBody,
+    PanelHead,
+    PanelHeadEnd,
+    PanelTitle,
+} from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import { useTheme } from 'Containers/ThemeProvider';
@@ -256,6 +264,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
     const isForm = wizardStep === wizardSteps.FORM;
     const iconClassName = 'h-4 w-4';
 
+    const borderColor = getSidePanelHeadBorderColor(isDarkMode);
     const panelButtons = isBlocked ? (
         <div />
     ) : (
@@ -277,60 +286,67 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
     );
 
     return (
-        <SidePanelAnimatedArea isOpen={!!selectedClusterId}>
-            <Panel
-                id="clusters-side-panel"
-                header={selectedClusterName}
-                headerComponents={panelButtons}
-                headerClassName={`flex w-full h-14 overflow-y-hidden bg-primary-200 rounded-tl-lg border-b ${
-                    !isDarkMode ? 'border-base-100' : 'border-primary-400'
-                }`}
-                bodyClassName={isDarkMode ? 'bg-base-0' : 'bg-primary-200'}
-                onClose={unselectCluster}
-            >
-                {!!messageState && (
-                    <div className="m-4">
-                        <Message type={messageState.type}>{messageState.message}</Message>
-                    </div>
-                )}
-                {submissionError && submissionError.length > 0 && (
-                    <div className="w-full">
-                        <div className="mb-4 mx-4">
-                            <Message type="error">{submissionError}</Message>
-                        </div>
-                    </div>
-                )}
-                {!isBlocked && wizardStep === wizardSteps.FORM && (
-                    <ClusterEditForm
-                        centralEnv={centralEnv}
-                        centralVersion={metadata.version}
-                        selectedCluster={selectedCluster}
-                        handleChange={onChange}
-                        isLoading={loadingCounter > 0}
+        <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!selectedClusterId}>
+            <PanelNew testid="clusters-side-panel">
+                <PanelHead isDarkMode={isDarkMode} isSidePanel>
+                    <PanelTitle
+                        isUpperCase={false}
+                        testid="clusters-side-panel-header"
+                        text={selectedClusterName}
                     />
-                )}
-                {!isBlocked && wizardStep === wizardSteps.DEPLOYMENT && (
-                    <div className="flex flex-col md:flex-row p-4">
-                        <ClusterDeployment
-                            editing={!!selectedCluster}
-                            createUpgraderSA={createUpgraderSA}
-                            toggleSA={toggleSA}
-                            onFileDownload={onDownload}
-                            clusterCheckedIn={!!selectedCluster?.healthStatus?.lastContact}
+                    <PanelHeadEnd>
+                        {panelButtons}
+                        <CloseButton
+                            onClose={unselectCluster}
+                            className={`${borderColor} border-l`}
                         />
-                        {!!selectedCluster.id && (
-                            <DownloadHelmValues
-                                clusterId={selectedCluster.id}
-                                description={
-                                    selectedCluster?.helmConfig
-                                        ? 'Download the required YAML to update your Helm values.'
-                                        : 'To start managing this cluster with a Helm chart, you can download the cluster’s current configuration values in Helm format.'
-                                }
+                    </PanelHeadEnd>
+                </PanelHead>
+                <PanelBody>
+                    {!!messageState && (
+                        <div className="m-4">
+                            <Message type={messageState.type}>{messageState.message}</Message>
+                        </div>
+                    )}
+                    {submissionError && submissionError.length > 0 && (
+                        <div className="w-full">
+                            <div className="mb-4 mx-4">
+                                <Message type="error">{submissionError}</Message>
+                            </div>
+                        </div>
+                    )}
+                    {!isBlocked && wizardStep === wizardSteps.FORM && (
+                        <ClusterEditForm
+                            centralEnv={centralEnv}
+                            centralVersion={metadata.version}
+                            selectedCluster={selectedCluster}
+                            handleChange={onChange}
+                            isLoading={loadingCounter > 0}
+                        />
+                    )}
+                    {!isBlocked && wizardStep === wizardSteps.DEPLOYMENT && (
+                        <div className="flex flex-col md:flex-row p-4">
+                            <ClusterDeployment
+                                editing={!!selectedCluster}
+                                createUpgraderSA={createUpgraderSA}
+                                toggleSA={toggleSA}
+                                onFileDownload={onDownload}
+                                clusterCheckedIn={!!selectedCluster?.healthStatus?.lastContact}
                             />
-                        )}
-                    </div>
-                )}
-            </Panel>
+                            {!!selectedCluster.id && (
+                                <DownloadHelmValues
+                                    clusterId={selectedCluster.id}
+                                    description={
+                                        selectedCluster?.helmConfig
+                                            ? 'Download the required YAML to update your Helm values.'
+                                            : 'To start managing this cluster with a Helm chart, you can download the cluster’s current configuration values in Helm format.'
+                                    }
+                                />
+                            )}
+                        </div>
+                    )}
+                </PanelBody>
+            </PanelNew>
         </SidePanelAnimatedArea>
     );
 }

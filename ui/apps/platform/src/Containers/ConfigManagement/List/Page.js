@@ -7,6 +7,7 @@ import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import PageHeader from 'Components/PageHeader';
+import { PageBody } from 'Components/Panel';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import ExportButton from 'Components/ExportButton';
 import configMgmtPaginationContext, {
@@ -15,6 +16,7 @@ import configMgmtPaginationContext, {
 } from 'Containers/configMgmtPaginationContext';
 import searchContext from 'Containers/searchContext';
 import { searchParams } from 'constants/searchParams';
+import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
 import entityLabels from 'messages/entity';
 import parseURL from 'utils/URLParser';
@@ -25,6 +27,7 @@ import EntityList from './EntityList';
 import SidePanel from '../SidePanel/SidePanel';
 
 const ListPage = ({ match, location, history }) => {
+    const { isDarkMode } = useTheme();
     const hostScanningEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_HOST_SCANNING);
     const featureFlags = {
         [knownBackendFlags.ROX_HOST_SCANNING]: hostScanningEnabled,
@@ -80,7 +83,7 @@ const ListPage = ({ match, location, history }) => {
                     </div>
                 </div>
             </PageHeader>
-            <div className="flex flex-1 h-full relative z-0">
+            <PageBody>
                 <configMgmtPaginationContext.Provider value={MAIN_PAGINATION_PARAMS}>
                     <EntityList
                         entityListType={pageEntityListType}
@@ -91,7 +94,7 @@ const ListPage = ({ match, location, history }) => {
                 </configMgmtPaginationContext.Provider>
                 <searchContext.Provider value={searchParams.sidePanel}>
                     <configMgmtPaginationContext.Provider value={SIDEPANEL_PAGINATION_PARAMS}>
-                        <SidePanelAnimatedArea isOpen={!!entityId1}>
+                        <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!entityId1}>
                             <SidePanel
                                 entityType1={pageEntityListType}
                                 entityId1={entityId1}
@@ -103,7 +106,7 @@ const ListPage = ({ match, location, history }) => {
                         </SidePanelAnimatedArea>
                     </configMgmtPaginationContext.Provider>
                 </searchContext.Provider>
-            </div>
+            </PageBody>
         </workflowStateContext.Provider>
     );
 };

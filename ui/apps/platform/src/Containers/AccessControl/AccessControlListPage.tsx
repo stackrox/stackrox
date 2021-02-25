@@ -1,29 +1,53 @@
 import React, { ReactElement, ReactNode } from 'react';
+import { Plus } from 'react-feather';
+import pluralize from 'pluralize';
 
+import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
+import {
+    PageBody,
+    PanelNew,
+    PanelBody,
+    PanelHead,
+    PanelHeadEnd,
+    PanelTitle,
+} from 'Components/Panel';
+import PanelButton from 'Components/PanelButton';
 import Table from 'Components/Table';
+import URLSearchInput from 'Components/URLSearchInput';
 import { AccessControlEntityType } from 'constants/entityTypes';
+import { accessControlLabels } from 'messages/common';
 
 import { Column, AccessControlRow } from './accessControlTypes';
-import AccessControlListHeader from './AccessControlListHeader';
 import AccessControlPageHeader from './AccessControlPageHeader';
 
 export type AccessControlListPageProps = {
     children: ReactNode;
     columns: Column[];
     entityType: AccessControlEntityType;
+    isDarkMode: boolean;
     rows: AccessControlRow[];
     selectedRowId?: string;
     setSelectedRowId: (id: string) => void;
 };
 
 function AccessControlListPage({
-    // children,
+    children,
     columns,
     entityType,
+    isDarkMode,
     rows,
     selectedRowId,
     setSelectedRowId,
 }: AccessControlListPageProps): ReactElement {
+    const entityLabel = accessControlLabels[entityType];
+    const textHead = `${rows.length} ${pluralize(entityLabel, rows.length)}`;
+    const textNew = `New ${entityLabel}`;
+
+    // TODO search filter is not yet interactive
+    const searchOptions = [];
+    const availableCategories = [];
+    const autoFocusSearchInput = true;
+
     // TODO table is not yet interactive
     const disableSortRemove = true;
     const noDataText = '';
@@ -35,23 +59,32 @@ function AccessControlListPage({
     }
     function onSortedChange() {}
 
-    // TODO render entity in side panel
-    // TODO factor out divs as presentation components?
     return (
         <>
             <AccessControlPageHeader currentType={entityType} />
-            <div className="flex flex-1 h-full relative z-0">
-                <div
-                    className="flex flex-col border-r border-base-400 w-full h-full"
-                    data-testid="main-panel"
-                >
-                    <AccessControlListHeader
-                        entityCount={rows.length}
-                        entityType={entityType}
-                        isEntity={!!selectedRowId}
-                        onClickNew={onClickNew}
-                    />
-                    <div className="h-full overflow-y-auto">
+            <PageBody>
+                <PanelNew testid="main-panel">
+                    <PanelHead isDarkMode={isDarkMode}>
+                        <PanelTitle isUpperCase testid="head-text" text={textHead} />
+                        <PanelHeadEnd>
+                            <URLSearchInput
+                                className="w-full"
+                                categoryOptions={searchOptions}
+                                categories={availableCategories}
+                                autoFocus={autoFocusSearchInput}
+                            />
+                            <PanelButton
+                                icon={<Plus className="h-4 w-4 ml-1" />}
+                                tooltip={textNew}
+                                className="btn btn-base ml-2"
+                                onClick={onClickNew}
+                                disabled={!!selectedRowId}
+                            >
+                                {textNew}
+                            </PanelButton>
+                        </PanelHeadEnd>
+                    </PanelHead>
+                    <PanelBody>
                         <Table
                             rows={rows}
                             columns={columns}
@@ -64,10 +97,12 @@ function AccessControlListPage({
                             onSortedChange={onSortedChange}
                             disableSortRemove={disableSortRemove}
                         />
-                    </div>
-                </div>
-                {/* side panel for selected entity */}
-            </div>
+                    </PanelBody>
+                </PanelNew>
+                <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!selectedRowId}>
+                    {children}
+                </SidePanelAnimatedArea>
+            </PageBody>
         </>
     );
 }

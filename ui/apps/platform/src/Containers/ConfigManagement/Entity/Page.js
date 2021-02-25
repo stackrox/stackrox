@@ -9,6 +9,7 @@ import configMgmtPaginationContext, {
     SIDEPANEL_PAGINATION_PARAMS,
 } from 'Containers/configMgmtPaginationContext';
 import searchContext from 'Containers/searchContext';
+import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
 import parseURL from 'utils/URLParser';
 import URLService from 'utils/URLService';
@@ -19,6 +20,7 @@ import SidePanel from '../SidePanel/SidePanel';
 import Entity from '../Entity';
 
 const EntityPage = ({ match, location }) => {
+    const { isDarkMode } = useTheme();
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;
     const pageState = new WorkflowState(
@@ -88,7 +90,7 @@ const EntityPage = ({ match, location }) => {
                     </configMgmtPaginationContext.Provider>
                     <searchContext.Provider value={searchParams.sidePanel}>
                         <configMgmtPaginationContext.Provider value={SIDEPANEL_PAGINATION_PARAMS}>
-                            <SidePanelAnimatedArea isOpen={!!entityId1}>
+                            <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!entityId1}>
                                 <SidePanel
                                     contextEntityId={pageEntityId}
                                     contextEntityType={pageEntityType}

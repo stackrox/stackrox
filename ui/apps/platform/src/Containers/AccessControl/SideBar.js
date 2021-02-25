@@ -16,7 +16,6 @@ const SideBar = ({
     rows,
     selected,
     addRowButton,
-    short,
 }) => {
     function onRowSelectHandler() {
         return (row) => {
@@ -64,7 +63,7 @@ const SideBar = ({
         },
     ];
     return (
-        <Panel header={header} headerClassName={panelHeaderClassName} short={short}>
+        <Panel header={header} headerClassName={panelHeaderClassName}>
             <div className="flex flex-col w-full h-full bg-base-100">
                 <div className="overflow-auto table-reset-padding">
                     <List
@@ -94,7 +93,6 @@ SideBar.propTypes = {
     onCancel: PropTypes.func,
     onDelete: PropTypes.func,
     type: PropTypes.string.isRequired,
-    short: PropTypes.bool,
 };
 
 SideBar.defaultProps = {
@@ -102,7 +100,6 @@ SideBar.defaultProps = {
     onDelete: null,
     selected: null,
     addRowButton: null,
-    short: false,
 };
 
 export default SideBar;

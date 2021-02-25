@@ -13,6 +13,7 @@ const transition = {
 
 export type SidePanelAnimatedAreaProps = {
     children: ReactNode;
+    isDarkMode: boolean;
     isOpen: boolean;
 };
 
@@ -27,7 +28,13 @@ export type SidePanelAnimatedAreaProps = {
  * A semi-transparent gray background color covers the main panel (underlay style).
  * The side panel opens from right to left.
  */
-function SidePanelAnimatedArea({ isOpen, children }: SidePanelAnimatedAreaProps): ReactElement {
+function SidePanelAnimatedArea({
+    children,
+    isDarkMode,
+    isOpen,
+}: SidePanelAnimatedAreaProps): ReactElement {
+    const bgClassName = isDarkMode ? 'bg-base-0' : 'bg-side-panel-wave';
+
     return (
         <AnimatePresence initial={false}>
             {isOpen && (
@@ -36,7 +43,7 @@ function SidePanelAnimatedArea({ isOpen, children }: SidePanelAnimatedAreaProps)
                     style={{ backgroundColor: 'hsla(210, 15%, 34%, 0.5)' }}
                 >
                     <motion.div
-                        className="bg-base-100 border-base-400 border-l h-full rounded-tl-lg shadow-sidepanel w-full lg:w-9/10"
+                        className={`${bgClassName} border-base-400 border-l h-full rounded-tl-lg shadow-sidepanel w-full lg:w-9/10`}
                         initial="closed"
                         animate="open"
                         exit="closed"

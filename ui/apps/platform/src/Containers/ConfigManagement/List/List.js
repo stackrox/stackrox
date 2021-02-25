@@ -8,7 +8,7 @@ import resolvePath from 'object-resolve-path';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
-import Panel from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import Table from 'Components/Table';
 import TablePagination from 'Components/TablePagination';
 import URLSearchInput from 'Components/URLSearchInput';
@@ -68,22 +68,28 @@ const List = ({
         )}`;
 
         return (
-            <Panel header={header} headerComponents={headerComponents}>
-                <Table
-                    rows={tableRows}
-                    columns={tableColumns}
-                    onRowClick={onRowClickHandler}
-                    idAttribute={idAttribute}
-                    id="capture-list"
-                    selectedRowId={selectedRowId}
-                    noDataText={noDataText}
-                    page={page}
-                    sorted={tableSort}
-                    onSortedChange={onSortedChange}
-                    manual={serverSidePagination}
-                    disableSortRemove
-                />
-            </Panel>
+            <PanelNew testid="panel">
+                <PanelHead>
+                    <PanelTitle isUpperCase testid="panel-header" text={header} />
+                    <PanelHeadEnd>{headerComponents}</PanelHeadEnd>
+                </PanelHead>
+                <PanelBody>
+                    <Table
+                        rows={tableRows}
+                        columns={tableColumns}
+                        onRowClick={onRowClickHandler}
+                        idAttribute={idAttribute}
+                        id="capture-list"
+                        selectedRowId={selectedRowId}
+                        noDataText={noDataText}
+                        page={page}
+                        sorted={tableSort}
+                        onSortedChange={onSortedChange}
+                        manual={serverSidePagination}
+                        disableSortRemove
+                    />
+                </PanelBody>
+            </PanelNew>
         );
     }
 

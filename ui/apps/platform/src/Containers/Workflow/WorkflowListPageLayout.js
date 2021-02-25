@@ -112,7 +112,7 @@ const WorkflowListPageLayout = ({ location }) => {
                         refreshTrigger={refreshTrigger}
                         setRefreshTrigger={setRefreshTrigger}
                     />
-                    <SidePanelAnimatedArea isOpen={!!sidePanelEntityId}>
+                    <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!sidePanelEntityId}>
                         <WorkflowSidePanel>
                             <EntityComponent
                                 entityId={sidePanelEntityId}

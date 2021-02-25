@@ -4,7 +4,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import pluralize from 'pluralize';
 import resolvePath from 'object-resolve-path';
 import workflowStateContext from 'Containers/workflowStateContext';
-import Panel from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import Table from 'Components/Table';
 import TablePagination from 'Components/TablePagination';
 import URLSearchInput from 'Components/URLSearchInput';
@@ -156,13 +156,13 @@ const EntityList = ({
     }
 
     return (
-        <Panel
-            className={selectedRowId ? 'bg-base-100' : ''}
-            header={header}
-            headerComponents={headerComponents}
-        >
-            {tableComponent}
-        </Panel>
+        <PanelNew testid="panel">
+            <PanelHead>
+                <PanelTitle isUpperCase testid="panel-header" text={header} />
+                <PanelHeadEnd>{headerComponents}</PanelHeadEnd>
+            </PanelHead>
+            <PanelBody>{tableComponent}</PanelBody>
+        </PanelNew>
     );
 };
 

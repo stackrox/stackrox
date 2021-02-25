@@ -4,13 +4,75 @@ import PropTypes from 'prop-types';
 import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import CloseButton from './CloseButton';
 
+/*
+ * PageBody is sibling of PageHeader and parent of main and side panels.
+ */
+export function PageBody({ children }) {
+    return <div className="flex flex-1 h-full relative z-0">{children}</div>;
+}
+
+/*
+ * PanelNew is parent of PanelHead and PanelBody.
+ */
+export function PanelNew({ children, testid }) {
+    return (
+        <div className="flex flex-col h-full w-full" data-testid={testid}>
+            {children}
+        </div>
+    );
+}
+
+const defaultBorderColor = 'border-base-400';
+
+export function getSidePanelHeadBorderColor(isDarkMode) {
+    return isDarkMode ? defaultBorderColor : 'border-base-100';
+}
+
+/*
+ * PanelHead is parent of the following:
+ * PanelTitle or entity-specific component like EntityBreadCrumbs
+ * PanelHeadEnd, which has flex end alignment
+ */
+export function PanelHead({ children, isDarkMode, isSidePanel = false }) {
+    const borderColor = isSidePanel ? getSidePanelHeadBorderColor(isDarkMode) : defaultBorderColor;
+    return <div className={`${borderColor} border-b flex h-14 w-full`}>{children}</div>;
+}
+
+export function PanelTitle({ isUpperCase, testid, text }) {
+    return (
+        <div
+            className={`flex font-700 items-center leading-normal overflow-hidden px-4 text-base-600 tracking-wide ${
+                isUpperCase ? 'uppercase' : 'capitalize'
+            }`}
+            data-testid={testid}
+        >
+            <Tooltip content={<TooltipOverlay>{text}</TooltipOverlay>}>
+                <div className="line-clamp break-all">{text}</div>
+            </Tooltip>
+        </div>
+    );
+}
+
+/*
+ * PanelHeadEnd, which has flex end alignment, is parent of reusable components.
+ * main panel: search filter, table pagination
+ * side panel: external link button, close button
+ */
+export function PanelHeadEnd({ children }) {
+    return <div className="flex flex-1 items-center justify-end pl-3 relative">{children}</div>;
+}
+
+/*
+ * PanelBody is parent of one or more entity-specific components.
+ */
+export function PanelBody({ children }) {
+    return <div className="h-full overflow-y-auto">{children}</div>;
+}
+
 export const headerClassName = 'flex w-full min-h-14 border-b border-base-400';
 
 const Panel = (props) => (
-    <div
-        className={`flex flex-col w-full ${props.className} ${props.short ? '' : 'h-full'}`}
-        data-testid={props.id}
-    >
+    <div className={`flex flex-col w-full ${props.className} h-full`} data-testid={props.id}>
         <div className="flex-nowrap">
             <div className={props.headerClassName}>
                 {props.leftButtons && (
@@ -69,7 +131,6 @@ Panel.propTypes = {
     headerComponents: PropTypes.element,
     leftButtons: PropTypes.node,
     isUpperCase: PropTypes.bool,
-    short: PropTypes.bool,
 };
 
 Panel.defaultProps = {
@@ -85,7 +146,6 @@ Panel.defaultProps = {
     headerComponents: null,
     leftButtons: null,
     isUpperCase: true,
-    short: false,
 };
 
 export default Panel;
