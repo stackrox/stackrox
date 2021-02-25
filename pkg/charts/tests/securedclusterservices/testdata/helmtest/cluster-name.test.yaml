@@ -27,3 +27,11 @@ tests:
     .secrets["helm-effective-cluster-name"] | assertThat(. != null)
     (container(.deployments.sensor; "sensor")).volumeMounts[] | select(.name == "helm-effective-cluster-name") | assertThat(. != null)
     .deployments.sensor.spec.template.spec.volumes[] | select(.name == "helm-effective-cluster-name") | assertThat(. != null)
+
+- name: "clusterName and confirmNewClusterName must match"
+  values:
+    clusterName: old-cluster
+    confirmNewClusterName: new-cluster
+  expectError: true
+  expect: |
+    .error | assertThat(contains("Failed to change cluster name"))
