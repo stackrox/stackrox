@@ -13,9 +13,7 @@ var (
 )
 
 func initialize() {
-	once.Do(func() {
-		ds = New(rocksdb.New(globaldb.GetRocksDB()))
-	})
+	ds = New(rocksdb.New(globaldb.GetRocksDB()))
 }
 
 // Singleton provides the interface for non-service external interaction.

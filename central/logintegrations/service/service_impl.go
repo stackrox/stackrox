@@ -58,7 +58,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) GetLogIntegration(ctx context.Context, req *v1.ResourceByID) (*v1.GetLogIntegrationResponse, error) {
-	if features.K8sAuditLogDetection.Enabled() {
+	if !features.K8sAuditLogDetection.Enabled() {
 		return nil, status.Error(codes.Unimplemented, logintegration.ErrFeatureNotEnabled)
 	}
 
@@ -75,7 +75,7 @@ func (s *serviceImpl) GetLogIntegration(ctx context.Context, req *v1.ResourceByI
 }
 
 func (s *serviceImpl) GetLogIntegrations(ctx context.Context, _ *v1.Empty) (*v1.GetLogIntegrationsResponse, error) {
-	if features.K8sAuditLogDetection.Enabled() {
+	if !features.K8sAuditLogDetection.Enabled() {
 		return nil, status.Error(codes.Unimplemented, logintegration.ErrFeatureNotEnabled)
 	}
 
@@ -90,12 +90,19 @@ func (s *serviceImpl) GetLogIntegrations(ctx context.Context, _ *v1.Empty) (*v1.
 }
 
 func (s *serviceImpl) CreateLogIntegration(ctx context.Context, req *v1.CreateLogIntegrationRequest) (*v1.CreateLogIntegrationResponse, error) {
-	if features.K8sAuditLogDetection.Enabled() {
+	if !features.K8sAuditLogDetection.Enabled() {
 		return nil, status.Error(codes.Unimplemented, logintegration.ErrFeatureNotEnabled)
 	}
 
+	// Validate parameters
+	if req.GetLogIntegration() == nil {
+		return nil, status.Error(codes.InvalidArgument, "Invalid create Log Integration request")
+	}
 	if req.GetLogIntegration().GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "ID not expected in create Log Integration request")
+	}
+	if req.GetLogIntegration().Config == nil {
+		return nil, status.Error(codes.InvalidArgument, "Config must be provided in create Log Integration request")
 	}
 	req.LogIntegration.Id = uuid.NewV4().String()
 
@@ -108,7 +115,7 @@ func (s *serviceImpl) CreateLogIntegration(ctx context.Context, req *v1.CreateLo
 }
 
 func (s *serviceImpl) TestLogIntegration(ctx context.Context, req *v1.TestLogIntegrationRequest) (*v1.Empty, error) {
-	if features.K8sAuditLogDetection.Enabled() {
+	if !features.K8sAuditLogDetection.Enabled() {
 		return nil, status.Error(codes.Unimplemented, logintegration.ErrFeatureNotEnabled)
 	}
 
@@ -116,7 +123,7 @@ func (s *serviceImpl) TestLogIntegration(ctx context.Context, req *v1.TestLogInt
 }
 
 func (s *serviceImpl) DeleteLogIntegration(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
-	if features.K8sAuditLogDetection.Enabled() {
+	if !features.K8sAuditLogDetection.Enabled() {
 		return nil, status.Error(codes.Unimplemented, logintegration.ErrFeatureNotEnabled)
 	}
 
@@ -127,7 +134,7 @@ func (s *serviceImpl) DeleteLogIntegration(ctx context.Context, req *v1.Resource
 }
 
 func (s *serviceImpl) UpdateLogIntegration(ctx context.Context, req *v1.UpdateLogIntegrationRequest) (*v1.Empty, error) {
-	if features.K8sAuditLogDetection.Enabled() {
+	if !features.K8sAuditLogDetection.Enabled() {
 		return nil, status.Error(codes.Unimplemented, logintegration.ErrFeatureNotEnabled)
 	}
 
@@ -142,7 +149,7 @@ func (s *serviceImpl) UpdateLogIntegration(ctx context.Context, req *v1.UpdateLo
 }
 
 func (s *serviceImpl) TestUpdatedLogIntegration(ctx context.Context, req *v1.UpdateLogIntegrationRequest) (*v1.Empty, error) {
-	if features.K8sAuditLogDetection.Enabled() {
+	if !features.K8sAuditLogDetection.Enabled() {
 		return nil, status.Error(codes.Unimplemented, logintegration.ErrFeatureNotEnabled)
 	}
 
