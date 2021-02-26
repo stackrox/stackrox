@@ -11,11 +11,17 @@ package storage;
 
 message LogIntegration {
     message AWSConfig {
-        // TODO
+        bool   use_iam           = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+        // The access key ID for the storage integration. Cannot use if IAM is selected. The server will mask the value of this credential in responses and logs.
+        string access_key_id     = 2 [(gogoproto.moretags) = "scrub:\"always\""];
+        // The secret access key for the storage integration. Cannot use if IAM is selected. The server will mask the value of this credential in responses and logs.
+        string secret_access_key = 3 [(gogoproto.moretags) = "scrub:\"always\""];
     }
 
     message GCPConfig {
-        // TODO
+        // The service account for the storage integration. If entered, the project id in the JSON has to match the project id provided previously. Cannot use if Workload is selected. The server will mask the value of this credential in responses and logs.
+        string service_account   = 1 [(gogoproto.moretags) = "scrub:\"always\""];
+        bool   use_workload_id   = 2 [(gogoproto.moretags) = "scrub:\"dependent\""];
     }
 
     string                    id               = 1;
