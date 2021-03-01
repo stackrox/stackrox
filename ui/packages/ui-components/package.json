@@ -47,7 +47,7 @@
         "initials": "^3.1.1",
         "lodash.get": "^4.4.2",
         "react-feather": "^2.0.9",
-        "tippy.js": "^6.2.7",
+        "tippy.js": "^6.3.0",
         "yup": "^0.32.8"
     },
     "devDependencies": {
