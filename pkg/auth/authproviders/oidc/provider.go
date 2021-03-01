@@ -4,53 +4,33 @@ import (
 	"context"
 	"strings"
 
-	"github.com/coreos/go-oidc"
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/auth/authproviders/oidc/internal/endpoint"
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
-// The go-oidc library has two annoying characteristics when it comes to creating backendImpl instances:
-// - The context is passed on to the remoteKeySource that is being created. Hence, we can't use a short-lived context
-//   (such as the request context), as otherwise subsequent verifications will fail because the keys have not been
-//   retrieved.
-// - The check for the issuer is done strictly, not even tolerating a trailing slash (which makes it very hard to omit
-//   the `https://` prefix, as is common).
-// We therefore add a wrapper method that calls `oidc.NewProvider` with the background context and writes the result to
-// a channel, and retries in case of an error with a trailing slash added or removed.
-//
-type createOIDCProviderResult struct {
-	issuer   string
-	provider *oidc.Provider
-	err      error
-}
-
-func createOIDCProviderAsync(ctx context.Context, issuer string, resultC chan<- createOIDCProviderResult) {
-	provider, err := oidc.NewProvider(ctx, issuer)
-	if err != nil {
-		if strings.HasSuffix(issuer, "/") {
-			issuer = strings.TrimSuffix(issuer, "/")
-		} else {
-			issuer = issuer + "/"
+// In the go-oidc library the check for the issuer is done strictly, not even tolerating a trailing slash
+// (which makes it very hard to omit the `https://` prefix, as is common).
+// So far, the go-oidc maintainers refuse to accommodate for this annoyance:
+// - https://github.com/coreos/go-oidc/issues/238
+// - https://github.com/coreos/go-oidc/issues/221 (and the long list of similar cases listed there)
+// We therefore call `oidc.NewProvider` and retry in case of an error, with a trailing
+// slash added or removed.
+func createOIDCProvider(ctx context.Context, helper *endpoint.Helper) (*provider, error) {
+	var err error
+	for _, issuer := range helper.URLsForDiscovery() {
+		var provider *oidc.Provider
+		if provider, err = oidc.NewProvider(ctx, issuer); err == nil {
+			// TODO(porridge): as an optimization, we could tell the helper which issuer URL turned out to be correct,
+			// so that it can be persisted. This way subsequent instantiations of the backend would hit the correct
+			// issuer on the first try, reducing latency.
+			// However we would likely still need this logic here indefinitely since the provider could conceivably
+			// add or remove a slash in the discovery document at a later time (however unlikely that would be).
+			return wrapProvider(provider), nil
 		}
-		provider, err = oidc.NewProvider(ctx, issuer)
 	}
-
-	select {
-	case resultC <- createOIDCProviderResult{issuer: issuer, provider: provider, err: err}:
-	case <-ctx.Done():
-	}
-}
-
-func createOIDCProvider(ctx context.Context, issuer string) (*oidc.Provider, string, error) {
-	resultC := make(chan createOIDCProviderResult, 1)
-	go createOIDCProviderAsync(contextutil.WithValuesFrom(context.Background(), ctx), issuer, resultC)
-	select {
-	case res := <-resultC:
-		return res.provider, res.issuer, res.err
-	case <-ctx.Done():
-		return nil, "", ctx.Err()
-	}
+	return nil, err
 }
 
 type provider struct {

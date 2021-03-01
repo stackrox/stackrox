@@ -1,4 +1,4 @@
-package oidc
+package endpoint
 
 import (
 	"crypto/tls"

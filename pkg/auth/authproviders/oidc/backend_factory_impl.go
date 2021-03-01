@@ -45,7 +45,7 @@ func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []st
 	return be, nil
 }
 
-func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (string, string, error) {
+func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (string, string, error) {
 	if r.URL.Path != f.callbackURLPath {
 		return "", "", httputil.NewError(http.StatusNotFound, "Not Found")
 	}

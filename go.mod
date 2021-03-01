@@ -20,7 +20,7 @@ require (
 	github.com/ckaznocha/protoc-gen-lint v0.2.1
 	github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e
 	github.com/containers/image/v5 v5.5.2
-	github.com/coreos/go-oidc v2.1.0+incompatible
+	github.com/coreos/go-oidc/v3 v3.0.0
 	github.com/coreos/go-systemd/v22 v22.0.0
 	github.com/dave/jennifer v1.3.0
 	github.com/deckarep/golang-set v1.7.1
@@ -101,7 +101,7 @@ require (
 	google.golang.org/grpc v1.33.0
 	google.golang.org/grpc/examples v0.0.0-20200731180010-8bec2f5d898f
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
-	gopkg.in/square/go-jose.v2 v2.3.1
+	gopkg.in/square/go-jose.v2 v2.5.1
 	gopkg.in/yaml.v2 v2.3.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	gotest.tools v2.2.0+incompatible

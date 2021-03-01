@@ -10,11 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coreos/go-oidc"
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
+	"github.com/stackrox/rox/pkg/auth/authproviders/oidc/internal/endpoint"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -22,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/oauth2"
 )
@@ -69,10 +69,10 @@ type backendImpl struct {
 	httpClient *http.Client
 }
 
-func (p *backendImpl) OnEnable(provider authproviders.Provider) {
+func (p *backendImpl) OnEnable(authproviders.Provider) {
 }
 
-func (p *backendImpl) OnDisable(provider authproviders.Provider) {
+func (p *backendImpl) OnDisable(authproviders.Provider) {
 }
 
 func (p *backendImpl) ExchangeToken(ctx context.Context, token, state string) (*authproviders.AuthResponse, string, error) {
@@ -212,32 +212,14 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		return nil, errors.New("no client ID provided")
 	}
 
-	issuer := config[issuerConfigKey]
-	if issuer == "" {
-		return nil, errors.New("no issuer provided")
-	}
-
-	if !strings.Contains(issuer, "://") {
-		issuer = "https://" + issuer
-	}
-
-	issuerURL, err := url.Parse(issuer)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse issuer URL")
-	}
-
-	if issuerURL.Scheme == "http" {
-		return nil, errors.New("unencrypted http is not allowed for OIDC issuers")
-	}
-
-	urlForDiscovery, httpClient := discoveryURLAndClient(issuerURL)
-
-	oidcProvider, _, err := createOIDCProvider(context.WithValue(ctx, oauth2.HTTPClient, httpClient), urlForDiscovery.String())
+	issuerHelper, err := endpoint.NewHelper(config[issuerConfigKey])
 	if err != nil {
 		return nil, err
 	}
-
-	provider := wrapProvider(oidcProvider)
+	provider, err := createOIDCProvider(ctx, issuerHelper)
+	if err != nil {
+		return nil, err
+	}
 
 	b := &backendImpl{
 		id: id,
@@ -246,7 +228,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		defaultUIEndpoint:  uiEndpoints[0],
 		allowedUIEndpoints: set.NewStringSet(uiEndpoints...),
 		provider:           provider,
-		httpClient:         httpClient,
+		httpClient:         issuerHelper.HTTPClient(),
 	}
 
 	b.baseRedirectURL = url.URL{
@@ -305,15 +287,15 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 
 	b.baseOptions = append(b.baseOptions, oauth2.SetAuthURLParam("response_type", responseType))
 
-	b.idTokenVerifier = oidcProvider.Verifier(&oidc.Config{ClientID: clientID})
+	b.idTokenVerifier = provider.Verifier(&oidc.Config{ClientID: clientID})
 
-	b.baseOauthConfig, err = createBaseOAuthConfig(clientID, clientSecret, oidcProvider.Endpoint(), issuerURL, provider.SupportsScope(oidc.ScopeOfflineAccess))
+	b.baseOauthConfig, err = createBaseOAuthConfig(clientID, clientSecret, provider.Endpoint(), issuerHelper, provider.SupportsScope(oidc.ScopeOfflineAccess))
 	if err != nil {
 		return nil, err
 	}
 
 	b.config = map[string]string{
-		issuerConfigKey:       issuer,
+		issuerConfigKey:       issuerHelper.Issuer(),
 		clientIDConfigKey:     clientID,
 		clientSecretConfigKey: clientSecret,
 		modeConfigKey:         mode,
@@ -322,23 +304,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 	return b, nil
 }
 
-func discoveryURLAndClient(issuerURL *url.URL) (*url.URL, *http.Client) {
-	urlForDiscovery := &url.URL{
-		Opaque:  issuerURL.Opaque,
-		Scheme:  issuerURL.Scheme,
-		Host:    issuerURL.Host,
-		Path:    issuerURL.Path,
-		RawPath: issuerURL.RawPath,
-	}
-
-	httpClient := http.DefaultClient
-	if stringutils.ConsumeSuffix(&urlForDiscovery.Scheme, "+insecure") {
-		httpClient = insecureHTTPClient
-	}
-	return urlForDiscovery, httpClient
-}
-
-func createBaseOAuthConfig(clientID string, clientSecret string, endpoint oauth2.Endpoint, issuerURL *url.URL, offlineAccessSupported bool) (oauth2.Config, error) {
+func createBaseOAuthConfig(clientID string, clientSecret string, endpoint oauth2.Endpoint, helper *endpoint.Helper, offlineAccessSupported bool) (oauth2.Config, error) {
 	baseConfig := oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
@@ -349,17 +315,11 @@ func createBaseOAuthConfig(clientID string, clientSecret string, endpoint oauth2
 		baseConfig.Scopes = append(baseConfig.Scopes, oidc.ScopeOfflineAccess)
 	}
 
-	// Adjust the auth URL endpoint to incorporate the query string and fragment from the issuer URL.
-	authURL, err := url.Parse(baseConfig.Endpoint.AuthURL)
+	var err error
+	baseConfig.Endpoint.AuthURL, err = helper.AdjustAuthURL(baseConfig.Endpoint.AuthURL)
 	if err != nil {
-		return oauth2.Config{}, errors.Wrapf(err, "unparseable OAuth2 auth URL %q", baseConfig.Endpoint.AuthURL)
+		return oauth2.Config{}, err
 	}
-
-	authURL.RawQuery = stringutils.JoinNonEmpty("&", authURL.RawQuery, issuerURL.RawQuery)
-	authURL.ForceQuery = authURL.ForceQuery || issuerURL.ForceQuery
-	authURL.Fragment = stringutils.JoinNonEmpty("&", authURL.Fragment, issuerURL.Fragment)
-
-	baseConfig.Endpoint.AuthURL = authURL.String()
 	return baseConfig, nil
 }
 
@@ -555,7 +515,7 @@ func (p *backendImpl) processIDPResponse(ctx context.Context, responseData url.V
 	return nil, combinedErr
 }
 
-func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
+func (p *backendImpl) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
 	var values url.Values
 	switch r.Method {
 	case http.MethodGet:
@@ -576,7 +536,7 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 	return p.processIDPResponse(r.Context(), values)
 }
 
-func (p *backendImpl) Validate(ctx context.Context, claims *tokens.Claims) error {
+func (p *backendImpl) Validate(context.Context, *tokens.Claims) error {
 	return nil
 }
 
@@ -632,7 +592,7 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 
 func (p *backendImpl) injectHTTPClient(ctx context.Context) context.Context {
 	if p.httpClient != nil {
-		return context.WithValue(ctx, oauth2.HTTPClient, p.httpClient)
+		return oidc.ClientContext(ctx, p.httpClient)
 	}
 	return ctx
 }
