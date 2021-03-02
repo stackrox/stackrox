@@ -8,18 +8,20 @@ import {
     PanelBody,
     PanelHead,
     PanelHeadEnd,
-    PanelTitle,
 } from 'Components/Panel';
 import { defaultColumnClassName, nonSortableHeaderClassName } from 'Components/Table';
+import TableCellLink from 'Components/TableCellLink';
 import { AccessControlEntityType } from 'constants/entityTypes';
 import { useTheme } from 'Containers/ThemeProvider';
+import { accessControlLabels } from 'messages/common';
 
+import { PanelTitle2 } from '../AccessControlComponents';
 import AccessControlListPage from '../AccessControlListPage';
 import { getEntityPath } from '../accessControlPaths';
-import { AuthProvider, Column } from '../accessControlTypes';
+import { Column, authProviders, rolesMap } from '../accessControlTypes';
 
 // The total of column width ratios must be less than or equal to 1.0
-// 4/4 = 1.0
+// 1/5 + 1/5 + 1/5 + 2/5 = 0.2 + 0.2 + 0.2 + 0.4 = 1.0
 const columns: Column[] = [
     {
         Header: 'Id',
@@ -30,52 +32,38 @@ const columns: Column[] = [
     {
         Header: 'Name',
         accessor: 'name',
-        headerClassName: `w-1/4 ${nonSortableHeaderClassName}`,
-        className: `w-1/4 ${defaultColumnClassName}`,
+        headerClassName: `w-1/5 ${nonSortableHeaderClassName}`,
+        className: `w-1/5 ${defaultColumnClassName}`,
         sortable: false,
     },
     {
         Header: 'Auth Provider',
         accessor: 'authProvider',
-        headerClassName: `w-1/4 ${nonSortableHeaderClassName}`,
-        className: `w-1/4 ${defaultColumnClassName}`,
+        headerClassName: `w-1/5 ${nonSortableHeaderClassName}`,
+        className: `w-1/5 ${defaultColumnClassName}`,
         sortable: false,
     },
     {
         Header: 'Minimum access role',
-        accessor: 'minimumAccessRole', // TODO link
-        headerClassName: `w-1/4 ${nonSortableHeaderClassName}`,
-        className: `w-1/4 ${defaultColumnClassName}`,
+        accessor: 'minimumAccessRole',
+        Cell: ({ original }) => {
+            const { minimumAccessRole } = original; // TODO verify it is id not name
+            return (
+                <TableCellLink url={getEntityPath('ROLE', minimumAccessRole)}>
+                    {rolesMap[minimumAccessRole]?.name ?? ''}
+                </TableCellLink>
+            );
+        },
+        headerClassName: `w-1/5 ${nonSortableHeaderClassName}`,
+        className: `w-1/5 ${defaultColumnClassName}`,
         sortable: false,
     },
     {
         Header: 'Assigned rules',
         accessor: 'TODO',
-        headerClassName: `w-1/4 ${nonSortableHeaderClassName}`,
-        className: `w-1/4 ${defaultColumnClassName}`,
+        headerClassName: `w-2/5 ${nonSortableHeaderClassName}`,
+        className: `w-2/5 ${defaultColumnClassName}`,
         sortable: false,
-    },
-];
-
-// Mock data
-export const rows: AuthProvider[] = [
-    {
-        id: '0',
-        name: 'Read-Only Auth0',
-        authProvider: 'Auth0',
-        minimumAccessRole: 'Analyst',
-    },
-    {
-        id: '1',
-        name: 'Read-Write OpenID',
-        authProvider: 'OpenID Connect',
-        minimumAccessRole: 'Analyst',
-    },
-    {
-        id: '2',
-        name: 'SeriousSAML',
-        authProvider: 'SAML 2.0',
-        minimumAccessRole: '',
     },
 ];
 
@@ -96,7 +84,7 @@ function AuthProvidersList(): ReactElement {
     );
 
     // TODO request data
-    const row = rows.find(({ id }) => id === entityId);
+    const authProvider = authProviders.find(({ id }) => id === entityId);
 
     function onClose() {
         setEntityId(undefined);
@@ -108,19 +96,22 @@ function AuthProvidersList(): ReactElement {
             columns={columns}
             entityType={entityType}
             isDarkMode={isDarkMode}
-            rows={rows}
+            rows={authProviders}
             selectedRowId={entityId}
             setSelectedRowId={setEntityId}
         >
             <PanelNew testid="side-panel">
                 <PanelHead isDarkMode={isDarkMode} isSidePanel>
-                    <PanelTitle isUpperCase={false} testid="head-text" text={row?.name ?? ''} />
+                    <PanelTitle2
+                        entityName={authProvider?.name ?? ''}
+                        entityTypeLabel={accessControlLabels[entityType]}
+                    />
                     <PanelHeadEnd>
                         <CloseButton onClose={onClose} className={`${borderColor} border-l`} />
                     </PanelHeadEnd>
                 </PanelHead>
                 <PanelBody>
-                    <code>{JSON.stringify(row, null, 2)}</code>
+                    <code>{JSON.stringify(authProvider, null, 2)}</code>
                 </PanelBody>
             </PanelNew>
         </AccessControlListPage>

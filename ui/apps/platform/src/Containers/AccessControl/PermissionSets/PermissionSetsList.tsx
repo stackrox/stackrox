@@ -1,5 +1,6 @@
 import React, { ReactElement, useCallback } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
+import pluralize from 'pluralize';
 
 import CloseButton from 'Components/CloseButton';
 import {
@@ -8,18 +9,20 @@ import {
     PanelBody,
     PanelHead,
     PanelHeadEnd,
-    PanelTitle,
 } from 'Components/Panel';
 import { defaultColumnClassName, nonSortableHeaderClassName } from 'Components/Table';
+import TableCellLink from 'Components/TableCellLink';
 import { AccessControlEntityType } from 'constants/entityTypes';
 import { useTheme } from 'Containers/ThemeProvider';
+import { accessControl, accessControlLabels } from 'messages/common';
 
+import { PanelTitle2 } from '../AccessControlComponents';
 import AccessControlListPage from '../AccessControlListPage';
 import { getEntityPath } from '../accessControlPaths';
-import { Column, PermissionSet } from '../accessControlTypes';
+import { Column, permissionSets, roles } from '../accessControlTypes';
 
 // The total of column width ratios must be less than or equal to 1.0
-// 2/4 + 2/5 + 1/10 = 0.5 + 0.4 + 0.1 = 1.0
+// 1/5 + 2/5 + 1/5 + 1/5 = 0.2 + 0.4 + 0.2 + 0.2 = 1.0
 const columns: Column[] = [
     {
         Header: 'Id',
@@ -30,8 +33,8 @@ const columns: Column[] = [
     {
         Header: 'Name',
         accessor: 'name',
-        headerClassName: `w-1/4 ${nonSortableHeaderClassName}`,
-        className: `w-1/4 ${defaultColumnClassName}`,
+        headerClassName: `w-1/5 ${nonSortableHeaderClassName}`,
+        className: `w-1/5 ${defaultColumnClassName}`,
         sortable: false,
     },
     {
@@ -42,76 +45,46 @@ const columns: Column[] = [
         sortable: false,
     },
     {
-        Header: 'Type',
-        accessor: 'type',
-        headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-        className: `w-1/10 ${defaultColumnClassName}`,
+        Header: 'Minimum Access',
+        accessor: 'minimumAccessLevel',
+        Cell: ({ original }) => {
+            const { minimumAccessLevel } = original;
+            // TODO delete cast after accessControl.js has been rewritten as TypeScript.
+            return (accessControl[minimumAccessLevel] ?? '') as string;
+        },
+        headerClassName: `w-1/5 ${nonSortableHeaderClassName}`,
+        className: `w-1/5 ${defaultColumnClassName}`,
         sortable: false,
     },
     {
         Header: 'Roles',
-        accessor: 'TODO', // TODO link
-        headerClassName: `w-1/4 ${nonSortableHeaderClassName}`,
-        className: `w-1/4 ${defaultColumnClassName}`,
-        sortable: false,
-    },
-];
+        accessor: 'TODO',
+        Cell: ({ original }) => {
+            const { id } = original;
+            const rolesFiltered = roles.filter(({ permissionSetId }) => permissionSetId === id);
 
-// Mock data
-export const rows: PermissionSet[] = [
-    {
-        id: '0',
-        name: 'GuestAccount',
-        displayName: 'GuestAccount',
-        description: 'Limited write access to basic settings, cannot save changes',
-        type: 'User defined',
-        minimumAccessLevel: 'READ_ACCESS',
-        permissions: [],
-    },
-    {
-        id: '1',
-        name: 'ReadWriteAll',
-        displayName: 'ReadWriteAll',
-        description: 'Full read and write access',
-        type: 'System default',
-        minimumAccessLevel: 'READ_WRITE_ACCESS',
-        permissions: [],
-    },
-    {
-        id: '2',
-        name: 'WriteSpecific',
-        displayName: 'WriteSpecific',
-        description: 'Limited write access and full read access',
-        type: 'System default',
-        minimumAccessLevel: 'READ_ACCESS',
-        permissions: [],
-    },
-    {
-        id: '3',
-        name: 'NoPermissions',
-        displayName: 'NoPermissions',
-        description: 'No read or write access',
-        type: 'System default',
-        minimumAccessLevel: 'NO_ACCESS',
-        permissions: [],
-    },
-    {
-        id: '4',
-        name: 'ReadOnly',
-        displayName: 'ReadOnly',
-        description: 'Full read access, no write access',
-        type: 'System default',
-        minimumAccessLevel: 'READ_ACCESS',
-        permissions: [],
-    },
-    {
-        id: '5',
-        name: 'TestSet',
-        displayName: 'TestSet',
-        description: 'Experimental set, do not use',
-        type: 'User defined',
-        minimumAccessLevel: 'NO_ACCESS',
-        permissions: [],
+            if (rolesFiltered.length === 0) {
+                return 'No roles';
+            }
+
+            if (rolesFiltered.length === 1) {
+                const role = rolesFiltered[0];
+                return (
+                    <TableCellLink url={getEntityPath('ROLE', role.id)}>{role.name}</TableCellLink>
+                );
+            }
+
+            const count = rolesFiltered.length;
+            const text = `${count} ${pluralize(accessControlLabels.ROLE, count)}`;
+            return (
+                <TableCellLink url={getEntityPath('ROLE', '', { PERMISSION_SET: id })}>
+                    {text}
+                </TableCellLink>
+            );
+        },
+        headerClassName: `w-1/5 ${nonSortableHeaderClassName}`,
+        className: `w-1/5 ${defaultColumnClassName}`,
+        sortable: false,
     },
 ];
 
@@ -132,7 +105,7 @@ function PermissionSetsList(): ReactElement {
     );
 
     // TODO request data
-    const row = rows.find(({ id }) => id === entityId);
+    const permissionSet = permissionSets.find(({ id }) => id === entityId);
 
     function onClose() {
         setEntityId(undefined);
@@ -144,19 +117,22 @@ function PermissionSetsList(): ReactElement {
             columns={columns}
             entityType={entityType}
             isDarkMode={isDarkMode}
-            rows={rows}
+            rows={permissionSets}
             selectedRowId={entityId}
             setSelectedRowId={setEntityId}
         >
             <PanelNew testid="side-panel">
                 <PanelHead isDarkMode={isDarkMode} isSidePanel>
-                    <PanelTitle isUpperCase={false} testid="head-text" text={row?.name ?? ''} />
+                    <PanelTitle2
+                        entityName={permissionSet?.name ?? ''}
+                        entityTypeLabel={accessControlLabels[entityType]}
+                    />
                     <PanelHeadEnd>
                         <CloseButton onClose={onClose} className={`${borderColor} border-l`} />
                     </PanelHeadEnd>
                 </PanelHead>
                 <PanelBody>
-                    <code>{JSON.stringify(row, null, 2)}</code>
+                    <code>{JSON.stringify(permissionSet, null, 2)}</code>
                 </PanelBody>
             </PanelNew>
         </AccessControlListPage>

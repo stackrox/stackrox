@@ -17,7 +17,7 @@ import URLSearchInput from 'Components/URLSearchInput';
 import { AccessControlEntityType } from 'constants/entityTypes';
 import { accessControlLabels } from 'messages/common';
 
-import { Column, AccessControlRow } from './accessControlTypes';
+import { AccessControlEntity, Column } from './accessControlTypes';
 import AccessControlPageHeader from './AccessControlPageHeader';
 
 export type AccessControlListPageProps = {
@@ -25,7 +25,7 @@ export type AccessControlListPageProps = {
     columns: Column[];
     entityType: AccessControlEntityType;
     isDarkMode: boolean;
-    rows: AccessControlRow[];
+    rows: AccessControlEntity[];
     selectedRowId?: string;
     setSelectedRowId: (id: string) => void;
 };
@@ -76,7 +76,7 @@ function AccessControlListPage({
                             <PanelButton
                                 icon={<Plus className="h-4 w-4 ml-1" />}
                                 tooltip={textNew}
-                                className="btn btn-base ml-2"
+                                className="btn btn-base ml-2 mr-4 whitespace-nowrap"
                                 onClick={onClickNew}
                                 disabled={!!selectedRowId}
                             >

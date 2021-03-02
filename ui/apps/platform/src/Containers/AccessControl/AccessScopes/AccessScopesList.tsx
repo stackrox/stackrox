@@ -1,5 +1,6 @@
 import React, { ReactElement, useCallback } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
+import pluralize from 'pluralize';
 
 import CloseButton from 'Components/CloseButton';
 import {
@@ -8,18 +9,20 @@ import {
     PanelBody,
     PanelHead,
     PanelHeadEnd,
-    PanelTitle,
 } from 'Components/Panel';
 import { defaultColumnClassName, nonSortableHeaderClassName } from 'Components/Table';
+import TableCellLink from 'Components/TableCellLink';
 import { AccessControlEntityType } from 'constants/entityTypes';
 import { useTheme } from 'Containers/ThemeProvider';
+import { accessControlLabels } from 'messages/common';
 
+import { PanelTitle2 } from '../AccessControlComponents';
 import AccessControlListPage from '../AccessControlListPage';
 import { getEntityPath } from '../accessControlPaths';
-import { AccessScope, Column } from '../accessControlTypes';
+import { Column, accessScopes, roles } from '../accessControlTypes';
 
 // The total of column width ratios must be less than or equal to 1.0
-// 3/6 + 2/5 + 1/10 = 0.5 + 0.4 + 0.1 = 1.0
+// 1/5 + 2/5 + 1/5 + 1/5 = 0.2 + 0.4 + 0.2 + 0.2 = 1.0
 const columns: Column[] = [
     {
         Header: 'Id',
@@ -30,8 +33,8 @@ const columns: Column[] = [
     {
         Header: 'Name',
         accessor: 'name',
-        headerClassName: `w-1/6 ${nonSortableHeaderClassName}`,
-        className: `w-1/6 ${defaultColumnClassName}`,
+        headerClassName: `w-1/5 ${nonSortableHeaderClassName}`,
+        className: `w-1/5 ${defaultColumnClassName}`,
         sortable: false,
     },
     {
@@ -42,53 +45,41 @@ const columns: Column[] = [
         sortable: false,
     },
     {
-        Header: 'Type',
-        accessor: 'type',
-        headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-        className: `w-1/10 ${defaultColumnClassName}`,
-        sortable: false,
-    },
-    {
         Header: 'Resources',
         accessor: 'TODO', // TODO link
-        headerClassName: `w-1/6 ${nonSortableHeaderClassName}`,
-        className: `w-1/6 ${defaultColumnClassName}`,
+        headerClassName: `w-1/5 ${nonSortableHeaderClassName}`,
+        className: `w-1/5 ${defaultColumnClassName}`,
         sortable: false,
     },
     {
         Header: 'Roles',
-        accessor: 'TODO', // TODO link
-        headerClassName: `w-1/6 ${nonSortableHeaderClassName}`,
-        className: `w-1/6 ${defaultColumnClassName}`,
-        sortable: false,
-    },
-];
+        accessor: 'TODO',
+        Cell: ({ original }) => {
+            const { id } = original;
+            const rolesFiltered = roles.filter(({ accessScopeId }) => accessScopeId === id);
 
-// Mock data
-export const rows: AccessScope[] = [
-    {
-        id: '0',
-        name: 'WalledGarden',
-        description: 'Exclude all entities, only access select entities',
-        type: 'User defined',
-    },
-    {
-        id: '1',
-        name: 'AllAccess',
-        description: 'Users can access all entities',
-        type: 'System default',
-    },
-    {
-        id: '2',
-        name: 'LimitedAccess',
-        description: 'Users have access to limited entities',
-        type: 'System default',
-    },
-    {
-        id: '3',
-        name: 'DenyAccess',
-        description: 'Users have no access',
-        type: 'System default',
+            if (rolesFiltered.length === 0) {
+                return 'No roles';
+            }
+
+            if (rolesFiltered.length === 1) {
+                const role = rolesFiltered[0];
+                return (
+                    <TableCellLink url={getEntityPath('ROLE', role.id)}>{role.name}</TableCellLink>
+                );
+            }
+
+            const count = rolesFiltered.length;
+            const text = `${count} ${pluralize(accessControlLabels.ROLE, count)}`;
+            return (
+                <TableCellLink url={getEntityPath('ROLE', '', { ACCESS_SCOPE: id })}>
+                    {text}
+                </TableCellLink>
+            );
+        },
+        headerClassName: `w-1/5 ${nonSortableHeaderClassName}`,
+        className: `w-1/5 ${defaultColumnClassName}`,
+        sortable: false,
     },
 ];
 
@@ -109,7 +100,7 @@ function AccessScopesList(): ReactElement {
     );
 
     // TODO request data
-    const row = rows.find(({ id }) => id === entityId);
+    const accessScope = accessScopes.find(({ id }) => id === entityId);
 
     function onClose() {
         setEntityId(undefined);
@@ -121,19 +112,22 @@ function AccessScopesList(): ReactElement {
             columns={columns}
             entityType={entityType}
             isDarkMode={isDarkMode}
-            rows={rows}
+            rows={accessScopes}
             selectedRowId={entityId}
             setSelectedRowId={setEntityId}
         >
             <PanelNew testid="side-panel">
                 <PanelHead isDarkMode={isDarkMode} isSidePanel>
-                    <PanelTitle isUpperCase={false} testid="head-text" text={row?.name ?? ''} />
+                    <PanelTitle2
+                        entityName={accessScope?.name ?? ''}
+                        entityTypeLabel={accessControlLabels[entityType]}
+                    />
                     <PanelHeadEnd>
                         <CloseButton onClose={onClose} className={`${borderColor} border-l`} />
                     </PanelHeadEnd>
                 </PanelHead>
                 <PanelBody>
-                    <code>{JSON.stringify(row, null, 2)}</code>
+                    <code>{JSON.stringify(accessScope, null, 2)}</code>
                 </PanelBody>
             </PanelNew>
         </AccessControlListPage>
