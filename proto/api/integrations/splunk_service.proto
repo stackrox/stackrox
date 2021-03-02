@@ -1,0 +1,122 @@
+syntax = "proto3";
+
+option go_package = "integrations";
+
+option java_package = "io.stackrox.proto.api.integrations";
+
+import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+import "storage/alert.proto";
+import "storage/deployment.proto";
+import "storage/policy.proto";
+import "storage/process_indicator.proto";
+
+package integrations;
+
+// SplunkViolationsResponse is what StackRox Platform returns on the request from Splunk Technology Addon for StackRox.
+message SplunkViolationsResponse {
+  repeated SplunkViolation violations = 1;
+}
+
+// SplunkViolation presents a violation information for Splunk. Essentially, it is a view of data centered around each
+// separate violation in storage.Alert structure: storage.Alert.Violation and storage.ProcessIndicator.
+// We're not using storage.Alert directly because it will be inconvenient to expose _individual_ violations that way.
+// Also, that would unnecessarily couple our Splunk Technology Addon (TA) to internal (storage) data structures of
+// StackRox. Given that TA and StackRox Platform are versioned and updated independently, it is safer to work with a
+// dedicated data structure for the SackRox-TA API interface, which is this SplunkViolation.
+// Note that SplunkViolation still re-uses some definitions from storage where it seemed practical to not reinvent too
+// much.
+message SplunkViolation {
+  // From storage.Alert.Violation
+  message ViolationInfo {
+    // In case of non-Process alerts (k8s and non-runtime), this is surrogate identifier derived from
+    // alert_id + crypto_hash(storage.Alert.Violation).
+    // In case of Process alerts, this has the same value as ProcessInfo.process_violation_id.
+    string violation_id = 1;
+
+    string violation_message = 2;
+    repeated storage.Alert.Violation.KeyValueAttrs.KeyValueAttr violation_message_attributes = 3;
+
+    // A new enum is introduced instead of storage.Alert.Violation.Type because
+    // 1) storage.Alert.Violation.Type does not have an item for PROCESS_EVENT
+    // 2) default value of storage.Alert.Violation.Type is GENERIC=0 and therefore not serialized to JSON.
+    enum ViolationType {
+      UNKNOWN = 0;
+      GENERIC = 1;
+      K8S_EVENT = 2;
+      PROCESS_EVENT = 3;
+    }
+    ViolationType violation_type = 4;
+
+    // In case of k8s alerts, this is storage.Alert.Violation.time
+    // In case of Process alerts, this is storage.ProcessSignal.process_creation_time
+    // In case of other alerts, this is storage.Alert.time
+    google.protobuf.Timestamp violation_time = 5;
+  }
+
+  // From storage.Alert
+  message AlertInfo {
+    string alert_id = 1;
+    storage.LifecycleStage lifecycle_stage = 2;
+    repeated string alert_tags = 3;
+    google.protobuf.Timestamp alert_first_occurred = 4;
+  }
+
+  // From storage.ProcessIndicator (numbers 1xx) and storage.ProcessSignal (numbers 2xx).
+  message ProcessInfo {
+    string process_violation_id = 101;
+
+    string pod_id = 102;
+    string pod_uid = 103;
+    string container_name = 104;
+    google.protobuf.Timestamp container_start_time = 105;
+
+    string container_id = 201;
+
+    string process_signal_id = 202;
+    google.protobuf.Timestamp process_creation_time = 203;
+    string process_name = 204;
+    string process_args = 205;
+    string exec_file_path = 206;
+    // UInt32Value is used for pid, process_uid and process_gid instead of plain uint32 to include 0 values on output.
+    google.protobuf.UInt32Value pid = 207;
+    google.protobuf.UInt32Value process_uid = 208;
+    google.protobuf.UInt32Value process_gid = 209;
+    repeated storage.ProcessSignal.LineageInfo process_lineage_info = 210;
+  }
+
+  // From storage.Alert.Entity: storage.Alert.Deployment (numbers 1xx) and storage.ContainerImage (2xx).
+  message DeploymentInfo {
+    string deployment_id = 101;
+    string deployment_name = 102;
+    string deployment_type = 103;
+    string deployment_namespace = 104;
+    string deployment_namespace_id = 105;
+    map<string, string> deployment_labels = 106;
+    string cluster_id = 107;
+    string cluster_name = 108;
+    repeated storage.Alert.Deployment.Container deployment_containers = 109;
+    map<string, string> deployment_annotations = 110;
+
+    storage.ContainerImage deployment_image = 201;
+  }
+
+  // From storage.Policy
+  message PolicyInfo {
+    string policy_id = 1;
+    string policy_name = 2;
+    string policy_description = 3;
+    string policy_rationale = 4;
+    repeated string policy_categories = 5;
+    repeated string policy_lifecycle_stages = 6;
+    string policy_severity = 7;
+    string policy_version = 8;
+  }
+
+  ViolationInfo violationInfo = 1;
+  AlertInfo alertInfo = 2;
+  ProcessInfo processInfo = 3;
+  DeploymentInfo deploymentInfo = 4;
+  PolicyInfo policyInfo = 5;
+}

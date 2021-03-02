@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
 	"github.com/stackrox/rox/central/audit"
@@ -645,6 +646,12 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/splunk/ta/compliance",
 			Authorizer:    user.With(permissions.View(resources.Compliance)),
 			ServerHandler: splunk.NewComplianceHandler(complianceDatastore.Singleton()),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/splunk/ta/violations",
+			Authorizer:    user.With(permissions.View(resources.Alert)),
+			ServerHandler: splunk.NewViolationsHandler(alertDatastore.Singleton()),
 			Compression:   true,
 		},
 		{
