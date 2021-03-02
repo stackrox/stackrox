@@ -10,6 +10,7 @@ import (
 var manifestFuncs = []func(registry *Registry, remote, ref string) (*storage.ImageMetadata, error){
 	HandleV2ManifestList,
 	HandleV2Manifest,
+	HandleOCIManifest,
 	HandleV1SignedManifest,
 	HandleV1Manifest,
 }

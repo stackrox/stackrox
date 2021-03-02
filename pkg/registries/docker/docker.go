@@ -10,6 +10,7 @@ import (
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/distribution/manifest/schema2"
 	"github.com/heroku/docker-registry-client/registry"
+	ociSpec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -144,6 +145,8 @@ func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error
 		return HandleV2ManifestList(r, remote, digest.String())
 	case schema2.MediaTypeManifest:
 		return HandleV2Manifest(r, remote, digest.String())
+	case ociSpec.MediaTypeImageManifest:
+		return HandleOCIManifest(r, remote, digest.String())
 	default:
 		return nil, fmt.Errorf("unknown manifest type '%s'", manifestType)
 	}

@@ -65,6 +65,7 @@ require (
 	github.com/mitchellh/hashstructure v1.0.0
 	github.com/nilslice/protolock v0.0.0
 	github.com/opencontainers/go-digest v1.0.0
+	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/openshift/api v3.9.1-0.20191201231411-9f834e337466+incompatible
 	github.com/openshift/client-go v3.9.0+incompatible
 	github.com/pkg/errors v0.9.1
@@ -81,7 +82,7 @@ require (
 	github.com/stackrox/external-network-pusher v0.0.0-20201201000949-ec60e0486e7a
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191029220117-2a73008e51a9
 	github.com/stackrox/scanner v0.0.0-20210216165912-1e9f5000b37c
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222
 	github.com/tkuchiki/go-timezone v0.1.3
 	github.com/vbauerster/mpb/v4 v4.11.1
@@ -130,7 +131,7 @@ replace (
 
 	// Something pulls in an older version with uppercase OpenAPIv2 package version
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.3
-	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20200930173048-36c5a823baf5
+	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20210302165330-43446b0a41b5
 	github.com/mattn/goveralls => github.com/viswajithiii/goveralls v0.0.3-0.20190917224517-4dd02c532775
 	github.com/nilslice/protolock => github.com/viswajithiii/protolock v0.10.1-0.20190117180626-43bb8a9ba4e8
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc9
