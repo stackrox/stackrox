@@ -55,16 +55,16 @@ const ResourceRelatedEntitiesList = ({
             items = items
                 .map((item) => ({
                     ...item.metadata,
-                    name: `${item.metadata.clusterName}/${item.metadata.name}`,
+                    name: `${item?.metadata?.clusterName}/${item?.metadata?.name}`,
                 }))
-                .filter((item) => item.clusterName === pageEntity.name);
+                .filter((item) => item.clusterName === pageEntity?.name);
         }
         if (listEntityType === entityTypes.NODE) {
             items = data.results.nodes;
         }
 
         return items.map((item) => ({
-            label: item.name,
+            label: item?.name,
             link: URLService.getURL(match, location).base(listEntityType, item.id).url(),
         }));
     }
@@ -76,7 +76,7 @@ const ResourceRelatedEntitiesList = ({
                     .base(listEntityType, null, linkContext)
                     .query({
                         [searchParam]: {
-                            [pageEntityType]: pageEntity.name,
+                            [pageEntityType]: pageEntity?.name,
                             [entityTypes.CLUSTER]: clusterName,
                         },
                     })
@@ -96,7 +96,7 @@ const ResourceRelatedEntitiesList = ({
 
         const variables = {
             query: queryService.objectToWhereClause({
-                [pageEntityType]: pageEntity.name,
+                [pageEntityType]: pageEntity?.name,
                 [entityTypes.CLUSTER]: clusterName,
             }),
         };

@@ -31,7 +31,7 @@ const ResourceCount = ({
                 .set('context', useCases.SECRET)
                 .query({
                     [searchParam]: {
-                        [`${capitalize(relatedToResourceType)}`]: relatedToResource.name,
+                        [`${capitalize(relatedToResourceType)}`]: relatedToResource?.name,
                     },
                 })
                 .url();

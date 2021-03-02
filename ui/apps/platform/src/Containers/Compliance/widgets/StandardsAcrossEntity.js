@@ -77,7 +77,7 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
                 y: standardBaseTypes[standardId],
                 x: percentagePassing,
                 hint: {
-                    title: `${standard.name} Standard - ${percentagePassing}% Passing`,
+                    title: `${standard?.name} Standard - ${percentagePassing}% Passing`,
                     body: `${
                         totalControls - passingControls
                     } failing controls across all ${pluralize(resourceLabels[type])}`,

@@ -38,7 +38,7 @@ const ControlRelatedEntitiesList = ({
                     acc.concat(
                         cluster.namespaces.map((ns) => ({
                             ...ns.metadata,
-                            name: `${cluster.name}/${ns.metadata.name}`,
+                            name: `${cluster?.name}/${ns?.metadata?.name}`,
                         }))
                     ),
                 []
@@ -49,7 +49,7 @@ const ControlRelatedEntitiesList = ({
                     acc.concat(
                         cluster.nodes.map((node) => ({
                             ...node,
-                            name: `${cluster.name}/${node.name}`,
+                            name: `${cluster?.name}/${node?.name}`,
                         }))
                     ),
                 []
@@ -96,7 +96,7 @@ const ControlRelatedEntitiesList = ({
             <Link
                 to={URLService.getURL(match, location)
                     .base(listEntityType, null, linkContext)
-                    .query({ [searchParam]: { standard, [pageEntityType]: pageEntity.name } })
+                    .query({ [searchParam]: { standard, [pageEntityType]: pageEntity?.name } })
                     .url()}
                 className="no-underline"
             >

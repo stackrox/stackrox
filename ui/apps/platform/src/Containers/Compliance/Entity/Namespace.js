@@ -80,7 +80,7 @@ const NamespacePage = ({
                     const listQuery = {
                         groupBy:
                             listEntityType1 === entityTypes.CONTROL ? entityTypes.STANDARD : '',
-                        Namespace: namespace.name,
+                        Namespace: namespace?.name,
                         ...query[searchParam],
                     };
                     contents = (
