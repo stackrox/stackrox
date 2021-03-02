@@ -50,3 +50,30 @@ func HandleV2Manifest(r *Registry, remote, ref string) (*storage.ImageMetadata, 
 		LayerShas: layers,
 	}, nil
 }
+
+// HandleOCIManifest handles fetching data if the media type is OCI
+func HandleOCIManifest(r *Registry, remote, ref string) (*storage.ImageMetadata, error) {
+	metadata, err := r.Client.ManifestOCI(remote, ref)
+	if err != nil {
+		return nil, err
+	}
+	layers := make([]string, 0, len(metadata.Layers))
+	for _, layer := range metadata.Layers {
+		layers = append(layers, layer.Digest.String())
+	}
+
+	var v1Metadata *storage.V1Metadata
+	if metadata.Config.Digest != "" {
+		v1Metadata, err = r.handleV1ManifestLayer(remote, metadata.Config.Digest)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &storage.ImageMetadata{
+		V1: v1Metadata,
+		V2: &storage.V2Metadata{
+			Digest: ref,
+		},
+		LayerShas: layers,
+	}, nil
+}

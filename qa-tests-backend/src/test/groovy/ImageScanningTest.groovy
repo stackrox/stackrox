@@ -34,6 +34,7 @@ class ImageScanningTest extends BaseSpecification {
             "richxsl/rhel7@sha256:8f3aae325d2074d2dc328cb532d6e7aeb0c588e15ddf847347038fe0566364d6"
     static final private String GCR_IMAGE   = "us.gcr.io/stackrox-ci/qa/registry-image:0.2"
     static final private String NGINX_IMAGE = "nginx:1.12.1"
+    static final private String OCI_IMAGE   = "stackrox/sandbox:oci-manifest"
     static final private String AR_IMAGE    = "us-west1-docker.pkg.dev/stackrox-ci/artifact-registry-test1/nginx:1.17"
     static final private String CENTOS_IMAGE = "stackrox/qa:centos7-base"
     static final private String CENTOS_ECHO_IMAGE = "stackrox/qa:centos7-base-echo"
@@ -365,6 +366,7 @@ class ImageScanningTest extends BaseSpecification {
         scanner                          | component      | version            | idx | cve              | image
         new StackroxScannerIntegration() | "openssl-libs" | "1:1.0.1e-34.el7"  | 1   | "RHSA-2014:1052" | RHEL7_IMAGE
         new StackroxScannerIntegration() | "openssl-libs" | "1:1.0.1e-34.el7"  | 1   | "CVE-2014-3509"  | RHEL7_IMAGE
+        new StackroxScannerIntegration() | "glibc"        | "2.23-0ubuntu11.2" | 0   | "CVE-2015-8985"  | OCI_IMAGE
         new AnchoreScannerIntegration()  | "openssl"      | "1.0.1t-1+deb8u12" | 0   | "CVE-2010-0928"  | GCR_IMAGE
         new AnchoreScannerIntegration()  | "perl"         | "5.20.2-3+deb8u12" | 0   | "CVE-2011-4116"  | GCR_IMAGE
         new ClairScannerIntegration()    | "apt"          | "1.4.8"            | 0   | "CVE-2011-3374"  | NGINX_IMAGE
