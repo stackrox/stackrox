@@ -18,9 +18,27 @@ import (
 )
 
 var (
-	nameValidator        = regexp.MustCompile(`^[^\n\r\$]{5,64}$`)
-	descriptionValidator = regexp.MustCompile(`^[^\$]{1,256}$`)
+	nameValidator = &regexpAndDesc{
+		r:    regexp.MustCompile(`^[^\n\r\$]{5,128}$`),
+		desc: "policy must have a name between 5 and 128 characters long with no new lines or dollar signs",
+	}
+	descriptionValidator = &regexpAndDesc{
+		r:    regexp.MustCompile(`^[^\$]{0,800}$`),
+		desc: "description, when present, should be of sentence form, and not contain more than 800 characters",
+	}
 )
+
+type regexpAndDesc struct {
+	r    *regexp.Regexp
+	desc string
+}
+
+func (r *regexpAndDesc) Validate(s string) error {
+	if !r.r.MatchString(s) {
+		return errors.New(r.desc)
+	}
+	return nil
+}
 
 func newPolicyValidator(notifierStorage notifierDataStore.DataStore) *policyValidator {
 	return &policyValidator{
@@ -75,10 +93,7 @@ func (s *policyValidator) internalValidate(policy *storage.Policy, additionalVal
 }
 
 func (s *policyValidator) validateName(policy *storage.Policy) error {
-	if policy.GetName() == "" || !nameValidator.MatchString(policy.GetName()) {
-		return errors.New("policy must have a name, at least 5 chars long, and contain no punctuation or special characters")
-	}
-	return nil
+	return nameValidator.Validate(policy.GetName())
 }
 
 func (s *policyValidator) validateVersion(policy *storage.Policy) error {
@@ -89,10 +104,7 @@ func (s *policyValidator) validateVersion(policy *storage.Policy) error {
 }
 
 func (s *policyValidator) validateDescription(policy *storage.Policy) error {
-	if policy.GetDescription() != "" && !descriptionValidator.MatchString(policy.GetDescription()) {
-		return errors.New("description, when present, should be of sentence form, and not contain more than 200 characters")
-	}
-	return nil
+	return descriptionValidator.Validate(policy.GetDescription())
 }
 
 func (s *policyValidator) validateCompilableForLifecycle(policy *storage.Policy, options ...booleanpolicy.ValidateOption) error {
