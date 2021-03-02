@@ -38,7 +38,7 @@ function processData(match, location, data, entityType, searchParam) {
             .base(entityTypes.CONTROL)
             .query({
                 [searchParam]: {
-                    [`${capitalize(entityType)}`]: entity.name,
+                    [`${capitalize(entityType)}`]: entity?.name,
                     standard: standardLabels[standard.id],
                 },
             })
@@ -49,7 +49,7 @@ function processData(match, location, data, entityType, searchParam) {
         );
         const { numFailing: numFailingControls } = controlResult;
         const dataPoint = {
-            x: entity && entity.name,
+            x: entity?.name,
             y: percentagePassing,
             hint: {
                 title: standardLabels[standard.id],
@@ -88,8 +88,8 @@ function getLabelLinks(match, location, data, entityType) {
     const { entityList } = data;
     const labelLinks = {};
     entityList.forEach((entity) => {
-        labelLinks[entity.name] = URLService.getURL(match, location)
-            .base(entityType, entity.id)
+        labelLinks[entity?.name] = URLService.getURL(match, location)
+            .base(entityType, entity?.id)
             .url();
     });
     return labelLinks;

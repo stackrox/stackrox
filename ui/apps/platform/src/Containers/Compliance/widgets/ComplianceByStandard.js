@@ -81,7 +81,7 @@ const processSunburstData = (match, location, data, type) => {
         if (groupStat !== undefined) {
             const value = Math.round((groupStat.passing / groupStat.total) * 100);
             groupMapping[datum.id] = {
-                name: `${datum.name}. ${datum.description}`,
+                name: `${datum?.name}. ${datum?.description}`,
                 color: getColor(value),
                 value,
                 children: [],
@@ -102,7 +102,7 @@ const processSunburstData = (match, location, data, type) => {
             if (group !== undefined && controlStat !== undefined) {
                 const value = Math.round((controlStat.passing / controlStat.total) * 100);
                 group.children.push({
-                    name: `${datum.name} - ${datum.description}`,
+                    name: `${datum?.name} - ${datum?.description}`,
                     color: getColor(value),
                     link: url,
                     value,

@@ -83,9 +83,9 @@ function formatResourceData(data, resourceType) {
         const entityMetaData = entity.metadata || {};
 
         entityMap[curEntity] = entityMap[curEntity] || {
-            name: entity.name || (entity.metadata && entity.metadata.name),
-            cluster: entity.clusterName || entityMetaData.clusterName || entity.name,
-            namespace: entity.namespace,
+            name: entity?.name || entity?.metadata?.name,
+            cluster: entity?.clusterName || entityMetaData?.clusterName || entity?.name,
+            namespace: entity?.namespace,
             id: curEntity,
             overall: {
                 numPassing: 0,
@@ -147,7 +147,7 @@ function formatStandardData(data) {
             if (__typename === 'Node') {
                 groupName = `${clusterName}/${name}`;
             } else if (__typename === 'Namespace') {
-                groupName = `${metadata.clusterName}/${metadata.name}`;
+                groupName = `${metadata?.clusterName}/${metadata?.name}`;
             }
             if (!groups[groupName]) {
                 const groupId = parseInt(groupName, 10) || groupName;

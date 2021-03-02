@@ -28,13 +28,13 @@ const ControlsMostFailed = ({ match, location, entityType, query, limit, showEmp
         const { results } = data.results;
         const { complianceStandards } = data;
         const controls = complianceStandards.reduce((acc, standard) => {
-            const standardName = standard.name;
+            const standardName = standard?.name;
             const standardControls = standard.controls.map((control) => ({
                 id: control.id,
                 label:
                     entity !== entityTypes.CHECK
-                        ? `${standardName} - ${control.name}: ${control.description}`
-                        : `${control.name}: ${control.description}`,
+                        ? `${standardName} - ${control?.name}: ${control?.description}`
+                        : `${control?.name}: ${control?.description}`,
             }));
 
             return acc.concat(standardControls);
