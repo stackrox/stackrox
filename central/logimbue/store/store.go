@@ -16,8 +16,8 @@ type Store interface {
 	RemoveLogs(from, to int64) error
 }
 
-// New returns a new Store instance using the provided bolt DB instance.
-func New(db *bolt.DB) Store {
+// newStore returns a new Store instance using the provided bolt DB instance.
+func newStore(db *bolt.DB) Store {
 	bolthelper.RegisterBucketOrPanic(db, logsBucket)
 	return &storeImpl{
 		DB: db,

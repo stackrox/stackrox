@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/logimbue/store"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/telemetry/gatherers"
 	"github.com/stackrox/rox/pkg/sync"
@@ -14,7 +15,8 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton(), connection.ManagerSingleton(), gatherers.Singleton())
+	as = New(datastore.Singleton(), connection.ManagerSingleton(), gatherers.Singleton(),
+		store.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

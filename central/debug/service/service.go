@@ -20,6 +20,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
 	"github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/logimbue/store"
+	"github.com/stackrox/rox/central/logimbue/writer"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/telemetry/gatherers"
@@ -83,11 +85,13 @@ type Service interface {
 }
 
 // New returns a Service that implements v1.DebugServiceServer
-func New(clusters datastore.DataStore, sensorConnMgr connection.Manager, telemetryGatherer *gatherers.RoxGatherer) Service {
+func New(clusters datastore.DataStore, sensorConnMgr connection.Manager, telemetryGatherer *gatherers.RoxGatherer,
+	store store.Store) Service {
 	return &serviceImpl{
 		clusters:          clusters,
 		sensorConnMgr:     sensorConnMgr,
 		telemetryGatherer: telemetryGatherer,
+		store:             store,
 	}
 }
 
@@ -95,6 +99,7 @@ type serviceImpl struct {
 	sensorConnMgr     connection.Manager
 	clusters          datastore.DataStore
 	telemetryGatherer *gatherers.RoxGatherer
+	store             store.Store
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -307,6 +312,19 @@ func writeTelemetryData(zipWriter *zip.Writer, telemetryInfo *data.TelemetryData
 	return jsonEnc.Encode(telemetryInfo)
 }
 
+func (s *serviceImpl) getLogImbue(zipWriter *zip.Writer) error {
+	w, err := zipWriter.Create("logimbue-data.json")
+	if err != nil {
+		return err
+	}
+	logs, err := s.store.GetLogs()
+	if err != nil {
+		return err
+	}
+	err = writer.WriteLogs(w, logs)
+	return err
+}
+
 // DebugHandler is an HTTP handler that outputs debugging information
 func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 	customRoutes := []routes.CustomRoute{
@@ -337,6 +355,7 @@ type debugDumpOptions struct {
 	// 2 - collect telemetry data from sensors and central.
 	telemetryMode  int
 	withCPUProfile bool
+	withLogImbue   bool
 	clusters       []string
 	since          time.Time
 }
@@ -393,6 +412,11 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 			log.Error(err)
 		}
 	}
+	if opts.withLogImbue {
+		if err := s.getLogImbue(zipWriter); err != nil {
+			log.Error(err)
+		}
+	}
 
 	if s.telemetryGatherer != nil && opts.telemetryMode > 0 {
 		telemetryData := s.telemetryGatherer.Gather(ctx, opts.telemetryMode >= 2)
@@ -428,6 +452,7 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 	opts := debugDumpOptions{
 		logs:           localLogs,
 		withCPUProfile: true,
+		withLogImbue:   true,
 		telemetryMode:  0,
 	}
 
@@ -468,6 +493,7 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 		logs:           fullK8sIntrospectionData,
 		telemetryMode:  2,
 		withCPUProfile: false,
+		withLogImbue:   true,
 	}
 
 	err := getOptionalQueryParams(&opts, r.URL)

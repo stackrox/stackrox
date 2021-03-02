@@ -313,32 +313,29 @@ runUIE2E: &runUIE2E
         make -C ui test-e2e
       fi
 
-collectImbuedUILogs: &collectImbuedUILogs
+downloadDiagnosticBundle: &downloadDiagnosticBundle
   run:
-    name: Collect imbued UI logs
+    name: Download diagnostic bundle
     command: |
-      mkdir -p /tmp/imbued-ui-logs
+      mkdir -p /tmp/diagnostic-bundle
       curl_cmd=(curl)
       if [[ -n "$ROX_USERNAME" && -n "$ROX_PASSWORD" ]]; then
         curl_cmd+=(-u "${ROX_USERNAME}:${ROX_PASSWORD}")
       fi
-      status_code="$("${curl_cmd[@]}" -sk -o logs.zip -w "%{http_code}\n" "https://${API_ENDPOINT}/api/logimbue")"
-      # Central returns 204 if there are no imbued logs
-      if [ "${status_code}" -eq 204 ]; then
-        echo "No imbued logs found."
-      elif [ "${status_code}" -eq 200 ]; then
-        echo "Logs imbued from the UI were found. Please find them in the artifacts section."
-        unzip logs.zip -d /tmp/imbued-ui-logs
+      status_code="$("${curl_cmd[@]}" -sk -o diagnostic.zip -w "%{http_code}\n" "https://${API_ENDPOINT}/api/extensions/diagnostics")"
+      if [ "${status_code}" -eq 200 ]; then
+        echo "Please find diagnostics bundle in the artifacts section."
+        unzip diagnostic.zip -d /tmp/diagnostic-bundle
       else
-        echo "Received error status code ${status_code} from the log imbue endpoint; is the log imbue handler broken?"
+        echo "Received error status code ${status_code} from the diagnostics endpoint; is the diagnostics handler broken?"
         exit 1
       fi
     when: always
 
-storeImbuedUILogs: &storeImbuedUILogs
+storeDiagnosticBundle: &storeDiagnosticBundle
   store_artifacts:
-    path: /tmp/imbued-ui-logs
-    destination: imbued-ui-logs
+    path: /tmp/diagnostic-bundle
+    destination: diagnostic-bundle
 
 collectK8sLogs: &collectK8sLogs
   run:
@@ -3313,8 +3310,8 @@ jobs:
       - *waitForUIDevServer
       - *runUIE2E
 
-      - *collectImbuedUILogs
-      - *storeImbuedUILogs
+      - *downloadDiagnosticBundle
+      - *storeDiagnosticBundle
 
       - *collectK8sLogs
       - get-and-store-debug-dump

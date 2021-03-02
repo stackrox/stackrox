@@ -3,7 +3,6 @@ package handler
 import (
 	"net/http"
 
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/logimbue/store"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -17,8 +16,7 @@ var (
 )
 
 func initialize() {
-	storage = store.New(globaldb.GetGlobalDB())
-
+	storage = store.Singleton()
 	ha = New(storage)
 }
 
