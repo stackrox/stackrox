@@ -3,14 +3,17 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -29,66 +32,66 @@ type PolicyValidatorTestSuite struct {
 	mockCtrl *gomock.Controller
 }
 
-func (suite *PolicyValidatorTestSuite) SetupTest() {
+func (s *PolicyValidatorTestSuite) SetupTest() {
 	// Since all the datastores underneath are mocked, the context of the request doesns't need any permissions.
-	suite.requestContext = context.Background()
+	s.requestContext = context.Background()
 
-	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.nStorage = notifierMocks.NewMockDataStore(suite.mockCtrl)
-	suite.cStorage = clusterMocks.NewMockDataStore(suite.mockCtrl)
+	s.mockCtrl = gomock.NewController(s.T())
+	s.nStorage = notifierMocks.NewMockDataStore(s.mockCtrl)
+	s.cStorage = clusterMocks.NewMockDataStore(s.mockCtrl)
 
-	suite.validator = newPolicyValidator(suite.nStorage)
+	s.validator = newPolicyValidator(s.nStorage)
 }
 
-func (suite *PolicyValidatorTestSuite) TearDownTest() {
-	suite.mockCtrl.Finish()
+func (s *PolicyValidatorTestSuite) TearDownTest() {
+	s.mockCtrl.Finish()
 }
 
-func (suite *PolicyValidatorTestSuite) TestValidatesName() {
+func (s *PolicyValidatorTestSuite) TestValidatesName() {
 	policy := &storage.Policy{
 		Name: "Robert",
 	}
-	err := suite.validator.validateName(policy)
-	suite.NoError(err, "\"Robert\" should be a valid name")
+	err := s.validator.validateName(policy)
+	s.NoError(err, "\"Robert\" should be a valid name")
 
 	policy = &storage.Policy{
 		Name: "Jim-Bob",
 	}
-	err = suite.validator.validateName(policy)
-	suite.NoError(err, "\"Jim-Bob\" should be a valid name")
+	err = s.validator.validateName(policy)
+	s.NoError(err, "\"Jim-Bob\" should be a valid name")
 
 	policy = &storage.Policy{
 		Name: "Jimmy_John",
 	}
-	err = suite.validator.validateName(policy)
-	suite.NoError(err, "\"Jimmy_John\" should be a valid name")
+	err = s.validator.validateName(policy)
+	s.NoError(err, "\"Jimmy_John\" should be a valid name")
 
 	policy = &storage.Policy{
 		Name: "",
 	}
-	err = suite.validator.validateName(policy)
-	suite.Error(err, "a name should be required")
+	err = s.validator.validateName(policy)
+	s.Error(err, "a name should be required")
 
 	policy = &storage.Policy{
 		Name: "Rob",
 	}
-	err = suite.validator.validateName(policy)
-	suite.Error(err, "names that are too short should not be supported")
+	err = s.validator.validateName(policy)
+	s.Error(err, "names that are too short should not be supported")
 
 	policy = &storage.Policy{
-		Name: "RobertIsTheCoolestDudeEverToLiveUnlessYouCountMrTBecauseHeIsEvenDoper",
+		Name: "RobertIsTheCoolestDudeEverToLiveUnlessYouCountMrTBecauseHeIsEvenDoperHisVanIsSweetAndHisHairIsCoolAndIReallyLikeAllTheGoldChainsHeWears",
 	}
-	err = suite.validator.validateName(policy)
-	suite.Error(err, "names that are more than 64 chars are not supported")
+	err = s.validator.validateName(policy)
+	s.Error(err, "names that are more than 128 chars are not supported")
 
 	policy = &storage.Policy{
 		Name: "Rob$",
 	}
-	err = suite.validator.validateName(policy)
-	suite.Error(err, "special characters should not be supported")
+	err = s.validator.validateName(policy)
+	s.Error(err, "special characters should not be supported")
 }
 
-func (suite *PolicyValidatorTestSuite) TestsValidateCapabilities() {
+func (s *PolicyValidatorTestSuite) TestsValidateCapabilities() {
 
 	cases := []struct {
 		name          string
@@ -125,50 +128,56 @@ func (suite *PolicyValidatorTestSuite) TestsValidateCapabilities() {
 	}
 
 	for _, c := range cases {
-		suite.T().Run(c.name, func(t *testing.T) {
+		s.T().Run(c.name, func(t *testing.T) {
 			policy := &storage.Policy{
 				Fields: &storage.PolicyFields{
 					AddCapabilities:  c.adds,
 					DropCapabilities: c.drops,
 				},
 			}
-			assert.Equal(t, c.expectedError, suite.validator.validateCapabilities(policy) != nil)
+			assert.Equal(t, c.expectedError, s.validator.validateCapabilities(policy) != nil)
 		})
 	}
 }
 
-func (suite *PolicyValidatorTestSuite) TestValidateDescription() {
+func (s *PolicyValidatorTestSuite) TestValidateDescription() {
 	policy := &storage.Policy{
 		Description: "",
 	}
-	err := suite.validator.validateDescription(policy)
-	suite.NoError(err, "descriptions are not required")
+	err := s.validator.validateDescription(policy)
+	s.NoError(err, "descriptions are not required")
 
 	policy = &storage.Policy{
 		Description: "Yo",
 	}
-	err = suite.validator.validateDescription(policy)
-	suite.NoError(err, "descriptions can be as short as they like")
+	err = s.validator.validateDescription(policy)
+	s.NoError(err, "descriptions can be as short as they like")
 
 	policy = &storage.Policy{
 		Description: "This policy is the stop when an image is terrible and will cause us to lose lots-o-dough. Why? Cause Money!",
 	}
-	err = suite.validator.validateDescription(policy)
-	suite.NoError(err, "descriptions should take the form of a sentence")
+	err = s.validator.validateDescription(policy)
+	s.NoError(err, "descriptions should take the form of a sentence")
 
 	policy = &storage.Policy{
 		Description: `This policy is the stop when an image is terrible and will cause us to lose lots-o-dough. Why? Cause Money!
 			Oh, and I almost forgot that this is also to help the good people of nowhere-ville get back on their
-			feet after that tornado ripped their town to shreds and left them nothing but pineapple and gum.`,
+			feet after that tornado ripped their town to shreds and left them nothing but pineapple and gum.  It was the It was 
+			the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the 
+			epoch of belief, it was the epoch of incredulity, it was the season of Light, it was the season of Darkness, it was 
+			the spring of hope, it was the winter of despair, we had everything before us, we had nothing before us, we were all 
+			going direct to Heaven, we were all going direct the other way--in short, the period was so far like the present 
+			period that some of its noisiest authorities insisted on its being received, for good or for evil, in the superlative 
+			degree of comparison only.`,
 	}
-	err = suite.validator.validateDescription(policy)
-	suite.Error(err, "descriptions should be no more than 256 chars")
+	err = s.validator.validateDescription(policy)
+	s.Error(err, "descriptions should be no more than 800 chars")
 
 	policy = &storage.Policy{
 		Description: "This$Rox",
 	}
-	err = suite.validator.validateDescription(policy)
-	suite.Error(err, "no special characters")
+	err = s.validator.validateDescription(policy)
+	s.Error(err, "no special characters")
 }
 
 func booleanPolicyWithFields(lifecycleStage storage.LifecycleStage, fieldsToVals map[string]string) *storage.Policy {
@@ -183,7 +192,7 @@ func booleanPolicyWithFields(lifecycleStage storage.LifecycleStage, fieldsToVals
 	}
 }
 
-func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
+func (s *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 	testCases := []struct {
 		description string
 		p           *storage.Policy
@@ -259,10 +268,10 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 	}
 
 	for _, c := range testCases {
-		suite.T().Run(c.description, func(t *testing.T) {
+		s.T().Run(c.description, func(t *testing.T) {
 			c.p.Name = "BLAHBLAH"
 
-			err := suite.validator.validateCompilableForLifecycle(c.p)
+			err := s.validator.validateCompilableForLifecycle(c.p)
 			if c.errExpected {
 				assert.Error(t, err)
 			} else {
@@ -272,7 +281,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 	}
 }
 
-func (suite *PolicyValidatorTestSuite) TestValidateLifeCycleEnforcementCombination() {
+func (s *PolicyValidatorTestSuite) TestValidateLifeCycleEnforcementCombination() {
 	testCases := []struct {
 		description  string
 		p            *storage.Policy
@@ -355,32 +364,32 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycleEnforcementCombinati
 	}
 
 	for _, c := range testCases {
-		suite.T().Run(c.description, func(t *testing.T) {
+		s.T().Run(c.description, func(t *testing.T) {
 			c.p.Name = "BLAHBLAH"
-			suite.validator.removeEnforcementsForMissingLifecycles(c.p)
+			s.validator.removeEnforcementsForMissingLifecycles(c.p)
 			assert.Equal(t, c.expectedSize, len(c.p.EnforcementActions), "enforcement size does not match")
 		})
 	}
 }
 
-func (suite *PolicyValidatorTestSuite) TestValidateSeverity() {
+func (s *PolicyValidatorTestSuite) TestValidateSeverity() {
 	policy := &storage.Policy{
 		Severity: storage.Severity_LOW_SEVERITY,
 	}
-	err := suite.validator.validateSeverity(policy)
-	suite.NoError(err, "severity should pass when set")
+	err := s.validator.validateSeverity(policy)
+	s.NoError(err, "severity should pass when set")
 
 	policy = &storage.Policy{
 		Severity: storage.Severity_UNSET_SEVERITY,
 	}
-	err = suite.validator.validateSeverity(policy)
-	suite.Error(err, "severity should fail when not set")
+	err = s.validator.validateSeverity(policy)
+	s.Error(err, "severity should fail when not set")
 }
 
-func (suite *PolicyValidatorTestSuite) TestValidateCategories() {
+func (s *PolicyValidatorTestSuite) TestValidateCategories() {
 	policy := &storage.Policy{}
-	err := suite.validator.validateCategories(policy)
-	suite.Error(err, "at least one category should be required")
+	err := s.validator.validateCategories(policy)
+	s.Error(err, "at least one category should be required")
 
 	policy = &storage.Policy{
 		Categories: []string{
@@ -389,8 +398,8 @@ func (suite *PolicyValidatorTestSuite) TestValidateCategories() {
 			"cat1",
 		},
 	}
-	err = suite.validator.validateCategories(policy)
-	suite.Error(err, "duplicate categories should fail")
+	err = s.validator.validateCategories(policy)
+	s.Error(err, "duplicate categories should fail")
 
 	policy = &storage.Policy{
 		Categories: []string{
@@ -398,43 +407,43 @@ func (suite *PolicyValidatorTestSuite) TestValidateCategories() {
 			"cat2",
 		},
 	}
-	err = suite.validator.validateCategories(policy)
-	suite.NoError(err, "valid categories should not fail")
+	err = s.validator.validateCategories(policy)
+	s.NoError(err, "valid categories should not fail")
 }
 
-func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
+func (s *PolicyValidatorTestSuite) TestValidateNotifiers() {
 	policy := &storage.Policy{
 		Notifiers: []string{
 			"id1",
 		},
 	}
-	suite.nStorage.EXPECT().GetNotifier(suite.requestContext, "id1").Return((*storage.Notifier)(nil), true, nil)
-	err := suite.validator.validateNotifiers(suite.requestContext, policy)
-	suite.NoError(err, "severity should pass when set")
+	s.nStorage.EXPECT().GetNotifier(s.requestContext, "id1").Return((*storage.Notifier)(nil), true, nil)
+	err := s.validator.validateNotifiers(s.requestContext, policy)
+	s.NoError(err, "severity should pass when set")
 
 	policy = &storage.Policy{
 		Notifiers: []string{
 			"id2",
 		},
 	}
-	suite.nStorage.EXPECT().GetNotifier(suite.requestContext, "id2").Return((*storage.Notifier)(nil), false, nil)
-	err = suite.validator.validateNotifiers(suite.requestContext, policy)
-	suite.Error(err, "should fail when it does not exist")
+	s.nStorage.EXPECT().GetNotifier(s.requestContext, "id2").Return((*storage.Notifier)(nil), false, nil)
+	err = s.validator.validateNotifiers(s.requestContext, policy)
+	s.Error(err, "should fail when it does not exist")
 
 	policy = &storage.Policy{
 		Notifiers: []string{
 			"id3",
 		},
 	}
-	suite.nStorage.EXPECT().GetNotifier(suite.requestContext, "id3").Return((*storage.Notifier)(nil), true, errors.New("oh noes"))
-	err = suite.validator.validateNotifiers(suite.requestContext, policy)
-	suite.Error(err, "should fail when an error is thrown")
+	s.nStorage.EXPECT().GetNotifier(s.requestContext, "id3").Return((*storage.Notifier)(nil), true, errors.New("oh noes"))
+	err = s.validator.validateNotifiers(s.requestContext, policy)
+	s.Error(err, "should fail when an error is thrown")
 }
 
-func (suite *PolicyValidatorTestSuite) TestValidateExclusions() {
+func (s *PolicyValidatorTestSuite) TestValidateExclusions() {
 	policy := &storage.Policy{}
-	err := suite.validator.validateExclusions(policy)
-	suite.NoError(err, "excluded scopes should not be required")
+	err := s.validator.validateExclusions(policy)
+	s.NoError(err, "excluded scopes should not be required")
 
 	deployment := &storage.Exclusion_Deployment{
 		Name: "that phat cluster",
@@ -450,8 +459,8 @@ func (suite *PolicyValidatorTestSuite) TestValidateExclusions() {
 			deploymentExclusion,
 		},
 	}
-	err = suite.validator.validateExclusions(policy)
-	suite.NoError(err, "valid to excluded scope by deployment name")
+	err = s.validator.validateExclusions(policy)
+	s.NoError(err, "valid to excluded scope by deployment name")
 
 	imageExclusion := &storage.Exclusion{
 		Image: &storage.Exclusion_Image{
@@ -466,16 +475,16 @@ func (suite *PolicyValidatorTestSuite) TestValidateExclusions() {
 			imageExclusion,
 		},
 	}
-	err = suite.validator.validateExclusions(policy)
-	suite.NoError(err, "valid to excluded scope by image registry")
+	err = s.validator.validateExclusions(policy)
+	s.NoError(err, "valid to excluded scope by image registry")
 
 	policy = &storage.Policy{
 		Exclusions: []*storage.Exclusion{
 			imageExclusion,
 		},
 	}
-	err = suite.validator.validateExclusions(policy)
-	suite.Error(err, "not valid to excluded scope by image registry since build time lifecycle isn't present")
+	err = s.validator.validateExclusions(policy)
+	s.Error(err, "not valid to excluded scope by image registry since build time lifecycle isn't present")
 
 	emptyExclusion := &storage.Exclusion{}
 	policy = &storage.Policy{
@@ -483,6 +492,17 @@ func (suite *PolicyValidatorTestSuite) TestValidateExclusions() {
 			emptyExclusion,
 		},
 	}
-	err = suite.validator.validateExclusions(policy)
-	suite.Error(err, "excluded scope requires either container or deployment configuration")
+	err = s.validator.validateExclusions(policy)
+	s.Error(err, "excluded scope requires either container or deployment configuration")
+}
+
+func (s *PolicyValidatorTestSuite) TestAllDefaultPoliciesValidate() {
+	defaults.PoliciesPath = policies.Directory()
+	defaultPolicies, err := defaults.Policies()
+	s.Require().NoError(err)
+
+	for _, policy := range defaultPolicies {
+		err = s.validator.validate(context.Background(), policy)
+		s.NoError(err, fmt.Sprintf("Policy %q failed validation with error: %v", policy.GetName(), err))
+	}
 }
