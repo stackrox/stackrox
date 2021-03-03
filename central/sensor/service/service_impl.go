@@ -139,7 +139,7 @@ func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, 
 	clusterIDFromCert := serviceID.GetId()
 	if features.SensorInstallationExperience.Enabled() {
 		if helmConfigInit == nil && clusterIDFromCert == centralsensor.InitCertClusterID {
-			return nil, status.Error(codes.InvalidArgument, "sensor using cluster init certificate must be helm-managed")
+			return nil, status.Error(codes.InvalidArgument, "sensor using cluster init certificate must transmit a helm-managed configuration")
 		}
 	}
 

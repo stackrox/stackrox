@@ -21,6 +21,10 @@ If this is what you want, set the "confirmNewClusterName" property to %q.`
 
 // CheckEffectiveClusterName validates if the effective cluster name matches with the applied cluster name
 func CheckEffectiveClusterName(helmConfig *central.HelmManagedConfigInit) error {
+	if helmConfig.GetClusterName() == "" {
+		return nil
+	}
+
 	oldName, err := getEffectiveClusterName()
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {

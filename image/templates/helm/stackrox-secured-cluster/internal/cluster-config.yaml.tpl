@@ -1,6 +1,7 @@
 {{- if ._rox.clusterName }}
 clusterName: {{ ._rox.clusterName }}
 {{- end }}
+notHelmManaged: {{ not ._rox.helmManaged }}
 clusterConfig:
   staticConfig:
     type: {{ if ._rox.env.openshift -}} OPENSHIFT_CLUSTER {{- else -}} KUBERNETES_CLUSTER {{- end }}

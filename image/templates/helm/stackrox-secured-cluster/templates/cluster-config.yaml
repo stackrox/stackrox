@@ -1,6 +1,5 @@
 {{- include "srox.init" . -}}
 
-{{- if ._rox.helmManaged }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -13,4 +12,3 @@ metadata:
 stringData:
   config.yaml: |
     {{- tpl (.Files.Get "internal/cluster-config.yaml.tpl") . | nindent 4 }}
-{{- end }}

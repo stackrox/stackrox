@@ -709,10 +709,13 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		// A this point, we can be sure that the cluster does not exist.
 		cluster = &storage.Cluster{
 			Name:               clusterName,
-			HelmConfig:         helmConfig.GetClusterConfig().Clone(),
 			MostRecentSensorId: hello.GetDeploymentIdentification().Clone(),
 		}
-		configureFromHelmConfig(cluster)
+		clusterConfig := helmConfig.GetClusterConfig()
+		configureFromHelmConfig(cluster, clusterConfig)
+		if !helmConfig.GetNotHelmManaged() {
+			cluster.HelmConfig = clusterConfig.Clone()
+		}
 		if _, err := ds.addClusterNoLock(cluster); err != nil {
 			return nil, errors.Wrapf(err, "failed to dynamically add cluster with name %q", clusterName)
 		}
@@ -721,7 +724,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	}
 
 	// If the cluster should not be helm-managed, clear out the helm config field, if necessary.
-	if helmConfig == nil {
+	if helmConfig == nil || helmConfig.GetNotHelmManaged() {
 		if cluster.GetHelmConfig() != nil {
 			cluster.HelmConfig = nil
 			if err := ds.updateClusterNoLock(cluster); err != nil {
@@ -748,8 +751,10 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		}
 	}
 
-	cluster.HelmConfig = helmConfig.GetClusterConfig().Clone()
-	configureFromHelmConfig(cluster)
+	// We know that the cluster is helm-managed at this point
+	clusterConfig := helmConfig.GetClusterConfig()
+	configureFromHelmConfig(cluster, clusterConfig)
+	cluster.HelmConfig = clusterConfig.Clone()
 
 	if err := ds.updateClusterNoLock(cluster); err != nil {
 		return nil, err
@@ -758,10 +763,10 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	return cluster, nil
 }
 
-func configureFromHelmConfig(cluster *storage.Cluster) {
-	cluster.DynamicConfig = cluster.GetHelmConfig().GetDynamicConfig().Clone()
+func configureFromHelmConfig(cluster *storage.Cluster, helmConfig *storage.CompleteClusterConfig) {
+	cluster.DynamicConfig = helmConfig.GetDynamicConfig().Clone()
 
-	staticConfig := cluster.GetHelmConfig().GetStaticConfig()
+	staticConfig := helmConfig.GetStaticConfig()
 	cluster.Type = staticConfig.GetType()
 	cluster.MainImage = staticConfig.GetMainImage()
 	cluster.CentralApiEndpoint = staticConfig.GetCentralApiEndpoint()

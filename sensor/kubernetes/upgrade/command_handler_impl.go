@@ -133,7 +133,7 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 		return nil
 	}
 
-	if h.configHandler.GetHelmManagedConfig() != nil {
+	if h.configHandler.GetHelmManagedConfig() != nil && !h.configHandler.GetHelmManagedConfig().GetNotHelmManaged() {
 		upgradesNotSupportedErr := errors.New("Cluster is Helm-managed and does not support auto-upgrades")
 		go h.rejectUpgradeRequest(trigger, upgradesNotSupportedErr)
 		go h.deleteUpgraderDeployments()

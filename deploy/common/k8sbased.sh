@@ -405,6 +405,10 @@ function launch_sensor {
         helm_args+=(-f "$k8s_dir/sensor-deploy/chart/feature-flag-values.yaml")
       fi
 
+      if [[ "$SENSOR_HELM_NOT_HELM_MANAGED" == "true" ]]; then
+        helm_args+=(--set "helmManaged=false")
+      fi
+
       if [[ -n "$CI" ]]; then
         helm lint "$k8s_dir/sensor-deploy/chart"
         helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox
