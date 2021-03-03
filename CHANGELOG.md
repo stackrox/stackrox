@@ -4,7 +4,10 @@ Entries in this file should be limited to:
 -  Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes. 
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
-## [NEXT RELEASE]
+## [56.1]
+- Secured clusters deployed via Helm with `helmManaged` set to `false` can now be used with cluster init
+  bundles, creating a new cluster within StackRox on-the-fly. Previously, `helmManaged=false` only worked
+  with certificates that were specific to an existing cluster.
 
 ## [56.0]
 - Page titles now reflect the URL location of the user within the app in the browser tab and history.
