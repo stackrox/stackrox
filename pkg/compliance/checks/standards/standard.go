@@ -3,12 +3,16 @@ package standards
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-// NodeChecks is the global map of standard names to checks
 var (
+	// NodeChecks is the global map of standard names to checks
 	NodeChecks = make(map[string]map[string]*CheckAndMetadata)
+	// StandardDependencies defines the standards mapped to their dependencies for evaluation
+	// This map is populated via init functions in the respective standard files if necessary
+	StandardDependencies = make(map[string]set.StringSet)
 )
 
 // Metadata contains metadata about a Check

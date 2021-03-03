@@ -35,6 +35,7 @@ import services.NetworkPolicyService
 import services.ImageService
 import services.ProcessService
 import spock.lang.Shared
+import util.Env
 import util.Timer
 import v1.ComplianceServiceOuterClass.ComplianceControl
 import v1.ComplianceServiceOuterClass.ComplianceStandard
@@ -148,14 +149,21 @@ class ComplianceTest extends BaseSpecification {
                                  "visualization for active network connections is possible."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
                 new Control(
-                        "CIS_Docker_v1_2_0:2_6",
-                        ["Docker daemon is not exposed over TCP"],
-                        ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.NODE),
-                new Control(
                         "NIST_SP_800_53_Rev_4:RA_3",
                         ["StackRox is installed in cluster \"remote\", and provides continuous risk assessment."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
         ]
+        if (Env.CI_JOBNAME && Env.CI_JOBNAME.contains("openshift-crio")) {
+            staticControls.add(new Control(
+                    "CIS_Docker_v1_2_0:2_6",
+                    ["Node does not use Docker container runtime"],
+                    ComplianceState.COMPLIANCE_STATE_SKIP).setType(Control.ControlType.NODE))
+        } else {
+            staticControls.add(new Control(
+                    "CIS_Docker_v1_2_0:2_6",
+                    ["Docker daemon is not exposed over TCP"],
+                    ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.NODE))
+        }
 
         expect:
         "confirm details of static checks"

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -23,10 +24,12 @@ func BenchmarkRunChecks(b *testing.B) {
 			standards.NIST800190,
 		},
 	}
-
+	conf := &sensor.MsgToCompliance_ScrapeConfig{
+		ContainerRuntime: storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
+	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		getCheckResults(run, data)
+		getCheckResults(run, conf, data)
 	}
 }
 
@@ -40,8 +43,10 @@ func BenchmarkCompressResults(b *testing.B) {
 			standards.NIST800190,
 		},
 	}
-
-	results := getCheckResults(run, data)
+	conf := &sensor.MsgToCompliance_ScrapeConfig{
+		ContainerRuntime: storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
+	}
+	results := getCheckResults(run, conf, data)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -62,10 +67,12 @@ func BenchmarkChecksAndCompression(b *testing.B) {
 			standards.NIST800190,
 		},
 	}
-
+	conf := &sensor.MsgToCompliance_ScrapeConfig{
+		ContainerRuntime: storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
+	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		results := getCheckResults(run, data)
+		results := getCheckResults(run, conf, data)
 		_, err := compressResults(results)
 		if err != nil {
 			panic(err)

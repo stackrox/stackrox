@@ -16,30 +16,34 @@ import searchContext from 'Containers/searchContext';
 import ReactSelect from 'Components/ReactSelect';
 import isGQLLoading from 'utils/gqlLoading';
 
-const colors = [
-    'var(--tertiary-400)',
-    'var(--warning-400)',
-    'var(--caution-400)',
-    'var(--alert-400)',
-];
+const passColor = 'var(--tertiary-400)';
+const warningColor = 'var(--warning-400)';
+const cautionColor = 'var(--caution-400)';
+const skippedColor = 'var(--base-300)';
+const alertColor = 'var(--alert-400)';
+
 const getColor = (value) => {
     if (value === 100) {
-        return colors[0];
+        return passColor;
     }
     if (value >= 70) {
-        return colors[1];
+        return warningColor;
     }
     if (value >= 50) {
-        return colors[2];
+        return cautionColor;
     }
-    return colors[3];
+    if (Number.isNaN(value)) {
+        return skippedColor;
+    }
+    return alertColor;
 };
 
 const sunburstLegendData = [
-    { title: '100%', color: 'var(--tertiary-400)' },
-    { title: '> 70%', color: 'var(--warning-400)' },
-    { title: '> 50%', color: 'var(--caution-400)' },
-    { title: '< 50%', color: 'var(--alert-400)' },
+    { title: '100%', color: passColor },
+    { title: '> 70%', color: warningColor },
+    { title: '> 50%', color: cautionColor },
+    { title: '< 50%', color: alertColor },
+    { title: 'Skipped', color: skippedColor },
 ];
 
 const processSunburstData = (match, location, data, type) => {

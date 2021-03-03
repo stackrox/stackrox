@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	_ "github.com/stackrox/rox/pkg/compliance/checks" // Make sure all checks are available
+	"github.com/stackrox/rox/pkg/compliance/checks/common"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 	"github.com/stackrox/rox/pkg/compliance/data"
 	"github.com/stackrox/rox/pkg/compliance/framework"
@@ -18,12 +19,12 @@ import (
 func runChecks(client sensor.ComplianceService_CommunicateClient, scrapeConfig *sensor.MsgToCompliance_ScrapeConfig, run *sensor.MsgToCompliance_TriggerRun) error {
 	complianceData := gatherData(scrapeConfig, run.GetScrapeId())
 	complianceData.Files = data.FlattenFileMap(complianceData.Files)
-	results := getCheckResults(run, complianceData)
+	results := getCheckResults(run, scrapeConfig, complianceData)
 
 	return sendResults(results, client, run.GetScrapeId())
 }
 
-func getCheckResults(run *sensor.MsgToCompliance_TriggerRun, complianceData *standards.ComplianceData) map[string]*compliance.ComplianceStandardResult {
+func getCheckResults(run *sensor.MsgToCompliance_TriggerRun, scrapeConfig *sensor.MsgToCompliance_ScrapeConfig, complianceData *standards.ComplianceData) map[string]*compliance.ComplianceStandardResult {
 	results := make(map[string]*compliance.ComplianceStandardResult)
 	for _, standardID := range run.GetStandardIds() {
 		standard, ok := standards.NodeChecks[standardID]
@@ -31,6 +32,19 @@ func getCheckResults(run *sensor.MsgToCompliance_TriggerRun, complianceData *sta
 			log.Infof("no checks found for standard %s during compliance run %s", standardID, run.GetScrapeId())
 			continue
 		}
+		requiresDockerRuntime := standards.StandardDependencies[standardID].Contains(standards.DockerDependency)
+		if requiresDockerRuntime && scrapeConfig.GetContainerRuntime() != storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME {
+			for checkName, checkAndMetadata := range standard {
+				if checkAndMetadata.CheckFunc == nil {
+					log.Infof("no check function found for check %s in standard %s during compliance run %s", checkName, standardID, run.GetScrapeId())
+					continue
+				}
+				evidence := common.NonDockerRuntimeSkipList()
+				addCheckResultsToResponse(results, standardID, checkName, checkAndMetadata.Metadata.TargetKind, evidence)
+			}
+			continue
+		}
+
 		for checkName, checkAndMetadata := range standard {
 			if checkAndMetadata.CheckFunc == nil {
 				log.Infof("no check function found for check %s in standard %s during compliance run %s", checkName, standardID, run.GetScrapeId())
