@@ -4825,6 +4825,24 @@ jobs:
           command: |
             git push origin "$NIGHTLY_TAG"
 
+      - run:
+          name: Remove tags more then 3 days old
+          command: |
+            beforeDate=$(date --date=@$(($(date +'%s') - (3 * 24 * 60 * 60))) +'%Y%m%d')
+            echo "Anything prior to ${beforeDate} will be deleted"
+            tags=$(git tag --list '*nightly*')
+            for tag in $tags; do
+                echo "Considering nightly tag: ${tag}"
+                datePart="${tag##*-}"
+                echo "  date part: ${datePart}"
+                if [[ "${datePart}" =~ ^-?[0-9]+$ ]] && [ "${datePart}" -lt ${beforeDate} ]; then
+                    echo "  this tag is a candidate for deletion"
+                    git push --delete origin "${tag}"
+                else
+                    echo "  this tag is not a candidate for deletion"
+                fi
+            done
+
   collect-test-jobs-stats:
     executor: custom
     resource_class: small
