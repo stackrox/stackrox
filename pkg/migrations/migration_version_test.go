@@ -1,0 +1,138 @@
+package migrations
+
+import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+
+	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestMigrationVersion_Read(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "migver-read")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.Remove(tempDir)
+	}()
+
+	testCases := []struct {
+		description string
+		prepFunc    func(dbPath string)
+		shouldFail  bool
+	}{
+		{
+			description: "Migration version missing",
+			prepFunc:    nil,
+			shouldFail:  true,
+		},
+		{
+			description: "Migration version corrupted",
+			prepFunc: func(dbPath string) {
+				f, err := os.Create(filepath.Join(dbPath, migrationVersionFile))
+				require.NoError(t, err)
+				defer utils.IgnoreError(f.Close)
+				_, err = f.Write([]byte("Something"))
+				require.NoError(t, err)
+			},
+			shouldFail: true,
+		},
+		{
+			description: "Migration version exists",
+			prepFunc: func(dbPath string) {
+				SetCurrent(dbPath)
+			},
+			shouldFail: false,
+		},
+	}
+
+	for _, c := range testCases {
+		t.Run(c.description, func(t *testing.T) {
+			dir, err := ioutil.TempDir(tempDir, "")
+			require.NoError(t, err)
+			if c.prepFunc != nil {
+				c.prepFunc(dir)
+			}
+			ver, err := Read(dir)
+			require.Equal(t, c.shouldFail, err != nil)
+			if !c.shouldFail {
+				assert.Equal(t, version.GetMainVersion(), ver.MainVersion)
+				assert.Equal(t, CurrentDBVersionSeqNum, ver.SeqNum)
+				assert.Equal(t, dir, ver.dbPath)
+			}
+		})
+	}
+
+}
+
+func TestMigrationVersion_Write(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "migver-write")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.Remove(tempDir)
+	}()
+
+	testCases := []struct {
+		description  string
+		prepFunc     func(dbPath string)
+		shouldUpdate bool
+	}{
+		{
+			description:  "Migration version missing",
+			prepFunc:     nil,
+			shouldUpdate: true,
+		},
+		{
+			description: "Migration version outdated",
+			prepFunc: func(dbPath string) {
+				ver := &MigrationVersion{
+					dbPath:      dbPath,
+					MainVersion: "",
+					SeqNum:      9,
+				}
+				err := ver.atomicWrite()
+				assert.NoError(t, err)
+			},
+			shouldUpdate: true,
+		},
+		{
+			description: "Migration version current",
+			prepFunc: func(dbPath string) {
+				SetCurrent(dbPath)
+			},
+			shouldUpdate: false,
+		},
+	}
+
+	for _, c := range testCases {
+		t.Run(c.description, func(t *testing.T) {
+			dir, err := ioutil.TempDir(tempDir, "")
+			require.NoError(t, err)
+			if c.prepFunc != nil {
+				c.prepFunc(dir)
+			}
+
+			// Verify the migration file updated when needed.
+			stat, err := os.Stat(filepath.Join(dir, migrationVersionFile))
+			time.Sleep(time.Millisecond * 10) // Make sure mod time changed.
+			SetCurrent(dir)
+			if err == nil {
+				newStat, err := os.Stat(filepath.Join(dir, migrationVersionFile))
+				assert.NoError(t, err)
+				assert.Equal(t, c.shouldUpdate, !stat.ModTime().Equal(newStat.ModTime()))
+			}
+
+			// Verify the content of migration version file.
+			ver, err := Read(dir)
+			require.NoError(t, err)
+
+			assert.Equal(t, version.GetMainVersion(), ver.MainVersion)
+			assert.Equal(t, CurrentDBVersionSeqNum, ver.SeqNum)
+			assert.Equal(t, dir, ver.dbPath)
+		})
+	}
+}

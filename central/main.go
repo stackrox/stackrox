@@ -237,6 +237,9 @@ func main() {
 		log.Errorf("Failed to remove backup DB: %v", err)
 	}
 
+	// Update last associated software version on DBs.
+	migrations.SetCurrent(migrations.DBMountPath)
+
 	// Start the prometheus metrics server
 	pkgMetrics.NewDefaultHTTPServer().RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
