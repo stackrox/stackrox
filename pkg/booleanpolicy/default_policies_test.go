@@ -707,6 +707,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				Id: "MOUNTPROPAGATIONCONTAINER",
 				Volumes: []*storage.Volume{
 					{
+						Name:             "ThisMountIsOnFire",
 						MountPropagation: storage.Volume_BIDIRECTIONAL,
 					},
 				},
@@ -1286,7 +1287,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			policyName: "Docker CIS 5.19: Ensure mount propagation mode is not enabled",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				mountPropagationDep.GetId(): {
-					{Message: "Writable volume '' has mount propagation 'bidirectional'"},
+					{Message: "Writable volume 'ThisMountIsOnFire' has mount propagation 'bidirectional'"},
 				},
 			},
 		},
