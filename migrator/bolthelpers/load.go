@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/migrations"
@@ -11,7 +12,8 @@ import (
 )
 
 const (
-	dbFileName = "stackrox.db"
+	dbFileName    = "stackrox.db"
+	dbOpenTimeout = 2 * time.Minute
 )
 
 // Path returns the path to the Bolt DB
@@ -34,7 +36,9 @@ func Load() (*bolt.DB, error) {
 }
 
 func newBolt(dbPath string) (*bolt.DB, error) {
-	db, err := bolt.Open(dbPath, 0600, nil)
+	opts := *bolt.DefaultOptions
+	opts.Timeout = dbOpenTimeout
+	db, err := bolt.Open(dbPath, 0600, &opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "bolt open failed")
 	}
