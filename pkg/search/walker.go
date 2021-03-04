@@ -6,29 +6,8 @@ import (
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
-)
-
-const (
-	searchXRefTag  = "search_xref"
-	searchIndexTag = "search_index"
-)
-
-var (
-	typeToSearchCategory = map[string]v1.SearchCategory{
-		"Image":            v1.SearchCategory_IMAGES,
-		"ContainerImage":   v1.SearchCategory_IMAGES,
-		"Deployment":       v1.SearchCategory_DEPLOYMENTS,
-		"ProcessIndicator": v1.SearchCategory_PROCESS_INDICATORS,
-		"Secret":           v1.SearchCategory_SECRETS,
-		"ServiceAccount":   v1.SearchCategory_SERVICE_ACCOUNTS,
-		"Alert":            v1.SearchCategory_ALERTS,
-		"Policy":           v1.SearchCategory_POLICIES,
-		"Role":             v1.SearchCategory_ROLES,
-		"Role Binding":     v1.SearchCategory_ROLEBINDINGS,
-	}
 )
 
 type searchWalker struct {
@@ -88,58 +67,6 @@ func (s *searchWalker) getSearchField(path, tag string) (string, *Field) {
 	}
 }
 
-// handleXRef is used when a search_xref is found. This means that we want to show these as search options
-// for the top level object, but do not want them to be prefixed with the top level prefix.
-// e.g. showing "Image Tag", and having the search field path be image.name.tag instead of deployment.containers.image.name.tag
-func (s *searchWalker) handleXRef(prefix string, t reflect.Type, tag string) {
-	spl := strings.Split(tag, ",")
-	if len(spl) == 0 {
-		log.Fatalf("Found empty %s tag at %q", searchXRefTag, prefix)
-	}
-
-	searchCategory, ok := typeToSearchCategory[t.Elem().Name()]
-	if !ok {
-		log.Fatalf("Type %q is not in type to search category mapping", t.Elem().Name())
-	}
-
-	searchMap := Walk(searchCategory, prefix, reflect.New(t).Interface())
-	if searchCategory == v1.SearchCategory_IMAGES {
-		searchMap = Walk(searchCategory, prefix, (*storage.Image)(nil))
-	}
-
-	if len(spl) == 1 && spl[0] == "all" {
-		for k, v := range searchMap.Original() {
-			s.fields[k] = v
-		}
-		return
-	}
-	for _, v := range spl {
-		value, ok := searchMap.Get(v)
-		if !ok {
-			log.Fatalf("Could not find reference to field value %q in option map %q", v, prefix)
-		}
-		s.fields[FieldLabel(v)] = value
-	}
-}
-
-// handleEmbeddedIndex is used when search_index is found. This means that we want to index specific fields
-// from the sub object. e.g. alert.deployment.name should be indexed with the embedded path alert.deployment.name
-// and should not refer to another external object
-func (s *searchWalker) handleEmbeddedIndex(prefix string, t reflect.Type, tag string) {
-	spl := strings.Split(tag, ",")
-	if len(spl) == 0 {
-		log.Fatalf("Found empty %s tag at %q", searchIndexTag, prefix)
-	}
-	searchMap := Walk(s.category, prefix, reflect.New(t).Interface())
-	for _, v := range spl {
-		searchField, ok := searchMap.Get(v)
-		if !ok {
-			log.Fatalf("Could not find reference to field value %q in option map %q", v, prefix)
-		}
-		s.fields[FieldLabel(v)] = searchField
-	}
-}
-
 // handleStruct takes in a struct object and properly handles all of the fields
 func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 	for i := 0; i < original.NumField(); i++ {
@@ -153,19 +80,6 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 		fullPath := fmt.Sprintf("%s.%s", prefix, jsonTag)
 		searchTag := field.Tag.Get("search")
 		if searchTag == "-" {
-			continue
-		}
-
-		var hasExtraReference bool
-		if searchXRefTag := field.Tag.Get(searchXRefTag); searchXRefTag != "" {
-			hasExtraReference = true
-			s.handleXRef(jsonTag, field.Type, searchXRefTag)
-		}
-		if searchIndexTag := field.Tag.Get(searchIndexTag); searchIndexTag != "" {
-			hasExtraReference = true
-			s.handleEmbeddedIndex(fullPath, field.Type, searchIndexTag)
-		}
-		if hasExtraReference {
 			continue
 		}
 
