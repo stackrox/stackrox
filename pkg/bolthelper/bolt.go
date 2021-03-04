@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/migrations"
@@ -19,8 +20,9 @@ import (
 
 const (
 	// DBFileName is the name of the file (within `migrations.DBMountPath`) containing the Bolt database.
-	DBFileName = "stackrox.db"
-	txMaxSize  = 65536
+	DBFileName    = "stackrox.db"
+	txMaxSize     = 65536
+	dbOpenTimeout = 2 * time.Minute
 )
 
 var (
@@ -40,6 +42,7 @@ func New(path string) (*bolt.DB, error) {
 	}
 	options := *bolt.DefaultOptions
 	options.FreelistType = bolt.FreelistMapType
+	options.Timeout = dbOpenTimeout
 	db, err := bolt.Open(path, 0600, &options)
 	if err != nil {
 		return nil, err
