@@ -1,23 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Message } from '@stackrox/ui-components';
 
 import PageHeader from 'Components/PageHeader';
 import Widget from 'Components/Widget';
-import integrationsList from 'Containers/Integrations/integrationsList';
+import ViewAllButton from 'Components/ViewAllButton';
 import useInterval from 'hooks/useInterval';
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
 import { clustersBasePath } from 'routePaths';
 import { fetchClustersAsArray } from 'services/ClustersService';
-import {
-    fetchBackupIntegrationsHealth,
-    fetchImageIntegrationsHealth,
-    fetchPluginIntegrationsHealth,
-    fetchVulnerabilityDefinitionsInfo,
-    fetchLogIntegrationsHealth,
-} from 'services/IntegrationHealthService';
-import { fetchIntegration } from 'services/IntegrationsService';
+import { fetchVulnerabilityDefinitionsInfo } from 'services/IntegrationHealthService';
 
 import ClusterOverview from './Components/ClusterOverview';
 import CollectorStatus from './Components/CollectorStatus';
@@ -27,11 +19,10 @@ import GenerateDiagnosticBundleButton from './Components/GenerateDiagnosticBundl
 import SensorStatus from './Components/SensorStatus';
 import SensorUpgrade from './Components/SensorUpgrade';
 import VulnerabilityDefinitions from './Components/VulnerabilityDefinitions';
-import IntegrationHealthWidget from './Components/IntegrationHealthWidget';
-
-import { mergeIntegrationResponses } from './utils/integrations';
-
-const smallButtonClassName = 'btn-sm btn-base flex-shrink-0 no-underline whitespace-nowrap';
+import ImageIntegrationHealthWidget from './Components/ImageIntegrationHealthWidget';
+import NotifierIntegrationHealthWidget from './Components/NotifierIntegrationHealthWidget';
+import BackupIntegrationHealthWidget from './Components/BackupIntegrationHealthWidget';
+import LogIntegrationHealthWidget from './Components/LogIntegrationHealthWidget';
 
 const SystemHealthDashboardPage = () => {
     const isK8sAuditLoggingEnabled = useFeatureFlagEnabled(
@@ -42,17 +33,9 @@ const SystemHealthDashboardPage = () => {
     const [currentDatetime, setCurrentDatetime] = useState(null);
 
     const [clusters, setClusters] = useState([]);
-    const [backupsMerged, setBackupsMerged] = useState([]);
-    const [imageIntegrationsMerged, setImageIntegrationsMerged] = useState([]);
-    const [logIntegrationsMerged, setLogIntegrationsMerged] = useState([]);
-    const [notifiersMerged, setNotifiersMerged] = useState([]);
     const [vulnerabilityDefinitionsInfo, setVulnerabilityDefinitionsInfo] = useState(null);
 
     const [clustersRequestHasError, setClustersRequestHasError] = useState(false);
-    const [backupsRequestHasError, setBackupsRequestHasError] = useState(false);
-    const [imageIntegrationsRequestHasError, setImageIntegrationsRequestHasError] = useState(false);
-    const [logIntegrationsRequestHasError, setLogIntegrationsRequestHasError] = useState(false);
-    const [notifiersRequestHasError, setNotifiersRequestHasError] = useState(false);
     const [
         vulnerabilityDefinitionsRequestHasError,
         setVulnerabilityDefinitionsRequestHasError,
@@ -68,66 +51,6 @@ const SystemHealthDashboardPage = () => {
             .catch(() => {
                 setClusters([]);
                 setClustersRequestHasError(true);
-            });
-        Promise.all([fetchBackupIntegrationsHealth(), fetchIntegration('backups')])
-            .then(([integrationsHealth, { response }]) => {
-                setBackupsMerged(
-                    mergeIntegrationResponses(
-                        integrationsHealth,
-                        response.externalBackups,
-                        integrationsList.backups
-                    )
-                );
-                setBackupsRequestHasError(false);
-            })
-            .catch(() => {
-                setBackupsMerged([]);
-                setBackupsRequestHasError(true);
-            });
-        Promise.all([fetchImageIntegrationsHealth(), fetchIntegration('imageIntegrations')])
-            .then(([integrationsHealth, { response }]) => {
-                setImageIntegrationsMerged(
-                    mergeIntegrationResponses(
-                        integrationsHealth,
-                        response.integrations,
-                        integrationsList.imageIntegrations
-                    )
-                );
-                setImageIntegrationsRequestHasError(false);
-            })
-            .catch(() => {
-                setImageIntegrationsMerged([]);
-                setImageIntegrationsRequestHasError(true);
-            });
-        Promise.all([fetchLogIntegrationsHealth(), fetchIntegration('logIntegrations')])
-            .then(([integrationsHealth, { response }]) => {
-                setLogIntegrationsMerged(
-                    mergeIntegrationResponses(
-                        integrationsHealth,
-                        response.integrations,
-                        integrationsList.logIntegrations
-                    )
-                );
-                setLogIntegrationsRequestHasError(false);
-            })
-            .catch(() => {
-                setLogIntegrationsMerged([]);
-                setLogIntegrationsRequestHasError(true);
-            });
-        Promise.all([fetchPluginIntegrationsHealth(), fetchIntegration('notifiers')])
-            .then(([integrationsHealth, { response }]) => {
-                setNotifiersMerged(
-                    mergeIntegrationResponses(
-                        integrationsHealth,
-                        response.notifiers,
-                        integrationsList.plugins
-                    )
-                );
-                setNotifiersRequestHasError(false);
-            })
-            .catch(() => {
-                setNotifiersMerged([]);
-                setNotifiersRequestHasError(true);
             });
     }, [pollingCountFaster]);
 
@@ -163,11 +86,7 @@ const SystemHealthDashboardPage = () => {
                     <Widget
                         className="sx-2"
                         header="Cluster Health"
-                        headerComponents={
-                            <Link to={clustersBasePath} className={smallButtonClassName}>
-                                View All
-                            </Link>
-                        }
+                        headerComponents={<ViewAllButton url={clustersBasePath} />}
                         id="cluster-health"
                     >
                         {clustersRequestHasError ? (
@@ -244,35 +163,11 @@ const SystemHealthDashboardPage = () => {
                     </Widget>
                 </div>
                 <div className="grid grid-columns-1 md:grid-columns-3 grid-gap-4 py-2 w-full">
-                    <IntegrationHealthWidget
-                        smallButtonClassName={smallButtonClassName}
-                        id="image-integrations"
-                        integrationText="Image Integrations"
-                        integrationsMerged={imageIntegrationsMerged}
-                        requestHasError={imageIntegrationsRequestHasError}
-                    />
-                    <IntegrationHealthWidget
-                        smallButtonClassName={smallButtonClassName}
-                        id="notifier-integrations"
-                        integrationText="Notifier Integrations"
-                        integrationsMerged={notifiersMerged}
-                        requestHasError={notifiersRequestHasError}
-                    />
-                    <IntegrationHealthWidget
-                        smallButtonClassName={smallButtonClassName}
-                        id="backup-integrations"
-                        integrationText="Backup Integrations"
-                        integrationsMerged={backupsMerged}
-                        requestHasError={backupsRequestHasError}
-                    />
+                    <ImageIntegrationHealthWidget pollingCount={pollingCountFaster} />
+                    <NotifierIntegrationHealthWidget pollingCount={pollingCountFaster} />
+                    <BackupIntegrationHealthWidget pollingCount={pollingCountFaster} />
                     {isK8sAuditLoggingEnabled && (
-                        <IntegrationHealthWidget
-                            smallButtonClassName={smallButtonClassName}
-                            id="log-integrations"
-                            integrationText="Audit Logging Integrations"
-                            integrationsMerged={logIntegrationsMerged}
-                            requestHasError={logIntegrationsRequestHasError}
-                        />
+                        <LogIntegrationHealthWidget pollingCount={pollingCountFaster} />
                     )}
                 </div>
             </div>

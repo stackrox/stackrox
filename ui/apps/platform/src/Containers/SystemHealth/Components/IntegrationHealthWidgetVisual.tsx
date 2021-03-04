@@ -1,21 +1,20 @@
 import React, { ReactElement } from 'react';
-import { HashLink } from 'react-router-hash-link';
 import { Message } from '@stackrox/ui-components';
 
 import { integrationsPath } from 'routePaths';
+import ViewAllButton from 'Components/ViewAllButton';
 import Widget from 'Components/Widget';
 import IntegrationsHealth from './IntegrationsHealth';
+import { IntegrationMergedItem } from '../utils/integrations';
 
 type IntegrationHealthWidgetProps = {
-    smallButtonClassName: string;
     id: string;
     integrationText: string;
-    integrationsMerged: [];
+    integrationsMerged: IntegrationMergedItem[];
     requestHasError: boolean;
 };
 
 const IntegrationHealthWidget = ({
-    smallButtonClassName,
     id,
     integrationText,
     integrationsMerged,
@@ -24,11 +23,7 @@ const IntegrationHealthWidget = ({
     return (
         <Widget
             header={integrationText}
-            headerComponents={
-                <HashLink to={`${integrationsPath}#${id}`} className={smallButtonClassName}>
-                    View All
-                </HashLink>
-            }
+            headerComponents={<ViewAllButton url={`${integrationsPath}#${id}`} />}
             id={id}
         >
             {requestHasError ? (
