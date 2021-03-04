@@ -21,7 +21,6 @@
         "Image": "READ_ACCESS",
         "ImageComponent": "NO_ACCESS",
         "ImageIntegration": "NO_ACCESS",
-        "ImbuedLogs": "NO_ACCESS",
         "Indicator": "NO_ACCESS",
         "K8sRole": "NO_ACCESS",
         "K8sRoleBinding": "NO_ACCESS",

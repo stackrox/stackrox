@@ -667,6 +667,12 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
 			ServerHandler: backupRestoreService.Singleton().ResumeRestoreHandler(),
 		},
+		{
+			Route:         "/api/logimbue",
+			Authorizer:    user.WithAnyRole(),
+			ServerHandler: logimbueHandler.Singleton(),
+			Compression:   false,
+		},
 	}
 
 	if features.SensorInstallationExperience.Enabled() {
@@ -677,23 +683,6 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		})
 	}
-
-	logImbueRoute := "/api/logimbue"
-	customRoutes = append(customRoutes,
-		routes.CustomRoute{
-			Route: logImbueRoute,
-			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
-				user.With(permissions.View(resources.ImbuedLogs)): {
-					routes.RPCNameForHTTP(logImbueRoute, http.MethodGet),
-				},
-				user.With(permissions.Modify(resources.ImbuedLogs)): {
-					routes.RPCNameForHTTP(logImbueRoute, http.MethodPost),
-				},
-			}),
-			ServerHandler: logimbueHandler.Singleton(),
-			Compression:   false,
-		},
-	)
 
 	scannerDefinitionsRoute := "/api/extensions/scannerdefinitions"
 	customRoutes = append(customRoutes,

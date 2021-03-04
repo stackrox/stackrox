@@ -102,7 +102,6 @@ principal.attributes["name"][0] == "stackrox-compliance" && \
       scope.noun == "Detection" || \
       scope.noun == "Group" || \
       scope.noun == "ImageIntegration" || \
-      scope.noun == "ImbuedLogs" || \
       scope.noun == "Licenses" || \
       scope.noun == "Notifier" || \
       scope.noun == "Policy" || \

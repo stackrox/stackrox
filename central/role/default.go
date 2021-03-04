@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/grpc/authz/user"
 )
 
 // All builtin, immutable role names are declared in the block below.
@@ -15,7 +16,7 @@ const (
 	Analyst = "Analyst"
 
 	// None role has no access.
-	None = "None"
+	None = user.NoneRole
 
 	// ContinuousIntegration is for CI piplines.
 	ContinuousIntegration = "Continuous Integration"
