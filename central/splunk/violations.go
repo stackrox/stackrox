@@ -5,25 +5,50 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/generated/api/integrations"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"go.uber.org/zap"
 )
 
-// allViolationStates contains all possible violation states for use in the query.
-var allViolationStates []string
+const (
+	checkpointQueryParam    = "from_checkpoint"
+	fallbackCheckpointValue = "2000-01-01T00:00:00.000Z"
+)
+
+var (
+	// allViolationStates contains all possible violation states for use in the query.
+	allViolationStates []string
+
+	// fallbackCheckpoint is a timestamp to use when checkpointQueryParam is not present in the query or can't be parsed.
+	fallbackCheckpoint *types.Timestamp
+)
 
 func init() {
 	allViolationStates = make([]string, 0, len(storage.ViolationState_value))
 	for k := range storage.ViolationState_value {
 		allViolationStates = append(allViolationStates, k)
 	}
+
+	ts, err := parseTimestamp(fallbackCheckpointValue)
+	utils.Must(err)
+	fallbackCheckpoint = ts
+}
+
+func parseTimestamp(timeStr string) (*types.Timestamp, error) {
+	t, err := time.Parse(time.RFC3339, timeStr)
+	if err != nil {
+		return nil, err
+	}
+	return types.TimestampProto(t)
 }
 
 // NewViolationsHandler provides violations data to Splunk on HTTP requests.
@@ -33,7 +58,7 @@ func NewViolationsHandler(alertDS datastore.DataStore) http.HandlerFunc {
 		if err != nil {
 			msg := fmt.Sprintf("Error handling Splunk violations request: %s", err)
 			log.Warn(msg)
-			http.Error(w, msg, http.StatusInternalServerError)
+			httputil.WriteError(w, err)
 			return
 		}
 		err = (&jsonpb.Marshaler{}).Marshal(w, res)
@@ -45,8 +70,14 @@ func NewViolationsHandler(alertDS datastore.DataStore) http.HandlerFunc {
 }
 
 func getViolationsResponse(alertDS datastore.DataStore, r *http.Request) (*integrations.SplunkViolationsResponse, error) {
-	// TODO: checkpointing https://stack-rox.atlassian.net/browse/ROX-6549
-	// TODO: pagination https://stack-rox.atlassian.net/browse/ROX-6689
+	fromTimestamp, err := getCheckpointValue(r)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: efficient checkpointing with the help of query, same ROX-6549
+
+	// TODO(ROX-6689): pagination
 	// TODO: add violation filtering based on date as part of checkpointing
 
 	// Alert searcher limits results to only certain (open) alert states if state query wasn't explicitly provided.
@@ -61,10 +92,15 @@ func getViolationsResponse(alertDS datastore.DataStore, r *http.Request) (*integ
 		return nil, err
 	}
 
-	var response integrations.SplunkViolationsResponse
+	response := integrations.SplunkViolationsResponse{
+		// Checkpoint should remain the same as before if there are no violations.
+		// Strictly speaking, we don't have to report it because Splunk remembers the last non-empty checkpoint, but
+		// that's just more consistent to always return a value here.
+		NewCheckpoint: fromTimestamp,
+	}
 
 	for _, alert := range alerts {
-		violations, err := extractViolations(alert)
+		violations, err := extractViolations(alert, fromTimestamp)
 		if err != nil {
 			return nil, err
 		}
@@ -75,17 +111,44 @@ func getViolationsResponse(alertDS datastore.DataStore, r *http.Request) (*integ
 		return response.Violations[i].GetViolationInfo().GetViolationTime().Compare(response.Violations[j].GetViolationInfo().GetViolationTime()) < 0
 	})
 
+	if len(response.Violations) > 0 {
+		response.NewCheckpoint = response.Violations[len(response.Violations)-1].GetViolationInfo().GetViolationTime()
+	}
+
 	return &response, nil
 }
 
-func extractViolations(alert *storage.Alert) ([]*integrations.SplunkViolation, error) {
+func getCheckpointValue(r *http.Request) (*types.Timestamp, error) {
+	param := r.URL.Query().Get(checkpointQueryParam)
+	if param == "" {
+		return fallbackCheckpoint, nil
+	}
+	ts, err := parseTimestamp(param)
+	if err != nil {
+		msg := fmt.Sprintf("could not parse query parameter %q value %q as timestamp (try the following format: %s=%s): %s", checkpointQueryParam, param, checkpointQueryParam, fallbackCheckpointValue, err)
+		return nil, httputil.NewError(http.StatusBadRequest, msg)
+	}
+	return ts, nil
+}
+
+func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp) ([]*integrations.SplunkViolation, error) {
 	var result []*integrations.SplunkViolation
+	seenViolations := false
+
+	// TODO: reuse deploymentInfo, policyInfo for efficiency. There's no need to parse the same data for every violation.
 
 	if processViolation := alert.GetProcessViolation(); processViolation != nil {
 		if len(processViolation.GetProcesses()) == 0 {
 			log.Warnw("Detected ProcessViolation without ProcessIndicators. No process violations can be extracted from this Alert.", zap.String("Alert.Id", alert.GetId()))
 		}
 		for _, procIndicator := range processViolation.GetProcesses() {
+			seenViolations = true
+
+			timestamp := getProcessViolationTime(alert, procIndicator)
+			if timestamp.Compare(fromTimestamp) <= 0 {
+				continue
+			}
+
 			violationInfo := extractProcessViolationInfo(alert, processViolation, procIndicator)
 			result = append(result, &integrations.SplunkViolation{
 				ViolationInfo:  violationInfo,
@@ -97,6 +160,13 @@ func extractViolations(alert *storage.Alert) ([]*integrations.SplunkViolation, e
 		}
 	}
 	for _, v := range alert.GetViolations() {
+		seenViolations = true
+
+		timestamp := getNonProcessViolationTime(alert, v)
+		if timestamp.Compare(fromTimestamp) <= 0 {
+			continue
+		}
+
 		violationInfo, err := extractNonProcessViolationInfo(alert, v)
 		if err != nil {
 			return nil, err
@@ -109,8 +179,8 @@ func extractViolations(alert *storage.Alert) ([]*integrations.SplunkViolation, e
 		})
 	}
 
-	if len(result) == 0 {
-		log.Warnw("Could not extract violations from Alert. Information about the alert will not be available in Splunk.", zap.String("Alert.Id", alert.GetId()))
+	if !seenViolations {
+		log.Warnw("Did not detect any extractable violations from the Alert. Information about the alert will not be available in Splunk.", zap.String("Alert.Id", alert.GetId()))
 	}
 
 	return result, nil
@@ -135,14 +205,17 @@ func generateViolationID(alertID string, v *storage.Alert_Violation) (string, er
 	return uuid.NewV5(alertUUID, hex.Dump(data)).String(), nil
 }
 
-func extractProcessViolationInfo(fromAlert *storage.Alert, fromProcViolation *storage.Alert_ProcessViolation, fromProcIndicator *storage.ProcessIndicator) *integrations.SplunkViolation_ViolationInfo {
-	time := fromProcIndicator.GetSignal().GetTime()
-	if time == nil {
+func getProcessViolationTime(fromAlert *storage.Alert, fromProcIndicator *storage.ProcessIndicator) *types.Timestamp {
+	timestamp := fromProcIndicator.GetSignal().GetTime()
+	if timestamp == nil {
 		// As a fallback when process violation does not have own time on the record take Alert's last seen time to
 		// provide at least some value.
-		time = fromAlert.GetTime()
+		timestamp = fromAlert.GetTime()
 	}
+	return timestamp
+}
 
+func extractProcessViolationInfo(fromAlert *storage.Alert, fromProcViolation *storage.Alert_ProcessViolation, fromProcIndicator *storage.ProcessIndicator) *integrations.SplunkViolation_ViolationInfo {
 	// fromProcViolation.Message can change over time. For example, first it begins like this
 	//   Binary '/usr/bin/nmap' executed with arguments '--help' under user ID 0
 	// On the next violation, the message changes to
@@ -154,8 +227,22 @@ func extractProcessViolationInfo(fromAlert *storage.Alert, fromProcViolation *st
 		ViolationId:      fromProcIndicator.GetId(),
 		ViolationMessage: fromProcViolation.GetMessage(),
 		ViolationType:    integrations.SplunkViolation_ViolationInfo_PROCESS_EVENT,
-		ViolationTime:    time,
+		ViolationTime:    getProcessViolationTime(fromAlert, fromProcIndicator),
 	}
+}
+
+func getNonProcessViolationTime(fromAlert *storage.Alert, fromViolation *storage.Alert_Violation) *types.Timestamp {
+	timestamp := fromViolation.GetTime()
+	if timestamp == nil {
+		// Generic violations don't have own timestamp therefore we report them with Alert's last seen time.
+		// This way all generic violations under the same Alert will have the same most recent violation time even
+		// though they might have happened at different moments.
+		// This means we'll likely resurrect old already seen violations when the alert gets updated, i.e. over-alarm.
+		// Perhaps that's better than set ViolationTime to fromAlert.FirstOccurred which will under-alarm.
+		// TODO(ROX-6706): simplify this after timestamps are added to all violations
+		timestamp = fromAlert.GetTime()
+	}
+	return timestamp
 }
 
 func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *storage.Alert_Violation) (*integrations.SplunkViolation_ViolationInfo, error) {
@@ -177,22 +264,12 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 		typ = integrations.SplunkViolation_ViolationInfo_K8S_EVENT
 	}
 
-	time := fromViolation.GetTime()
-	if time == nil {
-		// Generic violations don't have own timestamp therefore we report them with Alert's last seen time.
-		// This way all generic violations under the same Alert will have the same most recent violation time even
-		// though they might have happened at different moments.
-		// This means we'll likely resurrect old already seen violations when the alert gets updated, i.e. over-alarm.
-		// Perhaps that's better than set ViolationTime to fromAlert.FirstOccurred which will under-alarm.
-		time = fromAlert.GetTime()
-	}
-
 	return &integrations.SplunkViolation_ViolationInfo{
 		ViolationId:                id,
 		ViolationMessage:           fromViolation.GetMessage(),
 		ViolationMessageAttributes: msgAttrs,
 		ViolationType:              typ,
-		ViolationTime:              time,
+		ViolationTime:              getNonProcessViolationTime(fromAlert, fromViolation),
 	}, nil
 }
 

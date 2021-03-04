@@ -5,9 +5,9 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
@@ -346,9 +346,7 @@ var (
 )
 
 func makeTimestamp(timeStr string) *types.Timestamp {
-	t, err := time.Parse(time.RFC3339, timeStr)
-	utils.Must(err)
-	ts, err := types.TimestampProto(t)
+	ts, err := parseTimestamp(timeStr)
 	utils.Must(err)
 	return ts
 }
@@ -369,7 +367,7 @@ func (s *violationsTestSuite) SetupTest() {
 }
 
 func (s *violationsTestSuite) TestProcessAlert() {
-	vs := s.parseViolations(s.requestAndGetBody(&s.processAlert))
+	vs := s.getViolations(s.requestAndGetBody("", &s.processAlert))
 	s.Len(vs, 2)
 
 	for _, v := range vs {
@@ -387,7 +385,7 @@ func (s *violationsTestSuite) TestProcessAlert() {
 }
 
 func (s *violationsTestSuite) TestK8sAlert() {
-	vs := s.parseViolations(s.requestAndGetBody(&s.k8sAlert))
+	vs := s.getViolations(s.requestAndGetBody("", &s.k8sAlert))
 	s.Len(vs, 2)
 
 	for _, v := range vs {
@@ -403,7 +401,7 @@ func (s *violationsTestSuite) TestK8sAlert() {
 }
 
 func (s *violationsTestSuite) TestDeployAlert() {
-	vs := s.parseViolations(s.requestAndGetBody(&s.deployAlert))
+	vs := s.getViolations(s.requestAndGetBody("", &s.deployAlert))
 	s.Len(vs, 3)
 
 	for _, v := range vs {
@@ -419,7 +417,7 @@ func (s *violationsTestSuite) TestDeployAlert() {
 }
 
 func (s *violationsTestSuite) TestViolationsAreOrdered() {
-	vs := s.parseViolations(s.requestAndGetBody(&s.processAlert, &s.k8sAlert, &s.deployAlert))
+	vs := s.getViolations(s.requestAndGetBody("", &s.processAlert, &s.k8sAlert, &s.deployAlert))
 
 	s.Greater(len(vs), 2)
 	for i := range vs {
@@ -431,7 +429,7 @@ func (s *violationsTestSuite) TestViolationsAreOrdered() {
 }
 
 func (s *violationsTestSuite) TestViolationIdsAreDistinct() {
-	vs := s.parseViolations(s.requestAndGetBody(&s.processAlert, &s.k8sAlert, &s.deployAlert))
+	vs := s.getViolations(s.requestAndGetBody("", &s.processAlert, &s.k8sAlert, &s.deployAlert))
 
 	ids := set.StringSet{}
 	for _, v := range vs {
@@ -448,7 +446,7 @@ func (s *violationsTestSuite) TestWithDeploymentImage() {
 		Image: alert.GetDeployment().Containers[0].GetImage(),
 	}
 
-	vs := s.parseViolations(s.requestAndGetBody(alert))
+	vs := s.getViolations(s.requestAndGetBody("", alert))
 
 	s.assertPresent(vs[0], ".deploymentInfo",
 		// deploymentImage must obviously be present coming from above
@@ -461,21 +459,21 @@ func (s *violationsTestSuite) TestAlertWithoutPolicy() {
 	alert := s.processAlert.Clone()
 	alert.Policy = nil
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
-	vs := s.parseViolations(s.requestAndGetBody(alert))
+	vs := s.getViolations(s.requestAndGetBody("", alert))
 	s.Nil(s.extr(vs[0], ".policyInfo"))
 }
 
 func (s *violationsTestSuite) TestProcessAlertWithoutProcessIndicators() {
-	alert2 := s.processAlert.Clone()
-	alert2.ProcessViolation.Processes = []*storage.ProcessIndicator{}
-	s.Equal("{}", s.requestAndGetBody(alert2))
+	alert := s.processAlert.Clone()
+	alert.ProcessViolation.Processes = []*storage.ProcessIndicator{}
+	s.Empty(s.getViolations(s.requestAndGetBody("", alert)))
 }
 
 func (s *violationsTestSuite) TestProcessAlertWithoutProcessSignal() {
 	alert := s.processAlert.Clone()
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
 	alert.ProcessViolation.Processes[0].Signal = nil
-	vs := s.parseViolations(s.requestAndGetBody(alert))
+	vs := s.getViolations(s.requestAndGetBody("", alert))
 	s.checkViolationInfo(vs[0])
 	s.checkAlertInfo(vs[0])
 	// That's all it can gather from ProcessIndicator without ProcessSignal
@@ -488,14 +486,14 @@ func (s *violationsTestSuite) TestProcessAlertWithoutProcessSignal() {
 func (s *violationsTestSuite) TestAlertWithoutViolations() {
 	alert := s.deployAlert.Clone()
 	alert.Violations = []*storage.Alert_Violation{}
-	s.Equal("{}", s.requestAndGetBody(alert))
+	s.Empty(s.getViolations(s.requestAndGetBody("", alert)))
 }
 
 func (s *violationsTestSuite) TestK8sAlertWithoutDeployment() {
 	alert := s.k8sAlert.Clone()
 	alert.Entity = nil
 	alert.Violations = alert.Violations[:1]
-	vs := s.parseViolations(s.requestAndGetBody(alert))
+	vs := s.getViolations(s.requestAndGetBody("", alert))
 	s.Empty(s.extr(vs[0], ".deploymentInfo"))
 }
 
@@ -503,7 +501,7 @@ func (s *violationsTestSuite) TestProcessAlertWithoutDeployment() {
 	alert := s.processAlert.Clone()
 	alert.Entity = nil
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
-	vs := s.parseViolations(s.requestAndGetBody(alert))
+	vs := s.getViolations(s.requestAndGetBody("", alert))
 	// deploymentInfo still has some attributes because they came from ProcessIndicator-s
 	s.assertPresent(vs[0], ".deploymentInfo", ".deploymentId", ".deploymentNamespace")
 }
@@ -512,7 +510,7 @@ func (s *violationsTestSuite) TestProcessAlertNotMatchingDeploymentId() {
 	alert := s.processAlert.Clone()
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
 	alert.ProcessViolation.Processes[0].DeploymentId = "blah"
-	vs := s.parseViolations(s.requestAndGetBody(alert))
+	vs := s.getViolations(s.requestAndGetBody("", alert))
 	// DeploymentId value from ProcessIndicator should take priority
 	s.Equal("blah", s.extr(vs[0], ".deploymentInfo.deploymentId"))
 	s.NotEmpty(s.extr(vs[0], ".deploymentInfo.deploymentNamespace"))
@@ -523,9 +521,75 @@ func (s *violationsTestSuite) TestProcessAlertNotMatchingDeploymentInfo() {
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
 	alert.ProcessViolation.Processes[0].ClusterId = "blah-cluster"
 	alert.ProcessViolation.Processes[0].Namespace = "blah-namespace"
-	vs := s.parseViolations(s.requestAndGetBody(alert))
+	vs := s.getViolations(s.requestAndGetBody("", alert))
 	s.Equal("blah-cluster", s.extr(vs[0], ".deploymentInfo.clusterId"))
 	s.Equal("blah-namespace", s.extr(vs[0], ".deploymentInfo.deploymentNamespace"))
+}
+
+func (s *violationsTestSuite) TestDefaultCheckpointAndNoViolations() {
+	body := s.requestAndGetBody("")
+	s.Empty(s.getViolations(body))
+	// API should return some default checkpoint for subsequent querying.
+	cp := makeTimestamp(s.extr(body, ".newCheckpoint").(string))
+	// That timestamp should be in the past. For example, earlier than the first commit to Kubernetes repo.
+	s.True(cp.Compare(makeTimestamp("2014-06-06T23:40:48Z")) < 0)
+}
+
+func (s *violationsTestSuite) TestCheckpointInTheFuture() {
+	body := s.requestAndGetBody("2130-12-31T23:59:59Z", &s.processAlert, &s.k8sAlert, &s.deployAlert)
+	s.Empty(s.getViolations(body))
+	// Incoming checkpoint should be echoed on the output.
+	s.Equal("2130-12-31T23:59:59Z", s.extr(body, ".newCheckpoint"))
+}
+
+func (s *violationsTestSuite) TestCheckpointFiltering() {
+	fromStr := "2021-02-01T17:18:48Z"         // Somewhere in the middle of violation timestamps
+	toStr := "2021-02-15T19:04:36.843302212Z" // Timestamp of the last violation met in the data
+	fromTs := makeTimestamp(fromStr)
+	toTs := makeTimestamp(toStr)
+	alerts := []*storage.Alert{&s.processAlert, &s.k8sAlert, &s.deployAlert}
+
+	body := s.requestAndGetBody(fromStr, alerts...)
+	vs := s.getViolations(body)
+	s.NotEmpty(vs)
+	s.Less(len(vs), len(s.getViolations(s.requestAndGetBody("", alerts...))))
+
+	for _, v := range vs {
+		ts := makeTimestamp(s.extr(v, ".violationInfo.violationTime").(string))
+		s.True(ts.Compare(fromTs) > 0)
+		s.True(ts.Compare(toTs) <= 0)
+	}
+
+	s.Equal(toStr, s.extr(body, ".newCheckpoint"))
+}
+
+func (s *violationsTestSuite) TestCheckpointBeforeData() {
+	alerts := []*storage.Alert{&s.processAlert, &s.k8sAlert, &s.deployAlert}
+
+	// Query with checkpoint. The checkpoint's date is before violation timestamps in the data.
+	vs1 := s.getViolations(s.requestAndGetBody("2021-01-01T00:00:00Z", alerts...))
+	// Query without checkpoint.
+	vs2 := s.getViolations(s.requestAndGetBody("", alerts...))
+
+	s.Equal(len(vs1), len(vs2))
+}
+
+func (s *violationsTestSuite) TestInvalidCheckpoint() {
+	w := httptest.NewRecorder()
+
+	s.request(w, nil, url.QueryEscape("This isn't any good timestamp"))
+
+	s.Equal(http.StatusBadRequest, w.Code)
+	body := w.Body.String()
+	s.Contains(body, "could not parse query parameter")
+	s.Contains(body, "from_checkpoint")
+	s.Contains(body, "This isn't any good timestamp")
+}
+
+func (s *violationsTestSuite) TestFirstCheckpointWins() {
+	checkpointParam := "2130-12-31T23:59:59Z&from_checkpoint=2005-01-01T00:00:00Z"
+	vs := s.getViolations(s.requestAndGetBody(checkpointParam, &s.k8sAlert))
+	s.Empty(vs)
 }
 
 func (s *violationsTestSuite) assertPresent(violation interface{}, prefix string, attributes ...string) {
@@ -591,39 +655,45 @@ func (s *violationsTestSuite) checkPolicy(violation interface{}) {
 		".policyVersion")
 }
 
-func (s *violationsTestSuite) requestAndGetBody(data ...*storage.Alert) string {
+func (s *violationsTestSuite) requestAndGetBody(checkpointParam string, data ...*storage.Alert) map[string]interface{} {
 	w := httptest.NewRecorder()
-	s.request(w, nil, data...)
-
+	s.request(w, nil, checkpointParam, data...)
 	s.Equal(200, w.Code)
-	return w.Body.String()
+
+	var parsed map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &parsed)
+	s.NoError(err)
+
+	return parsed
 }
 
-func (s *violationsTestSuite) request(responseWriter http.ResponseWriter, searchAlertsError error, searchAlertsData ...*storage.Alert) {
+func (s *violationsTestSuite) request(responseWriter http.ResponseWriter, searchAlertsError error, checkpointParam string, searchAlertsData ...*storage.Alert) {
 	mockCtrl := gomock.NewController(s.T())
 	defer mockCtrl.Finish()
 
 	mockDS := mocks.NewMockDataStore(mockCtrl)
 
-	mockDS.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).Return(searchAlertsData, searchAlertsError)
+	mockDS.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).AnyTimes().Return(searchAlertsData, searchAlertsError)
 
 	handler := NewViolationsHandler(mockDS)
 
-	r := httptest.NewRequest("GET", "/ignored", nil)
+	url := "/ignored"
+	if checkpointParam != "" {
+		url += "?from_checkpoint=" + checkpointParam
+	}
+
+	r := httptest.NewRequest("GET", url, nil)
 
 	handler.ServeHTTP(responseWriter, r)
 }
 
-// parseViolations parses JSON string to untyped map and extracts "violations" for later querying them with JSONPath.
-func (s *violationsTestSuite) parseViolations(j string) []interface{} {
-	var parsed map[string]interface{}
-	err := json.Unmarshal([]byte(j), &parsed)
-	s.NoError(err)
-
-	violations, ok := s.extr(parsed, ".violations").([]interface{})
-	s.True(ok, "Provided JSON object does not contain \"violations\" list as attribute.")
-
-	return violations
+// getViolations extracts "violations" attribute as a slice for later querying them with JSONPath.
+func (s *violationsTestSuite) getViolations(body map[string]interface{}) []interface{} {
+	violations := s.extr(body, ".violations")
+	if violations == nil {
+		return nil
+	}
+	return violations.([]interface{})
 }
 
 // extr extracts value from input according to provided jsonPath. Returns nil if given attribute does not exist.
@@ -645,10 +715,10 @@ func (s *violationsTestSuite) extr(input interface{}, jsonPath string) interface
 func (s *violationsTestSuite) TestViolationsHandlerError() {
 	w := httptest.NewRecorder()
 
-	s.request(w, errors.New("mock error"))
+	s.request(w, errors.New("mock error"), "")
 
-	s.Equal(500, w.Code)
-	s.Contains(w.Body.String(), "Error handling Splunk violations request: mock error")
+	s.Equal(http.StatusInternalServerError, w.Code)
+	s.Contains(w.Body.String(), "mock error")
 }
 
 // failingResponseWriter is an implementation of http.ResponseWriter that returns error on attempt to write to it
@@ -668,7 +738,7 @@ func (f failingResponseWriter) Write(_ []byte) (int, error) {
 func (s *violationsTestSuite) TestViolationsHandlerWriteError() {
 	w := failingResponseWriter{}
 	s.PanicsWithError("net/http: abort Handler", func() {
-		s.request(w, nil, &s.processAlert)
+		s.request(w, nil, "", &s.processAlert)
 	})
 }
 

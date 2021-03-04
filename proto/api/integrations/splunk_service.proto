@@ -17,6 +17,9 @@ package integrations;
 // SplunkViolationsResponse is what StackRox Platform returns on the request from Splunk Technology Addon for StackRox.
 message SplunkViolationsResponse {
   repeated SplunkViolation violations = 1;
+
+  // new_checkpoint sets the checkpoint value for Splunk to use on the next call.
+  google.protobuf.Timestamp new_checkpoint = 6;
 }
 
 // SplunkViolation presents a violation information for Splunk. Essentially, it is a view of data centered around each
@@ -114,9 +117,9 @@ message SplunkViolation {
     string policy_version = 8;
   }
 
-  ViolationInfo violationInfo = 1;
-  AlertInfo alertInfo = 2;
-  ProcessInfo processInfo = 3;
-  DeploymentInfo deploymentInfo = 4;
-  PolicyInfo policyInfo = 5;
+  ViolationInfo  violation_info = 1;
+  AlertInfo      alert_info = 2;
+  ProcessInfo    process_info = 3;
+  DeploymentInfo deployment_info = 4;
+  PolicyInfo     policy_info = 5;
 }
