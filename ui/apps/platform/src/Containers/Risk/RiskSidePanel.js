@@ -4,7 +4,9 @@ import PropTypes from 'prop-types';
 import { fetchDeploymentWithRisk } from 'services/DeploymentsService';
 import { fetchProcesses } from 'services/ProcessesService';
 
-import Panel from 'Components/Panel';
+import CloseButton from 'Components/CloseButton';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
+
 import RiskSidePanelContent from './RiskSidePanelContent';
 
 function RiskSidePanel({ selectedDeploymentId, setSelectedDeploymentId }) {
@@ -45,19 +47,34 @@ function RiskSidePanel({ selectedDeploymentId, setSelectedDeploymentId }) {
     if (!selectedDeploymentId) {
         return null;
     }
+
+    const header = !selectedDeployment ? 'Unknown Deployment' : selectedDeployment.deployment.name;
+
+    /*
+     * For border color compatible with background color of SidePanelAdjacentArea:
+     * Omit isDarkMode and isSidePanel props from PanelHead.
+     * Do not call getSidePanelHeadBorderColor for CloseButton.
+     */
     return (
-        <Panel
-            header={!selectedDeployment ? 'Unknown Deployment' : selectedDeployment.deployment.name}
-            className="bg-primary-200 border-l border-base-400 absolute right-0 top-0 md:w-2/3 min-w-72 md:relative z-0"
-            onClose={unselectDeployment}
-        >
-            <RiskSidePanelContent
-                isFetching={isFetching}
-                selectedDeployment={!selectedDeployment ? null : selectedDeployment.deployment}
-                deploymentRisk={!selectedDeployment ? null : selectedDeployment.risk}
-                processGroup={selectedProcesses}
-            />
-        </Panel>
+        <PanelNew testid="panel">
+            <PanelHead>
+                <PanelTitle isUpperCase={false} testid="panel-header" text={header} />
+                <PanelHeadEnd>
+                    <CloseButton
+                        onClose={unselectDeployment}
+                        className="border-base-400 border-l"
+                    />
+                </PanelHeadEnd>
+            </PanelHead>
+            <PanelBody>
+                <RiskSidePanelContent
+                    isFetching={isFetching}
+                    selectedDeployment={selectedDeployment ? selectedDeployment.deployment : null}
+                    deploymentRisk={selectedDeployment ? selectedDeployment.risk : null}
+                    processGroup={selectedProcesses}
+                />
+            </PanelBody>
+        </PanelNew>
     );
 }
 

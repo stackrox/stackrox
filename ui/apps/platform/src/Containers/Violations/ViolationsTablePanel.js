@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 
 import { Tag, Check, BellOff } from 'react-feather';
-import Panel from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import { pageSize } from 'Components/TableV2';
 import TablePagination from 'Components/TablePaginationV2';
@@ -126,15 +126,6 @@ function ViolationsTablePanel({
     resolvableAlerts,
     excludableAlertIds,
 }) {
-    // Currently selected rows in the table.
-    const headerTextComponent = (
-        <ViolationsTablePanelTextHeader
-            violationsCount={violationsCount}
-            isViewFiltered={isViewFiltered}
-            checkedAlertIds={checkedAlertIds}
-        />
-    );
-
     // Handle page changes.
     function changePage(newPage) {
         if (newPage !== currentPage) {
@@ -142,22 +133,29 @@ function ViolationsTablePanel({
         }
     }
 
-    const pageCount = Math.ceil(violationsCount / pageSize);
-    const headerComponents = (
-        <>
-            <ViolationsTablePanelButtons
-                setDialogue={setDialogue}
-                checkedAlertIds={checkedAlertIds}
-                resolvableAlerts={resolvableAlerts}
-                excludableAlertIds={excludableAlertIds}
-            />
-            <TablePagination pageCount={pageCount} page={currentPage} setPage={changePage} />
-        </>
-    );
-
     return (
-        <Panel headerTextComponent={headerTextComponent} headerComponents={headerComponents}>
-            <div className="h-full w-full">
+        <PanelNew testid="panel">
+            <PanelHead>
+                <ViolationsTablePanelTextHeader
+                    violationsCount={violationsCount}
+                    isViewFiltered={isViewFiltered}
+                    checkedAlertIds={checkedAlertIds}
+                />
+                <PanelHeadEnd>
+                    <ViolationsTablePanelButtons
+                        setDialogue={setDialogue}
+                        checkedAlertIds={checkedAlertIds}
+                        resolvableAlerts={resolvableAlerts}
+                        excludableAlertIds={excludableAlertIds}
+                    />
+                    <TablePagination
+                        pageCount={Math.ceil(violationsCount / pageSize)}
+                        page={currentPage}
+                        setPage={changePage}
+                    />
+                </PanelHeadEnd>
+            </PanelHead>
+            <PanelBody>
                 <ViolationsTable
                     violations={violations}
                     selectedAlertId={selectedAlertId}
@@ -166,8 +164,8 @@ function ViolationsTablePanel({
                     setSelectedRows={setCheckedAlertIds}
                     setSortOption={setSortOption}
                 />
-            </div>
-        </Panel>
+            </PanelBody>
+        </PanelNew>
     );
 }
 

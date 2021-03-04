@@ -5,7 +5,7 @@ import { withRouter } from 'react-router-dom';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 
 import TableHeader from 'Components/TableHeader';
-import Panel from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
@@ -67,29 +67,32 @@ function RiskTablePanel({
         }
     }, [pageSearch, sortOption, currentPage, searchOptions]);
 
-    const paginationComponent = (
-        <TablePagination
-            page={currentPage}
-            dataLength={deploymentCount}
-            pageSize={DEFAULT_PAGE_SIZE}
-            setPage={setPage}
-        />
-    );
-
-    const headerComponent = (
-        <TableHeader length={deploymentCount} type="Deployment" isViewFiltered={isViewFiltered} />
-    );
     return (
-        <Panel headerTextComponent={headerComponent} headerComponents={paginationComponent}>
-            <div className="h-full w-full">
+        <PanelNew testid="panel">
+            <PanelHead>
+                <TableHeader
+                    length={deploymentCount}
+                    type="Deployment"
+                    isViewFiltered={isViewFiltered}
+                />
+                <PanelHeadEnd>
+                    <TablePagination
+                        page={currentPage}
+                        dataLength={deploymentCount}
+                        pageSize={DEFAULT_PAGE_SIZE}
+                        setPage={setPage}
+                    />
+                </PanelHeadEnd>
+            </PanelHead>
+            <PanelBody>
                 <RiskTable
                     currentDeployments={currentDeployments}
                     setSelectedDeploymentId={setSelectedDeploymentId}
                     selectedDeploymentId={selectedDeploymentId}
                     setSortOption={setSortOption}
                 />
-            </div>
-        </Panel>
+            </PanelBody>
+        </PanelNew>
     );
 }
 

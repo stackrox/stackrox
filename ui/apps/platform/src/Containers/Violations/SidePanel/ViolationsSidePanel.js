@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
-import { fetchAlert } from 'services/AlertsService';
+import CloseButton from 'Components/CloseButton';
 import Loader from 'Components/Loader';
-import Panel from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
+import { fetchAlert } from 'services/AlertsService';
+
 import ViolationTabs from './ViolationTabs';
 import ViolationNotFound from './ViolationNotFound';
 
@@ -50,14 +52,22 @@ const ViolationsSidePanel = ({ selectedAlertId, setSelectedAlertId }) => {
         selectedAlert && selectedAlert.deployment
             ? `${selectedAlert.deployment.name} (${selectedAlert.deployment.id})`
             : 'Unknown violation';
+
+    /*
+     * For border color compatible with background color of SidePanelAdjacentArea:
+     * Omit isDarkMode and isSidePanel props from PanelHead.
+     * Do not call getSidePanelHeadBorderColor for CloseButton.
+     */
     return (
-        <Panel
-            header={header}
-            className="z-1 absolute border-l border-base-400 right-0 top-0 min-w-72 md:w-1/2 md:relative bg-base-100"
-            onClose={unselectAlert}
-        >
-            {content}
-        </Panel>
+        <PanelNew testid="panel">
+            <PanelHead>
+                <PanelTitle isUpperCase={false} testid="panel-header" text={header} />
+                <PanelHeadEnd>
+                    <CloseButton onClose={unselectAlert} className="border-base-400 border-l" />
+                </PanelHeadEnd>
+            </PanelHead>
+            <PanelBody>{content}</PanelBody>
+        </PanelNew>
     );
 };
 

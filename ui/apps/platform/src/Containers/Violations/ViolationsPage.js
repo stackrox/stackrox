@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 
 import MessageCentered from 'Components/MessageCentered';
+import { PageBody } from 'Components/Panel';
+import SidePanelAdjacentArea from 'Components/SidePanelAdjacentArea';
 import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import VIOLATION_STATES from 'constants/violationStates';
@@ -69,54 +71,52 @@ function ViolationsPage({
     const excludableAlertIds = new Set(excludableAlerts.map((alert) => alert.id));
 
     return (
-        <section className="flex flex-1 flex-col h-full">
-            <div className="flex flex-1 flex-col">
-                <ViolationsPageHeader
-                    currentPage={currentPage}
-                    sortOption={sortOption}
-                    selectedAlertId={selectedAlertId}
-                    currentPageAlerts={currentPageAlerts}
-                    setCurrentPageAlerts={setCurrentPageAlerts}
-                    setCurrentPageAlertsErrorMessage={setCurrentPageAlertsErrorMessage}
-                    setSelectedAlertId={setSelectedAlertId}
-                    setAlertCount={setAlertCount}
-                    isViewFiltered={isViewFiltered}
-                    setIsViewFiltered={setIsViewFiltered}
-                />
-                <div className="flex flex-1 relative">
-                    {currentPageAlertsErrorMessage ? (
-                        <MessageCentered type="error">
-                            {currentPageAlertsErrorMessage}
-                        </MessageCentered>
-                    ) : (
-                        <>
-                            <div className="shadow border-primary-300 w-full overflow-hidden">
-                                <ViolationsTablePanel
-                                    violations={currentPageAlerts}
-                                    violationsCount={alertCount}
-                                    isViewFiltered={isViewFiltered}
-                                    setDialogue={setDialogue}
-                                    selectedAlertId={selectedAlertId}
-                                    setSelectedAlertId={setSelectedAlertId}
-                                    checkedAlertIds={checkedAlertIds}
-                                    setCheckedAlertIds={setCheckedAlertIds}
-                                    currentPage={currentPage}
-                                    setCurrentPage={setCurrentPage}
-                                    setSortOption={setSortOption}
-                                    resolvableAlerts={resolvableAlerts}
-                                    excludableAlertIds={excludableAlertIds}
-                                />
-                            </div>
-                            {selectedAlertId && (
+        <>
+            <ViolationsPageHeader
+                currentPage={currentPage}
+                sortOption={sortOption}
+                selectedAlertId={selectedAlertId}
+                currentPageAlerts={currentPageAlerts}
+                setCurrentPageAlerts={setCurrentPageAlerts}
+                setCurrentPageAlertsErrorMessage={setCurrentPageAlertsErrorMessage}
+                setSelectedAlertId={setSelectedAlertId}
+                setAlertCount={setAlertCount}
+                isViewFiltered={isViewFiltered}
+                setIsViewFiltered={setIsViewFiltered}
+            />
+            <PageBody>
+                {currentPageAlertsErrorMessage ? (
+                    <MessageCentered type="error">{currentPageAlertsErrorMessage}</MessageCentered>
+                ) : (
+                    <>
+                        <div className="flex-shrink-1 overflow-hidden w-full">
+                            <ViolationsTablePanel
+                                violations={currentPageAlerts}
+                                violationsCount={alertCount}
+                                isViewFiltered={isViewFiltered}
+                                setDialogue={setDialogue}
+                                selectedAlertId={selectedAlertId}
+                                setSelectedAlertId={setSelectedAlertId}
+                                checkedAlertIds={checkedAlertIds}
+                                setCheckedAlertIds={setCheckedAlertIds}
+                                currentPage={currentPage}
+                                setCurrentPage={setCurrentPage}
+                                setSortOption={setSortOption}
+                                resolvableAlerts={resolvableAlerts}
+                                excludableAlertIds={excludableAlertIds}
+                            />
+                        </div>
+                        {selectedAlertId && (
+                            <SidePanelAdjacentArea>
                                 <ViolationsSidePanel
                                     selectedAlertId={selectedAlertId}
                                     setSelectedAlertId={setSelectedAlertId}
                                 />
-                            )}
-                        </>
-                    )}
-                </div>
-            </div>
+                            </SidePanelAdjacentArea>
+                        )}
+                    </>
+                )}
+            </PageBody>
             {dialogue === dialogues.excludeScopes && (
                 <ExcludeConfirmation
                     setDialogue={setDialogue}
@@ -140,7 +140,7 @@ function ViolationsPage({
                     setCheckedAlertIds={setCheckedAlertIds}
                 />
             )}
-        </section>
+        </>
     );
 }
 

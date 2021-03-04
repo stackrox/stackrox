@@ -2,6 +2,8 @@ import React, { useState, useCallback } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { useQuery } from '@apollo/client';
 
+import { PageBody } from 'Components/Panel';
+import SidePanelAdjacentArea from 'Components/SidePanelAdjacentArea';
 import entityTypes, { searchCategories } from 'constants/entityTypes';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -47,30 +49,30 @@ const RiskPage = ({
 
     return (
         <workflowStateContext.Provider value={workflowState}>
-            <section className="flex flex-1 flex-col h-full">
-                <div className="flex flex-1 flex-col">
-                    <RiskPageHeader
+            <RiskPageHeader
+                isViewFiltered={isViewFiltered}
+                searchOptions={searchOptions}
+                autoFocusSearchInput={autoFocusSearchInput}
+            />
+            <PageBody>
+                <div className="flex-shrink-1 overflow-hidden w-full">
+                    <RiskTablePanel
+                        selectedDeploymentId={deploymentId}
+                        setSelectedDeploymentId={setSelectedDeploymentId}
                         isViewFiltered={isViewFiltered}
+                        setIsViewFiltered={setIsViewFiltered}
                         searchOptions={searchOptions}
-                        autoFocusSearchInput={autoFocusSearchInput}
                     />
-                    <div className="flex flex-1 relative">
-                        <div className="shadow border-primary-300 w-full overflow-hidden">
-                            <RiskTablePanel
-                                selectedDeploymentId={deploymentId}
-                                setSelectedDeploymentId={setSelectedDeploymentId}
-                                isViewFiltered={isViewFiltered}
-                                setIsViewFiltered={setIsViewFiltered}
-                                searchOptions={searchOptions}
-                            />
-                        </div>
+                </div>
+                {deploymentId && (
+                    <SidePanelAdjacentArea isWider>
                         <RiskSidePanel
                             selectedDeploymentId={deploymentId}
                             setSelectedDeploymentId={setSelectedDeploymentId}
                         />
-                    </div>
-                </div>
-            </section>
+                    </SidePanelAdjacentArea>
+                )}
+            </PageBody>
         </workflowStateContext.Provider>
     );
 };
