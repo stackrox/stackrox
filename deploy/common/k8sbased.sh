@@ -121,8 +121,10 @@ function launch_central {
 
     add_args -i "${MAIN_IMAGE}"
 
-    pkill -f "$ORCH_CMD"'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
-    pkill -9 -f "$ORCH_CMD"'.*port-forward.*' || true
+    pkill -f kubectl'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
+    pkill -9 -f kubectl'.*port-forward.*' || true
+    command -v oc && pkill -f oc'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
+    command -v oc && pkill -9 -f oc'.*port-forward.*' || true
 
     if [[ "${STORAGE_CLASS}" == "faster" ]]; then
         kubectl apply -f "${common_dir}/ssd-storageclass.yaml"
