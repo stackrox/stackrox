@@ -691,17 +691,22 @@ commands:
           path: debug-dump
           destination: debug
 
-  pull-stackrox-api-data:
-    description: Pull data from the StackRox API.
+  get-central-data:
+    description: Pull data from Central
+    parameters:
+      destination:
+        type: string
+        default: central-data
     steps:
       - run:
-          name: Pull data from the StackRox API
+          name: Pull data from Central
           command: |
-            ./scripts/grab-data-from-central.sh stackrox-api
-            ls -l stackrox-api
+            ./scripts/grab-data-from-central.sh << parameters.destination >>
+            ls -l << parameters.destination >>
+          when: always
       - store_artifacts:
-          path: stackrox-api
-          destination: stackrox-api
+          path: << parameters.destination >>
+          destination: << parameters.destination >>
 
   check-stackrox-logs:
     parameters:
@@ -1339,7 +1344,7 @@ commands:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
-      - pull-stackrox-api-data
+      - get-central-data
       - *storeQATestResults
       - copy-gradle-files:
           target-dir: ${CIRCLE_JOB}-part1
@@ -1369,7 +1374,8 @@ commands:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
-      - pull-stackrox-api-data
+      - get-central-data:
+          destination: central-data-part2
       - *backupCentral
       - *storeCentralBackupArtifact
       - *restoreDB
@@ -1642,7 +1648,7 @@ commands:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
-      - pull-stackrox-api-data
+      - get-central-data
 
       - *storeQATestResults
       - copy-gradle-files:
@@ -1675,7 +1681,8 @@ commands:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
-      - pull-stackrox-api-data
+      - get-central-data:
+          destination: central-data-part2
       - check-stackrox-logs
       - *storeK8sLogs
       - *storeQALogs
@@ -3212,7 +3219,7 @@ jobs:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
-      - pull-stackrox-api-data
+      - get-central-data
       - *backupCentral
       - *storeCentralBackupArtifact
       - check-stackrox-logs
@@ -3253,6 +3260,9 @@ jobs:
       - store_artifacts:
           path: /tmp/final-stackrox-logs
           destination: final-stackrox-logs
+
+      - get-central-data:
+          destination: final-central-data
 
       - *storeK8sLogs
       - teardown-gke
@@ -3315,7 +3325,7 @@ jobs:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
-      - pull-stackrox-api-data
+      - get-central-data
       - *backupCentral
       - *storeCentralBackupArtifact
       - *restoreDB
@@ -3898,7 +3908,7 @@ jobs:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
-      - pull-stackrox-api-data
+      - get-central-data
       - run:
           name: Delete the sensor
           command: |
@@ -3978,7 +3988,7 @@ jobs:
       - *storeMonitoringMetrics
       - *collectK8sLogs
       - get-and-store-debug-dump
-      - pull-stackrox-api-data
+      - get-central-data
 
       - *getPrometheusMetricParser
       - compare-with-stored-metrics:
@@ -4670,7 +4680,7 @@ jobs:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
-      - pull-stackrox-api-data
+      - get-central-data
       - *backupCentral
       - *storeCentralBackupArtifact
       - check-stackrox-logs

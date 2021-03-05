@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/tecbot/gorocksdb"
 )
@@ -32,6 +33,7 @@ func main() {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return loadAndDump(dbPath, backupFile, outputDir)
 		},
+		SilenceUsage: true,
 	}
 	cmd.PersistentFlags().StringVarP(&dbPath, "from-database", "d", "", "Database directory to read from")
 	cmd.PersistentFlags().StringVarP(&backupFile, "from-backup-file", "b", "", "Read the database from a backup (roxctl central backup)")
@@ -43,15 +45,14 @@ func main() {
 }
 
 var bucketToProtoInterface = map[string]proto.Message{
-	"alerts":                 (*storage.Alert)(nil),
-	"apiTokens":              (*storage.TokenMetadata)(nil),
-	"cluster_to_vuln":        (*storage.ClusterCVEEdge)(nil),
-	"clusterinitbundles":     (*storage.InitBundleMeta)(nil),
-	"clusters":               (*storage.Cluster)(nil),
-	"clusters_health_status": (*storage.ClusterHealthStatus)(nil),
-	"comp_to_vuln":           (*storage.ComponentCVEEdge)(nil),
-	//"compliance-run-results": (*storage.ComplianceRunResults)(nil), // multiple types
-	//"dackbox_graph": (*storage.??)(nil),
+	"alerts":                  (*storage.Alert)(nil),
+	"alerts_list":             (*storage.ListAlert)(nil),
+	"apiTokens":               (*storage.TokenMetadata)(nil),
+	"cluster_to_vuln":         (*storage.ClusterCVEEdge)(nil),
+	"clusterinitbundles":      (*storage.InitBundleMeta)(nil),
+	"clusters":                (*storage.Cluster)(nil),
+	"clusters_health_status":  (*storage.ClusterHealthStatus)(nil),
+	"comp_to_vuln":            (*storage.ComponentCVEEdge)(nil),
 	"deployments":             (*storage.Deployment)(nil),
 	"deployments_list":        (*storage.ListDeployment)(nil),
 	"imageBucket":             (*storage.Image)(nil),
@@ -80,6 +81,17 @@ var bucketToProtoInterface = map[string]proto.Message{
 	"service_accounts":        (*storage.ServiceAccount)(nil),
 	"version":                 (*storage.Version)(nil),
 }
+
+var knownUnhandledBuckets = set.NewStringSet(
+	"compliance-run-results", // multiple types
+	"dackbox_graph",
+	"dackbox_dirty",
+	"dackbox_reindex",
+)
+
+var ignoreUnmarshallErrors = set.NewStringSet(
+	"networkFlows2",
+)
 
 func loadAndDump(dbPath string, backupFile string, outputDir string) error {
 	if (dbPath == "") == (backupFile == "") {
@@ -116,12 +128,14 @@ func loadAndDump(dbPath string, backupFile string, outputDir string) error {
 	readOpts := gorocksdb.NewDefaultReadOptions()
 	it := db.NewIterator(readOpts)
 
-	missingBuckets := make(map[string]bool)
+	foundUnhandledBuckets := set.NewStringSet()
+	var fatalErrorsFound bool
 
 	for it.SeekToFirst(); it.Valid(); it.Next() {
 		key := it.Key()
 		if len(key.Data()) == 0 {
 			log.Println("A zero length key was found in the DB")
+			fatalErrorsFound = true
 			continue
 		}
 
@@ -129,20 +143,24 @@ func loadAndDump(dbPath string, backupFile string, outputDir string) error {
 		keyPieces := bytes.Split(key.Data(), []byte{0})
 		if len(keyPieces[0]) == 0 {
 			log.Printf("A bucket name was not found in: %s\n", string(key.Data()))
+			fatalErrorsFound = true
 			continue
 		}
 
 		bucketName := string(keyPieces[0])
+		if strings.HasPrefix(bucketName, "transactions") {
+			// skip transactions buckets
+			continue
+		}
 		var possibleObjectID string
 		if len(keyPieces) > 1 {
 			possibleObjectID = string(keyPieces[1])
 		}
 		pbInterface, ok := bucketToProtoInterface[bucketName]
 		if !ok {
-			_, missing := missingBuckets[bucketName]
-			if !missing {
+			if added := foundUnhandledBuckets.Add(bucketName); added {
 				log.Printf("A bucket is missing from the protobuf map: %s\n", bucketName)
-				missingBuckets[bucketName] = true
+				fatalErrorsFound = fatalErrorsFound || !knownUnhandledBuckets.Contains(bucketName)
 			}
 			continue
 		}
@@ -153,6 +171,8 @@ func loadAndDump(dbPath string, backupFile string, outputDir string) error {
 		if err != nil {
 			log.Printf("An object cannot be unmarshalled. Bucket: %s, possible ID: %s", bucketName, possibleObjectID)
 			log.Println(err)
+			log.Printf("len: %d, bytes: %v", len(it.Value().Data()), it.Value().Data())
+			fatalErrorsFound = fatalErrorsFound || !ignoreUnmarshallErrors.Contains(bucketName)
 			continue
 		}
 
@@ -160,6 +180,7 @@ func loadAndDump(dbPath string, backupFile string, outputDir string) error {
 		if err != nil {
 			log.Printf("An object cannot be serialized to JSON. Bucket: %s, possible ID: %s", bucketName, possibleObjectID)
 			log.Println(err)
+			fatalErrorsFound = fatalErrorsFound || !ignoreUnmarshallErrors.Contains(bucketName)
 			continue
 		}
 		bucketsToObjects[bucketName] = append(bucketsToObjects[bucketName], jsonResult)
@@ -181,6 +202,10 @@ func loadAndDump(dbPath string, backupFile string, outputDir string) error {
 			return err
 		}
 		log.Println("Wrote " + bucketName + ".json")
+	}
+
+	if fatalErrorsFound {
+		return errors.New("The database has unresolved issues")
 	}
 
 	return nil

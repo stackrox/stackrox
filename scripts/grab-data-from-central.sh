@@ -1,6 +1,8 @@
 #!/bin/bash
 
-# Get data from various API endpoints.
+set -e
+
+# Get data from a central backup.
 
 usage() {
     echo "$0 <somewhere to put it>"
@@ -11,49 +13,31 @@ main() {
         usage
         exit 1
     fi
-    if [ -z "${ROX_USERNAME}" -o -z "${ROX_PASSWORD}" ]; then
-        echo "ROX_USERNAME and ROX_PASSWORD must be set"
+    if [ -z "${ROX_PASSWORD}" ]; then
+        echo "ROX_PASSWORD must be set"
         exit 1
     fi
-
-    set +e
 
     dest="$1"
 
     api_hostname=localhost
     api_port=8000
     lb_ip=$(kubectl -n stackrox get svc/central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}' || true)
-    if [[ ! -z "${lb_ip}" ]]; then
+    if [ -n "${lb_ip}" ]; then
         api_hostname="${lb_ip}"
         api_port=443
     fi
     api_endpoint="${api_hostname}:${api_port}"
 
-    mkdir -p ${dest}
+    mkdir -p "${dest}"
 
-    curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/clusters | jq > ${dest}/clusters.json
-    curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/imageintegrations | jq > ${dest}/imageintegrations.json
+    roxctl -e "${api_endpoint}" -p "${ROX_PASSWORD}" central backup --output "${dest}"
 
-    for objects in "images" "deployments" "policies" "alerts" "serviceaccounts" "secrets" "clusters"; do
-        echo "Pulling StackRox ${objects}"
-        curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/${objects} | jq > ${dest}/${objects}.json
+    if ! [ -x "$(command -v rocksdbdump)" ]; then
+        go install ./tools/rocksdbdump
+    fi
 
-        jq_tweezer=".${objects}[].id"
-        object_list=($(cat ${dest}/${objects}.json | jq "${jq_tweezer}"))
-        echo "Will pull ${#object_list[@]} ${objects} from StackRox"
-
-        mkdir -p ${dest}/${objects}
-        for id in "${object_list[@]}"; do
-            id=$(echo ${id} | sed s/\"//g)
-            echo "Pulling $id"
-            curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/${objects}/${id} | jq > ${dest}/${objects}/${id}.json
-            if [[ "${objects}" == "clusters" ]]; then
-                mkdir -p ${dest}/networkgraph
-                curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/networkgraph/cluster/${id} | jq > ${dest}/networkgraph/${id}.json
-            fi
-            echo "Done"
-        done
-    done
+    rocksdbdump -b "${dest}"/*.zip -o "${dest}"
 }
 
 main "$@"
