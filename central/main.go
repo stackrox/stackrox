@@ -82,6 +82,7 @@ import (
 	"github.com/stackrox/rox/central/notifier/processor"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
+	"github.com/stackrox/rox/central/option"
 	pingService "github.com/stackrox/rox/central/ping/service"
 	podService "github.com/stackrox/rox/central/pod/service"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -238,7 +239,7 @@ func main() {
 	}
 
 	// Update last associated software version on DBs.
-	migrations.SetCurrent(migrations.DBMountPath)
+	migrations.SetCurrent(option.CentralOptions.DBPathBase)
 
 	// Start the prometheus metrics server
 	pkgMetrics.NewDefaultHTTPServer().RunForever()

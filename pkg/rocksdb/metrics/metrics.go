@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"path/filepath"
+
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
@@ -13,8 +15,6 @@ import (
 const (
 	// RocksDBDirName it the name of the RocksDB directory on the PVC
 	RocksDBDirName = `rocksdb`
-	// RocksDBPath is the full directory path on the PVC
-	RocksDBPath = "/var/lib/stackrox/" + RocksDBDirName
 )
 
 var (
@@ -63,4 +63,9 @@ func GetRocksDBMetrics() ([]*dto.Metric, []*dto.Metric, error) {
 	bytes, err := metrics.CollectToSlice(rocksDBPrefixBytes)
 	errList.AddError(errors.Wrap(err, "bytes"))
 	return cardinality, bytes, errList.ToError()
+}
+
+// GetRocksDBPath is the full directory path for rockdb in dbPath
+func GetRocksDBPath(dbPath string) string {
+	return filepath.Join(dbPath, RocksDBDirName)
 }

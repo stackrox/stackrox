@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/globaldb/metrics"
+	"github.com/stackrox/rox/central/option"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -38,7 +39,7 @@ func RegisterBucket(bucketName []byte, objType string) {
 // GetRocksDB returns the global rocksdb instance
 func GetRocksDB() *rocksdb.RocksDB {
 	rocksInit.Do(func() {
-		db, err := rocksdb.New(rocksMetrics.RocksDBPath)
+		db, err := rocksdb.New(rocksMetrics.GetRocksDBPath(option.CentralOptions.DBPathBase))
 		if err != nil {
 			panic(err)
 		}
@@ -55,7 +56,7 @@ func startMonitoringRocksDB(db *rocksdb.RocksDB) {
 			rocksMetrics.UpdateRocksDBPrefixSizeMetric(db, bucket.prefix, bucket.prefixString, bucket.objType)
 		}
 
-		size, err := fileutils.DirectorySize(rocksMetrics.RocksDBPath)
+		size, err := fileutils.DirectorySize(rocksMetrics.GetRocksDBPath(option.CentralOptions.DBPathBase))
 		if err != nil {
 			log.Errorf("error getting rocksdb directory size: %v", err)
 			return

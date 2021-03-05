@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/secondarykey"
 	"github.com/stackrox/rox/pkg/utils"
 	bolt "go.etcd.io/bbolt"
@@ -56,13 +55,8 @@ func New(path string) (*bolt.DB, error) {
 }
 
 // NewWithDefaults returns an instance of the persistent BoltDB store with default values loaded.
-func NewWithDefaults() (*bolt.DB, error) {
-	db, err := New(filepath.Join(migrations.DBMountPath, DBFileName))
-	if err != nil {
-		return db, err
-	}
-
-	return db, nil
+func NewWithDefaults(dbPath string) (*bolt.DB, error) {
+	return New(filepath.Join(dbPath, DBFileName))
 }
 
 // NewTemp creates a new DB, but places it in the host temporary directory.

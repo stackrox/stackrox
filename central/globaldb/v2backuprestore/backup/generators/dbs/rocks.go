@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/option"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/rocksdb/metrics"
@@ -110,7 +111,7 @@ func getBytesAvailableIn(toPath string) (uint64, error) {
 
 // Get the number of bytes used by files stored for the db.
 func getRocksDBSize() (int64, error) {
-	size, err := fileutils.DirectorySize(metrics.RocksDBPath)
+	size, err := fileutils.DirectorySize(metrics.GetRocksDBPath(option.CentralOptions.DBPathBase))
 	if err != nil {
 		return 0, err
 	}

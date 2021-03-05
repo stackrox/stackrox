@@ -1,6 +1,7 @@
 package gatherers
 
 import (
+	"github.com/stackrox/rox/central/option"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
@@ -30,7 +31,7 @@ func (d *rocksdbGatherer) Gather() *data.DatabaseStats {
 	dbStats := &data.DatabaseStats{
 		Type: "rocksdb",
 		// Can't get the path from the DB object, we don't track the actual path.  Just use the default for now.
-		Path:      metrics.RocksDBPath,
+		Path:      metrics.GetRocksDBPath(option.CentralOptions.DBPathBase),
 		UsedBytes: sizeInBytes,
 		Buckets:   bucketStats,
 		Errors:    errorList.ErrorStrings(),
@@ -55,7 +56,7 @@ func (d *rocksdbGatherer) getRocksDBBucketStats() ([]*data.BucketStats, []error)
 
 // Get the number of bytes used by files stored for the db.
 func getRocksDBSize() (int64, error) {
-	size, err := fileutils.DirectorySize(metrics.RocksDBPath)
+	size, err := fileutils.DirectorySize(metrics.GetRocksDBPath(option.CentralOptions.DBPathBase))
 	if err != nil {
 		return 0, err
 	}
