@@ -47,6 +47,10 @@ spec:
                 labelSelector:
                   matchLabels:
                     app: admission-control
+      {{- if ._rox.admissionControl._nodeSelector }}
+      nodeSelector:
+        {{- ._rox.admissionControl._nodeSelector | nindent 8 }}
+      {{- end}}
       securityContext:
         runAsUser: 4000
         fsGroup: 4000

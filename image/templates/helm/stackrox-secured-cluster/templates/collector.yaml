@@ -30,6 +30,10 @@ spec:
       tolerations:
       - operator: "Exists"
       {{- end}}
+      {{- if ._rox.collector._nodeSelector }}
+      nodeSelector:
+        {{- ._rox.collector._nodeSelector | nindent 8 }}
+      {{- end}}
       serviceAccountName: collector
       containers:
       {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}

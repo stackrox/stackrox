@@ -544,11 +544,14 @@ non-standard environments:
 |`sensor.resources`|Resource specification for Sensor.|See below.|
 |`collector.resources`|Resource specification for Collector.|See below.|
 |`collector.complianceResources`|Resource specification for Collector's Compliance container.|See below.|
+|`collector.nodeSelector` | Node selector for Collector pods placement. | `null` (no placement constraints) |
 |`admissionControl.resources`|Resource specification for Admission Control.|See below.|
 |`sensor.imagePullPolicy`| Kubernetes image pull policy for Sensor. | `IfNotPresent` |
+|`sensor.nodeSelector` | Node selector for Sensor pod placement. | `null` (no placement constraints) |
 |`collector.imagePullPolicy`| Kubernetes image pull policy for Sensor. | `Always` when deploying in slim mode, otherwise `IfNotPresent`. |
 |`collector.complianceImagePullPolicy`| Kubernetes image pull policy for Sensor. | `IfNotPresent` |
 |`admissionControl.imagePullPolicy`| Kubernetes image pull policy for Admission Control. | `IfNotPresent` |
+|`admissionControl.nodeSelector` | Node selector for Admission Control pods placement. | `null` (no placement constraints) |
 |`exposeMonitoring`| This setting controls whether the monitoring port (TCP 9090) should be exposed on the services. | `false` |
 |`env.openshift`| This setting can be used for overwriting the auto-sensing of OpenShift environments. If enabled, the cluster is set up for an OpenShift environment. | Auto-sensed, depends on environment. |
 |`env.istio`| This setting can be used for overwriting the auto-sensing of Istio environments. If enabled, the cluster is set up for an Istio environment. | Auto-sensed, depends on environment. |

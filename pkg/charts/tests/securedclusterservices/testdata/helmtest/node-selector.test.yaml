@@ -1,0 +1,70 @@
+tests:
+- name: "with default settings"
+  expect: |
+    .deployments.sensor.spec.template.spec.nodeSelector | assertThat(. == null)
+    .daemonsets.collector.spec.template.spec.nodeSelector | assertThat(. == null)
+    .deployments["admission-control"].spec.template.spec.nodeSelector | assertThat(. == null)
+
+- name: "with empty string settings"
+  values:
+    sensor:
+      nodeSelector: ""
+    collector:
+      nodeSelector: ""
+    admissionControl:
+      nodeSelector: ""
+  expect: |
+    .deployments.sensor.spec.template.spec.nodeSelector | assertThat(. == null)
+    .daemonsets.collector.spec.template.spec.nodeSelector | assertThat(. == null)
+    .deployments["admission-control"].spec.template.spec.nodeSelector | assertThat(. == null)
+
+- name: "with empty dict settings"
+  values:
+    sensor:
+      nodeSelector: {}
+    collector:
+      nodeSelector: {}
+    admissionControl:
+      nodeSelector: {}
+  expect: |
+    .deployments.sensor.spec.template.spec.nodeSelector | assertThat(length == 0)
+    .daemonsets.collector.spec.template.spec.nodeSelector | assertThat(length == 0)
+    .deployments["admission-control"].spec.template.spec.nodeSelector | assertThat(length == 0)
+
+- name: "with populated settings"
+  expect: |
+    .deployments.sensor.spec.template.spec.nodeSelector | assertThat(.role == "sensor")
+    .daemonsets.collector.spec.template.spec.nodeSelector | assertThat(.role == "collector")
+    .deployments["admission-control"].spec.template.spec.nodeSelector | assertThat(.role == "admission-control")
+    [.deployments.sensor, .daemonsets.collector, .deployments["admission-control"]][] |
+      .spec.template.spec.nodeSelector | assertThat(.foo == "bar")
+
+  tests:
+  - name: "via dictionary"
+    values:
+      sensor:
+        nodeSelector:
+          foo: bar
+          role: sensor
+      collector:
+        nodeSelector:
+          foo: bar
+          role: collector
+      admissionControl:
+        nodeSelector:
+          foo: bar
+          role: "admission-control"
+  - name: "via strings"
+    values:
+      sensor:
+        nodeSelector: |
+          foo: bar
+          role: sensor
+      collector:
+        nodeSelector: |
+          foo: bar
+          role: collector
+      admissionControl:
+        nodeSelector: |
+          foo: bar
+          role: "admission-control"

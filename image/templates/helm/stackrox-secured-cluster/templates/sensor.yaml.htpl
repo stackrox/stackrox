@@ -28,6 +28,10 @@ spec:
         traffic.sidecar.istio.io/excludeInboundPorts: "8443,9443"
         {{- include "srox.podAnnotations" (list . "deployment" "sensor") | nindent 8 }}
     spec:
+      {{- if ._rox.sensor._nodeSelector }}
+      nodeSelector:
+        {{- ._rox.sensor._nodeSelector | nindent 8 }}
+      {{- end}}
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

@@ -14,14 +14,17 @@ sensor:
     cert: true
     key: true
   resources: true
+  nodeSelector: true
 admissionControl:
   serviceTLS:
     cert: true
     key: true
   resources: true
+  nodeSelector: true
 collector:
   serviceTLS:
     cert: true
     key: true
   resources: true
   complianceResources: true
+  nodeSelector: true

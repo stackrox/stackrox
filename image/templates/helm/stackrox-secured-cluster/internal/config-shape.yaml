@@ -54,6 +54,7 @@ sensor:
     cert: null # string
     key: null # string
   exposeMonitoring: null # bool
+  nodeSelector: null # string | dict
 admissionControl:
   listenOnCreates: null # bool
   listenOnUpdates: null # bool
@@ -70,6 +71,7 @@ admissionControl:
     cert: null # string
     key: null # string
   exposeMonitoring: null # bool
+  nodeSelector: null # string | dict
 collector:
   collectionMethod: null # string
   disableTaintTolerations: null # bool
@@ -82,6 +84,7 @@ collector:
     cert: null # string
     key: null # string
   exposeMonitoring: null # bool
+  nodeSelector: null # string | dict
 customize:
   labels: {} # dict
   annotations: {} # dict

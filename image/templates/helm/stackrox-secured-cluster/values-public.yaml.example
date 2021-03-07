@@ -131,6 +131,10 @@
 #    cert: null
 #    key: null
 #
+#  # Use a nodeSelector for sensor
+#  nodeSelector
+#    environment: production
+#
 #  # Address of the Sensor endpoint including port number. No trailing slash.
 #  # Rarely needs to be changed.
 #  endpoint: sensor.stackrox:443
