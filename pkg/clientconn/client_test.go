@@ -46,7 +46,7 @@ func (t *ClientTestSuite) TestAddRootCA() {
 	t.Require().NoError(err)
 
 	// read system root CAs
-	sysCertPool, err := verifier.TrustedCertPool()
+	sysCertPool, err := verifier.SystemCertPool()
 	t.Require().NoError(err)
 
 	addedCertsCount := len(opts.TLS.RootCAs.Subjects()) - len(sysCertPool.Subjects())

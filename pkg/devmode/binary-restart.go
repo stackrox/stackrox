@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/osutils"
 )
 
-const rootPath = "/stackrox/"
+const rootPath = "/stackrox/bin/"
 
 var (
 	log = logging.LoggerForModule()

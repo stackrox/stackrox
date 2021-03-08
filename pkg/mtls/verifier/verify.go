@@ -36,6 +36,20 @@ func TrustedCertPool() (*x509.CertPool, error) {
 	return certPool, nil
 }
 
+// SystemCertPool returns all systems CAs including application specific CA
+func SystemCertPool() (*x509.CertPool, error) {
+	caCert, _, err := mtls.CACert()
+	if err != nil {
+		return nil, err
+	}
+	certPool, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, err
+	}
+	certPool.AddCert(caCert)
+	return certPool, nil
+}
+
 // TLSConfig initializes a server configuration that requires client TLS
 // authentication based on a single certificate in the filesystem.
 func (NonCA) TLSConfig() (*tls.Config, error) {
