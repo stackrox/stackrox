@@ -1,0 +1,22 @@
+server:
+  visibleSchemas:
+    - kubernetes-1.20.2
+values:
+  imagePullSecrets:
+    allowNone: true
+  ca:
+    cert: "CA cert"
+    key: "CA key"
+  central:
+    adminPassword:
+      value: adminpw
+    serviceTLS:
+      cert: "Central cert"
+      key: "Central key"
+  scanner:
+    serviceTLS:
+      cert: "Scanner cert"
+      key: "Scanner key"
+    dbServiceTLS:
+      cert: "ScannerDB cert"
+      key: "ScannerDB key"

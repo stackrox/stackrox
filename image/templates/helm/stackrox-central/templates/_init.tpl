@@ -152,6 +152,39 @@
 {{ $caCertSpec := dict "CN" "StackRox Certificate Authority" "ca" true }}
 {{ include "srox.configureCrypto" (list $ "ca" $caCertSpec) }}
 
+{{/* Additional CAs. */}}
+{{ $additionalCAList := list }}
+{{ if kindIs "string" $._rox.additionalCAs }}
+  {{ if trim $._rox.additionalCAs }}
+    {{ $additionalCAList = append $additionalCAList (dict "name" "ca.crt" "contents" $._rox.additionalCAs) }}
+  {{ end }}
+{{ else if kindIs "slice" $._rox.additionalCAs }}
+  {{ range $contents := $._rox.additionalCAs }}
+    {{ $additionalCAList = append $additionalCAList (dict "name" "ca.crt" "contents" $contents) }}
+  {{ end }}
+{{ else if kindIs "map" $._rox.additionalCAs }}
+  {{ range $name := keys $._rox.additionalCAs | sortAlpha }}
+    {{ $additionalCAList = append $additionalCAList (dict "name" $name "contents" (get $._rox.additionalCAs $name)) }}
+  {{ end }}
+{{ else if not (kindIs "invalid" $._rox.additionalCAs) }}
+  {{ include "srox.fail" (printf "Invalid kind %s for additionalCAs" (kindOf $._rox.additionalCAs)) }}
+{{ end }}
+{{ range $path, $contents := .Files.Glob "secrets/additional-cas/**" }}
+  {{ $name := trimPrefix "secrets/additional-cas/" $path }}
+  {{ $additionalCAList = append $additionalCAList (dict "name" $name "contents" (toString $contents)) }}
+{{ end }}
+{{ $additionalCAs := dict }}
+{{ range $idx, $elem := $additionalCAList }}
+  {{ if not (kindIs "string" $elem.contents) }}
+    {{ include "srox.fail" (printf "Invalid non-string contents kind %s at index %d (%q) of additionalCAs" (kindOf $elem.contents) $idx $elem.name) }}
+  {{ end }}
+  {{/* In a k8s secret, no characters other than alphanumeric, '.', '_' and '-' are allowed. Also, for the
+       update-ca-certificates script to work, the file names must end in '.crt'. */}}
+
+  {{ $normalizedName := printf "%02d-%s.crt" $idx (regexReplaceAll "[^[:alnum:]._-]" $elem.name "-" | trimSuffix ".crt") }}
+  {{ $_ := set $additionalCAs $normalizedName $elem.contents }}
+{{ end }}
+{{ $_ = set $._rox "_additionalCAs" $additionalCAs }}
 
 {{/* Proxy configuration.
      Note: The reason this is different is that unlike the endpoints config, the proxy configuration

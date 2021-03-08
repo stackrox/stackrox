@@ -1,7 +1,7 @@
 tests:
 - name: "Additional CA secret is not created"
   expect: |
-    .secrets["additional-ca-sensor"] | assertThat(. == null)
+    .secrets["additional-ca"] | assertThat(. == null)
   tests:
   - name: "with default settings"
   - name: "with an empty string"
@@ -19,7 +19,7 @@ tests:
       foo.crt: bar
       bar/baz?.pem: baz
   expect: |
-    .secrets["additional-ca-sensor"].stringData | assertThat(. == {
+    .secrets["additional-ca"].stringData | assertThat(. == {
       "00-bar-baz-.pem.crt": "baz\n",
       "01-foo.crt": "bar\n"})
 - name: "Additional CA secret is created from a single string"
@@ -27,7 +27,7 @@ tests:
     additionalCAs: |
       single extra certificate authority
   expect: |
-    .secrets["additional-ca-sensor"].stringData | assertThat(. == {
+    .secrets["additional-ca"].stringData | assertThat(. == {
       "00-ca.crt": "single extra certificate authority\n"})
 - name: "Additional CA secret is created from a list of strings"
   values:
@@ -35,7 +35,7 @@ tests:
     - "extra CA"
     - "another extra CA"
   expect: |
-    .secrets["additional-ca-sensor"].stringData | assertThat(. == {
+    .secrets["additional-ca"].stringData | assertThat(. == {
       "00-ca.crt": "extra CA\n",
       "01-ca.crt": "another extra CA\n"})
 - name: "error cases"

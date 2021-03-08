@@ -19,8 +19,6 @@ imagePullSecrets:
   useExisting: []
   useFromDefaultServiceAccount: true
 
-additionalCAs: {}
-
 sensor:
   endpoint: "sensor.{{ required "unknown namespace" ._rox._namespace }}:443"
 

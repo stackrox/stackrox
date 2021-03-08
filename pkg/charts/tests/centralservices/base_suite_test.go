@@ -52,6 +52,9 @@ imagePullSecrets:
 ca:
   cert: "ca cert pem"
   key: "ca key pem"
+additionalCAs:
+  ca.crt: |
+    Extra CA certificate
 central:
   adminPassword:
     htpasswd: "htpasswd file"
@@ -78,6 +81,9 @@ scanner:
 `
 	autogenerateAll = `
 licenseKey: "my license key"
+additionalCAs:
+  ca.crt: |
+    Extra CA certificate
 env:
   platform: gke
   openshift: true

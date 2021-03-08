@@ -77,6 +77,16 @@
 #   # not even try to make outbound connections. Defaults to `false` when omitted.
 #   offlineMode: false
 #
+# # Additional certificate authorities (CAs) to trust, besides system roots.
+# # Use this setting if Central or Scanner need to reach out to services that use certificates
+# # issued by an authority in your organization, but are NOT globally trusted. In these cases,
+# # specify the root CA certificate of your organization.
+# additionalCAs:
+#   acme-labs-ca.crt: |
+#     -----BEGIN CERTIFICATE-----
+#     [... base64 (PEM) encoded certificate data ...]
+#     -----END CERTIFICATE-----
+#
 # # Public configuration options for the StackRox Central deployment.
 # central:
 #   # disableTelemetry=true will opt out of transmitting telemetry data to StackRox.

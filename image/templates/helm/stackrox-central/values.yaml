@@ -102,6 +102,10 @@
 #  key: null
 #  generate: null
 #
+
+## Additional CA certificates to trust, besides system roots
+## If specified, this should be a map mapping file names to PEM-encoded contents.
+#additionalCAs: null
 #
 #central:
 #

@@ -123,16 +123,36 @@
 {{ include "srox.configureImagePullSecrets" (list $ "collectorImagePullSecrets" $._rox.collectorImagePullSecrets "secured-cluster-services-collector" (list "stackrox" "collector-stackrox") $._rox._namespace) }}
 
 {{/* Additional CAs. */}}
-{{ $additionalCAs := deepCopy $._rox.additionalCAs }}
-{{ range $path, $content := .Files.Glob "secrets/additional-cas/**" }}
-  {{ $content = toString $content }}
-  {{ $name := base $path }}
-  {{ if and (hasKey $additionalCAs $name) }}
-    {{ if not (eq $content (index $additionalCAs $name)) }}
-      {{ include "srox.fail" (printf "Additional CA certificate named %q is specified in 'additionalCAs' and exists as file %q at the same time. Delete or rename one of these certificate." $name $path) }}
-    {{ end }}
+{{ $additionalCAList := list }}
+{{ if kindIs "string" $._rox.additionalCAs }}
+  {{ if $._rox.additionalCAs }}
+    {{ $additionalCAList = append $additionalCAList (dict "name" "ca.crt" "contents" $._rox.additionalCAs) }}
   {{ end }}
-  {{ $_ = set $additionalCAs $name $content }}
+{{ else if kindIs "slice" $._rox.additionalCAs }}
+  {{ range $contents := $._rox.additionalCAs }}
+    {{ $additionalCAList = append $additionalCAList (dict "name" "ca.crt" "contents" $contents) }}
+  {{ end }}
+{{ else if kindIs "map" $._rox.additionalCAs }}
+  {{ range $name := keys $._rox.additionalCAs | sortAlpha }}
+    {{ $additionalCAList = append $additionalCAList (dict "name" $name "contents" (get $._rox.additionalCAs $name)) }}
+  {{ end }}
+{{ else if not (kindIs "invalid" $._rox.additionalCAs) }}
+  {{ include "srox.fail" (printf "Invalid kind %s for additionalCAs" (kindOf $._rox.additionalCAs)) }}
+{{ end }}
+{{ range $path, $contents := .Files.Glob "secrets/additional-cas/**" }}
+  {{ $name := trimPrefix "secrets/additional-cas/" $path }}
+  {{ $additionalCAList = append $additionalCAList (dict "name" $name "contents" (toString $contents)) }}
+{{ end }}
+{{ $additionalCAs := dict }}
+{{ range $idx, $elem := $additionalCAList }}
+  {{ if not (kindIs "string" $elem.contents) }}
+    {{ include "srox.fail" (printf "Invalid non-string contents kind %s at index %d (%q) of additionalCAs" (kindOf $elem.contents) $idx $elem.name) }}
+  {{ end }}
+  {{/* In a k8s secret, no characters other than alphanumeric, '.', '_' and '-' are allowed. Also, for the
+       update-ca-certificates script to work, the file names must end in '.crt'. */}}
+
+  {{ $normalizedName := printf "%02d-%s.crt" $idx (regexReplaceAll "[^[:alnum:]._-]" $elem.name "-" | trimSuffix ".crt") }}
+  {{ $_ := set $additionalCAs $normalizedName $elem.contents }}
 {{ end }}
 {{ $_ = set $._rox "_additionalCAs" $additionalCAs }}
 

@@ -17,6 +17,7 @@ ca:
   cert: null # string
   key: null # string
   generate: null # bool
+additionalCAs: null # string | [string] | dict
 central:
   disableTelemetry: null # bool
   config: null # string | dict
