@@ -25,7 +25,7 @@ kubectl -n proxies create secret tls nginx-proxy-tls-certs \
 	--key="${cert_dir}/tls.key" \
 	--dry-run -o yaml | kubectl apply -f -
 
-for proxy_type in http1 http1-plain http2 http2-plain multiplexed multiplexed-tls-be; do
+for proxy_type in http1 http1-plain http2 http2-plain multiplexed multiplexed-tls-be grpc; do
 	proxy_name="nginx-proxy-tls-${proxy_type}"
 
 	kubectl -n proxies create cm "${proxy_name}-conf" \
