@@ -5,6 +5,7 @@ option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
+import "api/v1/network_baseline_service.proto";
 import "api/v1/network_graph_service.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
@@ -125,6 +126,29 @@ message GenerateNetworkPoliciesResponse {
     storage.NetworkPolicyModification modification  = 1;
 }
 
+message GetBaselineGeneratedPolicyForDeploymentRequest {
+    string deployment_id                          = 1;
+    GenerateNetworkPoliciesRequest.DeleteExistingPoliciesMode delete_existing    = 2;
+    bool include_ports = 3;
+}
+
+message GetBaselineGeneratedPolicyForDeploymentResponse {
+    storage.NetworkPolicyModification modification = 1;
+}
+
+message GetAllowedPeersFromCurrentPolicyForDeploymentResponse {
+    repeated NetworkBaselineStatusPeer allowed_peers = 1;
+}
+
+message ApplyNetworkPolicyYamlForDeploymentRequest {
+    string deployment_id = 1;
+    storage.NetworkPolicyModification modification = 2;
+}
+
+message GetUndoModificationForDeploymentResponse {
+    storage.NetworkPolicyApplicationUndoRecord undo_record = 1;
+}
+
 service NetworkPolicyService {
 
     rpc GetNetworkPolicy (ResourceByID) returns (storage.NetworkPolicy) {
@@ -181,6 +205,32 @@ service NetworkPolicyService {
     rpc GenerateNetworkPolicies (GenerateNetworkPoliciesRequest) returns (GenerateNetworkPoliciesResponse) {
         option (google.api.http) = {
             get: "/v1/networkpolicies/generate/{cluster_id}"
+        };
+    }
+
+    rpc GetBaselineGeneratedNetworkPolicyForDeployment (GetBaselineGeneratedPolicyForDeploymentRequest) returns (GetBaselineGeneratedPolicyForDeploymentResponse) {
+        option (google.api.http) = {
+            post: "/v1/networkpolicies/generate/baseline/{deployment_id}"
+            body: "*"
+        };
+    }
+
+    rpc GetAllowedPeersFromCurrentPolicyForDeployment (ResourceByID) returns (GetAllowedPeersFromCurrentPolicyForDeploymentResponse) {
+        option (google.api.http) = {
+            get: "/v1/networkpolicies/allowedpeers/{id}"
+        };
+    }
+
+    rpc ApplyNetworkPolicyYamlForDeployment (ApplyNetworkPolicyYamlForDeploymentRequest) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/networkpolicies/apply/deployment/{deployment_id}"
+            body: "modification"
+        };
+    }
+
+    rpc GetUndoModificationForDeployment (ResourceByID) returns (GetUndoModificationForDeploymentResponse) {
+        option (google.api.http) = {
+            get: "/v1/networkpolicies/undo/deployment/{id}"
         };
     }
 }

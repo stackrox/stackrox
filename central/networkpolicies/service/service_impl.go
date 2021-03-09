@@ -50,15 +50,21 @@ var (
 			"/v1.NetworkPolicyService/GetNetworkGraph",
 			"/v1.NetworkPolicyService/GetNetworkGraphEpoch",
 			"/v1.NetworkPolicyService/GetUndoModification",
+			"/v1.NetworkPolicyService/GetAllowedPeersFromCurrentPolicyForDeployment",
+			"/v1.NetworkPolicyService/GetUndoModificationForDeployment",
 		},
 		user.With(permissions.Modify(resources.NetworkPolicy)): {
 			"/v1.NetworkPolicyService/ApplyNetworkPolicy",
+			"/v1.NetworkPolicyService/ApplyNetworkPolicyYamlForDeployment",
 		},
 		user.With(permissions.Modify(resources.Notifier)): {
 			"/v1.NetworkPolicyService/SendNetworkPolicyYAML",
 		},
 		user.With(permissions.View(resources.NetworkPolicy), permissions.View(resources.NetworkGraph)): {
 			"/v1.NetworkPolicyService/GenerateNetworkPolicies",
+		},
+		user.With(permissions.View(resources.NetworkPolicy), permissions.View(resources.NetworkBaseline)): {
+			"/v1.NetworkPolicyService/GetBaselineGeneratedNetworkPolicyForDeployment",
 		},
 	})
 )
@@ -405,6 +411,22 @@ func (s *serviceImpl) GetUndoModification(ctx context.Context, req *v1.GetUndoMo
 	return &v1.GetUndoModificationResponse{
 		UndoRecord: undoRecord,
 	}, nil
+}
+
+func (s *serviceImpl) GetBaselineGeneratedNetworkPolicyForDeployment(ctx context.Context, request *v1.GetBaselineGeneratedPolicyForDeploymentRequest) (*v1.GetBaselineGeneratedPolicyForDeploymentResponse, error) {
+	return nil, errors.New("unimplemented")
+}
+
+func (s *serviceImpl) GetAllowedPeersFromCurrentPolicyForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetAllowedPeersFromCurrentPolicyForDeploymentResponse, error) {
+	return nil, errors.New("unimplemented")
+}
+
+func (s *serviceImpl) ApplyNetworkPolicyYamlForDeployment(ctx context.Context, request *v1.ApplyNetworkPolicyYamlForDeploymentRequest) (*v1.Empty, error) {
+	return nil, errors.New("unimplemented")
+}
+
+func (s *serviceImpl) GetUndoModificationForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetUndoModificationForDeploymentResponse, error) {
+	return nil, errors.New("unimplemented")
 }
 
 func (s *serviceImpl) getDeployments(ctx context.Context, clusterID, query string) (deployments []*storage.Deployment, err error) {
