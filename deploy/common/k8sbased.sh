@@ -49,7 +49,7 @@ function hotload_binary {
   local deployment="$3"
 
   binary_path=$(realpath "$(git rev-parse --show-toplevel)/bin/linux/${local_name}")
-  kubectl -n stackrox patch "deploy/${deployment}" -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${deployment}'","volumeMounts":[{"mountPath":"/stackrox/bin/'${binary_name}'","name":"binary"}]}],"volumes":[{"hostPath":{"path":"'${binary_path}'","type":""},"name":"binary"}]}}}}'
+  kubectl -n stackrox patch "deploy/${deployment}" -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${deployment}'","volumeMounts":[{"mountPath":"/stackrox/'${binary_name}'","name":"binary"}]}],"volumes":[{"hostPath":{"path":"'${binary_path}'","type":""},"name":"binary"}]}}}}'
 }
 
 function launch_central {
@@ -438,7 +438,7 @@ function launch_sensor {
 
     if [[ -n "${CI}" || $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
        if [[ "${HOTRELOAD}" == "true" ]]; then
-         hotload_binary kubernetes-sensor kubernetes sensor
+         hotload_binary bin/kubernetes-sensor kubernetes sensor
        fi
        if [[ -z "${IS_RACE_BUILD}" ]]; then
            kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'

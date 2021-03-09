@@ -19,7 +19,7 @@ fi
 component="$1"
 case "${component}" in
 "sensor")
-  hotload_binary kubernetes-sensor kubernetes sensor
+  hotload_binary bin/kubernetes-sensor kubernetes sensor
   ;;
 "central")
   hotload_binary central central central
