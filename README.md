@@ -23,6 +23,7 @@ documentation.
       - [Local development](#local-development)
       - [Common Makefile Targets](#common-makefile-targets)
       - [Productivity](#productivity)
+      - [GoLand configuration](#goland-configuration)
       - [Debugging](#debugging)
     + [How to Deploy](#how-to-deploy)
 * [Deploying for Customer](#deploying-for-customer)
@@ -202,6 +203,23 @@ $ smart-rebase                  # rebase from parent branch
 $ smart-diff                    # check diff relative to parent branch
     ... git push, etc.
 ```
+
+#### GoLand configuration
+
+If you're using GoLand for development, the following can help improve the experience.
+
+Make sure `Protocol Buffer Editor` plugin is installed. If it isn't, use `Help | Find Action...`, type `Plugins` and hit
+enter, then switch to `Marketplace`, type its name and install the plugin.  
+This plugin does not know where to look for `.proto` imports by default in GoLand therefore you need to explicitly
+configure paths for this plugin. See <https://github.com/jvolkman/intellij-protobuf-editor#path-settings>.
+
+* Go to `File | Settings | Languages & Frameworks | Protocol Buffers`.
+* Uncheck `Configure automatically`.
+* Click on `+` button, navigate and select `./proto` directory in the root of the repo.
+* Optionally, also add `$HOME/go/pkg/mod/github.com/gogo/googleapis@1.1.0`
+  and `$HOME/go/pkg/mod/github.com/gogo/protobuf@v1.3.1/`.
+* To verify: use menu `Navigate | File...` type any `.proto` file name, e.g. `alert_service.proto`, and check that all
+  import strings are shown green, not red.
 
 #### Debugging
 
