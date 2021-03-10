@@ -1760,7 +1760,12 @@ class Kubernetes implements OrchestratorMain {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
             println "Waiting for ${deploymentName} to start"
-            K8sDeployment d = this.deployments.inNamespace(namespace).withName(deploymentName).get()
+            K8sDeployment d = null
+            try {
+                d = this.deployments.inNamespace(namespace).withName(deploymentName).get()
+            } catch (Exception e) {
+                println "Error getting k8s deployment" + e.toString()
+            }
             getAndPrintPods(namespace, deploymentName)
             if (d == null) {
                 println "${deploymentName} not found yet"
