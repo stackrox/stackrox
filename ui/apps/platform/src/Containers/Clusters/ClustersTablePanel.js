@@ -190,7 +190,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
             <PanelButton
                 icon={<Plus className="h-4 w-4 ml-1" />}
                 tooltip="New Cluster"
-                className="btn btn-base ml-2"
+                className="btn btn-base ml-2 mr-4"
                 onClick={onAddCluster}
                 disabled={!!selectedClusterId}
             >
