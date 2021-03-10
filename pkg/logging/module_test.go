@@ -36,18 +36,18 @@ func TestForEachModuleVisitsIndividualModules(t *testing.T) {
 
 func TestParseDefaultModuleLevels_Success(t *testing.T) {
 	levels, errs := parseDefaultModuleLevels("foo=Info,, bar =debug,")
-	assert.Equal(t, levels, map[string]int32{
-		"foo": InfoLevel,
-		"bar": DebugLevel,
+	assert.Equal(t, levels, map[string]zapcore.Level{
+		"foo": zapcore.InfoLevel,
+		"bar": zapcore.DebugLevel,
 	})
 	assert.Empty(t, errs)
 }
 
 func TestParseDefaultModuleLevels_Errs(t *testing.T) {
 	levels, errs := parseDefaultModuleLevels("foo=Info, baz , bar =random, qux=debug,")
-	assert.Equal(t, levels, map[string]int32{
-		"foo": InfoLevel,
-		"qux": DebugLevel,
+	assert.Equal(t, levels, map[string]zapcore.Level{
+		"foo": zapcore.InfoLevel,
+		"qux": zapcore.DebugLevel,
 	})
 	assert.Len(t, errs, 2)
 }
@@ -58,8 +58,8 @@ func TestNilModuleAlwaysReturnsFalseOnUnref(t *testing.T) {
 }
 
 func TestModuleSetLogLevel(t *testing.T) {
-	CurrentModule().SetLogLevel(DebugLevel)
-	assert.Equal(t, DebugLevel, CurrentModule().GetLogLevel())
+	CurrentModule().SetLogLevel(zapcore.DebugLevel)
+	assert.Equal(t, zapcore.DebugLevel, CurrentModule().GetLogLevel())
 }
 
 func TestModuleRefCountingWorks(t *testing.T) {
@@ -84,10 +84,10 @@ func TestRegistryPurgesModulesWithRefCountOfZero(t *testing.T) {
 }
 
 func TestLoggerCreatedFromModuleUpdatesLogLevel(t *testing.T) {
-	for level, zapLevel := range levelToZapLevel {
+	for zapLevel := range validLevels {
 		module := newModule(uuid.NewV4().String(), zap.NewAtomicLevelAt(zapcore.InfoLevel))
 		logger := module.Logger()
-		module.SetLogLevel(level)
+		module.SetLogLevel(zapLevel)
 		assert.True(t, logger.Desugar().Core().Enabled(zapLevel))
 		// uses internal knowledge of how Enabled(level) method works
 		assert.False(t, logger.Desugar().Core().Enabled(zapLevel-1))
@@ -99,15 +99,15 @@ func TestLoggerLevelUpdatesWithGlobalLevel(t *testing.T) {
 	logger := module.Logger()
 	level := GetGlobalLogLevel()
 
-	module.SetLogLevel(zapLevelToLevel[zapcore.DebugLevel])
+	module.SetLogLevel(zapcore.DebugLevel)
 
 	// verify the global level remains unchanged
 	assert.Equal(t, level, GetGlobalLogLevel())
 	assert.True(t, logger.Desugar().Core().Enabled(zapcore.DebugLevel))
 
-	SetGlobalLogLevel(zapLevelToLevel[zapcore.WarnLevel])
+	SetGlobalLogLevel(zapcore.WarnLevel)
 	// verify logger level changes with global level
-	assert.Equal(t, zapLevelToLevel[zapcore.WarnLevel], GetGlobalLogLevel())
+	assert.Equal(t, zapcore.WarnLevel, GetGlobalLogLevel())
 	assert.True(t, logger.Desugar().Core().Enabled(zapcore.WarnLevel))
 	assert.False(t, logger.Desugar().Core().Enabled(zapcore.InfoLevel))
 }

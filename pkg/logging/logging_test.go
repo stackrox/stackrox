@@ -5,26 +5,13 @@ import (
 
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap/zapcore"
 )
-
-func TestMappingZapLevelsValidLevels(t *testing.T) {
-	for k := range levelToZapLevel {
-		_, ok := validLevels[k]
-		assert.True(t, ok)
-	}
-}
-
-func TestMappingValidLevelsZapLevels(t *testing.T) {
-	for k := range validLevels {
-		_, ok := levelToZapLevel[k]
-		assert.True(t, ok)
-	}
-}
 
 func TestLevelForLabel(t *testing.T) {
 	for _, label := range []string{"warn", "WARN", "WaRn"} {
 		lvl, ok := LevelForLabel(label)
-		assert.Equal(t, WarnLevel, lvl)
+		assert.Equal(t, zapcore.WarnLevel, lvl)
 		assert.True(t, ok)
 	}
 	for _, label := range []string{"foo", "bar", "Trace", "something", "else", "WTF", "@$%@$&Y)(RW(*U(@Y$"} {
@@ -40,13 +27,13 @@ func TestLabelForLevel(t *testing.T) {
 		assert.Equal(t, expectedLabel, actualLabel)
 		assert.Equal(t, expectedLabel, LabelForLevelOrInvalid(level))
 	}
-	_, ok := LabelForLevel(-1)
+	_, ok := LabelForLevel(-2)
 	assert.False(t, ok)
-	label := LabelForLevelOrInvalid(-1)
+	label := LabelForLevelOrInvalid(-2)
 	assert.Equal(t, "Invalid", label)
 }
 
-func TestSortedLevels(t *testing.T) {
+func TestZapSortedLevels(t *testing.T) {
 	assert.Equal(t, sortedLevels, SortedLevels())
 }
 
@@ -54,7 +41,7 @@ func TestSetGlobalLogLevel(t *testing.T) {
 	mInfo := ModuleForName(uuid.NewV4().String())
 	assert.Equal(t, GetGlobalLogLevel(), mInfo.GetLogLevel())
 
-	SetGlobalLogLevel(DebugLevel)
+	SetGlobalLogLevel(zapcore.DebugLevel)
 	mDebug := ModuleForName(uuid.NewV4().String())
 	assert.Equal(t, GetGlobalLogLevel(), mDebug.GetLogLevel())
 	assert.Equal(t, GetGlobalLogLevel(), mInfo.GetLogLevel())

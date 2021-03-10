@@ -12,8 +12,8 @@ type Logger struct {
 }
 
 // Log logs at level.
-func (l *Logger) Log(level int32, args ...interface{}) {
-	switch zl := levelToZapLevelOrDefault(level, zapcore.InfoLevel); zl {
+func (l *Logger) Log(level zapcore.Level, args ...interface{}) {
+	switch level {
 	case zapcore.PanicLevel:
 		l.Panic(args...)
 	case zapcore.FatalLevel:
@@ -30,8 +30,8 @@ func (l *Logger) Log(level int32, args ...interface{}) {
 }
 
 // Logf logs at level.
-func (l *Logger) Logf(level int32, template string, args ...interface{}) {
-	switch zl := levelToZapLevelOrDefault(level, zapcore.InfoLevel); zl {
+func (l *Logger) Logf(level zapcore.Level, template string, args ...interface{}) {
+	switch level {
 	case zapcore.PanicLevel:
 		l.Panicf(template, args...)
 	case zapcore.FatalLevel:

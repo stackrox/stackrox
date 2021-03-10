@@ -159,14 +159,14 @@ func (s *serviceImpl) GetLogLevel(ctx context.Context, req *v1.GetLogLevelReques
 // SetLogLevel implements v1.DebugServiceServer, and it sets the log level for StackRox services.
 func (s *serviceImpl) SetLogLevel(ctx context.Context, req *v1.LogLevelRequest) (*types.Empty, error) {
 	levelStr := req.GetLevel()
-	levelInt, ok := logging.LevelForLabel(levelStr)
+	zapLevel, ok := logging.LevelForLabel(levelStr)
 	if !ok {
 		return nil, status.Errorf(codes.InvalidArgument, "Unknown log level %s", levelStr)
 	}
 
 	// If this is a global request, then set the global level and return
 	if len(req.GetModules()) == 0 {
-		logging.SetGlobalLogLevel(levelInt)
+		logging.SetGlobalLogLevel(zapLevel)
 		return &types.Empty{}, nil
 	}
 
@@ -175,7 +175,7 @@ func (s *serviceImpl) SetLogLevel(ctx context.Context, req *v1.LogLevelRequest) 
 		if m == nil {
 			unknownModules = append(unknownModules, name)
 		} else {
-			m.SetLogLevel(levelInt)
+			m.SetLogLevel(zapLevel)
 		}
 	}, req.GetModules())
 

@@ -72,23 +72,16 @@ func (m *Module) Name() string {
 }
 
 // GetLogLevel returns the log level of the module.
-func (m *Module) GetLogLevel() int32 {
-	return zapLevelToLevel[m.logLevel.Level()]
+func (m *Module) GetLogLevel() zapcore.Level {
+	return m.logLevel.Level()
 }
 
 // SetLogLevel adjusts the log level of m to level.
 //
 // Adjusting a per-module log level propagates to all
 // loggers created for the respective module.
-func (m *Module) SetLogLevel(level int32) {
-	l, known := levelToZapLevel[level]
-	if !known {
-		if thisModuleLogger != nil {
-			thisModuleLogger.Debugf("Ignoring unknown log level: %d", level)
-		}
-		return
-	}
-	m.logLevel.SetLevel(l)
+func (m *Module) SetLogLevel(level zapcore.Level) {
+	m.logLevel.SetLevel(level)
 }
 
 // ref increments the reference count of m by 1.
@@ -134,9 +127,7 @@ func (r *registry) getOrAddModule(name string) *Module {
 
 	m, known := r.modules[name]
 	if !known {
-		m = newModule(name, zap.NewAtomicLevelAt(
-			levelToZapLevelOrDefault(GetGlobalLogLevel(), zapcore.InfoLevel),
-		))
+		m = newModule(name, zap.NewAtomicLevelAt(GetGlobalLogLevel()))
 		r.modules[name] = m
 	} else {
 		m.ref()

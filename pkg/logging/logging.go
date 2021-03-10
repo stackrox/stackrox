@@ -7,11 +7,8 @@
 //     * panic
 //     * error
 //     * warn
-//     * internal (deprecated, mapped to info)
 //     * info
 //     * debug
-//     * initretry (deprecated, mapped to debug)
-//     * trace (deprecated, mapped to debug)
 //   * LOGENCODING supporting the following values:
 //     * json
 //     * console
@@ -30,7 +27,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync/atomic"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -39,20 +35,6 @@ import (
 )
 
 const (
-	//FatalLevel log level
-	FatalLevel int32 = 70
-	//PanicLevel log level
-	PanicLevel int32 = 60
-	//ErrorLevel log level
-	ErrorLevel int32 = 50
-	//WarnLevel log level
-	WarnLevel int32 = 40
-	//InternalLevel log level
-	InternalLevel int32 = 35
-	//InfoLevel log level
-	InfoLevel int32 = 30
-	//DebugLevel log level
-	DebugLevel int32 = 20
 	// defaultDestination is the default logging destination, which is currently os.Stderr
 	defaultDestination = "stderr"
 
@@ -61,6 +43,22 @@ const (
 
 	// LoggingPath is the common log file so we can export it
 	LoggingPath = "/var/log/stackrox/log.txt"
+
+	//defaultLevel is the default log level
+	defaultLevel = zapcore.InfoLevel
+
+	//FatalLevel log level
+	FatalLevel = zapcore.FatalLevel
+	//PanicLevel log level
+	PanicLevel = zapcore.PanicLevel
+	//ErrorLevel log level
+	ErrorLevel = zapcore.ErrorLevel
+	//WarnLevel log level
+	WarnLevel = zapcore.WarnLevel
+	//InfoLevel log level
+	InfoLevel = zapcore.InfoLevel
+	//DebugLevel log level
+	DebugLevel = zapcore.DebugLevel
 )
 
 var (
@@ -115,41 +113,14 @@ var (
 		},
 	}
 
-	//defaultLevel is the default log level
-	defaultLevel = InfoLevel
-
 	//validLevels is a map of all valid level severities to their name
-	validLevels = map[int32]string{
-		PanicLevel:    "Panic",
-		FatalLevel:    "Fatal",
-		ErrorLevel:    "Error",
-		WarnLevel:     "Warn",
-		InternalLevel: "Internal",
-		InfoLevel:     "Info",
-		DebugLevel:    "Debug",
-	}
-
-	levelToZapLevel = map[int32]zapcore.Level{
-		PanicLevel:    zapcore.PanicLevel,
-		FatalLevel:    zapcore.FatalLevel,
-		ErrorLevel:    zapcore.ErrorLevel,
-		WarnLevel:     zapcore.WarnLevel,
-		InternalLevel: zapcore.InfoLevel,
-		InfoLevel:     zapcore.InfoLevel,
-		DebugLevel:    zapcore.DebugLevel,
-	}
-
-	// We manually specify this LUT and do *not* populate
-	// it by iterating over levelToZapLevel as both InternalLevel
-	// and InfoLevel map to zapcore.InfoLevel. Due to golang's
-	// random iteration order, the reverse lookup would become non-deterministic.
-	zapLevelToLevel = map[zapcore.Level]int32{
-		zapcore.PanicLevel: PanicLevel,
-		zapcore.FatalLevel: FatalLevel,
-		zapcore.ErrorLevel: ErrorLevel,
-		zapcore.WarnLevel:  WarnLevel,
-		zapcore.InfoLevel:  InfoLevel,
-		zapcore.DebugLevel: DebugLevel,
+	validLevels = map[zapcore.Level]string{
+		zapcore.PanicLevel: "Panic",
+		zapcore.FatalLevel: "Fatal",
+		zapcore.ErrorLevel: "Error",
+		zapcore.WarnLevel:  "Warn",
+		zapcore.InfoLevel:  "Info",
+		zapcore.DebugLevel: "Debug",
 	}
 
 	zapLevelPrefix = map[zapcore.Level]string{
@@ -163,17 +134,17 @@ var (
 
 	// validLabels maps (lowercase) strings to their respective log level/severity. It should only be used for lookups,
 	// as the keys do not refer to the label names as they should be printed.
-	validLabels = func() map[string]int32 {
-		m := make(map[string]int32, len(validLevels))
+	validLabels = func() map[string]zapcore.Level {
+		m := make(map[string]zapcore.Level, len(validLevels))
 		for k, v := range validLevels {
 			m[strings.ToLower(v)] = k
 		}
 		return m
 	}()
 
-	// SortedLevels is a slice of log levels/severities, sorted in ascending order of severity.
-	sortedLevels = func() []int32 {
-		severities := make([]int32, 0, len(validLevels))
+	// sortedLevels is a slice of log levels/severities, sorted in ascending order of severity.
+	sortedLevels = func() []zapcore.Level {
+		severities := make([]zapcore.Level, 0, len(validLevels))
 		for severity := range validLevels {
 			severities = append(severities, severity)
 		}
@@ -191,12 +162,12 @@ var (
 )
 
 func init() {
-	initLevel, initLevelValid := os.Getenv("LOGLEVEL"), false
-	if value, ok := LevelForLabel(initLevel); ok {
-		defaultLevel = value
+	initLevelStr, initLevelValid := os.Getenv("LOGLEVEL"), false
+	logLevel := defaultLevel
+	if value, ok := LevelForLabel(initLevelStr); ok {
+		logLevel = value
 		initLevelValid = true
 	}
-	zapLevel := levelToZapLevelOrDefault(defaultLevel, zapcore.InfoLevel)
 
 	switch le := os.Getenv("LOGENCODING"); le {
 	case "", console.encoding:
@@ -209,7 +180,7 @@ func init() {
 		panic(fmt.Sprintf("unknown log encoding %s", le))
 	}
 
-	config.Level = zap.NewAtomicLevelAt(zapLevel)
+	config.Level = zap.NewAtomicLevelAt(logLevel)
 
 	// To the alert reader: While we could theoretically create a zapcore.Core instance and use
 	// the logFile to create a MultiSyncWriter, we stick with using the config-based approach
@@ -248,8 +219,8 @@ func init() {
 
 	// Use direct calls to createLogger in this function, as New/NewOrGet/CurrentModule().Logger() refer to thisModuleLogger.
 	thisModuleLogger = createLogger(ModuleForName(thisModule))
-	if !initLevelValid && initLevel != "" {
-		thisModuleLogger.Warnf("Invalid LOGLEVEL value '%s', defaulting to %s", initLevel, LabelForLevelOrInvalid(defaultLevel))
+	if !initLevelValid && initLevelStr != "" {
+		thisModuleLogger.Warnf("Invalid LOGLEVEL value '%s', defaulting to %s", initLevelStr, LabelForLevelOrInvalid(logLevel))
 	}
 
 	if len(defaultLevelsByModuleParsingErrs) > 0 {
@@ -267,30 +238,21 @@ func init() {
 }
 
 // SetGlobalLogLevel sets the log level on all loggers for all modules.
-func SetGlobalLogLevel(level int32) {
-	l, known := levelToZapLevel[level]
-	if !known {
-		if thisModuleLogger != nil {
-			thisModuleLogger.Debugf("Ignoring unknown log level: %d", level)
-		}
-		return
-	}
-
-	atomic.StoreInt32(&defaultLevel, level)
+func SetGlobalLogLevel(l zapcore.Level) {
 	config.Level.SetLevel(l)
 	ForEachModule(func(name string, m *Module) {
-		m.SetLogLevel(level)
+		m.SetLogLevel(l)
 	}, SelectAll)
 
 	// Don't log the log level change when switching to Panic or Fatal.
-	if thisModuleLogger != nil && level <= ErrorLevel {
-		thisModuleLogger.Logf(level, "Log level is set to: %s", l)
+	if thisModuleLogger != nil && l <= zapcore.ErrorLevel {
+		thisModuleLogger.Logf(l, "Log level is set to: %s", l)
 	}
 }
 
 // GetGlobalLogLevel returns the global log level (it is still possible that module loggers log at a different level).
-func GetGlobalLogLevel() int32 {
-	return atomic.LoadInt32(&defaultLevel)
+func GetGlobalLogLevel() zapcore.Level {
+	return config.Level.Level()
 }
 
 // LoggerForModule returns a logger for the current module.
@@ -301,10 +263,10 @@ func LoggerForModule() *Logger {
 //convenience methods log apply to root logger
 
 // Log implements logging.Logger interface.
-func Log(level int32, args ...interface{}) { rootLogger.Log(level, args...) }
+func Log(level zapcore.Level, args ...interface{}) { rootLogger.Log(level, args...) }
 
 // Logf implements logging.Logger interface.
-func Logf(level int32, template string, args ...interface{}) {
+func Logf(level zapcore.Level, template string, args ...interface{}) {
 	rootLogger.Logf(level, template, args...)
 }
 
@@ -359,15 +321,15 @@ func Warn(args ...interface{}) { rootLogger.Warn(args...) }
 // Warnf implements logging.Logger interface.
 func Warnf(format string, args ...interface{}) { rootLogger.Warnf(format, args...) }
 
-// LabelForLevel takes a numeric log level and returns its name. If the level has no associated name, a zero-valued
+// LabelForLevel takes a zapcore.Level and returns its name. If the level has no associated name, a zero-valued
 // string is returned, and the bool return value will be false.
-func LabelForLevel(level int32) (string, bool) {
+func LabelForLevel(level zapcore.Level) (string, bool) {
 	name, ok := validLevels[level]
 	return name, ok
 }
 
 // LabelForLevelOrInvalid returns the label for the given log level. If the level is unknown, "Invalid" is returned.
-func LabelForLevelOrInvalid(level int32) (name string) {
+func LabelForLevelOrInvalid(level zapcore.Level) (name string) {
 	name, ok := LabelForLevel(level)
 	if !ok {
 		name = "Invalid"
@@ -377,24 +339,17 @@ func LabelForLevelOrInvalid(level int32) (name string) {
 
 // LevelForLabel returns the severity level for a label, if the label name is known. Otherwise, a zero-valued level is
 // returned, and the bool return value will be false.
-func LevelForLabel(label string) (int32, bool) {
+func LevelForLabel(label string) (zapcore.Level, bool) {
 	level, ok := validLabels[strings.ToLower(label)]
 	return level, ok
 }
 
 // SortedLevels returns a slice containing all levels, in ascending order of severity.
-func SortedLevels() []int32 {
+func SortedLevels() []zapcore.Level {
 	// Create a copy of the original slice to prevent the caller from modifying logging internals.
-	result := make([]int32, len(sortedLevels))
+	result := make([]zapcore.Level, len(sortedLevels))
 	copy(result, sortedLevels)
 	return result
-}
-
-func levelToZapLevelOrDefault(level int32, defaultLevel zapcore.Level) zapcore.Level {
-	if l, known := levelToZapLevel[level]; known {
-		return l
-	}
-	return defaultLevel
 }
 
 // createLogger creates (but does not register) a new logger instance.
@@ -417,10 +372,10 @@ func createLogger(module *Module) *Logger {
 	return result
 }
 
-func parseDefaultModuleLevels(str string) (map[string]int32, []error) {
+func parseDefaultModuleLevels(str string) (map[string]zapcore.Level, []error) {
 	var errs []error
 	entries := strings.Split(str, ",")
-	result := make(map[string]int32, len(entries))
+	result := make(map[string]zapcore.Level, len(entries))
 	for _, e := range entries {
 		e = strings.TrimSpace(e)
 		if e == "" {
