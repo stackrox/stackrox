@@ -1,3 +1,5 @@
+import static org.junit.Assume.assumeFalse
+
 import io.stackrox.proto.storage.RoleOuterClass
 import org.junit.Assume
 import services.FeatureFlagService
@@ -15,6 +17,7 @@ import services.RoleService
 import services.SACService
 import spock.lang.Retry
 import spock.lang.Unroll
+import util.Env
 
 @Category(BAT)
 class VulnMgmtSACTest extends BaseSpecification {
@@ -70,6 +73,8 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
 
     def setupSpec() {
+        assumeFalse("This test is skipped in this evironment", skipThisTest())
+
         // Purposefully add an image that is not running to check the case
         // where an image is orphaned
         ImageIntegrationService.addStackroxScannerIntegration()
@@ -82,6 +87,8 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        assumeFalse("This test is skipped in this evironment", skipThisTest())
+
         BaseService.useBasicAuth()
         ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
     }
@@ -174,5 +181,11 @@ class VulnMgmtSACTest extends BaseSpecification {
         "nodes-only"                 | "Node:*"
         "images-only"                | "Image:*"
         "images-and-nodes-only"      | "Component:*"
+    }
+
+    private static Boolean skipThisTest() {
+        // This test consistently fails with OpenShift RHEL -race (ROX-6584)
+        return Env.get("IS_RACE_BUILD", null) == "true" &&
+                Env.CI_JOBNAME && Env.CI_JOBNAME.contains("openshift-rhel")
     }
 }
