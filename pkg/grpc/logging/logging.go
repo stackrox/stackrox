@@ -14,8 +14,12 @@ func UnaryServerInterceptor(logger *logging.Logger) grpc.UnaryServerInterceptor 
 	return grpc_zap.UnaryServerInterceptor(logger.SugaredLogger.Desugar(), grpc_zap.WithLevels(grpc_zap.DefaultCodeToLevel))
 }
 
-// ReplaceGrpcLogger replaces the gRPC logger with l.
-func ReplaceGrpcLogger(l *logging.Logger) {
+// InitGrpcLogger initializes gRPC logger using our logging framework.
+func InitGrpcLogger() {
+	module := logging.ModuleForName("grpc_internal")
+	// Skipping 4 nested levels to show correct place in code where issue happened.
+	// This is due to the way gRPC library wraps logger.
+	l := logging.CreateLogger(module, 4)
 	grpclog.SetLoggerV2(&zapGrpcLogger{
 		logger: l,
 	})

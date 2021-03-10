@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/uuid"
 	"gotest.tools/assert"
 )
 
@@ -19,5 +18,4 @@ func TestLoggerForModule(t *testing.T) {
 func TestLoggerCreationSite(t *testing.T) {
 	logging.CurrentModule().Logger().Info("CurrentModule().Logger()")
 	logging.LoggerForModule().Info("LoggerForModule()")
-	logging.NewOrGet(uuid.NewV4().String()).Info("NewOrGet()")
 }

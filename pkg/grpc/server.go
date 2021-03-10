@@ -44,7 +44,7 @@ const (
 
 func init() {
 	grpc_prometheus.EnableHandlingTimeHistogram()
-	grpc_logging.ReplaceGrpcLogger(log)
+	grpc_logging.InitGrpcLogger()
 }
 
 var (

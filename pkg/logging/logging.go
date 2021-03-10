@@ -217,8 +217,8 @@ func init() {
 	var defaultLevelsByModuleParsingErrs []error
 	defaultLevelsByModule, defaultLevelsByModuleParsingErrs := parseDefaultModuleLevels(os.Getenv("MODULE_LOGLEVELS"))
 
-	// Use direct calls to createLogger in this function, as New/NewOrGet/CurrentModule().Logger() refer to thisModuleLogger.
-	thisModuleLogger = createLogger(ModuleForName(thisModule))
+	// Use direct calls to CreateLogger in this function, as New/NewOrGet/CurrentModule().Logger() refer to thisModuleLogger.
+	thisModuleLogger = CreateLogger(ModuleForName(thisModule), 0)
 	if !initLevelValid && initLevelStr != "" {
 		thisModuleLogger.Warnf("Invalid LOGLEVEL value '%s', defaulting to %s", initLevelStr, LabelForLevelOrInvalid(logLevel))
 	}
@@ -234,7 +234,7 @@ func init() {
 		}
 	}
 
-	rootLogger = createLogger(ModuleForName("root logger"))
+	rootLogger = CreateLogger(ModuleForName("root logger"), 0)
 }
 
 // SetGlobalLogLevel sets the log level on all loggers for all modules.
@@ -352,12 +352,13 @@ func SortedLevels() []zapcore.Level {
 	return result
 }
 
-// createLogger creates (but does not register) a new logger instance.
-func createLogger(module *Module) *Logger {
+// CreateLogger creates (but does not register) a new logger instance.
+// Skip allows to specify how much layers of nested calls we will skip during logging.
+func CreateLogger(module *Module, skip int) *Logger {
 	lc := config
 	lc.Level = module.logLevel
 
-	logger, err := lc.Build(zap.AddCallerSkip(0))
+	logger, err := lc.Build(zap.AddCallerSkip(skip))
 	if err != nil {
 		panic(errors.Wrap(err, "failed to instantiate logger"))
 	}

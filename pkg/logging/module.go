@@ -63,7 +63,7 @@ func newModule(name string, logLevel zap.AtomicLevel) *Module {
 
 // Logger returns a new logger for m.
 func (m *Module) Logger() *Logger {
-	return createLogger(m)
+	return CreateLogger(m, 0)
 }
 
 // Name returns the name of m
@@ -195,9 +195,4 @@ func getCallingModule(skip int) string {
 		return "main"
 	}
 	return components[1]
-}
-
-// NewOrGet returns a logger instance for the given module. If there isn't such a logger yet, it will be created.
-func NewOrGet(module string) *Logger {
-	return createLogger(ModuleForName(module))
 }
