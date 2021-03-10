@@ -35,29 +35,34 @@ import (
 )
 
 const (
-	// defaultDestination is the default logging destination, which is currently os.Stderr
+	// defaultDestination is the default logging destination,
+	// which is currently os.Stderr.
 	defaultDestination = "stderr"
 
 	// Our project prefix. For all subpackages of this, we strip this prefix.
 	projectPrefix = "github.com/stackrox/rox"
 
-	// LoggingPath is the common log file so we can export it
+	// LoggingPath is the common log file so we can export it.
 	LoggingPath = "/var/log/stackrox/log.txt"
 
-	//defaultLevel is the default log level
+	// defaultLevel is the default log level.
 	defaultLevel = zapcore.InfoLevel
 
-	//FatalLevel log level
+	// Aliases for zapcore.* log levels to abstract away zapcore-based
+	// implementation and not to require clients to import zapcore lib
+	// explicitly.
+
+	// FatalLevel log level
 	FatalLevel = zapcore.FatalLevel
-	//PanicLevel log level
+	// PanicLevel log level
 	PanicLevel = zapcore.PanicLevel
-	//ErrorLevel log level
+	// ErrorLevel log level
 	ErrorLevel = zapcore.ErrorLevel
-	//WarnLevel log level
+	// WarnLevel log level
 	WarnLevel = zapcore.WarnLevel
-	//InfoLevel log level
+	// InfoLevel log level
 	InfoLevel = zapcore.InfoLevel
-	//DebugLevel log level
+	// DebugLevel log level
 	DebugLevel = zapcore.DebugLevel
 )
 
