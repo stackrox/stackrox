@@ -5,6 +5,9 @@ Entries in this file should be limited to:
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
+
+## [57.0]
+
 - The published time for CVEs in RHEL and CentOS images is now populated correctly.
 - Secured clusters deployed via Helm with `helmManaged` set to `false` can now be used with cluster init
   bundles, creating a new cluster within StackRox on-the-fly. Previously, `helmManaged=false` only worked
