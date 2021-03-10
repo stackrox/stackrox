@@ -13,6 +13,71 @@
           "namespace": "kube-system"
         }
       }
+    },
+    {
+      "name": "Don't alert on openshift-kube-apiserver namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-apiserver"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-kube-scheduler namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-scheduler"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-kube-controller-manager namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-controller-manager"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-sdn namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-sdn"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-network-operator namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-network-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-multus namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-multus"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-cluster-version namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-cluster-version"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on node-ca dameonset in the openshift-image-registry namespace",
+      "deployment": {
+        "name": "node-ca",
+        "scope": {
+          "namespace": "openshift-image-registry"
+        }
+      }
     }
   ],
   "categories": [

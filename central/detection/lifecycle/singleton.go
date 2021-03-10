@@ -1,16 +1,19 @@
 package lifecycle
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/alertmanager"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/runtime"
+	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	baselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processindicator/filter"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -30,6 +33,16 @@ func initialize() {
 		cache.DeletedDeploymentCacheSingleton(),
 		filter.Singleton(),
 	)
+
+	policies, err := policyDataStore.Singleton().GetAllPolicies(lifecycleMgrCtx)
+	utils.Must(err)
+	log.Infof("Injecting %d policies into detectors.", len(policies))
+	for _, policy := range policies {
+		err = manager.UpsertPolicy(policy)
+		utils.Should(errors.Wrap(err, "could not inject policy"))
+	}
+	log.Info("Done injecting policies.")
+
 	go manager.buildIndicatorFilter()
 }
 

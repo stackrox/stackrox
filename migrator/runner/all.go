@@ -49,4 +49,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_60_to_m_61_update_network_management_policy_regex"
 	_ "github.com/stackrox/rox/migrator/migrations/m_61_to_m_62_multiple_cve_types"
 	_ "github.com/stackrox/rox/migrator/migrations/m_62_to_m_63_splunk_source_type"
+	_ "github.com/stackrox/rox/migrator/migrations/m_63_to_m_64_exclude_some_openshift_operators_from_policies"
 )

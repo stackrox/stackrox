@@ -5,6 +5,16 @@
   "rationale": "A Bidirectional mount is replicated at all mounts and changes made at any mount point are propagated to all other mount points. Mounting a volume in Bidirectional mode does not restrict any other container from mounting and making changes to that volume. As this is likely not a desirable option from a security standpoint, this feature should not be used unless explicitly required",
   "remediation": "Do not mount volumes in Bidirectional propagation mode.",
   "disabled": false,
+  "whitelists": [
+    {
+      "name": "Don't alert on openshift-cluster-csi-drivers namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    }
+  ],
   "categories": [
     "Docker CIS"
   ],
