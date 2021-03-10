@@ -5,12 +5,7 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import ToggleSwitch from 'Components/ToggleSwitch';
 import FormFieldRequired from 'Components/forms/FormFieldRequired';
 import Select from 'Components/Select';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
-
 import {
-    clusterTypeOptions,
-    runtimeOptions,
     labelClassName,
     sublabelClassName,
     wrapperMarginClassName,
@@ -19,7 +14,11 @@ import {
     justifyBetweenClassName,
     selectElementClassName,
     selectWrapperClassName,
-} from './cluster.helpers';
+} from 'constants/form.constants';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
+
+import { clusterTypeOptions, runtimeOptions } from './cluster.helpers';
 import HelmValueWarning from './Components/HelmValueWarning';
 
 // factory that returns a handler to normalize our generic Select component's return value

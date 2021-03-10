@@ -1,5 +1,6 @@
 import React, { ReactElement } from 'react';
-import { inputTextClassName } from '../cluster.helpers';
+
+import { inputTextClassName } from 'constants/form.constants';
 
 export type HelmValueWarningProps = {
     currentValue: unknown;

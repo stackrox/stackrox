@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { gql } from '@apollo/client';
+import { List } from 'react-feather';
 
-import queryService from 'utils/queryService';
+import PanelButton from 'Components/PanelButton';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import TableCountLink from 'Components/workflow/TableCountLink';
 import StatusChip from 'Components/StatusChip';
@@ -17,8 +19,12 @@ import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { IMAGE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
+import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { imageSortFields } from 'constants/sortFields';
+import { knownBackendFlags } from 'utils/featureFlags';
+import queryService from 'utils/queryService';
+import InactiveImagesDialog from './InactiveImagesDialog';
 
 export const defaultImageSort = [
     {
@@ -195,7 +201,18 @@ export function getImageTableColumns(workflowState) {
     return removeEntityContextColumns(tableColumns, workflowState);
 }
 
-const VulnMgmtImages = ({ selectedRowId, search, sort, page, data, totalResults }) => {
+const VulnMgmtImages = ({
+    selectedRowId,
+    search,
+    sort,
+    page,
+    data,
+    totalResults,
+    refreshTrigger,
+    setRefreshTrigger,
+}) => {
+    const [showInactiveImagesDialog, setShowInactiveImagesDialog] = useState(false);
+
     const query = gql`
         query getImages($query: String, $pagination: Pagination) {
             results: images(query: $query, pagination: $pagination) {
@@ -209,28 +226,70 @@ const VulnMgmtImages = ({ selectedRowId, search, sort, page, data, totalResults 
     const tableSort = sort || defaultImageSort;
     const queryOptions = {
         variables: {
-            query: queryService.objectToWhereClause(search),
+            query: queryService.objectToWhereClause({
+                ...search,
+                cachebuster: refreshTrigger,
+            }),
             pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE),
         },
     };
 
+    const inactiveImageScanningEnabled = useFeatureFlagEnabled(
+        knownBackendFlags.ROX_INACTIVE_IMAGE_SCANNING_UI
+    );
+
+    function toggleInactiveDialog() {
+        if (showInactiveImagesDialog) {
+            // changing this param value on the query vars, to force the query to refetch
+            setRefreshTrigger(Math.random());
+        }
+
+        setShowInactiveImagesDialog(!showInactiveImagesDialog);
+    }
+    const tableHeaderComponents = inactiveImageScanningEnabled ? (
+        <PanelButton
+            icon={<List className="h-4 w-4" />}
+            className="btn-icon btn-tertiary"
+            onClick={toggleInactiveDialog}
+            tooltip="Manage Scanning of Inactive Images"
+            dataTestId="panel-button-manage-inactive-images"
+        >
+            Manage Inactive
+        </PanelButton>
+    ) : null;
+
     return (
-        <WorkflowListPage
-            data={data}
-            totalResults={totalResults}
-            query={query}
-            queryOptions={queryOptions}
-            entityListType={entityTypes.IMAGE}
-            getTableColumns={getImageTableColumns}
-            selectedRowId={selectedRowId}
-            search={search}
-            sort={tableSort}
-            page={page}
-        />
+        <>
+            <WorkflowListPage
+                data={data}
+                totalResults={totalResults}
+                query={query}
+                queryOptions={queryOptions}
+                entityListType={entityTypes.IMAGE}
+                getTableColumns={getImageTableColumns}
+                selectedRowId={selectedRowId}
+                search={search}
+                sort={tableSort}
+                page={page}
+                tableHeaderComponents={tableHeaderComponents}
+            />
+            {showInactiveImagesDialog && (
+                <InactiveImagesDialog closeDialog={toggleInactiveDialog} />
+            )}
+        </>
     );
 };
 
-VulnMgmtImages.propTypes = workflowListPropTypes;
-VulnMgmtImages.defaultProps = workflowListDefaultProps;
+VulnMgmtImages.propTypes = {
+    ...workflowListPropTypes,
+    refreshTrigger: PropTypes.number,
+    setRefreshTrigger: PropTypes.func,
+};
+
+VulnMgmtImages.defaultProps = {
+    ...workflowListDefaultProps,
+    refreshTrigger: 0,
+    setRefreshTrigger: null,
+};
 
 export default VulnMgmtImages;

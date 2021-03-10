@@ -4,16 +4,16 @@ import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import ToggleSwitch from 'Components/ToggleSwitch';
-
 import {
     labelClassName,
     sublabelClassName,
     wrapperMarginClassName,
     inputTextClassName,
-    inputNumberClassName,
     divToggleOuterClassName,
     justifyBetweenClassName,
-} from './cluster.helpers';
+    inputNumberClassName,
+} from 'constants/form.constants';
+
 import HelmValueWarning from './Components/HelmValueWarning';
 
 const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig }) => {

@@ -7,6 +7,7 @@ import { image as imageSchema } from './schemas';
 
 const imagesUrl = '/v1/images';
 const imagesCountUrl = '/v1/imagescount';
+const watchedImagesUrl = '/v1/watchedimages';
 
 /**
  * Fetches list of registered images.
@@ -80,5 +81,27 @@ export function fetchImage(id) {
         const { name } = response.data;
         image.name = name.fullName;
         return image;
+    });
+}
+
+export function watchImage(fullyQualifiedImageName) {
+    const requestPayload = {
+        name: fullyQualifiedImageName,
+    };
+    const options = {
+        method: 'post',
+        url: `${watchedImagesUrl}`,
+        data: requestPayload,
+        // longer timeout needed to wait for pull and scan
+        timeout: 300000, // 5 minutes is max for Chrome
+    };
+
+    return axios(options).then((response) => {
+        const { normalizedName, errorType, errorMessage } = response.data;
+        if (errorType !== 'NO_ERROR') {
+            throw new Error(errorMessage);
+        }
+
+        return { normalizedName };
     });
 }
