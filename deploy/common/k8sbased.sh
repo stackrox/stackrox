@@ -407,7 +407,9 @@ function launch_sensor {
         helm_args+=(-f "$k8s_dir/sensor-deploy/chart/feature-flag-values.yaml")
       fi
 
-      if [[ "$SENSOR_HELM_NOT_HELM_MANAGED" == "true" ]]; then
+      if [[ "$SENSOR_HELM_MANAGED" == "true" ]]; then
+        helm_args+=(--set "helmManaged=true")
+      else
         helm_args+=(--set "helmManaged=false")
       fi
 

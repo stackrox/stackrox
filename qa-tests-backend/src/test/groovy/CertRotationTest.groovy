@@ -5,6 +5,9 @@ import io.fabric8.kubernetes.api.model.Secret
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.storage.ClusterOuterClass.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
 import io.stackrox.proto.storage.ClusterOuterClass.UpgradeProgress.UpgradeState
+import org.bouncycastle.asn1.x500.X500Name
+import org.bouncycastle.asn1.x500.style.BCStyle
+import org.bouncycastle.asn1.x500.style.IETFUtils
 import org.junit.Assume
 import org.junit.AssumptionViolatedException
 import org.junit.experimental.categories.Category
@@ -137,11 +140,11 @@ class CertRotationTest extends BaseSpecification {
     }
 
     String extractCNFromCert(X509Certificate cert) {
-        def name = cert.subjectX500Principal.getName()
-        return name[name.indexOf("CN=")..-1]
+        return IETFUtils.valueToString(
+                X500Name.getInstance(cert.subjectX500Principal.encoded).getRDNs(BCStyle.CN)[0].first.value)
     }
 
-    def checkCurrentValueOfSecretIdenticalExceptNewCerts(Secret previousSecret, String name) {
+    def checkCurrentValueOfSecretIdenticalExceptNewCerts(String expectedCertCN, Secret previousSecret, String name) {
         def currentSecret = orchestrator.getSecret(name, "stackrox")
         if (previousSecret == null) {
             assert currentSecret == null
@@ -155,7 +158,7 @@ class CertRotationTest extends BaseSpecification {
                 def previousCert = Cert.loadBase64EncodedCert(previousSecret.data[k])
                 assert currentCert.notAfter.after(previousCert.notAfter)
                 assert currentCert.getSerialNumber() != previousCert.getSerialNumber()
-                assert extractCNFromCert(currentCert) == extractCNFromCert(previousCert)
+                assert extractCNFromCert(currentCert) == expectedCertCN
             } else if (!k.endsWith("key.pem")) {
                 assert currentSecret.data[k] == previousSecret.data[k]
             }
@@ -200,9 +203,12 @@ class CertRotationTest extends BaseSpecification {
         }
 
         then:
-        checkCurrentValueOfSecretIdenticalExceptNewCerts(sensorTLSSecret, "sensor-tls")
-        checkCurrentValueOfSecretIdenticalExceptNewCerts(collectorTLSSecret, "collector-tls")
-        checkCurrentValueOfSecretIdenticalExceptNewCerts(admissionControlTLSSecret, "admission-control-tls")
+        checkCurrentValueOfSecretIdenticalExceptNewCerts("SENSOR_SERVICE: ${cluster.getId()}", sensorTLSSecret,
+                "sensor-tls")
+        checkCurrentValueOfSecretIdenticalExceptNewCerts("COLLECTOR_SERVICE: ${cluster.getId()}", collectorTLSSecret,
+                "collector-tls")
+        checkCurrentValueOfSecretIdenticalExceptNewCerts("ADMISSION_CONTROL_SERVICE: ${cluster.getId()}",
+                admissionControlTLSSecret, "admission-control-tls")
 
         // Cleanup: revert secrets to what they were before this test was run.
         cleanup:
