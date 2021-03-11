@@ -48,8 +48,8 @@ const InactiveImagesDialog = ({ closeDialog }: InactiveImagesDialogProps): React
                         .then((image) => {
                             setSuccessMessage(
                                 <div>
-                                    <strong>{image?.normalizedName as string}</strong> has been
-                                    added to the list of images to be scanned.
+                                    <strong>{image?.normalizedName}</strong> has been added to the
+                                    list of images to be scanned.
                                 </div>
                             );
                         })

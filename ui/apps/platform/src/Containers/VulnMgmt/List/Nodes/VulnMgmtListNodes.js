@@ -25,7 +25,7 @@ export const defaultNodeSort = [
 
 // TODO: need to get node table columns
 // Node | CVE (both total # / #non fixable) | Top CVSS | Scan Time | OS | Runtime | Node Status | Cluster | Risk Priority |
-export function getImageTableColumns(workflowState) {
+export function getNodeTableColumns(workflowState) {
     const tableColumns = [
         {
             Header: 'Id',
@@ -195,7 +195,7 @@ const VulnMgmtNodes = ({ selectedRowId, search, sort, page, data, totalResults }
             query={query}
             queryOptions={queryOptions}
             entityListType={entityTypes.NODE}
-            getTableColumns={getImageTableColumns}
+            getTableColumns={getNodeTableColumns}
             selectedRowId={selectedRowId}
             search={search}
             sort={tableSort}

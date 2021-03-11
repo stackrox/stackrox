@@ -176,6 +176,7 @@ export const IMAGE_LIST_FRAGMENT = gql`
         name {
             fullName
         }
+        watchStatus
         deploymentCount(query: $query)
         priority
         topVuln {
