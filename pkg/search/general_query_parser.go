@@ -15,22 +15,25 @@ type generalQueryParser struct {
 	ExcludedFieldLabels set.StringSet
 }
 
-// ParseFieldMap parses a query string into a map of field label to a list of field value strings
-func ParseFieldMap(query string) (map[FieldLabel][]string, error) {
+func getFieldMap(query string) map[FieldLabel][]string {
 	pairs := strings.Split(query, "+")
 
-	var anyValid bool
 	fieldMap := make(map[FieldLabel][]string, len(pairs))
 	for _, pair := range pairs {
 		key, commaSeparatedValues, valid := parsePair(pair, false)
-		if !valid {
+		if !valid || !FieldLabelSet.Contains(strings.ToLower(key)) {
 			continue
 		}
 		values := strings.Split(commaSeparatedValues, ",")
 		fieldMap[FieldLabel(key)] = values
-		anyValid = true
 	}
-	if !anyValid {
+	return fieldMap
+}
+
+// ParseFieldMap parses a query string into a map of field label to a list of field value strings
+func ParseFieldMap(query string) (map[FieldLabel][]string, error) {
+	fieldMap := getFieldMap(query)
+	if len(fieldMap) == 0 {
 		return nil, errors.New("after parsing, query is empty")
 	}
 	return fieldMap, nil
@@ -47,19 +50,17 @@ func SortFieldLabels(fieldLabels []FieldLabel) []FieldLabel {
 // Parse parses the input query.
 func (pi generalQueryParser) parse(input string) (*v1.Query, error) {
 	// Handle empty input query case.
-	if len(input) == 0 && !pi.MatchAllIfEmpty {
-		return nil, errors.New("parser not configured to handle empty queries")
-	} else if len(input) == 0 {
+	fieldMap := getFieldMap(input)
+	if len(fieldMap) == 0 {
+		if !pi.MatchAllIfEmpty {
+			return nil, errors.New("parser not configured to handle empty queries")
+		}
 		return EmptyQuery(), nil
 	}
-	return pi.parseInternal(input)
+	return pi.parseInternal(fieldMap)
 }
 
-func (pi generalQueryParser) parseInternal(query string) (*v1.Query, error) {
-	fieldMap, err := ParseFieldMap(query)
-	if err != nil {
-		return nil, err
-	}
+func (pi generalQueryParser) parseInternal(fieldMap map[FieldLabel][]string) (*v1.Query, error) {
 	qb := NewQueryBuilder()
 	for fieldLabel, fieldValues := range fieldMap {
 		if pi.ExcludedFieldLabels.Contains(fieldLabel.String()) {

@@ -50,6 +50,43 @@ message DeleteImagesResponse {
     bool   dry_run     = 2;
 }
 
+message WatchImageRequest {
+    // The name of the image.
+    // This must be fully qualified, including a tag,
+    // but must NOT include a SHA.
+    string name = 1;
+}
+
+message WatchImageResponse {
+    // If the image was scanned successfully, this returns the normalized name of the image.
+    // This depends on what we get from the registry.
+    // For example, "docker.io/wordpress:latest" -> "docker.io/library/wordpress:latest"
+    string normalized_name = 1;
+
+    enum ErrorType {
+      NO_ERROR              = 0;
+      INVALID_IMAGE_NAME    = 1;
+      NO_VALID_INTEGRATION  = 2;
+      SCAN_FAILED           = 3;
+    };
+
+    ErrorType error_type  = 2;
+
+    // Only set if error_type is NOT equal to "NO_ERROR".
+    string error_message  = 3;
+
+}
+
+message UnwatchImageRequest {
+    // The name of the image to unwatch.
+    // Should match the name of a previously watched image.
+    string name = 1;
+}
+
+message GetWatchedImagesResponse {
+    repeated storage.WatchedImage watched_images = 1;
+}
+
 // ImageService APIs manages image metadata.
 service ImageService {
 
@@ -96,6 +133,31 @@ service ImageService {
     rpc DeleteImages (DeleteImagesRequest) returns (DeleteImagesResponse) {
         option (google.api.http) = {
             delete: "/v1/images"
+        };
+    }
+
+    // WatchImage marks an image name as to be watched.
+    rpc WatchImage (WatchImageRequest) returns (WatchImageResponse) {
+      option (google.api.http) = {
+          post: "/v1/watchedimages"
+          body: "*"
+      };
+    }
+
+    // UnwatchImage marks an image name to no longer be watched.
+    // It returns successfully if the image is no longer being watched
+    // after the call, irrespective of whether the image was already being watched.
+    rpc UnwatchImage (UnwatchImageRequest) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/watchedimages"
+        };
+    }
+
+    // GetWatchedImages returns the list of image names that are currently
+    // being watched.
+    rpc GetWatchedImages (Empty) returns (GetWatchedImagesResponse) {
+        option (google.api.http) = {
+            get: "/v1/watchedimages"
         };
     }
 

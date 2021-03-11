@@ -183,3 +183,7 @@ message ImageCVEEdge {
     string                    id                     = 1;
     google.protobuf.Timestamp first_image_occurrence = 2;
 }
+
+message WatchedImage {
+  string name            = 1;
+}

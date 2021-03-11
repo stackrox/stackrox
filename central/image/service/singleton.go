@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
+	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -15,7 +16,7 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton(), cveDataStore.Singleton(), manager.Singleton(), enrichment.ImageEnricherSingleton(), enrichment.ImageMetadataCacheSingleton(), enrichment.ImageScanCacheSingleton())
+	as = New(datastore.Singleton(), cveDataStore.Singleton(), watchedImageDataStore.Singleton(), manager.Singleton(), enrichment.ImageEnricherSingleton(), enrichment.ImageMetadataCacheSingleton(), enrichment.ImageScanCacheSingleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

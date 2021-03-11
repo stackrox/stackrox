@@ -56,6 +56,7 @@ var (
 	ServiceAccount        = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
 	ServiceIdentity       = newResourceMetadata("ServiceIdentity", permissions.GlobalScope)
 	User                  = newResourceMetadata("User", permissions.GlobalScope)
+	WatchedImage          = newResourceMetadata("WatchedImage", permissions.GlobalScope)
 
 	resourceToMetadata = make(map[permissions.Resource]permissions.ResourceMetadata)
 )

@@ -1,6 +1,8 @@
 package search
 
 import (
+	"strings"
+
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -222,6 +224,7 @@ func newFieldLabel(s string) FieldLabel {
 	if added := FieldLabelSet.Add(s); !added {
 		log.Fatalf("Field label %q has already been added", s)
 	}
+	FieldLabelSet.Add(strings.ToLower(s))
 	return FieldLabel(s)
 }
 

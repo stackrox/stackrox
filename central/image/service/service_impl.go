@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"math"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -10,10 +11,12 @@ import (
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
+	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -50,6 +53,13 @@ var (
 		user.With(permissions.View(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
 			"/v1.ImageService/InvalidateScanAndRegistryCaches",
 		},
+		user.With(permissions.View(resources.WatchedImage)): {
+			"/v1.ImageService/GetWatchedImages",
+		},
+		user.With(permissions.Modify(resources.WatchedImage)): {
+			"/v1.ImageService/WatchImage",
+			"/v1.ImageService/UnwatchImage",
+		},
 	})
 )
 
@@ -63,6 +73,8 @@ type serviceImpl struct {
 	scanCache     expiringcache.Cache
 
 	enricher enricher.ImageEnricher
+
+	watchedImages watchedImageDataStore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -145,7 +157,7 @@ func (s *serviceImpl) InvalidateScanAndRegistryCaches(context.Context, *v1.Empty
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) saveImage(ctx context.Context, img *storage.Image) {
+func (s *serviceImpl) saveImage(img *storage.Image) {
 	// Save the image if we received an ID from sensor
 	// Otherwise, our inferred ID may not match
 	if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
@@ -188,7 +200,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 
 	// asynchronously upsert images as this rpc should be performant
 	if img.GetId() != "" {
-		go s.saveImage(ctx, img.Clone())
+		go s.saveImage(img.Clone())
 	}
 
 	// This modifies the image object
@@ -200,29 +212,15 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 
 // ScanImage scans an image and returns the result
 func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageRequest) (*storage.Image, error) {
-	if request.GetImageName() == "" {
-		return nil, status.Error(codes.InvalidArgument, "image name must be specified")
-	}
-	containerImage, err := utils.GenerateImageFromString(request.GetImageName())
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-	img := types.ToImage(containerImage)
-
 	enrichmentCtx := enricher.EnrichmentContext{
 		FetchOpt: enricher.IgnoreExistingImages,
 	}
 	if request.GetForce() {
 		enrichmentCtx.FetchOpt = enricher.ForceRefetch
 	}
-
-	enrichmentResult, err := s.enricher.EnrichImage(enrichmentCtx, img)
+	img, err := enricher.EnrichImageByName(s.enricher, enrichmentCtx, request.GetImageName())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	if !enrichmentResult.ImageUpdated || (enrichmentResult.ScanResult != enricher.ScanSucceeded) {
-		return nil, status.Error(codes.Internal, "scan could not be completed. Please check that an applicable registry and scanner is integrated")
+		return nil, err
 	}
 
 	// Save the image
@@ -269,4 +267,87 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 		return nil, err
 	}
 	return response, nil
+}
+
+func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequest) (*v1.WatchImageResponse, error) {
+	if !features.InactiveImageScanningUI.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+	if request.GetName() == "" {
+		return &v1.WatchImageResponse{
+			ErrorMessage: "no image name specified",
+			ErrorType:    v1.WatchImageResponse_INVALID_IMAGE_NAME,
+		}, nil
+	}
+	containerImage, err := utils.GenerateImageFromString(request.GetName())
+	if err != nil {
+		return &v1.WatchImageResponse{
+			ErrorMessage: fmt.Sprintf("failed to parse name: %v", err),
+			ErrorType:    v1.WatchImageResponse_INVALID_IMAGE_NAME,
+		}, nil
+	}
+	if containerImage.Id != "" {
+		return &v1.WatchImageResponse{
+			ErrorMessage: fmt.Sprintf("name %s contains a digest, but watch does not handle images with digests", request.GetName()),
+			ErrorType:    v1.WatchImageResponse_INVALID_IMAGE_NAME,
+		}, nil
+	}
+
+	img := types.ToImage(containerImage)
+
+	enrichmentResult, err := s.enricher.EnrichImage(enricher.EnrichmentContext{FetchOpt: enricher.IgnoreExistingImages}, img)
+	if err != nil {
+		return &v1.WatchImageResponse{
+			ErrorMessage: fmt.Sprintf("failed to scan image: %v", err),
+			ErrorType:    v1.WatchImageResponse_SCAN_FAILED,
+		}, nil
+	}
+
+	if !enrichmentResult.ImageUpdated || (enrichmentResult.ScanResult != enricher.ScanSucceeded) {
+		return &v1.WatchImageResponse{
+			ErrorMessage: "scan could not be completed, due to no applicable registry/scanner integration",
+			ErrorType:    v1.WatchImageResponse_NO_VALID_INTEGRATION,
+		}, nil
+	}
+
+	// Save the image
+	img.Id = utils.GetImageID(img)
+	if img.GetId() == "" {
+		return &v1.WatchImageResponse{
+			ErrorType:    v1.WatchImageResponse_SCAN_FAILED,
+			ErrorMessage: "could not get SHA after scanning image",
+		}, nil
+	}
+
+	if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to store image: %v", err)
+	}
+
+	normalizedName := img.GetName().GetFullName()
+	if err := s.watchedImages.UpsertWatchedImage(ctx, normalizedName); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to upsert watched image: %v", err)
+	}
+	return &v1.WatchImageResponse{NormalizedName: normalizedName}, nil
+}
+
+func (s *serviceImpl) UnwatchImage(ctx context.Context, request *v1.UnwatchImageRequest) (*v1.Empty, error) {
+	if !features.InactiveImageScanningUI.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+	if err := s.watchedImages.UnwatchImage(ctx, request.GetName()); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) GetWatchedImages(ctx context.Context, empty *v1.Empty) (*v1.GetWatchedImagesResponse, error) {
+	if !features.InactiveImageScanningUI.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "feature not enabled")
+	}
+
+	watchedImgs, err := s.watchedImages.GetAllWatchedImages(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &v1.GetWatchedImagesResponse{WatchedImages: watchedImgs}, nil
 }

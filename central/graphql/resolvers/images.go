@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -15,6 +16,18 @@ import (
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
 )
+
+var (
+	imageWatchStatuses []string
+
+	notWatchedImageWatchStatus = registerImageWatchStatus("NOT_WATCHED")
+	watchedImageStatus         = registerImageWatchStatus("WATCHED")
+)
+
+func registerImageWatchStatus(s string) string {
+	imageWatchStatuses = append(imageWatchStatuses, s)
+	return s
+}
 
 func init() {
 	schema := getBuilder()
@@ -33,6 +46,8 @@ func init() {
 		schema.AddExtraResolver("Image", `componentCount(query: String): Int!`),
 		schema.AddExtraResolver("Image", `unusedVarSink(query: String): Int`),
 		schema.AddExtraResolver("Image", "plottedVulns(query: String): PlottedVulnerabilities!"),
+		schema.AddEnumType("ImageWatchStatus", imageWatchStatuses),
+		schema.AddExtraResolver("Image", "watchStatus: ImageWatchStatus!"),
 	)
 }
 
@@ -238,6 +253,20 @@ func (resolver *imageResolver) getImageQuery() *v1.Query {
 func (resolver *imageResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
 	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
+}
+
+func (resolver *imageResolver) WatchStatus(ctx context.Context) (string, error) {
+	if err := readAuth(resources.WatchedImage)(ctx); err != nil {
+		return "", err
+	}
+	watched, err := resolver.root.WatchedImageDataStore.Exists(ctx, resolver.data.GetName().GetFullName())
+	if err != nil {
+		return "", err
+	}
+	if watched {
+		return watchedImageStatus, nil
+	}
+	return notWatchedImageWatchStatus, nil
 }
 
 func (resolver *imageResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {

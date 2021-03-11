@@ -3,7 +3,6 @@ syntax = "proto3";
 option go_package = "sensor";
 
 import "storage/service_identity.proto";
-import "google/protobuf/empty.proto";
 
 package sensor;
 

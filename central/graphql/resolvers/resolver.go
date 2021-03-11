@@ -43,6 +43,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -84,6 +85,7 @@ type Resolver struct {
 	ServiceAccountsDataStore    serviceAccountDataStore.DataStore
 	ViolationsDataStore         violationsDatastore.DataStore
 	BaselineDataStore           baselineStore.DataStore
+	WatchedImageDataStore       watchedImageDataStore.DataStore
 	k8sIstioCVEManager          fetcher.K8sIstioCVEManager
 	cveMatcher                  *cveMatcher.CVEMatcher
 }
@@ -124,6 +126,7 @@ func New() *Resolver {
 		ServiceAccountsDataStore:    serviceAccountDataStore.Singleton(),
 		ViolationsDataStore:         violationsDatastore.Singleton(),
 		BaselineDataStore:           baselineStore.Singleton(),
+		WatchedImageDataStore:       watchedImageDataStore.Singleton(),
 		k8sIstioCVEManager:          fetcher.SingletonManager(),
 		cveMatcher:                  cveMatcher.Singleton(),
 	}

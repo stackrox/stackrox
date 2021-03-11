@@ -10,14 +10,14 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
+	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	nodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/sac"
@@ -38,27 +38,14 @@ var (
 	once sync.Once
 	loop Loop
 
-	getDeploymentsContext = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Deployment)))
-
-	getAndWriteImagesContext = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Image)))
-
-	getNodesContext = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Node)))
+	allAccessCtx = sac.WithAllAccess(context.Background())
 )
 
 // Singleton returns the singleton reprocessor loop
 func Singleton() Loop {
 	once.Do(func() {
 		loop = NewLoop(connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.NodeEnricherSingleton(),
-			deploymentDatastore.Singleton(), imageDatastore.Singleton(), nodeDatastore.Singleton(), manager.Singleton())
+			deploymentDatastore.Singleton(), imageDatastore.Singleton(), nodeDatastore.Singleton(), manager.Singleton(), watchedImageDataStore.Singleton())
 	})
 	return loop
 }
@@ -76,8 +63,8 @@ type Loop interface {
 // NewLoop returns a new instance of a Loop.
 func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, nodeEnricher nodeEnricher.NodeEnricher,
 	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeDatastore.DataStore,
-	risk manager.Manager) Loop {
-	return newLoopWithDuration(connManager, imageEnricher, nodeEnricher, deployments, images, nodes, risk, env.ReprocessInterval.DurationSetting(), 30*time.Minute, 15*time.Second)
+	risk manager.Manager, watchedImages watchedImageDataStore.DataStore) Loop {
+	return newLoopWithDuration(connManager, imageEnricher, nodeEnricher, deployments, images, nodes, risk, watchedImages, env.ReprocessInterval.DurationSetting(), 30*time.Minute, 15*time.Second)
 }
 
 // newLoopWithDuration returns a loop that ticks at the given duration.
@@ -85,7 +72,7 @@ func NewLoop(connManager connection.Manager, imageEnricher imageEnricher.ImageEn
 // to enable testing.
 func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnricher.ImageEnricher, nodeEnricher nodeEnricher.NodeEnricher,
 	deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, nodes nodeDatastore.DataStore,
-	risk manager.Manager, enrichAndDetectDuration, enrichAndDetectInjectionPeriod, deploymentRiskDuration time.Duration) Loop {
+	risk manager.Manager, watchedImages watchedImageDataStore.DataStore, enrichAndDetectDuration, enrichAndDetectInjectionPeriod, deploymentRiskDuration time.Duration) Loop {
 	return &loopImpl{
 		enrichAndDetectTickerDuration:  enrichAndDetectDuration,
 		deploymentRiskTickerDuration:   deploymentRiskDuration,
@@ -94,6 +81,8 @@ func newLoopWithDuration(connManager connection.Manager, imageEnricher imageEnri
 		imageEnricher: imageEnricher,
 		images:        images,
 		risk:          risk,
+
+		watchedImages: watchedImages,
 
 		deployments:       deployments,
 		deploymentRiskSet: set.NewStringSet(),
@@ -122,6 +111,8 @@ type loopImpl struct {
 	images        imageDatastore.DataStore
 	risk          manager.Manager
 	imageEnricher imageEnricher.ImageEnricher
+
+	watchedImages watchedImageDataStore.DataStore
 
 	deployments                  deploymentDatastore.DataStore
 	deploymentRiskSet            set.StringSet
@@ -176,7 +167,7 @@ func (l *loopImpl) sendDeployments(deploymentIDs []string) {
 		query = query.AddDocIDs(deploymentIDs...)
 	}
 
-	results, err := l.deployments.SearchDeployments(getDeploymentsContext, query.ProtoQuery())
+	results, err := l.deployments.SearchDeployments(allAccessCtx, query.ProtoQuery())
 	if err != nil {
 		log.Errorf("error getting results for deployment reprocessing: %v", err)
 		return
@@ -219,11 +210,46 @@ func (l *loopImpl) sendDeployments(deploymentIDs []string) {
 	}
 }
 
-func (l *loopImpl) reprocessImage(id string, sema *semaphore.Weighted, wg *concurrency.WaitGroup, fetchOpt imageEnricher.FetchOption) bool {
-	defer sema.Release(1)
-	defer wg.Add(-1)
+func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func() ([]string, error), individualReprocessFunc func(id string) bool) {
+	if l.stopSig.IsDone() {
+		return
+	}
+	ids, err := getIDsFunc()
+	if err != nil {
+		log.Errorf("Reprocessing failed: error retrieving active ids for %s: %v", entityType, err)
+		return
+	}
+	log.Infof("Found %d %ss to scan", len(ids), entityType)
 
-	image, exists, err := l.images.GetImage(getAndWriteImagesContext, id)
+	sema := semaphore.NewWeighted(5)
+	wg := concurrency.NewWaitGroup(0)
+	nReprocessed := atomic.NewInt32(0)
+	for _, id := range ids {
+		wg.Add(1)
+		if err := sema.Acquire(concurrency.AsContext(&l.stopSig), 1); err != nil {
+			log.Errorf("context cancelled via stop: %v", err)
+			return
+		}
+		go func(id string) {
+			defer sema.Release(1)
+			defer wg.Add(-1)
+			if individualReprocessFunc(id) {
+				nReprocessed.Inc()
+			}
+		}(id)
+	}
+	select {
+	case <-wg.Done():
+	case <-l.stopSig.Done():
+		log.Info("Stopping reprocessing due to stop signal")
+		return
+	}
+
+	log.Infof("Successfully reprocessed %d/%d %ss", nReprocessed.Load(), len(ids), entityType)
+}
+
+func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption) bool {
+	image, exists, err := l.images.GetImage(allAccessCtx, id)
 	if err != nil {
 		log.Errorf("error fetching image %q from the database: %v", id, err)
 		return false
@@ -250,51 +276,22 @@ func (l *loopImpl) reprocessImage(id string, sema *semaphore.Weighted, wg *concu
 	return true
 }
 
-func (l *loopImpl) getActiveImageIDs() (set.StringSet, error) {
+func (l *loopImpl) getActiveImageIDs() ([]string, error) {
 	query := search.NewQueryBuilder().AddStringsHighlighted(search.DeploymentID, search.WildcardString).ProtoQuery()
-	results, err := l.images.Search(getAndWriteImagesContext, query)
+	results, err := l.images.Search(allAccessCtx, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "error searching for active image IDs")
 	}
 
-	return search.ResultsToIDSet(results), nil
+	return search.ResultsToIDs(results), nil
 }
 
 func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.FetchOption) {
-	if l.stopSig.IsDone() {
-		return
-	}
-	imageIDs, err := l.getActiveImageIDs()
-	if err != nil {
-		log.Errorf("error retrieving active image ids: %v", err)
-		return
-	}
-	log.Infof("Found %d images to rescan", imageIDs.Cardinality())
-	imageSemaphore := semaphore.NewWeighted(5)
+	l.runReprocessingForObjects("image", l.getActiveImageIDs, func(id string) bool {
+		return l.reprocessImage(id, fetchOpt)
+	})
 
-	wg := concurrency.NewWaitGroup(0)
-	nReprocessed := atomic.NewInt32(0)
-	for imageID := range imageIDs {
-		wg.Add(1)
-		// Go over the image IDs
-		if err := imageSemaphore.Acquire(concurrency.AsContext(&l.stopSig), 1); err != nil {
-			log.Errorf("context cancelled via stop: %v", err)
-			return
-		}
-
-		go func(id string) {
-			if l.reprocessImage(id, imageSemaphore, &wg, fetchOpt) {
-				nReprocessed.Inc()
-			}
-		}(imageID)
-	}
-	select {
-	case <-wg.Done():
-	case <-l.stopSig.Done():
-		log.Info("Stopping reprocessing due to stop signal")
-		return
-	}
-	log.Infof("Successfully reprocessed %d/%d images. Reevaluating deployments...", nReprocessed.Load(), imageIDs.Cardinality())
+	log.Infof("Resyncing deployments now that images have been reprocessed...")
 	// Once the images have been rescanned, then reprocess the deployments.
 	// This should not take a particularly long period of time.
 	if !l.stopSig.IsDone() {
@@ -306,11 +303,8 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	}
 }
 
-func (l *loopImpl) reprocessNode(id string, sema *semaphore.Weighted, wg *concurrency.WaitGroup) bool {
-	defer sema.Release(1)
-	defer wg.Add(-1)
-
-	node, exists, err := l.nodes.GetNode(getNodesContext, id)
+func (l *loopImpl) reprocessNode(id string) bool {
+	node, exists, err := l.nodes.GetNode(allAccessCtx, id)
 	if err != nil {
 		log.Errorf("error fetching node %q from the database: %v", id, err)
 		return false
@@ -335,60 +329,77 @@ func (l *loopImpl) reprocessNode(id string, sema *semaphore.Weighted, wg *concur
 }
 
 func (l *loopImpl) reprocessNodes() {
-	if l.stopSig.IsDone() {
+	if !features.HostScanning.Enabled() {
 		return
 	}
-
-	results, err := l.nodes.Search(getNodesContext, search.EmptyQuery())
-	if err != nil {
-		log.Errorf("Error searching for nodes: %v", err)
-		return
-	}
-
-	nodeIDs := search.ResultsToIDSet(results)
-
-	log.Infof("Found %d nodes to rescan", nodeIDs.Cardinality())
-
-	nodeSemaphore := semaphore.NewWeighted(5)
-	wg := concurrency.NewWaitGroup(0)
-	nReprocessed := atomic.NewInt32(0)
-	for nodeID := range nodeIDs {
-		wg.Add(1)
-		if err := nodeSemaphore.Acquire(concurrency.AsContext(&l.stopSig), 1); err != nil {
-			log.Errorf("context cancelled via stop: %v", err)
-			return
+	l.runReprocessingForObjects("node", func() ([]string, error) {
+		results, err := l.nodes.Search(allAccessCtx, search.EmptyQuery())
+		if err != nil {
+			return nil, err
 		}
+		return search.ResultsToIDs(results), nil
+	}, l.reprocessNode)
+}
 
-		go func(id string) {
-			if l.reprocessNode(id, nodeSemaphore, &wg) {
-				nReprocessed.Inc()
-			}
-		}(nodeID)
+func (l *loopImpl) reprocessWatchedImage(name string) bool {
+	img, err := imageEnricher.EnrichImageByName(l.imageEnricher, imageEnricher.EnrichmentContext{
+		FetchOpt: imageEnricher.IgnoreExistingImages,
+	}, name)
+	if err != nil {
+		log.Errorf("Error enriching watched image with name %q: %v", name, err)
+		return false
 	}
-	select {
-	case <-wg.Done():
-	case <-l.stopSig.Done():
-		log.Info("Stopping reprocessing due to stop signal")
+	// Save the image
+	img.Id = utils.GetImageID(img)
+	if img.GetId() == "" {
+		return false
+	}
+	if err := l.risk.CalculateRiskAndUpsertImage(img); err != nil {
+		log.Errorf("Failed to upsert watched image with name %q after enriching: %v", name, err)
+		return false
+	}
+	return true
+}
+
+func (l *loopImpl) reprocessWatchedImages() {
+	if !features.InactiveImageScanningUI.Enabled() {
 		return
 	}
-
-	log.Infof("Successfully reprocessed %d/%d nodes...", nReprocessed.Load(), nodeIDs.Cardinality())
+	l.runReprocessingForObjects("watched image", func() ([]string, error) {
+		watchedImages, err := l.watchedImages.GetAllWatchedImages(allAccessCtx)
+		if err != nil {
+			return nil, err
+		}
+		imageNames := make([]string, 0, len(watchedImages))
+		for _, img := range watchedImages {
+			imageNames = append(imageNames, img.GetName())
+		}
+		return imageNames, nil
+	}, l.reprocessWatchedImage)
 }
 
 func (l *loopImpl) runReprocessing(imageFetchOpt imageEnricher.FetchOption) {
 	l.reprocessingComplete.Reset()
 	l.reprocessingStarted.Signal()
 
-	wg := concurrency.NewWaitGroup(2)
+	wg := concurrency.NewWaitGroup(0)
+
+	wg.Add(1)
 	go func() {
 		defer wg.Add(-1)
 		l.reprocessImagesAndResyncDeployments(imageFetchOpt)
 	}()
+
+	wg.Add(1)
 	go func() {
 		defer wg.Add(-1)
-		if features.HostScanning.Enabled() {
-			l.reprocessNodes()
-		}
+		l.reprocessNodes()
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Add(-1)
+		l.reprocessWatchedImages()
 	}()
 
 	<-wg.Done()
