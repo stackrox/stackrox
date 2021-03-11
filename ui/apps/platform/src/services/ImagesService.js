@@ -84,6 +84,46 @@ export function fetchImage(id) {
     });
 }
 
+/**
+ * Fetches list of watched images by their names.
+ *
+ * @returns {Promise<{ name: string }[], Error>} fulfilled with array of images
+ */
+
+export function getWatchedImages() {
+    const options = {
+        method: 'get',
+        url: `${watchedImagesUrl}`,
+    };
+
+    return axios(options).then((response) => {
+        const { watchedImages } = response.data;
+
+        return watchedImages || [];
+    });
+}
+
+/**
+ * Removes an image name from the watch list.
+ *
+ * @returns {Promise<unknown, Error>} fulfilled with array of images
+ */
+
+export function unwatchImage(name) {
+    const options = {
+        method: 'delete',
+        url: `${watchedImagesUrl}?name=${name}`,
+    };
+
+    return axios(options);
+}
+
+/**
+ * Marks a fully-qualified image name to be watched, even if inactive
+ *
+ * @returns {Promise<{ normalizedName: string }, Error>} fulfilled with array of images (as defined in .proto)
+ */
+
 export function watchImage(fullyQualifiedImageName) {
     const requestPayload = {
         name: fullyQualifiedImageName,
