@@ -201,6 +201,16 @@ fast-sensor: sensor-build-dockerized
 .PHONY: fast-sensor-kubernetes
 fast-sensor-kubernetes: sensor-kubernetes-build-dockerized
 
+.PHONY: fast-migrator
+fast-migrator:
+	@echo "+ $@"
+	docker run --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-migrator-build
+
+.PHONY: fast-migrator-build
+fast-migrator-build:
+	@echo "+ $@"
+	$(GOBUILD) migrator
+
 .PHONY: validateimports
 validateimports:
 	@echo "+ $@"
@@ -358,6 +368,12 @@ endif
 	# Copy the user's specific OS into gopath
 	cp bin/$(HOST_OS)/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
+
+cli-linux: build-prep
+	RACE=0 CGO_ENABLED=0 GOOS=linux $(GOBUILD) ./roxctl
+
+cli-darwin: build-prep
+	RACE=0 CGO_ENABLED=0 GOOS=darwin $(GOBUILD) ./roxctl
 
 upgrader: bin/$(HOST_OS)/upgrader
 

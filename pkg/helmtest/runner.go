@@ -231,6 +231,16 @@ func (r *runner) Run() {
 		caps = &newCaps
 	}
 
+	r.test.forEachScopeTopDown(func(t *Test) {
+		if t.Capabilities == nil {
+			return
+		}
+
+		newCaps := *caps
+		newCaps.KubeVersion = t.Capabilities.toHelmKubeVersion()
+		caps = &newCaps
+	})
+
 	renderVals, err := chartutil.ToRenderValues(r.tgt.Chart, values, releaseOpts, caps)
 	r.Require().NoError(err, "failed to obtain render values")
 

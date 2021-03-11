@@ -43,6 +43,10 @@ func Validate(cluster *storage.Cluster) *errorhelpers.ErrorList {
 		errorList.AddString("Central API endpoint cannot contain whitespace")
 	}
 
+	if cluster.GetAdmissionControllerEvents() && cluster.Type == storage.ClusterType_OPENSHIFT_CLUSTER {
+		errorList.AddString("OpenShift 3.x compatibility mode does not support admission controller webhooks on port-forward and exec.")
+	}
+
 	centralEndpoint := urlfmt.FormatURL(cluster.GetCentralApiEndpoint(), urlfmt.NONE, urlfmt.NoTrailingSlash)
 	_, _, _, err := netutil.ParseEndpoint(centralEndpoint)
 	if err != nil {

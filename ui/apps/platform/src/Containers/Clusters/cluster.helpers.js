@@ -32,16 +32,27 @@ export const runtimeOptions = [
     },
 ];
 
+export const clusterTypes = {
+    KUBERNETES: 'KUBERNETES_CLUSTER',
+    OPENSHIFT_3: 'OPENSHIFT_CLUSTER',
+    OPENSHIFT_4: 'OPENSHIFT4_CLUSTER',
+};
+
 export const clusterTypeOptions = [
     {
         label: 'Kubernetes',
         tableDisplay: 'Kubernetes',
-        value: 'KUBERNETES_CLUSTER',
+        value: clusterTypes.KUBERNETES,
     },
     {
-        label: 'OpenShift',
-        tableDisplay: 'OpenShift',
-        value: 'OPENSHIFT_CLUSTER',
+        label: 'OpenShift 3.x compatiblity mode',
+        tableDisplay: 'OpenShift 3.x compatiblity mode',
+        value: clusterTypes.OPENSHIFT_3,
+    },
+    {
+        label: 'OpenShift 4.x',
+        tableDisplay: 'OpenShift 4.x',
+        value: clusterTypes.OPENSHIFT_4,
     },
 ];
 

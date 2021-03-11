@@ -54,9 +54,10 @@
 #   registry: stackrox.io
 #
 # env:
-#   # Whether the target cluster is an OpenShift cluster. If you deploy via `helm install`,
-#   # this can typically be determined automatically, so we recommend to not set a value here.
-#   # Set to true or false explicitly to override the auto-sensing logic only.
+#   # Treat the environment as an OpenShift cluster. Leave this unset to use auto-detection
+#   # based on available API resources on the server.
+#   # Set it to true to auto-detect the OpenShift version, otherwise set it explicitly.
+#   # Possible values: null, false, true, 3, 4
 #   openshift: false
 #
 #   # Whether the target cluster is an Istio-enabled cluster. If you deploy via `helm install`,

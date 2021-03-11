@@ -12,7 +12,7 @@ source "${DIR}"/../deploy/common/k8sbased.sh
 
 if [[ -z "$1" ]]; then
   echo "Expected component as the first arg"
-  echo "Available [sensor, central]"
+  echo "Available [sensor, central, migrator]"
   exit 1
 fi
 
@@ -24,9 +24,12 @@ case "${component}" in
 "central")
   hotload_binary central central central
   ;;
+"migrator")
+  hotload_binary bin/migrator migrator central
+  ;;
 *)
   echo "Invalid input: ${component}"
-  echo "Available [sensor, central]"
+  echo "Available [sensor, central, migrator]"
   exit 1
   ;;
 esac

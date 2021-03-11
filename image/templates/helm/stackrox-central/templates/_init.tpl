@@ -92,7 +92,6 @@
 {{ $apiServer := dict "apiResources" $apiResources "version" $apiServerVersion }}
 {{ $_ = set $._rox "_apiServer" $apiServer }}
 
-
 {{/*
     Environment setup - part 1
    */}}
@@ -101,17 +100,22 @@
 {{/* Infer OpenShift, if needed */}}
 {{ if kindIs "invalid" $env.openshift }}
   {{ $_ := set $env "openshift" (has "apps.openshift.io/v1" $._rox._apiServer.apiResources) }}
-  {{ if $env.openshift }}
-    {{ include "srox.note" (list $ "Based on API server properties, we have inferred that you are deploying into an OpenShift cluster. Set the `env.openshift` property explicitly to false/true to override the auto-sensed value.") }}
-  {{ end }}
 {{ end }}
 
-{{/* Infer Istio, if needed */}}
-{{ if kindIs "invalid" $env.istio }}
-  {{ $_ := set $env "istio" (has "networking.istio.io/v1alpha3" $._rox._apiServer.apiResources) }}
-  {{ if $env.istio }}
-    {{ include "srox.note" (list $ "Based on API server properties, we have inferred that you are deploying into an Istio-enabled cluster. Set the `env.istio` property explicitly to false/true to override the auto-sensed value.") }}
+{{/* Infer openshift version */}}
+{{ if and $env.openshift (kindIs "bool" $env.openshift) }}
+  {{/* Parse and add KubeVersion as semver from built-in resources. This is necessary to compare valid integer numbers. */}}
+  {{ $kubeVersion := semver .Capabilities.KubeVersion.Version }}
+
+  {{/* Default to OpenShift 3 if no openshift resources are available, i.e. in helm template commands */}}
+  {{ if not (has "apps.openshift.io/v1" $._rox._apiServer.apiResources) }}
+    {{ $_ := set $._rox.env "openshift" 3 }}
+  {{ else if gt $kubeVersion.Minor 11 }}
+    {{ $_ := set $env "openshift" 4 }}
+  {{ else }}
+    {{ $_ := set $env "openshift" 3 }}
   {{ end }}
+  {{ include "srox.note" (list $ (printf "Based on API server properties, we have inferred that you are deploying into an OpenShift %d.x cluster. Set the `env.openshift` property explicitly to 3 or 4 to override the auto-sensed value." $env.openshift)) }}
 {{ end }}
 
 {{/* Infer GKE, if needed */}}

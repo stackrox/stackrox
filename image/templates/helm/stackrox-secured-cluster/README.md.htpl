@@ -120,7 +120,7 @@ and their default values.
 |Parameter |Description | Default value |
 |:---------|:-----------|:--------------|
 |`cluster.name`| Name of your cluster. | |
-|`cluster.type`| Either Kubernetes (`KUBERNETES_CLUSTER`) or OpenShift (`OPENSHIFT_CLUSTER`) cluster. |`KUBERNETES_CLUSTER` |
+|`cluster.type`| Type of your cluster. Use `KUBERNETES_CLUSTER` for Kubernetes, `OPENSHIFT4_CLUSTER` for OpenShift version `4.x`, or `OPENSHIFT_CLUSTER` for OpenShift version `3.x`. |  `KUBERNETES_CLUSTER` |
 |`endpoint.central`| Address of the Central endpoint, including the port number (without a trailing slash). If you are using a non-gRPC capable LoadBalancer, use the WebSocket protocol by prefixing the endpoint address with `wss://`. |`central.stackrox:443` |
 |`endpoint.advertised`| Address of the Sensor endpoint including port number.No trailing slash.|`sensor.stackrox:443` |
 |`image.repository.main`|Repository from which to download the main image. |`main` |
@@ -553,7 +553,7 @@ non-standard environments:
 |`admissionControl.imagePullPolicy`| Kubernetes image pull policy for Admission Control. | `IfNotPresent` |
 |`admissionControl.nodeSelector` | Node selector for Admission Control pods placement. | `null` (no placement constraints) |
 |`exposeMonitoring`| This setting controls whether the monitoring port (TCP 9090) should be exposed on the services. | `false` |
-|`env.openshift`| This setting can be used for overwriting the auto-sensing of OpenShift environments. If enabled, the cluster is set up for an OpenShift environment. | Auto-sensed, depends on environment. |
+|`env.openshift`| The StackRox Kubernetes Security Platform automatically detects the OpenShift version (`3.x` or `4.x`). Use this parameter to override the automatically detected version number, for example `4`. | `null` |
 |`env.istio`| This setting can be used for overwriting the auto-sensing of Istio environments. If enabled, the cluster is set up for an Istio environment. | Auto-sensed, depends on environment. |
 
 ### Default resources
@@ -645,7 +645,7 @@ doesn't need to be kept secret.
      1. Under the **Authentication Tokens** section, select **Cluster Init Bundle**.
      1. Select **Get CA Config** on the top right to download the configuration
         file called `ca-config.yaml`.
-   - **`roxctl1 CLI**:
+   - **`roxctl CLI**:
      1. Run the following command:
         ```sh
         roxctl central init-bundles fetch-ca --output ca-config.yaml

@@ -27,7 +27,7 @@ func Run(databases *types.Databases) error {
 			return err
 		}
 	} else {
-		log.WriteToStderr("DB is up to date. Nothing to do here.")
+		log.WriteToStderrf("DB is up to date at version %d. Nothing to do here.", dbSeqNum)
 	}
 
 	return nil

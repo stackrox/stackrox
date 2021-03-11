@@ -15,9 +15,10 @@ type Test struct {
 	Values map[string]interface{} `json:"values,omitempty"`
 	Set    map[string]interface{} `json:"set,omitempty"`
 
-	Defs    string       `json:"defs,omitempty"`
-	Release *ReleaseSpec `json:"release,omitempty"`
-	Server  *ServerSpec  `json:"server,omitempty"`
+	Defs         string            `json:"defs,omitempty"`
+	Release      *ReleaseSpec      `json:"release,omitempty"`
+	Server       *ServerSpec       `json:"server,omitempty"`
+	Capabilities *CapabilitiesSpec `json:"capabilities,omitempty"`
 
 	Expect      string `json:"expect,omitempty"`
 	ExpectError *bool  `json:"expectError,omitempty"`
@@ -51,4 +52,17 @@ type ServerSpec struct {
 
 	// NoInherit indicates that server-side settings should *not* be inherited from the enclosing scope.
 	NoInherit bool `json:"noInherit,omitempty"`
+}
+
+// CapabilitiesSpec represents the `Capabilities` in Helm.
+type CapabilitiesSpec struct {
+	// KubeVersion represents the kubernetes version which is discoverable via `.Capabilities.KubeVersion`.
+	KubeVersion *KubeVersion `json:"kubeVersion,omitempty"`
+}
+
+// KubeVersion is the Kubernetes version.
+type KubeVersion struct {
+	Version string `json:"version,omitempty"` // i.e. v1.18
+	Major   string `json:"major,omitempty"`   // i.e. 1
+	Minor   string `json:"minor,omitempty"`   // i.e. 18
 }

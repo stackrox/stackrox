@@ -1,0 +1,33 @@
+tests:
+- name: "Detect OpenShift 3 if no openshift server resources are not visible"
+  set:
+    env.openshift: true
+  server:
+    availableSchemas:
+      - openshift-4.1.0
+  expect:
+    .notes | assertThat(contains("we have inferred that you are deploying into an OpenShift 3"))
+
+- name: "Detect OpenShift 4 if env.openshift=true and server resources are visible"
+  server:
+    visibleSchemas:
+      - openshift-4.1.0
+  set:
+    env.openshift: true
+  capabilities:
+    kubeVersion:
+      version: "v1.18.0"
+  expect:
+    .notes | assertThat(contains("we have inferred that you are deploying into an OpenShift 4"))
+
+- name: "Detect openshift 3 if server resources are visible on kubernetes v1.11"
+  server:
+    visibleSchemas:
+      - openshift-4.1.0
+  set:
+    env.openshift: true
+  capabilities:
+    kubeVersion:
+      version: "v1.11.0"
+  expect:
+    .notes | assertThat(contains("we have inferred that you are deploying into an OpenShift 3"))

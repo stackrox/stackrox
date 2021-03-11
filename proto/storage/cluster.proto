@@ -14,6 +14,7 @@ enum ClusterType {
     OPENSHIFT_CLUSTER        = 2;
     reserved 3;
     reserved 4;
+    OPENSHIFT4_CLUSTER       = 5;
 }
 
 message GoogleProviderMetadata {

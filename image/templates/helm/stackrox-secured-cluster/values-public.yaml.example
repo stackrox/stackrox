@@ -75,7 +75,8 @@
 #env:
 #  # Treat the environment as an OpenShift cluster. Leave this unset to use auto-detection
 #  # based on available API resources on the server.
-#  # Possible values: null, false, true
+#  # Set it to true to auto-detect the OpenShift version, otherwise set it explicitly.
+#  # Possible values: null, false, true, 3, 4
 #  openshift: null
 #
 #  # Treat the environment as Istio-enabled. Leave this unset to use auto-detection based on

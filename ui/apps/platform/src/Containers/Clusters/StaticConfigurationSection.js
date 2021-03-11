@@ -18,7 +18,7 @@ import {
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
 
-import { clusterTypeOptions, runtimeOptions } from './cluster.helpers';
+import { clusterTypeOptions, clusterTypes, runtimeOptions } from './cluster.helpers';
 import HelmValueWarning from './Components/HelmValueWarning';
 
 // factory that returns a handler to normalize our generic Select component's return value
@@ -59,11 +59,27 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
         selectedCluster,
         handleChange
     );
+    function guardedClusterTypeChange(selectedOption) {
+        if (selectedOption === clusterTypes.OPENSHIFT_3) {
+            // force admission controller events off in OpenShift 3.x
+            const syntheticEvent = {
+                target: {
+                    name: 'admissionControllerEvents',
+                    value: false,
+                },
+            };
+
+            handleChange(syntheticEvent);
+        }
+        onClusterTypeChange(selectedOption);
+    }
 
     const showSlimCollectorWarning =
         centralEnv?.successfullyFetched &&
         selectedCluster.slimCollector &&
         !centralEnv.kernelSupportAvailable;
+
+    const isTypeOpenShift3 = selectedCluster?.type === clusterTypes.OPENSHIFT_3;
 
     return (
         <CollapsibleSection
@@ -94,7 +110,7 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                         id="clusterType"
                         options={clusterTypeOptions}
                         placeholder="Select a cluster type"
-                        onChange={onClusterTypeChange}
+                        onChange={guardedClusterTypeChange}
                         className={selectElementClassName}
                         wrapperClass={selectWrapperClassName}
                         triggerClass="border-l border-base-300"
@@ -193,23 +209,30 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                             <ToggleSwitch
                                 id="admissionControllerEvents"
                                 name="admissionControllerEvents"
+                                disabled={isTypeOpenShift3}
                                 toggleHandler={handleChange}
-                                enabled={selectedCluster.admissionControllerEvents}
+                                enabled={
+                                    isTypeOpenShift3
+                                        ? false
+                                        : selectedCluster.admissionControllerEvents
+                                }
                             />
                         </div>
-                        <HelmValueWarning
-                            currentValue={selectedCluster.admissionControllerEvents}
-                            helmValue={
-                                selectedCluster?.helmConfig?.staticConfig?.admissionControllerEvents
-                            }
-                        />
-                        {selectedCluster.admissionControllerEvents &&
-                            selectedCluster?.type === 'OPENSHIFT_CLUSTER' && (
-                                <div className="border border-alert-200 bg-alert-200 p-2 rounded-b">
-                                    This setting will not work for OpenShift 3.11; so please ensure
-                                    that your cluster is running OpenShift 4.0 and higher.
-                                </div>
-                            )}
+                        {!isTypeOpenShift3 && (
+                            <HelmValueWarning
+                                currentValue={selectedCluster.admissionControllerEvents}
+                                helmValue={
+                                    selectedCluster?.helmConfig?.staticConfig
+                                        ?.admissionControllerEvents
+                                }
+                            />
+                        )}
+                        {isTypeOpenShift3 && (
+                            <div className="border border-alert-200 bg-alert-200 p-2 rounded-b">
+                                This setting will not work for OpenShift 3.11. To use this webhook,
+                                you must upgrade your cluster to OpenShift 4.1 or higher.
+                            </div>
+                        )}
                     </div>
                 )}
                 <div className={wrapperMarginClassName}>

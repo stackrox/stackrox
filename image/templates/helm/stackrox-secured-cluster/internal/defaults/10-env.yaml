@@ -4,7 +4,6 @@
 env:
   {{- if has "apps.openshift.io/v1" ._rox._apiServer.apiResources }}
   openshift: true
-  {{- include "srox.note" (list . "Based on API server properties, we have inferred that you are deploying into an OpenShift cluster. Set the `env.openshift` property explicitly to false/true to override the auto-sensed value.") }}
   {{- else }}
   openshift: false
   {{- end }}

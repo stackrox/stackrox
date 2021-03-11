@@ -102,6 +102,27 @@
 {{ end }}
 {{ end }}
 
+{{/*
+   Environment setup
+*/}}
+
+{{/* Infer openshift version */}}
+{{ if and $._rox.env.openshift (kindIs "bool" $._rox.env.openshift) }}
+  {{/* Parse and add KubeVersion as semver from built-in resources. This is necessary to compare valid integer numbers. */}}
+  {{ $kubeVersion := semver .Capabilities.KubeVersion.Version }}
+
+  {{/* Default to OpenShift 3 if no openshift resources are available, i.e. in helm tempalte commands */}}
+  {{ if not (has "apps.openshift.io/v1" $._rox._apiServer.apiResources) }}
+    {{ $_ := set $._rox.env "openshift" 3 }}
+  {{ else if gt $kubeVersion.Minor 11 }}
+    {{ $_ := set $._rox.env "openshift" 4 }}
+  {{ else }}
+    {{ $_ := set $._rox.env "openshift" 3 }}
+  {{ end }}
+
+  {{ include "srox.note" (list $ (printf "Based on API server properties, we have inferred that you are deploying into an OpenShift %d cluster. Set the `env.openshift` property explicitly to 3 or 4 to override the auto-sensed value." $._rox.env.openshift)) }}
+{{ end }}
+
 {{ if and $._rox.admissionControl.dynamic.enforceOnCreates (not $._rox.admissionControl.listenOnCreates) }}
   {{ include "srox.warn" (list $ "Incompatible settings: 'admissionControl.dynamic.enforceOnCreates' is set to true, while `admissionControl.listenOnCreates` is set to false. For the feature to be active, enable both settings by setting them to true.") }}
 {{ end }}

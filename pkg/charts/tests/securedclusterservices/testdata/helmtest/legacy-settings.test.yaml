@@ -48,15 +48,48 @@ tests:
       | assertThat(. == "legacy-sensor.example.com:8443")
     envVars(.deployments["admission-control"]; "admission-control")["ROX_SENSOR_ENDPOINT"]
       | assertThat(. == "legacy-sensor.example.com:8443")
-- name: OpenShift in Legacy mode
+
+- name: OpenShift in Legacy mode detects OpenShift 3
   values:
     cluster:
       type: OPENSHIFT_CLUSTER
   server:
     availableSchemas:
     - openshift-4.1.0
+  capabilities:
+    kubeVersion:
+      version: "v1.13.0"
   expect: |
     .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml |
       .clusterConfig.staticConfig.type | assertThat(. == "OPENSHIFT_CLUSTER")
+    envVars(.deployments.sensor; "sensor")["ROX_OPENSHIFT_API"] | assertThat(. == "true")
+    .securitycontextconstraints | assertThat(length == 3)
+
+- name: OpenShift in Legacy mode with Kubernetes v3.11 should detect OpenShift 3
+  values:
+    cluster:
+      type: OPENSHIFT_CLUSTER
+  server:
+    visibleSchemas:
+      - openshift-4.1.0
+  capabilities:
+    kubeVersion:
+      version: "v3.11.0"
+  expect: |
+    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml |
+      .clusterConfig.staticConfig.type | assertThat(. == "OPENSHIFT_CLUSTER")
+    envVars(.deployments.sensor; "sensor")["ROX_OPENSHIFT_API"] | assertThat(. == "true")
+    .securitycontextconstraints | assertThat(length == 3)
+
+- name: OpenShift in Legacy mode accepts OpenShift4 cluster type
+  values:
+    cluster:
+      type: OPENSHIFT4_CLUSTER
+  server:
+    visibleSchemas:
+      - openshift-4.1.0
+  expect: |
+    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml |
+      .clusterConfig.staticConfig.type | assertThat(. == "OPENSHIFT4_CLUSTER")
     envVars(.deployments.sensor; "sensor")["ROX_OPENSHIFT_API"] | assertThat(. == "true")
     .securitycontextconstraints | assertThat(length == 3)

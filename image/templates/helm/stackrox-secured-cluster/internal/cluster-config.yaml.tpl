@@ -4,7 +4,11 @@ clusterName: {{ ._rox.clusterName }}
 notHelmManaged: {{ not ._rox.helmManaged }}
 clusterConfig:
   staticConfig:
-    type: {{ if ._rox.env.openshift -}} OPENSHIFT_CLUSTER {{- else -}} KUBERNETES_CLUSTER {{- end }}
+    {{- if not ._rox.env.openshift }}
+    type: KUBERNETES_CLUSTER
+    {{- else }}
+    type: {{ if eq (int ._rox.env.openshift) 4 -}} OPENSHIFT4_CLUSTER {{- else -}} OPENSHIFT_CLUSTER {{ end }}
+    {{- end }}
     mainImage: {{ coalesce ._rox.image.main._abbrevImageRef ._rox.image.main.fullRef }}
     collectorImage: {{ coalesce ._rox.image.collector._abbrevImageRef ._rox.image.collector.fullRef }}
     centralApiEndpoint: {{ ._rox.centralEndpoint }}
