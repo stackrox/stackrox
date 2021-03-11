@@ -70,8 +70,8 @@ func JSON(output io.Writer, alerts []*storage.Alert) error {
 
 // PrettyWithResourceName renders the given list of policies in a human-friendly format, and
 // writes that to the output stream.
-func PrettyWithResourceName(output io.Writer, alerts []*storage.Alert, enforcementStage storage.EnforcementAction, resourceType, resourceName string) error {
-	alertTemplateObjects := makeAlertTemplateObjects(alerts)
+func PrettyWithResourceName(output io.Writer, alerts []*storage.Alert, enforcementStage storage.EnforcementAction, resourceType, resourceName string, printAllViolations bool) error {
+	alertTemplateObjects := makeAlertTemplateObjects(alerts, printAllViolations)
 	var templateMap = map[string]interface{}{
 		"AlertTemplateObjects": alertTemplateObjects,
 		"ResourceType":         resourceType,
@@ -93,8 +93,8 @@ func PrettyWithResourceName(output io.Writer, alerts []*storage.Alert, enforceme
 }
 
 // Pretty is a wrapper around PrettyWithResourceName that gets called with an empty resource name
-func Pretty(output io.Writer, alerts []*storage.Alert, enforcementStage storage.EnforcementAction, resourceType string) error {
-	return PrettyWithResourceName(output, alerts, enforcementStage, resourceType, "")
+func Pretty(output io.Writer, alerts []*storage.Alert, enforcementStage storage.EnforcementAction, resourceType string, printAllViolations bool) error {
+	return PrettyWithResourceName(output, alerts, enforcementStage, resourceType, "", printAllViolations)
 }
 
 // EnforcementFailedBuild returns a function which returns true if the given policy has an enforcement
@@ -111,17 +111,17 @@ func EnforcementFailedBuild(enforcementAction storage.EnforcementAction) func(po
 	}
 }
 
-func makeAlertTemplateObjects(alerts []*storage.Alert) []*alertTemplateObject {
+func makeAlertTemplateObjects(alerts []*storage.Alert, printAllViolations bool) []*alertTemplateObject {
 	alertTemplateObjects := make([]*alertTemplateObject, len(alerts))
 	for i, alert := range alerts {
 		printedViolations := alert.GetViolations()
-		if len(printedViolations) > maxPrintedViolations {
+		if !printAllViolations && len(printedViolations) > maxPrintedViolations {
 			printedViolations = printedViolations[:maxPrintedViolations]
 		}
 		alertTemplateObjects[i] = &alertTemplateObject{
 			Alert:               alert,
 			PrintedViolations:   printedViolations,
-			RemainingViolations: len(alert.GetViolations()) - maxPrintedViolations,
+			RemainingViolations: len(alert.GetViolations()) - len(printedViolations),
 		}
 	}
 	return alertTemplateObjects

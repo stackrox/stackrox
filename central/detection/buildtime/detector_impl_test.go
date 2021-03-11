@@ -1,6 +1,7 @@
 package buildtime
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
@@ -41,10 +42,10 @@ func TestDetector(t *testing.T) {
 	require.NoError(t, policySet.UpsertPolicy(policyToTest))
 
 	for _, testCase := range []struct {
-		image             *storage.Image
-		allowedCategories []string
-		expectedAlerts    int
-		expectedError     bool
+		image                    *storage.Image
+		allowedCategories        []string
+		expectedAlerts           int
+		expectedUnusedCategories []string
 	}{
 		{
 			image:          &storage.Image{Name: &storage.ImageName{Tag: "latest"}},
@@ -59,10 +60,10 @@ func TestDetector(t *testing.T) {
 			expectedAlerts: 0,
 		},
 		{
-			image:             &storage.Image{Name: &storage.ImageName{Tag: "latest"}},
-			allowedCategories: []string{"Not a category"},
-			expectedAlerts:    0,
-			expectedError:     true,
+			image:                    &storage.Image{Name: &storage.ImageName{Tag: "latest"}},
+			allowedCategories:        []string{"Not a category"},
+			expectedAlerts:           0,
+			expectedUnusedCategories: []string{"Not a category"},
 		},
 		{
 			image:             &storage.Image{Name: &storage.ImageName{Tag: "latest"}},
@@ -71,12 +72,14 @@ func TestDetector(t *testing.T) {
 		},
 	} {
 		t.Run(proto.MarshalTextString(testCase.image), func(t *testing.T) {
-			alerts, err := detector.Detect(testCase.image, testCase.allowedCategories)
-			if testCase.expectedError {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
+			filter, getUnusedCategories := detection.MakeCategoryFilter(testCase.allowedCategories)
+			alerts, err := detector.Detect(testCase.image, filter)
+			require.NoError(t, err)
+			lowercaseCategories := make([]string, len(testCase.expectedUnusedCategories))
+			for i, category := range testCase.expectedUnusedCategories {
+				lowercaseCategories[i] = strings.ToLower(category)
 			}
+			require.ElementsMatch(t, lowercaseCategories, getUnusedCategories())
 			assert.Len(t, alerts, testCase.expectedAlerts)
 		})
 

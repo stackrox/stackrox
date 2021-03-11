@@ -137,11 +137,12 @@ var (
 
 func TestReport(t *testing.T) {
 	tests := []struct {
-		name         string
-		resourceType string
-		resourceName string
-		alerts       []*storage.Alert
-		goldenFile   string
+		name               string
+		resourceType       string
+		resourceName       string
+		alerts             []*storage.Alert
+		goldenFile         string
+		printAllViolations bool
 	}{
 		{
 			name:         "nil image alerts",
@@ -201,6 +202,13 @@ func TestReport(t *testing.T) {
 			resourceName: "nginx",
 			alerts:       []*storage.Alert{&imageAlertThree},
 			goldenFile:   "testdata/many-violations.txt",
+		}, {
+			name:               "hit violation cutoff but print them all",
+			resourceType:       "Image",
+			resourceName:       "nginx",
+			alerts:             []*storage.Alert{&imageAlertThree},
+			goldenFile:         "testdata/many-violations-all-printed.txt",
+			printAllViolations: true,
 		},
 	}
 
@@ -218,7 +226,7 @@ func TestReport(t *testing.T) {
 			default:
 				t.Fatalf("Resource type %q is not recognized", test.resourceType)
 			}
-			a.NoError(PrettyWithResourceName(buf, test.alerts, enforcementAction, test.resourceType, test.resourceName))
+			a.NoError(PrettyWithResourceName(buf, test.alerts, enforcementAction, test.resourceType, test.resourceName, test.printAllViolations))
 
 			// If the -update flag was passed to go test, update the contents
 			// of all golden files.

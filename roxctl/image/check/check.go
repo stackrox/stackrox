@@ -33,11 +33,12 @@ func Command() *cobra.Command {
 		retryCount             int
 		sendNotifications      bool
 		policyCategories       []string
+		printAllViolations     bool
 	)
 	c := &cobra.Command{
 		Use: "check",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			return checkImageWithRetry(image, json, failViolationsWithJSON, sendNotifications, flags.Timeout(c), retryDelay, retryCount, policyCategories)
+			return checkImageWithRetry(image, json, failViolationsWithJSON, sendNotifications, flags.Timeout(c), retryDelay, retryCount, policyCategories, printAllViolations)
 		}),
 		PreRun: func(c *cobra.Command, args []string) {
 			jsonFlag := c.Flag(jsonFlagName)
@@ -65,12 +66,13 @@ func Command() *cobra.Command {
 		"whether to send notifications for violations (notifications will be sent to the notifiers "+
 			"configured in each violated policy).")
 	c.Flags().StringSliceVarP(&policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
+	c.Flags().BoolVar(&printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
 	return c
 }
 
-func checkImageWithRetry(image string, json bool, failViolationsWithJSON bool, sendNotifications bool, timeout time.Duration, retryDelay int, retryCount int, policyCategories []string) error {
+func checkImageWithRetry(image string, json bool, failViolationsWithJSON bool, sendNotifications bool, timeout time.Duration, retryDelay int, retryCount int, policyCategories []string, printAllViolations bool) error {
 	err := retry.WithRetry(func() error {
-		return checkImage(image, json, failViolationsWithJSON, sendNotifications, timeout, policyCategories)
+		return checkImage(image, json, failViolationsWithJSON, sendNotifications, timeout, policyCategories, printAllViolations)
 	},
 		retry.Tries(retryCount+1),
 		retry.OnFailedAttempts(func(err error) {
@@ -83,7 +85,7 @@ func checkImageWithRetry(image string, json bool, failViolationsWithJSON bool, s
 	return nil
 }
 
-func checkImage(image string, json bool, failViolationsWithJSON bool, sendNotifications bool, timeout time.Duration, policyCategories []string) error {
+func checkImage(image string, json bool, failViolationsWithJSON bool, sendNotifications bool, timeout time.Duration, policyCategories []string, printAllViolations bool) error {
 	// Get the violated policies for the input data.
 	req, err := buildRequest(image, sendNotifications, policyCategories)
 	if err != nil {
@@ -94,10 +96,10 @@ func checkImage(image string, json bool, failViolationsWithJSON bool, sendNotifi
 		return err
 	}
 
-	return reportCheckResults(image, json, failViolationsWithJSON, alerts)
+	return reportCheckResults(image, json, failViolationsWithJSON, alerts, printAllViolations)
 }
 
-func reportCheckResults(image string, json bool, failViolationsWithJSON bool, alerts []*storage.Alert) error {
+func reportCheckResults(image string, json bool, failViolationsWithJSON bool, alerts []*storage.Alert, printAllViolations bool) error {
 	// If json mode was given, print results (as json) and either immediately return or check policy,
 	// depending on a flag.
 	if json {
@@ -112,7 +114,7 @@ func reportCheckResults(image string, json bool, failViolationsWithJSON bool, al
 	}
 
 	// Print results in human readable mode.
-	if err := report.PrettyWithResourceName(os.Stdout, alerts, storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT, "Image", image); err != nil {
+	if err := report.PrettyWithResourceName(os.Stdout, alerts, storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT, "Image", image, printAllViolations); err != nil {
 		return err
 	}
 

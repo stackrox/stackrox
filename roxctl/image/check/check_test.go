@@ -47,7 +47,7 @@ func Test_reportCheckResults(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := reportCheckResults("fake-image", tt.args.json, tt.args.failViolationsWithJSON, tt.args.alerts); (err != nil) != tt.wantErr {
+			if err := reportCheckResults("fake-image", tt.args.json, tt.args.failViolationsWithJSON, tt.args.alerts, false); (err != nil) != tt.wantErr {
 				t.Errorf("reportCheckResults() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

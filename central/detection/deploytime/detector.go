@@ -10,7 +10,7 @@ import (
 type Detector interface {
 	PolicySet() detection.PolicySet
 
-	Detect(ctx deploytime.DetectionContext, deployment *storage.Deployment, images []*storage.Image) ([]*storage.Alert, error)
+	Detect(ctx deploytime.DetectionContext, deployment *storage.Deployment, images []*storage.Image, policyFilters ...detection.FilterOption) ([]*storage.Alert, error)
 }
 
 // NewDetector returns a new instance of a Detector.

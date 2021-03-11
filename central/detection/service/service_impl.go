@@ -5,11 +5,13 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
+	centralDetection "github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
@@ -127,9 +129,14 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	}
 
 	utils.FilterSuppressedCVEsNoClone(img)
-	alerts, err := s.buildTimeDetector.Detect(img, req.GetPolicyCategories())
+	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(req.GetPolicyCategories())
+	alerts, err := s.buildTimeDetector.Detect(img, filter)
 	if err != nil {
 		return nil, err
+	}
+	unusedCategories := getUnusedCategories()
+	if len(unusedCategories) > 0 {
+		return nil, fmt.Errorf("allowed categories %q did not match any policy categories", unusedCategories)
 	}
 
 	s.maybeSendNotifications(req, alerts)
@@ -148,7 +155,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	}, nil
 }
 
-func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment) (*apiV1.DeployDetectionResponse_Run, error) {
+func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment, policyCategories ...string) (*apiV1.DeployDetectionResponse_Run, error) {
 	images, updatedIndices, _, err := s.deploymentEnricher.EnrichDeployment(enrichmentContext, deployment)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -168,9 +175,14 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 		EnforcementOnly: enrichmentContext.EnforcementOnly,
 	}
 
-	alerts, err := s.detector.Detect(detectionCtx, deployment, images)
+	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(policyCategories)
+	alerts, err := s.detector.Detect(detectionCtx, deployment, images, filter)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
+	}
+	unusedCategories := getUnusedCategories()
+	if len(unusedCategories) > 0 {
+		return nil, status.Errorf(codes.Internal, "allowed categories %v did not match any policy categories", unusedCategories)
 	}
 	return &apiV1.DeployDetectionResponse_Run{
 		Name:   deployment.GetName(),
@@ -179,7 +191,7 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}, nil
 }
 
-func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, eCtx enricher.EnrichmentContext, obj k8sRuntime.Object) (*apiV1.DeployDetectionResponse_Run, error) {
+func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, eCtx enricher.EnrichmentContext, obj k8sRuntime.Object, policyCategories []string) (*apiV1.DeployDetectionResponse_Run, error) {
 	if !kubernetes.IsDeploymentResource(obj.GetObjectKind().GroupVersionKind().Kind) {
 		return nil, nil
 	}
@@ -188,7 +200,7 @@ func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, eCtx enricher.Enr
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Could not convert to deployment from resource: %v", err)
 	}
-	return s.enrichAndDetect(ctx, eCtx, deployment)
+	return s.enrichAndDetect(ctx, eCtx, deployment, policyCategories...)
 }
 
 func getObjectsFromYAML(yamlString string) ([]k8sRuntime.Object, error) {
@@ -253,7 +265,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 
 	var runs []*apiV1.DeployDetectionResponse_Run
 	for _, r := range resources {
-		run, err := s.runDeployTimeDetect(ctx, eCtx, r)
+		run, err := s.runDeployTimeDetect(ctx, eCtx, r, req.GetPolicyCategories())
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "Unable to convert object: %v", err)
 		}

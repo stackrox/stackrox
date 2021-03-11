@@ -26,10 +26,12 @@ var (
 // Command checks the deployment against deploy time system policies
 func Command() *cobra.Command {
 	var (
-		file       string
-		json       bool
-		retryDelay int
-		retryCount int
+		file               string
+		json               bool
+		retryDelay         int
+		retryCount         int
+		policyCategories   []string
+		printAllViolations bool
 	)
 	c := &cobra.Command{
 		Use: "check",
@@ -37,7 +39,7 @@ func Command() *cobra.Command {
 			if file == "" {
 				return errors.New("--file must be set")
 			}
-			return checkDeploymentWithRetry(file, json, flags.Timeout(c), retryDelay, retryCount)
+			return checkDeploymentWithRetry(file, json, flags.Timeout(c), retryDelay, retryCount, policyCategories, printAllViolations)
 		}),
 	}
 
@@ -45,12 +47,14 @@ func Command() *cobra.Command {
 	c.Flags().BoolVar(&json, "json", false, "output policy results as json.")
 	c.Flags().IntVarP(&retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
 	c.Flags().IntVarP(&retryCount, "retries", "r", 0, "Number of retries before exiting as error")
+	c.Flags().StringSliceVarP(&policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
+	c.Flags().BoolVar(&printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
 	return c
 }
 
-func checkDeploymentWithRetry(file string, json bool, timeout time.Duration, retryDelay int, retryCount int) error {
+func checkDeploymentWithRetry(file string, json bool, timeout time.Duration, retryDelay int, retryCount int, policyCategories []string, printAllViolations bool) error {
 	err := retry.WithRetry(func() error {
-		return checkDeployment(file, json, timeout)
+		return checkDeployment(file, json, timeout, policyCategories, printAllViolations)
 	},
 		retry.Tries(retryCount+1),
 		retry.OnFailedAttempts(func(err error) {
@@ -63,14 +67,14 @@ func checkDeploymentWithRetry(file string, json bool, timeout time.Duration, ret
 	return nil
 }
 
-func checkDeployment(file string, json bool, timeout time.Duration) error {
+func checkDeployment(file string, json bool, timeout time.Duration, policyCategories []string, printAllViolations bool) error {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return err
 	}
 
 	// Get the violated policies for the input data.
-	alerts, err := getAlerts(string(data), timeout)
+	alerts, err := getAlerts(string(data), timeout, policyCategories)
 	if err != nil {
 		return err
 	}
@@ -81,7 +85,7 @@ func checkDeployment(file string, json bool, timeout time.Duration) error {
 	}
 
 	// Print results in human readable mode.
-	if err = report.Pretty(os.Stdout, alerts, storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT, "Deployment"); err != nil {
+	if err = report.Pretty(os.Stdout, alerts, storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT, "Deployment", printAllViolations); err != nil {
 		return err
 	}
 
@@ -96,7 +100,7 @@ func checkDeployment(file string, json bool, timeout time.Duration) error {
 }
 
 // Get the alerts for the command line inputs.
-func getAlerts(yaml string, timeout time.Duration) ([]*storage.Alert, error) {
+func getAlerts(yaml string, timeout time.Duration, policyCategories []string) ([]*storage.Alert, error) {
 	// Create the connection to the central detection service.
 	conn, err := common.GetGRPCConnection()
 	if err != nil {
@@ -110,7 +114,10 @@ func getAlerts(yaml string, timeout time.Duration) ([]*storage.Alert, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	// Call detection and return the returned alerts.
-	response, err := service.DetectDeployTimeFromYAML(ctx, &v1.DeployYAMLDetectionRequest{Yaml: yaml})
+	response, err := service.DetectDeployTimeFromYAML(ctx, &v1.DeployYAMLDetectionRequest{
+		Yaml:             yaml,
+		PolicyCategories: policyCategories,
+	})
 	if err != nil {
 		return nil, err
 	}
