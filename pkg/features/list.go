@@ -46,5 +46,5 @@ var (
 	K8sAuditLogDetection = registerFeature("Enable detection of kubernetes audit log based event detection", "ROX_K8S_AUDIT_LOG_DETECTION", false)
 
 	// InactiveImageScanningUI enables UI to facilitate scanning of inactive images.
-	InactiveImageScanningUI = registerFeature("Enable UI to facilitate scanning of inactive images", "ROX_INACTIVE_IMAGE_SCANNING_UI", false)
+	InactiveImageScanningUI = registerFeature("Enable UI to facilitate scanning of inactive images", "ROX_INACTIVE_IMAGE_SCANNING_UI", true)
 )
