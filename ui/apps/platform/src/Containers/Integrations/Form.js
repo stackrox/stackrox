@@ -9,8 +9,10 @@ import * as Icon from 'react-feather';
 import set from 'lodash/set';
 
 import { HelpIcon } from '@stackrox/ui-components';
-import Panel from 'Components/Panel';
+import CloseButton from 'Components/CloseButton';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
+import SidePanelAdjacentArea from 'Components/SidePanelAdjacentArea';
 import ReduxRadioButtonGroupField from 'Components/forms/ReduxRadioButtonGroupField';
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
@@ -280,7 +282,7 @@ class Form extends Component {
             <>
                 <PanelButton
                     icon={<Icon.Save className="h-4 w-4" />}
-                    className="btn btn-success mx-1"
+                    className="btn btn-success mr-2"
                     disabled={!isValid}
                     onClick={this.onSubmit}
                     tooltip={this.isEditMode() ? 'Save' : 'Create'}
@@ -292,7 +294,7 @@ class Form extends Component {
                     this.props.initialValues.id && (
                         <PanelButton
                             icon={<Icon.Check className="h-4 w-4" />}
-                            className="btn btn-base mx-1"
+                            className="btn btn-base mr-2"
                             onClick={this.onBackup}
                             tooltip="Trigger Backup"
                         >
@@ -302,7 +304,7 @@ class Form extends Component {
                 {this.props.source !== 'authProviders' && (
                     <PanelButton
                         icon={<Icon.Check className="h-4 w-4" />}
-                        className="btn btn-base mx-1"
+                        className="btn btn-base mr-2"
                         onClick={this.onTest}
                         tooltip="Test"
                     >
@@ -313,11 +315,21 @@ class Form extends Component {
         );
 
         return (
-            <div className="flex flex-1">
-                <Panel header={header} onClose={this.props.onClose} headerComponents={buttons}>
-                    {this.renderForm()}
-                </Panel>
-            </div>
+            <SidePanelAdjacentArea width="1/2">
+                <PanelNew testid="panel">
+                    <PanelHead>
+                        <PanelTitle isUpperCase testid="panel-header" text={header} />
+                        <PanelHeadEnd>
+                            {buttons}
+                            <CloseButton
+                                onClose={this.props.onClose}
+                                className="border-base-400 border-l"
+                            />
+                        </PanelHeadEnd>
+                    </PanelHead>
+                    <PanelBody>{this.renderForm()}</PanelBody>
+                </PanelNew>
+            </SidePanelAdjacentArea>
         );
     }
 }

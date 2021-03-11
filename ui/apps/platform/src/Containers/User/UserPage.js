@@ -47,7 +47,7 @@ const UserPage = ({ userData, resourceToAccessByRole }) => {
                             StackRox User Permissions
                             <ArrowRightCircle className="w-5" />
                         </button>
-                        <div className="border border-base-400">
+                        <div className="bg-base-100 border border-base-400">
                             <SideBar
                                 header="StackRox User Roles"
                                 rows={user.roles}

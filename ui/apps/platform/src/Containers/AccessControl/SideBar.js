@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 
 import List from 'Components/List';
-import Panel, { headerClassName } from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelTitle } from 'Components/Panel';
 import { defaultColumnClassName, rtTrActionsClassName } from 'Components/Table';
 import RowActionButton from 'Components/RowActionButton';
 
@@ -48,7 +48,6 @@ const SideBar = ({
         );
     }
 
-    const panelHeaderClassName = `${headerClassName} bg-base-100`;
     const columns = [
         {
             id: 'name',
@@ -62,9 +61,13 @@ const SideBar = ({
             Cell: ({ original }) => renderRowActionButtons(original),
         },
     ];
+
     return (
-        <Panel header={header} headerClassName={panelHeaderClassName}>
-            <div className="flex flex-col w-full h-full bg-base-100">
+        <PanelNew testid="panel">
+            <PanelHead>
+                <PanelTitle isUpperCase testid="panel-header" text={header} />
+            </PanelHead>
+            <PanelBody>
                 <div className="overflow-auto table-reset-padding">
                     <List
                         columns={columns}
@@ -79,8 +82,8 @@ const SideBar = ({
                         {addRowButton}
                     </div>
                 )}
-            </div>
-        </Panel>
+            </PanelBody>
+        </PanelNew>
     );
 };
 

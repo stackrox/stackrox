@@ -6,7 +6,7 @@ import SaveButton from 'Components/SaveButton';
 function HeaderButtons({ editText, isEditing, onEdit, onCancel, onTest, editDisabled }) {
     if (!isEditing) {
         return (
-            <div className="flex">
+            <div className="flex mr-3">
                 {!!onTest && (
                     <button
                         className="mr-2 border-2 bg-primary-200 border-primary-400 text-sm text-primary-700 hover:bg-primary-300 hover:border-primary-500 rounded-sm block px-3 py-2 uppercase"
@@ -29,7 +29,7 @@ function HeaderButtons({ editText, isEditing, onEdit, onCancel, onTest, editDisa
         );
     }
     return (
-        <div className="flex">
+        <div className="flex mr-3">
             <button className="btn btn-base mr-2" type="button" onClick={onCancel}>
                 Cancel
             </button>

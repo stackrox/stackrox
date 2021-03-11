@@ -5,7 +5,7 @@ import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 
 import { defaultRoles } from 'constants/accessControl';
-import Panel, { headerClassName } from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import Button from 'Containers/AccessControl/Roles/Permissions/Button';
 import Form from 'Containers/AccessControl/Roles/Permissions/Form';
 import Details from 'Containers/AccessControl/Roles/Permissions/Details';
@@ -38,7 +38,7 @@ const Permissions = ({
         headerText = name ? `"${name}" Permissions` : 'User Permissions';
     }
     const headerComponents = defaultRoles[selectedRole.name] ? (
-        <span className="uppercase text-base-500 leading-normal font-700">system default</span>
+        <span className="uppercase text-base-500 leading-normal 3 font-700">system default</span>
     ) : (
         <>
             {!readOnly && (
@@ -46,15 +46,15 @@ const Permissions = ({
             )}
         </>
     );
-    const panelHeaderClassName = `${headerClassName} bg-base-100`;
+
     return (
-        <Panel
-            header={headerText}
-            headerClassName={panelHeaderClassName}
-            headerComponents={headerComponents}
-        >
-            <div className="w-full h-full bg-base-100 flex flex-1">{displayContent()}</div>
-        </Panel>
+        <PanelNew testid="panel">
+            <PanelHead>
+                <PanelTitle isUpperCase testid="panel-header" text={headerText} />
+                <PanelHeadEnd>{headerComponents}</PanelHeadEnd>
+            </PanelHead>
+            <PanelBody>{displayContent()}</PanelBody>
+        </PanelNew>
     );
 };
 
