@@ -65,7 +65,7 @@ const RiskPage = ({
                     />
                 </div>
                 {deploymentId && (
-                    <SidePanelAdjacentArea isWider>
+                    <SidePanelAdjacentArea width="3/5">
                         <RiskSidePanel
                             selectedDeploymentId={deploymentId}
                             setSelectedDeploymentId={setSelectedDeploymentId}

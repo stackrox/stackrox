@@ -84,7 +84,7 @@ const AuthProviders = ({
     return (
         <section className="flex flex-1 h-full">
             <div className={`w-1/4 flex flex-col ${className}`}>
-                <div className="border border-base-400 m-4 h-full">
+                <div className="bg-base-100 border border-base-400 m-4 h-full">
                     <SideBar
                         header="Auth Providers"
                         rows={authProviders}
@@ -97,7 +97,7 @@ const AuthProviders = ({
                     />
                 </div>
             </div>
-            <div className="border border-base-400 w-3/4 my-4 mr-4 z-10">
+            <div className="bg-base-100 border border-base-400 w-3/4 my-4 mr-4 z-10">
                 <AuthProvider
                     isEditing={isEditing}
                     selectedAuthProvider={selectedAuthProvider}

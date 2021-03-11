@@ -13,11 +13,13 @@ import CheckboxTable from 'Components/CheckboxTable';
 import { rtTrActionsClassName } from 'Components/Table';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import Modal from 'Components/Modal';
+import CloseButton from 'Components/CloseButton';
 import CustomDialogue from 'Components/CustomDialogue';
-import Panel from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import RowActionButton from 'Components/RowActionButton';
+import SidePanelAdjacentArea from 'Components/SidePanelAdjacentArea';
 import { ClusterInitBundle, fetchCAConfig } from 'services/ClustersService';
 
 import FileSaver from 'file-saver';
@@ -209,7 +211,7 @@ function ClusterInitBundlesModal({
                 {selectionCount !== 0 && (
                     <PanelButton
                         icon={<Icon.Slash className="h-4 w-4 ml-1" />}
-                        className="btn btn-alert"
+                        className="btn btn-alert mr-3"
                         onClick={handleShowConfirmationDialog}
                         disabled={selectedBundleId !== null}
                         tooltip={`Revoke (${selectionCount})`}
@@ -236,7 +238,7 @@ function ClusterInitBundlesModal({
                         </PanelButton>
                         <PanelButton
                             icon={<Icon.Plus className="h-4 w-4 ml-1" />}
-                            className="btn btn-base"
+                            className="btn btn-base mr-3"
                             onClick={openForm}
                             disabled={
                                 clusterInitBundleGenerationWizardOpen || selectedBundleId !== null
@@ -271,9 +273,13 @@ function ClusterInitBundlesModal({
                       clusterInitBundleCount
                   )}`;
         return (
-            <Panel header={headerText} headerComponents={renderPanelButtons()}>
-                {showModalView()}
-            </Panel>
+            <PanelNew testid="panel">
+                <PanelHead isDarkMode>
+                    <PanelTitle isUpperCase testid="panel-header" text={headerText} />
+                    <PanelHeadEnd>{renderPanelButtons()}</PanelHeadEnd>
+                </PanelHead>
+                <PanelBody>{showModalView()}</PanelBody>
+            </PanelNew>
         );
     }
 
@@ -288,7 +294,7 @@ function ClusterInitBundlesModal({
         const buttons = (
             <PanelButton
                 icon={<Icon.Save className="h-4 w-4" />}
-                className="btn btn-success mr-2 "
+                className="btn btn-success mr-2"
                 onClick={onSubmit}
                 tooltip="Generate"
             >
@@ -297,27 +303,55 @@ function ClusterInitBundlesModal({
         );
 
         return (
-            <Panel
-                header="Generate Cluster Init Bundle"
-                onClose={closeForm}
-                headerComponents={buttons}
-            >
-                <ClusterInitBundleForm />
-            </Panel>
+            <SidePanelAdjacentArea width="1/2">
+                <PanelNew testid="panel">
+                    <PanelHead isDarkMode>
+                        <PanelTitle
+                            isUpperCase
+                            testid="panel-header"
+                            text="Generate Cluster Init Bundle"
+                        />
+                        <PanelHeadEnd>
+                            {buttons}
+                            <CloseButton onClose={closeForm} className="border-base-400 border-l" />
+                        </PanelHeadEnd>
+                    </PanelHead>
+                    <PanelBody>
+                        <ClusterInitBundleForm />
+                    </PanelBody>
+                </PanelNew>
+            </SidePanelAdjacentArea>
         );
     }
 
     function renderDetails() {
         if (currentGeneratedClusterInitBundle) {
             return (
-                <Panel header="Generated Cluster Init Bundle" onClose={closeForm}>
-                    <ClusterInitBundleDetails
-                        authProviders={authProviders}
-                        clusterInitBundle={currentGeneratedClusterInitBundle}
-                        helmValuesBundle={currentGeneratedHelmValuesBundle}
-                        kubectlBundle={currentGeneratedKubectlBundle}
-                    />
-                </Panel>
+                <SidePanelAdjacentArea width="1/2">
+                    <PanelNew testid="panel">
+                        <PanelHead isDarkMode>
+                            <PanelTitle
+                                isUpperCase
+                                testid="panel-header"
+                                text="Generated Cluster Init Bundle"
+                            />
+                            <PanelHeadEnd>
+                                <CloseButton
+                                    onClose={closeForm}
+                                    className="border-base-400 border-l"
+                                />
+                            </PanelHeadEnd>
+                        </PanelHead>
+                        <PanelBody>
+                            <ClusterInitBundleDetails
+                                authProviders={authProviders}
+                                clusterInitBundle={currentGeneratedClusterInitBundle}
+                                helmValuesBundle={currentGeneratedHelmValuesBundle}
+                                kubectlBundle={currentGeneratedKubectlBundle}
+                            />
+                        </PanelBody>
+                    </PanelNew>
+                </SidePanelAdjacentArea>
             );
         }
         if (selectedBundleId) {
@@ -326,14 +360,31 @@ function ClusterInitBundlesModal({
             );
             if (selectedBundleMetadata) {
                 return (
-                    <Panel header="Cluster Init Bundle Details" onClose={unSelectRow}>
-                        <ClusterInitBundleDetails
-                            authProviders={authProviders}
-                            clusterInitBundle={selectedBundleMetadata}
-                            helmValuesBundle={currentGeneratedHelmValuesBundle}
-                            kubectlBundle={currentGeneratedKubectlBundle}
-                        />
-                    </Panel>
+                    <SidePanelAdjacentArea width="1/2">
+                        <PanelNew testid="panel">
+                            <PanelHead isDarkMode>
+                                <PanelTitle
+                                    isUpperCase
+                                    testid="panel-header"
+                                    text="Cluster Init Bundle Details"
+                                />
+                                <PanelHeadEnd>
+                                    <CloseButton
+                                        onClose={unSelectRow}
+                                        className="border-base-400 border-l"
+                                    />
+                                </PanelHeadEnd>
+                            </PanelHead>
+                            <PanelBody>
+                                <ClusterInitBundleDetails
+                                    authProviders={authProviders}
+                                    clusterInitBundle={selectedBundleMetadata}
+                                    helmValuesBundle={currentGeneratedHelmValuesBundle}
+                                    kubectlBundle={currentGeneratedKubectlBundle}
+                                />
+                            </PanelBody>
+                        </PanelNew>
+                    </SidePanelAdjacentArea>
                 );
             }
         }
@@ -343,7 +394,7 @@ function ClusterInitBundlesModal({
     return (
         <Modal isOpen onRequestClose={onRequestClose} className="w-full lg:w-5/6 h-full">
             {renderHeader()}
-            <div className="flex flex-1 w-full bg-base-100">
+            <div className="flex flex-1 relative w-full bg-base-100">
                 {renderTable()}
                 {renderForm()}
                 {renderDetails()}

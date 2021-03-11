@@ -8,7 +8,7 @@ import { createStructuredSelector } from 'reselect';
 
 import CheckboxTable from 'Components/CheckboxTable';
 import { rtTrActionsClassName } from 'Components/Table';
-import Panel from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import RowActionButton from 'Components/RowActionButton';
 import * as Icon from 'react-feather';
@@ -103,7 +103,7 @@ class IntegrationTable extends Component {
                 {selectionCount !== 0 && (
                     <PanelButton
                         icon={<Icon.Trash2 className="h-4 w-4 ml-1" />}
-                        className="btn btn-alert"
+                        className="btn btn-alert mr-3"
                         onClick={onDelete}
                         disabled={integrationsCount === 0 || !buttonsEnabled}
                         tooltip={`Delete (${selectionCount})`}
@@ -114,7 +114,7 @@ class IntegrationTable extends Component {
                 {selectionCount === 0 && (
                     <PanelButton
                         icon={<Icon.Plus className="h-4 w-4 ml-1" />}
-                        className="btn btn-base"
+                        className="btn btn-base mr-3"
                         onClick={addHandler}
                         disabled={!buttonsEnabled}
                         tooltip="New Integration"
@@ -220,11 +220,16 @@ class IntegrationTable extends Component {
                       selectionCount === 1 ? '' : 's'
                   } selected`
                 : `${integrationsCount} ${label} Integration${integrationsCount === 1 ? '' : 's'}`;
+
         return (
-            <div className="flex flex-1">
-                <Panel header={headerText} headerComponents={this.getPanelButtons()}>
-                    {this.renderTableContent()}
-                </Panel>
+            <div className="bg-base-100 flex-shrink-1 overflow-hidden w-full">
+                <PanelNew testid="panel">
+                    <PanelHead>
+                        <PanelTitle isUpperCase testid="panel-header" text={headerText} />
+                        <PanelHeadEnd>{this.getPanelButtons()}</PanelHeadEnd>
+                    </PanelHead>
+                    <PanelBody>{this.renderTableContent()}</PanelBody>
+                </PanelNew>
             </div>
         );
     }

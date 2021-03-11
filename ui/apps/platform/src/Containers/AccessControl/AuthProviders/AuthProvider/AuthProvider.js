@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Message } from '@stackrox/ui-components';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
-import Panel, { headerClassName } from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import HeaderButtons from 'Containers/AccessControl/AuthProviders/AuthProvider/HeaderButtons';
 import Form from 'Containers/AccessControl/AuthProviders/AuthProvider/Form/Form';
 import Details from 'Containers/AccessControl/AuthProviders/AuthProvider/Details';
@@ -256,18 +256,19 @@ class AuthProvider extends Component {
                 />
             );
         }
-        const panelHeaderClassName = `${headerClassName} bg-base-100`;
+
         return (
-            <Panel
-                header={headerText}
-                headerClassName={panelHeaderClassName}
-                headerComponents={headerComponents}
-                id="auth-provider-panel"
-            >
-                <div className="w-full h-full bg-base-300 flex">
-                    {isEmptyState ? this.displayEmptyState() : this.displayContent()}
-                </div>
-            </Panel>
+            <PanelNew testid="auth-provider-panel">
+                <PanelHead>
+                    <PanelTitle isUpperCase testid="auth-provider-panel-header" text={headerText} />
+                    <PanelHeadEnd>{headerComponents}</PanelHeadEnd>
+                </PanelHead>
+                <PanelBody>
+                    <div className="w-full h-full bg-base-300 flex">
+                        {isEmptyState ? this.displayEmptyState() : this.displayContent()}
+                    </div>
+                </PanelBody>
+            </PanelNew>
         );
     }
 }

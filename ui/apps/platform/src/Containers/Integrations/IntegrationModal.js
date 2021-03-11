@@ -265,10 +265,10 @@ class IntegrationModal extends Component {
             <Modal
                 isOpen
                 onRequestClose={this.props.onRequestClose}
-                className="w-full lg:w-5/6 h-full"
+                className="w-full xl:w-9/10 xxl:w-5/6 h-full"
             >
                 {headerSection}
-                <div className="flex flex-1 w-full bg-base-100">
+                <div className="flex h-full relative w-full">
                     {tableSection}
                     {formSection}
                 </div>

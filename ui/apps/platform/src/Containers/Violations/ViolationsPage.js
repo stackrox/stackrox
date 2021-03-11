@@ -107,7 +107,7 @@ function ViolationsPage({
                             />
                         </div>
                         {selectedAlertId && (
-                            <SidePanelAdjacentArea>
+                            <SidePanelAdjacentArea width="2/5">
                                 <ViolationsSidePanel
                                     selectedAlertId={selectedAlertId}
                                     setSelectedAlertId={setSelectedAlertId}

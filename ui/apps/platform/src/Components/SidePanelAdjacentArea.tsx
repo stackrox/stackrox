@@ -1,8 +1,16 @@
 import React, { ReactElement, ReactNode } from 'react';
 
+type Width = '2/5' | '1/2' | '3/5';
+
 export type SidePanelAdjacentAreaProps = {
     children: ReactNode;
-    isWider?: boolean;
+    width?: Width;
+};
+
+const widthClassNames: Record<Width, string> = {
+    '2/5': 'md:w-2/5 xl:w-1/3 xxl:w-1/4', // Violations
+    '1/2': 'md:w-1/2', // Integrations
+    '3/5': 'md:w-3/5 lg:w-1/2 xl:w-2/5 xxl:w-1/3', // Risk
 };
 
 /*
@@ -15,13 +23,11 @@ export type SidePanelAdjacentAreaProps = {
  */
 function SidePanelAdjacentArea({
     children,
-    isWider = false,
+    width = '1/2',
 }: SidePanelAdjacentAreaProps): ReactElement {
     return (
         <div
-            className={`bg-base-100 border-base-400 border-l flex-shrink-0 h-full absolute left-0 top-0 w-full z-10 md:relative ${
-                isWider ? 'md:w-3/5 lg:w-1/2 xl:w-2/5 xxl:w-1/3' : 'md:w-2/5 xl:w-1/3 xxl:w-1/4'
-            }`}
+            className={`bg-base-100 border-base-400 border-l flex-shrink-0 h-full absolute left-0 top-0 w-full z-10 md:relative ${widthClassNames[width]}`}
         >
             {children}
         </div>
