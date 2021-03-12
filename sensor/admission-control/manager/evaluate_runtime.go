@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/stringutils"
 	admission "k8s.io/api/admission/v1beta1"
+	"k8s.io/utils/pointer"
 )
 
 func (m *manager) shouldBypassRuntimeDetection(s *state, req *admission.AdmissionRequest) bool {
@@ -68,7 +69,7 @@ func (m *manager) evaluateRuntimeAdmissionRequest(s *state, req *admission.Admis
 
 	log.Debugf("Evaluating policies on kubernetes request %s", kubernetes.EventAsString(event))
 
-	alerts, enrichedWithDeployment, err := m.evaluatePodEvent(s, event)
+	alerts, enrichedWithDeployment, err := m.evaluatePodEvent(s, req, event)
 	if err != nil {
 		return nil, errors.Wrap(err, "running StackRox detection")
 	}
@@ -78,21 +79,23 @@ func (m *manager) evaluateRuntimeAdmissionRequest(s *state, req *admission.Admis
 		return pass(req.UID), nil
 	}
 
+	sendAlerts := enrichedWithDeployment && !pointer.BoolPtrDerefOr(req.DryRun, false)
+
 	if failReviewRequest(alerts...) {
-		if enrichedWithDeployment {
+		if sendAlerts {
 			go m.filterAndPutAttemptedAlertsOnChan(req.Operation, alerts...)
 		}
 		return fail(req.UID, message(alerts, false)), nil
 	}
 
-	if enrichedWithDeployment {
+	if sendAlerts {
 		go m.putAlertsOnChan(alerts)
 	}
 
 	return pass(req.UID), nil
 }
 
-func (m *manager) evaluatePodEvent(s *state, event *storage.KubernetesEvent) ([]*storage.Alert, bool, error) {
+func (m *manager) evaluatePodEvent(s *state, req *admission.AdmissionRequest, event *storage.KubernetesEvent) ([]*storage.Alert, bool, error) {
 	deployment := m.getDeploymentForPod(event.GetObject().GetNamespace(), event.GetObject().GetName())
 	if deployment != nil {
 		log.Debugf("Found deployment %s (id=%s) for %s/%s", deployment.GetName(), deployment.GetId(),
@@ -122,7 +125,9 @@ func (m *manager) evaluatePodEvent(s *state, event *storage.KubernetesEvent) ([]
 		"Policies with deploy-time fields for kubernetes event %s will be detected in background",
 		event.GetObject().GetNamespace(), event.GetObject().GetName(), kubernetes.EventAsString(event))
 
-	go m.waitForDeploymentAndDetect(s, event)
+	if !pointer.BoolPtrDerefOr(req.DryRun, false) {
+		go m.waitForDeploymentAndDetect(s, event)
+	}
 
 	alerts, err := s.runtimeDetectorForPoliciesWithoutDeployFields.DetectForDeploymentAndKubeEvent(&storage.Deployment{}, nil, event)
 	if err != nil {
@@ -175,6 +180,8 @@ func (m *manager) waitForDeploymentAndDetect(s *state, event *storage.Kubernetes
 			return
 		}
 
+		// This function is never called in dry run mode, so we don't need to guard sending alerts with a check for dry
+		// run.
 		go m.putAlertsOnChan(alerts)
 
 		return
