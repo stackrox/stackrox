@@ -10,11 +10,15 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/backup"
+	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/tar"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tecbot/gorocksdb"
+	"gopkg.in/yaml.v2"
 )
 
 const scratchPath = "backuptest"
@@ -60,6 +64,21 @@ func doTestBackup(t *testing.T, includeCerts bool) {
 
 	checkZipForRocks(t, zipFile)
 	checkZipForCerts(t, zipFile, includeCerts)
+	checkZipForVersion(t, zipFile)
+}
+
+func checkZipForVersion(t *testing.T, zipFile *zip.ReadCloser) {
+	versionFileEntry := getFileWithName(zipFile, backup.MigrationVersion)
+	require.NotNil(t, versionFileEntry)
+	reader, err := versionFileEntry.Open()
+	require.NoError(t, err)
+	bytes, err := ioutil.ReadAll(reader)
+	require.NoError(t, err)
+	version := &migrations.MigrationVersion{}
+	err = yaml.Unmarshal(bytes, version)
+	require.NoError(t, err)
+	assert.Equal(t, version.MainVersion, version.MainVersion)
+	assert.Equal(t, migrations.CurrentDBVersionSeqNum, version.SeqNum)
 }
 
 func checkZipForCerts(t *testing.T, zipFile *zip.ReadCloser, includeCerts bool) {
