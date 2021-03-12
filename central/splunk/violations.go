@@ -1,6 +1,7 @@
 package splunk
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
 	"net/http"
@@ -25,35 +26,30 @@ const (
 )
 
 var (
-	// allViolationStates contains all possible violation states for use in the query.
-	allViolationStates []string
-
 	// fallbackCheckpoint is a timestamp to use when checkpointQueryParam is not present in the query or can't be parsed.
-	fallbackCheckpoint *types.Timestamp
+	fallbackCheckpoint, fallbackCheckpointTime = func() (*types.Timestamp, time.Time) {
+		ts, t, err := parseTimestamp(fallbackCheckpointValue)
+		utils.Must(err)
+		return ts, t
+	}()
 )
 
-func init() {
-	allViolationStates = make([]string, 0, len(storage.ViolationState_value))
-	for k := range storage.ViolationState_value {
-		allViolationStates = append(allViolationStates, k)
-	}
-
-	ts, err := parseTimestamp(fallbackCheckpointValue)
-	utils.Must(err)
-	fallbackCheckpoint = ts
-}
-
-func parseTimestamp(timeStr string) (*types.Timestamp, error) {
+func parseTimestamp(timeStr string) (*types.Timestamp, time.Time, error) {
 	t, err := time.Parse(time.RFC3339, timeStr)
 	if err != nil {
-		return nil, err
+		return nil, time.Time{}, err
 	}
-	return types.TimestampProto(t)
+	ts, err := types.TimestampProto(t)
+	if err != nil {
+		return nil, time.Time{}, err
+	}
+	return ts, t, nil
 }
 
 // NewViolationsHandler provides violations data to Splunk on HTTP requests.
 func NewViolationsHandler(alertDS datastore.DataStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		res, err := getViolationsResponse(alertDS, r)
 		if err != nil {
 			msg := fmt.Sprintf("Error handling Splunk violations request: %s", err)
@@ -70,24 +66,13 @@ func NewViolationsHandler(alertDS datastore.DataStore) http.HandlerFunc {
 }
 
 func getViolationsResponse(alertDS datastore.DataStore, r *http.Request) (*integrations.SplunkViolationsResponse, error) {
-	fromTimestamp, err := getCheckpointValue(r)
+	fromTimestamp, fromTime, err := getCheckpointValue(r)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: efficient checkpointing with the help of query, same ROX-6549
-
 	// TODO(ROX-6689): pagination
-	// TODO: add violation filtering based on date as part of checkpointing
-
-	// Alert searcher limits results to only certain (open) alert states if state query wasn't explicitly provided.
-	// See https://github.com/stackrox/rox/blob/fe0447b512623111b78f5f7f1eb22f39e3e70cb3/central/alert/datastore/internal/search/searcher_impl.go#L142
-	// This isn't desirable for Splunk integration because we want Splunk to know about all alerts irrespective of their
-	// current state in StackRox.
-	// The following explicitly instructs the search to return alerts in _all_ states.
-	query := search.NewQueryBuilder().AddExactMatches(search.ViolationState, allViolationStates...).ProtoQuery()
-
-	alerts, err := alertDS.SearchRawAlerts(r.Context(), query)
+	alerts, err := queryAlerts(r.Context(), alertDS, fromTime)
 	if err != nil {
 		return nil, err
 	}
@@ -112,23 +97,49 @@ func getViolationsResponse(alertDS datastore.DataStore, r *http.Request) (*integ
 	})
 
 	if len(response.Violations) > 0 {
+		// NewCheckpoint must be max of ViolationTimes so that Splunk does not receive the same violations next time it
+		// queries with the NewCheckpoint value.
+		// TODO(ROX-6689): drop sorting and just find max ViolationTime while iterating through violations.
 		response.NewCheckpoint = response.Violations[len(response.Violations)-1].GetViolationInfo().GetViolationTime()
 	}
 
 	return &response, nil
 }
 
-func getCheckpointValue(r *http.Request) (*types.Timestamp, error) {
+func getCheckpointValue(r *http.Request) (*types.Timestamp, time.Time, error) {
 	param := r.URL.Query().Get(checkpointQueryParam)
 	if param == "" {
-		return fallbackCheckpoint, nil
+		return fallbackCheckpoint, fallbackCheckpointTime, nil
 	}
-	ts, err := parseTimestamp(param)
+	ts, t, err := parseTimestamp(param)
 	if err != nil {
-		msg := fmt.Sprintf("could not parse query parameter %q value %q as timestamp (try the following format: %s=%s): %s", checkpointQueryParam, param, checkpointQueryParam, fallbackCheckpointValue, err)
-		return nil, httputil.NewError(http.StatusBadRequest, msg)
+		return nil, time.Time{}, httputil.Errorf(http.StatusBadRequest,
+			"could not parse query parameter %q value %q as timestamp (try the following format: %s=%s): %s",
+			checkpointQueryParam, param, checkpointQueryParam, fallbackCheckpointValue, err)
 	}
-	return ts, nil
+	return ts, t, nil
+}
+
+func queryAlerts(ctx context.Context, alertDS datastore.DataStore, fromTime time.Time) ([]*storage.Alert, error) {
+	// Alert searcher limits results to only certain (open) alert states if state query wasn't explicitly provided.
+	// See https://github.com/stackrox/rox/blob/fe0447b512623111b78f5f7f1eb22f39e3e70cb3/central/alert/datastore/internal/search/searcher_impl.go#L142
+	// This isn't desirable for Splunk integration because we want Splunk to know about all alerts irrespective of their
+	// current state in StackRox.
+	// The following explicitly instructs the search to return alerts in _all_ states.
+	query := search.NewQueryBuilder().AddStrings(search.ViolationState, "*")
+
+	// Here we add filtering to only receive Alerts that were updated after the timestamp provided as the checkpoint.
+	// This is an optimization that allows to reduce the amount of data read from the datastore.
+	// Alert times are updated each time Alert receives a new violation and so by applying this filtering we are picking
+	// up both brand new alerts and old alerts that had new violations. Further on we still filter violations according
+	// to violation timestamp to make sure that violations of some alert with a history are not included if they're
+	// before the checkpoint but violations after the checkpoint are.
+	// The downstream timestamp querying supports granularity up to a second and a peculiar timestamp format therefore
+	// we leverage what it provides.
+	// See https://github.com/stackrox/rox/blob/master/pkg/search/blevesearch/time_query.go
+	query = query.AddStrings(search.ViolationTime, ">="+fromTime.Format("01/02/2006 3:04:05 PM MST"))
+
+	return alertDS.SearchRawAlerts(ctx, query.ProtoQuery())
 }
 
 func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp) ([]*integrations.SplunkViolation, error) {

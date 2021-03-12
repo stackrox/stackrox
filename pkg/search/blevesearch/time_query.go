@@ -21,7 +21,7 @@ func newTimeQuery(_ v1.SearchCategory, field string, value string, modifiers ...
 	var seconds int64
 	if t, ok := parseTimeString(trimmedValue); ok {
 		// Adjust for the timezone offset when comparing
-		seconds := t.Unix() - timeToOffset(t)
+		seconds = t.Unix() - timeToOffset(t)
 
 		// If the date query is a singular date with no prefix, then need to create a numeric query with the min = date. max = date + 1
 		if prefix == "" {
@@ -52,13 +52,13 @@ func parseDuration(d string) (time.Duration, bool) {
 }
 
 func parseTimeString(value string) (time.Time, bool) {
-	if t, err := time.Parse("01/02/2006 MST", value); err == nil {
-		return t, true
+	layouts := []string{"01/02/2006 3:04:05 PM MST", "01/02/2006 MST", "01/02/2006"}
+	for _, layout := range layouts {
+		if t, err := time.Parse(layout, value); err == nil {
+			return t, true
+		}
 	}
-	if t, err := time.Parse("01/02/2006", value); err == nil {
-		return t, true
-	}
-	return time.Now(), false
+	return time.Time{}, false
 }
 
 func timeToOffset(t time.Time) int64 {

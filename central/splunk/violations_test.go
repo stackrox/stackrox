@@ -1,6 +1,7 @@
 package splunk
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -8,12 +9,16 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/alert/datastore/mocks"
+	"github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/suite"
 	"k8s.io/client-go/util/jsonpath"
@@ -346,7 +351,7 @@ var (
 )
 
 func makeTimestamp(timeStr string) *types.Timestamp {
-	ts, err := parseTimestamp(timeStr)
+	ts, _, err := parseTimestamp(timeStr)
 	utils.Must(err)
 	return ts
 }
@@ -358,16 +363,22 @@ func TestViolations(t *testing.T) {
 type violationsTestSuite struct {
 	suite.Suite
 	processAlert, k8sAlert, deployAlert storage.Alert
+	allowCtx                            context.Context
+	// noCheckpoint is just a type-safe way to say there's no checkpoint parameter in the request without risking to
+	// accidentally provide nil in *storage.Alert varargs.
+	noCheckpoint []string
 }
 
 func (s *violationsTestSuite) SetupTest() {
 	s.processAlert = *processAlert.Clone()
 	s.k8sAlert = *k8sAlert.Clone()
 	s.deployAlert = *deployAlert.Clone()
+	s.allowCtx = sac.WithAllAccess(context.Background())
+	s.noCheckpoint = []string{}
 }
 
 func (s *violationsTestSuite) TestProcessAlert() {
-	vs := s.getViolations(s.requestAndGetBody("", &s.processAlert))
+	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.processAlert))
 	s.Len(vs, 2)
 
 	for _, v := range vs {
@@ -385,7 +396,7 @@ func (s *violationsTestSuite) TestProcessAlert() {
 }
 
 func (s *violationsTestSuite) TestK8sAlert() {
-	vs := s.getViolations(s.requestAndGetBody("", &s.k8sAlert))
+	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.k8sAlert))
 	s.Len(vs, 2)
 
 	for _, v := range vs {
@@ -401,7 +412,7 @@ func (s *violationsTestSuite) TestK8sAlert() {
 }
 
 func (s *violationsTestSuite) TestDeployAlert() {
-	vs := s.getViolations(s.requestAndGetBody("", &s.deployAlert))
+	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.deployAlert))
 	s.Len(vs, 3)
 
 	for _, v := range vs {
@@ -417,7 +428,7 @@ func (s *violationsTestSuite) TestDeployAlert() {
 }
 
 func (s *violationsTestSuite) TestViolationsAreOrdered() {
-	vs := s.getViolations(s.requestAndGetBody("", &s.processAlert, &s.k8sAlert, &s.deployAlert))
+	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.processAlert, &s.k8sAlert, &s.deployAlert))
 
 	s.Greater(len(vs), 2)
 	for i := range vs {
@@ -429,7 +440,7 @@ func (s *violationsTestSuite) TestViolationsAreOrdered() {
 }
 
 func (s *violationsTestSuite) TestViolationIdsAreDistinct() {
-	vs := s.getViolations(s.requestAndGetBody("", &s.processAlert, &s.k8sAlert, &s.deployAlert))
+	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.processAlert, &s.k8sAlert, &s.deployAlert))
 
 	ids := set.StringSet{}
 	for _, v := range vs {
@@ -446,7 +457,7 @@ func (s *violationsTestSuite) TestWithDeploymentImage() {
 		Image: alert.GetDeployment().Containers[0].GetImage(),
 	}
 
-	vs := s.getViolations(s.requestAndGetBody("", alert))
+	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert))
 
 	s.assertPresent(vs[0], ".deploymentInfo",
 		// deploymentImage must obviously be present coming from above
@@ -459,21 +470,21 @@ func (s *violationsTestSuite) TestAlertWithoutPolicy() {
 	alert := s.processAlert.Clone()
 	alert.Policy = nil
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
-	vs := s.getViolations(s.requestAndGetBody("", alert))
+	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert))
 	s.Nil(s.extr(vs[0], ".policyInfo"))
 }
 
 func (s *violationsTestSuite) TestProcessAlertWithoutProcessIndicators() {
 	alert := s.processAlert.Clone()
 	alert.ProcessViolation.Processes = []*storage.ProcessIndicator{}
-	s.Empty(s.getViolations(s.requestAndGetBody("", alert)))
+	s.Empty(s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert)))
 }
 
 func (s *violationsTestSuite) TestProcessAlertWithoutProcessSignal() {
 	alert := s.processAlert.Clone()
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
 	alert.ProcessViolation.Processes[0].Signal = nil
-	vs := s.getViolations(s.requestAndGetBody("", alert))
+	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert))
 	s.checkViolationInfo(vs[0])
 	s.checkAlertInfo(vs[0])
 	// That's all it can gather from ProcessIndicator without ProcessSignal
@@ -486,14 +497,14 @@ func (s *violationsTestSuite) TestProcessAlertWithoutProcessSignal() {
 func (s *violationsTestSuite) TestAlertWithoutViolations() {
 	alert := s.deployAlert.Clone()
 	alert.Violations = []*storage.Alert_Violation{}
-	s.Empty(s.getViolations(s.requestAndGetBody("", alert)))
+	s.Empty(s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert)))
 }
 
 func (s *violationsTestSuite) TestK8sAlertWithoutDeployment() {
 	alert := s.k8sAlert.Clone()
 	alert.Entity = nil
 	alert.Violations = alert.Violations[:1]
-	vs := s.getViolations(s.requestAndGetBody("", alert))
+	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert))
 	s.Empty(s.extr(vs[0], ".deploymentInfo"))
 }
 
@@ -501,7 +512,7 @@ func (s *violationsTestSuite) TestProcessAlertWithoutDeployment() {
 	alert := s.processAlert.Clone()
 	alert.Entity = nil
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
-	vs := s.getViolations(s.requestAndGetBody("", alert))
+	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert))
 	// deploymentInfo still has some attributes because they came from ProcessIndicator-s
 	s.assertPresent(vs[0], ".deploymentInfo", ".deploymentId", ".deploymentNamespace")
 }
@@ -510,7 +521,7 @@ func (s *violationsTestSuite) TestProcessAlertNotMatchingDeploymentId() {
 	alert := s.processAlert.Clone()
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
 	alert.ProcessViolation.Processes[0].DeploymentId = "blah"
-	vs := s.getViolations(s.requestAndGetBody("", alert))
+	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert))
 	// DeploymentId value from ProcessIndicator should take priority
 	s.Equal("blah", s.extr(vs[0], ".deploymentInfo.deploymentId"))
 	s.NotEmpty(s.extr(vs[0], ".deploymentInfo.deploymentNamespace"))
@@ -521,13 +532,13 @@ func (s *violationsTestSuite) TestProcessAlertNotMatchingDeploymentInfo() {
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
 	alert.ProcessViolation.Processes[0].ClusterId = "blah-cluster"
 	alert.ProcessViolation.Processes[0].Namespace = "blah-namespace"
-	vs := s.getViolations(s.requestAndGetBody("", alert))
+	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert))
 	s.Equal("blah-cluster", s.extr(vs[0], ".deploymentInfo.clusterId"))
 	s.Equal("blah-namespace", s.extr(vs[0], ".deploymentInfo.deploymentNamespace"))
 }
 
 func (s *violationsTestSuite) TestDefaultCheckpointAndNoViolations() {
-	body := s.requestAndGetBody("")
+	body := s.requestAndGetBody(s.noCheckpoint)
 	s.Empty(s.getViolations(body))
 	// API should return some default checkpoint for subsequent querying.
 	cp := makeTimestamp(s.extr(body, ".newCheckpoint").(string))
@@ -536,7 +547,7 @@ func (s *violationsTestSuite) TestDefaultCheckpointAndNoViolations() {
 }
 
 func (s *violationsTestSuite) TestCheckpointInTheFuture() {
-	body := s.requestAndGetBody("2130-12-31T23:59:59Z", &s.processAlert, &s.k8sAlert, &s.deployAlert)
+	body := s.requestAndGetBody([]string{"2130-12-31T23:59:59Z"}, &s.processAlert, &s.k8sAlert, &s.deployAlert)
 	s.Empty(s.getViolations(body))
 	// Incoming checkpoint should be echoed on the output.
 	s.Equal("2130-12-31T23:59:59Z", s.extr(body, ".newCheckpoint"))
@@ -549,10 +560,10 @@ func (s *violationsTestSuite) TestCheckpointFiltering() {
 	toTs := makeTimestamp(toStr)
 	alerts := []*storage.Alert{&s.processAlert, &s.k8sAlert, &s.deployAlert}
 
-	body := s.requestAndGetBody(fromStr, alerts...)
+	body := s.requestAndGetBody([]string{fromStr}, alerts...)
 	vs := s.getViolations(body)
 	s.NotEmpty(vs)
-	s.Less(len(vs), len(s.getViolations(s.requestAndGetBody("", alerts...))))
+	s.Less(len(vs), len(s.getViolations(s.requestAndGetBody(s.noCheckpoint, alerts...))))
 
 	for _, v := range vs {
 		ts := makeTimestamp(s.extr(v, ".violationInfo.violationTime").(string))
@@ -567,9 +578,9 @@ func (s *violationsTestSuite) TestCheckpointBeforeData() {
 	alerts := []*storage.Alert{&s.processAlert, &s.k8sAlert, &s.deployAlert}
 
 	// Query with checkpoint. The checkpoint's date is before violation timestamps in the data.
-	vs1 := s.getViolations(s.requestAndGetBody("2021-01-01T00:00:00Z", alerts...))
+	vs1 := s.getViolations(s.requestAndGetBody([]string{"2021-01-01T00:00:00Z"}, alerts...))
 	// Query without checkpoint.
-	vs2 := s.getViolations(s.requestAndGetBody("", alerts...))
+	vs2 := s.getViolations(s.requestAndGetBody(s.noCheckpoint, alerts...))
 
 	s.Equal(len(vs1), len(vs2))
 }
@@ -577,7 +588,7 @@ func (s *violationsTestSuite) TestCheckpointBeforeData() {
 func (s *violationsTestSuite) TestInvalidCheckpoint() {
 	w := httptest.NewRecorder()
 
-	s.request(w, nil, url.QueryEscape("This isn't any good timestamp"))
+	s.request(s.allowCtx, w, []string{"This isn't any good timestamp"})
 
 	s.Equal(http.StatusBadRequest, w.Code)
 	body := w.Body.String()
@@ -587,8 +598,8 @@ func (s *violationsTestSuite) TestInvalidCheckpoint() {
 }
 
 func (s *violationsTestSuite) TestFirstCheckpointWins() {
-	checkpointParam := "2130-12-31T23:59:59Z&from_checkpoint=2005-01-01T00:00:00Z"
-	vs := s.getViolations(s.requestAndGetBody(checkpointParam, &s.k8sAlert))
+	checkpointParams := []string{"2130-12-31T23:59:59Z", "2005-01-01T00:00:00Z"}
+	vs := s.getViolations(s.requestAndGetBody(checkpointParams, &s.k8sAlert))
 	s.Empty(vs)
 }
 
@@ -655,10 +666,10 @@ func (s *violationsTestSuite) checkPolicy(violation interface{}) {
 		".policyVersion")
 }
 
-func (s *violationsTestSuite) requestAndGetBody(checkpointParam string, data ...*storage.Alert) map[string]interface{} {
+func (s *violationsTestSuite) requestAndGetBody(checkpointParams []string, alerts ...*storage.Alert) map[string]interface{} {
 	w := httptest.NewRecorder()
-	s.request(w, nil, checkpointParam, data...)
-	s.Equal(200, w.Code)
+	s.request(s.allowCtx, w, checkpointParams, alerts...)
+	s.Equal(http.StatusOK, w.Code)
 
 	var parsed map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &parsed)
@@ -667,24 +678,36 @@ func (s *violationsTestSuite) requestAndGetBody(checkpointParam string, data ...
 	return parsed
 }
 
-func (s *violationsTestSuite) request(responseWriter http.ResponseWriter, searchAlertsError error, checkpointParam string, searchAlertsData ...*storage.Alert) {
-	mockCtrl := gomock.NewController(s.T())
-	defer mockCtrl.Finish()
+func (s *violationsTestSuite) request(ctx context.Context, responseWriter http.ResponseWriter, checkpointParams []string, alerts ...*storage.Alert) {
+	handler := NewViolationsHandler(s.makeDS(alerts...))
 
-	mockDS := mocks.NewMockDataStore(mockCtrl)
-
-	mockDS.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).AnyTimes().Return(searchAlertsData, searchAlertsError)
-
-	handler := NewViolationsHandler(mockDS)
-
-	url := "/ignored"
-	if checkpointParam != "" {
-		url += "?from_checkpoint=" + checkpointParam
+	u, err := url.Parse("/ignored")
+	s.Require().NoError(err)
+	if len(checkpointParams) > 0 {
+		q := u.Query()
+		q["from_checkpoint"] = checkpointParams
+		u.RawQuery = q.Encode()
 	}
-
-	r := httptest.NewRequest("GET", url, nil)
+	r := httptest.NewRequest("GET", u.String(), nil)
+	r = r.WithContext(ctx)
 
 	handler.ServeHTTP(responseWriter, r)
+}
+
+// makeDS creates new datastore with only provided alerts for use in tests.
+func (s *violationsTestSuite) makeDS(alerts ...*storage.Alert) datastore.DataStore {
+	rocksDB := rocksdbtest.RocksDBForT(s.T())
+	boltDB := testutils.DBForT(s.T())
+
+	bleveIndex, err := globalindex.MemOnlyIndex()
+	s.Require().NoError(err)
+
+	alertsDS := datastore.NewWithDb(rocksDB, boltDB, bleveIndex)
+
+	err = alertsDS.UpsertAlerts(s.allowCtx, alerts)
+	s.NoError(err)
+
+	return alertsDS
 }
 
 // getViolations extracts "violations" attribute as a slice for later querying them with JSONPath.
@@ -712,13 +735,24 @@ func (s *violationsTestSuite) extr(input interface{}, jsonPath string) interface
 	return val[0][0].Interface()
 }
 
+func (s *violationsTestSuite) TestResponseContentType() {
+	w := httptest.NewRecorder()
+
+	s.request(s.allowCtx, w, s.noCheckpoint, &s.deployAlert)
+
+	s.Equal(http.StatusOK, w.Code)
+	s.Equal("application/json", w.Header().Get("Content-Type"))
+}
+
 func (s *violationsTestSuite) TestViolationsHandlerError() {
 	w := httptest.NewRecorder()
 
-	s.request(w, errors.New("mock error"), "")
+	// context.Background() did not go through our context validation and will not include any global access scope.
+	// We use this to make datastore generate an error which will make the request fail.
+	s.request(context.Background(), w, s.noCheckpoint, &s.deployAlert)
 
 	s.Equal(http.StatusInternalServerError, w.Code)
-	s.Contains(w.Body.String(), "mock error")
+	s.Contains(w.Body.String(), "access scope was not found in context")
 }
 
 // failingResponseWriter is an implementation of http.ResponseWriter that returns error on attempt to write to it
@@ -736,10 +770,86 @@ func (f failingResponseWriter) Write(_ []byte) (int, error) {
 }
 
 func (s *violationsTestSuite) TestViolationsHandlerWriteError() {
-	w := failingResponseWriter{}
+	w := failingResponseWriter{header: map[string][]string{}}
 	s.PanicsWithError("net/http: abort Handler", func() {
-		s.request(w, nil, "", &s.processAlert)
+		s.request(s.allowCtx, w, s.noCheckpoint, &s.processAlert)
 	})
+}
+
+func (s *violationsTestSuite) TestQueryReturnsAlertsWithAllStates() {
+	a1 := s.processAlert.Clone()
+	a1.State = storage.ViolationState_SNOOZED
+	a2 := s.k8sAlert.Clone()
+	a2.State = storage.ViolationState_RESOLVED
+	a3 := s.deployAlert.Clone()
+	a3.State = storage.ViolationState_ATTEMPTED
+
+	alerts := s.queryAlertsWithTimestamp("2000-01-01T00:00:00Z", a1, a2, a3)
+
+	s.Len(alerts, 3)
+	s.Contains(alerts, s.processAlert.Id)
+	s.Contains(alerts, s.k8sAlert.Id)
+	s.Contains(alerts, s.deployAlert.Id)
+}
+
+func (s *violationsTestSuite) TestQueryAlertsWithTimestamp() {
+	cases := []struct {
+		name      string
+		timestamp string
+		ids       []string
+	}{
+		{
+			name:      "More than a day earlier",
+			timestamp: "2021-01-31T00:00:00Z",
+			ids:       []string{s.processAlert.Id, s.k8sAlert.Id, s.deployAlert.Id},
+		}, {
+			name:      "Earlier same day",
+			timestamp: "2021-02-01T16:05:00Z",
+			ids:       []string{s.processAlert.Id, s.k8sAlert.Id, s.deployAlert.Id},
+		}, {
+			name:      "Between two, within a day",
+			timestamp: "2021-02-01T17:00:00Z",
+			ids:       []string{s.processAlert.Id, s.k8sAlert.Id},
+		}, {
+			name:      "Between two, different days",
+			timestamp: "2021-02-05T00:00:00Z",
+			ids:       []string{s.k8sAlert.Id},
+		}, {
+			name:      "After last, the same day",
+			timestamp: "2021-02-15T19:04:37Z",
+			ids:       []string{},
+		}, {
+			name:      "More than a day after last",
+			timestamp: "2021-02-17T19:04:37Z",
+			ids:       []string{},
+		},
+	}
+	for _, c := range cases {
+		s.Run(c.name, func() {
+			alerts := s.queryAlertsWithTimestamp(c.timestamp, &s.processAlert, &s.k8sAlert, &s.deployAlert)
+			s.Len(alerts, len(c.ids))
+			for _, id := range c.ids {
+				s.Contains(alerts, id)
+			}
+		})
+	}
+}
+
+func (s *violationsTestSuite) queryAlertsWithTimestamp(timestamp string, alerts ...*storage.Alert) []string {
+	alertsDS := s.makeDS(alerts...)
+
+	ts, err := time.Parse(time.RFC3339, timestamp)
+	s.NoError(err)
+
+	returnedAlerts, err := queryAlerts(s.allowCtx, alertsDS, ts)
+	s.NoError(err)
+
+	alertIDs := make([]string, 0, len(returnedAlerts))
+	for _, a := range returnedAlerts {
+		alertIDs = append(alertIDs, a.Id)
+	}
+
+	return alertIDs
 }
 
 func (s *violationsTestSuite) TestGenerateViolationId() {
