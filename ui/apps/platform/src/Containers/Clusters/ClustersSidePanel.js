@@ -182,15 +182,22 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
      * @return  {nothing}       Side effect: change the corresponding property in selectedCluster
      */
     function onChange(event) {
-        // event.target.name can be a dot path to property like:
-        // dynamicConfig.admissionControllerConfig.timeoutSeconds
-        if (get(selectedCluster, event.target.name) !== undefined) {
-            const newClusterSettings = { ...selectedCluster };
+        // Functional update computes new state from old state to solve data race:
+        // `admissionControllerEvents: false` overwritten by `type: "OPENSHIFT_CLUSTER"`
+        // See guardedClusterTypeChange
+        setSelectedCluster((oldClusterSettings) => {
+            // event.target.name can be a dot path to property like:
+            // dynamicConfig.admissionControllerConfig.timeoutSeconds
+            if (get(oldClusterSettings, event.target.name) === undefined) {
+                return oldClusterSettings;
+            }
+
+            const newClusterSettings = { ...oldClusterSettings };
             const newValue =
                 event.target.type === 'checkbox' ? event.target.checked : event.target.value;
             set(newClusterSettings, event.target.name, newValue);
-            setSelectedCluster(newClusterSettings);
-        }
+            return newClusterSettings;
+        });
     }
 
     function onNext() {
