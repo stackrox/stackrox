@@ -370,7 +370,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			b := newGraphBuilder(c.deployments, c.networkTree, namespacesByID)
+			b := newGraphBuilder(nil, c.deployments, c.networkTree, namespacesByID)
 			matches := b.evaluatePeer(namespacesByID[c.policyNamespace], c.peer)
 			assert.Len(t, matches, c.expectedMatches)
 		})
@@ -442,7 +442,7 @@ func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			b := newGraphBuilder([]*storage.Deployment{c.d}, nil, namespacesByID)
+			b := newGraphBuilder(nil, []*storage.Deployment{c.d}, nil, namespacesByID)
 			b.AddEdgesForNetworkPolicies([]*storage.NetworkPolicy{c.np})
 			assert.Equal(t, c.expected, len(b.allDeployments[0].applyingPoliciesIDs) > 0)
 		})

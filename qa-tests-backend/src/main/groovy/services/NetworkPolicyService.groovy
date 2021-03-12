@@ -59,6 +59,7 @@ class NetworkPolicyService extends BaseService {
                     SimulateNetworkGraphRequest.newBuilder()
                             .setClusterId(ClusterService.getClusterId())
                             .setModification(mod)
+                            .setIncludeNodeDiff(true)
             if (query != null) {
                 request.setQuery(query)
             }

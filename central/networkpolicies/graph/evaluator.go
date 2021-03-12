@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -26,7 +27,8 @@ var (
 // Evaluator implements the interface for the network graph generator
 //go:generate mockgen-wrapper
 type Evaluator interface {
-	GetGraph(clusterID string, deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, networkPolicies []*storage.NetworkPolicy, includePorts bool) *v1.NetworkGraph
+	// GetGraph returns the network policy graph. If `queryDeploymentIDs` is nil, it is assumed that all deployments are queried/relevant.
+	GetGraph(clusterID string, queryDeploymentIDs set.StringSet, clusterDeployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, networkPolicies []*storage.NetworkPolicy, includePorts bool) *v1.NetworkGraph
 	GetAppliedPolicies(deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, networkPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy
 	IncrementEpoch(clusterID string)
 	Epoch(clusterID string) uint32
@@ -74,10 +76,10 @@ func (g *evaluatorImpl) Epoch(clusterID string) uint32 {
 }
 
 // GetGraph generates a network graph for the input deployments based on the input policies.
-func (g *evaluatorImpl) GetGraph(clusterID string, deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, networkPolicies []*storage.NetworkPolicy, includePorts bool) *v1.NetworkGraph {
+func (g *evaluatorImpl) GetGraph(clusterID string, queryDeploymentIDs set.StringSet, clusterDeployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, networkPolicies []*storage.NetworkPolicy, includePorts bool) *v1.NetworkGraph {
 	namespacesByID := g.getNamespacesByID()
 
-	b := newGraphBuilder(deployments, networkTree, namespacesByID)
+	b := newGraphBuilder(queryDeploymentIDs, clusterDeployments, networkTree, namespacesByID)
 	b.AddEdgesForNetworkPolicies(networkPolicies)
 	b.PostProcess()
 	nodes := b.ToProto(includePorts)
@@ -90,9 +92,7 @@ func (g *evaluatorImpl) GetGraph(clusterID string, deployments []*storage.Deploy
 // GetAppliedPolicies creates a filtered list of policies from the input network policies, composed of only the policies
 // that apply to one or more of the input deployments.
 func (g *evaluatorImpl) GetAppliedPolicies(deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, networkPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
-	b := newGraphBuilder(deployments, networkTree, g.getNamespacesByID())
-	applyingPolicies := b.GetApplyingPolicies(networkPolicies)
-	return applyingPolicies
+	return newGraphBuilder(nil, deployments, networkTree, g.getNamespacesByID()).GetApplyingPolicies(networkPolicies)
 }
 
 func (g *evaluatorImpl) getNamespacesByID() map[string]*storage.NamespaceMetadata {

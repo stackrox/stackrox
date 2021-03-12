@@ -2,33 +2,39 @@ package graph
 
 import (
 	"sort"
+	"strings"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 type graphBuilder struct {
-	namespacesByName map[string]*storage.NamespaceMetadata
-	allDeployments   []*node
-	knownExtSrcsByID map[string]*node
-	internetSrc      *node
-	networkTree      tree.ReadOnlyNetworkTree
-	deploymentsByNS  map[*storage.NamespaceMetadata][]*node
+	namespacesByName    map[string]*storage.NamespaceMetadata
+	allDeployments      []*node
+	extSrcs             []*node
+	extSrcIDs           set.StringSet
+	internetSrc         *node
+	networkTree         tree.ReadOnlyNetworkTree
+	deploymentsByNS     map[*storage.NamespaceMetadata][]*node
+	deploymentPredicate func(string) bool
 }
 
-func newGraphBuilder(deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, namespacesByID map[string]*storage.NamespaceMetadata) *graphBuilder {
+func newGraphBuilder(queryDeploymentIDs set.StringSet, deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, namespacesByID map[string]*storage.NamespaceMetadata) *graphBuilder {
 	b := &graphBuilder{}
-	b.init(deployments, networkTree, namespacesByID)
+	b.init(queryDeploymentIDs, deployments, networkTree, namespacesByID)
 	return b
 }
 
-func (b *graphBuilder) init(deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, namespacesByID map[string]*storage.NamespaceMetadata) {
+func (b *graphBuilder) init(queryDeploymentIDs set.StringSet, deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, namespacesByID map[string]*storage.NamespaceMetadata) {
 	b.allDeployments = make([]*node, 0, len(deployments))
-	b.knownExtSrcsByID = make(map[string]*node)
+	b.extSrcs = make([]*node, 0)
+	b.extSrcIDs = set.NewStringSet()
 	b.namespacesByName = make(map[string]*storage.NamespaceMetadata)
 	b.deploymentsByNS = make(map[*storage.NamespaceMetadata][]*node)
 
@@ -54,12 +60,20 @@ func (b *graphBuilder) init(deployments []*storage.Deployment, networkTree tree.
 		b.deploymentsByNS[ns] = append(b.deploymentsByNS[ns], node)
 	}
 
+	if queryDeploymentIDs == nil {
+		b.deploymentPredicate = func(string) bool { return true }
+	} else {
+		b.deploymentPredicate = func(id string) bool { return queryDeploymentIDs.Contains(id) }
+	}
+
 	if networkTree == nil {
 		networkTree = tree.NewMultiTreeWrapper(tree.NewDefaultNetworkTreeWrapper())
 	}
 
 	b.networkTree = networkTree
 	b.internetSrc = newExternalSrcNode(networkgraph.InternetEntity().ToProto())
+	b.extSrcs = append(b.extSrcs, b.internetSrc)
+	b.extSrcIDs.Add(b.internetSrc.extSrc.GetId())
 }
 
 func (b *graphBuilder) evaluatePeers(currentNS *storage.NamespaceMetadata, peers []*storage.NetworkPolicyPeer) ([]*node, bool) {
@@ -163,10 +177,10 @@ func (b *graphBuilder) evaluateExternalPeer(ipBlock *storage.IPBlock) []*node {
 	if extSrc := b.networkTree.GetMatchingSupernetForCIDR(ipBlock.GetCidr(), func(entity *storage.NetworkEntityInfo) bool {
 		return entity.GetId() != networkgraph.InternetExternalSourceID
 	}); extSrc != nil {
-		n := b.knownExtSrcsByID[extSrc.GetId()]
-		if n == nil {
+		var n *node
+		if b.extSrcIDs.Add(extSrc.GetId()) {
 			n = newExternalSrcNode(extSrc)
-			b.knownExtSrcsByID[extSrc.GetId()] = n
+			b.extSrcs = append(b.extSrcs, n)
 		}
 		return []*node{n}
 	}
@@ -184,10 +198,10 @@ func (b *graphBuilder) evaluateExternalPeer(ipBlock *storage.IPBlock) []*node {
 	peers = append(peers, b.internetSrc)
 	for _, extSrc := range allMatchedPeers {
 		if !netsToExclude.Contains(extSrc.GetId()) {
-			n := b.knownExtSrcsByID[extSrc.GetId()]
-			if n == nil {
+			var n *node
+			if b.extSrcIDs.Add(extSrc.GetId()) {
 				n = newExternalSrcNode(extSrc)
-				b.knownExtSrcsByID[extSrc.GetId()] = n
+				b.extSrcs = append(b.extSrcs, n)
 			}
 			peers = append(peers, n)
 		}
@@ -345,52 +359,16 @@ func bundleForPorts(ports portDescs, includePorts bool) *v1.NetworkEdgePropertie
 }
 
 func (b *graphBuilder) ToProto(includePorts bool) []*v1.NetworkNode {
-	// This stores external sources including INTERNET. These nodes are added to final graph only if they exists a connection with them.
-	externalNodes := make(map[*node]*v1.NetworkNode)
-	// Add INTERNET
-	allExternalNodes := make([]*node, 0, len(b.knownExtSrcsByID)+1)
-	allExternalNodes = append(allExternalNodes, b.internetSrc)
-	for _, extSrc := range b.knownExtSrcsByID {
-		allExternalNodes = append(allExternalNodes, extSrc)
-	}
-	for _, n := range allExternalNodes {
-		node := &v1.NetworkNode{
-			Entity:             n.extSrc,
-			InternetAccess:     true,
-			NonIsolatedEgress:  true,
-			NonIsolatedIngress: true,
-			OutEdges:           make(map[int32]*v1.NetworkEdgePropertiesBundle),
-		}
-		externalNodes[n] = node
-	}
-
-	// anyNonIsolatedDeps tracks if there are non-isolated deployments in the cluster. This is a helper that
-	// enables adding external sources in cases, such as, no network policies are not defined for a namespace.
-	anyNonIsolatedDeps := false
-
-	nodeMap := make(map[*node]int)
-	allNodes := make([]*v1.NetworkNode, 0, len(b.allDeployments)+len(b.knownExtSrcsByID)+1)
-	for _, d := range b.allDeployments {
-		if !d.isEgressIsolated || !d.isIngressIsolated {
-			anyNonIsolatedDeps = true
-		}
-
-		node := &v1.NetworkNode{
-			Entity:             d.toEntityProto(),
-			InternetAccess:     d.internetAccess || !d.isEgressIsolated,
-			NonIsolatedEgress:  !d.isEgressIsolated,
-			NonIsolatedIngress: !d.isIngressIsolated,
-			OutEdges:           make(map[int32]*v1.NetworkEdgePropertiesBundle),
-			PolicyIds:          d.applyingPoliciesIDs,
-		}
-		nodeMap[d] = len(allNodes)
-		allNodes = append(allNodes, node)
-	}
-
-	for _, src := range b.allDeployments {
-		srcIdx := nodeMap[src]
-		srcNode := allNodes[srcIdx]
+	nodeMap, allNodes := b.getRelevantNodes()
+	for src, srcIdx := range nodeMap {
+		srcQueried := b.deploymentPredicate(src.deployment.GetId())
 		for tgt := range src.adjacentNodes {
+			// Add an edge between nodes iff one endpoint was queried.
+			if !srcQueried && !b.deploymentPredicate(tgt.deployment.GetId()) {
+				continue
+			}
+
+			// If the target has non-isolated ingress, skip adding edges since it is obvious.
 			if !src.isEgressIsolated && !tgt.isIngressIsolated {
 				continue
 			}
@@ -408,60 +386,165 @@ func (b *graphBuilder) ToProto(includePorts bool) []*v1.NetworkNode {
 				continue
 			}
 
+			srcNode := allNodes[srcIdx]
+			if srcNode.OutEdges == nil {
+				srcNode.OutEdges = make(map[int32]*v1.NetworkEdgePropertiesBundle)
+			}
+
 			tgtIdx, ok := nodeMap[tgt]
-			// This means that target is an external source that has not been added to graph yet.
 			if !ok {
-				tgtNode, ok := externalNodes[tgt]
-				if !ok {
-					continue
+				if tgt.deployment != nil {
+					utils.Should(errors.Errorf("deployment node %s not found in network node map", tgt.deployment.GetId()))
+				} else if tgt.extSrc != nil {
+					utils.Should(errors.Errorf("external node %s not found in network node map", tgt.extSrc.GetId()))
 				}
-				tgtIdx = len(allNodes)
-				nodeMap[tgt] = tgtIdx
-				allNodes = append(allNodes, tgtNode)
-			}
-
-			if srcNode.OutEdges == nil {
-				srcNode.OutEdges = make(map[int32]*v1.NetworkEdgePropertiesBundle)
-			}
-			srcNode.OutEdges[int32(tgtIdx)] = bundleForPorts(portsForEdge, includePorts)
-		}
-	}
-
-	for _, src := range allExternalNodes {
-		var srcNode *v1.NetworkNode
-		if srcIdx, ok := nodeMap[src]; ok {
-			srcNode = allNodes[srcIdx]
-		} else {
-			srcNode = externalNodes[src]
-		}
-
-		for tgt := range src.adjacentNodes {
-			// If the target has non-isolated ingress, skip adding edges since it is obvious.
-			if !tgt.isIngressIsolated {
 				continue
 			}
 
-			portsForEdge := tgt.ingressEdges[src].getPorts()
-			if len(portsForEdge) == 0 {
-				continue
-			}
-
-			tgtIdx := nodeMap[tgt]
-			if srcNode.OutEdges == nil {
-				srcNode.OutEdges = make(map[int32]*v1.NetworkEdgePropertiesBundle)
-			}
 			srcNode.OutEdges[int32(tgtIdx)] = bundleForPorts(portsForEdge, includePorts)
 		}
-
-		// If the external source has outgoing edges but has not been added to graph, add it.
-		if _, ok := nodeMap[src]; !ok && len(srcNode.OutEdges) > 0 {
-			nodeMap[src] = len(allNodes)
-			allNodes = append(allNodes, srcNode)
-		}
-	}
-
-	if _, ok := nodeMap[b.internetSrc]; !ok && anyNonIsolatedDeps {
-		allNodes = append(allNodes, externalNodes[b.internetSrc])
 	}
 	return allNodes
+}
+
+func (b *graphBuilder) getRelevantNodes() (map[*node]int, []*v1.NetworkNode) {
+	filteredNodeIDs := b.getRelevantNodeIDs()
+	// Sort nodes to keep the node order across multiple graph builds consistent.
+	sort.Slice(b.allDeployments, func(i, j int) bool {
+		return strings.Compare(b.allDeployments[i].deployment.GetId(), b.allDeployments[j].deployment.GetId()) < 0
+	})
+
+	sort.Slice(b.extSrcs, func(i, j int) bool {
+		return strings.Compare(b.extSrcs[i].extSrc.GetId(), b.extSrcs[j].extSrc.GetId()) < 0
+	})
+
+	nodeMap := make(map[*node]int)
+	allNodes := make([]*v1.NetworkNode, 0, len(filteredNodeIDs))
+	for _, node := range b.allDeployments {
+		if !filteredNodeIDs.Contains(node.deployment.GetId()) {
+			continue
+		}
+
+		nodeMap[node] = len(allNodes)
+		allNodes = append(allNodes, &v1.NetworkNode{
+			Entity:             node.toEntityProto(),
+			InternetAccess:     node.internetAccess || !node.isEgressIsolated,
+			NonIsolatedEgress:  !node.isEgressIsolated,
+			NonIsolatedIngress: !node.isIngressIsolated,
+			OutEdges:           make(map[int32]*v1.NetworkEdgePropertiesBundle),
+			PolicyIds:          node.applyingPoliciesIDs,
+		})
+	}
+
+	for _, node := range b.extSrcs {
+		if !filteredNodeIDs.Contains(node.extSrc.GetId()) {
+			continue
+		}
+
+		nodeMap[node] = len(allNodes)
+		allNodes = append(allNodes, &v1.NetworkNode{
+			Entity:             node.extSrc,
+			InternetAccess:     true,
+			NonIsolatedEgress:  true,
+			NonIsolatedIngress: true,
+			OutEdges:           make(map[int32]*v1.NetworkEdgePropertiesBundle),
+		})
+	}
+	return nodeMap, allNodes
+}
+
+func (b *graphBuilder) getRelevantNodeIDs() set.StringSet {
+	var anyQueryDepWithNonIsolatedIngress, anyQueryDepWithNonIsolatedEgress bool
+	// First, determine if any queried deployments are non-isolated.
+	for _, d := range b.allDeployments {
+		if !d.isIngressIsolated {
+			if b.deploymentPredicate(d.deployment.GetId()) {
+				anyQueryDepWithNonIsolatedIngress = true
+			}
+		}
+		if !d.isEgressIsolated {
+			if b.deploymentPredicate(d.deployment.GetId()) {
+				anyQueryDepWithNonIsolatedEgress = true
+			}
+		}
+	}
+
+	filteredNodeIDs := set.NewStringSet()
+	for _, currNode := range b.allDeployments {
+		var srcQueried, anyValidConns bool
+		if b.deploymentPredicate(currNode.deployment.GetId()) {
+			srcQueried = true
+		}
+
+		for adjNode := range currNode.adjacentNodes {
+			if adjNode.deployment == nil && adjNode.extSrc == nil {
+				utils.Should(errors.New("network policy graph node is nil"))
+				continue
+			}
+
+			dstQueried := b.deploymentPredicate(adjNode.deployment.GetId())
+			// If neither endpoint was queried, skip it for now. If this `adjNode` is relevant for some other node, it will be added eventually.
+			if !srcQueried && !dstQueried {
+				continue
+			}
+
+			// If isolated, check if any out edges actually exist to the target. If no edges exists, skip it.
+			var numEdges int
+			if currNode.isEgressIsolated && adjNode.isIngressIsolated {
+				numEdges = len(intersectNormalized(currNode.egressEdges[adjNode].getPorts(), adjNode.ingressEdges[currNode].getPorts()))
+			} else if currNode.isEgressIsolated {
+				numEdges = len(currNode.egressEdges[adjNode].getPorts())
+			} else if adjNode.isIngressIsolated {
+				numEdges = len(adjNode.ingressEdges[currNode].getPorts())
+			} else {
+				numEdges = 1 // non-isolated case-!currNode.isEgressIsolated && !adjNode.isIngressIsolated
+			}
+
+			if numEdges == 0 {
+				continue
+			}
+
+			anyValidConns = true
+
+			if adjNode.deployment != nil {
+				filteredNodeIDs.Add(adjNode.deployment.GetId())
+			} else if adjNode.extSrc != nil {
+				filteredNodeIDs.Add(adjNode.extSrc.GetId())
+			}
+		}
+
+		// Current node must exist in the graph if it satisfies any of this following conditions, else, skip it for now.
+		// - Either current node or any of its peers were queried, or
+		// - Current node has non-isolated egress and there exists at least one queried currNode that has non-isolated ingress, or
+		// - Current node has non-isolated ingress and there exists at least one queried currNode that has non-isolated egress
+
+		var relevantNode bool
+		if srcQueried || anyValidConns {
+			relevantNode = true
+		} else if anyQueryDepWithNonIsolatedIngress && !currNode.isEgressIsolated {
+			relevantNode = true
+		} else if anyQueryDepWithNonIsolatedEgress && !currNode.isIngressIsolated {
+			relevantNode = true
+		}
+
+		if relevantNode {
+			filteredNodeIDs.Add(currNode.deployment.GetId())
+		}
+	}
+
+	// Now determine relevant external entities. An external node should exists iff its peer was queried.
+	for _, node := range b.extSrcs {
+		for adjNode := range node.adjacentNodes {
+			if b.deploymentPredicate(adjNode.deployment.GetId()) {
+				filteredNodeIDs.Add(node.extSrc.GetId())
+				break
+			}
+		}
+	}
+
+	// If any queried node is non-isolated, INTERNET node must be added to the graph.
+	if anyQueryDepWithNonIsolatedIngress || anyQueryDepWithNonIsolatedEgress {
+		filteredNodeIDs.Add(b.internetSrc.extSrc.GetId())
+	}
+	return filteredNodeIDs
 }

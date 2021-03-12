@@ -218,7 +218,8 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	if networkTree == nil {
 		networkTree = f.netTreeMgr.CreateNetworkTree(ctx, clusterID)
 	}
-	r.networkGraph = f.networkGraphEvaluator.GetGraph(clusterID, deployments, networkTree, networkPolicies, false)
+
+	r.networkGraph = f.networkGraphEvaluator.GetGraph(clusterID, nil, deployments, networkTree, networkPolicies, false)
 
 	policies, err := f.policyStore.GetAllPolicies(ctx)
 	if err != nil {

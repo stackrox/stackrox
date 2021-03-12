@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	tree "github.com/stackrox/rox/pkg/networkgraph/tree"
+	set "github.com/stackrox/rox/pkg/set"
 	reflect "reflect"
 )
 
@@ -37,17 +38,17 @@ func (m *MockEvaluator) EXPECT() *MockEvaluatorMockRecorder {
 }
 
 // GetGraph mocks base method
-func (m *MockEvaluator) GetGraph(clusterID string, deployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, networkPolicies []*storage.NetworkPolicy, includePorts bool) *v1.NetworkGraph {
+func (m *MockEvaluator) GetGraph(clusterID string, queryDeploymentIDs set.StringSet, clusterDeployments []*storage.Deployment, networkTree tree.ReadOnlyNetworkTree, networkPolicies []*storage.NetworkPolicy, includePorts bool) *v1.NetworkGraph {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetGraph", clusterID, deployments, networkTree, networkPolicies, includePorts)
+	ret := m.ctrl.Call(m, "GetGraph", clusterID, queryDeploymentIDs, clusterDeployments, networkTree, networkPolicies, includePorts)
 	ret0, _ := ret[0].(*v1.NetworkGraph)
 	return ret0
 }
 
 // GetGraph indicates an expected call of GetGraph
-func (mr *MockEvaluatorMockRecorder) GetGraph(clusterID, deployments, networkTree, networkPolicies, includePorts interface{}) *gomock.Call {
+func (mr *MockEvaluatorMockRecorder) GetGraph(clusterID, queryDeploymentIDs, clusterDeployments, networkTree, networkPolicies, includePorts interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGraph", reflect.TypeOf((*MockEvaluator)(nil).GetGraph), clusterID, deployments, networkTree, networkPolicies, includePorts)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGraph", reflect.TypeOf((*MockEvaluator)(nil).GetGraph), clusterID, queryDeploymentIDs, clusterDeployments, networkTree, networkPolicies, includePorts)
 }
 
 // GetAppliedPolicies mocks base method

@@ -3,6 +3,7 @@ package graph
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -92,7 +93,7 @@ func benchmarkEvaluateCluster(b *testing.B, numDeployments, numNetworkPolicies, 
 	m := newMockGraphEvaluator()
 	deployments := make([]*storage.Deployment, 0, numDeployments)
 	for i := 0; i < numDeployments; i++ {
-		deployments = append(deployments, getMockDeployment(fmt.Sprintf("%d", i)))
+		deployments = append(deployments, getMockDeployment(strconv.Itoa(i)))
 	}
 	networkPolicies := make([]*storage.NetworkPolicy, 0, numDeployments)
 	for i := 0; i < numNetworkPolicies; i++ {
@@ -103,7 +104,7 @@ func benchmarkEvaluateCluster(b *testing.B, numDeployments, numNetworkPolicies, 
 	matchEgressRules(networkPolicies, deployments, egressMatches)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		m.GetGraph("", deployments, nil, networkPolicies, false)
+		m.GetGraph("", nil, deployments, nil, networkPolicies, false)
 	}
 }
 

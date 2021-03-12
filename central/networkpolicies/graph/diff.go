@@ -1,24 +1,25 @@
 package graph
 
 import (
-	"fmt"
 	"sort"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
-func getAdjacentNodeIDs(node *v1.NetworkNode) []int32 {
-	adjacencies := make([]int32, 0, len(node.OutEdges))
-	for adj := range node.OutEdges {
-		adjacencies = append(adjacencies, adj)
+func getAdjacentNodeIDs(adjacencies map[string]*v1.NetworkEdgePropertiesBundle) []string {
+	ids := make([]string, 0, len(adjacencies))
+	for id := range adjacencies {
+		ids = append(ids, id)
 	}
-	sort.Slice(adjacencies, func(i, j int) bool { return adjacencies[i] < adjacencies[j] })
-	return adjacencies
+	sort.Strings(ids)
+	return ids
 }
 
-func adjacentNodeIDsToMap(adjacencies []int32) map[int32]*v1.NetworkEdgePropertiesBundle {
-	result := make(map[int32]*v1.NetworkEdgePropertiesBundle, len(adjacencies))
+func adjacentNodeIDsToMap(adjacencies []string) map[string]*v1.NetworkEdgePropertiesBundle {
+	result := make(map[string]*v1.NetworkEdgePropertiesBundle, len(adjacencies))
 	for _, adj := range adjacencies {
 		result[adj] = &v1.NetworkEdgePropertiesBundle{}
 	}
@@ -31,7 +32,9 @@ func getPolicyIDs(node *v1.NetworkNode) []string {
 	return result
 }
 
-func computeNodeDiff(oldNode, newNode *v1.NetworkNode) (oldNodeDiff, newNodeDiff *v1.NetworkNodeDiff) {
+func computeNodeDiff(oldG, newG *networkGraphWrapper, id string) (oldNodeDiff, newNodeDiff *v1.NetworkNodeDiff) {
+	oldNode := oldG.getNode(id)
+	newNode := newG.getNode(id)
 	oldNodePolicies := getPolicyIDs(oldNode)
 	newNodePolicies := getPolicyIDs(newNode)
 	oldPolicyIDs, newPolicyIDs := sliceutils.StringDiff(oldNodePolicies, newNodePolicies, func(a, b string) bool { return a < b })
@@ -46,9 +49,9 @@ func computeNodeDiff(oldNode, newNode *v1.NetworkNode) (oldNodeDiff, newNodeDiff
 		}
 	}
 
-	oldAdjacencies := getAdjacentNodeIDs(oldNode)
-	newAdjacencies := getAdjacentNodeIDs(newNode)
-	removedAdjacencies, addedAdjacencies := sliceutils.Int32Diff(oldAdjacencies, newAdjacencies, func(i, j int32) bool { return i < j })
+	oldAdjacencies := getAdjacentNodeIDs(oldG.getNodeOutEdges(id))
+	newAdjacencies := getAdjacentNodeIDs(newG.getNodeOutEdges(id))
+	removedAdjacencies, addedAdjacencies := sliceutils.StringDiff(oldAdjacencies, newAdjacencies, func(a, b string) bool { return a < b })
 	if len(removedAdjacencies) > 0 {
 		if oldNodeDiff == nil {
 			oldNodeDiff = &v1.NetworkNodeDiff{}
@@ -93,26 +96,89 @@ func computeNodeDiff(oldNode, newNode *v1.NetworkNode) (oldNodeDiff, newNodeDiff
 
 // ComputeDiff computes a diff between the old and the new graph.
 func ComputeDiff(oldGraph, newGraph *v1.NetworkGraph) (removed, added *v1.NetworkGraphDiff, _ error) {
-	if len(oldGraph.GetNodes()) != len(newGraph.GetNodes()) {
-		return nil, nil, fmt.Errorf("graph node counts differ: %d (old) vs %d (new)",
-			len(oldGraph.GetNodes()), len(newGraph.GetNodes()))
-	}
 	added = &v1.NetworkGraphDiff{
-		NodeDiffs: make(map[int32]*v1.NetworkNodeDiff),
+		NodeDiffs: make(map[string]*v1.NetworkNodeDiff),
 	}
 	removed = &v1.NetworkGraphDiff{
-		NodeDiffs: make(map[int32]*v1.NetworkNodeDiff),
+		NodeDiffs: make(map[string]*v1.NetworkNodeDiff),
 	}
-	for i, oldNode := range oldGraph.GetNodes() {
-		newNode := newGraph.GetNodes()[i]
-		oldNodeDiff, newNodeDiff := computeNodeDiff(oldNode, newNode)
 
+	oldG := newNetworkGraph(oldGraph)
+	newG := newNetworkGraph(newGraph)
+
+	for id := range newG.graphNodes {
+		if oldNode := oldG.getNode(id); oldNode == nil {
+			added.NodeDiffs[id] = newG.getNetworkNodeDiffProto(id)
+		}
+	}
+
+	for id := range oldG.graphNodes {
+		if newNode := newG.getNode(id); newNode == nil {
+			removed.NodeDiffs[id] = oldG.getNetworkNodeDiffProto(id)
+			continue
+		}
+		oldNodeDiff, newNodeDiff := computeNodeDiff(oldG, newG, id)
 		if oldNodeDiff != nil {
-			removed.NodeDiffs[int32(i)] = oldNodeDiff
+			removed.NodeDiffs[id] = oldNodeDiff
 		}
 		if newNodeDiff != nil {
-			added.NodeDiffs[int32(i)] = newNodeDiff
+			added.NodeDiffs[id] = newNodeDiff
 		}
 	}
 	return
+}
+
+type networkGraphWrapper struct {
+	graphNodes map[string]*v1.NetworkNode
+	idxToIDs   map[int32]string
+}
+
+func newNetworkGraph(g *v1.NetworkGraph) *networkGraphWrapper {
+	graphNodes := make(map[string]*v1.NetworkNode)
+	idxToIDs := make(map[int32]string)
+	for i, node := range g.GetNodes() {
+		idxToIDs[int32(i)] = node.GetEntity().GetId()
+		graphNodes[node.GetEntity().GetId()] = node
+	}
+
+	return &networkGraphWrapper{
+		graphNodes: graphNodes,
+		idxToIDs:   idxToIDs,
+	}
+}
+
+func (g *networkGraphWrapper) getNode(id string) *v1.NetworkNode {
+	return g.graphNodes[id]
+}
+
+func (g *networkGraphWrapper) getNodeOutEdges(id string) map[string]*v1.NetworkEdgePropertiesBundle {
+	node := g.graphNodes[id]
+	if node == nil {
+		return nil
+	}
+
+	ret := make(map[string]*v1.NetworkEdgePropertiesBundle)
+	for i, edge := range node.GetOutEdges() {
+		tgtID, ok := g.idxToIDs[i]
+		if !ok {
+			utils.Should(errors.Errorf("network graph node %d not found", i))
+			continue
+		}
+		ret[tgtID] = edge
+	}
+	return ret
+}
+
+func (g *networkGraphWrapper) getNetworkNodeDiffProto(id string) *v1.NetworkNodeDiff {
+	node := g.graphNodes[id]
+	if node == nil {
+		return nil
+	}
+
+	return &v1.NetworkNodeDiff{
+		PolicyIds:          getPolicyIDs(node),
+		OutEdges:           g.getNodeOutEdges(id),
+		NonIsolatedIngress: node.GetNonIsolatedIngress(),
+		NonIsolatedEgress:  node.GetNonIsolatedEgress(),
+	}
 }

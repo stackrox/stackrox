@@ -83,6 +83,8 @@ class NetworkSimulator extends BaseSpecification {
 
         // Verify no change to added nodes
         assert simulation.added.nodeDiffsCount == 0
+        // Verify old deployment node has outedges
+        assert simulation.removed.nodeDiffsMap.get(webAppId).outEdgesCount > 0
 
         def nonQAOutEdges = baseline.nodesList.collectEntries {
             if (it.namespace != "qa" || !it.deploymentId) {
@@ -93,15 +95,14 @@ class NetworkSimulator extends BaseSpecification {
             },]
         }
 
-        simulation.removed.nodeDiffsMap.each {
-            def node = simulation.simulatedGraph.nodesList.get(it.key)
+        simulation.removed.nodeDiffsMap.each { k, v ->
+            def node = simulation.simulatedGraph.nodesList.find { it.deploymentId == k }
 
             assert node.namespace == "qa"
-            assert it.value.policyIdsCount == 0
-            assert it.value.outEdgesMap.size() == nonQAOutEdges.get(node.deploymentId)
-            assert it.value.getNonIsolatedEgress()
+            assert v.policyIdsCount == 0
+            assert v.outEdgesMap.size() == nonQAOutEdges.get(node.deploymentId)
+            assert v.getNonIsolatedEgress()
         }
-
         cleanup:
         "cleanup"
         Services.cleanupNetworkPolicies([policy])
@@ -129,9 +130,6 @@ class NetworkSimulator extends BaseSpecification {
         def simulation = NetworkPolicyService.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2))
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
-        def webAppIndex = simulation.simulatedGraph.nodesList.indexOf(
-                simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }
-        )
         def clientAppId = simulation.simulatedGraph.nodesList.find {
             it.deploymentName == CLIENTDEPLOYMENT
         }.deploymentId
@@ -154,8 +152,8 @@ class NetworkSimulator extends BaseSpecification {
 
         // Verify outEdge to 'web' is added to all nodes
         simulation.added.nodeDiffsMap.each {
-            if (it.key != webAppIndex) {
-                assert it.value.outEdgesMap.containsKey(webAppIndex)
+            if (it.key != webAppId) {
+                assert it.value.outEdgesMap.containsKey(webAppId)
             } else {
                 assert it.value.policyIdsCount > 0
             }
@@ -198,22 +196,22 @@ class NetworkSimulator extends BaseSpecification {
                 "Deployment:\"web\",\"client\"+Namespace:qa")
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
-        def webAppIndex = simulation.simulatedGraph.nodesList.indexOf(
-                simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }
-        )
         def clientAppId = simulation.simulatedGraph.nodesList.find {
             it.deploymentName == CLIENTDEPLOYMENT
         }.deploymentId
-        def clientAppIndex = simulation.simulatedGraph.nodesList.indexOf(
-                simulation.simulatedGraph.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }
-        )
+        def numNonIsolatedEgressNodes = simulation.simulatedGraph.nodesList.count { it.nonIsolatedEgress }
+        def numNonIsolatedIngressNodes = simulation.simulatedGraph.nodesList.count { it.nonIsolatedIngress }
 
         then:
         "verify simulation"
-        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, webAppId).size() == 1
+        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, webAppId).size() >=
+                numNonIsolatedEgressNodes
+
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, clientAppId).size() == 0
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, webAppId, null).size() == 0
-        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, clientAppId, null).size() == 1
+        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, clientAppId, null).size() >=
+                numNonIsolatedIngressNodes
+
         // No connections from INTERNET to "qa" namespace; simulated graph is scoped to "qa" namespace.
         assert NetworkGraphUtil.findEdges(
                 simulation.simulatedGraph,
@@ -233,12 +231,12 @@ class NetworkSimulator extends BaseSpecification {
 
         // Verify outEdge to 'web' is added to 'client' node only
         simulation.added.nodeDiffsMap.each {
-            if (it.key == clientAppIndex) {
-                assert it.value.outEdgesMap.containsKey(webAppIndex)
+            if (it.key == clientAppId) {
+                assert it.value.outEdgesMap.containsKey(webAppId)
                 assert it.value.outEdgesCount == 1
             } else {
                 assert it.value.policyIdsCount > 0
-                assert !it.value.outEdgesMap.containsKey(webAppIndex)
+                assert !it.value.outEdgesMap.containsKey(webAppId)
             }
         }
 
@@ -266,27 +264,23 @@ class NetworkSimulator extends BaseSpecification {
                 .addPodSelector(["app": WEBDEPLOYMENT])
                 .addIngressNamespaceSelector()
         def simulation = NetworkPolicyService.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2),
-                "Deployment:\"web\",\"central\"+Namespace:qa,stackrox")
+                "Deployment:\"web\"+Namespace:qa")
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
-        def webAppIndex = simulation.simulatedGraph.nodesList.indexOf(
-                simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }
-        )
+        // Ensure that central is present
         def centralAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == "central" }.deploymentId
+        def numNonIsolatedEgressNodes = simulation.simulatedGraph.nodesList.count { it.nonIsolatedEgress }
 
         then:
         "verify simulation"
-        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, webAppId).size() == 1
+        // At least nodes with non-isolated egress should have edges to 'web' deployment.
+        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, webAppId).size() >=
+                numNonIsolatedEgressNodes
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, webAppId, null).size() == 0
+        // Verify that central is present as a peer if when not queried.
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, centralAppId, null).size() == 1
-        // from INTERNET
-        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, centralAppId).size() == 1
-        // to Central
-        assert NetworkGraphUtil.findEdges(
-                simulation.simulatedGraph,
-                Constants.INTERNET_EXTERNAL_SOURCE_ID,
-                null).size() == 1
-        assert simulation.simulatedGraph.nodesList.size() == 3
+
+        assert simulation.simulatedGraph.nodesList.size() > 3 // central should now be part of peers without querying it
 
         assert simulation.policiesList.find { it.policy.name == "deny-all-traffic" }?.status ==
                 NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.UNCHANGED
@@ -296,8 +290,8 @@ class NetworkSimulator extends BaseSpecification {
 
         // Verify outEdge to 'web' is added to all nodes
         simulation.added.nodeDiffsMap.each {
-            if (it.key != webAppIndex) {
-                assert it.value.outEdgesMap.containsKey(webAppIndex)
+            if (it.key != webAppId) {
+                assert it.value.outEdgesMap.containsKey(webAppId)
             } else {
                 assert it.value.policyIdsCount > 0
             }
@@ -351,9 +345,6 @@ class NetworkSimulator extends BaseSpecification {
                 toDelete)
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
-        def clientAppIndex = simulation.simulatedGraph.nodesList.indexOf(
-                simulation.simulatedGraph.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }
-        )
         def clientAppId = simulation.simulatedGraph.nodesList.find {
             it.deploymentName == CLIENTDEPLOYMENT
         }.deploymentId
@@ -379,8 +370,8 @@ class NetworkSimulator extends BaseSpecification {
 
         // Verify outEdge to 'web' is added to all nodes
         simulation.added.nodeDiffsMap.each {
-            if (it.key != clientAppIndex) {
-                assert it.value.outEdgesMap.containsKey(clientAppIndex)
+            if (it.key != clientAppId) {
+                assert it.value.outEdgesMap.containsKey(clientAppId)
             } else {
                 assert it.value.policyIdsCount > 0
             }
@@ -431,7 +422,8 @@ class NetworkSimulator extends BaseSpecification {
 
         // Verify added details for deployments in test namespace
         simulation.added.nodeDiffsMap.each { k, v ->
-            if (simulation.simulatedGraph.nodesList.get(k).entity.deployment.namespace == "qa") {
+            def newNode = simulation.simulatedGraph.nodesList.find { it.deploymentId == k }
+            if (newNode.entity.deployment.namespace == "qa") {
                 assert v.policyIdsCount > 0
                 assert v.outEdgesCount == 0
             } else {
@@ -444,7 +436,7 @@ class NetworkSimulator extends BaseSpecification {
         // Verify removed details contains only deployments from test namespace, or deployments that have an egress
         // network policy applying to them (since for these we store the outgoing edges explicitly).
         simulation.removed.nodeDiffsMap.each { k, v ->
-            def origNode = simulation.simulatedGraph.nodesList.get(k)
+            def origNode = simulation.simulatedGraph.nodesList.find { it.deploymentId == k }
             if (origNode.entity.deployment.namespace == "qa") {
                 assert v.policyIdsCount == 0
                 assert v.nonIsolatedIngress

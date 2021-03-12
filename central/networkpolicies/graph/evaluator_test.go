@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	k8sV1 "k8s.io/api/networking/v1"
@@ -244,6 +245,20 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  name: deny-all-traffic-web
+  namespace: qa
+spec:
+  podSelector:
+    matchLabels:
+      app: web
+  policyTypes:
+  - Ingress
+  - Egress
+`,
+	`
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   name: allow-ingress-to-web
   namespace: qa
 spec:
@@ -345,7 +360,49 @@ spec:
   - Ingress
   - Egress
 `,
-
+	`
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: fully-isolate-web
+spec:
+  ingress: []
+  egress: []
+  podSelector:
+    matchLabels:
+      app: web
+  policyTypes:
+  - Ingress
+  - Egress
+`,
+	`
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: fully-isolate-qa-ns
+  namespace: qa
+spec:
+  podSelector: {}
+  ingress: []
+  egress: []
+  policyTypes:
+  - Ingress
+  - Egress
+`,
+	`
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+ name: ingress-from-8443
+ namespace: default
+spec:
+ ingress:
+ - ports:
+   - port: 8443
+ podSelector: {}
+ policyTypes:
+ - Ingress
+`,
 	`
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -685,7 +742,7 @@ func mockInternetNode() *v1.NetworkNode {
 
 func deploymentLabels(values ...string) map[string]string {
 	if len(values)%2 != 0 {
-		panic("values for deployments labels must be even")
+		panic("values for clusterDeployments labels must be even")
 	}
 	m := make(map[string]string)
 	for i := 0; i < len(values)/2; i++ {
@@ -694,7 +751,7 @@ func deploymentLabels(values ...string) map[string]string {
 	return m
 }
 
-func TestEvaluateClustersWithExtSrcsFeatureEnabled(t *testing.T) {
+func TestEvaluateClusters(t *testing.T) {
 	g := newMockGraphEvaluator()
 
 	t1, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
@@ -1249,9 +1306,679 @@ func TestEvaluateClustersWithExtSrcsFeatureEnabled(t *testing.T) {
 	for _, c := range cases {
 		testCase := c
 		populateOutEdges(testCase.nodes, testCase.edges)
+
 		t.Run(c.name, func(t *testing.T) {
-			nodes := g.GetGraph("", testCase.deployments, testCase.networkTree, testCase.nps, false)
-			assert.ElementsMatch(t, testCase.nodes, nodes.GetNodes())
+			graph := g.GetGraph("", nil, testCase.deployments, testCase.networkTree, testCase.nps, false)
+			assert.ElementsMatch(t, testCase.nodes, graph.GetNodes())
+		})
+	}
+}
+
+func TestEvaluateNeighbors(t *testing.T) {
+	g := newMockGraphEvaluator()
+
+	t1, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
+		{
+			Id:   "es1",
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "172.17.0.0/24",
+					},
+				},
+			},
+		},
+	})
+	assert.NoError(t, err)
+
+	t2, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
+		{
+			Id:   "es1",
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "172.17.10.0/24",
+					},
+				},
+			},
+		},
+		{
+			Id:   "es2",
+			Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
+			Desc: &storage.NetworkEntityInfo_ExternalSource_{
+				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
+					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
+						Cidr: "172.17.15.0/24",
+					},
+				},
+			},
+		},
+	})
+	assert.NoError(t, err)
+
+	// These are the k8s examples from https://github.com/ahmetb/kubernetes-network-policy-recipes
+	// Seems like a good way to verify that the logic is correct
+	cases := []struct {
+		name               string
+		queryDeployments   set.StringSet
+		clusterDeployments []*storage.Deployment
+		networkTree        tree.ReadOnlyNetworkTree
+		nps                []*storage.NetworkPolicy
+		edges              []testEdge
+		nodes              []*v1.NetworkNode
+	}{
+		{
+			name:             "No policies - fully connected",
+			queryDeployments: set.NewStringSet("d1", "d2"),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id: "d1",
+				},
+				{
+					Id: "d2",
+				},
+				{
+					Id: "d3",
+				},
+			},
+			networkTree: t1,
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "", true, true, true),
+				mockNode("d2", "", true, true, true),
+				mockNode("d3", "", true, true, true),
+				mockInternetNode(),
+			},
+		},
+		{
+			name:             "limit traffic to application",
+			queryDeployments: set.NewStringSet("d1", "d3"),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "bookstore", "role", "api"),
+				},
+				{
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "bookstore", "role", "frontend"),
+				},
+				{
+					Id:          "d3",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "coffeeshop", "role", "api"),
+				},
+			},
+			edges: flattenEdges(
+				ingressEdges("d1", "d2"),
+			),
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("limit-traffic"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "default", true, false, true, "limit-traffic"),
+				mockNode("d2", "default", true, true, true),
+				mockNode("d3", "default", true, true, true),
+				mockInternetNode(),
+			},
+		},
+		{
+			name:             "allow all ingress even if deny all",
+			queryDeployments: set.NewStringSet("d1", "d2", "d3"),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web"),
+				},
+				{
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+				{
+					Id:          "d3",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+				{
+					Id:          "d5",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+			},
+			edges: flattenEdges(
+				ingressEdges("d1", "d2", "d3", "d5", networkgraph.InternetExternalSourceID),
+			),
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("web-deny-all"),
+				getExamplePolicy("web-allow-all"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "default", true, false, true, "web-allow-all", "web-deny-all"),
+				mockNode("d2", "default", true, true, true),
+				mockNode("d3", "default", true, true, true),
+				mockNode("d5", "default", true, true, true),
+				mockInternetNode(),
+			},
+		},
+		{
+			name:             "DENY all non-whitelisted traffic to a namespace", // TODO: update to inclusive language when updating actual code
+			queryDeployments: set.NewStringSet("d1", "d2", "d3"),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web"),
+				},
+				{
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+				{
+					Id:          "d3",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
+				},
+				{
+					Id:          "d4",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
+				},
+			},
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("default-deny-all"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "default", true, false, true, "default-deny-all"),
+				mockNode("d2", "default", true, false, true, "default-deny-all"),
+				mockNode("d3", "stackrox", true, true, true),
+				mockNode("d4", "stackrox", true, true, true),
+				mockInternetNode(),
+			},
+		},
+		{
+			name:             "DENY all traffic from other namespaces",
+			queryDeployments: set.NewStringSet("d1"),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+				{
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+				{
+					Id:          "d3",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
+				},
+			},
+			edges: flattenEdges(
+				fullyConnectedEdges("d1", "d2"),
+			),
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("deny-from-other-namespaces"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "default", true, false, true, "deny-from-other-namespaces"),
+				mockNode("d2", "default", true, false, true, "deny-from-other-namespaces"),
+				mockNode("d3", "stackrox", true, true, true),
+				mockInternetNode(),
+			},
+		},
+		{
+			name:             "Web allow all traffic from other namespaces",
+			queryDeployments: set.NewStringSet("d1"),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web"),
+				},
+				{
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+				{
+					Id:          "d3",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
+				},
+			},
+			edges: flattenEdges(
+				fullyConnectedEdges("d1", "d2"),
+				ingressEdges("d1", "d3"),
+			),
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("deny-from-other-namespaces"),
+				getExamplePolicy("web-allow-all-namespaces"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "default", true, false, true, "deny-from-other-namespaces", "web-allow-all-namespaces"),
+				mockNode("d2", "default", true, false, true, "deny-from-other-namespaces"),
+				mockNode("d3", "stackrox", true, true, true),
+				mockInternetNode(),
+			},
+		},
+		{
+			name:             "Web allow all traffic from stackrox namespace",
+			queryDeployments: set.NewStringSet("d1"),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web"),
+				},
+				{
+					Id:          "d2",
+					Namespace:   "other",
+					NamespaceId: "other",
+				},
+				{
+					Id:          "d3",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
+				},
+				{
+					Id:          "d4",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
+				},
+			},
+			edges: flattenEdges(
+				ingressEdges("d1", "d3", "d4"),
+			),
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("web-allow-stackrox"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "default", true, false, true, "web-allow-stackrox"),
+				mockNode("d2", "other", true, true, true),
+				mockNode("d3", "stackrox", true, true, true),
+				mockNode("d4", "stackrox", true, true, true),
+				mockInternetNode(),
+			},
+		},
+		{
+			name:             "deny egress from namespace",
+			queryDeployments: set.NewStringSet(),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web"),
+				},
+				{
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+				{
+					Id:          "d3",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
+				},
+			},
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("default-deny-all-egress"),
+			},
+		},
+		{
+			name:             "deny internetAccess egress from cluster",
+			queryDeployments: set.NewStringSet("d3"),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web"),
+				},
+				{
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+				{
+					Id:          "d3",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
+				},
+			},
+			edges: flattenEdges(
+				egressEdges("d1", "d3"),
+			),
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("web-deny-external-egress"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "default", false, true, false, "web-deny-external-egress"),
+				mockNode("d2", "default", true, true, true),
+				mockNode("d3", "stackrox", true, true, true),
+				mockInternetNode(),
+			},
+		},
+		{
+			name:             "deny all ingress except for app=web",
+			queryDeployments: set.NewStringSet("d3"),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "qa",
+					NamespaceId: "qa",
+					PodLabels:   deploymentLabels("app", "web"),
+				},
+				{
+					Id:          "d2",
+					Namespace:   "qa",
+					NamespaceId: "qa",
+					PodLabels:   deploymentLabels("app", "client"),
+				},
+				{
+					Id:          "d3",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
+				},
+				{
+					Id:          "d4",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+			},
+			edges: flattenEdges(
+				ingressEdges("d1", "d3"),
+			),
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("deny-all-ingress"),
+				getExamplePolicy("allow-ingress-to-web"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "qa", true, false, true, "allow-ingress-to-web", "deny-all-ingress"),
+				mockNode("d2", "qa", true, false, true, "deny-all-ingress"),
+				mockNode("d3", "stackrox", true, true, true),
+				mockNode("d4", "default", true, true, true),
+				mockInternetNode(),
+			},
+		},
+		{
+			name:             "deny all ingress except for app=web; app=web queried",
+			queryDeployments: set.NewStringSet("d1"),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "qa",
+					NamespaceId: "qa",
+					PodLabels:   deploymentLabels("app", "web"),
+				},
+				{
+					Id:          "d2",
+					Namespace:   "qa",
+					NamespaceId: "qa",
+					PodLabels:   deploymentLabels("app", "client"),
+				},
+				{
+					Id:          "d3",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
+				},
+				{
+					Id:          "d4",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+			},
+			edges: flattenEdges(
+				ingressEdges("d1", "d2", "d3", "d4"),
+			),
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("deny-all-ingress"),
+				getExamplePolicy("allow-ingress-to-web"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "qa", true, false, true, "allow-ingress-to-web", "deny-all-ingress"),
+				mockNode("d2", "qa", true, false, true, "deny-all-ingress"),
+				mockNode("d3", "stackrox", true, true, true),
+				mockNode("d4", "default", true, true, true),
+				mockInternetNode(),
+			},
+		},
+		{
+			name:             "deny all traffic except ingress for app=web; app=web queried",
+			queryDeployments: set.NewStringSet("d1"),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "qa",
+					NamespaceId: "qa",
+					PodLabels:   deploymentLabels("app", "web"),
+				},
+				{
+					Id:          "d2",
+					Namespace:   "qa",
+					NamespaceId: "qa",
+					PodLabels:   deploymentLabels("app", "client"),
+				},
+				{
+					Id:          "d3",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
+				},
+				{
+					Id:          "d4",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+			},
+			edges: flattenEdges(
+				ingressEdges("d1", "d2", "d3", "d4"),
+			),
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("deny-all-traffic-web"),
+				getExamplePolicy("allow-ingress-to-web"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "qa", false, false, false, "allow-ingress-to-web", "deny-all-traffic-web"),
+				mockNode("d2", "qa", true, true, true),
+				mockNode("d3", "stackrox", true, true, true),
+				mockNode("d4", "default", true, true, true),
+			},
+		},
+		{
+			name:             "fully isolate all pods",
+			queryDeployments: set.NewStringSet("d1"),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+				{
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+			},
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("fully-isolate"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "default", false, false, false, "fully-isolate"),
+			},
+		},
+		{
+			name:             "fully isolate app=web pods; app=web queried",
+			queryDeployments: set.NewStringSet("d1"),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web"),
+				},
+				{
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+			},
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("fully-isolate-web"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "default", false, false, false, "fully-isolate-web"),
+			},
+		},
+		{
+			name:             "fully isolate app=web pods; app=web queried; reverse order",
+			queryDeployments: set.NewStringSet("d1"),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web"),
+				},
+			},
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("fully-isolate-web"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d1", "default", false, false, false, "fully-isolate-web"),
+			},
+		},
+		{
+			name:             "fully isolate app=web pods; other dep queried",
+			queryDeployments: set.NewStringSet("d2"),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web"),
+				},
+				{
+					Id:          "d2",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+			},
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("fully-isolate-web"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d2", "default", true, true, true),
+				mockInternetNode(),
+			},
+		},
+		{
+			name:             "fully isolate qa namespace; qa namespace queried",
+			queryDeployments: set.NewStringSet("d2"),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "qa",
+					NamespaceId: "qa",
+				},
+				{
+					Id:          "d2",
+					Namespace:   "qa",
+					NamespaceId: "qa",
+				},
+				{
+					Id:          "d3",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+			},
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("fully-isolate-qa-ns"),
+				getExamplePolicy("ingress-from-8443"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("d2", "qa", false, false, false, "fully-isolate-qa-ns"),
+			},
+		},
+		{
+			name:             "allow only egress to ipblock",
+			queryDeployments: set.NewStringSet(),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+				},
+			},
+			networkTree: t2,
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("allow-only-egress-to-ipblock"),
+			},
+		},
+		{
+			name:             "ingress and egress combination",
+			queryDeployments: set.NewStringSet("a"),
+			clusterDeployments: []*storage.Deployment{
+				{
+					Id:          "a",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "a"),
+				},
+				{
+					Id:          "b",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "b"),
+				},
+				{
+					Id:          "c",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "c"),
+				},
+			},
+			nps: []*storage.NetworkPolicy{
+				getExamplePolicy("a-ingress-tcp-8080"),
+				getExamplePolicy("b-egress-a-tcp-ports-and-dns"),
+				getExamplePolicy("c-egress-a-tcp-8443-and-udp"),
+			},
+			nodes: []*v1.NetworkNode{
+				mockNode("a", "default", true, false, true, "a-ingress-tcp-8080"),
+				mockNode("b", "default", false, true, false, "b-egress-a-tcp-ports-and-dns"),
+				mockNode("c", "default", false, true, false, "c-egress-a-tcp-8443-and-udp"),
+				mockInternetNode(),
+			},
+			edges: flattenEdges(
+				ingressEdges("a", "b", networkgraph.InternetExternalSourceID),
+			),
+		},
+	}
+	for _, c := range cases {
+		testCase := c
+		populateOutEdges(testCase.nodes, testCase.edges)
+
+		t.Run(c.name, func(t *testing.T) {
+			graph := g.GetGraph("", testCase.queryDeployments, testCase.clusterDeployments, testCase.networkTree, testCase.nps, false)
+			assert.ElementsMatch(t, testCase.nodes, graph.GetNodes())
 		})
 	}
 }
@@ -1542,9 +2269,10 @@ func TestEvaluateClustersWithPorts(t *testing.T) {
 	for _, c := range cases {
 		testCase := c
 		populateOutEdges(testCase.nodes, testCase.edges)
+
 		t.Run(c.name, func(t *testing.T) {
-			nodes := g.GetGraph("", testCase.deployments, nil, testCase.nps, true)
-			assert.ElementsMatch(t, testCase.nodes, nodes.GetNodes())
+			graph := g.GetGraph("", nil, testCase.deployments, nil, testCase.nps, true)
+			assert.ElementsMatch(t, testCase.nodes, graph.GetNodes())
 		})
 	}
 }

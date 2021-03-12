@@ -62,21 +62,21 @@ func (m nodeSpecMap) toGraph() *v1.NetworkGraph {
 
 func (m nodeSpecMap) toDiff(g *v1.NetworkGraph) *v1.NetworkGraphDiff {
 	result := &v1.NetworkGraphDiff{
-		NodeDiffs: make(map[int32]*v1.NetworkNodeDiff, len(m)),
+		NodeDiffs: make(map[string]*v1.NetworkNodeDiff, len(m)),
 	}
 	nodeIDs := make(map[string]int, len(g.Nodes))
 	for idx, node := range g.Nodes {
 		nodeIDs[node.Entity.Id] = idx
 	}
-	for node, spec := range m {
+	for nodeID, spec := range m {
 		diff := &v1.NetworkNodeDiff{
 			PolicyIds: sortedIDs(spec.policies),
-			OutEdges:  make(map[int32]*v1.NetworkEdgePropertiesBundle),
+			OutEdges:  make(map[string]*v1.NetworkEdgePropertiesBundle),
 		}
-		for _, succ := range spec.adjacencies {
-			diff.OutEdges[int32(nodeIDs[succ])] = &v1.NetworkEdgePropertiesBundle{}
+		for _, succID := range spec.adjacencies {
+			diff.OutEdges[succID] = &v1.NetworkEdgePropertiesBundle{}
 		}
-		result.NodeDiffs[int32(nodeIDs[node])] = diff
+		result.NodeDiffs[nodeID] = diff
 	}
 	return result
 }
@@ -92,8 +92,23 @@ func TestGraphDiffMismatchingNodes(t *testing.T) {
 		"b": {},
 	}.toGraph()
 
-	_, _, err := ComputeDiff(g1, g2)
-	assert.Error(t, err)
+	removed, added, err := ComputeDiff(g1, g2)
+	assert.NoError(t, err)
+	assert.Empty(t, removed.GetNodeDiffs())
+	assert.True(t, proto.Equal(nodeSpecMap{"b": {}}.toDiff(g2), added))
+
+	g1 = nodeSpecMap{
+		"a": {},
+		"b": {},
+	}.toGraph()
+	g2 = nodeSpecMap{
+		"a": {},
+	}.toGraph()
+
+	removed, added, err = ComputeDiff(g1, g2)
+	assert.NoError(t, err)
+	assert.Empty(t, added.GetNodeDiffs())
+	assert.True(t, proto.Equal(nodeSpecMap{"b": {}}.toDiff(g1), removed))
 }
 
 func TestGraphDiffSameGraph(t *testing.T) {

@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -134,7 +135,8 @@ func (suite *ServiceTestSuite) TestFailsIfClusterDoesNotExist() {
 
 	// Make the request to the service and check that it did not err.
 	request := &v1.SimulateNetworkGraphRequest{
-		ClusterId: fakeClusterID,
+		ClusterId:       fakeClusterID,
+		IncludeNodeDiff: true,
 	}
 	_, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.Error(err, "expected graph generation to fail since cluster does not exist")
@@ -151,6 +153,7 @@ func (suite *ServiceTestSuite) TestRejectsYamlWithoutNamespace() {
 		Modification: &storage.NetworkPolicyModification{
 			ApplyYaml: badYAML,
 		},
+		IncludeNodeDiff: true,
 	}
 	_, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.Error(err, "expected graph generation to fail since input yaml has no namespace")
@@ -176,7 +179,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, pols, false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, set.NewStringSet(), deps, networkTree, pols, false).
 		Return(expectedGraph)
 	expectedResp := &v1.SimulateNetworkGraphResponse{
 		SimulatedGraph: expectedGraph,
@@ -185,7 +188,8 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 
 	// Make the request to the service and check that it did not err.
 	request := &v1.SimulateNetworkGraphRequest{
-		ClusterId: fakeClusterID,
+		ClusterId:       fakeClusterID,
+		IncludeNodeDiff: true,
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
@@ -215,9 +219,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("first-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, set.NewStringSet(), deps, networkTree, checkHasPolicies("first-policy"), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("first-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, set.NewStringSet(), deps, networkTree, checkHasPolicies("first-policy"), false).
 		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
@@ -226,6 +230,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 		Modification: &storage.NetworkPolicyModification{
 			ApplyYaml: fakeYAML1,
 		},
+		IncludeNodeDiff: true,
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
@@ -255,9 +260,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("first-policy", "second-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, set.NewStringSet(), deps, networkTree, checkHasPolicies("first-policy", "second-policy"), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("second-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, set.NewStringSet(), deps, networkTree, checkHasPolicies("second-policy"), false).
 		Return(expectedGraph)
 
 	request := &v1.SimulateNetworkGraphRequest{
@@ -265,6 +270,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 		Modification: &storage.NetworkPolicyModification{
 			ApplyYaml: fakeYAML1,
 		},
+		IncludeNodeDiff: true,
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
@@ -296,9 +302,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("first-policy", "second-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, set.NewStringSet(), deps, networkTree, checkHasPolicies("first-policy", "second-policy"), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("first-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, set.NewStringSet(), deps, networkTree, checkHasPolicies("first-policy"), false).
 		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
@@ -307,6 +313,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 		Modification: &storage.NetworkPolicyModification{
 			ApplyYaml: combinedYAMLs,
 		},
+		IncludeNodeDiff: true,
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
@@ -339,9 +346,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies(), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, set.NewStringSet(), deps, networkTree, checkHasPolicies(), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("first-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, set.NewStringSet(), deps, networkTree, checkHasPolicies("first-policy"), false).
 		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
@@ -355,6 +362,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 				},
 			},
 		},
+		IncludeNodeDiff: true,
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
@@ -385,9 +393,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame(
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("first-policy", "second-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, set.NewStringSet(), deps, networkTree, checkHasPolicies("first-policy", "second-policy"), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("second-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, set.NewStringSet(), deps, networkTree, checkHasPolicies("second-policy"), false).
 		Return(expectedGraph)
 
 	request := &v1.SimulateNetworkGraphRequest{
@@ -401,6 +409,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame(
 			},
 			ApplyYaml: combinedYAMLs,
 		},
+		IncludeNodeDiff: true,
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
@@ -431,9 +440,9 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies("first-policy", "second-policy"), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, set.NewStringSet(), deps, networkTree, checkHasPolicies("first-policy", "second-policy"), false).
 		Return(expectedGraph)
-	suite.evaluator.EXPECT().GetGraph(fakeClusterID, deps, networkTree, checkHasPolicies(), false).
+	suite.evaluator.EXPECT().GetGraph(fakeClusterID, set.NewStringSet(), deps, networkTree, checkHasPolicies(), false).
 		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
@@ -442,6 +451,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 		Modification: &storage.NetworkPolicyModification{
 			ApplyYaml: combinedYAMLs,
 		},
+		IncludeNodeDiff: true,
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
