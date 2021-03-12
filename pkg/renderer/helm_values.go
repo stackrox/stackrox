@@ -21,7 +21,9 @@ const (
 
 env:
   {{- if eq .ClusterType.String "OPENSHIFT_CLUSTER" }}
-  openshift: true
+  openshift: 3
+  {{- else if eq .ClusterType.String "OPENSHIFT4_CLUSTER" }}
+  openshift: 4
   {{- end }}
   offlineMode: {{ .K8sConfig.OfflineMode }}
   {{- if ne .K8sConfig.IstioVersion "" }}

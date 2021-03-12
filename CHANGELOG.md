@@ -12,6 +12,12 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - Secured clusters deployed via Helm with `helmManaged` set to `false` can now be used with cluster init
   bundles, creating a new cluster within StackRox on-the-fly. Previously, `helmManaged=false` only worked
   with certificates that were specific to an existing cluster.
+- `roxctl central generate openshift` and `roxctl sensor generate openshift` now accept an
+  `--openshift-version` flag, which can be set to the major version (`3` or `4`) of the OpenShift platform
+  to deploy on. By default, deployment files are generated in a compatibility mode that works on OpenShift
+  3.11 as well as 4.x. When deploying to a cluster running a recent OpenShift version, set this flag to `4`
+  in order to take advantage of features only supported on OpenShift 4.x.
+  
 
 ## [56.0]
 - Page titles now reflect the URL location of the user within the app in the browser tab and history.

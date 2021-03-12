@@ -2,6 +2,7 @@ package generate
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -15,6 +16,10 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
+)
+
+const (
+	noteOpenShift3xCompatibilityMode = `NOTE: Deployment files are generated in OpenShift 3.x compatibility mode. Set the --openshift-version flag to 3 to suppress this note, or to 4 take advantage of OpenShift 4.x features.`
 )
 
 type persistentFlagsWrapper struct {
@@ -61,11 +66,16 @@ func orchestratorCommand(shortName, longName string) *cobra.Command {
 	return c
 }
 
-func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName string, cluster storage.ClusterType) *cobra.Command {
+func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName string, getClusterType func() (storage.ClusterType, error)) *cobra.Command {
 	c := orchestratorCommand(shortName, longName)
-	c.PersistentPreRun = func(*cobra.Command, []string) {
+	c.PersistentPreRunE = func(*cobra.Command, []string) error {
+		clusterType, err := getClusterType()
+		if err != nil {
+			return errors.Wrap(err, "determining cluster type")
+		}
 		cfg.K8sConfig = k8sConfig
-		cfg.ClusterType = cluster
+		cfg.ClusterType = clusterType
+		return nil
 	}
 
 	c.AddCommand(externalVolume())
@@ -92,7 +102,7 @@ func newK8sConfig() *renderer.K8sConfig {
 
 func k8s() *cobra.Command {
 	k8sConfig := newK8sConfig()
-	c := k8sBasedOrchestrator(k8sConfig, "k8s", "Kubernetes", storage.ClusterType_KUBERNETES_CLUSTER)
+	c := k8sBasedOrchestrator(k8sConfig, "k8s", "Kubernetes", func() (storage.ClusterType, error) { return storage.ClusterType_KUBERNETES_CLUSTER, nil })
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (lb, np, none)", "central")
@@ -116,7 +126,21 @@ func k8s() *cobra.Command {
 
 func openshift() *cobra.Command {
 	k8sConfig := newK8sConfig()
-	c := k8sBasedOrchestrator(k8sConfig, "openshift", "Openshift", storage.ClusterType_OPENSHIFT_CLUSTER)
+
+	var openshiftVersion int
+	c := k8sBasedOrchestrator(k8sConfig, "openshift", "Openshift", func() (storage.ClusterType, error) {
+		clusterType := storage.ClusterType_OPENSHIFT_CLUSTER
+		switch openshiftVersion {
+		case 0:
+			fmt.Fprintf(os.Stderr, "%s\n\n", noteOpenShift3xCompatibilityMode)
+		case 3:
+		case 4:
+			clusterType = storage.ClusterType_OPENSHIFT4_CLUSTER
+		default:
+			return 0, errors.Errorf("invalid OpenShift version %d, supported values are '3' and '4'", openshiftVersion)
+		}
+		return clusterType, nil
+	})
 
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 
@@ -125,6 +149,7 @@ func openshift() *cobra.Command {
 	validFormats := []string{"kubectl", "helm", "helm-values"}
 	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", fmt.Sprintf("the deployment tool to use (%s)", strings.Join(validFormats, ", ")), "central")
 
+	flagWrap.IntVar(&openshiftVersion, "openshift-version", 0, "the OpenShift major version (3 or 4) to deploy on")
 	flagWrap.Var(istioSupportWrapper{&k8sConfig.IstioVersion}, "istio-support",
 		fmt.Sprintf(
 			"Generate deployment files supporting the given Istio version. Valid versions: %s",
