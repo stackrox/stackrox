@@ -66,6 +66,33 @@ function getConnectionText(filterState, isActive, isAllowed): string {
     return connection;
 }
 
+function getTraffic(portsAndProtocols: PortsAndProtocols[]) {
+    const { isIngress, isEgress } = portsAndProtocols.reduce(
+        (acc, curr) => {
+            if (curr.traffic === networkTraffic.INGRESS) {
+                acc.isIngress = true;
+            } else if (curr.traffic === networkTraffic.EGRESS) {
+                acc.isEgress = true;
+            } else if (curr.traffic === networkTraffic.BIDIRECTIONAL) {
+                acc.isIngress = true;
+                acc.isEgress = true;
+            }
+            return acc;
+        },
+        { isIngress: false, isEgress: false }
+    );
+    if (isIngress && isEgress) {
+        return networkTraffic.BIDIRECTIONAL;
+    }
+    if (isIngress) {
+        return networkTraffic.INGRESS;
+    }
+    if (isEgress) {
+        return networkTraffic.EGRESS;
+    }
+    throw new Error('Network flow should have ports and protocols');
+}
+
 /**
  * Grabs the deployment-to-deployment edges and filters based on the filter state
  *
@@ -86,7 +113,6 @@ export function getNetworkFlows(edges: Edge[], filterState): OmnibusNetworkFlows
             {
                 data: {
                     destNodeId,
-                    traffic,
                     destNodeName,
                     destNodeNamespace,
                     destNodeType,
@@ -103,6 +129,9 @@ export function getNetworkFlows(edges: Edge[], filterState): OmnibusNetworkFlows
             const isExternal =
                 getIsExternalEntitiesNode(destNodeType) || getIsCIDRBlockNode(destNodeType);
             const connection = getConnectionText(filterState, isActive, isAllowed);
+            // See https://github.com/stackrox/rox/pull/7800/files#r592623997 for explanation of why we are
+            // constructing traffic like this instead of from the data object
+            const traffic = getTraffic(portsAndProtocols);
             directionalFlows.incrementFlows(traffic);
             return {
                 ...acc,
