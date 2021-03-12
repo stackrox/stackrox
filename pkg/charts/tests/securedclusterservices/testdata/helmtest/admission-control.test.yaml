@@ -3,6 +3,9 @@ server:
   - openshift-4.1.0
 tests:
 - name: "OpenShift3 clusters do not support admission control sideEffects"
+  server:
+    availableSchemas:
+      - openshift-3.11.0
   set:
     env.openshift: 3
     admissionControl:

@@ -29,6 +29,7 @@ server:
   visibleSchema: # openAPI schema which is visible to helm, i.e. to check API resource availability
   # all valid schemas are:
   - kubernetes-1.20.2
+  - openshift-3.11.0
   - openshift-4.1.0
   availableSchemas: [] # openAPI schema to validate against, i.e. to validate if rendered objects could be applied
 values:  # values as consumed by Helm via the `-f` CLI flag.
