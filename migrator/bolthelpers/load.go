@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/migrator/option"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -18,7 +18,7 @@ const (
 
 // Path returns the path to the Bolt DB
 func Path() string {
-	return filepath.Join(migrations.DBMountPath, dbFileName)
+	return filepath.Join(option.MigratorOptions.DBPathBase, dbFileName)
 }
 
 // Load loads an instance of Bolt from disk.

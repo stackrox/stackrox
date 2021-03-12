@@ -1,17 +1,18 @@
 package rockshelper
 
 import (
+	"path/filepath"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
+	"github.com/stackrox/rox/migrator/option"
 	"github.com/tecbot/gorocksdb"
 )
 
 const (
 	// RocksDBDirName it the name of the RocksDB directory on the PVC
 	rocksDBDirName = `rocksdb`
-	// RocksDBPath is the full directory path on the PVC
-	rocksDBPath = "/var/lib/stackrox/" + rocksDBDirName
 )
 
 // New returns a new RocksDB
@@ -19,7 +20,7 @@ func New() (*gorocksdb.DB, error) {
 	opts := gorocksdb.NewDefaultOptions()
 	opts.SetCreateIfMissing(true)
 	opts.SetCompression(gorocksdb.LZ4Compression)
-	return gorocksdb.OpenDb(opts, rocksDBPath)
+	return gorocksdb.OpenDb(opts, filepath.Join(option.MigratorOptions.DBPathBase, rocksDBDirName))
 }
 
 // ReadFromRocksDB return unmarshalled proto object read from rocksDB for given prefix and id.

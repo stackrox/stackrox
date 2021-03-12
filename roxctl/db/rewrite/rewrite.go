@@ -2,12 +2,14 @@ package rewrite
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/db/common"
@@ -27,8 +29,8 @@ func Command() *cobra.Command {
 			return rewrite(path, outputDB)
 		}),
 	}
-	c.Flags().StringVar(&path, "path", "/var/lib/stackrox/badgerdb", "Specify this path if you want to point explicitly at a specific BadgerDB")
-	c.Flags().StringVar(&outputDB, "output", "/var/lib/stackrox/badgerdb-rewrite", "Specify the path to write the new, rewritten BadgerDB out to")
+	c.Flags().StringVar(&path, "path", filepath.Join(migrations.CurrentPath, "badgerdb"), "Specify this path if you want to point explicitly at a specific BadgerDB")
+	c.Flags().StringVar(&outputDB, "output", filepath.Join(migrations.CurrentPath, "badgerdb-rewrite"), "Specify the path to write the new, rewritten BadgerDB out to")
 	return c
 }
 

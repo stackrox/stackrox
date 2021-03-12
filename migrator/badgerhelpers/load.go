@@ -9,7 +9,7 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/migrator/option"
 )
 
 const (
@@ -39,7 +39,7 @@ func New(path string) (*badger.DB, error) {
 
 // NewWithDefaults returns an instance of the persistent BadgerDB store instantiated at the default filesystem location.
 func NewWithDefaults() (*badger.DB, error) {
-	return New(filepath.Join(migrations.DBMountPath, badgerDBDirName))
+	return New(filepath.Join(option.MigratorOptions.DBPathBase, badgerDBDirName))
 }
 
 // NewTemp creates a new DB, but places it in the host temporary directory.
