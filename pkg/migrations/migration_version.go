@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/docker/docker/pkg/ioutils"
@@ -13,8 +14,9 @@ import (
 )
 
 const (
-	migrationVersionFile     = "migration_version.yaml"
-	migrationVersionfileMode = 0644
+	// MigrationVersionFile records the latest central version in databases.
+	MigrationVersionFile     = "migration_version.yaml"
+	migrationVersionFileMode = 0644
 )
 
 var (
@@ -32,7 +34,14 @@ type MigrationVersion struct {
 
 // Read reads the migration version from dbPath.
 func Read(dbPath string) (*MigrationVersion, error) {
-	bytes, err := ioutil.ReadFile(filepath.Join(dbPath, migrationVersionFile))
+	path := filepath.Join(dbPath, MigrationVersionFile)
+	// If the migration file does not exist, the databases come from a version earlier than 3.0.57.0.
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return &MigrationVersion{dbPath: dbPath, SeqNum: 0, MainVersion: "0"}, nil
+	}
+
+	bytes, err := ioutil.ReadFile(filepath.Join(dbPath, MigrationVersionFile))
 	if err != nil {
 		return nil, err
 	}
@@ -67,5 +76,5 @@ func (m *MigrationVersion) atomicWrite() error {
 	if err != nil {
 		return err
 	}
-	return ioutils.AtomicWriteFile(filepath.Join(m.dbPath, migrationVersionFile), bytes, migrationVersionfileMode)
+	return ioutils.AtomicWriteFile(filepath.Join(m.dbPath, MigrationVersionFile), bytes, migrationVersionFileMode)
 }

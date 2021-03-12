@@ -24,29 +24,37 @@ func TestMigrationVersion_Read(t *testing.T) {
 		description string
 		prepFunc    func(dbPath string)
 		shouldFail  bool
+		expectedVer string
+		expectedSeq int
 	}{
 		{
 			description: "Migration version missing",
 			prepFunc:    nil,
-			shouldFail:  true,
+			shouldFail:  false,
+			expectedVer: "0",
+			expectedSeq: 0,
 		},
 		{
 			description: "Migration version corrupted",
 			prepFunc: func(dbPath string) {
-				f, err := os.Create(filepath.Join(dbPath, migrationVersionFile))
+				f, err := os.Create(filepath.Join(dbPath, MigrationVersionFile))
 				require.NoError(t, err)
 				defer utils.IgnoreError(f.Close)
 				_, err = f.Write([]byte("Something"))
 				require.NoError(t, err)
 			},
-			shouldFail: true,
+			shouldFail:  true,
+			expectedVer: version.GetMainVersion(),
+			expectedSeq: CurrentDBVersionSeqNum,
 		},
 		{
 			description: "Migration version exists",
 			prepFunc: func(dbPath string) {
 				SetCurrent(dbPath)
 			},
-			shouldFail: false,
+			shouldFail:  false,
+			expectedVer: version.GetMainVersion(),
+			expectedSeq: CurrentDBVersionSeqNum,
 		},
 	}
 
@@ -60,8 +68,8 @@ func TestMigrationVersion_Read(t *testing.T) {
 			ver, err := Read(dir)
 			require.Equal(t, c.shouldFail, err != nil)
 			if !c.shouldFail {
-				assert.Equal(t, version.GetMainVersion(), ver.MainVersion)
-				assert.Equal(t, CurrentDBVersionSeqNum, ver.SeqNum)
+				assert.Equal(t, c.expectedVer, ver.MainVersion)
+				assert.Equal(t, c.expectedSeq, ver.SeqNum)
 				assert.Equal(t, dir, ver.dbPath)
 			}
 		})
@@ -117,11 +125,11 @@ func TestMigrationVersion_Write(t *testing.T) {
 			}
 
 			// Verify the migration file updated when needed.
-			stat, err := os.Stat(filepath.Join(dir, migrationVersionFile))
+			stat, err := os.Stat(filepath.Join(dir, MigrationVersionFile))
 			time.Sleep(time.Millisecond * 10) // Make sure mod time changed.
 			SetCurrent(dir)
 			if err == nil {
-				newStat, err := os.Stat(filepath.Join(dir, migrationVersionFile))
+				newStat, err := os.Stat(filepath.Join(dir, MigrationVersionFile))
 				assert.NoError(t, err)
 				assert.Equal(t, c.shouldUpdate, !stat.ModTime().Equal(newStat.ModTime()))
 			}

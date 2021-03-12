@@ -4,12 +4,14 @@ import (
 	"archive/zip"
 	"context"
 	"io"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators/cas"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators/dbs"
 	"github.com/stackrox/rox/pkg/backup"
+	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/utils"
 	bolt "go.etcd.io/bbolt"
@@ -32,6 +34,10 @@ func Backup(ctx context.Context, boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, incl
 		if err := generators.PutPathMapInZip(cas.NewCertsBackup(), backup.KeysBaseFolder).WriteTo(ctx, zipWriter); err != nil {
 			return errors.Wrap(err, "backing up certificates")
 		}
+	}
+
+	if err := generators.PutStreamInZip(generators.PutFileInStream(filepath.Join(migrations.CurrentPath, backup.MigrationVersion)), backup.MigrationVersion).WriteTo(ctx, zipWriter); err != nil {
+		return errors.Wrap(err, "backing up migration version")
 	}
 
 	return zipWriter.Close()

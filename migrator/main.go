@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 
@@ -15,6 +16,8 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/version"
 )
 
 func main() {
@@ -48,6 +51,16 @@ func run() error {
 	if conf.Maintenance.SafeMode {
 		log.WriteToStderr("configuration has safe mode set. Skipping migrator")
 		return nil
+	}
+
+	ver, err := migrations.Read(migrations.CurrentPath)
+	if err != nil {
+		log.WriteToStderrf("error reading migration version: %v", err)
+		return err
+	}
+
+	if ver.SeqNum > migrations.CurrentDBVersionSeqNum || version.CompareReleaseVersions(ver.MainVersion, version.GetMainVersion()) > 0 {
+		return errors.New(fmt.Sprintf("Database downgrade or force rollback from %+v is not supported", *ver))
 	}
 
 	if err := compact.Compact(conf); err != nil {
