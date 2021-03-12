@@ -1,6 +1,8 @@
 package helmtest
 
 import (
+	"fmt"
+
 	"github.com/itchyny/gojq"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
@@ -129,6 +131,12 @@ func toYaml(obj interface{}, _ []interface{}) interface{} {
 	return string(bytes)
 }
 
+func printjq(obj interface{}, _ []interface{}) interface{} {
+	fmt.Println("--------DEBUG--------")
+	fmt.Println(obj)
+	return obj
+}
+
 func assertThat(obj interface{}, args []interface{}) interface{} {
 	evalResult := args[0]
 	if !truthiness(evalResult) {
@@ -155,4 +163,5 @@ var builtinOpts = []gojq.CompilerOption{
 	gojq.WithFunction("assertThat", 2, 2, assertThat),
 	gojq.WithFunction("assertNotExist", 0, 0, assertNotExist),
 	gojq.WithFunction("assumeThat", 1, 1, assumeThat),
+	gojq.WithFunction("print", 0, 0, printjq),
 }

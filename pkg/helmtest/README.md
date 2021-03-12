@@ -25,6 +25,12 @@ release:  # Overrides for the Helm release properties. These are applied in root
   revision: int # override for the Helm release revision
   isInstall: bool # override for the "IsInstall" property of the release options
   isUpgrade: bool # override for the "IsUpgrade" property of the release options
+server:
+  visibleSchema: # openAPI schema which is visible to helm, i.e. to check API resource availability
+  # all valid schemas are:
+  - kubernetes-1.20.2
+  - openshift-4.1.0
+  availableSchemas: [] # openAPI schema to validate against, i.e. to validate if rendered objects could be applied
 values:  # values as consumed by Helm via the `-f` CLI flag.
   key: value
 set:  # alternative format for Helm values, as consumed via the `--set` CLI flag.
@@ -97,3 +103,5 @@ In addition to the standard `jq` functions, you can use the following ones:
   `| assertThat(.name == "foo")` are semantically equivalent, the latter is preferable as it is much easier to debug.
 - `assumeThat(f)` - assumes that a filter `f` holds for the input object. If it doesn't, the evaluation is aborted for
   the given input object, and no failure is triggered.
+- `print` - prints input directly with `fmt.Println` and returns it, i.e. to print all objects in a test as
+   `yaml` write `.objects[] | toyaml | print`.
