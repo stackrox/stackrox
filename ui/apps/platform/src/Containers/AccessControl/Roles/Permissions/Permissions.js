@@ -38,7 +38,7 @@ const Permissions = ({
         headerText = name ? `"${name}" Permissions` : 'User Permissions';
     }
     const headerComponents = defaultRoles[selectedRole.name] ? (
-        <span className="uppercase text-base-500 leading-normal 3 font-700">system default</span>
+        <span className="uppercase text-base-500 leading-normal mr-3 font-700">system default</span>
     ) : (
         <>
             {!readOnly && (
