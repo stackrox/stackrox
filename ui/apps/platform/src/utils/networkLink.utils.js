@@ -1,4 +1,3 @@
-import entityTypes from 'constants/entityTypes';
 import { nodeTypes } from 'constants/networkGraph';
 import { filterModes } from 'constants/networkFilterModes';
 import { UIfeatureFlags } from 'utils/featureFlags';
@@ -69,7 +68,6 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState) => 
                     const edgeKey = getSourceTargetKey(sourceEntityId, targetEntityId);
 
                     if (
-                        targetNode?.entity?.type !== entityTypes.DEPLOYMENT ||
                         !targetNode.nonIsolatedIngress // nodes that are ingress-isolated have explicit incoming edges
                     ) {
                         return;
