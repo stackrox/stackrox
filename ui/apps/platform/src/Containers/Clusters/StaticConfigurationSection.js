@@ -60,7 +60,7 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
         handleChange
     );
     function guardedClusterTypeChange(selectedOption) {
-        if (selectedOption === clusterTypes.OPENSHIFT_3) {
+        if (selectedOption.value === clusterTypes.OPENSHIFT_3) {
             // force admission controller events off in OpenShift 3.x
             const syntheticEvent = {
                 target: {
