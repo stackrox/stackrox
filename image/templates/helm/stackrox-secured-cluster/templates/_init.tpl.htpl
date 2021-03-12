@@ -102,6 +102,8 @@
 {{ end }}
 {{ end }}
 
+[< end >]
+
 {{/*
    Environment setup
 */}}
@@ -122,6 +124,11 @@
 
   {{ include "srox.note" (list $ (printf "Based on API server properties, we have inferred that you are deploying into an OpenShift %d cluster. Set the `env.openshift` property explicitly to 3 or 4 to override the auto-sensed value." $._rox.env.openshift)) }}
 {{ end }}
+{{ if not (kindIs "bool" $._rox.env.openshift) }}
+  {{ $_ := set $._rox.env "openshift" (int $._rox.env.openshift) }}
+{{ else if not $._rox.env.openshift }}
+  {{ $_ := set $._rox.env "openshift" 0 }}
+{{ end }}
 
 {{ if and $._rox.admissionControl.dynamic.enforceOnCreates (not $._rox.admissionControl.listenOnCreates) }}
   {{ include "srox.warn" (list $ "Incompatible settings: 'admissionControl.dynamic.enforceOnCreates' is set to true, while `admissionControl.listenOnCreates` is set to false. For the feature to be active, enable both settings by setting them to true.") }}
@@ -131,11 +138,9 @@
   {{ include "srox.warn" (list $ "Incompatible settings: 'admissionControl.dynamic.enforceOnUpdates' is set to true, while `admissionControl.listenOnUpdates` is set to false. For the feature to be active, enable both settings by setting them to true.") }}
 {{ end }}
 
-{{ if and $._rox.env.openshift $._rox.admissionControl.listenOnEvents }}
-  {{ include "srox.warn" (list $ "WARNING: 'admissionControl.listenOnEvents' is set to true, please ensure your OpenShift version is 4.0 or greater, for this feature to work") }}
+{{ if and (eq $._rox.env.openshift 3) $._rox.admissionControl.listenOnEvents }}
+  {{ include "srox.fail" "'admissionControl.listenOnEvents' is set to true, but the chart is being deployed in OpenShift 3.x compatibility mode, which does not work with this feature. Set 'env.openshift' to '4' in order to enable OpenShift 4.x features." }}
 {{ end }}
-
-[< end >]
 
 {{/* Initial image pull secret setup. */}}
 {{ include "srox.mergeInto" (list $._rox.mainImagePullSecrets $._rox.imagePullSecrets) }}

@@ -117,6 +117,11 @@
   {{ end }}
   {{ include "srox.note" (list $ (printf "Based on API server properties, we have inferred that you are deploying into an OpenShift %d.x cluster. Set the `env.openshift` property explicitly to 3 or 4 to override the auto-sensed value." $env.openshift)) }}
 {{ end }}
+{{ if not (kindIs "bool" $env.openshift) }}
+  {{ $_ := set $env "openshift" (int $env.openshift) }}
+{{ else if not $env.openshift }}
+  {{ $_ := set $env "openshift" 0 }}
+{{ end }}
 
 {{/* Infer GKE, if needed */}}
 {{ if kindIs "invalid" $env.platform }}

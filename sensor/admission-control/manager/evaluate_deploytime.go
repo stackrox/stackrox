@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/stringutils"
 	admission "k8s.io/api/admission/v1beta1"
+	"k8s.io/utils/pointer"
 )
 
 var (
@@ -149,7 +150,9 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	}
 
 	if features.K8sEventDetection.Enabled() {
-		go m.filterAndPutAttemptedAlertsOnChan(req.Operation, alerts...)
+		if !pointer.BoolPtrDerefOr(req.DryRun, false) {
+			go m.filterAndPutAttemptedAlertsOnChan(req.Operation, alerts...)
+		}
 	}
 
 	return fail(req.UID, message(alerts, !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass())), nil

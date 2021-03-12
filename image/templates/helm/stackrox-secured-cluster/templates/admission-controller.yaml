@@ -169,6 +169,9 @@ webhooks: []
 webhooks:
   {{- if or ._rox.admissionControl.listenOnCreates ._rox.admissionControl.listenOnUpdates }}
   - name: policyeval.stackrox.io
+    {{- if not (eq ._rox.env.openshift 3) }}
+    sideEffects: NoneOnDryRun
+    {{- end }}
     rules:
       - apiGroups:
         - '*'
@@ -212,6 +215,9 @@ webhooks:
   {{- end}}
   {{- if ._rox.admissionControl.listenOnEvents }}
   - name: k8sevents.stackrox.io
+    {{- if not (eq ._rox.env.openshift 3) }}
+    sideEffects: NoneOnDryRun
+    {{- end }}
     rules:
       - apiGroups:
         - '*'

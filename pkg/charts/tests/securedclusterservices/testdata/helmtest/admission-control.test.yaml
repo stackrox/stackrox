@@ -1,0 +1,24 @@
+server:
+  availableSchemas:
+  - openshift-4.1.0
+tests:
+- name: "OpenShift3 clusters do not support admission control sideEffects"
+  set:
+    env.openshift: 3
+    admissionControl:
+      listenOnEvents: true
+      listenOnCreates: true
+      listenOnUpdates: true
+  expectError: true
+
+- name: "OpenShift4 clusters support admission control sideEffects"
+  set:
+    env.openshift: 4
+  values:
+    admissionControl:
+      listenOnEvents: true
+      listenOnCreates: true
+      listenOnUpdates: true
+  expect: |
+    [.objects[] | select(.kind == "ValidatingWebhookConfiguration" and .metadata.name == "stackrox").webhooks[] |
+      select(.sideEffects == "NoneOnDryRun")] | assertThat(length == 2)
