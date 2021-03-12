@@ -24,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/sac"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -166,8 +165,8 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 	// - es3 has incoming flow from deployment depD and external source es1.
 	// EXPECT:
 	//   - all flows within namespace foo
-	//   - flows between depD and depA, and depE and depB
-	//   - incoming flow for depB from a masked deployment
+	//   - flows to/from namespace foo and bar
+	//   - flows between deployments in namespace foo and bar and masked deployments depX, depZ, and depW
 	//   - flows es1 - depA, es2 - depA
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.OneStepSCC{
@@ -267,6 +266,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 				anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es2ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
 				anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es5ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
 				depFlow("depB", "depA"),
+				depFlow("depB", "depF"),
 				depFlow("depB", "depX"),
 				depFlow("depB", "depW"),
 				depFlow("depC", "depA"),
@@ -280,6 +280,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 				depFlow("depE", "depX"),
 				depFlow("depE", "depB"),
 				depFlow("depF", "depB"),
+				depFlow("depD", "depF"),
 				anyFlow("depF", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
 				anyFlow("depF", storage.NetworkEntityInfo_DEPLOYMENT, es5ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
 				anyFlow("depQ", storage.NetworkEntityInfo_DEPLOYMENT, es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
@@ -298,14 +299,40 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 	s.networkTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(networkTree)
 	s.networkTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(networkTree)
 
-	s.deployments.EXPECT().Search(gomock.Not(ctxHasAllDeploymentsAccessMatcher), gomock.Any()).Return(
-		[]search.Result{
-			{ID: "depA"},
-			{ID: "depB"},
-			{ID: "depC"},
-			{ID: "depD"},
-			{ID: "depE"},
-			{ID: "depF"},
+	s.deployments.EXPECT().SearchListDeployments(gomock.Not(ctxHasAllDeploymentsAccessMatcher), gomock.Any()).Return(
+		[]*storage.ListDeployment{
+			{
+				Id:        "depA",
+				Name:      "depA",
+				Namespace: "foo",
+			},
+			{
+				Id:        "depB",
+				Name:      "depB",
+				Namespace: "foo",
+			},
+			{
+				Id:        "depC",
+				Name:      "depC",
+				Namespace: "foo",
+			},
+			{
+				Id:        "depD",
+				Name:      "depD",
+				Namespace: "bar",
+			},
+
+			{
+				Id:        "depE",
+				Name:      "depE",
+				Namespace: "bar",
+			},
+
+			{
+				Id:        "depF",
+				Name:      "depF",
+				Namespace: "baz",
+			},
 		}, nil)
 
 	s.deployments.EXPECT().SearchListDeployments(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(
@@ -357,6 +384,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 		"foo/depA <- " + es2ID.String(),
 		"foo/depA <- " + es3ID.String(), // non-existent es5 mapped to supernet es3
 		"foo/depB <- foo/depA",
+		"foo/depB <- baz/depF",
 		"foo/depB <- masked namespace #1/masked deployment #1",
 		"foo/depB <- masked namespace #2/masked deployment #3",
 		"foo/depC <- foo/depA",
@@ -364,6 +392,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 		"foo/depC <- " + networkgraph.InternetExternalSourceID,
 		"bar/depD <- foo/depA",
 		"bar/depE <- foo/depB",
+		"baz/depF <- foo/depB",
 		"mycluster__net1 <- foo/depA",
 	}
 	sort.Strings(expected)
@@ -377,19 +406,22 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 	// Third namespace baz is visible but not selected
 	// User has no network flow access in namespace bar
 	// Namespace foo has deployments:
-	// - depA has incoming flows from depB, depD, depE, deployment depX and depZ in a secret namespace,
+	// - depA has incoming flows from depB, depD, depE, depX and depZ
 	//   and deployment depY that was recently deleted
-	// - depB has incoming flows from depA and deployment depX in a secret namespace, and depW in another secret namespace
+	// - depB has incoming flows from depA, depX, and depW
 	// - depC has incoming flows from depA and depW
 	// Namespace bar:
-	// - depD has incoming flows from depA and depE
+	// - depD has incoming flows from depA, depE, and depZ
 	// - depE has incoming flows from depD and depB
 	// Namespace baz:
 	// - depF has incoming flows from depB
+	// Namespace other:
+	// - depX and depZ
+	// Namespace otherother:
+	// - depW
 	// EXPECT:
 	//   - all flows within namespace foo
-	//   - flows between depD and depA, and depE and depB
-	//   - incoming flow for depB from a masked deployment
+	//   - flows to/from namespace foo and bar
 
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -503,6 +535,57 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 
 	s.flows.EXPECT().GetFlowStore(ctxHasClusterWideNetworkFlowAccessMatcher, "mycluster").Return(mockFlowStore, nil)
 
+	s.deployments.EXPECT().SearchListDeployments(ctx, gomock.Any()).Return(
+		[]*storage.ListDeployment{
+			{
+				Id:        "depA",
+				Name:      "depA",
+				Namespace: "foo",
+			},
+			{
+				Id:        "depB",
+				Name:      "depB",
+				Namespace: "foo",
+			},
+			{
+				Id:        "depC",
+				Name:      "depC",
+				Namespace: "foo",
+			},
+			{
+				Id:        "depD",
+				Name:      "depD",
+				Namespace: "bar",
+			},
+
+			{
+				Id:        "depE",
+				Name:      "depE",
+				Namespace: "bar",
+			},
+
+			{
+				Id:        "depF",
+				Name:      "depF",
+				Namespace: "baz",
+			},
+			{
+				Id:        "depX",
+				Name:      "depX",
+				Namespace: "other",
+			},
+			{
+				Id:        "depZ",
+				Name:      "depZ",
+				Namespace: "other",
+			},
+			{
+				Id:        "depW",
+				Name:      "depW",
+				Namespace: "otherother",
+			},
+		}, nil)
+
 	s.deployments.EXPECT().SearchListDeployments(ctxHasAllDeploymentsAccessMatcher, gomock.Any()).Return(
 		[]*storage.ListDeployment{
 			// depY was deleted
@@ -545,16 +628,24 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 		"foo/depA <- foo/depB",
 		"foo/depA <- bar/depD",
 		"foo/depA <- bar/depE",
+		"foo/depA <- other/depX",
+		"foo/depA <- other/depZ",
 		"foo/depA <- " + es1ID.String(),
 		"foo/depA <- " + es2ID.String(),
 		"foo/depB <- foo/depA",
+		"foo/depB <- other/depX",
+		"foo/depB <- otherother/depW",
 		"foo/depC <- foo/depA",
+		"foo/depC <- otherother/depW",
 		"foo/depC <- " + networkgraph.InternetExternalSourceID,
 		"bar/depD <- foo/depA",
 		"bar/depD <- bar/depE",
+		"bar/depD <- other/depZ",
 		"bar/depD <- " + es3ID.String(),
 		"bar/depE <- foo/depB",
 		"bar/depE <- bar/depD",
+		"bar/depE <- other/depX",
+		"baz/depF <- foo/depB",
 		es1ID.String() + " <- foo/depA",
 		es1ID.String() + " <- bar/depD",
 		es2ID.String() + " <- bar/depD",

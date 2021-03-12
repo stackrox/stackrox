@@ -58,7 +58,6 @@ var (
 	})
 
 	defaultSince         = -5 * time.Minute
-	deploymentSAC        = sac.ForResource(resources.Deployment)
 	networkGraphSAC      = sac.ForResource(resources.NetworkGraph)
 	netEntityPredFactory = predicate.NewFactory("networkEntity", &storage.NetworkEntity{})
 )
@@ -310,7 +309,6 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1
 		return err
 	}
 	deploymentsWithFlows := objects.ListDeploymentsMapByID(filteredSlice.([]*storage.ListDeployment))
-
 	deploymentsMap := objects.ListDeploymentsMapByID(deployments)
 
 	// We can see all relevant flows if no deployments were filtered out in the previous step.
@@ -328,14 +326,8 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1
 		return err
 	}
 
-	// canSeeAllDeploymentsInCluster helps us to determine whether we have to handle masked deployments at all or not.
-	canSeeAllDeploymentsInCluster, err := deploymentSAC.ReadAllowed(ctx, sac.ClusterScopeKey(request.GetClusterId()))
-	if err != nil {
-		return status.Errorf(codes.Internal, "could not check permissions: %v", err)
-	}
-
 	var pred func(*storage.NetworkFlowProperties) bool
-	if request.GetQuery() != "" || !canSeeAllDeploymentsInCluster || !canSeeAllFlows {
+	if request.GetQuery() != "" || !canSeeAllFlows {
 		pred = func(props *storage.NetworkFlowProperties) bool {
 			srcEnt := props.GetSrcEntity()
 			dstEnt := props.GetDstEntity()
@@ -358,23 +350,7 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1
 				}
 			}
 
-			for _, entity := range []*storage.NetworkEntityInfo{props.GetSrcEntity(), props.GetDstEntity()} {
-				if entity.GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
-					if canSeeAllDeploymentsInCluster && deploymentsMap[entity.GetId()] == nil {
-						// We can see all deployments in the cluster, so any deployment not in the map was simply not
-						// selected by the query -> skip flow
-						return false
-					} else if !canSeeAllDeploymentsInCluster && deploymentsMap[entity.GetId()] != nil {
-						// We can't see all deployments in the cluster, so any flow with at least one endpoint in the
-						// map might be relevant (if the other endpoint is not in the map, it could still be masked).
-						return true
-					}
-				}
-			}
-
-			// If canSeeAllDeploymentsInCluster is true, we *exclude* flows above, otherwise we *include* them. Return
-			// the respective default for each action (including anything that's not excluded and vice versa).
-			return canSeeAllDeploymentsInCluster
+			return networkgraph.AnyDeploymentInFilter(srcEnt, dstEnt, deploymentsMap)
 		}
 	}
 
@@ -407,71 +383,75 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1
 	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
 	graphBuilder.AddFlows(flows)
 
-	filteredFlows, maskedDeployments, err := filterFlowsAndMaskScopeAlienDeployments(ctx, request.GetClusterId(), missingInfoFlows, deploymentsMap, s.deployments, canSeeAllDeploymentsInCluster)
+	filteredFlows, visibleNeighbors, maskedDeployments, err := filterFlowsAndMaskScopeAlienDeployments(ctx, request.GetClusterId(), missingInfoFlows, deploymentsMap, s.deployments)
 	if err != nil {
 		return err
 	}
+	graphBuilder.AddDeployments(visibleNeighbors)
 	graphBuilder.AddDeployments(maskedDeployments)
 	graphBuilder.AddFlows(filteredFlows)
 	return nil
 }
 
-func filterFlowsAndMaskScopeAlienDeployments(ctx context.Context, clusterID string, flows []*storage.NetworkFlow, deploymentsMap map[string]*storage.ListDeployment, deploymentDS deploymentDS.DataStore, allDeploymentsVisible bool) (filtered []*storage.NetworkFlow, maskedDeployments []*storage.ListDeployment, err error) {
-	isVisibleDeployment := func(string) bool { return true }
-	if !allDeploymentsVisible {
-		// Find out which deployments we *can* see.
-		visibleDeployments, err := deploymentDS.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
-		if err != nil {
-			return nil, nil, err
-		}
-		isVisibleDeployment = search.ResultsToIDSet(visibleDeployments).Contains
+func filterFlowsAndMaskScopeAlienDeployments(ctx context.Context, clusterID string, flows []*storage.NetworkFlow,
+	deploymentsMap map[string]*storage.ListDeployment, deploymentDS deploymentDS.DataStore,
+) (filtered []*storage.NetworkFlow, visibleNeighbors []*storage.ListDeployment, maskedDeployments []*storage.ListDeployment, err error) {
+	// Find out which deployments we *can* see.
+	results, err := deploymentDS.SearchListDeployments(ctx, search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
+	if err != nil {
+		return nil, nil, nil, err
 	}
+	visibleDeployments := objects.ListDeploymentsMapByID(results)
 
 	// Pass 1: Find deployments for which we are missing data (deleted or invisible).
 	filtered = flows[:0]
 
+	visibleNeighboringDeployments := set.NewStringSet()
 	missingDeploymentIDs := set.NewStringSet()
 	for _, flow := range flows {
-		srcEnt := flow.GetProps().GetSrcEntity()
-		dstEnt := flow.GetProps().GetDstEntity()
+		srcEnt, dstEnt := flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity()
 		// Skip all flows with BOTH endpoints not in the set.
 		if !networkgraph.AnyDeploymentInFilter(srcEnt, dstEnt, deploymentsMap) {
 			continue
 		}
 
-		// Skip flows where one of the endpoints is not in the set but visible i.e. the endpoint does not satisfy input query.
+		// Determine if neighbor is visible or not.
 		if srcEnt.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && deploymentsMap[srcEnt.GetId()] == nil {
-			if isVisibleDeployment(srcEnt.GetId()) {
-				continue
+			if visibleDeployments[srcEnt.GetId()] == nil {
+				missingDeploymentIDs.Add(srcEnt.GetId())
+			} else {
+				visibleNeighboringDeployments.Add(srcEnt.GetId())
 			}
-			missingDeploymentIDs.Add(srcEnt.GetId())
 		}
 		if dstEnt.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && deploymentsMap[dstEnt.GetId()] == nil {
-			if isVisibleDeployment(dstEnt.GetId()) {
-				continue
+			if visibleDeployments[dstEnt.GetId()] == nil {
+				missingDeploymentIDs.Add(dstEnt.GetId())
+			} else {
+				visibleNeighboringDeployments.Add(dstEnt.GetId())
 			}
-			missingDeploymentIDs.Add(dstEnt.GetId())
 		}
-
 		filtered = append(filtered, flow)
 	}
 
 	flows = filtered
 	filtered = flows[:0]
 
-	allDeploymentsReadCtx := sac.WithGlobalAccessScopeChecker(
-		ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Deployment),
-			sac.ClusterScopeKeys(clusterID)))
+	var existingButInvisibleDeploymentsMap map[string]*storage.ListDeployment
+	if len(missingDeploymentIDs) > 0 {
+		allDeploymentsReadCtx := sac.WithGlobalAccessScopeChecker(
+			ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Deployment),
+				sac.ClusterScopeKeys(clusterID)))
 
-	existingButInvisibleDeploymentsList, err := deploymentDS.SearchListDeployments(allDeploymentsReadCtx,
-		search.NewQueryBuilder().AddDocIDSet(missingDeploymentIDs).ProtoQuery())
-	if err != nil {
-		return nil, nil, err
+		existingButInvisibleDeploymentsList, err := deploymentDS.SearchListDeployments(allDeploymentsReadCtx,
+			search.NewQueryBuilder().AddDocIDSet(missingDeploymentIDs).ProtoQuery())
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		existingButInvisibleDeploymentsMap = objects.ListDeploymentsMapByID(existingButInvisibleDeploymentsList)
 	}
-	existingButInvisibleDeploymentsMap := objects.ListDeploymentsMapByID(existingButInvisibleDeploymentsList)
 
 	// Step 2: Mask deployments a user is not allowed to see.
 	masker := newFlowGraphMasker()
@@ -480,8 +460,18 @@ func filterFlowsAndMaskScopeAlienDeployments(ctx context.Context, clusterID stri
 		skipFlow := false
 		entities := []*storage.NetworkEntityInfo{flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity()}
 		for _, entity := range entities {
-			if entity.GetType() != storage.NetworkEntityInfo_DEPLOYMENT || deploymentsMap[entity.GetId()] != nil {
-				// no masking or skipping required for deployments which are in the set.
+			// no masking or skipping required for non-deployment type entities.
+			if entity.GetType() != storage.NetworkEntityInfo_DEPLOYMENT {
+				continue
+			}
+
+			// no masking or skipping required for deployments already in the set.
+			if deploymentsMap[entity.GetId()] != nil {
+				continue
+			}
+
+			// no masking or skipping required for neighboring deployments.
+			if visibleNeighboringDeployments.Contains(entity.GetId()) {
 				continue
 			}
 
@@ -501,7 +491,12 @@ func filterFlowsAndMaskScopeAlienDeployments(ctx context.Context, clusterID stri
 		filtered = append(filtered, flow)
 	}
 
-	return filtered, masker.GetMaskedDeployments(), nil
+	for _, visibleDeployment := range visibleDeployments {
+		if visibleNeighboringDeployments.Contains(visibleDeployment.GetId()) {
+			visibleNeighbors = append(visibleNeighbors, visibleDeployment)
+		}
+	}
+	return filtered, visibleNeighbors, masker.GetMaskedDeployments(), nil
 }
 
 func (s *serviceImpl) getDeployments(ctx context.Context, clusterID string, query string) (deployments []*storage.ListDeployment, err error) {

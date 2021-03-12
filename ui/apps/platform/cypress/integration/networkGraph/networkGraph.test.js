@@ -48,7 +48,7 @@ describe('Network Graph Search', () => {
         cy.route('GET', api.network.networkGraph).as('networkGraph');
     });
 
-    it('should filter to show only the deployments from the stackrox namespace', () => {
+    it('should filter to show only the deployments from the stackrox namespace and deployments connected to them', () => {
         const namespaceName = 'stackrox';
 
         cy.visit(networkUrl);
@@ -61,12 +61,12 @@ describe('Network Graph Search', () => {
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
             const deployments = cytoscape.nodes().filter(filterDeployments);
             deployments.forEach((deployment) => {
-                expect(deployment.data().parent).to.equal('stackrox');
+                expect(deployment.data().parent).to.be.oneOf(['stackrox', 'kube-system']);
             });
         });
     });
 
-    it('should filter to show only the stackrox namespace', () => {
+    it('should filter to show only the stackrox namespace and deployments connected to stackrox namespace', () => {
         const namespaceName = 'stackrox';
 
         cy.visit(networkUrl);
@@ -78,14 +78,14 @@ describe('Network Graph Search', () => {
 
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
             const namespaces = cytoscape.nodes().filter(filterNamespaces);
-            expect(namespaces.size()).to.equal(1);
+            expect(namespaces.size()).to.equal(2);
             namespaces.forEach((namespace) => {
-                expect(namespace.data().name).to.equal('stackrox');
+                expect(namespace.data().name).to.be.oneOf(['stackrox', 'kube-system']);
             });
         });
     });
 
-    it('should filter to show only a specific deployment', () => {
+    it('should filter to show only a specific deployment and deployments connected to it', () => {
         const deploymentName = 'central';
 
         cy.visit(networkUrl);
@@ -97,10 +97,13 @@ describe('Network Graph Search', () => {
 
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
             const deployments = cytoscape.nodes().filter(filterDeployments);
-            expect(deployments.size()).to.equal(1);
+            expect(deployments.size()).to.be.at.least(3); // central, scanner, sensor
+
+            const minDeps = [];
             deployments.forEach((deployment) => {
-                expect(deployment.data().name).to.equal('central');
+                minDeps.push(deployment.data().name);
             });
+            expect(minDeps).to.include.members(['central', 'scanner', 'sensor']);
         });
     });
 });

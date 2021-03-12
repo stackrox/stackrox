@@ -486,6 +486,11 @@ class SACTest extends BaseSpecification {
         allAccessFlows.removeAll(UNSTABLE_FLOWS)
         println allAccessFlows
 
+        def allAccessFlowsWithoutNeighbors = allAccessFlows.findAll {
+            it.matches("(stackrox/.*|INTERNET) -> (stackrox/.*|INTERNET)")
+        }
+        println allAccessFlowsWithoutNeighbors
+
         and:
         "Obtaining the network graph for the StackRox namespace with a SAC restricted token"
         useToken("stackroxNetFlowsToken")
@@ -513,13 +518,20 @@ class SACTest extends BaseSpecification {
         def sacFlowsNoQueryFiltered = new HashSet<String>(sacFlowsNoQuery)
         sacFlowsNoQueryFiltered.removeAll { it.contains("masked deployment") }
 
-        assert allAccessFlows == sacFlowsFiltered
-        assert allAccessFlows == sacFlowsNoQueryFiltered
+        assert allAccessFlowsWithoutNeighbors == sacFlowsFiltered
+        assert allAccessFlowsWithoutNeighbors == sacFlowsNoQueryFiltered
 
         and:
         "The flows obtained with SAC should contain some masked deployments"
         assert sacFlowsFiltered.size() < sacFlows.size()
         assert sacFlowsNoQueryFiltered.size() < sacFlowsNoQuery.size()
+
+        and:
+        "The masked deployments should be external to stackrox namespace"
+        assert sacFlows.size() - sacFlowsFiltered.size() ==
+                allAccessFlows.size() - allAccessFlowsWithoutNeighbors.size()
+        assert sacFlowsNoQuery.size() - sacFlowsNoQueryFiltered.size() ==
+                allAccessFlows.size() - allAccessFlowsWithoutNeighbors.size()
 
         cleanup:
         "Cleanup"
