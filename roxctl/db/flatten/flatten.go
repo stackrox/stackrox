@@ -1,14 +1,16 @@
 package flatten
 
 import (
+	"path/filepath"
+
+	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/badgerhelper"
+	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/db/common"
-
-	"github.com/dgraph-io/badger"
-	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 )
 
 // Command defines the central command tree
@@ -21,7 +23,7 @@ func Command() *cobra.Command {
 			return flatten(path, workers)
 		}),
 	}
-	c.Flags().StringVar(&path, "path", "/var/lib/stackrox/badgerdb", "Specify this path if you want to point explicitly at a specific BadgerDB")
+	c.Flags().StringVar(&path, "path", filepath.Join(migrations.CurrentPath, "badgerdb"), "Specify this path if you want to point explicitly at a specific BadgerDB")
 	c.Flags().IntVar(&workers, "workers", 2, "Specify the number of workers to use")
 	return c
 }

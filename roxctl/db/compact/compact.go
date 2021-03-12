@@ -1,14 +1,16 @@
 package compact
 
 import (
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/roxctl/common/util"
-	"github.com/stackrox/rox/roxctl/db/common"
+	"path/filepath"
 
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/badgerhelper"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/roxctl/common/util"
+	"github.com/stackrox/rox/roxctl/db/common"
 )
 
 var (
@@ -28,7 +30,7 @@ func Command() *cobra.Command {
 			return compact(path, discardRatio, iterations)
 		}),
 	}
-	c.Flags().StringVar(&path, "path", "/var/lib/stackrox/badgerdb", "Specify this path if you want to point explicitly at a specific BadgerDB")
+	c.Flags().StringVar(&path, "path", filepath.Join(migrations.CurrentPath, "badgerdb"), "Specify this path if you want to point explicitly at a specific BadgerDB")
 	c.Flags().Float64Var(&discardRatio, "discard-ratio", 0.5, "Specify the required amount of data to be rewritten for GC to rewrite a value log. Lower is more aggressive")
 	c.Flags().IntVar(&iterations, "iterations", 20, "Specify the number of iterations of GC to run. At some point, they stop becoming effective if there is no rewrite")
 	return c
