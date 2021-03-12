@@ -2355,18 +2355,11 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 			},
 		},
 		{
-			groups: []*storage.PolicyGroup{baselineGroup},
-			expectedMatches: map[string][]string{
-				privilegedDep.GetId():    {aptGetKey, aptGet2Key, bashKey},
-				nonPrivilegedDep.GetId(): {aptGetKey, curlKey, bashKey},
-			},
+			groups:          []*storage.PolicyGroup{baselineGroup},
+			expectedMatches: map[string][]string{},
 			expectedProcessMatches: map[string][]string{
 				privilegedDep.GetId():    {aptGetKey, aptGet2Key, bashKey},
 				nonPrivilegedDep.GetId(): {aptGetKey, curlKey, bashKey},
-			},
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				privilegedDep.GetId():    processBaselineMessage(privilegedDep, true, false, "apt-get", "apt-get", "bash"),
-				nonPrivilegedDep.GetId(): processBaselineMessage(nonPrivilegedDep, true, false, "apt-get", "bash", "curl"),
 			},
 		},
 
@@ -2381,15 +2374,8 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 			},
 		},
 		{
-			groups: []*storage.PolicyGroup{aptGetGroup, baselineGroup},
-			expectedMatches: map[string][]string{
-				privilegedDep.GetId():    {aptGetKey, aptGet2Key},
-				nonPrivilegedDep.GetId(): {aptGetKey},
-			},
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				privilegedDep.GetId():    processBaselineMessage(privilegedDep, true, false, "apt-get", "apt-get"),
-				nonPrivilegedDep.GetId(): processBaselineMessage(nonPrivilegedDep, true, false, "apt-get"),
-			},
+			groups:          []*storage.PolicyGroup{aptGetGroup, baselineGroup},
+			expectedMatches: map[string][]string{},
 			expectedProcessMatches: map[string][]string{
 				privilegedDep.GetId():    {aptGetKey, aptGet2Key},
 				nonPrivilegedDep.GetId(): {aptGetKey},
@@ -2412,9 +2398,6 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 			expectedMatches: map[string][]string{
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key, bashKey},
 			},
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				privilegedDep.GetId(): processBaselineMessage(privilegedDep, true, true, "apt-get", "apt-get", "bash"),
-			},
 			expectedProcessMatches: map[string][]string{
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key, bashKey},
 			},
@@ -2423,9 +2406,6 @@ func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
 			groups: []*storage.PolicyGroup{aptGetGroup, privilegedGroup, baselineGroup},
 			expectedMatches: map[string][]string{
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key},
-			},
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				privilegedDep.GetId(): processBaselineMessage(privilegedDep, true, true, "apt-get", "apt-get"),
 			},
 			expectedProcessMatches: map[string][]string{
 				privilegedDep.GetId(): {aptGetKey, aptGet2Key},
