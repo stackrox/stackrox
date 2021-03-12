@@ -73,6 +73,10 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState) => 
                         return;
                     }
 
+                    if (!node.queryMatch && !targetNode.queryMatch) {
+                        return;
+                    }
+
                     const isTargetExternal =
                         targetNodeType === nodeTypes.EXTERNAL_ENTITIES ||
                         targetNodeType === nodeTypes.CIDR_BLOCK;

@@ -130,14 +130,14 @@ func ComputeDiff(oldGraph, newGraph *v1.NetworkGraph) (removed, added *v1.Networ
 
 type networkGraphWrapper struct {
 	graphNodes map[string]*v1.NetworkNode
-	idxToIDs   map[int32]string
+	idxToIDs   []string
 }
 
 func newNetworkGraph(g *v1.NetworkGraph) *networkGraphWrapper {
 	graphNodes := make(map[string]*v1.NetworkNode)
-	idxToIDs := make(map[int32]string)
+	idxToIDs := make([]string, len(g.GetNodes()))
 	for i, node := range g.GetNodes() {
-		idxToIDs[int32(i)] = node.GetEntity().GetId()
+		idxToIDs[i] = node.GetEntity().GetId()
 		graphNodes[node.GetEntity().GetId()] = node
 	}
 
@@ -159,12 +159,11 @@ func (g *networkGraphWrapper) getNodeOutEdges(id string) map[string]*v1.NetworkE
 
 	ret := make(map[string]*v1.NetworkEdgePropertiesBundle)
 	for i, edge := range node.GetOutEdges() {
-		tgtID, ok := g.idxToIDs[i]
-		if !ok {
-			utils.Should(errors.Errorf("network graph node %d not found", i))
+		if i < 0 || i >= int32(len(g.idxToIDs)) {
+			utils.Should(errors.Errorf("invalid network graph node %d index", i))
 			continue
 		}
-		ret[tgtID] = edge
+		ret[g.idxToIDs[i]] = edge
 	}
 	return ret
 }

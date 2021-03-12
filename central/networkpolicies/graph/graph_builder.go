@@ -433,6 +433,7 @@ func (b *graphBuilder) getRelevantNodes() (map[*node]int, []*v1.NetworkNode) {
 			NonIsolatedIngress: !node.isIngressIsolated,
 			OutEdges:           make(map[int32]*v1.NetworkEdgePropertiesBundle),
 			PolicyIds:          node.applyingPoliciesIDs,
+			QueryMatch:         b.deploymentPredicate(node.deployment.GetId()),
 		})
 	}
 

@@ -303,7 +303,7 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 		return result, nil
 	}
 
-	if !request.IncludeNodeDiff {
+	if !request.GetIncludeNodeDiff() {
 		return result, nil
 	}
 

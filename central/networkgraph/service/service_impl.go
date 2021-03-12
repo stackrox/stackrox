@@ -296,7 +296,19 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 	if err := s.addDeploymentFlowsToGraph(ctx, requestClone, withListenPorts, builder, deployments); err != nil {
 		return nil, err
 	}
-	return builder.Build(), nil
+
+	depSet := set.NewStringSet()
+	for _, deployment := range deployments {
+		depSet.Add(deployment.GetId())
+	}
+
+	graph := builder.Build()
+	for _, node := range graph.GetNodes() {
+		if depSet.Contains(node.GetEntity().GetId()) {
+			node.QueryMatch = true
+		}
+	}
+	return graph, nil
 }
 
 func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1.NetworkGraphRequest, withListenPorts bool, graphBuilder *flowGraphBuilder, deployments []*storage.ListDeployment) error {
