@@ -54,10 +54,13 @@ var (
 			),
 		},
 		"github.com/magiconair/properties/assert": {
-			replacement: "github.com/stretch/testify/assert",
+			replacement: "github.com/stretchr/testify/assert",
 		},
 		"github.com/prometheus/common/log": {
-			replacement: "a logger instead",
+			replacement: "a logger",
+		},
+		"github.com/google/martian/log": {
+			replacement: "a logger",
 		},
 		"k8s.io/helm/...": {
 			replacement: "package from helm.sh/v3",

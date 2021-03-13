@@ -41,7 +41,6 @@ require (
 	github.com/golangci/golangci-lint v1.33.0
 	github.com/google/certificate-transparency-go v1.0.21
 	github.com/google/go-cmp v0.5.2
-	github.com/google/martian v2.1.0+incompatible
 	github.com/googleapis/gnostic v0.5.1
 	github.com/gookit/color v1.3.1
 	github.com/gorilla/schema v1.1.0
