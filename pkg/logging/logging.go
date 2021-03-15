@@ -102,7 +102,7 @@ var (
 			MessageKey: "msg",
 			LineEnding: zapcore.DefaultLineEnding,
 			EncodeLevel: func(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
-				enc.AppendString(zapLevelPrefix[l])
+				enc.AppendString(validLevels[l])
 			},
 			EncodeTime:     console.encodeTime,
 			EncodeDuration: zapcore.StringDurationEncoder,
@@ -118,17 +118,8 @@ var (
 		},
 	}
 
-	//validLevels is a map of all valid level severities to their name
+	// validLevels is a map of all valid level severities to their name
 	validLevels = map[zapcore.Level]string{
-		zapcore.PanicLevel: "Panic",
-		zapcore.FatalLevel: "Fatal",
-		zapcore.ErrorLevel: "Error",
-		zapcore.WarnLevel:  "Warn",
-		zapcore.InfoLevel:  "Info",
-		zapcore.DebugLevel: "Debug",
-	}
-
-	zapLevelPrefix = map[zapcore.Level]string{
 		zapcore.PanicLevel: "Panic",
 		zapcore.FatalLevel: "Fatal",
 		zapcore.ErrorLevel: "Error",
