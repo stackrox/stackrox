@@ -11,7 +11,7 @@
   ],
   "fields": {
     "image_name": {
-      "remote": "kubernetes-dashboard-amd64"
+      "remote": "kubernetesui/dashboard"
     }
   },
   "rationale": "The Kubernetes dashboard can be used to gain external access to a cluster, or to obtain additional access once inside.",

@@ -51,4 +51,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_62_to_m_63_splunk_source_type"
 	_ "github.com/stackrox/rox/migrator/migrations/m_63_to_m_64_exclude_some_openshift_operators_from_policies"
 	_ "github.com/stackrox/rox/migrator/migrations/m_64_to_m_65_detect_openshift4_cluster_on_exec_webhooks"
+	_ "github.com/stackrox/rox/migrator/migrations/m_65_to_m_66_policy_bug_fixes"
 )
