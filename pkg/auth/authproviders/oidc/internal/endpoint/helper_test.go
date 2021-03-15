@@ -171,6 +171,14 @@ func TestHelper_URLsForDiscovery(t *testing.T) {
 			supplied: "https://a/b#e=f/",
 			want:     []string{"https://a/b", "https://a/b/"},
 		},
+		{
+			name:     "BUG: path ends in quoted slash",
+			supplied: "https://a/b%2F",
+			// TODO(porridge): this is a bug, added as a test case just to prevent changing behaviour unconsciously.
+			// This is a wrong answer, since unescaped, both of these end in a slash.
+			// Perhaps we should be using unescaped paths exclusively?
+			want: []string{"https://a/b%2F", "https://a/b%2F/"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -255,6 +263,51 @@ func TestNewHelper(t *testing.T) {
 				canonicalIssuer: "https://a/b?c&d#e&f",
 				httpClient:      http.DefaultClient,
 				urlForDiscovery: "https://a/b",
+			},
+		},
+		{
+			name:   "opaque alphanumeric data",
+			issuer: "data:ABCD?c&d#e&f",
+			// Note: we are rejecting typical opaque URLs, but unfortunately just by coincidence.
+			// In this case, we slap "https://" on otherwise valid URL, and complain about wrong port in https://data:ABCD
+			wantErr: true,
+		},
+		{
+			name:   "BUG: opaque numeric data",
+			issuer: "data:99999999?c&d#e&f",
+			// TODO(porridge): this is a bug, added as a test case just to prevent changing behaviour unconsciously.
+			// We should either be rejecting opaque URLs altogether (consistently with the preceding case).
+			// Currently we mistake schema for the hostname and the data (if it's numeric) for the port number.
+			wantErr: false,
+			want: &Helper{
+				parsedIssuer: url.URL{
+					Scheme:   "https",
+					Host:     "data:99999999",
+					RawQuery: "c&d",
+					Fragment: "e&f",
+				},
+				canonicalIssuer: "https://data:99999999?c&d#e&f",
+				httpClient:      http.DefaultClient,
+				urlForDiscovery: "https://data:99999999",
+			},
+		},
+		{
+			name: "BUG: empty opaque URL",
+			// TODO(porridge): this is a bug, added as a test case just to prevent changing behaviour unconsciously.
+			// We should either be rejecting opaque URLs altogether (consistently with one of the cases above).
+			// Currently we mistake schema for the hostname and the empty data for an empty port number.
+			wantErr: false,
+			issuer:  "data:?c&d#e&f",
+			want: &Helper{
+				parsedIssuer: url.URL{
+					Scheme:   "https",
+					Host:     "data:",
+					RawQuery: "c&d",
+					Fragment: "e&f",
+				},
+				canonicalIssuer: "https://data:?c&d#e&f",
+				httpClient:      http.DefaultClient,
+				urlForDiscovery: "https://data:",
 			},
 		},
 		{
