@@ -25,7 +25,7 @@ import removeEntityContextColumns from 'utils/tableUtils';
 import { imageSortFields } from 'constants/sortFields';
 import { knownBackendFlags } from 'utils/featureFlags';
 import queryService from 'utils/queryService';
-import InactiveImagesDialog from './InactiveImagesDialog';
+import WatchedImagesDialog from './WatchedImagesDialog';
 
 export const defaultImageSort = [
     {
@@ -34,7 +34,7 @@ export const defaultImageSort = [
     },
 ];
 
-export function getCurriedImageTableColumns(inactiveImagesTrigger) {
+export function getCurriedImageTableColumns(watchedImagesTrigger) {
     return function getImageTableColumns(workflowState) {
         const tableColumns = [
             {
@@ -157,7 +157,7 @@ export function getCurriedImageTableColumns(inactiveImagesTrigger) {
                             {isWatched && (
                                 <button
                                     type="button"
-                                    onClick={inactiveImagesTrigger}
+                                    onClick={watchedImagesTrigger}
                                     className="text-primary-700 text-center underline w-full"
                                 >
                                     Scanning via watch tag
@@ -228,7 +228,7 @@ const VulnMgmtImages = ({
     refreshTrigger,
     setRefreshTrigger,
 }) => {
-    const [showInactiveImagesDialog, setShowInactiveImagesDialog] = useState(false);
+    const [showWatchedImagesDialog, setShowWatchedImagesDialog] = useState(false);
 
     const query = gql`
         query getImages($query: String, $pagination: Pagination) {
@@ -255,29 +255,29 @@ const VulnMgmtImages = ({
         knownBackendFlags.ROX_INACTIVE_IMAGE_SCANNING_UI
     );
 
-    function toggleInactiveDialog(e) {
+    function toggleWatchedImagesDialog(e) {
         e.stopPropagation();
 
-        if (showInactiveImagesDialog) {
+        if (showWatchedImagesDialog) {
             // changing this param value on the query vars, to force the query to refetch
             setRefreshTrigger(Math.random());
         }
 
-        setShowInactiveImagesDialog(!showInactiveImagesDialog);
+        setShowWatchedImagesDialog(!showWatchedImagesDialog);
     }
     const tableHeaderComponents = inactiveImageScanningEnabled ? (
         <PanelButton
             icon={<List className="h-4 w-4" />}
             className="btn-icon btn-tertiary"
-            onClick={toggleInactiveDialog}
-            tooltip="Manage Scanning of Inactive Images"
+            onClick={toggleWatchedImagesDialog}
+            tooltip="Manage Scanning of Watched Images"
             dataTestId="panel-button-manage-inactive-images"
         >
-            Manage Inactive
+            Manage Watches
         </PanelButton>
     ) : null;
 
-    const getImageTableColumns = getCurriedImageTableColumns(toggleInactiveDialog);
+    const getImageTableColumns = getCurriedImageTableColumns(toggleWatchedImagesDialog);
 
     return (
         <>
@@ -294,8 +294,8 @@ const VulnMgmtImages = ({
                 page={page}
                 tableHeaderComponents={tableHeaderComponents}
             />
-            {showInactiveImagesDialog && (
-                <InactiveImagesDialog closeDialog={toggleInactiveDialog} />
+            {showWatchedImagesDialog && (
+                <WatchedImagesDialog closeDialog={toggleWatchedImagesDialog} />
             )}
         </>
     );
