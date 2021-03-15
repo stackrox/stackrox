@@ -19,9 +19,10 @@ describe('Access Control Page', () => {
         it('should open the new auth provider panel', () => {
             navigateToThePanel();
 
-            cy.get(selectors.authProviders.addProviderSelect).select(
-                selectors.authProviders.newAuth0Option
-            );
+            cy.get(selectors.authProviders.addProviderSelect.input).click();
+            cy.get(
+                `${selectors.authProviders.addProviderSelect.options}:contains("${selectors.authProviders.newAuth0Option}")`
+            ).click();
             cy.get(selectors.authProviders.authProviderPanel).contains(
                 'Create New Auth0 Auth Provider'
             );
@@ -30,9 +31,10 @@ describe('Access Control Page', () => {
         it('should open the new OIDC provider form with client secret', () => {
             navigateToThePanel();
 
-            cy.get(selectors.authProviders.addProviderSelect).select(
-                selectors.authProviders.newOidcOption
-            );
+            cy.get(selectors.authProviders.addProviderSelect.input).click();
+            cy.get(
+                `${selectors.authProviders.addProviderSelect.options}:contains("${selectors.authProviders.newOidcOption}")`
+            ).click();
             cy.get(selectors.authProviders.authProviderPanel).contains(
                 'Create New OpenID Connect Auth Provider'
             );
@@ -155,9 +157,10 @@ describe('Access Control Page', () => {
         it('should return to the empty state after cancelling addition of the first provider (ROX-4359)', () => {
             navigateToThePanel({ authProviders: [] });
 
-            cy.get(selectors.authProviders.addProviderSelect).select(
-                selectors.authProviders.newOidcOption
-            );
+            cy.get(selectors.authProviders.addProviderSelect.input).click();
+            cy.get(
+                `${selectors.authProviders.addProviderSelect.options}:contains("${selectors.authProviders.newOidcOption}")`
+            ).click();
             cy.get(selectors.authProviders.authProviderPanel).contains(
                 'Create New OpenID Connect Auth Provider'
             );
@@ -258,8 +261,6 @@ describe('Access Control Page', () => {
             cy.get(selectors.message).contains(
                 'You do not have permission to view Access Control.'
             );
-
-            cy.get(selectors.authProviders.addProviderSelect).should('not.exist');
         });
     });
 });

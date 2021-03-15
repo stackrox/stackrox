@@ -3,6 +3,17 @@ import React, { useState } from 'react';
 
 import ReactSelect, { Creatable } from './ReactSelect';
 
+export default {
+    title: 'ReactSelect',
+    component: ReactSelect,
+};
+
+function Parent({ children }) {
+    // The height is for the drop-down menu (because overflow-hidden in Storybook).
+    // The width is for the placeholder.
+    return <div className="h-48 w-128">{children}</div>;
+}
+
 const lifecycleOptions = [
     {
         label: 'Build',
@@ -18,24 +29,37 @@ const lifecycleOptions = [
     },
 ];
 
-export default {
-    title: 'ReactSelect',
-    component: ReactSelect,
-};
-
-export const basicUsage = () => {
-    const [lifecycles, setLifecycles] = useState([]);
+export const basicUsagePlaceholder = () => {
+    const [lifecycles, setLifecycles] = useState('');
 
     return (
-        <ReactSelect
-            id="lifecycleStages"
-            name="lifecycleStages"
-            options={lifecycleOptions}
-            placeholder="Select Lifecycle Stage"
-            onChange={setLifecycles}
-            className="block w-full bg-base-100 border-base-300 text-base-600 z-1 focus:border-base-500"
-            value={lifecycles}
-        />
+        <Parent>
+            <ReactSelect
+                id="lifecycleStages"
+                name="lifecycleStages"
+                options={lifecycleOptions}
+                placeholder="Select Lifecycle Stage"
+                onChange={setLifecycles}
+                value={lifecycles}
+            />
+        </Parent>
+    );
+};
+
+export const basicUsageValue = () => {
+    const [lifecycles, setLifecycles] = useState('DEPLOY');
+
+    return (
+        <Parent>
+            <ReactSelect
+                id="lifecycleStages"
+                name="lifecycleStages"
+                options={lifecycleOptions}
+                placeholder="Select Lifecycle Stage"
+                onChange={setLifecycles}
+                value={lifecycles}
+            />
+        </Parent>
     );
 };
 
@@ -57,7 +81,11 @@ const existingPolicies = [
 export const asCreatable = () => {
     const [selectedPolicy, setSelectedPolicy] = useState(null);
     return (
-        <div>
+        <Parent>
+            <p className="bg-primary-300 mb-4 p-2 rounded-sm">
+                Selected policy:{' '}
+                {existingPolicies.find((options) => options.value === selectedPolicy)?.label ?? ''}
+            </p>
             <Creatable
                 key="policy"
                 onChange={setSelectedPolicy}
@@ -65,7 +93,6 @@ export const asCreatable = () => {
                 placeholder="Type a name, or select an existing policy"
                 value={selectedPolicy}
             />
-            <p className="mt-4 p-2 bg-primary-300 rounded-sm">Selected policy: {selectedPolicy}</p>
-        </div>
+        </Parent>
     );
 };

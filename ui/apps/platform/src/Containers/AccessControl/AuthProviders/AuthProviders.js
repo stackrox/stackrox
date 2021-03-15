@@ -4,11 +4,13 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions } from 'reducers/auth';
-import Dialog from 'Components/Dialog';
 
-import SideBar from 'Containers/AccessControl/SideBar';
-import Select from 'Containers/AccessControl/AuthProviders/Select';
-import AuthProvider from 'Containers/AccessControl/AuthProviders/AuthProvider/AuthProvider';
+import Dialog from 'Components/Dialog';
+import Select from 'Components/ReactSelect';
+import { availableAuthProviders } from 'constants/accessControl';
+
+import SideBar from '../SideBar';
+import AuthProvider from './AuthProvider/AuthProvider';
 
 const AuthProviders = ({
     saveAuthProvider,
@@ -44,8 +46,8 @@ const AuthProviders = ({
         setAuthProviderEditingState(true);
     }
 
-    function onCreateNewAuthProvider(option) {
-        selectAuthProvider({ type: option.value });
+    function onCreateNewAuthProvider(type) {
+        selectAuthProvider({ type });
         setAuthProviderEditingState(true);
     }
 
@@ -81,6 +83,14 @@ const AuthProviders = ({
     const className = isEditing
         ? 'before before:absolute before:h-full before:opacity-50 before:bg-base-400 before:w-full before:z-10'
         : '';
+    const addRowButton = (
+        <Select
+            onChange={onCreateNewAuthProvider}
+            options={availableAuthProviders}
+            placeholder="Add an Auth Provider"
+        />
+    );
+
     return (
         <section className="flex flex-1 h-full">
             <div className={`w-1/4 flex flex-col ${className}`}>
@@ -90,7 +100,7 @@ const AuthProviders = ({
                         rows={authProviders}
                         selected={selectedAuthProvider}
                         onSelectRow={selectAuthProvider}
-                        addRowButton={<Select onChange={onCreateNewAuthProvider} />}
+                        addRowButton={addRowButton}
                         onCancel={onCancel}
                         onDelete={onDelete}
                         type="auth provider"

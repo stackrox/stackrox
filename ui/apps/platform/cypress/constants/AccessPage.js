@@ -1,4 +1,5 @@
 import scopeSelectors from '../helpers/scopeSelectors';
+import selectSelectors from '../selectors/select';
 
 export const url = '/main/access';
 
@@ -35,8 +36,8 @@ export const selectors = {
             secondRowDeleteButton: 'div[data-testid=panel] div.rt-tr:nth(2) button',
             thirdRow: 'div[data-testid=panel] div.rt-tr:nth(3)',
         },
-        addProviderSelect: 'select:contains("Add an Auth Provider")',
-        newAuth0Option: 'auth0',
+        addProviderSelect: selectSelectors.singleSelect,
+        newAuth0Option: 'Auth0',
         newIAPOption: 'iap',
         newOidcOption: 'OpenID Connect',
         authProviderPanel: '[data-testid="auth-provider-panel"]',
