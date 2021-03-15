@@ -15,11 +15,11 @@ import {
 } from 'constants/form.constants';
 import { getWatchedImages, watchImage, unwatchImage } from 'services/ImagesService';
 
-type InactiveImagesDialogProps = {
+type WatchedImagesDialogProps = {
     closeDialog: () => void;
 };
 
-const InactiveImagesDialog = ({ closeDialog }: InactiveImagesDialogProps): ReactElement => {
+const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactElement => {
     const [currentWatchedImages, setCurrentWatchedImages] = useState<{ name: string }[]>([]);
     const [successMessage, setSuccessMessage] = useState<ReactElement | string>('');
     const [errorMessage, setErrorMessage] = useState<ReactElement | string>('');
@@ -114,7 +114,7 @@ const InactiveImagesDialog = ({ closeDialog }: InactiveImagesDialogProps): React
     return (
         <CustomDialogue
             className="w-3/4 md:w-1/2 lg:w-1/3"
-            title="Manage Inactive Images"
+            title="Manage Watched Images"
             text=""
             cancelText="Return to Image List"
             onCancel={closeDialog}
@@ -205,4 +205,4 @@ const InactiveImagesDialog = ({ closeDialog }: InactiveImagesDialogProps): React
     );
 };
 
-export default InactiveImagesDialog;
+export default WatchedImagesDialog;
