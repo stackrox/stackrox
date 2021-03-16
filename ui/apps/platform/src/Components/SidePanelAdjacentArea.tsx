@@ -1,6 +1,6 @@
 import React, { ReactElement, ReactNode } from 'react';
 
-type Width = '2/5' | '1/2' | '3/5';
+type Width = '1/3' | '2/5' | '1/2' | '3/5';
 
 export type SidePanelAdjacentAreaProps = {
     children: ReactNode;
@@ -8,6 +8,7 @@ export type SidePanelAdjacentAreaProps = {
 };
 
 const widthClassNames: Record<Width, string> = {
+    '1/3': 'md:w-1/3', // Compliance
     '2/5': 'md:w-2/5 xl:w-1/3 xxl:w-1/4', // Violations
     '1/2': 'md:w-1/2', // Integrations
     '3/5': 'md:w-3/5 lg:w-1/2 xl:w-2/5 xxl:w-1/3', // Risk

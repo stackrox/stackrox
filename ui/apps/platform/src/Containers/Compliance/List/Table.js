@@ -8,7 +8,7 @@ import entityTypes, { standardTypes } from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 import Table from 'Components/Table';
-import Panel from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import Loader from 'Components/Loader';
 
 import TablePagination from 'Components/TablePagination';
@@ -350,9 +350,13 @@ const ListTable = ({
                     );
                 }
                 return (
-                    <Panel header={headerText} headerComponents={headerComponent}>
-                        {contents}
-                    </Panel>
+                    <PanelNew testid="panel">
+                        <PanelHead>
+                            <PanelTitle isUpperCase testid="panel-header" text={headerText} />
+                            <PanelHeadEnd>{headerComponent}</PanelHeadEnd>
+                        </PanelHead>
+                        <PanelBody>{contents}</PanelBody>
+                    </PanelNew>
                 );
             }}
         </Query>

@@ -5,7 +5,8 @@ import { Link, withRouter } from 'react-router-dom';
 import { ExternalLink } from 'react-feather';
 
 import Query from 'Components/CacheFirstQuery';
-import Panel from 'Components/Panel';
+import CloseButton from 'Components/CloseButton';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import { resourceTypes, standardEntityTypes } from 'constants/entityTypes';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable import/no-cycle */
@@ -54,7 +55,7 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
                 }
                 const headerTextComponent = (
                     <div className="w-full flex items-center">
-                        <div className="flex items-center">
+                        <div className="flex items-center" data-testid="side-panel-header">
                             <Link
                                 to={headerUrl}
                                 className="w-full flex text-primary-700 hover:text-primary-800 focus:text-primary-700"
@@ -75,14 +76,18 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
                 );
                 const entityPage = getEntityPage();
                 return (
-                    <Panel
-                        className="bg-primary-200 z-40 absolute border-l border-base-400 right-0 top-0 md:w-1/2 min-w-108 md:relative"
-                        headerTextComponent={headerTextComponent}
-                        onClose={closeSidePanel}
-                        id="side-panel"
-                    >
-                        {entityPage}
-                    </Panel>
+                    <PanelNew testid="side-panel">
+                        <PanelHead>
+                            {headerTextComponent}
+                            <PanelHeadEnd>
+                                <CloseButton
+                                    onClose={closeSidePanel}
+                                    className="border-base-400 border-l"
+                                />
+                            </PanelHeadEnd>
+                        </PanelHead>
+                        <PanelBody>{entityPage}</PanelBody>
+                    </PanelNew>
                 );
             }}
         </Query>

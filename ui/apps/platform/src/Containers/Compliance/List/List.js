@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import URLService from 'utils/URLService';
+import { PageBody } from 'Components/Panel';
+import SidePanelAdjacentArea from 'Components/SidePanelAdjacentArea';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import searchContext from 'Containers/searchContext';
 import { searchParams } from 'constants/searchParams';
@@ -30,29 +32,30 @@ const ComplianceList = ({
         history.push(url);
     }
 
-    let sidepanel;
-    if (selectedRowId) {
-        sidepanel = <SidePanel entityType={entityType} entityId={selectedRowId} />;
-    }
-
     const searchComponent = noSearch ? null : (
         <SearchInput categories={[searchCategoryTypes[entityType]]} />
     );
 
     return (
-        <div className="flex flex-1 overflow-y-auto h-full bg-base-100">
-            <ListTable
-                searchComponent={searchComponent}
-                selectedRowId={selectedRowId}
-                entityType={entityType}
-                query={query}
-                updateSelectedRow={setSelectedRowId}
-                pdfId="capture-list"
-            />
-            <searchContext.Provider value={searchParams.sidePanel}>
-                {sidepanel}
-            </searchContext.Provider>
-        </div>
+        <PageBody>
+            <div className="flex-shrink-1 overflow-hidden w-full">
+                <ListTable
+                    searchComponent={searchComponent}
+                    selectedRowId={selectedRowId}
+                    entityType={entityType}
+                    query={query}
+                    updateSelectedRow={setSelectedRowId}
+                    pdfId="capture-list"
+                />
+            </div>
+            {selectedRowId && (
+                <SidePanelAdjacentArea width="1/3">
+                    <searchContext.Provider value={searchParams.sidePanel}>
+                        <SidePanel entityType={entityType} entityId={selectedRowId} />
+                    </searchContext.Provider>
+                </SidePanelAdjacentArea>
+            )}
+        </PageBody>
     );
 };
 
