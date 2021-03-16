@@ -48,8 +48,14 @@ const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactEl
             .then((image) => {
                 setSuccessMessage(
                     <div>
-                        <strong>{image?.normalizedName}</strong> has been added to the list of
-                        images to be scanned.
+                        <strong>{image?.normalizedName}</strong>
+                        {image?.normalizedName !== values.imageTag && (
+                            <>
+                                {` (normalized form of `}
+                                <strong>{values.imageTag}</strong>)
+                            </>
+                        )}{' '}
+                        has been added to the list of images to be scanned.
                     </div>
                 );
                 refreshWatchList();
