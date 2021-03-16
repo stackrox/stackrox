@@ -764,3 +764,9 @@ check-debugger:
 ifeq ($(DEBUG_BUILD),yes)
 	$(warning Warning: DEBUG_BUILD is enabled. Don not use this for production builds)
 endif
+
+.PHONY: policyutil
+policyutil:
+	@echo "+ $@"
+	CGO_ENABLED=0 GOOS=$(HOST_OS) $(GOBUILD) ./tools/policyutil
+	go install ./tools/policyutil
