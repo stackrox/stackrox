@@ -8,17 +8,10 @@
     "Network Tools",
     "Security Best Practices"
   ],
-  "fields": {
-    "processPolicy": {
-      "uid": "0",
-      "name": "iptables"
-    },
-    "privileged": true
-  },
   "lifecycleStages": [
     "RUNTIME"
   ],
-  "whitelists": [
+  "exclusions": [
     {
       "name": "Don't alert on Kube System Namespace",
       "deployment": {
@@ -44,7 +37,36 @@
       }
     }
   ],
-  "scope": [],
   "severity": "CRITICAL_SEVERITY",
-  "notifiers": []
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Privileged Container",
+          "values": [
+            {
+              "value": "true"
+            }
+          ]
+        },
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "iptables"
+            }
+          ]
+        },
+        {
+          "fieldName": "Process UID",
+          "values": [
+            {
+              "value": "0"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

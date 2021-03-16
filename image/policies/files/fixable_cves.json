@@ -11,15 +11,12 @@
     "BUILD"
   ],
   "severity": "MEDIUM_SEVERITY",
-  "policyVersion": "1",
+  "policyVersion": "1.1",
   "policySections": [
     {
-      "sectionName": "",
       "policyGroups": [
         {
           "fieldName": "Fixed By",
-          "booleanOperator": "OR",
-          "negate": false,
           "values": [
             {
               "value": ".*"

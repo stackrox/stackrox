@@ -2,37 +2,16 @@
   "id": "886c3c94-3a6a-4f2b-82fc-d6bf5a310840",
   "name": "No resource requests or limits specified",
   "description": "Alert on deployments that have containers without resource requests and limits",
-  "severity": "MEDIUM_SEVERITY",
-  "lifecycle_stages": [
-    "DEPLOY"
-  ],
+  "rationale": "If a container does not have resource requests or limits specified then the host may become over-provisioned.",
+  "remediation": "Specify the requests and limits of CPU and Memory for your deployment.",
   "categories": [
     "DevOps Best Practices",
     "Docker CIS"
   ],
-  "fields": {
-    "containerResourcePolicy": {
-      "cpuResourceRequest": {
-        "op": "EQUALS",
-        "value": 0
-      },
-      "cpuResourceLimit": {
-        "op": "EQUALS",
-        "value": 0
-      },
-      "memoryResourceRequest": {
-        "op": "EQUALS",
-        "value": 0
-      },
-      "memoryResourceLimit": {
-        "op": "EQUALS",
-        "value": 0
-      }
-    }
-  },
-  "rationale": "If a container does not have resource requests or limits specified then the host may become over-provisioned.",
-  "remediation": "Specify the requests and limits of CPU and Memory for your deployment.",
-  "whitelists": [
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "exclusions": [
     {
       "name": "Don't alert on kube-public namespace",
       "deployment": {
@@ -168,6 +147,58 @@
       "deployment": {
         "name": "benchmark"
       }
+    }
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Container CPU Limit",
+          "values": [
+            {
+              "value": "0.000000"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Container CPU Request",
+          "values": [
+            {
+              "value": "0.000000"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Container Memory Limit",
+          "values": [
+            {
+              "value": "0.000000"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Container Memory Request",
+          "values": [
+            {
+              "value": "0.000000"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

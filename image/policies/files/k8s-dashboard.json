@@ -2,18 +2,28 @@
   "id": "0ac267ae-9128-42c7-b15e-0e926844aa2f",
   "name": "Kubernetes Dashboard Deployed",
   "description": "Alert on the presence of the Kubernetes dashboard service",
-  "severity": "LOW_SEVERITY",
-  "lifecycle_stages": [
-    "DEPLOY"
-  ],
+  "rationale": "The Kubernetes dashboard can be used to gain external access to a cluster, or to obtain additional access once inside.",
+  "remediation": "Modify your cluster configuration to disable the Kubernetes dashboard service if it is not in use. In Google Kubernetes Engine (GKE), you can execute: gcloud container clusters update --update-addons=KubernetesDashboard=DISABLED [cluster-name]",
   "categories": [
     "Security Best Practices"
   ],
-  "fields": {
-    "image_name": {
-      "remote": "kubernetesui/dashboard"
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Image Remote",
+          "values": [
+            {
+              "value": "r/.*kubernetesui/dashboard.*"
+            }
+          ]
+        }
+      ]
     }
-  },
-  "rationale": "The Kubernetes dashboard can be used to gain external access to a cluster, or to obtain additional access once inside.",
-  "remediation": "Modify your cluster configuration to disable the Kubernetes dashboard service if it is not in use. In Google Kubernetes Engine (GKE), you can execute: gcloud container clusters update --update-addons=KubernetesDashboard=DISABLED [cluster-name]"
+  ]
 }

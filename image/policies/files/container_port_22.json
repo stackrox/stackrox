@@ -2,19 +2,36 @@
   "id": "3bf3cec3-d3e8-4512-86ca-b306697d4b75",
   "name": "Secure Shell (ssh) Port Exposed",
   "description": "Alert on deployments exposing port 22, commonly reserved for SSH access.",
-  "severity": "HIGH_SEVERITY",
-  "lifecycle_stages": [
-    "DEPLOY"
-  ],
+  "rationale": "Port 22 is reserved for SSH access. SSH should not typically be used within containers.",
+  "remediation": "Ensure that non-SSH services are not using port 22. Ensure that any actual SSH servers have been vetted.",
   "categories": [
     "Security Best Practices"
   ],
-  "fields": {
-    "port_policy": {
-      "port": 22,
-      "protocol": "tcp"
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Exposed Port",
+          "values": [
+            {
+              "value": "22"
+            }
+          ]
+        },
+        {
+          "fieldName": "Exposed Port Protocol",
+          "values": [
+            {
+              "value": "tcp"
+            }
+          ]
+        }
+      ]
     }
-  },
-  "rationale": "Port 22 is reserved for SSH access. SSH should not typically be used within containers.",
-  "remediation": "Ensure that non-SSH services are not using port 22. Ensure that any actual SSH servers have been vetted."
+  ]
 }

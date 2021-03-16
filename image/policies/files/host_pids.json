@@ -4,7 +4,6 @@
   "description": "The Process ID (PID) namespace isolates the process ID space, meaning that processes in different PID namespaces can have the same PID. This creates process level isolation between the containers and the host.",
   "rationale": "PID namespace provides separation between processes. It prevents system processes from being visible, and allows process ids to be reused including PID 1. If the host's PID namespace is shared with containers, it would basically allow these to see all of the processes on the host system. This reduces the benefit of process level isolation between the host and the containers. Under these circumstances a malicious user who has access to a container could get access to processes on the host itself, manipulate them, and even be able to kill them. This could allow for the host itself being shut down, which could be extremely serious, particularly in a multi-tenanted environment. You should not share the host's process namespace with the containers running on it.",
   "remediation": "You should not create a deployment with `hostPID: true`",
-  "disabled": false,
   "categories": [
     "Docker CIS"
   ],
@@ -12,15 +11,13 @@
     "DEPLOY"
   ],
   "severity": "MEDIUM_SEVERITY",
-  "policyVersion": "1",
+  "policyVersion": "1.1",
   "policySections": [
     {
       "sectionName": "Section 1",
       "policyGroups": [
         {
           "fieldName": "Host PID",
-          "booleanOperator": "OR",
-          "negate": false,
           "values": [
             {
               "value": "true"

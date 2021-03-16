@@ -4,7 +4,6 @@
   "description": "This policy generates a violation for the network flows that fall outside baselines for which 'alert on anomalous violations' is set.",
   "rationale": "The network baseline is a list of flows that are allowed, and once it is frozen, any flow outside that is a concern.",
   "remediation": "Evaluate this network flow. If deemed to be okay, add it to the baseline. If not, investigate further as required.",
-  "disabled": false,
   "categories": [
     "Anomalous Activity"
   ],
@@ -19,8 +18,6 @@
       "policyGroups": [
         {
           "fieldName": "Unexpected Network Flow Detected",
-          "booleanOperator": "OR",
-          "negate": false,
           "values": [
             {
               "value": "true"

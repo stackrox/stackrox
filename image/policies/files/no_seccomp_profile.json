@@ -12,15 +12,13 @@
     "DEPLOY"
   ],
   "severity": "MEDIUM_SEVERITY",
-  "policyVersion": "1",
+  "policyVersion": "1.1",
   "policySections": [
     {
       "sectionName": "Section 1",
       "policyGroups": [
         {
           "fieldName": "Seccomp Profile Type",
-          "booleanOperator": "OR",
-          "negate": false,
           "values": [
             {
               "value": "UNCONFINED"

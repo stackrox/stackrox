@@ -2,18 +2,28 @@
   "id": "0a2ee697-cb88-4e13-8e62-c6a2a887e0cc",
   "name": "chkconfig Execution",
   "description": "Detected usage of the chkconfig service manager; typically this is not used within a container",
-  "severity": "LOW_SEVERITY",
-  "lifecycle_stages": [
-    "RUNTIME"
-  ],
+  "rationale": "chkconfig can be used to activate and deactivate services, and should generally not be run within a container",
+  "remediation": "Consider removing the chkconfig utility, or using a base container image that doesn't have this utility in it",
   "categories": [
     "System Modification"
   ],
-  "fields": {
-    "process_policy": {
-      "name": "chkconfig"
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "chkconfig"
+            }
+          ]
+        }
+      ]
     }
-  },
-  "rationale": "chkconfig can be used to activate and deactivate services, and should generally not be run within a container",
-  "remediation": "Consider removing the chkconfig utility, or using a base container image that doesn't have this utility in it"
+  ]
 }

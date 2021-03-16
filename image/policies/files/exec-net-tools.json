@@ -2,21 +2,15 @@
   "id": "2361bb4c-4cf6-4997-bae6-825da6cf932e",
   "name": "Network Management Execution",
   "description": "Detects execution of binaries that can be used to manipulate network configuration and management.",
+  "rationale": "Network management tools can be used for a variety of tasks, including mapping out your network, overwriting iptables rules, or ssh tunneling to name a few.",
+  "remediation": "Remove unncessary network managment tools from the container image.",
   "categories": [
     "Network Tools"
   ],
-  "severity": "HIGH_SEVERITY",
-  "lifecycle_stages": [
+  "lifecycleStages": [
     "RUNTIME"
   ],
-  "fields": {
-    "process_policy": {
-      "name": "ip|ifrename|ethtool|ifconfig|arp|ipmaddr|iptunnel|route|nameif|mii-tool"
-    }
-  },
-  "rationale": "Network management tools can be used for a variety of tasks, including mapping out your network, overwriting iptables rules, or ssh tunneling to name a few.",
-  "remediation": "Remove unncessary network managment tools from the container image.",
-  "whitelists": [
+  "exclusions": [
     {
       "name": "Don't alert on kube-system namespace",
       "deployment": {
@@ -32,6 +26,22 @@
           "namespace": "openshift-.*"
         }
       }
+    }
+  ],
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "ip|ifrename|ethtool|ifconfig|arp|ipmaddr|iptunnel|route|nameif|mii-tool"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -2,20 +2,16 @@
   "id": "fe9de18b-86db-44d5-a7c4-74173ccffe2e",
   "name": "Privileged Container",
   "description": "Alert on deployments with containers running in privileged mode",
-  "severity": "MEDIUM_SEVERITY",
-  "lifecycle_stages": [
-    "DEPLOY"
-  ],
+  "rationale": "Containers running as privileged represent greater post-exploitation risk by allowing an attacker to access all host devices, run a daemon in the container, etc.",
+  "remediation": "Verify that privileged capabilities are required and cannot be provided with a subset of other controls.",
   "categories": [
     "Privileges",
     "Docker CIS"
   ],
-  "fields": {
-    "privileged": true
-  },
-  "rationale": "Containers running as privileged represent greater post-exploitation risk by allowing an attacker to access all host devices, run a daemon in the container, etc.",
-  "remediation": "Verify that privileged capabilities are required and cannot be provided with a subset of other controls.",
-  "whitelists": [
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "exclusions": [
     {
       "name": "Don't alert on the stackrox namespace",
       "deployment": {
@@ -111,6 +107,22 @@
           "namespace": "openshift-machine-config-operator"
         }
       }
+    }
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Privileged Container",
+          "values": [
+            {
+              "value": "true"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

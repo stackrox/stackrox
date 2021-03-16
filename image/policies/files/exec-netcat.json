@@ -2,18 +2,28 @@
   "id": "6abf0df8-736b-4530-8849-6a1344cf17fe",
   "name": "Netcat Execution Detected",
   "description": "Detects execution of netcat in a container",
+  "rationale": "netcat is a known malicious process",
+  "remediation": "Consider removing package managers during the build process that could be used to download such software. Check that exposed ports don't allow for remote code execution",
   "categories": [
     "Network Tools"
   ],
-  "severity": "MEDIUM_SEVERITY",
-  "lifecycle_stages": [
+  "lifecycleStages": [
     "RUNTIME"
   ],
-  "fields": {
-    "process_policy": {
-      "name": "nc"
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "nc"
+            }
+          ]
+        }
+      ]
     }
-  },
-  "rationale": "netcat is a known malicious process",
-  "remediation": "Consider removing package managers during the build process that could be used to download such software. Check that exposed ports don't allow for remote code execution"
+  ]
 }

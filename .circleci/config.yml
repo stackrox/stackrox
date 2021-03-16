@@ -2126,6 +2126,32 @@ jobs:
             # Matches comments of the form TODO(x), where x can be "DO NOT MERGE/don't-merge"/"dont-merge"/similar
             ./scripts/check-todos.sh 'do\s?n.*merge'
 
+  check-policy-files-up-to-date:
+    executor: custom
+    resource_class: medium
+    steps:
+      - checkout
+
+      - *restoreGoModCache
+      - setup-go-build-env
+
+      - run:
+          name: Ensure that all JSON policies in "./image/policies/" are of latest version. (If this fails, run `policyutil` on failed policies and commit the result.)
+          command: |
+            make deps
+            make policyutil
+            policyutil upgrade -d image/policies/files -o /tmp/policies-in-standard-form
+            diff image/policies/files /tmp/policies-in-standard-form > /tmp/policies-diff
+            if [[ -s /tmp/policies-diff ]]; then
+              echo 'Found policies that are not in standard form. Check "policies-diff" for affected policies; use "policyutil" to fix them.'
+              cat /tmp/policies-diff
+              exit 1
+            fi
+
+      - store_artifacts:
+          path: /tmp/policies-diff
+          destination: policies-diff
+
   integration-unit-tests:
     executor: custom
     resource_class: large
@@ -4897,6 +4923,8 @@ workflows:
       - style-checks:
           <<: *runOnAllTagsWithDockerIOPullCtx
       - check-generated-files-up-to-date:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+      - check-policy-files-up-to-date:
           <<: *runOnAllTagsWithDockerIOPullCtx
       - go-unit-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
