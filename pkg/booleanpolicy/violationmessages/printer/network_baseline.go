@@ -3,6 +3,7 @@ package printer
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,6 +16,12 @@ import (
 const (
 	networkFlowTimestampAttrKey = "NetworkFlowTimestamp"
 	networkFlowTimestampLayout  = "2006-01-02 15:04:05 UTC"
+	sourceNameAttrKey           = "SourceName"
+	destinationNameAttrKey      = "DestinationName"
+	destinationPortAttrKey      = "DestinationPort"
+	sourceEntityTypeKey         = "SourceType"
+	destinationEntityTypeKey    = "DestinationType"
+	protocolKey                 = "L4Protocol"
 )
 
 // GenerateNetworkFlowViolation constructs violation message for network flow violations.
@@ -53,6 +60,30 @@ func GenerateNetworkFlowViolation(networkFlow *augmentedobjs.NetworkFlowDetails)
 						Value: protoconv.
 							ConvertTimestampToTimeOrNow(networkFlow.LastSeenTimestamp).
 							Format(networkFlowTimestampLayout),
+					},
+					{
+						Key:   sourceNameAttrKey,
+						Value: networkFlow.SrcEntityName,
+					},
+					{
+						Key:   destinationNameAttrKey,
+						Value: networkFlow.DstEntityName,
+					},
+					{
+						Key:   destinationPortAttrKey,
+						Value: strconv.Itoa(int(networkFlow.DstPort)),
+					},
+					{
+						Key:   sourceEntityTypeKey,
+						Value: networkFlow.SrcEntityType.String(),
+					},
+					{
+						Key:   destinationEntityTypeKey,
+						Value: networkFlow.DstEntityType.String(),
+					},
+					{
+						Key:   protocolKey,
+						Value: networkFlow.L4Protocol.String(),
 					},
 				},
 			},

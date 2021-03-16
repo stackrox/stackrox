@@ -31,6 +31,155 @@ var (
 	// storage.Severity_HIGH_SEVERITY) instead of integer values (e.g. 3) and made timestamps look human-friendly by
 	// means of makeTimestamp() calls.
 
+	networkAlert = storage.Alert{
+		Id: "86a55daa-de0d-4649-a7a9-ad71eeebfb6a",
+		Policy: &storage.Policy{
+			Id:          "1b74ffdd-8e67-444c-9814-1c23863c8ccb",
+			Name:        "Unauthorized Network Flow",
+			Description: "This policy generates a violation for the network flows that fall outside baselines for which 'alert on anomalous violations' is set.",
+			Rationale:   "The network baseline is a list of flows that are allowed, and once it is frozen, any flow outside that is a concern.",
+			Remediation: "Evaluate this network flow. If deemed to be okay, add it to the baseline. If not, investigate further as required.",
+			Categories: []string{
+				"Anomalous Activity",
+			},
+			LifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			Severity:           storage.Severity_HIGH_SEVERITY,
+			SORTName:           "Unauthorized Network Flow",
+			SORTLifecycleStage: "RUNTIME",
+			PolicyVersion:      "1.1",
+			PolicySections: []*storage.PolicySection{{
+				PolicyGroups: []*storage.PolicyGroup{{
+					FieldName: "Unexpected Network Flow Detected",
+					Values: []*storage.PolicyValue{{
+						Value: "true",
+					}},
+				}},
+			}},
+		},
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+		Entity: &storage.Alert_Deployment_{
+			Deployment: &storage.Alert_Deployment{
+				Id:          "b09dd238-9131-4e05-af89-727e37cd31f1",
+				Name:        "central",
+				Type:        "Deployment",
+				Namespace:   "stackrox",
+				NamespaceId: "e537bed5-1f30-4425-9757-0e0056fffedf",
+				Labels: map[string]string{
+					"app":                          "central",
+					"app.kubernetes.io/component":  "central",
+					"app.kubernetes.io/instance":   "stackrox-central-services",
+					"app.kubernetes.io/managed-by": "Helm",
+					"app.kubernetes.io/name":       "stackrox",
+					"app.kubernetes.io/part-of":    "stackrox-central-services",
+					"app.kubernetes.io/version":    "3.0.56.x-67-g847d2628a2",
+					"helm.sh/chart":                "stackrox-central-services-56.0.67-g847d2628a2",
+				},
+				ClusterId:   "9e2755af-c2ba-4249-b4f2-f11a01694c71",
+				ClusterName: "remote",
+				Containers: []*storage.Alert_Deployment_Container{{
+					Image: &storage.ContainerImage{
+						Id: "sha256:09fcd52410a9b3ebb25fd932cc8269336ff2290cb8113e4513458020261267a0",
+						Name: &storage.ImageName{
+							Registry: "docker.io",
+							Remote:   "stackrox/main",
+							Tag:      "3.0.56.x-89-gc8e50289a2",
+							FullName: "docker.io/stackrox/main:3.0.56.x-89-gc8e50289a2",
+						},
+					},
+					Name: "central",
+				}},
+				Annotations: map[string]string{
+					"email":                          "support@stackrox.com",
+					"meta.helm.sh/release-name":      "stackrox-central-services",
+					"meta.helm.sh/release-namespace": "stackrox",
+					"owner":                          "stackrox",
+				},
+			},
+		},
+		Violations: []*storage.Alert_Violation{
+			{
+				Message: "Unexpected network flow found in deployment. Source name: 'central'. Destination name: 'scanner'. Destination port: '8443'. Protocol: 'L4_PROTOCOL_TCP'.",
+				MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+					KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+						Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+							{
+								Key:   "NetworkFlowTimestamp",
+								Value: "2021-03-05 01:32:31 UTC",
+							},
+							{
+								Key:   "SourceName",
+								Value: "central",
+							},
+							{
+								Key:   "DestinationName",
+								Value: "scanner",
+							},
+							{
+								Key:   "DestinationPort",
+								Value: "8443",
+							},
+							{
+								Key:   "SourceType",
+								Value: "DEPLOYMENT",
+							},
+							{
+								Key:   "DestinationType",
+								Value: "DEPLOYMENT",
+							},
+							{
+								Key:   "L4Protocol",
+								Value: "L4_PROTOCOL_TCP",
+							},
+						},
+					},
+				},
+				Type: storage.Alert_Violation_NETWORK_FLOW,
+				Time: makeTimestamp("2021-03-05T01:32:31.741573591Z"),
+			},
+			{
+				Message: "Unexpected network flow found in deployment. Source name: 'External Entities'. Destination name: 'central'. Destination port: '8443'. Protocol: 'L4_PROTOCOL_TCP'.",
+				MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+					KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+						Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+							{
+								Key:   "NetworkFlowTimestamp",
+								Value: "2021-03-09 22:56:18 UTC",
+							},
+							{
+								Key:   "SourceName",
+								Value: "External Entities",
+							},
+							{
+								Key:   "DestinationName",
+								Value: "central",
+							},
+							{
+								Key:   "DestinationPort",
+								Value: "8443",
+							},
+							{
+								Key:   "SourceType",
+								Value: "INTERNET",
+							},
+							{
+								Key:   "DestinationType",
+								Value: "DEPLOYMENT",
+							},
+							{
+								Key:   "L4Protocol",
+								Value: "L4_PROTOCOL_TCP",
+							},
+						},
+					},
+				},
+				Type: storage.Alert_Violation_NETWORK_FLOW,
+				Time: makeTimestamp("2021-03-09T22:57:28.600080752Z"),
+			},
+		},
+		Time:          makeTimestamp("2021-03-05T01:32:31.741586331Z"),
+		FirstOccurred: makeTimestamp("2021-03-05T01:32:32.210811055Z"),
+	}
+
 	processAlert = storage.Alert{
 		Id: "f2d0efaa-2c54-402c-aeed-5b88ed5ccb8a",
 		Policy: &storage.Policy{
@@ -248,7 +397,7 @@ var (
 			Name:        "90-Day Image Age",
 			Description: "Alert on deployments with images that haven't been updated in 90 days",
 			Rationale:   "Base images are updated frequently with bug fixes and vulnerability patches. Image age exceeding 90 days may indicate a higher risk of vulnerabilities existing in the image.",
-			Remediation: "Rebuild your image, push a new minor version (with a new immutable tag), and update your service to use it.",
+			Remediation: "Rebuild your image, push a new minor version (with a new immutable tag), and update your service to use it",
 			Categories: []string{
 				"DevOps Best Practices",
 				"Security Best Practices",
@@ -362,8 +511,8 @@ func TestViolations(t *testing.T) {
 
 type violationsTestSuite struct {
 	suite.Suite
-	processAlert, k8sAlert, deployAlert storage.Alert
-	allowCtx                            context.Context
+	processAlert, k8sAlert, deployAlert, networkAlert storage.Alert
+	allowCtx                                          context.Context
 	// noCheckpoint is just a type-safe way to say there's no checkpoint parameter in the request without risking to
 	// accidentally provide nil in *storage.Alert varargs.
 	noCheckpoint []string
@@ -373,8 +522,42 @@ func (s *violationsTestSuite) SetupTest() {
 	s.processAlert = *processAlert.Clone()
 	s.k8sAlert = *k8sAlert.Clone()
 	s.deployAlert = *deployAlert.Clone()
+	s.networkAlert = *networkAlert.Clone()
 	s.allowCtx = sac.WithAllAccess(context.Background())
 	s.noCheckpoint = []string{}
+}
+
+func (s *violationsTestSuite) TestNetworkAlert() {
+	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.networkAlert))
+	s.Len(vs, 2)
+
+	for _, v := range vs {
+		s.Equal("NETWORK_FLOW", s.extr(v, ".violationInfo.violationType"))
+		s.checkViolationInfo(v, ".violationMessageAttributes")
+		s.checkAlertInfo(v, ".lifecycleStage")
+		s.checkDeploymentInfo(v)
+		s.checkPolicy(v)
+	}
+	s.Equal("2021-03-05T01:32:31.741573591Z", s.extr(vs[0], ".violationInfo.violationTime"))
+	s.Equal("2021-03-09T22:57:28.600080752Z", s.extr(vs[1], ".violationInfo.violationTime"))
+
+	s.Equal("SourceName", s.extr(vs[0], ".violationInfo.violationMessageAttributes[1].key"))
+	s.Equal("central", s.extr(vs[0], ".violationInfo.violationMessageAttributes[1].value"))
+	s.Equal("DestinationName", s.extr(vs[0], ".violationInfo.violationMessageAttributes[2].key"))
+	s.Equal("scanner", s.extr(vs[0], ".violationInfo.violationMessageAttributes[2].value"))
+	s.Equal("SourceType", s.extr(vs[0], ".violationInfo.violationMessageAttributes[4].key"))
+	s.Equal("DEPLOYMENT", s.extr(vs[0], ".violationInfo.violationMessageAttributes[4].value"))
+	s.Equal("DestinationType", s.extr(vs[0], ".violationInfo.violationMessageAttributes[5].key"))
+	s.Equal("DEPLOYMENT", s.extr(vs[0], ".violationInfo.violationMessageAttributes[5].value"))
+
+	s.Equal("SourceName", s.extr(vs[1], ".violationInfo.violationMessageAttributes[1].key"))
+	s.Equal("External Entities", s.extr(vs[1], ".violationInfo.violationMessageAttributes[1].value"))
+	s.Equal("DestinationName", s.extr(vs[1], ".violationInfo.violationMessageAttributes[2].key"))
+	s.Equal("central", s.extr(vs[1], ".violationInfo.violationMessageAttributes[2].value"))
+	s.Equal("SourceType", s.extr(vs[1], ".violationInfo.violationMessageAttributes[4].key"))
+	s.Equal("INTERNET", s.extr(vs[1], ".violationInfo.violationMessageAttributes[4].value"))
+	s.Equal("DestinationType", s.extr(vs[1], ".violationInfo.violationMessageAttributes[5].key"))
+	s.Equal("DEPLOYMENT", s.extr(vs[1], ".violationInfo.violationMessageAttributes[5].value"))
 }
 
 func (s *violationsTestSuite) TestProcessAlert() {
@@ -428,7 +611,7 @@ func (s *violationsTestSuite) TestDeployAlert() {
 }
 
 func (s *violationsTestSuite) TestViolationsAreOrdered() {
-	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.processAlert, &s.k8sAlert, &s.deployAlert))
+	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert))
 
 	s.Greater(len(vs), 2)
 	for i := range vs {
@@ -440,7 +623,7 @@ func (s *violationsTestSuite) TestViolationsAreOrdered() {
 }
 
 func (s *violationsTestSuite) TestViolationIdsAreDistinct() {
-	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.processAlert, &s.k8sAlert, &s.deployAlert))
+	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert))
 
 	ids := set.StringSet{}
 	for _, v := range vs {

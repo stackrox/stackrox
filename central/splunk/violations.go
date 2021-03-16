@@ -273,6 +273,8 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 		typ = integrations.SplunkViolation_ViolationInfo_GENERIC
 	case storage.Alert_Violation_K8S_EVENT:
 		typ = integrations.SplunkViolation_ViolationInfo_K8S_EVENT
+	case storage.Alert_Violation_NETWORK_FLOW:
+		typ = integrations.SplunkViolation_ViolationInfo_NETWORK_FLOW
 	}
 
 	return &integrations.SplunkViolation_ViolationInfo{

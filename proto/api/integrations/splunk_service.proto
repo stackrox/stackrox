@@ -49,6 +49,7 @@ message SplunkViolation {
       GENERIC = 1;
       K8S_EVENT = 2;
       PROCESS_EVENT = 3;
+      NETWORK_FLOW = 4;
     }
     ViolationType violation_type = 4;
 
