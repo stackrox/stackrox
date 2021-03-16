@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -427,7 +428,101 @@ func (s *serviceImpl) GetBaselineGeneratedNetworkPolicyForDeployment(ctx context
 }
 
 func (s *serviceImpl) GetAllowedPeersFromCurrentPolicyForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetAllowedPeersFromCurrentPolicyForDeploymentResponse, error) {
-	return nil, errors.New("unimplemented")
+	if !features.NetworkDetectionBaselineSimulation.Enabled() {
+		return nil, errors.New("network baseline policy simulator is currently not enabled")
+	}
+	// Get the deployment
+	deployment, found, err := s.deployments.GetDeployment(ctx, request.Id)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	} else if !found {
+		return nil, status.Error(codes.InvalidArgument, "specified deployment not found")
+	}
+
+	networkTree, err := s.getNetworkTree(deployment.GetClusterId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	// Get the policies in the cluster
+	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(ctx, deployment.GetClusterId(), "")
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	// Only get the network policies that are applied to the deployment
+	networkPolicies = s.graphEvaluator.GetAppliedPolicies([]*storage.Deployment{deployment}, networkTree, networkPolicies)
+	// Build a graph out of the network policies. We can later remove all the deployments/nodes that do not have any out
+	// edge to the deployment we want
+	_, deploymentsInCluster, err := s.getDeployments(ctx, deployment.GetClusterId(), "")
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	graphWithNetPols :=
+		s.graphEvaluator.GetGraph(
+			deployment.GetClusterId(),
+			nil,
+			deploymentsInCluster,
+			networkTree,
+			networkPolicies,
+			true)
+	allowedPeers, err := s.getPeersOfDeploymentFromGraph(deployment, graphWithNetPols)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &v1.GetAllowedPeersFromCurrentPolicyForDeploymentResponse{AllowedPeers: allowedPeers}, nil
+}
+
+func (s *serviceImpl) getPeersOfDeploymentFromGraph(deployment *storage.Deployment, graph *v1.NetworkGraph) ([]*v1.NetworkBaselineStatusPeer, error) {
+	var allowedPeers []*v1.NetworkBaselineStatusPeer
+	// Try to search for the deployment in question
+	deploymentIdx := -1
+	for idx, node := range graph.GetNodes() {
+		if node.GetEntity().GetId() != deployment.GetId() {
+			continue
+		}
+		// we are looking at the node which is our deployment. Gather all the egress edges here
+		for egressPeerIdx := range node.GetOutEdges() {
+			egressPeer := graph.GetNodes()[egressPeerIdx]
+			for _, prop := range node.GetOutEdges()[egressPeerIdx].GetProperties() {
+				allowedPeers = append(allowedPeers, &v1.NetworkBaselineStatusPeer{
+					Entity: &v1.NetworkBaselinePeerEntity{
+						Id:   egressPeer.GetEntity().GetId(),
+						Type: egressPeer.GetEntity().GetType(),
+					},
+					Port:     prop.GetPort(),
+					Protocol: prop.GetProtocol(),
+					Ingress:  false,
+				})
+			}
+		}
+		// Record the idx
+		deploymentIdx = idx
+		break
+	}
+	if deploymentIdx == -1 {
+		return nil, errors.Errorf("deployment %q not found in the generated graph", deployment.GetName())
+	}
+	for _, node := range graph.GetNodes() {
+		if node.GetEntity().GetId() == deployment.GetId() {
+			continue
+		}
+		// we should try to fill in ingress info for the deployment from this node
+		props, ok := node.GetOutEdges()[int32(deploymentIdx)]
+		if !ok {
+			continue
+		}
+		for _, prop := range props.GetProperties() {
+			allowedPeers = append(allowedPeers, &v1.NetworkBaselineStatusPeer{
+				Entity: &v1.NetworkBaselinePeerEntity{
+					Id:   node.GetEntity().GetId(),
+					Type: node.GetEntity().GetType(),
+				},
+				Port:     prop.GetPort(),
+				Protocol: prop.GetProtocol(),
+				Ingress:  true,
+			})
+		}
+	}
+	return allowedPeers, nil
 }
 
 func (s *serviceImpl) ApplyNetworkPolicyYamlForDeployment(ctx context.Context, request *v1.ApplyNetworkPolicyYamlForDeploymentRequest) (*v1.Empty, error) {

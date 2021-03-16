@@ -16,12 +16,14 @@ import (
 	nDataStoreMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	grpcTestutils "github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -94,6 +96,7 @@ type ServiceTestSuite struct {
 	notifiers       *nDataStoreMocks.MockDataStore
 	tested          Service
 	mockCtrl        *gomock.Controller
+	envIsolator     *envisolator.EnvIsolator
 }
 
 func (suite *ServiceTestSuite) SetupTest() {
@@ -109,6 +112,8 @@ func (suite *ServiceTestSuite) SetupTest() {
 	suite.graphConfig = graphConfigMocks.NewMockDataStore(suite.mockCtrl)
 	suite.netTreeMgr = netTreeMgrMocks.NewMockManager(suite.mockCtrl)
 	suite.notifiers = nDataStoreMocks.NewMockDataStore(suite.mockCtrl)
+	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
+	suite.envIsolator.Setenv(features.NetworkDetectionBaselineSimulation.EnvVar(), "true")
 
 	suite.tested = New(suite.networkPolicies, suite.deployments, suite.externalSrcs, suite.graphConfig, suite.netTreeMgr,
 		suite.evaluator, nil, suite.clusters, suite.notifiers, nil, nil)
@@ -527,6 +532,158 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
 
 	suite.NoError(err, "expected graph generation to succeed")
 	suite.Equal(expectedPolicies, actualResp.GetNetworkPolicies(), "response should be policies applied to deployments")
+}
+
+func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment() {
+	// NOTE: although the test verifies GetAllowedPeersFromCurrentPolicyForDeployment, most of the
+	// dependency calls are mocked out. Thus those dependency calls' logics are not tested. This
+	// only verifies the needed dependency calls are indeed getting called and also the execution logic
+	// of the private functions used by GetAllowedPeersFromCurrentPolicyForDeployment.
+	if !features.NetworkDetectionBaselineSimulation.Enabled() {
+		return
+	}
+	// Prepare deployment001 - deployment004
+	numDeployments := 4
+	deps := make([]*storage.Deployment, 0, numDeployments)
+	for i := 0; i < numDeployments; i++ {
+		deps = append(deps, &storage.Deployment{
+			Id:        fmt.Sprintf("deployment%03d", i),
+			Name:      fmt.Sprintf("deployment%03d", i),
+			Namespace: "namespace",
+			ClusterId: fakeClusterID,
+			PodLabels: map[string]string{"app": fmt.Sprintf("deployment%03d", i)},
+		})
+	}
+	suite.deployments.EXPECT().SearchRawDeployments(
+		gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).MinTimes(numDeployments).Return(deps, nil)
+
+	// Configure a graph which looks like this:
+	// deployment001 -> deployment000 -> deployment002
+	// deployment003 is an "island" in this graph
+	var pols []*storage.NetworkPolicy
+	suite.evaluator.EXPECT().GetAppliedPolicies(gomock.Any(), gomock.Any(), pols).MinTimes(numDeployments).Return(pols)
+	suite.evaluator.EXPECT().GetGraph(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).MinTimes(numDeployments).Return(
+		&v1.NetworkGraph{
+			Epoch: 0,
+			Nodes: []*v1.NetworkNode{
+				{
+					Entity: &storage.NetworkEntityInfo{
+						Type: storage.NetworkEntityInfo_DEPLOYMENT,
+						Id:   deps[0].GetId(),
+					},
+					OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{
+						2: {
+							Properties: []*v1.NetworkEdgeProperties{
+								{
+									Port:     443,
+									Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+								},
+							},
+						},
+					},
+				},
+				{
+					Entity: &storage.NetworkEntityInfo{
+						Type: storage.NetworkEntityInfo_DEPLOYMENT,
+						Id:   deps[1].GetId(),
+					},
+					OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{
+						0: {
+							Properties: []*v1.NetworkEdgeProperties{
+								{
+									Port:     80,
+									Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+								},
+							},
+						},
+					},
+				},
+				{
+					Entity: &storage.NetworkEntityInfo{
+						Type: storage.NetworkEntityInfo_DEPLOYMENT,
+						Id:   deps[2].GetId(),
+					},
+				},
+				{
+					Entity: &storage.NetworkEntityInfo{
+						Type: storage.NetworkEntityInfo_DEPLOYMENT,
+						Id:   deps[3].GetId(),
+					},
+				},
+			},
+		})
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").MinTimes(numDeployments).Return(pols, nil)
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil).MinTimes(numDeployments)
+	suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).MinTimes(numDeployments).Return(nil)
+
+	// Validate GetAllowedPeers
+	for i, testCase := range []struct {
+		expectedAllowedPeers []*v1.NetworkBaselineStatusPeer
+	}{
+		{
+			// deployment000
+			expectedAllowedPeers: []*v1.NetworkBaselineStatusPeer{
+				{
+					Entity: &v1.NetworkBaselinePeerEntity{
+						Id:   deps[1].GetId(),
+						Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					},
+					Port:     80,
+					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+					Ingress:  true,
+				},
+				{
+					Entity: &v1.NetworkBaselinePeerEntity{
+						Id:   deps[2].GetId(),
+						Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					},
+					Port:     443,
+					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+					Ingress:  false,
+				},
+			},
+		},
+		{
+			// deployment001
+			expectedAllowedPeers: []*v1.NetworkBaselineStatusPeer{
+				{
+					Entity: &v1.NetworkBaselinePeerEntity{
+						Id:   deps[0].GetId(),
+						Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					},
+					Port:     80,
+					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+					Ingress:  false,
+				},
+			},
+		},
+		{
+			// deployment002
+			expectedAllowedPeers: []*v1.NetworkBaselineStatusPeer{
+				{
+					Entity: &v1.NetworkBaselinePeerEntity{
+						Id:   deps[0].GetId(),
+						Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					},
+					Port:     443,
+					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+					Ingress:  true,
+				},
+			},
+		},
+		{
+			// deployment003
+			expectedAllowedPeers: nil,
+		},
+	} {
+		suite.deployments.EXPECT().GetDeployment(gomock.Any(), gomock.Any()).Return(deps[i], true, nil)
+		resp, err := suite.tested.GetAllowedPeersFromCurrentPolicyForDeployment(
+			suite.requestContext,
+			&v1.ResourceByID{Id: deps[0].GetId()})
+		suite.NoError(err, "expected GetAllowedPeersFromCurrentPolicyForDeployment to succeed")
+
+		suite.ElementsMatch(resp.GetAllowedPeers(), testCase.expectedAllowedPeers)
+	}
 }
 
 // deploymentSearchIsForCluster returns a function that returns true if the in input ParsedSearchRequest has the
