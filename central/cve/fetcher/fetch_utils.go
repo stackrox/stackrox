@@ -23,7 +23,7 @@ import (
 const (
 	fetchDelay            = 2 * time.Hour
 	persistentCVEsPath    = migrations.DBMountPath
-	preloadedCVEsBasePath = "/stackrox/data"
+	preloadedCVEsBasePath = "/stackrox/static-data"
 	k8sCVEsURL            = "https://definitions.stackrox.io/cve/k8s/cve-list.json"
 	k8sCVEsChecksumURL    = "https://definitions.stackrox.io/cve/k8s/checksum"
 	istioCVEsURL          = "https://definitions.stackrox.io/cve/istio/cve-list.json"

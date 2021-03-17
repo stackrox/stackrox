@@ -38,11 +38,3 @@ RUN zip -jr /stackrox-data/external-networks/external-networks.zip /stackrox-dat
 COPY ./policies/files /stackrox-data/policies/files
 COPY ./docs/api/v1/swagger.json /stackrox-data/docs/api/v1/swagger.json
 
-COPY ./keys /tmp/keys
-
-RUN set -eo pipefail; \
-	( cd /stackrox-data ; tar -czf - * ; ) | \
-    openssl enc -aes-256-cbc \
-        -K "$(hexdump -e '32/1 "%02x"' </tmp/keys/data-key)" \
-        -iv "$(hexdump -e '16/1 "%02x"' </tmp/keys/data-iv)" \
-        -out /stackrox-data.tgze

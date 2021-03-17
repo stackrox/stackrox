@@ -893,8 +893,6 @@ spec:
         volumeMounts:
         - name: varlog
           mountPath: /var/log/stackrox/
-        - name: stackrox-data-volume
-          mountPath: /stackrox/data
         - name: central-tmp-volume
           mountPath: /tmp
         - name: central-etc-ssl-volume
@@ -931,8 +929,6 @@ spec:
           readOnly: true
       volumes:
       - name: varlog
-        emptyDir: {}
-      - name: stackrox-data-volume
         emptyDir: {}
       - name: central-tmp-volume
         emptyDir: {}

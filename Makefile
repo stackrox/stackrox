@@ -226,11 +226,6 @@ no-large-files:
 	@echo "+ $@"
 	@$(BASE_DIR)/tools/large-git-files/find.sh
 
-.PHONY: keys
-keys:
-	@echo "+ $@"
-	go generate github.com/stackrox/rox/central/ed
-
 .PHONY: storage-protos-compatible
 storage-protos-compatible: $(PROTOLOCK_BIN)
 	@echo "+ $@"
@@ -314,7 +309,7 @@ clean-proto-generated-srcs:
 
 # volatile-generated-srcs are all generated sources that are NOT committed
 .PHONY: volatile-generated-srcs
-volatile-generated-srcs: proto-generated-srcs go-packr-srcs keys
+volatile-generated-srcs: proto-generated-srcs go-packr-srcs
 
 .PHONY: generated-srcs
 generated-srcs: volatile-generated-srcs go-generated-srcs
@@ -594,8 +589,6 @@ docker-build-main-image-rhel: copy-binaries-to-image-dir docker-build-data-image
 
 .PHONY: docker-build-data-image
 docker-build-data-image:
-	test -f $(CURDIR)/image/keys/data-key
-	test -f $(CURDIR)/image/keys/data-iv
 	docker build -t stackrox-data:$(TAG) \
 		--build-arg DOCS_VERSION=$(shell cat DOCS_VERSION) \
 		$(ALPINE_MIRROR_BUILD_ARG) \

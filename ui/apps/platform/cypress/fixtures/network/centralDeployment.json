@@ -77,13 +77,6 @@
                     "type": "EmptyDir"
                 },
                 {
-                    "name": "stackrox-data-volume",
-                    "source": "",
-                    "destination": "/stackrox/data",
-                    "readOnly": false,
-                    "type": "EmptyDir"
-                },
-                {
                     "name": "central-tmp-volume",
                     "source": "",
                     "destination": "/tmp",

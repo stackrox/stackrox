@@ -18,7 +18,7 @@ var (
 	log = logging.LoggerForModule()
 
 	// PoliciesPath is the path containing default out of the box policies.
-	PoliciesPath = `/stackrox/data/policies`
+	PoliciesPath = `/stackrox/static-data/policies`
 )
 
 // Policies returns a list of default policies.

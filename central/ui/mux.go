@@ -2,15 +2,13 @@ package ui
 
 import (
 	"net/http"
-
-	"github.com/stackrox/rox/central/ed"
 )
 
 // Mux returns a HTTP Handler that knows how to serve the UI assets,
 // including Javascript, HTML, and other items.
 func Mux() http.Handler {
 	mux := http.NewServeMux()
-	mux.Handle("/docs/product/", http.StripPrefix("/docs/product/", http.FileServer(http.Dir(ed.PED("product-docs")))))
+	mux.Handle("/docs/product/", http.StripPrefix("/docs/product/", http.FileServer(http.Dir("/stackrox/static-data/product-docs"))))
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("/ui/static"))))
 	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "/ui/favicon.ico")

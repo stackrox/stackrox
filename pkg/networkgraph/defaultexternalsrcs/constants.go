@@ -31,7 +31,7 @@ var (
 	// LocalChecksumFile store the network graph default external sources checksum locally.
 	LocalChecksumFile = path.Join(migrations.DBMountPath, ChecksumFileName)
 	// BundledZip points to zip containing the external sources data and checksum files.
-	BundledZip = path.Join("/stackrox/data", common.MasterBucketPrefix, ZipFileName)
+	BundledZip = path.Join("/stackrox/static-data", common.MasterBucketPrefix, ZipFileName)
 )
 
 // GetRemoteDataAndCksumURLs returns the URLs to the latest networks data and checksum file
