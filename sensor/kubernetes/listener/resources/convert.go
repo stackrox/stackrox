@@ -451,3 +451,10 @@ func (w *deploymentWrap) updatePortExposureUncheckedNoLock(svc *serviceWrap) {
 		return w.Ports[i].ContainerPort < w.Ports[j].ContainerPort
 	})
 }
+
+func (w *deploymentWrap) updateServiceAccountPermissionLevel(permissionLevel storage.PermissionLevel) {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
+	w.ServiceAccountPermissionLevel = permissionLevel
+}

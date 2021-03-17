@@ -23,7 +23,9 @@ func (rs *rbacUpdaterImpl) assignPermissionLevelToDeployment(wrap *deploymentWra
 			utils.Should(errors.New("deployment permissions should not be evaluated if rbac has not been synced"))
 		}
 	}
-	wrap.ServiceAccountPermissionLevel = rs.bucketEvaluator.getBucketNoLock(subject)
+	// We must always update the underlying Deployment through accessor methods because it can be read and modified
+	// concurrently.
+	wrap.updateServiceAccountPermissionLevel(rs.bucketEvaluator.getBucketNoLock(subject))
 }
 
 // Evaluate the permission bucket for a subject.
