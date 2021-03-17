@@ -14,7 +14,12 @@ import mergeEntitiesById from 'utils/mergeEntitiesById';
 
 export const clusterFormId = 'cluster-form';
 
-export const clusterTypes = ['SWARM_CLUSTER', 'OPENSHIFT_CLUSTER', 'KUBERNETES_CLUSTER'];
+export const clusterTypes = [
+    'SWARM_CLUSTER',
+    'OPENSHIFT_CLUSTER',
+    'OPENSHIFT4_CLUSTER',
+    'KUBERNETES_CLUSTER',
+];
 
 export const wizardPages = Object.freeze({
     FORM: 'FORM',

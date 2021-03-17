@@ -11,12 +11,14 @@ export const clusterTypeLabels = Object.freeze({
     KUBERNETES_CLUSTER: 'Kubernetes Clusters',
     SWARM_CLUSTER: 'Swarm Clusters',
     OPENSHIFT_CLUSTER: 'OpenShift Clusters',
+    OPENSHIFT4_CLUSTER: 'OpenShift Clusters',
 });
 
 export const clusterVersionLabels = Object.freeze({
     KUBERNETES_CLUSTER: 'K8s Version',
     SWARM_CLUSTER: 'Swarm Version',
     OPENSHIFT_CLUSTER: 'OpenShift Version',
+    OPENSHIFT4_CLUSTER: 'OpenShift Version',
 });
 
 export const healthStatusLabels = Object.freeze({
