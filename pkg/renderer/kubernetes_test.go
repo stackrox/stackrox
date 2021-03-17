@@ -75,7 +75,7 @@ func (suite *renderSuite) testWithLoadBalancers(t *testing.T, c Config) {
 }
 
 func (suite *renderSuite) TestRenderMultiple() {
-	for _, orch := range []storage.ClusterType{storage.ClusterType_KUBERNETES_CLUSTER, storage.ClusterType_OPENSHIFT_CLUSTER} {
+	for _, orch := range []storage.ClusterType{storage.ClusterType_KUBERNETES_CLUSTER, storage.ClusterType_OPENSHIFT_CLUSTER, storage.ClusterType_OPENSHIFT4_CLUSTER} {
 		for _, format := range []v1.DeploymentFormat{v1.DeploymentFormat_KUBECTL, v1.DeploymentFormat_HELM} {
 			suite.T().Run(fmt.Sprintf("%s-%s", orch, format), func(t *testing.T) {
 				conf := getBaseConfig()

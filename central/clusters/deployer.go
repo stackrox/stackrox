@@ -70,7 +70,7 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 	}
 
 	command := "kubectl"
-	if c.Type == storage.ClusterType_OPENSHIFT_CLUSTER {
+	if c.Type == storage.ClusterType_OPENSHIFT_CLUSTER || c.Type == storage.ClusterType_OPENSHIFT4_CLUSTER {
 		command = "oc"
 	}
 	fields := map[string]interface{}{

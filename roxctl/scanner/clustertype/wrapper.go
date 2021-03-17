@@ -14,8 +14,9 @@ type wrapper struct {
 
 var (
 	clusterStringToType = map[string]storage.ClusterType{
-		"k8s":       storage.ClusterType_KUBERNETES_CLUSTER,
-		"openshift": storage.ClusterType_OPENSHIFT_CLUSTER,
+		"k8s":        storage.ClusterType_KUBERNETES_CLUSTER,
+		"openshift":  storage.ClusterType_OPENSHIFT_CLUSTER,
+		"openshift4": storage.ClusterType_OPENSHIFT4_CLUSTER,
 	}
 
 	clusterEnumToString = utils.Invert(clusterStringToType).(map[storage.ClusterType]string)
