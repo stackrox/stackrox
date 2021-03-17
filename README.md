@@ -121,6 +121,7 @@ Development can either happen in GCP or locally with
 
 ```bash
 # To mount local StackRox binaries into your pods, enable hotreload:
+# Note however that this will break the linter: https://stack-rox.atlassian.net/browse/ROX-6562
 $ export HOTRELOAD=true
 
 # To keep the StackRox central's rocksdb state between restarts, set:
