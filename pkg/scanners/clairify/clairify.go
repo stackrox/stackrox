@@ -3,6 +3,7 @@ package clairify
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net"
 	"net/http"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	clairConv "github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -124,7 +126,7 @@ func newNodeScanner(protoNodeIntegration *storage.NodeIntegration) (*clairify, e
 	if conf == nil {
 		return nil, errors.New("scanner configuration required")
 	}
-	if err := validateNodeScanningConfig(conf); err != nil {
+	if err := validateConfig(conf); err != nil {
 		return nil, err
 	}
 
@@ -133,7 +135,12 @@ func newNodeScanner(protoNodeIntegration *storage.NodeIntegration) (*clairify, e
 		return nil, err
 	}
 
-	gRPCConnection, err := grpc.Dial(conf.GetGrpcEndpoint(), grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+	endpoint := conf.GetGrpcEndpoint()
+	if endpoint == "" {
+		endpoint = fmt.Sprintf("scanner.%s:8443", env.Namespace.Setting())
+	}
+
+	gRPCConnection, err := grpc.Dial(endpoint, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to make gRPC connection to Scanner")
 	}
@@ -175,13 +182,6 @@ func (c *clairify) TestNodeScanner() error {
 func validateConfig(c *storage.ClairifyConfig) error {
 	if c.GetEndpoint() == "" {
 		return errors.New("endpoint parameter must be defined for Clairify")
-	}
-	return nil
-}
-
-func validateNodeScanningConfig(c *storage.ClairifyConfig) error {
-	if c.GetGrpcEndpoint() == "" {
-		return errors.New("gRPC endpoint parameter must be defined for Clairify")
 	}
 	return nil
 }
