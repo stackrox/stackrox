@@ -49,7 +49,7 @@ COPY ./bin/sensor-upgrader /stackrox/bin/
 COPY ./bin/admission-control /stackrox/bin/
 COPY ./static-bin/* /stackrox/
 COPY ./ui/build /ui/
-COPY --from=data /stackrox-data.tgze /stackrox/
+COPY --from=data /stackrox-data /stackrox/static-data/
 
 COPY ./THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES
 
@@ -87,9 +87,6 @@ VOLUME /var/cache/stackrox
 # /tmp needs to be a read-write filesystem.
 RUN chown -R 4000:4000 /tmp
 VOLUME /tmp
-
-RUN mkdir -p /stackrox/data && chown -R 4000:4000 /stackrox/data
-VOLUME /stackrox/data
 
 RUN ln -s /assets/downloads/cli/roxctl-linux /stackrox/roxctl
 

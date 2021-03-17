@@ -26,7 +26,7 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     tar -zxf bundle.tar.gz ./snappy.rpm && \
     tar -zxf bundle.tar.gz ./stackrox/central && \
     tar -zxf bundle.tar.gz ./stackrox/bin/ && \
-    tar -zxf bundle.tar.gz ./stackrox/stackrox-data.tgze && \
+    tar -zxf bundle.tar.gz ./stackrox/static-data/ && \
     tar -zxf bundle.tar.gz ./THIRD_PARTY_NOTICES/ && \
     tar -zxf bundle.tar.gz ./ui/ && \
     tar -zxf bundle.tar.gz ./usr/local/bin/ldb && \
@@ -47,8 +47,7 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
     mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
     mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
-    chown -R 4000:4000 /tmp && \
-    mkdir -p /stackrox/data && chown -R 4000:4000 /stackrox/data
+    chown -R 4000:4000 /tmp
 
 EXPOSE 8443
 

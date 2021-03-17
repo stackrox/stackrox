@@ -43,7 +43,6 @@ import (
 	detectionService "github.com/stackrox/rox/central/detection/service"
 	developmentService "github.com/stackrox/rox/central/development/service"
 	"github.com/stackrox/rox/central/docs"
-	"github.com/stackrox/rox/central/ed"
 	"github.com/stackrox/rox/central/endpoints"
 	"github.com/stackrox/rox/central/enrichment"
 	_ "github.com/stackrox/rox/central/externalbackups/plugins/all" // Import all of the external backup plugins
@@ -261,15 +260,6 @@ func main() {
 		waitForTerminationSignal()
 		return
 	}
-
-	log.Info("Extracting StackRox data ...")
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-	defer cancel()
-
-	if err := ed.ED(ctx); err != nil {
-		log.Fatalf("Could not extract data: %v", err)
-	}
-	log.Info("Successfully extracted StackRox data")
 
 	go startMainServer(&restartingFlag)
 
