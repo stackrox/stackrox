@@ -15,6 +15,7 @@ import entityTypes from 'constants/entityTypes';
 export const networkGraphClusters = {
     KUBERNETES_CLUSTER: true,
     OPENSHIFT_CLUSTER: true,
+    OPENSHIFT4_CLUSTER: true,
 };
 
 let networkFlowGraphEnabled = false;
