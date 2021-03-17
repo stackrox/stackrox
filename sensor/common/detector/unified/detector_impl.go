@@ -41,11 +41,6 @@ func (d *detectorImpl) DetectProcess(deployment *storage.Deployment, images []*s
 }
 
 func (d *detectorImpl) DetectKubeEventForDeployment(deployment *storage.Deployment, images []*storage.Image, kubeEvent *storage.KubernetesEvent) []*storage.Alert {
-	if !features.K8sEventDetection.Enabled() {
-		log.Errorf("Cannot detect kubernetes event %s. Support for kubernetes event policies is not enabled", kubernetes.EventAsString(kubeEvent))
-		return nil
-	}
-
 	alerts, err := d.runtimeDetector.DetectForDeploymentAndKubeEvent(deployment, images, kubeEvent)
 	if err != nil {
 		log.Errorf("Error running runtime policies for kubernetes event %s: %v", kubernetes.EventAsString(kubeEvent), err)

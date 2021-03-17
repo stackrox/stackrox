@@ -132,11 +132,9 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		telemetry.NewCommandHandler(client.Kubernetes()),
 		upgradeCmdHandler,
 		externalsrcs.Singleton(),
+		admissioncontroller.AlertHandlerSingleton(),
 	}
 
-	if features.K8sEventDetection.Enabled() {
-		components = append(components, admissioncontroller.AlertHandlerSingleton())
-	}
 	if admCtrlSettingsMgr != nil {
 		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(client.Kubernetes(), admCtrlSettingsMgr))
 	}
@@ -164,10 +162,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		processSignals,
 		complianceService,
 		imageService,
-	}
-
-	if features.K8sEventDetection.Enabled() {
-		apiServices = append(apiServices, deployment.NewService(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton()))
+		deployment.NewService(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton()),
 	}
 
 	if admCtrlSettingsMgr != nil {

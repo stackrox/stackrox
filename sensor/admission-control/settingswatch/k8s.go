@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/admissioncontrol"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -92,12 +91,9 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 		return nil, errors.Wrap(err, "reading deploy-time policies from configmap")
 	}
 
-	var runTimePolicies *storage.PolicyList
-	if features.K8sEventDetection.Enabled() {
-		runTimePolicies, err = decompressAndUnmarshalPolicies(cm.BinaryData[admissioncontrol.RunTimePoliciesGZDataKey])
-		if err != nil {
-			return nil, errors.Wrap(err, "reading run-time policies from configmap")
-		}
+	runTimePolicies, err := decompressAndUnmarshalPolicies(cm.BinaryData[admissioncontrol.RunTimePoliciesGZDataKey])
+	if err != nil {
+		return nil, errors.Wrap(err, "reading run-time policies from configmap")
 	}
 
 	configGZData := cm.BinaryData[admissioncontrol.ConfigGZDataKey]

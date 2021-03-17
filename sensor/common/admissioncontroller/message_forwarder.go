@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/common"
 )
 
@@ -81,10 +80,8 @@ func (h *admCtrlMsgForwarderImpl) forwardResponses(from <-chan *central.MsgFromS
 				return
 			}
 
-			if features.K8sEventDetection.Enabled() {
-				if event := msg.GetEvent(); event != nil {
-					h.admCtrlMgr.UpdateResources(msg.GetEvent())
-				}
+			if event := msg.GetEvent(); event != nil {
+				h.admCtrlMgr.UpdateResources(msg.GetEvent())
 			}
 
 			select {

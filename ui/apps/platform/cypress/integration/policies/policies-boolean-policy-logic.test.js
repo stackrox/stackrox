@@ -2,7 +2,6 @@ import { selectors, url } from '../../constants/PoliciesPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import DndSimulatorDataTransfer from '../../helpers/dndSimulatorDataTransfer';
-import checkFeatureFlag from '../../helpers/features';
 
 describe('Boolean Policy Logic Section', () => {
     withAuth();
@@ -346,11 +345,7 @@ describe('Boolean Policy Logic Section', () => {
 
         it('should be grouped into categories', () => {
             cy.get(selectors.booleanPolicySection.policyKeyGroupBtn).should((values) => {
-                if (checkFeatureFlag('ROX_K8S_EVENTS_DETECTION', true)) {
-                    expect(values).to.have.length(9);
-                } else {
-                    expect(values).to.have.length(8);
-                }
+                expect(values).to.have.length(9);
             });
         });
         it('should collapse categories when clicking the carrot', () => {

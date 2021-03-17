@@ -104,7 +104,7 @@ func (d *detectorImpl) detectForDeployment(
 			}
 		}
 
-		if kubeEvent != nil && features.K8sEventDetection.Enabled() {
+		if kubeEvent != nil {
 			violation, err := compiled.MatchAgainstKubeResourceAndEvent(&cacheReceptable, kubeEvent, augmentedDeploy)
 			if err != nil {
 				return errors.Wrapf(err, "evaluating violations for policy %q; kubernetes request %s",

@@ -1,7 +1,5 @@
 import React from 'react';
 
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import ToggleSwitch from 'Components/ToggleSwitch';
 import {
@@ -17,7 +15,6 @@ import {
 import HelmValueWarning from './Components/HelmValueWarning';
 
 const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig }) => {
-    const k8sEventsEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_K8S_EVENTS_DETECTION);
     const { registryOverride, admissionControllerConfig } = dynamicConfig;
     // @TODO, replace open prop with dynamic logic, based on clusterType
     return (
@@ -55,9 +52,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig }
                             htmlFor="dynamicConfig.admissionControllerConfig.enabled"
                             className={labelClassName}
                         >
-                            {k8sEventsEnabled
-                                ? 'Enforce on Object Creates'
-                                : 'Enable Admission Controller'}
+                            Enforce on Object Creates
                         </label>
                         <ToggleSwitch
                             id="dynamicConfig.admissionControllerConfig.enabled"
@@ -83,7 +78,7 @@ const DynamicConfigurationSection = ({ handleChange, dynamicConfig, helmConfig }
                             htmlFor="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
                             className={labelClassName}
                         >
-                            {k8sEventsEnabled ? 'Enforce on Object Updates' : 'Enforce on Updates'}
+                            Enforce on Object Updates
                         </label>
                         <ToggleSwitch
                             id="dynamicConfig.admissionControllerConfig.enforceOnUpdates"

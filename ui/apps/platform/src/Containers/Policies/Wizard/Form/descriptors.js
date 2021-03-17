@@ -1080,9 +1080,6 @@ const policyConfigurationDescriptor = [
         default: false,
         canBooleanLogic: true,
     },
-];
-
-const k8sEventsDescriptor = [
     {
         label: 'Kubernetes Action',
         name: 'Kubernetes Resource',
@@ -1148,9 +1145,6 @@ let isFirstLoad = true;
 
 export const getPolicyConfiguration = (featureFlags) => {
     const newPolicyConfiguration = { ...policyConfiguration };
-    if (featureFlags[knownBackendFlags.ROX_K8S_EVENTS_DETECTION] && isFirstLoad) {
-        newPolicyConfiguration.descriptor.push(...k8sEventsDescriptor);
-    }
     if (featureFlags[knownBackendFlags.ROX_NETWORK_DETECTION_BASELINE_VIOLATION] && isFirstLoad) {
         newPolicyConfiguration.descriptor.push(...networkDetectionDescriptor);
     }

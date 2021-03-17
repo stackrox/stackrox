@@ -8,12 +8,11 @@ import { selectors } from 'reducers';
 import Panel from 'Components/Panel';
 import { actions } from 'reducers/policies/wizard';
 import Tile from 'Containers/Policies/Wizard/Enforcement/Tile/Tile';
-import getLifecycleTileMap, {
+import {
+    lifecycleTileMap,
     lifecycleToEnforcementsMap,
 } from 'Containers/Policies/Wizard/Enforcement/descriptors';
 import EnforcementButtons from 'Containers/Policies/Wizard/Enforcement/EnforcementButtons';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 
 function enforcementActionsEmpty(enforcementActions) {
     return (
@@ -24,11 +23,6 @@ function enforcementActionsEmpty(enforcementActions) {
 }
 
 function EnforcementPanel({ header, onClose, wizardPolicy, setWizardPolicy }) {
-    const k8sEventsEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_K8S_EVENTS_DETECTION);
-    const featureFlags = {
-        [knownBackendFlags.ROX_K8S_EVENTS_DETECTION]: k8sEventsEnabled,
-    };
-    const lifecycleTileMap = getLifecycleTileMap(featureFlags);
     // Check that the lifecycle stage for an enforcement type is present.
     function lifecycleStageEnabled(stage) {
         return intersection(wizardPolicy.lifecycleStages, [stage]).length > 0;

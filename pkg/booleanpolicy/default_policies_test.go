@@ -2519,10 +2519,6 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventConstraints() {
 	}
 }
 func (suite *DefaultPoliciesTestSuite) TestKubeEventDefaultPolicies() {
-	if !features.K8sEventDetection.Enabled() {
-		suite.T().Skip()
-	}
-
 	for _, c := range []struct {
 		policyName         string
 		event              *storage.KubernetesEvent

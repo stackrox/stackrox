@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/admissioncontrol"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -126,14 +125,8 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 	clusterConfig := settings.GetClusterConfig()
 	enforcedDeployTimePolicies := settings.GetEnforcedDeployTimePolicies()
 	runtimePolicies := settings.GetRuntimePolicies()
-	if settings == nil || clusterConfig == nil || enforcedDeployTimePolicies == nil {
+	if settings == nil || clusterConfig == nil || enforcedDeployTimePolicies == nil || runtimePolicies == nil {
 		return nil, nil
-	}
-
-	if features.K8sEventDetection.Enabled() {
-		if runtimePolicies == nil {
-			return nil, nil
-		}
 	}
 
 	configBytes, err := proto.Marshal(clusterConfig)
@@ -154,17 +147,13 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 		return nil, errors.Wrap(err, "compressing deploy-time policies")
 	}
 
-	var runTimePoliciesBytesGZ []byte
-	if features.K8sEventDetection.Enabled() {
-		runTimePoliciesBytes, err := proto.Marshal(runtimePolicies)
-		if err != nil {
-			return nil, errors.Wrap(err, "encoding run-time policies")
-		}
-		runTimePoliciesBytesGZ, err = gziputil.Compress(runTimePoliciesBytes, gzip.BestCompression)
-		if err != nil {
-			return nil, errors.Wrap(err, "compressing run-time policies")
-		}
-
+	runTimePoliciesBytes, err := proto.Marshal(runtimePolicies)
+	if err != nil {
+		return nil, errors.Wrap(err, "encoding run-time policies")
+	}
+	runTimePoliciesBytesGZ, err := gziputil.Compress(runTimePoliciesBytes, gzip.BestCompression)
+	if err != nil {
+		return nil, errors.Wrap(err, "compressing run-time policies")
 	}
 
 	return &v1.ConfigMap{

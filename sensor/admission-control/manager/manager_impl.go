@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/detection/runtime"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/set"
@@ -182,10 +181,6 @@ func (m *manager) runSettingsWatch() {
 }
 
 func (m *manager) runUpdateResourceReqWatch() {
-	if !features.K8sEventDetection.Enabled() {
-		return
-	}
-
 	defer m.stoppedSig.Signal()
 	defer log.Info("Stopping watcher for new sensor events")
 
@@ -330,10 +325,6 @@ func (m *manager) HandleReview(req *admission.AdmissionRequest) (*admission.Admi
 }
 
 func (m *manager) HandleK8sEvent(req *admission.AdmissionRequest) (*admission.AdmissionResponse, error) {
-	if !features.K8sEventDetection.Enabled() {
-		return pass(req.UID), nil
-	}
-
 	state := m.currentState()
 	if state == nil {
 		return nil, pkgErr.New("admission controller is disabled, not handling request")

@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/enforcers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
@@ -149,10 +148,8 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 		return pass(req.UID), nil
 	}
 
-	if features.K8sEventDetection.Enabled() {
-		if !pointer.BoolPtrDerefOr(req.DryRun, false) {
-			go m.filterAndPutAttemptedAlertsOnChan(req.Operation, alerts...)
-		}
+	if !pointer.BoolPtrDerefOr(req.DryRun, false) {
+		go m.filterAndPutAttemptedAlertsOnChan(req.Operation, alerts...)
 	}
 
 	return fail(req.UID, message(alerts, !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass())), nil

@@ -8,7 +8,6 @@ import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.AlertService
-import services.FeatureFlagService
 import spock.lang.Retry
 import spock.lang.Unroll
 import util.Env
@@ -102,7 +101,6 @@ class K8sEventDetectionTest extends BaseSpecification {
     def "Verify k8s exec detection into #execIntoDeploymentNames with addl groups #additionalPolicyGroups"() {
         when:
         "Create the deployments, modify the policy, exec into them"
-        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_K8S_EVENTS_DETECTION"))
         // K8s event detection is currently not supported on OpenShift.
         Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
 

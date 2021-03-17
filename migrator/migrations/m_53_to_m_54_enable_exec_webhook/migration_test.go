@@ -6,9 +6,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/rocksdb"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -21,29 +19,19 @@ func TestExecWebhookMigration(t *testing.T) {
 
 type execWebhookTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 
 	db *rocksdb.RocksDB
 }
 
 func (suite *execWebhookTestSuite) SetupTest() {
-	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv(features.K8sEventDetection.EnvVar(), "true")
-
 	suite.db = rocksdbtest.RocksDBForT(suite.T())
 }
 
 func (suite *execWebhookTestSuite) TearDownTest() {
 	rocksdbtest.TearDownRocksDB(suite.db)
-	suite.envIsolator.RestoreAll()
-
 }
 
 func (suite *execWebhookTestSuite) TestMigrateClustersWithExecWebhooks() {
-	if !features.K8sEventDetection.Enabled() {
-		suite.T().Skipf("feature flag %s not enabled", features.K8sEventDetection.EnvVar())
-	}
-
 	clusters := []*storage.Cluster{
 		{
 			Id:   "1",

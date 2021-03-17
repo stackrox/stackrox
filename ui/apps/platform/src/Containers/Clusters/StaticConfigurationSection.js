@@ -44,7 +44,6 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
     const slimCollectorEnabled = useFeatureFlagEnabled(
         knownBackendFlags.ROX_SUPPORT_SLIM_COLLECTOR_MODE
     );
-    const k8sEventsEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_K8S_EVENTS_DETECTION);
 
     // curry the change handlers for the select inputs
     const onCollectionMethodChange = getSelectComparison(
@@ -199,48 +198,41 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                         />
                     </div>
                 </div>
-                {k8sEventsEnabled && (
-                    <div className={wrapperMarginClassName}>
-                        <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
-                            <label htmlFor="admissionControllerEvents" className={labelClassName}>
-                                Enable Admission Controller Webhook to listen on exec and
-                                port-forward events
-                            </label>
-                            <ToggleSwitch
-                                id="admissionControllerEvents"
-                                name="admissionControllerEvents"
-                                disabled={isTypeOpenShift3}
-                                toggleHandler={handleChange}
-                                enabled={
-                                    isTypeOpenShift3
-                                        ? false
-                                        : selectedCluster.admissionControllerEvents
-                                }
-                            />
-                        </div>
-                        {!isTypeOpenShift3 && (
-                            <HelmValueWarning
-                                currentValue={selectedCluster.admissionControllerEvents}
-                                helmValue={
-                                    selectedCluster?.helmConfig?.staticConfig
-                                        ?.admissionControllerEvents
-                                }
-                            />
-                        )}
-                        {isTypeOpenShift3 && (
-                            <div className="border border-alert-200 bg-alert-200 p-2 rounded-b">
-                                This setting will not work for OpenShift 3.11. To use this webhook,
-                                you must upgrade your cluster to OpenShift 4.1 or higher.
-                            </div>
-                        )}
+                <div className={wrapperMarginClassName}>
+                    <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
+                        <label htmlFor="admissionControllerEvents" className={labelClassName}>
+                            Enable Admission Controller Webhook to listen on exec and port-forward
+                            events
+                        </label>
+                        <ToggleSwitch
+                            id="admissionControllerEvents"
+                            name="admissionControllerEvents"
+                            disabled={isTypeOpenShift3}
+                            toggleHandler={handleChange}
+                            enabled={
+                                isTypeOpenShift3 ? false : selectedCluster.admissionControllerEvents
+                            }
+                        />
                     </div>
-                )}
+                    {!isTypeOpenShift3 && (
+                        <HelmValueWarning
+                            currentValue={selectedCluster.admissionControllerEvents}
+                            helmValue={
+                                selectedCluster?.helmConfig?.staticConfig?.admissionControllerEvents
+                            }
+                        />
+                    )}
+                    {isTypeOpenShift3 && (
+                        <div className="border border-alert-200 bg-alert-200 p-2 rounded-b">
+                            This setting will not work for OpenShift 3.11. To use this webhook, you
+                            must upgrade your cluster to OpenShift 4.1 or higher.
+                        </div>
+                    )}
+                </div>
                 <div className={wrapperMarginClassName}>
                     <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
                         <label htmlFor="admissionController" className={labelClassName}>
-                            {k8sEventsEnabled
-                                ? 'Configure Admission Controller Webhook to listen on Object Creates'
-                                : 'Create Admission Controller Webhook'}
+                            Configure Admission Controller Webhook to listen on Object Creates
                         </label>
                         <ToggleSwitch
                             id="admissionController"
@@ -257,9 +249,7 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                 <div className={wrapperMarginClassName}>
                     <div className={`${divToggleOuterClassName} ${justifyBetweenClassName}`}>
                         <label htmlFor="admissionControllerUpdates" className={labelClassName}>
-                            {k8sEventsEnabled
-                                ? 'Configure Admission Controller Webhook to listen on Object Updates'
-                                : 'Configure Admission Controller Webhook to listen on updates'}
+                            Configure Admission Controller Webhook to listen on Object Updates
                         </label>
                         <ToggleSwitch
                             id="admissionControllerUpdates"

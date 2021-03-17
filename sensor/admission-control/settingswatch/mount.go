@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/admissioncontrol"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
@@ -73,12 +72,9 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 		return nil, errors.Wrapf(err, "getting deploy-time policies from file %s", deployTimePoliciesPath)
 	}
 
-	var runTimePolicies *storage.PolicyList
-	if features.K8sEventDetection.Enabled() {
-		runTimePolicies, err = getPoliciesFromFile(runTimePoliciesPath)
-		if err != nil {
-			return nil, errors.Wrapf(err, "getting run-time policies from file %s", runTimePoliciesPath)
-		}
+	runTimePolicies, err := getPoliciesFromFile(runTimePoliciesPath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting run-time policies from file %s", runTimePoliciesPath)
 	}
 
 	timestampBytes, err := ioutil.ReadFile(timestampPath)

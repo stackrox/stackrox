@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -27,10 +26,6 @@ var (
 )
 
 func migrateExecWebhook(db *gorocksdb.DB) error {
-	if !features.K8sEventDetection.Enabled() {
-		return nil
-	}
-
 	var clustersToMigrate []*storage.Cluster // Should be able to hold all policies in memory easily
 	readOpts := gorocksdb.NewDefaultReadOptions()
 	it := db.NewIterator(readOpts)

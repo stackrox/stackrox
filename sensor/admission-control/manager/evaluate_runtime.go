@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/stringutils"
 	admission "k8s.io/api/admission/v1beta1"
@@ -50,10 +49,6 @@ func (m *manager) shouldBypassRuntimeDetection(s *state, req *admission.Admissio
 
 func (m *manager) evaluateRuntimeAdmissionRequest(s *state, req *admission.AdmissionRequest) (*admission.AdmissionResponse, error) {
 	log.Debugf("Evaluating request %+v", req)
-	if !features.K8sEventDetection.Enabled() {
-		return pass(req.UID), nil
-	}
-
 	if m.shouldBypassRuntimeDetection(s, req) {
 		return pass(req.UID), nil
 	}

@@ -51,18 +51,16 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		// Historically deploy time only field sections in policy were allowed. For kube event policies (and eventually
 		// all runtime policies), we do not want to allow such sections. If a section does not contain a kube event
 		// field, it implies it does not apply to kubernetes event.
-		if features.K8sEventDetection.Enabled() {
-			filtered = booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
-				return booleanpolicy.SectionContainsOneOf(section, booleanpolicy.KubeEventsFields)
-			})
-			if len(filtered.GetPolicySections()) > 0 {
-				compiled.hasKubeEventsSection = true
-				kubeEventsMatcher, err := booleanpolicy.BuildKubeEventMatcher(filtered)
-				if err != nil {
-					return nil, errors.Wrapf(err, "building kubernetes event matcher for policy %q", policy.GetName())
-				}
-				compiled.kubeEventsMatcher = kubeEventsMatcher
+		filtered = booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
+			return booleanpolicy.SectionContainsOneOf(section, booleanpolicy.KubeEventsFields)
+		})
+		if len(filtered.GetPolicySections()) > 0 {
+			compiled.hasKubeEventsSection = true
+			kubeEventsMatcher, err := booleanpolicy.BuildKubeEventMatcher(filtered)
+			if err != nil {
+				return nil, errors.Wrapf(err, "building kubernetes event matcher for policy %q", policy.GetName())
 			}
+			compiled.kubeEventsMatcher = kubeEventsMatcher
 		}
 
 		if features.NetworkDetectionBaselineViolation.Enabled() {

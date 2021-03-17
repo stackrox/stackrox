@@ -12,12 +12,10 @@ import PolicySections from './PolicySections';
 import { getPolicyConfiguration } from './descriptors';
 
 function BooleanPolicySection({ readOnly, hasHeader }) {
-    const k8sEventsEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_K8S_EVENTS_DETECTION);
     const networkDetectionBaselineViolationEnabled = useFeatureFlagEnabled(
         knownBackendFlags.ROX_NETWORK_DETECTION_BASELINE_VIOLATION
     );
     const featureFlags = {
-        [knownBackendFlags.ROX_K8S_EVENTS_DETECTION]: k8sEventsEnabled,
         [knownBackendFlags.ROX_NETWORK_DETECTION_BASELINE_VIOLATION]: networkDetectionBaselineViolationEnabled,
     };
     const keys = getPolicyConfiguration(featureFlags).descriptor;

@@ -1,10 +1,9 @@
 import buildImage from 'images/enforcement-build.svg';
 import deployImage from 'images/enforcement-deploy.svg';
 import runImage from 'images/enforcement-runtime.svg';
-import { knownBackendFlags } from 'utils/featureFlags';
 
 // Enforcement type mapped to tile properties for enforcement tab.
-const lifecycleTileMap = {
+export const lifecycleTileMap = {
     BUILD: {
         image: buildImage,
         label: 'BUILD',
@@ -24,17 +23,8 @@ const lifecycleTileMap = {
         label: 'RUNTIME',
         header: 'Enforcement Behavior',
         description:
-            'If enabled, StackRox will automatically kill any pod that matches the conditions of this policy.',
+            'If enabled, StackRox will either kill the offending pod or block the action taken on the pod. Executions within a pod that match the conditions of the policy will result in the pod being killed. Actions taken through the API server that match policy criteria will be blocked.',
     },
-};
-
-const getLifecycleTileMap = (featureFlags) => {
-    const newLifecycleTileMap = { ...lifecycleTileMap };
-    if (featureFlags[knownBackendFlags.ROX_K8S_EVENTS_DETECTION]) {
-        newLifecycleTileMap.RUNTIME.description =
-            'If enabled, StackRox will either kill the offending pod or block the action taken on the pod. Executions within a pod that match the conditions of the policy will result in the pod being killed. Actions taken through the API server that match policy criteria will be blocked.';
-    }
-    return newLifecycleTileMap;
 };
 
 export const lifecycleToEnforcementsMap = {
@@ -42,5 +32,3 @@ export const lifecycleToEnforcementsMap = {
     DEPLOY: ['SCALE_TO_ZERO_ENFORCEMENT', 'UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT'],
     RUNTIME: ['KILL_POD_ENFORCEMENT', 'FAIL_KUBE_REQUEST_ENFORCEMENT'],
 };
-
-export default getLifecycleTileMap;

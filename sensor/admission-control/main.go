@@ -84,10 +84,7 @@ func mainCmd() error {
 	}
 	if sensorConn != nil {
 		settingswatch.WatchSensorMessagePush(mgr, sensorConn)
-
-		if features.K8sEventDetection.Enabled() {
-			alerts.NewAlertSender(sensorConn, mgr.Alerts()).Start(concurrency.AsContext(mgr.Stopped()))
-		}
+		alerts.NewAlertSender(sensorConn, mgr.Alerts()).Start(concurrency.AsContext(mgr.Stopped()))
 	}
 
 	serverConfig := pkgGRPC.Config{

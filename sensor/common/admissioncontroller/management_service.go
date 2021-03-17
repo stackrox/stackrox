@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"google.golang.org/grpc"
@@ -94,13 +93,10 @@ func (s *managementService) Communicate(stream sensor.AdmissionControlManagement
 		return errors.Wrap(err, "sending initial settings")
 	}
 
-	var sensorEventIt concurrency.ValueStreamIter
-	if features.K8sEventDetection.Enabled() {
-		if err := s.sync(stream); err != nil {
-			return errors.Wrap(err, "syncing resources")
-		}
-		sensorEventIt = s.sensorEventsStream.Iterator(true)
+	if err := s.sync(stream); err != nil {
+		return errors.Wrap(err, "syncing resources")
 	}
+	sensorEventIt := s.sensorEventsStream.Iterator(true)
 
 	recvdMsgC := make(chan *sensor.MsgFromAdmissionControl)
 	recvErrC := make(chan error, 1)
@@ -138,9 +134,6 @@ func (s *managementService) Communicate(stream sensor.AdmissionControlManagement
 }
 
 func (s *managementService) PolicyAlerts(_ context.Context, alerts *sensor.AdmissionControlAlerts) (*types.Empty, error) {
-	if !features.K8sEventDetection.Enabled() {
-		return nil, errors.New("support for kubernetes events policies is not enabled")
-	}
 	go s.alertHandler.ProcessAlerts(alerts)
 	return &types.Empty{}, nil
 }

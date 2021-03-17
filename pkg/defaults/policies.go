@@ -48,11 +48,6 @@ func Policies() (policies []*storage.Policy, err error) {
 			continue
 		}
 
-		if !features.K8sEventDetection.Enabled() {
-			if p.GetId() == "8ab0f199-4904-4808-9461-3501da1d1b77" || p.GetId() == "742e0361-bddd-4a2d-8758-f2af6197f61d" {
-				continue
-			}
-		}
 		if !features.NetworkDetectionBaselineViolation.Enabled() && p.GetId() == "1b74ffdd-8e67-444c-9814-1c23863c8ccb" {
 			continue
 		}
