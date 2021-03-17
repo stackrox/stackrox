@@ -31,9 +31,7 @@ class Graph extends Component {
         networkNodeMap: PropTypes.shape({}).isRequired,
         networkEdgeMap: PropTypes.shape({}),
 
-        networkPolicyGraphState: PropTypes.string.isRequired,
         networkFlowGraphUpdateKey: PropTypes.number.isRequired,
-        networkFlowGraphState: PropTypes.string.isRequired,
         fetchNetworkPolicies: PropTypes.func.isRequired,
 
         setSelectedNode: PropTypes.func.isRequired,
@@ -168,19 +166,10 @@ class Graph extends Component {
     };
 
     render() {
-        const { filterState, isSimulatorOn } = this.props;
-        const { networkFlowGraphState, networkPolicyGraphState } = this.props;
-        // Simulator styling.
-        const simulatorMode = isSimulatorOn ? 'simulator-mode' : '';
-
-        // Graph nodes and styling.
-        const networkGraphState =
-            filterState === filterModes.active ? networkFlowGraphState : networkPolicyGraphState;
-        const networkGraphStateClass = networkGraphState === 'ERROR' ? 'error' : 'success';
-
+        const { isSimulatorOn } = this.props;
         // Rendering.
         return (
-            <div className={`${simulatorMode} ${networkGraphStateClass} w-full h-full theme-light`}>
+            <div className="network-grid-bg w-full h-full theme-light">
                 {this.renderGraph(isSimulatorOn)}
                 <Filters />
                 <Legend />
@@ -202,9 +191,7 @@ const mapStateToProps = createStructuredSelector({
     isSimulatorOn: getIsSimulatorOn,
     networkNodeMap: selectors.getNetworkNodeMap,
     networkEdgeMap: selectors.getNetworkEdgeMap,
-    networkPolicyGraphState: selectors.getNetworkPolicyGraphState,
     networkFlowGraphUpdateKey: selectors.getNetworkFlowGraphUpdateKey,
-    networkFlowGraphState: selectors.getNetworkFlowGraphState,
     clusters: selectors.getClusters,
     selectedClusterId: selectors.getSelectedNetworkClusterId,
     isLoading: selectors.getNetworkGraphLoading,

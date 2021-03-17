@@ -22,7 +22,7 @@ const Filters = ({ setFilterMode, offset, filterMode }) => {
     return (
         <div
             className={`absolute top-0 left-0 px-2 py-2 ${
-                offset ? 'mt-8' : 'mt-2'
+                offset ? 'mt-10' : 'mt-2'
             } ml-2 absolute z-1 bg-primary-100 uppercase flex items-center text-sm border-base-400 border-2`}
         >
             <span className="text-base-500 font-700 mr-2">Connections:</span>

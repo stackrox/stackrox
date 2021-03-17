@@ -1,47 +1,56 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import React, { useEffect } from 'react';
 import { connect } from 'react-redux';
+
 import { actions as dialogueActions } from 'reducers/network/dialogue';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as pageActions } from 'reducers/network/page';
-import dialogueStages from './Dialogue/dialogueStages';
+import dialogueStages from 'Containers/Network/Dialogue/dialogueStages';
+import useNetworkPolicySimulation from 'Containers/Network/useNetworkPolicySimulation';
 
-import Dialogue from './Dialogue';
-import Graph from './Graph/Graph';
-import Header from './Header/Header';
-import SimulationBorder from './SimulationBorder';
-import Wizard from './Wizard/Wizard';
+import SimulationFrame from 'Components/SimulationFrame';
+import Dialogue from 'Containers/Network/Dialogue';
+import Graph from 'Containers/Network/Graph/Graph';
+import Header from 'Containers/Network/Header/Header';
+import Wizard from 'Containers/Network/Wizard/Wizard';
 
-class Page extends Component {
-    static propTypes = {
-        setNetworkModification: PropTypes.func.isRequired,
-        closeWizard: PropTypes.func.isRequired,
-        setDialogueStage: PropTypes.func.isRequired,
-    };
+function NetworkPage({ closeWizard, setDialogueStage, setNetworkModification }) {
+    const {
+        isNetworkSimulationOn,
+        isNetworkSimulationError,
+        stopNetworkSimulation,
+    } = useNetworkPolicySimulation();
 
-    componentWillUnmount() {
-        this.props.closeWizard();
-        this.props.setDialogueStage(dialogueStages.closed);
-        this.props.setNetworkModification(null);
-    }
+    useEffect(() => {
+        return () => {
+            closeWizard();
+            setDialogueStage(dialogueStages.closed);
+            setNetworkModification(null);
+        };
+    }, [closeWizard, setDialogueStage, setNetworkModification]);
 
-    render() {
-        return (
-            <section className="flex flex-1 h-full w-full">
-                <div className="flex flex-1 flex-col w-full overflow-hidden">
-                    <div className="flex border-b border-base-400">
-                        <Header />
-                    </div>
-                    <section className="network-grid-bg flex flex-1 relative">
-                        <SimulationBorder />
-                        <Graph />
-                        <Wizard />
-                    </section>
+    const content = isNetworkSimulationOn ? (
+        <SimulationFrame isError={isNetworkSimulationError} onStop={stopNetworkSimulation}>
+            <Graph />
+            <Wizard />
+        </SimulationFrame>
+    ) : (
+        <div className="flex flex-1 relative">
+            <Graph />
+            <Wizard />
+        </div>
+    );
+
+    return (
+        <section className="flex flex-1 h-full w-full">
+            <div className="flex flex-1 flex-col w-full overflow-hidden">
+                <div className="flex border-b border-base-400">
+                    <Header />
                 </div>
-                <Dialogue />
-            </section>
-        );
-    }
+                {content}
+            </div>
+            <Dialogue />
+        </section>
+    );
 }
 
 const mapDispatchToProps = {
@@ -50,4 +59,4 @@ const mapDispatchToProps = {
     setDialogueStage: dialogueActions.setNetworkDialogueStage,
 };
 
-export default connect(null, mapDispatchToProps)(Page);
+export default connect(null, mapDispatchToProps)(NetworkPage);
