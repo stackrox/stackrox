@@ -54,12 +54,14 @@ const Entity = ({ entityType, entityId, entityListType, ...rest }) => {
     if (!Component) {
         return <PageNotFound resourceType={entityType} useCase={useCases.CONFIG_MANAGEMENT} />;
     }
+    let backgroundAndHeightClassName = 'h-full';
+    if (entityListType) {
+        backgroundAndHeightClassName = 'bg-base-100 h-full';
+    } else if (!isDarkMode) {
+        backgroundAndHeightClassName = 'bg-side-panel-wave min-h-full';
+    }
     return (
-        <div
-            className={`w-full flex ${
-                !isDarkMode && !entityListType ? 'bg-side-panel-wave min-h-full' : 'h-full'
-            }`}
-        >
+        <div className={`w-full flex ${backgroundAndHeightClassName}`}>
             <Component
                 id={entityId}
                 entityListType={entityListType}

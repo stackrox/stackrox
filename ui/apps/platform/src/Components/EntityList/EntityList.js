@@ -161,7 +161,9 @@ const EntityList = ({
                 <PanelTitle isUpperCase testid="panel-header" text={header} />
                 <PanelHeadEnd>{headerComponents}</PanelHeadEnd>
             </PanelHead>
-            <PanelBody>{tableComponent}</PanelBody>
+            <PanelBody>
+                <div className="bg-base-100 h-full w-full">{tableComponent}</div>
+            </PanelBody>
         </PanelNew>
     );
 };
