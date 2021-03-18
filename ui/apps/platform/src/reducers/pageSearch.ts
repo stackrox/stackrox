@@ -1,13 +1,13 @@
 import isEqual from 'lodash/isEqual';
 import capitalize from 'lodash/capitalize';
 
-type SearchEntry = {
+export type SearchEntry = {
     type?: 'categoryOption';
     value: string;
     label: string;
 };
 
-type SearchState = {
+export type SearchState = {
     searchOptions: SearchEntry[];
     searchModifiers: SearchEntry[];
     searchSuggestions: SearchEntry[];
