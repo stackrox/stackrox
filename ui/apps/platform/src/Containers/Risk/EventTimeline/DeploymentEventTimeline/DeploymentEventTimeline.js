@@ -5,7 +5,7 @@ import { useQuery } from '@apollo/client';
 
 import captureGraphQLErrors from 'utils/captureGraphQLErrors';
 import queryService from 'utils/queryService';
-import Panel from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import TimelineGraph from 'Components/TimelineGraph';
 import Loader from 'Components/Loader';
 import TimelineLegend from 'Components/TimelineLegend';
@@ -71,43 +71,45 @@ const DeploymentEventTimeline = ({
     };
     const csvQueryString = getTimelineQueryString(exportParams);
 
-    const headerComponents = (
-        <>
-            <EventTypeSelect
-                selectedEventType={selectedEventType}
-                selectEventType={selectEventType}
-            />
-            <div className="ml-3">
-                <TimelineLegend />
-            </div>
-            <div className="ml-3">
-                <ExportMenu
-                    fileName={`Event-Timeline-Report-${name}`}
-                    pdfId="capture-timeline"
-                    csvEndpoint="/api/risk/timeline/export/csv"
-                    csvQueryString={csvQueryString}
-                />
-            </div>
-        </>
-    );
-
     const timelineData = getPodEvents(data.pods, selectedEventType);
     const absoluteMaxTimeRange = getLargestDifferenceInMilliseconds(timelineData);
 
     return (
-        <Panel header={header} headerComponents={headerComponents} id="event-timeline">
-            <TimelineGraph
-                key={selectedEventType}
-                data={timelineData}
-                goToNextView={goToNextView}
-                currentPage={currentPage}
-                totalSize={numTotalPods}
-                pageSize={pageSize}
-                onPageChange={onPageChange}
-                absoluteMaxTimeRange={absoluteMaxTimeRange}
-                showClusteredEvents={showClusteredEvents}
-            />
-        </Panel>
+        <PanelNew testid="event-timeline">
+            <PanelHead>
+                <PanelTitle isUpperCase testid="event-timeline-header" text={header} />
+                <PanelHeadEnd>
+                    <EventTypeSelect
+                        selectedEventType={selectedEventType}
+                        selectEventType={selectEventType}
+                    />
+                    <div className="ml-3">
+                        <TimelineLegend />
+                    </div>
+                    <div className="ml-3 mr-3">
+                        <ExportMenu
+                            fileName={`Event-Timeline-Report-${name}`}
+                            pdfId="capture-timeline"
+                            csvEndpoint="/api/risk/timeline/export/csv"
+                            csvQueryString={csvQueryString}
+                        />
+                    </div>
+                </PanelHeadEnd>
+            </PanelHead>
+            <PanelBody>
+                <TimelineGraph
+                    key={selectedEventType}
+                    data={timelineData}
+                    goToNextView={goToNextView}
+                    currentPage={currentPage}
+                    totalSize={numTotalPods}
+                    pageSize={pageSize}
+                    onPageChange={onPageChange}
+                    absoluteMaxTimeRange={absoluteMaxTimeRange}
+                    showClusteredEvents={showClusteredEvents}
+                />
+            </PanelBody>
+        </PanelNew>
     );
 };
 

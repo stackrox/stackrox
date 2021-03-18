@@ -7,7 +7,7 @@ import getPaginatedList from 'utils/getPaginatedList';
 import captureGraphQLErrors from 'utils/captureGraphQLErrors';
 import queryService from 'utils/queryService';
 import Button from 'Components/Button';
-import Panel from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelHeadStart } from 'Components/Panel';
 import HeaderWithSubText from 'Components/HeaderWithSubText';
 import TimelineGraph from 'Components/TimelineGraph';
 import Loader from 'Components/Loader';
@@ -51,43 +51,11 @@ const PodEventTimeline = ({
 
     const { name, subText } = getPod(data.pod);
 
-    const headerTextComponent = (
-        <>
-            <Button
-                dataTestId="timeline-back-button"
-                className="border-base-300 border-r px-3 hover:bg-base-200"
-                icon={<ArrowLeft className="h-4 w-4 text-base-600" />}
-                onClick={goToPreviousView}
-            />
-            <HeaderWithSubText header={name} subText={subText} />
-        </>
-    );
-
     const exportParams = {
         'Deployment ID': deploymentId,
         'Pod ID': id,
     };
     const csvQueryString = getTimelineQueryString(exportParams);
-
-    const headerComponents = (
-        <>
-            <EventTypeSelect
-                selectedEventType={selectedEventType}
-                selectEventType={selectEventType}
-            />
-            <div className="ml-3">
-                <TimelineLegend />
-            </div>
-            <div className="ml-3">
-                <ExportMenu
-                    fileName={`Event-Timeline-Report-${name}`}
-                    pdfId="capture-timeline"
-                    csvEndpoint="/api/risk/timeline/export/csv"
-                    csvQueryString={csvQueryString}
-                />
-            </div>
-        </>
-    );
 
     // Adding pagination for Grouped Container Instances required a substantial amount of work, so we're going with pagination on the frontend for now
     const paginatedContainers = getPaginatedList(data.containers, currentPage, pageSize);
@@ -97,22 +65,48 @@ const PodEventTimeline = ({
     const numTotalContainers = data?.pod?.containerCount || 0;
 
     return (
-        <Panel
-            headerTextComponent={headerTextComponent}
-            headerComponents={headerComponents}
-            id="event-timeline"
-        >
-            <TimelineGraph
-                data={timelineData}
-                goToNextView={goToNextView}
-                currentPage={currentPage}
-                totalSize={numTotalContainers}
-                pageSize={pageSize}
-                onPageChange={onPageChange}
-                absoluteMaxTimeRange={absoluteMaxTimeRange}
-                showClusteredEvents={showClusteredEvents}
-            />
-        </Panel>
+        <PanelNew testid="event-timeline">
+            <PanelHead>
+                <PanelHeadStart testid="event-timeline-header">
+                    <Button
+                        dataTestId="timeline-back-button"
+                        className="border-base-300 border-r px-3 hover:bg-base-200"
+                        icon={<ArrowLeft className="h-4 w-4 text-base-600" />}
+                        onClick={goToPreviousView}
+                    />
+                    <HeaderWithSubText header={name} subText={subText} />
+                </PanelHeadStart>
+                <PanelHeadEnd>
+                    <EventTypeSelect
+                        selectedEventType={selectedEventType}
+                        selectEventType={selectEventType}
+                    />
+                    <div className="ml-3">
+                        <TimelineLegend />
+                    </div>
+                    <div className="ml-3 mr-3">
+                        <ExportMenu
+                            fileName={`Event-Timeline-Report-${name}`}
+                            pdfId="capture-timeline"
+                            csvEndpoint="/api/risk/timeline/export/csv"
+                            csvQueryString={csvQueryString}
+                        />
+                    </div>
+                </PanelHeadEnd>
+            </PanelHead>
+            <PanelBody>
+                <TimelineGraph
+                    data={timelineData}
+                    goToNextView={goToNextView}
+                    currentPage={currentPage}
+                    totalSize={numTotalContainers}
+                    pageSize={pageSize}
+                    onPageChange={onPageChange}
+                    absoluteMaxTimeRange={absoluteMaxTimeRange}
+                    showClusteredEvents={showClusteredEvents}
+                />
+            </PanelBody>
+        </PanelNew>
     );
 };
 

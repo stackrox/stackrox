@@ -54,6 +54,18 @@ export function PanelTitle({ isUpperCase, testid, text }) {
 }
 
 /*
+ * PanelHeadStart is a parent of multiple components at the start of the panel head.
+ * That is, instead of PageTitle.
+ */
+export function PanelHeadStart({ children, testid }) {
+    return (
+        <div className="flex" data-testid={testid}>
+            {children}
+        </div>
+    );
+}
+
+/*
  * PanelHeadEnd, which has flex end alignment, is parent of reusable components.
  * main panel: search filter, table pagination
  * side panel: external link button, close button
