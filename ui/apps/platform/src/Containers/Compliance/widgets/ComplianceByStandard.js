@@ -22,6 +22,12 @@ const cautionColor = 'var(--caution-400)';
 const skippedColor = 'var(--base-300)';
 const alertColor = 'var(--alert-400)';
 
+const passTextColor = 'var(--tertiary-500)';
+const warningTextColor = 'var(--warning-500)';
+const cautionTextColor = 'var(--caution-500)';
+const skippedTextColor = 'var(--base-500)';
+const alertTextColor = 'var(--alert-500)';
+
 const getColor = (value) => {
     if (value === 100) {
         return passColor;
@@ -36,6 +42,22 @@ const getColor = (value) => {
         return skippedColor;
     }
     return alertColor;
+};
+
+const getTextColor = (value) => {
+    if (value === 100) {
+        return passTextColor;
+    }
+    if (value >= 70) {
+        return warningTextColor;
+    }
+    if (value >= 50) {
+        return cautionTextColor;
+    }
+    if (Number.isNaN(value)) {
+        return skippedTextColor;
+    }
+    return alertTextColor;
 };
 
 const sunburstLegendData = [
@@ -87,6 +109,7 @@ const processSunburstData = (match, location, data, type) => {
             groupMapping[datum.id] = {
                 name: `${datum?.name}. ${datum?.description}`,
                 color: getColor(value),
+                textColor: getTextColor(value),
                 value,
                 children: [],
             };
@@ -108,6 +131,7 @@ const processSunburstData = (match, location, data, type) => {
                 group.children.push({
                     name: `${datum?.name} - ${datum?.description}`,
                     color: getColor(value),
+                    textColor: getTextColor(value),
                     link: url,
                     value,
                 });
