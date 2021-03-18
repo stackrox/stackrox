@@ -150,10 +150,10 @@ export const getClasses = (map) => {
  * Creates a mapping of ports/protocols based on node links (source->target), and then
  * returns a closure to allow getting the ports/protocols of a specific source->target
  *
- * @param {!Object[]} node
+ * @param {!Object[]} nodes
  * @param {!String} highlightedNodeId
  * @param {!Object} networkNodeMap
- * @param {!String} filterState
+ * @param {!number} filterState
  * @returns {!Object}
  *
  */
@@ -1046,17 +1046,18 @@ export const getNamespaceList = (
     return namespaceList;
 };
 
+const sides = ['top', 'left', 'right', 'bottom'];
+
 /**
  * Returns a list of edge nodes that are hidden cardinal direction edges
  *
- * @param {!String} name
+ * @param {!String} id
  * @param {!String} classes
-
+ * @param {!String} type
  * @returns {!Object[]}
  */
-const sides = ['top', 'left', 'right', 'bottom'];
-
 const createEdgeNodes = (id, classes, type) => {
+    const emptyArray = [];
     const edgeNodes = sides.reduce((acc, side) => {
         const node = {
             data: {
@@ -1068,7 +1069,7 @@ const createEdgeNodes = (id, classes, type) => {
             classes,
         };
         return [...acc, node];
-    }, []);
+    }, emptyArray);
     return edgeNodes;
 };
 
@@ -1084,7 +1085,7 @@ export const getEdgeNodes = (nodeList, classes) => {
 /**
  * Returns a list of nodes that are hidden "namespace" cardinal direction edges
  *
- * @param {!Object[]} namespaceList list of namespaces
+ * @param {!Object[]} namespaces list of namespaces
  *
  * @returns {!Object[]}
  */
@@ -1129,21 +1130,28 @@ function getConnectionText(filterState, isActive, isAllowed) {
     return connection;
 }
 
-function DirectionalFlows() {
-    let numIngressFlows = 0;
-    let numEgressFlows = 0;
-    return {
-        incrementFlows: (traffic) => {
-            if (traffic === networkTraffic.INGRESS || traffic === networkTraffic.BIDIRECTIONAL) {
-                numIngressFlows += 1;
-            }
-            if (traffic === networkTraffic.EGRESS || traffic === networkTraffic.BIDIRECTIONAL) {
-                numEgressFlows += 1;
-            }
-        },
-        getNumIngressFlows: () => numIngressFlows,
-        getNumEgressFlows: () => numEgressFlows,
-    };
+class DirectionalFlows {
+    constructor() {
+        this.numIngressFlows = 0;
+        this.numEgressFlows = 0;
+    }
+
+    incrementFlows(traffic) {
+        if (traffic === networkTraffic.INGRESS || traffic === networkTraffic.BIDIRECTIONAL) {
+            this.numIngressFlows += 1;
+        }
+        if (traffic === networkTraffic.EGRESS || traffic === networkTraffic.BIDIRECTIONAL) {
+            this.numEgressFlows += 1;
+        }
+    }
+
+    getNumIngressFlows() {
+        return this.numIngressFlows;
+    }
+
+    getNumEgressFlows() {
+        return this.numEgressFlows;
+    }
 }
 
 /**

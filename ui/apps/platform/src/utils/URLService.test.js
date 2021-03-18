@@ -92,7 +92,7 @@ it('sets base params for entity path', () => {
 it('sets base context', () => {
     const match = getMatch({});
     const context = 'testContext';
-    const url = URLService.getURL(match, location, context);
+    const url = URLService.getURL(match, location);
 
     url.base(entityTypes.CLUSTER, '123', context);
     expect(url.urlParams.context).toEqual(context);

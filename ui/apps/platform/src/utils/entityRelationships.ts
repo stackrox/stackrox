@@ -36,7 +36,9 @@ export const useCaseEntityMap = {
 };
 
 // to add featureFlag logic to the useCaseEntityMap
-export const getUseCaseEntityMap = (featureFlags) => {
+export const getUseCaseEntityMap = (
+    featureFlags: Record<string, boolean>
+): Record<string, string[]> => {
     const entityMap = { ...useCaseEntityMap };
     if (featureFlags[knownBackendFlags.ROX_HOST_SCANNING]) {
         if (!entityMap[useCaseTypes.VULN_MANAGEMENT].includes(entityTypes.NODE)) {
@@ -72,26 +74,15 @@ export const entityGroupMap = {
     [entityTypes.CVE]: entityGroups.SECURITY,
 };
 
-// const edgeTypes = {
-//     VIOLATIONS: 'VIOLATIONS',
-//     EVIDENCE: 'EVIDENCE'
-// };
-
-// map of edge types (side effects of when two entities cross)
-// note: these will not be listed -- they should only show up as columns in `x findings` tables
-// const relationshipEdgeMap = {
-//     [edgeTypes.VIOLATIONS]: {
-//         entityType1: [entityTypes.POLICY],
-//         entityType2: [entityTypes.DEPLOYMENT]
-//     },
-//     [edgeTypes.EVIDENCE]: {
-//         entityType1: [entityTypes.CONTROL],
-//         entityType2: [entityTypes.NODE, entityTypes.CLUSTER, entityTypes.DEPLOYMENT]
-//     }
-// };
+type EntityRelationshipData = {
+    children: string[];
+    parents: string[];
+    matches: string[];
+    extendedMatches?: string[];
+};
 
 // If you change the data, then you will need to update a snapshot.
-const entityRelationshipMap = {
+const entityRelationshipMap: Record<string, EntityRelationshipData> = {
     [entityTypes.CLUSTER]: {
         children: [entityTypes.NODE, entityTypes.NAMESPACE, entityTypes.ROLE],
         parents: [],
@@ -172,11 +163,12 @@ const entityRelationshipMap = {
 };
 
 // helper functions
-const getChildren = (entityType) => entityRelationshipMap[entityType].children;
-const getParents = (entityType) => entityRelationshipMap[entityType].parents;
-const getPureMatches = (entityType) => entityRelationshipMap[entityType].matches;
-const getExtendedMatches = (entityType) => entityRelationshipMap[entityType].extendedMatches || [];
-const getMatches = (entityType) => [
+const getChildren = (entityType: string): string[] => entityRelationshipMap[entityType].children;
+const getParents = (entityType: string): string[] => entityRelationshipMap[entityType].parents;
+const getPureMatches = (entityType: string): string[] => entityRelationshipMap[entityType].matches;
+const getExtendedMatches = (entityType: string): string[] =>
+    entityRelationshipMap[entityType].extendedMatches || [];
+const getMatches = (entityType: string): string[] => [
     ...getPureMatches(entityType),
     ...getExtendedMatches(entityType),
 ];
@@ -184,8 +176,8 @@ const getMatches = (entityType) => [
 // function to recursively get inclusive 'contains' relationships (inferred)
 // this includes all generations of children AND inferred (matches of children down the chain) relationships
 // e.g. namespace inclusively contains policy since ns contains deployment and deployment matches policy
-const getContains = (entityType) => {
-    const relationships = [];
+const getContains = (entityType: string): string[] => {
+    const relationships: string[] = [];
     const children = getChildren(entityType);
     if (children) {
         children.forEach((child) => {
@@ -198,14 +190,17 @@ const getContains = (entityType) => {
     return uniq(relationships).filter((type) => type !== entityType);
 };
 
-const isChild = (parent, child) => getChildren(parent).includes(child);
-const isParent = (parent, child) => getParents(child).includes(parent);
-const isMatch = (entityType1, entityType2) => getMatches(entityType1).includes(entityType2);
-const isPureMatch = (entityType1, entityType2) => getPureMatches(entityType1).includes(entityType2);
-const isExtendedMatch = (entityType1, entityType2) =>
+const isChild = (parent: string, child: string): boolean => getChildren(parent).includes(child);
+const isParent = (parent: string, child: string): boolean => getParents(child).includes(parent);
+const isMatch = (entityType1: string, entityType2: string): boolean =>
+    getMatches(entityType1).includes(entityType2);
+const isPureMatch = (entityType1: string, entityType2: string): boolean =>
+    getPureMatches(entityType1).includes(entityType2);
+const isExtendedMatch = (entityType1: string, entityType2: string): boolean =>
     getExtendedMatches(entityType1).includes(entityType2);
-const isContained = (entityType1, entityType2) => getContains(entityType1).includes(entityType2);
-const isContainedInferred = (entityType1, entityType2) =>
+const isContained = (entityType1: string, entityType2: string): boolean =>
+    getContains(entityType1).includes(entityType2);
+const isContainedInferred = (entityType1: string, entityType2: string): boolean =>
     entityType1 !== entityType2 &&
     isContained(entityType1, entityType2) &&
     !isChild(entityType1, entityType2);
@@ -215,13 +210,13 @@ const isContainedInferred = (entityType1, entityType2) =>
 // f(type, relationship, useCase)
 // f(cluster, contains, config management), f(deployment, parents, config management)
 export const getEntityTypesByRelationship = (
-    entityType,
-    relationship,
-    useCase,
+    entityType: string,
+    relationship: string,
+    useCase: string,
     featureFlags = {}
-) => {
+): string[] => {
     const entityMap = getUseCaseEntityMap(featureFlags);
-    let entities = [];
+    let entities: string[] = [];
     if (relationship === relationshipTypes.CONTAINS) {
         entities = getContains(entityType);
         // this is to remove NODE links from IMAGE, DEPLOYMENT, NAMESPACE and vice versa

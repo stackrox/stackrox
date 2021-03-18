@@ -4,7 +4,7 @@ import dateTimeFormat, { dateFormat } from 'constants/dateTimeFormat';
 
 /**
  * Returns a formatted date and time
- * @param {string} timestamp - The timestamp for the date and time
+ * @param {string | Date} timestamp - The timestamp for the date and time
  * @returns {string} - returns a formatted string for the date time
  */
 export function getDateTime(timestamp) {
@@ -13,7 +13,7 @@ export function getDateTime(timestamp) {
 
 /**
  * Returns a formatted date
- * @param {string} timestamp - The timestamp for the date
+ * @param {string | Date} timestamp - The timestamp for the date
  * @returns {string} - returns a formatted string for the date
  */
 export function getDate(timestamp) {

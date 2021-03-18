@@ -35,7 +35,7 @@ function action(type, payload = {}) {
 /**
  * Creates a map of action functions for the given action types.
  *
- * @param {PollingActionTypes}
+ * @param {PollingActionTypes} types
  * @returns {PollingActions}
  */
 export function createPollingActions(types) {

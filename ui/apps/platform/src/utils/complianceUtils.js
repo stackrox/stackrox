@@ -38,7 +38,7 @@ export function getResourceCountFromAggregatedResults(type, data) {
         return 0;
     }
 
-    const index = getIndicesFromAggregatedResults(source, type)[type];
+    const index = getIndicesFromAggregatedResults(source)[type];
 
     if (!index && index !== 0) {
         return 0;

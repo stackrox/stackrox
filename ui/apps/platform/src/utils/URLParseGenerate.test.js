@@ -1,3 +1,6 @@
+import { createLocation } from 'history';
+import qs from 'qs';
+
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
@@ -10,10 +13,10 @@ import { WorkflowState } from './WorkflowState';
 
 function getLocation(search, pathname) {
     return {
-        location: {
-            search,
+        location: createLocation({
+            search: qs.stringify(search),
             pathname,
-        },
+        }),
     };
 }
 

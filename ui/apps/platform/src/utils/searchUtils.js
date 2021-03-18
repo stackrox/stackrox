@@ -2,7 +2,7 @@
  *  Adds a search modifier to the searchOptions
  *
  *  @param {!Object[]} searchOptions an array of search options
- *  @param {!Object[]} modifier a modifier term (ie. 'Cluster:')
+ *  @param {!string} modifier a modifier term (ie. 'Cluster:')
  *  @returns {!Object[]} the modified search options
  */
 export function addSearchModifier(searchOptions, modifier) {
@@ -14,7 +14,7 @@ export function addSearchModifier(searchOptions, modifier) {
  *  Adds a search keyword to the searchOptions
  *
  *  @param {!Object[]} searchOptions an array of search options
- *  @param {!Object[]} keyword a keyword term (ie. 'remote')
+ *  @param {!string} keyword a keyword term (ie. 'remote')
  *  @returns {!Object[]} the modified search options
  */
 export function addSearchKeyword(searchOptions, keyword) {
@@ -26,7 +26,8 @@ export function addSearchKeyword(searchOptions, keyword) {
  *  Checks if the modifier exists in the searchOptions
  *
  *  @param {!Object[]} searchOptions an array of search options
- *  @returns {!Object[]} the modified search options
+ *  @param {!string} modifier
+ *  @returns {boolean}
  */
 export function hasSearchModifier(searchOptions, modifier) {
     return !!searchOptions.find(
@@ -58,8 +59,9 @@ export function filterAllowedSearch(allowed = [], currentSearch = {}) {
 }
 
 export function convertToRestSearch(workflowSearch) {
+    const emptyArray = [];
     if (!workflowSearch) {
-        return [];
+        return emptyArray;
     }
 
     const restSearch = Object.keys(workflowSearch).reduce((acc, key) => {
@@ -70,7 +72,7 @@ export function convertToRestSearch(workflowSearch) {
         const searchValue = { label: value, value: value || '' };
 
         return searchValue.value ? acc.concat(searchOption, searchValue) : acc;
-    }, []);
+    }, emptyArray);
 
     return restSearch;
 }

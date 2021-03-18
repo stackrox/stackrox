@@ -73,9 +73,9 @@ export function enhanceWordBreak({ doc, cell, column }) {
 const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
     const table = document.getElementById('pdf-table');
     const parent = document.getElementById(pdfId);
-    if (table && parent.contains(table)) {
+    if (table && parent?.contains(table)) {
         // TODO: fix this.
-        // Throwing error sometimes but not related to this PR
+        // Throwing error sometimes but not related to this PR, #2603
         try {
             parent.removeChild(table);
         } catch (err) {

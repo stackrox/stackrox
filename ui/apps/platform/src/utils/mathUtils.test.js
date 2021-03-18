@@ -1,6 +1,6 @@
 import { getPercentage } from './mathUtils';
 
-describe('dateUtils', () => {
+describe('mathUtils', () => {
     describe('getPercentage', () => {
         it('should return 0 when total not present', () => {
             const number = 42;

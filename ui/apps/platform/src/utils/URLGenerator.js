@@ -141,6 +141,7 @@ function generateURL(workflowState) {
             params.entityType2 = urlEntityListTypes[entityType2];
             params.entityId2 = entityId2;
 
+            // @ts-ignore The operand of a 'delete' operator must be optional.ts (2790)
             delete queryParams.workflowState;
         }
     }

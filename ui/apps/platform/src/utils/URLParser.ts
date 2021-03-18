@@ -1,5 +1,6 @@
 import { matchPath } from 'react-router-dom';
-import qs from 'qs';
+import qs, { ParsedQs } from 'qs';
+import { Location, LocationState } from 'history';
 
 import useCases from 'constants/useCaseTypes';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
@@ -15,25 +16,25 @@ import {
     policiesPath,
 } from '../routePaths';
 
-function getTypeKeyFromParamValue(value, listOnly) {
+function getTypeKeyFromParamValue(value: string, listOnly = false): string | null {
     const listMatch = Object.entries(urlEntityListTypes).find((entry) => entry[1] === value);
     const entityMatch = Object.entries(urlEntityTypes).find((entry) => entry[1] === value);
     const match = listOnly ? listMatch : listMatch || entityMatch;
     return match ? match[0] : null;
 }
 
-function getEntityFromURLParam(type, id) {
+function getEntityFromURLParam(type: string, id?: string): WorkflowEntity {
     return new WorkflowEntity(getTypeKeyFromParamValue(type), id);
 }
 
-function paramsToStateStack(params) {
+function paramsToStateStack(params): WorkflowEntity[] {
     const { pageEntityListType, pageEntityType, pageEntityId, entityId1, entityId2 } = params;
     const { entityType1: urlEntityType1, entityType2: urlEntityType2 } = params;
     const entityListType1 = getTypeKeyFromParamValue(urlEntityType1, true);
     const entityListType2 = getTypeKeyFromParamValue(urlEntityType2, true);
     const entityType1 = getTypeKeyFromParamValue(urlEntityType1);
     const entityType2 = getTypeKeyFromParamValue(urlEntityType2);
-    const stateArray = [];
+    const stateArray: WorkflowEntity[] = [];
     if (!pageEntityListType && !pageEntityType) {
         return stateArray;
     }
@@ -65,12 +66,12 @@ function paramsToStateStack(params) {
     return stateArray;
 }
 
-function formatSort(sort) {
+function formatSort(sort?: ParsedQs | ParsedQs[]): Record<string, unknown>[] | null {
     if (!sort) {
         return null;
     }
 
-    let sorts;
+    let sorts: ParsedQs[];
     if (!Array.isArray(sort)) {
         sorts = [sort];
     } else {
@@ -80,16 +81,17 @@ function formatSort(sort) {
     return sorts.map(({ id, desc }) => {
         return {
             id,
-            desc: JSON.parse(desc),
-        };
+            desc: JSON.parse(desc as string),
+        } as Record<string, unknown>;
     });
 }
 
 // Convert URL to workflow state and search objects
 // note: this will read strictly from 'location' as 'match' is relative to the closest Route component
-function parseURL(location) {
+function parseURL(location: Location<LocationState>): WorkflowState {
     if (!location) {
-        return {};
+        // TODO: be more specific, it could be an exception instead of a dummy object
+        return new WorkflowState();
     }
 
     const { pathname, search } = location;
@@ -160,7 +162,6 @@ function parseURL(location) {
 
     const stateStackFromURLParams = paramsToStateStack(params) || [];
 
-    let { workflowState: stateStackFromQueryString = [] } = queryStr;
     const {
         [searchParams.page]: pageSearch,
         [searchParams.sidePanel]: sidePanelSearch,
@@ -170,27 +171,26 @@ function parseURL(location) {
         [pagingParams.sidePanel]: sidePanelPaging,
     } = queryStr;
 
-    stateStackFromQueryString = !Array.isArray(stateStackFromQueryString)
-        ? [stateStackFromQueryString]
-        : stateStackFromQueryString;
-    stateStackFromQueryString = stateStackFromQueryString.map(
-        ({ t, i }) => new WorkflowEntity(t, i)
-    );
+    const queryWorkflowState = queryStr.workflowState || [];
+    const stateStackFromQueryString = !Array.isArray(queryWorkflowState)
+        ? [queryWorkflowState as ParsedQs]
+        : (queryWorkflowState as ParsedQs[]);
+    const stateStack = stateStackFromQueryString.map(({ t, i }) => new WorkflowEntity(t, i));
 
     const workflowState = new WorkflowState(
         params.context,
-        [...stateStackFromURLParams, ...stateStackFromQueryString],
+        [...stateStackFromURLParams, ...stateStack],
         {
             [searchParams.page]: pageSearch || null,
             [searchParams.sidePanel]: sidePanelSearch || null,
         },
         {
-            [sortParams.page]: formatSort(pageSort),
-            [sortParams.sidePanel]: formatSort(sidePanelSort),
+            [sortParams.page]: formatSort(pageSort as ParsedQs | ParsedQs[]),
+            [sortParams.sidePanel]: formatSort(sidePanelSort as ParsedQs | ParsedQs[]),
         },
         {
-            [pagingParams.page]: parseInt(pagePaging || 0, 10),
-            [pagingParams.sidePanel]: parseInt(sidePanelPaging || 0, 10),
+            [pagingParams.page]: parseInt((pagePaging as string) ?? '0', 10),
+            [pagingParams.sidePanel]: parseInt((sidePanelPaging as string) ?? '0', 10),
         }
     );
 

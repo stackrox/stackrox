@@ -5,9 +5,9 @@
 /**
  *  Toggles a row selected/unselected in checkbox tables
  *
- *  @param {!String} id the id of the row to toggle
- *  @param {!Object[]} selection the current selection
- *  @returns {!Object[]} the modified selection
+ *  @param {!number} id the id of the row to toggle
+ *  @param {!object[]} selection the current selection
+ *  @returns {!object[]} the modified selection
  */
 export function toggleRow(id, selection) {
     const modifiedSelection = [...selection];
@@ -26,9 +26,9 @@ export function toggleRow(id, selection) {
  *  If some or none are selected, all become selected on that page,
  *  else if all are selected in the entire table, all become unselected in the table
  *
- *  @param {!Number} rowsLength the length of the table
- *  @param {!Object[]} selection the current selection
- *  @returns {!Object[]} the modified selection
+ *  @param {!number} rowsLength the length of the table
+ *  @param {!object[]} selection the current selection
+ *  @returns {!object[]} the modified selection
  */
 export function toggleSelectAll(rowsLength, selection, tableRef) {
     const selectedAll = selection.length !== 0 && selection.length === rowsLength;

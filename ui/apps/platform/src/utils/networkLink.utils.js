@@ -14,8 +14,7 @@ import {
  * @param {!Object[]} nodes list of nodes
  * @param {!Object} networkEdgeMap map of edges in the graph by srcId--tgtId key
  * @param {!Object} networkNodeMap map of nodes in the graph by nodeId
- * @param {!string} filterState current filter state
- * @param {!string[]} featureFlags featureFlags
+ * @param {!number} filterState current filter state
  * @returns {!Object[]}
  */
 export const getLinks = (nodes, networkEdgeMap, networkNodeMap, filterState) => {

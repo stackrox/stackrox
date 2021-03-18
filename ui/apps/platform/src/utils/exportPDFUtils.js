@@ -79,7 +79,11 @@ function computeStyles(element) {
  *  @param {HTMLElement} element
  */
 function addElementToRootNode(element) {
-    document.getElementById('root').appendChild(element);
+    const root = document.getElementById('root');
+    if (!root) {
+        throw new Error('Expected DOM to contain element with id "root"');
+    }
+    root.appendChild(element);
 }
 
 /**
@@ -94,7 +98,7 @@ function removeElementFromRootNode(element) {
 
 /**
  *  Converts a Canvas element -> PNG -> PDF
- *  @param {HTMLElement} canvas
+ *  @param {HTMLCanvasElement} canvas
  *  @param {string} pdfFileName - The PDF file name
  */
 function savePDF(canvas, pdfFileName) {
@@ -128,6 +132,9 @@ function exportPDF(fileName, pdfId, startExportingPDF, finishExportingPDF) {
     // create a clone of the element to be exported and add it to the body of the container
     const pdfBodyElement = createPDFBodyElement();
     const elementToBeExported = document.getElementById(pdfId);
+    if (!elementToBeExported) {
+        throw new Error(`Expected to find DOM element with id ${pdfId}`);
+    }
     const clonedElementToBeExported = elementToBeExported.cloneNode(true);
     pdfBodyElement.appendChild(clonedElementToBeExported);
     pdfContainerElement.appendChild(pdfBodyElement);

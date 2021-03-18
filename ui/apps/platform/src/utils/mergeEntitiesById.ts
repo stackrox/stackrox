@@ -12,9 +12,13 @@ import isArray from 'lodash/isArray';
  * @returns {Object.<string, Object>} map of "id -> entity" with updated entities deeply merged in
  */
 
-export default function mergeEntitiesById(existingEntitiesById, newEntitiesById, shouldUpdate) {
-    const updateValue = (existingValue, newValue) => newValue;
-    const updateArrayValue = (existingValue, newValue) =>
+export default function mergeEntitiesById<T extends Record<string, unknown>>(
+    existingEntitiesById: T,
+    newEntitiesById: T,
+    shouldUpdate = false
+): T {
+    const updateValue = (existingValue, newValue): unknown => newValue;
+    const updateArrayValue = (existingValue, newValue): unknown =>
         isArray(existingValue) && isArray(newValue) ? newValue : undefined;
 
     return Object.keys(newEntitiesById).reduce((result, id) => {

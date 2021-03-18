@@ -248,7 +248,7 @@ class URL {
         this.urlParams = encodeEntityIds(urlParams);
     }
 
-    base(type, id, context) {
+    base(type = null, id = null, context = null) {
         const params = { context: context || this.urlParams.context };
         if (id) {
             // Entity path
@@ -263,7 +263,7 @@ class URL {
         return this;
     }
 
-    push(val, val2) {
+    push(val, val2 = null) {
         const { urlParams, q } = this;
         let newParams = { ...urlParams };
         let newQuery = { ...q };
@@ -285,16 +285,16 @@ class URL {
         }
 
         // replacement: if pushing type or id onto a stack the ends in type or id, replace instead of push
-        if (isType(urlParams[lastUsedParamName]) === isType(val)) {
+        if (lastUsedParamName && isType(urlParams[lastUsedParamName]) === isType(val)) {
             newParams[lastUsedParamName] = val;
         }
 
         // Entity push: if pushing both a type and id at the same time, then entity <> entity
         else if (val && val2) {
             if (!lastUsedParamIsId) {
-                throw new Error({
-                    message: `Can't push an entity type and id onto a list. Use push(id) instead of push(type,id)`,
-                });
+                throw new Error(
+                    'Can’t push an entity type and id onto a list. Use push(id) instead of push(type,id)'
+                );
             }
             if (!isListPath && !urlParams.entityId1) {
                 newParams.entityType1 = val;
@@ -383,7 +383,7 @@ class URL {
         return this;
     }
 
-    query(queryChanges) {
+    query(queryChanges = null) {
         if (!queryChanges) {
             this.q = {};
         } else {

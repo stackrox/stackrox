@@ -28,6 +28,7 @@ export const takeEveryLocation = (route, saga, ...args) =>
                 } = action;
                 const match = matchPath(location.pathname, route);
                 if (match) {
+                    // @ts-expect-error TODO: understand what we're doing wrong here...
                     yield fork(saga, ...args.concat({ match, location }));
                 }
             }
@@ -56,6 +57,7 @@ export const takeEveryNewlyMatchedLocation = (route, saga, ...args) =>
                 } = action;
                 const match = matchPath(location.pathname, route);
                 if (match && !prevLocationMatched) {
+                    // @ts-expect-error TODO: understand what we're doing wrong here...
                     yield fork(saga, ...args.concat({ match, location }));
                 }
                 prevLocationMatched = !!match;

@@ -23,6 +23,7 @@ describe('featureFlags utils', () => {
         beforeEach(() => {
             jest.resetModules(); // this is important - it clears the cache
             process.env = { ...OLD_ENV };
+            // @ts-expect-error dirty and efficient
             delete process.env.NODE_ENV;
 
             spy = jest.spyOn(console, 'warn').mockImplementation();
@@ -52,6 +53,7 @@ describe('featureFlags utils', () => {
 
             const flagToFind = 'ROX_NON_EXISTENT_FEATURE_FLAG';
             const defaultVal = false;
+            // @ts-expect-error dirty and efficient
             process.env.NODE_ENV = 'development';
 
             // eslint-disable-next-line no-unused-vars
