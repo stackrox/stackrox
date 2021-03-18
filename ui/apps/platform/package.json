@@ -88,7 +88,7 @@
         "typeface-open-sans": "^1.1.13",
         "typeface-open-sans-condensed": "^1.1.13",
         "use-deep-compare-effect": "^1.6.1",
-        "yup": "^0.32.8"
+        "yup": "^0.32.9"
     },
     "resolutions": {
         "react-cytoscapejs/cytoscape": "^3.17.0"
