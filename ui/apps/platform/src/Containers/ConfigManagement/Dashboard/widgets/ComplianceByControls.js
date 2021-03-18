@@ -23,6 +23,10 @@ const passingColor = 'var(--tertiary-400)';
 const failingColor = 'var(--alert-400)';
 const NAColor = 'var(--base-400)';
 
+const passingTextColor = 'var(--tertiary-500)';
+const failingTextColor = 'var(--alert-500)';
+const NATextColor = 'var(--base-500)';
+
 const sunburstLegendData = [
     { title: 'Passing', color: 'var(--tertiary-400)' },
     { title: 'Failing', color: 'var(--alert-400)' },
@@ -98,6 +102,16 @@ const getColor = (numPassing, numFailing) => {
     return failingColor;
 };
 
+const getTextColor = (numPassing, numFailing) => {
+    if (!numPassing && !numFailing) {
+        return NATextColor;
+    }
+    if (!numFailing) {
+        return passingTextColor;
+    }
+    return failingTextColor;
+};
+
 const getSunburstData = (categoryMapping, urlBuilder, searchParam, standardType) => {
     const categories = Object.keys(categoryMapping);
     const data = categories.map((categoryId) => {
@@ -114,6 +128,7 @@ const getSunburstData = (categoryMapping, urlBuilder, searchParam, standardType)
         return {
             name: `${category.name}. ${category.description}`,
             color: getColor(totalPassing, totalFailing),
+            textColor: getTextColor(totalPassing, totalFailing),
             value: categoryValue,
             children: controls.map(({ control, numPassing, numFailing }) => {
                 const value = getPercentagePassing(numPassing, numFailing);
@@ -130,6 +145,7 @@ const getSunburstData = (categoryMapping, urlBuilder, searchParam, standardType)
                 return {
                     name: `${control.name} - ${control.description}`,
                     color: getColor(numPassing, numFailing),
+                    textColor: getTextColor(numPassing, numFailing),
                     value,
                     link,
                 };
