@@ -98,7 +98,7 @@ const Panel = (props) => (
                     </div>
                 ) : (
                     <div
-                        className={`overflow-hidden mx-4 flex text-base-600 items-center tracking-wide leading-normal font-700 ${
+                        className={`overflow-hidden mx-4 flex text-base-600 items-center tracking-wide leading-normal font-700 min-w-24 ${
                             props.isUpperCase ? 'uppercase' : 'capitalize'
                         }`}
                         data-testid={`${props.id}-header`}

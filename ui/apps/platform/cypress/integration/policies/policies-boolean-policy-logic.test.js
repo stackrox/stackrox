@@ -2,6 +2,7 @@ import { selectors, url } from '../../constants/PoliciesPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import DndSimulatorDataTransfer from '../../helpers/dndSimulatorDataTransfer';
+import checkFeatureFlag from '../../helpers/features';
 
 describe('Boolean Policy Logic Section', () => {
     withAuth();
@@ -109,7 +110,7 @@ describe('Boolean Policy Logic Section', () => {
             });
         });
 
-        it('should allow floats for CPU and CVSS configuration fields', () => {
+        it('should allow floats for CPU configuration field', () => {
             // unfurl Container Configuration policy key group
             clickPolicyKeyGroup('Container Configuration');
             // first, select a CPU field
@@ -122,7 +123,9 @@ describe('Boolean Policy Logic Section', () => {
                 `${selectors.booleanPolicySection.form.selectOption}:contains("Is equal to")`
             ).click();
             cy.get(selectors.booleanPolicySection.form.numericInput).click().type(2.2);
+        });
 
+        it('should allow floats for CVSS configuration field', () => {
             // unfurl Image Contents policy field key group
             clickPolicyKeyGroup('Image Contents');
             // second, select CVSS field
@@ -345,9 +348,14 @@ describe('Boolean Policy Logic Section', () => {
 
         it('should be grouped into categories', () => {
             cy.get(selectors.booleanPolicySection.policyKeyGroupBtn).should((values) => {
-                expect(values).to.have.length(9);
+                if (checkFeatureFlag('ROX_K8S_AUDIT_LOG_DETECTION', false)) {
+                    expect(values).to.have.length(9);
+                } else {
+                    expect(values).to.have.length(8);
+                }
             });
         });
+
         it('should collapse categories when clicking the carrot', () => {
             cy.get(`${selectors.booleanPolicySection.policyKey}:first`)
                 .scrollIntoView()

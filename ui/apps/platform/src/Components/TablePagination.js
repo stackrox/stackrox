@@ -76,7 +76,7 @@ const TablePagination = ({ dataLength, setPage, page, pageSize }) => {
             className="flex items-center justify-end text-base-500 font-500"
         >
             <div className="flex items-center pl-5">
-                <div className="mr-4 font-600">
+                <div className="mr-4 font-600 min-w-24">
                     Page
                     <input
                         type="number"

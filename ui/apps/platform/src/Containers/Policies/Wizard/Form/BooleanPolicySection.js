@@ -7,7 +7,7 @@ import { connect } from 'react-redux';
 
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
-import PolicyBuilderKeys from 'Components/PolicyBuilderKeys';
+import PolicyBuilderKeys from './PolicyBuilderKeys';
 import PolicySections from './PolicySections';
 import { getPolicyConfiguration } from './descriptors';
 

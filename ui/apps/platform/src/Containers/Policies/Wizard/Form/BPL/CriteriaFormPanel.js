@@ -17,7 +17,7 @@ function CriteriaFormPanel({ header, onClose }) {
             <div className="w-full h-full">
                 <FormMessages />
                 <form className="flex flex-col w-full overflow-auto h-full">
-                    <BooleanPolicySection />;
+                    <BooleanPolicySection />
                 </form>
             </div>
         </Panel>

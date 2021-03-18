@@ -7,6 +7,7 @@ import {
     mountPropagationLabels,
     seccompProfileTypeLabels,
 } from 'messages/common';
+import { resourceTypes } from 'constants/entityTypes';
 import { knownBackendFlags } from 'utils/featureFlags';
 import { clientOnlyExclusionFieldNames } from './whitelistFieldNames';
 
@@ -49,6 +50,7 @@ const cpuResource = (label, policy, field) => ({
     required: false,
     default: false,
     canBooleanLogic: true,
+    entityType: resourceTypes.DEPLOYMENT,
 });
 
 const capabilities = [
@@ -116,6 +118,7 @@ const memoryResource = (label, policy, field) => ({
     required: false,
     default: false,
     canBooleanLogic: true,
+    entityType: resourceTypes.DEPLOYMENT,
 });
 
 // A descriptor for every option on the policy creation page.
@@ -245,6 +248,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Image Remote',
@@ -258,6 +262,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Image Tag',
@@ -270,6 +275,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Days since image was created',
@@ -282,6 +288,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: false,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Days since image was last scanned',
@@ -294,6 +301,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: false,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Image User',
@@ -306,6 +314,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: false,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Dockerfile Line',
@@ -348,6 +357,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Image is NOT Scanned',
@@ -371,6 +381,7 @@ const policyConfigurationDescriptor = [
         defaultValue: true,
         disabled: true,
         canBooleanLogic: false,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'CVSS',
@@ -399,6 +410,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Fixed By',
@@ -412,6 +424,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.NODE,
     },
     {
         label: 'CVE',
@@ -425,6 +438,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.NODE,
     },
     {
         label: 'Image Component',
@@ -451,6 +465,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Image OS',
@@ -463,6 +478,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Environment Variable',
@@ -500,6 +516,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Disallowed Annotation',
@@ -526,6 +543,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Required Label',
@@ -553,6 +571,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Required Annotation',
@@ -580,6 +599,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Volume Name',
@@ -592,6 +612,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Volume Source',
@@ -604,6 +625,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Volume Destination',
@@ -616,6 +638,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Volume Type',
@@ -628,6 +651,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Writable Mounted Volume',
@@ -651,6 +675,7 @@ const policyConfigurationDescriptor = [
         defaultValue: false,
         reverse: true,
         canBooleanLogic: false,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Mount Propagation',
@@ -666,6 +691,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Protocol',
@@ -678,6 +704,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Exposed Node Port',
@@ -690,6 +717,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Port',
@@ -702,6 +730,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     cpuResource('Container CPU Request', 'containerResourcePolicy', 'cpuResourceRequest'),
     cpuResource('Container CPU Limit', 'containerResourcePolicy', 'cpuResourceLimit'),
@@ -729,6 +758,7 @@ const policyConfigurationDescriptor = [
         defaultValue: true,
         disabled: true,
         canBooleanLogic: false,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Read-Only Root Filesystem',
@@ -752,6 +782,7 @@ const policyConfigurationDescriptor = [
         defaultValue: false,
         disabled: true,
         canBooleanLogic: false,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Seccomp Profile Type',
@@ -767,6 +798,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: false,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Share Host Network Namespace',
@@ -790,6 +822,7 @@ const policyConfigurationDescriptor = [
         defaultValue: true,
         disabled: true,
         canBooleanLogic: false,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Share Host PID Namespace',
@@ -813,6 +846,7 @@ const policyConfigurationDescriptor = [
         defaultValue: true,
         disabled: true,
         canBooleanLogic: false,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Share Host IPC Namespace',
@@ -836,6 +870,7 @@ const policyConfigurationDescriptor = [
         defaultValue: true,
         disabled: true,
         canBooleanLogic: false,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Drop Capabilities',
@@ -847,6 +882,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Add Capabilities',
@@ -858,6 +894,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Process Name',
@@ -870,6 +907,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Process Ancestor',
@@ -882,6 +920,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Process Args',
@@ -894,6 +933,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Process UID',
@@ -906,6 +946,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Port Exposure',
@@ -923,6 +964,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Writable Host Mount',
@@ -947,6 +989,7 @@ const policyConfigurationDescriptor = [
         reverse: true,
         disabled: true,
         canBooleanLogic: false,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Process Baselining Enabled',
@@ -964,6 +1007,7 @@ const policyConfigurationDescriptor = [
         defaultValue: false,
         reverse: false,
         canBooleanLogic: false,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Service Account',
@@ -975,6 +1019,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Minimum RBAC Permissions',
@@ -991,6 +1036,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: false,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Required Image Label',
@@ -1017,6 +1063,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Disallowed Image Label',
@@ -1043,6 +1090,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Namespace',
@@ -1055,6 +1103,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Container Name',
@@ -1067,6 +1116,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'AppArmor Profile',
@@ -1079,6 +1129,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: true,
+        entityType: resourceTypes.DEPLOYMENT,
     },
     {
         label: 'Kubernetes Action',
@@ -1100,6 +1151,7 @@ const policyConfigurationDescriptor = [
         required: false,
         default: false,
         canBooleanLogic: false,
+        entityType: resourceTypes.CLUSTER,
     },
 ];
 
@@ -1120,6 +1172,7 @@ const networkDetectionDescriptor = [
         defaultValue: false,
         reverse: false,
         canBooleanLogic: false,
+        entityType: resourceTypes.DEPLOYMENT,
     },
 ];
 
