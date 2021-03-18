@@ -110,7 +110,7 @@ To sweeten your experience, install [the workflow scripts](#productivity) before
 # It is necessary because of several CGO bindings
 $ brew install rocksdb
 
-$ cd $GOPATH/src/github.com/stackrox
+$ cd $GOPATH/src/github.com/stackrox/rox
 $ make install-dev-tools
 $ make image
 ```
