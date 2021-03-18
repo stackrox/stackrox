@@ -19,6 +19,7 @@ import (
 // slash added or removed.
 func createOIDCProvider(ctx context.Context, helper *endpoint.Helper) (*provider, error) {
 	var err error
+	ctx = oidc.ClientContext(ctx, helper.HTTPClient())
 	for _, issuer := range helper.URLsForDiscovery() {
 		var provider *oidc.Provider
 		if provider, err = oidc.NewProvider(ctx, issuer); err == nil {
