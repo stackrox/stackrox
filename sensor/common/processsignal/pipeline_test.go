@@ -9,8 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
-	"github.com/stackrox/rox/sensor/common/detector"
-	"github.com/stackrox/rox/sensor/common/store/mocks"
+	"github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,10 +21,10 @@ func TestProcessPipeline(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	mockStore := clusterentities.NewStore()
-	mockDepStore := mocks.NewMockDeploymentStore(mockCtrl)
+	mockDetector := mocks.NewMockDetector(mockCtrl)
 
 	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, []int{10, 10, 10}),
-		detector.New(nil, nil, mockDepStore, nil))
+		mockDetector)
 	closeChan := make(chan bool)
 
 	go consumeEnrichedSignals(sensorEvents, actualEvents, closeChan)
@@ -42,7 +41,9 @@ func TestProcessPipeline(t *testing.T) {
 	signal := storage.ProcessSignal{
 		ContainerId: containerID,
 	}
-	mockDepStore.EXPECT().Get(deploymentID).Return(&storage.Deployment{Id: deploymentID})
+	mockDetector.EXPECT().ProcessIndicator(gomock.Any()).DoAndReturn(func(ind *storage.ProcessIndicator) {
+		assert.Equal(t, deploymentID, ind.GetDeploymentId())
+	})
 	p.Process(&signal)
 	time.Sleep(time.Second)
 	msg := <-actualEvents
@@ -54,7 +55,9 @@ func TestProcessPipeline(t *testing.T) {
 	signal = storage.ProcessSignal{
 		ContainerId: containerID,
 	}
-	mockDepStore.EXPECT().Get(deploymentID).Return(&storage.Deployment{Id: deploymentID})
+	mockDetector.EXPECT().ProcessIndicator(gomock.Any()).DoAndReturn(func(ind *storage.ProcessIndicator) {
+		assert.Equal(t, deploymentID, ind.GetDeploymentId())
+	})
 	p.Process(&signal)
 	updateStore(containerID, deploymentID, containerMetadata, mockStore)
 	msg = <-actualEvents
@@ -66,13 +69,17 @@ func TestProcessPipeline(t *testing.T) {
 	signal = storage.ProcessSignal{
 		ContainerId: containerID,
 	}
-	mockDepStore.EXPECT().Get(deploymentID).Return(&storage.Deployment{Id: deploymentID})
+	mockDetector.EXPECT().ProcessIndicator(gomock.Any()).DoAndReturn(func(ind *storage.ProcessIndicator) {
+		assert.Equal(t, deploymentID, ind.GetDeploymentId())
+	})
 	p.Process(&signal)
 	updateStore(containerID, deploymentID, containerMetadata, mockStore)
 	msg = <-actualEvents
 	assert.NotNil(t, msg)
 	assert.Equal(t, deploymentID, msg.GetEvent().GetProcessIndicator().GetDeploymentId())
-	mockDepStore.EXPECT().Get(deploymentID).Return(&storage.Deployment{Id: deploymentID})
+	mockDetector.EXPECT().ProcessIndicator(gomock.Any()).DoAndReturn(func(ind *storage.ProcessIndicator) {
+		assert.Equal(t, deploymentID, ind.GetDeploymentId())
+	})
 	p.Process(&signal)
 	msg = <-actualEvents
 	assert.NotNil(t, msg)
