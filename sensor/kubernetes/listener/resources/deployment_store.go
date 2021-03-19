@@ -7,16 +7,21 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-// DeploymentStore stores deployments (by namespace and id).
+// DeploymentStore stores deployments.
 type DeploymentStore struct {
-	lock        sync.RWMutex
-	deployments map[string]map[string]*deploymentWrap
+	lock sync.RWMutex
+
+	// Stores deployment IDs by namespaces.
+	deploymentIDs map[string]map[string]struct{}
+	// Stores deployments by IDs.
+	deployments map[string]*deploymentWrap
 }
 
 // newDeploymentStore creates and returns a new deployment store.
 func newDeploymentStore() *DeploymentStore {
 	return &DeploymentStore{
-		deployments: make(map[string]map[string]*deploymentWrap),
+		deploymentIDs: make(map[string]map[string]struct{}),
+		deployments:   make(map[string]*deploymentWrap),
 	}
 }
 
@@ -24,23 +29,26 @@ func (ds *DeploymentStore) addOrUpdateDeployment(wrap *deploymentWrap) {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	nsMap := ds.deployments[wrap.GetNamespace()]
-	if nsMap == nil {
-		nsMap = make(map[string]*deploymentWrap)
-		ds.deployments[wrap.GetNamespace()] = nsMap
+	ids, ok := ds.deploymentIDs[wrap.GetNamespace()]
+	if !ok {
+		ids = make(map[string]struct{})
+		ds.deploymentIDs[wrap.GetNamespace()] = ids
 	}
-	nsMap[wrap.GetId()] = wrap
+	ids[wrap.GetId()] = struct{}{}
+
+	ds.deployments[wrap.GetId()] = wrap
 }
 
 func (ds *DeploymentStore) removeDeployment(wrap *deploymentWrap) {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	nsMap := ds.deployments[wrap.GetNamespace()]
-	if nsMap == nil {
+	ids := ds.deploymentIDs[wrap.GetNamespace()]
+	if ids == nil {
 		return
 	}
-	delete(nsMap, wrap.GetId())
+	delete(ids, wrap.GetId())
+	delete(ds.deployments, wrap.GetId())
 }
 
 func (ds *DeploymentStore) getDeploymentsByIDs(namespace string, idSet set.StringSet) []*deploymentWrap {
@@ -48,8 +56,9 @@ func (ds *DeploymentStore) getDeploymentsByIDs(namespace string, idSet set.Strin
 	defer ds.lock.RUnlock()
 
 	deployments := make([]*deploymentWrap, 0, len(idSet))
-	for _, wrap := range ds.deployments[namespace] {
-		if idSet.Contains(wrap.GetId()) {
+	for id := range idSet {
+		wrap := ds.deployments[id]
+		if wrap != nil {
 			deployments = append(deployments, wrap)
 		}
 	}
@@ -60,7 +69,17 @@ func (ds *DeploymentStore) getMatchingDeployments(namespace string, sel selector
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
-	for _, wrap := range ds.deployments[namespace] {
+	ids := ds.deploymentIDs[namespace]
+	if ids == nil {
+		return
+	}
+
+	for id := range ids {
+		wrap := ds.deployments[id]
+		if wrap == nil {
+			continue
+		}
+
 		if sel.Matches(labels.Set(wrap.PodLabels)) {
 			matching = append(matching, wrap)
 		}
@@ -73,15 +92,23 @@ func (ds *DeploymentStore) CountDeploymentsForNamespace(namespace string) int {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
-	return len(ds.deployments[namespace])
+	return len(ds.deploymentIDs[namespace])
 }
 
 // OnNamespaceDeleted reacts to a namespace deletion, deleting all deployments in this namespace from the store.
-func (ds *DeploymentStore) OnNamespaceDeleted(ns string) {
+func (ds *DeploymentStore) OnNamespaceDeleted(namespace string) {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	delete(ds.deployments, ns)
+	ids := ds.deploymentIDs[namespace]
+	if ids == nil {
+		return
+	}
+
+	for id := range ids {
+		delete(ds.deployments, id)
+	}
+	delete(ds.deploymentIDs, namespace)
 }
 
 // GetAll returns all deployments.
@@ -90,27 +117,20 @@ func (ds *DeploymentStore) GetAll() []*storage.Deployment {
 	defer ds.lock.RUnlock()
 
 	var ret []*storage.Deployment
-	for _, depMap := range ds.deployments {
-		for _, dep := range depMap {
-			if dep != nil {
-				ret = append(ret, dep.GetDeployment())
-			}
+	for _, wrap := range ds.deployments {
+		if wrap != nil {
+			ret = append(ret, wrap.GetDeployment())
 		}
 	}
 	return ret
 }
 
-// Get returns deployment for supplied id and namespace, if available.
-func (ds *DeploymentStore) Get(id, namespace string) *storage.Deployment {
+// Get returns deployment for supplied id.
+func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
-	depMap := ds.deployments[namespace]
-	if depMap == nil {
-		return nil
-	}
-
-	wrap := depMap[id]
+	wrap := ds.deployments[id]
 	if wrap == nil {
 		return nil
 	}

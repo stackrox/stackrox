@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector/unified"
 	"github.com/stackrox/rox/sensor/common/enforcer"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
+	"github.com/stackrox/rox/sensor/common/store"
 	"google.golang.org/grpc"
 )
 
@@ -40,7 +41,8 @@ type Detector interface {
 }
 
 // New returns a new detector
-func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager, cache expiringcache.Cache) Detector {
+func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
+	deploymentStore store.DeploymentStore, cache expiringcache.Cache) Detector {
 	return &detectorImpl{
 		unifiedDetector: unified.NewDetector(),
 
@@ -49,7 +51,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		deploymentProcessingMap:   make(map[string]int64),
 
 		enricher:            newEnricher(cache),
-		deploymentStore:     newDeploymentStore(),
+		deploymentStore:     deploymentStore,
 		extSrcsStore:        externalsrcs.StoreInstance(),
 		baselineEval:        baseline.NewBaselineEvaluator(),
 		networkbaselineEval: networkBaselineEval.NewNetworkBaselineEvaluator(),
@@ -78,7 +80,7 @@ type detectorImpl struct {
 	deploymentDetectionLock sync.Mutex
 
 	enricher            *enricher
-	deploymentStore     *deploymentStore
+	deploymentStore     store.DeploymentStore
 	extSrcsStore        externalsrcs.Store
 	baselineEval        baseline.Evaluator
 	networkbaselineEval networkBaselineEval.Evaluator
@@ -188,7 +190,7 @@ func (d *detectorImpl) processPolicySync(sync *central.PolicySync) error {
 
 	// Take deployment lock and flush
 	concurrency.WithLock(&d.deploymentDetectionLock, func() {
-		for _, deployment := range d.deploymentStore.getAll() {
+		for _, deployment := range d.deploymentStore.GetAll() {
 			d.processDeploymentNoLock(deployment, central.ResourceAction_UPDATE_RESOURCE)
 		}
 	})
@@ -295,7 +297,6 @@ func (d *detectorImpl) ProcessDeployment(deployment *storage.Deployment, action 
 func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, action central.ResourceAction) {
 	switch action {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		d.deploymentStore.removeDeployment(deployment.GetId())
 		d.baselineEval.RemoveDeployment(deployment.GetId())
 		d.deduper.removeDeployment(deployment.GetId())
 
@@ -312,13 +313,10 @@ func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, a
 			}
 		}()
 	case central.ResourceAction_CREATE_RESOURCE:
-		d.deploymentStore.upsertDeployment(deployment)
 		d.deduper.addDeployment(deployment)
 		d.markDeploymentForProcessing(deployment.GetId())
 		go d.enricher.blockingScan(deployment, action)
 	case central.ResourceAction_UPDATE_RESOURCE:
-		d.deploymentStore.upsertDeployment(deployment)
-
 		// Check if the deployment has changes that require detection, which is more expensive than hashing
 		// If not, then just return
 		if !d.deduper.needsProcessing(deployment) {
@@ -356,7 +354,7 @@ func createAlertResultsMsg(action central.ResourceAction, alertResults *central.
 }
 
 func (d *detectorImpl) processIndicator(pi *storage.ProcessIndicator) {
-	deployment := d.deploymentStore.getDeployment(pi.GetDeploymentId())
+	deployment := d.deploymentStore.Get(pi.GetDeploymentId())
 	if deployment == nil {
 		log.Debugf("Deployment has already been removed: %+v", pi)
 		// Because the indicator was already enriched with a deployment, this means the deployment is gone
@@ -392,7 +390,7 @@ func (d *detectorImpl) ProcessNetworkFlow(flow *storage.NetworkFlow) {
 func (d *detectorImpl) getNetworkFlowEntityName(info *storage.NetworkEntityInfo) (string, error) {
 	switch info.GetType() {
 	case storage.NetworkEntityInfo_DEPLOYMENT:
-		deployment := d.deploymentStore.getDeployment(info.GetId())
+		deployment := d.deploymentStore.Get(info.GetId())
 		if deployment == nil {
 			// Maybe the deployment is already removed. Don't run the flow through policy anymore
 			return "", errors.Errorf("Deployment with ID: %q not found while trying to run network flow policy", info.GetId())
@@ -418,7 +416,7 @@ func (d *detectorImpl) processAlertsForFlowOnEntity(
 	if entity.GetType() != storage.NetworkEntityInfo_DEPLOYMENT {
 		return
 	}
-	deployment := d.deploymentStore.getDeployment(entity.GetId())
+	deployment := d.deploymentStore.Get(entity.GetId())
 	if deployment == nil {
 		// Probably the deployment was deleted just before we had fetched entity names.
 		log.Warnf("Stop processing alerts for network flow on deployment %q. No deployment was found", entity.GetId())

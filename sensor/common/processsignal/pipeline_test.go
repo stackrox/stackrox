@@ -4,19 +4,28 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestProcessPipeline(t *testing.T) {
 	sensorEvents := make(chan *central.MsgFromSensor)
 	actualEvents := make(chan *central.MsgFromSensor)
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
 	mockStore := clusterentities.NewStore()
-	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, []int{10, 10, 10}), detector.New(nil, nil, nil))
+	mockDepStore := mocks.NewMockDeploymentStore(mockCtrl)
+
+	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, []int{10, 10, 10}),
+		detector.New(nil, nil, mockDepStore, nil))
 	closeChan := make(chan bool)
 
 	go consumeEnrichedSignals(sensorEvents, actualEvents, closeChan)
@@ -33,6 +42,7 @@ func TestProcessPipeline(t *testing.T) {
 	signal := storage.ProcessSignal{
 		ContainerId: containerID,
 	}
+	mockDepStore.EXPECT().Get(deploymentID).Return(&storage.Deployment{Id: deploymentID})
 	p.Process(&signal)
 	time.Sleep(time.Second)
 	msg := <-actualEvents
@@ -44,6 +54,7 @@ func TestProcessPipeline(t *testing.T) {
 	signal = storage.ProcessSignal{
 		ContainerId: containerID,
 	}
+	mockDepStore.EXPECT().Get(deploymentID).Return(&storage.Deployment{Id: deploymentID})
 	p.Process(&signal)
 	updateStore(containerID, deploymentID, containerMetadata, mockStore)
 	msg = <-actualEvents
@@ -55,11 +66,13 @@ func TestProcessPipeline(t *testing.T) {
 	signal = storage.ProcessSignal{
 		ContainerId: containerID,
 	}
+	mockDepStore.EXPECT().Get(deploymentID).Return(&storage.Deployment{Id: deploymentID})
 	p.Process(&signal)
 	updateStore(containerID, deploymentID, containerMetadata, mockStore)
 	msg = <-actualEvents
 	assert.NotNil(t, msg)
 	assert.Equal(t, deploymentID, msg.GetEvent().GetProcessIndicator().GetDeploymentId())
+	mockDepStore.EXPECT().Get(deploymentID).Return(&storage.Deployment{Id: deploymentID})
 	p.Process(&signal)
 	msg = <-actualEvents
 	assert.NotNil(t, msg)

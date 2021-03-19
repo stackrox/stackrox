@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
-	"github.com/stackrox/rox/pkg/sensor/store"
+	"github.com/stackrox/rox/sensor/common/store"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -56,12 +56,16 @@ func (s *serviceImpl) GetDeploymentForPod(ctx context.Context, req *sensor.GetDe
 
 	pod := s.pods.GetByName(req.GetPodName(), req.GetNamespace())
 	if pod == nil {
-		return nil, status.Errorf(codes.NotFound, "namespace/%s/pods/%s not found", req.GetNamespace(), req.GetPodName())
+		return nil, status.Errorf(codes.NotFound,
+			"namespace/%s/pods/%s not found",
+			req.GetNamespace(), req.GetPodName())
 	}
 
-	dep := s.deployments.Get(pod.GetId(), pod.GetNamespace())
+	dep := s.deployments.Get(pod.GetDeploymentId())
 	if dep == nil {
-		return nil, status.Errorf(codes.NotFound, "no containing deployment found for namespace/%s/pods/%s", req.GetNamespace(), req.GetPodName())
+		return nil, status.Errorf(codes.NotFound,
+			"no containing deployment found for namespace/%s/pods/%s",
+			req.GetNamespace(), req.GetPodName())
 	}
 	return dep, nil
 }
