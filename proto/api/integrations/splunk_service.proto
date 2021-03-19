@@ -4,7 +4,6 @@ option go_package = "integrations";
 
 option java_package = "io.stackrox.proto.api.integrations";
 
-import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 import "storage/alert.proto";
@@ -31,7 +30,7 @@ message SplunkViolationsResponse {
 // Note that SplunkViolation still re-uses some definitions from storage where it seemed practical to not reinvent too
 // much.
 message SplunkViolation {
-  // From storage.Alert.Violation
+  // From storage.Alert.Violation (numbers <100).
   message ViolationInfo {
     // In case of non-Process alerts (k8s and non-runtime), this is surrogate identifier derived from
     // alert_id + crypto_hash(storage.Alert.Violation).
@@ -57,6 +56,16 @@ message SplunkViolation {
     // In case of Process alerts, this is storage.ProcessSignal.process_creation_time
     // In case of other alerts, this is storage.Alert.time
     google.protobuf.Timestamp violation_time = 5;
+
+    // pod_ and container_ details point to where the violation happened. They are filled:
+    // * from storage.ProcessIndicator and storage.ProcessSignal for process violations,
+    // * from storage.Alert.Violation.KeyValueAttrs for k8s events.
+
+    string pod_id = 102;
+    string pod_uid = 103;
+    string container_name = 104;
+    google.protobuf.Timestamp container_start_time = 105;
+    string container_id = 106;
   }
 
   // From storage.Alert
@@ -70,14 +79,6 @@ message SplunkViolation {
   // From storage.ProcessIndicator (numbers 1xx) and storage.ProcessSignal (numbers 2xx).
   message ProcessInfo {
     string process_violation_id = 101;
-
-    string pod_id = 102;
-    string pod_uid = 103;
-    string container_name = 104;
-    google.protobuf.Timestamp container_start_time = 105;
-
-    string container_id = 201;
-
     string process_signal_id = 202;
     google.protobuf.Timestamp process_creation_time = 203;
     string process_name = 204;

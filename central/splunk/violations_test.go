@@ -385,6 +385,20 @@ var (
 			},
 			Type: storage.Alert_Violation_K8S_EVENT,
 			Time: makeTimestamp("2021-02-15T19:04:36.659410153Z"),
+		}, {
+			// Port forward violation is triggered by a different policy and will be in a separate Alert, but for the
+			// sake of these tests it is sufficient to keep it also here.
+			Message: "Kubernetes API received port forward request to pod 'central-84cbdb7869-4psdr'",
+			MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+				KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+					Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{{
+						Key:   "pod",
+						Value: "central-84cbdb7869-4psdr",
+					}},
+				},
+			},
+			Type: storage.Alert_Violation_K8S_EVENT,
+			Time: makeTimestamp("2021-02-15T19:04:36.712345678Z"),
 		}},
 		Time:          makeTimestamp("2021-02-15T19:04:36.843516328Z"),
 		FirstOccurred: makeTimestamp("2021-02-15T19:04:36.662294945Z"),
@@ -570,7 +584,7 @@ func (s *violationsTestSuite) TestProcessAlert() {
 		s.Equal(float64(0), s.extr(v, ".processInfo.processGid"))
 		s.Equal(s.extr(v, ".processInfo.processCreationTime"), s.extr(v, ".violationInfo.violationTime"))
 
-		s.checkViolationInfo(v)
+		s.checkViolationInfo(v, ".podId", ".podUid", ".containerName", ".containerStartTime", ".containerId")
 		s.checkProcessInfo(v)
 		s.checkAlertInfo(v, ".lifecycleStage")
 		s.checkDeploymentInfo(v)
@@ -580,7 +594,7 @@ func (s *violationsTestSuite) TestProcessAlert() {
 
 func (s *violationsTestSuite) TestK8sAlert() {
 	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.k8sAlert))
-	s.Len(vs, 2)
+	s.Len(vs, 3)
 
 	for _, v := range vs {
 		s.Equal("K8S_EVENT", s.extr(v, ".violationInfo.violationType"))
@@ -590,8 +604,15 @@ func (s *violationsTestSuite) TestK8sAlert() {
 		s.checkDeploymentInfo(v)
 		s.checkPolicy(v)
 	}
+
 	s.Equal("2021-02-15T19:04:36.659410153Z", s.extr(vs[0], ".violationInfo.violationTime"))
-	s.Equal("2021-02-15T19:04:36.843302212Z", s.extr(vs[1], ".violationInfo.violationTime"))
+	s.assertPresent(vs[0], ".violationInfo", ".containerName", ".podId") // exec has both pod and container
+
+	s.Equal("2021-02-15T19:04:36.712345678Z", s.extr(vs[1], ".violationInfo.violationTime"))
+	s.assertPresent(vs[1], ".violationInfo", ".podId") // port-forward has only pod
+
+	s.Equal("2021-02-15T19:04:36.843302212Z", s.extr(vs[2], ".violationInfo.violationTime"))
+	s.assertPresent(vs[0], ".violationInfo", ".containerName", ".podId")
 }
 
 func (s *violationsTestSuite) TestDeployAlert() {
@@ -668,11 +689,10 @@ func (s *violationsTestSuite) TestProcessAlertWithoutProcessSignal() {
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
 	alert.ProcessViolation.Processes[0].Signal = nil
 	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert))
-	s.checkViolationInfo(vs[0])
+	s.checkViolationInfo(vs[0], ".podId", ".podUid", ".containerName", ".containerStartTime") // .containerId isn't available
 	s.checkAlertInfo(vs[0])
 	// That's all it can gather from ProcessIndicator without ProcessSignal
-	s.assertPresent(vs[0], ".processInfo",
-		".processViolationId", ".podId", ".podUid", ".containerName", ".containerStartTime")
+	s.assertPresent(vs[0], ".processInfo", ".processViolationId")
 	s.checkDeploymentInfo(vs[0])
 	s.checkPolicy(vs[0])
 }
@@ -809,11 +829,6 @@ func (s *violationsTestSuite) checkAlertInfo(violation interface{}, extraAttrs .
 func (s *violationsTestSuite) checkProcessInfo(violation interface{}) {
 	s.assertPresent(violation, ".processInfo",
 		".processViolationId",
-		".podId",
-		".podUid",
-		".containerName",
-		".containerStartTime",
-		".containerId",
 		".processSignalId",
 		".processCreationTime",
 		".processName",

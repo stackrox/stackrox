@@ -8,6 +8,13 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
+const (
+	// PodKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote a pod.
+	PodKey = "pod"
+	// ContainerKey is used as key in storage.Alert_Violation_KeyValueAttrs_KeyValueAttr to denote a container.
+	ContainerKey = "container"
+)
+
 // GenerateKubeEventViolationMsg constructs violation message for kubernetes event violations.
 func GenerateKubeEventViolationMsg(event *storage.KubernetesEvent) *storage.Alert_Violation {
 	var message string
@@ -67,11 +74,11 @@ func getExecMsgHeader(pod, container, cmds string) string {
 func getExecMsgViolationAttr(pod, container, cmds string) []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr {
 	attrs := make([]*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, 0, 3)
 	if pod != "" {
-		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: "pod", Value: pod})
+		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: PodKey, Value: pod})
 	}
 
 	if container != "" {
-		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: "container", Value: container})
+		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: ContainerKey, Value: container})
 	}
 
 	if cmds != "" {
@@ -97,7 +104,7 @@ func getPFMsgHeader(pod, ports string) string {
 func getPFMsgViolationAttr(pod, ports string) []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr {
 	attrs := make([]*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, 0, 2)
 	if pod != "" {
-		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: "pod", Value: pod})
+		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: PodKey, Value: pod})
 	}
 
 	if ports != "" {

@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/generated/api/integrations"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -235,10 +236,15 @@ func extractProcessViolationInfo(fromAlert *storage.Alert, fromProcViolation *st
 	//   Binaries '/usr/bin/apt' and '/usr/bin/dpkg' executed with 5 different arguments under 2 different user IDs
 	// We still map it as best effort.
 	return &integrations.SplunkViolation_ViolationInfo{
-		ViolationId:      fromProcIndicator.GetId(),
-		ViolationMessage: fromProcViolation.GetMessage(),
-		ViolationType:    integrations.SplunkViolation_ViolationInfo_PROCESS_EVENT,
-		ViolationTime:    getProcessViolationTime(fromAlert, fromProcIndicator),
+		ViolationId:        fromProcIndicator.GetId(),
+		ViolationMessage:   fromProcViolation.GetMessage(),
+		ViolationType:      integrations.SplunkViolation_ViolationInfo_PROCESS_EVENT,
+		ViolationTime:      getProcessViolationTime(fromAlert, fromProcIndicator),
+		PodId:              fromProcIndicator.GetPodId(),
+		PodUid:             fromProcIndicator.GetPodUid(),
+		ContainerName:      fromProcIndicator.GetContainerName(),
+		ContainerStartTime: fromProcIndicator.GetContainerStartTime(),
+		ContainerId:        fromProcIndicator.GetSignal().GetContainerId(),
 	}
 }
 
@@ -267,6 +273,16 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 		msgAttrs = kvs.Clone().GetAttrs()
 	}
 
+	var podID, containerName string
+	for _, kv := range msgAttrs {
+		if kv.Key == printer.PodKey {
+			podID = kv.Value
+		}
+		if kv.Key == printer.ContainerKey {
+			containerName = kv.Value
+		}
+	}
+
 	typ := integrations.SplunkViolation_ViolationInfo_UNKNOWN
 	switch fromViolation.GetType() {
 	case storage.Alert_Violation_GENERIC:
@@ -283,6 +299,8 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 		ViolationMessageAttributes: msgAttrs,
 		ViolationType:              typ,
 		ViolationTime:              getNonProcessViolationTime(fromAlert, fromViolation),
+		PodId:                      podID,
+		ContainerName:              containerName,
 	}, nil
 }
 
@@ -307,11 +325,6 @@ func extractProcessInfo(alertID string, from *storage.ProcessIndicator) *integra
 
 	return &integrations.SplunkViolation_ProcessInfo{
 		ProcessViolationId:  from.GetId(),
-		PodId:               from.GetPodId(),
-		PodUid:              from.GetPodUid(),
-		ContainerName:       from.GetContainerName(),
-		ContainerStartTime:  from.GetContainerStartTime(),
-		ContainerId:         signal.GetContainerId(),
 		ProcessSignalId:     signal.GetId(),
 		ProcessCreationTime: signal.GetTime(),
 		ProcessName:         signal.GetName(),
