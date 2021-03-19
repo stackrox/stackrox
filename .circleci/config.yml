@@ -539,7 +539,7 @@ orbs:
 executors:
   custom:
     docker:
-      - image: docker.io/stackrox/apollo-ci:0.3.6
+      - image: docker.io/stackrox/apollo-ci:0.3.9
         auth:
           username: $DOCKER_IO_PULL_USERNAME
           password: $DOCKER_IO_PULL_PASSWORD

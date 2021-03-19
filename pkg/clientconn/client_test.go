@@ -39,8 +39,8 @@ func (t *ClientTestSuite) TearDownTest() {
 
 func (t *ClientTestSuite) TestAddRootCA() {
 	const certCount = 2
-	cert := &x509.Certificate{SubjectKeyId: []byte(`SubjectKeyId1`), RawSubject: []byte(`RawSubject1`)}
-	cert2 := &x509.Certificate{SubjectKeyId: []byte(`SubjectKeyId2`), RawSubject: []byte(`RawSubject2`)}
+	cert := &x509.Certificate{Raw: []byte(`cert data`), SubjectKeyId: []byte(`SubjectKeyId1`), RawSubject: []byte(`RawSubject1`)}
+	cert2 := &x509.Certificate{Raw: []byte(`cert data2`), SubjectKeyId: []byte(`SubjectKeyId2`), RawSubject: []byte(`RawSubject2`)}
 
 	opts, err := OptionsForEndpoint(centralEndpoint, AddRootCAs(cert, cert2))
 	t.Require().NoError(err)

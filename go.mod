@@ -1,6 +1,6 @@
 module github.com/stackrox/rox
 
-go 1.15
+go 1.16
 
 require (
 	cloud.google.com/go v0.70.0
