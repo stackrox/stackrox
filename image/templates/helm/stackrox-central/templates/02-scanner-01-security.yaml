@@ -84,7 +84,7 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "securitycontextconstraints" "scanner") | nindent 4 }}
     kubernetes.io/description: scanner is the security constraint for the Scanner container
-priority: 100
+priority: 0
 runAsUser:
   type: RunAsAny
 seLinuxContext:
