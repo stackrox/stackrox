@@ -4,7 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/openshift/client-go/apps/clientset/versioned"
+	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
+	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
@@ -43,8 +44,13 @@ func (c *clientSetImpl) Kubernetes() kubernetes.Interface {
 	return c.kubernetes
 }
 
-// Openshift returns nil for the openshift client
-func (c *clientSetImpl) Openshift() versioned.Interface {
+// OpenshiftApps returns nil for the openshift client for config
+func (c *clientSetImpl) OpenshiftApps() appVersioned.Interface {
+	return nil
+}
+
+// OpenshiftConfig returns nil for the openshift client for apps
+func (c *clientSetImpl) OpenshiftConfig() configVersioned.Interface {
 	return nil
 }
 

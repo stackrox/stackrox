@@ -1,7 +1,8 @@
 package client
 
 import (
-	"github.com/openshift/client-go/apps/clientset/versioned"
+	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
+	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"k8s.io/client-go/kubernetes"
@@ -15,12 +16,14 @@ var (
 // Interface implements an interface that bridges Kubernetes and Openshift
 type Interface interface {
 	Kubernetes() kubernetes.Interface
-	Openshift() versioned.Interface
+	OpenshiftApps() appVersioned.Interface
+	OpenshiftConfig() configVersioned.Interface
 }
 
 type clientSet struct {
-	k8s       kubernetes.Interface
-	openshift versioned.Interface
+	k8s             kubernetes.Interface
+	openshiftApps   appVersioned.Interface
+	openshiftConfig configVersioned.Interface
 }
 
 // MustCreateInterface creates a client interface for both Kubernetes and Openshfit clients
@@ -35,20 +38,29 @@ func MustCreateInterface() Interface {
 		log.Panicf("Creating Kubernetes clientset: %v", err)
 	}
 
-	var openshiftClientSet versioned.Interface
+	var openshiftAppsClientSet appVersioned.Interface
+	var openshiftConfigClientSet configVersioned.Interface
+
 	if env.OpenshiftAPI.Setting() == "true" {
 		config, err := rest.InClusterConfig()
 		if err != nil {
 			log.Fatalf("Unable to get cluster config: %s", err)
 		}
-		openshiftClientSet, err = versioned.NewForConfig(config)
+		openshiftAppsClientSet, err = appVersioned.NewForConfig(config)
+		if err != nil {
+			log.Warnf("Could not generate openshift client: %s", err)
+		}
+
+		openshiftConfigClientSet, err = configVersioned.NewForConfig(config)
 		if err != nil {
 			log.Warnf("Could not generate openshift client: %s", err)
 		}
 	}
+
 	return &clientSet{
-		k8s:       k8sClientSet,
-		openshift: openshiftClientSet,
+		k8s:             k8sClientSet,
+		openshiftApps:   openshiftAppsClientSet,
+		openshiftConfig: openshiftConfigClientSet,
 	}
 }
 
@@ -56,6 +68,10 @@ func (c *clientSet) Kubernetes() kubernetes.Interface {
 	return c.k8s
 }
 
-func (c *clientSet) Openshift() versioned.Interface {
-	return c.openshift
+func (c *clientSet) OpenshiftApps() appVersioned.Interface {
+	return c.openshiftApps
+}
+
+func (c *clientSet) OpenshiftConfig() configVersioned.Interface {
+	return c.openshiftConfig
 }

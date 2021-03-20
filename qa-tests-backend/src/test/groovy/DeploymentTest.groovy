@@ -10,6 +10,9 @@ import util.Timer
 
 class DeploymentTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "image-join"
+    private static final String ORCHESTRATOR_DEPLOYMENT_NAME = "kube-dns"
+    private static final String STACKROX_DEPLOYMENT_NAME = "central"
+
     private static final Deployment DEPLOYMENT = new Deployment()
             .setName(DEPLOYMENT_NAME)
             .setImage("nginx@sha256:204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad")
@@ -103,4 +106,25 @@ class DeploymentTest extends BaseSpecification {
         "Label:app=test+Image:docker.io/library/nginx"                                                          | _
     }
 
+    @Unroll
+    @Category([BAT])
+    def "Verify orchestrator deployment is marked appropriately"() {
+        when:
+        def results = DeploymentService.listDeploymentsSearch(RawQuery.newBuilder().setQuery(query).build())
+
+        then:
+        assert results != null
+
+        def listDep = results.deploymentsList.find { x -> x.getName() == deploymentName }
+        assert listDep != null
+
+        def dep = DeploymentService.getDeployment(listDep.getId())
+        assert dep.getOrchestratorComponent() == result
+
+        where:
+        "Data inputs are: "
+        deploymentName   |   query    |  result
+        "${ORCHESTRATOR_DEPLOYMENT_NAME}" | "Deployment:${ORCHESTRATOR_DEPLOYMENT_NAME}+Namespace:kube-system"  |  true
+        "${STACKROX_DEPLOYMENT_NAME}"     | "Deployment:${STACKROX_DEPLOYMENT_NAME}+Namespace:stackrox"         |  false
+    }
 }

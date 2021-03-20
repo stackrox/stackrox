@@ -13,7 +13,7 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
-// Next available tag: 33
+// Next available tag: 34
 message Deployment {
     string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
     string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
@@ -22,6 +22,7 @@ message Deployment {
     string type                                = 4 [(gogoproto.moretags) = "search:\"Deployment Type\""];
     string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
     string namespace_id                        = 23 [(gogoproto.moretags) = "search:\"Namespace ID\""];
+    bool orchestrator_component                = 33 [(gogoproto.moretags) = "search:\"Orchestrator Component\""];
     int64 replicas                             = 6;
     map<string, string> labels                 = 7 [(gogoproto.moretags) = "search:\"Label,store\""];
     map<string, string> pod_labels             = 19 [(gogoproto.moretags) = "search:\"Pod Label,store\""];

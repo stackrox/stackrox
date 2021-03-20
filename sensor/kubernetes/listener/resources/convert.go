@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
+	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	"k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,12 +68,13 @@ func doesFieldExist(value reflect.Value) bool {
 }
 
 func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAction, deploymentType, clusterID string,
-	lister v1listers.PodLister, namespaceStore *namespaceStore, hierarchy references.ParentHierarchy, registryOverride string) *deploymentWrap {
+	lister v1listers.PodLister, namespaceStore *namespaceStore, hierarchy references.ParentHierarchy, registryOverride string,
+	namespaces *orchestratornamespaces.OrchestratorNamespaces) *deploymentWrap {
 	wrap := newWrap(obj, deploymentType, clusterID, registryOverride)
 	if wrap == nil {
 		return nil
 	}
-	if ok, err := wrap.populateNonStaticFields(obj, action, lister, namespaceStore, hierarchy); err != nil {
+	if ok, err := wrap.populateNonStaticFields(obj, action, lister, namespaceStore, hierarchy, namespaces); err != nil {
 		// Panic on dev because we should always be able to parse the deployments
 		utils.Should(err)
 		return nil
@@ -135,7 +137,9 @@ func checkIfNewPodSpecRequired(podSpec *v1.PodSpec, pods []*v1.Pod) bool {
 	return updated
 }
 
-func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *central.ResourceAction, lister v1listers.PodLister, namespaceStore *namespaceStore, hierarchy references.ParentHierarchy) (bool, error) {
+func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *central.ResourceAction, lister v1listers.PodLister,
+	namespaceStore *namespaceStore, hierarchy references.ParentHierarchy,
+	namespaces *orchestratornamespaces.OrchestratorNamespaces) (bool, error) {
 	w.original = obj
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	spec := objValue.FieldByName("Spec")
@@ -205,7 +209,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 		w.AutomountServiceAccountToken = *podSpec.AutomountServiceAccountToken
 	}
 
-	w.populateNamespaceID(namespaceStore)
+	w.populateNamespaceID(namespaceStore, namespaces)
 
 	if labelSelector == nil {
 		labelSelector = &metav1.LabelSelector{
@@ -350,9 +354,11 @@ func (w *deploymentWrap) getLabelSelector(spec reflect.Value) (*metav1.LabelSele
 	return nil, fmt.Errorf("unable to get label selector for %+v", spec.Type())
 }
 
-func (w *deploymentWrap) populateNamespaceID(namespaceStore *namespaceStore) {
+func (w *deploymentWrap) populateNamespaceID(namespaceStore *namespaceStore,
+	namespaces *orchestratornamespaces.OrchestratorNamespaces) {
 	if namespaceID, found := namespaceStore.lookupNamespaceID(w.GetNamespace()); found {
 		w.NamespaceId = namespaceID
+		w.OrchestratorComponent = namespaces.IsOrchestratorNamespace(w.GetNamespace())
 	} else {
 		log.Errorf("no namespace ID found for namespace %s and deployment %q", w.GetNamespace(), w.GetName())
 	}

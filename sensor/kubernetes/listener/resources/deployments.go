@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
+	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	v1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1listers "k8s.io/client-go/listers/core/v1"
@@ -69,16 +70,17 @@ func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action 
 
 // deploymentHandler handles deployment resource events and does the actual processing.
 type deploymentHandler struct {
-	podLister       v1listers.PodLister
-	serviceStore    *serviceStore
-	deploymentStore *DeploymentStore
-	podStore        *PodStore
-	endpointManager *endpointManager
-	namespaceStore  *namespaceStore
-	processFilter   filter.Filter
-	config          config.Handler
-	hierarchy       references.ParentHierarchy
-	rbac            rbacUpdater
+	podLister              v1listers.PodLister
+	serviceStore           *serviceStore
+	deploymentStore        *DeploymentStore
+	podStore               *PodStore
+	endpointManager        *endpointManager
+	namespaceStore         *namespaceStore
+	processFilter          filter.Filter
+	config                 config.Handler
+	hierarchy              references.ParentHierarchy
+	rbac                   rbacUpdater
+	orchestratorNamespaces *orchestratornamespaces.OrchestratorNamespaces
 
 	detector detector.Detector
 
@@ -88,27 +90,27 @@ type deploymentHandler struct {
 // newDeploymentHandler creates and returns a new deployment handler.
 func newDeploymentHandler(clusterID string, serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *PodStore,
 	endpointManager *endpointManager, namespaceStore *namespaceStore, rbac rbacUpdater, podLister v1listers.PodLister,
-	processFilter filter.Filter, config config.Handler, detector detector.Detector) *deploymentHandler {
+	processFilter filter.Filter, config config.Handler, detector detector.Detector, namespaces *orchestratornamespaces.OrchestratorNamespaces) *deploymentHandler {
 	return &deploymentHandler{
-		podLister:       podLister,
-		serviceStore:    serviceStore,
-		deploymentStore: deploymentStore,
-		podStore:        podStore,
-		endpointManager: endpointManager,
-		namespaceStore:  namespaceStore,
-		processFilter:   processFilter,
-		config:          config,
-		hierarchy:       references.NewParentHierarchy(),
-		rbac:            rbac,
-
-		detector: detector,
-
-		clusterID: clusterID,
+		podLister:              podLister,
+		serviceStore:           serviceStore,
+		deploymentStore:        deploymentStore,
+		podStore:               podStore,
+		endpointManager:        endpointManager,
+		namespaceStore:         namespaceStore,
+		processFilter:          processFilter,
+		config:                 config,
+		hierarchy:              references.NewParentHierarchy(),
+		rbac:                   rbac,
+		detector:               detector,
+		orchestratorNamespaces: namespaces,
+		clusterID:              clusterID,
 	}
 }
 
 func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent {
-	deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.clusterID, d.podLister, d.namespaceStore, d.hierarchy, d.config.GetConfig().GetRegistryOverride())
+	deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.clusterID, d.podLister, d.namespaceStore,
+		d.hierarchy, d.config.GetConfig().GetRegistryOverride(), d.orchestratorNamespaces)
 	// Note: deploymentWrap may be nil. Typically, this means that this is not a top-level object that we track --
 	// either it's an object we don't track, or we track its parent.
 	// (For example, we don't track replicasets if they are owned by a deployment.)

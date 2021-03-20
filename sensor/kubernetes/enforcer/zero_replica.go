@@ -31,7 +31,7 @@ func (e *enforcerImpl) scaleToZero(ctx context.Context, enforcement *central.Sen
 		}
 	case pkgKubernetes.DeploymentConfig:
 		function = func(ctx context.Context) error {
-			return deploymentconfig.EnforceZeroReplica(ctx, e.client.Openshift(), deploymentInfo)
+			return deploymentconfig.EnforceZeroReplica(ctx, e.client.OpenshiftApps(), deploymentInfo)
 		}
 	case pkgKubernetes.DaemonSet:
 		function = func(ctx context.Context) error {

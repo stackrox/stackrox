@@ -483,6 +483,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 		"namespace: String!",
 		"namespaceId: String!",
+		"orchestratorComponent: Boolean!",
 		"podLabels: [Label!]!",
 		"ports: [PortConfig]!",
 		"priority: Int!",
@@ -4892,6 +4893,12 @@ func (resolver *deploymentResolver) Namespace(ctx context.Context) string {
 func (resolver *deploymentResolver) NamespaceId(ctx context.Context) string {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetNamespaceId()
+	return value
+}
+
+func (resolver *deploymentResolver) OrchestratorComponent(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetOrchestratorComponent()
 	return value
 }
 

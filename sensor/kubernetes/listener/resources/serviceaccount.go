@@ -10,7 +10,7 @@ import (
 // serviceAccountDispatcher handles service account events
 type serviceAccountDispatcher struct{}
 
-// newSecretDispatcher creates and returns a new secret handler.
+// newServiceAccountDispatcher creates and returns a new service account dispatcher.
 func newServiceAccountDispatcher() *serviceAccountDispatcher {
 	return &serviceAccountDispatcher{}
 }

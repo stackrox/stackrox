@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/openshift/client-go/apps/informers/externalversions"
+	configExtVersions "github.com/openshift/client-go/config/informers/externalversions"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -31,19 +32,23 @@ type listenerImpl struct {
 
 func (k *listenerImpl) Start() error {
 	// Create informer factories for needed orchestrators.
-	var osFactory externalversions.SharedInformerFactory
+	var osAppsFactory externalversions.SharedInformerFactory
+	var osConfigFactory configExtVersions.SharedInformerFactory
 
 	k8sFactory := informers.NewSharedInformerFactory(k.client.Kubernetes(), resyncPeriod)
 	k8sResyncingFactory := informers.NewSharedInformerFactory(k.client.Kubernetes(), resyncingPeriod)
-	if k.client.Openshift() != nil {
-		osFactory = externalversions.NewSharedInformerFactory(k.client.Openshift(), resyncingPeriod)
+	if k.client.OpenshiftApps() != nil {
+		osAppsFactory = externalversions.NewSharedInformerFactory(k.client.OpenshiftApps(), resyncingPeriod)
+	}
+	if k.client.OpenshiftConfig() != nil {
+		osConfigFactory = configExtVersions.NewSharedInformerFactory(k.client.OpenshiftConfig(), resyncingPeriod)
 	}
 
 	// Patch namespaces to include labels
 	patchNamespaces(k.client.Kubernetes(), &k.stopSig)
 
 	// Start handling resource events.
-	go handleAllEvents(k8sFactory, k8sResyncingFactory, osFactory, k.eventsC, &k.stopSig, k.configHandler, k.detector)
+	go handleAllEvents(k8sFactory, k8sResyncingFactory, osAppsFactory, osConfigFactory, k.eventsC, &k.stopSig, k.configHandler, k.detector)
 	return nil
 }
 

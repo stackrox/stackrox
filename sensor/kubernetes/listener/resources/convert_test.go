@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
+	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -27,6 +28,7 @@ var (
 	mockNamespaceStore = func() *namespaceStore {
 		s := newNamespaceStore()
 		s.addNamespace(&storage.NamespaceMetadata{Id: "FAKENSID", Name: "namespace"})
+		s.addNamespace(&storage.NamespaceMetadata{Id: "KUBESYSID", Name: "kube-system"})
 		return s
 	}()
 )
@@ -81,7 +83,8 @@ func TestPopulateNonStaticFieldWithPod(t *testing.T) {
 	}
 	for _, c := range cases {
 		ph := references.NewParentHierarchy()
-		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", testClusterID, nil, mockNamespaceStore, ph, "")
+		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", testClusterID, nil,
+			mockNamespaceStore, ph, "", orchestratornamespaces.Singleton())
 		assert.Equal(t, c.expectedAction, c.action)
 	}
 }
@@ -638,7 +641,9 @@ func TestConvert(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID, c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "").GetDeployment()
+			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID,
+				c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "",
+				orchestratornamespaces.Singleton()).GetDeployment()
 			if actual != nil {
 				actual.StateTimestamp = 0
 			}

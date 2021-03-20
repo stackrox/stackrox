@@ -1,7 +1,8 @@
 package listener
 
 import (
-	"github.com/openshift/client-go/apps/informers/externalversions"
+	appsExternalVersions "github.com/openshift/client-go/apps/informers/externalversions"
+	configExternalVersions "github.com/openshift/client-go/config/informers/externalversions"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/kubernetes"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/tools/cache"
@@ -19,7 +21,8 @@ import (
 
 func handleAllEvents(sif,
 	resyncingSif informers.SharedInformerFactory,
-	osf externalversions.SharedInformerFactory,
+	osAppsFactory appsExternalVersions.SharedInformerFactory,
+	osConfigFactory configExternalVersions.SharedInformerFactory,
 	output chan<- *central.MsgFromSensor,
 	stopSignal *concurrency.Signal,
 	config config.Handler,
@@ -36,7 +39,8 @@ func handleAllEvents(sif,
 
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
 	podInformer := resyncingSif.Core().V1().Pods()
-	dispatchers := resources.NewDispatcherRegistry(&syncedRBAC, clusterID, podInformer.Lister(), clusterentities.StoreInstance(), processfilter.Singleton(), config, detector)
+	dispatchers := resources.NewDispatcherRegistry(&syncedRBAC, clusterID, podInformer.Lister(), clusterentities.StoreInstance(),
+		processfilter.Singleton(), config, detector, orchestratornamespaces.Singleton())
 
 	namespaceInformer := sif.Core().V1().Namespaces().Informer()
 	secretInformer := sif.Core().V1().Secrets().Informer()
@@ -63,9 +67,16 @@ func handleAllEvents(sif,
 	handle(clusterRoleInformer, dispatchers.ForRBAC(), output, nil, prePodWaitGroup, stopSignal, &eventLock)
 	handle(roleBindingInformer, dispatchers.ForRBAC(), output, nil, prePodWaitGroup, stopSignal, &eventLock)
 	handle(clusterRoleBindingInformer, dispatchers.ForRBAC(), output, nil, prePodWaitGroup, stopSignal, &eventLock)
+	// For openshift clusters only
+	if osConfigFactory != nil {
+		handle(osConfigFactory.Config().V1().ClusterOperators().Informer(), dispatchers.ForClusterOperators(), output, nil, prePodWaitGroup, stopSignal, &eventLock)
+	}
 
 	sif.Start(stopSignal.Done())
 	resyncingSif.Start(stopSignal.Done())
+	if osConfigFactory != nil {
+		osConfigFactory.Start(stopSignal.Done())
+	}
 
 	if !concurrency.WaitInContext(prePodWaitGroup, stopSignal) {
 		return
@@ -112,15 +123,15 @@ func handleAllEvents(sif,
 	handle(resyncingSif.Apps().V1().StatefulSets().Informer(), dispatchers.ForDeployments(kubernetes.StatefulSet), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
 	handle(resyncingSif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetes.CronJob), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
 
-	if osf != nil {
-		handle(osf.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetes.DeploymentConfig), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
+	if osAppsFactory != nil {
+		handle(osAppsFactory.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetes.DeploymentConfig), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
 	}
 
 	// SharedInformerFactories can have Start called multiple times which will start the rest of the handlers
 	sif.Start(stopSignal.Done())
 	resyncingSif.Start(stopSignal.Done())
-	if osf != nil {
-		osf.Start(stopSignal.Done())
+	if osAppsFactory != nil {
+		osAppsFactory.Start(stopSignal.Done())
 	}
 
 	// WaitForCacheSync synchronization is broken for SharedIndexInformers due to internal addCh/pendingNotifications

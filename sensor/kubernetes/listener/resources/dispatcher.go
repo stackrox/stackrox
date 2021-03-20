@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	v1Listers "k8s.io/client-go/listers/core/v1"
 )
 
@@ -29,11 +30,13 @@ type DispatcherRegistry interface {
 	ForServices() Dispatcher
 	ForServiceAccounts() Dispatcher
 	ForRBAC() Dispatcher
+	ForClusterOperators() Dispatcher
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
-func NewDispatcherRegistry(syncedRBAC *concurrency.Flag, clusterID string, podLister v1Listers.PodLister, entityStore *clusterentities.Store, processFilter filter.Filter,
-	configHandler config.Handler, detector detector.Detector) DispatcherRegistry {
+func NewDispatcherRegistry(syncedRBAC *concurrency.Flag, clusterID string, podLister v1Listers.PodLister,
+	entityStore *clusterentities.Store, processFilter filter.Filter,
+	configHandler config.Handler, detector detector.Detector, namespaces *orchestratornamespaces.OrchestratorNamespaces) DispatcherRegistry {
 	serviceStore := newServiceStore()
 	deploymentStore := DeploymentStoreSingleton()
 	podStore := PodStoreSingleton()
@@ -44,28 +47,30 @@ func NewDispatcherRegistry(syncedRBAC *concurrency.Flag, clusterID string, podLi
 
 	return &registryImpl{
 		deploymentHandler: newDeploymentHandler(clusterID, serviceStore, deploymentStore, podStore, endpointManager, nsStore,
-			rbacUpdater, podLister, processFilter, configHandler, detector),
+			rbacUpdater, podLister, processFilter, configHandler, detector, namespaces),
 
-		rbacDispatcher:           newRBACDispatcher(rbacUpdater),
-		namespaceDispatcher:      newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore),
-		serviceDispatcher:        newServiceDispatcher(serviceStore, deploymentStore, endpointManager),
-		secretDispatcher:         newSecretDispatcher(),
-		networkPolicyDispatcher:  newNetworkPolicyDispatcher(),
-		nodeDispatcher:           newNodeDispatcher(serviceStore, deploymentStore, nodeStore, endpointManager),
-		serviceAccountDispatcher: newServiceAccountDispatcher(),
+		rbacDispatcher:            newRBACDispatcher(rbacUpdater),
+		namespaceDispatcher:       newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore),
+		serviceDispatcher:         newServiceDispatcher(serviceStore, deploymentStore, endpointManager),
+		secretDispatcher:          newSecretDispatcher(),
+		networkPolicyDispatcher:   newNetworkPolicyDispatcher(),
+		nodeDispatcher:            newNodeDispatcher(serviceStore, deploymentStore, nodeStore, endpointManager),
+		serviceAccountDispatcher:  newServiceAccountDispatcher(),
+		clusterOperatorDispatcher: newClusterOperatorDispatcher(namespaces),
 	}
 }
 
 type registryImpl struct {
 	deploymentHandler *deploymentHandler
 
-	rbacDispatcher           *rbacDispatcher
-	namespaceDispatcher      *namespaceDispatcher
-	serviceDispatcher        *serviceDispatcher
-	secretDispatcher         *secretDispatcher
-	networkPolicyDispatcher  *networkPolicyDispatcher
-	nodeDispatcher           *nodeDispatcher
-	serviceAccountDispatcher *serviceAccountDispatcher
+	rbacDispatcher            *rbacDispatcher
+	namespaceDispatcher       *namespaceDispatcher
+	serviceDispatcher         *serviceDispatcher
+	secretDispatcher          *secretDispatcher
+	networkPolicyDispatcher   *networkPolicyDispatcher
+	nodeDispatcher            *nodeDispatcher
+	serviceAccountDispatcher  *serviceAccountDispatcher
+	clusterOperatorDispatcher *clusterOperatorDispatcher
 }
 
 func (d *registryImpl) ForDeployments(deploymentType string) Dispatcher {
@@ -102,4 +107,8 @@ func (d *registryImpl) ForServiceAccounts() Dispatcher {
 
 func (d *registryImpl) ForRBAC() Dispatcher {
 	return d.rbacDispatcher
+}
+
+func (d *registryImpl) ForClusterOperators() Dispatcher {
+	return d.clusterOperatorDispatcher
 }
