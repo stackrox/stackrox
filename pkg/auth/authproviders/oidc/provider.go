@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc/internal/endpoint"
 	"github.com/stackrox/rox/pkg/sliceutils"
