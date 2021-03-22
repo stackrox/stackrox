@@ -3034,7 +3034,7 @@ jobs:
       - setup-go-build-env
       - run:
           name: Retrieving missing dependencies
-          command: make download-deps
+          command: make deps
 
       - *setupRoxctl
       - setup_remote_docker

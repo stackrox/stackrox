@@ -324,17 +324,11 @@ deps: go.mod proto-generated-srcs
 	@$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
 	@test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
 	@go mod tidy
-	@$(MAKE) download-deps
 ifdef CI
 	@git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
 	go mod verify
 endif
 	@touch deps
-
-.PHONY: download-deps
-download-deps:
-	@echo "+ $@"
-	@go mod download
 
 .PHONY: clean-deps
 clean-deps:
@@ -691,12 +685,12 @@ render-helm-yamls: proto-generated-srcs
 	@cp $(BASE_DIR)/deploy/common/docker-auth.sh  /tmp/$(TAG)/scripts/
 
 .PHONY: ossls-audit
-ossls-audit: download-deps
+ossls-audit: deps
 	ossls version
 	ossls audit
 
 .PHONY: ossls-notice
-ossls-notice: download-deps
+ossls-notice: deps
 	ossls version
 	ossls audit --export image/THIRD_PARTY_NOTICES
 
