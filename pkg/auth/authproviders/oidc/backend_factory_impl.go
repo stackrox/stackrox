@@ -2,13 +2,16 @@ package oidc
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
+	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
@@ -19,6 +22,9 @@ const (
 	TypeName = "oidc"
 
 	callbackRelativePath = "callback"
+
+	nonceTTL     = 1 * time.Minute
+	nonceByteLen = 20
 )
 
 var (
@@ -26,23 +32,25 @@ var (
 )
 
 type factory struct {
-	callbackURLPath string
+	callbackURLPath     string
+	noncePool           cryptoutils.NoncePool
+	providerFactoryFunc providerFactoryFunc
+	oauthExchange       exchangeFunc
 }
 
 // NewFactory creates a new factory for OIDC authprovider backends.
 func NewFactory(urlPathPrefix string) authproviders.BackendFactory {
 	urlPathPrefix = strings.TrimRight(urlPathPrefix, "/") + "/"
 	return &factory{
-		callbackURLPath: fmt.Sprintf("%s%s", urlPathPrefix, callbackRelativePath),
+		callbackURLPath:     fmt.Sprintf("%s%s", urlPathPrefix, callbackRelativePath),
+		noncePool:           cryptoutils.NewThreadSafeNoncePool(cryptoutils.NewNonceGenerator(nonceByteLen, rand.Reader), nonceTTL),
+		providerFactoryFunc: newWrappedOIDCProvider,
+		oauthExchange:       oauthExchange,
 	}
 }
 
 func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (authproviders.Backend, error) {
-	be, err := newBackend(ctx, id, uiEndpoints, f.callbackURLPath, config)
-	if err != nil {
-		return nil, err
-	}
-	return be, nil
+	return newBackend(ctx, id, uiEndpoints, f.callbackURLPath, config, f.providerFactoryFunc, f.oauthExchange, f.noncePool)
 }
 
 func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (string, string, error) {

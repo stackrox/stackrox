@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc/internal/endpoint"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -17,33 +16,34 @@ import (
 // - https://github.com/coreos/go-oidc/issues/221 (and the long list of similar cases listed there)
 // We therefore call `oidc.NewProvider` and retry in case of an error, with a trailing
 // slash added or removed.
-func createOIDCProvider(ctx context.Context, helper *endpoint.Helper) (*provider, error) {
+func createOIDCProvider(ctx context.Context, helper *endpoint.Helper, providerFactory providerFactoryFunc) (*informedProvider, error) {
 	var err error
 	ctx = oidc.ClientContext(ctx, helper.HTTPClient())
 	for _, issuer := range helper.URLsForDiscovery() {
-		var provider *oidc.Provider
-		if provider, err = oidc.NewProvider(ctx, issuer); err == nil {
+		var provider oidcProvider
+		if provider, err = providerFactory(ctx, issuer); err == nil {
 			// TODO(porridge): as an optimization, we could tell the helper which issuer URL turned out to be correct,
 			// so that it can be persisted. This way subsequent instantiations of the backend would hit the correct
 			// issuer on the first try, reducing latency.
 			// However we would likely still need this logic here indefinitely since the provider could conceivably
 			// add or remove a slash in the discovery document at a later time (however unlikely that would be).
-			return wrapProvider(provider), nil
+			return toInformedProvider(provider), nil
 		}
 	}
 	return nil, err
 }
 
-type provider struct {
-	*oidc.Provider
+// informedProvider contains a go-oidc provider object and some additional information from discovery
+type informedProvider struct {
+	oidcProvider
 	extraDiscoveryInfo
 }
 
-func wrapProvider(rawProvider *oidc.Provider) *provider {
-	p := &provider{
-		Provider: rawProvider,
+func toInformedProvider(rawProvider oidcProvider) *informedProvider {
+	p := &informedProvider{
+		oidcProvider: rawProvider,
 	}
-	if err := p.Provider.Claims(&p.extraDiscoveryInfo); err != nil {
+	if err := p.Claims(&p.extraDiscoveryInfo); err != nil {
 		log.Warnf("Failed to parse additional provider discovery claims: %v", err)
 	}
 	return p

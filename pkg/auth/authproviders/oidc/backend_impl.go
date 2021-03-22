@@ -2,7 +2,6 @@ package oidc
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -30,9 +29,6 @@ import (
 const (
 	fragmentCallbackURLPath = "/auth/response/oidc"
 
-	nonceTTL     = 1 * time.Minute
-	nonceByteLen = 20
-
 	issuerConfigKey              = "issuer"
 	clientIDConfigKey            = "client_id"
 	clientSecretConfigKey        = "client_secret"
@@ -51,15 +47,16 @@ const (
 
 type backendImpl struct {
 	id                 string
-	idTokenVerifier    *oidc.IDTokenVerifier
+	idTokenVerifier    oidcIDTokenVerifier
 	noncePool          cryptoutils.NoncePool
 	defaultUIEndpoint  string
 	allowedUIEndpoints set.StringSet
 
-	provider        *provider
+	provider        *informedProvider
 	baseRedirectURL url.URL
 	baseOauthConfig oauth2.Config
 	baseOptions     []oauth2.AuthCodeOption
+	oauthExchange   exchangeFunc
 
 	responseMode  string
 	responseTypes set.FrozenStringSet
@@ -166,7 +163,7 @@ func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, nonc
 		return nil, err
 	}
 
-	if nonceVerification != dontVerifyNonce && !p.noncePool.ConsumeNonce(idToken.Nonce) {
+	if nonceVerification != dontVerifyNonce && !p.noncePool.ConsumeNonce(idToken.GetNonce()) {
 		return nil, errors.New("invalid token")
 	}
 
@@ -178,7 +175,7 @@ func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, nonc
 	externalClaims := userInfoToExternalClaims(&userInfo)
 	return &authproviders.AuthResponse{
 		Claims:     externalClaims,
-		Expiration: idToken.Expiry,
+		Expiration: idToken.GetExpiry(),
 	}, nil
 }
 
@@ -191,7 +188,7 @@ func (p *backendImpl) fetchUserInfo(ctx context.Context, rawAccessToken string) 
 	}
 
 	var userInfo userInfoType
-	if err := userInfo.PopulateFromUserInfo(userInfoFromEndpoint); err != nil {
+	if err := userInfoFromEndpoint.Claims(&userInfo); err != nil {
 		return nil, errors.Wrap(err, "parsing userinfo")
 	}
 
@@ -202,33 +199,40 @@ func (p *backendImpl) fetchUserInfo(ctx context.Context, rawAccessToken string) 
 	}, nil
 }
 
-func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackURLPath string, config map[string]string) (*backendImpl, error) {
+var (
+	errNoClientIDProvided        = errors.New("no client ID provided")
+	errPleaseSpecifyClientSecret = errors.New("please specify a client secret, or explicitly opt-out of client secret usage")
+	errQueryWithoutClientSecret  = errors.New("query response mode can only be used with a client secret")
+)
+
+func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackURLPath string, config map[string]string,
+	providerFactory providerFactoryFunc, exchange exchangeFunc, noncePool cryptoutils.NoncePool) (*backendImpl, error) {
 	if len(uiEndpoints) == 0 {
 		return nil, errors.New("OIDC requires a default UI endpoint")
 	}
 
 	clientID := config[clientIDConfigKey]
 	if clientID == "" {
-		return nil, errors.New("no client ID provided")
+		return nil, errNoClientIDProvided
 	}
 
 	issuerHelper, err := endpoint.NewHelper(config[issuerConfigKey])
 	if err != nil {
 		return nil, err
 	}
-	provider, err := createOIDCProvider(ctx, issuerHelper)
+	provider, err := createOIDCProvider(ctx, issuerHelper, providerFactory)
 	if err != nil {
 		return nil, err
 	}
 
 	b := &backendImpl{
-		id: id,
-		noncePool: cryptoutils.NewThreadSafeNoncePool(
-			cryptoutils.NewNonceGenerator(nonceByteLen, rand.Reader), nonceTTL),
+		id:                 id,
+		noncePool:          noncePool,
 		defaultUIEndpoint:  uiEndpoints[0],
 		allowedUIEndpoints: set.NewStringSet(uiEndpoints...),
 		provider:           provider,
 		httpClient:         issuerHelper.HTTPClient(),
+		oauthExchange:      exchange,
 	}
 
 	b.baseRedirectURL = url.URL{
@@ -253,9 +257,9 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 
 	if clientSecret == "" && config[dontUseClientSecretConfigKey] == "false" {
 		if mode == "query" {
-			return nil, errors.New("query response mode can only be used with a client secret")
+			return nil, errQueryWithoutClientSecret
 		}
-		return nil, errors.New("please specify a client secret, or explicitly opt-out of client secret usage")
+		return nil, errPleaseSpecifyClientSecret
 	}
 
 	var responseMode string
@@ -419,12 +423,12 @@ func (p *backendImpl) processIDPResponseForCodeFlow(ctx context.Context, respons
 	ri := requestinfo.FromContext(ctx)
 	oauthCfg := p.oauthCfgForRequest(&ri)
 
-	token, err := oauthCfg.Exchange(p.injectHTTPClient(ctx), code)
+	token, err := p.oauthExchange(p.injectHTTPClient(ctx), oauthCfg, code)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to obtain ID token for code")
 	}
 
-	rawIDToken, _ := token.Extra("id_token").(string) // needs to be present thanks to `openid` scope
+	rawIDToken, _ := token.GetExtra("id_token").(string) // needs to be present thanks to `openid` scope
 	if rawIDToken == "" {
 		return nil, errors.New("response from server did not contain ID token in violation of OIDC spec")
 	}
@@ -434,15 +438,15 @@ func (p *backendImpl) processIDPResponseForCodeFlow(ctx context.Context, respons
 		return nil, errors.Wrap(err, "ID token verification failed")
 	}
 
-	if token.RefreshToken != "" {
+	if token.GetRefreshToken() != "" {
 		// we received a proper refresh token
 		authResp.RefreshTokenData = authproviders.RefreshTokenData{
-			RefreshToken:     token.RefreshToken,
+			RefreshToken:     token.GetRefreshToken(),
 			RefreshTokenType: "refresh_token",
 		}
 	} else {
 		authResp.RefreshTokenData = authproviders.RefreshTokenData{
-			RefreshToken:     token.AccessToken,
+			RefreshToken:     token.GetAccessToken(),
 			RefreshTokenType: "access_token",
 		}
 	}
@@ -549,14 +553,6 @@ type userInfoType struct {
 	EMail  string   `json:"email"`
 	UID    string   `json:"sub"`
 	Groups []string `json:"groups"`
-}
-
-func (u *userInfoType) PopulateFromIDToken(idToken *oidc.IDToken) error {
-	return idToken.Claims(u)
-}
-
-func (u *userInfoType) PopulateFromUserInfo(userInfo *oidc.UserInfo) error {
-	return userInfo.Claims(u)
 }
 
 func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim {

@@ -9,6 +9,9 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
+// ErrNoIssuerProvided is returned when issuer supplied to NewHelper is empty.
+var ErrNoIssuerProvided = errors.New("no issuer provided")
+
 // Helper encapsulates logic closely connected with issuer URL.
 // It helps establish the canonical issuer URL, determine the correct HTTP client to use and adjust auth URL.
 type Helper struct {
@@ -65,7 +68,7 @@ func (h *Helper) AdjustAuthURL(authEndpoint string) (string, error) {
 // If the scheme is not specified, it prepends "https://".
 func NewHelper(issuer string) (*Helper, error) {
 	if issuer == "" {
-		return nil, errors.New("no issuer provided")
+		return nil, ErrNoIssuerProvided
 	}
 
 	if !strings.Contains(issuer, "://") {
