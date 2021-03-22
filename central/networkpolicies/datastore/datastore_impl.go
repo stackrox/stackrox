@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
+	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,8 +18,9 @@ var (
 )
 
 type datastoreImpl struct {
-	storage     store.Store
-	undoStorage undostore.UndoStore
+	storage               store.Store
+	undoStorage           undostore.UndoStore
+	undoDeploymentStorage undodeploymentstore.UndoDeploymentStore
 }
 
 func (ds *datastoreImpl) GetNetworkPolicy(ctx context.Context, id string) (*storage.NetworkPolicy, bool, error) {
@@ -127,6 +129,31 @@ func (ds *datastoreImpl) UpsertUndoRecord(ctx context.Context, clusterID string,
 	}
 
 	return ds.undoStorage.UpsertUndoRecord(clusterID, undoRecord)
+}
+
+// UndoDeploymentDataStore functionality.
+///////////////////////////////
+func (ds *datastoreImpl) GetUndoDeploymentRecord(ctx context.Context, deploymentID string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error) {
+	undoRecord, found, err := ds.undoDeploymentStorage.Get(deploymentID)
+	if err != nil || !found {
+		return nil, false, err
+	}
+
+	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(undoRecord).Allowed(ctx); err != nil || !ok {
+		return nil, false, err
+	}
+
+	return undoRecord, true, nil
+}
+
+func (ds *datastoreImpl) UpsertUndoDeploymentRecord(ctx context.Context, undoRecord *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
+	if ok, err := netpolSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(undoRecord).Allowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrPermissionDenied
+	}
+
+	return ds.undoDeploymentStorage.Upsert(undoRecord)
 }
 
 func (ds *datastoreImpl) getNetworkPolicy(id string) (*storage.NetworkPolicy, bool, error) {

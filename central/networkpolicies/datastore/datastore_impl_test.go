@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	storeMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/mocks"
+	undoDeploymentStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/mocks"
 	undoStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -36,10 +37,11 @@ type netPolDataStoreTestSuite struct {
 	hasNS2ReadCtx context.Context
 	hasWriteCtx   context.Context
 
-	dataStore   DataStore
-	storage     *storeMocks.MockStore
-	undoStorage *undoStoreMocks.MockUndoStore
-	mockCtrl    *gomock.Controller
+	dataStore             DataStore
+	storage               *storeMocks.MockStore
+	undoStorage           *undoStoreMocks.MockUndoStore
+	undoDeploymentStorage *undoDeploymentStoreMocks.MockUndoDeploymentStore
+	mockCtrl              *gomock.Controller
 }
 
 func (s *netPolDataStoreTestSuite) SetupTest() {
@@ -64,7 +66,8 @@ func (s *netPolDataStoreTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.undoStorage = undoStoreMocks.NewMockUndoStore(s.mockCtrl)
-	s.dataStore = New(s.storage, s.undoStorage)
+	s.undoDeploymentStorage = undoDeploymentStoreMocks.NewMockUndoDeploymentStore(s.mockCtrl)
+	s.dataStore = New(s.storage, s.undoStorage, s.undoDeploymentStorage)
 }
 
 func (s *netPolDataStoreTestSuite) TearDownTest() {

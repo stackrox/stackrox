@@ -204,3 +204,86 @@ func (mr *MockDataStoreMockRecorder) UpsertUndoRecord(ctx, clusterID, undoRecord
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertUndoRecord", reflect.TypeOf((*MockDataStore)(nil).UpsertUndoRecord), ctx, clusterID, undoRecord)
 }
+
+// GetUndoDeploymentRecord mocks base method
+func (m *MockDataStore) GetUndoDeploymentRecord(ctx context.Context, deploymentID string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUndoDeploymentRecord", ctx, deploymentID)
+	ret0, _ := ret[0].(*storage.NetworkPolicyApplicationUndoDeploymentRecord)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetUndoDeploymentRecord indicates an expected call of GetUndoDeploymentRecord
+func (mr *MockDataStoreMockRecorder) GetUndoDeploymentRecord(ctx, deploymentID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUndoDeploymentRecord", reflect.TypeOf((*MockDataStore)(nil).GetUndoDeploymentRecord), ctx, deploymentID)
+}
+
+// UpsertUndoDeploymentRecord mocks base method
+func (m *MockDataStore) UpsertUndoDeploymentRecord(ctx context.Context, undoRecord *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertUndoDeploymentRecord", ctx, undoRecord)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertUndoDeploymentRecord indicates an expected call of UpsertUndoDeploymentRecord
+func (mr *MockDataStoreMockRecorder) UpsertUndoDeploymentRecord(ctx, undoRecord interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertUndoDeploymentRecord", reflect.TypeOf((*MockDataStore)(nil).UpsertUndoDeploymentRecord), ctx, undoRecord)
+}
+
+// MockUndoDeploymentDataStore is a mock of UndoDeploymentDataStore interface
+type MockUndoDeploymentDataStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockUndoDeploymentDataStoreMockRecorder
+}
+
+// MockUndoDeploymentDataStoreMockRecorder is the mock recorder for MockUndoDeploymentDataStore
+type MockUndoDeploymentDataStoreMockRecorder struct {
+	mock *MockUndoDeploymentDataStore
+}
+
+// NewMockUndoDeploymentDataStore creates a new mock instance
+func NewMockUndoDeploymentDataStore(ctrl *gomock.Controller) *MockUndoDeploymentDataStore {
+	mock := &MockUndoDeploymentDataStore{ctrl: ctrl}
+	mock.recorder = &MockUndoDeploymentDataStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockUndoDeploymentDataStore) EXPECT() *MockUndoDeploymentDataStoreMockRecorder {
+	return m.recorder
+}
+
+// GetUndoDeploymentRecord mocks base method
+func (m *MockUndoDeploymentDataStore) GetUndoDeploymentRecord(ctx context.Context, deploymentID string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUndoDeploymentRecord", ctx, deploymentID)
+	ret0, _ := ret[0].(*storage.NetworkPolicyApplicationUndoDeploymentRecord)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetUndoDeploymentRecord indicates an expected call of GetUndoDeploymentRecord
+func (mr *MockUndoDeploymentDataStoreMockRecorder) GetUndoDeploymentRecord(ctx, deploymentID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUndoDeploymentRecord", reflect.TypeOf((*MockUndoDeploymentDataStore)(nil).GetUndoDeploymentRecord), ctx, deploymentID)
+}
+
+// UpsertUndoDeploymentRecord mocks base method
+func (m *MockUndoDeploymentDataStore) UpsertUndoDeploymentRecord(ctx context.Context, undoRecord *storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertUndoDeploymentRecord", ctx, undoRecord)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertUndoDeploymentRecord indicates an expected call of UpsertUndoDeploymentRecord
+func (mr *MockUndoDeploymentDataStoreMockRecorder) UpsertUndoDeploymentRecord(ctx, undoRecord interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertUndoDeploymentRecord", reflect.TypeOf((*MockUndoDeploymentDataStore)(nil).UpsertUndoDeploymentRecord), ctx, undoRecord)
+}

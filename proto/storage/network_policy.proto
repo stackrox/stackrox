@@ -93,3 +93,12 @@ message NetworkPolicyApplicationUndoRecord {
     NetworkPolicyModification original_modification = 3;
     NetworkPolicyModification undo_modification     = 4;
 }
+
+message NetworkPolicyApplicationUndoDeploymentRecord {
+    string deployment_id                            = 1;
+    // For SAC
+    string cluster_id                               = 2;
+    string namespace                                = 3;
+
+    NetworkPolicyApplicationUndoRecord undo_record  = 4;
+}

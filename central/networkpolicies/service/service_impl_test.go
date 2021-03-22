@@ -686,6 +686,36 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 	}
 }
 
+func (suite *ServiceTestSuite) TestGetUndoDeploymentRecord() {
+	if !features.NetworkDetectionBaselineSimulation.Enabled() {
+		return
+	}
+	suite.deployments.EXPECT().GetDeployment(gomock.Any(), "some-deployment").Return(
+		&storage.Deployment{
+			Id:        "some-deployment",
+			Namespace: "some-namespace",
+		},
+		true,
+		nil)
+	suite.
+		networkPolicies.
+		EXPECT().
+		GetUndoDeploymentRecord(gomock.Any(), "some-deployment").
+		Return(
+			&storage.NetworkPolicyApplicationUndoDeploymentRecord{
+				DeploymentId: "some-deployment",
+				UndoRecord:   &storage.NetworkPolicyApplicationUndoRecord{},
+			},
+			true,
+			nil)
+	resp, err :=
+		suite.tested.GetUndoModificationForDeployment(suite.requestContext, &v1.ResourceByID{Id: "some-deployment"})
+	suite.NoError(err)
+	suite.Equal(
+		&v1.GetUndoModificationForDeploymentResponse{UndoRecord: &storage.NetworkPolicyApplicationUndoRecord{}},
+		resp)
+}
+
 // deploymentSearchIsForCluster returns a function that returns true if the in input ParsedSearchRequest has the
 // ClusterID field set to the input clusterID.
 func deploymentSearchIsForCluster(clusterID string) gomock.Matcher {

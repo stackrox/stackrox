@@ -530,7 +530,26 @@ func (s *serviceImpl) ApplyNetworkPolicyYamlForDeployment(ctx context.Context, r
 }
 
 func (s *serviceImpl) GetUndoModificationForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetUndoModificationForDeploymentResponse, error) {
-	return nil, errors.New("unimplemented")
+	if !features.NetworkDetectionBaselineSimulation.Enabled() {
+		return nil, errors.New("network baseline policy simulator is currently not enabled")
+	}
+	// Try getting the deployment first
+	_, found, err := s.deployments.GetDeployment(ctx, request.GetId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	} else if !found {
+		return nil, status.Errorf(codes.NotFound, "deployment with ID %q not found", request.GetId())
+	}
+
+	undoRecord, found, err := s.networkPolicies.GetUndoDeploymentRecord(ctx, request.GetId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	} else if !found {
+		return nil, status.Errorf(codes.NotFound, "no undo record stored for deployment %q", request.GetId())
+	}
+	return &v1.GetUndoModificationForDeploymentResponse{
+		UndoRecord: undoRecord.GetUndoRecord(),
+	}, nil
 }
 
 func (s *serviceImpl) getQueryDeployments(ctx context.Context, clusterID, query string) ([]*storage.Deployment, error) {

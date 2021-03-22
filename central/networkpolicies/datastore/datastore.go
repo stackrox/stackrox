@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
+	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -32,12 +33,22 @@ type DataStore interface {
 	RemoveNetworkPolicy(ctx context.Context, id string) error
 
 	UndoDataStore
+	UndoDeploymentDataStore
+}
+
+// UndoDeploymentDataStore provides storage functionality for the undo deployment records resulting
+// from policy application.
+//go:generate mockgen-wrapper
+type UndoDeploymentDataStore interface {
+	GetUndoDeploymentRecord(ctx context.Context, deploymentID string) (*storage.NetworkPolicyApplicationUndoDeploymentRecord, bool, error)
+	UpsertUndoDeploymentRecord(ctx context.Context, undoRecord *storage.NetworkPolicyApplicationUndoDeploymentRecord) error
 }
 
 // New returns a new Store instance using the provided bolt DB instance.
-func New(storage store.Store, undoStorage undostore.UndoStore) DataStore {
+func New(storage store.Store, undoStorage undostore.UndoStore, undoDeploymentStorage undodeploymentstore.UndoDeploymentStore) DataStore {
 	return &datastoreImpl{
-		storage:     storage,
-		undoStorage: undoStorage,
+		storage:               storage,
+		undoStorage:           undoStorage,
+		undoDeploymentStorage: undoDeploymentStorage,
 	}
 }
