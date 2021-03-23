@@ -32,9 +32,6 @@ func (s *identityTestSuite) SetupTest() {
 }
 
 func (s *identityTestSuite) TestIssueSecuredClusterInitCertificates() {
-	// Disable admission controller because the init bundle ALWAYS contains certificates for every service
-	s.envIsolator.Setenv("ROX_ADMISSION_CONTROL_SERVICE", "false")
-
 	certs, bundleUUID, err := IssueSecuredClusterInitCertificates()
 	s.Require().NoError(err)
 	s.NotEmpty(bundleUUID)

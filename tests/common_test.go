@@ -30,6 +30,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
+//lint:ignore U1000 Ignore unused code check since this function could be useful in future.
 func assumeFeatureFlagHasValue(t *testing.T, featureFlag features.FeatureFlag, assumedValue bool) {
 	conn := testutils.GRPCConnectionToCentral(t)
 	featureService := v1.NewFeatureFlagServiceClient(conn)

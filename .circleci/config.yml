@@ -3006,7 +3006,6 @@ jobs:
       - LOAD_BALANCER: lb
       - ROX_PLAINTEXT_ENDPOINTS: "8080,grpc@8081"
       - ROXDEPLOY_CONFIG_FILE_MAP: "scripts/ci/endpoints/endpoints.yaml"
-      - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
       - ROX_SENSOR_TLS_CHALLENGE: true
       - ROX_NETWORK_DETECTION: true

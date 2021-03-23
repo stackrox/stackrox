@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -41,10 +40,6 @@ func main() {
 }
 
 func mainCmd() error {
-	if !features.AdmissionControlService.Enabled() {
-		return errors.New("admission control service is not enabled")
-	}
-
 	sigC := make(chan os.Signal, 1)
 	signal.Notify(sigC, unix.SIGTERM, unix.SIGINT)
 

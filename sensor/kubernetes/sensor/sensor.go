@@ -56,10 +56,7 @@ var (
 
 // CreateSensor takes in a client interface and returns a sensor instantiation
 func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager) (*sensor.Sensor, error) {
-	var admCtrlSettingsMgr admissioncontroller.SettingsManager
-	if features.AdmissionControlService.Enabled() {
-		admCtrlSettingsMgr = admissioncontroller.NewSettingsManager(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton())
-	}
+	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(resources.DeploymentStoreSingleton(), resources.PodStoreSingleton())
 
 	var helmManagedConfig *central.HelmManagedConfigInit
 	if features.SensorInstallationExperience.Enabled() {

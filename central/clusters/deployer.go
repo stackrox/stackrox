@@ -92,8 +92,7 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		"TolerationsEnabled": !c.GetTolerationsConfig().GetDisabled(),
 		"CreateUpgraderSA":   opts.CreateUpgraderSA,
 
-		"EnvVars":             envVars,
-		"AdmissionController": false,
+		"EnvVars": envVars,
 
 		"K8sCommand": command,
 
@@ -108,18 +107,15 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		"RenderAsLegacyChart": true,
 
 		"FeatureFlags": make(map[string]string),
-	}
 
-	if features.AdmissionControlService.Enabled() {
-		fields["AdmissionController"] = c.AdmissionController
-		fields["AdmissionControlListenOnUpdates"] = c.GetAdmissionControllerUpdates()
-		fields["AdmissionControlListenOnEvents"] = c.GetAdmissionControllerEvents()
-		fields["DisableBypass"] = c.GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass()
-		fields["TimeoutSeconds"] = c.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds()
-		fields["ScanInline"] = c.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline()
-		fields["AdmissionControllerEnabled"] = c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled()
-		fields["AdmissionControlEnforceOnUpdates"] = c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates()
+		"AdmissionController":              c.AdmissionController,
+		"AdmissionControlListenOnUpdates":  c.GetAdmissionControllerUpdates(),
+		"AdmissionControlListenOnEvents":   c.GetAdmissionControllerEvents(),
+		"DisableBypass":                    c.GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
+		"TimeoutSeconds":                   c.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
+		"ScanInline":                       c.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
+		"AdmissionControllerEnabled":       c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
+		"AdmissionControlEnforceOnUpdates": c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
 	}
-
 	return fields, nil
 }

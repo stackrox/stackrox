@@ -33,7 +33,6 @@ func (s *generateCertsTestSuite) TearDownTest() {
 func (s *generateCertsTestSuite) SetupTest() {
 	err := testutilsMTLS.LoadTestMTLSCerts(s.envIsolator)
 	s.Require().NoError(err)
-	s.envIsolator.Setenv("ROX_ADMISSION_CONTROL_SERVICE", "true")
 }
 
 func (s *generateCertsTestSuite) TestGenerateCertsAndAddToZip() {

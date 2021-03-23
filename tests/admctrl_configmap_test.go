@@ -9,7 +9,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/admissioncontrol"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -19,8 +18,6 @@ import (
 )
 
 func TestAdmissionControllerConfigMap(t *testing.T) {
-	assumeFeatureFlagHasValue(t, features.AdmissionControlService, true)
-
 	k8sClient := createK8sClient(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

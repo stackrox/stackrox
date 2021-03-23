@@ -7,7 +7,6 @@ import (
 	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -69,9 +68,10 @@ func IssueSecuredClusterInitCertificates() (CertBundle, uuid.UUID, error) {
 }
 
 func getEnabledServices(cluster *storage.Cluster) []storage.ServiceType {
-	serviceTypes := []storage.ServiceType{storage.ServiceType_COLLECTOR_SERVICE, storage.ServiceType_SENSOR_SERVICE}
-	if features.AdmissionControlService.Enabled() {
-		serviceTypes = append(serviceTypes, storage.ServiceType_ADMISSION_CONTROL_SERVICE)
+	serviceTypes := []storage.ServiceType{
+		storage.ServiceType_COLLECTOR_SERVICE,
+		storage.ServiceType_SENSOR_SERVICE,
+		storage.ServiceType_ADMISSION_CONTROL_SERVICE,
 	}
 	return serviceTypes
 }

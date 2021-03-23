@@ -3,9 +3,6 @@ package features
 //lint:file-ignore U1000 we want to introduce this feature flag unused.
 
 var (
-	// AdmissionControlService enables running admission control as a separate microservice.
-	AdmissionControlService = registerFeature("Separate admission control microservice", "ROX_ADMISSION_CONTROL_SERVICE", true)
-
 	// csvExport enables CSV export of search results.
 	csvExport = registerFeature("Enable CSV export of search results", "ROX_CSV_EXPORT", false)
 

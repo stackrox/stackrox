@@ -9,11 +9,9 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 import objects.Deployment
 import objects.GCRImageIntegration
-import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.CVEService
 import services.ClusterService
-import services.FeatureFlagService
 import services.ImageIntegrationService
 import services.PolicyService
 import spock.lang.Retry
@@ -88,12 +86,10 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     def setup() {
-        if (FeatureFlagService.isFeatureFlagEnabled("ROX_ADMISSION_CONTROL_SERVICE")) {
-            // By default, operate with a chaos monkey that keeps one ready replica alive and deletes with a 10s grace
-            // period, which should be sufficient for K8s to pick up readiness changes and update endpoints.
-            chaosMonkey = new ChaosMonkey(1, 10L)
-            chaosMonkey.waitForEffect()
-        }
+        // By default, operate with a chaos monkey that keeps one ready replica alive and deletes with a 10s grace
+        // period, which should be sufficient for K8s to pick up readiness changes and update endpoints.
+        chaosMonkey = new ChaosMonkey(1, 10L)
+        chaosMonkey.waitForEffect()
     }
 
     def cleanup() {
@@ -165,8 +161,6 @@ class AdmissionControllerTest extends BaseSpecification {
     def "Verify CVE snoozing applies to images scanned by admission controller #image"() {
         given:
         "Create policy looking for a specific CVE"
-        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_ADMISSION_CONTROL_SERVICE"))
-
         // We don't want to block on CVSS
         Services.updatePolicyEnforcement(
                 CVSS,
@@ -257,8 +251,6 @@ class AdmissionControllerTest extends BaseSpecification {
     @Category([BAT])
     def "Verify Admission Controller Enforcement on Updates (#desc)"() {
         when:
-        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_ADMISSION_CONTROL_SERVICE"))
-
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
                 .setEnabled(true)
                 .setEnforceOnUpdates(true)
@@ -361,8 +353,6 @@ class AdmissionControllerTest extends BaseSpecification {
     def "Verify admission controller does not impair cluster operations when unstable"() {
         when:
         "Check if test is applicable"
-        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_ADMISSION_CONTROL_SERVICE"))
-
         and:
         "Stop the regular chaos monkey"
         chaosMonkey.stop()
