@@ -3,6 +3,7 @@
 package quay
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -26,5 +27,15 @@ func TestQuay(t *testing.T) {
 
 	q, err := newRegistry(integration)
 	assert.NoError(t, err)
-	assert.NoError(t, q.Test())
+	assert.NoError(t, filterOkErrors(q.Test()))
+}
+
+func filterOkErrors(err error) error {
+	if err != nil &&
+		(strings.Contains(err.Error(), "EOF") ||
+			strings.Contains(err.Error(), "status=502")) {
+		// Ignore failures that can indicate quay.io outage
+		return nil
+	}
+	return err
 }

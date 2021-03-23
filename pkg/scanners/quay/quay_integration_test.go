@@ -3,6 +3,7 @@
 package quay
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -37,7 +38,7 @@ func (suite *QuayIntegrationSuite) SetupSuite() {
 
 	q, err := newScanner(protoImageIntegration)
 	suite.NoError(err)
-	suite.NoError(q.Test())
+	suite.NoError(filterOkErrors(q.Test()))
 	suite.quay = q
 }
 
@@ -45,7 +46,7 @@ func (suite *QuayIntegrationSuite) TearDownSuite() {}
 
 func (suite *QuayIntegrationSuite) TestScanTest() {
 	err := suite.quay.Test()
-	suite.NoError(err)
+	suite.NoError(filterOkErrors(err))
 }
 
 func (suite *QuayIntegrationSuite) TestGetScan() {
@@ -62,6 +63,7 @@ func (suite *QuayIntegrationSuite) TestGetScan() {
 	var err error
 	err = retry.WithRetry(func() error {
 		scan, err = suite.quay.GetScan(image)
+		err = filterOkErrors(err)
 		if err != nil {
 			return retry.MakeRetryable(err)
 		}
@@ -73,4 +75,14 @@ func (suite *QuayIntegrationSuite) TestGetScan() {
 
 	suite.NoError(err)
 	suite.NotEmpty(scan.GetComponents())
+}
+
+func filterOkErrors(err error) error {
+	if err != nil &&
+		(strings.Contains(err.Error(), "EOF") ||
+			strings.Contains(err.Error(), "status=502")) {
+		// Ignore failures that can indicate quay.io outage
+		return nil
+	}
+	return err
 }
