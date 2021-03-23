@@ -145,8 +145,9 @@
       }
     },
     {
-      "name": "Don't alert on openshift-image-registry namespace",
+      "name": "Don't alert on node-ca dameonset in the openshift-image-registry namespace",
       "deployment": {
+        "name": "node-ca",
         "scope": {
           "namespace": "openshift-image-registry"
         }

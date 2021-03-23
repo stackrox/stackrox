@@ -1,14 +1,20 @@
 import com.google.protobuf.Timestamp
 import com.google.protobuf.UnknownFieldSet
+import com.google.protobuf.util.JsonFormat
+import groovy.io.FileType
 import groups.Upgrade
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.api.v1.SummaryServiceOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ProcessIndicatorOuterClass
+import io.stackrox.proto.storage.ScopeOuterClass
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.ConfigService
 import services.GraphQLService
+import services.PolicyService
 import services.ProcessService
 import services.SummaryService
 import spock.lang.Unroll
@@ -16,6 +22,7 @@ import util.Env
 
 class UpgradesTest extends BaseSpecification {
     private final static String CLUSTERID = Env.mustGet("UPGRADE_CLUSTER_ID")
+    private final static String POLICIES_JSON_PATH = Env.get("POLICIES_JSON_RELATIVE_PATH", "../image/policies/files")
 
     private static final COMPLIANCE_QUERY = """query getAggregatedResults(
         \$groupBy: [ComplianceAggregation_Scope!],
@@ -204,9 +211,197 @@ class UpgradesTest extends BaseSpecification {
         ["STANDARD", "NAMESPACE"] | "CONTROL" | 1
     }
 
-    // TODO
-    // network flow edges
-    // compliance
-    // clairify integration
-    // slack integration
+    static private class KnownPolicyDiffs {
+        Set<PolicyOuterClass.Exclusion> toRemove
+        List<Tuple2<PolicyOuterClass.Exclusion, Integer>> toAdd
+        String remediation
+        String rationale
+        String description
+
+        def addExclusions(def toAdd) {
+            this.toAdd = toAdd.collect {
+                def dep = PolicyOuterClass.Exclusion.Deployment.newBuilder().setScope(
+                        ScopeOuterClass.Scope.newBuilder().setNamespace(it[0])
+                )
+                new Tuple2(
+                        PolicyOuterClass.Exclusion.newBuilder().
+                                setName("Don't alert on ${it[0]} namespace").setDeployment(dep).build(),
+                        it[1]
+                )
+            }
+            return this
+        }
+
+        def addExclusionsWithName(def toAdd) {
+            this.toAdd = toAdd.collect {
+                def dep = PolicyOuterClass.Exclusion.Deployment.newBuilder().
+                        setScope(ScopeOuterClass.Scope.newBuilder().setNamespace(it[0])).
+                        setName(it[1]).
+                        build()
+                new Tuple2(
+                        PolicyOuterClass.Exclusion.newBuilder().
+                                setName("Don't alert on ${it[2]}").setDeployment(dep).build(),
+                        it[3]
+                )
+            }
+            return this
+        }
+
+        def removeExclusions(def toRemove) {
+            this.toRemove = toRemove.collect {
+                def dep = PolicyOuterClass.Exclusion.Deployment.newBuilder().
+                        setScope(ScopeOuterClass.Scope.newBuilder().setNamespace(it[0])).
+                        setName(it[1]).
+                        build()
+                PolicyOuterClass.Exclusion.newBuilder().
+                        setName("Don't alert on ${it[2]}").setDeployment(dep).build()
+            }
+            return this
+        }
+
+        def updateRemediation(def remediation) {
+            this.remediation = remediation
+            return this
+        }
+
+        def updateRationale(def rationale) {
+            this.rationale = rationale
+            return this
+        }
+
+        def updateDescription(def description) {
+            this.description = description
+            return this
+        }
+    }
+
+    @Category(Upgrade)
+    def "Verify upgraded policies match default policy set"() {
+        given:
+        "Default policies in code"
+        def defaultPolicies = [:]
+        def policiesDir = new File(POLICIES_JSON_PATH)
+        policiesDir.eachFileRecurse (FileType.FILES) { file ->
+            if (file.name.endsWith(".json")) {
+                def builder = PolicyOuterClass.Policy.newBuilder()
+                JsonFormat.parser().merge(file.text, builder)
+                def policy = builder.build()
+
+                defaultPolicies[policy.id] = policy
+            }
+        }
+
+        when:
+        "Upgraded default policies are fetched from central"
+        def upgradedPolicies = PolicyService.getPolicyClient().exportPolicies(
+                PolicyServiceOuterClass.ExportPoliciesRequest.newBuilder().
+                        addAllPolicyIds(defaultPolicies.keySet()).
+                        build()
+        ).getPoliciesList()
+
+        def knownPolicyDifferences = [
+                "2db9a279-2aec-4618-a85d-7f1bdf4911b1": new KnownPolicyDiffs().addExclusions([["istio-system", 1]]),
+                "2e90874a-3521-44de-85c6-5720f519a701": new KnownPolicyDiffs().addExclusions([["istio-system", 1]]),
+                "886c3c94-3a6a-4f2b-82fc-d6bf5a310840": new KnownPolicyDiffs().addExclusions([["istio-system", 3]]),
+                "fe9de18b-86db-44d5-a7c4-74173ccffe2e": new KnownPolicyDiffs().addExclusions([["istio-system", 2]]),
+                "014a03c6-9053-49b5-88ea-c1efcf19804f": new KnownPolicyDiffs().addExclusions([["istio-system", 1]]),
+                "880fd131-46f0-43d2-82c9-547f5aa7e043": new KnownPolicyDiffs().addExclusions([["istio-system", 1]]),
+                "550081a1-ad3a-4eab-a874-8eb68fab2bbd": new KnownPolicyDiffs().addExclusions([["istio-system", 1]]),
+                "8ac93556-4ad4-4220-a275-3f518db0ceb9": new KnownPolicyDiffs().addExclusions([["istio-system", 1]]),
+                "d3e480c1-c6de-4cd2-9006-9a3eb3ad36b6": new KnownPolicyDiffs().addExclusions([["istio-system", 1]]),
+                "1a498d97-0cc2-45f5-b32e-1f3cca6a3113": new KnownPolicyDiffs().addExclusions([["istio-system", 1]]),
+                "60e7c7f3-dc78-4367-9e9a-68aa3b7467f0": new KnownPolicyDiffs().addExclusions([["istio-system", 1]]),
+                "a9b9ecf7-9707-4e32-8b62-d03018ed454f": new KnownPolicyDiffs()
+                        .removeExclusions([["kube-system", "", "kube namespace"]])
+                        .addExclusionsWithName([
+                                ["kube-system", "", "kube-system namespace", 2],
+                                ["istio-system", "", "istio-system namespace", 3]
+                        ])
+                        .updateRemediation("Ensure that deployments do not mount sensitive host directories," +
+                                " or exclude this deployment if host mount is required."),
+                "7760a5f3-bca4-4ca8-94a7-ad89edbc0e2c": new KnownPolicyDiffs()
+                        .removeExclusions([["kube-system", "", "Kube System Namespace"]])
+                        .addExclusionsWithName([
+                                ["kube-system", "", "kube-system namespace", 0],
+                                ["istio-system", "", "istio-system namespace", 1]
+                        ]),
+                "f4996314-c3d7-4553-803b-b24ce7febe48": new KnownPolicyDiffs()
+                        .removeExclusions([["stackrox", "scanner-v2-db", "StackRox scanner-v2 database"]])
+                        .updateRemediation("Migrate your secrets from environment variables to orchestrator secrets" +
+                                " or your security team's secret management solution."),
+                "a788556c-9268-4f30-a114-d456f2380818": new KnownPolicyDiffs()
+                        .removeExclusions([["stackrox", "scanner-v2-db", "StackRox scanner-v2 database"]])
+                        .updateRemediation("Migrate your secrets from environment variables" +
+                                " to your security team's secret management solution."),
+                "74cfb824-2e65-46b7-b1b4-ba897e53af1f": new KnownPolicyDiffs()
+                        .removeExclusions([
+                                ["stackrox", "scanner-v2", "StackRox scanner-v2"],
+                                ["stackrox", "scanner-v2-db", "StackRox scanner-v2 database"]
+                        ])
+                        .updateRemediation("Run `dpkg -r --force-all apt apt-get && dpkg -r --force-all debconf dpkg`" +
+                                " in the image build for production containers."),
+                "1913283f-ce3c-4134-84ef-195c4cd687ae": new KnownPolicyDiffs()
+                        .removeExclusions([["stackrox", "scanner-v2", "StackRox scanner-v2"]]),
+                "f95ff08d-130a-465a-a27e-32ed1fb05555": new KnownPolicyDiffs()
+                        .removeExclusions([["stackrox", "scanner-v2", "StackRox scanner-v2"]])
+                        .addExclusionsWithName([["stackrox", "scanner", "StackRox scanner", 0]]),
+                "ddb7af9c-5ec1-45e1-a0cf-c36e3ef2b2ce": new KnownPolicyDiffs()
+                        .removeExclusions([["stackrox", "scanner-v2", "StackRox scanner-v2"]])
+                        .addExclusionsWithName([["stackrox", "scanner", "StackRox scanner", 0]]),
+                "d7a275e1-1bba-47e7-92a1-42340c759883": new KnownPolicyDiffs().updateRemediation(
+                        "Run `dpkg -r --force-all apt && dpkg -r --force-all debconf dpkg` in the image build" +
+                                " for production containers. Change applications to no longer use package managers" +
+                                " at runtime, if applicable."
+                ),
+                "89cae2e6-0cb7-4329-8692-c2c3717c1237": new KnownPolicyDiffs()
+                        .updateRationale("A locked process baseline communicates high confidence that execution" +
+                                " of a process not included in the baseline positively indicates malicious activity.")
+                        .updateDescription("This policy generates a violation for any process execution" +
+                                " that is not explicitly allowed by a locked process baseline" +
+                                " for a given container specification within a Kubernetes deployment."),
+        ]
+        and:
+        "Skip over known differences in migrated policies until ROX-6806 is fixed"
+        upgradedPolicies = upgradedPolicies.collect { policy ->
+            assert Float.parseFloat(policy.policyVersion) >= 1.0
+
+            def builder = PolicyOuterClass.Policy.newBuilder(policy)
+            if (policy.hasFields()) {
+                builder.clearFields() // fields is ignored so clear it out
+            }
+
+            if (knownPolicyDifferences.containsKey(policy.id)) {
+                def diffs = knownPolicyDifferences[policy.id]
+                if (diffs.toRemove) {
+                    def filteredExclusions = policy.exclusionsList.findAll { !diffs.toRemove.contains(it) }
+                    builder.clearExclusions().addAllExclusions(filteredExclusions)
+                }
+                if (diffs.toAdd) {
+                    diffs.toAdd.each { builder.addExclusions(it.second, it.first) }
+                }
+                if (diffs.remediation) {
+                    builder.setRemediation(diffs.remediation)
+                }
+                if (diffs.rationale) {
+                    builder.setRationale(diffs.rationale)
+                }
+                if (diffs.description) {
+                    builder.setDescription(diffs.description)
+                }
+            }
+
+            builder.build()
+        }
+
+        then:
+        "All default policies must still exist"
+        assert upgradedPolicies.size() >= defaultPolicies.size()
+
+        and:
+        "Upgraded policies should match the default policies in code"
+        def unmatchedPolicies = upgradedPolicies.findAll {
+            it != defaultPolicies[it.id]
+        }
+        assert unmatchedPolicies.size() == 0
+    }
 }
