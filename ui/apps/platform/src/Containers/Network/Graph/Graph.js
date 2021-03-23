@@ -169,7 +169,7 @@ class Graph extends Component {
         const { isSimulatorOn } = this.props;
         // Rendering.
         return (
-            <div className="network-grid-bg w-full h-full theme-light">
+            <div className="w-full h-full">
                 {this.renderGraph(isSimulatorOn)}
                 <Filters />
                 <Legend />

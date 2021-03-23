@@ -75,9 +75,7 @@ function Wizard({ wizardOpen, wizardStage, onClose }) {
     }
 
     return (
-        <div
-            className={`${width} h-full absolute right-0 bg-primary-200 shadow-lg theme-light network-panel`}
-        >
+        <div className={`${width} h-full absolute right-0 bg-primary-200 shadow-lg network-panel`}>
             <NodesUpdateSection />
             <ZoomButtons pinnedLeft />
 

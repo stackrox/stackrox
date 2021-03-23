@@ -680,7 +680,7 @@ const NetworkGraph = ({
         </div>
     );
     return (
-        <div className="h-full w-full relative">
+        <div className="h-full w-full relative network-grid-bg">
             <div
                 id="cytoscapeContainer"
                 className="w-full h-full cursor-pointer cytoscape-container"

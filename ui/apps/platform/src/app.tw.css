@@ -678,7 +678,7 @@ h6 {
     box-shadow: -10px 0 0 var(--base-100), 10px 0 0 var(--base-100), 0 2px 8px 0 hsl(233, 25%, 15%) !important;
 }
 
-.theme-dark .network-grid-bg .ReactTable .rt-thead.-header .rt-tr {
+.theme-dark .network-panel .ReactTable .rt-thead.-header .rt-tr {
     background: none !important;
     box-shadow: none !important;
 }

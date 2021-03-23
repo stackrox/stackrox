@@ -26,11 +26,7 @@ const ZoomButtons = ({ pinnedLeft, networkGraphRef: graph }) => {
     }
 
     return (
-        <div
-            className={`flex theme-light absolute bottom-0 ${
-                pinnedLeft && 'pin-network-zoom-buttons-left'
-            }`}
-        >
+        <div className={`flex absolute bottom-0 ${pinnedLeft && 'pin-network-zoom-buttons-left'}`}>
             <div className="border-2 border-base-400 my-4">
                 <Button
                     className="btn-icon btn-base border-b border-base-300"
