@@ -73,7 +73,7 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
 
     def setupSpec() {
-        assumeFalse("This test is skipped in this evironment", skipThisTest())
+        assumeFalse("This test is skipped in this environment", skipThisTest())
 
         // Purposefully add an image that is not running to check the case
         // where an image is orphaned
@@ -87,7 +87,7 @@ class VulnMgmtSACTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        assumeFalse("This test is skipped in this evironment", skipThisTest())
+        assumeFalse("This test is skipped in this environment", skipThisTest())
 
         BaseService.useBasicAuth()
         ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()

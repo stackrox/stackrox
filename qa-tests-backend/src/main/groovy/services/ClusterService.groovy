@@ -91,4 +91,16 @@ class ClusterService extends BaseService {
         }
         isEKS
     }
+
+    static Boolean isAKS() {
+        Boolean isAKS = false
+        try {
+            isAKS = getClusterServiceClient().getClusters().getClustersList().every {
+                Cluster cluster -> cluster.getStatus().getProviderMetadata().hasAzure()
+            }
+        } catch (Exception e) {
+            println "Error getting cluster info: ${e}"
+        }
+        isAKS
+    }
 }

@@ -1,7 +1,10 @@
+import static org.junit.Assume.assumeFalse
+
 import groups.BAT
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import objects.Job
 import org.junit.experimental.categories.Category
+import services.ClusterService
 import services.DeploymentService
 import services.ImageService
 import objects.Deployment
@@ -110,6 +113,7 @@ class DeploymentTest extends BaseSpecification {
     @Category([BAT])
     def "Verify orchestrator deployment is marked appropriately"() {
         when:
+        assumeFalse(ClusterService.isAKS())
         def results = DeploymentService.listDeploymentsSearch(RawQuery.newBuilder().setQuery(query).build())
 
         then:
