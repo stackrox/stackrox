@@ -6,9 +6,6 @@ var (
 	// csvExport enables CSV export of search results.
 	csvExport = registerFeature("Enable CSV export of search results", "ROX_CSV_EXPORT", false)
 
-	// SupportSlimCollectorMode enables support for retrieving slim Collector bundles from central.
-	SupportSlimCollectorMode = registerFeature("Support slim Collector mode", "ROX_SUPPORT_SLIM_COLLECTOR_MODE", true)
-
 	// ComplianceInRocksDB switches compliance over to using RocksDB instead of Bolt
 	ComplianceInRocksDB = registerFeature("Switch compliance to using RocksDB", "ROX_COMPLIANCE_IN_ROCKSDB", true)
 

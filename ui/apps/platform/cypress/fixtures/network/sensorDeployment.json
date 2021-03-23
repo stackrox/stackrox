@@ -40,11 +40,6 @@
                         "key": "ROX_SENSOR_INSTALLATION_EXPERIENCE",
                         "value": "true",
                         "envVarSource": "RAW"
-                    },
-                    {
-                        "key": "ROX_SUPPORT_SLIM_COLLECTOR_MODE",
-                        "value": "true",
-                        "envVarSource": "RAW"
                     }
                 ],
                 "command": ["kubernetes-sensor"],

@@ -15,8 +15,6 @@ import {
     selectElementClassName,
     selectWrapperClassName,
 } from 'constants/form.constants';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 
 import { clusterTypeOptions, clusterTypes, runtimeOptions } from './cluster.helpers';
 import HelmValueWarning from './Components/HelmValueWarning';
@@ -41,10 +39,6 @@ function getSelectComparison(options, key, selectedCluster, handleChange) {
 }
 
 const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange }) => {
-    const slimCollectorEnabled = useFeatureFlagEnabled(
-        knownBackendFlags.ROX_SUPPORT_SLIM_COLLECTOR_MODE
-    );
-
     // curry the change handlers for the select inputs
     const onCollectionMethodChange = getSelectComparison(
         runtimeOptions,
@@ -296,55 +290,53 @@ const StaticConfigurationSection = ({ centralEnv, selectedCluster, handleChange 
                         }
                     />
                 </div>
-                {slimCollectorEnabled && (
-                    <div className="flex flex-col">
-                        <div className={wrapperMarginClassName}>
-                            <div className={divToggleOuterClassName}>
-                                <div className={justifyBetweenClassName}>
-                                    <label htmlFor="slimCollector" className={labelClassName}>
-                                        <span>Enable Slim Collector Mode</span>
-                                        <br />
-                                        <span className={sublabelClassName}>
-                                            New cluster will be set up using a slim collector image
-                                        </span>
-                                    </label>
-                                    <ToggleSwitch
-                                        id="slimCollector"
-                                        name="slimCollector"
-                                        toggleHandler={handleChange}
-                                        enabled={selectedCluster.slimCollector}
-                                    />
-                                </div>
+                <div className="flex flex-col">
+                    <div className={wrapperMarginClassName}>
+                        <div className={divToggleOuterClassName}>
+                            <div className={justifyBetweenClassName}>
+                                <label htmlFor="slimCollector" className={labelClassName}>
+                                    <span>Enable Slim Collector Mode</span>
+                                    <br />
+                                    <span className={sublabelClassName}>
+                                        New cluster will be set up using a slim collector image
+                                    </span>
+                                </label>
+                                <ToggleSwitch
+                                    id="slimCollector"
+                                    name="slimCollector"
+                                    toggleHandler={handleChange}
+                                    enabled={selectedCluster.slimCollector}
+                                />
                             </div>
-                            <HelmValueWarning
-                                currentValue={selectedCluster?.slimCollector}
-                                helmValue={selectedCluster?.helmConfig?.staticConfig?.slimCollector}
-                            />
                         </div>
-                        {!centralEnv?.successfullyFetched && (
-                            <Message type="warn">
-                                Failed to check if Central has kernel support packages available
-                            </Message>
-                        )}
-                        {showSlimCollectorWarning && (
-                            <Message type="warn">
-                                <span>
-                                    Central doesn’t have the required Kernel support package.
-                                    Retrieve it from{' '}
-                                    <a
-                                        href="https://install.stackrox.io/collector/support-packages/index.html"
-                                        className="underline text-primary-900"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        stackrox.io
-                                    </a>{' '}
-                                    and upload it to Central using roxctl.
-                                </span>
-                            </Message>
-                        )}
+                        <HelmValueWarning
+                            currentValue={selectedCluster?.slimCollector}
+                            helmValue={selectedCluster?.helmConfig?.staticConfig?.slimCollector}
+                        />
                     </div>
-                )}
+                    {!centralEnv?.successfullyFetched && (
+                        <Message type="warn">
+                            Failed to check if Central has kernel support packages available
+                        </Message>
+                    )}
+                    {showSlimCollectorWarning && (
+                        <Message type="warn">
+                            <span>
+                                Central doesn’t have the required Kernel support package. Retrieve
+                                it from{' '}
+                                <a
+                                    href="https://install.stackrox.io/collector/support-packages/index.html"
+                                    className="underline text-primary-900"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    stackrox.io
+                                </a>{' '}
+                                and upload it to Central using roxctl.
+                            </span>
+                        </Message>
+                    )}
+                </div>
             </div>
         </CollapsibleSection>
     );

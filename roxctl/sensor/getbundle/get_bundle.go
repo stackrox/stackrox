@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/roxctl/common"
@@ -116,11 +115,7 @@ func Command() *cobra.Command {
 			"Generate deployment files supporting the given Istio version. Valid versions: %s",
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
 
-	if features.SupportSlimCollectorMode.Enabled() {
-		autobool.NewFlag(c.PersistentFlags(), &slimCollector, "slim-collector", "Use slim collector in deployment bundle")
-	} else {
-		slimCollector = pointers.Bool(false)
-	}
+	autobool.NewFlag(c.PersistentFlags(), &slimCollector, "slim-collector", "Use slim collector in deployment bundle")
 
 	return c
 }

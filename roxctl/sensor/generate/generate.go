@@ -12,9 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/istioutils"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -183,11 +181,7 @@ func Command() *cobra.Command {
 
 	c.PersistentFlags().BoolVar(&cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes")
 
-	if features.SupportSlimCollectorMode.Enabled() {
-		autobool.NewFlag(c.PersistentFlags(), &slimCollectorP, "slim-collector", "Use slim collector in deployment bundle")
-	} else {
-		slimCollectorP = pointers.Bool(false)
-	}
+	autobool.NewFlag(c.PersistentFlags(), &slimCollectorP, "slim-collector", "Use slim collector in deployment bundle")
 
 	c.PersistentFlags().BoolVar(&cluster.AdmissionController, "create-admission-controller", false, "whether or not to use an admission controller for enforcement (WARNING: deprecated; admission controller will be deployed by default")
 	utils.Must(c.PersistentFlags().MarkHidden("create-admission-controller"))
