@@ -455,6 +455,14 @@ func (p *backendImpl) processIDPResponseForCodeFlow(ctx context.Context, respons
 }
 
 func (p *backendImpl) processIDPResponse(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, error) {
+	idpError := responseData.Get("error")
+	if idpError != "" {
+		desc := translateErrorCode(idpError)
+		if idpErrorDesc := responseData.Get("error_description"); idpErrorDesc != "" {
+			desc = desc + " Additional information from the provider follows. " + idpErrorDesc
+		}
+		return nil, errors.New(desc)
+	}
 	now := time.Now()
 
 	var combinedErr error
@@ -517,6 +525,15 @@ func (p *backendImpl) processIDPResponse(ctx context.Context, responseData url.V
 	}
 
 	return nil, combinedErr
+}
+
+func translateErrorCode(idpError string) string {
+	switch idpError {
+	case "unauthorized_client":
+		return "Identity provider claims that this authentication provider configuration is not authorized to request an authorization code or access token using this method."
+	default:
+		return fmt.Sprintf("Identity provider returned a %q error.", idpError)
+	}
 }
 
 func (p *backendImpl) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {

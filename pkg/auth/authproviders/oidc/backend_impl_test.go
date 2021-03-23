@@ -174,7 +174,7 @@ func TestBackend(t *testing.T) {
 		issueNonce                  bool
 		idpResponseTemplate         map[string]responseValueProvider
 		exchangedTokenClaims        *claims
-		wantProcessIDPResponseError bool
+		wantProcessIDPResponseError string
 		assertInsecureClient        bool
 	}{
 		"no client id": {
@@ -313,7 +313,7 @@ func TestBackend(t *testing.T) {
 			idpResponseTemplate: map[string]responseValueProvider{
 				"access_token": literalValue{mockAccessToken},
 			},
-			wantProcessIDPResponseError: true,
+			wantProcessIDPResponseError: "1 error occurred:\n\t* 'code' field not found in response data\n\n",
 		},
 		"mode form post with bad nonce": {
 			config: map[string]string{
@@ -341,7 +341,7 @@ func TestBackend(t *testing.T) {
 				"code": literalValue{mockAuthorizationCode},
 			},
 			exchangedTokenClaims:        &suppliedClaims,
-			wantProcessIDPResponseError: true,
+			wantProcessIDPResponseError: "1 error occurred:\n\t* ID token verification failed: invalid token\n\n",
 		},
 		"mode query": {
 			config: map[string]string{
@@ -424,7 +424,7 @@ func TestBackend(t *testing.T) {
 			idpResponseTemplate: map[string]responseValueProvider{
 				"access_token": literalValue{mockAccessToken},
 			},
-			wantProcessIDPResponseError: true,
+			wantProcessIDPResponseError: "2 errors occurred:\n\t* fetching user info with access token: fetching updated userinfo: simulated UserInfo endpoint failure\n\t* no id_token field found in response\n\n",
 		},
 		"mode fragment with id_token only": {
 			config: map[string]string{
@@ -465,7 +465,7 @@ func TestBackend(t *testing.T) {
 			idpResponseTemplate: map[string]responseValueProvider{
 				"id_token": suppliedClaims,
 			},
-			wantProcessIDPResponseError: true,
+			wantProcessIDPResponseError: "2 errors occurred:\n\t* no access_token field found in response\n\t* id token verification failed: invalid token\n\n",
 		},
 		"mode fragment with both token and id_token": {
 			config: map[string]string{
@@ -731,6 +731,73 @@ func TestBackend(t *testing.T) {
 				"access_token": literalValue{mockAccessToken},
 			},
 		},
+		"unauthorized client error from idp": {
+			config: map[string]string{
+				clientIDConfigKey:            "testclientid",
+				clientSecretConfigKey:        "testsecret",
+				dontUseClientSecretConfigKey: "true",
+				issuerConfigKey:              "https://test-issuer",
+				modeConfigKey:                "auto",
+			},
+			oidcProvider: &mockOIDCProvider{
+				responseTypesSupported: allResponseTypes,
+				responseModesSupported: allResponseModes,
+			},
+			wantBackend: &wantBackend{
+				responseMode:  "form_post",
+				responseTypes: []string{"code"},
+			},
+			idpResponseTemplate: map[string]responseValueProvider{
+				// Typical response from KeyCloak when we request implicit or hybrid flow from a confidential-only client config.
+				"error":             literalValue{"unauthorized_client"},
+				"error_description": literalValue{"Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client."},
+			},
+			wantProcessIDPResponseError: "Identity provider claims that this authentication provider configuration is not authorized to request an authorization code or access token using this method. " +
+				"Additional information from the provider follows. Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.",
+		},
+		"error from idp without description": {
+			config: map[string]string{
+				clientIDConfigKey:            "testclientid",
+				clientSecretConfigKey:        "testsecret",
+				dontUseClientSecretConfigKey: "true",
+				issuerConfigKey:              "https://test-issuer",
+				modeConfigKey:                "auto",
+			},
+			oidcProvider: &mockOIDCProvider{
+				responseTypesSupported: allResponseTypes,
+				responseModesSupported: allResponseModes,
+			},
+			wantBackend: &wantBackend{
+				responseMode:  "form_post",
+				responseTypes: []string{"code"},
+			},
+			idpResponseTemplate: map[string]responseValueProvider{
+				"error": literalValue{"code1"},
+			},
+			wantProcessIDPResponseError: "Identity provider returned a \"code1\" error.",
+		},
+		"error from idp with description": {
+			config: map[string]string{
+				clientIDConfigKey:            "testclientid",
+				clientSecretConfigKey:        "testsecret",
+				dontUseClientSecretConfigKey: "true",
+				issuerConfigKey:              "https://test-issuer",
+				modeConfigKey:                "auto",
+			},
+			oidcProvider: &mockOIDCProvider{
+				responseTypesSupported: allResponseTypes,
+				responseModesSupported: allResponseModes,
+			},
+			wantBackend: &wantBackend{
+				responseMode:  "form_post",
+				responseTypes: []string{"code"},
+			},
+			idpResponseTemplate: map[string]responseValueProvider{
+				"error":             literalValue{"code2"},
+				"error_description": literalValue{"Blah blah blah."},
+			},
+			wantProcessIDPResponseError: "Identity provider returned a \"code2\" error. Additional information from the provider follows. Blah blah blah.",
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -788,8 +855,8 @@ func TestBackend(t *testing.T) {
 				idpResponseData[name] = []string{provider.serialize(nonce)}
 			}
 			authResp, err := gotBackend.processIDPResponse(context.TODO(), idpResponseData)
-			if tt.wantProcessIDPResponseError {
-				assert.Error(t, err)
+			if tt.wantProcessIDPResponseError != "" {
+				assert.EqualError(t, err, tt.wantProcessIDPResponseError)
 			} else {
 				require.NoError(t, err, "processIDPResponse returned error")
 				assert.Equal(t, &wantProcessIDPResponseAuthResponseClaims, authResp.Claims, "unexpected auth response from processIDPResponse")
