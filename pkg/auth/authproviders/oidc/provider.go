@@ -95,19 +95,25 @@ func (i *extraDiscoveryInfo) SelectResponseMode(hasClientSecret bool) (string, e
 
 func (i *extraDiscoveryInfo) SelectResponseType(responseMode string, hasClientSecret bool) (string, error) {
 	var preferredResponseTypes []string
+	// code flow is always preferable, but only works if we have a client secret. Worse, some providers
+	// (e.g., Auth0) will actually not allow issuing a code if the response mode is fragment; so we
+	// would rather additionally avoid it in that case.
 	if hasClientSecret && responseMode != "fragment" {
-		// code flow is always preferable, but only works if we have a client secret. Worse, some providers
-		// (e.g., Auth0) will actually not allow issuing a code if the response mode is fragment; so we
-		// would rather avoid it.
+		// Some providers (e.g. Ping Federate and KeyCloak) disallow implicit and hybrid flows unless
+		// explicitly permitted by the administrator. Therefore we prefer pure code flow over hybrid.
+		// See https://stack-rox.atlassian.net/browse/ROX-6497 for background.
+		// TODO(mowsiany): consider exposing a knob which lets administrator prefer hybrid flow if they know what they are doing.
+		// Not sure if hybrid flow actually buys us anything, since we go to the token endpoint anyway,
+		// nullifying any latency gains from having received the (id_)token in authorization response.
+		preferredResponseTypes = append(preferredResponseTypes, "code")
 
 		// Hybrid flow only works in non-query mode
 		if responseMode != "query" {
 			// Note: "code id_token token" is the canonical response type per
 			// https://openid.net/specs/oauth-v2-multiple-response-types-1_0.html#Combinations, but some providers
-			// (Google) have the order swapped, listing it as "token id_token".
+			// (e.g. Google, Auth0, PingFederate) have the order swapped, listing it as "token id_token".
 			preferredResponseTypes = append(preferredResponseTypes, "code id_token token", "code token id_token", "code token", "code id_token")
 		}
-		preferredResponseTypes = append(preferredResponseTypes, "code")
 	}
 	if responseMode != "query" {
 		// token and id_token are not allowed to be used with the query response mode.

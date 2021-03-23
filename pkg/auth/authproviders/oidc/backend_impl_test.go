@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"testing"
@@ -104,7 +105,7 @@ func (m mockOAuth2Token) GetRefreshToken() string {
 	return "mock-refresh-token"
 }
 
-func (m mockOAuth2Token) GetExtra(s string) interface{} {
+func (m mockOAuth2Token) GetExtra(string) interface{} {
 	return m.idToken
 }
 
@@ -174,6 +175,7 @@ func TestBackend(t *testing.T) {
 		idpResponseTemplate         map[string]responseValueProvider
 		exchangedTokenClaims        *claims
 		wantProcessIDPResponseError bool
+		assertInsecureClient        bool
 	}{
 		"no client id": {
 			config: map[string]string{
@@ -231,6 +233,34 @@ func TestBackend(t *testing.T) {
 			},
 			wantBackendErr: errQueryWithoutClientSecret,
 		},
+		"insecure client mode form post": {
+			config: map[string]string{
+				clientIDConfigKey:     "testclientid",
+				clientSecretConfigKey: "testsecret",
+				issuerConfigKey:       "https+insecure://test-issuer",
+				modeConfigKey:         "post",
+			},
+			oidcProvider: &mockOIDCProvider{
+				responseTypesSupported: allResponseTypes,
+				responseModesSupported: allResponseModes,
+			},
+			assertInsecureClient: true,
+			wantBackend: &wantBackend{
+				responseMode:  "form_post",
+				responseTypes: []string{"code"},
+				config: map[string]string{
+					clientIDConfigKey:     "testclientid",
+					clientSecretConfigKey: "testsecret",
+					issuerConfigKey:       "https+insecure://test-issuer",
+					modeConfigKey:         "post",
+				},
+			},
+			issueNonce: true,
+			idpResponseTemplate: map[string]responseValueProvider{
+				"code": literalValue{mockAuthorizationCode},
+			},
+			exchangedTokenClaims: &suppliedClaims,
+		},
 		"mode form post": {
 			config: map[string]string{
 				clientIDConfigKey:     "testclientid",
@@ -244,7 +274,7 @@ func TestBackend(t *testing.T) {
 			},
 			wantBackend: &wantBackend{
 				responseMode:  "form_post",
-				responseTypes: []string{"code", "token", "id_token"},
+				responseTypes: []string{"code"},
 				config: map[string]string{
 					clientIDConfigKey:     "testclientid",
 					clientSecretConfigKey: "testsecret",
@@ -298,7 +328,7 @@ func TestBackend(t *testing.T) {
 			},
 			wantBackend: &wantBackend{
 				responseMode:  "form_post",
-				responseTypes: []string{"code", "token", "id_token"},
+				responseTypes: []string{"code"},
 				config: map[string]string{
 					clientIDConfigKey:     "testclientid",
 					clientSecretConfigKey: "testsecret",
@@ -609,7 +639,7 @@ func TestBackend(t *testing.T) {
 			},
 			wantBackend: &wantBackend{
 				responseMode:  "form_post",
-				responseTypes: []string{"code", "token", "id_token"},
+				responseTypes: []string{"code"},
 				config: map[string]string{
 					clientIDConfigKey:     "testclientid",
 					clientSecretConfigKey: "testsecret",
@@ -639,6 +669,12 @@ func TestBackend(t *testing.T) {
 			wantBackend: &wantBackend{
 				responseMode:  "fragment",
 				responseTypes: []string{"token", "id_token"},
+				config: map[string]string{
+					clientIDConfigKey:     "testclientid",
+					clientSecretConfigKey: "testsecret",
+					issuerConfigKey:       "https://test-issuer",
+					modeConfigKey:         "fragment",
+				},
 			},
 			idpResponseTemplate: map[string]responseValueProvider{
 				"access_token": literalValue{mockAccessToken},
@@ -660,6 +696,12 @@ func TestBackend(t *testing.T) {
 			wantBackend: &wantBackend{
 				responseMode:  "query",
 				responseTypes: []string{"code"},
+				config: map[string]string{
+					clientIDConfigKey:     "testclientid",
+					clientSecretConfigKey: "testsecret",
+					issuerConfigKey:       "https://test-issuer",
+					modeConfigKey:         "query",
+				},
 			},
 			issueNonce: true,
 			idpResponseTemplate: map[string]responseValueProvider{
@@ -696,7 +738,14 @@ func TestBackend(t *testing.T) {
 
 			if tt.oidcProvider != nil {
 				tt.oidcProvider.(*mockOIDCProvider).t = t
-				f.providerFactoryFunc = func(_ context.Context, _ string) (oidcProvider, error) {
+				f.providerFactoryFunc = func(ctx context.Context, _ string) (oidcProvider, error) {
+					client, ok := ctx.Value(oauth2.HTTPClient).(*http.Client)
+					assert.True(t, ok, "context passed to provider creation must contain an HTTP client")
+					if client.Transport != nil || tt.assertInsecureClient {
+						transport, ok := client.Transport.(*http.Transport)
+						assert.Truef(t, ok, "cannot check client transport of %T", client.Transport)
+						assert.Equal(t, tt.assertInsecureClient, transport.TLSClientConfig.InsecureSkipVerify)
+					}
 					return tt.oidcProvider, nil
 				}
 			} else {
@@ -806,7 +855,7 @@ func (m mockOIDCUserInfo) Claims(u interface{}) error {
 	return nil
 }
 
-func (m *mockOIDCProvider) UserInfo(ctx context.Context, tokenSource oauth2.TokenSource) (oidcUserInfo, error) {
+func (m *mockOIDCProvider) UserInfo(_ context.Context, tokenSource oauth2.TokenSource) (oidcUserInfo, error) {
 	token, err := tokenSource.Token()
 	require.NoError(m.t, err) // our code provides a static token source, which should never fail
 	require.Equal(m.t, m.userInfoAssertAccessToken, token.AccessToken)
@@ -816,14 +865,14 @@ func (m *mockOIDCProvider) UserInfo(ctx context.Context, tokenSource oauth2.Toke
 	return mockOIDCUserInfo{claims: m.claimsFromUserInfoEndpoint}, nil
 }
 
-func (m *mockOIDCProvider) Verifier(config *oidc.Config) oidcIDTokenVerifier {
+func (m *mockOIDCProvider) Verifier(*oidc.Config) oidcIDTokenVerifier {
 	return mockVerifier{}
 }
 
 type mockVerifier struct {
 }
 
-func (m mockVerifier) Verify(client context.Context, token string) (oidcIDToken, error) {
+func (m mockVerifier) Verify(_ context.Context, token string) (oidcIDToken, error) {
 	// undo claims.serialize
 	s := strings.Split(token, ":")
 	return mockOIDCToken{name: s[0], email: s[1], uid: s[2], nonce: s[3]}, nil
