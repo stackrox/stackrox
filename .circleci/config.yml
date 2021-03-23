@@ -4538,14 +4538,6 @@ jobs:
             done
 
       - run:
-          name: Upload main image RHEL DSOP bundle to dsop-artifacts.stackrox.io
-          command: |
-            gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
-            gcloud auth list
-            TAG="$(make --quiet tag)"
-            gsutil cp image/rhel/bundle.tar.gz "gs://dsop-artifacts.stackrox.io/main-rhel/${TAG}/"
-
-      - run:
           name: Publish Helm charts to github repository stackrox/release-artifacts and create a PR
           command: |
             central_services_chart_dir="$(mktemp -d)"
