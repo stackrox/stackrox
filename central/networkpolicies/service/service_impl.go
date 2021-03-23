@@ -204,37 +204,12 @@ func (s *serviceImpl) GetNetworkGraphEpoch(_ context.Context, req *v1.GetNetwork
 }
 
 func (s *serviceImpl) ApplyNetworkPolicy(ctx context.Context, request *v1.ApplyNetworkPolicyYamlRequest) (*v1.Empty, error) {
-	if request.GetModification().GetApplyYaml() == "" && len(request.GetModification().GetToDelete()) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "Modification must have contents")
-	}
-
-	clusterID := request.GetClusterId()
-	conn := s.sensorConnMgr.GetConnection(clusterID)
-	if conn == nil {
-		return nil, status.Errorf(codes.FailedPrecondition, "no active connection to cluster %q", clusterID)
-	}
-
-	undoMod, err := conn.NetworkPolicies().ApplyNetworkPolicies(ctx, request.GetModification())
+	undoRecord, err := s.applyModificationAndGetUndoRecord(ctx, request.GetClusterId(), request.GetModification())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "could not apply network policy modification: %v", err)
+		return nil, err
 	}
 
-	var user string
-	identity := authn.IdentityFromContext(ctx)
-	if identity != nil {
-		user = identity.FriendlyName()
-		if ap := identity.ExternalAuthProvider(); ap != nil {
-			user += fmt.Sprintf(" [%s]", ap.Name())
-		}
-	}
-	undoRecord := &storage.NetworkPolicyApplicationUndoRecord{
-		User:                 user,
-		ApplyTimestamp:       types.TimestampNow(),
-		OriginalModification: request.GetModification(),
-		UndoModification:     undoMod,
-	}
-
-	err = s.networkPolicies.UpsertUndoRecord(ctx, clusterID, undoRecord)
+	err = s.networkPolicies.UpsertUndoRecord(ctx, request.GetClusterId(), undoRecord)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "network policy was applied, but undo record could not be stored: %v", err)
 	}
@@ -525,8 +500,70 @@ func (s *serviceImpl) getPeersOfDeploymentFromGraph(deployment *storage.Deployme
 	return allowedPeers, nil
 }
 
+func (s *serviceImpl) applyModificationAndGetUndoRecord(
+	ctx context.Context,
+	clusterID string,
+	modification *storage.NetworkPolicyModification,
+) (*storage.NetworkPolicyApplicationUndoRecord, error) {
+	if modification.GetApplyYaml() == "" && len(modification.GetToDelete()) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "Modification must have contents")
+	}
+
+	conn := s.sensorConnMgr.GetConnection(clusterID)
+	if conn == nil {
+		return nil, status.Errorf(codes.FailedPrecondition, "no active connection to cluster %q", clusterID)
+	}
+
+	undoMod, err := conn.NetworkPolicies().ApplyNetworkPolicies(ctx, modification)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "could not apply network policy modification: %v", err)
+	}
+
+	var user string
+	identity := authn.IdentityFromContext(ctx)
+	if identity != nil {
+		user = identity.FriendlyName()
+		if ap := identity.ExternalAuthProvider(); ap != nil {
+			user += fmt.Sprintf(" [%s]", ap.Name())
+		}
+	}
+	undoRecord := &storage.NetworkPolicyApplicationUndoRecord{
+		User:                 user,
+		ApplyTimestamp:       types.TimestampNow(),
+		OriginalModification: modification,
+		UndoModification:     undoMod,
+	}
+	return undoRecord, nil
+}
+
 func (s *serviceImpl) ApplyNetworkPolicyYamlForDeployment(ctx context.Context, request *v1.ApplyNetworkPolicyYamlForDeploymentRequest) (*v1.Empty, error) {
-	return nil, errors.New("unimplemented")
+	if !features.NetworkDetectionBaselineSimulation.Enabled() {
+		return nil, errors.New("network baseline policy simulator is currently not enabled")
+	}
+
+	// Get the deployment
+	deployment, found, err := s.deployments.GetDeployment(ctx, request.GetDeploymentId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	} else if !found {
+		return nil, status.Errorf(codes.NotFound, "requested deployment %q not found", request.GetDeploymentId())
+	}
+
+	undoRecord, err := s.applyModificationAndGetUndoRecord(ctx, deployment.GetClusterId(), request.GetModification())
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.networkPolicies.UpsertUndoDeploymentRecord(
+		ctx,
+		&storage.NetworkPolicyApplicationUndoDeploymentRecord{
+			DeploymentId: request.GetDeploymentId(),
+			UndoRecord:   undoRecord,
+		})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "network policy was applied, but undo deployment record could not be stored: %v", err)
+	}
+	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) GetUndoModificationForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetUndoModificationForDeploymentResponse, error) {
