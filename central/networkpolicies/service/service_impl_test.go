@@ -557,12 +557,14 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 	suite.deployments.EXPECT().SearchRawDeployments(
 		gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).MinTimes(numDeployments).Return(deps, nil)
 
-	// Configure a graph which looks like this:
-	// deployment001 -> deployment000 -> deployment002
+	// Configure a graph which has explicit edges like this:
+	//   - deployment001 -> deployment000 -> deployment002
 	// deployment003 is an "island" in this graph
+	// deployment001 has non-isolated ingress, and deployment002 has non-isolated egress. Thus
+	// there should be an implicit edge from deployment002 -> deployment001
 	var pols []*storage.NetworkPolicy
 	suite.evaluator.EXPECT().GetAppliedPolicies(gomock.Any(), gomock.Any(), pols).MinTimes(numDeployments).Return(pols)
-	suite.evaluator.EXPECT().GetGraph(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).MinTimes(numDeployments).Return(
+	graph :=
 		&v1.NetworkGraph{
 			Epoch: 0,
 			Nodes: []*v1.NetworkNode{
@@ -597,12 +599,14 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 							},
 						},
 					},
+					NonIsolatedIngress: true,
 				},
 				{
 					Entity: &storage.NetworkEntityInfo{
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
 						Id:   deps[2].GetId(),
 					},
+					NonIsolatedEgress: true,
 				},
 				{
 					Entity: &storage.NetworkEntityInfo{
@@ -611,7 +615,7 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 					},
 				},
 			},
-		})
+		}
 	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").MinTimes(numDeployments).Return(pols, nil)
 	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil).MinTimes(numDeployments)
 	suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).MinTimes(numDeployments).Return(nil)
@@ -655,6 +659,15 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 					Ingress:  false,
 				},
+				{
+					Entity: &v1.NetworkBaselinePeerEntity{
+						Id:   deps[2].GetId(),
+						Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					},
+					Port:     0,
+					Protocol: storage.L4Protocol_L4_PROTOCOL_ANY,
+					Ingress:  true,
+				},
 			},
 		},
 		{
@@ -669,6 +682,15 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 					Ingress:  true,
 				},
+				{
+					Entity: &v1.NetworkBaselinePeerEntity{
+						Id:   deps[1].GetId(),
+						Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					},
+					Port:     0,
+					Protocol: storage.L4Protocol_L4_PROTOCOL_ANY,
+					Ingress:  false,
+				},
 			},
 		},
 		{
@@ -676,13 +698,20 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 			expectedAllowedPeers: nil,
 		},
 	} {
-		suite.deployments.EXPECT().GetDeployment(gomock.Any(), gomock.Any()).Return(deps[i], true, nil)
-		resp, err := suite.tested.GetAllowedPeersFromCurrentPolicyForDeployment(
-			suite.requestContext,
-			&v1.ResourceByID{Id: deps[0].GetId()})
-		suite.NoError(err, "expected GetAllowedPeersFromCurrentPolicyForDeployment to succeed")
+		suite.Run(fmt.Sprintf("testing deployment%03d", i), func() {
+			// Mark testing deployment node's query match to be true
+			graphCopy := graph.Clone()
+			graphCopy.Nodes[i].QueryMatch = true
 
-		suite.ElementsMatch(resp.GetAllowedPeers(), testCase.expectedAllowedPeers)
+			suite.evaluator.EXPECT().GetGraph(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(graphCopy)
+			suite.deployments.EXPECT().GetDeployment(gomock.Any(), gomock.Any()).Return(deps[i], true, nil)
+			resp, err := suite.tested.GetAllowedPeersFromCurrentPolicyForDeployment(
+				suite.requestContext,
+				&v1.ResourceByID{Id: deps[0].GetId()})
+			suite.NoError(err, "expected GetAllowedPeersFromCurrentPolicyForDeployment to succeed")
+
+			suite.ElementsMatch(resp.GetAllowedPeers(), testCase.expectedAllowedPeers)
+		})
 	}
 }
 

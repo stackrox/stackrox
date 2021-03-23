@@ -434,7 +434,7 @@ func (s *serviceImpl) GetAllowedPeersFromCurrentPolicyForDeployment(ctx context.
 	graphWithNetPols :=
 		s.graphEvaluator.GetGraph(
 			deployment.GetClusterId(),
-			nil,
+			set.NewStringSet(deployment.GetId()),
 			deploymentsInCluster,
 			networkTree,
 			networkPolicies,
@@ -446,55 +446,76 @@ func (s *serviceImpl) GetAllowedPeersFromCurrentPolicyForDeployment(ctx context.
 	return &v1.GetAllowedPeersFromCurrentPolicyForDeploymentResponse{AllowedPeers: allowedPeers}, nil
 }
 
+func (s *serviceImpl) toNetworkBaselinePeerEntityProto(peer *v1.NetworkNode, port uint32, protocol storage.L4Protocol, ingress bool) *v1.NetworkBaselineStatusPeer {
+	return &v1.NetworkBaselineStatusPeer{
+		Entity: &v1.NetworkBaselinePeerEntity{
+			Id:   peer.GetEntity().GetId(),
+			Type: peer.GetEntity().GetType(),
+		},
+		Port:     port,
+		Protocol: protocol,
+		Ingress:  ingress,
+	}
+}
+
 func (s *serviceImpl) getPeersOfDeploymentFromGraph(deployment *storage.Deployment, graph *v1.NetworkGraph) ([]*v1.NetworkBaselineStatusPeer, error) {
 	var allowedPeers []*v1.NetworkBaselineStatusPeer
 	// Try to search for the deployment in question
 	deploymentIdx := -1
+	var deploymentIngressNonIsolated, deploymentEgressNonIsolated bool
 	for idx, node := range graph.GetNodes() {
-		if node.GetEntity().GetId() != deployment.GetId() {
+		// The deployment we want is passed in as part of queryDeploymentIDs during getGraph for graph generation
+		if !node.GetQueryMatch() {
 			continue
 		}
 		// we are looking at the node which is our deployment. Gather all the egress edges here
 		for egressPeerIdx := range node.GetOutEdges() {
 			egressPeer := graph.GetNodes()[egressPeerIdx]
 			for _, prop := range node.GetOutEdges()[egressPeerIdx].GetProperties() {
-				allowedPeers = append(allowedPeers, &v1.NetworkBaselineStatusPeer{
-					Entity: &v1.NetworkBaselinePeerEntity{
-						Id:   egressPeer.GetEntity().GetId(),
-						Type: egressPeer.GetEntity().GetType(),
-					},
-					Port:     prop.GetPort(),
-					Protocol: prop.GetProtocol(),
-					Ingress:  false,
-				})
+				allowedPeers =
+					append(
+						allowedPeers,
+						s.toNetworkBaselinePeerEntityProto(egressPeer, prop.GetPort(), prop.GetProtocol(), false))
 			}
 		}
 		// Record the idx
 		deploymentIdx = idx
+		// Check if the deployment is isolated or not
+		deploymentIngressNonIsolated = node.GetNonIsolatedIngress()
+		deploymentEgressNonIsolated = node.GetNonIsolatedEgress()
 		break
 	}
 	if deploymentIdx == -1 {
 		return nil, errors.Errorf("deployment %q not found in the generated graph", deployment.GetName())
 	}
 	for _, node := range graph.GetNodes() {
-		if node.GetEntity().GetId() == deployment.GetId() {
+		if node.GetQueryMatch() {
 			continue
 		}
-		// we should try to fill in ingress info for the deployment from this node
+		// If the peer node is non-isolated, we should add a wildcard flow to result
+		if deploymentIngressNonIsolated && node.GetNonIsolatedEgress() {
+			allowedPeers =
+				append(
+					allowedPeers,
+					s.toNetworkBaselinePeerEntityProto(node, 0, storage.L4Protocol_L4_PROTOCOL_ANY, true))
+		}
+		if deploymentEgressNonIsolated && node.GetNonIsolatedIngress() {
+			allowedPeers =
+				append(
+					allowedPeers,
+					s.toNetworkBaselinePeerEntityProto(node, 0, storage.L4Protocol_L4_PROTOCOL_ANY, false))
+		}
+
+		// We should try to fill in ingress info for the deployment from this node.
 		props, ok := node.GetOutEdges()[int32(deploymentIdx)]
 		if !ok {
 			continue
 		}
 		for _, prop := range props.GetProperties() {
-			allowedPeers = append(allowedPeers, &v1.NetworkBaselineStatusPeer{
-				Entity: &v1.NetworkBaselinePeerEntity{
-					Id:   node.GetEntity().GetId(),
-					Type: node.GetEntity().GetType(),
-				},
-				Port:     prop.GetPort(),
-				Protocol: prop.GetProtocol(),
-				Ingress:  true,
-			})
+			allowedPeers =
+				append(
+					allowedPeers,
+					s.toNetworkBaselinePeerEntityProto(node, prop.GetPort(), prop.GetProtocol(), true))
 		}
 	}
 	return allowedPeers, nil
