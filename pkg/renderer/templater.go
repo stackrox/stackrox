@@ -137,8 +137,7 @@ type Config struct {
 
 	Environment map[string]string
 
-	GCPMarketplace bool
-	Version        string
+	Version string
 
 	ConfigFileOverrides map[string]string
 

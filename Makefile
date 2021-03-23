@@ -555,11 +555,6 @@ main-image: all-builds
 main-image-rhel: all-rhel-builds
 	make docker-build-main-image-rhel
 
-.PHONY: deployer-image
-deployer-image: build-prep
-	$(GOBUILD) roxctl
-	make docker-build-deployer-image
-
 # The following targets copy compiled artifacts into the expected locations and
 # runs the docker build.
 # Please DO NOT invoke this target directly unless you know what you're doing;
@@ -588,14 +583,6 @@ docker-build-data-image:
 		$(ALPINE_MIRROR_BUILD_ARG) \
 		image/ \
 		--file image/stackrox-data.Dockerfile
-
-.PHONY: docker-build-deployer-image
-docker-build-deployer-image:
-	cp -f bin/linux/roxctl image/bin/roxctl-linux
-	docker build -t stackrox/deployer:$(TAG) \
-		--build-arg MAIN_IMAGE_TAG=$(TAG) \
-		--build-arg SCANNER_IMAGE_TAG=$(shell cat SCANNER_VERSION) \
-		image/ --file image/Dockerfile_gcp
 
 .PHONY: docker-build-roxctl-image
 docker-build-roxctl-image:

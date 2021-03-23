@@ -11,7 +11,6 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "application" "stackrox") | nindent 4 }}
     kubernetes-engine.cloud.google.com/icon: "data:image/png;base64,{{ .Files.Get "assets/icon.png" | b64enc }}"
-    marketplace.cloud.google.com/deploy-info: '{partner_id: "stackrox-launcher-project-1", product_id: "stackrox-kubernetes-security", partner_name: "StackRox"}'
 spec:
   descriptor:
     type: StackRox
@@ -25,13 +24,9 @@ spec:
 
       <br>
 
-      #### Licensing and Activation
-
-      In order to activate the product, please contact us at [signup.stackrox.io](https://signup.stackrox.io) to request a license key.
-
       #### Support
 
-      [Email support@stackrox.com](mailto:support@stackrox.com?cc=sales@stackrox.com&Subject=GKE%20Marketplace%20Support%20Question&Body=Dear%20StackRox%20support,)
+      [Email support@stackrox.com](mailto:support@stackrox.com?cc=sales@stackrox.com&Subject=StackRox%20Support%20Question&Body=Dear%20StackRox%20support,)
 
       ## Connecting to StackRox
 

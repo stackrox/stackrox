@@ -23,7 +23,6 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 KUBE_COMMAND=${KUBE_COMMAND:-kubectl}
 
-{{if and (ne .ImageRemote "stackrox-launcher-project-1/stackrox") (ne .ImageRemote "cloud-marketplace/stackrox-launcher-project-1/stackrox-kubernetes-security")}}
 ${KUBE_COMMAND} get namespace stackrox &>/dev/null || ${KUBE_COMMAND} create namespace stackrox
 
 if ! ${KUBE_COMMAND} get secret/stackrox -n stackrox &>/dev/null; then
@@ -40,7 +39,6 @@ metadata:
 type: kubernetes.io/dockerconfigjson
 EOF
 fi
-{{- end}}
 
 if ! ${KUBE_COMMAND} get secret/collector-stackrox -n stackrox &>/dev/null; then
   registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.CollectorRegistry}}")"

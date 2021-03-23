@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/db"
 	"github.com/stackrox/rox/roxctl/deployment"
-	"github.com/stackrox/rox/roxctl/gcp"
 	"github.com/stackrox/rox/roxctl/helm"
 	"github.com/stackrox/rox/roxctl/image"
 	"github.com/stackrox/rox/roxctl/logconvert"
@@ -50,7 +49,6 @@ func Command() *cobra.Command {
 		collector.Command(),
 		deployment.Command(),
 		logconvert.Command(),
-		gcp.Command(),
 		image.Command(),
 		scanner.Command(),
 		sensor.Command(),

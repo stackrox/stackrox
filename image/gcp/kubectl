@@ -1,7 +1,0 @@
-#!/bin/sh
-
-if [ -n "$KUBE_TOKEN" ]; then
-    exec /bin/kubectl --token "$KUBE_TOKEN" "$@"
-fi
-
-exec /bin/kubectl "$@"

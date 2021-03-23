@@ -2617,30 +2617,6 @@ jobs:
 
       - cleanup-clusters-on-fail
 
-  build-deployer:
-    executor: custom
-    environment:
-      - KOPS_AUTOMATION_VERSION: 0.0.9
-      - EKS_AUTOMATION_VERSION: 0.1.7
-    steps:
-      - checkout
-      - setup_remote_docker
-
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
-      - run:
-          name: Build deployer image for GCP Marketplace
-          command: make docker-build-deployer-image
-
-      - run:
-          name: Push new image
-          command: |
-            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
-
-            TAG="$(make --quiet tag)"
-            docker push "docker.io/stackrox/deployer:${TAG}" | cat
-
   ###
   # Jobs that build and provision test resources (like cluster provisioning)
   # Recommended naming format: provision-{test_job_name}
@@ -4547,33 +4523,6 @@ jobs:
             done
 
       - run:
-          name: Push image into gcr.io for GCP Marketplace
-          command: |
-            docker login -u _json_key -p "$GOOGLE_CREDENTIALS_GCR_SCANNER" https://gcr.io
-
-            MAIN_TAG=$(make --quiet tag)
-            SCANNER_TAG=$(make --quiet scanner-tag)
-
-            # Deployer was pushed up in build-deployer, so must be pulled back down here.
-            docker pull docker.io/stackrox/deployer:$MAIN_TAG | cat
-            docker tag  docker.io/stackrox/deployer:$MAIN_TAG gcr.io/stackrox-launcher-project-1/stackrox/deployer:$MAIN_TAG
-            docker push gcr.io/stackrox-launcher-project-1/stackrox/deployer:$MAIN_TAG | cat
-
-            # Main was pushed up in the previous step, so just needs to be tagged.
-            docker tag  stackrox.io/main:$MAIN_TAG gcr.io/stackrox-launcher-project-1/stackrox:$MAIN_TAG
-            docker push gcr.io/stackrox-launcher-project-1/stackrox:$MAIN_TAG | cat
-
-            # Scanner was pushed up in its own repo, so must be pulled back down here.
-            docker pull stackrox.io/scanner:$SCANNER_TAG | cat
-            docker tag  stackrox.io/scanner:$SCANNER_TAG gcr.io/stackrox-launcher-project-1/stackrox/scanner:$SCANNER_TAG
-            docker push gcr.io/stackrox-launcher-project-1/stackrox/scanner:$SCANNER_TAG | cat
-
-            # Scanner DB was pushed up in its own repo, so must be pulled back down here.
-            docker pull stackrox.io/scanner-db:$SCANNER_TAG | cat
-            docker tag  stackrox.io/scanner-db:$SCANNER_TAG gcr.io/stackrox-launcher-project-1/stackrox/scanner-db:$SCANNER_TAG
-            docker push gcr.io/stackrox-launcher-project-1/stackrox/scanner-db:$SCANNER_TAG | cat
-
-      - run:
           name: Push offline image bundles to stackrox.io
           command: |
             gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
@@ -4607,48 +4556,6 @@ jobs:
             "$roxctl" helm output central-services --output-dir "${central_services_chart_dir}"
             "$roxctl" helm output secured-cluster-services --output-dir "${secured_cluster_services_chart_dir}"
             .circleci/publish-helm-charts "$(make --quiet tag)" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}"
-
-      - run:
-          name: Push image into ECR for AWS Marketplace
-          command: |
-            ECR_REGISTRY="226581168482.dkr.ecr.us-east-1.amazonaws.com/stackrox"
-            aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin "$ECR_REGISTRY"
-
-            MAIN_TAG=$(make --quiet tag)
-            SCANNER_TAG=$(make --quiet scanner-tag)
-            COLLECTOR_TAG=$(make --quiet collector-tag)
-
-            # Main was pushed up in a previous step, so just needs to be tagged.
-            docker tag  "stackrox.io/main:$MAIN_TAG" "$ECR_REGISTRY/main:$MAIN_TAG"
-            docker push "$ECR_REGISTRY/main:$MAIN_TAG" | cat
-
-            # Scanner was pushed up in its own repo, so must be pulled back down here.
-            docker pull "stackrox.io/scanner:$SCANNER_TAG" | cat
-            docker tag  "stackrox.io/scanner:$SCANNER_TAG" "$ECR_REGISTRY/scanner:$SCANNER_TAG"
-            docker push "$ECR_REGISTRY/scanner:$SCANNER_TAG" | cat
-
-            # Scanner-db was pushed up in its own repo, so must be pulled back down here.
-            docker pull "stackrox.io/scanner-db:$SCANNER_TAG" | cat
-            docker tag  "stackrox.io/scanner-db:$SCANNER_TAG" "$ECR_REGISTRY/scanner-db:$SCANNER_TAG"
-            docker push "$ECR_REGISTRY/scanner-db:$SCANNER_TAG" | cat
-
-            # Docs was pushed up in its own repo, so must be pulled back down here.
-            docker pull "stackrox.io/docs:$MAIN_TAG" | cat
-            docker tag  "stackrox.io/docs:$MAIN_TAG" "$ECR_REGISTRY/docs:$MAIN_TAG"
-            docker push "$ECR_REGISTRY/docs:$MAIN_TAG" | cat
-
-            # Collector was pushed up in its own repo, so must be pulled back down here.
-            docker pull "collector.stackrox.io/collector:$COLLECTOR_TAG" | cat
-            docker tag  "collector.stackrox.io/collector:$COLLECTOR_TAG" "$ECR_REGISTRY/collector:$COLLECTOR_TAG"
-            docker push "$ECR_REGISTRY/collector:$COLLECTOR_TAG" | cat
-
-            echo ""
-            echo "Images pushed to Marketplace ECR:"
-            echo "MAIN:       $ECR_REGISTRY/main:$MAIN_TAG"
-            echo "SCANNER:    $ECR_REGISTRY/scanner:$SCANNER_TAG"
-            echo "SCANNER-DB: $ECR_REGISTRY/scanner-db:$SCANNER_TAG"
-            echo "COLLECTOR:  $ECR_REGISTRY/collector:$COLLECTOR_TAG"
-            echo "DOCS:       $ECR_REGISTRY/docs:$DOCS_TAG"
 
   scan-images-in-quay:
     executor: custom
@@ -4850,10 +4757,6 @@ workflows:
             - pre-build-go-binaries
       - build-rhel:
           <<: *runOnAllTagsWithDockerIOPushCtx
-      - build-deployer:
-          <<: *runOnAllTagsWithDockerIOPushCtx
-          requires:
-            - pre-build-cli
       - build-scale-monitoring-and-mock-server:
           <<: *runOnAllTagsWithDockerIOPushCtx
       - provision-gke-api-nongroovy-tests:
@@ -4983,7 +4886,6 @@ workflows:
           requires:
             - build
             - build-rhel
-            - build-deployer
             - go-unit-tests
             - ui-unit-tests
 
