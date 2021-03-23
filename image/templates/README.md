@@ -54,7 +54,6 @@ $ ./bin/darwin/roxctl helm output central-services
 # Install the helm chart
 $ helm upgrade --install -n stackrox stackrox-central-services --create-namespace  ./stackrox-central-services-chart \
     -f ./dev-tools/helm/central-services/docker-values-public.yaml \
-    --set-file licenseKey=./deploy/common/dev-license.lic \
     --set imagePullSecrets.username=<USERNAME> \
     --set imagePullSecrets.password=<PASSWORD>
 

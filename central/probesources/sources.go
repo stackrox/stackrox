@@ -74,8 +74,12 @@ func (s *ProbeSources) initializeStandardSources(probeUploadManager probeUploadM
 	opts := kocache.Options{}
 	if licenseMgr != nil {
 		opts.ModifyRequest = func(req *http.Request) {
+			customerID := licenseMgr.GetActiveLicense().GetMetadata().GetLicensedForId()
+			if customerID == "" {
+				return
+			}
 			q := req.URL.Query()
-			q.Set("cid", licenseMgr.GetActiveLicense().GetMetadata().GetLicensedForId())
+			q.Set("cid", customerID)
 			req.URL.RawQuery = q.Encode()
 		}
 	}

@@ -30,7 +30,7 @@ describe('userRolePermissions selector', () => {
             name: '',
             globalAccess: 'READ_WRITE_ACCESS',
             userRolePermissions: {
-                Licenses: 'READ_ACCESS',
+                Deployment: 'READ_ACCESS',
                 ServiceIdentity: 'NO_ACCESS',
             },
         };
@@ -44,7 +44,7 @@ describe('userRolePermissions selector', () => {
 });
 
 describe('getHasReadPermission', () => {
-    const permission = 'Licenses';
+    const permission = 'Deployment';
 
     it('should not have access given the initial state', () => {
         const state = null;
@@ -58,7 +58,7 @@ describe('getHasReadPermission', () => {
             name: '',
             globalAccess: 'READ_ACCESS',
             resourceToAccess: {
-                Licenses: 'NO_ACCESS',
+                Deployment: 'NO_ACCESS',
             },
         };
         const received = getHasReadPermission(permission, state);
@@ -82,7 +82,7 @@ describe('getHasReadPermission', () => {
             name: '',
             globalAccess: 'NO_ACCESS',
             resourceToAccess: {
-                Licenses: 'READ_ACCESS',
+                Deployment: 'READ_ACCESS',
             },
         };
         const received = getHasReadPermission(permission, state);
@@ -95,7 +95,7 @@ describe('getHasReadPermission', () => {
             name: '',
             globalAccess: 'NO_ACCESS',
             resourceToAccess: {
-                Licenses: 'READ_WRITE_ACCESS',
+                Deployment: 'READ_WRITE_ACCESS',
             },
         };
         const received = getHasReadPermission(permission, state);
@@ -105,7 +105,7 @@ describe('getHasReadPermission', () => {
 });
 
 describe('getHasReadWritePermission', () => {
-    const permission = 'Licenses';
+    const permission = 'Deployment';
 
     it('should not have access given the initial state', () => {
         const state = null;
@@ -119,7 +119,7 @@ describe('getHasReadWritePermission', () => {
             name: '',
             globalAccess: 'READ_ACCESS',
             resourceToAccess: {
-                Licenses: 'NO_ACCESS',
+                Deployment: 'NO_ACCESS',
             },
         };
         const received = getHasReadWritePermission(permission, state);
@@ -143,7 +143,7 @@ describe('getHasReadWritePermission', () => {
             name: '',
             globalAccess: 'NO_ACCESS',
             resourceToAccess: {
-                Licenses: 'READ_WRITE_ACCESS',
+                Deployment: 'READ_WRITE_ACCESS',
             },
         };
         const received = getHasReadWritePermission(permission, state);
@@ -156,7 +156,7 @@ describe('getHasReadWritePermission', () => {
             name: '',
             globalAccess: 'READ_WRITE_ACCESS',
             resourceToAccess: {
-                Licenses: 'READ_ACCESS',
+                Deployment: 'READ_ACCESS',
             },
         };
         const received = getHasReadWritePermission(permission, state);

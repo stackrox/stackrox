@@ -82,8 +82,6 @@ type manager struct {
 	stopSig    concurrency.Signal
 	stoppedSig concurrency.Signal
 
-	listener LicenseEventListener
-
 	deploymentEnvsMgr deploymentenvs.Manager
 
 	licenseStatus v1.Metadata_LicenseStatus
@@ -116,7 +114,7 @@ func (m *manager) interrupt() bool {
 	}
 }
 
-func (m *manager) Initialize(listener LicenseEventListener) (*licenseproto.License, error) {
+func (m *manager) Initialize() (*licenseproto.License, error) {
 	if m.licenses != nil {
 		return nil, errors.New("license manager was already initialized")
 	}
@@ -135,14 +133,7 @@ func (m *manager) Initialize(listener LicenseEventListener) (*licenseproto.Licen
 		m.checkLicensesNoLock(m.deploymentEnvsMgr.GetDeploymentEnvironmentsByClusterID(true))
 	}
 
-	// Only set the listener now to prevent any event delivery during initial license selection.
-	m.listener = listener
-
 	go m.run()
-
-	if listener != nil {
-		listener.OnInitialize(m, m.activeLicense.getLicenseProto())
-	}
 
 	m.deploymentEnvsMgr.RegisterListener(deploymentEnvListener{
 		manager: m,
@@ -372,10 +363,6 @@ func (m *manager) makeLicenseActiveNoLock(newLicense *licenseData, deploymentEnv
 	}
 	if oldLicenseInfo != nil {
 		oldLicenseInfo.Active = false
-	}
-
-	if m.listener != nil {
-		m.listener.OnActiveLicenseChanged(newLicenseInfo, oldLicenseInfo)
 	}
 
 	m.markDirtyNoLock(oldLicense)

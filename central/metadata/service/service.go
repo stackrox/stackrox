@@ -3,9 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/license/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -23,9 +21,6 @@ type Service interface {
 }
 
 // New returns a new instance of service.
-func New(restarting *concurrency.Flag, licenseMgr manager.LicenseManager) Service {
-	return &serviceImpl{
-		restarting: restarting,
-		licenseMgr: licenseMgr,
-	}
+func New() Service {
+	return &serviceImpl{}
 }

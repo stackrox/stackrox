@@ -2,14 +2,6 @@ import { combineReducers } from 'redux';
 
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
 
-export const METADATA_LICENSE_STATUS = {
-    NONE: 'NONE',
-    INVALID: 'INVALID',
-    EXPIRED: 'EXPIRED',
-    RESTARTING: 'RESTARTING',
-    VALID: 'VALID',
-};
-
 // Action types
 
 export const types = {

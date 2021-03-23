@@ -6,6 +6,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+- The product no longer requires a license to run. Several license-related functionalities and flags
+  have been removed from the product and related tooling, as well as from the Helm charts.
+
 ## [57.0]
 
 - The published time for CVEs in RHEL and CentOS images is now populated correctly.

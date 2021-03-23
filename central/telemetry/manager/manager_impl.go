@@ -182,7 +182,11 @@ func (m *manager) collectAndSendData(ctx context.Context, retC chan<- sendResult
 }
 
 func (m *manager) doCollectAndSendData(ctx context.Context) (time.Duration, error) {
-	if m.offlineMode {
+	// Note that if we don't have an active license, we set the "next send" timer to never. However,
+	// it is possible that an active license expires between one send and the next. The effect is that
+	// we print out a license-related error message once, but do not make any further send attempts
+	// thereafter and thus don't print out further messages.
+	if m.offlineMode || m.licenseMgr == nil {
 		return 0, errors.New("invoked telemetry collection in spite of offline mode")
 	}
 
@@ -193,6 +197,9 @@ func (m *manager) doCollectAndSendData(ctx context.Context) (time.Duration, erro
 	}
 
 	licenseMD := telemetryData.Central.License.Metadata
+	if licenseMD == nil {
+		return 0, errors.New("cannot send telemetry data as no license information is available")
+	}
 
 	endpoint, err := m.Endpoint(licenseMD)
 	if err != nil {
@@ -267,7 +274,7 @@ func (m *manager) updateNextSendTime(interval time.Duration) *time.Timer {
 }
 
 func (m *manager) nextSendTimer() *time.Timer {
-	if m.offlineMode || !m.getActiveConfig().GetEnabled() || m.nextSendTime.IsZero() {
+	if m.offlineMode || m.licenseMgr == nil || m.licenseMgr.GetActiveLicense() == nil || !m.getActiveConfig().GetEnabled() || m.nextSendTime.IsZero() {
 		return nil
 	}
 

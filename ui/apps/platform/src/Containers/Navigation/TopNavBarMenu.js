@@ -8,14 +8,13 @@ import { Avatar } from '@stackrox/ui-components';
 
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
-import { getHasReadPermission } from 'reducers/roles';
 import Menu from 'Components/Menu';
 import User from 'utils/User';
 
 const topNavMenuBtnClass =
     'no-underline text-base-600 hover:bg-base-200 items-center cursor-pointer';
 
-function TopNavBarMenu({ logout, userRolePermissions, userData }) {
+function TopNavBarMenu({ logout, userData }) {
     /**
      * TODO: rework the logic for the top-right menu
      * currently starts with the last item and we conditional unshift middle item,
@@ -26,10 +25,6 @@ function TopNavBarMenu({ logout, userRolePermissions, userData }) {
      * Menu component should probably be adapted to just take children
      */
     const options = [{ label: 'Logout', onClick: () => logout() }];
-
-    if (getHasReadPermission('Licenses', userRolePermissions)) {
-        options.unshift({ label: 'Manage Product License', link: '/main/license' });
-    }
 
     let buttonIcon = <MoreHorizontal className="mx-4 h-4 w-4 pointer-events-none" />;
     let buttonText = null;

@@ -13,6 +13,7 @@ import SideBar from '../SideBar';
 import AuthProvider from './AuthProvider/AuthProvider';
 
 const AuthProviders = ({
+    fetchAuthProviders,
     saveAuthProvider,
     setAuthProviderEditingState,
     selectAuthProvider,
@@ -32,6 +33,10 @@ const AuthProviders = ({
             selectAuthProvider(null);
         }
     }, [authProviders, selectAuthProvider, selectedAuthProvider]);
+
+    useEffect(() => {
+        fetchAuthProviders();
+    }, [fetchAuthProviders]);
 
     useEffect(() => {
         // select default / first auth provider when nothing is selected
@@ -134,6 +139,7 @@ AuthProviders.propTypes = {
     selectedAuthProvider: PropTypes.shape({
         id: PropTypes.string,
     }),
+    fetchAuthProviders: PropTypes.func.isRequired,
     selectAuthProvider: PropTypes.func.isRequired,
     saveAuthProvider: PropTypes.func.isRequired,
     deleteAuthProvider: PropTypes.func.isRequired,
@@ -161,6 +167,7 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = {
+    fetchAuthProviders: actions.fetchAuthProviders.request,
     selectAuthProvider: actions.selectAuthProvider,
     saveAuthProvider: actions.saveAuthProvider,
     deleteAuthProvider: actions.deleteAuthProvider,

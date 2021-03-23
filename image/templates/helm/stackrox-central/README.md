@@ -79,11 +79,6 @@ This approach is the quickest way to customize the deployment, but it does not w
 more complex configuration settings. Via the `--set` and `--set-file` flags, which need to be
 appended to your `helm install` invocation, you can inject configuration values into the
 installation process. Here are some examples:
-- **Specify the StackRox license key upon deployment:** This eliminates the need to upload a
-  license file via the StackRox portal upon the initial login.
-  ```sh
-  --set-file licenseKey=path/to/license.lic
-  ```
 - **Deploy StackRox in offline mode:** This configures StackRox in a way such that it will not
   reach out to any external endpoints.
   ```sh
@@ -147,9 +142,6 @@ can be configured via those files:
   ```
 - **`values-private.yaml`**:
   ```yaml
-  licenseKey: |
-    ... the StackRox license key ...
-  
   central:
     # Configure a default TLS certificate (public cert + private key) for central
     defaultTLS:

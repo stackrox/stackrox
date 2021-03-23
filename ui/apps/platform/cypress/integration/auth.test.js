@@ -39,9 +39,6 @@ describe('Authentication', () => {
         cy.route('GET', api.alerts.countsByCategory, {}).as('countsByCategory');
         cy.route('GET', api.dashboard.timeseries, {}).as('alertsByTimeseries');
         cy.route('GET', api.risks.riskyDeployments, {}).as('deployments');
-        cy.route('GET', api.licenses.list, { response: { licenses: [{ status: 'VALIDs' }] } }).as(
-            'licenses'
-        );
         cy.route('POST', api.logs, {}).as('logs');
     };
 

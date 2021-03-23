@@ -142,10 +142,6 @@ export const compliance = {
 
 export const logs = '/api/logimbue';
 
-export const licenses = {
-    list: '/v1/licenses/list*',
-};
-
 export const featureFlags = '/v1/featureflags';
 
 export const configMgmt = {

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/license/manager"
 	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -35,17 +34,14 @@ var (
 )
 
 type defaultExtSrcsGathererImpl struct {
-	licenseMgr      manager.LicenseManager
 	networkEntityDS entityDataStore.EntityDataStore
 	sensorConnMgr   connection.Manager
 	stopSig         concurrency.Signal
 }
 
 // newDefaultExtNetworksGatherer returns an instance of NetworkGraphDefaultExtSrcsGatherer that reaches out internet to fetch the data.
-func newDefaultExtNetworksGatherer(networkEntityDS entityDataStore.EntityDataStore, sensorConnMgr connection.Manager,
-	licenseMgr manager.LicenseManager) NetworkGraphDefaultExtSrcsGatherer {
+func newDefaultExtNetworksGatherer(networkEntityDS entityDataStore.EntityDataStore, sensorConnMgr connection.Manager) NetworkGraphDefaultExtSrcsGatherer {
 	return &defaultExtSrcsGathererImpl{
-		licenseMgr:      licenseMgr,
 		networkEntityDS: networkEntityDS,
 		sensorConnMgr:   sensorConnMgr,
 	}

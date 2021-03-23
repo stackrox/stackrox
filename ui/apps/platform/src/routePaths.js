@@ -8,7 +8,6 @@ import useCaseTypes from 'constants/useCaseTypes';
 export const mainPath = '/main';
 export const loginPath = '/login';
 export const testLoginResultsPath = '/test-login-results';
-export const licenseStartUpPath = `/license`;
 export const authResponsePrefix = '/auth/response/';
 
 export const dashboardPath = `${mainPath}/dashboard`;
@@ -28,7 +27,6 @@ export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
 export const apidocsPath = `${mainPath}/apidocs`;
 export const accessControlPath = `${mainPath}/access`;
 export const accessControlPathV2 = `${mainPath}/access-control`;
-export const licensePath = `${mainPath}/license`;
 export const userPath = `${mainPath}/user`;
 export const systemConfigPath = `${mainPath}/systemconfig`;
 export const complianceBasePath = `${mainPath}/compliance`;
@@ -97,8 +95,6 @@ export const basePathToLabelMap = {
     [systemConfigPath]: 'System Configuration',
     [systemHealthPath]: 'System Health',
     [loginPath]: 'Log In',
-    [licensePath]: 'License',
-    [licenseStartUpPath]: 'License',
     [userPath]: 'User Page',
 };
 

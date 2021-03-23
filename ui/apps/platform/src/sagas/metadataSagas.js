@@ -1,9 +1,8 @@
-import { call, fork, put, race, take } from 'redux-saga/effects';
+import { call, fork, put } from 'redux-saga/effects';
 
 import { fetchMetadata } from 'services/MetadataService';
-import { actions, METADATA_LICENSE_STATUS } from 'reducers/metadata';
+import { actions } from 'reducers/metadata';
 import { delay } from 'redux-saga';
-import { types } from 'reducers/license';
 
 // Fetches the version and sends it to the given action.
 // The action must be a "fetching" action type, which has
@@ -27,28 +26,8 @@ function* pollVersion() {
         if (metadata && metadata.version) {
             action = actions.pollMetadata;
         }
-        const nextPoll =
-            !metadata || metadata.licenseStatus === METADATA_LICENSE_STATUS.RESTARTING
-                ? 1000
-                : 10000;
-        yield race([call(delay, nextPoll), take(types.SET_LICENSE_UPLOAD_STATUS)]);
-    }
-}
-
-export function* pollUntilCentralRestarts() {
-    const action = actions.initialFetchMetadata;
-    let continuePolling = true;
-    while (continuePolling) {
-        try {
-            const result = yield call(fetchVersionAndSendTo, action);
-            const { licenseStatus } = result;
-            if (licenseStatus !== METADATA_LICENSE_STATUS.RESTARTING) {
-                continuePolling = false;
-            }
-        } catch (error) {
-            continuePolling = false;
-        }
-        delay(1000);
+        const nextPoll = !metadata ? 1000 : 10000;
+        yield call(delay, nextPoll);
     }
 }
 

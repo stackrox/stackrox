@@ -10,7 +10,8 @@ import (
 // Command controls all of the functions in this subpackage. See usage string below for details.
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use: "license",
+		Use:    "license",
+		Hidden: true,
 	}
 	c.AddCommand(add.Command())
 	c.AddCommand(info.Command())

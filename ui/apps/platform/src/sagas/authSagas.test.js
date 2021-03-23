@@ -5,9 +5,7 @@ import { dynamic, throwError } from 'redux-saga-test-plan/providers';
 
 import { selectors } from 'reducers';
 import { actions, AUTH_STATUS } from 'reducers/auth';
-import { LICENSE_STATUS } from 'reducers/license';
 import * as AuthService from 'services/AuthService';
-import * as LicenseService from 'services/LicenseService';
 import { fetchUserRolePermissions } from 'services/RolesService';
 import saga from './authSagas';
 import createLocationChange from './sagaTestUtils';
@@ -151,14 +149,6 @@ describe('Auth Sagas', () => {
                 ],
                 [call(AuthService.storeAccessToken, exchangedToken), dynamic(storeAccessTokenMock)],
                 [call(AuthService.getAndClearRequestedLocation), requestedLocation],
-                [
-                    call(LicenseService.fetchLicenses),
-                    {
-                        response: {
-                            licenses: [{ status: LICENSE_STATUS.VALID }],
-                        },
-                    },
-                ],
                 [call(AuthService.logout), null],
                 [call(fetchUserRolePermissions), { response: {} }],
             ])
@@ -197,14 +187,6 @@ describe('Auth Sagas', () => {
                 [
                     call(AuthService.storeRequestedLocation, requestedLocation),
                     dynamic(storeLocationMock),
-                ],
-                [
-                    call(LicenseService.fetchLicenses),
-                    {
-                        response: {
-                            licenses: [{ status: LICENSE_STATUS.VALID }],
-                        },
-                    },
                 ],
                 [call(AuthService.logout), null],
                 [call(fetchUserRolePermissions), { response: {} }],

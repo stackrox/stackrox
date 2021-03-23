@@ -311,7 +311,7 @@ func Command() *cobra.Command {
 	}, "license", flags.LicenseUsage)
 
 	utils.Must(
-		c.PersistentFlags().SetAnnotation("license", flags.InteractiveUsageKey, []string{flags.LicenseUsageInteractive}),
+		c.PersistentFlags().MarkHidden("license"),
 		c.PersistentFlags().SetAnnotation("license", flags.OptionalKey, []string{"true"}),
 	)
 

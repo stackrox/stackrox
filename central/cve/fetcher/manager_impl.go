@@ -158,7 +158,7 @@ func (m *k8sIstioCVEManagerImpl) reconcileOnlineModeCVEs(ct converter.CVEType, f
 		return nil
 	}
 
-	url, err := addLicenseIDAsQueryParam(urls.cveChecksumURL)
+	url, err := maybeAddLicenseIDAsQueryParam(urls.cveChecksumURL)
 	if err != nil {
 		return err
 	}
@@ -175,7 +175,7 @@ func (m *k8sIstioCVEManagerImpl) reconcileOnlineModeCVEs(ct converter.CVEType, f
 		return nil
 	}
 
-	url, err = addLicenseIDAsQueryParam(urls.cveURL)
+	url, err = maybeAddLicenseIDAsQueryParam(urls.cveURL)
 	if err != nil {
 		return err
 	}

@@ -19,8 +19,6 @@ var (
 const (
 	// LicenseUsage provides usage information for license flags defined by the struct in this package.
 	LicenseUsage = "license data or filename; '-' for stdin"
-	// LicenseUsageInteractive is the usage information that will be shown for the interactive prompt.
-	LicenseUsageInteractive = "license data or filename (`-` for multiline input)"
 
 	// minSignatureBytes is the minimum number of bytes for the base64-decoded part right of the dot
 	// in a license key or filename string in order for us to assume it actually is a license key.

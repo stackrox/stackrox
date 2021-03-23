@@ -143,11 +143,10 @@ setupLicense: &setupLicense
       if [[ -n "$CIRCLE_TAG" ]] || .circleci/pr_has_label.sh "ci-release-build"; then
         echo "Issuing a CI license for testing the release build"
         ROX_LICENSE_KEY="$(licenses/ci.sh)"
+        cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
       else
-        echo "Using the development license for CI"
-        ROX_LICENSE_KEY="$(cat deploy/common/dev-license.lic)"
+        echo "Using no license for CI"
       fi
-      cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
 
 setupDefaultTLSCerts: &setupDefaultTLSCerts
   run:
@@ -4739,98 +4738,6 @@ jobs:
               curl -sS --fail -X POST -u "${CIRCLE_TOKEN_ROXBOT}:" "https://circleci.com/api/v1.1/project/github/stackrox/rox/build" -d '{"branch": "master"}'
             fi
 
-  regenerate-dev-license-if-required:
-    executor: custom
-    resource_class: small
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-      - *setupRoxctl
-
-      - run:
-          name: Halt unless license is expiring soon
-          command: |
-            license_expiry_epoch="$(roxctl central license info --license=deploy/common/dev-license.lic --json | jq '.restrictions.notValidAfter' -r | sed 's/\.[0-9]*//' | jq -R 'fromdateiso8601')"
-            [[ -n "${license_expiry_epoch}" ]]
-            echo "License expiry timestamp: ${license_expiry_epoch}"
-            now="$(date +%s)"
-            days_until_expiry="$(( (license_expiry_epoch-now)/(24*60*60) ))"
-            echo "Days until expiry: ${days_until_expiry}"
-            if [[ "${days_until_expiry}" -ge 15 ]]; then
-              circleci step halt
-            fi
-
-      - run:
-          name: Halt if there is an existing branch with the dev license.
-          command: |
-            if git branch -a | grep -qx '[[:space:]]*remotes/origin/roxbot/regenerate-dev-license'; then
-              echo "Found existing branch, halting..."
-              circleci step halt
-            fi
-
-      - *setupGoogleAppCreds
-      - run:
-          name: Regenerate development license
-          command: |
-            scripts/regenerate-dev-license.sh
-
-      - run:
-          name: Configure git
-          command: |
-            git config user.email "roxbot@stackrox.com"
-            git config user.name "RoxBot"
-
-      - add_ssh_keys:
-          fingerprints:
-            - "b0:90:e9:6f:77:d5:fe:b6:8c:1a:a5:3f:a4:e3:41:e5"
-
-      - run:
-          name: Add SSH key of github.com
-          command: |
-            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
-
-      - run:
-          name: Create temporary branch with license update commit
-          command: |
-            git add deploy/common/dev-license.lic
-            git checkout -b "roxbot-tmp/regenerate-dev-license"
-            git commit \
-              -m"Automatic re-generation of development license ($(date '+%Y-%m-%d'))"
-
-      - run:
-          name: Push updated dev license to remote
-          command: |
-            commit="$(git rev-parse "roxbot-tmp/regenerate-dev-license")"
-
-            git checkout master
-
-            for i in $(seq 1 3); do
-              echo "Attempting to merge into master (attempt $i of 3) ..."
-
-              git fetch && git reset --hard origin/master
-              # Note that the above `git reset --hard` requires a clean working tree. We therefore
-              # cherry-pick the license update commit instead of generating it now such that we
-              # invoke all scripts from the current branch (mostly relevant for testing purposes).
-              git cherry-pick "$commit"
-              if git push origin master:"roxbot/regenerate-dev-license"; then
-                echo "Success!"
-                exit 0
-              fi
-
-              echo "Push did not succeed. Sleeping for 10 seconds, then trying again."
-              sleep 10
-            done
-
-            echo "Failed to merge into master."
-            exit 1
-
-      - run:
-          name: Create PR
-          command: |
-            git checkout "$CIRCLE_BRANCH"
-            scripts/ci/create-dev-license-update-pr.sh "roxbot/regenerate-dev-license"
-
   trigger-nightly-build:
     executor: custom
     resource_class: small
@@ -5112,22 +5019,6 @@ workflows:
 #          requires:
 #            - push-release
 #            - provision-test-helm-charts-repo
-
-  update_dev_license_if_required:
-    triggers:
-      - schedule:
-          cron: "0 0 * * *"
-          filters:
-            branches:
-              only: master
-
-    jobs:
-      - pre-build-cli:
-          context: docker-io-pull
-      - regenerate-dev-license-if-required:
-          context: docker-io-pull
-          requires:
-            - pre-build-cli
 
   nightly:
     triggers:

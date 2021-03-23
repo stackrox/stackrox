@@ -12,7 +12,6 @@
 #
 # The following values typically require user input, as they cannot be automatically generated
 # (though each of them can be omitted):
-# - `licenseKey`
 # - `imagePullSecrets.username` and `imagePullSecrets.password`
 # - `env.proxyConfig`
 # - `central.defaultTLS`
@@ -23,11 +22,6 @@
 #
 
 # # BEGIN CONFIGURATION VALUES SECTION
-
-# # The license key of the StackRox Kubernetes Security platform. If you do not provide
-# # this, you will be required to upload a license key file after the initial installation.
-# licenseKey: |
-#   <insert your StackRox license key here>
 
 # # Image pull credentials. If you do not specify these, you need to specify one of
 # # the following:

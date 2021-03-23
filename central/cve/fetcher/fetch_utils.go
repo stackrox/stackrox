@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path"
 	"time"
@@ -50,27 +51,22 @@ var (
 	}
 )
 
-func addLicenseIDAsQueryParam(baseURL string) (string, error) {
-	licenseID, err := getCurrentLicenseID()
+func maybeAddLicenseIDAsQueryParam(baseURL string) (string, error) {
+	var params url.Values
+	if licenseID := getCurrentLicenseID(); licenseID != "" {
+		params = license.IDAsURLParam(licenseID)
+	}
+	u, err := urlfmt.FullyQualifiedURL(baseURL, params)
 	if err != nil {
 		return "", err
 	}
-	params := license.IDAsURLParam(licenseID)
-
-	url, err := urlfmt.FullyQualifiedURL(baseURL, params)
-	if err != nil {
-		return "", err
-	}
-	return url, nil
+	return u, nil
 }
 
-func getCurrentLicenseID() (string, error) {
-	license := licenseSingletons.ManagerSingleton().GetActiveLicense()
+func getCurrentLicenseID() string {
+	lic := licenseSingletons.ManagerSingleton().GetActiveLicense()
 
-	if license == nil {
-		return "", errors.New("active license not found")
-	}
-	return license.GetMetadata().GetId(), nil
+	return lic.GetMetadata().GetId()
 }
 
 func getLocalCVEChecksum(cveChecksumFile string) (string, error) {

@@ -25,10 +25,6 @@
 ## non-sensitive configuration data.
 ##
 #
-## The StackRox License Key to deploy with. If this is left unset, a license will need
-## to be uploaded upon the first installation/deployment of StackRox.
-#licenseKey: null
-#
 ## Configuration for image pull secrets.
 ## These should usually be set via the command line when running `helm install`, e.g.,
 ## helm install --set imagePullSecrets.username=myuser --set imagePullSecrets.password=mypass,

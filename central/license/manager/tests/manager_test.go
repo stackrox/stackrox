@@ -9,7 +9,6 @@ import (
 	deploymentEnvsMocks "github.com/stackrox/rox/central/deploymentenvs/mocks"
 	"github.com/stackrox/rox/central/license/datastore/mocks"
 	"github.com/stackrox/rox/central/license/manager"
-	licenseMgrMocks "github.com/stackrox/rox/central/license/manager/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	licenseproto "github.com/stackrox/rox/generated/shared/license"
@@ -33,7 +32,6 @@ type managerTestSuite struct {
 	mockCtrl              *gomock.Controller
 	mockStore             *mocks.MockDataStore
 	mockValidator         *validatorMocks.MockValidator
-	mockListener          *licenseMgrMocks.MockLicenseEventListener
 	mockDeploymentEnvsMgr *deploymentEnvsMocks.MockManager
 
 	mgr manager.LicenseManager
@@ -69,7 +67,6 @@ func (s *managerTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.mockStore = mocks.NewMockDataStore(s.mockCtrl)
 	s.mockValidator = validatorMocks.NewMockValidator(s.mockCtrl)
-	s.mockListener = licenseMgrMocks.NewMockLicenseEventListener(s.mockCtrl)
 	s.mockDeploymentEnvsMgr = deploymentEnvsMocks.NewMockManager(s.mockCtrl)
 
 	s.mgr = manager.New(s.mockStore, s.mockValidator, s.mockDeploymentEnvsMgr)
@@ -86,8 +83,7 @@ func (s *managerTestSuite) TearDownTest() {
 
 func (s *managerTestSuite) TestInitializeEmpty() {
 	s.mockStore.EXPECT().ListLicenseKeys(isReadCtx).Return(nil, nil)
-	s.mockListener.EXPECT().OnInitialize(s.mgr, gomock.Nil())
-	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	activeLicense, err := s.mgr.Initialize()
 	s.Nil(activeLicense)
 	s.Equal(v1.Metadata_NONE, s.mgr.GetLicenseStatus())
 	s.NoError(err)
@@ -137,9 +133,7 @@ func (s *managerTestSuite) TestInitializeWithValidAndSelected() {
 
 	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(license2, nil)
 
-	s.mockListener.EXPECT().OnInitialize(s.mgr, license2)
-
-	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	activeLicense, err := s.mgr.Initialize()
 	s.NoError(err)
 
 	s.Equal("license2", activeLicense.GetMetadata().GetId())
@@ -190,8 +184,6 @@ func (s *managerTestSuite) TestInitializeWithInvalidSelected() {
 
 	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(license2, nil)
 
-	s.mockListener.EXPECT().OnInitialize(s.mgr, license2)
-
 	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx,
 		testutils.AssertionMatcher(
 			assert.ElementsMatch,
@@ -208,7 +200,7 @@ func (s *managerTestSuite) TestInitializeWithInvalidSelected() {
 				},
 			}))
 
-	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	activeLicense, err := s.mgr.Initialize()
 	s.NoError(err)
 
 	s.Equal("license2", activeLicense.GetMetadata().GetId())
@@ -259,8 +251,6 @@ func (s *managerTestSuite) TestInitializeWithNoneSelected() {
 
 	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(license2, nil)
 
-	s.mockListener.EXPECT().OnInitialize(s.mgr, license2)
-
 	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx,
 		[]*storage.StoredLicenseKey{
 			{
@@ -270,7 +260,7 @@ func (s *managerTestSuite) TestInitializeWithNoneSelected() {
 			},
 		})
 
-	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	activeLicense, err := s.mgr.Initialize()
 	s.NoError(err)
 
 	s.Equal("license2", activeLicense.GetMetadata().GetId())
@@ -321,27 +311,11 @@ func (s *managerTestSuite) TestLicenseSwitchOnExpiration() {
 		},
 	}, nil)
 
-	s.mockListener.EXPECT().OnInitialize(s.mgr, license1)
-
-	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	activeLicense, err := s.mgr.Initialize()
 	s.NoError(err)
 
 	s.Equal("license1", activeLicense.GetMetadata().GetId())
 	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
-
-	s.mockListener.EXPECT().OnActiveLicenseChanged(
-		testutils.PredMatcher("new license is license 2 and valid", func(l *v1.LicenseInfo) bool {
-			if l.GetLicense().GetMetadata().GetId() != "license2" {
-				return false
-			}
-			return l.GetStatus() == v1.LicenseInfo_VALID
-		}),
-		testutils.PredMatcher("old license is license 1 and expired", func(l *v1.LicenseInfo) bool {
-			if l.GetLicense().GetMetadata().GetId() != "license1" {
-				return false
-			}
-			return l.GetStatus() == v1.LicenseInfo_EXPIRED
-		}))
 
 	s.mockStore.EXPECT().UpsertLicenseKeys(s.hasWriteCtx, testutils.AssertionMatcher(assert.ElementsMatch, []*storage.StoredLicenseKey{
 		{
@@ -409,22 +383,11 @@ func (s *managerTestSuite) TestLicenseSwitchOffOnExpiration() {
 		},
 	}, nil)
 
-	s.mockListener.EXPECT().OnInitialize(s.mgr, license1)
-
-	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	activeLicense, err := s.mgr.Initialize()
 	s.NoError(err)
 
 	s.Equal("license1", activeLicense.GetMetadata().GetId())
 	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
-
-	s.mockListener.EXPECT().OnActiveLicenseChanged(
-		nil,
-		testutils.PredMatcher("old license is license 1 and expired", func(l *v1.LicenseInfo) bool {
-			if l.GetLicense().GetMetadata().GetId() != "license1" {
-				return false
-			}
-			return l.GetStatus() == v1.LicenseInfo_EXPIRED
-		}))
 
 	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx, []*storage.StoredLicenseKey{
 		{
@@ -464,21 +427,10 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValid() {
 		},
 	}, nil)
 
-	s.mockListener.EXPECT().OnInitialize(s.mgr, gomock.Nil())
-
-	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	activeLicense, err := s.mgr.Initialize()
 	s.NoError(err)
 	s.Nil(activeLicense)
 	s.Equal(v1.Metadata_INVALID, s.mgr.GetLicenseStatus())
-
-	s.mockListener.EXPECT().OnActiveLicenseChanged(
-		testutils.PredMatcher("new license is license 1 and is valid", func(l *v1.LicenseInfo) bool {
-			if l.GetLicense().GetMetadata().GetId() != "license1" {
-				return false
-			}
-			return l.GetStatus() == v1.LicenseInfo_VALID
-		}),
-		nil)
 
 	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx, []*storage.StoredLicenseKey{
 		{
@@ -512,21 +464,10 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValidAdded() {
 		},
 	}, nil)
 
-	s.mockListener.EXPECT().OnInitialize(s.mgr, gomock.Nil())
-
-	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	activeLicense, err := s.mgr.Initialize()
 	s.NoError(err)
 	s.Nil(activeLicense)
 	s.Equal(v1.Metadata_NONE, s.mgr.GetLicenseStatus())
-
-	s.mockListener.EXPECT().OnActiveLicenseChanged(
-		testutils.PredMatcher("new license is license 1 and is valid", func(l *v1.LicenseInfo) bool {
-			if l.GetLicense().GetMetadata().GetId() != "license1" {
-				return false
-			}
-			return l.GetStatus() == v1.LicenseInfo_VALID
-		}),
-		nil)
 
 	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx, []*storage.StoredLicenseKey{
 		{
@@ -572,9 +513,7 @@ func (s *managerTestSuite) TestLicenseNotReplacedWithActivateFalse() {
 
 	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(license1, nil)
 
-	s.mockListener.EXPECT().OnInitialize(s.mgr, license1)
-
-	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	activeLicense, err := s.mgr.Initialize()
 	s.NoError(err)
 
 	s.Equal("license1", activeLicense.GetMetadata().GetId())
@@ -639,9 +578,7 @@ func (s *managerTestSuite) TestLicenseIsReplacedWithActivateTrue() {
 
 	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(license1, nil)
 
-	s.mockListener.EXPECT().OnInitialize(s.mgr, license1)
-
-	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	activeLicense, err := s.mgr.Initialize()
 	s.NoError(err)
 
 	s.Equal("license1", activeLicense.GetMetadata().GetId())
@@ -673,20 +610,6 @@ func (s *managerTestSuite) TestLicenseIsReplacedWithActivateTrue() {
 			LicenseId:  "license1",
 		},
 	}))
-	s.mockListener.EXPECT().OnActiveLicenseChanged(
-		testutils.PredMatcher("new license is license 2 and is valid", func(l *v1.LicenseInfo) bool {
-			if l.GetLicense().GetMetadata().GetId() != "license2" {
-				return false
-			}
-			return l.GetStatus() == v1.LicenseInfo_VALID
-		}),
-		testutils.PredMatcher("old license is license 1 and is valid", func(l *v1.LicenseInfo) bool {
-			if l.GetLicense().GetMetadata().GetId() != "license1" {
-				return false
-			}
-			return l.GetStatus() == v1.LicenseInfo_VALID
-		}),
-	)
 
 	addedLicense, err := s.mgr.AddLicenseKey("KEY2", true)
 	s.NoError(err)
@@ -717,9 +640,7 @@ func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
 		},
 	}, nil)
 
-	s.mockListener.EXPECT().OnInitialize(s.mgr, gomock.Nil())
-
-	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	activeLicense, err := s.mgr.Initialize()
 	s.NoError(err)
 	s.Nil(activeLicense)
 	s.Equal(v1.Metadata_NONE, s.mgr.GetLicenseStatus())
@@ -742,15 +663,6 @@ func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
 	newActiveLicense := s.mgr.GetActiveLicense()
 	s.Nil(newActiveLicense)
 	s.Empty(s.mgr.GetActiveLicenseKey())
-
-	s.mockListener.EXPECT().OnActiveLicenseChanged(
-		testutils.PredMatcher("new license is license 1 and is valid", func(l *v1.LicenseInfo) bool {
-			if l.GetLicense().GetMetadata().GetId() != "license1" {
-				return false
-			}
-			return l.GetStatus() == v1.LicenseInfo_VALID
-		}),
-		nil)
 
 	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx, []*storage.StoredLicenseKey{
 		{
@@ -785,21 +697,10 @@ func (s *managerTestSuite) TestLicenseExpiredAfterAdded() {
 		},
 	}, nil)
 
-	s.mockListener.EXPECT().OnInitialize(s.mgr, gomock.Nil())
-
-	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	activeLicense, err := s.mgr.Initialize()
 	s.NoError(err)
 	s.Nil(activeLicense)
 	s.Equal(v1.Metadata_NONE, s.mgr.GetLicenseStatus())
-
-	s.mockListener.EXPECT().OnActiveLicenseChanged(
-		testutils.PredMatcher("new license is license 1 and is valid", func(l *v1.LicenseInfo) bool {
-			if l.GetLicense().GetMetadata().GetId() != "license1" {
-				return false
-			}
-			return l.GetStatus() == v1.LicenseInfo_VALID
-		}),
-		nil)
 
 	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx, []*storage.StoredLicenseKey{
 		{
@@ -820,15 +721,6 @@ func (s *managerTestSuite) TestLicenseExpiredAfterAdded() {
 	s.Equal(addedLicense.GetLicense(), newActiveLicense)
 	s.Equal("KEY1", s.mgr.GetActiveLicenseKey())
 	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
-
-	s.mockListener.EXPECT().OnActiveLicenseChanged(
-		nil,
-		testutils.PredMatcher("old license is license 1 and is expired", func(l *v1.LicenseInfo) bool {
-			if l.GetLicense().GetMetadata().GetId() != "license1" {
-				return false
-			}
-			return l.GetStatus() == v1.LicenseInfo_EXPIRED
-		}))
 
 	s.mockStore.EXPECT().UpsertLicenseKeys(isWriteCtx, []*storage.StoredLicenseKey{
 		{

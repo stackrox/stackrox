@@ -94,15 +94,6 @@ describe('General sanity checks', () => {
 
             cy.title().should('eq', 'User Page | StackRox');
         });
-
-        it('for License Page', () => {
-            cy.route('GET', api.licenses.list).as('licenses');
-
-            cy.visit('/main/license');
-            cy.wait('@licenses');
-
-            cy.title().should('eq', 'License | StackRox');
-        });
     });
 
     it('should render navbar with Dashboard selected', () => {

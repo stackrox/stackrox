@@ -22,7 +22,6 @@ import { actions as groupActions } from 'reducers/groups';
 import { types as locationActionTypes } from 'reducers/routes';
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as rolesActions } from 'reducers/roles';
-import { getLicenses } from 'sagas/licenseSagas';
 
 function* getUserPermissions() {
     try {
@@ -207,7 +206,6 @@ function* dispatchAuthResponse(type, location) {
         yield call(handleErrAuthResponse, result, `no auth token received via method ${type}`);
     }
 
-    yield fork(getLicenses);
     yield fork(getUserPermissions);
 
     const storedLocation = yield call(AuthService.getAndClearRequestedLocation);

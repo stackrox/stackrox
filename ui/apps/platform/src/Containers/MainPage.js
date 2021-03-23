@@ -18,7 +18,6 @@ import {
     apidocsPath,
     accessControlPath,
     accessControlPathV2,
-    licensePath,
     userPath,
     systemConfigPath,
     systemHealthPath,
@@ -38,7 +37,6 @@ import TopNavigation from 'Containers/Navigation/TopNavigation';
 import LeftNavigation from 'Containers/Navigation/LeftNavigation';
 import SearchModal from 'Containers/Search/SearchModal';
 import CLIModal from 'Containers/CLI/CLIModal';
-import LicenseReminder from 'Containers/License/LicenseReminder';
 
 import ErrorBoundary from 'Containers/ErrorBoundary';
 import UnreachableWarning from 'Containers/UnreachableWarning';
@@ -60,7 +58,6 @@ const AsyncAccessControlPage = asyncComponent(() => import('Containers/AccessCon
 const AsyncAccessControlRoutes = asyncComponent(() =>
     import('Containers/AccessControl/AccessControlRoutes')
 );
-const AsyncLicensePage = asyncComponent(() => import('Containers/License/Page'));
 const AsyncUserPage = asyncComponent(() => import('Containers/User/UserPage'));
 const AsyncSystemConfigPage = asyncComponent(() => import('Containers/SystemConfig/Page'));
 const AsyncConfigManagementPage = asyncComponent(() => import('Containers/ConfigManagement/Page'));
@@ -138,11 +135,6 @@ class MainPage extends Component {
                         )}
                     />
                     <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />
-                    <ProtectedRoute
-                        path={licensePath}
-                        component={AsyncLicensePage}
-                        requiredPermission="Licenses"
-                    />
                     <ProtectedRoute path={userPath} component={AsyncUserPage} />
                     <ProtectedRoute path={systemConfigPath} component={AsyncSystemConfigPage} />
                     <ProtectedRoute path={vulnManagementPath} component={AsyncVulnMgmtPage} />
@@ -187,7 +179,6 @@ class MainPage extends Component {
                 <section className="flex flex-1 flex-col h-full relative">
                     <UnreachableWarning />
                     <Notifications />
-                    <LicenseReminder />
                     <CredentialExpiryBanners />
                     <div className="navigation-gradient" />
                     {this.renderVersionOutOfDate()}

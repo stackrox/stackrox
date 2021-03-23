@@ -64,7 +64,6 @@ import (
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	integrationHealthService "github.com/stackrox/rox/central/integrationhealth/service"
 	"github.com/stackrox/rox/central/jwt"
-	licenseEnforcer "github.com/stackrox/rox/central/license/enforcer"
 	licenseService "github.com/stackrox/rox/central/license/service"
 	licenseSingletons "github.com/stackrox/rox/central/license/singleton"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
@@ -244,24 +243,13 @@ func main() {
 	pkgMetrics.NewDefaultHTTPServer().RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 
-	var restartingFlag concurrency.Flag
-
 	licenseMgr := licenseSingletons.ManagerSingleton()
-	initialLicense, err := licenseMgr.Initialize(licenseEnforcer.New(&restartingFlag))
+	_, err = licenseMgr.Initialize()
 	if err != nil {
-		log.Fatalf("Could not initialize license manager: %v", err)
+		log.Warnf("Could not initialize license manager: %v", err)
 	}
 
-	if initialLicense == nil {
-		log.Error("*** No valid license found")
-		log.Error("*** ")
-		log.Error("*** Server starting in limited mode until license activated")
-		go startLimitedModeServer(&restartingFlag)
-		waitForTerminationSignal()
-		return
-	}
-
-	go startMainServer(&restartingFlag)
+	go startGRPCServer()
 
 	waitForTerminationSignal()
 }
@@ -273,42 +261,7 @@ func ensureDB() {
 	}
 }
 
-type invalidLicenseFactory struct {
-	restartingFlag *concurrency.Flag
-}
-
-func (f invalidLicenseFactory) ServicesToRegister(authproviders.Registry) []pkgGRPC.APIService {
-	return []pkgGRPC.APIService{
-		licenseService.New(true, licenseSingletons.ManagerSingleton()),
-		metadataService.New(f.restartingFlag, licenseSingletons.ManagerSingleton()),
-		pingService.Singleton(), // required for dev scripts & health checking
-	}
-}
-
-func (invalidLicenseFactory) StartServices() {
-}
-
-func (invalidLicenseFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
-	return []routes.CustomRoute{uiRoute()}
-}
-
-func startLimitedModeServer(restartingFlag *concurrency.Flag) {
-	startGRPCServer(invalidLicenseFactory{
-		restartingFlag: restartingFlag,
-	})
-}
-
-type serviceFactory interface {
-	CustomRoutes() (customRoutes []routes.CustomRoute)
-	ServicesToRegister(authproviders.Registry) []pkgGRPC.APIService
-	StartServices()
-}
-
-type defaultFactory struct {
-	restartingFlag *concurrency.Flag
-}
-
-func (defaultFactory) StartServices() {
+func startServices() {
 	if err := complianceManager.Singleton().Start(); err != nil {
 		log.Panicf("could not start compliance manager: %v", err)
 	}
@@ -320,7 +273,7 @@ func (defaultFactory) StartServices() {
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
 
-func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
+func servicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
 	servicesToRegister := []pkgGRPC.APIService{
 		alertService.Singleton(),
 		apiTokenService.Singleton(),
@@ -342,7 +295,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		imageService.Singleton(),
 		iiService.Singleton(),
 		licenseService.New(false, licenseSingletons.ManagerSingleton()),
-		metadataService.New(f.restartingFlag, licenseSingletons.ManagerSingleton()),
+		metadataService.New(),
 		namespaceService.Singleton(),
 		networkFlowService.Singleton(),
 		networkPolicyService.Singleton(),
@@ -406,13 +359,6 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 	return servicesToRegister
 }
 
-func startMainServer(restartingFlag *concurrency.Flag) {
-	factory := defaultFactory{
-		restartingFlag: restartingFlag,
-	}
-	startGRPCServer(factory)
-}
-
 func watchdog(signal *concurrency.Signal, timeout time.Duration) {
 	if !concurrency.WaitWithTimeout(signal, timeout) {
 		log.Errorf("API server failed to start within %v!", timeout)
@@ -423,7 +369,7 @@ func watchdog(signal *concurrency.Signal, timeout time.Duration) {
 	}
 }
 
-func startGRPCServer(factory serviceFactory) {
+func startGRPCServer() {
 	// Temporarily elevate permissions to modify auth providers.
 	authProviderRegisteringCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -477,7 +423,7 @@ func startGRPCServer(factory serviceFactory) {
 	}
 
 	config := pkgGRPC.Config{
-		CustomRoutes:       factory.CustomRoutes(),
+		CustomRoutes:       customRoutes(),
 		IdentityExtractors: idExtractors,
 		AuthProviders:      registry,
 		Auditor:            audit.New(processor.Singleton()),
@@ -502,9 +448,9 @@ func startGRPCServer(factory serviceFactory) {
 	)
 
 	server := pkgGRPC.NewAPI(config)
-	server.Register(factory.ServicesToRegister(registry)...)
+	server.Register(servicesToRegister(registry)...)
 
-	factory.StartServices()
+	startServices()
 	startedSig := server.Start()
 
 	go watchdog(startedSig, grpcServerWatchdogTimeout)
@@ -562,7 +508,7 @@ func uiRoute() routes.CustomRoute {
 	}
 }
 
-func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
+func customRoutes() (customRoutes []routes.CustomRoute) {
 	customRoutes = []routes.CustomRoute{
 		uiRoute(),
 		{
