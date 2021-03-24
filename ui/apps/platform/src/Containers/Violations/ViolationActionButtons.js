@@ -41,7 +41,7 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
                         <Tooltip
                             content={
                                 <TooltipOverlay>
-                                    Resolve violation and add affected processes to excluded scope
+                                    Resolve violation and add affected processes to process baseline
                                 </TooltipOverlay>
                             }
                         >
