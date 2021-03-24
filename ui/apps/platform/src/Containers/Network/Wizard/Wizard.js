@@ -5,8 +5,6 @@ import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
-import { knownBackendFlags } from 'utils/featureFlags';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import wizardStages from './wizardStages';
 import NetworkDeploymentOverlay from './NetworkDeploymentOverlay';
 import Details from './Details/Details';
@@ -20,10 +18,7 @@ import NodesUpdateSection from '../Graph/Overlays/NodesUpdateSection';
 import ZoomButtons from '../Graph/Overlays/ZoomButtons';
 
 function Wizard({ wizardOpen, wizardStage, onClose }) {
-    const networkDetectionEnabled = useFeatureFlagEnabled(knownBackendFlags.ROX_NETWORK_DETECTION);
-
     if (
-        networkDetectionEnabled &&
         wizardOpen &&
         (wizardStage === wizardStages.details || wizardStage === wizardStages.externalDetails)
     ) {

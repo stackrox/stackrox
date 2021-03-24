@@ -7,7 +7,6 @@ import (
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	flowDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
@@ -26,10 +25,8 @@ func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.Netw
 	updateMicroTS := timestamp.FromProtobuf(updateTS)
 
 	flowsByIndicator := getFlowsByIndicator(newFlows, updateMicroTS, now)
-	if features.NetworkDetection.Enabled() {
-		if err := s.baselines.ProcessFlowUpdate(flowsByIndicator); err != nil {
-			return err
-		}
+	if err := s.baselines.ProcessFlowUpdate(flowsByIndicator); err != nil {
+		return err
 	}
 
 	// Add existing unterminated flows from the store if this is the first run this time round.

@@ -4,7 +4,6 @@ import io.stackrox.proto.storage.NetworkFlowOuterClass
 import objects.Deployment
 import org.junit.Assume
 import org.junit.experimental.categories.Category
-import services.FeatureFlagService
 import services.NetworkBaselineService
 import spock.lang.Retry
 import util.NetworkGraphUtil
@@ -109,7 +108,6 @@ class NetworkBaselineTest extends BaseSpecification {
         "Feature flag is enabled"
         // Skip test for now, we're working on fixing it.
         Assume.assumeTrue(false)
-        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_NETWORK_DETECTION"))
 
         when:
         "Create initial set of deployments, wait for baseline to populate"

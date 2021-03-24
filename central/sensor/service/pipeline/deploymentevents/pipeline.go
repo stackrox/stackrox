@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -134,10 +133,8 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, deployment *storag
 	// Before removing the deployment, clean up all the network baselines that had an edge to this deployment
 	// Otherwise if deployment delete succeeded but baseline clean up failed, we may never have chance to
 	// clean up these baselines
-	if features.NetworkDetection.Enabled() {
-		if err := s.networkBaselines.ProcessDeploymentDelete(deployment.GetId()); err != nil {
-			return err
-		}
+	if err := s.networkBaselines.ProcessDeploymentDelete(deployment.GetId()); err != nil {
+		return err
 	}
 
 	// Remove the deployment from persistence.
@@ -203,15 +200,13 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 	}
 
 	// Add network baseline for this deployment if it does not exist yet
-	if features.NetworkDetection.Enabled() {
-		if err := s.networkBaselines.ProcessDeploymentCreate(
-			deployment.GetId(),
-			deployment.GetName(),
-			deployment.GetClusterId(),
-			deployment.GetNamespace(),
-		); err != nil {
-			return err
-		}
+	if err := s.networkBaselines.ProcessDeploymentCreate(
+		deployment.GetId(),
+		deployment.GetName(),
+		deployment.GetClusterId(),
+		deployment.GetNamespace(),
+	); err != nil {
+		return err
 	}
 
 	// Update risk asynchronously

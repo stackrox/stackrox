@@ -14,7 +14,6 @@ import (
 	reprocessorMocks "github.com/stackrox/rox/central/reprocessor/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
@@ -61,7 +60,6 @@ func (suite *PipelineTestSuite) SetupTest() {
 			suite.reprocessor,
 			suite.networkBaselines).(*pipelineImpl)
 	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv("ROX_NETWORK_DETECTION", "true")
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
@@ -73,9 +71,7 @@ func (suite *PipelineTestSuite) TestDeploymentRemovePipeline() {
 
 	suite.deployments.EXPECT().RemoveDeployment(context.Background(), deployment.GetClusterId(), deployment.GetId())
 	suite.graphEvaluator.EXPECT().IncrementEpoch(deployment.GetClusterId())
-	if features.NetworkDetection.Enabled() {
-		suite.networkBaselines.EXPECT().ProcessDeploymentDelete(gomock.Any()).Return(nil)
-	}
+	suite.networkBaselines.EXPECT().ProcessDeploymentDelete(gomock.Any()).Return(nil)
 
 	err := suite.pipeline.Run(context.Background(), deployment.GetClusterId(), &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -97,9 +93,7 @@ func (suite *PipelineTestSuite) TestCreateNetworkBaseline() {
 	suite.clusters.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("cluster-name", true, nil)
 	suite.deployments.EXPECT().GetDeployment(gomock.Any(), gomock.Any()).Return(nil, false, nil)
 	suite.deployments.EXPECT().UpsertDeployment(gomock.Any(), gomock.Any()).Return(nil)
-	if features.NetworkDetection.Enabled() {
-		suite.networkBaselines.EXPECT().ProcessDeploymentCreate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-	}
+	suite.networkBaselines.EXPECT().ProcessDeploymentCreate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any()).Return()
 	suite.graphEvaluator.EXPECT().IncrementEpoch(gomock.Any()).Return()
 
@@ -127,9 +121,7 @@ func (suite *PipelineTestSuite) TestAlertRemovalOnReconciliation() {
 	suite.deployments.EXPECT().RemoveDeployment(context.Background(), deployment.GetClusterId(), deployment.GetId())
 	suite.graphEvaluator.EXPECT().IncrementEpoch(deployment.GetClusterId())
 	suite.manager.EXPECT().DeploymentRemoved(deployment)
-	if features.NetworkDetection.Enabled() {
-		suite.networkBaselines.EXPECT().ProcessDeploymentDelete(deployment.GetId()).Return(nil)
-	}
+	suite.networkBaselines.EXPECT().ProcessDeploymentDelete(deployment.GetId()).Return(nil)
 
 	suite.NoError(suite.pipeline.runRemovePipeline(context.Background(), deployment, true))
 }

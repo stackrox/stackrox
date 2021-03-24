@@ -297,6 +297,7 @@ func servicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
 		licenseService.New(false, licenseSingletons.ManagerSingleton()),
 		metadataService.New(),
 		namespaceService.Singleton(),
+		networkBaselineService.Singleton(),
 		networkFlowService.Singleton(),
 		networkPolicyService.Singleton(),
 		nodeService.Singleton(),
@@ -322,10 +323,6 @@ func servicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
 		userService.Singleton(),
 		cveService.Singleton(),
 		integrationHealthService.Singleton(),
-	}
-
-	if features.NetworkDetection.Enabled() {
-		servicesToRegister = append(servicesToRegister, networkBaselineService.Singleton())
 	}
 
 	if features.SensorInstallationExperience.Enabled() {

@@ -9,7 +9,6 @@ import (
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -38,15 +37,11 @@ type NetworkBaselineServiceTestSuite struct {
 
 func (s *NetworkBaselineServiceTestSuite) SetupTest() {
 	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv("ROX_NETWORK_DETECTION", "true")
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.baselines = networkBaselineDSMocks.NewMockDataStore(s.mockCtrl)
 	s.manager = networkBaselineMocks.NewMockManager(s.mockCtrl)
 	s.service = New(s.baselines, s.manager)
-	if !features.NetworkDetection.Enabled() {
-		s.T().Skip()
-	}
 }
 
 func (s *NetworkBaselineServiceTestSuite) TearDownTest() {

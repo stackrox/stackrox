@@ -12,7 +12,6 @@ import (
 	nfDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -55,7 +54,6 @@ func (suite *FlowStoreUpdaterTestSuite) SetupSuite() {
 	suite.mockBaselines = baselineMocks.NewMockManager(suite.mockCtrl)
 	suite.tested = newFlowPersister(suite.mockFlows, suite.mockBaselines)
 	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv(features.NetworkDetection.EnvVar(), "true")
 }
 
 func (suite *FlowStoreUpdaterTestSuite) TearDownSuite() {
@@ -141,59 +139,57 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	// Return storedFlows on DB read.
 	suite.mockFlows.EXPECT().GetAllFlows(suite.hasWriteCtx, gomock.Any()).Return(storedFlows, *firstTimestamp, nil)
 
-	if features.NetworkDetection.Enabled() {
-		suite.mockBaselines.EXPECT().ProcessFlowUpdate(testutils.PredMatcher("equivalent map except for timestamp", func(got map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) bool {
-			expectedMap := map[networkgraph.NetworkConnIndicator]timestamp.MicroTS{
-				{
-					SrcEntity: networkgraph.Entity{
-						Type: storage.NetworkEntityInfo_DEPLOYMENT,
-						ID:   "someNode1",
-					},
-					DstEntity: networkgraph.Entity{
-						Type: storage.NetworkEntityInfo_DEPLOYMENT,
-						ID:   "someNode2",
-					},
-					DstPort:  1,
-					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-				}: 0,
-				{
-					SrcEntity: networkgraph.Entity{
-						Type: storage.NetworkEntityInfo_DEPLOYMENT,
-						ID:   "someNode1",
-					},
-					DstEntity: networkgraph.Entity{
-						Type: storage.NetworkEntityInfo_DEPLOYMENT,
-						ID:   "someOtherNode2",
-					},
-					DstPort:  2,
-					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-				}: timestamp.FromProtobuf(secondTimestamp),
-			}
+	suite.mockBaselines.EXPECT().ProcessFlowUpdate(testutils.PredMatcher("equivalent map except for timestamp", func(got map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) bool {
+		expectedMap := map[networkgraph.NetworkConnIndicator]timestamp.MicroTS{
+			{
+				SrcEntity: networkgraph.Entity{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					ID:   "someNode1",
+				},
+				DstEntity: networkgraph.Entity{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					ID:   "someNode2",
+				},
+				DstPort:  1,
+				Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			}: 0,
+			{
+				SrcEntity: networkgraph.Entity{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					ID:   "someNode1",
+				},
+				DstEntity: networkgraph.Entity{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					ID:   "someOtherNode2",
+				},
+				DstPort:  2,
+				Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			}: timestamp.FromProtobuf(secondTimestamp),
+		}
 
-			if len(expectedMap) != len(got) {
+		if len(expectedMap) != len(got) {
+			return false
+		}
+		for indicator, ts := range expectedMap {
+			got, inGot := got[indicator]
+			if !inGot {
 				return false
 			}
-			for indicator, ts := range expectedMap {
-				got, inGot := got[indicator]
-				if !inGot {
+			if ts == 0 {
+				if got != 0 {
 					return false
 				}
-				if ts == 0 {
-					if got != 0 {
-						return false
-					}
-				} else {
-					// The timestamp may vary slightly because of the adjustment that we do,
-					// but should not vary by more than a second.
-					if math.Abs(ts.GoTime().Sub(got.GoTime()).Seconds()) > 1 {
-						return false
-					}
+			} else {
+				// The timestamp may vary slightly because of the adjustment that we do,
+				// but should not vary by more than a second.
+				if math.Abs(ts.GoTime().Sub(got.GoTime()).Seconds()) > 1 {
+					return false
 				}
 			}
-			return true
-		},
-		))
-	}
+		}
+		return true
+	},
+	))
 
 	// Check that the given write matches expectations.
 	suite.mockFlows.EXPECT().UpsertFlows(suite.hasWriteCtx, testutils.PredMatcher("matches expected updates", func(actualUpdates []*storage.NetworkFlow) bool {

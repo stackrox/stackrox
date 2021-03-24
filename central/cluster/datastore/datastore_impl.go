@@ -487,11 +487,9 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 		log.Errorf("failed to delete external network graph entities for removed cluster %s: %v", cluster.GetId(), err)
 	}
 
-	if features.NetworkDetection.Enabled() {
-		err := ds.networkBaselineMgr.ProcessPostClusterDelete(cluster.GetId())
-		if err != nil {
-			log.Errorf("failed to delete network baselines associated with this cluster %q: %v", cluster.GetId(), err)
-		}
+	err := ds.networkBaselineMgr.ProcessPostClusterDelete(cluster.GetId())
+	if err != nil {
+		log.Errorf("failed to delete network baselines associated with this cluster %q: %v", cluster.GetId(), err)
 	}
 
 	ds.removeClusterSecrets(ctx, cluster)

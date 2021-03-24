@@ -12,9 +12,6 @@ var (
 	// SensorInstallationExperience enables new features related to the new installation experience for sensor.
 	SensorInstallationExperience = registerFeature("Enable new installation user experience for Sensor", "ROX_SENSOR_INSTALLATION_EXPERIENCE", true)
 
-	// NetworkDetection enables new features related to the new network detection experience.
-	NetworkDetection = registerFeature("Enable new network detection experience", "ROX_NETWORK_DETECTION", true)
-
 	// NetworkDetectionBaselineViolation enables new features related to the baseline violation part of the network detection experience.
 	NetworkDetectionBaselineViolation = registerFeature("Enable network detection baseline violation", "ROX_NETWORK_DETECTION_BASELINE_VIOLATION", true)
 
