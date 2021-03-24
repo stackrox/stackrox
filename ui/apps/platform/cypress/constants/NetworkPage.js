@@ -38,7 +38,6 @@ export const selectors = {
     },
     buttons: {
         viewActiveYamlButton: '[data-testid="view-active-yaml-button"]',
-        simulatorButtonOn: '[data-testid="simulator-button-on"]',
         simulatorButtonOff: '[data-testid="simulator-button-off"]',
         generateNetworkPolicies: 'button:contains("Generate and simulate network policies")',
         applyNetworkPolicies: 'button:contains("Apply Network Policies")',
@@ -48,6 +47,7 @@ export const selectors = {
         allowedFilter:
             'button[data-testid="network-connections-filter-allowed"]:contains("allowed")',
         allFilter: 'button[data-testid="network-connections-filter-all"]:contains("all")',
+        stopSimulation: '.simulator-mode button:contains("Stop")',
     },
     detailsPanel: scopeSelectors(networkPanels.detailsPanel, {
         header: '[data-testid="network-details-panel-header"]',

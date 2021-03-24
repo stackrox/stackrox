@@ -22,6 +22,7 @@ const ReduxSearchInput = ({
     clearAutoComplete,
     autoCompleteCategories,
     setAllSearchOptions,
+    isDisabled,
 }) => {
     return (
         <SearchInput
@@ -39,6 +40,7 @@ const ReduxSearchInput = ({
             clearAutoComplete={clearAutoComplete}
             autoCompleteCategories={autoCompleteCategories}
             setAllSearchOptions={setAllSearchOptions}
+            isDisabled={isDisabled}
         />
     );
 };

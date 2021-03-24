@@ -34,6 +34,7 @@ export const searchInputPropTypes = {
     clearAutoComplete: PropTypes.func,
     autoCompleteCategories: PropTypes.arrayOf(PropTypes.string),
     setAllSearchOptions: PropTypes.func,
+    isDisabled: PropTypes.bool,
 };
 
 export const searchInputDefaultProps = {
@@ -49,6 +50,7 @@ export const searchInputDefaultProps = {
     clearAutoComplete: null,
     autoCompleteCategories: [],
     setAllSearchOptions: () => {},
+    isDisabled: false,
 };
 
 // This is a legacy search component, that will be removed soon as we move everything to URLSearchInput.
@@ -206,10 +208,11 @@ class SearchInput extends Component {
 
     render() {
         const Placeholder = placeholderCreator(this.props.placeholder);
-        const { searchOptions, className } = this.props;
+        const { searchOptions, className, isDisabled } = this.props;
         const suggestions = this.getSuggestions();
         const hideDropdown = suggestions.length ? '' : 'hide-dropdown';
         const props = {
+            isDisabled,
             className: `${className} ${hideDropdown}`,
             components: { ValueContainer, Option, Placeholder, MultiValue },
             options: suggestions,

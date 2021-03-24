@@ -15,6 +15,7 @@ const CIDRFormButton = ({
     openWizard,
     closeWizard,
     setWizardStage,
+    isDisabled,
 }) => {
     function toggleForm() {
         if (isWizardOpen && currentWizardStage === wizardStages.cidrForm) {
@@ -32,6 +33,7 @@ const CIDRFormButton = ({
             type="button"
             onClick={toggleForm}
             className="flex border-l border-dashed border-base-400 items-center px-4 font-condensed uppercase justify-center hover:bg-base-300"
+            disabled={isDisabled}
         >
             <Box />
             <span className="text-left pl-2">

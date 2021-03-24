@@ -45,7 +45,11 @@ export type SimulationFrameProps = {
 
 function SimulationFrame({ children, isError, onStop }: SimulationFrameProps): ReactElement {
     return (
-        <div className={`flex flex-1 relative simulator-mode ${isError ? 'error' : 'success'}`}>
+        <div
+            className={`flex flex-1 flex-col relative simulator-mode ${
+                isError ? 'error' : 'success'
+            }`}
+        >
             <SimulationLabel isError={isError} onStop={onStop} />
             {children}
         </div>

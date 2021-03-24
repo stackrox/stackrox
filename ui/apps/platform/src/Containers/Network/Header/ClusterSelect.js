@@ -9,7 +9,13 @@ import { actions as pageActions } from 'reducers/network/page';
 
 import Select from 'Components/ReactSelect';
 
-const ClusterSelect = ({ selectClusterId, closeSidePanel, clusters, selectedClusterId }) => {
+const ClusterSelect = ({
+    selectClusterId,
+    closeSidePanel,
+    clusters,
+    selectedClusterId,
+    isDisabled,
+}) => {
     function changeCluster(clusterId) {
         selectClusterId(clusterId);
         closeSidePanel();
@@ -32,6 +38,7 @@ const ClusterSelect = ({ selectClusterId, closeSidePanel, clusters, selectedClus
         placeholder: 'Select a cluster',
         onChange: changeCluster,
         autoFocus: true,
+        isDisabled,
     };
     return <Select {...clustersProps} />;
 };
@@ -42,10 +49,12 @@ ClusterSelect.propTypes = {
     selectClusterId: PropTypes.func.isRequired,
     fetchClusters: PropTypes.func.isRequired,
     closeSidePanel: PropTypes.func.isRequired,
+    isDisabled: PropTypes.bool,
 };
 
 ClusterSelect.defaultProps = {
     selectedClusterId: '',
+    isDisabled: false,
 };
 
 const mapStateToProps = createStructuredSelector({

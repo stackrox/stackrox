@@ -15,6 +15,7 @@ function NetworkSearch({
     setSearchOptions,
     setSearchSuggestions,
     closeWizard,
+    isDisabled,
 }) {
     function onSearch(options) {
         if (options.length && !options[options.length - 1].type) {
@@ -30,6 +31,7 @@ function NetworkSearch({
             setSearchOptions={setSearchOptions}
             setSearchSuggestions={setSearchSuggestions}
             onSearch={onSearch}
+            isDisabled={isDisabled}
         />
     );
 }
