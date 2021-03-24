@@ -6,7 +6,8 @@ import { Message } from '@stackrox/ui-components';
 
 import { selectors } from 'reducers';
 import Loader from 'Components/Loader';
-import Panel from 'Components/Panel';
+import CloseButton from 'Components/CloseButton';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import Violations from './Violations';
 import ExcludedScopes from './ExcludedScopes';
 import PreviewButtons from './PreviewButtons';
@@ -51,14 +52,16 @@ function PreviewPanel({ header, dryRun, policyDisabled, onClose }) {
     );
 
     return (
-        <Panel
-            header={header}
-            headerComponents={<PreviewButtons />}
-            onClose={onClose}
-            id="side-panel"
-        >
-            <div className="bg-primary-100 h-full">{content}</div>
-        </Panel>
+        <PanelNew testid="side-panel">
+            <PanelHead>
+                <PanelTitle isUpperCase testid="side-panel-header" text={header} />
+                <PanelHeadEnd>
+                    <PreviewButtons />
+                    <CloseButton onClose={onClose} className="border-base-400 border-l" />
+                </PanelHeadEnd>
+            </PanelHead>
+            <PanelBody>{content}</PanelBody>
+        </PanelNew>
     );
 }
 

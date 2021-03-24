@@ -1,21 +1,29 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import Panel from 'Components/Panel';
+import CloseButton from 'Components/CloseButton';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import FormButtons from 'Containers/Policies/Wizard/Form/FormButtons';
 import FieldGroupCards from 'Containers/Policies/Wizard/Form/FieldGroupCards';
 import FormMessages from './FormMessages';
 
 function FormPanel({ header, fieldGroups, onClose, initialValues }) {
     return (
-        <Panel header={header} headerComponents={<FormButtons />} onClose={onClose} id="side-panel">
-            <div className="w-full h-full">
+        <PanelNew test id="side-panel">
+            <PanelHead>
+                <PanelTitle isUpperCase testid="side-panel-header" text={header} />
+                <PanelHeadEnd>
+                    <FormButtons />
+                    <CloseButton onClose={onClose} className="border-base-400 border-l" />
+                </PanelHeadEnd>
+            </PanelHead>
+            <PanelBody>
                 <FormMessages />
                 <form className="flex flex-col w-full overflow-auto pb-5">
                     <FieldGroupCards initialValues={initialValues} fieldGroups={fieldGroups} />
                 </form>
-            </div>
-        </Panel>
+            </PanelBody>
+        </PanelNew>
     );
 }
 

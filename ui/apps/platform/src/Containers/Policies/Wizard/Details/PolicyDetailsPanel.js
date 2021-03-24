@@ -1,20 +1,25 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import Panel from 'Components/Panel';
+import CloseButton from 'Components/CloseButton';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import DetailsButtons from './DetailsButtons';
 import PolicyDetails from './PolicyDetails';
 
 function PolicyDetailsPanel({ header, onClose, policy }) {
     return (
-        <Panel
-            header={header}
-            headerComponents={<DetailsButtons />}
-            onClose={onClose}
-            id="side-panel"
-        >
-            <PolicyDetails policy={policy} />
-        </Panel>
+        <PanelNew testid="side-panel">
+            <PanelHead>
+                <PanelTitle isUpperCase testid="side-panel-header" text={header} />
+                <PanelHeadEnd>
+                    <DetailsButtons />
+                    <CloseButton onClose={onClose} className="border-base-400 border-l" />
+                </PanelHeadEnd>
+            </PanelHead>
+            <PanelBody>
+                <PolicyDetails policy={policy} />
+            </PanelBody>
+        </PanelNew>
     );
 }
 

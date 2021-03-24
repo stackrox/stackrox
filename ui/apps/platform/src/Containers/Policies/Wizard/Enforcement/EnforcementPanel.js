@@ -5,7 +5,8 @@ import { createStructuredSelector } from 'reselect';
 import intersection from 'lodash/intersection';
 
 import { selectors } from 'reducers';
-import Panel from 'Components/Panel';
+import CloseButton from 'Components/CloseButton';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import { actions } from 'reducers/policies/wizard';
 import Tile from 'Containers/Policies/Wizard/Enforcement/Tile/Tile';
 import {
@@ -81,33 +82,37 @@ function EnforcementPanel({ header, onClose, wizardPolicy, setWizardPolicy }) {
 
     const lifecycles = Object.keys(lifecycleToEnforcementsMap);
     return (
-        <Panel
-            header={header}
-            headerComponents={<EnforcementButtons />}
-            onClose={onClose}
-            id="side-panel"
-        >
-            <div className="flex flex-col overflow-y-scroll w-full h-1/3 bg-primary-100">
-                <h2 className="font-700 flex justify-center top-0 py-4 px-8 sticky text-xs text-base-600 uppercase items-center tracking-wide leading-normal font-700">
-                    BASED ON THE FIELDS SELECTED IN YOUR POLICY CONFIGURATION, YOU MAY CHOOSE TO
-                    APPLY ENFORCEMENT AT THE FOLLOWING STAGES:
-                </h2>
-                <div className="border-b border-base-400" />
-                <div className="flex flex-col items-center w-full">
-                    {lifecycles.map((key) => (
-                        <Tile
-                            key={key}
-                            lifecycle={key}
-                            enabled={lifecycleStageEnabled(key)}
-                            applied={hasEnforcementForLifecycle(key)}
-                            enforcement={lifecycleTileMap[key]}
-                            onAction={toggleOn(key)}
-                            offAction={toggleOff(key)}
-                        />
-                    ))}
+        <PanelNew testid="side-panel">
+            <PanelHead>
+                <PanelTitle isUpperCase testid="side-panel-header" text={header} />
+                <PanelHeadEnd>
+                    <EnforcementButtons />
+                    <CloseButton onClose={onClose} className="border-base-400 border-l" />
+                </PanelHeadEnd>
+            </PanelHead>
+            <PanelBody>
+                <div className="flex flex-col overflow-y-scroll w-full h-1/3 bg-primary-100">
+                    <h2 className="font-700 flex justify-center top-0 py-4 px-8 sticky text-xs text-base-600 uppercase items-center tracking-wide leading-normal font-700">
+                        BASED ON THE FIELDS SELECTED IN YOUR POLICY CONFIGURATION, YOU MAY CHOOSE TO
+                        APPLY ENFORCEMENT AT THE FOLLOWING STAGES:
+                    </h2>
+                    <div className="border-b border-base-400" />
+                    <div className="flex flex-col items-center w-full">
+                        {lifecycles.map((key) => (
+                            <Tile
+                                key={key}
+                                lifecycle={key}
+                                enabled={lifecycleStageEnabled(key)}
+                                applied={hasEnforcementForLifecycle(key)}
+                                enforcement={lifecycleTileMap[key]}
+                                onAction={toggleOn(key)}
+                                offAction={toggleOff(key)}
+                            />
+                        ))}
+                    </div>
                 </div>
-            </div>
-        </Panel>
+            </PanelBody>
+        </PanelNew>
     );
 }
 

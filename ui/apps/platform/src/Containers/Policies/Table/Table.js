@@ -10,7 +10,7 @@ import { actions as pageActions } from 'reducers/policies/page';
 import { actions as tableActions } from 'reducers/policies/table';
 import { actions as wizardActions } from 'reducers/policies/wizard';
 
-import Panel from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import TablePagination from 'Components/TablePagination';
 import wizardStages from 'Containers/Policies/Wizard/wizardStages';
@@ -66,18 +66,6 @@ class Table extends Component {
         this.setState({ showImportDialogue: false });
     };
 
-    pagination = (policies, page) => {
-        const { length } = policies;
-        return (
-            <TablePagination
-                pageSize={POLICIES_TABLE_PAGE_SIZE}
-                page={page}
-                dataLength={length}
-                setPage={this.props.setPage}
-            />
-        );
-    };
-
     getTableHeaderText = () => {
         const selectionCount = this.props.selectedPolicyIds.length;
         const rowCount = this.props.policies.length;
@@ -93,23 +81,36 @@ class Table extends Component {
             return <NoResultsMessage message="No results found. Please refine your search." />;
         }
 
-        const headerComponents = (
-            <>
-                <Buttons startPolicyImport={this.startPolicyImport} />
-                {this.pagination(this.props.policies, this.props.page)}
-                {this.state.showImportDialogue && (
-                    <PolicyImportDialogue closeAction={this.closeImportDialogue} />
-                )}
-            </>
-        );
-
         return (
-            <Panel header={this.getTableHeaderText()} headerComponents={headerComponents}>
-                <TableContents
-                    pageSize={POLICIES_TABLE_PAGE_SIZE}
-                    setSelectedPolicy={this.setSelectedPolicy}
-                />
-            </Panel>
+            <div className="flex-shrink-1 overflow-hidden w-full">
+                <PanelNew testid="panel">
+                    <PanelHead>
+                        <PanelTitle
+                            isUpperCase
+                            testid="panel-header"
+                            text={this.getTableHeaderText()}
+                        />
+                        <PanelHeadEnd>
+                            <Buttons startPolicyImport={this.startPolicyImport} />
+                            <TablePagination
+                                pageSize={POLICIES_TABLE_PAGE_SIZE}
+                                page={this.props.page}
+                                dataLength={this.props.policies.length}
+                                setPage={this.props.setPage}
+                            />
+                            {this.state.showImportDialogue && (
+                                <PolicyImportDialogue closeAction={this.closeImportDialogue} />
+                            )}
+                        </PanelHeadEnd>
+                    </PanelHead>
+                    <PanelBody>
+                        <TableContents
+                            pageSize={POLICIES_TABLE_PAGE_SIZE}
+                            setSelectedPolicy={this.setSelectedPolicy}
+                        />
+                    </PanelBody>
+                </PanelNew>
+            </div>
         );
     }
 }

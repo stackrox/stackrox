@@ -10,6 +10,7 @@ import { actions as formMessageActions } from 'reducers/formMessages';
 import { actions as pageActions } from 'reducers/policies/page';
 import { actions as tableActions } from 'reducers/policies/table';
 import { actions as wizardActions } from 'reducers/policies/wizard';
+import SidePanelAdjacentArea from 'Components/SidePanelAdjacentArea';
 import WizardPanel from 'Containers/Policies/Wizard/WizardPanel';
 import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 import { policyStatus, policyDetails } from 'Containers/Policies/Wizard/Form/descriptors';
@@ -46,13 +47,13 @@ function Wizard({
     const initialValues = wizardPolicy && preFormatPolicyFields(wizardPolicy);
 
     return (
-        <div className="border-l border-base-400 w-full">
+        <SidePanelAdjacentArea width="1/2">
             <WizardPanel
                 initialValues={initialValues}
                 fieldGroups={fieldGroups}
                 onClose={onClose}
             />
-        </div>
+        </SidePanelAdjacentArea>
     );
 }
 
