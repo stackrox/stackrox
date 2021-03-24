@@ -1,21 +1,30 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
+import { useLocation } from 'react-router-dom';
 
+import parseURL from 'utils/URLParser';
 import Logo from 'Components/icons/logo';
 import ClusterStatusProblems from 'Components/ClusterStatusProblems';
 import ThemeToggleButton from 'Components/ThemeToggleButton';
 import CLIDownloadButton from 'Components/CLIDownloadButton';
 import GlobalSearchButton from 'Components/GlobalSearchButton';
 import { useTheme } from 'Containers/ThemeProvider';
+import useCases from 'constants/useCaseTypes';
 import SummaryCounts from './SummaryCounts';
 import TopNavBarMenu from './TopNavBarMenu';
+import OrchestratorComponentsToggle from './OrchestratorComponentsToggle';
 
 const topNavBtnTextClass = 'sm:hidden md:flex uppercase text-sm tracking-wide';
 const topNavBtnSvgClass = 'sm:mr-0 md:mr-3 h-4 w-4';
 const topNavBtnClass =
     'flex flex-end px-4 no-underline pt-3 pb-2 text-base-600 hover:bg-base-200 items-center cursor-pointer';
 
-const TopNavigation = () => {
+const TopNavigation = (): ReactElement => {
     const { isDarkMode } = useTheme();
+    const location = useLocation();
+    const workflowState = parseURL(location);
+    const useCase = workflowState.getUseCase();
+    const showOrchestratorComponentsToggle =
+        useCase === useCases.RISK || useCase === useCases.NETWORK;
 
     return (
         <nav
@@ -34,6 +43,7 @@ const TopNavigation = () => {
                     <div className="pl-1 pt-1 text-sm tracking-wide">Platform</div>
                 </div>
                 <SummaryCounts />
+                {showOrchestratorComponentsToggle && <OrchestratorComponentsToggle />}
             </div>
             <div className="flex" data-testid="top-nav-btns">
                 <GlobalSearchButton

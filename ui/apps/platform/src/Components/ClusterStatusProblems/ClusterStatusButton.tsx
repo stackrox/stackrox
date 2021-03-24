@@ -1,11 +1,9 @@
 /* eslint-disable react/jsx-no-bind */
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactElement } from 'react';
 import { Activity } from 'react-feather';
-import { withRouter } from 'react-router-dom';
-import ReactRouterPropTypes from 'react-router-prop-types';
-
+import { useHistory } from 'react-router-dom';
 import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
+
 import { clustersBasePath } from 'routePaths';
 
 const bgHoverDefault = 'hover:bg-base-200';
@@ -22,6 +20,11 @@ const trClassName = 'align-top leading-normal';
 const thClassName = 'font-600 pl-0 pr-2 py-0 text-left';
 const tdClassName = 'p-0 text-right';
 
+type ClusterStatusButtonProps = {
+    degraded?: number;
+    unhealthy?: number;
+};
+
 /*
  * Visual indicator in top navigation whether any clusters have health problems.
  *
@@ -29,7 +32,11 @@ const tdClassName = 'p-0 text-right';
  * The tooltip body displays query results, including zero counts.
  * A button click opens the Clusters list with a search query.
  */
-const ClusterStatusButton = ({ degraded, unhealthy, history }) => {
+const ClusterStatusButton = ({
+    degraded = 0,
+    unhealthy = 0,
+}: ClusterStatusButtonProps): ReactElement => {
+    const history = useHistory();
     const hasDegradedClusters = degraded > 0;
     const hasUnhealthyClusters = unhealthy > 0;
 
@@ -141,15 +148,4 @@ const ClusterStatusButton = ({ degraded, unhealthy, history }) => {
     );
 };
 
-ClusterStatusButton.propTypes = {
-    degraded: PropTypes.number,
-    unhealthy: PropTypes.number,
-    history: ReactRouterPropTypes.history.isRequired,
-};
-
-ClusterStatusButton.defaultProps = {
-    degraded: 0,
-    unhealthy: 0,
-};
-
-export default withRouter(ClusterStatusButton);
+export default ClusterStatusButton;

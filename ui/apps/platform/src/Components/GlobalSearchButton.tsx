@@ -1,18 +1,24 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactElement } from 'react';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { actions as globalSearchActions } from 'reducers/globalSearch';
-
 import * as Icon from 'react-feather';
 import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+
+import { actions as globalSearchActions } from 'reducers/globalSearch';
+
+type GlobalSearchButtonProps = {
+    toggleGlobalSearchView: () => void;
+    topNavBtnTextClass: string;
+    topNavBtnSvgClass: string;
+    topNavBtnClass: string;
+};
 
 const GlobalSearchButton = ({
     toggleGlobalSearchView,
     topNavBtnTextClass,
     topNavBtnSvgClass,
     topNavBtnClass,
-}) => (
+}: GlobalSearchButtonProps): ReactElement => (
     <Tooltip content={<TooltipOverlay>Search</TooltipOverlay>} className="sm:visible md:invisible">
         <button
             type="button"
@@ -25,14 +31,9 @@ const GlobalSearchButton = ({
     </Tooltip>
 );
 
-GlobalSearchButton.propTypes = {
-    toggleGlobalSearchView: PropTypes.func.isRequired,
-    topNavBtnTextClass: PropTypes.string.isRequired,
-    topNavBtnSvgClass: PropTypes.string.isRequired,
-    topNavBtnClass: PropTypes.string.isRequired,
-};
-
 const mapDispatchToProps = (dispatch) => ({
+    // TODO: type redux props
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     toggleGlobalSearchView: () => dispatch(globalSearchActions.toggleGlobalSearchView()),
 });
 

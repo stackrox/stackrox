@@ -1,11 +1,20 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
-
 import { ClipLoader as Loader } from 'react-spinners';
+
 import TileContent from 'Components/TileContent';
 
-const SummaryTileCount = ({ label, value, loading }) => {
+type SummaryTileCountProps = {
+    label: string;
+    value?: number;
+    loading?: boolean;
+};
+
+const SummaryTileCount = ({
+    label,
+    value = 0,
+    loading = false,
+}: SummaryTileCountProps): ReactElement => {
     return (
         <li
             key={label}
@@ -23,17 +32,6 @@ const SummaryTileCount = ({ label, value, loading }) => {
             )}
         </li>
     );
-};
-
-SummaryTileCount.propTypes = {
-    label: PropTypes.string.isRequired,
-    value: PropTypes.number,
-    loading: PropTypes.bool,
-};
-
-SummaryTileCount.defaultProps = {
-    loading: false,
-    value: 0,
 };
 
 export default SummaryTileCount;

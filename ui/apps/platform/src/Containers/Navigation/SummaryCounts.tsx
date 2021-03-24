@@ -1,7 +1,6 @@
-import React from 'react';
-import { gql, useQuery } from '@apollo/client';
-
+import React, { ReactElement } from 'react';
 import Raven from 'raven-js';
+import { gql, useQuery } from '@apollo/client';
 
 import SummaryTileCount from 'Components/SummaryTileCount';
 
@@ -16,7 +15,7 @@ const SUMMARY_COUNTS = gql`
     }
 `;
 
-const SummaryCounts = () => {
+const SummaryCounts = (): ReactElement => {
     const { loading, error, data } = useQuery(SUMMARY_COUNTS, { pollInterval: 30000 });
     if (error) {
         Raven.captureException(error);
@@ -24,7 +23,7 @@ const SummaryCounts = () => {
     const { clusterCount, nodeCount, violationCount, deploymentCount, imageCount, secretCount } =
         data || {};
     return (
-        <ul className="flex uppercase text-sm p-0 w-full">
+        <ul className="flex uppercase text-sm p-0">
             <SummaryTileCount label="Cluster" value={clusterCount} loading={loading} />
             <SummaryTileCount label="Node" value={nodeCount} loading={loading} />
             <SummaryTileCount label="Violation" value={violationCount} loading={loading} />

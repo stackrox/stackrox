@@ -121,7 +121,7 @@ const Menu = ({
 
 Menu.propTypes = {
     buttonClass: PropTypes.string,
-    buttonText: PropTypes.string.isRequired,
+    buttonText: PropTypes.string,
     buttonTextClassName: PropTypes.string,
     buttonIcon: PropTypes.node,
     menuClassName: PropTypes.string,
@@ -149,6 +149,7 @@ Menu.propTypes = {
 Menu.defaultProps = {
     buttonClass: '',
     buttonTextClassName: '',
+    buttonText: '',
     buttonIcon: null,
     disabled: false,
     menuClassName: '',

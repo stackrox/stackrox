@@ -14,6 +14,23 @@ import User from 'utils/User';
 const topNavMenuBtnClass =
     'no-underline text-base-600 hover:bg-base-200 items-center cursor-pointer';
 
+const MenuOptionComponent = ({ name, email, roles }) => (
+    <div className="flex flex-col pl-2">
+        <div className="font-700 normal-case" data-testid="menu-user-name">
+            {name}
+        </div>
+        {email && (
+            <div className="lowercase text-base-500 italic pt-px" data-testid="menu-user-email">
+                {email}
+            </div>
+        )}
+        <div className="pt-1" data-testid="menu-user-roles">
+            <span className="font-700 pr-2">Roles ({roles.length}):</span>
+            <span>{roles.map((role) => role.name).join(', ')}</span>
+        </div>
+    </div>
+);
+
 function TopNavBarMenu({ logout, userData }) {
     /**
      * TODO: rework the logic for the top-right menu
@@ -24,10 +41,8 @@ function TopNavBarMenu({ logout, userData }) {
      *
      * Menu component should probably be adapted to just take children
      */
-    const options = [{ label: 'Logout', onClick: () => logout() }];
 
     let buttonIcon = <MoreHorizontal className="mx-4 h-4 w-4 pointer-events-none" />;
-    let buttonText = null;
     const buttonTextClassName = 'border rounded-full mx-3 p-3 text-xl border-base-400';
 
     const user = new User(userData);
@@ -36,30 +51,22 @@ function TopNavBarMenu({ logout, userData }) {
     if (displayEmail === displayName) {
         displayEmail = null;
     }
-    const menuOptionComponent = (
-        <div className="flex flex-col pl-2">
-            <div className="font-700 normal-case" data-testid="menu-user-name">
-                {displayName}
-            </div>
-            {displayEmail && (
-                <div className="lowercase text-base-500 italic pt-px" data-testid="menu-user-email">
-                    {displayEmail}
-                </div>
-            )}
-            <div className="pt-1" data-testid="menu-user-roles">
-                <span className="font-700 pr-2">Roles ({user.roles.length}):</span>
-                <span>{user.roles.map((role) => role.name).join(', ')}</span>
-            </div>
-        </div>
-    );
-    options.unshift({ component: menuOptionComponent, link: '/main/user' });
+
+    const options = [
+        {
+            component: (
+                <MenuOptionComponent name={displayName} email={displayEmail} roles={user.roles} />
+            ),
+            link: '/main/user',
+        },
+        { label: 'Logout', onClick: () => logout() },
+    ];
     buttonIcon = (
         <Avatar
             name={user.name || user.username}
             extraClassName="mx-3 h-10 w-10 flex items-center justify-center leading-none"
         />
     );
-    buttonText = '';
 
     return (
         <div className="flex items-center border-l border-base-400 hover:bg-base-200">
@@ -67,9 +74,7 @@ function TopNavBarMenu({ logout, userData }) {
                 className={`${topNavMenuBtnClass} h-full`}
                 menuClassName="min-w-48"
                 buttonIcon={buttonIcon}
-                buttonText={buttonText}
                 buttonTextClassName={buttonTextClassName}
-                button
                 hideCaret
                 options={options}
             />
@@ -79,7 +84,6 @@ function TopNavBarMenu({ logout, userData }) {
 
 TopNavBarMenu.propTypes = {
     logout: PropTypes.func.isRequired,
-    userRolePermissions: PropTypes.shape({ globalAccess: PropTypes.string.isRequired }),
     userData: PropTypes.shape({
         userInfo: PropTypes.shape({
             username: PropTypes.string,
@@ -92,23 +96,10 @@ TopNavBarMenu.propTypes = {
         }),
         userAttributes: PropTypes.arrayOf(PropTypes.shape({})),
     }).isRequired,
-    // eslint-disable-next-line react/no-unused-prop-types
-    featureFlags: PropTypes.arrayOf(
-        PropTypes.shape({
-            envVar: PropTypes.string.isRequired,
-            enabled: PropTypes.bool.isRequired,
-        })
-    ).isRequired,
-};
-
-TopNavBarMenu.defaultProps = {
-    userRolePermissions: null,
 };
 
 const mapStateToProps = createStructuredSelector({
-    userRolePermissions: selectors.getUserRolePermissions,
     userData: selectors.getCurrentUser,
-    featureFlags: selectors.getFeatureFlags,
 });
 
 const mapDispatchToProps = (dispatch) => ({

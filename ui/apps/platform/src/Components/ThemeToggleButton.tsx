@@ -1,10 +1,10 @@
-import React from 'react';
-import { useTheme } from 'Containers/ThemeProvider';
+import React, { ReactElement } from 'react';
+import { Moon, Sun } from 'react-feather';
 import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
-import { Moon, Sun } from 'react-feather';
+import { useTheme } from 'Containers/ThemeProvider';
 
-const ThemeToggleButton = () => {
+const ThemeToggleButton = (): ReactElement => {
     const themeState = useTheme();
     const tooltipText = themeState.isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode';
     return (
