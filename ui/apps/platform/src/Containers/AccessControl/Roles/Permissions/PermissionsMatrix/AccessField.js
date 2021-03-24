@@ -5,7 +5,7 @@ import { NO_ACCESS, READ_ACCESS, READ_WRITE_ACCESS } from 'constants/accessContr
 import { accessControl } from 'messages/common';
 
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
-import ReadWriteIcon from './ReadWriteIcon';
+import { ReadAccessIcon, WriteAccessIcon } from '../../../PermissionSets/AccessIcons';
 
 const AccessField = ({ input, resourceToAccess, resourceName, isEditing }) => {
     const options = [
@@ -13,7 +13,7 @@ const AccessField = ({ input, resourceToAccess, resourceName, isEditing }) => {
         { label: accessControl.READ_ACCESS, value: READ_ACCESS },
         { label: accessControl.READ_WRITE_ACCESS, value: READ_WRITE_ACCESS },
     ];
-    const value = input ? input.value : resourceToAccess[resourceName];
+    const accessType = input ? input.value : resourceToAccess[resourceName];
     const name = input ? input.name : '';
     return (
         <tr>
@@ -21,12 +21,12 @@ const AccessField = ({ input, resourceToAccess, resourceName, isEditing }) => {
                 <span className="p-2">{resourceName}</span>
             </td>
             <td className="p-2 text-center border-b border-base-300">
-                {value.read && (value.read.join(', ') || 'None')}
-                {!value.read && <ReadWriteIcon value={value} type="READ" />}
+                {accessType.read && (accessType.read.join(', ') || 'None')}
+                {!accessType.read && <ReadAccessIcon accessType={accessType} />}
             </td>
             <td className="p-2 text-center border-b border-base-300">
-                {value.write && (value.write.join(', ') || 'None')}
-                {!value.write && <ReadWriteIcon value={value} type="WRITE" />}
+                {accessType.write && (accessType.write.join(', ') || 'None')}
+                {!accessType.write && <WriteAccessIcon accessType={accessType} />}
             </td>
             {isEditing && (
                 <td className="p-2 border-b border-base-300">

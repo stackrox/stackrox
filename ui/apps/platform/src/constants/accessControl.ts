@@ -3,6 +3,8 @@ export const NO_ACCESS = 'NO_ACCESS';
 export const READ_ACCESS = 'READ_ACCESS';
 export const READ_WRITE_ACCESS = 'READ_WRITE_ACCESS';
 
+export type AccessType = 'NO_ACCESS' | 'READ_ACCESS' | 'READ_WRITE_ACCESS';
+
 export const defaultRoles = {
     Admin: true,
     Analyst: true,
@@ -42,8 +44,8 @@ export const oidcCallbackValues = {
     query: 'Query',
 };
 
-export function getAuthProviderLabelByValue(value) {
-    return availableAuthProviders.find((e) => e.value === value).label;
+export function getAuthProviderLabelByValue(value: string): string {
+    return availableAuthProviders.find((e) => e.value === value)?.label ?? '';
 }
 
 export const defaultMinimalReadAccessResources = [
