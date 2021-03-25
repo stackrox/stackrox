@@ -645,12 +645,15 @@ clean-image:
 
 .PHONY: tag
 tag:
+ifneq (,$(wildcard CI_TAG))
+	@cat CI_TAG
+else
 ifdef COMMIT
 	@git describe $(COMMIT) --tags --abbrev=10 --long
 else
 	@echo $(TAG)
 endif
-
+endif
 
 .PHONY: render-helm-yamls
 sensorChartDir="image/templates/helm/stackrox-secured-cluster"

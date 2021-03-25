@@ -2329,6 +2329,21 @@ jobs:
   # Build jobs
   ###
 
+  pre-create-tag:
+    executor: custom
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Creating a consistent tag for CI workflow
+          command: |
+            make --quiet tag | tee CI_TAG_TMP
+            mv CI_TAG_TMP CI_TAG
+      - persist_to_workspace:
+          root: /go/src/github.com/stackrox/rox
+          paths:
+            - CI_TAG
+
   pre-build-ui:
     executor: custom
     resource_class: large
@@ -2337,6 +2352,8 @@ jobs:
       - EKS_AUTOMATION_VERSION: 0.1.7
     steps:
       - checkout
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
       - restore-npm-deps-cache
       - fetch-ui-deps
 
@@ -2387,6 +2404,8 @@ jobs:
       - EKS_AUTOMATION_VERSION: 0.1.7
     steps:
       - checkout
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
       - *restoreGoModCache
       - setup-go-build-env
       - *restoreGoBuildCache
@@ -2433,6 +2452,8 @@ jobs:
     resource_class: large
     steps:
       - checkout
+      - attach_workspace:
+          at: ~/go/src/github.com/stackrox/rox
       - run:
           name: Create cci-export utility and setup env
           command: |
@@ -4728,12 +4749,20 @@ workflows:
           <<: *runOnAllTagsWithDockerIOPullCtx
       - integration-unit-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
+      - pre-create-tag:
+          <<: *runOnAllTagsWithDockerIOPullCtx
       - pre-build-ui:
           <<: *runOnAllTagsWithDockerIOPullCtx
+          requires:
+            - pre-create-tag
       - pre-build-cli:
           <<: *runOnAllTagsWithDockerIOPullCtx
+          requires:
+            - pre-create-tag
       - pre-build-go-binaries:
           <<: *runOnAllTagsWithDockerIOPushCtx
+          requires:
+            - pre-create-tag
       - build:
           <<: *runOnAllTagsWithDockerIOPushCtx
           requires:
