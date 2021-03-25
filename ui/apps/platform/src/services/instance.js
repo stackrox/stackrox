@@ -10,7 +10,7 @@ const instance = axios.create({
     timeout: 10000,
 });
 
-export const orchestratorQueryKey = 'orchestrator_component';
+export const orchestratorQueryKey = 'orchestratorComponent';
 
 export function appendOrchestratorComponentsQuery(url, showOrchestratorComponent) {
     const hasQuery = url.includes('?');
