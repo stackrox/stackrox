@@ -69,6 +69,7 @@ function NetworkBaselines({
             header={header}
             headerComponents={modifiedHeaderComponents}
             bodyClassName="flex flex-1 flex-col"
+            className="flex-1"
         >
             <div className="p-2 border-b border-base-300">
                 <NetworkBaselinesSearch

@@ -3,7 +3,7 @@ import React, { createContext, ReactElement, ReactNode } from 'react';
 import useBaselineSimulation from './useBaselineSimulation';
 import { BaselineSimulationResult } from './baselineSimulationTypes';
 
-const BaselineSimulationContext = createContext<BaselineSimulationResult>(undefined);
+const BaselineSimulationContext = createContext<BaselineSimulationResult | undefined>(undefined);
 
 type BaselineSimulationProviderProps = { children: ReactNode };
 
