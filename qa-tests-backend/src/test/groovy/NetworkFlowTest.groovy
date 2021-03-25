@@ -776,7 +776,7 @@ class NetworkFlowTest extends BaseSpecification {
         return match
     }
 
-    private waitForEdgeUpdate(Edge edge, int timeoutSeconds = 60, float addSecondsToEdgeTimestamp = 0.01) {
+    private waitForEdgeUpdate(Edge edge, int timeoutSeconds = 60, float addSecondsToEdgeTimestamp = 0.2) {
         int intervalSeconds = 1
         int waitTime
         def startTime = System.currentTimeMillis()
@@ -789,7 +789,7 @@ class NetworkFlowTest extends BaseSpecification {
             // the buffer simply says only check for updates that happen >`addSecondsToEdgeTimestamp`
             // seconds after the baseline edge.
             // In addition per ROX-5749 small deltas may appear in edge timestamps which will not be
-            // considered as a new edge, hence the 0.01 default value.
+            // considered as a new edge, hence the 0.2 default value.
             if (newEdge != null &&
                     newEdge.lastActiveTimestamp > edge.lastActiveTimestamp + (addSecondsToEdgeTimestamp * 1000)) {
                 println "Found updated edge in graph after ${(System.currentTimeMillis() - startTime) / 1000}s"
