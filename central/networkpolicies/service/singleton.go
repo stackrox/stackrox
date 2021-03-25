@@ -4,6 +4,7 @@ import (
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	nsDataStore "github.com/stackrox/rox/central/namespace/datastore"
+	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
@@ -27,6 +28,7 @@ func initialize() {
 		deploymentDS.Singleton(),
 		networkEntityDS.Singleton(),
 		graphConfigDS.Singleton(),
+		networkBaselineDataStore.Singleton(),
 		networktree.Singleton(),
 		graph.Singleton(),
 		nsDataStore.Singleton(),

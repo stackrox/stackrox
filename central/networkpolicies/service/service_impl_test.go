@@ -8,6 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	cDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	dDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	networkBaselineDSMocks "github.com/stackrox/rox/central/networkbaseline/datastore/mocks"
 	graphConfigMocks "github.com/stackrox/rox/central/networkgraph/config/datastore/mocks"
 	netEntityDSMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	netTreeMgrMocks "github.com/stackrox/rox/central/networkgraph/entity/networktree/mocks"
@@ -85,18 +86,19 @@ func TestNetworkPolicyService(t *testing.T) {
 type ServiceTestSuite struct {
 	suite.Suite
 
-	requestContext  context.Context
-	clusters        *cDataStoreMocks.MockDataStore
-	deployments     *dDataStoreMocks.MockDataStore
-	externalSrcs    *netEntityDSMocks.MockEntityDataStore
-	graphConfig     *graphConfigMocks.MockDataStore
-	netTreeMgr      *netTreeMgrMocks.MockManager
-	networkPolicies *npMocks.MockDataStore
-	evaluator       *npGraphMocks.MockEvaluator
-	notifiers       *nDataStoreMocks.MockDataStore
-	tested          Service
-	mockCtrl        *gomock.Controller
-	envIsolator     *envisolator.EnvIsolator
+	requestContext   context.Context
+	clusters         *cDataStoreMocks.MockDataStore
+	deployments      *dDataStoreMocks.MockDataStore
+	externalSrcs     *netEntityDSMocks.MockEntityDataStore
+	graphConfig      *graphConfigMocks.MockDataStore
+	networkBaselines *networkBaselineDSMocks.MockDataStore
+	netTreeMgr       *netTreeMgrMocks.MockManager
+	networkPolicies  *npMocks.MockDataStore
+	evaluator        *npGraphMocks.MockEvaluator
+	notifiers        *nDataStoreMocks.MockDataStore
+	tested           Service
+	mockCtrl         *gomock.Controller
+	envIsolator      *envisolator.EnvIsolator
 }
 
 func (suite *ServiceTestSuite) SetupTest() {
@@ -110,12 +112,13 @@ func (suite *ServiceTestSuite) SetupTest() {
 	suite.deployments = dDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.externalSrcs = netEntityDSMocks.NewMockEntityDataStore(suite.mockCtrl)
 	suite.graphConfig = graphConfigMocks.NewMockDataStore(suite.mockCtrl)
+	suite.networkBaselines = networkBaselineDSMocks.NewMockDataStore(suite.mockCtrl)
 	suite.netTreeMgr = netTreeMgrMocks.NewMockManager(suite.mockCtrl)
 	suite.notifiers = nDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
 	suite.envIsolator.Setenv(features.NetworkDetectionBaselineSimulation.EnvVar(), "true")
 
-	suite.tested = New(suite.networkPolicies, suite.deployments, suite.externalSrcs, suite.graphConfig, suite.netTreeMgr,
+	suite.tested = New(suite.networkPolicies, suite.deployments, suite.externalSrcs, suite.graphConfig, suite.networkBaselines, suite.netTreeMgr,
 		suite.evaluator, nil, suite.clusters, suite.notifiers, nil, nil)
 }
 
@@ -557,65 +560,8 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 	suite.deployments.EXPECT().SearchRawDeployments(
 		gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).MinTimes(numDeployments).Return(deps, nil)
 
-	// Configure a graph which has explicit edges like this:
-	//   - deployment001 -> deployment000 -> deployment002
-	// deployment003 is an "island" in this graph
-	// deployment001 has non-isolated ingress, and deployment002 has non-isolated egress. Thus
-	// there should be an implicit edge from deployment002 -> deployment001
 	var pols []*storage.NetworkPolicy
 	suite.evaluator.EXPECT().GetAppliedPolicies(gomock.Any(), gomock.Any(), pols).MinTimes(numDeployments).Return(pols)
-	graph :=
-		&v1.NetworkGraph{
-			Epoch: 0,
-			Nodes: []*v1.NetworkNode{
-				{
-					Entity: &storage.NetworkEntityInfo{
-						Type: storage.NetworkEntityInfo_DEPLOYMENT,
-						Id:   deps[0].GetId(),
-					},
-					OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{
-						2: {
-							Properties: []*v1.NetworkEdgeProperties{
-								{
-									Port:     443,
-									Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-								},
-							},
-						},
-					},
-				},
-				{
-					Entity: &storage.NetworkEntityInfo{
-						Type: storage.NetworkEntityInfo_DEPLOYMENT,
-						Id:   deps[1].GetId(),
-					},
-					OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{
-						0: {
-							Properties: []*v1.NetworkEdgeProperties{
-								{
-									Port:     80,
-									Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-								},
-							},
-						},
-					},
-					NonIsolatedIngress: true,
-				},
-				{
-					Entity: &storage.NetworkEntityInfo{
-						Type: storage.NetworkEntityInfo_DEPLOYMENT,
-						Id:   deps[2].GetId(),
-					},
-					NonIsolatedEgress: true,
-				},
-				{
-					Entity: &storage.NetworkEntityInfo{
-						Type: storage.NetworkEntityInfo_DEPLOYMENT,
-						Id:   deps[3].GetId(),
-					},
-				},
-			},
-		}
 	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").MinTimes(numDeployments).Return(pols, nil)
 	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil).MinTimes(numDeployments)
 	suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).MinTimes(numDeployments).Return(nil)
@@ -642,6 +588,15 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
 					},
 					Port:     443,
+					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+					Ingress:  false,
+				},
+				{
+					Entity: &v1.NetworkBaselinePeerEntity{
+						Id:   deps[2].GetId(),
+						Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					},
+					Port:     80,
 					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 					Ingress:  false,
 				},
@@ -684,6 +639,15 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 				},
 				{
 					Entity: &v1.NetworkBaselinePeerEntity{
+						Id:   deps[0].GetId(),
+						Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					},
+					Port:     80,
+					Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+					Ingress:  true,
+				},
+				{
+					Entity: &v1.NetworkBaselinePeerEntity{
 						Id:   deps[1].GetId(),
 						Type: storage.NetworkEntityInfo_DEPLOYMENT,
 					},
@@ -700,10 +664,10 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 	} {
 		suite.Run(fmt.Sprintf("testing deployment%03d", i), func() {
 			// Mark testing deployment node's query match to be true
-			graphCopy := graph.Clone()
-			graphCopy.Nodes[i].QueryMatch = true
+			graph := suite.getSampleNetworkGraph(deps...)
+			graph.Nodes[i].QueryMatch = true
 
-			suite.evaluator.EXPECT().GetGraph(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(graphCopy)
+			suite.evaluator.EXPECT().GetGraph(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(graph)
 			suite.deployments.EXPECT().GetDeployment(gomock.Any(), gomock.Any()).Return(deps[i], true, nil)
 			resp, err := suite.tested.GetAllowedPeersFromCurrentPolicyForDeployment(
 				suite.requestContext,
@@ -743,6 +707,206 @@ func (suite *ServiceTestSuite) TestGetUndoDeploymentRecord() {
 	suite.Equal(
 		&v1.GetUndoModificationForDeploymentResponse{UndoRecord: &storage.NetworkPolicyApplicationUndoRecord{}},
 		resp)
+}
+
+func (suite *ServiceTestSuite) TestGetDiffFlows() {
+	if !features.NetworkDetectionBaselineSimulation.Enabled() {
+		return
+	}
+	// Prepare deployment001 - deployment004
+	numDeployments := 4
+	deps := make([]*storage.Deployment, 0, numDeployments)
+	for i := 0; i < numDeployments; i++ {
+		deps = append(deps, &storage.Deployment{
+			Id:        fmt.Sprintf("deployment%03d", i),
+			Name:      fmt.Sprintf("deployment%03d", i),
+			Namespace: "namespace",
+			ClusterId: fakeClusterID,
+			PodLabels: map[string]string{"app": fmt.Sprintf("deployment%03d", i)},
+		})
+	}
+	suite.deployments.EXPECT().GetDeployment(gomock.Any(), "deployment000").Return(deps[1], true, nil)
+	suite.deployments.EXPECT().SearchRawDeployments(
+		gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).Return(deps, nil)
+
+	var pols []*storage.NetworkPolicy
+	suite.evaluator.EXPECT().GetAppliedPolicies(gomock.Any(), gomock.Any(), pols).Return(pols)
+	graph := suite.getSampleNetworkGraph(deps...)
+	graph.Nodes[0].QueryMatch = true
+	suite.evaluator.EXPECT().GetGraph(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(graph)
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, networkPolicyGetIsForCluster(fakeClusterID), "").Return(pols, nil)
+	suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(&storage.NetworkGraphConfig{HideDefaultExternalSrcs: true}, nil)
+	suite.netTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), fakeClusterID).Return(nil)
+	suite.networkBaselines.EXPECT().GetNetworkBaseline(gomock.Any(), "deployment000").Return(
+		&storage.NetworkBaseline{
+			DeploymentId: "deployment000",
+			Peers: []*storage.NetworkBaselinePeer{
+				{
+					Entity: &storage.NetworkEntity{
+						Info: &storage.NetworkEntityInfo{
+							Type: storage.NetworkEntityInfo_DEPLOYMENT,
+							Id:   "deployment002",
+						},
+					},
+					Properties: []*storage.NetworkBaselineConnectionProperties{
+						{
+							Ingress:  false,
+							Port:     443,
+							Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+						},
+						{
+							Ingress:  true,
+							Port:     22,
+							Protocol: storage.L4Protocol_L4_PROTOCOL_UDP,
+						},
+					},
+				},
+				{
+					Entity: &storage.NetworkEntity{
+						Info: &storage.NetworkEntityInfo{
+							Type: storage.NetworkEntityInfo_DEPLOYMENT,
+							Id:   "deployment003",
+						},
+					},
+					Properties: []*storage.NetworkBaselineConnectionProperties{
+						{
+							Ingress:  false,
+							Port:     443,
+							Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+						},
+					},
+				},
+			},
+		}, true, nil)
+	rsp, err :=
+		suite.tested.GetDiffFlowsBetweenPolicyAndBaselineForDeployment(suite.requestContext, &v1.ResourceByID{Id: "deployment000"})
+	suite.NoError(err)
+	suite.Equal(rsp, &v1.GetDiffFlowsResponse{
+		Added: []*v1.GetDiffFlowsGroupedFlow{
+			{
+				Entity: &v1.NetworkBaselinePeerEntity{
+					Id:   "deployment003",
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				},
+				Properties: []*storage.NetworkBaselineConnectionProperties{
+					{
+						Ingress:  false,
+						Port:     443,
+						Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+					},
+				},
+			},
+		},
+		Removed: []*v1.GetDiffFlowsGroupedFlow{
+			{
+				Entity: &v1.NetworkBaselinePeerEntity{
+					Id:   "deployment001",
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				},
+				Properties: []*storage.NetworkBaselineConnectionProperties{
+					{
+						Ingress:  true,
+						Port:     80,
+						Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+					},
+				},
+			},
+		},
+		Reconciled: []*v1.GetDiffFlowsReconciledFlow{
+			{
+				Entity: &v1.NetworkBaselinePeerEntity{
+					Id:   "deployment002",
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				},
+				Added: []*storage.NetworkBaselineConnectionProperties{
+					{
+						Ingress:  true,
+						Port:     22,
+						Protocol: storage.L4Protocol_L4_PROTOCOL_UDP,
+					},
+				},
+				Removed: []*storage.NetworkBaselineConnectionProperties{
+					{
+						Ingress:  false,
+						Port:     80,
+						Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+					},
+				},
+				Unchanged: []*storage.NetworkBaselineConnectionProperties{
+					{
+						Ingress:  false,
+						Port:     443,
+						Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+					},
+				},
+			},
+		},
+	})
+}
+
+// getSampleNetworkGraph requires at least 4 deployments
+// This function configures a graph which has explicit edges like this:
+//   - deployment001 -> deployment000 -> deployment002
+// deployment003 is an "island" in this graph
+// deployment001 has non-isolated ingress, and deployment002 has non-isolated egress. Thus
+// there should be an implicit edge from deployment002 -> deployment001
+func (suite *ServiceTestSuite) getSampleNetworkGraph(deps ...*storage.Deployment) *v1.NetworkGraph {
+	suite.GreaterOrEqual(len(deps), 4)
+	return &v1.NetworkGraph{
+		Epoch: 0,
+		Nodes: []*v1.NetworkNode{
+			{
+				Entity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   deps[0].GetId(),
+				},
+				OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{
+					2: {
+						Properties: []*v1.NetworkEdgeProperties{
+							{
+								Port:     443,
+								Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+							},
+							{
+								Port:     80,
+								Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+							},
+						},
+					},
+				},
+			},
+			{
+				Entity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   deps[1].GetId(),
+				},
+				OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{
+					0: {
+						Properties: []*v1.NetworkEdgeProperties{
+							{
+								Port:     80,
+								Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+							},
+						},
+					},
+				},
+				NonIsolatedIngress: true,
+			},
+			{
+				Entity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   deps[2].GetId(),
+				},
+				NonIsolatedEgress: true,
+			},
+			{
+				Entity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   deps[3].GetId(),
+				},
+			},
+		},
+	}
 }
 
 // deploymentSearchIsForCluster returns a function that returns true if the in input ParsedSearchRequest has the

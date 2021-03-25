@@ -6,6 +6,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
+	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
@@ -38,6 +39,7 @@ func New(storage npDS.DataStore,
 	deployments deploymentDataStore.DataStore,
 	externalSrcs networkEntityDS.EntityDataStore,
 	graphConfig graphConfigDS.DataStore,
+	networkBaselines networkBaselineDataStore.ReadOnlyDataStore,
 	networkTreeMgr networktree.Manager,
 	graphEvaluator graph.Evaluator,
 	namespacesStore nsDS.DataStore,
@@ -46,15 +48,16 @@ func New(storage npDS.DataStore,
 	globalFlowDataStore nfDS.ClusterDataStore,
 	sensorConnMgr connection.Manager) Service {
 	return &serviceImpl{
-		sensorConnMgr:   sensorConnMgr,
-		deployments:     deployments,
-		externalSrcs:    externalSrcs,
-		graphConfig:     graphConfig,
-		networkTreeMgr:  networkTreeMgr,
-		networkPolicies: storage,
-		notifierStore:   notifierStore,
-		clusterStore:    clusterStore,
-		graphEvaluator:  graphEvaluator,
-		policyGenerator: generator.New(storage, deployments, namespacesStore, globalFlowDataStore, networkTreeMgr),
+		sensorConnMgr:    sensorConnMgr,
+		deployments:      deployments,
+		externalSrcs:     externalSrcs,
+		graphConfig:      graphConfig,
+		networkBaselines: networkBaselines,
+		networkTreeMgr:   networkTreeMgr,
+		networkPolicies:  storage,
+		notifierStore:    notifierStore,
+		clusterStore:     clusterStore,
+		graphEvaluator:   graphEvaluator,
+		policyGenerator:  generator.New(storage, deployments, namespacesStore, globalFlowDataStore, networkTreeMgr),
 	}
 }

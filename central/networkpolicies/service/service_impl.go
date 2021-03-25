@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
@@ -55,6 +56,7 @@ var (
 			"/v1.NetworkPolicyService/GetNetworkGraphEpoch",
 			"/v1.NetworkPolicyService/GetUndoModification",
 			"/v1.NetworkPolicyService/GetAllowedPeersFromCurrentPolicyForDeployment",
+			"/v1.NetworkPolicyService/GetDiffFlowsBetweenPolicyAndBaselineForDeployment",
 			"/v1.NetworkPolicyService/GetUndoModificationForDeployment",
 		},
 		user.With(permissions.Modify(resources.NetworkPolicy)): {
@@ -77,15 +79,16 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
-	sensorConnMgr   connection.Manager
-	clusterStore    clusterDataStore.DataStore
-	deployments     deploymentDataStore.DataStore
-	externalSrcs    networkEntityDS.EntityDataStore
-	graphConfig     graphConfigDS.DataStore
-	networkTreeMgr  networktree.Manager
-	networkPolicies npDS.DataStore
-	notifierStore   notifierDataStore.DataStore
-	graphEvaluator  graph.Evaluator
+	sensorConnMgr    connection.Manager
+	clusterStore     clusterDataStore.DataStore
+	deployments      deploymentDataStore.DataStore
+	externalSrcs     networkEntityDS.EntityDataStore
+	graphConfig      graphConfigDS.DataStore
+	networkBaselines networkBaselineDataStore.ReadOnlyDataStore
+	networkTreeMgr   networktree.Manager
+	networkPolicies  npDS.DataStore
+	notifierStore    notifierDataStore.DataStore
+	graphEvaluator   graph.Evaluator
 
 	policyGenerator generator.Generator
 }
@@ -608,6 +611,156 @@ func (s *serviceImpl) GetUndoModificationForDeployment(ctx context.Context, requ
 	return &v1.GetUndoModificationForDeploymentResponse{
 		UndoRecord: undoRecord.GetUndoRecord(),
 	}, nil
+}
+
+func (s *serviceImpl) GetDiffFlowsBetweenPolicyAndBaselineForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetDiffFlowsResponse, error) {
+	if !features.NetworkDetectionBaselineSimulation.Enabled() {
+		return nil, errors.New("network baseline policy simulator is currently not enabled")
+	}
+	// First get allowed peers from current network policies
+	allowedPeers, err := s.GetAllowedPeersFromCurrentPolicyForDeployment(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	// Get allowed peers from the deployment's NetworkBaseline
+	baseline, found, err := s.networkBaselines.GetNetworkBaseline(ctx, request.GetId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	} else if !found {
+		return nil, status.Error(codes.NotFound, "requested deployment's baseline not found")
+	}
+
+	rsp := s.computeDiffFlowsBetweenPolicyAllowedAndBaseline(allowedPeers.GetAllowedPeers(), baseline)
+	return rsp, nil
+}
+
+func (s *serviceImpl) constructGetDiffFlowsGroupedFlow(
+	id string,
+	entityType storage.NetworkEntityInfo_Type,
+	properties []*storage.NetworkBaselineConnectionProperties,
+) *v1.GetDiffFlowsGroupedFlow {
+	return &v1.GetDiffFlowsGroupedFlow{
+		Entity: &v1.NetworkBaselinePeerEntity{
+			Id:   id,
+			Type: entityType,
+		},
+		Properties: properties,
+	}
+}
+
+func (s *serviceImpl) computeDiffFlowsBetweenPolicyAllowedAndBaseline(
+	allowedPeers []*v1.NetworkBaselineStatusPeer,
+	baseline *storage.NetworkBaseline,
+) *v1.GetDiffFlowsResponse {
+	// Group allowed peers by entity
+	allowedIDToEntity := make(map[string]*v1.GetDiffFlowsGroupedFlow)
+	for _, peer := range allowedPeers {
+		entityForPeer, ok := allowedIDToEntity[peer.GetEntity().GetId()]
+		if !ok {
+			entityForPeer = s.constructGetDiffFlowsGroupedFlow(peer.GetEntity().GetId(), peer.GetEntity().GetType(), make([]*storage.NetworkBaselineConnectionProperties, 0))
+			allowedIDToEntity[peer.GetEntity().GetId()] = entityForPeer
+		}
+		entityForPeer.Properties =
+			append(
+				allowedIDToEntity[peer.GetEntity().GetId()].Properties,
+				&storage.NetworkBaselineConnectionProperties{
+					Ingress:  peer.GetIngress(),
+					Port:     peer.GetPort(),
+					Protocol: peer.GetProtocol(),
+				})
+	}
+
+	rsp := &v1.GetDiffFlowsResponse{
+		Added:      make([]*v1.GetDiffFlowsGroupedFlow, 0),
+		Removed:    make([]*v1.GetDiffFlowsGroupedFlow, 0),
+		Reconciled: make([]*v1.GetDiffFlowsReconciledFlow, 0),
+	}
+	for _, baselinePeer := range baseline.GetPeers() {
+		if allowedPeer, ok := allowedIDToEntity[baselinePeer.GetEntity().GetInfo().GetId()]; !ok {
+			// Baseline peer not found in the current set of allowed peers. This is a newly added peer
+			rsp.Added = append(rsp.Added,
+				s.constructGetDiffFlowsGroupedFlow(
+					baselinePeer.GetEntity().GetInfo().GetId(),
+					baselinePeer.GetEntity().GetInfo().GetType(),
+					baselinePeer.GetProperties()))
+		} else {
+			// A new set of flows might be configured for this entity. Reconcile the difference if there is any
+			rsp.Reconciled = append(rsp.Reconciled,
+				s.reconcileFlowDifferences(
+					allowedPeer.GetEntity().GetId(),
+					allowedPeer.GetEntity().GetType(),
+					allowedPeer.GetProperties(),
+					baselinePeer.GetProperties()))
+			delete(allowedIDToEntity, allowedPeer.GetEntity().GetId())
+		}
+	}
+
+	// Since we have deleted matched peers from the currently allowed peers map. The peers left
+	// are the ones that will be removed.
+	for _, allowedPeer := range allowedIDToEntity {
+		rsp.Removed = append(rsp.Removed, allowedPeer)
+	}
+
+	return rsp
+}
+
+type connectionProperties struct {
+	ingress  bool
+	port     uint32
+	protocol storage.L4Protocol
+}
+
+func (s *serviceImpl) toConnectionPropertiesStruct(properties *storage.NetworkBaselineConnectionProperties) connectionProperties {
+	return connectionProperties{
+		ingress:  properties.GetIngress(),
+		port:     properties.GetPort(),
+		protocol: properties.GetProtocol(),
+	}
+}
+
+func (s *serviceImpl) reconcileFlowDifferences(
+	id string,
+	entityType storage.NetworkEntityInfo_Type,
+	allowedProperties, baselineProperties []*storage.NetworkBaselineConnectionProperties,
+) *v1.GetDiffFlowsReconciledFlow {
+	result := &v1.GetDiffFlowsReconciledFlow{
+		Entity: &v1.NetworkBaselinePeerEntity{
+			Id:   id,
+			Type: entityType,
+		},
+		Added:     make([]*storage.NetworkBaselineConnectionProperties, 0),
+		Removed:   make([]*storage.NetworkBaselineConnectionProperties, 0),
+		Unchanged: make([]*storage.NetworkBaselineConnectionProperties, 0),
+	}
+	// Convert allowedProperties to set for easy lookup
+	allowedPropertiesSet := make(map[connectionProperties]struct{})
+	for _, properties := range allowedProperties {
+		allowedPropertiesSet[s.toConnectionPropertiesStruct(properties)] = struct{}{}
+	}
+
+	// Loop through baseline properties and fill the flow info
+	for _, properties := range baselineProperties {
+		converted := s.toConnectionPropertiesStruct(properties)
+		if _, ok := allowedPropertiesSet[converted]; !ok {
+			// This set of baseline connection properties if not currently allowed
+			result.Added = append(result.Added, properties)
+		} else {
+			// This set of properties currently exists.
+			result.Unchanged = append(result.Unchanged, properties)
+			delete(allowedPropertiesSet, converted)
+		}
+	}
+	// Since we have deleted matched properties from the currently allowed properties set. The properties left
+	// are the ones that will be removed.
+	for properties := range allowedPropertiesSet {
+		result.Removed = append(result.Removed, &storage.NetworkBaselineConnectionProperties{
+			Ingress:  properties.ingress,
+			Port:     properties.port,
+			Protocol: properties.protocol,
+		})
+	}
+
+	return result
 }
 
 func (s *serviceImpl) getQueryDeployments(ctx context.Context, clusterID, query string) ([]*storage.Deployment, error) {
