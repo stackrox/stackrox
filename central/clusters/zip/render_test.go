@@ -36,10 +36,18 @@ func init() {
 }
 
 func TestRenderOpenshiftEnv(t *testing.T) {
+	for _, clusterType := range []storage.ClusterType{storage.ClusterType_OPENSHIFT_CLUSTER, storage.ClusterType_OPENSHIFT4_CLUSTER} {
+		t.Run(clusterType.String(), func(t *testing.T) {
+			doTestRenderOpenshiftEnv(t, clusterType)
+		})
+	}
+}
+
+func doTestRenderOpenshiftEnv(t *testing.T, clusterType storage.ClusterType) {
 	cluster := &storage.Cluster{
 		Name:      "cluster",
 		MainImage: "stackrox/main:abc",
-		Type:      storage.ClusterType_OPENSHIFT_CLUSTER,
+		Type:      clusterType,
 	}
 
 	baseFiles, err := renderBaseFiles(cluster, clusters.RenderOptions{}, dummyCerts)
