@@ -5,7 +5,9 @@ import { connect } from 'react-redux';
 
 import { selectors } from 'reducers';
 import { actions as wizardActions } from 'reducers/network/wizard';
-import wizardStages from '../../wizardStages';
+import wizardStages from 'Containers/Network/Wizard/wizardStages';
+
+import { CheckboxWithLabel } from '@stackrox/ui-components';
 
 const GenerateButton = ({
     setWizardStage,
@@ -24,19 +26,14 @@ const GenerateButton = ({
 
     return (
         <>
-            <div className="flex justify-center">
-                <input
-                    type="checkbox"
-                    data-testid="checkbox-exclude-ports-protocols"
-                    id="exclude-ports-protocols"
-                    checked={!!excludePortsProtocols}
-                    onChange={onChangeHandler}
-                    aria-label="Exclude ports and protocols"
-                />
-                <label htmlFor="exclude-ports-protocols" className="pl-2">
-                    Exclude ports & protocols
-                </label>
-            </div>
+            <CheckboxWithLabel
+                id="checkbox-exclude-ports-protocols"
+                ariaLabel="Exclude ports and protocols"
+                checked={!!excludePortsProtocols}
+                onChange={onChangeHandler}
+            >
+                Exclude Ports & Protocols
+            </CheckboxWithLabel>
             <div className="flex m-3 py-2 items-center justify-center">
                 <button
                     type="button"

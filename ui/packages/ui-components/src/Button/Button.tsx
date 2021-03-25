@@ -11,7 +11,7 @@ export type ButtonProps = {
     type?: 'button' | 'submit';
     onClick?: React.MouseEventHandler<HTMLButtonElement>; // required for type "button", but not for type "submit"
     children: ReactNode;
-    colorType?: 'alert' | 'success' | 'base';
+    colorType?: 'alert' | 'success' | 'primary' | 'base';
     isCondensed?: boolean;
     isDisabled?: boolean;
 };
@@ -24,6 +24,8 @@ const alertClassName =
     'border-alert-400 bg-alert-100 hover:bg-alert-200 hover:text-alert-700 text-alert-800';
 const successClassName =
     'border-success-500 bg-success-200 hover:bg-success-300 hover:text-success-800 text-success-700';
+const primaryClassName =
+    'border-primary-500 bg-primary-200 hover:bg-primary-300 hover:text-primary-800 text-primary-700';
 
 function getColorClassName(colorType: ButtonProps['colorType']): string {
     switch (colorType) {
@@ -31,6 +33,8 @@ function getColorClassName(colorType: ButtonProps['colorType']): string {
             return alertClassName;
         case 'success':
             return successClassName;
+        case 'primary':
+            return primaryClassName;
         case 'base':
         default:
             return baseClassName;
