@@ -229,7 +229,7 @@ func getSensorChart(values map[string]interface{}, certs *sensor.Certs) (*chart.
 func addScripts(values map[string]interface{}) ([]*loader.BufferedFile, error) {
 	if values["ClusterType"] == storage.ClusterType_KUBERNETES_CLUSTER.String() {
 		return scripts(values, k8sScriptsFileMap)
-	} else if values["ClusterType"] == storage.ClusterType_OPENSHIFT_CLUSTER.String() || values["ClusterType"] == storage.ClusterType_OPENSHIFT4_CLUSTER {
+	} else if values["ClusterType"] == storage.ClusterType_OPENSHIFT_CLUSTER.String() || values["ClusterType"] == storage.ClusterType_OPENSHIFT4_CLUSTER.String() {
 		return scripts(values, osScriptsFileMap)
 	} else {
 		return nil, errors.Errorf("unable to create sensor bundle, invalid cluster type for cluster %s",

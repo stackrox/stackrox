@@ -3083,6 +3083,11 @@ jobs:
             API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/istio-support.sh
 
       - run:
+          name: Test YAML bundle generation in roxctl
+          command: |
+            API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/bundle-generation.sh
+
+      - run:
           name: Test Helm chart generation in roxctl
           command: |
              MAIN_TAG=$(make --quiet tag) ./tests/roxctl/helm-chart-generation.sh
