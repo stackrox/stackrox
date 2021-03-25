@@ -317,4 +317,9 @@ class BaseSpecification extends Specification {
                 Constants.ORCHESTRATOR_NAMESPACE)
         orchestrator.deleteSecret("gcr-image-pull-secret", Constants.ORCHESTRATOR_NAMESPACE)
     }
+
+    static Boolean isRHELRace() {
+        return Env.get("IS_RACE_BUILD", null) == "true" &&
+                (Env.CI_JOBNAME && Env.CI_JOBNAME.contains("-rhel"))
+    }
 }
