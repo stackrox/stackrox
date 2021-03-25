@@ -41,10 +41,20 @@ type element struct {
 	get  func(vals interface{}) ([]byte, error)
 }
 
+// Name returns the name of the element
+func (e *element) GetName() string {
+	return e.name
+}
+
 // ChartTemplate is a template for a Helm chart. It can be instantiated from a meta-values
 // structure, and loaded directly as a helm chart.
 type ChartTemplate struct {
 	elements []element
+}
+
+// GetElements returns all elements in the chart
+func (t *ChartTemplate) GetElements() []element {
+	return t.elements
 }
 
 // Load loads a chart template from a set of files. If a file named `.helmtplignore` is

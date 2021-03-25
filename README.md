@@ -172,9 +172,6 @@ $ make fast-sensor
 
 # Only compile protobuf
 $ make proto-generated-srcs
-
-# Update files embedded in binaries, useful when working on the Helm charts, for instance.
-$ make go-packr-srcs
 ```
 
 #### Productivity

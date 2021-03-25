@@ -42,7 +42,7 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool) e
 	}
 
 	// Load and render template files.
-	renderedChartFiles, err := image.LoadAndInstantiateChartTemplate(image.K8sBox, chartTemplatePathPrefix)
+	renderedChartFiles, err := image.LoadAndInstantiateChartTemplate(chartTemplatePathPrefix)
 	if err != nil {
 		return errors.Wrapf(err, "loading and instantiating %s helmtpl", chartName)
 	}

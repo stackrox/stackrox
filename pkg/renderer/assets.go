@@ -13,7 +13,7 @@ func LoadAssets(fileNames FileNameMap) ([]*zip.File, error) {
 	files := make([]*zip.File, 0, len(fileNames))
 
 	for srcName, tgtName := range fileNames {
-		contents, err := image.AssetBox.Find(srcName)
+		contents, err := image.AssetFS.ReadFile(srcName)
 		if err != nil {
 			return nil, errors.Wrapf(err, "reading asset file %s", srcName)
 		}

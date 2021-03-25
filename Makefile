@@ -112,11 +112,6 @@ $(GENNY_BIN): deps
 	@echo "+ $@"
 	go install github.com/mauricelam/genny
 
-PACKR_BIN := $(GOBIN)/packr
-$(PACKR_BIN): deps
-	@echo "+ $@"
-	go install github.com/gobuffalo/packr/packr
-
 GO_JUNIT_REPORT_BIN := $(GOBIN)/go-junit-report
 $(GO_JUNIT_REPORT_BIN): deps
 	@echo "+ $@"
@@ -266,11 +261,6 @@ PROTO_GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_API_GW_SRCS)
 
 include make/protogen.mk
 
-.PHONY: go-packr-srcs
-go-packr-srcs: $(PACKR_BIN)
-	@echo "+ $@"
-	@packr
-
 # For some reasons, a `packr clean` is much slower than the `find`. It also does not work.
 .PHONY: clean-packr-srcs
 clean-packr-srcs:
@@ -309,7 +299,7 @@ clean-proto-generated-srcs:
 
 # volatile-generated-srcs are all generated sources that are NOT committed
 .PHONY: volatile-generated-srcs
-volatile-generated-srcs: proto-generated-srcs go-packr-srcs
+volatile-generated-srcs: proto-generated-srcs
 
 .PHONY: generated-srcs
 generated-srcs: volatile-generated-srcs go-generated-srcs

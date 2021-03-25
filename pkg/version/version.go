@@ -46,7 +46,7 @@ type Versions struct {
 
 // GetAllVersions returns all of the various pieces of version information.
 func GetAllVersions() Versions {
-	v := Versions{
+	return Versions{
 		BuildDate:        buildinfo.BuildTimestamp(),
 		CollectorVersion: GetCollectorVersion(),
 		GitCommit:        internal.GitShortSha,
@@ -56,7 +56,6 @@ func GetAllVersions() Versions {
 		ScannerVersion:   GetScannerVersion(),
 		ChartVersion:     GetChartVersion(),
 	}
-	return v
 }
 
 // parsedMainVersion contains a parsed StackRox Main Version (see https://stack-rox.atlassian.net/wiki/spaces/StackRox/pages/673808422/Product+Versioning+yes+again).

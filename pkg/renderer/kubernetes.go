@@ -13,8 +13,12 @@ import (
 )
 
 var (
-	assetFileNameMap = NewFileNameMap("docker-auth.sh")
+	assetFileNameMap = FileNameMap{}
 )
+
+func init() {
+	assetFileNameMap.AddWithName("assets/docker-auth.sh", "docker-auth.sh")
+}
 
 // mode is the mode we want the renderer to function in.
 //go:generate stringer -type=mode

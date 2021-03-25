@@ -1,11 +1,14 @@
 package helmtest
 
 import (
+	"embed"
+	"io/fs"
+	"path"
 	"strings"
 
-	"github.com/gobuffalo/packr"
 	openapi_v2 "github.com/googleapis/gnostic/openapiv2"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"gopkg.in/yaml.v3"
@@ -15,9 +18,10 @@ import (
 	"k8s.io/kubectl/pkg/util/openapi"
 )
 
-var (
-	schemaBox = packr.NewBox("./openapi-schemas")
+//go:embed openapi-schemas/*
+var openAPISchemaFS embed.FS
 
+var (
 	allSchemas      = map[string]*schemaEntry{}
 	allSchemasMutex sync.Mutex
 )
@@ -70,11 +74,17 @@ func (e *schemaEntry) get() (*schema, error) {
 }
 
 func (e *schemaEntry) load() (*schema, error) {
-	schemaBytes, err := schemaBox.Find(e.name + ".json.gz") // packr will transparently decompress
+	schemaBytes, err := fs.ReadFile(openAPISchemaFS, path.Join("openapi-schemas", e.name+".json.gz"))
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid name %q", e.name)
 	}
-	doc, err := openapi_v2.ParseDocument(schemaBytes)
+
+	openapiDoc, err := gziputil.Decompress(schemaBytes)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed reading openapi docs %s", e.name)
+	}
+
+	doc, err := openapi_v2.ParseDocument(openapiDoc)
 	if err != nil {
 		return nil, errors.Wrapf(err, "parsing OpenAPI doc for %s", e.name)
 	}

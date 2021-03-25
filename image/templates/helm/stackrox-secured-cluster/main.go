@@ -57,7 +57,7 @@ func mainCmd(args []string) error {
 		return errors.Wrapf(err, "directory %s expected to exist, but doesn't", outputDir)
 	}
 
-	chartTpl, err := image.GetSensorChartTemplate(image.K8sBox)
+	chartTpl, err := image.GetSensorChartTemplate()
 	if err != nil {
 		return errors.Wrap(err, "loading sensor helmtpl")
 	}

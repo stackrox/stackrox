@@ -32,8 +32,6 @@ require (
 	github.com/facebookincubator/nvdtools v0.1.4
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/gobuffalo/packd v0.3.0
-	github.com/gobuffalo/packr v1.30.1
 	github.com/godbus/dbus/v5 v5.0.3
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/mock v1.4.4

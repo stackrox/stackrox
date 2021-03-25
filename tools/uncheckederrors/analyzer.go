@@ -44,7 +44,6 @@ var (
 		"github.com/stackrox/rox/pkg/utils": set.NewFrozenStringSet(
 			"Should",
 		),
-		"github.com/gobuffalo/packr": set.NewFrozenStringSet("PackJSONBytes"),
 	}
 )
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/magiconair/properties"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/roxctl/packer"
+	"github.com/stackrox/rox/roxctl/help"
 )
 
 var (
@@ -18,13 +18,10 @@ var (
 // Singleton loads the properties file for roxctl command help
 func Singleton() *properties.Properties {
 	propsOnce.Do(func() {
-		buf, err := packer.RoxctlBox.Find(packer.PropertiesFile)
+		var err error
+		props, err = help.ReadProperties()
 		if err != nil {
-			log.Panicf("error reading help properties file %s: %v", packer.PropertiesFile, err)
-		}
-		err = props.Load(buf, properties.UTF8)
-		if err != nil {
-			log.Panicf("error loading help properties file %s: %v", packer.PropertiesFile, err)
+			log.Panicf("error loading help properties: %s", err)
 		}
 	})
 

@@ -1,13 +1,12 @@
 package image
 
 import (
-	"io/ioutil"
+	"embed"
+	"io/fs"
 	"path"
 	"strings"
 	"text/template"
 
-	"github.com/gobuffalo/packd"
-	"github.com/gobuffalo/packr"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/sensor"
@@ -24,50 +23,44 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+//go:embed templates/* assets/* templates/helm/stackrox-central/* templates/helm/stackrox-central/templates/* templates/helm/stackrox-secured-cluster/templates/* templates/helm/stackrox-secured-cluster/*
+
+// AssetFS holds the helm charts
+var AssetFS embed.FS
+
 const (
 	templatePath = "templates"
 
 	// CentralServicesChartPrefix points to the new stackrox-central-services Helm Chart.
-	CentralServicesChartPrefix = "helm/stackrox-central/"
+	CentralServicesChartPrefix = "templates/helm/stackrox-central"
 	// SecuredClusterServicesChartPrefix points to the new stackrox-secured-cluster-services Helm Chart.
-	SecuredClusterServicesChartPrefix = "helm/stackrox-secured-cluster/"
+	SecuredClusterServicesChartPrefix = "templates/helm/stackrox-secured-cluster"
 )
 
-// These are the go based files from packr
+// These are the go based files from embedded chart filesystem
 var (
-	K8sBox   = packr.NewBox("./templates")
-	AssetBox = packr.NewBox("./assets")
-
-	allBoxes = []*packr.Box{
-		&K8sBox,
-		&AssetBox,
-	}
-
 	k8sScriptsFileMap = map[string]string{
-		"sensor/kubernetes/sensor.sh":        "templates/sensor.sh",
-		"sensor/kubernetes/delete-sensor.sh": "templates/delete-sensor.sh",
-		"common/ca-setup.sh":                 "templates/ca-setup-sensor.sh",
-		"common/delete-ca.sh":                "templates/delete-ca-sensor.sh",
+		"templates/sensor/kubernetes/sensor.sh":        "templates/sensor.sh",
+		"templates/sensor/kubernetes/delete-sensor.sh": "templates/delete-sensor.sh",
+		"templates/common/ca-setup.sh":                 "templates/ca-setup-sensor.sh",
+		"templates/common/delete-ca.sh":                "templates/delete-ca-sensor.sh",
 	}
 
 	osScriptsFileMap = map[string]string{
-		"sensor/openshift/sensor.sh":        "templates/sensor.sh",
-		"sensor/openshift/delete-sensor.sh": "templates/delete-sensor.sh",
-		"common/ca-setup.sh":                "templates/ca-setup-sensor.sh",
-		"common/delete-ca.sh":               "templates/delete-ca-sensor.sh",
+		"templates/sensor/openshift/sensor.sh":        "templates/sensor.sh",
+		"templates/sensor/openshift/delete-sensor.sh": "templates/delete-sensor.sh",
+		"templates/common/ca-setup.sh":                "templates/ca-setup-sensor.sh",
+		"templates/common/delete-ca.sh":               "templates/delete-ca-sensor.sh",
 	}
 )
 
-// LoadFileContents resolves a given file's contents across all boxes.
+// LoadFileContents resolves a given file's contents.
 func LoadFileContents(filename string) (string, error) {
-	for _, box := range allBoxes {
-		boxPath := strings.TrimRight(strings.TrimPrefix(box.Path, "./"), "/") + "/"
-		if strings.HasPrefix(filename, boxPath) {
-			relativeFilename := strings.TrimPrefix(filename, boxPath)
-			return box.FindString(relativeFilename)
-		}
+	content, err := fs.ReadFile(AssetFS, filename)
+	if err != nil {
+		return "", err
 	}
-	return "", errors.Errorf("file %q could not be located in any box", filename)
+	return string(content), nil
 }
 
 // ReadFileAndTemplate reads and renders the template for the file
@@ -86,10 +79,9 @@ func ReadFileAndTemplate(pathToFile string, funcs template.FuncMap) (*template.T
 }
 
 func getChartTemplate(prefix string) (*helmtpl.ChartTemplate, error) {
-	// Retrieve template files from box.
-	chartTplFiles, err := GetFilesFromBox(K8sBox, prefix)
+	chartTplFiles, err := GetFiles(prefix)
 	if err != nil {
-		return nil, errors.Wrapf(err, "fetching %s chart files from box", prefix)
+		return nil, errors.Wrapf(err, "fetching %s chart files from embedded filesystem", prefix)
 	}
 	chartTpl, err := helmtpl.Load(chartTplFiles)
 	if err != nil {
@@ -99,15 +91,15 @@ func getChartTemplate(prefix string) (*helmtpl.ChartTemplate, error) {
 	return chartTpl, nil
 }
 
-func mustGetSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.Certs) *chart.Chart {
-	ch, err := getSensorChart(box, values, certs)
+func mustGetSensorChart(values map[string]interface{}, certs *sensor.Certs) *chart.Chart {
+	ch, err := getSensorChart(values, certs)
 	utils.Must(err)
 	return ch
 }
 
 // GetSensorChart returns the Helm chart for sensor
 func GetSensorChart(values map[string]interface{}, certs *sensor.Certs) *chart.Chart {
-	return mustGetSensorChart(K8sBox, values, certs)
+	return mustGetSensorChart(values, certs)
 }
 
 // GetCentralServicesChartTemplate retrieves the StackRox Central Services Helm chart template.
@@ -136,13 +128,12 @@ var (
 	}
 )
 
-// LoadAndInstantiateChartTemplate loads a Helm chart (meta-)template from a packr box, and instantiates
+// LoadAndInstantiateChartTemplate loads a Helm chart (meta-)template from an embed.FS, and instantiates
 // it, using default chart values.
-func LoadAndInstantiateChartTemplate(box packr.Box, prefix string) ([]*loader.BufferedFile, error) {
-	// Retrieve template files from box.
-	chartTplFiles, err := GetFilesFromBox(box, prefix)
+func LoadAndInstantiateChartTemplate(prefix string) ([]*loader.BufferedFile, error) {
+	chartTplFiles, err := GetFiles(prefix)
 	if err != nil {
-		return nil, errors.Wrapf(err, "fetching %s chart files from box", prefix)
+		return nil, errors.Wrapf(err, "fetching %s chart files from embedded filesystems", prefix)
 	}
 	chartTpl, err := helmtpl.Load(chartTplFiles)
 	if err != nil {
@@ -164,47 +155,49 @@ func LoadAndInstantiateChartTemplate(box packr.Box, prefix string) ([]*loader.Bu
 	return renderedChartFiles, nil
 }
 
-// GetFilesFromBox returns all files from the box matching the provided prefix.
-func GetFilesFromBox(box packr.Box, prefix string) ([]*loader.BufferedFile, error) {
-	normPrefix := path.Clean(prefix)
-	if normPrefix == "." {
-		normPrefix = ""
-	} else {
-		normPrefix = strings.TrimRight(normPrefix, "/") + "/"
-	}
-
+// GetFiles returns all files recursively under a given path.
+func GetFiles(prefix string) ([]*loader.BufferedFile, error) {
+	prefix = strings.TrimSuffix(prefix, "/")
 	var files []*loader.BufferedFile
-	err := box.WalkPrefix(normPrefix, func(path string, file packd.File) error {
-		relativePath := strings.TrimPrefix(path, normPrefix)
-		contents, err := ioutil.ReadAll(file)
+	err := fs.WalkDir(AssetFS, prefix, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return errors.Wrapf(err, "reading file %s from packr box", path)
+			return err
 		}
+		if d.IsDir() {
+			return nil
+		}
+
+		data, err := fs.ReadFile(AssetFS, p)
+		if err != nil {
+			return err
+		}
+
+		newPath := strings.TrimPrefix(p, prefix+"/")
 		files = append(files, &loader.BufferedFile{
-			Name: relativePath,
-			Data: contents,
+			Name: newPath,
+			Data: data,
 		})
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
+
 	return files, nil
 }
 
-// GetSensorChartTemplate loads the Sensor helmtpl meta-template from the given Box.
-func GetSensorChartTemplate(box packr.Box) (*helmtpl.ChartTemplate, error) {
-	chartTplFiles, err := GetFilesFromBox(box, SecuredClusterServicesChartPrefix)
+// GetSensorChartTemplate loads the Sensor helmtpl meta-template
+func GetSensorChartTemplate() (*helmtpl.ChartTemplate, error) {
+	chartTplFiles, err := GetFiles(SecuredClusterServicesChartPrefix)
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching sensor chart files from box")
+		return nil, errors.Wrap(err, "fetching sensor chart files from embedded filesystem")
 	}
 
 	return helmtpl.Load(chartTplFiles)
 }
 
-func getSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.Certs) (*chart.Chart, error) {
-	chartTpl, err := GetSensorChartTemplate(box)
+func getSensorChart(values map[string]interface{}, certs *sensor.Certs) (*chart.Chart, error) {
+	chartTpl, err := GetSensorChartTemplate()
 	if err != nil {
 		return nil, errors.Wrap(err, "loading sensor chart template")
 	}
@@ -222,7 +215,7 @@ func getSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.
 	}
 
 	if certOnly, _ := values["CertsOnly"].(bool); !certOnly {
-		scriptFiles, err := addScripts(box, values)
+		scriptFiles, err := addScripts(values)
 		if err != nil {
 			return nil, err
 		}
@@ -233,21 +226,21 @@ func getSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.
 	return loader.LoadFiles(renderedFiles)
 }
 
-func addScripts(box packr.Box, values map[string]interface{}) ([]*loader.BufferedFile, error) {
+func addScripts(values map[string]interface{}) ([]*loader.BufferedFile, error) {
 	if values["ClusterType"] == storage.ClusterType_KUBERNETES_CLUSTER.String() {
-		return scripts(box, values, k8sScriptsFileMap)
+		return scripts(values, k8sScriptsFileMap)
 	} else if values["ClusterType"] == storage.ClusterType_OPENSHIFT_CLUSTER.String() || values["ClusterType"] == storage.ClusterType_OPENSHIFT4_CLUSTER {
-		return scripts(box, values, osScriptsFileMap)
+		return scripts(values, osScriptsFileMap)
 	} else {
 		return nil, errors.Errorf("unable to create sensor bundle, invalid cluster type for cluster %s",
 			values["ClusterName"])
 	}
 }
 
-func scripts(box packr.Box, values map[string]interface{}, filenameMap map[string]string) ([]*loader.BufferedFile, error) {
+func scripts(values map[string]interface{}, filenameMap map[string]string) ([]*loader.BufferedFile, error) {
 	var chartFiles []*loader.BufferedFile
 	for srcFile, dstFile := range filenameMap {
-		fileData, err := box.Find(srcFile)
+		fileData, err := AssetFS.ReadFile(srcFile)
 		if err != nil {
 			return nil, err
 		}

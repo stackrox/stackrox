@@ -2,45 +2,32 @@ package properties
 
 import (
 	"fmt"
-	"log"
 	"testing"
 
 	"github.com/magiconair/properties"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/roxctl/help"
 	"github.com/stackrox/rox/roxctl/maincommand"
-	"github.com/stackrox/rox/roxctl/packer"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestHelpKeysExist tests that the short and long help key values exist for each command in the properties file
 func TestHelpKeysExist(t *testing.T) {
 	c := maincommand.Command()
-	props := properties.NewProperties()
 
-	buf, err := packer.RoxctlBox.Find(packer.PropertiesFile)
-	if err != nil {
-		log.Panicf("error reading help properties file %s: %v", packer.PropertiesFile, err)
-	}
-	err = props.Load(buf, properties.UTF8)
-	if err != nil {
-		log.Panicf("error loading help properties file %s: %v", packer.PropertiesFile, err)
-	}
+	props, err := help.ReadProperties()
+	require.NoError(t, err)
+
 	checkHelp(t, c.Commands(), props)
 }
 
 // TestNoDanglingHelpKeys tests that there are no unused key value pairs in the help properties file
 func TestNoDanglingHelpKeys(t *testing.T) {
 	c := maincommand.Command()
-	props := properties.NewProperties()
 
-	buf, err := packer.RoxctlBox.Find(packer.PropertiesFile)
-	if err != nil {
-		log.Panicf("error reading help properties file %s: %v", packer.PropertiesFile, err)
-	}
-	err = props.Load(buf, properties.UTF8)
-	if err != nil {
-		log.Panicf("error loading help properties file %s: %v", packer.PropertiesFile, err)
-	}
+	props, err := help.ReadProperties()
+	require.NoError(t, err)
 
 	findDanglingHelpKeys(t, c.Commands(), props)
 

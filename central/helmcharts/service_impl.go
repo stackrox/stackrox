@@ -62,7 +62,7 @@ func (s *service) serveChart(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Render template files.
-	renderedChartFiles, err := image.LoadAndInstantiateChartTemplate(image.K8sBox, chartPathPrefix)
+	renderedChartFiles, err := image.LoadAndInstantiateChartTemplate(chartPathPrefix)
 	if err != nil {
 		http.Error(w, errors.Wrapf(err, "loading and instantiating %s helmtpl", chartName).Error(), http.StatusInternalServerError)
 		return
