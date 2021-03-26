@@ -13,7 +13,8 @@ import { selectors } from 'reducers';
 import { sortValue } from 'sorters/sorters';
 import { filterModes, filterLabels } from 'constants/networkFilterModes';
 import { getNetworkFlows } from 'utils/networkUtils/getNetworkFlows';
-import Panel from 'Components/Panel';
+import CloseButton from 'Components/CloseButton';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import Loader from 'Components/Loader';
 import TablePagination from 'Components/TablePagination';
 import NoResultsMessage from 'Components/NoResultsMessage';
@@ -151,29 +152,33 @@ class NamespaceDetails extends Component {
         if (!namespace) {
             throw new Error('There is no selected namespace.');
         }
-        const paginationComponent = (
-            <TablePagination
-                page={this.state.page}
-                dataLength={namespace && namespace.deployments && namespace.deployments.length}
-                setPage={this.setTablePage}
-            />
-        );
         const subHeaderText = `${namespace.deployments.length} Deployment${
             namespace.deployments.length === 1 ? '' : 's'
         }`;
-        const content = isFetchingNamespace ? <Loader /> : <div>{this.renderTable()}</div>;
 
         return (
-            <Panel header={namespace.id} onClose={this.onPanelClose}>
-                <Panel
-                    header={subHeaderText}
-                    headerComponents={paginationComponent}
-                    isUpperCase={false}
-                    className="bg-base-100"
-                >
-                    <div className="w-full h-full">{content}</div>
-                </Panel>
-            </Panel>
+            <PanelNew testid="panel">
+                <PanelHead>
+                    <PanelTitle isUpperCase testid="panel-header" text={namespace.id} />
+                    <PanelHeadEnd>
+                        <CloseButton
+                            onClose={this.onPanelClose}
+                            className="border-base-400 border-l"
+                        />
+                    </PanelHeadEnd>
+                </PanelHead>
+                <PanelHead>
+                    <PanelTitle testid="panel-header" text={subHeaderText} />
+                    <PanelHeadEnd>
+                        <TablePagination
+                            page={this.state.page}
+                            dataLength={namespace?.deployments?.length}
+                            setPage={this.setTablePage}
+                        />
+                    </PanelHeadEnd>
+                </PanelHead>
+                <PanelBody>{isFetchingNamespace ? <Loader /> : this.renderTable()}</PanelBody>
+            </PanelNew>
         );
     }
 }

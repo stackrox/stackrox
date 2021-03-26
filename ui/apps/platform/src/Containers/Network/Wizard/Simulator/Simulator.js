@@ -4,7 +4,9 @@ import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import PropTypes from 'prop-types';
-import Panel from 'Components/Panel';
+
+import CloseButton from 'Components/CloseButton';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 
 import ProcessingView from './ProcessingView';
 import SuccessView from './SuccessView';
@@ -19,20 +21,28 @@ const Simulator = ({ onClose, setModification, modificationState }) => {
     const colorType = modificationState === 'ERROR' ? 'alert' : 'success';
 
     return (
-        <div
-            data-testid="network-simulator-panel"
-            className="w-full h-full absolute right-0 bottom-0 pt-1 pb-1 pr-1 shadow-md bg-base-200"
-        >
-            <Panel
-                header="Network Policy Simulator"
-                onClose={onCloseHandler}
-                closeButtonClassName={`bg-${colorType}-600 hover:bg-${colorType}-700`}
-                closeButtonIconColor="text-base-100"
-            >
-                <ProcessingView />
-                <ErrorView />
-                <SuccessView />
-            </Panel>
+        <div className="w-full h-full absolute right-0 bottom-0 pt-1 pb-1 pr-1 shadow-md bg-base-200">
+            <PanelNew testid="network-simulator-panel">
+                <PanelHead>
+                    <PanelTitle
+                        isUpperCase
+                        testid="network-simulator-panel-header"
+                        text="Network Policy Simulator"
+                    />
+                    <PanelHeadEnd>
+                        <CloseButton
+                            onClose={onCloseHandler}
+                            className={`bg-${colorType}-600 hover:bg-${colorType}-700`}
+                            iconColor="text-base-100"
+                        />
+                    </PanelHeadEnd>
+                </PanelHead>
+                <PanelBody>
+                    <ProcessingView />
+                    <ErrorView />
+                    <SuccessView />
+                </PanelBody>
+            </PanelNew>
         </div>
     );
 };

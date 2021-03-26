@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { filterModes } from 'constants/networkFilterModes';
 import useSearchFilteredData from 'hooks/useSearchFilteredData';
 
-import Panel from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
 import Loader from 'Components/Loader';
 import NetworkBaselinesSearch, {
@@ -52,41 +52,42 @@ function NetworkBaselines({
     }
 
     const panelId = getPanelId(filterState);
-    const modifiedHeaderComponents = (
-        <>
-            {headerComponents}
-            <TablePagination
-                page={page}
-                dataLength={filteredNetworkBaselines.length}
-                setPage={setPage}
-            />
-        </>
-    );
 
     return (
-        <Panel
-            id={panelId}
-            header={header}
-            headerComponents={modifiedHeaderComponents}
-            bodyClassName="flex flex-1 flex-col"
-            className="flex-1"
-        >
-            <div className="p-2 border-b border-base-300">
-                <NetworkBaselinesSearch
-                    networkBaselines={networkBaselines}
-                    searchOptions={searchOptions}
-                    setSearchOptions={setSearchOptions}
+        <PanelNew testid={panelId}>
+            <PanelHead>
+                <PanelTitle isUpperCase testid={`${panelId}-header`} text={header} />
+                <PanelHeadEnd>
+                    {headerComponents}
+                    <TablePagination
+                        page={page}
+                        dataLength={filteredNetworkBaselines.length}
+                        setPage={setPage}
+                    />
+                </PanelHeadEnd>
+            </PanelHead>
+            <PanelHead>
+                <PanelHeadEnd>
+                    <div className="pr-3 w-full">
+                        <NetworkBaselinesSearch
+                            networkBaselines={networkBaselines}
+                            searchOptions={searchOptions}
+                            setSearchOptions={setSearchOptions}
+                        />
+                    </div>
+                </PanelHeadEnd>
+            </PanelHead>
+            <PanelBody>
+                <NetworkBaselinesTable
+                    networkBaselines={filteredNetworkBaselines}
+                    page={page}
+                    filterState={filterState}
+                    onNavigateToEntity={onNavigateToEntity}
+                    toggleBaselineStatuses={toggleBaselineStatuses}
+                    includedBaselineStatuses={includedBaselineStatuses}
                 />
-            </div>
-            <NetworkBaselinesTable
-                networkBaselines={filteredNetworkBaselines}
-                page={page}
-                filterState={filterState}
-                onNavigateToEntity={onNavigateToEntity}
-                toggleBaselineStatuses={toggleBaselineStatuses}
-                includedBaselineStatuses={includedBaselineStatuses}
-            />
-        </Panel>
+            </PanelBody>
+        </PanelNew>
     );
 }
 

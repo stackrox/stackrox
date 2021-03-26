@@ -9,7 +9,7 @@ import { actions as graphActions } from 'reducers/network/graph';
 
 import { getNetworkFlows } from 'utils/networkUtils/getNetworkFlows';
 import { filterModes, filterLabels } from 'constants/networkFilterModes';
-import Panel from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import useSearchFilteredData from 'hooks/useSearchFilteredData';
@@ -35,40 +35,39 @@ const NetworkFlows = ({ edges, filterState, onNavigateToDeploymentById }) => {
         return <NoResultsMessage message={`No ${filterStateString} network flows`} />;
     }
 
-    const headerComponents = (
-        <>
-            <div className="flex flex-1">
-                <NetworkFlowsSearch
-                    networkFlows={networkFlows}
-                    searchOptions={searchOptions}
-                    setSearchOptions={setSearchOptions}
-                />
-            </div>
-            <TablePagination
-                page={page}
-                dataLength={filteredNetworkFlows.length}
-                setPage={setPage}
-            />
-        </>
-    );
     const subHeaderText = `${filteredNetworkFlows.length} ${filterStateString} ${pluralize(
         'Flow',
         filteredNetworkFlows.length
     )}`;
 
     return (
-        <div className="w-full h-full">
-            <Panel header={subHeaderText} headerComponents={headerComponents} isUpperCase={false}>
-                <div className="w-full h-full bg-base-100">
-                    <NetworkFlowsTable
-                        networkFlows={filteredNetworkFlows}
+        <PanelNew testid="panel">
+            <PanelHead>
+                <PanelTitle testid="panel-header" text={subHeaderText} />
+                <PanelHeadEnd>
+                    <div className="flex flex-1">
+                        <NetworkFlowsSearch
+                            networkFlows={networkFlows}
+                            searchOptions={searchOptions}
+                            setSearchOptions={setSearchOptions}
+                        />
+                    </div>
+                    <TablePagination
                         page={page}
-                        filterState={filterState}
-                        onNavigateToDeploymentById={onNavigateToDeploymentById}
+                        dataLength={filteredNetworkFlows.length}
+                        setPage={setPage}
                     />
-                </div>
-            </Panel>
-        </div>
+                </PanelHeadEnd>
+            </PanelHead>
+            <PanelBody>
+                <NetworkFlowsTable
+                    networkFlows={filteredNetworkFlows}
+                    page={page}
+                    filterState={filterState}
+                    onNavigateToDeploymentById={onNavigateToDeploymentById}
+                />
+            </PanelBody>
+        </PanelNew>
     );
 };
 

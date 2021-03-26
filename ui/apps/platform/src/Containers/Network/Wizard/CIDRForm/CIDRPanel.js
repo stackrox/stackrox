@@ -6,7 +6,8 @@ import { createStructuredSelector } from 'reselect';
 
 import { actions as graphActions } from 'reducers/network/graph';
 import { fetchCIDRBlocks } from 'services/NetworkService';
-import Panel from 'Components/Panel';
+import CloseButton from 'Components/CloseButton';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import Loader from 'Components/Loader';
 import DefaultCIDRToggle from './DefaultCIDRToggle';
 import CIDRForm from './CIDRForm';
@@ -32,24 +33,33 @@ const CIDRPanel = ({ selectedClusterId, updateNetworkNodes, onClose }) => {
     }, [selectedClusterId]);
 
     return (
-        <Panel
-            header="Segment External Entities by CIDR Blocks"
-            onClose={onClose}
-            bodyClassName="flex flex-col bg-base-100"
-            id="network-cidr-form"
-        >
-            <DefaultCIDRToggle />
-            {CIDRBlocks?.entities?.length >= 0 ? (
-                <CIDRForm
-                    rows={CIDRBlocks}
-                    clusterId={selectedClusterId}
-                    onClose={onClose}
-                    updateNetworkNodes={updateNetworkNodes}
+        <PanelNew testid="network-cidr-form">
+            <PanelHead>
+                <PanelTitle
+                    isUpperCase
+                    testid="network-cidr-form-header"
+                    text="Segment External Entities by CIDR Blocks"
                 />
-            ) : (
-                <Loader />
-            )}
-        </Panel>
+                <PanelHeadEnd>
+                    <CloseButton onClose={onClose} className="border-base-400 border-l" />
+                </PanelHeadEnd>
+            </PanelHead>
+            <PanelBody>
+                <div className="flex flex-col h-full">
+                    <DefaultCIDRToggle />
+                    {CIDRBlocks?.entities?.length >= 0 ? (
+                        <CIDRForm
+                            rows={CIDRBlocks}
+                            clusterId={selectedClusterId}
+                            onClose={onClose}
+                            updateNetworkNodes={updateNetworkNodes}
+                        />
+                    ) : (
+                        <Loader />
+                    )}
+                </div>
+            </PanelBody>
+        </PanelNew>
     );
 };
 
