@@ -19,6 +19,11 @@ class SimulatorButton extends Component {
         setWizardStage: PropTypes.func.isRequired,
         closeWizard: PropTypes.func.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
+        isDisabled: PropTypes.bool,
+    };
+
+    static defaultProps = {
+        isDisabled: false,
     };
 
     toggleSimulation = () => {
@@ -43,6 +48,7 @@ class SimulatorButton extends Component {
                 data-testid={`simulator-button-${this.props.creatingOrSimulating ? 'on' : 'off'}`}
                 className={`flex items-center flex-shrink-0 border-2 rounded-sm text-sm pl-2 pr-2 h-10 ${className}`}
                 onClick={this.toggleSimulation}
+                disabled={this.props.isDisabled}
             >
                 <Icon.Circle className="h-2 w-2" fill={iconColor} stroke={iconColor} />
                 <span className="pl-2">Network Policy Simulator</span>
