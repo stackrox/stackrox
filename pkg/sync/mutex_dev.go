@@ -41,43 +41,48 @@ func init() {
 	lockTimeout = time.Duration(timeoutSecs) * time.Second
 }
 
-func watchdog(action string, ch <-chan struct{}, timeout time.Duration, stacktrace debug.LazyStacktrace) {
-	t := time.NewTimer(timeout)
-
-	select {
-	case <-ch:
-		if !t.Stop() {
-			<-t.C
-		}
+func panicIfTooMuchTimeElapsed(action string, startTime time.Time, limit time.Duration, skip int) {
+	if limit <= 0 || time.Since(startTime) <= limit {
 		return
-	case <-t.C:
-		_, _ = fmt.Fprintf(os.Stderr, "Action %s took more than %v to complete. Stack trace:\n%s", action, timeout, stacktrace)
-		kill()
 	}
+	_, _ = fmt.Fprintf(os.Stderr, "Action %s took more than %v to complete. Stack trace:\n%s", action, limit, debug.GetLazyStacktrace(skip+1))
+	kill()
 }
 
 func panicOnTimeout(action string, do func(), timeout time.Duration) {
-	if timeout > 0 {
-		ch := make(chan struct{})
-		go watchdog(action, ch, timeout, debug.GetLazyStacktrace(2))
-		defer close(ch)
-	}
+	panicOnTimeoutMarked(action, do, timeout, time.Now().UnixNano())
+}
+
+// panicOnTimeoutMarked allows recording the timestamp (in nanoseconds since unix epoch) as a parameter on the
+// stack. The noinline directive is supposed to prevent the optimizer from removing it.
+//go:noinline
+func panicOnTimeoutMarked(action string, do func(), timeout time.Duration, nowNanos int64) {
 	do()
+	panicIfTooMuchTimeElapsed(action, time.Unix(0, nowNanos), timeout, 3)
 }
 
 // Mutex is a watchdog-enabled version of sync.Mutex.
 type Mutex struct {
 	sync.Mutex
+	acquireTime time.Time
 }
 
 // Lock acquires the lock on the mutex.
 func (m *Mutex) Lock() {
 	panicOnTimeout("Mutex.Lock", m.Mutex.Lock, lockTimeout)
+	m.acquireTime = time.Now()
+}
+
+// Unlock releases an acquired lock on the mutex.
+func (m *Mutex) Unlock() {
+	panicIfTooMuchTimeElapsed("Mutex.Unlock", m.acquireTime, lockTimeout, 1)
+	m.Mutex.Unlock()
 }
 
 // RWMutex is a watchdog-enabled version of sync.RWMutex.
 type RWMutex struct {
 	sync.RWMutex
+	acquireTime time.Time // Lock only, not RLock
 }
 
 // RLock acquires a reader lock on the mutex.
@@ -88,4 +93,11 @@ func (m *RWMutex) RLock() {
 // Lock acquires a writer (exclusive) lock on the mutex.
 func (m *RWMutex) Lock() {
 	panicOnTimeout("RWMutex.Lock", m.RWMutex.Lock, lockTimeout)
+	m.acquireTime = time.Now()
+}
+
+// Unlock releases an acquired writer (exclusive) lock on the mutex.
+func (m *RWMutex) Unlock() {
+	panicIfTooMuchTimeElapsed("RWMutex.Unlock", m.acquireTime, lockTimeout, 1)
+	m.RWMutex.Unlock()
 }
