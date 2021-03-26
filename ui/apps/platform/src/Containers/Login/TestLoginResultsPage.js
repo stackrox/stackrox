@@ -22,6 +22,7 @@ function getMessageBody(response) {
             <div className={messageClass}>
                 <h1 className={headingClass}>Authentication error</h1>
                 <p> {upperFirst(response?.error) || 'An unrecognized error occurred.'}</p>
+                {response?.error_description && <p>{response.error_description}</p>}
             </div>
         );
     }

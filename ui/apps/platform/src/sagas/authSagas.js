@@ -23,6 +23,10 @@ import { types as locationActionTypes } from 'reducers/routes';
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as rolesActions } from 'reducers/roles';
 
+// The unique string indicating auth provider test mode. Do not change!
+// Must be kept in sync with `TestLoginClientState` in `pkg/auth/authproviders/idputil/state.go`.
+const testLoginClientState = `e003ba41-9cc1-48ee-b6a9-2dd7c21da92e`;
+
 function* getUserPermissions() {
     try {
         const result = yield call(fetchUserRolePermissions);
@@ -118,11 +122,20 @@ function parseFragment(location) {
     return transformedHash;
 }
 
+// isTestMode returns whether the given client-side state (of the general form
+// `<auth provider ID>:<test prefix or empty>#<client state>`) indicates that we are in test mode).
+// See `ParseClientState` in `pkg/auth/authproviders/idputil/state.go` for the authoritative implementation.
+function isTestMode(state) {
+    const stateComponents = state?.split(':') || [];
+    const origStateComponents = stateComponents[1]?.split('#') || [];
+    return origStateComponents[0] === testLoginClientState;
+}
+
 function* handleOidcResponse(location) {
     const hash = parseFragment(location);
     // eslint-disable-next-line camelcase
     if (hash.error) {
-        return hash;
+        return { ...hash, test: isTestMode(hash.state) };
     }
 
     try {
@@ -156,6 +169,7 @@ function* handleErrAuthResponse(result, defaultErrMsg) {
 function* handleTestLoginAuthResponse(location, type, result) {
     const parsedResult = {
         error: result?.error || null,
+        error_description: result?.error_description || null,
     };
 
     if (result?.user) {
