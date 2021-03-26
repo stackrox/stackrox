@@ -43,6 +43,24 @@ func TestSubject(t *testing.T) {
 				OU: "COLLECTOR_SERVICE",
 			},
 		},
+		{
+			input:    Subject{ServiceType: storage.ServiceType_SCANNER_DB_SERVICE, Identifier: "456"},
+			cn:       "SCANNER_DB_SERVICE: 456",
+			hostname: "scanner-db.stackrox",
+			ou:       "SCANNER_DB_SERVICE",
+			name: cfcsr.Name{
+				OU: "SCANNER_DB_SERVICE",
+			},
+		},
+		{
+			input:    Subject{ServiceType: storage.ServiceType_ADMISSION_CONTROL_SERVICE, Identifier: "456"},
+			cn:       "ADMISSION_CONTROL_SERVICE: 456",
+			hostname: "admission-control.stackrox",
+			ou:       "ADMISSION_CONTROL_SERVICE",
+			name: cfcsr.Name{
+				OU: "ADMISSION_CONTROL_SERVICE",
+			},
+		},
 	}
 
 	for _, c := range cases {
