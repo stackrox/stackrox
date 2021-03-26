@@ -3,6 +3,7 @@ package services
 import io.stackrox.proto.api.v1.ClustersServiceGrpc
 import io.stackrox.proto.api.v1.ClusterService.GetClustersRequest
 import io.stackrox.proto.api.v1.Common
+import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.ClusterOuterClass.Cluster
 import io.stackrox.proto.storage.ClusterOuterClass.DynamicClusterConfig
@@ -102,5 +103,12 @@ class ClusterService extends BaseService {
             println "Error getting cluster info: ${e}"
         }
         isAKS
+    }
+    static Boolean isOpenShift3() {
+        return getCluster().getType() == ClusterOuterClass.ClusterType.OPENSHIFT_CLUSTER
+    }
+
+    static Boolean isOpenShift4() {
+        return getCluster().getType() == ClusterOuterClass.ClusterType.OPENSHIFT4_CLUSTER
     }
 }

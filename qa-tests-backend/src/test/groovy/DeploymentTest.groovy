@@ -1,4 +1,4 @@
-import static org.junit.Assume.assumeFalse
+import static org.junit.Assume.assumeTrue
 
 import groups.BAT
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
@@ -13,7 +13,8 @@ import util.Timer
 
 class DeploymentTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "image-join"
-    private static final String ORCHESTRATOR_DEPLOYMENT_NAME = "kube-dns"
+    private static final String GKE_ORCHESTRATOR_DEPLOYMENT_NAME = "kube-dns"
+    private static final String OPENSHIFT_ORCHESTRATOR_DEPLOYMENT_NAME = "apiserver"
     private static final String STACKROX_DEPLOYMENT_NAME = "central"
 
     private static final Deployment DEPLOYMENT = new Deployment()
@@ -111,24 +112,46 @@ class DeploymentTest extends BaseSpecification {
 
     @Unroll
     @Category([BAT])
-    def "Verify orchestrator deployment is marked appropriately"() {
+    def "Verify GKE orchestrator deployment is marked appropriately"() {
         when:
-        assumeFalse(ClusterService.isAKS())
-        def results = DeploymentService.listDeploymentsSearch(RawQuery.newBuilder().setQuery(query).build())
+        assumeTrue(orchestrator.isGKE())
 
         then:
+        assert checkOrchestratorDeployment(deploymentName, query, result)
+
+        where:
+        "Data inputs are: "
+        deploymentName   |   query    |  result
+        "${GKE_ORCHESTRATOR_DEPLOYMENT_NAME}" | "Deployment:${GKE_ORCHESTRATOR_DEPLOYMENT_NAME}+Namespace:kube-system" \
+        | true
+        "${STACKROX_DEPLOYMENT_NAME}"     | "Deployment:${STACKROX_DEPLOYMENT_NAME}+Namespace:stackrox" | false
+    }
+
+    @Unroll
+    @Category([BAT])
+    def "Verify Openshift orchestrator deployment is marked appropriately"() {
+        when:
+        assumeTrue(ClusterService.isOpenShift4())
+
+        then:
+        assert checkOrchestratorDeployment(deploymentName, query, result)
+
+        where:
+        "Data inputs are: "
+        deploymentName   |   query    |  result
+        "${OPENSHIFT_ORCHESTRATOR_DEPLOYMENT_NAME}" | "Deployment:${OPENSHIFT_ORCHESTRATOR_DEPLOYMENT_NAME}" + \
+                "+Namespace:openshift-apiserver" | true
+        "${STACKROX_DEPLOYMENT_NAME}"  | "Deployment:${STACKROX_DEPLOYMENT_NAME}+Namespace:stackrox" | false
+    }
+
+    boolean checkOrchestratorDeployment (String deploymentName, String query, boolean result) {
+        def results = DeploymentService.listDeploymentsSearch(RawQuery.newBuilder().setQuery(query).build())
         assert results != null
 
         def listDep = results.deploymentsList.find { x -> x.getName() == deploymentName }
         assert listDep != null
 
-        def dep = DeploymentService.getDeployment(listDep.getId())
-        assert dep.getOrchestratorComponent() == result
-
-        where:
-        "Data inputs are: "
-        deploymentName   |   query    |  result
-        "${ORCHESTRATOR_DEPLOYMENT_NAME}" | "Deployment:${ORCHESTRATOR_DEPLOYMENT_NAME}+Namespace:kube-system"  |  true
-        "${STACKROX_DEPLOYMENT_NAME}"     | "Deployment:${STACKROX_DEPLOYMENT_NAME}+Namespace:stackrox"         |  false
+        return DeploymentService.getDeployment(listDep.getId()).getOrchestratorComponent() == result
     }
 }
+

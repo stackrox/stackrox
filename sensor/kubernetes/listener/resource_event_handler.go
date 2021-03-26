@@ -69,7 +69,8 @@ func handleAllEvents(sif,
 	handle(clusterRoleBindingInformer, dispatchers.ForRBAC(), output, nil, prePodWaitGroup, stopSignal, &eventLock)
 	// For openshift clusters only
 	if osConfigFactory != nil {
-		handle(osConfigFactory.Config().V1().ClusterOperators().Informer(), dispatchers.ForClusterOperators(), output, nil, prePodWaitGroup, stopSignal, &eventLock)
+		handle(osConfigFactory.Config().V1().ClusterOperators().Informer(), dispatchers.ForClusterOperators(),
+			output, nil, prePodWaitGroup, stopSignal, &eventLock)
 	}
 
 	sif.Start(stopSignal.Done())

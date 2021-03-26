@@ -17,8 +17,10 @@ import (
 const (
 	// See https://groups.google.com/forum/#!topic/kubernetes-sig-api-machinery/PbSCXdLDno0
 	// Kubernetes scheduler no longer uses a resync period and it seems like its usage doesn't apply to us
-	resyncPeriod    = 0
-	resyncingPeriod = 1 * time.Minute
+	resyncPeriod                = 0
+	resyncingPeriod             = 1 * time.Minute
+	clusterOperatorResourceName = "clusteroperators"
+	clusterOperatorGroupVersion = "config.openshift.io/v1"
 )
 
 type listenerImpl struct {
@@ -41,7 +43,15 @@ func (k *listenerImpl) Start() error {
 		osAppsFactory = externalversions.NewSharedInformerFactory(k.client.OpenshiftApps(), resyncingPeriod)
 	}
 	if k.client.OpenshiftConfig() != nil {
-		osConfigFactory = configExtVersions.NewSharedInformerFactory(k.client.OpenshiftConfig(), resyncingPeriod)
+		ok, err := clusterOperatorCRDExists(k.client)
+		if ok && err == nil {
+			osConfigFactory = configExtVersions.NewSharedInformerFactory(k.client.OpenshiftConfig(), resyncingPeriod)
+		} else {
+			if err != nil {
+				log.Errorf("Error checking for cluster operator CRD: %v", err)
+			}
+			log.Warnf("Skipping cluster operator discovery....")
+		}
 	}
 
 	// Patch namespaces to include labels
@@ -66,4 +76,17 @@ func (k *listenerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (k *listenerImpl) ResponsesC() <-chan *central.MsgFromSensor {
 	return k.eventsC
+}
+
+func clusterOperatorCRDExists(client client.Interface) (bool, error) {
+	resourceList, err := client.Kubernetes().Discovery().ServerResourcesForGroupVersion(clusterOperatorGroupVersion)
+	if err != nil {
+		return false, err
+	}
+	for _, apiResource := range resourceList.APIResources {
+		if apiResource.Name == clusterOperatorResourceName {
+			return true, nil
+		}
+	}
+	return false, nil
 }

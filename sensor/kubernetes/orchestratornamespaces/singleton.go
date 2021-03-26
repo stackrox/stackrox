@@ -1,6 +1,7 @@
 package orchestratornamespaces
 
 import (
+	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -20,7 +21,7 @@ type OrchestratorNamespaces struct {
 func Singleton() *OrchestratorNamespaces {
 	once.Do(func() {
 		namespaces = OrchestratorNamespaces{
-			nsSet: set.NewStringSet("kube-system"),
+			nsSet: set.NewStringSet(kubernetes.SystemNamespaceSet.AsSlice()...),
 		}
 	})
 	return &namespaces
