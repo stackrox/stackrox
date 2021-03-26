@@ -988,6 +988,9 @@ commands:
       - destroy-aks-cluster:
           when: on_fail
 
+      - destroy-openshift-4-cluster:
+          when: on_fail
+
   destroy-aks-cluster:
     parameters:
       when:
@@ -1014,6 +1017,35 @@ commands:
             docker run --rm -t \
               -e AZURE_SP_USERNAME -e AZURE_SP_PASSWORD -e AZURE_SP_TENANT \
               gcr.io/stackrox-infra/automation-flavors/aks:$AKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}" "${AZURE_RESOURCE_GROUP}"
+          when: << parameters.when >>
+
+  destroy-openshift-4-cluster:
+    parameters:
+      when:
+        type: enum
+        enum: ["on_fail", "always"]
+
+    steps:
+      - run:
+          name: Pack openshift volume for remote docker
+          command: |
+            docker create -v /data --name openshift alpine:3.9 /bin/true
+            docker cp openshift-4/data/. openshift:/data
+          when: << parameters.when >>
+
+      - run:
+          name: Destroy OpenShift 4 cluster
+          environment:
+            - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.6
+          command: |
+            if [ ! -d "$PWD/openshift-4" ]; then
+              echo "OpenShift 4 Cluster not created (due to missing artifacts), skipping destroy."
+              exit 0
+            fi
+            docker run --rm -t \
+              --volumes-from openshift \
+              -e GOOGLE_CREDENTIALS="${GOOGLE_OPENSHIFT_4_CREDENTIALS}" \
+              gcr.io/stackrox-infra/automation-flavors/openshift-4:$OPENSHIFT_4_AUTOMATION_VERSION destroy
           when: << parameters.when >>
 
   provision-gke-cluster:
@@ -1262,6 +1294,10 @@ commands:
         type: string
         default: kubectl
 
+      orchestrator-flavor:
+        type: string
+        default: k8s
+
       use-websocket:
         type: boolean
         default: false
@@ -1316,6 +1352,7 @@ commands:
 
       - deploy-stackrox:
           sensor-deploy-flavor: << parameters.sensor-deploy-flavor >>
+          orchestrator-flavor: << parameters.orchestrator-flavor >>
 
           post-central-deploy-steps:
             - *setupClientTLSCerts
@@ -1330,7 +1367,11 @@ commands:
       - run:
           name: QA Automation Platform Part 1
           command: |
-            export CLUSTER=K8S
+            if [[ "<< parameters.orchestrator-flavor >>" == "openshift" ]]; then
+              export CLUSTER=OPENSHIFT
+            else
+              export CLUSTER=K8S
+            fi
             if [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
               echo "On master, running all QA tests..."
               make -C qa-tests-backend test || touch FAIL
@@ -2987,6 +3028,58 @@ jobs:
       - destroy-aks-cluster:
           when: on_fail
 
+  provision-openshift-4-api-e2e-tests:
+    executor: custom
+    steps:
+      - checkout
+      - check-label-exists-or-skip:
+          label: ci-openshift-4-tests
+          run-on-master: false
+
+      - setup_remote_docker
+
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - *loginToGCR
+      - run:
+          name: Create OpenShift 4 cluster
+          environment:
+            - OPENSHIFT_4_AUTOMATION_VERSION: 0.2.6
+            - GCP_PROJECT: stackrox-ci
+          command: |
+            mkdir $PWD/openshift-4
+            docker run --name openshift-4-automation -t \
+              -v $PWD/openshift-4:/data \
+              -e GOOGLE_CREDENTIALS="${GOOGLE_OPENSHIFT_4_CREDENTIALS}" \
+              -e PULL_SECRET="${REDHAT_PULL_SECRET}" \
+              gcr.io/stackrox-infra/automation-flavors/openshift-4:$OPENSHIFT_4_AUTOMATION_VERSION \
+              create openshift-4-"${CIRCLE_WORKFLOW_ID:0:7}" "${GCP_PROJECT}" openshift.ci.rox.systems
+            docker cp openshift-4-automation:/data $PWD/openshift-4
+          no_output_timeout: 45m
+
+      - run:
+          name: Validate Kubeconfig
+          command: |
+            ls -lh $PWD/openshift-4/data
+            export KUBECONFIG=$PWD/openshift-4/data/auth/kubeconfig
+            sudo chown "$USER" $PWD/openshift-4/data/auth/kubeconfig
+            oc get nodes
+
+      - store_artifacts:
+          path: openshift-4
+          destination: openshift-4
+
+      - build-liveness-check
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - openshift-4
+
+      - destroy-openshift-4-cluster:
+          when: on_fail
+
   ###
   # Test jobs against built artifacts
   # Recommended naming format: {cluster_type}-[{flavor}-]{test_target_type}-{any_test_name}-tests
@@ -4357,6 +4450,51 @@ jobs:
             - destroy-aks-cluster:
                 when: always
 
+  openshift-4-api-e2e-tests:
+    executor: custom
+    environment:
+      - LOCAL_PORT: 443
+      - COLLECTION_METHOD: ebpf
+      - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: true
+      - ROX_WHITELIST_GENERATION_DURATION: 1m
+      - LOAD_BALANCER: lb
+      - ADMISSION_CONTROLLER: true
+      - ADMISSION_CONTROLLER_UPDATES: true
+      - ROX_NETWORK_GRAPH_PORTS: true
+      - ROX_NETWORK_GRAPH_EXTERNAL_SRCS: true
+      - ROX_SYSLOG_INTEGRATION: true
+      - ROX_NETWORK_DETECTION: true
+      - ROX_HOST_SCANNING: true
+      - ROX_SENSOR_TLS_CHALLENGE: true
+      - ROX_SENSOR_INSTALLATION_EXPERIENCE: true
+      - ROX_NETWORK_DETECTION: true
+      - ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: 2m
+
+    steps:
+      - run-qa-tests:
+          cluster-id: openshift-4-api-e2e-tests
+          sensor-deploy-flavor: helm
+          orchestrator-flavor: openshift
+          determine-whether-to-run:
+            - check-master-or-tag-or-label:
+                label: ci-openshift-4-tests
+                run-on-master: false
+                run-on-tags: true
+          use-websocket: true
+          is-gke-cluster: false
+          connect-to-cluster:
+            - run:
+                name: Restore KUBECONFIG
+                command: |
+                  ls -lh $PWD/openshift-4/data
+                  cci-export KUBECONFIG "$PWD/openshift-4/data/auth/kubeconfig"
+                  oc get nodes
+          destroy-cluster:
+            - *loginToGCR
+            - destroy-openshift-4-cluster:
+                when: always
+
   roxctl-windows-test:
     executor:
       name: win/default  # References orbs.win defined above.
@@ -4861,6 +4999,14 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-aks-api-e2e-tests
+      - provision-openshift-4-api-e2e-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+      - openshift-4-api-e2e-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-openshift-4-api-e2e-tests
       - roxctl-windows-test:
           <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
