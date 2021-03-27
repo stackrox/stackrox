@@ -3,9 +3,9 @@ import { useHistory } from 'react-router-dom';
 import { EntityType } from 'Containers/Network/networkTypes';
 import { nodeTypes } from 'constants/networkGraph';
 
-type NavigateHook = (entityId: string, type: EntityType) => void;
+export type NavigateToEntityHook = (entityId: string, type: EntityType) => void;
 
-function useNavigateToEntity(): NavigateHook {
+function useNavigateToEntity(): NavigateToEntityHook {
     const history = useHistory();
     return function onNavigateToEntityById(entityId: string, type: EntityType): void {
         if (type === nodeTypes.CIDR_BLOCK || type === nodeTypes.EXTERNAL_ENTITIES) {

@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
 
+import { NavigateToEntityHook } from 'Containers/Network/Wizard/useNavigateToEntity';
 import { filterModes } from 'constants/networkFilterModes';
 import { Edge } from 'Containers/Network/networkTypes';
 import { networkFlowStatus } from 'constants/networkGraph';
@@ -12,7 +13,7 @@ export type NetworkFlowsProps = {
     deploymentId: string;
     edges: Edge[];
     filterState: number;
-    onNavigateToEntity: () => void;
+    onNavigateToEntity: NavigateToEntityHook;
     lastUpdatedTimestamp: string;
 };
 

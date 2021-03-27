@@ -93,3 +93,41 @@ export type Edge = {
         type: 'deployment' | 'external';
     };
 };
+
+type AllFilterState = 0;
+type AllowedFilterState = 1;
+type ActiveFilterState = 2;
+
+export type FilterState = AllFilterState | AllowedFilterState | ActiveFilterState;
+
+export type NetworkNode = {
+    cluster: string;
+    deploymentId: string;
+    edges: Edge[];
+    egress: string[];
+    externallyConnected: boolean;
+    id: string;
+    ingress: string[];
+    internetAccess: boolean;
+    isActive: boolean;
+    listenPorts: {
+        port: number;
+        l4protocol: string;
+    }[];
+    name: string;
+    nonIsolatedEgress: boolean;
+    nonIsolatedIngress: boolean;
+    outEdges: {
+        [key: string]: {
+            properties: {
+                port: number;
+                protocol: string;
+                lastActiveTimestamp: string;
+            }[];
+        };
+    };
+    parent: string;
+    policyIds: string[];
+    queryMatch: boolean;
+    type: string;
+};

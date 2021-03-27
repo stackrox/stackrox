@@ -34,7 +34,7 @@ function BinderTabHeader({
 }
 
 export type BinderTabsProps = {
-    children: ReactElement[];
+    children: (ReactElement | null)[];
 };
 
 function BinderTabs({ children }: BinderTabsProps): ReactElement {

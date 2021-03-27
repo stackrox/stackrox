@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
-import useNavigateToEntity from 'hooks/useNavigateToEntity';
+import useNavigateToEntity from 'Containers/Network/Wizard/useNavigateToEntity';
 import { selectors } from 'reducers';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as graphActions } from 'reducers/network/graph';

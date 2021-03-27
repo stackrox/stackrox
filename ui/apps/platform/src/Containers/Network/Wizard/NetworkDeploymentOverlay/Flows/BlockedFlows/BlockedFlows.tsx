@@ -1,6 +1,8 @@
 import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
 
+import { NavigateToEntityHook } from 'Containers/Network/Wizard/useNavigateToEntity';
+import { FilterState } from 'Containers/Network/networkTypes';
 import { filterModes } from 'constants/networkFilterModes';
 import { networkFlowStatus } from 'constants/networkGraph';
 import useFetchBlockedFlows from './useFetchBlockedFlows';
@@ -10,8 +12,8 @@ import NetworkBaselines from '../NetworkBaselines';
 export type BlockedFlowsProps = {
     selectedDeployment: unknown;
     deploymentId: string;
-    filterState: string;
-    onNavigateToEntity: () => void;
+    filterState: FilterState;
+    onNavigateToEntity: NavigateToEntityHook;
 };
 
 function getPanelHeaderText(numBlockedFlows: number): string {

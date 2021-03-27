@@ -5,35 +5,17 @@ import { createStructuredSelector } from 'reselect';
 import { useParams } from 'react-router-dom';
 
 import { selectors } from 'reducers';
-import { nodeTypes } from 'constants/networkGraph';
-import useNavigateToEntity from 'hooks/useNavigateToEntity';
+import { useNetworkBaselineSimulation } from 'Containers/Network/baselineSimulationContext';
 
 import Tab from 'Components/Tab';
 import NetworkEntityTabbedOverlay from 'Components/NetworkEntityTabbedOverlay';
-import BinderTabs from 'Components/BinderTabs';
-import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
-import NetworkFlows from './NetworkFlows';
-import BlockedFlows from './BlockedFlows';
-import BaselineSettings from './BaselineSettings';
 import DeploymentDetails from './DeploymentDetails';
 import NetworkPoliciesDetail from './NetworkPoliciesDetail';
-
-function getDeploymentEdges(deployment) {
-    const edges = deployment.edges.filter(
-        ({ data: { destNodeName, destNodeNamespace, source, target, destNodeType } }) =>
-            destNodeNamespace &&
-            destNodeName &&
-            (source !== target || destNodeType !== nodeTypes.DEPLOYMENT)
-    );
-    return edges;
-}
+import Flows from './Flows';
 
 function NetworkDeploymentOverlay({ selectedDeployment, filterState, lastUpdatedTimestamp }) {
-    const showBlockedFlows = useFeatureFlagEnabled('ROX_NETWORK_DETECTION_BLOCKED_FLOWS');
-    const onNavigateToEntity = useNavigateToEntity();
+    const { isBaselineSimulationOn } = useNetworkBaselineSimulation();
     const { deploymentId } = useParams();
-
-    const edges = getDeploymentEdges(selectedDeployment);
 
     return (
         <NetworkEntityTabbedOverlay
@@ -41,35 +23,14 @@ function NetworkDeploymentOverlay({ selectedDeployment, filterState, lastUpdated
             entityType={selectedDeployment.type}
         >
             <Tab title="Flows">
-                <BinderTabs>
-                    <Tab title="Network Flows">
-                        <NetworkFlows
-                            deploymentId={deploymentId}
-                            edges={edges}
-                            filterState={filterState}
-                            onNavigateToEntity={onNavigateToEntity}
-                            lastUpdatedTimestamp={lastUpdatedTimestamp}
-                        />
-                    </Tab>
-                    {showBlockedFlows && (
-                        <Tab title="Blocked Flows">
-                            <BlockedFlows
-                                selectedDeployment={selectedDeployment}
-                                deploymentId={deploymentId}
-                                filterState={filterState}
-                                onNavigateToEntity={onNavigateToEntity}
-                            />
-                        </Tab>
-                    )}
-                    <Tab title="Baseline Settings">
-                        <BaselineSettings
-                            selectedDeployment={selectedDeployment}
-                            deploymentId={deploymentId}
-                            filterState={filterState}
-                            onNavigateToEntity={onNavigateToEntity}
-                        />
-                    </Tab>
-                </BinderTabs>
+                {isBaselineSimulationOn ? null : (
+                    <Flows
+                        selectedDeployment={selectedDeployment}
+                        deploymentId={deploymentId}
+                        filterState={filterState}
+                        lastUpdatedTimestamp={lastUpdatedTimestamp}
+                    />
+                )}
             </Tab>
             <Tab title="Network Policies">
                 <NetworkPoliciesDetail policyIds={selectedDeployment.policyIds} />

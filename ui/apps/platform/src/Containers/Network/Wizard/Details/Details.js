@@ -12,7 +12,7 @@ import { selectors } from 'reducers';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as graphActions } from 'reducers/network/graph';
 import { nodeTypes } from 'constants/networkGraph';
-import useNavigateToEntity from 'hooks/useNavigateToEntity';
+import useNavigateToEntity from 'Containers/Network/Wizard/useNavigateToEntity';
 
 import Panel from 'Components/Panel';
 import Tabs from 'Components/Tabs';

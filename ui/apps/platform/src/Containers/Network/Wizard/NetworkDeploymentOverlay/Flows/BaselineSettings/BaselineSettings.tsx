@@ -1,6 +1,8 @@
 import React, { ReactElement } from 'react';
 
+import { NavigateToEntityHook } from 'Containers/Network/Wizard/useNavigateToEntity';
 import { filterModes } from 'constants/networkFilterModes';
+import { FilterState } from 'Containers/Network/networkTypes';
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { knownBackendFlags } from 'utils/featureFlags';
 import { networkFlowStatus } from 'constants/networkGraph';
@@ -13,8 +15,8 @@ import SimulateBaselineNetworkPolicy from './SimulateBaselineNetworkPolicy';
 export type BaselineSettingsProps = {
     selectedDeployment: unknown;
     deploymentId: string;
-    filterState: string;
-    onNavigateToEntity: () => void;
+    filterState: FilterState;
+    onNavigateToEntity: NavigateToEntityHook;
 };
 
 function BaselineSettings({
