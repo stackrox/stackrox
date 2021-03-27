@@ -73,7 +73,6 @@ const NetworkGraph = ({
     setNetworkGraphRef,
     setSelectedNamespace,
     setSelectedNodeInGraph,
-    simulatorOn,
     selectedClusterName,
     history,
     match,
@@ -81,6 +80,7 @@ const NetworkGraph = ({
     lastUpdatedTimestamp,
     selectedNamespace,
     selectedClusterId,
+    isReadOnly,
 }) => {
     const [selectedNode, setSelectedNode] = useState();
     const [hoveredElement, setHoveredElement] = useState();
@@ -233,65 +233,67 @@ const NetworkGraph = ({
     }
 
     function clickHandler(ev) {
-        const { target } = ev;
-        const evData = target.data && target.data();
-        const { id, type } = evData;
-        const targetIsNamespace = type === entityTypes.NAMESPACE;
-        const isEdge = target.isEdge && target.isEdge();
+        if (!isReadOnly) {
+            const { target } = ev;
+            const evData = target.data && target.data();
+            const { id, type } = evData;
+            const targetIsNamespace = type === entityTypes.NAMESPACE;
+            const isEdge = target.isEdge && target.isEdge();
 
-        // Canvas or Selected node click: clear selection
-        if (
-            !id ||
-            !evData ||
-            (selectedNode && id === selectedNode.id) ||
-            type === entityTypes.CLUSTER
-        ) {
-            setSelectedNode();
-            setSelectedNodeInGraph();
-            onClickOutside();
-            history.push('/main/network');
-            return;
-        }
+            // Canvas or Selected node click: clear selection
+            if (
+                !id ||
+                !evData ||
+                (selectedNode && id === selectedNode.id) ||
+                type === entityTypes.CLUSTER
+            ) {
+                setSelectedNode();
+                setSelectedNodeInGraph();
+                onClickOutside();
+                history.push('/main/network');
+                return;
+            }
 
-        // Edge click or edge node click
-        if (isEdge || evData.side) {
-            return;
-        }
+            // Edge click or edge node click
+            if (isEdge || evData.side) {
+                return;
+            }
 
-        // Namespace Click
-        if (targetIsNamespace) {
-            if (id) {
-                const deployments = (namespacesWithDeployments[id] || []).map((deployment) => {
-                    const deploymentEdges = getEdgesFromNode({
-                        ...getConfigObj(),
-                        selectedNode: deployment.data,
+            // Namespace Click
+            if (targetIsNamespace) {
+                if (id) {
+                    const deployments = (namespacesWithDeployments[id] || []).map((deployment) => {
+                        const deploymentEdges = getEdgesFromNode({
+                            ...getConfigObj(),
+                            selectedNode: deployment.data,
+                        });
+                        const modifiedDeployment = {
+                            ...deployment,
+                        };
+                        modifiedDeployment.data.edges = deploymentEdges;
+                        return modifiedDeployment;
                     });
-                    const modifiedDeployment = {
-                        ...deployment,
-                    };
-                    modifiedDeployment.data.edges = deploymentEdges;
-                    return modifiedDeployment;
-                });
-                onNamespaceClick({ id, deployments });
+                    onNamespaceClick({ id, deployments });
+                    setSelectedNode(evData);
+                    setSelectedNodeInGraph(evData);
+                }
+                return;
+            }
+
+            // if we didn't return early, must be click off a NS
+            setSelectedNamespace(null);
+
+            // New Node click: select node
+            if (target.isNode()) {
                 setSelectedNode(evData);
                 setSelectedNodeInGraph(evData);
-            }
-            return;
-        }
 
-        // if we didn't return early, must be click off a NS
-        setSelectedNamespace(null);
-
-        // New Node click: select node
-        if (target.isNode()) {
-            setSelectedNode(evData);
-            setSelectedNodeInGraph(evData);
-
-            if (type === nodeTypes.EXTERNAL_ENTITIES || type === nodeTypes.CIDR_BLOCK) {
-                onExternalEntitiesClick();
-            } else {
-                history.push(`/main/network/${id}`);
-                onNodeClick(evData);
+                if (type === nodeTypes.EXTERNAL_ENTITIES || type === nodeTypes.CIDR_BLOCK) {
+                    onExternalEntitiesClick();
+                } else {
+                    history.push(`/main/network/${id}`);
+                    onNodeClick(evData);
+                }
             }
         }
     }
@@ -644,11 +646,6 @@ const NetworkGraph = ({
                 deployments: namespacesWithDeployments[selectedNode.id] || [],
             });
         }
-        if (simulatorOn) {
-            setSelectedNode();
-            setSelectedNodeInGraph();
-            setSelectedNamespace(null);
-        }
     }
 
     function grabifyNamespaces() {
@@ -665,7 +662,7 @@ const NetworkGraph = ({
         networkNodeMap,
         networkEdgeMap,
         filterState,
-        simulatorOn,
+        isReadOnly,
         lastUpdatedTimestamp,
         match.params.deploymentId,
     ]);
@@ -718,7 +715,7 @@ NetworkGraph.propTypes = {
     history: ReactRouterPropTypes.history.isRequired,
     match: ReactRouterPropTypes.match.isRequired,
     setSelectedNodeInGraph: PropTypes.func,
-    simulatorOn: PropTypes.bool.isRequired,
+    isReadOnly: PropTypes.bool,
     selectedClusterName: PropTypes.string.isRequired,
     featureFlags: PropTypes.arrayOf(PropTypes.shape),
     lastUpdatedTimestamp: PropTypes.instanceOf(Date),
@@ -736,6 +733,7 @@ NetworkGraph.defaultProps = {
     lastUpdatedTimestamp: null,
     selectedNamespace: null,
     selectedClusterId: null,
+    isReadOnly: false,
 };
 
 export default withRouter(NetworkGraph);

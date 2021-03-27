@@ -43,7 +43,7 @@ function NetworkPageContent() {
             {isSimulationOn ? (
                 <SimulationFrame isError={isError} onStop={onStop}>
                     <div className="flex flex-1 relative">
-                        <Graph />
+                        <Graph isReadOnly />
                         <Wizard />
                     </div>
                 </SimulationFrame>

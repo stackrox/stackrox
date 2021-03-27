@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { createSelector, createStructuredSelector } from 'reselect';
+import { createStructuredSelector } from 'reselect';
 import PropTypes from 'prop-types';
 import isEmpty from 'lodash/isEmpty';
 import cloneDeep from 'lodash/cloneDeep';
@@ -26,7 +26,6 @@ class Graph extends Component {
         openWizard: PropTypes.func.isRequired,
         closeWizard: PropTypes.func.isRequired,
         setWizardStage: PropTypes.func.isRequired,
-        isSimulatorOn: PropTypes.bool.isRequired,
 
         networkNodeMap: PropTypes.shape({}).isRequired,
         networkEdgeMap: PropTypes.shape({}),
@@ -50,6 +49,8 @@ class Graph extends Component {
         setNetworkGraphRef: PropTypes.func.isRequired,
         setSelectedNodeInGraph: PropTypes.func,
         lastUpdatedTimestamp: PropTypes.instanceOf(Date),
+
+        isReadOnly: PropTypes.bool,
     };
 
     static defaultProps = {
@@ -59,6 +60,7 @@ class Graph extends Component {
         setSelectedNodeInGraph: null,
         lastUpdatedTimestamp: null,
         selectedNamespace: null,
+        isReadOnly: false,
     };
 
     shouldComponentUpdate(nextProps) {
@@ -69,7 +71,7 @@ class Graph extends Component {
             wizardOpen,
             networkEdgeMap,
             networkNodeMap,
-            isSimulatorOn,
+            isReadOnly,
         } = this.props;
         return (
             !networkEdgeMap ||
@@ -78,14 +80,11 @@ class Graph extends Component {
             nextProps.filterState !== filterState ||
             nextProps.isLoading !== isLoading ||
             nextProps.wizardOpen !== wizardOpen ||
-            nextProps.isSimulatorOn !== isSimulatorOn
+            nextProps.isReadOnly !== isReadOnly
         );
     }
 
     onNamespaceClick = (namespace) => {
-        if (this.props.isSimulatorOn) {
-            return;
-        }
         this.props.setSelectedNamespace(namespace);
         this.props.setWizardStage(wizardStages.namespaceDetails);
         this.props.openWizard();
@@ -93,15 +92,12 @@ class Graph extends Component {
 
     // eslint-disable-next-line no-unused-vars
     onExternalEntitiesClick = () => {
-        if (this.props.isSimulatorOn) {
-            return;
-        }
         this.props.setWizardStage(wizardStages.externalDetails);
         this.props.openWizard();
     };
 
     onNodeClick = (node) => {
-        if (node?.type === entityTypes.CLUSTER || this.props.isSimulatorOn) {
+        if (node?.type === entityTypes.CLUSTER) {
             return;
         }
         this.props.setSelectedNode(node);
@@ -111,17 +107,9 @@ class Graph extends Component {
         this.props.openWizard();
     };
 
-    renderGraph = (simulatorOn) => {
-        const { networkNodeMap } = this.props;
-        // If we have more than 1100 nodes, display a message instead of the graph.
-        const nodeLimit = 1100;
-        if (Object.keys(networkNodeMap).length > nodeLimit) {
-            // hopefully a temporal solution
-            return (
-                <NoResultsMessage message="There are too many deployments to render on the graph. Please refine your search to a set of namespaces or deployments to display." />
-            );
-        }
+    renderGraph = () => {
         const {
+            networkNodeMap,
             networkFlowGraphUpdateKey,
             networkEdgeMap,
             closeWizard,
@@ -134,7 +122,17 @@ class Graph extends Component {
             setSelectedNodeInGraph,
             lastUpdatedTimestamp,
             selectedNamespace,
+            isReadOnly,
         } = this.props;
+
+        // If we have more than 1100 nodes, display a message instead of the graph.
+        const nodeLimit = 1100;
+        if (Object.keys(networkNodeMap).length > nodeLimit) {
+            // hopefully a temporal solution
+            return (
+                <NoResultsMessage message="There are too many deployments to render on the graph. Please refine your search to a set of namespaces or deployments to display." />
+            );
+        }
 
         const selectedClusterName =
             clusters.find((cluster) => cluster.id === selectedClusterId)?.name || 'Unknown cluster';
@@ -152,7 +150,6 @@ class Graph extends Component {
                 onExternalEntitiesClick={this.onExternalEntitiesClick}
                 onClickOutside={closeWizard}
                 filterState={filterState}
-                simulatorOn={simulatorOn}
                 selectedClusterName={selectedClusterName}
                 featureFlags={featureFlags}
                 setNetworkGraphRef={setNetworkGraphRef}
@@ -161,16 +158,15 @@ class Graph extends Component {
                 lastUpdatedTimestamp={lastUpdatedTimestamp}
                 selectedNamespace={selectedNamespace}
                 selectedClusterId={selectedClusterId}
+                isReadOnly={isReadOnly}
             />
         );
     };
 
     render() {
-        const { isSimulatorOn } = this.props;
-        // Rendering.
         return (
             <div className="w-full h-full">
-                {this.renderGraph(isSimulatorOn)}
+                {this.renderGraph()}
                 <Filters />
                 <Legend />
             </div>
@@ -178,17 +174,9 @@ class Graph extends Component {
     }
 }
 
-const getIsSimulatorOn = createSelector(
-    [selectors.getNetworkWizardOpen, selectors.getNetworkWizardStage],
-    (wizardOpen, wizardStage) =>
-        wizardOpen &&
-        (wizardStage === wizardStages.simulator || wizardStage === wizardStages.creator)
-);
-
 const mapStateToProps = createStructuredSelector({
     wizardOpen: selectors.getNetworkWizardOpen,
     filterState: selectors.getNetworkGraphFilterMode,
-    isSimulatorOn: getIsSimulatorOn,
     networkNodeMap: selectors.getNetworkNodeMap,
     networkEdgeMap: selectors.getNetworkEdgeMap,
     networkFlowGraphUpdateKey: selectors.getNetworkFlowGraphUpdateKey,
