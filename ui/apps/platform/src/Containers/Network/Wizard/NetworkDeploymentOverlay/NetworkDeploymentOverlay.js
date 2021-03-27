@@ -12,6 +12,7 @@ import NetworkEntityTabbedOverlay from 'Components/NetworkEntityTabbedOverlay';
 import DeploymentDetails from './DeploymentDetails';
 import NetworkPoliciesDetail from './NetworkPoliciesDetail';
 import Flows from './Flows';
+import BaselineSimulation from './BaselineSimulation';
 
 function NetworkDeploymentOverlay({ selectedDeployment, filterState, lastUpdatedTimestamp }) {
     const { isBaselineSimulationOn } = useNetworkBaselineSimulation();
@@ -23,7 +24,9 @@ function NetworkDeploymentOverlay({ selectedDeployment, filterState, lastUpdated
             entityType={selectedDeployment.type}
         >
             <Tab title="Flows">
-                {isBaselineSimulationOn ? null : (
+                {isBaselineSimulationOn ? (
+                    <BaselineSimulation />
+                ) : (
                     <Flows
                         selectedDeployment={selectedDeployment}
                         deploymentId={deploymentId}

@@ -33,12 +33,12 @@ export function getSidePanelHeadBorderColor(isDarkMode) {
  * PanelTitle or entity-specific component like EntityBreadCrumbs
  * PanelHeadEnd, which has flex end alignment
  */
-export function PanelHead({ children, isDarkMode, isSidePanel = false }) {
+export function PanelHead({ children, isDarkMode = false, isSidePanel = false }) {
     const borderColor = isSidePanel ? getSidePanelHeadBorderColor(isDarkMode) : defaultBorderColor;
     return <div className={`${borderColor} border-b flex h-14 w-full`}>{children}</div>;
 }
 
-export function PanelTitle({ isUpperCase, testid, text }) {
+export function PanelTitle({ isUpperCase = false, testid = null, text }) {
     return (
         <div
             className={`flex font-700 items-center leading-normal min-w-24 overflow-hidden px-4 text-base-600 tracking-wide ${
@@ -57,7 +57,7 @@ export function PanelTitle({ isUpperCase, testid, text }) {
  * PanelHeadStart is a parent of multiple components at the start of the panel head.
  * That is, instead of PageTitle.
  */
-export function PanelHeadStart({ children, testid }) {
+export function PanelHeadStart({ children, testid = null }) {
     return (
         <div className="flex" data-testid={testid}>
             {children}
