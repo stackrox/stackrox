@@ -12,6 +12,10 @@ import "api/v1/empty.proto";
 
 package v1;
 
+message NetworkGraphScope {
+    string query = 1;
+}
+
 message NetworkEdgeProperties {
     uint32     port     = 1;
     storage.L4Protocol protocol = 2;
@@ -39,7 +43,8 @@ message NetworkGraphRequest {
     string query                    = 2;
     google.protobuf.Timestamp since = 3;
 
-    bool include_ports = 4;
+    bool              include_ports = 4;
+    NetworkGraphScope scope         = 5;
 }
 
 message NetworkGraph {

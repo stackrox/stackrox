@@ -37,7 +37,8 @@ message GetNetworkGraphRequest {
     string query      = 2;
 
     // If set to true, include port-level information in the network policy graph.
-    bool include_ports = 3;
+    bool              include_ports = 3;
+    NetworkGraphScope scope         = 4;
 }
 
 message SimulateNetworkGraphRequest {

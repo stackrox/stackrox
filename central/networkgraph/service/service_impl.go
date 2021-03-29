@@ -279,8 +279,12 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 		requestClone.Since = since
 	}
 
-	// Get the deployments we want to check connectivity between.
-	deployments, err := s.getDeployments(ctx, requestClone.GetClusterId(), requestClone.GetQuery())
+	deploymentQuery, scopeQuery, err := networkgraph.GetFilterAndScopeQueries(request.GetClusterId(), requestClone.GetQuery(), requestClone.GetScope())
+	if err != nil {
+		return nil, err
+	}
+
+	deployments, err := s.deployments.SearchListDeployments(ctx, deploymentQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -293,7 +297,7 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 	builder := newFlowGraphBuilder()
 	builder.AddDeployments(deployments)
 
-	if err := s.addDeploymentFlowsToGraph(ctx, requestClone, withListenPorts, builder, deployments); err != nil {
+	if err := s.addDeploymentFlowsToGraph(ctx, requestClone, scopeQuery, withListenPorts, builder, deployments); err != nil {
 		return nil, err
 	}
 
@@ -311,7 +315,14 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 	return graph, nil
 }
 
-func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1.NetworkGraphRequest, withListenPorts bool, graphBuilder *flowGraphBuilder, deployments []*storage.ListDeployment) error {
+func (s *serviceImpl) addDeploymentFlowsToGraph(
+	ctx context.Context,
+	request *v1.NetworkGraphRequest,
+	scopeQuery *v1.Query,
+	withListenPorts bool,
+	graphBuilder *flowGraphBuilder,
+	deployments []*storage.ListDeployment,
+) error {
 	// Build a possibly reduced map of only those deployments for which we can see network flows.
 	networkFlowsChecker := networkGraphSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ClusterID(request.GetClusterId())
 	filteredSlice, err := sac.FilterSliceReflect(ctx, networkFlowsChecker, deployments, func(deployment *storage.ListDeployment) sac.ScopePredicate {
@@ -395,7 +406,8 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1
 	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
 	graphBuilder.AddFlows(flows)
 
-	filteredFlows, visibleNeighbors, maskedDeployments, err := filterFlowsAndMaskScopeAlienDeployments(ctx, request.GetClusterId(), missingInfoFlows, deploymentsMap, s.deployments)
+	filteredFlows, visibleNeighbors, maskedDeployments, err := filterFlowsAndMaskScopeAlienDeployments(ctx,
+		request.GetClusterId(), scopeQuery, missingInfoFlows, deploymentsMap, s.deployments)
 	if err != nil {
 		return err
 	}
@@ -405,11 +417,16 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(ctx context.Context, request *v1
 	return nil
 }
 
-func filterFlowsAndMaskScopeAlienDeployments(ctx context.Context, clusterID string, flows []*storage.NetworkFlow,
-	deploymentsMap map[string]*storage.ListDeployment, deploymentDS deploymentDS.DataStore,
+func filterFlowsAndMaskScopeAlienDeployments(
+	ctx context.Context,
+	clusterID string,
+	scopeQuery *v1.Query,
+	flows []*storage.NetworkFlow,
+	deploymentsMap map[string]*storage.ListDeployment,
+	deploymentDS deploymentDS.DataStore,
 ) (filtered []*storage.NetworkFlow, visibleNeighbors []*storage.ListDeployment, maskedDeployments []*storage.ListDeployment, err error) {
 	// Find out which deployments we *can* see.
-	results, err := deploymentDS.SearchListDeployments(ctx, search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
+	results, err := deploymentDS.SearchListDeployments(ctx, scopeQuery)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -458,7 +475,10 @@ func filterFlowsAndMaskScopeAlienDeployments(ctx context.Context, clusterID stri
 				sac.ClusterScopeKeys(clusterID)))
 
 		existingButInvisibleDeploymentsList, err := deploymentDS.SearchListDeployments(allDeploymentsReadCtx,
-			search.NewQueryBuilder().AddDocIDSet(missingDeploymentIDs).ProtoQuery())
+			search.ConjunctionQuery(
+				scopeQuery,
+				search.NewQueryBuilder().AddDocIDSet(missingDeploymentIDs).ProtoQuery()),
+		)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -489,7 +509,7 @@ func filterFlowsAndMaskScopeAlienDeployments(ctx context.Context, clusterID stri
 
 			invisibleDeployment := existingButInvisibleDeploymentsMap[entity.GetId()]
 			if invisibleDeployment == nil {
-				skipFlow = true // deployment has been deleted
+				skipFlow = true // deployment has been deleted or does not satisfy scope.
 				break
 			}
 
@@ -509,20 +529,4 @@ func filterFlowsAndMaskScopeAlienDeployments(ctx context.Context, clusterID stri
 		}
 	}
 	return filtered, visibleNeighbors, masker.GetMaskedDeployments(), nil
-}
-
-func (s *serviceImpl) getDeployments(ctx context.Context, clusterID string, query string) (deployments []*storage.ListDeployment, err error) {
-	clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-
-	q := clusterQuery
-	if query != "" {
-		q, err = search.ParseQuery(query)
-		if err != nil {
-			return
-		}
-		q = search.ConjunctionQuery(q, clusterQuery)
-	}
-
-	deployments, err = s.deployments.SearchListDeployments(ctx, q)
-	return
 }

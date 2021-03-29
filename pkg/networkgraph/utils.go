@@ -2,8 +2,10 @@ package networkgraph
 
 import (
 	"github.com/pkg/errors"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -159,4 +161,29 @@ func PopulateExternalSrcsDesc(entity *storage.NetworkEntityInfo, extSrcMapper fu
 		return
 	}
 	entity.Desc = src.GetDesc()
+}
+
+// GetFilterAndScopeQueries returns parses the raw deployment query string and network graph scope into v1.Query.
+func GetFilterAndScopeQueries(clusterID, rawQ string, scope *v1.NetworkGraphScope) (*v1.Query, *v1.Query, error) {
+	allClusterDepsQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+
+	scopeQuery := allClusterDepsQuery
+	if scope.GetQuery() != "" {
+		parsedScopeQuery, err := search.ParseQuery(scope.GetQuery())
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "parsing network graph scope query")
+		}
+		scopeQuery = search.ConjunctionQuery(scopeQuery, parsedScopeQuery)
+	}
+
+	depQ := scopeQuery
+	if rawQ != "" {
+		parsedRawQ, err := search.ParseQuery(rawQ)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "parsing network graph filter query")
+		}
+		depQ = search.ConjunctionQuery(depQ, parsedRawQ)
+	}
+
+	return depQ, scopeQuery, nil
 }

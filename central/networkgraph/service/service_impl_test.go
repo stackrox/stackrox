@@ -153,6 +153,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 	//   and deployment depY that was recently deleted, and external sources es1 and es2.
 	// - depB has incoming flows from depA and deployment depX in a secret namespace, and depW in another secret namespace
 	// - depC has incoming flows from depA and depW, and deleted external source es4.
+	// - depG and depH are orchestrator components.
 	// Namespace bar:
 	// - depD has incoming flows from depA and depE, and external source es3.
 	// - depE has incoming flows from depD and depB
@@ -186,7 +187,10 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 	req := &v1.NetworkGraphRequest{
 		ClusterId: "mycluster",
 		Query:     "Namespace: foo,bar,far",
-		Since:     ts,
+		Scope: &v1.NetworkGraphScope{
+			Query: "Orchestrator Component:false",
+		},
+		Since: ts,
 	}
 
 	ctxHasAllDeploymentsAccessMatcher := sacTestutils.ContextWithAccess(sac.ScopeSuffix{
@@ -257,6 +261,8 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 			flows := []*storage.NetworkFlow{depFlow("depA", "depB"),
 				depFlow("depA", "depD"),
 				depFlow("depA", "depE"),
+				depFlow("depA", "depG"),
+				depFlow("depA", "depH"),
 				depFlow("depA", "depX"),
 				depFlow("depA", "depY"),
 				depFlow("depA", "depZ"),
@@ -267,6 +273,8 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 				anyFlow("depA", storage.NetworkEntityInfo_DEPLOYMENT, es5ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
 				depFlow("depB", "depA"),
 				depFlow("depB", "depF"),
+				depFlow("depB", "depG"),
+				depFlow("depB", "depH"),
 				depFlow("depB", "depX"),
 				depFlow("depB", "depW"),
 				depFlow("depC", "depA"),
@@ -281,6 +289,8 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSAC() {
 				depFlow("depE", "depB"),
 				depFlow("depF", "depB"),
 				depFlow("depD", "depF"),
+				anyFlow("depG", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
+				anyFlow("depH", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
 				anyFlow("depF", storage.NetworkEntityInfo_DEPLOYMENT, es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
 				anyFlow("depF", storage.NetworkEntityInfo_DEPLOYMENT, es5ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),
 				anyFlow("depQ", storage.NetworkEntityInfo_DEPLOYMENT, es1aID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE),

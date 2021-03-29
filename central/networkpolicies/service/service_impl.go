@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/sac"
@@ -187,7 +188,7 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetwor
 	}
 
 	// Get the deployments we want to check connectivity between.
-	queryDeploymentIDs, clusterDeployments, err := s.getDeployments(ctx, request.GetClusterId(), request.GetQuery())
+	queryDeploymentIDs, clusterDeployments, err := s.getDeployments(ctx, request.GetClusterId(), request.GetQuery(), request.GetScope())
 	if err != nil {
 		return nil, err
 	}
@@ -238,7 +239,7 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 	}
 
 	// Get the deployments we want to check connectivity between.
-	queryDeploymentIDs, clusterDeployments, err := s.getDeployments(ctx, request.GetClusterId(), request.GetQuery())
+	queryDeploymentIDs, clusterDeployments, err := s.getDeployments(ctx, request.GetClusterId(), request.GetQuery(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -430,7 +431,7 @@ func (s *serviceImpl) GetAllowedPeersFromCurrentPolicyForDeployment(ctx context.
 	networkPolicies = s.graphEvaluator.GetAppliedPolicies([]*storage.Deployment{deployment}, networkTree, networkPolicies)
 	// Build a graph out of the network policies. We can later remove all the deployments/nodes that do not have any out
 	// edge to the deployment we want
-	_, deploymentsInCluster, err := s.getDeployments(ctx, deployment.GetClusterId(), "")
+	_, deploymentsInCluster, err := s.getDeployments(ctx, deployment.GetClusterId(), "", nil)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -783,24 +784,22 @@ func (s *serviceImpl) getQueryDeployments(ctx context.Context, clusterID, query 
 	return deps, nil
 }
 
-func (s *serviceImpl) getDeployments(ctx context.Context, clusterID, query string) (set.StringSet, []*storage.Deployment, error) {
-	clusterDeployments, err := s.deployments.SearchRawDeployments(ctx,
-		search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
+func (s *serviceImpl) getDeployments(ctx context.Context, clusterID, rawQ string, scope *v1.NetworkGraphScope) (set.StringSet, []*storage.Deployment, error) {
+	depQ, scopeQ, err := networkgraph.GetFilterAndScopeQueries(clusterID, rawQ, scope)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	q, err := search.ParseQuery(query, search.MatchAllIfEmpty())
+	clusterDeployments, err := s.deployments.SearchRawDeployments(ctx, scopeQ)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	depQuery, _ := search.FilterQueryWithMap(q, deployments.OptionsMap)
+	depQuery, _ := search.FilterQueryWithMap(depQ, deployments.OptionsMap)
 	pred, err := deploymentPredicateFactory.GeneratePredicate(depQuery)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	queryDeploymentIDs := set.NewStringSet()
 	for _, dep := range clusterDeployments {
 		if pred.Matches(dep) {
