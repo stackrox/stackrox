@@ -41,45 +41,45 @@ type Event struct {
 func TestPod(testT *testing.T) {
 	// https://stack-rox.atlassian.net/browse/ROX-6631
 	// - the process events expected in this test are not reliably detected.
-	testutils.Retry(testT, 3, 10*time.Second, func(runT testutils.T) {
+	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
 		// Set up testing environment
-		setupDeploymentFromFile(testT, deploymentName, "yamls/multi-container-pod.yaml")
-		defer teardownDeploymentFromFile(testT, deploymentName, "yamls/multi-container-pod.yaml")
+		defer teardownDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod.yaml")
+		setupDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod.yaml")
 
 		// Get the test deployment.
-		deploymentID := getDeploymentID(testT, deploymentName)
-		require.Equal(runT, 1, getPodCount(testT, deploymentID))
+		deploymentID := getDeploymentID(retryT, deploymentName)
+		require.Equal(retryT, 1, getPodCount(retryT, deploymentID))
 
 		// Get the test pod.
-		pods := getPods(testT, deploymentID)
-		require.Len(runT, pods, 1)
+		pods := getPods(retryT, deploymentID)
+		require.Len(retryT, pods, 1)
 		pod := pods[0]
 
 		// Verify the container count.
-		require.Equal(runT, int32(2), pod.ContainerCount)
+		require.Equal(retryT, int32(2), pod.ContainerCount)
 
 		// Verify the events.
 		var loopCount int
 		var events []Event
 		for {
-			events = getEvents(runT, pod)
+			events = getEvents(retryT, pod)
 			if len(events) == 4 {
 				break
 			}
 			loopCount++
-			require.LessOrEqual(runT, loopCount, 20)
+			require.LessOrEqual(retryT, loopCount, 20)
 			time.Sleep(3 * time.Second)
 		}
 
 		// Expecting processes: nginx, sh, date, sleep
 		eventNames := sliceutils.Map(events, func(event Event) string { return event.Name }).([]string)
-		require.ElementsMatch(runT, eventNames, []string{"/bin/date", "/bin/sh", "/usr/sbin/nginx", "/bin/sleep"})
+		require.ElementsMatch(retryT, eventNames, []string{"/bin/date", "/bin/sh", "/usr/sbin/nginx", "/bin/sleep"})
 
 		// Verify the pod's timestamp is no later than the timestamp of the earliest event.
-		require.False(runT, pod.Started.After(events[0].Timestamp.Time))
+		require.False(retryT, pod.Started.After(events[0].Timestamp.Time))
 
 		// Verify risk event timeline csv
-		verifyRiskEventTimelineCSV(runT, deploymentID, eventNames)
+		verifyRiskEventTimelineCSV(retryT, deploymentID, eventNames)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
@@ -89,13 +89,13 @@ func TestPod(testT *testing.T) {
 				APIVersion: "v1",
 			},
 		})
-		require.NoError(runT, err)
+		require.NoError(retryT, err)
 		// Verify Pod start time is the creation time.
-		require.Equal(runT, k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
+		require.Equal(retryT, k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
 	})
 }
 
-func getDeploymentID(t *testing.T, deploymentName string) string {
+func getDeploymentID(t testutils.T, deploymentName string) string {
 	var respData struct {
 		Deployments []IDStruct `json:"deployments"`
 	}
@@ -115,7 +115,7 @@ func getDeploymentID(t *testing.T, deploymentName string) string {
 	return string(respData.Deployments[0].ID)
 }
 
-func getPods(t *testing.T, deploymentID string) []Pod {
+func getPods(t testutils.T, deploymentID string) []Pod {
 	var respData struct {
 		Pods []Pod `json:"pods"`
 	}
@@ -154,7 +154,7 @@ func getPods(t *testing.T, deploymentID string) []Pod {
 	return respData.Pods
 }
 
-func getPodCount(t *testing.T, deploymentID string) int {
+func getPodCount(t testutils.T, deploymentID string) int {
 	var respData struct {
 		PodCount int32 `json:"podCount"`
 	}

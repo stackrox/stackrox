@@ -73,13 +73,13 @@ func UnauthenticatedGRPCConnectionToCentral(t *testing.T) *grpc.ClientConn {
 
 // GRPCConnectionToCentral returns a GRPC connection to Central, which can be used in E2E tests.
 // It fatals the test if there's an error.
-func GRPCConnectionToCentral(t *testing.T) *grpc.ClientConn {
+func GRPCConnectionToCentral(t T) *grpc.ClientConn {
 	return grpcConnectionToCentral(t, func(opts *clientconn.Options) {
 		opts.ConfigureBasicAuth(RoxUsername(t), RoxPassword(t))
 	})
 }
 
-func grpcConnectionToCentral(t *testing.T, optsModifyFunc func(options *clientconn.Options)) *grpc.ClientConn {
+func grpcConnectionToCentral(t T, optsModifyFunc func(options *clientconn.Options)) *grpc.ClientConn {
 	endpoint := RoxAPIEndpoint(t)
 	host, _, _, err := netutil.ParseEndpoint(endpoint)
 	require.NoError(t, err)

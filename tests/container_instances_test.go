@@ -18,46 +18,50 @@ type ContainerNameGroup struct {
 	Events    []Event      `json:"events"`
 }
 
-func TestContainerInstances(t *testing.T) {
-	// Set up testing environment
-	setupDeploymentFromFile(t, deploymentName, "yamls/multi-container-pod.yaml")
-	defer teardownDeploymentFromFile(t, deploymentName, "yamls/multi-container-pod.yaml")
+func TestContainerInstances(testT *testing.T) {
+	// https://stack-rox.atlassian.net/browse/ROX-6493
+	// - the process events expected in this test are not reliably detected.
+	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
+		// Set up testing environment
+		defer teardownDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod.yaml")
+		setupDeploymentFromFile(retryT, deploymentName, "yamls/multi-container-pod.yaml")
 
-	// Get the test pod.
-	deploymentID := getDeploymentID(t, deploymentName)
-	pods := getPods(t, deploymentID)
-	require.Len(t, pods, 1)
-	pod := pods[0]
+		// Get the test pod.
+		deploymentID := getDeploymentID(retryT, deploymentName)
+		pods := getPods(retryT, deploymentID)
+		require.Len(retryT, pods, 1)
+		pod := pods[0]
 
-	// Retry to ensure all processes start up.
-	testutils.Retry(t, 20, 3*time.Second, func(t testutils.T) {
-		// Get the container groups.
-		groupedContainers := getGroupedContainerInstances(t, string(pod.ID))
+		// Retry to ensure all processes start up.
+		testutils.Retry(retryT, 20, 3*time.Second, func(retryEventsT testutils.T) {
+			// Get the container groups.
+			groupedContainers := getGroupedContainerInstances(retryEventsT, string(pod.ID))
 
-		// Verify the number of containers.
-		require.Len(t, groupedContainers, 2)
-		// Verify default sort is by name.
-		names := sliceutils.Map(groupedContainers, func(g ContainerNameGroup) string { return g.Name })
-		require.Equal(t, names, []string{"1st", "2nd"})
-		// Verify the events.
-		// Expecting 1 process: nginx
-		require.Len(t, groupedContainers[0].Events, 1)
-		firstContainerEvents :=
-			sliceutils.Map(groupedContainers[0].Events, func(event Event) string { return event.Name }).([]string)
-		require.ElementsMatch(t, firstContainerEvents, []string{"/usr/sbin/nginx"})
-		// Expecting 3 processes: sh, date, sleep
-		require.Len(t, groupedContainers[1].Events, 3)
-		secondContainerEvents :=
-			sliceutils.Map(groupedContainers[1].Events, func(event Event) string { return event.Name }).([]string)
-		require.ElementsMatch(t, secondContainerEvents, []string{"/bin/sh", "/bin/date", "/bin/sleep"})
+			// Verify the number of containers.
+			require.Len(retryEventsT, groupedContainers, 2)
+			// Verify default sort is by name.
+			names := sliceutils.Map(groupedContainers, func(g ContainerNameGroup) string { return g.Name })
+			require.Equal(retryEventsT, names, []string{"1st", "2nd"})
+			// Verify the events.
+			// Expecting 1 process: nginx
+			require.Len(retryEventsT, groupedContainers[0].Events, 1)
+			firstContainerEvents :=
+				sliceutils.Map(groupedContainers[0].Events, func(event Event) string { return event.Name }).([]string)
+			require.ElementsMatch(retryEventsT, firstContainerEvents, []string{"/usr/sbin/nginx"})
+			// Expecting 3 processes: sh, date, sleep
+			require.Len(retryEventsT, groupedContainers[1].Events, 3)
+			secondContainerEvents :=
+				sliceutils.Map(groupedContainers[1].Events, func(event Event) string { return event.Name }).([]string)
+			require.ElementsMatch(retryEventsT, secondContainerEvents, []string{"/bin/sh", "/bin/date", "/bin/sleep"})
 
-		// Verify the container group's timestamp is no later than the timestamp of the first event
-		require.False(t, groupedContainers[0].StartTime.After(groupedContainers[0].Events[0].Timestamp.Time))
-		require.False(t, groupedContainers[1].StartTime.After(groupedContainers[1].Events[0].Timestamp.Time))
+			// Verify the container group's timestamp is no later than the timestamp of the first event
+			require.False(retryEventsT, groupedContainers[0].StartTime.After(groupedContainers[0].Events[0].Timestamp.Time))
+			require.False(retryEventsT, groupedContainers[1].StartTime.After(groupedContainers[1].Events[0].Timestamp.Time))
 
-		// Number of events expected should be the aggregate of the above
+			// Number of events expected should be the aggregate of the above
 
-		verifyRiskEventTimelineCSV(t, deploymentID, append(firstContainerEvents, secondContainerEvents...))
+			verifyRiskEventTimelineCSV(retryEventsT, deploymentID, append(firstContainerEvents, secondContainerEvents...))
+		})
 	})
 }
 

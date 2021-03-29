@@ -71,7 +71,7 @@ func retrieveDeployments(service v1.DeploymentServiceClient, deps []*storage.Lis
 	return deployments, nil
 }
 
-func waitForDeployment(t *testing.T, deploymentName string) {
+func waitForDeployment(t testutils.T, deploymentName string) {
 	conn := testutils.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
@@ -117,7 +117,7 @@ func waitForDeployment(t *testing.T, deploymentName string) {
 	}
 }
 
-func waitForTermination(t *testing.T, deploymentName string) {
+func waitForTermination(t testutils.T, deploymentName string) {
 	conn := testutils.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
@@ -153,7 +153,7 @@ func waitForTermination(t *testing.T, deploymentName string) {
 }
 
 // The deploymentName must be copied form the file path passed in
-func setupDeploymentFromFile(t *testing.T, deploymentName, path string) {
+func setupDeploymentFromFile(t testutils.T, deploymentName, path string) {
 	cmd := exec.Command(`kubectl`, `create`, `-f`, path)
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
@@ -173,7 +173,7 @@ func setupDeployment(t *testing.T, image, deploymentName string) {
 	waitForDeployment(t, deploymentName)
 }
 
-func teardownDeploymentFromFile(t *testing.T, deploymentName, path string) {
+func teardownDeploymentFromFile(t testutils.T, deploymentName, path string) {
 	cmd := exec.Command(`kubectl`, `delete`, `-f`, path, `--ignore-not-found=true`)
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
