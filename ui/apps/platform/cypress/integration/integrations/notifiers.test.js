@@ -127,7 +127,6 @@ describe('Notifiers Test', () => {
             cy.get(selectors.awsSecurityHubForm.awsSecretAccessKey).type(
                 'EXAMPLEKEYwJalrXUtnFEMI/K7MDENG/bPxRfiCY'
             );
-            cy.get(selectors.awsSecurityHubForm.active).should('be.checked');
 
             cy.get(selectors.buttons.create).click();
 
@@ -180,8 +179,6 @@ describe('Notifiers Test', () => {
             cy.get(selectors.syslogForm.disableTlsValidation).click({ force: true });
             cy.get(selectors.syslogForm.useTls).click({ force: true });
             cy.get(selectors.syslogForm.disableTlsValidation).click({ force: true });
-
-            cy.get(selectors.syslogForm.active).should('be.checked');
 
             cy.get(selectors.buttons.create).click();
 

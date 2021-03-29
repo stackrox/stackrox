@@ -679,11 +679,11 @@ class ComplianceTest extends BaseSpecification {
                 new Control("HIPAA_164:310_a_1", failureEvidence, ComplianceState.COMPLIANCE_STATE_FAILURE),
                 new Control(
                         "HIPAA_164:314_a_2_i_c",
-                        ["At least one notifier is enabled."],
+                        ["At least one enabled policy has a notifier configured."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS),
                 new Control(
                         "HIPAA_164:314_a_2_i_c",
-                        ["At least one notifier is enabled."],
+                        ["At least one enabled policy has a notifier configured."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS),
                 new Control(
                         "NIST_SP_800_53_Rev_4:IR_6_(1)",

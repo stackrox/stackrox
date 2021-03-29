@@ -75,7 +75,6 @@ export const selectors = {
     },
     awsSecurityHubForm: {
         nameInput: "form input[name='name']",
-        active: "form input[name='enabled']",
         awsAccountNumber: "form input[name='awsSecurityHub.accountId']",
         awsRegion: 'form .react-select__control',
         awsRegionListItems: '.react-select__menu-list > div',
@@ -84,7 +83,6 @@ export const selectors = {
     },
     syslogForm: {
         nameInput: "form input[name='name']",
-        active: "form input[name='enabled']",
         localFacility: 'form .react-select__control',
         localFacilityListItems: '.react-select__menu-list > div',
         receiverHost: "form input[name='syslog.tcpConfig.hostname']",

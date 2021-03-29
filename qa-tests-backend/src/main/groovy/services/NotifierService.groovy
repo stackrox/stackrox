@@ -60,7 +60,6 @@ class NotifierService extends BaseService {
                 .setName(name)
                 .setLabelKey("mailgun")
                 .setLabelDefault("stackrox.qa@gmail.com")
-                .setEnabled(true)
                 .setUiEndpoint(getStackRoxEndpoint())
                 .setEmail(builder.getEmailBuilder()
                         .setUsername("automation@mailgun.rox.systems")
@@ -111,7 +110,6 @@ class NotifierService extends BaseService {
                 .setName(name)
                 .setLabelKey("#slack-test")
                 .setLabelDefault("https://hooks.slack.com/services/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")
-                .setEnabled(true)
                 .setUiEndpoint(getStackRoxEndpoint())
                 .build()
     }
@@ -122,7 +120,6 @@ class NotifierService extends BaseService {
                 .setName(name)
                 .setLabelKey("AJIT")
                 .setLabelDefault("AJIT")
-                .setEnabled(true)
                 .setUiEndpoint(getStackRoxEndpoint())
                 .setJira(NotifierOuterClass.Jira.newBuilder()
                         .setUsername("k+automation@stackrox.com")
@@ -142,7 +139,6 @@ class NotifierService extends BaseService {
                         "https://outlook.office.com/webhook/8a021ef7-9845-449a-a0c0-7bf85eab3955@" +
                                 "6aec22ae-2b26-45bd-b17f-d60e89828e89/IncomingWebhook/9bb3b3574ea2" +
                                 "4655b6482116848bf175/6de97827-1fef-4f8c-a8ab-edac7629df89")
-                .setEnabled(true)
                 .setUiEndpoint(getStackRoxEndpoint())
                 .build()
     }
@@ -151,7 +147,6 @@ class NotifierService extends BaseService {
         return NotifierOuterClass.Notifier.newBuilder()
                 .setType("pagerduty")
                 .setName(name)
-                .setEnabled(true)
                 .setUiEndpoint("https://localhost:8000")
                 .setPagerduty(NotifierOuterClass.PagerDuty.newBuilder()
                         .setApiKey(PAGERDUTY_API_KEY))
@@ -176,7 +171,6 @@ class NotifierService extends BaseService {
                 .setName(name)
                 .setLabelKey(splunkIntegration)
                 .setLabelDefault(splunkIntegration)
-                .setEnabled(true)
                 .setUiEndpoint(getStackRoxEndpoint())
                 .setSplunk(NotifierOuterClass.Splunk.newBuilder()
                         .setHttpToken(prePackagedToken)
@@ -204,7 +198,6 @@ class NotifierService extends BaseService {
                 .setName(name)
                 .setLabelKey(syslogIntegration)
                 .setLabelDefault(syslogIntegration)
-                .setEnabled(true)
                 .setUiEndpoint(getStackRoxEndpoint())
                 .setSyslog(NotifierOuterClass.Syslog.newBuilder()
                         .setTcpConfig(NotifierOuterClass.Syslog.TCPConfig.newBuilder()

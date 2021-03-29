@@ -16,6 +16,7 @@ type LightPolicy struct {
 	Enforced bool
 
 	ImageRegistry string
+	Notifiers     []string
 
 	CVSSGreaterThan float32
 	CVE             string
@@ -33,6 +34,7 @@ func (l *LightPolicy) convert() *storage.Policy {
 			ImageName: &storage.ImageNamePolicy{Registry: l.ImageRegistry},
 			Cve:       l.CVE,
 		},
+		Notifiers: l.Notifiers,
 	}
 	if l.CVSSGreaterThan > 0 {
 		p.Fields.Cvss = &storage.NumericalPolicy{Value: l.CVSSGreaterThan}

@@ -17,15 +17,27 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// CheckNotifierInUseByCluster checks if any notifiers have been sent up for alerts.
+// CheckNotifierInUseByCluster checks if at least one enabled policy has a notifier configured.
 func CheckNotifierInUseByCluster(ctx framework.ComplianceContext) {
+	notifiers := set.NewStringSet()
 	for _, notifier := range ctx.Data().Notifiers() {
-		if notifier.GetEnabled() {
-			framework.Pass(ctx, "At least one notifier is enabled.")
-			return
+		notifiers.Add(notifier.Id)
+	}
+
+	for _, policy := range ctx.Data().Policies() {
+		if !IsPolicyEnabled(policy) {
+			continue
+		}
+
+		for _, notifierID := range policy.GetNotifiers() {
+			if notifiers.Contains(notifierID) {
+				framework.Pass(ctx, "At least one enabled policy has a notifier configured.")
+				return
+			}
 		}
 	}
-	framework.Fail(ctx, "There are no enabled notifiers for alerts.")
+
+	framework.Fail(ctx, "There are no enabled policies with a notifier configured.")
 }
 
 // CheckImageScannerInUseByCluster checks if we have atleast one image scanner in use.

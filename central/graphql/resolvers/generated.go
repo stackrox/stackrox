@@ -778,7 +778,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"awsSecurityHub: AWSSecurityHub",
 		"cscc: CSCC",
 		"email: Email",
-		"enabled: Boolean!",
 		"generic: Generic",
 		"id: ID!",
 		"jira: Jira",
@@ -7178,11 +7177,6 @@ func (resolver *notifierResolver) Cscc(ctx context.Context) (*cSCCResolver, erro
 func (resolver *notifierResolver) Email(ctx context.Context) (*emailResolver, error) {
 	value := resolver.data.GetEmail()
 	return resolver.root.wrapEmail(value, true, nil)
-}
-
-func (resolver *notifierResolver) Enabled(ctx context.Context) bool {
-	value := resolver.data.GetEnabled()
-	return value
 }
 
 func (resolver *notifierResolver) Generic(ctx context.Context) (*genericResolver, error) {

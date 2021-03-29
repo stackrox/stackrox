@@ -352,12 +352,6 @@ const formDescriptors = {
                 required: true,
                 ...storedCredentialFields,
             },
-            {
-                label: 'Integration Active',
-                jsonpath: 'enabled',
-                type: 'toggle',
-                default: true,
-            },
         ],
         jira: [
             {
@@ -721,12 +715,6 @@ const formDescriptors = {
                 jsonpath: 'syslog.tcpConfig.skipTlsVerify',
                 type: 'toggle',
                 placeholder: '',
-            },
-            {
-                label: 'Integration Active',
-                jsonpath: 'enabled',
-                type: 'toggle',
-                default: true,
             },
         ],
     },

@@ -5,7 +5,6 @@
             "name": "Google Cloud SCC Test",
             "type": "cscc",
             "uiEndpoint": "localhost:3000",
-            "enabled": true,
             "labelKey": "testKey",
             "labelDefault": "testDefault",
             "cscc": {
@@ -18,7 +17,6 @@
             "name": "Jira Test",
             "type": "jira",
             "uiEndpoint": "localhost:3000",
-            "enabled": true,
             "labelKey": "testKey",
             "labelDefault": "testDefault",
             "jira": {
@@ -40,7 +38,6 @@
             "name": "Email Test",
             "type": "email",
             "uiEndpoint": "localhost:3000",
-            "enabled": true,
             "labelKey": "testKey",
             "labelDefault": "testDefault",
             "email": {
@@ -59,7 +56,6 @@
             "name": "Splunk Test",
             "type": "splunk",
             "uiEndpoint": "localhost:3000",
-            "enabled": true,
             "labelKey": "testKey",
             "labelDefault": "testDefault",
             "splunk": {
@@ -75,7 +71,6 @@
             "name": "PagerDuty Test",
             "type": "pagerduty",
             "uiEndpoint": "localhost:3000",
-            "enabled": true,
             "labelKey": "testKey",
             "labelDefault": "testDefault",
             "pagerduty": {
@@ -87,7 +82,6 @@
             "name": "Generic Webhook Test",
             "type": "generic",
             "uiEndpoint": "localhost:3000",
-            "enabled": true,
             "labelKey": "testKey",
             "labelDefault": "testDefault",
             "generic": {

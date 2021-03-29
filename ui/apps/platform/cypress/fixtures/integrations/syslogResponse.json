@@ -3,7 +3,6 @@
     "name": "Test Syslog integration",
     "type": "syslog",
     "uiEndpoint": "https://localhost:3000",
-    "enabled": true,
     "labelKey": "",
     "labelDefault": "",
     "syslog": {

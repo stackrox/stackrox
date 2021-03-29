@@ -152,7 +152,6 @@ func TestWithFakeJira(t *testing.T) {
 	fakeJiraConfig := &storage.Notifier{
 		Name:         "FakeJIRA",
 		UiEndpoint:   "https://central.stackrox",
-		Enabled:      true,
 		Type:         "jira",
 		LabelDefault: projectKey,
 		Config: &storage.Notifier_Jira{

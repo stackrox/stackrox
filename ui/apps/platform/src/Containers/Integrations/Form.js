@@ -93,8 +93,8 @@ class Form extends Component {
         const { location } = window;
         data.uiEndpoint = this.props.source === 'authProviders' ? location.host : location.origin;
         data.type = this.props.type;
-        // Set a default value of true for everything but auth plugins or AWS SH (they have their own toggle for that).
-        if (this.props.source !== 'authPlugins' && data.type !== 'awsSecurityHub') {
+        // Set a default value of true for everything but auth plugins.
+        if (this.props.source !== 'authPlugins') {
             data.enabled = true;
         }
         data.categories = data.categories || [];
