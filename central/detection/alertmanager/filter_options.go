@@ -9,11 +9,13 @@ import (
 type AlertFilterOption interface {
 	apply(*search.QueryBuilder)
 	specifiedPolicyID() string
+	removedDeploymentID() string
 }
 
 type alertFilterOptionImpl struct {
-	applyFunc func(*search.QueryBuilder)
-	policyID  string
+	applyFunc         func(*search.QueryBuilder)
+	policyID          string
+	removedDeployment string
 }
 
 func (a *alertFilterOptionImpl) apply(qb *search.QueryBuilder) {
@@ -22,6 +24,10 @@ func (a *alertFilterOptionImpl) apply(qb *search.QueryBuilder) {
 
 func (a *alertFilterOptionImpl) specifiedPolicyID() string {
 	return a.policyID
+}
+
+func (a *alertFilterOptionImpl) removedDeploymentID() string {
+	return a.removedDeployment
 }
 
 // WithPolicyID returns an AlertFilterOption that filters by policy id.
@@ -34,13 +40,17 @@ func WithPolicyID(policyID string) AlertFilterOption {
 	}
 }
 
-// WithDeploymentIDs returns an AlertFilterOption that filters by deployment id.
-func WithDeploymentIDs(deploymentIDs ...string) AlertFilterOption {
-	return &alertFilterOptionImpl{
+// WithDeploymentID returns an AlertFilterOption that filters by deployment id.
+func WithDeploymentID(deploymentID string, isRemove bool) AlertFilterOption {
+	opt := &alertFilterOptionImpl{
 		applyFunc: func(qb *search.QueryBuilder) {
-			qb.AddExactMatches(search.DeploymentID, deploymentIDs...)
+			qb.AddExactMatches(search.DeploymentID, deploymentID)
 		},
 	}
+	if isRemove {
+		opt.removedDeployment = deploymentID
+	}
+	return opt
 }
 
 // WithLifecycleStage returns an AlertFilterOptions that filters by lifecycle stage.

@@ -154,7 +154,7 @@ func (suite *AlertManagerTestSuite) TestGetAlertsByPolicy() {
 func (suite *AlertManagerTestSuite) TestGetAlertsByDeployment() {
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, testutils.PredMatcher("query for violation state, deployment", queryHasFields(search.ViolationState, search.DeploymentID))).Return(([]*storage.Alert)(nil), nil)
 
-	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, nil, WithDeploymentIDs("did"))
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, nil, WithDeploymentID("did", false))
 	suite.False(modified.Cardinality() > 0)
 	suite.NoError(err, "update should succeed")
 }

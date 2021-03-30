@@ -276,7 +276,7 @@ func (m *managerImpl) HandleAlerts(deploymentID string, alerts []*storage.Alert,
 		return nil
 	}
 	if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, alerts,
-		alertmanager.WithLifecycleStage(stage), alertmanager.WithDeploymentIDs(deploymentID)); err != nil {
+		alertmanager.WithLifecycleStage(stage), alertmanager.WithDeploymentID(deploymentID, false)); err != nil {
 		return err
 	}
 
@@ -319,7 +319,7 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 }
 
 func (m *managerImpl) DeploymentRemoved(deployment *storage.Deployment) error {
-	_, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithDeploymentIDs(deployment.GetId()))
+	_, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithDeploymentID(deployment.GetId(), true))
 	return err
 }
 

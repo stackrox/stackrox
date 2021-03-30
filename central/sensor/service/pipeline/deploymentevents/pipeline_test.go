@@ -8,14 +8,12 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
-	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
 	graphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
 	reprocessorMocks "github.com/stackrox/rox/central/reprocessor/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
@@ -30,7 +28,6 @@ type PipelineTestSuite struct {
 
 	clusters         *clusterMocks.MockDataStore
 	deployments      *deploymentMocks.MockDataStore
-	images           *imageMocks.MockDataStore
 	networkBaselines *networkBaselineMocks.MockManager
 	manager          *lifecycleMocks.MockManager
 	graphEvaluator   *graphMocks.MockEvaluator
@@ -45,7 +42,6 @@ func (suite *PipelineTestSuite) SetupTest() {
 
 	suite.clusters = clusterMocks.NewMockDataStore(suite.mockCtrl)
 	suite.deployments = deploymentMocks.NewMockDataStore(suite.mockCtrl)
-	suite.images = imageMocks.NewMockDataStore(suite.mockCtrl)
 	suite.networkBaselines = networkBaselineMocks.NewMockManager(suite.mockCtrl)
 	suite.manager = lifecycleMocks.NewMockManager(suite.mockCtrl)
 	suite.graphEvaluator = graphMocks.NewMockEvaluator(suite.mockCtrl)
@@ -54,7 +50,6 @@ func (suite *PipelineTestSuite) SetupTest() {
 		NewPipeline(
 			suite.clusters,
 			suite.deployments,
-			suite.images,
 			suite.manager,
 			suite.graphEvaluator,
 			suite.reprocessor,
@@ -72,6 +67,7 @@ func (suite *PipelineTestSuite) TestDeploymentRemovePipeline() {
 	suite.deployments.EXPECT().RemoveDeployment(context.Background(), deployment.GetClusterId(), deployment.GetId())
 	suite.graphEvaluator.EXPECT().IncrementEpoch(deployment.GetClusterId())
 	suite.networkBaselines.EXPECT().ProcessDeploymentDelete(gomock.Any()).Return(nil)
+	suite.manager.EXPECT().DeploymentRemoved(deployment).Return(nil)
 
 	err := suite.pipeline.Run(context.Background(), deployment.GetClusterId(), &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -123,49 +119,7 @@ func (suite *PipelineTestSuite) TestAlertRemovalOnReconciliation() {
 	suite.manager.EXPECT().DeploymentRemoved(deployment)
 	suite.networkBaselines.EXPECT().ProcessDeploymentDelete(deployment.GetId()).Return(nil)
 
-	suite.NoError(suite.pipeline.runRemovePipeline(context.Background(), deployment, true))
-}
-
-func (suite *PipelineTestSuite) TestUpdateImages() {
-	events := fakeDeploymentEvents()
-	ctx := context.Background()
-
-	// Expect that our enforcement generator is called with expected data.
-	expectedImage0 := events[0].GetDeployment().GetContainers()[0].GetImage()
-	suite.images.EXPECT().UpsertImage(ctx,
-		testutils.PredMatcher("check that image has correct ID",
-			func(img *storage.Image) bool { return img.GetId() == expectedImage0.GetId() })).Return(nil)
-
-	// Call function.
-	tested := &updateImagesImpl{
-		images: suite.images,
-	}
-	tested.do(ctx, events[0].GetDeployment())
-
-	// Pull one more time to get nil
-	suite.Equal(expectedImage0, events[0].GetDeployment().GetContainers()[0].GetImage())
-}
-
-func (suite *PipelineTestSuite) TestUpdateImagesSkipped() {
-	ctx := context.Background()
-	deployment := &storage.Deployment{
-		Id: "id1",
-		Containers: []*storage.Container{
-			{
-				Image: &storage.ContainerImage{
-					Name: &storage.ImageName{
-						FullName: "derp",
-					},
-				},
-			},
-		},
-	}
-
-	// Call function. It shouldn't do anything because the only image has no sha.
-	tested := &updateImagesImpl{
-		images: suite.images,
-	}
-	tested.do(ctx, deployment)
+	suite.NoError(suite.pipeline.runRemovePipeline(context.Background(), deployment))
 }
 
 func (suite *PipelineTestSuite) TestValidateImages() {

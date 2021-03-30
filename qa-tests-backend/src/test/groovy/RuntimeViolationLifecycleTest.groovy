@@ -187,10 +187,14 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         assert Services.waitForDeployment(DEPLOYMENT)
 
         def violations = assertAlertExistsForDeploymentUidAndGetViolations(APTGETPOLICY, DEPLOYMENT.getDeploymentUid())
+        for (def violation: violations) {
+            def alert = AlertService.getViolation(violation.getId())
+            assert alert.getDeployment() != null && !alert.getDeployment().getInactive()
+        }
 
         //// We delete the deployment in the middle of this test, but we keep this flag so that we know to clean up
         //// in case the test didn't make it that far.
-        boolean deploymentDeleted = false
+        boolean deploymentDeleted
 
         when:
         "Delete the deployment, wait for it to disappear from StackRox, and fetch the new runtime alert."
@@ -203,6 +207,10 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         def newViolations =
                 assertAlertExistsForDeploymentUidAndGetViolations(APTGETPOLICY, DEPLOYMENT.getDeploymentUid())
         assert (newViolations*.id).toSet().containsAll(violations*.id)
+        for (def violation: newViolations) {
+            def alert = AlertService.getViolation(violation.getId())
+            assert alert.getDeployment() != null && alert.getDeployment().getInactive()
+        }
 
         cleanup:
         if (!deploymentDeleted) {

@@ -7,7 +7,6 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
-	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
@@ -33,7 +32,6 @@ var (
 func GetPipeline() pipeline.Fragment {
 	return NewPipeline(clusterDataStore.Singleton(),
 		deploymentDataStore.Singleton(),
-		imageDataStore.Singleton(),
 		lifecycle.SingletonManager(),
 		graph.Singleton(),
 		reprocessor.Singleton(),
@@ -44,7 +42,6 @@ func GetPipeline() pipeline.Fragment {
 func NewPipeline(
 	clusters clusterDataStore.DataStore,
 	deployments deploymentDataStore.DataStore,
-	images imageDataStore.DataStore,
 	manager lifecycle.Manager,
 	graphEvaluator graph.Evaluator,
 	reprocessor reprocessor.Loop,
@@ -53,7 +50,6 @@ func NewPipeline(
 	return &pipelineImpl{
 		validateInput:     newValidateInput(),
 		clusterEnrichment: newClusterEnrichment(clusters),
-		updateImages:      newUpdateImages(images),
 		lifecycleManager:  manager,
 
 		graphEvaluator:   graphEvaluator,
@@ -69,7 +65,6 @@ type pipelineImpl struct {
 	// pipeline stages.
 	validateInput     *validateInputImpl
 	clusterEnrichment *clusterEnrichmentImpl
-	updateImages      *updateImagesImpl
 	lifecycleManager  lifecycle.Manager
 
 	deployments      deploymentDataStore.DataStore
@@ -89,7 +84,7 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 
 	store := storeMap.Get((*central.SensorEvent_Deployment)(nil))
 	return reconciliation.Perform(store, search.ResultsToIDSet(results), "deployments", func(id string) error {
-		return s.runRemovePipeline(ctx, &storage.Deployment{Id: id}, true)
+		return s.runRemovePipeline(ctx, &storage.Deployment{Id: id})
 	})
 }
 
@@ -108,7 +103,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	var err error
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		err = s.runRemovePipeline(ctx, deployment, false)
+		err = s.runRemovePipeline(ctx, deployment)
 	default:
 		err = s.runGeneralPipeline(ctx, deployment)
 	}
@@ -116,18 +111,14 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(ctx context.Context, deployment *storage.Deployment, reconciliation bool) error {
+func (s *pipelineImpl) runRemovePipeline(ctx context.Context, deployment *storage.Deployment) error {
 	// Validate the the deployment we receive has necessary fields set.
 	if err := s.validateInput.do(deployment); err != nil {
 		return err
 	}
 
-	if reconciliation {
-		// Only remove the alerts during reconciliation as the sensor will naturally send an empty AlertResults
-		// struct which will properly clean up the existing deploy time alerts
-		if err := s.lifecycleManager.DeploymentRemoved(deployment); err != nil {
-			return err
-		}
+	if err := s.lifecycleManager.DeploymentRemoved(deployment); err != nil {
+		return err
 	}
 
 	// Before removing the deployment, clean up all the network baselines that had an edge to this deployment

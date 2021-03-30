@@ -262,16 +262,33 @@ func (d *alertManagerImpl) mergeManyAlerts(
 		newAlerts = append(newAlerts, alert)
 	}
 
+	// Get the deployments that are currently being removed as part of this alert update.
+	deploymentsBeingRemoved := set.NewStringSet()
+	for _, f := range oldAlertFilters {
+		if depID := f.removedDeploymentID(); depID != "" {
+			deploymentsBeingRemoved.Add(depID)
+		}
+	}
+
 	// Find any old alerts no longer being produced.
 	for _, alert := range previousAlerts {
 		if d.shouldMarkAlertStale(alert, presentAlerts, oldAlertFilters...) {
 			staleAlerts = append(staleAlerts, alert)
 		}
 
-		if alert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME && d.inactiveDeploymentAlert(alert) {
-			if deployment := alert.GetDeployment(); deployment != nil && !deployment.GetInactive() {
-				deployment.Inactive = true
-				updatedAlerts = append(updatedAlerts, alert)
+		if alert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME {
+			depID := alert.GetDeployment().GetId()
+			// If we are in the context of a deployment removal, then mark the deployment as inactive without going to the
+			// store -- this is because the alert processing related to the deployment removal (ie, this code) runs
+			// _before_ the deployment is actually deleted, which means we will incorrectly mark the deployment as active
+			// if we check the store.
+			// If we're not in the context of a deployment removal, then just check whether the deployment is inactive
+			// in the store and use that.
+			if deploymentsBeingRemoved.Contains(depID) || d.runtimeDetector.DeploymentInactive(depID) {
+				if deployment := alert.GetDeployment(); deployment != nil && !deployment.GetInactive() {
+					deployment.Inactive = true
+					updatedAlerts = append(updatedAlerts, alert)
+				}
 			}
 		}
 	}
@@ -318,10 +335,6 @@ func (d *alertManagerImpl) shouldMarkAlertStale(alert *storage.Alert, presentAle
 
 	// If the deployment is excluded from the scope of the policy now, we should mark the alert stale, otherwise we will keep it around.
 	return d.runtimeDetector.DeploymentWhitelistedForPolicy(alert.GetDeployment().GetId(), alert.GetPolicy().GetId())
-}
-
-func (d *alertManagerImpl) inactiveDeploymentAlert(alert *storage.Alert) bool {
-	return d.runtimeDetector.DeploymentInactive(alert.GetDeployment().GetId())
 }
 
 func findAlert(toFind *storage.Alert, alerts []*storage.Alert) *storage.Alert {
