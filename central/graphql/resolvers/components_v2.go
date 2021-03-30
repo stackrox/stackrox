@@ -375,6 +375,10 @@ func (eicr *imageComponentResolver) Location(ctx context.Context, args RawQuery)
 	return edge.GetLocation(), nil
 }
 
+func (eicr *imageComponentResolver) FixedIn(ctx context.Context) string {
+	return eicr.data.GetFixedBy()
+}
+
 // LayerIndex is the index in the parent image.
 func (eicr *imageComponentResolver) LayerIndex() *int32 {
 	return nil

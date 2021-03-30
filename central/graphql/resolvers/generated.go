@@ -593,6 +593,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"scan: ImageScan",
 	}))
 	utils.Must(builder.AddType("ImageComponent", []string{
+		"fixedBy: String!",
 		"id: ID!",
 		"license: License",
 		"name: String!",
@@ -5813,6 +5814,11 @@ func (resolver *Resolver) wrapImageComponents(values []*storage.ImageComponent, 
 		output[i] = &imageComponentResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *imageComponentResolver) FixedBy(ctx context.Context) string {
+	value := resolver.data.GetFixedBy()
+	return value
 }
 
 func (resolver *imageComponentResolver) Id(ctx context.Context) graphql.ID {

@@ -227,6 +227,7 @@ export const VULN_COMPONENT_LIST_FRAGMENT = gql`
         version
         location
         source
+        fixedIn
         vulnCounter {
             all {
                 total

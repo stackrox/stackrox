@@ -32,6 +32,7 @@ const VulnMgmtComponent = ({
                 id
                 name
                 version
+                fixedIn
                 location(query: $scopeQuery)
                 priority
                 vulnCount(query: $query)

@@ -856,6 +856,7 @@ github.com/klauspost/cpuid v1.2.0/go.mod h1:Pj4uuM528wm8OyEC2QMXAi2YiTZ96dNQPGgo
 github.com/klauspost/cpuid v1.2.1/go.mod h1:Pj4uuM528wm8OyEC2QMXAi2YiTZ96dNQPGgoMS4s3ek=
 github.com/klauspost/pgzip v1.2.1/go.mod h1:Ch1tH69qFZu15pkjo5kYi6mth2Zzwzt50oCQKQE9RUs=
 github.com/klauspost/pgzip v1.2.4/go.mod h1:Ch1tH69qFZu15pkjo5kYi6mth2Zzwzt50oCQKQE9RUs=
+github.com/knqyf263/go-apk-version v0.0.0-20200609155635-041fdbb8563f/go.mod h1:q59u9px8b7UTj0nIjEjvmTWekazka6xIt6Uogz5Dm+8=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/konsorten/go-windows-terminal-sequences v1.0.2/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/konsorten/go-windows-terminal-sequences v1.0.3/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
@@ -1279,8 +1280,8 @@ github.com/stackrox/k8s-cves v0.0.0-20201110001126-cc333981eaab h1:77xJmm1Ykqbgr
 github.com/stackrox/k8s-cves v0.0.0-20201110001126-cc333981eaab/go.mod h1:EBskgGC5Gzt/r8ToNsuD6tYMcf+AWY0ubaFSRy5/3QM=
 github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191029220117-2a73008e51a9 h1:IXESjfBZNfZjU+VuVdxLZvkeiMPlodw94++hjOLORis=
 github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191029220117-2a73008e51a9/go.mod h1:13vPFaMtP66fobTXqiv3SB32ZCZfa9btx3O6uOlTCDY=
-github.com/stackrox/nvdtools v0.0.0-20200903060121-ccc2b5ea9f6f h1:QFUyX5r4RLwpUP2n6JGcaFONWKZGUdcczZX50YKq0uE=
-github.com/stackrox/nvdtools v0.0.0-20200903060121-ccc2b5ea9f6f/go.mod h1:AIeN7k60Q/kcW9aeiMpA0PY8CU3zsrLV0UhIksolMn4=
+github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56 h1:D2wYiy+hcKy8qZAg9SxSWfZgbvmEgD9AdV0g0lJqGZ0=
+github.com/stackrox/nvdtools v0.0.0-20210326191554-5daeb6395b56/go.mod h1:AIeN7k60Q/kcW9aeiMpA0PY8CU3zsrLV0UhIksolMn4=
 github.com/stackrox/rox v0.0.0-20191128130813-ae51554fc242/go.mod h1:Qshd7p6Hw8xBvPlJM3pKWh81R2s3qhbAdYIvA6pPStw=
 github.com/stackrox/rox v0.0.0-20200813232042-403e0ab8a77e/go.mod h1:X/6FdUgnl7zcQX+YgQt1tJHRU8joAifnMAj9pefVjrI=
 github.com/stackrox/rox v0.0.0-20200902200840-183e12662c50/go.mod h1:U3X7wnmLK3TQbM0jAf5SvKLnVsq/neyQNTEc23X8zkY=
@@ -1288,8 +1289,8 @@ github.com/stackrox/rox v0.0.0-20201222223839-042406f3664c/go.mod h1:i2w/bSJhyyt
 github.com/stackrox/scanner v0.0.0-20191202203519-a2a15f33f41a/go.mod h1:2GKn2VH/P+4lsFJG8NlpTdgrU+nelhk8Ogtdx6XjaI0=
 github.com/stackrox/scanner v0.0.0-20200828185353-f2362ea7df99/go.mod h1:9EZi1lP1jHMkAdDEQKymiBSqH5Auma8DZiWcUrh7L0U=
 github.com/stackrox/scanner v0.0.0-20201218051228-bb42033af91b/go.mod h1:EQhODmCL9hcTgyjvh8YovNfn3cFNlUSAFCMl+34aezk=
-github.com/stackrox/scanner v0.0.0-20210216165912-1e9f5000b37c h1:hVQUCRqq2BtjU+eRrJI9wbDluazpWCOPrjEouPr8M+E=
-github.com/stackrox/scanner v0.0.0-20210216165912-1e9f5000b37c/go.mod h1:rrgPikt3xdQWi2I//Qfp9pBy+0NLoX0OScYDA8T3lXI=
+github.com/stackrox/scanner v0.0.0-20210329193728-46bf28eb4945 h1:1KushlDg7eRSjhsD40xcZKrWNXPUHgZq5Jz6kLHJ6hU=
+github.com/stackrox/scanner v0.0.0-20210329193728-46bf28eb4945/go.mod h1:pQbPEjpjBMdQqWFll1ILLSaLj5Y6DzdnOvvyoAPb4i0=
 github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f h1:Ofa3PAa609eSHcHP2kCJDUWUnuEWfiqXhsuppk/QtOE=
 github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f/go.mod h1:MA8QOfq0BHJwdXa996Y4dYkAqRKB8/1K1QMMZVaNZjQ=
 github.com/steveyen/gtreap v0.0.0-20150807155958-0abe01ef9be2 h1:JNEGSiWg6D3lcBCMCBqN3ELniXujt+0QNHLhNnO0w3s=

@@ -22,6 +22,7 @@ const emptyComponent = {
     topVuln: {},
     version: '',
     vulnCount: 0,
+    fixedIn: '',
 };
 
 function VulnMgmtComponentOverview({ data, entityContext }) {
@@ -30,7 +31,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyComponent, ...data };
 
-    const { version, priority, topVuln, id, location } = safeData;
+    const { fixedIn, version, priority, topVuln, id, location, vulnCount } = safeData;
 
     const metadataKeyValuePairs = [
         {
@@ -48,6 +49,11 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
             value: location || 'N/A',
         });
     }
+
+    metadataKeyValuePairs.push({
+        key: 'Fixed In',
+        value: fixedIn || (vulnCount === 0 ? 'N/A' : 'Not Fixable'),
+    });
 
     const componentStats = [<RiskScore key="risk-score" score={priority} />];
     if (topVuln) {

@@ -19,6 +19,8 @@ message ImageComponent {
     oneof set_top_cvss {
         float                      top_cvss     = 8 [(gogoproto.moretags) = "search:\"Component Top CVSS,store\""];
     }
+    // Component version that fixes all the fixable vulnerabilities in this component.
+    string                         fixed_by     = 9;
 }
 
 message ComponentCVEEdge {

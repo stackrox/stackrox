@@ -47,8 +47,10 @@ func generateEmbeddedComponent(cp ComponentParts, imageCVEEdges map[string]*stor
 		License:   cp.component.GetLicense().Clone(),
 		Source:    cp.component.GetSource(),
 		Location:  cp.edge.GetLocation(),
+		FixedBy:   cp.component.GetFixedBy(),
 		RiskScore: cp.component.GetRiskScore(),
 	}
+
 	if cp.edge.HasLayerIndex != nil {
 		ret.HasLayerIndex = &storage.EmbeddedImageScanComponent_LayerIndex{
 			LayerIndex: cp.edge.GetLayerIndex(),

@@ -84,6 +84,9 @@ func (rs *rbacUpdaterImpl) updateBindingNoLock(roleID string, ref namespacedRole
 func (rs *rbacUpdaterImpl) upsertRoleGenericNoLock(ref namespacedRoleRef, role *storage.K8SRole) *central.SensorEvent {
 	defer rs.rebuildEvaluatorBucketsNoLock()
 
+	// Clone the role
+	role = role.Clone()
+
 	rs.roles[ref] = role
 
 	// Find all the bindings that are registered for this namespacedRoleRef and assign their roleID

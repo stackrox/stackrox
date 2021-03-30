@@ -73,6 +73,17 @@ export function getComponentTableColumns(workflowState) {
             sortField: componentSortFields.CVE_COUNT,
         },
         {
+            Header: `Fixed In`,
+            headerClassName: `w-1/12 ${defaultHeaderClassName}`,
+            className: `w-1/12 word-break-all ${defaultColumnClassName}`,
+            Cell: ({ original }) =>
+                original.fixedIn || (original.vulnCounter.all.total === 0 ? 'N/A' : 'Not Fixable'),
+            id: componentSortFields.FIXEDIN,
+            accessor: 'fixedIn',
+            sortField: componentSortFields.FIXEDIN,
+            sortable: false,
+        },
+        {
             Header: `Top CVSS`,
             headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,

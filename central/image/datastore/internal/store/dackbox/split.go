@@ -80,6 +80,7 @@ func generateImageComponent(from *storage.EmbeddedImageScanComponent) *storage.I
 		Version:   from.GetVersion(),
 		License:   from.GetLicense().Clone(),
 		Source:    from.GetSource(),
+		FixedBy:   from.GetFixedBy(),
 		RiskScore: from.GetRiskScore(),
 	}
 

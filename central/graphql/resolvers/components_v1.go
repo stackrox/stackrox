@@ -99,6 +99,11 @@ func (eicr *EmbeddedImageScanComponentResolver) Location(ctx context.Context, _ 
 	return eicr.data.GetLocation(), nil
 }
 
+// FixedIn returns the highest component version in which all the containing vulnerabilities are fixed.
+func (eicr *EmbeddedImageScanComponentResolver) FixedIn(ctx context.Context) string {
+	return eicr.data.GetFixedBy()
+}
+
 // RiskScore returns the risk score of the component.
 func (eicr *EmbeddedImageScanComponentResolver) RiskScore(ctx context.Context) float64 {
 	return float64(eicr.data.GetRiskScore())

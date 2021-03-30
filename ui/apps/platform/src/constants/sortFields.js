@@ -48,6 +48,7 @@ export const componentSortFields = {
     IMAGE_COUNT: 'Image Count',
     DEPLOYMENT_COUNT: 'Deployment Count',
     PRIORITY: 'Priority',
+    FIXEDIN: 'Component Fixed By', // This field does not exist. However, seems like every column has to follow a template.
 };
 
 /**
