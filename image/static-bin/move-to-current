@@ -10,7 +10,7 @@ INIT_DIR=/var/lib/stackrox/.db-init
 
 # The following process should be executed successfully only once.
 # The following codes must be idempotent and allowing re-entry. The previous run may crash at any point.
-if [ ! -d "$TGT_DIR" ]; then
+if [ ! -L "$TGT_DIR" ]; then
   echo "Move databases to current"
   mkdir -p "$INIT_DIR"
 

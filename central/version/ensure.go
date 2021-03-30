@@ -33,14 +33,14 @@ func Ensure(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB) error {
 	// No version in the DB. This means that we're starting from scratch, with a blank DB, so we can just
 	// write the current version in and move on.
 	if version == nil {
-		if err := versionStore.UpdateVersion(&storage.Version{SeqNum: migrations.CurrentDBVersionSeqNum}); err != nil {
+		if err := versionStore.UpdateVersion(&storage.Version{SeqNum: int32(migrations.CurrentDBVersionSeqNum())}); err != nil {
 			return errors.Wrap(err, "failed to write version to the DB")
 		}
 		log.Info("No version found in the DB. Assuming that this is a fresh install...")
 		return nil
 	}
 
-	if version.GetSeqNum() != migrations.CurrentDBVersionSeqNum {
+	if int(version.GetSeqNum()) != migrations.CurrentDBVersionSeqNum() {
 		return fmt.Errorf("invalid DB version found: %s", proto.MarshalTextString(version))
 	}
 

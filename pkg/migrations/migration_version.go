@@ -58,11 +58,11 @@ func Read(dbPath string) (*MigrationVersion, error) {
 
 // SetCurrent update the database migration version of a database directory.
 func SetCurrent(dbPath string) {
-	if curr, err := Read(dbPath); err != nil || curr.MainVersion != version.GetMainVersion() || curr.SeqNum != CurrentDBVersionSeqNum {
+	if curr, err := Read(dbPath); err != nil || curr.MainVersion != version.GetMainVersion() || curr.SeqNum != CurrentDBVersionSeqNum() {
 		newVersion := &MigrationVersion{
 			dbPath:      dbPath,
 			MainVersion: version.GetMainVersion(),
-			SeqNum:      CurrentDBVersionSeqNum,
+			SeqNum:      CurrentDBVersionSeqNum(),
 		}
 		err := newVersion.atomicWrite()
 		if err != nil {

@@ -17,7 +17,7 @@ var (
 // Singleton returns the unique singleton instance of the database backup/restore manager.
 func Singleton() Manager {
 	managerInstanceInit.Do(func() {
-		managerInstance = newManager(migrations.DBMountPath, formats.RegistrySingleton())
+		managerInstance = newManager(migrations.DBMountPath(), formats.RegistrySingleton())
 	})
 	return managerInstance
 }

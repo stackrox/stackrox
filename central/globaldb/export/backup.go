@@ -36,7 +36,7 @@ func Backup(ctx context.Context, boltDB *bolt.DB, rocksDB *rocksdb.RocksDB, incl
 		}
 	}
 
-	if err := generators.PutStreamInZip(generators.PutFileInStream(filepath.Join(migrations.CurrentPath, backup.MigrationVersion)), backup.MigrationVersion).WriteTo(ctx, zipWriter); err != nil {
+	if err := generators.PutStreamInZip(generators.PutFileInStream(filepath.Join(migrations.CurrentPath(), backup.MigrationVersion)), backup.MigrationVersion).WriteTo(ctx, zipWriter); err != nil {
 		return errors.Wrap(err, "backing up migration version")
 	}
 

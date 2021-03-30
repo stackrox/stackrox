@@ -20,6 +20,7 @@ require (
 	github.com/ckaznocha/protoc-gen-lint v0.2.1
 	github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e
 	github.com/containers/image/v5 v5.5.2
+	github.com/coreos/etcd v3.3.17+incompatible
 	github.com/coreos/go-oidc/v3 v3.0.0
 	github.com/coreos/go-systemd/v22 v22.0.0
 	github.com/dave/jennifer v1.3.0

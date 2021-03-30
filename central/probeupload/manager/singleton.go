@@ -14,7 +14,7 @@ var (
 // Singleton returns the singleton instance for the probe upload manager.
 func Singleton() Manager {
 	instanceInit.Do(func() {
-		instance = newManager(migrations.DBMountPath)
+		instance = newManager(migrations.DBMountPath())
 		if err := instance.Initialize(); err != nil {
 			utils.Should(err)
 			log.Error("There was an error initializing the probe upload functionality. Probe upload/download functionality will likely be affected.")

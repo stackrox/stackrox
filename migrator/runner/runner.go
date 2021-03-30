@@ -16,7 +16,7 @@ func Run(databases *types.Databases) error {
 	if err != nil {
 		return errors.Wrap(err, "getting current seq num")
 	}
-	currSeqNum := pkgMigrations.CurrentDBVersionSeqNum
+	currSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
 	if dbSeqNum > currSeqNum {
 		return fmt.Errorf("DB sequence number %d is greater than the latest one we have (%d). This means "+
 			"the migration binary is likely out of date", dbSeqNum, currSeqNum)
@@ -34,7 +34,7 @@ func Run(databases *types.Databases) error {
 }
 
 func runMigrations(databases *types.Databases, startingSeqNum int) error {
-	for seqNum := startingSeqNum; seqNum < pkgMigrations.CurrentDBVersionSeqNum; seqNum++ {
+	for seqNum := startingSeqNum; seqNum < pkgMigrations.CurrentDBVersionSeqNum(); seqNum++ {
 		migration, ok := migrations.Get(seqNum)
 		if !ok {
 			return fmt.Errorf("no migration found starting at %d", startingSeqNum)

@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	scannerDefinitionsSubdir   = path.Join(migrations.DBMountPath, "scannerdefinitions")
+	scannerDefinitionsSubdir   = path.Join(migrations.DBMountPath(), "scannerdefinitions")
 	scannerDefinitionsFilePath = path.Join(scannerDefinitionsSubdir, "scanner-defs.zip")
 )
 

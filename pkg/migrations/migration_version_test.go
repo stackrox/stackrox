@@ -45,7 +45,7 @@ func TestMigrationVersion_Read(t *testing.T) {
 			},
 			shouldFail:  true,
 			expectedVer: version.GetMainVersion(),
-			expectedSeq: CurrentDBVersionSeqNum,
+			expectedSeq: CurrentDBVersionSeqNum(),
 		},
 		{
 			description: "Migration version exists",
@@ -54,7 +54,7 @@ func TestMigrationVersion_Read(t *testing.T) {
 			},
 			shouldFail:  false,
 			expectedVer: version.GetMainVersion(),
-			expectedSeq: CurrentDBVersionSeqNum,
+			expectedSeq: CurrentDBVersionSeqNum(),
 		},
 	}
 
@@ -139,7 +139,7 @@ func TestMigrationVersion_Write(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, version.GetMainVersion(), ver.MainVersion)
-			assert.Equal(t, CurrentDBVersionSeqNum, ver.SeqNum)
+			assert.Equal(t, CurrentDBVersionSeqNum(), ver.SeqNum)
 			assert.Equal(t, dir, ver.dbPath)
 		})
 	}

@@ -78,7 +78,7 @@ func checkZipForVersion(t *testing.T, zipFile *zip.ReadCloser) {
 	err = yaml.Unmarshal(bytes, version)
 	require.NoError(t, err)
 	assert.Equal(t, version.MainVersion, version.MainVersion)
-	assert.Equal(t, migrations.CurrentDBVersionSeqNum, version.SeqNum)
+	assert.Equal(t, migrations.CurrentDBVersionSeqNum(), version.SeqNum)
 }
 
 func checkZipForCerts(t *testing.T, zipFile *zip.ReadCloser, includeCerts bool) {

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 
@@ -11,13 +10,14 @@ import (
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/compact"
 	"github.com/stackrox/rox/migrator/log"
+	"github.com/stackrox/rox/migrator/option"
+	"github.com/stackrox/rox/migrator/replica"
 	"github.com/stackrox/rox/migrator/rockshelper"
 	"github.com/stackrox/rox/migrator/runner"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/migrations"
-	"github.com/stackrox/rox/pkg/version"
 )
 
 func main() {
@@ -53,16 +53,27 @@ func run() error {
 		return nil
 	}
 
-	ver, err := migrations.Read(migrations.CurrentPath)
+	dbm, err := replica.Scan(migrations.DBMountPath())
 	if err != nil {
-		log.WriteToStderrf("error reading migration version: %v", err)
+		return errors.Wrap(err, "fail to scan replicas")
+	}
+
+	replica, replicaPath, err := dbm.GetReplicaToMigrate()
+	if err != nil {
+		return err
+	}
+	option.MigratorOptions.DBPathBase = replicaPath
+	if err = upgrade(conf); err != nil {
 		return err
 	}
 
-	if ver.SeqNum > migrations.CurrentDBVersionSeqNum || version.CompareReleaseVersions(ver.MainVersion, version.GetMainVersion()) > 0 {
-		return errors.New(fmt.Sprintf("Database downgrade or force rollback from %+v is not supported", *ver))
+	if err = dbm.Persist(replica); err != nil {
+		return err
 	}
+	return nil
+}
 
+func upgrade(conf *config.Config) error {
 	if err := compact.Compact(conf); err != nil {
 		log.WriteToStderrf("error compacting DB: %v", err)
 	}
@@ -116,5 +127,6 @@ func run() error {
 	if err != nil {
 		return errors.Wrap(err, "migrations failed")
 	}
+
 	return nil
 }

@@ -23,7 +23,6 @@ import (
 
 const (
 	fetchDelay            = 2 * time.Hour
-	persistentCVEsPath    = migrations.DBMountPath
 	preloadedCVEsBasePath = "/stackrox/static-data"
 	k8sCVEsURL            = "https://definitions.stackrox.io/cve/k8s/cve-list.json"
 	k8sCVEsChecksumURL    = "https://definitions.stackrox.io/cve/k8s/checksum"
@@ -35,6 +34,7 @@ const (
 )
 
 var (
+	persistentCVEsPath                  = migrations.DBMountPath()
 	persistentK8sCVEsFilePath           = path.Join(persistentCVEsPath, commonCveDir, k8sCVEsDir, "cve-list.json")
 	persistentK8sCVEsChecksumFilePath   = path.Join(persistentCVEsPath, commonCveDir, k8sCVEsDir, "checksum")
 	preloadedK8sCVEsFilePath            = path.Join(preloadedCVEsBasePath, commonCveDir, nvd.Feeds[nvd.Kubernetes].CVEFilename)

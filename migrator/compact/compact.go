@@ -31,12 +31,12 @@ func availableBytes(path string) (uint64, error) {
 func determineLargeEnoughDir(currSize uint64) (string, error) {
 	desiredSpace := currSize + sizeBuffer
 
-	mountAvailBytes, err := availableBytes(migrations.DBMountPath)
+	mountAvailBytes, err := availableBytes(migrations.DBMountPath())
 	if err != nil {
 		return "", errors.Wrap(err, "error getting available bytes for DB mount path")
 	}
 	if mountAvailBytes > desiredSpace {
-		return migrations.DBMountPath, nil
+		return migrations.DBMountPath(), nil
 	}
 
 	tmpAvailBytes, err := availableBytes("/tmp")
@@ -50,7 +50,7 @@ func determineLargeEnoughDir(currSize uint64) (string, error) {
 		}
 		return name, nil
 	}
-	return "", fmt.Errorf("not enough disk space: (needed: %d, /tmp: %d, %s: %d)", desiredSpace, tmpAvailBytes, migrations.DBMountPath, mountAvailBytes)
+	return "", fmt.Errorf("not enough disk space: (needed: %d, /tmp: %d, %s: %d)", desiredSpace, tmpAvailBytes, migrations.DBMountPath(), mountAvailBytes)
 }
 
 func checkIfCompactionIsNeeded(conf *config.Config) bool {
@@ -183,7 +183,7 @@ func Compact(config *config.Config) error {
 		return errors.Wrap(err, "error closing old DB")
 	}
 
-	if compactionDirPath != migrations.DBMountPath {
+	if compactionDirPath != migrations.DBMountPath() {
 		// Now that we have compacted the DB, see if it will fit on the same Device so we can atomically rename it
 		// If it does not then we may need manual intervention otherwise, we could cause data loss
 		fi, err = os.Stat(compactedBoltDBFilePath)
@@ -191,16 +191,16 @@ func Compact(config *config.Config) error {
 			return errors.Wrap(err, "error running stat on the compacted path")
 		}
 
-		availableOnMountPath, err := availableBytes(migrations.DBMountPath)
+		availableOnMountPath, err := availableBytes(migrations.DBMountPath())
 		if err != nil {
-			return errors.Wrapf(err, "unable to get available bytes for %q", migrations.DBMountPath)
+			return errors.Wrapf(err, "unable to get available bytes for %q", migrations.DBMountPath())
 		}
 
 		if uint64(fi.Size()) > availableOnMountPath {
 			return fmt.Errorf("not enough space to move the compacted DB to the device. Needed space = %d bytes, but available = %d bytes", fi.Size(), availableOnMountPath)
 		}
 		// generate filepath on device and overwrite compactedBoltDBFilePath
-		newCompactedBoltDBFilePath := filepath.Join(migrations.DBMountPath, "compacted.db")
+		newCompactedBoltDBFilePath := filepath.Join(migrations.DBMountPath(), "compacted.db")
 
 		if err := transferFromScratchToDevice(newCompactedBoltDBFilePath, compactedBoltDBFilePath); err != nil {
 			return errors.Wrap(err, "error transfering file from scratch")

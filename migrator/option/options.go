@@ -8,5 +8,5 @@ import (
 var MigratorOptions = struct {
 	DBPathBase string
 }{
-	DBPathBase: migrations.CurrentPath,
+	DBPathBase: migrations.CurrentPath(),
 }

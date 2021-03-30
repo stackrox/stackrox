@@ -26,7 +26,7 @@ func newDatabaseGatherer(rocks *rocksdbGatherer, bolt *boltGatherer, bleve *blev
 // Gather returns a list of stats about all the databases this Central is using
 func (d *databaseGatherer) Gather() *data.StorageInfo {
 	errList := errorhelpers.NewErrorList("")
-	capacity, used, err := getDiskStats(migrations.DBMountPath)
+	capacity, used, err := getDiskStats(migrations.DBMountPath())
 	errList.AddError(err)
 
 	storageInfo := &data.StorageInfo{

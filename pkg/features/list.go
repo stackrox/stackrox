@@ -38,4 +38,7 @@ var (
 
 	// InactiveImageScanningUI enables UI to facilitate scanning of inactive images.
 	InactiveImageScanningUI = registerFeature("Enable UI to facilitate scanning of inactive images", "ROX_INACTIVE_IMAGE_SCANNING_UI", true)
+
+	// UpgradeRollback enables rollback to last central version after upgrade.
+	UpgradeRollback = registerFeature("Enable rollback to last central version after upgrade", "ROX_ENABLE_ROLLBACK", false)
 )

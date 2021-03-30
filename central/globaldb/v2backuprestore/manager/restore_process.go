@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sync/atomic"
 	"time"
 
@@ -133,16 +134,8 @@ func (p *restoreProcess) Launch(tempOutputDir, finalDir string) (concurrency.Err
 	return currAttemptDone, nil
 }
 
-func (p *restoreProcess) cleanUp(outputDir string) {
-	// RemoveAll will return a nil error if the directory does not exist.
-	if err := os.RemoveAll(outputDir); err != nil {
-		log.Warnf("Could not remove temporary restore output directory %s: %v", outputDir, err)
-	}
-}
-
 func (p *restoreProcess) run(tempOutputDir, finalDir string) {
 	defer utils.IgnoreError(p.data.Close)
-	defer p.cleanUp(tempOutputDir)
 	defer p.cancelSig.Signal()
 
 	// Make sure the process runs in a context that respects the stop signal.
@@ -171,8 +164,8 @@ func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir, finalDir stri
 		return err
 	}
 
-	if err := os.Rename(tempOutputDir, finalDir); err != nil {
-		return errors.Wrapf(err, "restore process succeeded, but failed to atomically rename output directory %s", tempOutputDir)
+	if err := os.Symlink(filepath.Base(tempOutputDir), finalDir); err != nil {
+		return errors.Wrapf(err, "restore process succeeded, but failed to atomically create symbolic link to output directory %s", tempOutputDir)
 	}
 
 	return nil

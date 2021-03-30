@@ -65,7 +65,6 @@ cp "${INPUT_ROOT}/static-bin/import-additional-cas"    "${OUTPUT_DIR}/scripts"
 cp "${INPUT_ROOT}/static-bin/db-functions"             "${OUTPUT_DIR}/scripts"
 cp "${INPUT_ROOT}/static-bin/move-to-current"          "${OUTPUT_DIR}/scripts"
 cp "${INPUT_ROOT}/static-bin/restore-all-dir-contents" "${OUTPUT_DIR}/scripts"
-cp "${INPUT_ROOT}/static-bin/restore-central-db"       "${OUTPUT_DIR}/scripts"
 cp "${INPUT_ROOT}/static-bin/save-dir-contents"        "${OUTPUT_DIR}/scripts"
 cp "${INPUT_ROOT}/static-bin/start-central.sh"         "${OUTPUT_DIR}/scripts"
 

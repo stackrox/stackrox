@@ -25,7 +25,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	restoreDir = filepath.Join(migrations.DBMountPath, ".restore")
+	restoreDir = filepath.Join(migrations.DBMountPath(), ".restore")
 )
 
 func tryRestoreBolt(r io.Reader, outDir string) error {
@@ -152,7 +152,7 @@ func tryRestore(backupFile *os.File, outPath string) error {
 
 // Restore restores a backup from a file.
 func Restore(backupFile *os.File) error {
-	tempRestoreDir, err := ioutil.TempDir(migrations.DBMountPath, ".restore-")
+	tempRestoreDir, err := ioutil.TempDir(migrations.DBMountPath(), ".restore-")
 	if err != nil {
 		return errors.Wrap(err, "could not create a temporary restore directory")
 	}
@@ -162,9 +162,9 @@ func Restore(backupFile *os.File) error {
 		return errors.Wrap(err, "could not restore database backup")
 	}
 
-	if err := os.Rename(tempRestoreDir, restoreDir); err != nil {
+	if err := os.Symlink(filepath.Base(tempRestoreDir), restoreDir); err != nil {
 		_ = os.RemoveAll(tempRestoreDir)
-		return errors.Wrap(err, "could not rename temporary restore directory to canonical location")
+		return errors.Wrap(err, "could not link temporary restore directory to canonical location")
 	}
 
 	return nil

@@ -6,5 +6,5 @@ import "github.com/stackrox/rox/pkg/migrations"
 var CentralOptions = struct {
 	DBPathBase string
 }{
-	DBPathBase: migrations.CurrentPath,
+	DBPathBase: migrations.CurrentPath(),
 }
