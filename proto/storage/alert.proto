@@ -5,6 +5,7 @@ option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
 import "storage/deployment.proto";
+import "storage/network_flow.proto";
 import "storage/policy.proto";
 import "storage/process_indicator.proto";
 import "gogoproto/gogo.proto";
@@ -43,19 +44,32 @@ message Alert {
             }
             repeated KeyValueAttr attrs = 1;
         }
+        message NetworkFlowInfo {
+            message Entity {
+                string name = 1;
+                storage.NetworkEntityInfo.Type entity_type = 2;
+                string deployment_namespace = 3;
+                string deployment_type = 5;
+                int32 port = 6;
+            }
+            storage.L4Protocol protocol = 1;
+            Entity source = 2;
+            Entity destination = 3;
+        }
 
-        string                    message = 1;
+        string                    message         = 1;
         reserved 2; // formerly link
         reserved 3; // formerly processes
         oneof MessageAttributes {
-            KeyValueAttrs key_value_attrs = 4;
+            KeyValueAttrs key_value_attrs         = 4;
+            NetworkFlowInfo network_flow_info     = 7;
         }
         // 'type' is for internal use only.
-        Type                      type    = 5;
+        Type                      type            = 5;
         // Indicates violation time. This field differs from top-level field 'time' which represents last time the alert
         // occurred in case of multiple occurrences of the policy alert. As of 55.0, this field is set only for kubernetes
         // event violations, but may not be limited to it in future.
-        google.protobuf.Timestamp time    = 6;
+        google.protobuf.Timestamp time            = 6;
     }
 
     message ProcessViolation {

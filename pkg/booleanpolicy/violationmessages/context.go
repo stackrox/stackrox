@@ -36,9 +36,6 @@ var (
 	ProcessBaselineContextFields = newContextFields(
 		nil,
 		[]string{augmentedobjs.ContainerNameCustomTag, search.ProcessName.String()})
-	NetworkBaselineContextFields = newContextFields(
-		nil,
-		[]string{augmentedobjs.NetworkFlowSrcNameCustomTag, augmentedobjs.NetworkFlowDstNameCustomTag, augmentedobjs.NetworkFlowDstPortCustomTag, augmentedobjs.NetworkFlowL4Protocol})
 )
 
 func newContextFields(buildStageContext []string, deployStageContext []string) ContextQueryFields {

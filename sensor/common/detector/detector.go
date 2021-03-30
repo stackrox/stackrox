@@ -3,6 +3,7 @@ package detector
 import (
 	"sort"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -388,25 +389,39 @@ func (d *detectorImpl) ProcessNetworkFlow(flow *storage.NetworkFlow) {
 	go d.processNetworkFlow(flow)
 }
 
-func (d *detectorImpl) getNetworkFlowEntityName(info *storage.NetworkEntityInfo) (string, error) {
+type networkEntityDetails struct {
+	name                string
+	deploymentNamespace string
+	deploymentType      string
+}
+
+func (d *detectorImpl) getNetworkFlowEntityDetails(info *storage.NetworkEntityInfo) (networkEntityDetails, error) {
 	switch info.GetType() {
 	case storage.NetworkEntityInfo_DEPLOYMENT:
 		deployment := d.deploymentStore.Get(info.GetId())
 		if deployment == nil {
 			// Maybe the deployment is already removed. Don't run the flow through policy anymore
-			return "", errors.Errorf("Deployment with ID: %q not found while trying to run network flow policy", info.GetId())
+			return networkEntityDetails{}, errors.Errorf("Deployment with ID: %q not found while trying to run network flow policy", info.GetId())
 		}
-		return deployment.GetName(), nil
+		return networkEntityDetails{
+			name:                deployment.GetName(),
+			deploymentNamespace: deployment.GetNamespace(),
+			deploymentType:      deployment.GetType(),
+		}, nil
 	case storage.NetworkEntityInfo_EXTERNAL_SOURCE:
 		extsrc := d.extSrcsStore.LookupByID(info.GetId())
 		if extsrc == nil {
-			return "", errors.Errorf("External source with ID: %q not found while trying to run network flow policy", info.GetId())
+			return networkEntityDetails{}, errors.Errorf("External source with ID: %q not found while trying to run network flow policy", info.GetId())
 		}
-		return extsrc.GetExternalSource().GetName(), nil
+		return networkEntityDetails{
+			name: extsrc.GetExternalSource().GetName(),
+		}, nil
 	case storage.NetworkEntityInfo_INTERNET:
-		return networkgraph.InternetExternalSourceName, nil
+		return networkEntityDetails{
+			name: networkgraph.InternetExternalSourceName,
+		}, nil
 	default:
-		return "", errors.Errorf("Unsupported network entity type: %q", info.GetType())
+		return networkEntityDetails{}, errors.Errorf("Unsupported network entity type: %q", info.GetType())
 	}
 }
 
@@ -454,29 +469,44 @@ func (d *detectorImpl) processNetworkFlow(flow *storage.NetworkFlow) {
 	}
 
 	// First extract more information of the flow. Mainly entity names
-	srcName, err := d.getNetworkFlowEntityName(flow.GetProps().GetSrcEntity())
+	srcDetails, err := d.getNetworkFlowEntityDetails(flow.GetProps().GetSrcEntity())
 	if err != nil {
-		log.Errorf("Error looking up source entity name while running network flow policy: %v", err)
+		log.Errorf("Error looking up source entity details while running network flow policy: %v", err)
 		return
 	}
-	dstName, err := d.getNetworkFlowEntityName(flow.GetProps().GetDstEntity())
+	dstDetails, err := d.getNetworkFlowEntityDetails(flow.GetProps().GetDstEntity())
 	if err != nil {
-		log.Errorf("Error looking up destination entity name while running network flow policy: %v", err)
+		log.Errorf("Error looking up destination entity details while running network flow policy: %v", err)
 		return
 	}
 	// Check if flow is anomalous
-	flowIsNotInBaseline := d.networkbaselineEval.IsOutsideLockedBaseline(flow, srcName, dstName)
+	flowIsNotInBaseline := d.networkbaselineEval.IsOutsideLockedBaseline(flow, srcDetails.name, dstDetails.name)
 	flowDetails := &augmentedobjs.NetworkFlowDetails{
-		SrcEntityName:        srcName,
-		SrcEntityType:        flow.GetProps().GetSrcEntity().GetType(),
-		DstEntityName:        dstName,
-		DstEntityType:        flow.GetProps().GetDstEntity().GetType(),
-		DstPort:              flow.GetProps().GetDstPort(),
-		L4Protocol:           flow.GetProps().GetL4Protocol(),
-		NotInNetworkBaseline: flowIsNotInBaseline,
-		LastSeenTimestamp:    flow.GetLastSeenTimestamp(),
+		SrcEntityName:          srcDetails.name,
+		SrcEntityType:          flow.GetProps().GetSrcEntity().GetType(),
+		DstEntityName:          dstDetails.name,
+		DstEntityType:          flow.GetProps().GetDstEntity().GetType(),
+		DstPort:                flow.GetProps().GetDstPort(),
+		L4Protocol:             flow.GetProps().GetL4Protocol(),
+		NotInNetworkBaseline:   flowIsNotInBaseline,
+		LastSeenTimestamp:      extractTimestamp(flow),
+		SrcDeploymentNamespace: srcDetails.deploymentNamespace,
+		SrcDeploymentType:      srcDetails.deploymentType,
+		DstDeploymentNamespace: dstDetails.deploymentNamespace,
+		DstDeploymentType:      dstDetails.deploymentType,
 	}
 
 	d.processAlertsForFlowOnEntity(flow.GetProps().GetSrcEntity(), flowDetails)
 	d.processAlertsForFlowOnEntity(flow.GetProps().GetDstEntity(), flowDetails)
+}
+
+// The upstream code can sometimes emit events without a timestamp which is problematic
+// because UI users will see 1st of Jan 1970 as timestamp.
+// TODO(ROX-6858): remove this workaround after the fix is made
+func extractTimestamp(flow *storage.NetworkFlow) *types.Timestamp {
+	timestamp := flow.GetLastSeenTimestamp()
+	if timestamp == nil {
+		return types.TimestampNow()
+	}
+	return timestamp
 }

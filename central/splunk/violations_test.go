@@ -98,86 +98,53 @@ var (
 		},
 		Violations: []*storage.Alert_Violation{
 			{
-				Message: "Unexpected network flow found in deployment. Source name: 'central'. Destination name: 'scanner'. Destination port: '8443'. Protocol: 'L4_PROTOCOL_TCP'.",
-				MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
-					KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
-						Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
-							{
-								Key:   "NetworkFlowTimestamp",
-								Value: "2021-03-05 01:32:31 UTC",
-							},
-							{
-								Key:   "SourceName",
-								Value: "central",
-							},
-							{
-								Key:   "DestinationName",
-								Value: "scanner",
-							},
-							{
-								Key:   "DestinationPort",
-								Value: "8443",
-							},
-							{
-								Key:   "SourceType",
-								Value: "DEPLOYMENT",
-							},
-							{
-								Key:   "DestinationType",
-								Value: "DEPLOYMENT",
-							},
-							{
-								Key:   "L4Protocol",
-								Value: "L4_PROTOCOL_TCP",
-							},
+				Message: "Unexpected network flow found in deployment. Source name: 'central'. Destination name: 'External Entities'. Destination port: '9'. Protocol: 'L4_PROTOCOL_UDP'.",
+				MessageAttributes: &storage.Alert_Violation_NetworkFlowInfo_{
+					NetworkFlowInfo: &storage.Alert_Violation_NetworkFlowInfo{
+						Protocol: storage.L4Protocol_L4_PROTOCOL_UDP,
+						Source: &storage.Alert_Violation_NetworkFlowInfo_Entity{
+							Name:                "central",
+							EntityType:          storage.NetworkEntityInfo_DEPLOYMENT,
+							DeploymentNamespace: "stackrox",
+							DeploymentType:      "Deployment",
+						},
+						Destination: &storage.Alert_Violation_NetworkFlowInfo_Entity{
+							Name:                "External Entities",
+							EntityType:          storage.NetworkEntityInfo_INTERNET,
+							DeploymentNamespace: "internet",
+							Port:                9,
 						},
 					},
 				},
 				Type: storage.Alert_Violation_NETWORK_FLOW,
-				Time: makeTimestamp("2021-03-05T01:32:31.741573591Z"),
+				Time: makeTimestamp("2021-03-21T21:50:46.600080752Z"),
 			},
 			{
-				Message: "Unexpected network flow found in deployment. Source name: 'External Entities'. Destination name: 'central'. Destination port: '8443'. Protocol: 'L4_PROTOCOL_TCP'.",
-				MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
-					KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
-						Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
-							{
-								Key:   "NetworkFlowTimestamp",
-								Value: "2021-03-09 22:56:18 UTC",
-							},
-							{
-								Key:   "SourceName",
-								Value: "External Entities",
-							},
-							{
-								Key:   "DestinationName",
-								Value: "central",
-							},
-							{
-								Key:   "DestinationPort",
-								Value: "8443",
-							},
-							{
-								Key:   "SourceType",
-								Value: "INTERNET",
-							},
-							{
-								Key:   "DestinationType",
-								Value: "DEPLOYMENT",
-							},
-							{
-								Key:   "L4Protocol",
-								Value: "L4_PROTOCOL_TCP",
-							},
+				Message: "Unexpected network flow found in deployment. Source name: 'central'. Destination name: 'scanner'. Destination port: '8080'. Protocol: 'L4_PROTOCOL_TCP'.",
+				MessageAttributes: &storage.Alert_Violation_NetworkFlowInfo_{
+					NetworkFlowInfo: &storage.Alert_Violation_NetworkFlowInfo{
+						Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+						Source: &storage.Alert_Violation_NetworkFlowInfo_Entity{
+							Name:                "central",
+							EntityType:          storage.NetworkEntityInfo_DEPLOYMENT,
+							DeploymentNamespace: "stackrox",
+							DeploymentType:      "Deployment",
+						},
+						Destination: &storage.Alert_Violation_NetworkFlowInfo_Entity{
+							Name:                "scanner",
+							EntityType:          storage.NetworkEntityInfo_DEPLOYMENT,
+							DeploymentNamespace: "stackrox",
+							DeploymentType:      "Deployment",
+							Port:                8080,
 						},
 					},
 				},
 				Type: storage.Alert_Violation_NETWORK_FLOW,
-				Time: makeTimestamp("2021-03-09T22:57:28.600080752Z"),
+				Time: makeTimestamp("2021-03-21T21:50:46.741573591Z"),
 			},
 		},
-		Time:          makeTimestamp("2021-03-05T01:32:31.741586331Z"),
-		FirstOccurred: makeTimestamp("2021-03-05T01:32:32.210811055Z"),
+		Time:          makeTimestamp("2021-03-21T21:50:46.741586331Z"),
+		FirstOccurred: makeTimestamp("2021-03-21T21:50:46.210811055Z"),
 	}
 
 	processAlert = storage.Alert{
@@ -547,31 +514,57 @@ func (s *violationsTestSuite) TestNetworkAlert() {
 
 	for _, v := range vs {
 		s.Equal("NETWORK_FLOW", s.extr(v, ".violationInfo.violationType"))
-		s.checkViolationInfo(v, ".violationMessageAttributes")
+		s.checkViolationInfo(v)
 		s.checkAlertInfo(v, ".lifecycleStage")
 		s.checkDeploymentInfo(v)
 		s.checkPolicy(v)
 	}
-	s.Equal("2021-03-05T01:32:31.741573591Z", s.extr(vs[0], ".violationInfo.violationTime"))
-	s.Equal("2021-03-09T22:57:28.600080752Z", s.extr(vs[1], ".violationInfo.violationTime"))
 
-	s.Equal("SourceName", s.extr(vs[0], ".violationInfo.violationMessageAttributes[1].key"))
-	s.Equal("central", s.extr(vs[0], ".violationInfo.violationMessageAttributes[1].value"))
-	s.Equal("DestinationName", s.extr(vs[0], ".violationInfo.violationMessageAttributes[2].key"))
-	s.Equal("scanner", s.extr(vs[0], ".violationInfo.violationMessageAttributes[2].value"))
-	s.Equal("SourceType", s.extr(vs[0], ".violationInfo.violationMessageAttributes[4].key"))
-	s.Equal("DEPLOYMENT", s.extr(vs[0], ".violationInfo.violationMessageAttributes[4].value"))
-	s.Equal("DestinationType", s.extr(vs[0], ".violationInfo.violationMessageAttributes[5].key"))
-	s.Equal("DEPLOYMENT", s.extr(vs[0], ".violationInfo.violationMessageAttributes[5].value"))
+	firstData := []struct {
+		key   string
+		value interface{}
+	}{
+		// source
+		{key: ".violationInfo.violationTime", value: "2021-03-21T21:50:46.600080752Z"},
+		{key: ".networkFlowInfo.source.name", value: "central"},
+		{key: ".networkFlowInfo.source.entityType", value: "DEPLOYMENT"},
+		{key: ".networkFlowInfo.source.deploymentNamespace", value: "stackrox"},
+		{key: ".networkFlowInfo.source.deploymentType", value: "Deployment"},
+		// destination
+		{key: ".networkFlowInfo.destination.name", value: "External Entities"},
+		{key: ".networkFlowInfo.destination.entityType", value: "INTERNET"},
+		{key: ".networkFlowInfo.destination.port", value: 9.0},
+		// protocol
+		{key: ".networkFlowInfo.protocol", value: "L4_PROTOCOL_UDP"},
+	}
 
-	s.Equal("SourceName", s.extr(vs[1], ".violationInfo.violationMessageAttributes[1].key"))
-	s.Equal("External Entities", s.extr(vs[1], ".violationInfo.violationMessageAttributes[1].value"))
-	s.Equal("DestinationName", s.extr(vs[1], ".violationInfo.violationMessageAttributes[2].key"))
-	s.Equal("central", s.extr(vs[1], ".violationInfo.violationMessageAttributes[2].value"))
-	s.Equal("SourceType", s.extr(vs[1], ".violationInfo.violationMessageAttributes[4].key"))
-	s.Equal("INTERNET", s.extr(vs[1], ".violationInfo.violationMessageAttributes[4].value"))
-	s.Equal("DestinationType", s.extr(vs[1], ".violationInfo.violationMessageAttributes[5].key"))
-	s.Equal("DEPLOYMENT", s.extr(vs[1], ".violationInfo.violationMessageAttributes[5].value"))
+	secondData := []struct {
+		key   string
+		value interface{}
+	}{
+		// source
+		{key: ".violationInfo.violationTime", value: "2021-03-21T21:50:46.741573591Z"},
+		{key: ".networkFlowInfo.source.name", value: "central"},
+		{key: ".networkFlowInfo.source.entityType", value: "DEPLOYMENT"},
+		{key: ".networkFlowInfo.source.deploymentNamespace", value: "stackrox"},
+		{key: ".networkFlowInfo.source.deploymentType", value: "Deployment"},
+		// destination
+		{key: ".networkFlowInfo.destination.name", value: "scanner"},
+		{key: ".networkFlowInfo.destination.entityType", value: "DEPLOYMENT"},
+		{key: ".networkFlowInfo.destination.deploymentNamespace", value: "stackrox"},
+		{key: ".networkFlowInfo.destination.deploymentType", value: "Deployment"},
+		{key: ".networkFlowInfo.destination.port", value: 8080.0},
+		// protocol
+		{key: ".networkFlowInfo.protocol", value: "L4_PROTOCOL_TCP"},
+	}
+
+	for _, d := range firstData {
+		s.Equal(d.value, s.extr(vs[0], d.key))
+	}
+
+	for _, d := range secondData {
+		s.Equal(d.value, s.extr(vs[1], d.key))
+	}
 }
 
 func (s *violationsTestSuite) TestProcessAlert() {

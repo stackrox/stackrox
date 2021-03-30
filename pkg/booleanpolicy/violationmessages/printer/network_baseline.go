@@ -3,7 +3,6 @@ package printer
 import (
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -16,12 +15,6 @@ import (
 const (
 	networkFlowTimestampAttrKey = "NetworkFlowTimestamp"
 	networkFlowTimestampLayout  = "2006-01-02 15:04:05 UTC"
-	sourceNameAttrKey           = "SourceName"
-	destinationNameAttrKey      = "DestinationName"
-	destinationPortAttrKey      = "DestinationPort"
-	sourceEntityTypeKey         = "SourceType"
-	destinationEntityTypeKey    = "DestinationType"
-	protocolKey                 = "L4Protocol"
 )
 
 // GenerateNetworkFlowViolation constructs violation message for network flow violations.
@@ -52,44 +45,26 @@ func GenerateNetworkFlowViolation(networkFlow *augmentedobjs.NetworkFlowDetails)
 
 	return &storage.Alert_Violation{
 		Message: messageBuilder.String(),
-		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
-			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
-				Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
-					{
-						Key: networkFlowTimestampAttrKey,
-						Value: protoconv.
-							ConvertTimestampToTimeOrNow(networkFlow.LastSeenTimestamp).
-							Format(networkFlowTimestampLayout),
-					},
-					{
-						Key:   sourceNameAttrKey,
-						Value: networkFlow.SrcEntityName,
-					},
-					{
-						Key:   destinationNameAttrKey,
-						Value: networkFlow.DstEntityName,
-					},
-					{
-						Key:   destinationPortAttrKey,
-						Value: strconv.Itoa(int(networkFlow.DstPort)),
-					},
-					{
-						Key:   sourceEntityTypeKey,
-						Value: networkFlow.SrcEntityType.String(),
-					},
-					{
-						Key:   destinationEntityTypeKey,
-						Value: networkFlow.DstEntityType.String(),
-					},
-					{
-						Key:   protocolKey,
-						Value: networkFlow.L4Protocol.String(),
-					},
+		MessageAttributes: &storage.Alert_Violation_NetworkFlowInfo_{
+			NetworkFlowInfo: &storage.Alert_Violation_NetworkFlowInfo{
+				Source: &storage.Alert_Violation_NetworkFlowInfo_Entity{
+					Name:                networkFlow.SrcEntityName,
+					EntityType:          networkFlow.SrcEntityType,
+					DeploymentNamespace: networkFlow.SrcDeploymentNamespace,
+					DeploymentType:      networkFlow.SrcDeploymentType,
 				},
+				Destination: &storage.Alert_Violation_NetworkFlowInfo_Entity{
+					Name:                networkFlow.DstEntityName,
+					EntityType:          networkFlow.DstEntityType,
+					DeploymentNamespace: networkFlow.DstDeploymentNamespace,
+					DeploymentType:      networkFlow.DstDeploymentType,
+					Port:                int32(networkFlow.DstPort),
+				},
+				Protocol: networkFlow.L4Protocol,
 			},
 		},
 		Type: storage.Alert_Violation_NETWORK_FLOW,
-		Time: protoconv.ConvertTimeToTimestamp(time.Now()),
+		Time: networkFlow.LastSeenTimestamp,
 	}, nil
 }
 

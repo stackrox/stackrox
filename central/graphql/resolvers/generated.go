@@ -86,12 +86,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Alert_Violation", []string{
 		"keyValueAttrs: Alert_Violation_KeyValueAttrs",
 		"message: String!",
+		"networkFlowInfo: Alert_Violation_NetworkFlowInfo",
 		"time: Time",
 		"type: Alert_Violation_Type!",
 		"messageAttributes: Alert_ViolationMessageAttributes",
 	}))
 	utils.Must(builder.AddUnionType("Alert_ViolationMessageAttributes", []string{
 		"Alert_Violation_KeyValueAttrs",
+		"Alert_Violation_NetworkFlowInfo",
 	}))
 	utils.Must(builder.AddType("Alert_Violation_KeyValueAttrs", []string{
 		"attrs: [Alert_Violation_KeyValueAttrs_KeyValueAttr]!",
@@ -99,6 +101,18 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Alert_Violation_KeyValueAttrs_KeyValueAttr", []string{
 		"key: String!",
 		"value: String!",
+	}))
+	utils.Must(builder.AddType("Alert_Violation_NetworkFlowInfo", []string{
+		"destination: Alert_Violation_NetworkFlowInfo_Entity",
+		"protocol: L4Protocol!",
+		"source: Alert_Violation_NetworkFlowInfo_Entity",
+	}))
+	utils.Must(builder.AddType("Alert_Violation_NetworkFlowInfo_Entity", []string{
+		"deploymentNamespace: String!",
+		"deploymentType: String!",
+		"entityType: NetworkEntityInfo_Type!",
+		"name: String!",
+		"port: Int!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_Violation_Type(0)))
 	utils.Must(builder.AddType("AzureProviderMetadata", []string{
@@ -1817,6 +1831,11 @@ func (resolver *alert_ViolationResolver) Message(ctx context.Context) string {
 	return value
 }
 
+func (resolver *alert_ViolationResolver) NetworkFlowInfo(ctx context.Context) (*alert_Violation_NetworkFlowInfoResolver, error) {
+	value := resolver.data.GetNetworkFlowInfo()
+	return resolver.root.wrapAlert_Violation_NetworkFlowInfo(value, true, nil)
+}
+
 func (resolver *alert_ViolationResolver) Time(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetTime()
 	return timestamp(value)
@@ -1837,11 +1856,21 @@ func (resolver *alert_ViolationResolver) MessageAttributes() *alert_ViolationMes
 			resolver: &alert_Violation_KeyValueAttrsResolver{root: resolver.root, data: val},
 		}
 	}
+	if val := resolver.data.GetNetworkFlowInfo(); val != nil {
+		return &alert_ViolationMessageAttributesResolver{
+			resolver: &alert_Violation_NetworkFlowInfoResolver{root: resolver.root, data: val},
+		}
+	}
 	return nil
 }
 
 func (resolver *alert_ViolationMessageAttributesResolver) ToAlert_Violation_KeyValueAttrs() (*alert_Violation_KeyValueAttrsResolver, bool) {
 	res, ok := resolver.resolver.(*alert_Violation_KeyValueAttrsResolver)
+	return res, ok
+}
+
+func (resolver *alert_ViolationMessageAttributesResolver) ToAlert_Violation_NetworkFlowInfo() (*alert_Violation_NetworkFlowInfoResolver, bool) {
+	res, ok := resolver.resolver.(*alert_Violation_NetworkFlowInfoResolver)
 	return res, ok
 }
 
@@ -1905,6 +1934,94 @@ func (resolver *alert_Violation_KeyValueAttrs_KeyValueAttrResolver) Key(ctx cont
 
 func (resolver *alert_Violation_KeyValueAttrs_KeyValueAttrResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
+	return value
+}
+
+type alert_Violation_NetworkFlowInfoResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Alert_Violation_NetworkFlowInfo
+}
+
+func (resolver *Resolver) wrapAlert_Violation_NetworkFlowInfo(value *storage.Alert_Violation_NetworkFlowInfo, ok bool, err error) (*alert_Violation_NetworkFlowInfoResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_Violation_NetworkFlowInfoResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Violation_NetworkFlowInfos(values []*storage.Alert_Violation_NetworkFlowInfo, err error) ([]*alert_Violation_NetworkFlowInfoResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_Violation_NetworkFlowInfoResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_Violation_NetworkFlowInfoResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_Violation_NetworkFlowInfoResolver) Destination(ctx context.Context) (*alert_Violation_NetworkFlowInfo_EntityResolver, error) {
+	value := resolver.data.GetDestination()
+	return resolver.root.wrapAlert_Violation_NetworkFlowInfo_Entity(value, true, nil)
+}
+
+func (resolver *alert_Violation_NetworkFlowInfoResolver) Protocol(ctx context.Context) string {
+	value := resolver.data.GetProtocol()
+	return value.String()
+}
+
+func (resolver *alert_Violation_NetworkFlowInfoResolver) Source(ctx context.Context) (*alert_Violation_NetworkFlowInfo_EntityResolver, error) {
+	value := resolver.data.GetSource()
+	return resolver.root.wrapAlert_Violation_NetworkFlowInfo_Entity(value, true, nil)
+}
+
+type alert_Violation_NetworkFlowInfo_EntityResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Alert_Violation_NetworkFlowInfo_Entity
+}
+
+func (resolver *Resolver) wrapAlert_Violation_NetworkFlowInfo_Entity(value *storage.Alert_Violation_NetworkFlowInfo_Entity, ok bool, err error) (*alert_Violation_NetworkFlowInfo_EntityResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_Violation_NetworkFlowInfo_EntityResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Violation_NetworkFlowInfo_Entities(values []*storage.Alert_Violation_NetworkFlowInfo_Entity, err error) ([]*alert_Violation_NetworkFlowInfo_EntityResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_Violation_NetworkFlowInfo_EntityResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_Violation_NetworkFlowInfo_EntityResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_Violation_NetworkFlowInfo_EntityResolver) DeploymentNamespace(ctx context.Context) string {
+	value := resolver.data.GetDeploymentNamespace()
+	return value
+}
+
+func (resolver *alert_Violation_NetworkFlowInfo_EntityResolver) DeploymentType(ctx context.Context) string {
+	value := resolver.data.GetDeploymentType()
+	return value
+}
+
+func (resolver *alert_Violation_NetworkFlowInfo_EntityResolver) EntityType(ctx context.Context) string {
+	value := resolver.data.GetEntityType()
+	return value.String()
+}
+
+func (resolver *alert_Violation_NetworkFlowInfo_EntityResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *alert_Violation_NetworkFlowInfo_EntityResolver) Port(ctx context.Context) int32 {
+	value := resolver.data.GetPort()
 	return value
 }
 

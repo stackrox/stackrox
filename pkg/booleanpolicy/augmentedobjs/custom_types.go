@@ -40,14 +40,22 @@ type baselineResult struct {
 // required field for network flow runtime checks. Please update printer.go
 // if other fields are included in the future
 type NetworkFlowDetails struct {
-	SrcEntityName        string                         `search:"Network Flow Source Name"`
-	SrcEntityType        storage.NetworkEntityInfo_Type `search:"Network Flow Source Type"`
-	DstEntityName        string                         `search:"Network Flow Destination Name"`
-	DstEntityType        storage.NetworkEntityInfo_Type `search:"Network Flow Destination Type"`
-	DstPort              uint32                         `search:"Network Flow Destination Port"`
-	L4Protocol           storage.L4Protocol             `search:"Network Flow L4 Protocol"`
-	NotInNetworkBaseline bool                           `search:"Not In Network Baseline"`
+	SrcEntityName        string
+	SrcEntityType        storage.NetworkEntityInfo_Type
+	DstEntityName        string
+	DstEntityType        storage.NetworkEntityInfo_Type
+	DstPort              uint32
+	L4Protocol           storage.L4Protocol
+	NotInNetworkBaseline bool `policy:"Not In Network Baseline"`
 	LastSeenTimestamp    *types.Timestamp
+	// will only be populated if src is deployment
+	SrcDeploymentNamespace string
+	// will only be populated if dst is deployment
+	DstDeploymentNamespace string
+	// will only be populated if src is deployment
+	SrcDeploymentType string
+	// will only be populated if dst is deployment
+	DstDeploymentType string
 }
 
 type envVar struct {

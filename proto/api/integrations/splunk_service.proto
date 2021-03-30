@@ -124,4 +124,6 @@ message SplunkViolation {
   ProcessInfo    process_info = 3;
   DeploymentInfo deployment_info = 4;
   PolicyInfo     policy_info = 5;
+  // extra details for network violation
+  storage.Alert.Violation.NetworkFlowInfo network_flow_info = 6;
 }

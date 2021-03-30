@@ -149,6 +149,8 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp) ([]
 
 	// TODO: reuse deploymentInfo, policyInfo for efficiency. There's no need to parse the same data for every violation.
 
+	policyInfo := extractPolicyInfo(alert.GetId(), alert.GetPolicy())
+
 	if processViolation := alert.GetProcessViolation(); processViolation != nil {
 		if len(processViolation.GetProcesses()) == 0 {
 			log.Warnw("Detected ProcessViolation without ProcessIndicators. No process violations can be extracted from this Alert.", zap.String("Alert.Id", alert.GetId()))
@@ -167,7 +169,7 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp) ([]
 				AlertInfo:      extractAlertInfo(alert, violationInfo),
 				ProcessInfo:    extractProcessInfo(alert.GetId(), procIndicator),
 				DeploymentInfo: extractDeploymentInfo(alert, procIndicator),
-				PolicyInfo:     extractPolicyInfo(alert.GetId(), alert.GetPolicy()),
+				PolicyInfo:     policyInfo,
 			})
 		}
 	}
@@ -184,10 +186,11 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp) ([]
 			return nil, err
 		}
 		result = append(result, &integrations.SplunkViolation{
-			ViolationInfo:  violationInfo,
-			AlertInfo:      extractAlertInfo(alert, violationInfo),
-			DeploymentInfo: extractDeploymentInfo(alert, nil),
-			PolicyInfo:     extractPolicyInfo(alert.GetId(), alert.GetPolicy()),
+			ViolationInfo:   violationInfo,
+			AlertInfo:       extractAlertInfo(alert, violationInfo),
+			DeploymentInfo:  extractDeploymentInfo(alert, nil),
+			PolicyInfo:      policyInfo,
+			NetworkFlowInfo: v.GetNetworkFlowInfo().Clone(),
 		})
 	}
 
