@@ -12,28 +12,33 @@ export const entityPathSegment: Record<AccessControlEntityType, string> = {
     ROLE: 'roles',
 };
 
+type AccessControlQueryObject = {
+    action?: 'create' | 'update';
+    s?: Partial<Record<AccessControlEntityType, string>>;
+};
+
 export function getEntityPath(
     entityType: AccessControlEntityType,
     entityId = '',
-    filterObject?: Partial<Record<AccessControlEntityType, string>>
+    queryObject?: AccessControlQueryObject
 ): string {
     const entityTypePath = `${accessControlPath}/${entityPathSegment[entityType]}`;
 
     // TODO verify which the backend will expect:
     // ?s[PERMISSION_SET]=GuestAccount
     // ?s[Permission%20Set]=GuestAccount
-    const queryString =
-        filterObject && Object.keys(filterObject).length !== 0
-            ? qs.stringify(
-                  { s: filterObject },
-                  {
-                      addQueryPrefix: true,
-                      encodeValuesOnly: true, // TODO for _ but what if space?
-                  }
-              )
-            : '';
+    const queryString = queryObject
+        ? qs.stringify(queryObject, {
+              addQueryPrefix: true,
+              encodeValuesOnly: true, // TODO for _ but what if space?
+          })
+        : '';
 
     return entityId
         ? `${entityTypePath}/${entityId}${queryString}`
         : `${entityTypePath}${queryString}`;
+}
+
+export function getQueryObject(search: string): AccessControlQueryObject {
+    return qs.parse(search, { ignoreQueryPrefix: true });
 }

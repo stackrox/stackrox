@@ -1,25 +1,20 @@
 import React, { ReactElement, useCallback } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { useHistory, useLocation, useParams } from 'react-router-dom';
 import pluralize from 'pluralize';
 
-import CloseButton from 'Components/CloseButton';
-import {
-    getSidePanelHeadBorderColor,
-    PanelNew,
-    PanelBody,
-    PanelHead,
-    PanelHeadEnd,
-} from 'Components/Panel';
+import { PanelNew, PanelBody } from 'Components/Panel';
+import SidePanelAbsoluteArea from 'Components/SidePanelAbsoluteArea';
 import { defaultColumnClassName, nonSortableHeaderClassName } from 'Components/Table';
 import TableCellLink from 'Components/TableCellLink';
 import { AccessControlEntityType } from 'constants/entityTypes';
-import { useTheme } from 'Containers/ThemeProvider';
 import { accessControl, accessControlLabels } from 'messages/common';
 
-import { PanelTitle2 } from '../AccessControlComponents';
-import AccessControlListPage from '../AccessControlListPage';
-import { getEntityPath } from '../accessControlPaths';
-import { Column, permissionSets, roles } from '../accessControlTypes';
+import { AccessControlSidePanelHead } from '../AccessControlComponents';
+import AccessControlPage from '../AccessControlPage';
+import { getEntityPath, getQueryObject } from '../accessControlPaths';
+import { Column, PermissionSet, permissionSets, roles } from '../accessControlTypes';
+
+import PermissionSetForm from './PermissionSetForm';
 
 // The total of column width ratios must be less than or equal to 1.0
 // 1/5 + 2/5 + 1/5 + 1/5 = 0.2 + 0.4 + 0.2 + 0.2 = 1.0
@@ -69,18 +64,15 @@ const columns: Column[] = [
 
             if (rolesFiltered.length === 1) {
                 const role = rolesFiltered[0];
-                return (
-                    <TableCellLink url={getEntityPath('ROLE', role.id)}>{role.name}</TableCellLink>
-                );
+                const url = getEntityPath('ROLE', role.id);
+                const text = role.name;
+                return <TableCellLink url={url}>{text}</TableCellLink>;
             }
 
             const count = rolesFiltered.length;
+            const url = getEntityPath('ROLE', '', { s: { PERMISSION_SET: id } });
             const text = `${count} ${pluralize(accessControlLabels.ROLE, count)}`;
-            return (
-                <TableCellLink url={getEntityPath('ROLE', '', { PERMISSION_SET: id })}>
-                    {text}
-                </TableCellLink>
-            );
+            return <TableCellLink url={url}>{text}</TableCellLink>;
         },
         headerClassName: `w-1/5 ${nonSortableHeaderClassName}`,
         className: `w-1/5 ${defaultColumnClassName}`,
@@ -88,13 +80,22 @@ const columns: Column[] = [
     },
 ];
 
+const permissionSetNew: PermissionSet = {
+    id: '',
+    name: '',
+    description: '',
+    minimumAccessLevel: '',
+    permissions: [],
+};
+
 const entityType: AccessControlEntityType = 'PERMISSION_SET';
 
 function PermissionSetsList(): ReactElement {
     const history = useHistory();
-    // const { search } = useLocation();
+    const { search } = useLocation();
     const { entityId } = useParams();
-    const { isDarkMode } = useTheme();
+
+    const queryObject = getQueryObject(search);
 
     const setEntityId = useCallback(
         (id) => {
@@ -105,37 +106,67 @@ function PermissionSetsList(): ReactElement {
     );
 
     // TODO request data
-    const permissionSet = permissionSets.find(({ id }) => id === entityId);
 
-    function onClose() {
-        setEntityId(undefined);
+    function onCancel() {
+        const url = getEntityPath(entityType, entityId, { ...queryObject, action: undefined });
+        history.push(url);
     }
 
-    const borderColor = getSidePanelHeadBorderColor(isDarkMode);
+    function onClose() {
+        const url = getEntityPath(entityType);
+        history.push(url);
+    }
+
+    function onCreate() {
+        const url = getEntityPath(entityType, undefined, { ...queryObject, action: 'create' });
+        history.push(url);
+    }
+
+    function onSave() {
+        // TODO put change
+    }
+
+    function onUpdate() {
+        const url = getEntityPath(entityType, entityId, { ...queryObject, action: 'update' });
+        history.push(url);
+    }
+
+    const permissionSet = permissionSets.find(({ id }) => id === entityId) || permissionSetNew;
+    const isEditing = Boolean(queryObject.action);
+    const isSidePanelOpen = isEditing || Boolean(entityId);
+
     return (
-        <AccessControlListPage
+        <AccessControlPage
             columns={columns}
             entityType={entityType}
-            isDarkMode={isDarkMode}
+            onClickNew={onCreate}
             rows={permissionSets}
             selectedRowId={entityId}
             setSelectedRowId={setEntityId}
         >
-            <PanelNew testid="side-panel">
-                <PanelHead isDarkMode={isDarkMode} isSidePanel>
-                    <PanelTitle2
-                        entityName={permissionSet?.name ?? ''}
-                        entityTypeLabel={accessControlLabels[entityType]}
-                    />
-                    <PanelHeadEnd>
-                        <CloseButton onClose={onClose} className={`${borderColor} border-l`} />
-                    </PanelHeadEnd>
-                </PanelHead>
-                <PanelBody>
-                    <code>{JSON.stringify(permissionSet, null, 2)}</code>
-                </PanelBody>
-            </PanelNew>
-        </AccessControlListPage>
+            {isSidePanelOpen && (
+                <SidePanelAbsoluteArea>
+                    <PanelNew testid="side-panel">
+                        <AccessControlSidePanelHead
+                            entityType={entityType}
+                            isEditable
+                            isEditing={isEditing}
+                            name={permissionSet.name}
+                            onClickCancel={onCancel}
+                            onClickClose={onClose}
+                            onClickEdit={onUpdate}
+                            onClickSave={onSave}
+                        />
+                        <PanelBody>
+                            <PermissionSetForm
+                                permissionSet={permissionSet}
+                                isEditing={isEditing}
+                            />
+                        </PanelBody>
+                    </PanelNew>
+                </SidePanelAbsoluteArea>
+            )}
+        </AccessControlPage>
     );
 }
 

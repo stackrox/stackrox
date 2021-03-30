@@ -32,11 +32,12 @@ export type Permission = {
     resource: string;
     access: Access;
 };
+
 export type PermissionSet = {
     id: string;
     name: string;
     description: string;
-    minimumAccessLevel: Access;
+    minimumAccessLevel: string;
     permissions: Permission[];
 };
 
