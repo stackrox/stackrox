@@ -74,6 +74,7 @@ const NetworkGraph = ({
     setSelectedNamespace,
     setSelectedNodeInGraph,
     selectedClusterName,
+    showNamespaceFlows,
     history,
     match,
     featureFlags,
@@ -352,6 +353,10 @@ const NetworkGraph = ({
         const hoveredEdge = includes(Object.values(edgeTypes), hoveredElement?.type)
             ? hoveredElement
             : null;
+
+        const shouldShowNamespaceEdges =
+            !!hoveredNode || !!hoveredEdge || !!selectedNode || showNamespaceFlows === 'show';
+
         return {
             hoveredNode,
             selectedNode,
@@ -363,6 +368,7 @@ const NetworkGraph = ({
             nodeSideMap,
             networkNodeMap,
             featureFlags,
+            shouldShowNamespaceEdges,
         };
     }
 
@@ -717,6 +723,7 @@ NetworkGraph.propTypes = {
     setSelectedNodeInGraph: PropTypes.func,
     isReadOnly: PropTypes.bool,
     selectedClusterName: PropTypes.string.isRequired,
+    showNamespaceFlows: PropTypes.string.isRequired,
     featureFlags: PropTypes.arrayOf(PropTypes.shape),
     lastUpdatedTimestamp: PropTypes.instanceOf(Date),
     selectedNamespace: PropTypes.shape({

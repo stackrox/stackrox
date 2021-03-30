@@ -3,6 +3,9 @@ const getNodeErrorMessage = (node) => `Could not find node "${node.name}" of typ
 const getEdgeErrorMessage = (sourceNode, targetNode) =>
     `Could not find an edge between "${sourceNode.name}" and "${targetNode.name}"`;
 
+const getEdgePresentErrorMessage = (sourceNode, targetNode) =>
+    `Found an edge between "${sourceNode.name}" and "${targetNode.name}" when there wasn't supposed to be one`;
+
 // Network Graph Interaction-based Commands
 
 export function clickOnNodeById(cytoscape, node) {
@@ -43,6 +46,13 @@ export function mouseOverEdgeByNames(cytoscape, sourceNode, targetNode) {
         throw Error(getEdgeErrorMessage(sourceNode, targetNode));
     }
     edges.emit('mouseover');
+}
+
+export function ensureEdgeNotPresent(cytoscape, sourceNode, targetNode) {
+    const edges = cytoscape.edges().filter(filterBySourceTarget(sourceNode, targetNode));
+    if (edges.length !== 0) {
+        throw Error(getEdgePresentErrorMessage(sourceNode, targetNode));
+    }
 }
 
 // Filter Functions

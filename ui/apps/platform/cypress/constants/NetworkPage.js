@@ -47,6 +47,7 @@ export const selectors = {
         allowedFilter:
             'button[data-testid="network-connections-filter-allowed"]:contains("allowed")',
         allFilter: 'button[data-testid="network-connections-filter-all"]:contains("all")',
+        hideNsEdgesFilter: '[data-testid="namespace-flows-filter"] button:contains("Hide")',
         stopSimulation: '.simulator-mode button:contains("Stop")',
     },
     detailsPanel: scopeSelectors(networkPanels.detailsPanel, {

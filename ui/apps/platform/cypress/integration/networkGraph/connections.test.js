@@ -1,7 +1,7 @@
 import * as api from '../../constants/apiEndpoints';
 import { url as networkUrl, selectors as networkPageSelectors } from '../../constants/NetworkPage';
 import withAuth from '../../helpers/basicAuth';
-import { mouseOverEdgeByNames } from '../../helpers/networkGraph';
+import { mouseOverEdgeByNames, ensureEdgeNotPresent } from '../../helpers/networkGraph';
 import selectors from '../../selectors/index';
 
 const { cytoscapeContainer } = networkPageSelectors;
@@ -69,6 +69,17 @@ describe('Network Graph connections filter', () => {
             cy.get(selectors.tooltip.body)
                 .should('contain', activeSubstring)
                 .should('contain', allowedSubstring);
+        });
+    });
+
+    it('should not show namespace edges when user hides them', () => {
+        navigateToNetworkGraphWithMockedData();
+
+        cy.get(networkPageSelectors.buttons.allFilter).click();
+        cy.get(networkPageSelectors.buttons.hideNsEdgesFilter).click();
+
+        cy.getCytoscape(cytoscapeContainer).then((cytoscape) => {
+            ensureEdgeNotPresent(cytoscape, sourceNode, targetNode);
         });
     });
 });

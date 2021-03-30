@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { connect } from 'react-redux';
 
+import useLocalStorage from 'hooks/useLocalStorage';
 import { actions as dialogueActions } from 'reducers/network/dialogue';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as pageActions } from 'reducers/network/page';
@@ -18,6 +19,10 @@ import Header from 'Containers/Network/Header/Header';
 import Wizard from 'Containers/Network/Wizard/Wizard';
 
 function NetworkPageContent() {
+    const [showNamespaceFlows, setShowNamespaceFlows] = useLocalStorage(
+        'showNamespaceFlows',
+        'show'
+    );
     const {
         isNetworkSimulationOn,
         isNetworkSimulationError,
@@ -35,6 +40,10 @@ function NetworkPageContent() {
     }
     const isError = isNetworkSimulationOn && isNetworkSimulationError;
 
+    function handleNamespaceFlowsToggle(mode) {
+        setShowNamespaceFlows(mode);
+    }
+
     return (
         <div className="flex flex-1 flex-col relative">
             <div className="flex border-b border-base-400">
@@ -43,13 +52,20 @@ function NetworkPageContent() {
             {isSimulationOn ? (
                 <SimulationFrame isError={isError} onStop={onStop}>
                     <div className="flex flex-1 relative">
-                        <Graph isReadOnly />
+                        <Graph
+                            isReadOnly
+                            showNamespaceFlows={showNamespaceFlows}
+                            setShowNamespaceFlows={handleNamespaceFlowsToggle}
+                        />
                         <Wizard />
                     </div>
                 </SimulationFrame>
             ) : (
                 <div className="flex flex-1 relative">
-                    <Graph />
+                    <Graph
+                        showNamespaceFlows={showNamespaceFlows}
+                        setShowNamespaceFlows={handleNamespaceFlowsToggle}
+                    />
                     <Wizard />
                 </div>
             )}

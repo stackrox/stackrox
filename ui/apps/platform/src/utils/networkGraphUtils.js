@@ -958,7 +958,8 @@ export const getNodeData = (id, deploymentList) => {
  * @returns {!Object[]}
  */
 export const getEdges = (configObj) => {
-    const namespaceEdges = getNamespaceEdges(configObj);
+    const { shouldShowNamespaceEdges } = configObj;
+    const namespaceEdges = shouldShowNamespaceEdges ? getNamespaceEdges(configObj) : [];
     const edgesFromNodes = getEdgesFromNode(configObj);
     return [...namespaceEdges, ...edgesFromNodes];
 };

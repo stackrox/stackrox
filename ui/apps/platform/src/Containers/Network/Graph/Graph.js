@@ -42,6 +42,8 @@ class Graph extends Component {
         fetchDeployment: PropTypes.func.isRequired,
         clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
         selectedClusterId: PropTypes.string,
+        showNamespaceFlows: PropTypes.string.isRequired,
+        setShowNamespaceFlows: PropTypes.func.isRequired,
 
         filterState: PropTypes.number.isRequired,
         isLoading: PropTypes.bool.isRequired,
@@ -72,6 +74,7 @@ class Graph extends Component {
             networkEdgeMap,
             networkNodeMap,
             isReadOnly,
+            showNamespaceFlows,
         } = this.props;
         return (
             !networkEdgeMap ||
@@ -80,7 +83,8 @@ class Graph extends Component {
             nextProps.filterState !== filterState ||
             nextProps.isLoading !== isLoading ||
             nextProps.wizardOpen !== wizardOpen ||
-            nextProps.isReadOnly !== isReadOnly
+            nextProps.isReadOnly !== isReadOnly ||
+            nextProps.showNamespaceFlows !== showNamespaceFlows
         );
     }
 
@@ -116,6 +120,7 @@ class Graph extends Component {
             filterState,
             clusters,
             selectedClusterId,
+            showNamespaceFlows,
             featureFlags,
             setNetworkGraphRef,
             setSelectedNamespace,
@@ -151,6 +156,7 @@ class Graph extends Component {
                 onClickOutside={closeWizard}
                 filterState={filterState}
                 selectedClusterName={selectedClusterName}
+                showNamespaceFlows={showNamespaceFlows}
                 featureFlags={featureFlags}
                 setNetworkGraphRef={setNetworkGraphRef}
                 setSelectedNamespace={setSelectedNamespace}
@@ -164,10 +170,16 @@ class Graph extends Component {
     };
 
     render() {
+        const { isReadOnly, showNamespaceFlows, setShowNamespaceFlows } = this.props;
+
         return (
             <div className="w-full h-full">
                 {this.renderGraph()}
-                <Filters />
+                <Filters
+                    offset={isReadOnly}
+                    showNamespaceFlows={showNamespaceFlows}
+                    setShowNamespaceFlows={setShowNamespaceFlows}
+                />
                 <Legend />
             </div>
         );
