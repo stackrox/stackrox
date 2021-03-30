@@ -3,11 +3,12 @@ import React, { ReactElement } from 'react';
 type KeyValueProps = {
     label: string;
     value: string;
+    className?: string;
 };
 
-function KeyValue({ label, value }: KeyValueProps): ReactElement {
+function KeyValue({ label, value, className = '' }: KeyValueProps): ReactElement {
     return (
-        <div>
+        <div className={className}>
             <span className="font-700 capitalize">{label}</span> {value}
         </div>
     );

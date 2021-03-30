@@ -12,7 +12,7 @@ function K8sCard({ message, keyValueAttrs, time }) {
     return (
         <div className="mb-4" key={message} data-testid="runtime-processes">
             <RuntimeViolationCollapsibleCard title={message}>
-                <div className="border-t border-base-300" label={message}>
+                <div className="border-t border-base-300">
                     <div className="flex px-4 py-2 border-base-300 border-b text-base-600">
                         <KeyValue label="Time:" value={format(time, dateTimeFormat)} />
                     </div>
