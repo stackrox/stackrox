@@ -84,19 +84,21 @@ require (
 	github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222
 	github.com/tkuchiki/go-timezone v0.1.3
 	github.com/vbauerster/mpb/v4 v4.11.1
+	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	go.etcd.io/bbolt v1.3.5
 	go.uber.org/atomic v1.6.0
 	go.uber.org/zap v1.15.1-0.20200717220000-53a387079b46
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
-	golang.org/x/net v0.0.0-20201016165138-7b1cca2348c0
+	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
+	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5 // indirect
+	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
-	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
-	golang.org/x/sys v0.0.0-20210113181707-4bcb84eeeb78
-	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
-	golang.org/x/tools v0.0.0-20201019175715-b894a3290fff
+	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
+	golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4
+	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
+	golang.org/x/tools v0.1.0
 	golang.stackrox.io/grpc-http1 v0.2.2
 	google.golang.org/api v0.33.0
-	google.golang.org/genproto v0.0.0-20201019141844-1ed22bb0c154
+	google.golang.org/genproto v0.0.0-20201110150050-8816d57aaa9a
 	google.golang.org/grpc v1.33.0
 	google.golang.org/grpc/examples v0.0.0-20200731180010-8bec2f5d898f
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
@@ -110,9 +112,10 @@ require (
 	k8s.io/apimachinery v0.19.2
 	k8s.io/apiserver v0.19.2
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/kube-openapi v0.0.0-20200805222855-6aeccd4b50c6
+	k8s.io/kube-openapi v0.0.0-20201113171705-d219536bb9fd
 	k8s.io/kubectl v0.19.2
-	k8s.io/utils v0.0.0-20201027101359-01387209bb0d
+	k8s.io/kubelet v0.19.2
+	k8s.io/utils v0.0.0-20201110183641-67b214c5f920
 	sigs.k8s.io/yaml v1.2.0
 )
 

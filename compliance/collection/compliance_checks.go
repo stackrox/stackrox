@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/compliance/collection/containerruntimes/crio"
 	"github.com/stackrox/rox/compliance/collection/containerruntimes/docker"
 	"github.com/stackrox/rox/compliance/collection/file"
+	"github.com/stackrox/rox/compliance/collection/kubernetes/collection/kubelet"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -157,6 +158,11 @@ func gatherData(scrapeConfig *sensor.MsgToCompliance_ScrapeConfig, scrapeID stri
 	log.Info("Successfully collected relevant command lines")
 
 	complianceData.IsMasterNode = scrapeConfig.GetIsMasterNode()
+
+	complianceData.KubeletConfiguration, err = kubelet.GatherKubelet()
+	if err != nil {
+		log.Errorf("collecting kubelet configuration failed: %v", err)
+	}
 
 	complianceData.Time = types.TimestampNow()
 	return complianceData
