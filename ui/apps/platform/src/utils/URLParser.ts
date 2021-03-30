@@ -14,6 +14,7 @@ import {
     riskPath,
     violationsPath,
     policiesPath,
+    networkPath,
 } from '../routePaths';
 
 function getTypeKeyFromParamValue(value: string, listOnly = false): string | null {
@@ -111,6 +112,10 @@ function parseURL(location: Location<LocationState>): WorkflowState {
         path: riskPath,
         exact: true,
     });
+    const matchedNetworkParams = matchPath(pathname, {
+        path: networkPath,
+        exact: true,
+    });
     const matchedClustersParams = matchPath(pathname, {
         path: clustersPathWithParam,
         exact: true,
@@ -124,6 +129,14 @@ function parseURL(location: Location<LocationState>): WorkflowState {
         exact: true,
     });
     let legacyParams = { params: {} };
+    if (matchedNetworkParams) {
+        legacyParams = {
+            params: {
+                ...matchedNetworkParams,
+                context: useCases.NETWORK,
+            },
+        };
+    }
     if (matchedRiskParams) {
         legacyParams = {
             params: {

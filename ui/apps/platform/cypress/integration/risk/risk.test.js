@@ -148,9 +148,9 @@ describe('Risk page', () => {
 
         it('should have multiple URL search param key/value pairs in its search bar', () => {
             const nsOption = 'Namespace';
-            const nsValue = 'kube-system';
+            const nsValue = 'stackrox';
             const deployOption = 'Deployment';
-            const deployValue = 'static';
+            const deployValue = 'scanner';
             cy.get(RiskPageSelectors.table.dataRows)
                 .filter(`:contains("${deployValue}")`)
                 .then((staticDeps) => {

@@ -78,7 +78,7 @@ describe('Network Graph Search', () => {
 
         cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
             const namespaces = cytoscape.nodes().filter(filterNamespaces);
-            expect(namespaces.size()).to.equal(2);
+            expect(namespaces.size()).to.equal(1);
             namespaces.forEach((namespace) => {
                 expect(namespace.data().name).to.be.oneOf(['stackrox', 'kube-system']);
             });

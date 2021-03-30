@@ -1,4 +1,6 @@
 import queryString from 'qs';
+
+import { ORCHESTRATOR_COMPONENT_KEY } from 'Containers/Navigation/OrchestratorComponentsToggle';
 import axios from './instance';
 
 const networkPoliciesBaseUrl = '/v1/networkpolicies';
@@ -70,14 +72,15 @@ export function toggleAlertBaselineViolations({ deploymentId, enable }) {
  * @returns {Promise<Object, Error>}
  */
 export function fetchNetworkPolicyGraph(clusterId, query, modification, includePorts) {
-    const urlParams = { query };
+    const urlParams = query ? { query } : {};
     if (includePorts) {
         urlParams.includePorts = true;
     }
-    const params = queryString.stringify(urlParams, { arrayFormat: 'repeat' });
+
     let options;
     let getGraph = (data) => data;
     if (modification) {
+        const params = queryString.stringify(urlParams, { arrayFormat: 'repeat' });
         options = {
             method: 'POST',
             data: modification,
@@ -85,6 +88,13 @@ export function fetchNetworkPolicyGraph(clusterId, query, modification, includeP
         };
         getGraph = ({ simulatedGraph }) => simulatedGraph;
     } else {
+        // for openshift filtering toggle
+        if (localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY) !== 'true') {
+            urlParams.scope = {
+                query: 'Orchestrator Component:false',
+            };
+        }
+        const params = queryString.stringify(urlParams, { arrayFormat: 'repeat', allowDots: true });
         options = {
             method: 'GET',
             url: `${networkPoliciesBaseUrl}/cluster/${clusterId}?${params}`,
@@ -106,15 +116,20 @@ export function fetchNetworkPolicyGraph(clusterId, query, modification, includeP
  * @returns {Promise<Object, Error>}
  */
 export function fetchNetworkFlowGraph(clusterId, query, date, includePorts) {
-    const urlParams = { query };
+    const urlParams = query ? { query } : {};
     if (date) {
         urlParams.since = date.toISOString();
     }
     if (includePorts) {
         urlParams.includePorts = true;
     }
-
-    const params = queryString.stringify(urlParams, { arrayFormat: 'repeat' });
+    // for openshift filtering toggle
+    if (localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY) !== 'true') {
+        urlParams.scope = {
+            query: 'Orchestrator Component:false',
+        };
+    }
+    const params = queryString.stringify(urlParams, { arrayFormat: 'repeat', allowDots: true });
     const options = {
         method: 'GET',
         url: `${networkFlowBaseUrl}/cluster/${clusterId}?${params}`,
@@ -205,7 +220,7 @@ export function getUndoNetworkModification(clusterId) {
  * @returns {Promise<Object, Error>}
  */
 export function generateNetworkModification(clusterId, query, date, excludePortsProtocols = null) {
-    const urlParams = { query };
+    const urlParams = query ? { query } : {};
     if (date) {
         urlParams.networkDataSince = date.toISOString();
     }

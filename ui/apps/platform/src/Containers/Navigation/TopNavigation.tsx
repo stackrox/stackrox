@@ -43,7 +43,9 @@ const TopNavigation = (): ReactElement => {
                     <div className="pl-1 pt-1 text-sm tracking-wide">Platform</div>
                 </div>
                 <SummaryCounts />
-                {showOrchestratorComponentsToggle && <OrchestratorComponentsToggle />}
+                {showOrchestratorComponentsToggle && (
+                    <OrchestratorComponentsToggle useCase={useCase} />
+                )}
             </div>
             <div className="flex" data-testid="top-nav-btns">
                 <GlobalSearchButton

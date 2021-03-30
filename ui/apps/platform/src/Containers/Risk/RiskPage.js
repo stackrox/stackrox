@@ -45,13 +45,16 @@ const RiskPage = ({
     };
     const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
     const searchOptions = (searchData && searchData.searchOptions) || [];
+    const filteredSearchOptions = searchOptions.filter(
+        (option) => option !== 'Orchestrator Component'
+    );
     const autoFocusSearchInput = !deploymentId;
 
     return (
         <workflowStateContext.Provider value={workflowState}>
             <RiskPageHeader
                 isViewFiltered={isViewFiltered}
-                searchOptions={searchOptions}
+                searchOptions={filteredSearchOptions}
                 autoFocusSearchInput={autoFocusSearchInput}
             />
             <PageBody>

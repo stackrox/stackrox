@@ -2,6 +2,10 @@ import scopeSelectors from '../helpers/scopeSelectors';
 
 // eslint-disable-next-line import/prefer-default-export
 export const selectors = {
+    orchestratorComponentsToggle: scopeSelectors('[data-testid="orchestrator-components-toggle"]', {
+        hideButton: 'button:contains("Hide")',
+        showButton: 'button:contains("Show")',
+    }),
     menuButton: '[data-testid="menu-button"]',
 
     menuList: scopeSelectors('[data-testid="menu-list"]', {

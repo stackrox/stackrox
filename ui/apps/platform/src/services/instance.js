@@ -2,38 +2,9 @@
 // All other places must use the instance exported here.
 // eslint-disable-next-line no-restricted-imports
 import axios from 'axios';
-import qs from 'qs';
-
-import { ORCHESTRATOR_COMPONENT_KEY } from 'Containers/Navigation/OrchestratorComponentsToggle';
 
 const instance = axios.create({
     timeout: 10000,
-});
-
-export const orchestratorQueryKey = 'orchestratorComponent';
-
-export function appendOrchestratorComponentsQuery(url, showOrchestratorComponent) {
-    const hasQuery = url.includes('?');
-    const params = hasQuery ? url.split('?')[1] : null;
-    // append orchestrator components query to URL
-    const orchestratorComponentsQuery = {
-        [orchestratorQueryKey]: showOrchestratorComponent,
-    };
-    const queryString = qs.stringify(orchestratorComponentsQuery);
-
-    const delimiter = params ? '&' : '?';
-    return `${url}${delimiter}${queryString}`;
-}
-
-instance.interceptors.request.use((config) => {
-    // for openshift filterting toggle
-    const showOrchestratorComponent = localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY);
-    if (showOrchestratorComponent === 'true') {
-        const newConfig = { ...config };
-        newConfig.url = appendOrchestratorComponentsQuery(config.url, showOrchestratorComponent);
-        return newConfig;
-    }
-    return config;
 });
 
 export default instance;

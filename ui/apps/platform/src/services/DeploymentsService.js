@@ -1,14 +1,30 @@
 import queryString from 'qs';
 import { normalize } from 'normalizr';
-import searchOptionsToQuery from 'services/searchOptionsToQuery';
-import axios from './instance';
 
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import { ORCHESTRATOR_COMPONENT_KEY } from 'Containers/Navigation/OrchestratorComponentsToggle';
+import axios from './instance';
 import { deployment as deploymentSchema, deploymentDetail } from './schemas';
 
 const deploymentsUrl = '/v1/deploymentswithprocessinfo';
 const deploymentByIdUrl = '/v1/deployments';
 const deploymentWithRiskUrl = '/v1/deploymentswithrisk';
 const deploymentsCountUrl = '/v1/deploymentscount';
+
+const orchestratorComponentOption = [
+    {
+        value: 'Orchestrator Component:',
+        type: 'categoryOption',
+    },
+    {
+        value: 'false',
+    },
+];
+
+function shouldHideOrchestratorComponents() {
+    // for openshift filterting toggle
+    return localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY) !== 'true';
+}
 
 /**
  * Fetches list of registered deployments.
@@ -17,18 +33,22 @@ const deploymentsCountUrl = '/v1/deploymentscount';
  */
 export function fetchDeployments(options, sortOption, page, pageSize) {
     const offset = page * pageSize;
-    const query = searchOptionsToQuery(options);
-    const params = queryString.stringify(
-        {
-            query,
-            pagination: {
-                offset,
-                limit: pageSize,
-                sortOption,
-            },
+    let searchOptions = options;
+    if (shouldHideOrchestratorComponents()) {
+        searchOptions = [...options, ...orchestratorComponentOption];
+    }
+    const query = searchOptionsToQuery(searchOptions);
+    const queryObject = {
+        pagination: {
+            offset,
+            limit: pageSize,
+            sortOption,
         },
-        { arrayFormat: 'repeat', allowDots: true }
-    );
+    };
+    if (query) {
+        queryObject.query = query;
+    }
+    const params = queryString.stringify(queryObject, { arrayFormat: 'repeat', allowDots: true });
     return axios.get(`${deploymentsUrl}?${params}`).then((response) => response.data.deployments);
 }
 
@@ -38,10 +58,18 @@ export function fetchDeployments(options, sortOption, page, pageSize) {
  * @returns {Promise<Object[], Error>} fulfilled with array of deployments (as defined in .proto)
  */
 export function fetchDeploymentsCount(options) {
-    const params = queryString.stringify(
-        { query: searchOptionsToQuery(options) },
-        { arrayFormat: 'repeat' }
-    );
+    let searchOptions = options;
+    if (shouldHideOrchestratorComponents()) {
+        searchOptions = [...options, ...orchestratorComponentOption];
+    }
+    const query = searchOptionsToQuery(searchOptions);
+    const queryObject =
+        searchOptions.length > 0
+            ? {
+                  query,
+              }
+            : {};
+    const params = queryString.stringify(queryObject, { arrayFormat: 'repeat' });
     return axios.get(`${deploymentsCountUrl}?${params}`).then((response) => response.data.count);
 }
 
@@ -75,10 +103,12 @@ export function fetchDeploymentWithRisk(id) {
  * @returns {Promise<Object[], Error>} fulfilled with array of deployments (as defined in .proto)
  */
 export function fetchDeploymentsLegacy(options) {
-    const params = queryString.stringify(
-        { query: searchOptionsToQuery(options) },
-        { arrayFormat: 'repeat' }
-    );
+    let searchOptions = options;
+    if (shouldHideOrchestratorComponents()) {
+        searchOptions = [...options, ...orchestratorComponentOption];
+    }
+    const query = searchOptionsToQuery(searchOptions);
+    const params = queryString.stringify({ query }, { arrayFormat: 'repeat' });
     return axios.get(`${deploymentsUrl}?${params}`).then((response) => ({
         response: normalize(response.data.deployments, [deploymentSchema]),
     }));
