@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
+
 import Query from 'Components/ThrowingQuery';
 import URLSearchInputWithAutocomplete from 'Components/URLSearchInputWithAutocomplete';
-
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 
 const URLSearchInput = ({ categories, ...props }) => {

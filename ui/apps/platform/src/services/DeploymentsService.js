@@ -2,7 +2,10 @@ import queryString from 'qs';
 import { normalize } from 'normalizr';
 
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
-import { ORCHESTRATOR_COMPONENT_KEY } from 'Containers/Navigation/OrchestratorComponentsToggle';
+import {
+    ORCHESTRATOR_COMPONENT_KEY,
+    orchestratorComponentOption,
+} from 'Containers/Navigation/OrchestratorComponentsToggle';
 import axios from './instance';
 import { deployment as deploymentSchema, deploymentDetail } from './schemas';
 
@@ -10,16 +13,6 @@ const deploymentsUrl = '/v1/deploymentswithprocessinfo';
 const deploymentByIdUrl = '/v1/deployments';
 const deploymentWithRiskUrl = '/v1/deploymentswithrisk';
 const deploymentsCountUrl = '/v1/deploymentscount';
-
-const orchestratorComponentOption = [
-    {
-        value: 'Orchestrator Component:',
-        type: 'categoryOption',
-    },
-    {
-        value: 'false',
-    },
-];
 
 function shouldHideOrchestratorComponents() {
     // for openshift filterting toggle

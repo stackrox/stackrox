@@ -13,8 +13,11 @@ import {
     inputMatchesTopOption,
     removeValuesForKey,
 } from 'Components/URLSearchInputWithAutocomplete';
-
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import {
+    ORCHESTRATOR_COMPONENT_KEY,
+    orchestratorComponentOption,
+} from 'Containers/Navigation/OrchestratorComponentsToggle';
 
 export const searchInputPropTypes = {
     className: PropTypes.string,
@@ -35,6 +38,7 @@ export const searchInputPropTypes = {
     autoCompleteCategories: PropTypes.arrayOf(PropTypes.string),
     setAllSearchOptions: PropTypes.func,
     isDisabled: PropTypes.bool,
+    prependQuery: PropTypes.bool,
 };
 
 export const searchInputDefaultProps = {
@@ -51,6 +55,7 @@ export const searchInputDefaultProps = {
     autoCompleteCategories: [],
     setAllSearchOptions: () => {},
     isDisabled: false,
+    prependQuery: false,
 };
 
 // This is a legacy search component, that will be removed soon as we move everything to URLSearchInput.
@@ -115,7 +120,12 @@ class SearchInput extends Component {
         }
 
         if (this.props.sendAutoCompleteRequest) {
-            const clonedSearchOptions = searchOptions.slice();
+            let options = [...searchOptions];
+            const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY);
+            if (orchestratorComponentShowState !== 'true' && this.props.prependQuery) {
+                options = [...orchestratorComponentOption, ...searchOptions];
+            }
+            const clonedSearchOptions = options.slice();
             if (clonedSearchOptions.length === 0) {
                 clonedSearchOptions.push(this.props.defaultOption);
             }

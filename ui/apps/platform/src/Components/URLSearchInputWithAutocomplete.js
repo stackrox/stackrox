@@ -12,6 +12,10 @@ import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import searchContext from 'Containers/searchContext';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { newWorkflowCases } from 'constants/useCaseTypes';
+import {
+    ORCHESTRATOR_COMPONENT_KEY,
+    orchestratorComponentOption,
+} from 'Containers/Navigation/OrchestratorComponentsToggle';
 
 const borderClass = 'border border-primary-300';
 const categoryOptionClass = `bg-primary-200 text-primary-700 ${borderClass}`;
@@ -105,6 +109,7 @@ const URLSearchInputWithAutocomplete = ({
     fetchAutocomplete,
     placeholder,
     className,
+    prependQuery,
     ...rest
 }) => {
     const searchParam = useContext(searchContext);
@@ -228,8 +233,13 @@ const URLSearchInputWithAutocomplete = ({
         });
     }
 
-    function updateAutocompleteState(searchOptions) {
+    function updateAutocompleteState(options) {
         return (input) => {
+            let searchOptions = [...options];
+            const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY);
+            if (orchestratorComponentShowState !== 'true' && prependQuery) {
+                searchOptions = [...orchestratorComponentOption, ...options];
+            }
             setAllSearchOptions(searchOptions);
             if (searchOptions.length === 0) {
                 if (clearAutocomplete) {
@@ -305,6 +315,7 @@ URLSearchInputWithAutocomplete.propTypes = {
     fetchAutocomplete: PropTypes.func,
     clearAutocomplete: PropTypes.func,
     setAllSearchOptions: PropTypes.func.isRequired,
+    prependQuery: PropTypes.bool,
 };
 
 URLSearchInputWithAutocomplete.defaultProps = {
@@ -314,6 +325,7 @@ URLSearchInputWithAutocomplete.defaultProps = {
     autoCompleteResults: [],
     fetchAutocomplete: null,
     clearAutocomplete: null,
+    prependQuery: false,
 };
 
 const mapDispatchToProps = {

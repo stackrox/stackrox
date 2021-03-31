@@ -32,6 +32,7 @@ function NetworkSearch({
             setSearchSuggestions={setSearchSuggestions}
             onSearch={onSearch}
             isDisabled={isDisabled}
+            prependQuery
         />
     );
 }

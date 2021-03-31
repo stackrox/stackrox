@@ -18,6 +18,7 @@ function RiskPageHeader({ autoFocusSearchInput, isViewFiltered, searchOptions })
                 categories={autoCompleteCategories}
                 placeholder="Add one or more resource filters"
                 autoFocus={autoFocusSearchInput}
+                prependQuery
             />
             <CreatePolicyFromSearch />
         </PageHeader>

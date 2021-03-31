@@ -5,6 +5,16 @@ import { actions as graphActions } from 'reducers/network/graph';
 import RadioButtonGroup from 'Components/RadioButtonGroup';
 import useCases from 'constants/useCaseTypes';
 
+export const orchestratorComponentOption = [
+    {
+        value: 'Orchestrator Component:',
+        type: 'categoryOption',
+    },
+    {
+        value: 'false',
+    },
+];
+
 export const ORCHESTRATOR_COMPONENT_KEY = 'showOrchestratorComponents';
 
 type OrchestratorComponentsToggleProps = {
@@ -19,9 +29,9 @@ const OrchestratorComponentsToggle = ({
     const [showOrchestratorComponents, setShowOrchestratorComponents] = useState('false');
 
     useEffect(() => {
-        const systemComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY);
-        if (systemComponentShowState) {
-            setShowOrchestratorComponents(systemComponentShowState);
+        const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY);
+        if (orchestratorComponentShowState) {
+            setShowOrchestratorComponents(orchestratorComponentShowState);
         }
     }, []);
 
