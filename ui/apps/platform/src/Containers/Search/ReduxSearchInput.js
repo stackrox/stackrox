@@ -23,7 +23,7 @@ const ReduxSearchInput = ({
     autoCompleteCategories,
     setAllSearchOptions,
     isDisabled,
-    prependQuery,
+    prependAutocompleteQuery,
 }) => {
     return (
         <SearchInput
@@ -42,7 +42,7 @@ const ReduxSearchInput = ({
             autoCompleteCategories={autoCompleteCategories}
             setAllSearchOptions={setAllSearchOptions}
             isDisabled={isDisabled}
-            prependQuery={prependQuery}
+            prependAutocompleteQuery={prependAutocompleteQuery}
         />
     );
 };
