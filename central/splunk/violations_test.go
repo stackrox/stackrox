@@ -610,18 +610,19 @@ func (s *violationsTestSuite) TestK8sAlert() {
 
 func (s *violationsTestSuite) TestDeployAlert() {
 	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.deployAlert))
-	s.Len(vs, 3)
+	s.Len(vs, 1)
 
-	for _, v := range vs {
-		s.Equal("GENERIC", s.extr(v, ".violationInfo.violationType"))
-		s.Equal("2021-02-01T16:09:02.128791072Z", s.extr(v, ".alertInfo.alertFirstOccurred"))
-		s.Equal("2021-02-01T16:09:02.193352817Z", s.extr(v, ".violationInfo.violationTime"))
+	s.Equal("GENERIC", s.extr(vs[0], ".violationInfo.violationType"))
+	s.Equal("2021-02-01T16:09:02.128791072Z", s.extr(vs[0], ".alertInfo.alertFirstOccurred"))
+	s.Equal("2021-02-01T16:09:02.193352817Z", s.extr(vs[0], ".violationInfo.violationTime"))
 
-		s.checkViolationInfo(v)
-		s.checkAlertInfo(v)
-		s.checkDeploymentInfo(v)
-		s.checkPolicy(v)
-	}
+	// Splunk Violation message must contain three lines from three generic Violations of the same Alert.
+	s.Len(strings.Split(s.extr(vs[0], ".violationInfo.violationMessage").(string), "\n"), 3)
+
+	s.checkViolationInfo(vs[0])
+	s.checkAlertInfo(vs[0])
+	s.checkDeploymentInfo(vs[0])
+	s.checkPolicy(vs[0])
 }
 
 func (s *violationsTestSuite) TestViolationsAreOrdered() {

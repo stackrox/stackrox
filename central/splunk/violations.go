@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -173,11 +174,21 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp) ([]
 			})
 		}
 	}
+	var genericViolationMessage strings.Builder
 	for _, v := range alert.GetViolations() {
 		seenViolations = true
 
 		timestamp := getNonProcessViolationTime(alert, v)
 		if timestamp.Compare(fromTimestamp) <= 0 {
+			continue
+		}
+
+		if isGenericViolation(v) {
+			if genericViolationMessage.Len() != 0 {
+				genericViolationMessage.WriteString("\n")
+			}
+			genericViolationMessage.WriteString(v.GetMessage())
+			// For generic violations we only collect messages, the actual violation record is created below after the loop.
 			continue
 		}
 
@@ -191,6 +202,15 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp) ([]
 			DeploymentInfo:  extractDeploymentInfo(alert, nil),
 			PolicyInfo:      policyInfo,
 			NetworkFlowInfo: v.GetNetworkFlowInfo().Clone(),
+		})
+	}
+	if genericViolationMessage.Len() != 0 {
+		violationInfo := extractGenericViolationInfo(alert, genericViolationMessage.String())
+		result = append(result, &integrations.SplunkViolation{
+			ViolationInfo:  violationInfo,
+			AlertInfo:      extractAlertInfo(alert, violationInfo),
+			DeploymentInfo: extractDeploymentInfo(alert, nil),
+			PolicyInfo:     policyInfo,
 		})
 	}
 
@@ -305,6 +325,22 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 		PodId:                      podID,
 		ContainerName:              containerName,
 	}, nil
+}
+
+func extractGenericViolationInfo(fromAlert *storage.Alert, message string) *integrations.SplunkViolation_ViolationInfo {
+	return &integrations.SplunkViolation_ViolationInfo{
+		ViolationId:      fromAlert.GetId(),
+		ViolationMessage: message,
+		ViolationTime:    fromAlert.GetTime(),
+		ViolationType:    integrations.SplunkViolation_ViolationInfo_GENERIC,
+	}
+}
+
+// isGenericViolation checks if the violation doesn't have anything except of message.
+// Such violations are non-runtimes and can be squashed together in one integrations.SplunkViolation when storage.Alert
+// has many of them.
+func isGenericViolation(violation *storage.Alert_Violation) bool {
+	return violation.GetType() == storage.Alert_Violation_GENERIC && violation.GetTime() == nil && violation.GetMessageAttributes() == nil
 }
 
 func extractProcessInfo(alertID string, from *storage.ProcessIndicator) *integrations.SplunkViolation_ProcessInfo {
