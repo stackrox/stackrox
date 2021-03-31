@@ -6,6 +6,7 @@ import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.CreateNetworkEntit
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesRequest
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.GetExternalNetworkEntitiesResponse
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraphRequest
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraphScope
 import io.stackrox.proto.api.v1.NetworkGraphServiceGrpc
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntity
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.ExternalSource
@@ -16,7 +17,7 @@ class NetworkGraphService extends BaseService {
         return NetworkGraphServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getNetworkGraph(Timestamp since = null, String query = null) {
+    static getNetworkGraph(Timestamp since = null, String query = null, String scope = null) {
         try {
             NetworkGraphRequest.Builder request =
                     NetworkGraphRequest.newBuilder()
@@ -26,6 +27,9 @@ class NetworkGraphService extends BaseService {
             }
             if (query != null) {
                 request.setQuery(query)
+            }
+            if (scope != null) {
+                request.setScope(NetworkGraphScope.newBuilder().setQuery(scope))
             }
             return getNetworkGraphClient().getNetworkGraph(request.build())
         } catch (Exception e) {

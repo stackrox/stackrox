@@ -1,4 +1,3 @@
-
 import static com.jayway.restassured.RestAssured.given
 
 import common.Constants
@@ -7,9 +6,6 @@ import util.Env
 import util.Helpers
 import util.Timer
 import io.grpc.StatusRuntimeException
-import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass
-import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest.DeleteExistingPoliciesMode
-import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
 import org.yaml.snakeyaml.Yaml
 import services.NetworkPolicyService
 import groups.BAT
@@ -32,6 +28,10 @@ import util.NetworkGraphUtil
 import io.stackrox.proto.storage.NetworkFlowOuterClass.L4Protocol
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.Type
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraph
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkNode
+import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest.DeleteExistingPoliciesMode
+import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
+import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import com.jayway.restassured.response.Response
 
 @Stepwise
@@ -241,6 +241,30 @@ class NetworkFlowTest extends BaseSpecification {
         }
     }
 
+    def verifyGraphFilterAndScope(
+            NetworkGraph graph,
+            Set<String> nonOrchestratorDeployments,
+            Set<String> orchestratorDeployments,
+            boolean nonOrchestratorComponentsShouldExist,
+            boolean orchestratorComponentsShouldExist
+    ) {
+        def graphDeployments = NetworkGraphUtil.deployments(graph)
+        def numGraphNonOrchestratorDeployments = nonOrchestratorDeployments.intersect(graphDeployments).size()
+        if (nonOrchestratorComponentsShouldExist) {
+            assert numGraphNonOrchestratorDeployments > 0
+        } else {
+            assert numGraphNonOrchestratorDeployments == 0
+        }
+
+        def numGraphOrchestratorDeployments = orchestratorDeployments.intersect(graphDeployments).size()
+        if (orchestratorComponentsShouldExist) {
+            assert numGraphOrchestratorDeployments > 0
+        } else {
+            assert numGraphOrchestratorDeployments == 0
+        }
+        return true
+    }
+
     @Category([NetworkFlowVisualization])
     def "Verify one-time connections show at first, but do not appear again"() {
         given:
@@ -360,6 +384,59 @@ class NetworkFlowTest extends BaseSpecification {
         then:
         "Wait for collector update and fetch graph again to confirm short interval connections remain"
         assert waitForEdgeUpdate(edges.get(0), 90)
+    }
+
+    @Unroll
+    @Category([BAT, NetworkFlowVisualization])
+    def "Verify network graph when filtered on \"#filter\" and scoped to \"#scope\" #desc"() {
+        given:
+        "Orchestrator components exists"
+        def deployments = Services.getDeployments(
+                RawQuery.newBuilder().setQuery("Orchestrator Component:true").build()
+        )
+        def orchestratorDeployments = new HashSet<String>([])
+        deployments.each { orchestratorDeployments.add("${it.namespace}/${it.name}") }
+        Assume.assumeTrue(orchestratorDeployments.size() > 0)
+
+        deployments = Services.getDeployments(
+                RawQuery.newBuilder().setQuery("Orchestrator Component:false").build()
+        )
+        def nonOrchestratorDeployments = new HashSet<String>([])
+        deployments.each { nonOrchestratorDeployments.add("${it.namespace}/${it.name}") }
+
+        when:
+        "Network graph is filtered on \"#filter\" and scoped to \"#scope\""
+        def graph = NetworkGraphService.getNetworkGraph(null, filter, scope)
+
+        then:
+        "Network graph #desc"
+        assert verifyGraphFilterAndScope(graph, nonOrchestratorDeployments, orchestratorDeployments,
+                nonOrchestratorDepsShouldExist, orchestratorDepsShouldExist)
+
+        when:
+        "Network policy graph is filtered on \"#filter\" and scoped to \"#scope\""
+        graph = NetworkPolicyService.getNetworkPolicyGraph(filter, scope)
+
+        then:
+        "Network policy graph #desc"
+        assert verifyGraphFilterAndScope(graph, nonOrchestratorDeployments, orchestratorDeployments,
+                nonOrchestratorDepsShouldExist, orchestratorDepsShouldExist)
+
+        where:
+        "Data is:"
+
+        filter                         | scope                          | orchestratorDepsShouldExist |
+                nonOrchestratorDepsShouldExist | desc
+        ""                             | "Orchestrator Component:false" | false                       |
+                true | "contains non-orchestrator deployments only"
+        "Orchestrator Component:false" | ""                             | true                        |
+                true | "contains non-orchestrator deployments and connected orchestrator deployments"
+        "Orchestrator Component:true"  | "Orchestrator Component:false" | false                       |
+                false | "contains no deployments"
+        "Orchestrator Component:false" | "Orchestrator Component:true"  | false                       |
+                false | "contains no deployments"
+        "Namespace:stackrox"           | "Orchestrator Component:false" | false                       |
+                true | "contains stackrox deployments only"
     }
 
     @Category([NetworkFlowVisualization])
@@ -582,7 +659,7 @@ class NetworkFlowTest extends BaseSpecification {
             def index = currentGraph.nodesList.findIndexOf { node -> node.deploymentName == deploymentName }
             def allowAllIngress = deployments.find { it.name == deploymentName }?.createLoadBalancer ||
                     currentGraph.nodesList.find { it.entity.type == Type.INTERNET }.outEdgesMap.containsKey(index)
-            List<NetworkGraphServiceOuterClass.NetworkNode> outNodes =  currentGraph.nodesList.findAll { node ->
+            List<NetworkNode> outNodes =  currentGraph.nodesList.findAll { node ->
                 node.outEdgesMap.containsKey(index)
             }
             def ingressPodSelectors = it."spec"."ingress".find { it.containsKey("from") } ?
@@ -743,7 +820,7 @@ class NetworkFlowTest extends BaseSpecification {
         "let netpols propagate and allow connection data to update, then verify graph again"
         sleep 60000
         NetworkGraph newGraph = NetworkGraphService.getNetworkGraph()
-        for (NetworkGraphServiceOuterClass.NetworkNode newNode : newGraph.nodesList) {
+        for (NetworkNode newNode : newGraph.nodesList) {
             def baseNode = baseGraph.nodesList.find {
                 it.entity.deployment.name == newNode.entity.deployment.name &&
                         it.entity.deployment.namespace == newNode.entity.deployment.namespace
@@ -760,7 +837,7 @@ class NetworkFlowTest extends BaseSpecification {
     private static getNode(String deploymentId, boolean withListenPorts, int timeoutSeconds = 90) {
         def t = new Timer(timeoutSeconds, 1)
 
-        NetworkGraphServiceOuterClass.NetworkNode match = null
+        NetworkNode match = null
         while (t.IsValid()) {
             def graph = NetworkGraphService.getNetworkGraph()
             def node = NetworkGraphUtil.findDeploymentNode(graph, deploymentId)

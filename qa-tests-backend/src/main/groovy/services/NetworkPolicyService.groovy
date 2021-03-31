@@ -2,6 +2,7 @@ package services
 
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.Common.ResourceByID
+import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraphScope
 import io.stackrox.proto.api.v1.NetworkPolicyServiceGrpc
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.ApplyNetworkPolicyYamlRequest
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest
@@ -22,13 +23,16 @@ class NetworkPolicyService extends BaseService {
         return NetworkPolicyServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getNetworkPolicyGraph(String query = null) {
+    static getNetworkPolicyGraph(String query = null, String scope = null) {
         try {
             GetNetworkGraphRequest.Builder request =
                     GetNetworkGraphRequest.newBuilder()
                             .setClusterId(ClusterService.getClusterId())
             if (query != null) {
                 request.setQuery(query)
+            }
+            if (scope != null) {
+                request.setScope(NetworkGraphScope.newBuilder().setQuery(scope))
             }
             return getNetworkPolicyClient().getNetworkGraph(request.build())
         } catch (Exception e) {
