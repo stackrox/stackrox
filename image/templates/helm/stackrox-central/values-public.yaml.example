@@ -104,6 +104,12 @@
 #         enabled: true
 #         bucketFillFraction: .5
 #         freeFractionThreshold: 0.75
+#       # Configuration option for rolling back to a previous version after an upgrade has been completed.
+#       # Default to none.
+#       # By default, the user may initiate a rollback if upgrade fails before Central has started.
+#       # Users may rollback to their previous version once Central has started, but this may result in data loss,
+#       # so users must explicitly specify the version they are rolling back to in order to acknowledge the effects.
+#       forceRollbackVersion: 3.0.58.0
 #
 #   # Additional endpoints configuration for the Central deployment.
 #   # See the `config/central/endpoints.yaml.default` file that is shipped with this chart

@@ -53,7 +53,7 @@ func run() error {
 		return nil
 	}
 
-	dbm, err := replica.Scan(migrations.DBMountPath())
+	dbm, err := replica.Scan(migrations.DBMountPath(), conf.Maintenance.ForceRollbackVersion)
 	if err != nil {
 		return errors.Wrap(err, "fail to scan replicas")
 	}

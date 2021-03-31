@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	migrationtestutils "github.com/stackrox/rox/pkg/migrations/testutils"
 	"github.com/stackrox/rox/pkg/version/testutils"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -98,7 +98,7 @@ func createAndRunCentral(t *testing.T, ver *versionPair) *mockCentral {
 	mock := createCentral(t)
 	mock.setVersion = setVersion
 	mock.setVersion(t, ver)
-	mock.runMigrator("")
+	mock.runMigrator("", "")
 	mock.runCentral()
 	return mock
 }
@@ -177,7 +177,7 @@ func TestReplicaMigrationFailureAndReentry(t *testing.T) {
 			}
 			if c.furtherToVersion != nil {
 				// Run migrator multiple times
-				mock.runMigrator("")
+				mock.runMigrator("", "")
 				mock.upgradeCentral(c.furtherToVersion, "")
 			}
 		})
@@ -260,12 +260,106 @@ func TestReplicaRestore(t *testing.T) {
 	}
 }
 
-func TestDowngradeFailure(t *testing.T) {
-	mock := createAndRunCentral(t, &futureVer)
-	defer mock.destroyCentral()
-	setVersion(t, &currVer)
-	_, err := Scan(mock.mountPath)
-	require.EqualError(t, err, fmt.Sprintf("Database downgrade or force rollback from %s is not supported", futureVer.version))
+func TestForceRollbackFailure(t *testing.T) {
+	if buildinfo.ReleaseBuild {
+		return
+	}
+	testCases := []struct {
+		description          string
+		rollbackEnabled      bool
+		forceRollback        string
+		withPrevious         bool
+		expectedErrorMessage string
+		wrongVersion         bool
+	}{
+		{
+			description:          "Rollback disabled without force rollback without previous",
+			rollbackEnabled:      false,
+			withPrevious:         false,
+			forceRollback:        "",
+			expectedErrorMessage: errNoPrevious,
+		},
+		{
+			description:          "Rollback disabled with force rollback without previous",
+			rollbackEnabled:      false,
+			withPrevious:         false,
+			forceRollback:        currVer.version,
+			expectedErrorMessage: errNoPrevious,
+		},
+		{
+			description:          "Rollback disabled without force rollback with previous",
+			rollbackEnabled:      false,
+			withPrevious:         true,
+			forceRollback:        "",
+			expectedErrorMessage: errForceUpgradeDisabled,
+		},
+		{
+			description:          "Rollback disabled with force rollback with wrong previous replica",
+			rollbackEnabled:      false,
+			withPrevious:         true,
+			forceRollback:        currVer.version,
+			expectedErrorMessage: fmt.Sprintf(errPreviousMismatchWithVersions, preVer.version, currVer.version),
+			wrongVersion:         true,
+		},
+		{
+			description:          "Rollback enabled without force rollback without previous",
+			rollbackEnabled:      true,
+			withPrevious:         false,
+			forceRollback:        "",
+			expectedErrorMessage: errNoPrevious,
+		},
+		{
+			description:          "Rollback enabled with force rollback without previous",
+			rollbackEnabled:      true,
+			withPrevious:         false,
+			forceRollback:        currentReplica,
+			expectedErrorMessage: errNoPrevious,
+		},
+		{
+			description:          "Rollback enabled with force rollback with previous",
+			rollbackEnabled:      true,
+			withPrevious:         true,
+			forceRollback:        currVer.version,
+			expectedErrorMessage: "",
+		},
+		{
+			description:          "Rollback enabled without force rollback with previous",
+			rollbackEnabled:      true,
+			withPrevious:         true,
+			forceRollback:        "",
+			expectedErrorMessage: errForceUpgradeDisabled,
+		},
+		{
+			description:          "Rollback enabled with force rollback with wrong previous replica",
+			rollbackEnabled:      true,
+			withPrevious:         true,
+			forceRollback:        currVer.version,
+			expectedErrorMessage: fmt.Sprintf(errPreviousMismatchWithVersions, preVer.version, currVer.version),
+			wrongVersion:         true,
+		},
+	}
+	for _, c := range testCases {
+		t.Run(c.description, func(t *testing.T) {
+			ver := &currVer
+			if c.wrongVersion {
+				ver = &preVer
+			}
+			mock := createAndRunCentral(t, ver)
+			defer mock.destroyCentral()
+			mock.enableRollBack(c.withPrevious)
+			mock.upgradeCentral(&futureVer, "")
+			// Force rollback
+			mock.enableRollBack(c.rollbackEnabled)
+			setVersion(t, &currVer)
+			_, err := Scan(mock.mountPath, c.forceRollback)
+			if c.expectedErrorMessage != "" {
+				assert.EqualError(t, err, c.expectedErrorMessage)
+			} else {
+				assert.NoError(t, err)
+				mock.rollbackCentral(&currVer, "", c.forceRollback)
+			}
+		})
+	}
 }
 
 func TestRollback(t *testing.T) {
@@ -337,9 +431,9 @@ func TestRollback(t *testing.T) {
 			defer mock.destroyCentral()
 			mock.setVersion = setVersion
 			mock.enableRollBack(true)
-			mock.migrateWithVersion(c.fromVersion, c.breakPoint)
-			mock.migrateWithVersion(c.fromVersion, c.breakPoint)
-			mock.rollbackCentral(c.toVersion, "")
+			mock.migrateWithVersion(c.fromVersion, c.breakPoint, "")
+			mock.migrateWithVersion(c.fromVersion, c.breakPoint, "")
+			mock.rollbackCentral(c.toVersion, "", "")
 			mock.upgradeCentral(c.fromVersion, "")
 		})
 	}
@@ -370,7 +464,7 @@ func TestRacingConditionInPersist(t *testing.T) {
 		{
 			description: "Rollback breaks in persist",
 			preRun: func(m *mockCentral) {
-				m.migrateWithVersion(&futureVer, breakBeforePersist)
+				m.migrateWithVersion(&futureVer, breakBeforePersist, "")
 				setVersion(t, &currVer)
 			},
 		},

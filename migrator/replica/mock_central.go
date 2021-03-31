@@ -25,6 +25,7 @@ const (
 	breakAfterRemove         = "remove"
 	breakBeforeCommitCurrent = "current"
 	breakBeforeCleanUp       = "cleanup"
+	enableRollback           = "ROX_ENABLE_ROLLBACK"
 )
 
 type versionPair struct {
@@ -63,23 +64,23 @@ func (m *mockCentral) enableRollBack(enable bool) {
 func (m *mockCentral) rebootCentral() {
 	curSeq := migrations.CurrentDBVersionSeqNum()
 	curVer := version.GetMainVersion()
-	m.runMigrator("")
+	m.runMigrator("", "")
 	m.runCentral()
 	assert.Equal(m.t, curSeq, migrations.CurrentDBVersionSeqNum())
 	assert.Equal(m.t, curVer, version.GetMainVersion())
 }
 
-func (m *mockCentral) migrateWithVersion(ver *versionPair, breakpoint string) {
+func (m *mockCentral) migrateWithVersion(ver *versionPair, breakpoint string, forceRollback string) {
 	m.setVersion(m.t, ver)
-	m.runMigrator(breakpoint)
+	m.runMigrator(breakpoint, forceRollback)
 }
 
 func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
 	curVer := &versionPair{version: version.GetMainVersion(), seqNum: migrations.CurrentDBVersionSeqNum()}
-	m.migrateWithVersion(ver, breakpoint)
+	m.migrateWithVersion(ver, breakpoint, "")
 	// Re-run migrator if the previous one breaks
 	if breakpoint != "" {
-		m.runMigrator("")
+		m.runMigrator("", "")
 	}
 	m.runCentral()
 	if m.rollbackEnabled && version.CompareReleaseVersions(curVer.version, "3.0.57.0") >= 0 {
@@ -101,8 +102,8 @@ func (m *mockCentral) upgradeDB(path string) {
 	require.NoError(m.t, ioutil.WriteFile(filepath.Join(path, "db"), []byte(fmt.Sprintf("%d", migrations.CurrentDBVersionSeqNum())), 0644))
 }
 
-func (m *mockCentral) runMigrator(breakPoint string) {
-	dbm, err := Scan(m.mountPath)
+func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) {
+	dbm, err := Scan(m.mountPath, forceRollback)
 	require.NoError(m.t, err)
 	if breakPoint == breakAfterScan {
 		return
@@ -139,17 +140,17 @@ func (m *mockCentral) restoreCentral(ver *versionPair, breakPoint string) {
 	curVer := &versionPair{version: version.GetMainVersion(), seqNum: migrations.CurrentDBVersionSeqNum()}
 	m.restore(ver)
 	if breakPoint == "" {
-		m.runMigrator(breakPoint)
+		m.runMigrator(breakPoint, "")
 	}
-	m.runMigrator("")
+	m.runMigrator("", "")
 	m.verifyReplica(backupReplica, curVer)
 	m.runCentral()
 }
 
-func (m *mockCentral) rollbackCentral(ver *versionPair, breakpoint string) {
-	m.migrateWithVersion(ver, breakpoint)
+func (m *mockCentral) rollbackCentral(ver *versionPair, breakpoint string, forceRollback string) {
+	m.migrateWithVersion(ver, breakpoint, forceRollback)
 	if breakpoint != "" {
-		m.runMigrator("")
+		m.runMigrator("", "")
 	}
 	m.runCentral()
 }
@@ -205,7 +206,7 @@ func (m *mockCentral) verifyDBVersion(dbPath string, seqNum int) {
 }
 
 func (m *mockCentral) runMigratorWithBreaksInPersist(breakpoint string) {
-	dbm, err := Scan(m.mountPath)
+	dbm, err := Scan(m.mountPath, "")
 	require.NoError(m.t, err)
 	replica, path, err := dbm.GetReplicaToMigrate()
 	require.NoError(m.t, err)

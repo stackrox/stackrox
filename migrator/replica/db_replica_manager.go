@@ -34,7 +34,9 @@ const (
 	bleveIndex = "scorch.bleve"
 	index      = "index"
 
-	enableRollback = "ROX_ENABLE_ROLLBACK"
+	errNoPrevious                   = "Database downgrade is not supported. No previous database for force rollback."
+	errForceUpgradeDisabled         = "Central force rollback is disabled. If you want to force rollback to the database before last upgrade, please enable force rollback to current version in central config. Note: all data updates since last upgrade will be lost."
+	errPreviousMismatchWithVersions = "Database downgrade is not supported. We can only rollback to the central version before last upgrade. Last upgrade %s, current version %s"
 )
 
 var (
@@ -50,16 +52,25 @@ type dbReplica struct {
 	migVer  *migrations.MigrationVersion
 }
 
+func (d *dbReplica) getVersion() string {
+	return d.migVer.MainVersion
+}
+
+func (d *dbReplica) getSeqNum() int {
+	return d.migVer.SeqNum
+}
+
 // DBReplicaManager scans and manage database replicas within central.
 type DBReplicaManager struct {
-	basePath   string
-	replicaMap map[string]*dbReplica
+	basePath             string
+	replicaMap           map[string]*dbReplica
+	forceRollbackVersion string
 }
 
 // Scan checks the persistent data of central and gather the replica information
 // from disk.
-func Scan(basePath string) (*DBReplicaManager, error) {
-	manager := DBReplicaManager{basePath: basePath, replicaMap: make(map[string]*dbReplica)}
+func Scan(basePath string, forceVersion string) (*DBReplicaManager, error) {
+	manager := DBReplicaManager{basePath: basePath, replicaMap: make(map[string]*dbReplica), forceRollbackVersion: forceVersion}
 
 	files, err := ioutil.ReadDir(basePath)
 	if err != nil {
@@ -109,11 +120,24 @@ func Scan(basePath string) (*DBReplicaManager, error) {
 		}
 	}
 
-	if !manager.contains(currentReplica) {
+	currReplica, currExists := manager.replicaMap[currentReplica]
+	if !currExists {
 		return nil, errors.Errorf("Cannot find database at %s", filepath.Join(basePath, currentReplica))
 	}
-	if manager.getSeqNum(currentReplica) > migrations.CurrentDBVersionSeqNum() || version.CompareReleaseVersions(manager.getVersion(currentReplica), version.GetMainVersion()) > 0 {
-		return nil, errors.Errorf("Database downgrade or force rollback from %s is not supported", manager.getVersion(currentReplica))
+	if currReplica.getSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareReleaseVersions(currReplica.getVersion(), version.GetMainVersion()) > 0 {
+		// If there is no previous replica or force rollback is not requested, we cannot downgrade.
+		prevReplica, prevExists := manager.replicaMap[previousReplica]
+		if !prevExists {
+			return nil, errors.New(errNoPrevious)
+		}
+		// Force rollback is not requested.
+		if manager.forceRollbackVersion != version.GetMainVersion() {
+			return nil, errors.New(errForceUpgradeDisabled)
+		}
+		// If previous replica does not match
+		if prevReplica.getVersion() != version.GetMainVersion() {
+			return nil, errors.Errorf(errPreviousMismatchWithVersions, prevReplica.getVersion(), version.GetMainVersion())
+		}
 	}
 
 	// Remove unknown replicas that is not in use
@@ -159,20 +183,24 @@ func (d *DBReplicaManager) GetReplicaToMigrate() (string, string, error) {
 		return restoreReplica, d.getPath(restoreRepl.dirName), nil
 	}
 
+	currReplica := d.replicaMap[currentReplica]
 	prevReplica, prevExists := d.replicaMap[previousReplica]
-
-	if d.rollbackEnabled() && d.getVersion(currentReplica) != version.GetMainVersion() {
+	if d.rollbackEnabled() && currReplica.getVersion() != version.GetMainVersion() {
 		// If previous replica has the same version as current version, the previous upgrade was not completed.
 		// Central could be in a loop of booting up the service. So we should continue to run with current.
-		if prevExists && d.getVersion(currentReplica) == d.getVersion(previousReplica) {
+		if prevExists && currReplica.getVersion() == prevReplica.getVersion() {
 			return currentReplica, d.getPath(d.replicaMap[currentReplica].dirName), nil
+		}
+		if version.CompareReleaseVersions(currReplica.getVersion(), version.GetMainVersion()) > 0 || currReplica.getSeqNum() > migrations.CurrentDBVersionSeqNum() {
+			// Force rollback
+			return previousReplica, d.getPath(d.replicaMap[previousReplica].dirName), nil
 		}
 
 		// TODO(cdu): TBD - do we want to save some extra space here?
 		// d.safeRemove(previousReplica)
 		tempDir := ".db-" + uuid.NewV4().String()
 		log.Info("Database rollback enabled. Copying database files and migrate it to current version.")
-		// Copy directory: not following link
+		// Copy directory: not following link, do not overwrite
 		cmd := exec.Command("cp", "-Rp", d.getPath(d.replicaMap[currentReplica].dirName), d.getPath(tempDir))
 		if output, err := cmd.CombinedOutput(); err != nil {
 			_ = os.RemoveAll(d.getPath(tempDir))
@@ -184,11 +212,11 @@ func (d *DBReplicaManager) GetReplicaToMigrate() (string, string, error) {
 			return "", "", err
 		}
 		d.replicaMap[tempReplica] = &dbReplica{dirName: tempDir, migVer: ver}
-		return tempReplica, d.getPath(tempDir), nil
+		return tempReplica, d.getPath(d.replicaMap[tempReplica].dirName), nil
 	}
 
 	// Rollback from previous version.
-	if prevExists && d.getVersion(previousReplica) == version.GetMainVersion() {
+	if prevExists && prevReplica.getVersion() == version.GetMainVersion() {
 		return previousReplica, d.getPath(prevReplica.dirName), nil
 	}
 
@@ -245,19 +273,16 @@ func (d *DBReplicaManager) doPersist(replica string, prev string) error {
 	return nil
 }
 
-func (d *DBReplicaManager) getPath(replica string) string {
-	return filepath.Join(d.basePath, replica)
-}
-
-func (d *DBReplicaManager) getVersion(replica string) string {
-	return d.replicaMap[replica].migVer.MainVersion
-}
-
-func (d *DBReplicaManager) getSeqNum(replica string) int {
-	return d.replicaMap[replica].migVer.SeqNum
+func (d *DBReplicaManager) getPath(replicaLink string) string {
+	return filepath.Join(d.basePath, replicaLink)
 }
 
 func (d *DBReplicaManager) rollbackEnabled() bool {
 	// If we are upgrading from earlier version without a migration version, we cannot do rollback.
-	return features.UpgradeRollback.Enabled() && d.getSeqNum(currentReplica) != 0
+	currReplica, currExists := d.replicaMap[currentReplica]
+	if !currExists {
+		utils.Should(errors.New("cannot find current replica"))
+		return false
+	}
+	return features.UpgradeRollback.Enabled() && currReplica.getSeqNum() != 0
 }

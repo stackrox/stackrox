@@ -49,6 +49,8 @@ func (c *Compaction) validate() error {
 type Maintenance struct {
 	SafeMode   bool       `yaml:"safeMode"`
 	Compaction Compaction `yaml:"compaction"`
+	// Allowing force rollback only to this version.
+	ForceRollbackVersion string `yaml:"forceRollbackVersion"`
 }
 
 func (m *Maintenance) applyDefaults() {
