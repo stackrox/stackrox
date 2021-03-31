@@ -30,6 +30,10 @@ spec:
         traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
         {{- include "srox.podAnnotations" (list . "deployment" "scanner") | nindent 8 }}
     spec:
+      {{- if ._rox.scanner._nodeSelector }}
+      nodeSelector:
+        {{- ._rox.scanner._nodeSelector | nindent 8 }}
+      {{- end }}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -177,6 +181,10 @@ spec:
         traffic.sidecar.istio.io/excludeInboundPorts: "5432"
         {{- include "srox.podAnnotations" (list . "deployment" "scanner-db") | nindent 8 }}
     spec:
+      {{- if ._rox.scanner._dbNodeSelector }}
+      nodeSelector:
+        {{- ._rox.scanner._dbNodeSelector | nindent 8 }}
+      {{- end }}
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

@@ -69,6 +69,8 @@ scanner:
   disable: null # bool
   replicas: null # int
   logLevel: null # string
+  nodeSelector: null # string | dict
+  dbNodeSelector: null # string | dict
   autoscaling:
     disable: null # bool
     minReplicas: null # int

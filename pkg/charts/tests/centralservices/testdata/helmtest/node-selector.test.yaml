@@ -1,0 +1,66 @@
+tests:
+- name: "with default settings"
+  expect: |
+    .deployments.central.spec.template.spec.nodeSelector | assertThat(. == null)
+    .deployments.scanner.spec.template.spec.nodeSelector | assertThat(. == null)
+    .deployments["scanner-db"].spec.template.spec.nodeSelector | assertThat(. == null)
+
+- name: "with empty string settings"
+  values:
+    central:
+      nodeSelector: ""
+    scanner:
+      nodeSelector: ""
+      dbNodeSelector: ""
+  expect: |
+    .deployments.central.spec.template.spec.nodeSelector | assertThat(. == null)
+    .deployments.scanner.spec.template.spec.nodeSelector | assertThat(. == null)
+    .deployments["scanner-db"].spec.template.spec.nodeSelector | assertThat(. == null)
+
+- name: "with empty dict settings"
+  values:
+    central:
+      nodeSelector: {}
+    scanner:
+      nodeSelector: {}
+      dbNodeSelector: {}
+  expect: |
+    .deployments.central.spec.template.spec.nodeSelector | assertThat(length == 0)
+    .deployments.scanner.spec.template.spec.nodeSelector | assertThat(length == 0)
+    .deployments["scanner-db"].spec.template.spec.nodeSelector | assertThat(length == 0)
+
+- name: "with populated settings"
+  expect: |
+    .deployments.central.spec.template.spec.nodeSelector | assertThat(.role == "central")
+    .deployments.scanner.spec.template.spec.nodeSelector | assertThat(.role == "scanner")
+    .deployments["scanner-db"].spec.template.spec.nodeSelector | assertThat(.role == "scanner-db")
+    [.deployments.central, .deployments.scanner, .deployments["scanner-db"]][] |
+      .spec.template.spec.nodeSelector | assertThat(.foo == "bar")
+
+  tests:
+  - name: "via dictionary"
+    values:
+      central:
+        nodeSelector:
+          foo: bar
+          role: central
+      scanner:
+        nodeSelector:
+          foo: bar
+          role: scanner
+        dbNodeSelector:
+          foo: bar
+          role: "scanner-db"
+  - name: "via strings"
+    values:
+      central:
+        nodeSelector: |
+          foo: bar
+          role: central
+      scanner:
+        nodeSelector: |
+          foo: bar
+          role: scanner
+        dbNodeSelector: |
+          foo: bar
+          role: "scanner-db"

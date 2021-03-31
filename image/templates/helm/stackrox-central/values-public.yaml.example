@@ -244,6 +244,21 @@
 #   # The log level for the scanner deployment. This typically does not need to be changed.
 #   logLevel: INFO
 #
+#   # If you want to enforce StackRox Scanner to only run on certain nodes, you can specify
+#   # a node selector here to make sure Scanner can only be scheduled on Nodes with the
+#   # given label.
+#   nodeSelector:
+#     # This can contain arbitrary `label-key: label-value` pairs.
+#     role: stackrox-scanner
+#
+#
+#   # If you want to enforce StackRox Scanner DB to only run on certain nodes, you can specify
+#   # a node selector here to make sure Scanner DB can only be scheduled on Nodes with the
+#   # given label.
+#   dbNodeSelector:
+#     # This can contain arbitrary `label-key: label-value` pairs.
+#     role: stackrox-scanner-db
+#
 #   # Configuration for autoscaling the Scanner deployment.
 #   autoscaling:
 #     # disable=true causes autoscaling to be disabled. All other settings in this section
