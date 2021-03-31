@@ -10,15 +10,15 @@ class OnOffSwitch extends Component {
     };
 
     renderSwitch = () => {
-        const onColor = 'border-success-300 text-success-600';
-        const offColor = 'border-alert-300 text-alert-600';
+        const onColor = 'bg-success-600 border-success-600 text-base-100';
+        const offColor = 'bg-alert-600 border-alert-600 text-base-100';
         const neutralColor = 'border-primary-300 text-primary-600';
 
         const onSwitchColor = this.props.enabled && this.props.applied ? onColor : neutralColor;
         const offSwitchColor = this.props.enabled && !this.props.applied ? offColor : neutralColor;
 
-        const onSwitchClass = `px-2 py-1 border-2 bg-base-100 ${onSwitchColor} font-700 rounded-sm text-base-600 text-xs uppercase`;
-        const offSwitchClass = `px-2 py-1 border-2 bg-base-100 ${offSwitchColor} font-700 rounded-sm text-base-600 text-xs uppercase`;
+        const onSwitchClass = `px-2 py-1 border-2 bg-base-100 ${onSwitchColor} font-700 rounded-sm text-xs uppercase`;
+        const offSwitchClass = `px-2 py-1 border-2 bg-base-100 ${offSwitchColor} font-700 rounded-sm text-xs uppercase`;
 
         return (
             <div
