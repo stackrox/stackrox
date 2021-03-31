@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/coreos/etcd/pkg/fileutil"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/migrations"
 	migrationtestutils "github.com/stackrox/rox/pkg/migrations/testutils"
@@ -25,7 +26,6 @@ const (
 	breakAfterRemove         = "remove"
 	breakBeforeCommitCurrent = "current"
 	breakBeforeCleanUp       = "cleanup"
-	enableRollback           = "ROX_ENABLE_ROLLBACK"
 )
 
 type versionPair struct {
@@ -58,7 +58,7 @@ func (m *mockCentral) destroyCentral() {
 
 func (m *mockCentral) enableRollBack(enable bool) {
 	m.rollbackEnabled = enable
-	require.NoError(m.t, os.Setenv(enableRollback, strconv.FormatBool(enable)))
+	require.NoError(m.t, os.Setenv(features.UpgradeRollback.EnvVar(), strconv.FormatBool(enable)))
 }
 
 func (m *mockCentral) rebootCentral() {

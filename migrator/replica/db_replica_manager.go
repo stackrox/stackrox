@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/fsutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/set"
@@ -45,6 +46,8 @@ var (
 	knownReplicas = set.NewStringSet(currentReplica, restoreReplica, backupReplica, previousReplica)
 
 	log = logging.CurrentModule().Logger()
+
+	capacityMargin = 0.2
 )
 
 type dbReplica struct {
@@ -196,23 +199,27 @@ func (d *DBReplicaManager) GetReplicaToMigrate() (string, string, error) {
 			return previousReplica, d.getPath(d.replicaMap[previousReplica].dirName), nil
 		}
 
-		// TODO(cdu): TBD - do we want to save some extra space here?
-		// d.safeRemove(previousReplica)
-		tempDir := ".db-" + uuid.NewV4().String()
-		log.Info("Database rollback enabled. Copying database files and migrate it to current version.")
-		// Copy directory: not following link, do not overwrite
-		cmd := exec.Command("cp", "-Rp", d.getPath(d.replicaMap[currentReplica].dirName), d.getPath(tempDir))
-		if output, err := cmd.CombinedOutput(); err != nil {
-			_ = os.RemoveAll(d.getPath(tempDir))
-			return "", "", errors.Wrapf(err, "failed to copy current db %s", output)
+		d.safeRemove(previousReplica)
+		if d.hasSpaceForRollback() {
+			tempDir := ".db-" + uuid.NewV4().String()
+			log.Info("Database rollback enabled. Copying database files and migrate it to current version.")
+			// Copy directory: not following link, do not overwrite
+			cmd := exec.Command("cp", "-Rp", d.getPath(d.replicaMap[currentReplica].dirName), d.getPath(tempDir))
+			if output, err := cmd.CombinedOutput(); err != nil {
+				_ = os.RemoveAll(d.getPath(tempDir))
+				return "", "", errors.Wrapf(err, "failed to copy current db %s", output)
+			}
+			ver, err := migrations.Read(d.getPath(tempDir))
+			if err != nil {
+				_ = os.RemoveAll(d.getPath(tempDir))
+				return "", "", err
+			}
+			d.replicaMap[tempReplica] = &dbReplica{dirName: tempDir, migVer: ver}
+			return tempReplica, d.getPath(d.replicaMap[tempReplica].dirName), nil
 		}
-		ver, err := migrations.Read(d.getPath(tempDir))
-		if err != nil {
-			_ = os.RemoveAll(d.getPath(tempDir))
-			return "", "", err
-		}
-		d.replicaMap[tempReplica] = &dbReplica{dirName: tempDir, migVer: ver}
-		return tempReplica, d.getPath(d.replicaMap[tempReplica].dirName), nil
+
+		// If the space is not enough to make a replica, continue to upgrade with current.
+		return currentReplica, d.getPath(d.replicaMap[currentReplica].dirName), nil
 	}
 
 	// Rollback from previous version.
@@ -228,6 +235,7 @@ func (d *DBReplicaManager) Persist(replica string) error {
 	if !d.contains(replica) {
 		utils.Must(errors.New("Unexpected replica to persist"))
 	}
+	log.Infof("Persisting upgraded replica: %s", replica)
 
 	switch replica {
 	case restoreReplica:
@@ -285,4 +293,26 @@ func (d *DBReplicaManager) rollbackEnabled() bool {
 		return false
 	}
 	return features.UpgradeRollback.Enabled() && currReplica.getSeqNum() != 0
+}
+
+func (d *DBReplicaManager) hasSpaceForRollback() bool {
+	currReplica, currExists := d.replicaMap[currentReplica]
+	if !currExists {
+		utils.Should(errors.New("cannot find current replica"))
+		return false
+	}
+	availableBytes, err := fsutils.AvailableBytesIn(d.basePath)
+	if err != nil {
+		log.Warnf("Fail to get available bytes in %s", d.basePath)
+		return false
+	}
+	requiredBytes, err := fileutils.DirectorySize(d.getPath(currReplica.dirName))
+	if err != nil {
+		log.Warnf("Fail to directory size %s", d.getPath(currReplica.dirName))
+		return false
+	}
+
+	hasSpace := float64(availableBytes) > float64(requiredBytes)*(1.0+capacityMargin)
+	log.Infof("Central has space to create backup for rollback: %v, required: %d, available %d with %f margin", hasSpace, requiredBytes, availableBytes, capacityMargin)
+	return hasSpace
 }

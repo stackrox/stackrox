@@ -4,12 +4,12 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
-	"syscall"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/option"
 	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/fsutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/rocksdb/metrics"
 	"github.com/tecbot/gorocksdb"
@@ -75,7 +75,7 @@ func findScratchPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	tmpBytesAvailable, err := getBytesAvailableIn(tmpDir)
+	tmpBytesAvailable, err := fsutils.AvailableBytesIn(tmpDir)
 	if err != nil {
 		return "", errors.Wrapf(err, "unable to calculates size of %s", tmpDir)
 	}
@@ -88,7 +88,7 @@ func findScratchPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	pvcBytesAvailable, err := getBytesAvailableIn(pvcDir)
+	pvcBytesAvailable, err := fsutils.AvailableBytesIn(pvcDir)
 	if err != nil {
 		return "", errors.Wrapf(err, "unable to calculates size of %s", pvcDir)
 	}
@@ -98,15 +98,6 @@ func findScratchPath() (string, error) {
 
 	// If neither had enough space, return an error.
 	return "", errors.Errorf("required %f bytes of space, found %f bytes in %s and %f bytes on PVC, cannot backup", requiredBytes, float64(tmpBytesAvailable), os.TempDir(), float64(pvcBytesAvailable))
-}
-
-// Use statfs_t to get the bytes available in the path.
-func getBytesAvailableIn(toPath string) (uint64, error) {
-	var stat syscall.Statfs_t
-	if err := syscall.Statfs(toPath, &stat); err != nil {
-		return 0, err
-	}
-	return stat.Bavail * uint64(stat.Bsize), nil
 }
 
 // Get the number of bytes used by files stored for the db.

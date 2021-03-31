@@ -15,12 +15,12 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/binenc"
+	"github.com/stackrox/rox/pkg/fsutils"
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/probeupload"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
-	"golang.org/x/sys/unix"
 )
 
 const (
@@ -126,14 +126,6 @@ func (m *manager) cleanUpRootDir() error {
 	return nil
 }
 
-func (m *manager) freeBytes() (int64, error) {
-	var stfs unix.Statfs_t
-	if err := unix.Statfs(m.rootDir, &stfs); err != nil {
-		return 0, err
-	}
-	return int64(stfs.Bavail) * int64(stfs.Bsize), nil
-}
-
 func (m *manager) Initialize() error {
 	// Ensure the root directory exists and is a directory
 	rootDirSt, err := os.Stat(m.rootDir)
@@ -230,8 +222,8 @@ func (m *manager) StoreFile(ctx context.Context, file string, data io.Reader, si
 		return errors.Errorf("invalid file name %q", file)
 	}
 
-	if freeBytes, err := m.freeBytes(); err == nil {
-		if freeBytes-size-fileSizeOverhead < m.freeDiskThreshold {
+	if freeBytes, err := fsutils.AvailableBytesIn(m.rootDir); err == nil {
+		if freeBytes-uint64(size)-uint64(fileSizeOverhead) < uint64(m.freeDiskThreshold) {
 			return errors.Errorf("only %d bytes left on partition, not storing probes to avoid impacting database health", freeBytes)
 		}
 	}

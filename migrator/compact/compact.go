@@ -6,12 +6,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"syscall"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/fsutils"
 	"github.com/stackrox/rox/pkg/migrations"
 	bolt "go.etcd.io/bbolt"
 )
@@ -20,18 +20,10 @@ const (
 	sizeBuffer = 4 * 1024 * 1024
 )
 
-func availableBytes(path string) (uint64, error) {
-	var stat syscall.Statfs_t
-	if err := syscall.Statfs(path, &stat); err != nil {
-		return 0, err
-	}
-	return stat.Bavail * uint64(stat.Bsize), nil
-}
-
 func determineLargeEnoughDir(currSize uint64) (string, error) {
 	desiredSpace := currSize + sizeBuffer
 
-	mountAvailBytes, err := availableBytes(migrations.DBMountPath())
+	mountAvailBytes, err := fsutils.AvailableBytesIn(migrations.DBMountPath())
 	if err != nil {
 		return "", errors.Wrap(err, "error getting available bytes for DB mount path")
 	}
@@ -39,7 +31,7 @@ func determineLargeEnoughDir(currSize uint64) (string, error) {
 		return migrations.DBMountPath(), nil
 	}
 
-	tmpAvailBytes, err := availableBytes("/tmp")
+	tmpAvailBytes, err := fsutils.AvailableBytesIn("/tmp")
 	if err != nil {
 		return "", errors.Wrap(err, "error getting available bytes for /tmp")
 	}
@@ -191,7 +183,7 @@ func Compact(config *config.Config) error {
 			return errors.Wrap(err, "error running stat on the compacted path")
 		}
 
-		availableOnMountPath, err := availableBytes(migrations.DBMountPath())
+		availableOnMountPath, err := fsutils.AvailableBytesIn(migrations.DBMountPath())
 		if err != nil {
 			return errors.Wrapf(err, "unable to get available bytes for %q", migrations.DBMountPath())
 		}

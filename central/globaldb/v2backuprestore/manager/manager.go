@@ -6,7 +6,6 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/pkg/errors"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/formats"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/fsutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/osutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -93,13 +93,12 @@ func analyzeManifest(manifest *v1.DBExportManifest, format *formats.ExportFormat
 }
 
 func (m *manager) checkDiskSpace(requiredBytes int64) error {
-	var stat syscall.Statfs_t
-	if err := syscall.Statfs(m.outputRoot, &stat); err != nil {
+	availableBytes, err := fsutils.AvailableBytesIn(m.outputRoot)
+	if err != nil {
 		log.Warnf("Could not determine free disk space of volume containing %s: %v. Assuming free space is sufficient for %d bytes.", m.outputRoot, err, requiredBytes)
 		return nil
 	}
-	availableBytes := int64(stat.Bsize) * int64(stat.Bavail)
-	if availableBytes < requiredBytes {
+	if availableBytes < uint64(requiredBytes) {
 		return errors.Errorf("restoring backup requires %d bytes of free disk space, but volume containing %s only has %d bytes available", requiredBytes, m.outputRoot, availableBytes)
 	}
 	return nil
