@@ -340,9 +340,9 @@ bash openshift/central.sh
 Replace the value with the version number you want to release from:
 
 ```bash
-export RELEASE_BRANCH=2.4.22.x
+export RELEASE_BRANCH=3.0.58.x
 export MASTER_VERSION=${RELEASE_BRANCH}
-export RELEASE_VERSION=2.4.22.0
+export RELEASE_VERSION=3.0.58.0
 ```
 
 The release branch naming convention should follow <major_version>.<generic_minor_version>.
@@ -354,7 +354,7 @@ The release version should be the specific version you plan to release. This wil
 when creating the tag later in the process. With each release, we should create at least
 1 release candidate to use for testing prior to releasing to customers (Release
 Candidate versions should be a combination of the full version number with `-rc.x`
-appended to the end: i.e., `2.4.22.0-rc.1`).
+appended to the end: i.e., `3.0.58.0-rc.1`).
 
 By convention, we do not currently use a `v` prefix for release tags (that is,
 we push tags like `0.5`, not `v0.5`).
@@ -373,7 +373,7 @@ empty commit to `release/${RELEASE_BRANCH}` to diverge from master. This allows
 us to start tracking the point of divergence for the release. We will push the
 branch to github for use in future builds for that release version. We also will
 tag the master branch commit with `${MASTER_VERSION}` (N.B. not `${RELEASE_VERSION}` --
-master tag should now look like `2.4.22.x`.
+master tag should now look like `3.0.58.x`.
 
 ```bash
 git checkout master
@@ -423,7 +423,7 @@ git push origin release/${RELEASE_BRANCH}
 
 When you push the tag to GitHub, CircleCI will start a build and will push
 the image to docker.io as `stackrox/main:[your-rc-tag]`,
-for example `stackrox/main:2.4.22.0-rc.1`.
+for example `stackrox/main:3.0.58.0-rc.1`.
 
 ### Create a Release
 
@@ -437,7 +437,7 @@ git push origin release/${RELEASE_BRANCH}
 
 When you push the tag to GitHub, CircleCI will start a build and will push
 the image as `stackrox/main:[your-release-tag]`,
-for example `stackrox/main:2.4.22.0` and `stackrox.io/main:2.4.22.0`.
+for example `stackrox/main:3.0.58.0` and `stackrox.io/main:3.0.58.0`.
 
 ### Update JIRA release
 
