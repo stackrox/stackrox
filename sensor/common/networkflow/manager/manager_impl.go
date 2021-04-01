@@ -270,19 +270,20 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 
 	if len(lookupResults) == 0 {
 		var extSrc *storage.NetworkEntityInfo
-		if conn.remote.IPAndPort.Address.IsValid() {
-			extSrc = m.externalSrcs.LookupByAddress(conn.remote.IPAndPort.Address)
-		} else if conn.remote.IPAndPort.IPNetwork.IsValid() {
+		if conn.remote.IPAndPort.IPNetwork.IsValid() {
 			extSrc = m.externalSrcs.LookupByNetwork(conn.remote.IPAndPort.IPNetwork)
-		}
-
-		if extSrc != nil {
-			isFresh = false
+			if extSrc != nil {
+				isFresh = false
+			}
 		}
 
 		// If the address is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time before associating it to INTERNET.
 		if isFresh {
 			return
+		}
+
+		if conn.remote.IPAndPort.Address.IsValid() {
+			extSrc = m.externalSrcs.LookupByAddress(conn.remote.IPAndPort.Address)
 		}
 
 		flowMetrics.ExternalFlowCounter.Inc()
