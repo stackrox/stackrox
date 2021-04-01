@@ -279,6 +279,9 @@ class UpgradesTest extends BaseSpecification {
     def "Verify upgraded policies match default policy set"() {
         given:
         "Default policies in code"
+        // TODO(nakul) update caveats once fixes are in place
+        Assume.assumeFalse(CLUSTERID=="268c98c6-e983-4f4e-95d2-9793cebddfd7")
+
         def defaultPolicies = [:]
         def policiesDir = new File(POLICIES_JSON_PATH)
         policiesDir.eachFileRecurse (FileType.FILES) { file ->

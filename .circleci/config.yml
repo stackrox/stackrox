@@ -3986,6 +3986,68 @@ jobs:
           desc: "Validate RocksDB after backup + restore"
 
       - run:
+          name: Restore 56.1 backup to current HEAD
+          command: |
+            gsutil cp gs://stackrox-ci-upgrade-test-dbs/stackrox_56_1_upgrade.zip .
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m stackrox_56_1_upgrade.zip
+
+      - *waitForAPI
+      - validate-upgrade-and-check-logs-with-bouncing:
+          upgrade-cluster-id: "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+          desc: "Validate 56.1 restore to current HEAD"
+
+      - remove-existing-stackrox-resources
+
+      - run:
+          name: Deploy RHEL-based Central 56.1
+          command: |
+            git checkout 3.0.56.1
+
+            cci-export MAIN_IMAGE_REPO stackrox/main-rhel
+            cci-export SCANNER_IMAGE "stackrox/scanner-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+            cci-export SCANNER_DB_IMAGE "stackrox/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+
+            cci-export MAIN_IMAGE_TAG 3.0.56.1
+            ./deploy/k8s/central.sh
+
+            # Remove the scanner HPA for these tests to avoid resource throttling
+            kubectl -n stackrox delete hpa/scanner
+
+            source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
+            cci-export ROX_USERNAME "$ROX_USERNAME"
+            cci-export ROX_PASSWORD "$ROX_PASSWORD"
+
+      - *waitForAPI
+
+      - run:
+          name: Restore 56.1 backup to 56.1
+          command: |
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --timeout 2m stackrox_56_1_upgrade.zip
+
+      - *waitForAPI
+
+      - run:
+          name: Set Central + Scanner images to most recent commit
+          command: |
+            git reset --hard "${CIRCLE_SHA1}"
+            kubectl -n stackrox set image deploy/central "central=stackrox/main-rhel:$(make --quiet tag)"
+            kubectl -n stackrox set image deploy/scanner "scanner=stackrox/scanner-rhel:$(cat SCANNER_VERSION)"
+            kubectl -n stackrox set image deploy/scanner-db "*=stackrox/scanner-db-rhel:$(cat SCANNER_VERSION)"
+
+      - *waitForAPI
+
+      - validate-upgrade-and-check-logs-with-bouncing:
+          upgrade-cluster-id: "268c98c6-e983-4f4e-95d2-9793cebddfd7"
+          desc: "Validate 56.1 migration to current HEAD on RHEL-based image"
+
+      - run:
+          name: Set images back to base and checkout HEAD again
+          command: |
+            cci-export MAIN_IMAGE_REPO stackrox/main
+            cci-export SCANNER_IMAGE "stackrox/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+            cci-export SCANNER_DB_IMAGE "stackrox/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+
+      - run:
           name: Fetch bundle for the "remote" cluster in the DB
           command: |
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" sensor get-bundle remote
@@ -4953,6 +5015,7 @@ workflows:
             - build
             - build-scale-monitoring-and-mock-server
             - provision-gke-api-upgrade-tests
+            - build-rhel
       - provision-gke-api-scale-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
       - gke-api-scale-tests:
