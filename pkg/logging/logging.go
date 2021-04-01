@@ -14,6 +14,9 @@
 //     * console
 //   * MODULE_LOGLEVELS supporting ,-separated module=level pairs, e.g.: grpc=debug,kubernetes=warn
 //   * MAX_LOG_LINE_QUOTA in the format max/duration_in_seconds, e.g.: 100/10
+//   * PERSISTENT_LOG supporting the following values for additional log file on persistent storage
+//     * true
+//     * false
 //
 // LOGLEVEL semantics follow common conventions, i.e., any log message with a level less than the
 // currently set log level will be discarded.
@@ -45,6 +48,9 @@ const (
 	// LoggingPath is the common log file so we can export it.
 	LoggingPath = "/var/log/stackrox/log.txt"
 
+	// PersistentLoggingPath is the additional logs on persistent storage for migration related logs.
+	PersistentLoggingPath = "/var/lib/stackrox/migration_log/log.txt"
+
 	// defaultLevel is the default log level.
 	defaultLevel = zapcore.InfoLevel
 
@@ -64,6 +70,8 @@ const (
 	InfoLevel = zapcore.InfoLevel
 	// DebugLevel log level
 	DebugLevel = zapcore.DebugLevel
+
+	persistentLogEnvVar = "PERSISTENT_LOG"
 )
 
 var (
@@ -181,13 +189,9 @@ func init() {
 	// To the alert reader: While we could theoretically create a zapcore.Core instance and use
 	// the logFile to create a MultiSyncWriter, we stick with using the config-based approach
 	// such that we can easily propagate changes to log levels.
-	if logFile, err := os.OpenFile(LoggingPath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666); err == nil {
-		defer func() {
-			_ = logFile.Close()
-		}()
-		config.OutputPaths = append(
-			config.OutputPaths, LoggingPath,
-		)
+	addOutput(&config, LoggingPath)
+	if strings.ToLower(os.Getenv(persistentLogEnvVar)) == "true" {
+		addOutput(&config, PersistentLoggingPath)
 	}
 
 	if buildinfo.ReleaseBuild {
@@ -231,6 +235,22 @@ func init() {
 	}
 
 	rootLogger = CreateLogger(ModuleForName("root logger"), 0)
+}
+
+func addOutput(config *zap.Config, path string) {
+	for _, p := range config.OutputPaths {
+		if p == path {
+			return
+		}
+	}
+	if logFile, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666); err == nil {
+		defer func() {
+			_ = logFile.Close()
+		}()
+		config.OutputPaths = append(
+			config.OutputPaths, path,
+		)
+	}
 }
 
 // SetGlobalLogLevel sets the log level on all loggers for all modules.
@@ -352,6 +372,19 @@ func SortedLevels() []zapcore.Level {
 // Skip allows to specify how much layers of nested calls we will skip during logging.
 func CreateLogger(module *Module, skip int) *Logger {
 	lc := config
+	return createLoggerWithConfig(&lc, module, skip)
+}
+
+// CreatePersistentLogger creates (but does not register) a new logger instance logging
+// also to persistent location.
+// Skip allows to specify how much layers of nested calls we will skip during logging.
+func CreatePersistentLogger(module *Module, skip int) *Logger {
+	lc := config
+	addOutput(&lc, PersistentLoggingPath)
+	return createLoggerWithConfig(&lc, module, skip)
+}
+
+func createLoggerWithConfig(lc *zap.Config, module *Module, skip int) *Logger {
 	lc.Level = module.logLevel
 
 	logger, err := lc.Build(zap.AddCallerSkip(skip))

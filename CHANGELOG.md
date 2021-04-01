@@ -14,6 +14,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Note: 
     - It is supported only when StackRox Scanner is used.
     - It is not namespaced to distro.
+- Added upgrade rollback function. By default, users may rollback to their previous version if upgrade fails before Central has started.
+  After services started, users must explicitly specify the version they are rolling back to in central config `maintenance.forceRollbackVersion`.
 
 ## [57.0]
 

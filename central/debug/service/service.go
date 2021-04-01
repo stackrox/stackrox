@@ -269,12 +269,22 @@ func getGoroutines(zipWriter *zip.Writer) error {
 }
 
 func getLogs(zipWriter *zip.Writer) error {
-	w, err := zipWriter.Create("central.log")
+	if err := getLogFile(zipWriter, "central.log", logging.LoggingPath); err != nil {
+		return err
+	}
+	if err := getLogFile(zipWriter, "migration.log", logging.PersistentLoggingPath); err != nil {
+		return err
+	}
+	return nil
+}
+
+func getLogFile(zipWriter *zip.Writer, targetPath string, sourcePath string) error {
+	w, err := zipWriter.Create(targetPath)
 	if err != nil {
 		return err
 	}
 
-	logFile, err := os.Open(logging.LoggingPath)
+	logFile, err := os.Open(sourcePath)
 	if err != nil {
 		return err
 	}

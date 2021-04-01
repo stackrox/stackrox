@@ -159,7 +159,7 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log = logging.CreatePersistentLogger(logging.CurrentModule(), 0)
 
 	authProviderBackendFactories = map[string]authproviders.BackendFactoryCreator{
 		oidc.TypeName:                oidc.NewFactory,
