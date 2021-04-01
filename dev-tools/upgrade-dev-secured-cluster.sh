@@ -28,11 +28,7 @@ if [[ -f  "$default_init_bundle_path" ]]; then
   )
 fi
 
-if [[ "$MAIN_IMAGE_TAG" == "latest-local-build" ]]; then
-  MAIN_IMAGE_TAG="$(docker images --filter="reference=stackrox/main" --format "{{.Tag}}" | head -1)"
-else
-  MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet -C "$DIR/.." tag)}"
-fi
+MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet -C "$DIR/.." tag)}"
 
 helm_args+=(
   --set "image.main.tag=$MAIN_IMAGE_TAG"
