@@ -15,6 +15,7 @@ export type FlowsProps = {
     selectedDeployment: NetworkNode;
     filterState: FilterState;
     lastUpdatedTimestamp: string;
+    entityIdToNamespaceMap: Record<string, string>;
 };
 
 function filterNonSelfReferencingEdges(edge: Edge) {
@@ -27,6 +28,7 @@ function Flows({
     selectedDeployment,
     filterState,
     lastUpdatedTimestamp,
+    entityIdToNamespaceMap,
 }: FlowsProps): ReactElement {
     const showBlockedFlows = useFeatureFlagEnabled('ROX_NETWORK_DETECTION_BLOCKED_FLOWS');
     const edges = selectedDeployment.edges.filter(filterNonSelfReferencingEdges);
@@ -59,6 +61,7 @@ function Flows({
                     deploymentId={deploymentId}
                     filterState={filterState}
                     onNavigateToEntity={onNavigateToEntity}
+                    entityIdToNamespaceMap={entityIdToNamespaceMap}
                 />
             </Tab>
         </BinderTabs>

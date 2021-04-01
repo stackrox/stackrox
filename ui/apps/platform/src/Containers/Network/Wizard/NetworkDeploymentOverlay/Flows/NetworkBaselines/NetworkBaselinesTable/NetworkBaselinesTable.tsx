@@ -107,7 +107,7 @@ const columns = [
         Header: 'Namespace',
         id: 'namespace',
         accessor: (datum: FlattenedNetworkBaseline): string => {
-            return datum.peer.entity.namespace ?? '-';
+            return datum.peer.entity.namespace || '-';
         },
         aggregate: (leafValues: string[]): string => {
             return getAggregateText(leafValues);

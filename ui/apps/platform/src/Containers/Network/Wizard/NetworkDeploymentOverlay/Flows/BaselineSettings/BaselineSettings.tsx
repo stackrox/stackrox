@@ -17,10 +17,12 @@ export type BaselineSettingsProps = {
     deploymentId: string;
     filterState: FilterState;
     onNavigateToEntity: NavigateToEntityHook;
+    entityIdToNamespaceMap: Record<string, string>;
 };
 
 function BaselineSettings({
     selectedDeployment,
+    entityIdToNamespaceMap,
     deploymentId,
     filterState,
     onNavigateToEntity,
@@ -38,6 +40,7 @@ function BaselineSettings({
         selectedDeployment,
         deploymentId,
         filterState,
+        entityIdToNamespaceMap,
     });
 
     const headerComponents = isBaselineViolationEnabled && (

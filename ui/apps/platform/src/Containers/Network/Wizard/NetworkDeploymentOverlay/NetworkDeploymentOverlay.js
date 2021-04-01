@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
@@ -14,9 +14,25 @@ import NetworkPoliciesDetail from './NetworkPoliciesDetail';
 import Flows from './Flows';
 import BaselineSimulation from './BaselineSimulation';
 
-function NetworkDeploymentOverlay({ selectedDeployment, filterState, lastUpdatedTimestamp }) {
+function NetworkDeploymentOverlay({
+    selectedDeployment,
+    filterState,
+    lastUpdatedTimestamp,
+    networkNodeMap,
+}) {
     const { isBaselineSimulationOn } = useNetworkBaselineSimulation();
     const { deploymentId } = useParams();
+
+    const entityIdToNamespaceMap = useMemo(() => {
+        return Object.keys(networkNodeMap).reduce((accumulator, entityId) => {
+            const val = networkNodeMap[entityId];
+            const entity = val?.active?.entity || val?.allowed?.entity;
+            if (entity.type === 'DEPLOYMENT') {
+                accumulator[entityId] = entity.deployment.namespace;
+            }
+            return accumulator;
+        }, {});
+    }, [networkNodeMap]);
 
     return (
         <NetworkEntityTabbedOverlay
@@ -32,6 +48,7 @@ function NetworkDeploymentOverlay({ selectedDeployment, filterState, lastUpdated
                         deploymentId={deploymentId}
                         filterState={filterState}
                         lastUpdatedTimestamp={lastUpdatedTimestamp}
+                        entityIdToNamespaceMap={entityIdToNamespaceMap}
                     />
                 )}
             </Tab>
@@ -53,6 +70,7 @@ NetworkDeploymentOverlay.propTypes = {
         edges: PropTypes.arrayOf(PropTypes.shape({})),
         policyIds: PropTypes.arrayOf(PropTypes.string),
     }).isRequired,
+    networkNodeMap: PropTypes.shape({}).isRequired,
     filterState: PropTypes.number.isRequired,
     lastUpdatedTimestamp: PropTypes.instanceOf(Date).isRequired,
 };
@@ -60,6 +78,7 @@ NetworkDeploymentOverlay.propTypes = {
 const mapStateToProps = createStructuredSelector({
     selectedDeployment: selectors.getSelectedNode,
     filterState: selectors.getNetworkGraphFilterMode,
+    networkNodeMap: selectors.getNetworkNodeMap,
     lastUpdatedTimestamp: selectors.getLastUpdatedTimestamp,
 });
 

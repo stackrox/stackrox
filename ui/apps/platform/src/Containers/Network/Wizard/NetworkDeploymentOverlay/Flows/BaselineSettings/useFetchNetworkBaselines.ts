@@ -36,6 +36,7 @@ function useFetchNetworkBaselines({
     selectedDeployment,
     deploymentId,
     filterState,
+    entityIdToNamespaceMap,
 }): FetchNetworkBaselinesResult {
     const [result, setResult] = useState<FetchNetworkBaselinesResult>(defaultResultState);
 
@@ -44,14 +45,16 @@ function useFetchNetworkBaselines({
 
         networkBaselinesPromise
             .then((response) => {
-                const { namespace, peers, locked } = response;
+                const { peers, locked } = response;
                 const networkBaselines = peers.reduce(
                     (acc: FlattenedNetworkBaseline[], currPeer) => {
                         currPeer.properties.forEach((property) => {
                             const name = getPeerEntityName(currPeer);
+                            const entityId = currPeer.entity.info.id;
+                            const namespace = entityIdToNamespaceMap[entityId] || '';
                             const peer = {
                                 entity: {
-                                    id: currPeer.entity.info.id,
+                                    id: entityId,
                                     type: currPeer.entity.info.type,
                                     name,
                                     namespace,
