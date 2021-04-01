@@ -660,6 +660,7 @@ const NetworkGraph = ({
         }
         const CY = cyRef.current;
         CY.nodes(`.cluster`).ungrabify();
+        CY.nodes(`.deployment`).ungrabify();
     }
 
     useEffect(setWindowResize, []);
