@@ -439,6 +439,26 @@ class NetworkFlowTest extends BaseSpecification {
                 true | "contains stackrox deployments only"
     }
 
+    @Category([BAT, NetworkFlowVisualization])
+    def "Verify network flows with graph filtering"() {
+        given:
+        "Two deployments, A and B, where B communicates to A"
+        rebuildForRetries()
+        String sourceUid = deployments.find { it.name == TCPCONNECTIONSOURCE }?.deploymentUid
+        assert sourceUid != null
+        String targetUid = deployments.find { it.name == TCPCONNECTIONTARGET }?.deploymentUid
+        assert targetUid != null
+
+        when:
+        "Network graph is filtered by deployment A"
+        def graph = NetworkGraphService.getNetworkGraph(null, "Deployment:\"${TCPCONNECTIONSOURCE}\"", "")
+
+        then:
+        "Edge between A and B should exist in network graph"
+        List<Edge> edges = NetworkGraphUtil.findEdges(graph, sourceUid, targetUid)
+        assert edges && edges.size() > 0
+    }
+
     @Category([NetworkFlowVisualization])
     def "Verify connections to external sources"() {
         given:
