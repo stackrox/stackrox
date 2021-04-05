@@ -231,14 +231,14 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 		log.Debugf("Upserted policy %q (%s)", policy.GetName(), policy.GetId())
 	}
 
-	enforcedOperations := make(map[admission.Operation]struct{})
+	enforceOnCreates := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnabled()
+	enforceOnUpdates := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates()
 
 	deployTimePolicySet := detection.NewPolicySet()
-	if newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnabled() {
-		enforcedOperations[admission.Create] = struct{}{}
-
+	if enforceOnCreates || enforceOnUpdates {
 		for _, policy := range newSettings.GetEnforcedDeployTimePolicies().GetPolicies() {
-			if policyfields.ContainsUnscannedImageField(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
+			if policyfields.ContainsUnscannedImageField(policy) &&
+				!newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
 				log.Warnf(errors.ImageScanUnavailableMsg(policy))
 				continue
 			}
@@ -248,7 +248,12 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 		}
 	}
 
-	if newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates() {
+	enforcedOperations := make(map[admission.Operation]struct{})
+	if enforceOnCreates {
+		enforcedOperations[admission.Create] = struct{}{}
+	}
+
+	if enforceOnUpdates {
 		enforcedOperations[admission.Update] = struct{}{}
 	}
 
