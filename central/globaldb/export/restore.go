@@ -119,7 +119,7 @@ func tryRestoreZip(backupFile *os.File, outPath string) error {
 }
 
 func removeChildren(path string) error {
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		return err
 	}

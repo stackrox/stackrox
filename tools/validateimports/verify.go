@@ -211,14 +211,14 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot, packageName str
 }
 
 // Lifted straight from the goimports code
-func isGoFile(f os.FileInfo) bool {
+func isGoFile(f os.DirEntry) bool {
 	name := f.Name()
 	return !f.IsDir() && !strings.HasPrefix(name, ".") && strings.HasSuffix(name, ".go")
 }
 
 // Returns the list of go files in this directory (non recursively).
 func getGoFilesInDir(packageDir string) (fileNames []string) {
-	files, err := ioutil.ReadDir(packageDir)
+	files, err := os.ReadDir(packageDir)
 	if err != nil {
 		logAndExit("Couldn't read go files in directory %s: %v", packageDir, err)
 	}

@@ -15,7 +15,7 @@ import (
 const hostProc = "/host/proc"
 
 func findProcessArgs(processes set.StringSet) ([]string, error) {
-	files, err := ioutil.ReadDir(hostProc)
+	files, err := os.ReadDir(hostProc)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not read host proc")
 	}

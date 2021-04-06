@@ -1,14 +1,13 @@
 package k8scfgwatch
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
 )
 
 func dirContentsMTime(dir string) (time.Time, error) {
-	entries, err := ioutil.ReadDir(dir)
+	entries, err := os.ReadDir(dir)
 
 	if err != nil {
 		return time.Time{}, err
@@ -19,16 +18,20 @@ func dirContentsMTime(dir string) (time.Time, error) {
 		if e.Name() == "." || e.Name() == ".." || e.IsDir() {
 			continue
 		}
+		info, err := e.Info()
+		if err != nil {
+			return time.Time{}, err
+		}
 
-		if e.Mode()&os.ModeSymlink == os.ModeSymlink {
+		if e.Type()&os.ModeSymlink == os.ModeSymlink {
 			resolved, err := os.Stat(filepath.Join(dir, e.Name()))
 			if resolved != nil && err == nil {
-				e = resolved
+				info = resolved
 			}
 		}
 
-		if e.ModTime().After(contentsMTime) {
-			contentsMTime = e.ModTime()
+		if info.ModTime().After(contentsMTime) {
+			contentsMTime = info.ModTime()
 		}
 	}
 

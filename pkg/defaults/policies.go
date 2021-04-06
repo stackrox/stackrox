@@ -3,6 +3,7 @@ package defaults
 import (
 	"bytes"
 	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
 
@@ -24,7 +25,7 @@ var (
 // Policies returns a list of default policies.
 func Policies() (policies []*storage.Policy, err error) {
 	dir := path.Join(PoliciesPath, "files")
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		log.Errorf("Unable to list files in directory: %s", err)
 		return

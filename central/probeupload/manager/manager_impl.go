@@ -57,7 +57,7 @@ func newManager(persistenceRoot string) *manager {
 
 func (m *manager) cleanUpModuleVersionDir(modVer string) error {
 	subDir := filepath.Join(m.rootDir, modVer)
-	subDirEntries, err := ioutil.ReadDir(subDir)
+	subDirEntries, err := os.ReadDir(subDir)
 	if err != nil {
 		return errors.Wrap(err, "could not read module version subdirectory")
 	}
@@ -100,7 +100,7 @@ func (m *manager) cleanUpModuleVersionDir(modVer string) error {
 func (m *manager) cleanUpRootDir() error {
 	// Look for empty module version subdirectories (remove those) and leftover temporary upload directories (remove
 	// those as well). Also, print a warning for each unrecognized entry.
-	entries, err := ioutil.ReadDir(m.rootDir)
+	entries, err := os.ReadDir(m.rootDir)
 	if err != nil {
 		return errors.Wrap(err, "could not read probe upload root directory")
 	}
@@ -327,7 +327,7 @@ func (m *manager) LoadProbe(ctx context.Context, file string) (io.ReadCloser, in
 }
 
 func (m *manager) IsAvailable(ctx context.Context) (bool, error) {
-	entries, err := ioutil.ReadDir(m.rootDir)
+	entries, err := os.ReadDir(m.rootDir)
 	if err != nil {
 		return false, err
 	}

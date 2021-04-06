@@ -3,7 +3,6 @@ package bundle
 import (
 	"archive/zip"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -52,7 +51,7 @@ func (c contentsMap) add(fileName string, openFunc OpenFunc) bool {
 }
 
 func buildDirContentsMapRecursive(dir, base string, m contentsMap) error {
-	fileInfos, err := ioutil.ReadDir(dir)
+	fileInfos, err := os.ReadDir(dir)
 	if err != nil {
 		return err
 	}

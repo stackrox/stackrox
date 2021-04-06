@@ -17,13 +17,13 @@ var (
 )
 
 // Lifted straight from the goimports code
-func isGoFile(f os.FileInfo) bool {
+func isGoFile(f os.DirEntry) bool {
 	name := f.Name()
 	return !f.IsDir() && !strings.HasPrefix(name, ".") && strings.HasSuffix(name, ".go")
 }
 
 func getGoFiles() (fileNames []string, err error) {
-	files, err := ioutil.ReadDir(".")
+	files, err := os.ReadDir(".")
 	if err != nil {
 		return nil, err
 	}

@@ -26,7 +26,7 @@ const (
 // GetAdditionalCAs reads all additional CAs in DER format.
 func GetAdditionalCAs() ([][]byte, error) {
 	additionalCADir := AdditionalCACertsDirPath()
-	certFileInfos, err := ioutil.ReadDir(additionalCADir)
+	certFileInfos, err := os.ReadDir(additionalCADir)
 	if err != nil {
 		// Ignore error if additional CAs do not exist on filesystem
 		if os.IsNotExist(err) {

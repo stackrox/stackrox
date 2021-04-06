@@ -190,7 +190,7 @@ func EvaluatePath(path string, withContents, recurse bool) (*compliance.File, bo
 
 	file := getFile(path, fi)
 	if fi.IsDir() && recurse {
-		files, err := ioutil.ReadDir(pathInContainer)
+		files, err := os.ReadDir(pathInContainer)
 		if err != nil {
 			return nil, false, err
 		}

@@ -27,7 +27,7 @@ const (
 )
 
 func getAdditionalCAs(certs *sensor.Certs) ([]*zip.File, error) {
-	certFileInfos, err := ioutil.ReadDir(tlsconfig.AdditionalCACertsDirPath())
+	certFileInfos, err := os.ReadDir(tlsconfig.AdditionalCACertsDirPath())
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil

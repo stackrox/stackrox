@@ -1,7 +1,6 @@
 package replica
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -75,7 +74,7 @@ type DBReplicaManager struct {
 func Scan(basePath string, forceVersion string) (*DBReplicaManager, error) {
 	manager := DBReplicaManager{basePath: basePath, replicaMap: make(map[string]*dbReplica), forceRollbackVersion: forceVersion}
 
-	files, err := ioutil.ReadDir(basePath)
+	files, err := os.ReadDir(basePath)
 	if err != nil {
 		return nil, err
 	}

@@ -3,7 +3,7 @@ package runner
 import (
 	"go/parser"
 	"go/token"
-	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -15,7 +15,7 @@ import (
 )
 
 func TestAllPackagesAreImported(t *testing.T) {
-	migrationDirEntries, err := ioutil.ReadDir("../migrations")
+	migrationDirEntries, err := os.ReadDir("../migrations")
 	require.NoError(t, err, "failed to read migrations directory")
 
 	existingMigrations := set.NewStringSet()

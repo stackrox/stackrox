@@ -89,7 +89,7 @@ func getProcessFromCmdLineBytes(cmdlineBytes []byte) string {
 }
 
 func findProcess(process string) (string, error) {
-	files, err := ioutil.ReadDir("/host/proc")
+	files, err := os.ReadDir("/host/proc")
 	if err != nil {
 		return "", err
 	}

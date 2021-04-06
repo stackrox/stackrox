@@ -197,7 +197,7 @@ func upgradeFolder() error {
 		}
 	}
 
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return errors.Wrap(err, "iterate input directory")
 	}
