@@ -12,3 +12,13 @@ func IsDeployTimeAttemptedAlert(alert *storage.Alert) bool {
 func IsAttemptedAlert(alert *storage.Alert) bool {
 	return alert.GetState() == storage.ViolationState_ATTEMPTED
 }
+
+// AnyAttemptedAlert indicates whether any alert is an attempted alert.
+func AnyAttemptedAlert(alerts ...*storage.Alert) bool {
+	for _, alert := range alerts {
+		if IsAttemptedAlert(alert) {
+			return true
+		}
+	}
+	return false
+}
