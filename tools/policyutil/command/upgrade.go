@@ -2,7 +2,6 @@ package command
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -112,7 +111,7 @@ func upgrade(c *cobra.Command, _ []string) error {
 }
 
 func upgradeSingle() error {
-	content, err := ioutil.ReadFile(file)
+	content, err := os.ReadFile(file)
 	if err != nil {
 		return errors.Wrap(err, "problem reading the file")
 	}
@@ -173,7 +172,7 @@ func upgradeSingle() error {
 		common.PrintLog("Saving upgraded policy to %q SKIPPED (dry run)", out)
 	} else {
 		common.PrintVerboseLog("Saving upgraded policy to %q", out)
-		err = ioutil.WriteFile(out, []byte(upgraded+"\n"), 0644)
+		err = os.WriteFile(out, []byte(upgraded+"\n"), 0644)
 		if err != nil {
 			return errors.Wrap(err, "writing file failed")
 		}
@@ -227,7 +226,7 @@ func upgradeFolder() error {
 		source := path.Join(dir, file.Name())
 		target := path.Join(out, file.Name())
 
-		content, err := ioutil.ReadFile(source)
+		content, err := os.ReadFile(source)
 		if err != nil {
 			totalFailed++
 			multiErr = multierror.Append(multiErr, errors.Wrapf(err, "problem reading file %q", source))
@@ -267,7 +266,7 @@ func upgradeFolder() error {
 			common.PrintVerboseLog("Saving policy to %q SKIPPED", target)
 		} else {
 			common.PrintVerboseLog("Saving upgraded policy to %q", target)
-			err = ioutil.WriteFile(target, []byte(upgraded+"\n"), 0644)
+			err = os.WriteFile(target, []byte(upgraded+"\n"), 0644)
 			if err != nil {
 				totalFailed++
 				multiErr = multierror.Append(multiErr, errors.Wrap(err, "writing file failed"))
