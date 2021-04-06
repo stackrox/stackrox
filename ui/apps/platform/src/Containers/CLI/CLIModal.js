@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
 import { actions } from 'reducers/cli';
 import onClickOutside from 'react-onclickoutside';
 
@@ -85,10 +84,8 @@ const CLIModalContainer = (props) => {
     );
 };
 
-const mapStateToProps = createStructuredSelector({});
-
 const mapDispatchToProps = {
     onDownload: actions.downloadCLI,
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(CLIModalContainer);
+export default connect(null, mapDispatchToProps)(CLIModalContainer);

@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { ReactElement, useState } from 'react';
 import { connect } from 'react-redux';
-import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 
 import Button from 'Components/Button';
@@ -9,7 +8,11 @@ import { serverStates } from 'reducers/serverError';
 
 const windowReloadHandler = () => window.location.reload();
 
-const UnreachableWarning = ({ serverState }) => {
+export type UnreachableWarningProps = {
+    serverState?: 'UP' | 'UNREACHABLE' | 'RESURRECTED' | null;
+};
+
+function UnreachableWarning({ serverState }: UnreachableWarningProps): ReactElement | null {
     const [isShowing, toggleShow] = useState(true);
     function onClickHandler() {
         toggleShow(false);
@@ -23,8 +26,8 @@ const UnreachableWarning = ({ serverState }) => {
         return null;
     }
     const showCancel = serverState === serverStates.RESURRECTED;
-    return (
-        isShowing && (
+    if (isShowing) {
+        return (
             <div className="flex w-full items-center p-3 bg-warning-200 text-warning-800 border-b border-base-400 justify-center font-700 text-center">
                 <span className="flex-1">
                     {serverState === serverStates.UNREACHABLE &&
@@ -42,20 +45,13 @@ const UnreachableWarning = ({ serverState }) => {
                     <Icon.X className="h-6 w-6 cursor-pointer" onClick={onClickHandler} />
                 )}
             </div>
-        )
-    );
-};
-
-UnreachableWarning.propTypes = {
-    serverState: PropTypes.string,
-};
-
-UnreachableWarning.defaultProps = {
-    serverState: serverStates.UP,
-};
+        );
+    }
+    return null;
+}
 
 // not using `reselect` because it falsely assumes the serverState nested property has not changed,
 // if the server comes back online
 const mapStateToProps = (state) => ({ serverState: selectors.getServerState(state) });
 
-export default connect(mapStateToProps)(UnreachableWarning);
+export default connect(mapStateToProps, null)(UnreachableWarning);
