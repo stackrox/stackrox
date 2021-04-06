@@ -7,12 +7,10 @@ import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
 import wizardStages from './wizardStages';
 import NetworkDeploymentOverlay from './NetworkDeploymentOverlay';
-import Details from './Details/Details';
 import Creator from './Creator/Creator';
 import Simulator from './Simulator/Simulator';
 import CIDRPanel from './CIDRForm/CIDRPanel';
 import NamespaceDetails from './NamespaceDetails/NamespaceDetails';
-import ExternalDetails from './ExternalDetails/ExternalDetails';
 import ExternalDetailsOverlay from './ExternalDetails/ExternalDetailsOverlay';
 import NodesUpdateSection from '../Graph/Overlays/NodesUpdateSection';
 import ZoomButtons from '../Graph/Overlays/ZoomButtons';
@@ -47,8 +45,7 @@ function Wizard({ wizardOpen, wizardStage, onClose }) {
     if (wizardOpen) {
         switch (wizardStage) {
             case wizardStages.details:
-                panelContent = <Details onClose={onClose} />;
-                break;
+                return null; // supserseded by NetworkDeploymentOverlay
             case wizardStages.simulator:
                 panelContent = <Simulator onClose={onClose} />;
                 break;
@@ -59,8 +56,7 @@ function Wizard({ wizardOpen, wizardStage, onClose }) {
                 panelContent = <NamespaceDetails onClose={onClose} />;
                 break;
             case wizardStages.externalDetails:
-                panelContent = <ExternalDetails onClose={onClose} />;
-                break;
+                return null; // superseded by ExternalDetailsOverlay
             case wizardStages.cidrForm:
                 panelContent = <CIDRPanel onClose={onClose} />;
                 break;
