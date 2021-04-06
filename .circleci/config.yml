@@ -2593,6 +2593,13 @@ jobs:
             docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
             docker push "docker.io/stackrox/main:$(make --quiet tag)" | cat
             docker push "docker.io/stackrox/roxctl:$(make --quiet tag)" | cat
+            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
+              docker tag "docker.io/stackrox/main:$(make --quiet tag)" docker.io/stackrox/main:latest
+              docker push docker.io/stackrox/main:latest
+
+              docker tag "docker.io/stackrox/roxctl:$(make --quiet tag)" docker.io/stackrox/roxctl:latest
+              docker push docker.io/stackrox/roxctl:latest
+            fi
 
       - run:
           name: Publish new versions of NPM packages if any
@@ -2670,6 +2677,10 @@ jobs:
 
             TAG="$(make --quiet tag)"
             docker push "docker.io/stackrox/main-rhel:${TAG}" | cat
+            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
+              docker tag "docker.io/stackrox/main-rhel:${TAG}" docker.io/stackrox/main-rhel:latest
+              docker push docker.io/stackrox/main-rhel:latest
+            fi
 
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
@@ -4669,6 +4680,12 @@ jobs:
             docker pull docker.io/stackrox/docs:$DOCS_TAG | cat
             docker tag  docker.io/stackrox/docs:$DOCS_TAG docker.io/stackrox/docs:$MAIN_TAG
             docker push docker.io/stackrox/docs:$MAIN_TAG | cat
+
+            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
+              docker tag "docker.io/stackrox/docs:$MAIN_TAG" docker.io/stackrox/docs:latest
+              docker push docker.io/stackrox/docs:latest
+            fi
+
 
       - run:
           name: Push image into stackrox.io
