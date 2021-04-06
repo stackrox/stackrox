@@ -2769,9 +2769,6 @@ jobs:
 
   provision-gke-api-upgrade-tests:
     executor: custom
-    environment:
-      # Use 1.15 to facilitate the upgrade install of 2.4.16.4
-      - CLUSTER_VERSION: 1.15.
     steps:
       - checkout
       - check-backend-changes
@@ -3604,6 +3601,7 @@ jobs:
       - ROX_K8S_EVENTS_DETECTION: true
       - ROX_K8S_AUDIT_LOG_DETECTION: true
       - ROX_SCOPED_ACCESS_CONTROL_V2: true
+      - MONITORING_SUPPORT: false
 
     steps:
       - checkout
