@@ -29,13 +29,14 @@ func getSensorChartFile(filename string, data []byte) (*zip.File, bool) {
 
 // RenderSensorTLSSecretsOnly renders just the TLS secrets from the sensor helm chart, concatenated into one YAML file.
 func RenderSensorTLSSecretsOnly(values map[string]interface{}, certs *sensor.Certs) ([]byte, error) {
+	helmImage := image.GetDefaultImage()
 	metaVals := make(map[string]interface{}, len(values)+1)
 	for k, v := range values {
 		metaVals[k] = v
 	}
 	metaVals["CertsOnly"] = true
 
-	ch := image.GetSensorChart(metaVals, certs)
+	ch := helmImage.GetSensorChart(metaVals, certs)
 
 	m, err := helmutil.Render(ch, nil, helmutil.Options{})
 	if err != nil {
@@ -63,7 +64,8 @@ func RenderSensorTLSSecretsOnly(values map[string]interface{}, certs *sensor.Cer
 
 // RenderSensor renders the sensorchart and returns rendered files
 func RenderSensor(values map[string]interface{}, certs *sensor.Certs, opts helmutil.Options) ([]*zip.File, error) {
-	ch := image.GetSensorChart(values, certs)
+	helmImage := image.GetDefaultImage()
+	ch := helmImage.GetSensorChart(values, certs)
 
 	m, err := helmutil.Render(ch, nil, opts)
 	if err != nil {

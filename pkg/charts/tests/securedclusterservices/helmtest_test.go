@@ -10,7 +10,8 @@ import (
 )
 
 func TestWithHelmtest(t *testing.T) {
-	tpl, err := image.GetSecuredClusterServicesChartTemplate()
+	helmImage := image.GetDefaultImage()
+	tpl, err := helmImage.GetSecuredClusterServicesChartTemplate()
 	require.NoError(t, err, "error retrieving chart template")
 	ch, err := tpl.InstantiateAndLoad(metaValues)
 	require.NoError(t, err, "error instantiating chart")

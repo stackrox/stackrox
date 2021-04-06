@@ -116,6 +116,7 @@ func TestBase(t *testing.T) {
 
 func (s *baseSuite) LoadAndRenderWithNamespace(namespace string, valStrs ...string) (*chart.Chart, map[string]string) {
 	var helmVals chartutil.Values
+	helmImage := image.GetDefaultImage()
 	for _, valStr := range valStrs {
 		extraVals, err := chartutil.ReadValues([]byte(valStr))
 		s.Require().NoError(err, "failed to parse values string %s", valStr)
@@ -124,7 +125,7 @@ func (s *baseSuite) LoadAndRenderWithNamespace(namespace string, valStrs ...stri
 	}
 
 	// Retrieve template files from box.
-	tpl, err := image.GetSecuredClusterServicesChartTemplate()
+	tpl, err := helmImage.GetSecuredClusterServicesChartTemplate()
 	s.Require().NoError(err, "error retrieving chart template")
 	ch, err := tpl.InstantiateAndLoad(metaValues)
 	s.Require().NoError(err, "error instantiating chart")

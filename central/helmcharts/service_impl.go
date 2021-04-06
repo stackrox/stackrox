@@ -43,6 +43,7 @@ func (s *service) CustomRoutes() []routes.CustomRoute {
 }
 
 func (s *service) serveChart(w http.ResponseWriter, req *http.Request) {
+	helmImage := image.GetDefaultImage()
 	if req.Method != http.MethodGet {
 		http.Error(w, fmt.Sprintf("method %q not allowed", req.Method), http.StatusMethodNotAllowed)
 		return
@@ -62,7 +63,7 @@ func (s *service) serveChart(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Render template files.
-	renderedChartFiles, err := image.LoadAndInstantiateChartTemplate(chartPathPrefix)
+	renderedChartFiles, err := helmImage.LoadAndInstantiateChartTemplate(chartPathPrefix)
 	if err != nil {
 		http.Error(w, errors.Wrapf(err, "loading and instantiating %s helmtpl", chartName).Error(), http.StatusInternalServerError)
 		return

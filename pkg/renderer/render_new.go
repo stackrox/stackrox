@@ -71,6 +71,7 @@ func renderHelmChart(chartFiles []*loader.BufferedFile, mode mode, valuesFiles [
 }
 
 func renderNewBasicFiles(c Config, mode mode) ([]*zip.File, error) {
+	helmImage := image.GetDefaultImage()
 	valuesFiles, err := renderNewHelmValues(c)
 	if err != nil {
 		return nil, errors.Wrap(err, "rendering new helm values")
@@ -82,7 +83,7 @@ func renderNewBasicFiles(c Config, mode mode) ([]*zip.File, error) {
 
 	// Helm (full) or kubectl
 
-	chTpl, err := image.GetCentralServicesChartTemplate()
+	chTpl, err := helmImage.GetCentralServicesChartTemplate()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to obtain central services chart template")
 	}

@@ -13,9 +13,10 @@ import (
 // RenderFiles takes the template files from the given FileNameMap, and instantiates them with the given values. The
 // results are returned as ZipFiles.
 func RenderFiles(filenames map[string]string, values interface{}) ([]*zip.File, error) {
+	helmImage := image.GetDefaultImage()
 	var files []*zip.File
 	for f, tgtName := range filenames {
-		t, err := image.ReadFileAndTemplate(f, utils.BuiltinFuncs)
+		t, err := helmImage.ReadFileAndTemplate(f, utils.BuiltinFuncs)
 		if err != nil {
 			return nil, errors.Wrapf(err, "reading template file %s", f)
 		}

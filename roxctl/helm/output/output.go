@@ -4,18 +4,20 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
 // These are actually const.
 
-func outputHelmChart(chartName string, outputDir string, removeOutputDir bool) error {
+func outputHelmChart(chartName string, outputDir string, removeOutputDir bool, debug bool, debugChartPath string) error {
 	// Lookup chart template prefix.
 	chartTemplatePathPrefix := common.ChartTemplates[chartName]
 	if chartTemplatePathPrefix == "" {
@@ -41,8 +43,14 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool) e
 		return errors.Wrapf(err, "failed to check if directory %q exists", outputDir)
 	}
 
+	//load image with templates
+	templateImage := image.GetDefaultImage()
+	if debug {
+		templateImage = image.NewImage(os.DirFS(debugChartPath))
+	}
+
 	// Load and render template files.
-	renderedChartFiles, err := image.LoadAndInstantiateChartTemplate(chartTemplatePathPrefix)
+	renderedChartFiles, err := templateImage.LoadAndInstantiateChartTemplate(chartTemplatePathPrefix)
 	if err != nil {
 		return errors.Wrapf(err, "loading and instantiating %s helmtpl", chartName)
 	}
@@ -65,6 +73,8 @@ func outputHelmChart(chartName string, outputDir string, removeOutputDir bool) e
 func Command() *cobra.Command {
 	var outputDir string
 	var removeOutputDir bool
+	var debug bool
+	var debugChartPath string
 
 	c := &cobra.Command{
 		Use: fmt.Sprintf("output <%s>", common.PrettyChartNameList),
@@ -73,12 +83,17 @@ func Command() *cobra.Command {
 				return errors.New("incorrect number of arguments, see --help for usage information")
 			}
 			chartName := args[0]
-			return outputHelmChart(chartName, outputDir, removeOutputDir)
-
+			return outputHelmChart(chartName, outputDir, removeOutputDir, debug, debugChartPath)
 		},
 	}
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "path to the output directory for Helm chart (default: './stackrox-<chart name>-chart')")
 	c.PersistentFlags().BoolVar(&removeOutputDir, "remove", false, "remove the output directory if it already exists")
+
+	if !buildinfo.ReleaseBuild {
+		defaultDebugPath := path.Join(os.Getenv("GOPATH"), "src/github.com/stackrox/rox/image/")
+		c.PersistentFlags().BoolVar(&debug, "debug", false, "read templates from local filesystem")
+		c.PersistentFlags().StringVar(&debugChartPath, "debug-path", defaultDebugPath, "path to helm templates on your local filesystem")
+	}
 
 	return c
 }

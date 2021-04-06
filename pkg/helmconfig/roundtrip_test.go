@@ -74,8 +74,9 @@ type HelmClusterConfig struct {
 }
 
 func (h *helmConfigSuite) toClusterConfig(helmCfg chartutil.Values) (*storage.CompleteClusterConfig, error) {
+	helmImage := image.GetDefaultImage()
 	// Instantiate central-services Helm chart.
-	tpl, err := image.GetSecuredClusterServicesChartTemplate()
+	tpl, err := helmImage.GetSecuredClusterServicesChartTemplate()
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving chart template")
 	}

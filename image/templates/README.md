@@ -23,14 +23,6 @@ Installs:
  - `sensor`
  - `collector`
 
-### Deprecated charts
-
-The following charts are deprecated and not under active development anymore.
-
- - `./helm/DEPRECATEDcentralchart`
- - `./helm/DEPRECATEDscannerchart`
- - `./helm/DEPRECATEDsensorchart`
-
 ## Developing helm charts
 
 To extend templating to, e.g., `Chart.yaml`, which in a normal helm chart cannot be templated `.htpl` files are used.
@@ -45,11 +37,9 @@ This example shows how to work with the `stackrox central services` chart.
 # Go to rox root
 $ cdrox
 
-# Building roxctl compiles the helm charts into the binary
-$ make cli
-
 # Receive the rendered helm chart from roxctl
-$ ./bin/darwin/roxctl helm output central-services
+# To use a custom template path use the `--debug-path=</path/to/templates>` argument.
+$ ./bin/darwin/roxctl helm output central-services --debug
 
 # Install the helm chart
 $ helm upgrade --install -n stackrox stackrox-central-services --create-namespace  ./stackrox-central-services-chart \

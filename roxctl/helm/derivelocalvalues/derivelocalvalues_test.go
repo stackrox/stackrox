@@ -66,6 +66,7 @@ func (s *baseSuite) TestK8sResourcesRoundTrip() {
 }
 
 func (s *baseSuite) DoTestK8sResourcesRoundTrip(testDataFile string) {
+	helmImage := image.GetDefaultImage()
 	ctx := context.Background()
 
 	// Retrieve persisted K8s resources.
@@ -96,7 +97,7 @@ func (s *baseSuite) DoTestK8sResourcesRoundTrip(testDataFile string) {
 	helmVals := chartutil.CoalesceTables(yamlRoundTrip(s, publicValues), yamlRoundTrip(s, privateValues))
 
 	// Instantiate central-services Helm chart.
-	tpl, err := image.GetCentralServicesChartTemplate()
+	tpl, err := helmImage.GetCentralServicesChartTemplate()
 	s.Require().NoError(err, "error retrieving chart template")
 	ch, err := tpl.InstantiateAndLoad(metaValues)
 	s.Require().NoError(err, "error instantiating chart")
@@ -158,6 +159,8 @@ func (s *baseSuite) TestsHelmValuesRoundTrip() {
 }
 
 func (s *baseSuite) DoTestsHelmValuesRoundTrip(helmValuesFile string) {
+	helmImage := image.GetDefaultImage()
+
 	// Read and parse Helm values.
 	valBytes, err := ioutil.ReadFile(helmValuesFile)
 	s.Require().NoError(err, "failed to read Helm values from file %q", helmValuesFile)
@@ -175,7 +178,7 @@ func (s *baseSuite) DoTestsHelmValuesRoundTrip(helmValuesFile string) {
 	}, helmVals)
 
 	// Instantiate central-services Helm chart.
-	tpl, err := image.GetCentralServicesChartTemplate()
+	tpl, err := helmImage.GetCentralServicesChartTemplate()
 	s.Require().NoError(err, "error retrieving chart template")
 	ch, err := tpl.InstantiateAndLoad(metaValues)
 	s.Require().NoError(err, "error instantiating chart")

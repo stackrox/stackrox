@@ -37,6 +37,8 @@ func TestHelmLint(t *testing.T) {
 }
 
 func testChartLint(t *testing.T, chartName string) {
+	const noDebug = false
+	const noDebugChartPath = ""
 	outputDir, err := ioutil.TempDir("", "roxctl-helm-output-lint-")
 	require.NoError(t, err)
 
@@ -44,7 +46,7 @@ func testChartLint(t *testing.T, chartName string) {
 		_ = os.RemoveAll(outputDir)
 	}()
 
-	err = outputHelmChart(chartName, outputDir, true)
+	err = outputHelmChart(chartName, outputDir, true, noDebug, noDebugChartPath)
 	require.NoErrorf(t, err, "failed to output helm chart %s", chartName)
 
 	for _, ns := range lintNamespaces {
