@@ -36,7 +36,7 @@ main() {
     log_dir="${log_dir}/${namespace}"
     mkdir -p "${log_dir}"
 
-	set +e
+    set +e
 
     for object in deployments services pods secrets serviceaccounts validatingwebhookconfigurations; do
         # A feel good command before pulling logs

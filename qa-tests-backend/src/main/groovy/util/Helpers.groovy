@@ -106,13 +106,14 @@ class Helpers {
         }
     }
 
-    static void shellCmd(String cmd, Integer timeout = 60000) {
+    static void shellCmd(String cmd) {
         def sout = new StringBuilder(), serr = new StringBuilder()
         def proc = cmd.execute(null, new File(".."))
         proc.consumeProcessOutput(sout, serr)
-        proc.waitForOrKill(timeout)
+        proc.waitFor()
         println "Ran: ${cmd}"
         println "Stdout: $sout"
         println "Stderr: $serr"
+        println "Exit: ${proc.exitValue()}"
     }
 }
