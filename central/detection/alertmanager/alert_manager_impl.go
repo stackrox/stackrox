@@ -226,7 +226,7 @@ func mergeAlerts(old, newAlert *storage.Alert) *storage.Alert {
 // MergeManyAlerts merges two alerts.
 func (d *alertManagerImpl) mergeManyAlerts(
 	ctx context.Context,
-	presentAlerts []*storage.Alert,
+	incomingAlerts []*storage.Alert,
 	oldAlertFilters ...AlertFilterOption,
 ) (newAlerts, updatedAlerts, staleAlerts []*storage.Alert, err error) {
 	qb := search.NewQueryBuilder().AddStrings(
@@ -243,7 +243,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	}
 
 	// Merge any alerts that have new and old alerts.
-	for _, alert := range presentAlerts {
+	for _, alert := range incomingAlerts {
 		if pkgAlert.IsDeployTimeAttemptedAlert(alert) {
 			alert.FirstOccurred = ptypes.TimestampNow()
 			newAlerts = append(newAlerts, alert)
@@ -271,13 +271,14 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	}
 
 	// Find any old alerts no longer being produced.
-	for _, alert := range previousAlerts {
-		if d.shouldMarkAlertStale(alert, presentAlerts, oldAlertFilters...) {
-			staleAlerts = append(staleAlerts, alert)
+	for _, previousAlert := range previousAlerts {
+		if d.shouldMarkAlertStale(previousAlert, incomingAlerts, oldAlertFilters...) {
+			staleAlerts = append(staleAlerts, previousAlert)
 		}
 
-		if alert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME {
-			depID := alert.GetDeployment().GetId()
+		if previousAlert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME ||
+			previousAlert.GetState() == storage.ViolationState_ATTEMPTED {
+			depID := previousAlert.GetDeployment().GetId()
 			// If we are in the context of a deployment removal, then mark the deployment as inactive without going to the
 			// store -- this is because the alert processing related to the deployment removal (ie, this code) runs
 			// _before_ the deployment is actually deleted, which means we will incorrectly mark the deployment as active
@@ -285,9 +286,9 @@ func (d *alertManagerImpl) mergeManyAlerts(
 			// If we're not in the context of a deployment removal, then just check whether the deployment is inactive
 			// in the store and use that.
 			if deploymentsBeingRemoved.Contains(depID) || d.runtimeDetector.DeploymentInactive(depID) {
-				if deployment := alert.GetDeployment(); deployment != nil && !deployment.GetInactive() {
+				if deployment := previousAlert.GetDeployment(); deployment != nil && !deployment.GetInactive() {
 					deployment.Inactive = true
-					updatedAlerts = append(updatedAlerts, alert)
+					updatedAlerts = append(updatedAlerts, previousAlert)
 				}
 			}
 		}
@@ -295,24 +296,26 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	return
 }
 
-func (d *alertManagerImpl) shouldMarkAlertStale(alert *storage.Alert, presentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) bool {
+func (d *alertManagerImpl) shouldMarkAlertStale(oldAlert *storage.Alert, incomingAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) bool {
+	oldAndNew := []*storage.Alert{oldAlert}
+	oldAndNew = append(oldAndNew, incomingAlerts...)
 	// Do not mark any attempted alerts as stale. All attempted alerts must be resolved by users.
-	if pkgAlert.IsAttemptedAlert(alert) {
+	if pkgAlert.AnyAttemptedAlert(oldAndNew...) {
 		return false
 	}
 
 	// If the alert is still being produced, don't mark it stale.
-	if matchingNew := findAlert(alert, presentAlerts); matchingNew != nil {
+	if matchingNew := findAlert(oldAlert, incomingAlerts); matchingNew != nil {
 		return false
 	}
 
 	// Only runtime alerts should not be marked stale when they are no longer produced.
 	// (Deploy time alerts should disappear along with deployments, for example.)
-	if alert.GetLifecycleStage() != storage.LifecycleStage_RUNTIME {
+	if oldAlert.GetLifecycleStage() != storage.LifecycleStage_RUNTIME {
 		return true
 	}
 
-	if !d.runtimeDetector.PolicySet().Exists(alert.GetPolicy().GetId()) {
+	if !d.runtimeDetector.PolicySet().Exists(oldAlert.GetPolicy().GetId()) {
 		return true
 	}
 
@@ -329,12 +332,12 @@ func (d *alertManagerImpl) shouldMarkAlertStale(alert *storage.Alert, presentAle
 	}
 
 	// Some other policies were updated, we don't want to mark this alert stale in response.
-	if !specifiedPolicyIDs.Contains(alert.GetPolicy().GetId()) {
+	if !specifiedPolicyIDs.Contains(oldAlert.GetPolicy().GetId()) {
 		return false
 	}
 
 	// If the deployment is excluded from the scope of the policy now, we should mark the alert stale, otherwise we will keep it around.
-	return d.runtimeDetector.DeploymentWhitelistedForPolicy(alert.GetDeployment().GetId(), alert.GetPolicy().GetId())
+	return d.runtimeDetector.DeploymentWhitelistedForPolicy(oldAlert.GetDeployment().GetId(), oldAlert.GetPolicy().GetId())
 }
 
 func findAlert(toFind *storage.Alert, alerts []*storage.Alert) *storage.Alert {
