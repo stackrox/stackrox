@@ -76,7 +76,7 @@ const CollectorStatus = ({ healthStatus, currentDatetime, isList }) => {
                             <th className={thClassName} scope="row">
                                 Collector version:
                             </th>
-                            <td className={tdClassName} data-testid="version">
+                            <td className={`${tdClassName} break-all`} data-testid="version">
                                 {version || notAvailable}
                             </td>
                         </tr>
