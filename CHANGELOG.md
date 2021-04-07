@@ -16,6 +16,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     - It is not namespaced to distro.
 - Added upgrade rollback function. By default, users may rollback to their previous version if upgrade fails before Central has started.
   After services started, users must explicitly specify the version they are rolling back to in central config `maintenance.forceRollbackVersion`.
+- Added a `central.exposeMonitoring` option to the Central Services Helm chart, which, when set to `true`, allows exposing a `/metrics`
+  endpoint on port 9090.
+
 
 ## [57.0]
 
