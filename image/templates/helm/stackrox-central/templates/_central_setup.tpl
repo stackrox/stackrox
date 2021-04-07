@@ -26,19 +26,6 @@
 {{ $jwtSignerSpec := dict "keyOnly" "rsa" }}
 {{ include "srox.configureCrypto" (list $ "central.jwtSigner" $jwtSignerSpec) }}
 
-{{/* License Key */}}
-{{/* Note: this is at the top-level in $.Values, but this is purely to achieve a less surprising
-     user interface. It effectively is part of the Central configuration. */}}
-{{ $licenseKey := $._rox._licenseKey }}
-{{ if and (not $licenseKey) $.Release.IsInstall }}
-  {{/* Even on install, check if there might be a pre-existing license key to minimize confusion. */}}
-  {{ $licenseLookupOut := dict }}
-  {{ include "srox.safeLookup" (list $ $licenseLookupOut "v1" "Secret" $.Release.Namespace "central-license") }}
-  {{ if not $licenseLookupOut.result }}
-    {{ include "srox.warn" (list $ "No StackRox license provided. Make sure a valid license exists in Kubernetes secret 'central-license'.") }}
-  {{ end }}
-{{ end }}
-
 {{/* Setup Default TLS Certificate. */}}
 {{ if $._rox.central.defaultTLS }}
   {{ $cert := $._rox.central.defaultTLS._cert }}
