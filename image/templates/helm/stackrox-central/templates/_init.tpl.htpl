@@ -35,6 +35,7 @@
 
 {{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
 {{ $_ = include "srox.mergeInto" (list $rox $configShape (tpl ($.Files.Get "internal/bootstrap-defaults.yaml.tpl") . | fromYaml)) }}
+{{ $_ = set $._rox "_configShape" $configShape }}
 
 {{/*
     General validation.
@@ -225,115 +226,13 @@
 {{ end }}
 {{ $_ = set $env "_proxyConfig" $proxyCfg }}
 
-
 {{/*
     Central setup.
    */}}
 
-{{ $centralCfg := $rox.central }}
-
-{{/* Image settings */}}
-{{ if kindIs "invalid" $centralCfg.image.tag }}
-  {{ $_ := set $centralCfg.image "tag" $.Chart.AppVersion }}
-{{ end }}
-{{ include "srox.configureImage" (list $ $centralCfg.image) }}
-
-{{/* Admin password */}}
-{{ include "srox.configurePassword" (list $ "central.adminPassword" "admin") }}
-
-{{/* Service TLS Certificates */}}
-{{ $centralCertSpec := dict "CN" "CENTRAL_SERVICE: Central" "dnsBase" "central" }}
-{{ include "srox.configureCrypto" (list $ "central.serviceTLS" $centralCertSpec) }}
-
-{{/* JWT Token Signer */}}
-{{ $jwtSignerSpec := dict "keyOnly" "rsa" }}
-{{ include "srox.configureCrypto" (list $ "central.jwtSigner" $jwtSignerSpec) }}
-
-{{/* License Key */}}
-{{/* Note: this is at the top-level in $.Values, but this is purely to achieve a less surprising
-     user interface. It effectively is part of the Central configuration. */}}
-{{ $licenseKey := $._rox._licenseKey }}
-{{ if and (not $licenseKey) $.Release.IsInstall }}
-  {{/* Even on install, check if there might be a pre-existing license key to minimize confusion. */}}
-  {{ $licenseLookupOut := dict }}
-  {{ include "srox.safeLookup" (list $ $licenseLookupOut "v1" "Secret" $.Release.Namespace "central-license") }}
-  {{ if not $licenseLookupOut.result }}
-    {{ include "srox.warn" (list $ "No StackRox license provided. Make sure a valid license exists in Kubernetes secret 'central-license'.") }}
-  {{ end }}
-{{ end }}
-
-{{/* Setup Default TLS Certificate. */}}
-{{ if $._rox.central.defaultTLS }}
-  {{ $cert := $._rox.central.defaultTLS._cert }}
-  {{ $key := $._rox.central.defaultTLS._key }}
-  {{ if and $cert $key }}
-    {{ $defaultTLSCert := dict "Cert" $cert "Key" $key }}
-    {{ $_ := set $._rox.central "_defaultTLS" $defaultTLSCert }}
-    {{ include "srox.note" (list $ "Configured default TLS certificate") }}
-  {{ else if or $cert $key }}
-    {{ include "srox.fail" "Must specify either none or both of central.defaultTLS.cert and central.defaultTLS.key" }}
-  {{ end }}
-{{ end }}
-
-{{/*
-    Setup configuration for persistence backend.
-  */}}
-{{ $volumeCfg := dict }}
-{{ if $centralCfg.persistence.none }}
-  {{ include "srox.warn" (list $ "You have selected no persistence backend. Every deletion of the StackRox Central pod will cause you to lose all your data. This is STRONGLY recommended against.") }}
-  {{ $_ := set $volumeCfg "emptyDir" dict }}
-{{ end }}
-{{ if $centralCfg.persistence.hostPath }}
-  {{ if not $centralCfg.nodeSelector }}
-    {{ include "srox.warn" (list $ "You have selected host path persistence, but not specified a node selector. This is unlikely to work reliably.") }}
-  {{ end }}
-  {{ $_ := set $volumeCfg "hostPath" (dict "path" $centralCfg.persistence.hostPath) }}
-{{ end }}
-{{/* Configure PVC if either any of the settings in `central.persistence.persistentVolumeClaim` are provided,
-     or no other persistence backend has been configured yet. */}}
-{{ if or (not (deepEqual $configShape.central.persistence.persistentVolumeClaim $centralCfg.persistence.persistentVolumeClaim)) (not $volumeCfg) }}
-  {{ $pvcCfg := $centralCfg.persistence.persistentVolumeClaim }}
-  {{ $_ := include "srox.mergeInto" (list $pvcCfg $._rox._defaults.pvcDefaults (dict "createClaim" $.Release.IsInstall)) }}
-  {{ $_ = set $volumeCfg "persistentVolumeClaim" (dict "claimName" $pvcCfg.claimName) }}
-  {{ if $pvcCfg.createClaim }}
-    {{ $_ = set $centralCfg.persistence "_pvcCfg" $pvcCfg }}
-  {{ end }}
-{{ end }}
-
-{{ $allPersistenceMethods := keys $volumeCfg | sortAlpha }}
-{{ if ne (len $allPersistenceMethods) 1 }}
-  {{ include "srox.fail" (printf "Invalid or no persistence configurations for central: [%s]" (join "," $allPersistenceMethods)) }}
-{{ end }}
-{{ $_ = set $centralCfg.persistence "_volumeCfg" $volumeCfg }}
-
-{{/* Endpoint configuration */}}
-{{ include "srox.configureCentralEndpoints" $._rox.central }}
-
-{{/*
-    Exposure configuration setup & sanity checks.
-   */}}
-{{ if $._rox.central.exposure.loadBalancer.enabled }}
-  {{ include "srox.note" (list $ (printf "Exposing StackRox Central via LoadBalancer service.")) }}
-{{ end }}
-{{ if $._rox.central.exposure.nodePort.enabled }}
-  {{ include "srox.note" (list $ (printf "Exposing StackRox Central via NodePort service.")) }}
-{{ end }}
-{{ if $._rox.central.exposure.route.enabled }}
-  {{ if not $env.openshift }}
-    {{ include "srox.fail" (printf "The exposure method 'Route' is only available on OpenShift clusters.") }}
-  {{ end }}
-  {{ include "srox.note" (list $ (printf "Exposing StackRox Central via OpenShift Route https://central.%s." $.Release.Namespace)) }}
-{{ end }}
-
-{{ if not (or $._rox.central.exposure.loadBalancer.enabled $._rox.central.exposure.nodePort.enabled $._rox.central.exposure.route.enabled) }}
-  {{ include "srox.note" (list $ "Not exposing StackRox Central, it will only be reachable cluster-internally.") }}
-  {{ include "srox.note" (list $ "To enable exposure via LoadBalancer service, use --set central.exposure.loadBalancer.enabled=true.") }}
-  {{ include "srox.note" (list $ "To enable exposure via NodePort service, use --set central.exposure.nodePort.enabled=true.") }}
-  {{ if $env.openshift }}
-    {{ include "srox.note" (list $ "To enable exposure via an OpenShift Route, use --set central.exposure.route.enabled=true.") }}
-  {{ end }}
-  {{ include "srox.note" (list $ (printf "To acccess StackRox Central via a port-forward on your local port 18443, run: kubectl -n %s port-forward svc/central 18443:443." .Release.Namespace)) }}
-{{ end }}
+[< if ne .RenderMode "scannerOnly" >]
+{{ include "srox.centralSetup" $ }}
+[< end >]
 
 {{/*
     Scanner setup.
