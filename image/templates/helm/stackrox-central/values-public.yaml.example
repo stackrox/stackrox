@@ -122,6 +122,10 @@
 #       tls:
 #         disable: true
 #
+#   # If you want to use a monitoring solution such as Prometheus, set the following value to
+#   # "true" to make a /metrics endpoint for Central available on port 9090.
+#   exposeMonitoring: true
+#
 #   # If you want to enforce StackRox Central to only run on certain nodes, you can specify
 #   # a node selector here to make sure Central can only be scheduled on Nodes with the
 #   # given label. This is particular relevant for the "hostPath" persistence type.

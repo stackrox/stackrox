@@ -44,6 +44,10 @@
     {{ end }}
   {{ end }}
 {{ end }}
+{{ if $central.exposeMonitoring }}
+  {{ $containerPorts = append $containerPorts (dict "name" "monitoring" "containerPort" 9090) }}
+  {{ $servicePorts = append $servicePorts (dict "name" "monitoring" "targetPort" "monitoring" "port" 9090) }}
+{{ end }}
 {{ $_ := set $central "_containerPorts" $containerPorts }}
 {{ $_ = set $central "_servicePorts" $servicePorts }}
 {{ $_ = set $central "_netPolIngressRules" $netPolIngressRules }}

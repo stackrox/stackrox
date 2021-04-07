@@ -23,6 +23,7 @@ central:
   config: null # string | dict
   endpointsConfig: null # string | dict
   nodeSelector: null # string | dict
+  exposeMonitoring: null # bool
   jwtSigner:
     key: null # string
     generate: null # bool
