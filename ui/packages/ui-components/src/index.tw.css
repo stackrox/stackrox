@@ -23,7 +23,7 @@ h3,
 h4,
 h5,
 h6 {
-    @apply break-words !important;
+    @apply break-words;
 }
 
 input[type='number']::-webkit-inner-spin-button,
@@ -33,17 +33,17 @@ input[type='number']::-webkit-outer-spin-button {
 }
 
 button:focus {
-    @apply outline-none !important;
+    @apply outline-none;
 }
 
 button,
 select {
-    @apply text-base-600 text-base font-600 appearance-none !important;
+    @apply text-base-600 text-base font-600 appearance-none;
     line-height: 14px; /*weird render bug fix where select text gets clipped at bottom */
 }
 
 button[disabled] {
-    @apply opacity-50 pointer-events-none !important;
+    @apply opacity-50 pointer-events-none;
 }
 
 /**
