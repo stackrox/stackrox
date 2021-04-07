@@ -1,0 +1,7 @@
+tests:
+  - name: "central should generate certificates"
+    expect: |
+      .secrets["central-tls"] | assertThat(.stringData["ca.pem"] != "")
+      .secrets["central-tls"] | assertThat(.stringData["ca-key.pem"] != "")
+      .secrets["central-tls"] | assertThat(.stringData["key.pem"] != "")
+      .secrets["central-tls"] | assertThat(.stringData["jwt-key.pem"] != "")

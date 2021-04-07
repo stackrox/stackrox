@@ -139,7 +139,6 @@ func serveHTTP(w http.ResponseWriter, r *http.Request) {
 	// Tell the browser this is a download.
 	w.Header().Add("Content-Disposition", `attachment; filename="scanner-bundle.zip"`)
 	_, _ = w.Write(bytes)
-
 }
 
 // Handler returns the handler that serves scanner zip files.

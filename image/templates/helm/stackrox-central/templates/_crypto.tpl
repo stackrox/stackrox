@@ -63,8 +63,8 @@
 {{ $keyPEM := $cfg._key }}
 
 {{ $result := dict }}
-{{ if and $certPEM $keyPEM }}
-  {{ $result = dict "Cert" $certPEM "Key" $keyPEM }}
+{{ if $certPEM }}
+  {{ $result = dict "Cert" $certPEM "Key" (default "" $keyPEM) }}
 {{ else if or $certPEM $keyPEM }}
   {{ if and $keyPEM $spec.keyOnly }}
     {{ $_ := set $result "Key" $keyPEM }}
