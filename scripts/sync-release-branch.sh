@@ -75,7 +75,7 @@ IFS=$'\n' read -d '' -r -a milestones < <(
     jq --arg family "${current_release_family}" --arg shortFamily "${short_release_family}" \
       '.[] | select(.title | (startswith($family) or startswith($shortFamily))) | .title' -r |
     sort --version-sort
-  )
+  ) || true
 
 if [[ "${#milestones[@]}" -eq 0 ]]; then
   die "No milestones found for release family ${current_release_family}"
@@ -106,12 +106,12 @@ for milestone in "${milestones[@]}"; do
   # Determine unclosed PRs for informational output.
   IFS=$'\n' read -d '' -r -a newly_unclosed_prs < <(
       jq <<<"$milestone_prs" \
-        '.items[] | select(.state != "closed") | ("#" + (.number | tostring) + " by " + .user.login + ": " + .title)' -r)
+        '.items[] | select(.state != "closed") | ("#" + (.number | tostring) + " by " + .user.login + ": " + .title)' -r) || true
   unclosed_prs+=("${newly_unclosed_prs[@]}")
 
   # Look
   IFS=$'\n' read -d '' -r -a closed_prs < <(
-    jq <<<"$milestone_prs" '.items[] | select(.state == "closed") | .number' -r)
+    jq <<<"$milestone_prs" '.items | sort_by(.closed_at) | .[] | select(.state == "closed") | .number' -r) || true
   for closed_pr in "${closed_prs[@]}"; do
     commit_id="$(
       gh_curl "/repos/stackrox/rox/issues/${closed_pr}/events" |
@@ -135,7 +135,9 @@ for milestone in "${milestones[@]}"; do
         # commit messages, and somebody eliminating the PR# from the commit message), additionally check if
         # the diffs (with context removed) look the same.
         firstline="$(git log "${commit_id}...${commit_id}^" --format='%s')"
-        firstline_match_commit="$(git log --grep "^${firstline}\$" --format='%H')"
+        firstline_search="${firstline//[/\[}"
+        firstline_search="${firstline_search//]/\]}"
+        firstline_match_commit="$(git log --grep "^${firstline_search}\$" --format='%H')"
         if [[ -n "$firstline_match_commit" ]]; then
           if cmp -s \
               <(git diff -U0 "${commit_id}" "${commit_id}^" | sed -e 's/@@.*@@/@@@@/g') \
@@ -149,7 +151,7 @@ for milestone in "${milestones[@]}"; do
         else
           # If there is no match (neither for cherry-pick log nor for firstline), it requires cherry-picking.
           verbose "  Commit ${commit_id} requires cherry-picking"
-          cherrypick_commits+=("$commit_id")
+          cherrypick_commits+=("$commit_id" "${firstline//'`'/''}")
         fi
       fi
     fi
@@ -167,11 +169,13 @@ fi
 if [[ "${#cherrypick_commits[@]}" -gt 0 ]]; then
   echo
   echo "The following commits require cherry-picking:"
-  printf ' - %s\n' "${cherrypick_commits[@]}"
+  printf ' - %s (%s)\n' "${cherrypick_commits[@]}"
   echo
   echo "Copy-pastable command:"
   echo
-  echo "  git cherry-pick -x ${cherrypick_commits[*]}"
+  echo   '  git cherry-pick -x \'
+  printf '    %s   `# %s` \\\n' "${cherrypick_commits[@]}"
+  echo   '    ;'
   echo
 fi
 
