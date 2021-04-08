@@ -387,7 +387,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, NetworkFlowVisualization])
+    @Category([BAT, RUNTIME, NetworkFlowVisualization])
     def "Verify network graph when filtered on \"#filter\" and scoped to \"#scope\" #desc"() {
         given:
         "Orchestrator components exists"
