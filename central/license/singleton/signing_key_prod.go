@@ -8,14 +8,8 @@ import (
 	"github.com/stackrox/rox/pkg/timeutil"
 )
 
-var (
-	// IMPORTANT: CHANGE THIS ONCE YOU ROTATE THE PRODUCTION LICENSE KEY.
-	activeProdKey = &publickeys.ProdV2
-)
-
 func init() {
 	registerValidatorRegistrationArgs(
-		// IMPORTANT: IF YOU ADD A NEW PROD KEY, ALSO CHANGE `activeProdKey` ABOVE.
 		validatorRegistrationArgs{
 			publickeys.ProdV2,
 			func() validator.SigningKeyRestrictions {
