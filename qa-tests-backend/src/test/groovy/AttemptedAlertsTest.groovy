@@ -6,6 +6,8 @@ import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
 import objects.Deployment
+import orchestratormanager.OrchestratorTypes
+import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.AlertService
 import services.ClusterService
@@ -13,6 +15,7 @@ import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Unroll
+import util.Env
 
 @Stepwise
 class AttemptedAlertsTest extends BaseSpecification {
@@ -245,6 +248,9 @@ class AttemptedAlertsTest extends BaseSpecification {
     def "Verify attempted alerts on kubernetes events: #desc"() {
         given:
         "Admission Controller exec/pf is enabled"
+        // K8s event detection is currently not supported on OpenShift.
+        Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
+
         assert ClusterService.getCluster().getAdmissionControllerEvents()
 
         and:
