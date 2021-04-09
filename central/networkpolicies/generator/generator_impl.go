@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
+	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
 	"github.com/stackrox/rox/central/networkgraph/aggregator"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
@@ -25,7 +26,8 @@ import (
 )
 
 const (
-	generatedNetworkPolicyLabel = `network-policy-generator.stackrox.io/generated`
+	generatedNetworkPolicyLabel         = `network-policy-generator.stackrox.io/generated`
+	baselineGeneratedNetworkPolicyLabel = `network-policy-generator.stackrox.io/from-baseline`
 
 	networkPolicyAPIVersion = `networking.k8s.io/v1`
 )
@@ -47,6 +49,7 @@ type generator struct {
 	networkTreeMgr      networktree.Manager
 	namespacesStore     nsDS.DataStore
 	globalFlowDataStore nfDS.ClusterDataStore
+	networkBaselines    networkBaselineDataStore.ReadOnlyDataStore
 }
 
 func markGeneratedPoliciesForDeletion(policies []*storage.NetworkPolicy) ([]*storage.NetworkPolicy, []*storage.NetworkPolicyReference) {
@@ -175,6 +178,20 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	return g.buildGraph(ctx, clusterID, relevantDeployments, flows, missingInfoFlows, includePorts)
 }
 
+func (g *generator) populateNode(elevatedCtx context.Context, id string, entityType storage.NetworkEntityInfo_Type) *node {
+	n := createNode(networkgraph.Entity{Type: entityType, ID: id})
+	if entityType == storage.NetworkEntityInfo_DEPLOYMENT {
+		nodeDeployment, ok, err := g.deploymentStore.GetDeployment(elevatedCtx, id)
+		if err != nil || !ok {
+			// Deployment not found. It might be deleted.
+			log.Debugf("detected peer deployment %q missing while trying to generate baseline generated policy", id)
+			return nil
+		}
+		n.deployment = nodeDeployment
+	}
+	return n
+}
+
 func generatePolicy(node *node, namespacesByName map[string]*storage.NamespaceMetadata, ingressPolicies, egressPolicies map[string][]*storage.NetworkPolicy) *storage.NetworkPolicy {
 	if hasMatchingPolicy(node.deployment, ingressPolicies[node.deployment.GetNamespace()]) {
 		return nil
@@ -187,6 +204,32 @@ func generatePolicy(node *node, namespacesByName map[string]*storage.NamespaceMe
 		ClusterName: node.deployment.GetClusterName(),
 		Labels: map[string]string{
 			generatedNetworkPolicyLabel: "true",
+		},
+		ApiVersion: networkPolicyAPIVersion,
+		Spec: &storage.NetworkPolicySpec{
+			PodSelector: labelSelectorForDeployment(node.deployment),
+		},
+	}
+
+	policy.Spec.Ingress = generateIngressRules(node, namespacesByName)
+	policy.Spec.PolicyTypes = []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE}
+
+	return policy
+}
+
+func (g *generator) getBaselineGeneratedPolicyName(deploymentName string) string {
+	return fmt.Sprintf("stackrox-baseline-generated-%s", deploymentName)
+}
+
+func (g *generator) getBaselineGeneratedPolicy(node *node, namespacesByName map[string]*storage.NamespaceMetadata) *storage.NetworkPolicy {
+
+	policy := &storage.NetworkPolicy{
+		Name:        g.getBaselineGeneratedPolicyName(node.deployment.GetName()),
+		Namespace:   node.deployment.GetNamespace(),
+		ClusterId:   node.deployment.GetClusterId(),
+		ClusterName: node.deployment.GetClusterName(),
+		Labels: map[string]string{
+			baselineGeneratedNetworkPolicyLabel: "true",
 		},
 		ApiVersion: networkPolicyAPIVersion,
 		Spec: &storage.NetworkPolicySpec{
@@ -221,6 +264,16 @@ func (g *generator) generatePolicies(graph map[networkgraph.Entity]*node, namesp
 	return generatedPolicies
 }
 
+func (g *generator) getNamespacesByName(ctx context.Context, clusterID string) (map[string]*storage.NamespaceMetadata, error) {
+	clusterIDQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	namespaces, err := g.namespacesStore.SearchNamespaces(ctx, clusterIDQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not obtain namespaces metadata")
+	}
+
+	return createNamespacesByNameMap(namespaces), nil
+}
+
 func (g *generator) Generate(ctx context.Context, req *v1.GenerateNetworkPoliciesRequest) (generated []*storage.NetworkPolicy, toDelete []*storage.NetworkPolicyReference, err error) {
 	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
@@ -237,14 +290,40 @@ func (g *generator) Generate(ctx context.Context, req *v1.GenerateNetworkPolicie
 		return nil, nil, errors.Wrap(err, "obtaining existing network policies")
 	}
 
-	clusterIDQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, req.GetClusterId()).ProtoQuery()
-	namespaces, err := g.namespacesStore.SearchNamespaces(ctx, clusterIDQuery)
+	namespacesByName, err := g.getNamespacesByName(ctx, req.GetClusterId())
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not obtain namespaces metadata")
+		return nil, nil, err
 	}
-
-	namespacesByName := createNamespacesByNameMap(namespaces)
 
 	generatedPolicies := g.generatePolicies(graph, namespacesByName, existingPolicies)
 	return generatedPolicies, toDelete, nil
+}
+
+func (g *generator) GenerateFromBaselineForDeployment(
+	ctx context.Context,
+	req *v1.GetBaselineGeneratedPolicyForDeploymentRequest,
+) (generated []*storage.NetworkPolicy, toDelete []*storage.NetworkPolicyReference, err error) {
+	deployment, ok, err := g.deploymentStore.GetDeployment(ctx, req.GetDeploymentId())
+	if err != nil {
+		return nil, nil, err
+	} else if !ok {
+		return nil, nil, errors.New("deployment not found")
+	}
+
+	node, err := g.generateNodeFromBaselineForDeployment(ctx, deployment, req.GetIncludePorts())
+	if err != nil {
+		return nil, nil, err
+	} else if node == nil {
+		return nil, nil, errors.New("failed to generate graph node for this deployment")
+	}
+
+	namespacesByName, err := g.getNamespacesByName(ctx, deployment.GetClusterId())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Generate network policy for this deployment
+	generated = []*storage.NetworkPolicy{g.getBaselineGeneratedPolicy(node, namespacesByName)}
+
+	return generated, toDelete, nil
 }

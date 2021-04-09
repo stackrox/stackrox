@@ -58,6 +58,6 @@ func New(storage npDS.DataStore,
 		notifierStore:    notifierStore,
 		clusterStore:     clusterStore,
 		graphEvaluator:   graphEvaluator,
-		policyGenerator:  generator.New(storage, deployments, namespacesStore, globalFlowDataStore, networkTreeMgr),
+		policyGenerator:  generator.New(storage, deployments, namespacesStore, globalFlowDataStore, networkTreeMgr, networkBaselines),
 	}
 }

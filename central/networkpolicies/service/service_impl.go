@@ -367,16 +367,9 @@ func (s *serviceImpl) GenerateNetworkPolicies(ctx context.Context, req *v1.Gener
 		return nil, status.Errorf(codes.Internal, "error generating network policies: %v", err)
 	}
 
-	var applyYAML string
-	for _, generatedPolicy := range generated {
-		yaml, err := networkPolicyConversion.RoxNetworkPolicyWrap{NetworkPolicy: generatedPolicy}.ToYaml()
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "error converting generated network policy to YAML: %v", err)
-		}
-		if applyYAML != "" {
-			applyYAML += "\n---\n"
-		}
-		applyYAML += yaml
+	applyYAML, err := s.generateApplyYamlFromGeneratedPolicies(generated)
+	if err != nil {
+		return nil, err
 	}
 
 	mod := &storage.NetworkPolicyModification{
@@ -402,8 +395,47 @@ func (s *serviceImpl) GetUndoModification(ctx context.Context, req *v1.GetUndoMo
 	}, nil
 }
 
+func (s *serviceImpl) generateApplyYamlFromGeneratedPolicies(generatedPolicies []*storage.NetworkPolicy) (string, error) {
+	var applyYAML string
+	for _, policy := range generatedPolicies {
+		yaml, err := networkPolicyConversion.RoxNetworkPolicyWrap{NetworkPolicy: policy}.ToYaml()
+		if err != nil {
+			return "", status.Errorf(codes.Internal, "error converting generated network policy to YAML: %v", err)
+		}
+		if applyYAML != "" {
+			applyYAML += "\n---\n"
+		}
+		applyYAML += yaml
+	}
+	return applyYAML, nil
+}
+
 func (s *serviceImpl) GetBaselineGeneratedNetworkPolicyForDeployment(ctx context.Context, request *v1.GetBaselineGeneratedPolicyForDeploymentRequest) (*v1.GetBaselineGeneratedPolicyForDeploymentResponse, error) {
-	return nil, errors.New("unimplemented")
+	if !features.NetworkDetectionBaselineSimulation.Enabled() {
+		return nil, errors.New("network baseline policy simulator is currently not enabled")
+	}
+	// Currently we don't look at request.GetDeleteExisting. We try to delete the existing baseline generated
+	// policy no matter what
+	if request.GetDeploymentId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Cluster ID must be specified")
+	}
+
+	generated, toDelete, err := s.policyGenerator.GenerateFromBaselineForDeployment(ctx, request)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error generating network policies: %v", err)
+	}
+
+	applyYAML, err := s.generateApplyYamlFromGeneratedPolicies(generated)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.GetBaselineGeneratedPolicyForDeploymentResponse{
+		Modification: &storage.NetworkPolicyModification{
+			ApplyYaml: applyYAML,
+			ToDelete:  toDelete,
+		},
+	}, nil
 }
 
 func (s *serviceImpl) GetAllowedPeersFromCurrentPolicyForDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.GetAllowedPeersFromCurrentPolicyForDeploymentResponse, error) {
