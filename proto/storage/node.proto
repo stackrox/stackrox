@@ -23,6 +23,7 @@ message Node {
     repeated Taint taints                  = 3;
     string cluster_id                      = 4 [(gogoproto.moretags) = "search:\"Cluster ID,store\""];
     string cluster_name                    = 5 [(gogoproto.moretags) = "search:\"Cluster,store\""];
+    // TODO(ROX-6895): "Label" search term is ambiguous.
     map<string, string> labels             = 6 [(gogoproto.moretags) = "search:\"Label\""];
     map<string, string> annotations        = 7 [(gogoproto.moretags) = "search:\"Annotation\""];
     // When the cluster reported the node was added
