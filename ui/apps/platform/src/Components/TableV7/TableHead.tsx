@@ -15,7 +15,7 @@ export type TableHeadProps = {
     }[];
 };
 
-function TableHead({ headerGroups }: TableHeadProps): ReactElement {
+export function TableHead({ headerGroups }: TableHeadProps): ReactElement {
     return (
         <thead>
             {headerGroups.map((headerGroup) => {
@@ -40,5 +40,3 @@ function TableHead({ headerGroups }: TableHeadProps): ReactElement {
         </thead>
     );
 }
-
-export default TableHead;

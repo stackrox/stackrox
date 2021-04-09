@@ -27,7 +27,7 @@ function ExpanderCellComponent({ row }): ReactNode {
     );
 }
 
-function expanderPlugin(hooks): void {
+export function expanderPlugin(hooks): void {
     hooks.visibleColumns.push(
         (visibleColumns) =>
             [
@@ -40,5 +40,3 @@ function expanderPlugin(hooks): void {
             ] as { id: string; Cell: Component }[]
     );
 }
-
-export default expanderPlugin;

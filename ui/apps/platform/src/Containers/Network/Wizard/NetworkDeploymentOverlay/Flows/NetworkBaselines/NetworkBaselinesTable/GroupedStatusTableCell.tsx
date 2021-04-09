@@ -3,11 +3,8 @@ import pluralize from 'pluralize';
 
 import { BaselineStatus } from 'Containers/Network/networkTypes';
 import { networkFlowStatusLabels } from 'messages/network';
-import { Cell } from './tableTypes';
-import { isExpanderCell } from './expanderPlugin';
-
-import TableCell from './TableCell';
-import { TableColorStyles } from '../networkBaseline.utils';
+import { TableCell, TableColorStyles, Cell } from 'Components/TableV7';
+import { isExpanderCell } from 'Components/TableV7/expanderPlugin';
 
 export type GroupedStatusTableCellProps = {
     row: {

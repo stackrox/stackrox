@@ -11,19 +11,22 @@ import {
 import { FlattenedNetworkBaseline, BaselineStatus } from 'Containers/Network/networkTypes';
 
 import NavigateToEntityButton from 'Containers/Network/NavigateToEntityButton';
-import Table from './Table';
-import TableHead from './TableHead';
-import TableBody from './TableBody';
-import TableRow from './TableRow';
-import TableCell from './TableCell';
+import {
+    Table,
+    TableHead,
+    TableBody,
+    TableRow,
+    TableCell,
+    checkboxSelectionPlugin,
+    expanderPlugin,
+    TableColorStyles,
+} from 'Components/TableV7';
 import GroupedStatusTableCell from './GroupedStatusTableCell';
 import ToggleSelectedBaselineStatuses from './ToggleSelectedBaselineStatuses';
 import ToggleBaselineStatus from './ToggleBaselineStatus';
 import EmptyGroupedStatusRow from './EmptyGroupedStatusRow';
-import checkboxSelectionPlugin from './checkboxSelectionPlugin';
-import expanderPlugin from './expanderPlugin';
 import { Row } from './tableTypes';
-import { getFlowRowColors, TableColorStyles } from '../networkBaseline.utils';
+import { getFlowRowColors } from '../networkBaseline.utils';
 
 export type NetworkBaselinesTableProps = {
     networkBaselines: FlattenedNetworkBaseline[];

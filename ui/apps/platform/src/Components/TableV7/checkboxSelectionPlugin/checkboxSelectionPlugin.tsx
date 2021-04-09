@@ -24,10 +24,6 @@ function CheckboxCellComponent({ row }): ReactNode {
     );
 }
 
-export type CheckboxSelectionPluginOptions = {
-    showHeader: boolean;
-};
-
 function checkboxSelectionPlugin(hooks): void {
     hooks.visibleColumns.push(
         (visibleColumns) =>

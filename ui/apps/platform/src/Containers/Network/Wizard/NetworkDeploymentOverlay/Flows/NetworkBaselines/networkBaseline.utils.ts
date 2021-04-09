@@ -1,11 +1,6 @@
 import { networkFlowStatus } from 'constants/networkGraph';
 import { BaselineStatus } from 'Containers/Network/networkTypes';
-
-export type TableColorStyles = {
-    bgColor: string;
-    borderColor: string;
-    textColor: string;
-};
+import { TableColorStyles } from 'Components/TableV7';
 
 const bgAlert = 'bg-alert-200';
 const borderAlert = 'border-alert-300';

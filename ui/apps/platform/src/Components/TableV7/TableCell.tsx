@@ -1,8 +1,7 @@
 import React, { ReactElement } from 'react';
 
-import { Cell } from './tableTypes';
+import { Cell, TableColorStyles } from './tableTypes';
 import { isExpanderCell } from './expanderPlugin';
-import { TableColorStyles } from '../networkBaseline.utils';
 
 export type TableCellProps = {
     cell: Cell;
@@ -10,7 +9,7 @@ export type TableCellProps = {
     isSticky?: boolean;
 };
 
-function TableCell({ cell, colorStyles, isSticky = false }: TableCellProps): ReactElement {
+export function TableCell({ cell, colorStyles, isSticky = false }: TableCellProps): ReactElement {
     const { key } = cell.getCellProps();
 
     const isSubRowExpanderCell = !cell.row.isGrouped && isExpanderCell(cell);
@@ -33,5 +32,3 @@ function TableCell({ cell, colorStyles, isSticky = false }: TableCellProps): Rea
         </td>
     );
 }
-
-export default TableCell;

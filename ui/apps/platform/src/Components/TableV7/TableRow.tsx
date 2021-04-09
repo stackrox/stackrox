@@ -1,6 +1,6 @@
 import React, { ReactElement, ReactNode, useState } from 'react';
 
-import { TableColorStyles } from '../networkBaseline.utils';
+import { TableColorStyles } from './tableTypes';
 
 function onFocus(): number {
     return 0;
@@ -32,7 +32,7 @@ export type TableRowProps = {
     GroupedRowComponent?: ReactNode;
 };
 
-function TableRow({
+export function TableRow({
     colorStyles,
     row,
     children,
@@ -85,5 +85,3 @@ function TableRow({
         </tr>
     );
 }
-
-export default TableRow;
