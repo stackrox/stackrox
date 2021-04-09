@@ -8,7 +8,6 @@ import objects.Deployment
 import objects.SecretKeyRef
 import objects.Volume
 import orchestratormanager.OrchestratorTypes
-import org.junit.Assume
 import org.junit.experimental.categories.Category
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -17,6 +16,7 @@ import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
 import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
+import io.stackrox.proto.storage.ScopeOuterClass
 import services.AlertService
 import services.CreatePolicyService
 import spock.lang.Shared
@@ -221,7 +221,7 @@ class PolicyFieldsTest extends BaseSpecification {
             "some_configuration": "a value",
     ]
 
-    // https://stack-rox.atlassian.net/browse/ROX-5298
+    // https://stack-rox.atlassian.net/browse/ROX-6891
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
             (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT || isRHELRace()) ? 100 : 30
 
@@ -230,6 +230,11 @@ class PolicyFieldsTest extends BaseSpecification {
             .addCategories("Test")
             .setDisabled(false)
             .setSeverityValue(2)
+            // https://stack-rox.atlassian.net/browse/ROX-6891
+            // limiting the scope of the test policies to the test namespaces reduces the workload that
+            // causes slow alert triggers.
+            .addAllScope(["qa", "qa-policyfieldstest-.*"].collect
+                    { ScopeOuterClass.Scope.newBuilder().setNamespace(it).build() })
 
     static final private BASE_RUNTIME_POLICY = BASE_POLICY.clone()
             .clearLifecycleStages()
@@ -533,7 +538,9 @@ class PolicyFieldsTest extends BaseSpecification {
     // "Minimum RBAC Permissions"
 
     static final private MINIMUM_RBAC_CLUSTER_WIDE = setPolicyFieldANDValues(
-            BASE_POLICY.clone().setName("AAA_MINIMUM_RBAC_CLUSTER_WIDE"),
+            BASE_POLICY.clone().setName("AAA_MINIMUM_RBAC_CLUSTER_WIDE").addScope(
+                    ScopeOuterClass.Scope.newBuilder().setNamespace("stackrox").build()
+            ),
             "Minimum RBAC Permissions",
             ["ELEVATED_CLUSTER_WIDE"]
     )
@@ -752,10 +759,6 @@ class PolicyFieldsTest extends BaseSpecification {
     private List<String> createdPolicyIds
 
     def setupSpec() {
-        if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
-            return
-        }
-
         createdPolicyIds = []
         for (policyBuilder in POLICY_BUILDERS) {
             Policy policy = policyBuilder.build()
@@ -767,6 +770,18 @@ class PolicyFieldsTest extends BaseSpecification {
         orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA)
         orchestrator.createSecret(SECRET_NAME)
 
+        List<String> newNamespaces = []
+        for (Deployment deployment : DEPLOYMENTS) {
+            if (deployment.namespace != Constants.ORCHESTRATOR_NAMESPACE &&
+                    !newNamespaces.contains(deployment.namespace)) {
+                println "Creating the test namespace ${deployment.namespace} with pull rights before deployment"
+                orchestrator.ensureNamespaceExists(deployment.namespace)
+                addStackroxImagePullSecret(deployment.namespace)
+                addGCRImagePullSecret(deployment.namespace)
+                newNamespaces.add(deployment.namespace)
+            }
+        }
+
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
@@ -775,10 +790,6 @@ class PolicyFieldsTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
-            return
-        }
-
         orchestrator.deleteDeployment(UNSCANNED)
 
         for (Deployment deployment : DEPLOYMENTS) {
@@ -798,9 +809,6 @@ class PolicyFieldsTest extends BaseSpecification {
     @Unroll
     @Category([BAT])
     def "Expect violation for policy field '#fieldName' - #testName"() {
-        // ROX-5298 - Policy tests are unreliable on Openshift
-        Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
-
         expect:
         "Verify expected violations are triggered"
         assert waitForViolation(deployment.name, policy.name, WAIT_FOR_VIOLATION_TIMEOUT)
@@ -881,9 +889,6 @@ class PolicyFieldsTest extends BaseSpecification {
     @Unroll
     @Category([BAT])
     def "Expect no violation for policy field '#fieldName' - #testName"() {
-        // ROX-5298 - Policy tests are unreliable on Openshift
-        Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
-
         expect:
         "Verify unexpected violations are not triggered"
         def violations = AlertService.getViolations(ListAlertsRequest.newBuilder()

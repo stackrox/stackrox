@@ -251,7 +251,7 @@ class BaseSpecification extends Specification {
         Helpers.resetRetryAttempts()
     }
 
-    static addStackroxImagePullSecret() {
+    static addStackroxImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
         // Add an image pull secret to the qa namespace and also the default service account so the qa namespace can
         // pull stackrox images from dockerhub
 
@@ -266,23 +266,23 @@ class BaseSpecification extends Specification {
 
         OrchestratorMain orchestrator = OrchestratorType.create(
                 Env.mustGetOrchestratorType(),
-                Constants.ORCHESTRATOR_NAMESPACE
+                ns
         )
         orchestrator.createImagePullSecret(
                 "stackrox",
                 Env.mustGetInCI("REGISTRY_USERNAME", "fakeUsername"),
                 Env.mustGetInCI("REGISTRY_PASSWORD", "fakePassword"),
-                Constants.ORCHESTRATOR_NAMESPACE
+                ns
         )
         def sa = new K8sServiceAccount(
                 name: "default",
-                namespace: Constants.ORCHESTRATOR_NAMESPACE,
+                namespace: ns,
                 imagePullSecrets: ["stackrox"]
         )
         orchestrator.createServiceAccount(sa)
     }
 
-    static addGCRImagePullSecret() {
+    static addGCRImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
         if (!Env.IN_CI && Env.get("GOOGLE_CREDENTIALS_GCR_SCANNER", null) == null) {
             // Arguably this should be fatal but for tests that don't pull from us.gcr.io it is not strictly necessary
             println "WARNING: The GOOGLE_CREDENTIALS_GCR_SCANNER env var is missing. "+
@@ -292,7 +292,7 @@ class BaseSpecification extends Specification {
 
         OrchestratorMain orchestrator = OrchestratorType.create(
                 Env.mustGetOrchestratorType(),
-                Constants.ORCHESTRATOR_NAMESPACE
+                ns
         )
 
         orchestrator.createImagePullSecret(new Secret(
@@ -300,13 +300,13 @@ class BaseSpecification extends Specification {
                 server: "https://us.gcr.io",
                 username: "_json_key",
                 password: Env.mustGetInCI("GOOGLE_CREDENTIALS_GCR_SCANNER", "{}"),
-                namespace: Constants.ORCHESTRATOR_NAMESPACE
+                namespace: ns
         ))
 
         orchestrator.addServiceAccountImagePullSecret(
                 "default",
                 "gcr-image-pull-secret",
-                Constants.ORCHESTRATOR_NAMESPACE
+                ns
         )
     }
 

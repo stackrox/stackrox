@@ -100,6 +100,7 @@ interface OrchestratorMain {
     def updateSecret(io.fabric8.kubernetes.api.model.Secret secret)
 
     //Namespaces
+    def ensureNamespaceExists(String ns)
     String createNamespace(String ns)
     def deleteNamespace(String ns)
     def waitForNamespaceDeletion(String ns)
