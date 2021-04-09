@@ -17,6 +17,7 @@ var (
 
 	Cluster      = newFieldLabel("Cluster")
 	ClusterID    = newFieldLabel("Cluster ID")
+	ClusterLabel = newFieldLabel("Cluster Label")
 	ClusterScope = newFieldLabel("Cluster Scope")
 	Label        = newFieldLabel("Label")
 	PodLabel     = newFieldLabel("Pod Label")
