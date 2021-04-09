@@ -22,6 +22,10 @@ class ImageManagementTest extends BaseSpecification {
         def startStages = Services.updatePolicyLifecycleStage(policy, [LifecycleStage.BUILD, LifecycleStage.DEPLOY])
 
         and:
+        "Update Policy to be enabled"
+        def policyEnabled = Services.setPolicyDisabled(policy, false)
+
+        and:
         "Request Image Scan"
         def scanResults = Services.requestBuildImageScan(imageRegistry, imageRemote, imageTag)
 
@@ -32,6 +36,9 @@ class ImageManagementTest extends BaseSpecification {
         cleanup:
         "Revert Policy"
         Services.updatePolicyLifecycleStage(policy, startStages)
+        if (policyEnabled) {
+            Services.setPolicyDisabled(policy, true)
+        }
 
         where:
         "Data inputs are: "

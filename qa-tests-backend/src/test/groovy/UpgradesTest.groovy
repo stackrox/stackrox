@@ -217,6 +217,7 @@ class UpgradesTest extends BaseSpecification {
         String remediation
         String rationale
         String description
+        boolean setDisabled = false
 
         def addExclusions(def toAdd) {
             this.toAdd = toAdd.collect {
@@ -271,6 +272,11 @@ class UpgradesTest extends BaseSpecification {
 
         def updateDescription(def description) {
             this.description = description
+            return this
+        }
+
+        def setPolicyAsDisabled() {
+            this.setDisabled = true
             return this
         }
     }
@@ -344,7 +350,8 @@ class UpgradesTest extends BaseSpecification {
                         .updateRemediation("Run `dpkg -r --force-all apt apt-get && dpkg -r --force-all debconf dpkg`" +
                                 " in the image build for production containers."),
                 "1913283f-ce3c-4134-84ef-195c4cd687ae": new KnownPolicyDiffs()
-                        .removeExclusions([["stackrox", "scanner-v2", "StackRox scanner-v2"]]),
+                        .removeExclusions([["stackrox", "scanner-v2", "StackRox scanner-v2"]])
+                        .setPolicyAsDisabled(),
                 "f95ff08d-130a-465a-a27e-32ed1fb05555": new KnownPolicyDiffs()
                         .removeExclusions([["stackrox", "scanner-v2", "StackRox scanner-v2"]])
                         .addExclusionsWithName([["stackrox", "scanner", "StackRox scanner", 0]]),
@@ -362,6 +369,7 @@ class UpgradesTest extends BaseSpecification {
                         .updateDescription("This policy generates a violation for any process execution" +
                                 " that is not explicitly allowed by a locked process baseline" +
                                 " for a given container specification within a Kubernetes deployment."),
+                "842feb9f-ecb1-4e3c-a4bf-8a1dcb63948a": new KnownPolicyDiffs().setPolicyAsDisabled(),
         ]
         and:
         "Skip over known differences in migrated policies until ROX-6806 is fixed"
@@ -390,6 +398,9 @@ class UpgradesTest extends BaseSpecification {
                 }
                 if (diffs.description) {
                     builder.setDescription(diffs.description)
+                }
+                if (diffs.setDisabled) {
+                    builder.setDisabled(true)
                 }
             }
 

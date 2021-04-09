@@ -13,6 +13,7 @@ import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest.RequestGroup
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsGroupResponse
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass.ListAlert
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
@@ -147,15 +148,39 @@ class DefaultPoliciesTest extends BaseSpecification {
                                                   String testId) {
         when:
         "Validate if policy is present"
-        assert getPolicies().stream()
+        def policies = getPolicies().stream()
                 .filter { f -> f.getName() == policyName }
-                .collect(Collectors.toList()).size() == 1
+                .collect(Collectors.toList())
+
+        assert policies.size() == 1
+
+        and:
+        "Policy is temporarily enabled"
+        def policy = policies.get(0)
+        def policyEnabled = false
+        if (policy.disabled) {
+            // Use patchPolicy instead of Services.setPolicyDisabled since this already has a reference to policy id.
+            // No need to find policy id and refetch it this way.
+            CreatePolicyService.patchPolicy(
+                    PolicyServiceOuterClass.PatchPolicyRequest.newBuilder().setId(policy.id).setDisabled(false).build()
+            )
+            println "Temporarily enabled policy '${policyName}'"
+            policyEnabled = true
+        }
 
         then:
         "Verify Violation for #policyName is triggered"
         // Some of these policies require scans so extend the timeout as the scan will be done inline
         // with our scanner
         assert waitForViolation(deploymentName,  policyName, 60)
+
+        cleanup:
+        if (policyEnabled) {
+            CreatePolicyService.patchPolicy(
+                    PolicyServiceOuterClass.PatchPolicyRequest.newBuilder().setId(policy.id).setDisabled(true).build()
+            )
+            println "Re-disabled policy '${policyName}'"
+        }
 
         where:
         "Data inputs are:"
