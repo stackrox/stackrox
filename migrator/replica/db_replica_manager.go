@@ -45,8 +45,6 @@ var (
 	knownReplicas = set.NewStringSet(currentReplica, restoreReplica, backupReplica, previousReplica)
 
 	log = logging.CurrentModule().Logger()
-
-	capacityMargin = 0.2
 )
 
 type dbReplica struct {
@@ -311,7 +309,7 @@ func (d *DBReplicaManager) hasSpaceForRollback() bool {
 		return false
 	}
 
-	hasSpace := float64(availableBytes) > float64(requiredBytes)*(1.0+capacityMargin)
-	log.Infof("Central has space to create backup for rollback: %v, required: %d, available %d with %f margin", hasSpace, requiredBytes, availableBytes, capacityMargin)
+	hasSpace := float64(availableBytes) > float64(requiredBytes)*(1.0+migrations.CapacityMarginFraction)
+	log.Infof("Central has space to create backup for rollback: %v, required: %d, available: %d with %f margin", hasSpace, requiredBytes, availableBytes, migrations.CapacityMarginFraction)
 	return hasSpace
 }

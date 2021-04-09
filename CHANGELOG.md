@@ -6,6 +6,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [NEXT RELEASE]
 
+- Added `GET /v1/centralhealth/upgradestatus` endpoint to support upgrade rollback.
+
 ## [58.0]
 
 - The product no longer requires a license to run. Several license-related functionalities and flags

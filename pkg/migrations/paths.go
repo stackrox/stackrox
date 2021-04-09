@@ -13,6 +13,8 @@ import (
 const (
 	// Current is the current database in use.
 	Current = "current"
+	// PreviousReplica is the symbolic link pointing to the previous databases.
+	PreviousReplica = ".previous"
 )
 
 // DBMountPath is the directory path (within a container) where database storage device is mounted.
