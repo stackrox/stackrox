@@ -124,7 +124,7 @@ func Scan(basePath string, forceVersion string) (*DBReplicaManager, error) {
 	if !currExists {
 		return nil, errors.Errorf("Cannot find database at %s", filepath.Join(basePath, currentReplica))
 	}
-	if currReplica.getSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareReleaseVersions(currReplica.getVersion(), version.GetMainVersion()) > 0 {
+	if currReplica.getSeqNum() > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(currReplica.getVersion(), version.GetMainVersion()) > 0 {
 		// If there is no previous replica or force rollback is not requested, we cannot downgrade.
 		prevReplica, prevExists := manager.replicaMap[previousReplica]
 		if !prevExists {
@@ -191,7 +191,7 @@ func (d *DBReplicaManager) GetReplicaToMigrate() (string, string, error) {
 		if prevExists && currReplica.getVersion() == prevReplica.getVersion() {
 			return currentReplica, d.getPath(d.replicaMap[currentReplica].dirName), nil
 		}
-		if version.CompareReleaseVersions(currReplica.getVersion(), version.GetMainVersion()) > 0 || currReplica.getSeqNum() > migrations.CurrentDBVersionSeqNum() {
+		if version.CompareVersions(currReplica.getVersion(), version.GetMainVersion()) > 0 || currReplica.getSeqNum() > migrations.CurrentDBVersionSeqNum() {
 			// Force rollback
 			return previousReplica, d.getPath(d.replicaMap[previousReplica].dirName), nil
 		}

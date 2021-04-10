@@ -83,7 +83,7 @@ func (s *serviceImpl) GetUpgradeStatus(ctx context.Context, empty *v1.Empty) (*v
 
 	// Get rollback to version
 	migVer, err := migrations.Read(filepath.Join(migrations.DBMountPath(), migrations.PreviousReplica))
-	if err == nil && migVer.SeqNum > 0 && version.CompareReleaseVersionsOr(migVer.MainVersion, minForceRollbackTo, -1) >= 0 {
+	if err == nil && migVer.SeqNum > 0 && version.CompareVersionsOr(migVer.MainVersion, minForceRollbackTo, -1) >= 0 {
 		upgradeStatus.ForceRollbackTo = migVer.MainVersion
 	}
 

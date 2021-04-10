@@ -16,6 +16,12 @@ var (
 	preVer        = versionPair{version: "3.0.57.0", seqNum: 65}
 	currVer       = versionPair{version: "3.0.58.0", seqNum: 65}
 	futureVer     = versionPair{version: "10001.0.0.0", seqNum: 6533}
+
+	// Current versions
+	rcVer      = versionPair{version: "3.0.58.0-rc.1", seqNum: 65}
+	releaseVer = versionPair{version: "3.0.58.0", seqNum: 65}
+	devVer     = versionPair{version: "3.0.58.x-19-g6bd31dae22-dirty", seqNum: 65}
+	nightlyVer = versionPair{version: "3.0.58.x-nightly-20210407", seqNum: 65}
 )
 
 func setVersion(t *testing.T, ver *versionPair) {
@@ -24,6 +30,17 @@ func setVersion(t *testing.T, ver *versionPair) {
 }
 
 func TestReplicaMigration(t *testing.T) {
+	currVer = releaseVer
+	doTestReplicaMigration(t)
+	currVer = devVer
+	doTestReplicaMigration(t)
+	currVer = rcVer
+	doTestReplicaMigration(t)
+	currVer = nightlyVer
+	doTestReplicaMigration(t)
+}
+
+func doTestReplicaMigration(t *testing.T) {
 	if buildinfo.ReleaseBuild {
 		return
 	}
@@ -104,6 +121,17 @@ func createAndRunCentral(t *testing.T, ver *versionPair) *mockCentral {
 }
 
 func TestReplicaMigrationFailureAndReentry(t *testing.T) {
+	currVer = releaseVer
+	doTestReplicaMigrationFailureAndReentry(t)
+	currVer = devVer
+	doTestReplicaMigrationFailureAndReentry(t)
+	currVer = rcVer
+	doTestReplicaMigrationFailureAndReentry(t)
+	currVer = nightlyVer
+	doTestReplicaMigrationFailureAndReentry(t)
+}
+
+func doTestReplicaMigrationFailureAndReentry(t *testing.T) {
 	if buildinfo.ReleaseBuild {
 		return
 	}
@@ -261,6 +289,17 @@ func TestReplicaRestore(t *testing.T) {
 }
 
 func TestForceRollbackFailure(t *testing.T) {
+	currVer = releaseVer
+	doTestForceRollbackFailure(t)
+	currVer = devVer
+	doTestForceRollbackFailure(t)
+	currVer = rcVer
+	doTestForceRollbackFailure(t)
+	currVer = nightlyVer
+	doTestForceRollbackFailure(t)
+}
+
+func doTestForceRollbackFailure(t *testing.T) {
 	if buildinfo.ReleaseBuild {
 		return
 	}
@@ -363,6 +402,17 @@ func TestForceRollbackFailure(t *testing.T) {
 }
 
 func TestRollback(t *testing.T) {
+	currVer = releaseVer
+	doTestRollback(t)
+	currVer = devVer
+	doTestRollback(t)
+	currVer = rcVer
+	doTestRollback(t)
+	currVer = nightlyVer
+	doTestRollback(t)
+}
+
+func doTestRollback(t *testing.T) {
 	if buildinfo.ReleaseBuild {
 		return
 	}

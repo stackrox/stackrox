@@ -26,13 +26,14 @@ const (
 const (
 	releaseRegexStr  = `\d+(?:\.\d+)*`
 	rcSuffixRegexStr = `-rc\.\d+`
+	hashTagRegexStr  = `-g[0-9a-f]{10}`
 )
 
 var (
 	releaseRegex = regexp.MustCompile(`^` + releaseRegexStr + `$`)
 	rcRegex      = regexp.MustCompile(`^` + releaseRegexStr + rcSuffixRegexStr + `$`)
 	nightlyRegex = regexp.MustCompile(`^.*-nightly-.*$`)
-	devRegex     = regexp.MustCompile(`^` + releaseRegexStr + `(?:` + rcSuffixRegexStr + `|\.x)?-\d+-g[0-9a-f]{10}(?:-dirty)?$`)
+	devRegex     = regexp.MustCompile(`^` + releaseRegexStr + `(?:` + rcSuffixRegexStr + `|\.x)?-\d+` + hashTagRegexStr + `(?:-dirty)?$`)
 )
 
 // GetVersionKind returns the version kind (release, RC, development) of the given version string.

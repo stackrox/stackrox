@@ -83,7 +83,7 @@ func (m *mockCentral) upgradeCentral(ver *versionPair, breakpoint string) {
 		m.runMigrator("", "")
 	}
 	m.runCentral()
-	if m.rollbackEnabled && version.CompareReleaseVersions(curVer.version, "3.0.57.0") >= 0 {
+	if m.rollbackEnabled && version.CompareVersions(curVer.version, "3.0.57.0") >= 0 {
 		m.verifyReplica(previousReplica, curVer)
 	} else {
 		assert.NoDirExists(m.t, filepath.Join(m.mountPath, previousReplica))
@@ -125,7 +125,7 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) {
 
 func (m *mockCentral) runCentral() {
 	require.NoError(m.t, migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(m.mountPath, ".backup")))
-	if version.CompareReleaseVersions(version.GetMainVersion(), "3.0.57.0") >= 0 {
+	if version.CompareVersions(version.GetMainVersion(), "3.0.57.0") >= 0 {
 		migrations.SetCurrent(migrations.CurrentPath())
 	}
 	if !fileutil.Exist(filepath.Join(migrations.CurrentPath(), "db")) {
@@ -163,7 +163,7 @@ func (m *mockCentral) restore(ver *versionPair) {
 	require.NoError(m.t, os.Symlink(filepath.Base(restoreDir), filepath.Join(migrations.DBMountPath(), ".restore")))
 	require.NoError(m.t, err)
 	// backups from version lower than 3.0.57.0 do not have migration version.
-	if version.CompareReleaseVersions(ver.version, "3.0.57.0") >= 0 {
+	if version.CompareVersions(ver.version, "3.0.57.0") >= 0 {
 		m.setMigrationVersion(restoreDir, ver)
 	}
 }
@@ -174,7 +174,7 @@ func (m *mockCentral) verifyCurrent() {
 
 func (m *mockCentral) verifyReplica(replica string, ver *versionPair) {
 	dbPath := filepath.Join(m.mountPath, replica)
-	if version.CompareReleaseVersions(ver.version, "3.0.57.0") >= 0 {
+	if version.CompareVersions(ver.version, "3.0.57.0") >= 0 {
 		m.verifyMigrationVersion(dbPath, ver)
 	} else {
 		require.NoFileExists(m.t, filepath.Join(dbPath, migrations.MigrationVersionFile))

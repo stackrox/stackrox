@@ -37,7 +37,7 @@ func restoreMigrationVersion(ctx common.RestoreFileContext, fileReader io.Reader
 	if err != nil {
 		return err
 	}
-	if ver.SeqNum > migrations.CurrentDBVersionSeqNum() || version.CompareReleaseVersions(ver.MainVersion, version.GetMainVersion()) > 0 {
+	if ver.SeqNum > migrations.CurrentDBVersionSeqNum() || version.CompareVersions(ver.MainVersion, version.GetMainVersion()) > 0 {
 		return errors.Errorf("Cannot restore databases from higher version %+v, expect version <= %s and sequence number <= %d", *ver, version.GetMainVersion(), ver.SeqNum)
 	}
 	return nil
