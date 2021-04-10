@@ -229,19 +229,24 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 	return c.eventPipeline.Run(ctx, msg, c)
 }
 
-// getPolicySyncMsg prepares stored policies for delivery to sensor. If:
-//   - sensor's policy version is unknown -> guess Version1,
-//   - sensor's policy version is older than central's -> attempt to downgrade
-//     all policies to sensor's version,
-//   - otherwise -> forward policies unmodified.
-//
-// If there is any error during the downgrade, pass the affected policies as-is.
+// getPolicySyncMsg fetches stored policies and prepares them for delivery to sensor.
 func (c *sensorConnection) getPolicySyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
 	policies, err := c.policyMgr.GetAllPolicies(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "error getting policies for initial sync")
 	}
 
+	return c.getPolicySyncMsgFromPolicies(policies)
+}
+
+// getPolicySyncMsgFromPolicies prepares given policies for delivery to sensor. If:
+//   - sensor's policy version is unknown -> guess Version1,
+//   - sensor's policy version is older than central's -> attempt to downgrade
+//     all policies to sensor's version,
+//   - otherwise -> forward policies unmodified.
+//
+// If there is any error during the downgrade, pass the affected policies as-is.
+func (c *sensorConnection) getPolicySyncMsgFromPolicies(policies []*storage.Policy) (*central.MsgToSensor, error) {
 	// Older sensors do not broadcast the policy version they support, so if we
 	// observe an empty string, we guess the version at Version1 and persist it.
 	sensorPolicyVersionStr := stringutils.FirstNonEmpty(c.sensorHello.GetPolicyVersion(), policyversion.Version1().String())

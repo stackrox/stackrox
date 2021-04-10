@@ -95,6 +95,18 @@ func (mr *MockManagerMockRecorder) GetActiveConnections() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveConnections", reflect.TypeOf((*MockManager)(nil).GetActiveConnections))
 }
 
+// PreparePoliciesAndBroadcast mocks base method
+func (m *MockManager) PreparePoliciesAndBroadcast(policies []*storage.Policy) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PreparePoliciesAndBroadcast", policies)
+}
+
+// PreparePoliciesAndBroadcast indicates an expected call of PreparePoliciesAndBroadcast
+func (mr *MockManagerMockRecorder) PreparePoliciesAndBroadcast(policies interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PreparePoliciesAndBroadcast", reflect.TypeOf((*MockManager)(nil).PreparePoliciesAndBroadcast), policies)
+}
+
 // BroadcastMessage mocks base method
 func (m *MockManager) BroadcastMessage(msg *central.MsgToSensor) {
 	m.ctrl.T.Helper()

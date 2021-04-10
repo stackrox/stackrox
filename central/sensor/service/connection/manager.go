@@ -25,6 +25,7 @@ type Manager interface {
 	HandleConnection(ctx context.Context, sensorHello *central.SensorHello, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error
 	GetConnection(clusterID string) SensorConnection
 	GetActiveConnections() []SensorConnection
+	PreparePoliciesAndBroadcast(policies []*storage.Policy)
 	BroadcastMessage(msg *central.MsgToSensor)
 	SendMessage(clusterID string, msg *central.MsgToSensor) error
 

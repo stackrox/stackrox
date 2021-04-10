@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/backgroundtasks"
@@ -635,14 +634,8 @@ func (s *serviceImpl) syncPoliciesWithSensors() error {
 	if err != nil {
 		return errors.Wrap(err, "error reading policies from store")
 	}
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_PolicySync{
-			PolicySync: &central.PolicySync{
-				Policies: policies,
-			},
-		},
-	}
-	s.connectionManager.BroadcastMessage(msg)
+
+	s.connectionManager.PreparePoliciesAndBroadcast(policies)
 	return nil
 }
 

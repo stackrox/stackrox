@@ -336,6 +336,32 @@ func (m *manager) GetActiveConnections() []SensorConnection {
 	return result
 }
 
+// PreparePoliciesAndBroadcast prepares and sends PolicySync message
+// separately for each sensor.
+func (m *manager) PreparePoliciesAndBroadcast(policies []*storage.Policy) {
+	m.connectionsByClusterIDMutex.RLock()
+	defer m.connectionsByClusterIDMutex.RUnlock()
+
+	for clusterID, connAndUpgradeCtrl := range m.connectionsByClusterID {
+		if connAndUpgradeCtrl.connection == nil {
+			log.Debugf("could not broadcast message to cluster %q which has no active connection", clusterID)
+			continue
+		}
+
+		// Downgrade policies based on the target sensor's supported version.
+		msg, err := connAndUpgradeCtrl.connection.getPolicySyncMsgFromPolicies(policies)
+		if err != nil {
+			log.Errorf("error getting policy sync msg for cluster %q: %v", clusterID, err)
+			continue
+		}
+
+		if err := connAndUpgradeCtrl.connection.InjectMessage(concurrency.Never(), msg); err != nil {
+			log.Errorf("error broadcasting message to cluster %q", clusterID)
+		}
+	}
+
+}
+
 func (m *manager) BroadcastMessage(msg *central.MsgToSensor) {
 	m.connectionsByClusterIDMutex.RLock()
 	defer m.connectionsByClusterIDMutex.RUnlock()
