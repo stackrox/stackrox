@@ -265,6 +265,8 @@ class AttemptedAlertsTest extends BaseSpecification {
         def policy = Services.getPolicyByName(KUBECTL_EXEC_POLICY_NAME)
         assert policy && policy.getName() == KUBECTL_EXEC_POLICY_NAME
         assert policy.enforcementActionsList == policyEnforcements
+        // Sleep to allow settings update to propagate
+        sleep(5000)
 
         and:
         "Exec into pod"
