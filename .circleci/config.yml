@@ -3936,6 +3936,58 @@ jobs:
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db backup --output rocksdb-44-backup.zip
 
       - run:
+          name: Install yq
+          command: |
+            sudo wget https://github.com/mikefarah/yq/releases/download/v4.4.1/yq_linux_amd64 -O /usr/bin/yq
+            sudo chmod 0755 /usr/bin/yq
+
+      - run:
+          name: Set Central to a 58 image
+          command: |
+            cci-export FORCE_ROLLBACK_VERSION 3.0.58.x-41-gb7c73d4d9d
+            kubectl -n stackrox set image deploy/central "central=stackrox/main:$FORCE_ROLLBACK_VERSION"
+
+      - *waitForAPI
+      - validate-upgrade:
+          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+          desc: "Validate upgrade to 3.0.58.x"
+
+      - run:
+          name: Set Central to current commit
+          command: |
+            kubectl -n stackrox set image deploy/central "central=stackrox/main:$(make --quiet tag)"
+
+      - *waitForAPI
+      - validate-upgrade:
+          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+          desc: "Validate Central upgrade to current"
+
+      - run:
+          name: Force rollback Central to 58
+          command: |
+            # Check upgrade status before proceeding
+            upgradeStatus="$(curl -sSk -X GET -u "admin:${ROX_PASSWORD}" "https://${API_ENDPOINT}/v1/centralhealth/upgradestatus")"
+            echo "$upgradeStatus"
+            [[ "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" == "$(make --quiet tag)" ]]
+            [[ "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" == "$FORCE_ROLLBACK_VERSION" ]]
+            [[ "$(echo "$upgradeStatus" | jq '.upgradeStatus.canRollbackAfterUpgrade' -r)" == "true" ]]
+            [[ "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceAvailableForRollbackAfterUpgrade' -r)" -gt "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceRequiredForRollbackAfterUpgrade' -r)" ]]
+
+            # Force rollback
+            kubectl -n stackrox get configmap/central-config -o yaml | yq e '{"data": .data}' - > /tmp/force_rollback_patch
+            central_config=`yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"$FORCE_ROLLBACK_VERSION\"" -`
+            config_patch=`yq e ".data[\"central-config.yaml\"] |= \"$central_config\"" /tmp/force_rollback_patch`
+            echo "$config_patch"
+
+            kubectl -n stackrox patch configmap/central-config -p "$config_patch"
+            kubectl -n stackrox set image deploy/central "central=stackrox/main:$FORCE_ROLLBACK_VERSION"
+
+      - *waitForAPI
+      - validate-upgrade:
+          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+          desc: "Validate Central force rollback to 58"
+
+      - run:
           name: Set Central + Scanner images to most recent commit
           command: |
             kubectl -n stackrox set image deploy/central "central=stackrox/main:$(make --quiet tag)"
@@ -4101,11 +4153,6 @@ jobs:
           name: Delete the sensor
           command: |
             ./sensor-remote/delete-sensor.sh
-      - run:
-          name: Install yq
-          command: |
-            sudo wget https://github.com/mikefarah/yq/releases/download/v4.4.1/yq_linux_amd64 -O /usr/bin/yq
-            sudo chmod 0755 /usr/bin/yq
 
       - run:
           name: Deploy from the sensor helm chart and perform upgrades to the current secured cluster services chart
