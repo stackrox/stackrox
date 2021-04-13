@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { actions as wizardActions } from 'reducers/network/wizard';
+import { actions as sidepanelActions } from 'reducers/network/sidepanel';
 
 import wizardStages from '../../wizardStages';
 
@@ -31,8 +31,8 @@ GenerateButton.propTypes = {
 };
 
 const mapDispatchToProps = {
-    loadActivePolicies: wizardActions.loadActiveNetworkPolicyModification,
-    setWizardStage: wizardActions.setNetworkWizardStage,
+    loadActivePolicies: sidepanelActions.loadActiveNetworkPolicyModification,
+    setWizardStage: sidepanelActions.setNetworkWizardStage,
 };
 
 export default connect(null, mapDispatchToProps)(GenerateButton);

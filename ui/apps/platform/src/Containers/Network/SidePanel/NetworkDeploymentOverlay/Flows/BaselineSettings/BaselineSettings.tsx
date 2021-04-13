@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 
-import { NavigateToEntityHook } from 'Containers/Network/Wizard/useNavigateToEntity';
+import { NavigateToEntityHook } from 'Containers/Network/SidePanel/useNavigateToEntity';
 import { filterModes } from 'constants/networkFilterModes';
 import { FilterState } from 'Containers/Network/networkTypes';
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';

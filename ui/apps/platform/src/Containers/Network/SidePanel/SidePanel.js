@@ -15,9 +15,9 @@ import ExternalDetailsOverlay from './ExternalDetails/ExternalDetailsOverlay';
 import NodesUpdateSection from '../Graph/Overlays/NodesUpdateSection';
 import ZoomButtons from '../Graph/Overlays/ZoomButtons';
 
-function Wizard({ wizardOpen, wizardStage, onClose }) {
+function SidePanel({ sidePanelOpen, wizardStage, onClose }) {
     if (
-        wizardOpen &&
+        sidePanelOpen &&
         (wizardStage === wizardStages.details || wizardStage === wizardStages.externalDetails)
     ) {
         const paletteComponent =
@@ -39,10 +39,10 @@ function Wizard({ wizardOpen, wizardStage, onClose }) {
         );
     }
 
-    const width = wizardOpen ? 'md:w-2/3 lg:w-2/5 min-w-208' : 'w-0';
+    const width = sidePanelOpen ? 'md:w-2/3 lg:w-2/5 min-w-208' : 'w-0';
     let panelContent = null;
 
-    if (wizardOpen) {
+    if (sidePanelOpen) {
         switch (wizardStage) {
             case wizardStages.details:
                 return null; // supserseded by NetworkDeploymentOverlay
@@ -75,19 +75,19 @@ function Wizard({ wizardOpen, wizardStage, onClose }) {
     );
 }
 
-Wizard.propTypes = {
-    wizardOpen: PropTypes.bool.isRequired,
+SidePanel.propTypes = {
+    sidePanelOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
     wizardStage: PropTypes.string.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
-    wizardOpen: selectors.getNetworkWizardOpen,
+    sidePanelOpen: selectors.getNetworkSidePanelOpen,
     wizardStage: selectors.getNetworkWizardStage,
 });
 
 const mapDispatchToProps = {
-    onClose: pageActions.closeNetworkWizard,
+    onClose: pageActions.closeSidePanel,
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(Wizard);
+export default connect(mapStateToProps, mapDispatchToProps)(SidePanel);

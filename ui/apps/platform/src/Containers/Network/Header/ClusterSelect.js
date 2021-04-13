@@ -65,7 +65,7 @@ const mapStateToProps = createStructuredSelector({
 const mapDispatchToProps = {
     fetchClusters: clusterActions.fetchClusters.request,
     selectClusterId: graphActions.selectNetworkClusterId,
-    closeSidePanel: pageActions.closeNetworkWizard,
+    closeSidePanel: pageActions.closeSidePanel,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(ClusterSelect);

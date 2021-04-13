@@ -8,16 +8,15 @@ import * as Icon from 'react-feather';
 
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
-import { actions as wizardActions } from 'reducers/network/wizard';
-
-import wizardStages from '../Wizard/wizardStages';
+import { actions as sidepanelActions } from 'reducers/network/sidepanel';
+import wizardStages from '../SidePanel/wizardStages';
 
 class SimulatorButton extends Component {
     static propTypes = {
         creatingOrSimulating: PropTypes.bool.isRequired,
-        openWizard: PropTypes.func.isRequired,
+        openSidePanel: PropTypes.func.isRequired,
         setWizardStage: PropTypes.func.isRequired,
-        closeWizard: PropTypes.func.isRequired,
+        closeSidePanel: PropTypes.func.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
         isDisabled: PropTypes.bool,
     };
@@ -30,9 +29,9 @@ class SimulatorButton extends Component {
         // @TODO: This isn't very nice. We'll have  to revisit this in the future. But adding this fix to address a customer issue (https://stack-rox.atlassian.net/browse/ROX-3118)
         this.props.history.push('/main/network');
         if (this.props.creatingOrSimulating) {
-            this.props.closeWizard();
+            this.props.closeSidePanel();
         } else {
-            this.props.openWizard();
+            this.props.openSidePanel();
             this.props.setWizardStage(wizardStages.creator);
         }
     };
@@ -58,9 +57,9 @@ class SimulatorButton extends Component {
 }
 
 const getCreatingOrSimulating = createSelector(
-    [selectors.getNetworkWizardOpen, selectors.getNetworkWizardStage],
-    (wizardOpen, wizardStage) =>
-        wizardOpen &&
+    [selectors.getNetworkSidePanelOpen, selectors.getNetworkWizardStage],
+    (sidePanelOpen, wizardStage) =>
+        sidePanelOpen &&
         (wizardStage === wizardStages.simulator || wizardStage === wizardStages.creator)
 );
 
@@ -69,9 +68,9 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = {
-    openWizard: pageActions.openNetworkWizard,
-    closeWizard: pageActions.closeNetworkWizard,
-    setWizardStage: wizardActions.setNetworkWizardStage,
+    openSidePanel: pageActions.openSidePanel,
+    closeSidePanel: pageActions.closeSidePanel,
+    setWizardStage: sidepanelActions.setNetworkWizardStage,
 };
 
 export default withRouter(connect(mapStateToProps, mapDispatchToProps)(SimulatorButton));

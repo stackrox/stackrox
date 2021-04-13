@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 
 import useLocalStorage from 'hooks/useLocalStorage';
 import { actions as dialogueActions } from 'reducers/network/dialogue';
-import { actions as wizardActions } from 'reducers/network/wizard';
+import { actions as sidepanelActions } from 'reducers/network/sidepanel';
 import { actions as pageActions } from 'reducers/network/page';
 import dialogueStages from 'Containers/Network/Dialogue/dialogueStages';
 import useNetworkPolicySimulation from 'Containers/Network/useNetworkPolicySimulation';
@@ -16,7 +16,7 @@ import SimulationFrame from 'Components/SimulationFrame';
 import Dialogue from 'Containers/Network/Dialogue';
 import Graph from 'Containers/Network/Graph/Graph';
 import Header from 'Containers/Network/Header/Header';
-import Wizard from 'Containers/Network/Wizard/Wizard';
+import SidePanel from 'Containers/Network/SidePanel/SidePanel';
 
 function NetworkPageContent() {
     const [showNamespaceFlows, setShowNamespaceFlows] = useLocalStorage(
@@ -57,7 +57,7 @@ function NetworkPageContent() {
                             showNamespaceFlows={showNamespaceFlows}
                             setShowNamespaceFlows={handleNamespaceFlowsToggle}
                         />
-                        <Wizard />
+                        <SidePanel />
                     </div>
                 </SimulationFrame>
             ) : (
@@ -66,22 +66,22 @@ function NetworkPageContent() {
                         showNamespaceFlows={showNamespaceFlows}
                         setShowNamespaceFlows={handleNamespaceFlowsToggle}
                     />
-                    <Wizard />
+                    <SidePanel />
                 </div>
             )}
         </div>
     );
 }
 
-function NetworkPage({ closeWizard, setDialogueStage, setNetworkModification }) {
+function NetworkPage({ closeSidePanel, setDialogueStage, setNetworkModification }) {
     // when this component unmounts, then close the side panel and exit network policy simulation
     useEffect(() => {
         return () => {
-            closeWizard();
+            closeSidePanel();
             setDialogueStage(dialogueStages.closed);
             setNetworkModification(null);
         };
-    }, [closeWizard, setDialogueStage, setNetworkModification]);
+    }, [closeSidePanel, setDialogueStage, setNetworkModification]);
 
     return (
         <section className="flex flex-1 h-full w-full">
@@ -96,8 +96,8 @@ function NetworkPage({ closeWizard, setDialogueStage, setNetworkModification }) 
 }
 
 const mapDispatchToProps = {
-    closeWizard: pageActions.closeNetworkWizard,
-    setNetworkModification: wizardActions.setNetworkPolicyModification,
+    closeSidePanel: pageActions.closeSidePanel,
+    setNetworkModification: sidepanelActions.setNetworkPolicyModification,
     setDialogueStage: dialogueActions.setNetworkDialogueStage,
 };
 

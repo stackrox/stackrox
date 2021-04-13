@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import generate from 'images/generate.svg';
 
-import GenerateButton from 'Containers/Network/Wizard/Creator/Buttons/Generate';
+import GenerateButton from 'Containers/Network/SidePanel/Creator/Buttons/Generate';
 
 class Generate extends Component {
     renderHeader = () => (

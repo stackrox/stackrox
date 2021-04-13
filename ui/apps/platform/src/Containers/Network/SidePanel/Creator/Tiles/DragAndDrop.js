@@ -6,8 +6,8 @@ import { useDropzone } from 'react-dropzone';
 
 import { fileUploadColors } from 'constants/visuals/colors';
 import { actions as notificationActions } from 'reducers/notifications';
-import { actions as wizardActions } from 'reducers/network/wizard';
-import wizardStages from 'Containers/Network/Wizard/wizardStages';
+import { actions as sidepanelActions } from 'reducers/network/sidepanel';
+import wizardStages from 'Containers/Network/SidePanel/wizardStages';
 
 const DragAndDrop = (props) => {
     const showToast = useCallback(() => {
@@ -94,12 +94,12 @@ DragAndDrop.propTypes = {
 };
 
 const mapDispatchToProps = {
-    setNetworkPolicyModification: wizardActions.setNetworkPolicyModification,
-    setNetworkPolicyModificationState: wizardActions.setNetworkPolicyModificationState,
-    setNetworkPolicyModificationSource: wizardActions.setNetworkPolicyModificationSource,
-    setNetworkPolicyModificationName: wizardActions.setNetworkPolicyModificationName,
+    setNetworkPolicyModification: sidepanelActions.setNetworkPolicyModification,
+    setNetworkPolicyModificationState: sidepanelActions.setNetworkPolicyModificationState,
+    setNetworkPolicyModificationSource: sidepanelActions.setNetworkPolicyModificationSource,
+    setNetworkPolicyModificationName: sidepanelActions.setNetworkPolicyModificationName,
 
-    setWizardStage: wizardActions.setNetworkWizardStage,
+    setWizardStage: sidepanelActions.setNetworkWizardStage,
 
     addToast: notificationActions.addNotification,
     removeToast: notificationActions.removeOldestNotification,

@@ -17,12 +17,12 @@ function NetworkSearch({
     searchModifiers,
     setSearchOptions,
     setSearchSuggestions,
-    closeWizard,
+    closeSidePanel,
     isDisabled,
 }) {
     function onSearch(options) {
         if (options.length && !options[options.length - 1].type) {
-            closeWizard();
+            closeSidePanel();
         }
     }
 
@@ -60,7 +60,7 @@ const mapStateToProps = createStructuredSelector<
 const mapDispatchToProps = {
     setSearchOptions: searchActions.setNetworkSearchOptions,
     setSearchSuggestions: searchActions.setNetworkSearchSuggestions,
-    closeWizard: pageActions.closeNetworkWizard,
+    closeSidePanel: pageActions.closeSidePanel,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(NetworkSearch);

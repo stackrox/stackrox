@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 
-import useNavigateToEntity from 'Containers/Network/Wizard/useNavigateToEntity';
+import useNavigateToEntity from 'Containers/Network/SidePanel/useNavigateToEntity';
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
 import { FilterState, NetworkNode, Edge } from 'Containers/Network/networkTypes';
 

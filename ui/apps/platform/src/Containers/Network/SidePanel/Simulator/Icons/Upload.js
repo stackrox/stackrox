@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import { useDropzone } from 'react-dropzone';
 import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
-import { actions as wizardActions } from 'reducers/network/wizard';
+import { actions as sidepanelActions } from 'reducers/network/sidepanel';
 import { actions as notificationActions } from 'reducers/notifications';
 
 const Upload = (props) => {
@@ -67,10 +67,10 @@ Upload.propTypes = {
 };
 
 const mapDispatchToProps = {
-    setNetworkPolicyModification: wizardActions.setNetworkPolicyModification,
-    setNetworkPolicyModificationState: wizardActions.setNetworkPolicyModificationState,
-    setNetworkPolicyModificationSource: wizardActions.setNetworkPolicyModificationSource,
-    setNetworkPolicyModificationName: wizardActions.setNetworkPolicyModificationName,
+    setNetworkPolicyModification: sidepanelActions.setNetworkPolicyModification,
+    setNetworkPolicyModificationState: sidepanelActions.setNetworkPolicyModificationState,
+    setNetworkPolicyModificationSource: sidepanelActions.setNetworkPolicyModificationSource,
+    setNetworkPolicyModificationName: sidepanelActions.setNetworkPolicyModificationName,
 
     addToast: notificationActions.addNotification,
     removeToast: notificationActions.removeOldestNotification,

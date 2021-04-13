@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
-import { actions as wizardActions } from 'reducers/network/wizard';
+import { actions as sidepanelActions } from 'reducers/network/sidepanel';
 
 import generate from 'images/generate.svg';
 
@@ -35,7 +35,7 @@ class Generate extends Component {
 }
 
 const mapDispatchToProps = {
-    generatePolicyModification: wizardActions.generateNetworkPolicyModification,
+    generatePolicyModification: sidepanelActions.generateNetworkPolicyModification,
 };
 
 export default connect(null, mapDispatchToProps)(Generate);

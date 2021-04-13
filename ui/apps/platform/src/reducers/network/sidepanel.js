@@ -1,6 +1,6 @@
 import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
-import wizardStages from 'Containers/Network/Wizard/wizardStages';
+import wizardStages from 'Containers/Network/SidePanel/wizardStages';
 import { types as deploymentTypes } from 'reducers/deployments';
 
 // Action types

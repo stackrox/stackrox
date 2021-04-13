@@ -14,7 +14,7 @@ import { types as searchNetworkTypes } from 'reducers/network/search';
 import {
     actions as wizardNetworkActions,
     types as wizardNetworkTypes,
-} from 'reducers/network/wizard';
+} from 'reducers/network/sidepanel';
 import { actions as clusterActions } from 'reducers/clusters';
 import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';

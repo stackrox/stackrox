@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import { selectors } from 'reducers';
-import { actions as wizardActions } from 'reducers/network/wizard';
+import { actions as sidepanelActions } from 'reducers/network/sidepanel';
 
 class Undo extends Component {
     static propTypes = {
@@ -39,7 +39,7 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = {
-    undoModification: wizardActions.loadUndoNetworkPolicyModification,
+    undoModification: sidepanelActions.loadUndoNetworkPolicyModification,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(Undo);

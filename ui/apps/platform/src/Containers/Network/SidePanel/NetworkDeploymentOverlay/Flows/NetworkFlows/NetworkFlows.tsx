@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
 
-import { NavigateToEntityHook } from 'Containers/Network/Wizard/useNavigateToEntity';
+import { NavigateToEntityHook } from 'Containers/Network/SidePanel/useNavigateToEntity';
 import { filterModes } from 'constants/networkFilterModes';
 import { Edge } from 'Containers/Network/networkTypes';
 import { networkFlowStatus } from 'constants/networkGraph';

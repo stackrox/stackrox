@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
-import { actions as wizardActions } from 'reducers/network/wizard';
+import { actions as sidepanelActions } from 'reducers/network/sidepanel';
 import PropTypes from 'prop-types';
 
 import CloseButton from 'Components/CloseButton';
@@ -59,7 +59,7 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = {
-    setModification: wizardActions.setNetworkPolicyModification,
+    setModification: sidepanelActions.setNetworkPolicyModification,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(Simulator);

@@ -6,7 +6,7 @@ import dialogueReducer, { selectors as dialogueSelectors } from 'reducers/networ
 import graphReducer, { selectors as graphSelectors } from 'reducers/network/graph';
 import pageReducer, { selectors as pageSelectors } from 'reducers/network/page';
 import searchReducer, { selectors as searchSelectors } from 'reducers/network/search';
-import wizardReducer, { selectors as wizardSelectors } from 'reducers/network/wizard';
+import wizardReducer, { selectors as wizardSelectors } from 'reducers/network/sidepanel';
 
 // File combines all of the reducers and selectors under reducers/network.
 

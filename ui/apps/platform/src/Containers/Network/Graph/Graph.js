@@ -9,22 +9,22 @@ import { selectors } from 'reducers';
 import { actions as backendActions } from 'reducers/network/backend';
 import { actions as graphActions } from 'reducers/network/graph';
 import { actions as pageActions } from 'reducers/network/page';
-import { actions as wizardActions } from 'reducers/network/wizard';
+import { actions as sidepanelActions } from 'reducers/network/sidepanel';
 import { actions as deploymentActions } from 'reducers/deployments';
 import NetworkGraph from 'Components/NetworkGraph';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { filterModes } from 'constants/networkFilterModes';
 import { nodeTypes } from 'constants/networkGraph';
 import entityTypes from 'constants/entityTypes';
-import wizardStages from '../Wizard/wizardStages';
+import wizardStages from '../SidePanel/wizardStages';
 import Filters from './Overlays/Filters';
 import Legend from './Overlays/Legend';
 
 class Graph extends Component {
     static propTypes = {
-        wizardOpen: PropTypes.bool.isRequired,
-        openWizard: PropTypes.func.isRequired,
-        closeWizard: PropTypes.func.isRequired,
+        sidePanelOpen: PropTypes.bool.isRequired,
+        openSidePanel: PropTypes.func.isRequired,
+        closeSidePanel: PropTypes.func.isRequired,
         setWizardStage: PropTypes.func.isRequired,
 
         networkNodeMap: PropTypes.shape({}).isRequired,
@@ -70,7 +70,7 @@ class Graph extends Component {
             networkFlowGraphUpdateKey,
             filterState,
             isLoading,
-            wizardOpen,
+            sidePanelOpen,
             networkEdgeMap,
             networkNodeMap,
             isReadOnly,
@@ -82,7 +82,7 @@ class Graph extends Component {
             nextProps.networkFlowGraphUpdateKey !== networkFlowGraphUpdateKey ||
             nextProps.filterState !== filterState ||
             nextProps.isLoading !== isLoading ||
-            nextProps.wizardOpen !== wizardOpen ||
+            nextProps.sidePanelOpen !== sidePanelOpen ||
             nextProps.isReadOnly !== isReadOnly ||
             nextProps.showNamespaceFlows !== showNamespaceFlows
         );
@@ -91,13 +91,13 @@ class Graph extends Component {
     onNamespaceClick = (namespace) => {
         this.props.setSelectedNamespace(namespace);
         this.props.setWizardStage(wizardStages.namespaceDetails);
-        this.props.openWizard();
+        this.props.openSidePanel();
     };
 
     // eslint-disable-next-line no-unused-vars
     onExternalEntitiesClick = () => {
         this.props.setWizardStage(wizardStages.externalDetails);
-        this.props.openWizard();
+        this.props.openSidePanel();
     };
 
     onNodeClick = (node) => {
@@ -108,7 +108,7 @@ class Graph extends Component {
         this.props.fetchDeployment(node.deploymentId);
         this.props.fetchNetworkPolicies([...node.policyIds]);
         this.props.setWizardStage(wizardStages.details);
-        this.props.openWizard();
+        this.props.openSidePanel();
     };
 
     renderGraph = () => {
@@ -116,7 +116,7 @@ class Graph extends Component {
             networkNodeMap,
             networkFlowGraphUpdateKey,
             networkEdgeMap,
-            closeWizard,
+            closeSidePanel,
             filterState,
             clusters,
             selectedClusterId,
@@ -153,7 +153,7 @@ class Graph extends Component {
                 onNodeClick={this.onNodeClick}
                 onNamespaceClick={this.onNamespaceClick}
                 onExternalEntitiesClick={this.onExternalEntitiesClick}
-                onClickOutside={closeWizard}
+                onClickOutside={closeSidePanel}
                 filterState={filterState}
                 selectedClusterName={selectedClusterName}
                 showNamespaceFlows={showNamespaceFlows}
@@ -187,7 +187,7 @@ class Graph extends Component {
 }
 
 const mapStateToProps = createStructuredSelector({
-    wizardOpen: selectors.getNetworkWizardOpen,
+    sidePanelOpen: selectors.getNetworkSidePanelOpen,
     filterState: selectors.getNetworkGraphFilterMode,
     networkNodeMap: selectors.getNetworkNodeMap,
     networkEdgeMap: selectors.getNetworkEdgeMap,
@@ -207,11 +207,11 @@ const mapDispatchToProps = {
     setSelectedNamespace: graphActions.setSelectedNamespace,
     fetchDeployment: deploymentActions.fetchDeployment.request,
     fetchNetworkPolicies: backendActions.fetchNetworkPolicies.request,
-    openWizard: pageActions.openNetworkWizard,
-    setWizardStage: wizardActions.setNetworkWizardStage,
+    openSidePanel: pageActions.openSidePanel,
+    setWizardStage: sidepanelActions.setNetworkWizardStage,
     setNetworkGraphRef: graphActions.setNetworkGraphRef,
     setNetworkGraphLoading: graphActions.setNetworkGraphLoading,
-    closeWizard: pageActions.closeNetworkWizard,
+    closeSidePanel: pageActions.closeSidePanel,
     setSelectedNodeInGraph: graphActions.setSelectedNode,
 };
 

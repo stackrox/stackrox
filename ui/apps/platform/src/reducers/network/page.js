@@ -5,16 +5,16 @@ import { timeWindows } from 'constants/timeWindows';
 // Action types
 
 export const types = {
-    OPEN_WIZARD: 'network/OPEN_WIZARD',
-    CLOSE_WIZARD: 'network/CLOSE_WIZARD',
+    OPEN_SIDE_PANEL: 'network/OPEN_SIDE_PANEL',
+    CLOSE_SIDE_PANEL: 'network/CLOSE_SIDE_PANEL',
     SET_NETWORK_ACTIVITY_TIME_WINDOW: 'network/SET_NETWORK_ACTIVITY_TIME_WINDOW',
 };
 
 // Actions
 
 export const actions = {
-    openNetworkWizard: () => ({ type: types.OPEN_WIZARD }),
-    closeNetworkWizard: () => ({ type: types.CLOSE_WIZARD }),
+    openSidePanel: () => ({ type: types.OPEN_SIDE_PANEL }),
+    closeSidePanel: () => ({ type: types.CLOSE_SIDE_PANEL }),
     setNetworkActivityTimeWindow: (window) => ({
         type: types.SET_NETWORK_ACTIVITY_TIME_WINDOW,
         window,
@@ -23,11 +23,11 @@ export const actions = {
 
 // Reducers
 
-const wizardOpen = (state = false, action) => {
-    if (action.type === types.OPEN_WIZARD && state !== true) {
+const sidePanelOpen = (state = false, action) => {
+    if (action.type === types.OPEN_SIDE_PANEL && state !== true) {
         return true;
     }
-    if (action.type === types.CLOSE_WIZARD && state !== false) {
+    if (action.type === types.CLOSE_SIDE_PANEL && state !== false) {
         return false;
     }
     return state;
@@ -41,17 +41,17 @@ const networkActivityTimeWindow = (state = timeWindows[0], action) => {
 };
 
 const reducer = combineReducers({
-    wizardOpen,
+    sidePanelOpen,
     networkActivityTimeWindow,
 });
 
 // Selectors
 
-const getNetworkWizardOpen = (state) => state.wizardOpen;
+const getNetworkSidePanelOpen = (state) => state.sidePanelOpen;
 const getNetworkActivityTimeWindow = (state) => state.networkActivityTimeWindow;
 
 export const selectors = {
-    getNetworkWizardOpen,
+    getNetworkSidePanelOpen,
     getNetworkActivityTimeWindow,
 };
 

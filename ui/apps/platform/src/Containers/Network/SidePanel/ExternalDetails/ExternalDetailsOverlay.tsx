@@ -2,10 +2,8 @@ import React, { ReactElement } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
-import useNavigateToEntity from 'Containers/Network/Wizard/useNavigateToEntity';
+import useNavigateToEntity from 'Containers/Network/SidePanel/useNavigateToEntity';
 import { selectors } from 'reducers';
-import { actions as wizardActions } from 'reducers/network/wizard';
-import { actions as graphActions } from 'reducers/network/graph';
 import NetworkFlows from '../Details/NetworkFlows';
 
 function ExternalDetailsOverlay({ selectedNode }): ReactElement {
@@ -38,15 +36,7 @@ function ExternalDetailsOverlay({ selectedNode }): ReactElement {
 }
 
 const mapStateToProps = createStructuredSelector({
-    wizardOpen: selectors.getNetworkWizardOpen,
-    wizardStage: selectors.getNetworkWizardStage,
     selectedNode: selectors.getSelectedNode,
-    networkGraphRef: selectors.getNetworkGraphRef,
 });
 
-const mapDispatchToProps = {
-    setWizardStage: wizardActions.setNetworkWizardStage,
-    setSelectedNode: graphActions.setSelectedNode,
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(ExternalDetailsOverlay);
+export default connect(mapStateToProps, null)(ExternalDetailsOverlay);

@@ -4,8 +4,8 @@ import { createStructuredSelector } from 'reselect';
 import { connect } from 'react-redux';
 
 import { selectors } from 'reducers';
-import { actions as wizardActions } from 'reducers/network/wizard';
-import wizardStages from 'Containers/Network/Wizard/wizardStages';
+import { actions as sidepanelActions } from 'reducers/network/sidepanel';
+import wizardStages from 'Containers/Network/SidePanel/wizardStages';
 
 import { CheckboxWithLabel } from '@stackrox/ui-components';
 
@@ -59,9 +59,9 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = {
-    setWizardStage: wizardActions.setNetworkWizardStage,
-    requestNetworkPolicyModification: wizardActions.generateNetworkPolicyModification,
-    setExcludePortsProtocolsState: wizardActions.setNetworkPolicyExcludePortsProtocolsState,
+    setWizardStage: sidepanelActions.setNetworkWizardStage,
+    requestNetworkPolicyModification: sidepanelActions.generateNetworkPolicyModification,
+    setExcludePortsProtocolsState: sidepanelActions.setNetworkPolicyExcludePortsProtocolsState,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(GenerateButton);

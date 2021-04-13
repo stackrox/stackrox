@@ -4,7 +4,7 @@ import { getIsExternalEntitiesNode, getIsCIDRBlockNode } from 'utils/networkGrap
 import { PortsAndProtocols, Edge } from 'Containers/Network/networkTypes';
 
 // TODO: reconcile this NetworkFlow type with the one in
-//       ui/apps/platform/src/Containers/Network/Wizard/NetworkDeploymentOverlay/NetworkFlows/NetworkFlowsTable/NetworkFlowsTable.tsx
+//       ui/apps/platform/src/Containers/Network/SidePanel/NetworkDeploymentOverlay/NetworkFlows/NetworkFlowsTable/NetworkFlowsTable.tsx
 type NetworkFlow = {
     connection: 'active' | 'allowed' | 'active/allowed' | '-';
     deploymentId: string;

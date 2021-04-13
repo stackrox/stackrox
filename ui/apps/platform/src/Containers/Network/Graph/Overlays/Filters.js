@@ -16,7 +16,7 @@ const activeButtonClassName = `${baseButtonClassName} bg-primary-300 border-prim
 const Filters = ({
     setFilterMode,
     offset,
-    wizardOpen,
+    sidePanelOpen,
     filterMode,
     showNamespaceFlows,
     setShowNamespaceFlows,
@@ -30,7 +30,7 @@ const Filters = ({
     return (
         <div
             className={`flex absolute top-0 left-0 ${offset ? 'mt-10' : 'mt-2'} ${
-                wizardOpen ? 'flex-col' : ''
+                sidePanelOpen ? 'flex-col' : ''
             } ml-2 absolute z-1`}
         >
             <div className="p-2 bg-primary-100 flex items-center text-sm border-base-400 border-2">
@@ -79,7 +79,7 @@ const Filters = ({
             </div>
             <div
                 className={`px-2 py-1 bg-primary-100 flex items-center text-sm border-base-400 border-2 ${
-                    wizardOpen ? 'mt-1' : 'ml-1'
+                    sidePanelOpen ? 'mt-1' : 'ml-1'
                 }`}
             >
                 <NamespaceEdgeFilter
@@ -94,7 +94,7 @@ const Filters = ({
 Filters.propTypes = {
     setFilterMode: PropTypes.func.isRequired,
     offset: PropTypes.bool,
-    wizardOpen: PropTypes.bool.isRequired,
+    sidePanelOpen: PropTypes.bool.isRequired,
     filterMode: PropTypes.number.isRequired,
     showNamespaceFlows: PropTypes.string.isRequired,
     setShowNamespaceFlows: PropTypes.string.isRequired,
@@ -105,7 +105,7 @@ Filters.defaultProps = {
 };
 
 const mapStateToProps = createStructuredSelector({
-    wizardOpen: selectors.getNetworkWizardOpen,
+    sidePanelOpen: selectors.getNetworkSidePanelOpen,
     filterMode: selectors.getNetworkGraphFilterMode,
 });
 
