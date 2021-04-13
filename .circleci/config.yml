@@ -446,6 +446,13 @@ storeQATestResults: &storeQATestResults
   store_test_results:
     path: qa-tests-backend/build/test-results/test
 
+checkQASpockResults: &checkQASpockResults
+  run:
+    name: Surface any failures in QA tests
+    command: |
+      jq 'to_entries | map(select((.value.stats.failures > 0) or (.value.stats.errors > 0))) | .[].key' \
+        < ./qa-tests-backend/build/spock-reports/aggregated_report.json || true
+
 storeQASpockReports: &storeQASpockReports
   store_artifacts:
     path: ./qa-tests-backend/build/spock-reports
@@ -1387,6 +1394,7 @@ commands:
       - get-and-store-debug-dump
       - get-central-data
       - *storeQATestResults
+      - *checkQASpockResults
       - copy-gradle-files:
           target-dir: ${CIRCLE_JOB}-part1
 
@@ -1692,6 +1700,7 @@ commands:
       - get-central-data
 
       - *storeQATestResults
+      - *checkQASpockResults
       - copy-gradle-files:
           target-dir: openshift-part1
 
