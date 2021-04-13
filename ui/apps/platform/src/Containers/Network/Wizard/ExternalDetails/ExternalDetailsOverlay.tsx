@@ -17,7 +17,7 @@ function ExternalDetailsOverlay({ selectedNode }): ReactElement {
 
     // TODO: generalize the layout wrapper in NetworkEntityTabbedOverlay.js so tabs are optional
     return (
-        <div className="flex flex-1 flex-col text-sm max-h-minus-buttons">
+        <div className="flex flex-1 flex-col text-sm max-h-minus-buttons min-w-0">
             <div className="bg-primary-800 flex items-center m-2 min-w-108 p-3 rounded-lg shadow text-primary-100">
                 <div className="flex flex-1 flex-col">
                     <div>{headerName}</div>
