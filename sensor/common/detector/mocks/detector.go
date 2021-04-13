@@ -104,6 +104,18 @@ func (mr *MockDetectorMockRecorder) ResponsesC() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResponsesC", reflect.TypeOf((*MockDetector)(nil).ResponsesC))
 }
 
+// SetCentralGRPCClient mocks base method
+func (m *MockDetector) SetCentralGRPCClient(cc grpc.ClientConnInterface) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetCentralGRPCClient", cc)
+}
+
+// SetCentralGRPCClient indicates an expected call of SetCentralGRPCClient
+func (mr *MockDetectorMockRecorder) SetCentralGRPCClient(cc interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCentralGRPCClient", reflect.TypeOf((*MockDetector)(nil).SetCentralGRPCClient), cc)
+}
+
 // ProcessDeployment mocks base method
 func (m *MockDetector) ProcessDeployment(deployment *storage.Deployment, action central.ResourceAction) {
 	m.ctrl.T.Helper()
@@ -138,16 +150,4 @@ func (m *MockDetector) ProcessNetworkFlow(flow *storage.NetworkFlow) {
 func (mr *MockDetectorMockRecorder) ProcessNetworkFlow(flow interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessNetworkFlow", reflect.TypeOf((*MockDetector)(nil).ProcessNetworkFlow), flow)
-}
-
-// SetClient mocks base method
-func (m *MockDetector) SetClient(conn grpc.ClientConnInterface) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetClient", conn)
-}
-
-// SetClient indicates an expected call of SetClient
-func (mr *MockDetectorMockRecorder) SetClient(conn interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetClient", reflect.TypeOf((*MockDetector)(nil).SetClient), conn)
 }

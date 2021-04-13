@@ -29,17 +29,20 @@ import (
 	"google.golang.org/grpc"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log                             = logging.LoggerForModule()
+	_   common.CentralGRPCConnAware = (*detectorImpl)(nil)
+)
 
 // Detector is the sensor component that syncs policies from Central and runs detection
 //go:generate mockgen-wrapper
 type Detector interface {
 	common.SensorComponent
+	common.CentralGRPCConnAware
 
 	ProcessDeployment(deployment *storage.Deployment, action central.ResourceAction)
 	ProcessIndicator(indicator *storage.ProcessIndicator)
 	ProcessNetworkFlow(flow *storage.NetworkFlow)
-	SetClient(conn grpc.ClientConnInterface)
 }
 
 // New returns a new detector
@@ -329,8 +332,8 @@ func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, a
 	}
 }
 
-func (d *detectorImpl) SetClient(conn grpc.ClientConnInterface) {
-	d.enricher.imageSvc = v1.NewImageServiceClient(conn)
+func (d *detectorImpl) SetCentralGRPCClient(cc grpc.ClientConnInterface) {
+	d.enricher.imageSvc = v1.NewImageServiceClient(cc)
 }
 
 func (d *detectorImpl) ProcessIndicator(pi *storage.ProcessIndicator) {

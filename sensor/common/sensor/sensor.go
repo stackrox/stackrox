@@ -135,8 +135,6 @@ func (s *Sensor) Start() {
 			v.SetCentralGRPCClient(s.centralConnection)
 		}
 	}
-
-	s.detector.SetClient(s.centralConnection)
 	s.imageService.SetClient(s.centralConnection)
 	s.profilingServer = s.startProfilingServer()
 
