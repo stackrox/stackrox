@@ -17,6 +17,7 @@ var (
 		"openshift",
 		"openshift-ansible-service-broker",
 		"openshift-console",
+		"openshift-cluster-version",
 		"openshift-infra",
 		"openshift-logging",
 		"openshift-monitoring",
