@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stretchr/testify/assert"
 )
@@ -64,6 +65,12 @@ func TestMatchPolicyPeer(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
+	_, _, _ = t1, t2, t3
+
+	type expectedMatch struct {
+		id        string
+		matchType storage.NetworkEntityInfo_Type
+	}
 
 	cases := []struct {
 		name            string
@@ -71,7 +78,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 		networkTree     tree.ReadOnlyNetworkTree
 		peer            *storage.NetworkPolicyPeer
 		policyNamespace string
-		expectedMatches int
+		expectedMatches []expectedMatch
 	}{
 		{
 			name: "zero peer",
@@ -83,12 +90,13 @@ func TestMatchPolicyPeer(t *testing.T) {
 			},
 			peer:            &storage.NetworkPolicyPeer{},
 			policyNamespace: "default",
-			expectedMatches: 0,
+			expectedMatches: nil,
 		},
 		{
 			name: "match all in same NS peer",
 			deployments: []*storage.Deployment{
 				{
+					Id:          "DEP1",
 					Namespace:   "default",
 					NamespaceId: "default",
 				},
@@ -97,7 +105,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 				PodSelector: &storage.LabelSelector{},
 			},
 			policyNamespace: "default",
-			expectedMatches: 1,
+			expectedMatches: []expectedMatch{{id: "DEP1", matchType: storage.NetworkEntityInfo_DEPLOYMENT}},
 		},
 		{
 			name: "match all in same NS peer - no match",
@@ -111,12 +119,13 @@ func TestMatchPolicyPeer(t *testing.T) {
 				PodSelector: &storage.LabelSelector{},
 			},
 			policyNamespace: "stackrox",
-			expectedMatches: 0,
+			expectedMatches: nil,
 		},
 		{
 			name: "match all in all NS peer",
 			deployments: []*storage.Deployment{
 				{
+					Id:          "DEP1",
 					Namespace:   "default",
 					NamespaceId: "default",
 				},
@@ -126,18 +135,19 @@ func TestMatchPolicyPeer(t *testing.T) {
 				NamespaceSelector: &storage.LabelSelector{},
 			},
 			policyNamespace: "stackrox",
-			expectedMatches: 1,
+			expectedMatches: []expectedMatch{{id: "DEP1", matchType: storage.NetworkEntityInfo_DEPLOYMENT}},
 		},
 		{
 			name:            "ip block",
 			deployments:     []*storage.Deployment{},
 			peer:            &storage.NetworkPolicyPeer{IpBlock: &storage.IPBlock{}},
-			expectedMatches: 0,
+			expectedMatches: nil,
 		},
 		{
 			name: "ip block - external source fully contains ip block; match deployments and external sources",
 			deployments: []*storage.Deployment{
 				{
+					Id:        "DEP1",
 					Namespace: "default",
 				},
 			},
@@ -147,7 +157,10 @@ func TestMatchPolicyPeer(t *testing.T) {
 					Cidr: "192.16.0.0/24",
 				},
 			},
-			expectedMatches: 2,
+			expectedMatches: []expectedMatch{
+				{id: "DEP1", matchType: storage.NetworkEntityInfo_DEPLOYMENT},
+				{id: "1", matchType: storage.NetworkEntityInfo_EXTERNAL_SOURCE},
+			},
 		},
 		{
 			name:        "ip block - external source fully contains ip block; match only external source",
@@ -157,12 +170,15 @@ func TestMatchPolicyPeer(t *testing.T) {
 					Cidr: "192.16.0.0/24",
 				},
 			},
-			expectedMatches: 1,
+			expectedMatches: []expectedMatch{
+				{id: "1", matchType: storage.NetworkEntityInfo_EXTERNAL_SOURCE},
+			},
 		},
 		{
 			name: "ip block - ip block fully contains external source; match deployments, external sources and INTERNET",
 			deployments: []*storage.Deployment{
 				{
+					Id:        "DEP1",
 					Namespace: "default",
 				},
 			},
@@ -172,7 +188,11 @@ func TestMatchPolicyPeer(t *testing.T) {
 					Cidr: "192.16.0.0/24",
 				},
 			},
-			expectedMatches: 3,
+			expectedMatches: []expectedMatch{
+				{id: "DEP1", matchType: storage.NetworkEntityInfo_DEPLOYMENT},
+				{id: "2", matchType: storage.NetworkEntityInfo_EXTERNAL_SOURCE},
+				{id: networkgraph.InternetExternalSourceID, matchType: storage.NetworkEntityInfo_INTERNET},
+			},
 		},
 		{
 			name:        "ip block - ip block fully contains external source; match INTERNET and exclude except networks",
@@ -183,7 +203,10 @@ func TestMatchPolicyPeer(t *testing.T) {
 					Except: []string{"192.16.15.0/22"},
 				},
 			},
-			expectedMatches: 2,
+			expectedMatches: []expectedMatch{
+				{id: "1", matchType: storage.NetworkEntityInfo_EXTERNAL_SOURCE},
+				{id: networkgraph.InternetExternalSourceID, matchType: storage.NetworkEntityInfo_INTERNET},
+			},
 		},
 		{
 			name:        "ip block - does not match external source; matches INTERNET",
@@ -193,7 +216,9 @@ func TestMatchPolicyPeer(t *testing.T) {
 					Cidr: "192.0.0.0/24",
 				},
 			},
-			expectedMatches: 1,
+			expectedMatches: []expectedMatch{
+				{id: networkgraph.InternetExternalSourceID, matchType: storage.NetworkEntityInfo_INTERNET},
+			},
 		},
 		{
 			name: "non match pod selector",
@@ -211,12 +236,13 @@ func TestMatchPolicyPeer(t *testing.T) {
 					},
 				},
 			},
-			expectedMatches: 0,
+			expectedMatches: nil,
 		},
 		{
 			name: "match pod selector",
 			deployments: []*storage.Deployment{
 				{
+					Id:          "DEP1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels: map[string]string{
@@ -232,12 +258,13 @@ func TestMatchPolicyPeer(t *testing.T) {
 				},
 			},
 			policyNamespace: "default",
-			expectedMatches: 1,
+			expectedMatches: []expectedMatch{{id: "DEP1", matchType: storage.NetworkEntityInfo_DEPLOYMENT}},
 		},
 		{
 			name: "match namespace selector",
 			deployments: []*storage.Deployment{
 				{
+					Id:          "DEP1",
 					Namespace:   "default",
 					NamespaceId: "default",
 				},
@@ -250,7 +277,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 				},
 			},
 			policyNamespace: "default",
-			expectedMatches: 1,
+			expectedMatches: []expectedMatch{{id: "DEP1", matchType: storage.NetworkEntityInfo_DEPLOYMENT}},
 		},
 		{
 			name: "non match namespace selector",
@@ -268,7 +295,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 				},
 			},
 			policyNamespace: "default",
-			expectedMatches: 0,
+			expectedMatches: nil,
 		},
 		{
 			name: "different namespaces",
@@ -286,12 +313,13 @@ func TestMatchPolicyPeer(t *testing.T) {
 				},
 			},
 			policyNamespace: "stackrox",
-			expectedMatches: 0,
+			expectedMatches: nil,
 		},
 		{
 			name: "match namespace and pod selector",
 			deployments: []*storage.Deployment{
 				{
+					Id:          "DEP1",
 					Namespace:   "default",
 					NamespaceId: "default",
 					PodLabels: map[string]string{
@@ -312,7 +340,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 				},
 			},
 			policyNamespace: "default",
-			expectedMatches: 1,
+			expectedMatches: []expectedMatch{{id: "DEP1", matchType: storage.NetworkEntityInfo_DEPLOYMENT}},
 		},
 		{
 			name: "match namespace but not pod selector",
@@ -338,7 +366,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 				},
 			},
 			policyNamespace: "default",
-			expectedMatches: 0,
+			expectedMatches: nil,
 		},
 		{
 			name: "match pod but not namespace selector",
@@ -364,15 +392,35 @@ func TestMatchPolicyPeer(t *testing.T) {
 				},
 			},
 			policyNamespace: "default",
-			expectedMatches: 0,
+			expectedMatches: nil,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			b := newGraphBuilder(nil, c.deployments, c.networkTree, namespacesByID)
-			matches := b.evaluatePeer(namespacesByID[c.policyNamespace], c.peer)
-			assert.Len(t, matches, c.expectedMatches)
+			// Run the test multiple times to make sure that the graph builder is not put into a bad state the first time,
+			// and is capable of returning consistent results.
+			for i := 0; i < 2; i++ {
+				matches := b.evaluatePeer(namespacesByID[c.policyNamespace], c.peer)
+				formattedMatches := make([]expectedMatch, 0, len(matches))
+				for _, match := range matches {
+					var formattedMatch expectedMatch
+					if match.deployment != nil {
+						formattedMatch.matchType = storage.NetworkEntityInfo_DEPLOYMENT
+						formattedMatch.id = match.deployment.Id
+					} else if match.extSrc != nil {
+						formattedMatch.id = match.extSrc.Id
+						if match.extSrc.Id == networkgraph.InternetExternalSourceID {
+							formattedMatch.matchType = storage.NetworkEntityInfo_INTERNET
+						} else {
+							formattedMatch.matchType = storage.NetworkEntityInfo_EXTERNAL_SOURCE
+						}
+					}
+					formattedMatches = append(formattedMatches, formattedMatch)
+				}
+				assert.ElementsMatch(t, formattedMatches, c.expectedMatches)
+			}
 		})
 	}
 }
