@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -71,9 +72,7 @@ func (b *graphBuilder) init(queryDeploymentIDs set.StringSet, deployments []*sto
 	}
 
 	b.networkTree = networkTree
-	b.internetSrc = newExternalSrcNode(networkgraph.InternetEntity().ToProto())
-	b.extSrcs = append(b.extSrcs, b.internetSrc)
-	b.extSrcIDs.Add(b.internetSrc.extSrc.GetId())
+	b.internetSrc = b.getOrCreateExtSrcNode(networkgraph.InternetEntity().ToProto())
 }
 
 func (b *graphBuilder) evaluatePeers(currentNS *storage.NamespaceMetadata, peers []*storage.NetworkPolicyPeer) ([]*node, bool) {
@@ -165,6 +164,23 @@ func (b *graphBuilder) evaluatePeer(currentNS *storage.NamespaceMetadata, peer *
 	return matchDeployments(deploymentsInNSs, podSel)
 }
 
+func (b *graphBuilder) getOrCreateExtSrcNode(extSrc *storage.NetworkEntityInfo) *node {
+	if b.extSrcIDs.Add(extSrc.GetId()) {
+		n := newExternalSrcNode(extSrc)
+		b.extSrcs = append(b.extSrcs, n)
+		return n
+	}
+	for _, existingExtSrcNode := range b.extSrcs {
+		if existingExtSrcNode.extSrc.Id == extSrc.GetId() {
+			return existingExtSrcNode
+		}
+	}
+	// Should never get here since we keep the set and the list in sync.
+	// Note that utils.Should here is useless since we will panic elsewhere anyway,
+	// if such a fundamental assertion is broken.
+	panic(fmt.Sprintf("UNEXPECTED: %v id found in extSrcIDs but not in extSrcs", extSrc))
+}
+
 func (b *graphBuilder) evaluateExternalPeer(ipBlock *storage.IPBlock) []*node {
 	if ipBlock.GetCidr() == "" {
 		return nil
@@ -177,11 +193,7 @@ func (b *graphBuilder) evaluateExternalPeer(ipBlock *storage.IPBlock) []*node {
 	if extSrc := b.networkTree.GetMatchingSupernetForCIDR(ipBlock.GetCidr(), func(entity *storage.NetworkEntityInfo) bool {
 		return entity.GetId() != networkgraph.InternetExternalSourceID
 	}); extSrc != nil {
-		var n *node
-		if b.extSrcIDs.Add(extSrc.GetId()) {
-			n = newExternalSrcNode(extSrc)
-			b.extSrcs = append(b.extSrcs, n)
-		}
+		n := b.getOrCreateExtSrcNode(extSrc)
 		return []*node{n}
 	}
 
@@ -198,11 +210,7 @@ func (b *graphBuilder) evaluateExternalPeer(ipBlock *storage.IPBlock) []*node {
 	peers = append(peers, b.internetSrc)
 	for _, extSrc := range allMatchedPeers {
 		if !netsToExclude.Contains(extSrc.GetId()) {
-			var n *node
-			if b.extSrcIDs.Add(extSrc.GetId()) {
-				n = newExternalSrcNode(extSrc)
-				b.extSrcs = append(b.extSrcs, n)
-			}
+			n := b.getOrCreateExtSrcNode(extSrc)
 			peers = append(peers, n)
 		}
 	}
