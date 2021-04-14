@@ -1,6 +1,5 @@
 import React, { ReactElement } from 'react';
 import { useTable, useSortBy, useGroupBy, useExpanded, useRowSelect } from 'react-table';
-import uniq from 'lodash/uniq';
 
 import { networkFlowStatus } from 'constants/networkGraph';
 import {
@@ -21,6 +20,10 @@ import {
     expanderPlugin,
     TableColorStyles,
 } from 'Components/TableV7';
+import {
+    getAggregateText,
+    getDirectionalityLabel,
+} from 'Containers/Network/SidePanel/NetworkDeploymentOverlay/utils';
 import GroupedStatusTableCell from './GroupedStatusTableCell';
 import ToggleSelectedBaselineStatuses from './ToggleSelectedBaselineStatuses';
 import ToggleBaselineStatus from './ToggleBaselineStatus';
@@ -64,14 +67,6 @@ function getEmptyGroupRow(status: BaselineStatus): Row {
     };
 }
 
-function getAggregateText(leafValues: string[], multiplePhrase = 'Many'): string {
-    const uniqValues = uniq(leafValues);
-    if (uniqValues.length > 1) {
-        return multiplePhrase;
-    }
-    return uniqValues[0];
-}
-
 const columns = [
     {
         Header: 'Status',
@@ -87,10 +82,7 @@ const columns = [
         Header: 'Traffic',
         id: 'traffic',
         accessor: (datum: FlattenedNetworkBaseline): string => {
-            if (datum.peer.ingress) {
-                return 'Ingress';
-            }
-            return 'Egress';
+            return getDirectionalityLabel(datum.peer.ingress);
         },
         aggregate: (leafValues: string[]): string => {
             return getAggregateText(leafValues, 'Two-way');

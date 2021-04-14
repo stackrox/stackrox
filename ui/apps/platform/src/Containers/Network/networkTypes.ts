@@ -1,20 +1,22 @@
 export type EntityType = 'DEPLOYMENT' | 'INTERNET' | 'EXTERNAL_SOURCE';
 
-type Protocol = 'L4_PROTOCOL_TCP' | 'L4_PROTOCOL_UDP' | 'L4_PROTOCOL_ANY';
+export type Protocol = 'L4_PROTOCOL_TCP' | 'L4_PROTOCOL_UDP' | 'L4_PROTOCOL_ANY';
 
-type ConnectionState = 'active' | 'allowed';
+export type ConnectionState = 'active' | 'allowed';
 
 export type BaselineStatus = 'BASELINE' | 'ANOMALOUS' | 'BLOCKED';
 
 type Traffic = 'bidirectional' | 'ingress' | 'egress';
 
+export type Entity = {
+    id: string;
+    type: EntityType;
+    name: string;
+    namespace?: string;
+};
+
 export type FlattenedPeer = {
-    entity: {
-        id: string;
-        type: EntityType;
-        name: string;
-        namespace?: string;
-    };
+    entity: Entity;
     port: string;
     protocol: Protocol;
     ingress: boolean;
@@ -22,12 +24,7 @@ export type FlattenedPeer = {
 };
 
 export type Peer = {
-    entity: {
-        id: string;
-        type: EntityType;
-        name: string;
-        namespace?: string;
-    };
+    entity: Entity;
     portsAndProtocols: {
         port: string;
         protocol: Protocol;

@@ -60,7 +60,7 @@ function BaselineSettings({
                 includedBaselineStatuses={[networkFlowStatus.BASELINE]}
             />
             {isBaselineSimulationFeatureEnabled && (
-                <div className="flex justify-center items-center py-4 border-t border-base-300">
+                <div className="flex justify-center items-center py-4 border-t border-base-300 bg-base-100">
                     <SimulateBaselineNetworkPolicy />
                 </div>
             )}
