@@ -163,7 +163,7 @@ func (s *managementService) sync(stream sensor.AdmissionControlManagementService
 		}
 	}
 
-	err := stream.Send(&sensor.MsgToAdmissionControl{
+	return stream.Send(&sensor.MsgToAdmissionControl{
 		Msg: &sensor.MsgToAdmissionControl_UpdateResourceRequest{
 			UpdateResourceRequest: &sensor.AdmCtrlUpdateResourceRequest{
 				Resource: &sensor.AdmCtrlUpdateResourceRequest_Synced{
@@ -172,8 +172,4 @@ func (s *managementService) sync(stream sensor.AdmissionControlManagementService
 			},
 		},
 	})
-	if err != nil {
-		return err
-	}
-	return nil
 }

@@ -392,7 +392,26 @@ func (w *deploymentWrap) toEvent(action central.ResourceAction) *central.SensorE
 	}
 }
 
-func filterHostExposure(exposureInfos []*storage.PortConfig_ExposureInfo) (filtered []*storage.PortConfig_ExposureInfo, level storage.PortConfig_ExposureLevel) {
+// anyNonHostPort is derived from `filterHostExposure(...)`. Therefore, if `filterHostExposure(...)` is updated,
+// ensure to update this function.
+func (w *deploymentWrap) anyNonHostPort() bool {
+	w.mutex.RLock()
+	defer w.mutex.RUnlock()
+
+	for _, portCfg := range w.portConfigs {
+		for _, exposureInfo := range portCfg.ExposureInfos {
+			if exposureInfo.GetLevel() != storage.PortConfig_HOST {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// Make sure to update `anyNonHostPort()` if this function is updated.
+func filterHostExposure(exposureInfos []*storage.PortConfig_ExposureInfo) (
+	filtered []*storage.PortConfig_ExposureInfo, level storage.PortConfig_ExposureLevel,
+) {
 	for _, exposureInfo := range exposureInfos {
 		if exposureInfo.GetLevel() != storage.PortConfig_HOST {
 			continue
@@ -421,13 +440,25 @@ func (w *deploymentWrap) updatePortExposureFromStore(store *serviceStore) {
 	}
 }
 
+func (w *deploymentWrap) updatePortExposureFromServices(svcs ...*serviceWrap) {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
+	w.resetPortExposureNoLock()
+
+	for _, svc := range svcs {
+		w.updatePortExposureUncheckedNoLock(svc)
+	}
+}
+
 func (w *deploymentWrap) updatePortExposure(svc *serviceWrap) {
-	if !svc.selector.Matches(labels.Set(w.PodLabels)) {
+	if svc.selector.Matches(labels.Set(w.PodLabels)) {
 		return
 	}
 
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
+
 	w.updatePortExposureUncheckedNoLock(svc)
 }
 
@@ -463,4 +494,31 @@ func (w *deploymentWrap) updateServiceAccountPermissionLevel(permissionLevel sto
 	defer w.mutex.Unlock()
 
 	w.ServiceAccountPermissionLevel = permissionLevel
+}
+
+// Clone clones a deploymentWrap. Note: `original` field is not cloned.
+func (w *deploymentWrap) Clone() *deploymentWrap {
+	w.mutex.RLock()
+	defer w.mutex.RUnlock()
+
+	ret := &deploymentWrap{
+		original:         w.original, // original is only always read
+		registryOverride: w.registryOverride,
+		Deployment:       w.GetDeployment().Clone(),
+		podSelector:      w.podSelector.DeepCopySelector(),
+	}
+	if w.pods != nil {
+		ret.pods = make([]*v1.Pod, len(w.pods))
+		for idx, pod := range w.pods {
+			ret.pods[idx] = pod.DeepCopy()
+		}
+	}
+	if w.portConfigs != nil {
+		ret.portConfigs = make(map[portRef]*storage.PortConfig)
+		for k, v := range w.portConfigs {
+			ret.portConfigs[k] = v.Clone()
+		}
+	}
+
+	return ret
 }

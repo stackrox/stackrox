@@ -100,7 +100,12 @@ func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.Res
 
 func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector) (events []*central.SensorEvent) {
 	for _, deploymentWrap := range sh.deploymentStore.getMatchingDeployments(namespace, sel) {
-		deploymentWrap.updatePortExposureFromStore(sh.serviceStore)
+		if svcs := sh.serviceStore.getMatchingServices(deploymentWrap.Namespace, deploymentWrap.PodLabels); len(svcs) > 0 || deploymentWrap.anyNonHostPort() {
+			cloned := deploymentWrap.Clone()
+			cloned.updatePortExposureFromServices(svcs...)
+			sh.deploymentStore.addOrUpdateDeployment(cloned)
+		}
+
 		events = append(events, deploymentWrap.toEvent(central.ResourceAction_UPDATE_RESOURCE))
 	}
 	sh.endpointManager.OnServiceUpdateOrRemove(namespace, sel)
@@ -108,12 +113,14 @@ func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel se
 }
 
 func (sh *serviceDispatcher) processCreate(svc *v1.Service) (events []*central.SensorEvent) {
-	wrap := wrapService(svc)
-	sh.serviceStore.addOrUpdateService(wrap)
-	for _, deploymentWrap := range sh.deploymentStore.getMatchingDeployments(svc.Namespace, wrap.selector) {
-		deploymentWrap.updatePortExposure(wrap)
-		events = append(events, deploymentWrap.toEvent(central.ResourceAction_UPDATE_RESOURCE))
+	svcWrap := wrapService(svc)
+	sh.serviceStore.addOrUpdateService(svcWrap)
+	for _, deploymentWrap := range sh.deploymentStore.getMatchingDeployments(svc.Namespace, svcWrap.selector) {
+		cloned := deploymentWrap.Clone()
+		cloned.updatePortExposure(svcWrap)
+		sh.deploymentStore.addOrUpdateDeployment(cloned)
+		events = append(events, cloned.toEvent(central.ResourceAction_UPDATE_RESOURCE))
 	}
-	sh.endpointManager.OnServiceCreate(wrap)
+	sh.endpointManager.OnServiceCreate(svcWrap)
 	return
 }
