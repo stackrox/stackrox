@@ -26,3 +26,4 @@ roxctl/helm/derivelocalvalues/testdata/k8s-resources/offlineMode-internalRegistr
 pkg/helmtest/openapi-schemas/kubernetes-1.20.2.json.gz
 pkg/helmtest/openapi-schemas/openshift-4.1.0.json.gz
 pkg/helmtest/openapi-schemas/openshift-3.11.0.json.gz
+pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks/mocks.go
