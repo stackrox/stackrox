@@ -50,7 +50,7 @@ require (
 	github.com/hako/durafmt v0.0.0-20180520121703-7b7ae1e72ead
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/hashicorp/go-version v1.2.1
-	github.com/hashicorp/golang-lru v0.5.3
+	github.com/hashicorp/golang-lru v0.5.4
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/itchyny/gojq v0.12.1
 	github.com/jstemmer/go-junit-report v0.9.1
@@ -109,14 +109,15 @@ require (
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.4.0
 	honnef.co/go/tools v0.0.1-2020.1.6
-	k8s.io/api v0.19.2
-	k8s.io/apimachinery v0.19.2
-	k8s.io/apiserver v0.19.2
+	k8s.io/api v0.20.2
+	k8s.io/apimachinery v0.20.2
+	k8s.io/apiserver v0.20.2
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/kube-openapi v0.0.0-20201113171705-d219536bb9fd
-	k8s.io/kubectl v0.19.2
-	k8s.io/kubelet v0.19.2
-	k8s.io/utils v0.0.0-20201110183641-67b214c5f920
+	k8s.io/kubectl v0.20.2
+	k8s.io/kubelet v0.20.2
+	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
+	sigs.k8s.io/controller-runtime v0.8.3
 	sigs.k8s.io/yaml v1.2.0
 )
 
@@ -143,8 +144,9 @@ replace (
 	golang.org/x/oauth2 => github.com/misberner/oauth2 v0.0.0-20200208204620-d153c71f6b8d
 
 	honnef.co/go/tools => honnef.co/go/tools v0.0.1-2020.1.5
+	k8s.io/api => k8s.io/api v0.20.2
 
 	// Circular github.com/stackrox/rox sets this to an incompatible version
-	k8s.io/client-go => k8s.io/client-go v0.19.2
+	k8s.io/client-go => k8s.io/client-go v0.20.2
 	vbom.ml/util => github.com/fvbommel/util v0.0.0-20200828041400-c69461e88a36
 )

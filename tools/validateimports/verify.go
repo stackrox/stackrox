@@ -36,6 +36,7 @@ var (
 		"sensor/upgrader",
 		"tools",
 		"webhookserver",
+		"operator",
 	}
 
 	ignoredRoots = []string{
