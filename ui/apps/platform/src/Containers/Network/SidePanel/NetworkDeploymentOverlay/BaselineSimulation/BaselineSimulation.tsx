@@ -1,8 +1,14 @@
-import React, { ReactElement } from 'react';
+import React, { useState, ReactElement } from 'react';
+
+import useSearchFilteredData from 'hooks/useSearchFilteredData';
 
 import { PanelBody, PanelHead, PanelHeadEnd, PanelNew, PanelTitle } from 'Components/Panel';
+import TablePagination from 'Components/TablePagination';
 import NetworkPolicyYAMLOptions from './NetworkPolicyYAMLOptions';
 import SimulatedNetworkBaselines from './SimulatedNetworkBaselines';
+import SimulatedBaselinesSearch, {
+    getSimulatedBaselineValueByCategory,
+} from './SimulatedBaselinesSearch';
 
 const simulatedNetworkBaselines = [
     {
@@ -10,7 +16,7 @@ const simulatedNetworkBaselines = [
             entity: {
                 id: '12345',
                 type: 'DEPLOYMENT',
-                name: 'kube-dns',
+                name: 'sensor',
                 namespace: 'stackrox',
             },
             added: {
@@ -44,7 +50,7 @@ const simulatedNetworkBaselines = [
             entity: {
                 id: '45678',
                 type: 'DEPLOYMENT',
-                name: 'sensor',
+                name: 'collector',
                 namespace: 'stackrox',
             },
             modified: {
@@ -68,7 +74,7 @@ const simulatedNetworkBaselines = [
             entity: {
                 id: '24564',
                 type: 'DEPLOYMENT',
-                name: 'sensor',
+                name: 'monitoring',
                 namespace: 'stackrox',
             },
             unmodified: {
@@ -83,6 +89,14 @@ const simulatedNetworkBaselines = [
 ];
 
 function BaselineSimulation(): ReactElement {
+    const [page, setPage] = useState(0);
+    const [searchOptions, setSearchOptions] = useState([]);
+    const filteredBaselines = useSearchFilteredData(
+        simulatedNetworkBaselines,
+        searchOptions,
+        getSimulatedBaselineValueByCategory
+    );
+
     return (
         <div className="bg-primary-100 rounded-b rounded-tr-lg shadow flex flex-1">
             <PanelNew testid="baseline-simulation">
@@ -90,12 +104,26 @@ function BaselineSimulation(): ReactElement {
                     <PanelTitle text="Baseline Simulation" />
                     <PanelHeadEnd>
                         <NetworkPolicyYAMLOptions />
+                        <TablePagination
+                            page={page}
+                            dataLength={filteredBaselines.length}
+                            setPage={setPage}
+                        />
+                    </PanelHeadEnd>
+                </PanelHead>
+                <PanelHead>
+                    <PanelHeadEnd>
+                        <div className="pr-3 w-full">
+                            <SimulatedBaselinesSearch
+                                networkBaselines={simulatedNetworkBaselines}
+                                searchOptions={searchOptions}
+                                setSearchOptions={setSearchOptions}
+                            />
+                        </div>
                     </PanelHeadEnd>
                 </PanelHead>
                 <PanelBody>
-                    <SimulatedNetworkBaselines
-                        simulatedNetworkBaselines={simulatedNetworkBaselines}
-                    />
+                    <SimulatedNetworkBaselines simulatedNetworkBaselines={filteredBaselines} />
                 </PanelBody>
             </PanelNew>
         </div>
