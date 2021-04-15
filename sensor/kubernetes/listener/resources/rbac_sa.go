@@ -17,6 +17,7 @@ func (rs *rbacUpdaterImpl) assignPermissionLevelToDeployment(wrap *deploymentWra
 
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
+
 	if !rs.hasBuiltInitialBucket {
 		rs.hasBuiltInitialBucket = rs.rebuildEvaluatorBucketsNoLock()
 		if !rs.hasBuiltInitialBucket {

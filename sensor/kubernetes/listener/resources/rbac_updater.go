@@ -23,6 +23,8 @@ type rbacUpdater interface {
 	upsertClusterBinding(binding *v1.ClusterRoleBinding) *central.SensorEvent
 	removeClusterBinding(binding *v1.ClusterRoleBinding) *central.SensorEvent
 
+	// Make sure to clone and add deploymentWrap to the store if this function is being used at places other than
+	// right after deploymentWrap object creation.
 	assignPermissionLevelToDeployment(wrap *deploymentWrap)
 }
 

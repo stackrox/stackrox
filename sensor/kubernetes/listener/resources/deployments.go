@@ -158,9 +158,9 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 
 	deploymentWrap.updatePortExposureFromStore(d.serviceStore)
 	if action != central.ResourceAction_REMOVE_RESOURCE {
+		d.rbac.assignPermissionLevelToDeployment(deploymentWrap)
 		d.deploymentStore.addOrUpdateDeployment(deploymentWrap)
 		d.endpointManager.OnDeploymentCreateOrUpdate(deploymentWrap)
-		d.rbac.assignPermissionLevelToDeployment(deploymentWrap)
 	} else {
 		d.deploymentStore.removeDeployment(deploymentWrap)
 		d.podStore.onDeploymentRemove(deploymentWrap)
