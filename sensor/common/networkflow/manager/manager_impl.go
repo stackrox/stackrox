@@ -264,27 +264,22 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
 	}
 
-	if !isFresh {
-		status.used = true
-	}
-
 	if len(lookupResults) == 0 {
-		var extSrc *storage.NetworkEntityInfo
-		if conn.remote.IPAndPort.IPNetwork.IsValid() {
-			extSrc = m.externalSrcs.LookupByNetwork(conn.remote.IPAndPort.IPNetwork)
-			if extSrc != nil {
-				isFresh = false
-			}
-		}
-
-		// If the address is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time before associating it to INTERNET.
-		if isFresh {
+		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
+		// before associating it to a known network or INTERNET.
+		if isFresh && conn.remote.IPAndPort.Address.IsValid() {
 			return
 		}
 
-		if conn.remote.IPAndPort.Address.IsValid() {
-			extSrc = m.externalSrcs.LookupByAddress(conn.remote.IPAndPort.Address)
+		extSrc := m.externalSrcs.LookupByNetwork(conn.remote.IPAndPort.IPNetwork)
+		if extSrc != nil {
+			isFresh = false
 		}
+
+		if isFresh {
+			return
+		}
+		status.used = true
 
 		flowMetrics.ExternalFlowCounter.Inc()
 
@@ -621,10 +616,12 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 
 func getIPAndPort(address *sensor.NetworkAddress) net.NetworkPeerID {
 	tuple := net.NetworkPeerID{
-		// If not set, this be invalid i.e. `IPNetwork{}`.
+		// For private address, both address and IPNetwork are expected to be set by Collector.
+		// If not set, this will be invalid i.e. `IPNetwork{}`.
 		IPNetwork: net.IPNetworkFromCIDRBytes(address.GetIpNetwork()),
-		Address:   net.IPFromBytes(address.GetAddressData()),
-		Port:      uint16(address.GetPort()),
+		// If not set, this will be invalid i.e. `IPAddress{}`.
+		Address: net.IPFromBytes(address.GetAddressData()),
+		Port:    uint16(address.GetPort()),
 	}
 	return tuple
 }

@@ -271,8 +271,8 @@ func TestExternalSourcesLookup(t *testing.T) {
 	require.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 
 	expected := req.GetPushNetworkEntitiesRequest().GetEntities()[1]
-	assert.Equal(t, expected, handler.LookupByAddress(net.IPFromBytes([]byte{192, 10, 10, 10})))
+	assert.Equal(t, expected, handler.LookupByNetwork(net.IPNetworkFromCIDRBytes([]byte{192, 10, 0, 0, 16})))
 
 	expected = req.GetPushNetworkEntitiesRequest().GetEntities()[3]
-	assert.Equal(t, expected, handler.LookupByAddress(net.IPFromBytes([]byte{127, 10, 10, 10})))
+	assert.Equal(t, expected, handler.LookupByNetwork(net.IPNetworkFromCIDRBytes([]byte{0, 0, 0, 0, 0})))
 }

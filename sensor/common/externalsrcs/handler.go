@@ -25,7 +25,6 @@ var (
 type Store interface {
 	ExternalSrcsValueStream() concurrency.ReadOnlyValueStream
 	LookupByNetwork(ipNet pkgNet.IPNetwork) *storage.NetworkEntityInfo
-	LookupByAddress(ip pkgNet.IPAddress) *storage.NetworkEntityInfo
 	LookupByID(id string) *storage.NetworkEntityInfo
 }
 
@@ -166,33 +165,14 @@ func (h *handlerImpl) ExternalSrcsValueStream() concurrency.ReadOnlyValueStream 
 }
 
 func (h *handlerImpl) LookupByNetwork(ipNet pkgNet.IPNetwork) *storage.NetworkEntityInfo {
+	if !ipNet.IsValid() {
+		return nil
+	}
+
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
 	return h.entities[ipNet]
-}
-
-func (h *handlerImpl) LookupByAddress(ip pkgNet.IPAddress) *storage.NetworkEntityInfo {
-	h.lock.Lock()
-	defer h.lock.Unlock()
-
-	if ip.Family() == pkgNet.IPv4 {
-		for i := 0; i < len(h.lastSeenList.GetIpv4Networks())/5; i++ {
-			network := pkgNet.IPNetworkFromCIDRBytes(h.lastSeenList.Ipv4Networks[5*i : 5*i+5])
-			if network.Contains(ip) {
-				return h.entities[network]
-			}
-		}
-	} else if ip.Family() == pkgNet.IPv6 {
-		for i := 0; i < len(h.lastSeenList.GetIpv4Networks())/17; i++ {
-			network := pkgNet.IPNetworkFromCIDRBytes(h.lastSeenList.Ipv4Networks[17*i : 17*i+17])
-			if network.Contains(ip) {
-				return h.entities[network]
-			}
-		}
-	}
-
-	return nil
 }
 
 func (h *handlerImpl) LookupByID(id string) *storage.NetworkEntityInfo {
