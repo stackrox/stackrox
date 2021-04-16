@@ -544,6 +544,11 @@ orbs:
 
 executors:
   custom:
+    parameters:
+      resource_class:
+        type: string
+        default: medium
+    resource_class: << parameters.resource_class >>
     docker:
       - image: docker.io/stackrox/apollo-ci:0.3.9
         auth:
@@ -3104,7 +3109,9 @@ jobs:
   ###
 
   gke-api-nongroovy-tests:
-    executor: custom
+    executor: 
+      name: custom
+      resource_class: medium+
     environment:
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
