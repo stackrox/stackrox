@@ -22,6 +22,20 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 KUBE_COMMAND=${KUBE_COMMAND:-kubectl}
+SKIP_ORCHESTRATOR_CHECK=${SKIP_ORCHESTRATOR_CHECK:-false}
+
+if [[ "${SKIP_ORCHESTRATOR_CHECK}" == "true" ]] ; then
+    echo >&2  "WARN: Skipping orchestrator check..."
+else
+    count="$(${KUBE_COMMAND} api-resources | grep "securitycontextconstraints" -c || true)"
+    if [[ "${count}" -gt 0 ]]; then
+        echo >&2 "Detected an attempt to deploy a cluster bundle designed to be deployed on vanilla Kubernetes, \\
+        on an OpenShift cluster. Please regenerate the cluster bundle using cluster type `openshift` and redeploy. \\
+        If you think this message is in error, and would like to continue deploying the cluster bundle, please rerun \\
+        the script using 'SKIP_ORCHESTRATOR_CHECK=true ./sensor.sh'"
+        exit 1
+    fi
+fi
 
 ${KUBE_COMMAND} get namespace stackrox &>/dev/null || ${KUBE_COMMAND} create namespace stackrox
 
