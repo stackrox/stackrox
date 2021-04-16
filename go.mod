@@ -97,7 +97,7 @@ require (
 	golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	golang.org/x/tools v0.1.0
-	golang.stackrox.io/grpc-http1 v0.2.2
+	golang.stackrox.io/grpc-http1 v0.2.3
 	google.golang.org/api v0.33.0
 	google.golang.org/genproto v0.0.0-20201110150050-8816d57aaa9a
 	google.golang.org/grpc v1.33.0
