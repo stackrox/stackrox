@@ -122,7 +122,7 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 		enforcer,
 		networkFlowManager,
 		networkpolicies.NewCommandHandler(client.Kubernetes()),
-		clusterstatus.NewUpdater(client.Kubernetes()),
+		clusterstatus.NewUpdater(client),
 		clusterhealth.NewUpdater(client.Kubernetes(), 0),
 		complianceCommandHandler,
 		processSignals,

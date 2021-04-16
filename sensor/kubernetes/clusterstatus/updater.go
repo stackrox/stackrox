@@ -2,29 +2,40 @@ package clusterstatus
 
 import (
 	"context"
+	"encoding/json"
 	"sort"
 	"time"
 
+	v1 "github.com/openshift/api/config/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deploymentenvs"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/providers"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apimachineryversion "k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 )
 
 var (
-	log = logging.LoggerForModule()
+	log                  = logging.LoggerForModule()
+	getVersionRetryDelay = 3 * time.Second
+	getVersionRetries    = 3
+	getVersionTimeout    = 10 * time.Second
 )
 
 type updaterImpl struct {
-	client kubernetes.Interface
+	client     client.Interface
+	kubeClient kubernetes.Interface
 
 	updates chan *central.MsgFromSensor
 	stopSig concurrency.Signal
@@ -100,7 +111,7 @@ func (u *updaterImpl) run() {
 }
 
 func (u *updaterImpl) getClusterMetadata() *storage.OrchestratorMetadata {
-	serverVersion, err := u.client.Discovery().ServerVersion()
+	serverVersion, err := u.kubeClient.Discovery().ServerVersion()
 	if err != nil {
 		log.Errorf("Could not get cluster metadata: %v", err)
 		return nil
@@ -111,16 +122,106 @@ func (u *updaterImpl) getClusterMetadata() *storage.OrchestratorMetadata {
 		log.Error(err)
 	}
 
-	return &storage.OrchestratorMetadata{
+	metadata := &storage.OrchestratorMetadata{
 		Version:     serverVersion.GitVersion,
 		BuildDate:   protoconv.ConvertTimeToTimestamp(buildDate),
 		ApiVersions: u.getAPIVersions(),
 	}
+
+	if env.OpenshiftAPI.Setting() == "true" {
+		// Update Openshift version
+		openshiftVersion, err := u.getOpenshiftVersion()
+		if kerrors.IsNotFound(err) {
+			// Try legacy way to get version for Openshift 3.11
+			log.Info("Cannot get Openshift version from operator, trying to get it through legacy API")
+			openshiftVersion, err = u.getOpenshiftVersionLegacyAPI()
+		}
+		if err != nil {
+			if kerrors.IsForbidden(err) || kerrors.IsUnauthorized(err) {
+				log.Errorf("OpenShift version not found (must be logged in to cluster as admin): %v", err)
+			} else {
+				log.Errorf("Fail to get Openshift version: %v", err)
+			}
+			return metadata
+		}
+		log.Infof("Openshift version: %s", openshiftVersion)
+		metadata.IsOpenshift = &storage.OrchestratorMetadata_OpenshiftVersion{OpenshiftVersion: openshiftVersion}
+	}
+	return metadata
+}
+
+func (u *updaterImpl) getOpenshiftVersion() (string, error) {
+	var clusterOperator *v1.ClusterOperator
+	err := retry.WithRetry(
+		func() error {
+			ctx, cancel := context.WithTimeout(context.Background(), getVersionTimeout)
+			defer cancel()
+			var err error
+			clusterOperator, err = u.client.OpenshiftConfig().ConfigV1().ClusterOperators().Get(ctx, "openshift-apiserver", metav1.GetOptions{})
+			if err != nil {
+				if kerrors.IsTimeout(err) || kerrors.IsServerTimeout(err) || kerrors.IsTooManyRequests(err) || kerrors.IsServiceUnavailable(err) {
+					return retry.MakeRetryable(err)
+				}
+				return err
+			}
+			return nil
+		},
+		retry.OnlyRetryableErrors(),
+		retry.Tries(getVersionRetries),
+		retry.OnFailedAttempts(func(err error) {
+			log.Errorf("Failed to fetch version %v, retrying in %v", err, getVersionRetryDelay)
+			time.Sleep(getVersionRetryDelay)
+		}))
+
+	if err != nil {
+		return "", err
+	}
+
+	for _, ver := range clusterOperator.Status.Versions {
+		if ver.Name == "operator" {
+			return ver.Version, nil
+		}
+	}
+	return "", nil
+}
+
+func (u *updaterImpl) getOpenshiftVersionLegacyAPI() (string, error) {
+	var oVersionBody []byte
+	err := retry.WithRetry(
+		func() error {
+			ctx, cancel := context.WithTimeout(context.Background(), getVersionTimeout)
+			defer cancel()
+			var err error
+			oVersionBody, err = u.kubeClient.Discovery().RESTClient().Get().AbsPath("/version/openshift").Do(ctx).Raw()
+			if err != nil {
+				if kerrors.IsTimeout(err) || kerrors.IsServerTimeout(err) || kerrors.IsTooManyRequests(err) || kerrors.IsServiceUnavailable(err) {
+					return retry.MakeRetryable(err)
+				}
+				return err
+			}
+			return nil
+		},
+		retry.OnlyRetryableErrors(),
+		retry.Tries(getVersionRetries),
+		retry.OnFailedAttempts(func(err error) {
+			log.Errorf("Failed to fetch version %v, retrying in %v", err, getVersionRetryDelay)
+			time.Sleep(getVersionRetryDelay)
+		}))
+
+	if err != nil {
+		return "", err
+	}
+	var ocServerInfo apimachineryversion.Info
+	err = json.Unmarshal(oVersionBody, &ocServerInfo)
+	if err != nil && len(oVersionBody) > 0 {
+		return "", err
+	}
+	return ocServerInfo.String(), nil
 }
 
 // API versions exists as the fields in the kube client.
 func (u *updaterImpl) getAPIVersions() []string {
-	groupList, err := u.client.Discovery().ServerGroups()
+	groupList, err := u.kubeClient.Discovery().ServerGroups()
 	if err != nil {
 		log.Errorf("unable to fetch api-versions: %s", err)
 		return nil
@@ -140,10 +241,11 @@ func (u *updaterImpl) getCloudProviderMetadata(ctx context.Context) *storage.Pro
 }
 
 // NewUpdater returns a new ready-to-use updater.
-func NewUpdater(client kubernetes.Interface) common.SensorComponent {
+func NewUpdater(client client.Interface) common.SensorComponent {
 	return &updaterImpl{
-		client:  client,
-		updates: make(chan *central.MsgFromSensor),
-		stopSig: concurrency.NewSignal(),
+		client:     client,
+		kubeClient: client.Kubernetes(),
+		updates:    make(chan *central.MsgFromSensor),
+		stopSig:    concurrency.NewSignal(),
 	}
 }

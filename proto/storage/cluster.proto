@@ -44,7 +44,10 @@ message ProviderMetadata {
 }
 
 message OrchestratorMetadata {
-    string                    version      = 1;
+    string version      = 1;
+    oneof is_openshift {
+        string openshift_version = 4;
+    }
     google.protobuf.Timestamp build_date   = 2;
     repeated string           api_versions = 3;
 }
