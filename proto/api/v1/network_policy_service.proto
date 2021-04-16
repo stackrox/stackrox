@@ -10,6 +10,7 @@ import "api/v1/network_graph_service.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
 import "storage/network_baseline.proto";
+import "storage/network_flow.proto";
 import "storage/network_policy.proto";
 
 package v1;
@@ -155,14 +156,14 @@ message GetUndoModificationForDeploymentResponse {
 }
 
 message GetDiffFlowsReconciledFlow {
-    NetworkBaselinePeerEntity entity = 1;
+    storage.NetworkEntityInfo entity = 1;
     repeated storage.NetworkBaselineConnectionProperties added = 2;
     repeated storage.NetworkBaselineConnectionProperties removed = 3;
     repeated storage.NetworkBaselineConnectionProperties unchanged = 4;
 }
 
 message GetDiffFlowsGroupedFlow {
-    NetworkBaselinePeerEntity entity = 1;
+    storage.NetworkEntityInfo entity = 1;
     repeated storage.NetworkBaselineConnectionProperties properties = 2;
 }
 

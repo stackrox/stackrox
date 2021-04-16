@@ -746,6 +746,10 @@ func (suite *ServiceTestSuite) TestGetDiffFlows() {
 						Info: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
 							Id:   "deployment002",
+							Desc: &storage.NetworkEntityInfo_Deployment_{Deployment: &storage.NetworkEntityInfo_Deployment{
+								Name:      "deployment002",
+								Namespace: "namespace",
+							}},
 						},
 					},
 					Properties: []*storage.NetworkBaselineConnectionProperties{
@@ -766,6 +770,10 @@ func (suite *ServiceTestSuite) TestGetDiffFlows() {
 						Info: &storage.NetworkEntityInfo{
 							Type: storage.NetworkEntityInfo_DEPLOYMENT,
 							Id:   "deployment003",
+							Desc: &storage.NetworkEntityInfo_Deployment_{Deployment: &storage.NetworkEntityInfo_Deployment{
+								Name:      "deployment003",
+								Namespace: "namespace",
+							}},
 						},
 					},
 					Properties: []*storage.NetworkBaselineConnectionProperties{
@@ -781,12 +789,16 @@ func (suite *ServiceTestSuite) TestGetDiffFlows() {
 	rsp, err :=
 		suite.tested.GetDiffFlowsBetweenPolicyAndBaselineForDeployment(suite.requestContext, &v1.ResourceByID{Id: "deployment000"})
 	suite.NoError(err)
-	suite.Equal(rsp, &v1.GetDiffFlowsResponse{
+	suite.Equal(&v1.GetDiffFlowsResponse{
 		Added: []*v1.GetDiffFlowsGroupedFlow{
 			{
-				Entity: &v1.NetworkBaselinePeerEntity{
+				Entity: &storage.NetworkEntityInfo{
 					Id:   "deployment003",
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Desc: &storage.NetworkEntityInfo_Deployment_{Deployment: &storage.NetworkEntityInfo_Deployment{
+						Name:      "deployment003",
+						Namespace: "namespace",
+					}},
 				},
 				Properties: []*storage.NetworkBaselineConnectionProperties{
 					{
@@ -799,9 +811,13 @@ func (suite *ServiceTestSuite) TestGetDiffFlows() {
 		},
 		Removed: []*v1.GetDiffFlowsGroupedFlow{
 			{
-				Entity: &v1.NetworkBaselinePeerEntity{
+				Entity: &storage.NetworkEntityInfo{
 					Id:   "deployment001",
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Desc: &storage.NetworkEntityInfo_Deployment_{Deployment: &storage.NetworkEntityInfo_Deployment{
+						Name:      "deployment001",
+						Namespace: "namespace",
+					}},
 				},
 				Properties: []*storage.NetworkBaselineConnectionProperties{
 					{
@@ -814,9 +830,13 @@ func (suite *ServiceTestSuite) TestGetDiffFlows() {
 		},
 		Reconciled: []*v1.GetDiffFlowsReconciledFlow{
 			{
-				Entity: &v1.NetworkBaselinePeerEntity{
+				Entity: &storage.NetworkEntityInfo{
 					Id:   "deployment002",
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Desc: &storage.NetworkEntityInfo_Deployment_{Deployment: &storage.NetworkEntityInfo_Deployment{
+						Name:      "deployment002",
+						Namespace: "namespace",
+					}},
 				},
 				Added: []*storage.NetworkBaselineConnectionProperties{
 					{
@@ -841,7 +861,18 @@ func (suite *ServiceTestSuite) TestGetDiffFlows() {
 				},
 			},
 		},
-	})
+	}, rsp)
+}
+
+func depToInfo(dep *storage.Deployment) *storage.NetworkEntityInfo {
+	return &storage.NetworkEntityInfo{
+		Type: storage.NetworkEntityInfo_DEPLOYMENT,
+		Id:   dep.GetId(),
+		Desc: &storage.NetworkEntityInfo_Deployment_{Deployment: &storage.NetworkEntityInfo_Deployment{
+			Name:      dep.GetName(),
+			Namespace: dep.GetNamespace(),
+		}},
+	}
 }
 
 // getSampleNetworkGraph requires at least 4 deployments
@@ -856,10 +887,7 @@ func (suite *ServiceTestSuite) getSampleNetworkGraph(deps ...*storage.Deployment
 		Epoch: 0,
 		Nodes: []*v1.NetworkNode{
 			{
-				Entity: &storage.NetworkEntityInfo{
-					Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					Id:   deps[0].GetId(),
-				},
+				Entity: depToInfo(deps[0]),
 				OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{
 					2: {
 						Properties: []*v1.NetworkEdgeProperties{
@@ -876,10 +904,7 @@ func (suite *ServiceTestSuite) getSampleNetworkGraph(deps ...*storage.Deployment
 				},
 			},
 			{
-				Entity: &storage.NetworkEntityInfo{
-					Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					Id:   deps[1].GetId(),
-				},
+				Entity: depToInfo(deps[1]),
 				OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{
 					0: {
 						Properties: []*v1.NetworkEdgeProperties{
@@ -893,17 +918,11 @@ func (suite *ServiceTestSuite) getSampleNetworkGraph(deps ...*storage.Deployment
 				NonIsolatedIngress: true,
 			},
 			{
-				Entity: &storage.NetworkEntityInfo{
-					Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					Id:   deps[2].GetId(),
-				},
+				Entity:            depToInfo(deps[2]),
 				NonIsolatedEgress: true,
 			},
 			{
-				Entity: &storage.NetworkEntityInfo{
-					Type: storage.NetworkEntityInfo_DEPLOYMENT,
-					Id:   deps[3].GetId(),
-				},
+				Entity: depToInfo(deps[3]),
 			},
 		},
 	}

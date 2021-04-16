@@ -442,18 +442,57 @@ func (s *serviceImpl) GetAllowedPeersFromCurrentPolicyForDeployment(ctx context.
 	if !features.NetworkDetectionBaselineSimulation.Enabled() {
 		return nil, errors.New("network baseline policy simulator is currently not enabled")
 	}
-	// Get the deployment
-	deployment, found, err := s.deployments.GetDeployment(ctx, request.Id)
+	dep, networkTree, deploymentsInCluster, err := s.getRelevantClusterObjectsForDeployment(ctx, request.GetId())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, err
+	}
+	allowedPeers, err := s.getAllowedPeersForDeployment(ctx, dep, networkTree, deploymentsInCluster)
+	if err != nil {
+		return nil, err
+	}
+	resp := &v1.GetAllowedPeersFromCurrentPolicyForDeploymentResponse{}
+	for _, p := range allowedPeers {
+		entity := p.entity
+		for _, prop := range p.properties {
+			resp.AllowedPeers = append(resp.AllowedPeers, &v1.NetworkBaselineStatusPeer{
+				Entity: &v1.NetworkBaselinePeerEntity{
+					Id:   entity.GetId(),
+					Type: entity.GetType(),
+				},
+				Port:     prop.GetPort(),
+				Protocol: prop.GetProtocol(),
+				Ingress:  prop.GetIngress(),
+			})
+		}
+	}
+	return resp, nil
+}
+
+func (s *serviceImpl) getRelevantClusterObjectsForDeployment(ctx context.Context, deploymentID string) (*storage.Deployment,
+	tree.ReadOnlyNetworkTree, []*storage.Deployment, error) {
+	// Get the deployment
+	deployment, found, err := s.deployments.GetDeployment(ctx, deploymentID)
+	if err != nil {
+		return nil, nil, nil, status.Error(codes.Internal, err.Error())
 	} else if !found {
-		return nil, status.Error(codes.InvalidArgument, "specified deployment not found")
+		return nil, nil, nil, status.Error(codes.InvalidArgument, "specified deployment not found")
 	}
 
 	networkTree, err := s.getNetworkTree(deployment.GetClusterId())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, nil, nil, status.Error(codes.Internal, err.Error())
 	}
+	_, deploymentsInCluster, err := s.getDeployments(ctx, deployment.GetClusterId(), "", nil)
+	if err != nil {
+		return nil, nil, nil, status.Error(codes.Internal, err.Error())
+	}
+	return deployment, networkTree, deploymentsInCluster, nil
+}
+
+func (s *serviceImpl) getAllowedPeersForDeployment(ctx context.Context, deployment *storage.Deployment,
+	networkTree tree.ReadOnlyNetworkTree, deploymentsInCluster []*storage.Deployment) (
+	groupedEntitiesWithProperties, error) {
+
 	// Get the policies in the cluster
 	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(ctx, deployment.GetClusterId(), "")
 	if err != nil {
@@ -463,10 +502,6 @@ func (s *serviceImpl) GetAllowedPeersFromCurrentPolicyForDeployment(ctx context.
 	networkPolicies = s.graphEvaluator.GetAppliedPolicies([]*storage.Deployment{deployment}, networkTree, networkPolicies)
 	// Build a graph out of the network policies. We can later remove all the deployments/nodes that do not have any out
 	// edge to the deployment we want
-	_, deploymentsInCluster, err := s.getDeployments(ctx, deployment.GetClusterId(), "", nil)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
 	graphWithNetPols :=
 		s.graphEvaluator.GetGraph(
 			deployment.GetClusterId(),
@@ -479,23 +514,27 @@ func (s *serviceImpl) GetAllowedPeersFromCurrentPolicyForDeployment(ctx context.
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	return &v1.GetAllowedPeersFromCurrentPolicyForDeploymentResponse{AllowedPeers: allowedPeers}, nil
+	return allowedPeers, nil
 }
 
-func (s *serviceImpl) toNetworkBaselinePeerEntityProto(peer *v1.NetworkNode, port uint32, protocol storage.L4Protocol, ingress bool) *v1.NetworkBaselineStatusPeer {
-	return &v1.NetworkBaselineStatusPeer{
-		Entity: &v1.NetworkBaselinePeerEntity{
-			Id:   peer.GetEntity().GetId(),
-			Type: peer.GetEntity().GetType(),
-		},
-		Port:     port,
-		Protocol: protocol,
-		Ingress:  ingress,
+type groupedEntitiesWithProperties map[string]*entityWithProperties
+
+func (g groupedEntitiesWithProperties) addProperty(entity *storage.NetworkEntityInfo, property *storage.NetworkBaselineConnectionProperties) {
+	entry := g[entity.GetId()]
+	if entry == nil {
+		entry = &entityWithProperties{entity: entity}
+		g[entity.GetId()] = entry
 	}
+	entry.properties = append(entry.properties, property)
 }
 
-func (s *serviceImpl) getPeersOfDeploymentFromGraph(deployment *storage.Deployment, graph *v1.NetworkGraph) ([]*v1.NetworkBaselineStatusPeer, error) {
-	var allowedPeers []*v1.NetworkBaselineStatusPeer
+type entityWithProperties struct {
+	entity     *storage.NetworkEntityInfo
+	properties []*storage.NetworkBaselineConnectionProperties
+}
+
+func (s *serviceImpl) getPeersOfDeploymentFromGraph(deployment *storage.Deployment, graph *v1.NetworkGraph) (groupedEntitiesWithProperties, error) {
+	allowedPeers := make(groupedEntitiesWithProperties)
 	// Try to search for the deployment in question
 	deploymentIdx := -1
 	var deploymentIngressNonIsolated, deploymentEgressNonIsolated bool
@@ -508,10 +547,11 @@ func (s *serviceImpl) getPeersOfDeploymentFromGraph(deployment *storage.Deployme
 		for egressPeerIdx := range node.GetOutEdges() {
 			egressPeer := graph.GetNodes()[egressPeerIdx]
 			for _, prop := range node.GetOutEdges()[egressPeerIdx].GetProperties() {
-				allowedPeers =
-					append(
-						allowedPeers,
-						s.toNetworkBaselinePeerEntityProto(egressPeer, prop.GetPort(), prop.GetProtocol(), false))
+				allowedPeers.addProperty(egressPeer.GetEntity(), &storage.NetworkBaselineConnectionProperties{
+					Ingress:  false,
+					Port:     prop.GetPort(),
+					Protocol: prop.GetProtocol(),
+				})
 			}
 		}
 		// Record the idx
@@ -530,16 +570,23 @@ func (s *serviceImpl) getPeersOfDeploymentFromGraph(deployment *storage.Deployme
 		}
 		// If the peer node is non-isolated, we should add a wildcard flow to result
 		if deploymentIngressNonIsolated && node.GetNonIsolatedEgress() {
-			allowedPeers =
-				append(
-					allowedPeers,
-					s.toNetworkBaselinePeerEntityProto(node, 0, storage.L4Protocol_L4_PROTOCOL_ANY, true))
+			entry := allowedPeers[node.GetEntity().GetId()]
+			if entry == nil {
+				entry = &entityWithProperties{entity: node.GetEntity()}
+				allowedPeers[node.GetEntity().GetId()] = entry
+			}
+			allowedPeers.addProperty(node.GetEntity(), &storage.NetworkBaselineConnectionProperties{
+				Ingress:  true,
+				Port:     0,
+				Protocol: storage.L4Protocol_L4_PROTOCOL_ANY,
+			})
 		}
 		if deploymentEgressNonIsolated && node.GetNonIsolatedIngress() {
-			allowedPeers =
-				append(
-					allowedPeers,
-					s.toNetworkBaselinePeerEntityProto(node, 0, storage.L4Protocol_L4_PROTOCOL_ANY, false))
+			allowedPeers.addProperty(node.GetEntity(), &storage.NetworkBaselineConnectionProperties{
+				Ingress:  false,
+				Port:     0,
+				Protocol: storage.L4Protocol_L4_PROTOCOL_ANY,
+			})
 		}
 
 		// We should try to fill in ingress info for the deployment from this node.
@@ -548,10 +595,11 @@ func (s *serviceImpl) getPeersOfDeploymentFromGraph(deployment *storage.Deployme
 			continue
 		}
 		for _, prop := range props.GetProperties() {
-			allowedPeers =
-				append(
-					allowedPeers,
-					s.toNetworkBaselinePeerEntityProto(node, prop.GetPort(), prop.GetProtocol(), true))
+			allowedPeers.addProperty(node.GetEntity(), &storage.NetworkBaselineConnectionProperties{
+				Ingress:  true,
+				Port:     prop.GetPort(),
+				Protocol: prop.GetProtocol(),
+			})
 		}
 	}
 	return allowedPeers, nil
@@ -651,7 +699,11 @@ func (s *serviceImpl) GetDiffFlowsBetweenPolicyAndBaselineForDeployment(ctx cont
 		return nil, errors.New("network baseline policy simulator is currently not enabled")
 	}
 	// First get allowed peers from current network policies
-	allowedPeers, err := s.GetAllowedPeersFromCurrentPolicyForDeployment(ctx, request)
+	dep, networkTree, deploymentsInCluster, err := s.getRelevantClusterObjectsForDeployment(ctx, request.GetId())
+	if err != nil {
+		return nil, err
+	}
+	allowedPeers, err := s.getAllowedPeersForDeployment(ctx, dep, networkTree, deploymentsInCluster)
 	if err != nil {
 		return nil, err
 	}
@@ -663,75 +715,74 @@ func (s *serviceImpl) GetDiffFlowsBetweenPolicyAndBaselineForDeployment(ctx cont
 		return nil, status.Error(codes.NotFound, "requested deployment's baseline not found")
 	}
 
-	rsp := s.computeDiffFlowsBetweenPolicyAllowedAndBaseline(allowedPeers.GetAllowedPeers(), baseline)
+	// Populate a map of peer deployments by ID.
+	// To do this efficiently, first populate the map with just the IDs of the peers (and `nil` values)
+	// to mark which IDs we care about
+	// and then iterate over the deploymentsInCluster slice and populate the value in the map.
+	peerDeploymentsByID := make(map[string]*storage.Deployment)
+	for _, p := range baseline.GetPeers() {
+		if p.GetEntity().GetInfo().GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
+			peerDeploymentsByID[p.GetEntity().GetInfo().GetId()] = nil
+		}
+	}
+
+	for _, dep := range deploymentsInCluster {
+		if _, ok := peerDeploymentsByID[dep.GetId()]; !ok {
+			continue
+		}
+		peerDeploymentsByID[dep.GetId()] = dep
+	}
+
+	baselinePeers := make(groupedEntitiesWithProperties)
+	for _, p := range baseline.GetPeers() {
+		entity := p.GetEntity().GetInfo()
+		switch entity.GetType() {
+		case storage.NetworkEntityInfo_DEPLOYMENT:
+			entity.Desc = &storage.NetworkEntityInfo_Deployment_{
+				Deployment: &storage.NetworkEntityInfo_Deployment{
+					// Note that the two below lines are nil-safe, and will correctly return an empty string
+					// if we couldn't find this deployment in the clusterDeployments for whatever reason.
+					Name:      peerDeploymentsByID[entity.GetId()].GetName(),
+					Namespace: peerDeploymentsByID[entity.GetId()].GetNamespace(),
+				},
+			}
+		case storage.NetworkEntityInfo_EXTERNAL_SOURCE:
+			entity.Desc = networkTree.Get(entity.GetId()).GetDesc()
+		}
+		baselinePeers[entity.GetId()] = &entityWithProperties{
+			entity:     entity,
+			properties: p.GetProperties(),
+		}
+	}
+
+	rsp := s.computeDiffFlowsBetweenPolicyAllowedAndBaseline(allowedPeers, baselinePeers)
 	return rsp, nil
 }
 
-func (s *serviceImpl) constructGetDiffFlowsGroupedFlow(
-	id string,
-	entityType storage.NetworkEntityInfo_Type,
-	properties []*storage.NetworkBaselineConnectionProperties,
-) *v1.GetDiffFlowsGroupedFlow {
-	return &v1.GetDiffFlowsGroupedFlow{
-		Entity: &v1.NetworkBaselinePeerEntity{
-			Id:   id,
-			Type: entityType,
-		},
-		Properties: properties,
-	}
-}
-
 func (s *serviceImpl) computeDiffFlowsBetweenPolicyAllowedAndBaseline(
-	allowedPeers []*v1.NetworkBaselineStatusPeer,
-	baseline *storage.NetworkBaseline,
+	allowedPeers groupedEntitiesWithProperties,
+	baselinePeers groupedEntitiesWithProperties,
 ) *v1.GetDiffFlowsResponse {
-	// Group allowed peers by entity
-	allowedIDToEntity := make(map[string]*v1.GetDiffFlowsGroupedFlow)
-	for _, peer := range allowedPeers {
-		entityForPeer, ok := allowedIDToEntity[peer.GetEntity().GetId()]
-		if !ok {
-			entityForPeer = s.constructGetDiffFlowsGroupedFlow(peer.GetEntity().GetId(), peer.GetEntity().GetType(), make([]*storage.NetworkBaselineConnectionProperties, 0))
-			allowedIDToEntity[peer.GetEntity().GetId()] = entityForPeer
-		}
-		entityForPeer.Properties =
-			append(
-				allowedIDToEntity[peer.GetEntity().GetId()].Properties,
-				&storage.NetworkBaselineConnectionProperties{
-					Ingress:  peer.GetIngress(),
-					Port:     peer.GetPort(),
-					Protocol: peer.GetProtocol(),
-				})
-	}
-
-	rsp := &v1.GetDiffFlowsResponse{
-		Added:      make([]*v1.GetDiffFlowsGroupedFlow, 0),
-		Removed:    make([]*v1.GetDiffFlowsGroupedFlow, 0),
-		Reconciled: make([]*v1.GetDiffFlowsReconciledFlow, 0),
-	}
-	for _, baselinePeer := range baseline.GetPeers() {
-		if allowedPeer, ok := allowedIDToEntity[baselinePeer.GetEntity().GetInfo().GetId()]; !ok {
+	rsp := &v1.GetDiffFlowsResponse{}
+	for _, baselinePeer := range baselinePeers {
+		entity := baselinePeer.entity
+		if allowedPeer, ok := allowedPeers[entity.GetId()]; !ok {
 			// Baseline peer not found in the current set of allowed peers. This is a newly added peer
-			rsp.Added = append(rsp.Added,
-				s.constructGetDiffFlowsGroupedFlow(
-					baselinePeer.GetEntity().GetInfo().GetId(),
-					baselinePeer.GetEntity().GetInfo().GetType(),
-					baselinePeer.GetProperties()))
+			rsp.Added = append(rsp.Added, &v1.GetDiffFlowsGroupedFlow{
+				Entity:     baselinePeer.entity,
+				Properties: baselinePeer.properties,
+			})
 		} else {
 			// A new set of flows might be configured for this entity. Reconcile the difference if there is any
-			rsp.Reconciled = append(rsp.Reconciled,
-				s.reconcileFlowDifferences(
-					allowedPeer.GetEntity().GetId(),
-					allowedPeer.GetEntity().GetType(),
-					allowedPeer.GetProperties(),
-					baselinePeer.GetProperties()))
-			delete(allowedIDToEntity, allowedPeer.GetEntity().GetId())
+			rsp.Reconciled = append(rsp.Reconciled, s.reconcileFlowDifferences(entity, allowedPeer.properties, baselinePeer.properties))
+			delete(allowedPeers, entity.GetId())
 		}
 	}
 
 	// Since we have deleted matched peers from the currently allowed peers map. The peers left
 	// are the ones that will be removed.
-	for _, allowedPeer := range allowedIDToEntity {
-		rsp.Removed = append(rsp.Removed, allowedPeer)
+	for _, allowedPeer := range allowedPeers {
+		rsp.Removed = append(rsp.Removed, &v1.GetDiffFlowsGroupedFlow{Entity: allowedPeer.entity, Properties: allowedPeer.properties})
 	}
 
 	return rsp
@@ -751,19 +802,10 @@ func (s *serviceImpl) toConnectionPropertiesStruct(properties *storage.NetworkBa
 	}
 }
 
-func (s *serviceImpl) reconcileFlowDifferences(
-	id string,
-	entityType storage.NetworkEntityInfo_Type,
-	allowedProperties, baselineProperties []*storage.NetworkBaselineConnectionProperties,
-) *v1.GetDiffFlowsReconciledFlow {
+func (s *serviceImpl) reconcileFlowDifferences(entity *storage.NetworkEntityInfo, allowedProperties,
+	baselineProperties []*storage.NetworkBaselineConnectionProperties) *v1.GetDiffFlowsReconciledFlow {
 	result := &v1.GetDiffFlowsReconciledFlow{
-		Entity: &v1.NetworkBaselinePeerEntity{
-			Id:   id,
-			Type: entityType,
-		},
-		Added:     make([]*storage.NetworkBaselineConnectionProperties, 0),
-		Removed:   make([]*storage.NetworkBaselineConnectionProperties, 0),
-		Unchanged: make([]*storage.NetworkBaselineConnectionProperties, 0),
+		Entity: entity,
 	}
 	// Convert allowedProperties to set for easy lookup
 	allowedPropertiesSet := make(map[connectionProperties]struct{})
