@@ -2,6 +2,12 @@ ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8/ubi
 ARG BASE_TAG=8.2
 
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
+
+COPY bundle.tar.gz /
+WORKDIR /bundle
+RUN tar -zxf /bundle.tar.gz
+
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
 LABEL name="main-rhel" \
@@ -15,28 +21,24 @@ ENV PATH="/stackrox:$PATH" \
 
 COPY signatures/RPM-GPG-KEY-CentOS-Official /
 COPY scripts /stackrox/
-COPY bundle.tar.gz /
+COPY --from=extracted_bundle /bundle/assets/ /assets/
+COPY --from=extracted_bundle /bundle/stackrox/ /stackrox/
+COPY --from=extracted_bundle /bundle/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
+COPY --from=extracted_bundle /bundle/ui/ /ui/
+COPY --from=extracted_bundle /bundle/usr/local/bin/ldb /usr/local/bin/
+COPY --from=extracted_bundle /bundle/snappy.rpm /tmp/
 
 RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     ln -s entrypoint-wrapper.sh /stackrox/compliance && \
     ln -s entrypoint-wrapper.sh /stackrox/kubernetes-sensor && \
     ln -s entrypoint-wrapper.sh /stackrox/sensor-upgrader && \
-    tar -zxf bundle.tar.gz ./assets/ && \
     ln -s /assets/downloads/cli/roxctl-linux /stackrox/roxctl && \
-    tar -zxf bundle.tar.gz ./snappy.rpm && \
-    tar -zxf bundle.tar.gz ./stackrox/central && \
-    tar -zxf bundle.tar.gz ./stackrox/bin/ && \
-    tar -zxf bundle.tar.gz ./stackrox/static-data/ && \
-    tar -zxf bundle.tar.gz ./THIRD_PARTY_NOTICES/ && \
-    tar -zxf bundle.tar.gz ./ui/ && \
-    tar -zxf bundle.tar.gz ./usr/local/bin/ldb && \
-    rm -f bundle.tar.gz && \
     rpm --import RPM-GPG-KEY-CentOS-Official && \
     dnf upgrade -y && \
-    dnf install -y lz4 bzip2 snappy.rpm && \
+    dnf install -y lz4 bzip2 /tmp/snappy.rpm && \
     dnf clean all && \
     rm -rf /var/cache/dnf && \
-    rm snappy.rpm RPM-GPG-KEY-CentOS-Official && \
+    rm /tmp/snappy.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps rpm rpm-build-libs rpm-libs python3-rpm subscription-manager python3-subscription-manager-rhsm yum $(rpm -qa *dnf*) python3-hawkey && \
     # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
