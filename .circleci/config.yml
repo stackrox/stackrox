@@ -3953,13 +3953,22 @@ jobs:
       - run:
           name: Set Central to a 58 image
           command: |
+            git checkout b7c73d4d9d627b470d047ea4f026818ed92550d3
+            # We explicitly need to set CIRCLE_TAG to empty, as it will otherwise dictate
+            # the output of `make tag`.
+            cci-export MAIN_IMAGE_TAG "$(make --quiet tag CIRCLE_TAG=)"
+
             cci-export FORCE_ROLLBACK_VERSION 3.0.58.x-41-gb7c73d4d9d
             kubectl -n stackrox set image deploy/central "central=stackrox/main:$FORCE_ROLLBACK_VERSION"
 
       - *waitForAPI
       - validate-upgrade:
           upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
-          desc: "Validate upgrade to 3.0.58.x"
+          desc: "Validate Central is functional after setting to 3.0.58.x by running upgrade test as a smoke test"
+
+      - run:
+          name: Checkout current commit again
+          command: git reset --hard "${CIRCLE_SHA1}"
 
       - run:
           name: Set Central to current commit
@@ -3982,6 +3991,12 @@ jobs:
             [[ "$(echo "$upgradeStatus" | jq '.upgradeStatus.canRollbackAfterUpgrade' -r)" == "true" ]]
             [[ "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceAvailableForRollbackAfterUpgrade' -r)" -gt "$(echo "$upgradeStatus" | jq '.upgradeStatus.spaceRequiredForRollbackAfterUpgrade' -r)" ]]
 
+            # checkout git to 58 so that it can be used for tests
+            git checkout b7c73d4d9d627b470d047ea4f026818ed92550d3
+            # We explicitly need to set CIRCLE_TAG to empty, as it will otherwise dictate
+            # the output of `make tag`.
+            cci-export MAIN_IMAGE_TAG "$(make --quiet tag CIRCLE_TAG=)"
+
             # Force rollback
             kubectl -n stackrox get configmap/central-config -o yaml | yq e '{"data": .data}' - > /tmp/force_rollback_patch
             central_config=`yq e '.data["central-config.yaml"]' /tmp/force_rollback_patch | yq e ".maintenance.forceRollbackVersion = \"$FORCE_ROLLBACK_VERSION\"" -`
@@ -3994,7 +4009,11 @@ jobs:
       - *waitForAPI
       - validate-upgrade:
           upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
-          desc: "Validate Central force rollback to 58"
+          desc: "Validate Central is functional after force rollback to 58 by running upgrade test as a smoke test"
+
+      - run:
+          name: Checkout current commit again
+          command: git reset --hard "${CIRCLE_SHA1}"
 
       - run:
           name: Set Central + Scanner images to most recent commit
