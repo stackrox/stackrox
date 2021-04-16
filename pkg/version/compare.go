@@ -2,6 +2,7 @@ package version
 
 import (
 	"math"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -10,8 +11,9 @@ import (
 )
 
 var (
-	log          = logging.LoggerForModule()
-	hashTagRegex = regexp.MustCompile(hashTagRegexStr)
+	log              = logging.LoggerForModule()
+	hashTagRegex     = regexp.MustCompile(hashTagRegexStr)
+	compareDevBuilds = strings.ToLower(os.Getenv("ROX_DONT_COMPARE_DEV_BUILDS")) != "true"
 )
 
 func convertToIntArray(version string) (out []int) {
@@ -85,6 +87,10 @@ func CompareVersions(versionA, versionB string) int {
 // versionB or 1 if version A is a greater version than versionB.
 // It returns incomparableRes if they are not comparable.
 func CompareVersionsOr(versionA, versionB string, incomparableRes int) int {
+	if !compareDevBuilds {
+		return CompareReleaseVersionsOr(versionA, versionB, incomparableRes)
+	}
+
 	if versionA == versionB {
 		return 0
 	}

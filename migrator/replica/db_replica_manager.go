@@ -34,7 +34,18 @@ const (
 	bleveIndex = "scorch.bleve"
 	index      = "index"
 
-	errNoPrevious                   = "Database downgrade is not supported. No previous database for force rollback."
+	errNoPrevious         = "Downgrade is not supported. No previous database for force rollback."
+	errNoPreviousInDevEnv = `
+Downgrade is not supported.
+We compare dev builds by their release tags. For example, 3.0.58.x-58-g848e7365da is greater than
+3.0.58.x-57-g848e7365da. However if the dev builds are on diverged branches, the sequence could be wrong.
+These builds are not comparable.
+
+To address this:
+1. if you are testing migration, you can merge or rebase to make sure the builds are not diverged; or
+2. if you simply want to switch the image, you can disable upgrade rollback and bypass this check by:
+kubectl -n stackrox set env deploy/central ROX_DONT_COMPARE_DEV_BUILDS=true
+`
 	errForceUpgradeDisabled         = "Central force rollback is disabled. If you want to force rollback to the database before last upgrade, please enable force rollback to current version in central config. Note: all data updates since last upgrade will be lost."
 	errPreviousMismatchWithVersions = "Database downgrade is not supported. We can only rollback to the central version before last upgrade. Last upgrade %s, current version %s"
 )
@@ -128,7 +139,10 @@ func Scan(basePath string, forceVersion string) (*DBReplicaManager, error) {
 		// If there is no previous replica or force rollback is not requested, we cannot downgrade.
 		prevReplica, prevExists := manager.replicaMap[previousReplica]
 		if !prevExists {
-			return nil, errors.New(errNoPrevious)
+			if currReplica.getSeqNum() > migrations.CurrentDBVersionSeqNum() || version.GetVersionKind(currReplica.getVersion()) == version.ReleaseKind && version.GetVersionKind(version.GetMainVersion()) == version.ReleaseKind {
+				return nil, errors.New(errNoPrevious)
+			}
+			return nil, errors.New(errNoPreviousInDevEnv)
 		}
 		// Force rollback is not requested.
 		if manager.forceRollbackVersion != version.GetMainVersion() {
