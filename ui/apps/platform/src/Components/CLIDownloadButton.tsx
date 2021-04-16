@@ -1,22 +1,18 @@
 import React, { ReactElement } from 'react';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
-import * as Icon from 'react-feather';
+import { DownloadIcon } from '@patternfly/react-icons';
 import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 import { actions as CLIDownloadActions } from 'reducers/cli';
 
 type CLIDownloadButtonProps = {
     toggleCLIDownloadView: () => void;
-    topNavBtnTextClass: string;
-    topNavBtnSvgClass: string;
     topNavBtnClass: string;
 };
 
 const CLIDownloadButton = ({
     toggleCLIDownloadView,
-    topNavBtnTextClass,
-    topNavBtnSvgClass,
     topNavBtnClass,
 }: CLIDownloadButtonProps): ReactElement => (
     <Tooltip content={<TooltipOverlay>CLI</TooltipOverlay>} className="sm:visible md:invisible">
@@ -25,8 +21,8 @@ const CLIDownloadButton = ({
             onClick={toggleCLIDownloadView}
             className={`${topNavBtnClass} ignore-cli-clickoutside`}
         >
-            <Icon.Download className={topNavBtnSvgClass} />
-            <span className={topNavBtnTextClass}>CLI</span>
+            <DownloadIcon alt="" />
+            <span className="ml-2">CLI</span>
         </button>
     </Tooltip>
 );

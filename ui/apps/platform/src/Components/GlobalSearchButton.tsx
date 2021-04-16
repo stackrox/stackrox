@@ -1,32 +1,28 @@
 import React, { ReactElement } from 'react';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
-import * as Icon from 'react-feather';
+import { SearchIcon } from '@patternfly/react-icons';
 import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 
 type GlobalSearchButtonProps = {
     toggleGlobalSearchView: () => void;
-    topNavBtnTextClass: string;
-    topNavBtnSvgClass: string;
     topNavBtnClass: string;
 };
 
 const GlobalSearchButton = ({
     toggleGlobalSearchView,
-    topNavBtnTextClass,
-    topNavBtnSvgClass,
     topNavBtnClass,
 }: GlobalSearchButtonProps): ReactElement => (
     <Tooltip content={<TooltipOverlay>Search</TooltipOverlay>} className="sm:visible md:invisible">
         <button
             type="button"
             onClick={toggleGlobalSearchView}
-            className={`${topNavBtnClass} border-l border-r border-base-400 ignore-react-onclickoutside`}
+            className={`${topNavBtnClass} ignore-react-onclickoutside`}
         >
-            <Icon.Search className={topNavBtnSvgClass} />
-            <span className={topNavBtnTextClass}>Search</span>
+            <SearchIcon alt="" />
+            <span className="ml-2">Search</span>
         </button>
     </Tooltip>
 );

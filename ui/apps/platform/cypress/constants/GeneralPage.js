@@ -1,7 +1,7 @@
 const selectors = {
     navLinks: {
-        first: 'nav.left-navigation li:first a',
-        others: 'nav.left-navigation li:not(:first) a',
+        first: 'ul.pf-c-nav__list li:first a',
+        others: 'ul.pf-c-nav__list li:not(:first) a',
         list: 'nav.top-navigation li',
         apidocs: '[data-testid="API Reference"]',
     },

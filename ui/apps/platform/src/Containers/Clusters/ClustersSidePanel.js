@@ -1,8 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
-import { selectors } from 'reducers';
-import { createStructuredSelector } from 'reselect';
 import { ArrowRight, Check } from 'react-feather';
 import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
@@ -22,6 +19,7 @@ import PanelButton from 'Components/PanelButton';
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import { useTheme } from 'Containers/ThemeProvider';
 import useInterval from 'hooks/useInterval';
+import useMetadata from 'hooks/useMetadata';
 import {
     getClusterById,
     saveCluster,
@@ -62,7 +60,9 @@ const validate = (values) => {
     return errors;
 };
 
-function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }) {
+function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
+    const metadata = useMetadata();
+
     const defaultCluster = cloneDeep(newClusterDefault);
     const envAwareClusterDefault = {
         ...defaultCluster,
@@ -359,8 +359,6 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId }
 }
 
 ClustersSidePanel.propTypes = {
-    metadata: PropTypes.shape({ version: PropTypes.string, releaseBuild: PropTypes.bool })
-        .isRequired,
     setSelectedClusterId: PropTypes.func.isRequired,
     selectedClusterId: PropTypes.string,
 };
@@ -369,8 +367,4 @@ ClustersSidePanel.defaultProps = {
     selectedClusterId: '',
 };
 
-const mapStateToProps = createStructuredSelector({
-    metadata: selectors.getMetadata,
-});
-
-export default connect(mapStateToProps)(ClustersSidePanel);
+export default ClustersSidePanel;

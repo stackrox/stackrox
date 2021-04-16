@@ -11,8 +11,7 @@ import { actions as authActions } from 'reducers/auth';
 import Menu from 'Components/Menu';
 import User from 'utils/User';
 
-const topNavMenuBtnClass =
-    'no-underline text-base-600 hover:bg-base-200 items-center cursor-pointer';
+const topNavMenuBtnClass = 'no-underline text-base-600 items-center cursor-pointer';
 
 const MenuOptionComponent = ({ name, email, roles }) => (
     <div className="flex flex-col pl-2">
@@ -69,7 +68,7 @@ function TopNavBarMenu({ logout, userData }) {
     );
 
     return (
-        <div className="flex items-center border-l border-base-400 hover:bg-base-200">
+        <div className="flex items-center">
             <Menu
                 className={`${topNavMenuBtnClass} h-full`}
                 menuClassName="min-w-48"

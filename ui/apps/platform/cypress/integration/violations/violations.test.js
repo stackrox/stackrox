@@ -62,7 +62,7 @@ describe('Violations page', () => {
     };
 
     it('should select item in nav bar', () => {
-        cy.get(ViolationsPageSelectors.navLink).should('have.class', 'bg-primary-700');
+        cy.get(ViolationsPageSelectors.navLink).should('have.class', 'pf-m-current');
     });
 
     it('should have violations in table', () => {

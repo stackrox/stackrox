@@ -22,7 +22,8 @@ describe('User Info', () => {
         cy.route('GET', api.auth.authStatus, 'fixture:auth/basicAuthAdminStatus').as('authStatus');
     }
 
-    describe('User Info in Top Navigation', () => {
+    // TODO: Fix test for ROX-6826
+    xdescribe('User Info in Top Navigation', () => {
         it('should show initials in the user avatar', () => {
             mockWithAdminUser();
             cy.visit(dashboardURL);

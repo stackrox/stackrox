@@ -73,7 +73,8 @@ describe('Policies basic tests', () => {
         });
 
         it('should have selected item in nav bar', () => {
-            cy.get(selectors.configure).should('have.class', 'bg-primary-700');
+            cy.get(selectors.configure).click();
+            cy.get(selectors.navLink).should('have.class', 'pf-m-current');
         });
 
         it('should open side panel and check for the policy name', () => {

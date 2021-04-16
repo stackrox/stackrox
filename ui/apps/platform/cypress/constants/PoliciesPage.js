@@ -1,8 +1,10 @@
+import navigationSelectors from '../selectors/navigation';
+
 export const url = '/main/policies';
 
 export const selectors = {
-    configure: 'nav.left-navigation li:contains("Platform Configuration") a',
-    navLink: '.navigation-panel li:contains("System Policies") a',
+    configure: `${navigationSelectors.navExpandable}:contains("Platform Configuration")`,
+    navLink: `${navigationSelectors.navLinks}:contains("System Policies")`,
     newPolicyButton: 'button:contains("New")',
     importPolicyButton: 'button[data-testid="import-policy-btn"]:contains("Import Policy")',
     singlePolicyExportButton: 'button[data-testid="single-policy-export"]',

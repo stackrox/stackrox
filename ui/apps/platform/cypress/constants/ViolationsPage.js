@@ -1,12 +1,13 @@
 import { violationTagsSelectors } from '../selectors/tags';
 import { violationCommentsSelectors, commentsDialogSelectors } from '../selectors/comments';
 import selectSelectors from '../selectors/select';
+import navigationSelectors from '../selectors/navigation';
 import scopeSelectors from '../helpers/scopeSelectors';
 
 export const url = '/main/violations';
 
 export const selectors = {
-    navLink: 'nav li:contains("Violations") a',
+    navLink: `${navigationSelectors.navLinks}:contains("Violations")`,
     rows: '.rt-tbody .rt-tr',
     activeRow: '.row-active',
     firstTableRow: '.rt-tbody :nth-child(1) > .rt-tr',

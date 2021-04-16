@@ -12,6 +12,8 @@
     "dependencies": {
         "@apollo/client": "^3.3.11",
         "@lifeomic/axios-fetch": "^1.5.1",
+        "@patternfly/react-core": "^4.101.3",
+        "@patternfly/react-icons": "^4.9.9",
         "@stackrox/ui-components": "*",
         "axios": "^0.21.1",
         "computed-style-to-inline-style": "^3.0.0",

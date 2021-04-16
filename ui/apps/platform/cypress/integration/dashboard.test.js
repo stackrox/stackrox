@@ -13,7 +13,7 @@ describe('Dashboard page', () => {
 
     it('should select item in nav bar', () => {
         cy.visit(dashboardUrl);
-        cy.get(selectors.navLink).should('have.class', 'bg-primary-700');
+        cy.get(selectors.navLink).should('have.class', 'pf-m-current');
     });
 
     it('should display system violations tiles', () => {

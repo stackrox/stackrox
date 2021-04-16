@@ -1,8 +1,6 @@
 /* eslint-disable react/jsx-no-bind */
 import React, { useContext, useState, useReducer } from 'react';
 import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import { DownloadCloud, Plus, Trash2 } from 'react-feather';
 import get from 'lodash/get';
@@ -17,8 +15,8 @@ import { searchParams } from 'constants/searchParams';
 import workflowStateContext from 'Containers/workflowStateContext';
 import useInterval from 'hooks/useInterval';
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import useMetadata from 'hooks/useMetadata';
 import { knownBackendFlags } from 'utils/featureFlags';
-import { selectors } from 'reducers';
 import {
     fetchClustersAsArray,
     deleteClusters,
@@ -32,8 +30,10 @@ import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
 
-function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOptions, metadata }) {
+function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOptions }) {
     const workflowState = useContext(workflowStateContext);
+    const metadata = useMetadata();
+
     const pageSearch = workflowState.search[searchParams.page];
 
     const [checkedClusterIds, setCheckedClusters] = useState([]);
@@ -286,7 +286,6 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
 }
 
 ClustersTablePanel.propTypes = {
-    metadata: PropTypes.shape({ version: PropTypes.string }).isRequired,
     selectedClusterId: PropTypes.string,
     setSelectedClusterId: PropTypes.func.isRequired,
     searchOptions: PropTypes.arrayOf(PropTypes.string),
@@ -297,8 +296,4 @@ ClustersTablePanel.defaultProps = {
     searchOptions: [],
 };
 
-const mapStateToProps = createStructuredSelector({
-    metadata: selectors.getMetadata,
-});
-
-export default connect(mapStateToProps, null)(ClustersTablePanel);
+export default ClustersTablePanel;

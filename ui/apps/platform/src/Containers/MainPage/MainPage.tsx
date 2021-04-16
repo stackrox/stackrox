@@ -1,22 +1,23 @@
-import React, { ReactElement } from 'react';
+import React, { ReactElement, useState } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { History } from 'history';
+import { Page } from '@patternfly/react-core';
 
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { actions as cliSearchActions } from 'reducers/cli';
 
 import Notifications from 'Containers/Notifications';
-import TopNavigation from 'Containers/Navigation/TopNavigation';
-import LeftNavigation from 'Containers/Navigation/LeftNavigation';
+import NavigationSideBar from 'Containers/Navigation/NavigationSideBar';
 import SearchModal from 'Containers/Search/SearchModal';
 import CLIModal from 'Containers/CLI/CLIModal';
 import UnreachableWarning from 'Containers/UnreachableWarning';
-import VersionOutOfDate from 'Containers/VersionOutOfDate';
-import Body from 'Containers/MainPage/Body';
 import AppWrapper from 'Containers/AppWrapper';
 import CredentialExpiryBanners from 'Containers/CredentialExpiry/CredentialExpiryBanners';
+import VersionOutOfDate from 'Containers/VersionOutOfDate';
+import Body from 'Containers/MainPage/Body';
+import Masthead from 'Containers/MainPage/Masthead';
 
 const onCloseHandler = (history, callBack) => (toURL) => {
     callBack();
@@ -46,21 +47,27 @@ function MainPage({
         stale: false,
     },
 }: MainPageProps): ReactElement {
+    const [isNavOpen, setNavOpen] = useState(true);
+    function onNavToggle() {
+        setNavOpen(!isNavOpen);
+    }
+
+    const Header = <Masthead isNavOpen={isNavOpen} onNavToggle={onNavToggle} />;
+
     return (
         <AppWrapper>
             <div className="flex flex-1 flex-col h-full relative">
                 <UnreachableWarning />
                 <Notifications />
                 <CredentialExpiryBanners />
-                <div className="navigation-gradient" />
                 {metadata?.stale && <VersionOutOfDate />}
-                <header className="flex z-20 ignore-react-onclickoutside">
-                    <TopNavigation />
-                </header>
-                <div className="flex flex-1 flex-row">
-                    <LeftNavigation />
+                <Page
+                    mainContainerId="main-page-container"
+                    header={Header}
+                    sidebar={<NavigationSideBar isNavOpen={isNavOpen} />}
+                >
                     <Body />
-                </div>
+                </Page>
                 {isGlobalSearchView && (
                     <SearchModal onClose={onCloseHandler(history, toggleGlobalSearchView)} />
                 )}

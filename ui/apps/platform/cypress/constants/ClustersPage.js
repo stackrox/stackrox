@@ -3,8 +3,8 @@ import scopeSelectors from '../helpers/scopeSelectors';
 export const clustersUrl = '/main/clusters';
 
 export const selectors = {
-    configure: 'nav.left-navigation li:contains("Platform Configuration") a',
-    navLink: '.navigation-panel li:contains("Clusters") a',
+    configure: 'ul.pf-c-nav__list li button:contains("Platform Configuration")',
+    navLink: 'ul.pf-c-nav__list li a.pf-c-nav__link:contains("Clusters")',
     header: '[data-testid="header-text"]',
     autoUpgradeInput: '[id="enableAutoUpgrade"]',
     clusters: scopeSelectors('[data-testid="clusters-table"]', {

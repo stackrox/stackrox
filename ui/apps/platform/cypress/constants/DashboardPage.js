@@ -1,8 +1,9 @@
 import { severityColorMap } from '../../src/constants/severityColors';
+import navigationSelectors from '../selectors/navigation';
 
 export const url = '/main/dashboard';
 export const selectors = {
-    navLink: 'nav li:contains("Dashboard") a',
+    navLink: `${navigationSelectors.navLinks}:contains("Dashboard")`,
     buttons: {
         viewAll: 'button:contains("View All")',
     },

@@ -1,0 +1,17 @@
+/*
+   This file is for temporary overrides as we migrate the app to PatternFly.
+
+   We should have a goal of eventually being able to delete this file.
+ */
+
+.pf-c-page__main {
+    --pf-c-page__main--ZIndex: auto;
+}
+
+.pf-c-page__sidebar {
+    --pf-c-page__sidebar--ZIndex: 50;
+}
+
+[data-testid='top-nav-btns'] {
+    height: 4.75rem !important;
+}

@@ -1,12 +1,13 @@
 import table from '../selectors/table';
 import toast from '../selectors/toast';
 import tooltip from '../selectors/tooltip';
+import navigationSelectors from '../selectors/navigation';
 
 export const url = '/main/integrations';
 
 export const selectors = {
-    configure: 'nav.left-navigation li:contains("Platform Configuration") a',
-    navLink: '.navigation-panel li:contains("Integrations") a',
+    configure: `${navigationSelectors.navExpandable}:contains("Platform Configuration")`,
+    navLink: `${navigationSelectors.navLinks}:contains("Integrations")`,
     kubernetesTile: 'div[role="button"]:contains("Kubernetes")',
     dockerRegistryTile: 'div[role="button"]:contains("Generic Docker Registry")',
     tiles: 'div[role="button"]',

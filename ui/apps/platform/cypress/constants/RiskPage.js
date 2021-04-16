@@ -4,6 +4,7 @@ import { processCommentsSelectors, commentsDialogSelectors } from '../selectors/
 import selectSelectors from '../selectors/select';
 import paginationSelectors from '../selectors/pagination';
 import tooltipSelectors from '../selectors/tooltip';
+import navigationSelectors from '../selectors/navigation';
 import scopeSelectors from '../helpers/scopeSelectors';
 
 export const url = '/main/risk';
@@ -74,7 +75,7 @@ const eventTimelineSelectors = scopeSelectors('[data-testid="event-timeline"]', 
 });
 
 export const selectors = {
-    risk: 'nav.left-navigation li:contains("Risk") a',
+    risk: `${navigationSelectors.navLinks}:contains("Risk")`,
     errMgBox: 'div.error-message',
     panelTabs: {
         riskIndicators: 'button[data-testid="tab"]:contains("Risk Indicators")',

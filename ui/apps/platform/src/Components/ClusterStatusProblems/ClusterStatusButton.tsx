@@ -6,14 +6,11 @@ import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
 
 import { clustersBasePath } from 'routePaths';
 
-const bgHoverDefault = 'hover:bg-base-200';
 const fgColorDefault = 'text-base-600';
 
-const bgHoverUnhealthy = 'hover:bg-alert-200';
 const fgColorUnhealthy = 'text-alert-700';
 const bothColorsUnhealthy = `bg-alert-200 ${fgColorUnhealthy}`;
 
-const bgHoverDegraded = 'hover:bg-warning-200';
 const fgColorDegraded = 'text-warning-700';
 
 const trClassName = 'align-top leading-normal';
@@ -97,15 +94,11 @@ const ClusterStatusButton = ({
         </span>
     ) : null;
 
-    let bgHover = bgHoverDefault;
     let iconColor = fgColorDefault;
-
     // The color indicates the more severe health problem.
     if (hasUnhealthyClusters) {
-        bgHover = bgHoverUnhealthy;
         iconColor = fgColorUnhealthy;
     } else if (hasDegradedClusters) {
-        bgHover = bgHoverDegraded;
         iconColor = fgColorDegraded;
     }
 
@@ -136,7 +129,7 @@ const ClusterStatusButton = ({
                 aria-label="Cluster Status Problems"
                 type="button"
                 onClick={onClick}
-                className={`relative flex font-600 h-full items-center px-4 border-base-400 border-l border-r-0 ${bgHover}`}
+                className="relative flex font-600 h-full items-center pt-1 px-4"
             >
                 {unhealthyElement}
                 {degradedElement}

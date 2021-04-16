@@ -1,6 +1,7 @@
 import { url as networkUrl, selectors as networkPageSelectors } from '../constants/NetworkPage';
 import { url as riskURL, selectors as riskPageSelectors } from '../constants/RiskPage';
 import toastSelectors from '../selectors/toast';
+import navigationSelectors from '../selectors/navigation';
 
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
@@ -35,10 +36,12 @@ describe('Network page', () => {
     withAuth();
 
     it('should have selected item in nav bar', () => {
+        const networkNavigationLink = `${navigationSelectors.navLinks}:contains('Network')`;
+
         navigateToNetworkGraphWithMockedData();
 
-        cy.get(networkPageSelectors.network).click();
-        cy.get(networkPageSelectors.network).should('have.class', 'bg-primary-700');
+        cy.get(networkNavigationLink).click();
+        cy.get(networkNavigationLink).should('have.class', 'pf-m-current');
     });
 
     it('should display a legend', () => {

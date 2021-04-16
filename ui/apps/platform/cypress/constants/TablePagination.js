@@ -1,8 +1,10 @@
+import navigationSelectors from '../selectors/navigation';
+
 export const url = '/main/policies';
 
 export const selectors = {
-    configure: 'nav.left-navigation li:contains("Platform Configuration") a',
-    navLink: '.navigation-panel li:contains("System Policies") a',
+    configure: `${navigationSelectors.navExpandable}:contains("Platform Configuration")`,
+    navLink: `${navigationSelectors.navLinks}:contains("System Policies")`,
     paginationHeader: '[data-testid="pagination-header"]',
     prevPageButton: '[data-testid="prev-page-button"]',
     nextPageButton: '[data-testid="next-page-button"]',

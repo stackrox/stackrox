@@ -2,7 +2,8 @@ import { selectors } from '../constants/SearchPage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 
-describe('Global Search Modal', () => {
+// TODO: Fix for ROX-6826
+describe.skip('Global Search Modal', () => {
     withAuth();
 
     beforeEach(() => {
@@ -17,7 +18,8 @@ describe('Global Search Modal', () => {
         cy.get(selectors.globalSearchButton).click();
     });
 
-    it('Should have 6 tabs with the "All" tab selected by default', () => {
+    // TODO: Fix for ROX-6826
+    xit('Should have 6 tabs with the "All" tab selected by default', () => {
         cy.wait('@globalSearchOptions');
         cy.get(selectors.globalSearch.input).type('Cluster:{enter}', {
             force: true,

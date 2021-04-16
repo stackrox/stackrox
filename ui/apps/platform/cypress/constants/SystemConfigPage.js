@@ -1,10 +1,12 @@
+import navigationSelectors from '../selectors/navigation';
+
 export const systemConfigUrl = '/main/systemconfig';
 
 const selectors = {
     navLinks: {
-        config: '[data-testid="configure"]',
+        configure: `${navigationSelectors.navExpandable}:contains("Platform Configuration")`,
         subnavMenu: '[data-testid="configure-subnav"]',
-        systemConfig: '[data-testid="system-config"]',
+        systemConfig: `${navigationSelectors.navLinks}:contains("System Configuration")`,
         topNav: '[data-testid="top-nav-btns"] button',
         logout: '[data-testid="Logout"]',
     },

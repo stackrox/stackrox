@@ -1,8 +1,8 @@
 import React, { ReactElement, useState, useEffect } from 'react';
 import { connect } from 'react-redux';
+import { Switch } from '@patternfly/react-core';
 
 import { actions as graphActions } from 'reducers/network/graph';
-import RadioButtonGroup from 'Components/RadioButtonGroup';
 import useCases from 'constants/useCaseTypes';
 
 export const orchestratorComponentOption = [
@@ -35,20 +35,11 @@ const OrchestratorComponentsToggle = ({
         }
     }, []);
 
-    const buttons = [
-        {
-            text: 'Hide',
-            value: 'false',
-        },
-        {
-            text: 'Show',
-            value: 'true',
-        },
-    ];
     function handleToggle(value) {
-        localStorage.setItem(ORCHESTRATOR_COMPONENT_KEY, value);
+        const storedValue = value ? 'true' : 'false';
+        localStorage.setItem(ORCHESTRATOR_COMPONENT_KEY, storedValue);
         if (useCase === useCases.NETWORK) {
-            setShowOrchestratorComponents(value);
+            setShowOrchestratorComponents(storedValue);
             // we don't want to force reload on the network graph since search filters are not URL based
             updateNetworkNodes();
         } else {
@@ -57,18 +48,18 @@ const OrchestratorComponentsToggle = ({
         }
     }
 
+    // TODO: update wrapper classes to PatternFly, like  `pf-u-background-color-100
     return (
-        <div className="border-base-400 border-dashed border-r p-3 flex flex-col justify-center items-center">
-            <RadioButtonGroup
-                buttons={buttons}
-                onClick={handleToggle}
-                selected={showOrchestratorComponents}
-                groupClassName="h-auto w-24 my-1"
-                testId="orchestrator-components-toggle"
+        <div className="flex justify-center items-center p-3">
+            <Switch
+                id="orchestrator-components-toggle"
+                aria-label="Toggle Showing Orchestrator Components"
+                isChecked={showOrchestratorComponents === 'true'}
+                onChange={handleToggle}
             />
-            <div className="font-600 font-condensed uppercase text-base-500 flex justify-center pt-px">
-                Orchestrator Components
-            </div>
+            <span className="p-2 text-base-900" aria-hidden="true">
+                Show Orchestrator Components
+            </span>
         </div>
     );
 };

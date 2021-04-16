@@ -22,6 +22,7 @@ import {
 } from 'routePaths';
 import { knownBackendFlags } from 'utils/featureFlags';
 import useFeatureFlagEnabled from 'hooks/useFeatureFlagEnabled';
+import { useTheme } from 'Containers/ThemeProvider';
 
 import asyncComponent from 'Components/AsyncComponent';
 import ProtectedRoute from 'Components/ProtectedRoute';
@@ -49,12 +50,17 @@ const AsyncVulnMgmtPage = asyncComponent(() => import('Containers/Workflow/Workf
 const AsyncSystemHealthPage = asyncComponent(() => import('Containers/SystemHealth/DashboardPage'));
 
 function Body(): ReactElement {
+    const { isDarkMode } = useTheme();
     const isScopedAccessControlEnabled = useFeatureFlagEnabled(
         knownBackendFlags.ROX_SCOPED_ACCESS_CONTROL
     );
 
     return (
-        <div className="flex flex-col h-full w-full relative overflow-auto">
+        <div
+            className={`flex flex-col h-full w-full relative overflow-auto ${
+                isDarkMode ? 'bg-base-0' : 'bg-base-100'
+            }`}
+        >
             <ErrorBoundary>
                 <Switch>
                     <ProtectedRoute path={dashboardPath} component={AsyncDashboardPage} />

@@ -3,7 +3,7 @@ import withAuth from '../helpers/basicAuth';
 import { system as configApi } from '../constants/apiEndpoints';
 
 function openConfigNav() {
-    cy.get(selectors.navLinks.config).click();
+    cy.get(selectors.navLinks.configure).click();
 }
 
 function openTopNav() {
@@ -139,7 +139,8 @@ describe('System Configuration', () => {
         cy.get(selectors.footer.banner).should('not.exist');
     });
 
-    it('should be able to edit and enable login notice', () => {
+    // TODO: re-enable when PatternFly masthead style is integrated
+    xit('should be able to edit and enable login notice', () => {
         cy.visit(systemConfigUrl);
         cy.wait('@getSystemConfig');
         editBaseConfig('loginNotice');

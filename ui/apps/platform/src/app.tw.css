@@ -147,8 +147,9 @@ h6 {
 }
 
 .react-modal-overlay {
-    @apply fixed top-0 left-0 w-full h-full z-60 !important;
+    @apply fixed top-0 left-0 w-full h-full !important;
     background-color: hsla(225, 41%, 32%, 0.82);
+    z-index: 10000;
 }
 
 .pill {

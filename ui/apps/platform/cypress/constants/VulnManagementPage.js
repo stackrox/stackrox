@@ -3,6 +3,7 @@ import panelSelectors from '../selectors/panel';
 import tableSelectors from '../selectors/table';
 import { violationTagsSelectors } from '../selectors/tags';
 import scopeSelectors from '../helpers/scopeSelectors';
+import navigationSelectors from '../selectors/navigation';
 
 const baseURL = '/main/vulnerability-management';
 
@@ -27,7 +28,7 @@ export const url = {
 };
 
 export const vmHomePageSelectors = {
-    vmDBPageTileLink: '[data-testid="Vulnerability Management"]',
+    vmDBPageTileLink: `${navigationSelectors.navLinks}:contains("Vulnerability Management")`,
 };
 export const listSelectors = {
     riskScoreCol: '.rt-table > .rt-tbody > div > div > div:nth-child(10)',
