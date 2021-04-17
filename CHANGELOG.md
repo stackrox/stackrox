@@ -8,6 +8,12 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - Added `GET /v1/centralhealth/upgradestatus` endpoint to support upgrade rollback.
 
+## [58.1]
+
+- A few CVSS3.1 scores for applicable vulnerabilities were miscalculated, but it has since been fixed.
+- Fixed CVE-2021-20305, RHSA-2021:1206 in RHEL scanner images
+- Fixed Java package scanning when the package has the word "agent"
+
 ## [58.0]
 
 - The product no longer requires a license to run. Several license-related functionalities and flags
