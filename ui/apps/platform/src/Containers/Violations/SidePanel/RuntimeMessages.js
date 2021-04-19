@@ -6,7 +6,8 @@ import ProcessCard from './ProcessCard';
 import K8sCard from './K8sCard';
 
 function RuntimeMessages({ processViolation, violations }) {
-    const isPlainViolation = violations?.length;
+    const isPlainViolation = !!violations?.length;
+    const isProcessViolation = !!processViolation?.processes?.length;
     const isNetworkFlowViolation = violations?.some((violation) => !!violation.networkFlowInfo);
 
     const plainViolations = isNetworkFlowViolation
@@ -29,7 +30,7 @@ function RuntimeMessages({ processViolation, violations }) {
     return (
         <>
             {isPlainViolation && plainViolations}
-            {processViolation?.processes?.length && (
+            {isProcessViolation && (
                 <ProcessCard
                     processes={processViolation.processes}
                     message={processViolation.message}
