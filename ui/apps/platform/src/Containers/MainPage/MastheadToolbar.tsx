@@ -75,7 +75,8 @@ function MastheadToolbar(): ReactElement {
 
     return (
         <PageHeaderTools>
-            <PageHeaderToolsGroup>
+            {/* TODO: (PatternFly) need more robust mobile experience  than just hiding tools */}
+            <PageHeaderToolsGroup visibility={{ default: 'hidden', md: 'visible' }}>
                 {showOrchestratorComponentsToggle && (
                     <PageHeaderToolsItem>
                         <OrchestratorComponentsToggle useCase={useCase} />

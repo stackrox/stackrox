@@ -9,6 +9,7 @@
 }
 
 .pf-c-page__sidebar {
+    --pf-c-page__sidebar-body--PaddingTop: 0;
     --pf-c-page__sidebar--ZIndex: 50;
 }
 
