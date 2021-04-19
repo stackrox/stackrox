@@ -11,14 +11,17 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/securityhub"
+	"github.com/aws/aws-sdk-go/service/securityhub/securityhubiface"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"go.uber.org/zap"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -31,8 +34,16 @@ var (
 	log                  = logging.CurrentModule().Logger()
 	defaultConfiguration = configuration{
 		upstreamTimeout: 2 * time.Second,
-		batchSize:       5,
-		uploadTimeout:   15 * time.Second,
+		// From https://docs.aws.amazon.com/securityhub/latest/userguide/finding-update-batchimportfindings.html
+		// It is not clear whether they use Decimal or Binary, so we assume 1 KB = 1000 bytes.
+		// The maximum finding size is 240 KB, the maximum batch size is 6 MB. We assume each
+		// finding will not be larger than 240 KB, giving us a safe batch size of 25.
+		maxBatchSize: 25, // 6 MB / 240 KB = 25
+		// The throttle rate limit is 10 TPS per account per Region, with burst of 30 TPS.
+		// Forgetting the burst, we allow ourselves up to 10 uploads per second.
+		minUploadDelay: 100 * time.Millisecond,
+		// We set a maximum upload delay to ensure our data stays fresh.
+		maxUploadDelay: 15 * time.Second,
 	}
 	product = struct {
 		arnFormatter func(string) string
@@ -104,21 +115,25 @@ func validateNotifierConfiguration(config *storage.AWSSecurityHub) (*storage.AWS
 type configuration struct {
 	descriptor      *storage.Notifier
 	upstreamTimeout time.Duration
-	batchSize       int
-	uploadTimeout   time.Duration
-	canceler        func()
+
+	maxBatchSize   int
+	minUploadDelay time.Duration
+	maxUploadDelay time.Duration
+
+	canceler func()
 }
 
 // notifier is an AlertNotifier implementation.
 type notifier struct {
 	configuration
-	*securityhub.SecurityHub
+	securityHub securityhubiface.SecurityHubAPI
 	account     string
 	arn         string
 	cache       map[string]*storage.Alert
 	alertCh     chan *storage.Alert
-	stopSig     concurrency.Signal
 	initDoneSig concurrency.Signal
+	// stoppedSig is owned by the notifier, it is triggered when the `run` method is not executing.
+	stoppedSig concurrency.Signal
 }
 
 func newNotifier(configuration configuration) (*notifier, error) {
@@ -146,12 +161,13 @@ func newNotifier(configuration configuration) (*notifier, error) {
 
 	return &notifier{
 		configuration: configuration,
-		SecurityHub:   securityhub.New(awss),
+		securityHub:   securityhub.New(awss),
 		account:       config.GetAccountId(),
 		arn:           product.arnFormatter(config.GetRegion()),
 		cache:         map[string]*storage.Alert{},
 		alertCh:       make(chan *storage.Alert),
 		initDoneSig:   concurrency.NewSignal(),
+		// stoppedSig intentionally omitted - zero value is "already triggered"
 	}, nil
 }
 
@@ -161,7 +177,7 @@ func (n *notifier) waitForInitDone() {
 
 func (n *notifier) sendHeartbeat() {
 	now := aws.String(time.Now().UTC().Format(iso8601UTC))
-	_, err := n.SecurityHub.BatchImportFindings(&securityhub.BatchImportFindingsInput{
+	_, err := n.securityHub.BatchImportFindings(&securityhub.BatchImportFindingsInput{
 
 		Findings: []*securityhub.AwsSecurityFinding{
 			{
@@ -200,41 +216,37 @@ func (n *notifier) sendHeartbeat() {
 }
 
 // run executes n's event processing loop until either an error occurs or ctx is marked as done.
-// If syncer is not nil, run writes to syncer when initialization is done (or an error occured).
+// It will trigger `stoppedSig` once the function exits, signaling its completion.
 func (n *notifier) run(ctx context.Context) error {
-	if !n.stopSig.Reset() {
+	if !n.stoppedSig.Reset() {
+		// If stoppedSig wasn't triggered before the reset then we were already running.
 		n.initDoneSig.Signal()
 		return errAlreadyRunning
 	}
-	defer func() {
-		n.stopSig.Signal()
-	}()
+	defer n.stoppedSig.Signal()
 
 	doneCh := ctx.Done()
-	lastUpload := time.Time{}
-	uploadTicker := time.NewTicker(n.uploadTimeout)
+	rateLimiter := rate.NewLimiter(rate.Every(n.minUploadDelay), 1)
+	uploadTicker := time.NewTicker(n.maxUploadDelay)
 	defer uploadTicker.Stop()
 
 	heartbeatTicker := time.NewTicker(heartbeatInterval)
+	defer heartbeatTicker.Stop()
 
 	n.initDoneSig.Signal()
 
 	for {
 		select {
 		case alert := <-n.alertCh:
-			if n.processAlert(ctx, alert) {
-				lastUpload = time.Now()
+			n.processAlert(alert)
+			if len(n.cache) >= n.maxBatchSize && rateLimiter.Allow() {
+				n.uploadBatch(ctx)
 			}
 		case <-heartbeatTicker.C:
 			n.sendHeartbeat()
 		case <-uploadTicker.C:
-			// If the upload timer kicks in, we haven't received a new alert for
-			// uploadTimeout seconds. We aim to minimize the amount of state
-			// kept in memory and drain our internal cache here.
-			if time.Since(lastUpload) > n.uploadTimeout && n.uploadBatchIf(ctx, func(n *notifier) bool {
-				return len(n.cache) > 0
-			}) {
-				lastUpload = time.Now()
+			if len(n.cache) > 0 && rateLimiter.Allow() {
+				n.uploadBatch(ctx)
 			}
 		case <-doneCh:
 			return ctx.Err()
@@ -242,7 +254,7 @@ func (n *notifier) run(ctx context.Context) error {
 	}
 }
 
-func (n *notifier) processAlert(ctx context.Context, alert *storage.Alert) bool {
+func (n *notifier) processAlert(alert *storage.Alert) {
 	cached := n.cache[alert.GetId()]
 	if cached != nil {
 		tsAlert, tsAlertErr := types.TimestampFromProto(alert.GetTime())
@@ -257,55 +269,63 @@ func (n *notifier) processAlert(ctx context.Context, alert *storage.Alert) bool 
 	} else {
 		n.cache[alert.GetId()] = alert
 	}
-
-	return n.uploadBatchIf(ctx, func(n *notifier) bool {
-		return len(n.cache) >= n.batchSize
-	})
 }
 
-func (n *notifier) uploadBatchIf(ctx context.Context, predicate func(*notifier) bool) bool {
-	if !predicate(n) {
-		log.Debug("skipping upload")
-		return false
+func (n *notifier) uploadBatch(ctx context.Context) {
+	if len(n.cache) == 0 {
+		log.Debug("no alerts to upload, skipping")
+		return
 	}
 
-	input := &securityhub.BatchImportFindingsInput{}
+	uiEndpoint := n.ProtoNotifier().GetUiEndpoint()
+	batch := &securityhub.BatchImportFindingsInput{}
+	alertIds := set.StringSet{}
+	for id, alert := range n.cache {
+		if len(alertIds) >= n.maxBatchSize {
+			break
+		}
 
-	for _, alert := range n.cache {
-		input.Findings = append(input.Findings, mapAlertToFinding(n.account, n.arn, notifiers.AlertLink(n.ProtoNotifier().GetUiEndpoint(), alert), alert))
+		finding := mapAlertToFinding(n.account, n.arn, notifiers.AlertLink(uiEndpoint, alert), alert)
+		batch.Findings = append(batch.Findings, finding)
+		alertIds.Add(id)
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, n.upstreamTimeout)
 	defer cancel()
 
-	result, err := n.SecurityHub.BatchImportFindingsWithContext(ctx, input)
+	result, err := n.securityHub.BatchImportFindingsWithContext(ctx, batch)
 	if err != nil {
 		log.Warn("failed to upload batch", logging.Err(err))
-		return false
+		return
 	}
 
+	// Keep alerts that failed to upload in the cache so they'll retry.
+	// Note that randomized iteration of map will shuffle failures.
 	if result.FailedCount != nil && *result.FailedCount > 0 {
-		cache := make(map[string]*storage.Alert)
+		log.Warn("failed to upload some or all alerts in batch", zap.Any("failures", result.FailedFindings))
+
 		for _, finding := range result.FailedFindings {
 			if id := finding.Id; id != nil {
-				if entry := n.cache[*id]; entry != nil {
-					cache[*id] = entry
-				}
+				alertIds.Remove(*id)
 			}
 		}
-		log.Warn("failed to upload batch", zap.Any("failures", result.FailedFindings))
-		n.cache = cache
-
-		return false
 	}
 
-	log.Debug("successfully uploaded batch")
-	n.cache = make(map[string]*storage.Alert)
+	// Remove alerts that successfully uploaded from the cache.
+	if len(alertIds) > 0 {
+		log.Debug("successfully uploaded some or all alerts in batch", zap.Int("successes", len(alertIds)))
+		for id := range alertIds {
+			delete(n.cache, id)
+		}
+	}
 
-	return true
+	if len(n.cache) >= 5*n.maxBatchSize {
+		log.Warn("alert backlog is too large; check for failures above, throttling might need adjusting",
+			zap.Int("cacheSize", len(n.cache)))
+	}
 }
 
-func (n *notifier) Close(ctx context.Context) error {
+func (n *notifier) Close(_ context.Context) error {
 	if n.canceler != nil {
 		n.canceler()
 	}
@@ -321,14 +341,14 @@ func (n *notifier) ProtoNotifier() *storage.Notifier {
 //   * AWS SecurityHub is reachable
 // If either of the checks fails, an error is returned.
 func (n *notifier) Test(ctx context.Context) error {
-	if n.stopSig.IsDone() {
+	if n.stoppedSig.IsDone() {
 		return errNotRunning
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, n.upstreamTimeout)
 	defer cancel()
 
-	_, err := n.SecurityHub.GetFindingsWithContext(ctx, &securityhub.GetFindingsInput{
+	_, err := n.securityHub.GetFindingsWithContext(ctx, &securityhub.GetFindingsInput{
 		Filters: &securityhub.AwsSecurityFindingFilters{
 			ProductArn: []*securityhub.StringFilter{
 				{
@@ -374,7 +394,7 @@ func (n *notifier) Test(ctx context.Context) error {
 		// Mark the state as resolved, thus indicating to security hub that all is good and avoiding raising a false alert.
 		State: storage.ViolationState_RESOLVED,
 	}
-	_, err = n.SecurityHub.BatchImportFindings(&securityhub.BatchImportFindingsInput{
+	_, err = n.securityHub.BatchImportFindings(&securityhub.BatchImportFindingsInput{
 		Findings: []*securityhub.AwsSecurityFinding{
 			mapAlertToFinding(n.account, n.arn, notifiers.AlertLink(n.ProtoNotifier().GetUiEndpoint(), testAlert), testAlert),
 		},
@@ -384,11 +404,10 @@ func (n *notifier) Test(ctx context.Context) error {
 		return createError("error testing AWS Security Hub integration", err)
 	}
 	return nil
-
 }
 
 func (n *notifier) AlertNotify(ctx context.Context, alert *storage.Alert) error {
-	if n.stopSig.IsDone() {
+	if n.stoppedSig.IsDone() {
 		return errNotRunning
 	}
 
@@ -399,7 +418,7 @@ func (n *notifier) AlertNotify(ctx context.Context, alert *storage.Alert) error 
 	select {
 	case n.alertCh <- alert:
 		return nil
-	case <-n.stopSig.Done():
+	case <-n.stoppedSig.Done():
 		return errNotRunning
 	case <-ctx.Done():
 		return ctx.Err()
