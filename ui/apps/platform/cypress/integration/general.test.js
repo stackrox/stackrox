@@ -18,13 +18,15 @@ describe('General sanity checks', () => {
     });
 
     describe('should have correct page titles based on URL', () => {
+        const baseTitleText = 'Red Hat ACS';
+
         it('for Dashboard', () => {
             cy.route('GET', api.dashboard.timeseries).as('dashboardTimeseries');
 
             cy.visit('/main');
             cy.wait('@dashboardTimeseries');
 
-            cy.title().should('eq', 'Dashboard | StackRox');
+            cy.title().should('eq', `Dashboard | ${baseTitleText}`);
         });
 
         it('for Network Graph', () => {
@@ -33,7 +35,7 @@ describe('General sanity checks', () => {
             cy.visit('/main/network');
             cy.wait('@networkGraph');
 
-            cy.title().should('eq', 'Network Graph | StackRox');
+            cy.title().should('eq', `Network Graph | ${baseTitleText}`);
         });
 
         it('for Violations', () => {
@@ -42,7 +44,7 @@ describe('General sanity checks', () => {
             cy.visit('/main/violations');
             cy.wait('@alerts');
 
-            cy.title().should('eq', 'Violations | StackRox');
+            cy.title().should('eq', `Violations | ${baseTitleText}`);
         });
 
         it('for Violations with side panel open', () => {
@@ -51,7 +53,7 @@ describe('General sanity checks', () => {
             cy.visit('/main/violations/1234');
             cy.wait('@alertById');
 
-            cy.title().should('eq', 'Violations | StackRox');
+            cy.title().should('eq', `Violations | ${baseTitleText}`);
         });
 
         it('for Compliance Dashboard', () => {
@@ -63,7 +65,7 @@ describe('General sanity checks', () => {
             cy.visit('/main/compliance');
             cy.wait('@getAggregatedResults');
 
-            cy.title().should('eq', 'Compliance | StackRox');
+            cy.title().should('eq', `Compliance | ${baseTitleText}`);
         });
 
         it('for Compliance Namespaces', () => {
@@ -73,7 +75,7 @@ describe('General sanity checks', () => {
             cy.visit('/main/compliance/namespaces');
             cy.wait('@namespaces');
 
-            cy.title().should('eq', 'Compliance - Namespace | StackRox');
+            cy.title().should('eq', `Compliance - Namespace | ${baseTitleText}`);
         });
 
         it('for API Docs', () => {
@@ -82,7 +84,7 @@ describe('General sanity checks', () => {
             cy.visit('/main/apidocs');
             cy.wait('@apiDocs', { timeout: 10000 }); // api docs are sloooooow
 
-            cy.title().should('eq', 'API Reference | StackRox');
+            cy.title().should('eq', `API Reference | ${baseTitleText}`);
         });
 
         // TODO: Fix for ROX-6826
@@ -93,7 +95,7 @@ describe('General sanity checks', () => {
             cy.visit('/main/user');
             cy.wait('@summaryCounts');
 
-            cy.title().should('eq', 'User Page | StackRox');
+            cy.title().should('eq', `User Page | ${baseTitleText}`);
         });
     });
 
