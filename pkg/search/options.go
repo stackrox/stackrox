@@ -15,6 +15,13 @@ type FieldLabel string
 var (
 	FieldLabelSet = set.NewStringSet()
 
+	// DocID is a special value for document identifier in the Bleve index.
+	// Every document we put in the index has identifier. In most cases we simply get this identifier from
+	// entity.GetId(), unless the getter is overridden in the call to blevebindings-wrapper with --id-func argument.
+	// It is possible to use DocID in sorting, see https://blevesearch.com/docs/Sorting/, and subsequently in
+	// pagination with SearchAfter.
+	DocID = newFieldLabel("_id")
+
 	Cluster      = newFieldLabel("Cluster")
 	ClusterID    = newFieldLabel("Cluster ID")
 	ClusterLabel = newFieldLabel("Cluster Label")

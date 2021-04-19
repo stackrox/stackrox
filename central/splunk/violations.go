@@ -5,54 +5,76 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/generated/api/integrations"
+	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"go.uber.org/zap"
 )
 
 const (
-	checkpointQueryParam    = "from_checkpoint"
-	fallbackCheckpointValue = "2000-01-01T00:00:00.000Z"
+	checkpointQueryParam = "from_checkpoint"
+	fallbackCheckpoint   = "2000-01-01T00:00:00.000Z"
+
+	// A violation gets the current timestamp after it is detected. However, it takes some time before the violation is
+	// stored in the database because it needs to go through enrichment and get to central. For example, the violation
+	// occurs now at 8:09:01 (p.m.) but is saved in the database at 8:09:06, i.e. with 5 seconds delay. If we try to
+	// query for this violation at 8:09:04, we will not find it even though it occurred before that moment. It will not
+	// be visible until after 8:09:06.
+	// We introduce a buffer duration - eventualConsistencyMargin - which is subtracted from time.Now() when
+	// querying by Alert timestamp and when filtering violations in order not to lose recent violations that were
+	// detected but not yet seen in the database. Ten seconds were chosen based on our understanding how quickly
+	// violations are persisted.
+	eventualConsistencyMargin = 10 * time.Second
 )
 
-var (
-	// fallbackCheckpoint is a timestamp to use when checkpointQueryParam is not present in the query or can't be parsed.
-	fallbackCheckpoint, fallbackCheckpointTime = func() (*types.Timestamp, time.Time) {
-		ts, t, err := parseTimestamp(fallbackCheckpointValue)
-		utils.Must(err)
-		return ts, t
-	}()
-)
+type paginationSettings struct {
+	// limit number of alerts returned from database
+	maxAlertsFromQuery int32
+	// approximately this many violations we want in the response
+	violationsPerResponse int
+}
 
-func parseTimestamp(timeStr string) (*types.Timestamp, time.Time, error) {
-	t, err := time.Parse(time.RFC3339, timeStr)
-	if err != nil {
-		return nil, time.Time{}, err
-	}
-	ts, err := types.TimestampProto(t)
-	if err != nil {
-		return nil, time.Time{}, err
-	}
-	return ts, t, nil
+// defaultPaginationSettings provide pagination limits used in production.
+//
+// Average JSON SplunkViolation size is around 2 kilobytes. 5000 violations per response were chosen so that 10Mb
+// response fits well under ~250Mb response sizes that I observed started failing during Splunk local imports.
+// Splunk timeout appears to be between 1 and 2 minutes (seems slightly more than 1 minute).
+//
+// 500 alerts from query limit was chosen based on intuition that each Runtime Alert has on average 5-10 violations.
+// In the worst case, Runtime Alert can have up to 40 violations (hard limit), and so the database query will return
+// 4x violations than will be included in the response. I.e. the number 500 alerts can provide between 1/10 and 4x of
+// desired number of violations.
+// Note that non-runtime Alert currently results in a single SplunkViolation irrespective of how many
+// storage.Violation-s are inside.
+//
+// More info and raw numbers in https://stack-rox.atlassian.net/browse/ROX-6868
+var defaultPaginationSettings = paginationSettings{
+	maxAlertsFromQuery:    500,
+	violationsPerResponse: 5000,
 }
 
 // NewViolationsHandler provides violations data to Splunk on HTTP requests.
 func NewViolationsHandler(alertDS datastore.DataStore) http.HandlerFunc {
+	return newViolationsHandler(alertDS, defaultPaginationSettings)
+}
+
+// newViolationsHandler allows overriding paginationSettings during tests.
+func newViolationsHandler(alertDS datastore.DataStore, pagination paginationSettings) http.HandlerFunc {
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		res, err := getViolationsResponse(alertDS, r)
+		res, err := getViolationsResponse(alertDS, r, pagination)
 		if err != nil {
 			msg := fmt.Sprintf("Error handling Splunk violations request: %s", err)
 			log.Warn(msg)
@@ -67,62 +89,75 @@ func NewViolationsHandler(alertDS datastore.DataStore) http.HandlerFunc {
 	}
 }
 
-func getViolationsResponse(alertDS datastore.DataStore, r *http.Request) (*integrations.SplunkViolationsResponse, error) {
-	fromTimestamp, fromTime, err := getCheckpointValue(r)
+func getViolationsResponse(alertDS datastore.DataStore, r *http.Request, pagination paginationSettings) (*integrations.SplunkViolationsResponse, error) {
+	checkpoint, err := getCheckpointValue(r)
+	if err != nil {
+		return nil, err
+	}
+	fromTimestamp, err := types.TimestampProto(checkpoint.fromTimestamp)
+	if err != nil {
+		return nil, err
+	}
+	toTimestamp, err := types.TimestampProto(checkpoint.toTimestamp)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO(ROX-6689): pagination
-	alerts, err := queryAlerts(r.Context(), alertDS, fromTime)
-	if err != nil {
-		return nil, err
-	}
+	response := integrations.SplunkViolationsResponse{}
 
-	response := integrations.SplunkViolationsResponse{
-		// Checkpoint should remain the same as before if there are no violations.
-		// Strictly speaking, we don't have to report it because Splunk remembers the last non-empty checkpoint, but
-		// that's just more consistent to always return a value here.
-		NewCheckpoint: fromTimestamp,
-	}
-
-	for _, alert := range alerts {
-		violations, err := extractViolations(alert, fromTimestamp)
+	for len(response.Violations) < pagination.violationsPerResponse {
+		alerts, err := queryAlerts(r.Context(), alertDS, checkpoint, pagination.maxAlertsFromQuery)
 		if err != nil {
 			return nil, err
 		}
-		response.Violations = append(response.Violations, violations...)
+
+		lastAlertID := ""
+
+		for _, alert := range alerts {
+			violations, err := extractViolations(alert, fromTimestamp, toTimestamp)
+			if err != nil {
+				return nil, err
+			}
+			response.Violations = append(response.Violations, violations...)
+
+			if alert.GetId() > lastAlertID {
+				lastAlertID = alert.GetId()
+			}
+
+			// We cannot strictly limit number of violations in the response without further complicating the checkpoint
+			// format. Therefore we stop after we got enough violations and processed the entire Alert.
+			if len(response.Violations) >= pagination.violationsPerResponse {
+				break
+			}
+		}
+
+		if lastAlertID != "" {
+			// The next query should continue from the Alert following the last one where the processing stopped this time.
+			checkpoint.fromAlertID = lastAlertID
+		} else {
+			// Advance the checkpoint timestamps if no more alerts were returned (for the current checkpoint).
+			checkpoint = checkpoint.makeNextCheckpoint()
+			break
+		}
 	}
 
-	sort.Slice(response.Violations, func(i, j int) bool {
-		return response.Violations[i].GetViolationInfo().GetViolationTime().Compare(response.Violations[j].GetViolationInfo().GetViolationTime()) < 0
-	})
-
-	if len(response.Violations) > 0 {
-		// NewCheckpoint must be max of ViolationTimes so that Splunk does not receive the same violations next time it
-		// queries with the NewCheckpoint value.
-		// TODO(ROX-6689): drop sorting and just find max ViolationTime while iterating through violations.
-		response.NewCheckpoint = response.Violations[len(response.Violations)-1].GetViolationInfo().GetViolationTime()
-	}
+	response.NewCheckpoint = checkpoint.String()
 
 	return &response, nil
 }
 
-func getCheckpointValue(r *http.Request) (*types.Timestamp, time.Time, error) {
+func getCheckpointValue(r *http.Request) (splunkCheckpoint, error) {
 	param := r.URL.Query().Get(checkpointQueryParam)
-	if param == "" {
-		return fallbackCheckpoint, fallbackCheckpointTime, nil
-	}
-	ts, t, err := parseTimestamp(param)
+	cp, err := parseCheckpointParam(param)
 	if err != nil {
-		return nil, time.Time{}, httputil.Errorf(http.StatusBadRequest,
-			"could not parse query parameter %q value %q as timestamp (try the following format: %s=%s): %s",
-			checkpointQueryParam, param, checkpointQueryParam, fallbackCheckpointValue, err)
+		return splunkCheckpoint{}, httputil.Errorf(http.StatusBadRequest,
+			"error parsing or validating checkpoint parameter %q value %q (try making request without this query parameter to see the example format): %s",
+			checkpointQueryParam, param, err)
 	}
-	return ts, t, nil
+	return cp, nil
 }
 
-func queryAlerts(ctx context.Context, alertDS datastore.DataStore, fromTime time.Time) ([]*storage.Alert, error) {
+func queryAlerts(ctx context.Context, alertDS datastore.DataStore, checkpoint splunkCheckpoint, maxAlertsFromQuery int32) ([]*storage.Alert, error) {
 	// Alert searcher limits results to only certain (open) alert states if state query wasn't explicitly provided.
 	// See https://github.com/stackrox/rox/blob/fe0447b512623111b78f5f7f1eb22f39e3e70cb3/central/alert/datastore/internal/search/searcher_impl.go#L142
 	// This isn't desirable for Splunk integration because we want Splunk to know about all alerts irrespective of their
@@ -139,18 +174,29 @@ func queryAlerts(ctx context.Context, alertDS datastore.DataStore, fromTime time
 	// The downstream timestamp querying supports granularity up to a second and a peculiar timestamp format therefore
 	// we leverage what it provides.
 	// See https://github.com/stackrox/rox/blob/master/pkg/search/blevesearch/time_query.go
-	query = query.AddStrings(search.ViolationTime, ">="+fromTime.Format("01/02/2006 3:04:05 PM MST"))
+	query = query.AddStrings(search.ViolationTime, ">="+checkpoint.fromTimestamp.Format("01/02/2006 3:04:05 PM MST"))
 
-	return alertDS.SearchRawAlerts(ctx, query.ProtoQuery())
+	pq := query.ProtoQuery()
+
+	pq.Pagination = &apiV1.QueryPagination{
+		Limit:  maxAlertsFromQuery,
+		Offset: 0,
+		SortOptions: []*apiV1.QuerySortOption{{
+			Field:          search.DocID.String(),
+			Reversed:       false,
+			SearchAfterOpt: &apiV1.QuerySortOption_SearchAfter{SearchAfter: checkpoint.fromAlertID},
+		}},
+	}
+
+	return alertDS.SearchRawAlerts(ctx, pq)
 }
 
-func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp) ([]*integrations.SplunkViolation, error) {
+func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp, toTimestamp *types.Timestamp) ([]*integrations.SplunkViolation, error) {
 	var result []*integrations.SplunkViolation
 	seenViolations := false
 
-	// TODO: reuse deploymentInfo, policyInfo for efficiency. There's no need to parse the same data for every violation.
-
 	policyInfo := extractPolicyInfo(alert.GetId(), alert.GetPolicy())
+	deploymentInfo := extractDeploymentInfo(alert)
 
 	if processViolation := alert.GetProcessViolation(); processViolation != nil {
 		if len(processViolation.GetProcesses()) == 0 {
@@ -160,7 +206,7 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp) ([]
 			seenViolations = true
 
 			timestamp := getProcessViolationTime(alert, procIndicator)
-			if timestamp.Compare(fromTimestamp) <= 0 {
+			if timestamp.Compare(fromTimestamp) <= 0 || timestamp.Compare(toTimestamp) > 0 {
 				continue
 			}
 
@@ -169,7 +215,7 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp) ([]
 				ViolationInfo:  violationInfo,
 				AlertInfo:      extractAlertInfo(alert, violationInfo),
 				ProcessInfo:    extractProcessInfo(alert.GetId(), procIndicator),
-				DeploymentInfo: extractDeploymentInfo(alert, procIndicator),
+				DeploymentInfo: refineDeploymentInfo(alert.GetId(), deploymentInfo, procIndicator),
 				PolicyInfo:     policyInfo,
 			})
 		}
@@ -179,7 +225,7 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp) ([]
 		seenViolations = true
 
 		timestamp := getNonProcessViolationTime(alert, v)
-		if timestamp.Compare(fromTimestamp) <= 0 {
+		if timestamp.Compare(fromTimestamp) <= 0 || timestamp.Compare(toTimestamp) > 0 {
 			continue
 		}
 
@@ -199,7 +245,7 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp) ([]
 		result = append(result, &integrations.SplunkViolation{
 			ViolationInfo:   violationInfo,
 			AlertInfo:       extractAlertInfo(alert, violationInfo),
-			DeploymentInfo:  extractDeploymentInfo(alert, nil),
+			DeploymentInfo:  deploymentInfo,
 			PolicyInfo:      policyInfo,
 			NetworkFlowInfo: v.GetNetworkFlowInfo().Clone(),
 		})
@@ -209,7 +255,7 @@ func extractViolations(alert *storage.Alert, fromTimestamp *types.Timestamp) ([]
 		result = append(result, &integrations.SplunkViolation{
 			ViolationInfo:  violationInfo,
 			AlertInfo:      extractAlertInfo(alert, violationInfo),
-			DeploymentInfo: extractDeploymentInfo(alert, nil),
+			DeploymentInfo: deploymentInfo,
 			PolicyInfo:     policyInfo,
 		})
 	}
@@ -274,12 +320,7 @@ func extractProcessViolationInfo(fromAlert *storage.Alert, fromProcViolation *st
 func getNonProcessViolationTime(fromAlert *storage.Alert, fromViolation *storage.Alert_Violation) *types.Timestamp {
 	timestamp := fromViolation.GetTime()
 	if timestamp == nil {
-		// Generic violations don't have own timestamp therefore we report them with Alert's last seen time.
-		// This way all generic violations under the same Alert will have the same most recent violation time even
-		// though they might have happened at different moments.
-		// This means we'll likely resurrect old already seen violations when the alert gets updated, i.e. over-alarm.
-		// Perhaps that's better than set ViolationTime to fromAlert.FirstOccurred which will under-alarm.
-		// TODO(ROX-6706): simplify this after timestamps are added to all violations
+		// Use alert timestamp as a fallback in case violation timestamp wasn't provided.
 		timestamp = fromAlert.GetTime()
 	}
 	return timestamp
@@ -328,6 +369,12 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 }
 
 func extractGenericViolationInfo(fromAlert *storage.Alert, message string) *integrations.SplunkViolation_ViolationInfo {
+	// Generic (non-runtime) violations are squashed together and presented as one violation for Splunk.
+	// Primarily that's because they don't have own timestamps. If they had timestamps, we could process and filter them
+	// the same way as K8S events and network violations.
+	// Splunk users will see a new SplunkViolation with growing violation message and with the same ID as before when a
+	// new generic Violation gets added to the existing Alert.
+	// TODO(ROX-6706): un-merge generic violations after timestamps are added to all violations.
 	return &integrations.SplunkViolation_ViolationInfo{
 		ViolationId:      fromAlert.GetId(),
 		ViolationMessage: message,
@@ -421,7 +468,7 @@ func extractPolicyInfo(alertID string, from *storage.Policy) *integrations.Splun
 	// message.
 }
 
-func extractDeploymentInfo(from *storage.Alert, fromProc *storage.ProcessIndicator) *integrations.SplunkViolation_DeploymentInfo {
+func extractDeploymentInfo(from *storage.Alert) *integrations.SplunkViolation_DeploymentInfo {
 	var res integrations.SplunkViolation_DeploymentInfo
 
 	switch e := from.GetEntity().(type) {
@@ -452,34 +499,148 @@ func extractDeploymentInfo(from *storage.Alert, fromProc *storage.ProcessIndicat
 		log.Warnw("Alert.Entity unrecognized or not set. Resulting violation item will not have deployment details.", zap.String("Alert.Id", from.GetId()))
 	}
 
-	if fromProc != nil {
-		// Process violations come with own information about deployment where the violation happened.
-		// I decided to trust that information more, and, in unlikely case when there are discrepancies between info
-		// coming from process and in Alert itself, we give priority to process info.
+	return &res
+}
 
-		resetIfDiffer := func(field, v1, v2 string) {
-			if v1 != "" && v2 != "" && v1 != v2 {
-				log.Warnw(
-					fmt.Sprintf("Alert %s=%q does not correspond to %s=%q of recorded process violation.", field, v1, field, v2)+
-						" Resulting deployment details will not be complete.",
-					zap.String("Alert.Id", from.GetId()))
-				res = integrations.SplunkViolation_DeploymentInfo{}
-			}
-		}
-		resetIfDiffer("DeploymentId", res.GetDeploymentId(), fromProc.GetDeploymentId())
-		resetIfDiffer("Namespace", res.GetDeploymentNamespace(), fromProc.GetNamespace())
-		resetIfDiffer("ClusterId", res.GetClusterId(), fromProc.GetClusterId())
-
-		if fromProc.GetDeploymentId() != "" {
-			res.DeploymentId = fromProc.GetDeploymentId()
-		}
-		if fromProc.GetNamespace() != "" {
-			res.DeploymentNamespace = fromProc.GetNamespace()
-		}
-		if fromProc.GetClusterId() != "" {
-			res.ClusterId = fromProc.GetClusterId()
-		}
+// refineDeploymentInfo must only be called for process violations.
+// Process violations bring own information about deployment where the violation happened.
+// I decided to trust that information more, and, in unlikely case when there are discrepancies between info
+// coming from process and in Alert itself, we give priority to process info.
+func refineDeploymentInfo(alertID string, deploymentInfo *integrations.SplunkViolation_DeploymentInfo, fromProc *storage.ProcessIndicator) *integrations.SplunkViolation_DeploymentInfo {
+	if fromProc == nil {
+		// If there's no process indicator for some weird reason, there's nothing to change in the deployment info and
+		// we can pass it through so that the resulting record has at least the location of violation.
+		return deploymentInfo
 	}
 
-	return &res
+	res := deploymentInfo.Clone()
+
+	resetIfDiffer := func(field, v1, v2 string) {
+		if v1 != "" && v2 != "" && v1 != v2 {
+			log.Warnw(
+				fmt.Sprintf("Alert %s=%q does not correspond to %s=%q of recorded process violation.", field, v1, field, v2)+
+					" Resulting deployment details will not be complete.",
+				zap.String("Alert.Id", alertID))
+			res = &integrations.SplunkViolation_DeploymentInfo{}
+		}
+	}
+	resetIfDiffer("DeploymentId", res.GetDeploymentId(), fromProc.GetDeploymentId())
+	resetIfDiffer("Namespace", res.GetDeploymentNamespace(), fromProc.GetNamespace())
+	resetIfDiffer("ClusterId", res.GetClusterId(), fromProc.GetClusterId())
+
+	// If process indicator has some data and Alert's deployment does not, here we'll add it to the resulting struct.
+	if fromProc.GetDeploymentId() != "" {
+		res.DeploymentId = fromProc.GetDeploymentId()
+	}
+	if fromProc.GetNamespace() != "" {
+		res.DeploymentNamespace = fromProc.GetNamespace()
+	}
+	if fromProc.GetClusterId() != "" {
+		res.ClusterId = fromProc.GetClusterId()
+	}
+
+	return res
+}
+
+// splunkCheckpoint represents parsed checkpoint. Possible checkpoint formats are:
+//  1. "FromTimestamp__ToTimestamp__FromAlertID"
+//  2. "FromTimestamp"
+// #2 is used as initial checkpoint setting in Splunk TA config and when there were no more alerts in the previous request.
+// #1 is used when there were more alerts between FromTimestamp and ToTimestamp and response had to stop because
+// sufficient number of violations was returned.
+type splunkCheckpoint struct {
+	fromTimestamp, toTimestamp time.Time
+	fromAlertID                string
+}
+
+// parseCheckpointParam parses checkpoint value passed to API endpoint in query parameters.
+// It also validates and prepares the checkpoint so that it is directly usable in the pagination logic.
+// Probably this function is overly complex for what it should do but at least it isolates the rest of the code from
+// the necessary "hackery".
+func parseCheckpointParam(value string) (splunkCheckpoint, error) {
+	adjustedNow := time.Now().UTC().Add(-eventualConsistencyMargin)
+
+	if value == "" {
+		// In case no checkpoint value was provided, we take the default value to make API return all data from the
+		// beginning of time.
+		value = fallbackCheckpoint
+	}
+
+	parts := strings.Split(value, "__")
+
+	if len(parts) > 3 {
+		return splunkCheckpoint{}, errors.Errorf("too many parts in checkpoint value %s: found %d expecting up to 3 parts", value, len(parts))
+	}
+
+	fromTs, err := time.Parse(time.RFC3339Nano, parts[0])
+	if err != nil {
+		return splunkCheckpoint{}, errors.Wrap(err, "could not parse FromTimestamp")
+	}
+	if fromTs.After(adjustedNow) {
+		// If API accepts a timestamp in the future, it will return incomplete data when this time moves into past
+		// within eventual consistency margin from now. Therefore future timestamps are not allowed.
+		// Note that Splunk will keep retrying requests with the same checkpoint until it starts getting 200 response
+		// (and a different newCheckpoint value). Therefore, it is "ok" for Splunk users to set checkpoint in the
+		// future. They won't see the data until that checkpoint timestamp.
+		return splunkCheckpoint{}, errors.New("FromTimestamp must not be in the future or within eventual consistency margin")
+	}
+
+	var toTs time.Time
+	if len(parts) > 1 {
+		toTs, err = time.Parse(time.RFC3339Nano, parts[1])
+		if err != nil {
+			return splunkCheckpoint{}, errors.Wrap(err, "could not parse ToTimestamp")
+		}
+	} else {
+		// If checkpoint consists from only FromTimestamp, i.e. no ToTimestamp and FromAlertID, ToTimestamp will become
+		// the current instant (minus eventual consistency buffer) which allows to get all already persisted violations
+		// between provided FromTimestamp and the current moment when the request is processed.
+		toTs = adjustedNow
+	}
+	if toTs.After(adjustedNow) { // Same reasoning as for fromTs above.
+		return splunkCheckpoint{}, errors.New("ToTimestamp must not be in the future or within eventual consistency margin")
+	}
+
+	if fromTs.After(toTs) {
+		// This should not happen but we error out for the case we or users mess it up somehow.
+		return splunkCheckpoint{}, errors.New("FromTimestamp must not be after ToTimestamp")
+	}
+
+	// If FromAlertID part isn't specified, we take empty string which should always be the lowest value in
+	// lexicographical ordering of Alert IDs. This way all Alerts will be considered in processing of the request with
+	// such checkpoint.
+	fromAlertID := ""
+	if len(parts) > 2 {
+		fromAlertID = parts[2]
+	}
+
+	return splunkCheckpoint{
+		fromTimestamp: fromTs,
+		toTimestamp:   toTs,
+		fromAlertID:   fromAlertID,
+	}, nil
+}
+
+// makeNextCheckpoint creates a checkpoint that starts from the same instant where the given one ends.
+// This function must be called only when no more Alerts were returned from the query for the given checkpoint.
+func (c splunkCheckpoint) makeNextCheckpoint() splunkCheckpoint {
+	return splunkCheckpoint{
+		fromTimestamp: c.toTimestamp,
+	}
+}
+
+// String formats checkpoint value to be parsable by parseCheckpointParam.
+// Also, returned value should be given to Splunk via newCheckpoint.
+// Note that String() might not necessarily create the same representation that was given to parseCheckpointParam(),
+// and vice versa: parsing String() returned value may produce splunkCheckpoint struct with different field values.
+// That's not an issue with String(), rather peculiarity of parseCheckpointParam implementation.
+func (c splunkCheckpoint) String() string {
+	if c.toTimestamp.IsZero() && c.fromAlertID == "" {
+		// If both toTimestamp and fromAlertID are unset, they should not be present in the output, only fromTimestamp
+		// must be included. E.g. "2021-03-30T09:58:00.1234Z".
+		// This way our implementation can assign the _current_ instant to toTimestamp when Splunk requests again with
+		// this checkpoint.
+		return c.fromTimestamp.Format(time.RFC3339Nano)
+	}
+	return c.fromTimestamp.Format(time.RFC3339Nano) + "__" + c.toTimestamp.Format(time.RFC3339Nano) + "__" + c.fromAlertID
 }

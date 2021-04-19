@@ -1,25 +1,28 @@
 package splunk
 
+// This file contains tests for /violations endpoint (mostly).
+
 import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sort"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/alert/datastore"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"k8s.io/client-go/util/jsonpath"
 )
@@ -31,120 +34,112 @@ var (
 	// storage.Severity_HIGH_SEVERITY) instead of integer values (e.g. 3) and made timestamps look human-friendly by
 	// means of makeTimestamp() calls.
 
-	networkAlert = storage.Alert{
-		Id: "86a55daa-de0d-4649-a7a9-ad71eeebfb6a",
+	deployAlert = storage.Alert{
+		Id: "f56ffae8-adf9-4983-8e56-e260f1ab3dc9",
 		Policy: &storage.Policy{
-			Id:          "1b74ffdd-8e67-444c-9814-1c23863c8ccb",
-			Name:        "Unauthorized Network Flow",
-			Description: "This policy generates a violation for the network flows that fall outside baselines for which 'alert on anomalous violations' is set.",
-			Rationale:   "The network baseline is a list of flows that are allowed, and once it is frozen, any flow outside that is a concern.",
-			Remediation: "Evaluate this network flow. If deemed to be okay, add it to the baseline. If not, investigate further as required.",
+			Id:          "2db9a279-2aec-4618-a85d-7f1bdf4911b1",
+			Name:        "90-Day Image Age",
+			Description: "Alert on deployments with images that haven't been updated in 90 days",
+			Rationale:   "Base images are updated frequently with bug fixes and vulnerability patches. Image age exceeding 90 days may indicate a higher risk of vulnerabilities existing in the image.",
+			Remediation: "Rebuild your image, push a new minor version (with a new immutable tag), and update your service to use it",
 			Categories: []string{
-				"Anomalous Activity",
+				"DevOps Best Practices",
+				"Security Best Practices",
 			},
-			LifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
-			Severity:           storage.Severity_HIGH_SEVERITY,
-			SORTName:           "Unauthorized Network Flow",
-			SORTLifecycleStage: "RUNTIME",
+			LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY},
+			Exclusions: []*storage.Exclusion{{
+				Name: "Don't alert on kube-system namespace",
+				Deployment: &storage.Exclusion_Deployment{
+					Scope: &storage.Scope{
+						Namespace: "kube-system",
+					},
+				},
+			}, {
+				Name: "Don't alert on istio-system namespace",
+				Deployment: &storage.Exclusion_Deployment{
+					Scope: &storage.Scope{
+						Namespace: "istio-system",
+					},
+				},
+			}},
+			Severity:           storage.Severity_LOW_SEVERITY,
+			SORTName:           "90-Day Image Age",
+			SORTLifecycleStage: "BUILD,DEPLOY",
 			PolicyVersion:      "1.1",
 			PolicySections: []*storage.PolicySection{{
 				PolicyGroups: []*storage.PolicyGroup{{
-					FieldName: "Unexpected Network Flow Detected",
+					FieldName: "Image Age",
 					Values: []*storage.PolicyValue{{
-						Value: "true",
+						Value: "90",
 					}},
 				}},
 			}},
 		},
-		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Entity: &storage.Alert_Deployment_{
 			Deployment: &storage.Alert_Deployment{
-				Id:          "b09dd238-9131-4e05-af89-727e37cd31f1",
-				Name:        "central",
+				Id:          "565bdd7a-eb3e-4367-9b73-87a9bcb8f4e7",
+				Name:        "monitoring",
 				Type:        "Deployment",
 				Namespace:   "stackrox",
-				NamespaceId: "e537bed5-1f30-4425-9757-0e0056fffedf",
+				NamespaceId: "dff6a17e-f246-4dc0-98b3-c70ee59c3cea",
 				Labels: map[string]string{
-					"app":                          "central",
-					"app.kubernetes.io/component":  "central",
-					"app.kubernetes.io/instance":   "stackrox-central-services",
+					"app":                          "monitoring",
 					"app.kubernetes.io/managed-by": "Helm",
 					"app.kubernetes.io/name":       "stackrox",
-					"app.kubernetes.io/part-of":    "stackrox-central-services",
-					"app.kubernetes.io/version":    "3.0.56.x-67-g847d2628a2",
-					"helm.sh/chart":                "stackrox-central-services-56.0.67-g847d2628a2",
 				},
-				ClusterId:   "9e2755af-c2ba-4249-b4f2-f11a01694c71",
+				ClusterId:   "098e0e05-a96b-43ca-95af-3ef72cd32828",
 				ClusterName: "remote",
 				Containers: []*storage.Alert_Deployment_Container{{
 					Image: &storage.ContainerImage{
-						Id: "sha256:09fcd52410a9b3ebb25fd932cc8269336ff2290cb8113e4513458020261267a0",
+						Id: "sha256:488ce940267b9b7e281779845d45c6aef36774ed4ca54b2aef67104bf70dee23",
 						Name: &storage.ImageName{
 							Registry: "docker.io",
-							Remote:   "stackrox/main",
-							Tag:      "3.0.56.x-89-gc8e50289a2",
-							FullName: "docker.io/stackrox/main:3.0.56.x-89-gc8e50289a2",
+							Remote:   "stackrox/monitoring",
+							Tag:      "1.0.0",
+							FullName: "docker.io/stackrox/monitoring:1.0.0",
 						},
 					},
-					Name: "central",
+					Name: "grafana",
+				}, {
+					Image: &storage.ContainerImage{
+						Id: "sha256:488ce940267b9b7e281779845d45c6aef36774ed4ca54b2aef67104bf70dee23",
+						Name: &storage.ImageName{
+							Registry: "docker.io",
+							Remote:   "stackrox/monitoring",
+							Tag:      "1.0.0",
+							FullName: "docker.io/stackrox/monitoring:1.0.0",
+						},
+					},
+					Name: "influxdb",
+				}, {
+					Image: &storage.ContainerImage{
+						Id: "sha256:488ce940267b9b7e281779845d45c6aef36774ed4ca54b2aef67104bf70dee23",
+						Name: &storage.ImageName{
+							Registry: "docker.io",
+							Remote:   "stackrox/monitoring",
+							Tag:      "1.0.0",
+							FullName: "docker.io/stackrox/monitoring:1.0.0",
+						},
+					},
+					Name: "telegraf-proxy",
 				}},
 				Annotations: map[string]string{
-					"email":                          "support@stackrox.com",
-					"meta.helm.sh/release-name":      "stackrox-central-services",
-					"meta.helm.sh/release-namespace": "stackrox",
 					"owner":                          "stackrox",
+					"email":                          "support@stackrox.com",
+					"meta.helm.sh/release-name":      "stackrox-monitoring",
+					"meta.helm.sh/release-namespace": "stackrox",
 				},
 			},
 		},
-		Violations: []*storage.Alert_Violation{
-			{
-				Message: "Unexpected network flow found in deployment. Source name: 'central'. Destination name: 'External Entities'. Destination port: '9'. Protocol: 'L4_PROTOCOL_UDP'.",
-				MessageAttributes: &storage.Alert_Violation_NetworkFlowInfo_{
-					NetworkFlowInfo: &storage.Alert_Violation_NetworkFlowInfo{
-						Protocol: storage.L4Protocol_L4_PROTOCOL_UDP,
-						Source: &storage.Alert_Violation_NetworkFlowInfo_Entity{
-							Name:                "central",
-							EntityType:          storage.NetworkEntityInfo_DEPLOYMENT,
-							DeploymentNamespace: "stackrox",
-							DeploymentType:      "Deployment",
-						},
-						Destination: &storage.Alert_Violation_NetworkFlowInfo_Entity{
-							Name:                "External Entities",
-							EntityType:          storage.NetworkEntityInfo_INTERNET,
-							DeploymentNamespace: "internet",
-							Port:                9,
-						},
-					},
-				},
-				Type: storage.Alert_Violation_NETWORK_FLOW,
-				Time: makeTimestamp("2021-03-21T21:50:46.600080752Z"),
-			},
-			{
-				Message: "Unexpected network flow found in deployment. Source name: 'central'. Destination name: 'scanner'. Destination port: '8080'. Protocol: 'L4_PROTOCOL_TCP'.",
-				MessageAttributes: &storage.Alert_Violation_NetworkFlowInfo_{
-					NetworkFlowInfo: &storage.Alert_Violation_NetworkFlowInfo{
-						Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-						Source: &storage.Alert_Violation_NetworkFlowInfo_Entity{
-							Name:                "central",
-							EntityType:          storage.NetworkEntityInfo_DEPLOYMENT,
-							DeploymentNamespace: "stackrox",
-							DeploymentType:      "Deployment",
-						},
-						Destination: &storage.Alert_Violation_NetworkFlowInfo_Entity{
-							Name:                "scanner",
-							EntityType:          storage.NetworkEntityInfo_DEPLOYMENT,
-							DeploymentNamespace: "stackrox",
-							DeploymentType:      "Deployment",
-							Port:                8080,
-						},
-					},
-				},
-				Type: storage.Alert_Violation_NETWORK_FLOW,
-				Time: makeTimestamp("2021-03-21T21:50:46.741573591Z"),
-			},
-		},
-		Time:          makeTimestamp("2021-03-21T21:50:46.741586331Z"),
-		FirstOccurred: makeTimestamp("2021-03-21T21:50:46.210811055Z"),
+		Violations: []*storage.Alert_Violation{{
+			Message: "Container 'grafana' has image created at 2020-09-28 17:03:00 (UTC)",
+		}, {
+			Message: "Container 'influxdb' has image created at 2020-09-28 17:03:00 (UTC)",
+		}, {
+			Message: "Container 'telegraf-proxy' has image created at 2020-09-28 17:03:00 (UTC)",
+		}},
+		Time:          makeTimestamp("2021-02-01T16:09:02.193352817Z"),
+		FirstOccurred: makeTimestamp("2021-02-01T16:09:02.128791072Z"),
 	}
 
 	processAlert = storage.Alert{
@@ -371,117 +366,131 @@ var (
 		FirstOccurred: makeTimestamp("2021-02-15T19:04:36.662294945Z"),
 	}
 
-	deployAlert = storage.Alert{
-		Id: "f56ffae8-adf9-4983-8e56-e260f1ab3dc9",
+	networkAlert = storage.Alert{
+		Id: "86a55daa-de0d-4649-a7a9-ad71eeebfb6a",
 		Policy: &storage.Policy{
-			Id:          "2db9a279-2aec-4618-a85d-7f1bdf4911b1",
-			Name:        "90-Day Image Age",
-			Description: "Alert on deployments with images that haven't been updated in 90 days",
-			Rationale:   "Base images are updated frequently with bug fixes and vulnerability patches. Image age exceeding 90 days may indicate a higher risk of vulnerabilities existing in the image.",
-			Remediation: "Rebuild your image, push a new minor version (with a new immutable tag), and update your service to use it",
+			Id:          "1b74ffdd-8e67-444c-9814-1c23863c8ccb",
+			Name:        "Unauthorized Network Flow",
+			Description: "This policy generates a violation for the network flows that fall outside baselines for which 'alert on anomalous violations' is set.",
+			Rationale:   "The network baseline is a list of flows that are allowed, and once it is frozen, any flow outside that is a concern.",
+			Remediation: "Evaluate this network flow. If deemed to be okay, add it to the baseline. If not, investigate further as required.",
 			Categories: []string{
-				"DevOps Best Practices",
-				"Security Best Practices",
+				"Anomalous Activity",
 			},
-			LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY},
-			Exclusions: []*storage.Exclusion{{
-				Name: "Don't alert on kube-system namespace",
-				Deployment: &storage.Exclusion_Deployment{
-					Scope: &storage.Scope{
-						Namespace: "kube-system",
-					},
-				},
-			}, {
-				Name: "Don't alert on istio-system namespace",
-				Deployment: &storage.Exclusion_Deployment{
-					Scope: &storage.Scope{
-						Namespace: "istio-system",
-					},
-				},
-			}},
-			Severity:           storage.Severity_LOW_SEVERITY,
-			SORTName:           "90-Day Image Age",
-			SORTLifecycleStage: "BUILD,DEPLOY",
+			LifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			Severity:           storage.Severity_HIGH_SEVERITY,
+			SORTName:           "Unauthorized Network Flow",
+			SORTLifecycleStage: "RUNTIME",
 			PolicyVersion:      "1.1",
 			PolicySections: []*storage.PolicySection{{
 				PolicyGroups: []*storage.PolicyGroup{{
-					FieldName: "Image Age",
+					FieldName: "Unexpected Network Flow Detected",
 					Values: []*storage.PolicyValue{{
-						Value: "90",
+						Value: "true",
 					}},
 				}},
 			}},
 		},
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Entity: &storage.Alert_Deployment_{
 			Deployment: &storage.Alert_Deployment{
-				Id:          "565bdd7a-eb3e-4367-9b73-87a9bcb8f4e7",
-				Name:        "monitoring",
+				Id:          "b09dd238-9131-4e05-af89-727e37cd31f1",
+				Name:        "central",
 				Type:        "Deployment",
 				Namespace:   "stackrox",
-				NamespaceId: "dff6a17e-f246-4dc0-98b3-c70ee59c3cea",
+				NamespaceId: "e537bed5-1f30-4425-9757-0e0056fffedf",
 				Labels: map[string]string{
-					"app":                          "monitoring",
+					"app":                          "central",
+					"app.kubernetes.io/component":  "central",
+					"app.kubernetes.io/instance":   "stackrox-central-services",
 					"app.kubernetes.io/managed-by": "Helm",
 					"app.kubernetes.io/name":       "stackrox",
+					"app.kubernetes.io/part-of":    "stackrox-central-services",
+					"app.kubernetes.io/version":    "3.0.56.x-67-g847d2628a2",
+					"helm.sh/chart":                "stackrox-central-services-56.0.67-g847d2628a2",
 				},
-				ClusterId:   "098e0e05-a96b-43ca-95af-3ef72cd32828",
+				ClusterId:   "9e2755af-c2ba-4249-b4f2-f11a01694c71",
 				ClusterName: "remote",
 				Containers: []*storage.Alert_Deployment_Container{{
 					Image: &storage.ContainerImage{
-						Id: "sha256:488ce940267b9b7e281779845d45c6aef36774ed4ca54b2aef67104bf70dee23",
+						Id: "sha256:09fcd52410a9b3ebb25fd932cc8269336ff2290cb8113e4513458020261267a0",
 						Name: &storage.ImageName{
 							Registry: "docker.io",
-							Remote:   "stackrox/monitoring",
-							Tag:      "1.0.0",
-							FullName: "docker.io/stackrox/monitoring:1.0.0",
+							Remote:   "stackrox/main",
+							Tag:      "3.0.56.x-89-gc8e50289a2",
+							FullName: "docker.io/stackrox/main:3.0.56.x-89-gc8e50289a2",
 						},
 					},
-					Name: "grafana",
-				}, {
-					Image: &storage.ContainerImage{
-						Id: "sha256:488ce940267b9b7e281779845d45c6aef36774ed4ca54b2aef67104bf70dee23",
-						Name: &storage.ImageName{
-							Registry: "docker.io",
-							Remote:   "stackrox/monitoring",
-							Tag:      "1.0.0",
-							FullName: "docker.io/stackrox/monitoring:1.0.0",
-						},
-					},
-					Name: "influxdb",
-				}, {
-					Image: &storage.ContainerImage{
-						Id: "sha256:488ce940267b9b7e281779845d45c6aef36774ed4ca54b2aef67104bf70dee23",
-						Name: &storage.ImageName{
-							Registry: "docker.io",
-							Remote:   "stackrox/monitoring",
-							Tag:      "1.0.0",
-							FullName: "docker.io/stackrox/monitoring:1.0.0",
-						},
-					},
-					Name: "telegraf-proxy",
+					Name: "central",
 				}},
 				Annotations: map[string]string{
-					"owner":                          "stackrox",
 					"email":                          "support@stackrox.com",
-					"meta.helm.sh/release-name":      "stackrox-monitoring",
+					"meta.helm.sh/release-name":      "stackrox-central-services",
 					"meta.helm.sh/release-namespace": "stackrox",
+					"owner":                          "stackrox",
 				},
 			},
 		},
-		Violations: []*storage.Alert_Violation{{
-			Message: "Container 'grafana' has image created at 2020-09-28 17:03:00 (UTC)",
-		}, {
-			Message: "Container 'influxdb' has image created at 2020-09-28 17:03:00 (UTC)",
-		}, {
-			Message: "Container 'telegraf-proxy' has image created at 2020-09-28 17:03:00 (UTC)",
-		}},
-		Time:          makeTimestamp("2021-02-01T16:09:02.193352817Z"),
-		FirstOccurred: makeTimestamp("2021-02-01T16:09:02.128791072Z"),
+		Violations: []*storage.Alert_Violation{
+			{
+				Message: "Unexpected network flow found in deployment. Source name: 'central'. Destination name: 'External Entities'. Destination port: '9'. Protocol: 'L4_PROTOCOL_UDP'.",
+				MessageAttributes: &storage.Alert_Violation_NetworkFlowInfo_{
+					NetworkFlowInfo: &storage.Alert_Violation_NetworkFlowInfo{
+						Protocol: storage.L4Protocol_L4_PROTOCOL_UDP,
+						Source: &storage.Alert_Violation_NetworkFlowInfo_Entity{
+							Name:                "central",
+							EntityType:          storage.NetworkEntityInfo_DEPLOYMENT,
+							DeploymentNamespace: "stackrox",
+							DeploymentType:      "Deployment",
+						},
+						Destination: &storage.Alert_Violation_NetworkFlowInfo_Entity{
+							Name:                "External Entities",
+							EntityType:          storage.NetworkEntityInfo_INTERNET,
+							DeploymentNamespace: "internet",
+							Port:                9,
+						},
+					},
+				},
+				Type: storage.Alert_Violation_NETWORK_FLOW,
+				Time: makeTimestamp("2021-03-21T21:50:46.600080752Z"),
+			},
+			{
+				Message: "Unexpected network flow found in deployment. Source name: 'central'. Destination name: 'scanner'. Destination port: '8080'. Protocol: 'L4_PROTOCOL_TCP'.",
+				MessageAttributes: &storage.Alert_Violation_NetworkFlowInfo_{
+					NetworkFlowInfo: &storage.Alert_Violation_NetworkFlowInfo{
+						Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+						Source: &storage.Alert_Violation_NetworkFlowInfo_Entity{
+							Name:                "central",
+							EntityType:          storage.NetworkEntityInfo_DEPLOYMENT,
+							DeploymentNamespace: "stackrox",
+							DeploymentType:      "Deployment",
+						},
+						Destination: &storage.Alert_Violation_NetworkFlowInfo_Entity{
+							Name:                "scanner",
+							EntityType:          storage.NetworkEntityInfo_DEPLOYMENT,
+							DeploymentNamespace: "stackrox",
+							DeploymentType:      "Deployment",
+							Port:                8080,
+						},
+					},
+				},
+				Type: storage.Alert_Violation_NETWORK_FLOW,
+				Time: makeTimestamp("2021-03-21T21:50:46.741573591Z"),
+			},
+		},
+		Time:          makeTimestamp("2021-03-21T21:50:46.741586331Z"),
+		FirstOccurred: makeTimestamp("2021-03-21T21:50:46.210811055Z"),
 	}
 )
 
 func makeTimestamp(timeStr string) *types.Timestamp {
-	ts, _, err := parseTimestamp(timeStr)
+	ts, err := types.TimestampProto(mustParseTime(timeStr))
+	utils.Must(err)
+	return ts
+}
+
+func mustParseTime(timeStr string) time.Time {
+	ts, err := time.Parse(time.RFC3339Nano, timeStr)
 	utils.Must(err)
 	return ts
 }
@@ -492,24 +501,20 @@ func TestViolations(t *testing.T) {
 
 type violationsTestSuite struct {
 	suite.Suite
-	processAlert, k8sAlert, deployAlert, networkAlert storage.Alert
+	deployAlert, processAlert, k8sAlert, networkAlert storage.Alert
 	allowCtx                                          context.Context
-	// noCheckpoint is just a type-safe way to say there's no checkpoint parameter in the request without risking to
-	// accidentally provide nil in *storage.Alert varargs.
-	noCheckpoint []string
 }
 
 func (s *violationsTestSuite) SetupTest() {
+	s.deployAlert = *deployAlert.Clone()
 	s.processAlert = *processAlert.Clone()
 	s.k8sAlert = *k8sAlert.Clone()
-	s.deployAlert = *deployAlert.Clone()
 	s.networkAlert = *networkAlert.Clone()
 	s.allowCtx = sac.WithAllAccess(context.Background())
-	s.noCheckpoint = []string{}
 }
 
 func (s *violationsTestSuite) TestNetworkAlert() {
-	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.networkAlert))
+	vs := s.getViolations(s.prepare().setAlerts(&s.networkAlert).runRequestAndGetBody())
 	s.Len(vs, 2)
 
 	for _, v := range vs {
@@ -568,7 +573,7 @@ func (s *violationsTestSuite) TestNetworkAlert() {
 }
 
 func (s *violationsTestSuite) TestProcessAlert() {
-	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.processAlert))
+	vs := s.getViolations(s.prepare().setAlerts(&s.processAlert).runRequestAndGetBody())
 	s.Len(vs, 2)
 
 	for _, v := range vs {
@@ -586,7 +591,7 @@ func (s *violationsTestSuite) TestProcessAlert() {
 }
 
 func (s *violationsTestSuite) TestK8sAlert() {
-	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.k8sAlert))
+	vs := s.getViolations(s.prepare().setAlerts(&s.k8sAlert).runRequestAndGetBody())
 	s.Len(vs, 3)
 
 	for _, v := range vs {
@@ -598,18 +603,20 @@ func (s *violationsTestSuite) TestK8sAlert() {
 		s.checkPolicy(v)
 	}
 
-	s.Equal("2021-02-15T19:04:36.659410153Z", s.extr(vs[0], ".violationInfo.violationTime"))
-	s.assertPresent(vs[0], ".violationInfo", ".containerName", ".podId") // exec has both pod and container
+	s.sortViolationsByID(vs)
 
-	s.Equal("2021-02-15T19:04:36.712345678Z", s.extr(vs[1], ".violationInfo.violationTime"))
-	s.assertPresent(vs[1], ".violationInfo", ".podId") // port-forward has only pod
+	s.Equal("2021-02-15T19:04:36.712345678Z", s.extr(vs[0], ".violationInfo.violationTime"))
+	s.assertPresent(vs[0], ".violationInfo", ".podId") // port-forward has only pod
 
-	s.Equal("2021-02-15T19:04:36.843302212Z", s.extr(vs[2], ".violationInfo.violationTime"))
-	s.assertPresent(vs[0], ".violationInfo", ".containerName", ".podId")
+	s.Equal("2021-02-15T19:04:36.843302212Z", s.extr(vs[1], ".violationInfo.violationTime"))
+	s.assertPresent(vs[1], ".violationInfo", ".containerName", ".podId") // exec has both pod and container
+
+	s.Equal("2021-02-15T19:04:36.659410153Z", s.extr(vs[2], ".violationInfo.violationTime"))
+	s.assertPresent(vs[2], ".violationInfo", ".containerName", ".podId")
 }
 
 func (s *violationsTestSuite) TestDeployAlert() {
-	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.deployAlert))
+	vs := s.getViolations(s.prepare().setAlerts(&s.deployAlert).runRequestAndGetBody())
 	s.Len(vs, 1)
 
 	s.Equal("GENERIC", s.extr(vs[0], ".violationInfo.violationType"))
@@ -625,20 +632,8 @@ func (s *violationsTestSuite) TestDeployAlert() {
 	s.checkPolicy(vs[0])
 }
 
-func (s *violationsTestSuite) TestViolationsAreOrdered() {
-	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert))
-
-	s.Greater(len(vs), 2)
-	for i := range vs {
-		if i == 0 {
-			continue
-		}
-		s.LessOrEqual(s.extr(vs[i-1], ".violationInfo.violationTime"), s.extr(vs[i], ".violationInfo.violationTime"))
-	}
-}
-
 func (s *violationsTestSuite) TestViolationIdsAreDistinct() {
-	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, &s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert))
+	vs := s.getViolations(s.prepare().setAlerts(&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert).runRequestAndGetBody())
 
 	ids := set.StringSet{}
 	for _, v := range vs {
@@ -655,7 +650,7 @@ func (s *violationsTestSuite) TestWithDeploymentImage() {
 		Image: alert.GetDeployment().Containers[0].GetImage(),
 	}
 
-	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert))
+	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
 
 	s.assertPresent(vs[0], ".deploymentInfo",
 		// deploymentImage must obviously be present coming from above
@@ -668,21 +663,21 @@ func (s *violationsTestSuite) TestAlertWithoutPolicy() {
 	alert := s.processAlert.Clone()
 	alert.Policy = nil
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
-	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert))
+	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
 	s.Nil(s.extr(vs[0], ".policyInfo"))
 }
 
 func (s *violationsTestSuite) TestProcessAlertWithoutProcessIndicators() {
 	alert := s.processAlert.Clone()
 	alert.ProcessViolation.Processes = []*storage.ProcessIndicator{}
-	s.Empty(s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert)))
+	s.Empty(s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody()))
 }
 
 func (s *violationsTestSuite) TestProcessAlertWithoutProcessSignal() {
 	alert := s.processAlert.Clone()
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
 	alert.ProcessViolation.Processes[0].Signal = nil
-	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert))
+	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
 	s.checkViolationInfo(vs[0], ".podId", ".podUid", ".containerName", ".containerStartTime") // .containerId isn't available
 	s.checkAlertInfo(vs[0])
 	// That's all it can gather from ProcessIndicator without ProcessSignal
@@ -694,14 +689,14 @@ func (s *violationsTestSuite) TestProcessAlertWithoutProcessSignal() {
 func (s *violationsTestSuite) TestAlertWithoutViolations() {
 	alert := s.deployAlert.Clone()
 	alert.Violations = []*storage.Alert_Violation{}
-	s.Empty(s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert)))
+	s.Empty(s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody()))
 }
 
 func (s *violationsTestSuite) TestK8sAlertWithoutDeployment() {
 	alert := s.k8sAlert.Clone()
 	alert.Entity = nil
 	alert.Violations = alert.Violations[:1]
-	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert))
+	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
 	s.Empty(s.extr(vs[0], ".deploymentInfo"))
 }
 
@@ -709,7 +704,7 @@ func (s *violationsTestSuite) TestProcessAlertWithoutDeployment() {
 	alert := s.processAlert.Clone()
 	alert.Entity = nil
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
-	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert))
+	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
 	// deploymentInfo still has some attributes because they came from ProcessIndicator-s
 	s.assertPresent(vs[0], ".deploymentInfo", ".deploymentId", ".deploymentNamespace")
 }
@@ -718,7 +713,7 @@ func (s *violationsTestSuite) TestProcessAlertNotMatchingDeploymentId() {
 	alert := s.processAlert.Clone()
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
 	alert.ProcessViolation.Processes[0].DeploymentId = "blah"
-	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert))
+	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
 	// DeploymentId value from ProcessIndicator should take priority
 	s.Equal("blah", s.extr(vs[0], ".deploymentInfo.deploymentId"))
 	s.NotEmpty(s.extr(vs[0], ".deploymentInfo.deploymentNamespace"))
@@ -729,75 +724,34 @@ func (s *violationsTestSuite) TestProcessAlertNotMatchingDeploymentInfo() {
 	alert.ProcessViolation.Processes = alert.ProcessViolation.Processes[:1]
 	alert.ProcessViolation.Processes[0].ClusterId = "blah-cluster"
 	alert.ProcessViolation.Processes[0].Namespace = "blah-namespace"
-	vs := s.getViolations(s.requestAndGetBody(s.noCheckpoint, alert))
+	vs := s.getViolations(s.prepare().setAlerts(alert).runRequestAndGetBody())
 	s.Equal("blah-cluster", s.extr(vs[0], ".deploymentInfo.clusterId"))
 	s.Equal("blah-namespace", s.extr(vs[0], ".deploymentInfo.deploymentNamespace"))
 }
 
-func (s *violationsTestSuite) TestDefaultCheckpointAndNoViolations() {
-	body := s.requestAndGetBody(s.noCheckpoint)
-	s.Empty(s.getViolations(body))
-	// API should return some default checkpoint for subsequent querying.
-	cp := makeTimestamp(s.extr(body, ".newCheckpoint").(string))
-	// That timestamp should be in the past. For example, earlier than the first commit to Kubernetes repo.
-	s.True(cp.Compare(makeTimestamp("2014-06-06T23:40:48Z")) < 0)
-}
-
-func (s *violationsTestSuite) TestCheckpointInTheFuture() {
-	body := s.requestAndGetBody([]string{"2130-12-31T23:59:59Z"}, &s.processAlert, &s.k8sAlert, &s.deployAlert)
-	s.Empty(s.getViolations(body))
-	// Incoming checkpoint should be echoed on the output.
-	s.Equal("2130-12-31T23:59:59Z", s.extr(body, ".newCheckpoint"))
-}
-
-func (s *violationsTestSuite) TestCheckpointFiltering() {
-	fromStr := "2021-02-01T17:18:48Z"         // Somewhere in the middle of violation timestamps
-	toStr := "2021-02-15T19:04:36.843302212Z" // Timestamp of the last violation met in the data
-	fromTs := makeTimestamp(fromStr)
-	toTs := makeTimestamp(toStr)
-	alerts := []*storage.Alert{&s.processAlert, &s.k8sAlert, &s.deployAlert}
-
-	body := s.requestAndGetBody([]string{fromStr}, alerts...)
-	vs := s.getViolations(body)
-	s.NotEmpty(vs)
-	s.Less(len(vs), len(s.getViolations(s.requestAndGetBody(s.noCheckpoint, alerts...))))
-
-	for _, v := range vs {
-		ts := makeTimestamp(s.extr(v, ".violationInfo.violationTime").(string))
-		s.True(ts.Compare(fromTs) > 0)
-		s.True(ts.Compare(toTs) <= 0)
+// getViolations extracts "violations" attribute as a slice for later querying them with JSONPath.
+func (s *violationsTestSuite) getViolations(body map[string]interface{}) []interface{} {
+	violations := s.extr(body, ".violations")
+	if violations == nil {
+		return nil
 	}
-
-	s.Equal(toStr, s.extr(body, ".newCheckpoint"))
+	return violations.([]interface{})
 }
 
-func (s *violationsTestSuite) TestCheckpointBeforeData() {
-	alerts := []*storage.Alert{&s.processAlert, &s.k8sAlert, &s.deployAlert}
+// extr extracts value from input according to provided jsonPath. Returns nil if given attribute does not exist.
+func (s *violationsTestSuite) extr(input interface{}, jsonPath string) interface{} {
+	jp := jsonpath.New("")
 
-	// Query with checkpoint. The checkpoint's date is before violation timestamps in the data.
-	vs1 := s.getViolations(s.requestAndGetBody([]string{"2021-01-01T00:00:00Z"}, alerts...))
-	// Query without checkpoint.
-	vs2 := s.getViolations(s.requestAndGetBody(s.noCheckpoint, alerts...))
+	err := jp.Parse("{" + jsonPath + "}")
+	s.NoError(err)
 
-	s.Equal(len(vs1), len(vs2))
-}
+	val, err := jp.FindResults(input)
+	if err != nil && strings.HasSuffix(err.Error(), " is not found") {
+		return nil
+	}
+	s.NoError(err)
 
-func (s *violationsTestSuite) TestInvalidCheckpoint() {
-	w := httptest.NewRecorder()
-
-	s.request(s.allowCtx, w, []string{"This isn't any good timestamp"})
-
-	s.Equal(http.StatusBadRequest, w.Code)
-	body := w.Body.String()
-	s.Contains(body, "could not parse query parameter")
-	s.Contains(body, "from_checkpoint")
-	s.Contains(body, "This isn't any good timestamp")
-}
-
-func (s *violationsTestSuite) TestFirstCheckpointWins() {
-	checkpointParams := []string{"2130-12-31T23:59:59Z", "2005-01-01T00:00:00Z"}
-	vs := s.getViolations(s.requestAndGetBody(checkpointParams, &s.k8sAlert))
-	s.Empty(vs)
+	return val[0][0].Interface()
 }
 
 func (s *violationsTestSuite) assertPresent(violation interface{}, prefix string, attributes ...string) {
@@ -858,79 +812,367 @@ func (s *violationsTestSuite) checkPolicy(violation interface{}) {
 		".policyVersion")
 }
 
-func (s *violationsTestSuite) requestAndGetBody(checkpointParams []string, alerts ...*storage.Alert) map[string]interface{} {
-	w := httptest.NewRecorder()
-	s.request(s.allowCtx, w, checkpointParams, alerts...)
-	s.Equal(http.StatusOK, w.Code)
+func (s *violationsTestSuite) TestResponsePagination() {
+	s.withAlerts(these(&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert), func(alertsDS datastore.DataStore) {
+		violationsNoPagination := s.getViolations(s.prepare().setAlertsDS(alertsDS).runRequestAndGetBody())
+		s.NotEmpty(violationsNoPagination)
+		s.sortViolationsByID(violationsNoPagination)
 
-	var parsed map[string]interface{}
-	err := json.Unmarshal(w.Body.Bytes(), &parsed)
-	s.NoError(err)
+		cases := []paginationSettings{
+			{maxAlertsFromQuery: 1, violationsPerResponse: 1},
+			{maxAlertsFromQuery: 1, violationsPerResponse: 5},
+			{maxAlertsFromQuery: 1, violationsPerResponse: 7},
+			{maxAlertsFromQuery: 1, violationsPerResponse: 10},
+			{maxAlertsFromQuery: 2, violationsPerResponse: 5},
+			{maxAlertsFromQuery: 10, violationsPerResponse: 1},
+		}
+		for _, c := range cases {
+			s.Run(fmt.Sprintf("%v", c), func() {
+				violationsPaginated := make([]interface{}, 0, len(violationsNoPagination))
+				checkpoint := "2020-01-01T00:00:00Z"
+				iterations := 0
+				for ; ; iterations++ {
+					body := s.prepare().setCheckpoint(checkpoint).setPagination(c).setAlertsDS(alertsDS).runRequestAndGetBody()
+					checkpoint = s.extr(body, ".newCheckpoint").(string)
+					vs := s.getViolations(body)
+					if len(vs) == 0 {
+						break
+					}
+					violationsPaginated = append(violationsPaginated, vs...)
+				}
+				s.Empty(mustParseCheckpoint(s.T(), checkpoint).fromAlertID) // No more alerts available.
 
-	return parsed
+				if c.violationsPerResponse < len(violationsNoPagination) {
+					s.Greater(iterations, 1)
+				} else {
+					s.Equal(1, iterations)
+				}
+				s.sortViolationsByID(violationsPaginated)
+				s.Equal(violationsNoPagination, violationsPaginated)
+			})
+		}
+	})
 }
 
-func (s *violationsTestSuite) request(ctx context.Context, responseWriter http.ResponseWriter, checkpointParams []string, alerts ...*storage.Alert) {
-	handler := NewViolationsHandler(s.makeDS(alerts...))
+func (s *violationsTestSuite) TestCheckpointIteration() {
+	violationsNoPagination := s.getViolations(s.prepare().setAlerts(&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert).runRequestAndGetBody())
+	s.NotEmpty(violationsNoPagination)
+	s.sortViolationsByID(violationsNoPagination)
+
+	violationsPaginated := make([]interface{}, 0, len(violationsNoPagination))
+
+	// Get a part of violations from the first three alerts initially.
+	checkpoint := "2021-01-01T00:00:00Z__2021-02-15T19:04:36.712345678Z" // ToTimestamp in the middle of k8sAlert violations
+	body := s.prepare().setCheckpoint(checkpoint).setAlerts(&s.deployAlert, &s.processAlert, &s.k8sAlert).runRequestAndGetBody()
+	checkpoint = s.extr(body, ".newCheckpoint").(string)
+	violationsPaginated = append(violationsPaginated, s.getViolations(body)...)
+	s.Equal("2021-02-15T19:04:36.712345678Z", checkpoint)
+	s.Less(len(violationsPaginated), len(violationsNoPagination))
+
+	// Next, get remaining violations from k8sAlert and a new networkAlert.
+	body = s.prepare().setCheckpoint(checkpoint).setAlerts(&s.k8sAlert, &s.networkAlert).runRequestAndGetBody()
+	checkpoint = s.extr(body, ".newCheckpoint").(string)
+	violationsPaginated = append(violationsPaginated, s.getViolations(body)...)
+	assertCheckpointIsNow(s.T(), checkpoint)
+
+	// We should get the same in the end.
+	s.sortViolationsByID(violationsPaginated)
+	s.Equal(violationsNoPagination, violationsPaginated)
+}
+
+func (s *violationsTestSuite) sortViolationsByID(violations []interface{}) {
+	sort.Slice(violations, func(i, j int) bool {
+		return s.extr(violations[i], ".violationInfo.violationId").(string) < s.extr(violations[j], ".violationInfo.violationId").(string)
+	})
+}
+
+func (s *violationsTestSuite) TestCheckpointTimestampFiltering() {
+	const now = "now" // just a bit fancier way to denote a special value
+
+	samples := []struct {
+		name                                    string
+		alerts                                  []*storage.Alert
+		fromCheckpoint                          string
+		violationsNotBefore, violationsNotAfter string // Time range that should contain all returned violations.
+		expectedCount                           int
+		expectedNewCheckpoint                   string
+	}{
+		{
+			name:                  "Checkpoint before violations",
+			alerts:                []*storage.Alert{&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert},
+			fromCheckpoint:        "2021-01-01T00:00:00Z",
+			violationsNotBefore:   "2021-02-01T16:09:02.193352817Z", // The first violation timestamp in the data.
+			violationsNotAfter:    "2021-03-21T21:50:46.741573591Z", // The biggest violation timestamp in the data.
+			expectedCount:         8,                                // Count of all violations in the data.
+			expectedNewCheckpoint: now,
+		}, {
+			name:                  "Checkpoint without ToTimestamp over all violations",
+			alerts:                []*storage.Alert{&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert},
+			fromCheckpoint:        "2021-02-01T17:18:48Z",
+			violationsNotBefore:   "2021-02-01T17:18:49.421852357Z", // The first violation timestamp after the checkpoint.
+			violationsNotAfter:    "2021-03-21T21:50:46.741573591Z", // The biggest violation timestamp in the data.
+			expectedCount:         6,
+			expectedNewCheckpoint: now,
+		}, {
+			name:                  "Checkpoint with ToTimestamp over all violations",
+			alerts:                []*storage.Alert{&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert},
+			fromCheckpoint:        "2021-02-01T16:09:02.193352817Z__2021-02-15T19:04:36.712345678Z",
+			violationsNotBefore:   "2021-02-01T17:15:56.457252Z",    // The smallest violation timestamp in the data.
+			violationsNotAfter:    "2021-02-15T19:04:36.712345678Z", // The last violation is exactly at ToTimestamp.
+			expectedCount:         4,
+			expectedNewCheckpoint: "2021-02-15T19:04:36.712345678Z", // ToTimestamp value.
+		}, {
+			name:           "No checkpoint and no violations",
+			alerts:         nil,
+			fromCheckpoint: "",
+			expectedCount:  0,
+			// The checkpoint for subsequent querying should start from FromTimestamp=Now() because no Alerts were
+			// present before that moment.
+			expectedNewCheckpoint: now,
+		}, {
+			name:                  "No checkpoint and all violations",
+			alerts:                []*storage.Alert{&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert},
+			fromCheckpoint:        "",
+			violationsNotBefore:   "2021-02-01T16:09:02.193352817Z",
+			violationsNotAfter:    "2021-03-21T21:50:46.741573591Z",
+			expectedCount:         8,
+			expectedNewCheckpoint: now,
+		}, {
+			// While FromTimestamp==ToTimestamp is possible and won't be an error, it will select no data.
+			// Returned newCheckpoint will allow to query data further.
+			name:                  "FromTimestamp is equal to ToTimestamp",
+			alerts:                []*storage.Alert{&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert},
+			fromCheckpoint:        "2021-02-01T18:00:00Z__2021-02-01T18:00:00Z", // Between violations.
+			expectedCount:         0,
+			expectedNewCheckpoint: "2021-02-01T18:00:00Z",
+		}, {
+			// Process violations filtering needs to be checked independently because it is done separately.
+			name:                  "ToTimestamp in the middle of Process Indicators",
+			alerts:                []*storage.Alert{&s.processAlert},
+			fromCheckpoint:        "2021-02-01T00:00:00Z__2021-02-01T17:15:56.457252Z",
+			violationsNotBefore:   "2021-02-01T17:15:56.457252Z",
+			violationsNotAfter:    "2021-02-01T17:15:56.457252Z",
+			expectedCount:         1,
+			expectedNewCheckpoint: "2021-02-01T17:15:56.457252Z",
+		}, {
+			name:                  "FromTimestamp in the middle of Process Indicators",
+			alerts:                []*storage.Alert{&s.processAlert},
+			fromCheckpoint:        "2021-02-01T17:15:56.457252Z__2021-02-01T17:18:49.421852357Z",
+			violationsNotBefore:   "2021-02-01T17:18:49.421852357Z",
+			violationsNotAfter:    "2021-02-01T17:18:49.421852357Z",
+			expectedCount:         1,
+			expectedNewCheckpoint: "2021-02-01T17:18:49.421852357Z",
+		}, {
+			// Non-process violations filtering on the example of K8S events.
+			name:                  "ToTimestamp in the middle of k8s events",
+			alerts:                []*storage.Alert{&s.k8sAlert},
+			fromCheckpoint:        "2021-02-15T19:04:36Z__2021-02-15T19:04:36.712345678Z",
+			violationsNotBefore:   "2021-02-15T19:04:36.659410153Z",
+			violationsNotAfter:    "2021-02-15T19:04:36.712345678Z",
+			expectedCount:         2,
+			expectedNewCheckpoint: "2021-02-15T19:04:36.712345678Z",
+		}, {
+			name:                  "FromTimestamp in the middle of k8s events",
+			alerts:                []*storage.Alert{&s.k8sAlert},
+			fromCheckpoint:        "2021-02-15T19:04:36.659410153Z__2021-02-15T19:04:37Z",
+			violationsNotBefore:   "2021-02-15T19:04:36.712345678Z",
+			violationsNotAfter:    "2021-02-15T19:04:36.843302212Z",
+			expectedCount:         2,
+			expectedNewCheckpoint: "2021-02-15T19:04:37Z",
+		}, {
+			// Non-runtime violations filtering is again a bit special and so we check it separately.
+			name:                  "Deploy violations in the range",
+			alerts:                []*storage.Alert{&s.deployAlert},
+			fromCheckpoint:        "2021-02-01T16:09:02.193352816Z__2021-02-01T16:09:02.193352817Z",
+			violationsNotBefore:   "2021-02-01T16:09:02.193352817Z",
+			violationsNotAfter:    "2021-02-01T16:09:02.193352817Z",
+			expectedCount:         1,
+			expectedNewCheckpoint: "2021-02-01T16:09:02.193352817Z",
+		}, {
+			name:                  "Deploy violations after the range",
+			alerts:                []*storage.Alert{&s.deployAlert},
+			fromCheckpoint:        "2021-01-01T00:00:00Z__2021-02-01T16:09:02.193352816Z",
+			expectedCount:         0,
+			expectedNewCheckpoint: "2021-02-01T16:09:02.193352816Z",
+		}, {
+			name:                  "Deploy violations before the range",
+			alerts:                []*storage.Alert{&s.deployAlert},
+			fromCheckpoint:        "2021-02-01T16:09:02.193352817Z__2021-04-01T00:00:00Z",
+			expectedCount:         0,
+			expectedNewCheckpoint: "2021-04-01T00:00:00Z",
+		},
+	}
+
+	for _, sample := range samples {
+		s.Run(sample.name, func() {
+			checkpointParam := []string{sample.fromCheckpoint}
+			if sample.fromCheckpoint == "" {
+				checkpointParam = nil
+			}
+
+			body := s.prepare().setCheckpoint(checkpointParam...).setAlerts(sample.alerts...).runRequestAndGetBody()
+			vs := s.getViolations(body)
+
+			s.Len(vs, sample.expectedCount)
+
+			if sample.expectedCount > 0 {
+				// Check that all violations fall within the expected range.
+				fromTs := makeTimestamp(sample.violationsNotBefore)
+				toTs := makeTimestamp(sample.violationsNotAfter)
+				for _, v := range vs {
+					ts := makeTimestamp(s.extr(v, ".violationInfo.violationTime").(string))
+					s.True(ts.Compare(fromTs) >= 0, "Violation timestamp is earlier than expected", v)
+					s.True(ts.Compare(toTs) <= 0, "Violation timestamp is later than expected", v)
+				}
+			}
+
+			newCheckpoint := s.extr(body, ".newCheckpoint").(string)
+			if sample.expectedNewCheckpoint == now {
+				assertCheckpointIsNow(s.T(), newCheckpoint)
+			} else {
+				s.Equal(sample.expectedNewCheckpoint, newCheckpoint)
+			}
+		})
+	}
+}
+
+func (s *violationsTestSuite) TestCheckpointFromAlertIDFiltering() {
+	smallerID, biggerID := s.processAlert.GetId(), s.k8sAlert.GetId()
+	if smallerID > biggerID {
+		smallerID, biggerID = biggerID, smallerID
+	}
+
+	body := s.prepare().setCheckpoint("2000-01-01T00:00:00Z__2021-03-29T14:37:00Z__"+smallerID).
+		setAlerts(&s.k8sAlert, &s.processAlert).runRequestAndGetBody()
+	vs := s.getViolations(body)
+
+	s.NotEmpty(vs)
+
+	for _, v := range vs {
+		s.Equal(biggerID, s.extr(v, ".alertInfo.alertId"))
+	}
+}
+
+func (s *violationsTestSuite) TestCheckpointWithFromAlertID() {
+	pagination := paginationSettings{violationsPerResponse: 4}
+	body := s.prepare().setPagination(pagination).setAlerts(&s.deployAlert, &s.processAlert, &s.k8sAlert, &s.networkAlert).runRequestAndGetBody()
+
+	vs := s.getViolations(body)
+	s.GreaterOrEqual(len(vs), 4)
+
+	newCheckpoint := mustParseCheckpoint(s.T(), s.extr(body, ".newCheckpoint").(string))
+	assertFromTimestampIsLongTimeAgo(s.T(), newCheckpoint)
+	assertTimestampIsNow(s.T(), newCheckpoint.toTimestamp)
+	// FromAlertID must have a value because there were more alerts available for the time range after the response page
+	// was finalized.
+	s.NotEmpty(newCheckpoint.fromAlertID)
+}
+
+func (s *violationsTestSuite) TestNonParsableCheckpoint() {
+	w := httptest.NewRecorder()
+
+	s.prepare().setCheckpoint("This isn't any good timestamp").runRequest(w)
+
+	s.Equal(http.StatusBadRequest, w.Code)
+	body := w.Body.String()
+	s.Regexp("error parsing.*from_checkpoint.*This isn't any good timestamp", body)
+}
+
+func (s *violationsTestSuite) TestCheckpointInTheFuture() {
+	w := httptest.NewRecorder()
+
+	s.prepare().setCheckpoint("2130-12-31T23:59:59Z").setAlerts(&s.processAlert, &s.k8sAlert, &s.deployAlert).runRequest(w)
+
+	s.Equal(http.StatusBadRequest, w.Code)
+	s.Regexp("error.*validating checkpoint.*FromTimestamp.*in the future", w.Body.String())
+}
+
+func (s *violationsTestSuite) TestFirstCheckpointParamWins() {
+	checkpointParams := []string{"2021-03-26T09:28:59Z", "2005-01-01T00:00:00Z"}
+	vs := s.getViolations(s.prepare().setCheckpoint(checkpointParams...).setAlerts(&s.k8sAlert).runRequestAndGetBody())
+	s.Empty(vs)
+}
+
+// requestBuilder allows to configure parameters for API request in test and to trigger the request itself.
+type requestBuilder struct {
+	t                *testing.T
+	ctx              context.Context
+	checkpointParams []string
+	pagination       paginationSettings
+	alerts           []*storage.Alert
+	alertsDS         datastore.DataStore
+	// useAlertsDS is true if alertsDS should be used. When false, a new datastore with alerts will be created.
+	// In other words, either alerts or alertsDS is used but not both, and useAlertsDS controls which one will be.
+	useAlertsDS bool
+}
+
+func (s *violationsTestSuite) prepare() *requestBuilder {
+	return &requestBuilder{
+		t:          s.T(),
+		ctx:        s.allowCtx,
+		pagination: defaultPaginationSettings,
+	}
+}
+func (rb *requestBuilder) setContext(ctx context.Context) *requestBuilder {
+	rb.ctx = ctx
+	return rb
+}
+func (rb *requestBuilder) setCheckpoint(checkpointParams ...string) *requestBuilder {
+	rb.checkpointParams = checkpointParams
+	return rb
+}
+func (rb *requestBuilder) setPagination(pagination paginationSettings) *requestBuilder {
+	rb.pagination = pagination
+	return rb
+}
+func (rb *requestBuilder) setAlerts(alerts ...*storage.Alert) *requestBuilder {
+	rb.alerts = alerts
+	rb.useAlertsDS = false
+	return rb
+}
+func (rb *requestBuilder) setAlertsDS(alertsDS datastore.DataStore) *requestBuilder {
+	rb.alertsDS = alertsDS
+	rb.useAlertsDS = true
+	return rb
+}
+func (rb *requestBuilder) runRequest(responseWriter http.ResponseWriter) {
+	alertsDS := rb.alertsDS
+	if !rb.useAlertsDS {
+		ds := makeDS(rb.t, rb.alerts)
+		defer ds.teardown(rb.t)
+		alertsDS = ds.alertsDS
+	}
+
+	handler := newViolationsHandler(alertsDS, rb.pagination)
 
 	u, err := url.Parse("/ignored")
-	s.Require().NoError(err)
-	if len(checkpointParams) > 0 {
+	require.NoError(rb.t, err)
+	if len(rb.checkpointParams) > 0 {
 		q := u.Query()
-		q["from_checkpoint"] = checkpointParams
+		q["from_checkpoint"] = rb.checkpointParams
 		u.RawQuery = q.Encode()
 	}
 	r := httptest.NewRequest("GET", u.String(), nil)
-	r = r.WithContext(ctx)
+	r = r.WithContext(rb.ctx)
 
 	handler.ServeHTTP(responseWriter, r)
 }
+func (rb *requestBuilder) runRequestAndGetBody() map[string]interface{} {
+	w := httptest.NewRecorder()
+	rb.runRequest(w)
+	assert.Equal(rb.t, http.StatusOK, w.Code)
 
-// makeDS creates new datastore with only provided alerts for use in tests.
-func (s *violationsTestSuite) makeDS(alerts ...*storage.Alert) datastore.DataStore {
-	rocksDB := rocksdbtest.RocksDBForT(s.T())
-	boltDB := testutils.DBForT(s.T())
+	var parsed map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &parsed)
+	assert.NoError(rb.t, err)
 
-	bleveIndex, err := globalindex.MemOnlyIndex()
-	s.Require().NoError(err)
-
-	alertsDS := datastore.NewWithDb(rocksDB, boltDB, bleveIndex)
-
-	err = alertsDS.UpsertAlerts(s.allowCtx, alerts)
-	s.NoError(err)
-
-	return alertsDS
-}
-
-// getViolations extracts "violations" attribute as a slice for later querying them with JSONPath.
-func (s *violationsTestSuite) getViolations(body map[string]interface{}) []interface{} {
-	violations := s.extr(body, ".violations")
-	if violations == nil {
-		return nil
-	}
-	return violations.([]interface{})
-}
-
-// extr extracts value from input according to provided jsonPath. Returns nil if given attribute does not exist.
-func (s *violationsTestSuite) extr(input interface{}, jsonPath string) interface{} {
-	jp := jsonpath.New("")
-
-	err := jp.Parse("{" + jsonPath + "}")
-	s.NoError(err)
-
-	val, err := jp.FindResults(input)
-	if err != nil && strings.HasSuffix(err.Error(), " is not found") {
-		return nil
-	}
-	s.NoError(err)
-
-	return val[0][0].Interface()
+	return parsed
 }
 
 func (s *violationsTestSuite) TestResponseContentType() {
 	w := httptest.NewRecorder()
 
-	s.request(s.allowCtx, w, s.noCheckpoint, &s.deployAlert)
+	s.prepare().setAlerts(&s.deployAlert).runRequest(w)
 
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/json", w.Header().Get("Content-Type"))
@@ -941,7 +1183,7 @@ func (s *violationsTestSuite) TestViolationsHandlerError() {
 
 	// context.Background() did not go through our context validation and will not include any global access scope.
 	// We use this to make datastore generate an error which will make the request fail.
-	s.request(context.Background(), w, s.noCheckpoint, &s.deployAlert)
+	s.prepare().setContext(context.Background()).setAlerts(&s.deployAlert).runRequest(w)
 
 	s.Equal(http.StatusInternalServerError, w.Code)
 	s.Contains(w.Body.String(), "access scope was not found in context")
@@ -964,84 +1206,8 @@ func (f failingResponseWriter) Write(_ []byte) (int, error) {
 func (s *violationsTestSuite) TestViolationsHandlerWriteError() {
 	w := failingResponseWriter{header: map[string][]string{}}
 	s.PanicsWithError("net/http: abort Handler", func() {
-		s.request(s.allowCtx, w, s.noCheckpoint, &s.processAlert)
+		s.prepare().setAlerts(&s.processAlert).runRequest(w)
 	})
-}
-
-func (s *violationsTestSuite) TestQueryReturnsAlertsWithAllStates() {
-	a1 := s.processAlert.Clone()
-	a1.State = storage.ViolationState_SNOOZED
-	a2 := s.k8sAlert.Clone()
-	a2.State = storage.ViolationState_RESOLVED
-	a3 := s.deployAlert.Clone()
-	a3.State = storage.ViolationState_ATTEMPTED
-
-	alerts := s.queryAlertsWithTimestamp("2000-01-01T00:00:00Z", a1, a2, a3)
-
-	s.Len(alerts, 3)
-	s.Contains(alerts, s.processAlert.Id)
-	s.Contains(alerts, s.k8sAlert.Id)
-	s.Contains(alerts, s.deployAlert.Id)
-}
-
-func (s *violationsTestSuite) TestQueryAlertsWithTimestamp() {
-	cases := []struct {
-		name      string
-		timestamp string
-		ids       []string
-	}{
-		{
-			name:      "More than a day earlier",
-			timestamp: "2021-01-31T00:00:00Z",
-			ids:       []string{s.processAlert.Id, s.k8sAlert.Id, s.deployAlert.Id},
-		}, {
-			name:      "Earlier same day",
-			timestamp: "2021-02-01T16:05:00Z",
-			ids:       []string{s.processAlert.Id, s.k8sAlert.Id, s.deployAlert.Id},
-		}, {
-			name:      "Between two, within a day",
-			timestamp: "2021-02-01T17:00:00Z",
-			ids:       []string{s.processAlert.Id, s.k8sAlert.Id},
-		}, {
-			name:      "Between two, different days",
-			timestamp: "2021-02-05T00:00:00Z",
-			ids:       []string{s.k8sAlert.Id},
-		}, {
-			name:      "After last, the same day",
-			timestamp: "2021-02-15T19:04:37Z",
-			ids:       []string{},
-		}, {
-			name:      "More than a day after last",
-			timestamp: "2021-02-17T19:04:37Z",
-			ids:       []string{},
-		},
-	}
-	for _, c := range cases {
-		s.Run(c.name, func() {
-			alerts := s.queryAlertsWithTimestamp(c.timestamp, &s.processAlert, &s.k8sAlert, &s.deployAlert)
-			s.Len(alerts, len(c.ids))
-			for _, id := range c.ids {
-				s.Contains(alerts, id)
-			}
-		})
-	}
-}
-
-func (s *violationsTestSuite) queryAlertsWithTimestamp(timestamp string, alerts ...*storage.Alert) []string {
-	alertsDS := s.makeDS(alerts...)
-
-	ts, err := time.Parse(time.RFC3339, timestamp)
-	s.NoError(err)
-
-	returnedAlerts, err := queryAlerts(s.allowCtx, alertsDS, ts)
-	s.NoError(err)
-
-	alertIDs := make([]string, 0, len(returnedAlerts))
-	for _, a := range returnedAlerts {
-		alertIDs = append(alertIDs, a.Id)
-	}
-
-	return alertIDs
 }
 
 func (s *violationsTestSuite) TestGenerateViolationId() {

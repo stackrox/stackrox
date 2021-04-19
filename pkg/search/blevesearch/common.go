@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/mathutil"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch/validpositions"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // Don't limit the max search responses because then functionality can go wonky as we rely on the indexer for correctness
@@ -39,6 +40,7 @@ type relationship struct {
 type bleveContext struct {
 	pagination        *v1.QueryPagination
 	renderedSortOrder search.SortOrder
+	searchAfter       []string
 
 	filters map[v1.SearchCategory]query.Query
 	hook    *Hook
@@ -256,13 +258,15 @@ func resolveMatchFieldQuery(ctx bleveContext, index bleve.Index, category v1.Sea
 
 // RunSearchRequest builds a query and runs it against the index.
 func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index, optionsMap searchPkg.OptionsMap, searchOpts ...SearchOption) ([]searchPkg.Result, error) {
-	sortOrder, err := getSortOrder(q.GetPagination(), optionsMap)
+	sortOrder, searchAfter, err := getSortOrderAndSearchAfter(q.GetPagination(), optionsMap)
 	if err != nil {
 		return nil, err
 	}
+
 	ctx := bleveContext{
 		pagination:        q.GetPagination(),
 		renderedSortOrder: sortOrder,
+		searchAfter:       searchAfter,
 		filters:           make(map[v1.SearchCategory]query.Query),
 	}
 
@@ -326,26 +330,60 @@ func RunCountRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index,
 	return int(result.Total), nil
 }
 
-func getSortOrder(pagination *v1.QueryPagination, optionsMap searchPkg.OptionsMap) (search.SortOrder, error) {
+func getSortOrderAndSearchAfter(pagination *v1.QueryPagination, optionsMap searchPkg.OptionsMap) (search.SortOrder, []string, error) {
 	if len(pagination.GetSortOptions()) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
 
-	ret := make([]search.SearchSort, 0)
-	for _, so := range pagination.SortOptions {
-		sf, ok := optionsMap.Get(so.GetField())
-		if !ok {
-			return nil, fmt.Errorf("option %q is not a valid search option", so.GetField())
+	sortOrder := make([]search.SearchSort, 0, len(pagination.GetSortOptions()))
+
+	var searchAfter []string
+	searchAfterHasDocID := false
+	allowSearchAfter := true
+
+	for _, so := range pagination.GetSortOptions() {
+		var sortField search.SearchSort
+
+		if so.GetField() == searchPkg.DocID.String() {
+			sortField = &search.SortDocID{
+				Desc: so.GetReversed(),
+			}
+		} else {
+			sf, ok := optionsMap.Get(so.GetField())
+			if !ok {
+				return nil, nil, errors.Errorf("option %q is not a valid search option", so.GetField())
+			}
+			sortField = &search.SortField{
+				Field:   sf.GetFieldPath(),
+				Desc:    so.GetReversed(),
+				Type:    search.SortFieldAuto,
+				Missing: search.SortFieldMissingLast,
+			}
 		}
 
-		ret = append(ret, &search.SortField{
-			Field:   sf.GetFieldPath(),
-			Desc:    so.GetReversed(),
-			Type:    search.SortFieldAuto,
-			Missing: search.SortFieldMissingLast,
-		})
+		sortOrder = append(sortOrder, sortField)
+
+		if saOpt, ok := so.GetSearchAfterOpt().(*v1.QuerySortOption_SearchAfter); ok {
+			if !allowSearchAfter {
+				return nil, nil, errors.New("invalid SearchAfter state: SearchAfter values must start from the beginning of SortOptions and must follow without gaps")
+			}
+			if so.GetField() == searchPkg.DocID.String() {
+				searchAfterHasDocID = true
+			}
+			searchAfter = append(searchAfter, saOpt.SearchAfter)
+		} else {
+			allowSearchAfter = false
+		}
 	}
-	return ret, nil
+
+	if len(searchAfter) > 0 && !searchAfterHasDocID {
+		// This checks that SearchAfter will have effect when used or returns an error.
+		// It appears that Bleve does not have validations for bleve.SearchRequest.SearchAfter. This closes the gap.
+		// See https://github.com/blevesearch/bleve/pull/1182#issuecomment-499216058
+		return nil, nil, utils.Should(errors.New("total ordering not guaranteed: SortOrder must contain DocID and SearchAfter value for it to ensure there are no ties, otherwise SearchAfter will not produce correct results"))
+	}
+
+	return sortOrder, searchAfter, nil
 }
 
 func runBleveQuery(ctx bleveContext, query query.Query, index bleve.Index, highlightCtx highlightContext, includeLocations bool, fields ...string) (*bleve.SearchResult, error) {
@@ -354,6 +392,7 @@ func runBleveQuery(ctx bleveContext, query query.Query, index bleve.Index, highl
 	searchRequest.Size = maxSearchResponses
 	if ctx.pagination != nil {
 		searchRequest.Sort = ctx.renderedSortOrder
+		searchRequest.SearchAfter = ctx.searchAfter
 	}
 	searchRequest.IncludeLocations = includeLocations
 
