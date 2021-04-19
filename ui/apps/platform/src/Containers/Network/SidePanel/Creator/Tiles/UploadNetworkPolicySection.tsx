@@ -1,24 +1,42 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, ReactElement } from 'react';
 import { connect } from 'react-redux';
-import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import { useDropzone } from 'react-dropzone';
 
 import { fileUploadColors } from 'constants/visuals/colors';
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as sidepanelActions } from 'reducers/network/sidepanel';
-import wizardStages from 'Containers/Network/SidePanel/wizardStages';
+import sidepanelStages from 'Containers/Network/SidePanel/sidepanelStages';
 
-const DragAndDrop = (props) => {
+type UploadNetworkPolicySectionProps = {
+    setNetworkPolicyModification: (policy) => void;
+    setNetworkPolicyModificationState: (state) => void;
+    setNetworkPolicyModificationSource: (source) => void;
+    setNetworkPolicyModificationName: (name) => void;
+    setSidePanelStage: (stage) => void;
+
+    addToast: (message) => void;
+    removeToast: () => void;
+};
+
+function UploadNetworkPolicySection({
+    setNetworkPolicyModification,
+    setNetworkPolicyModificationName,
+    setNetworkPolicyModificationSource,
+    setNetworkPolicyModificationState,
+    setSidePanelStage,
+    addToast,
+    removeToast,
+}: UploadNetworkPolicySectionProps): ReactElement {
     const showToast = useCallback(() => {
         const errorMessage = 'Invalid file type. Try again.';
-        props.addToast(errorMessage);
-        setTimeout(props.removeToast, 500);
-    }, [props]);
+        addToast(errorMessage);
+        setTimeout(removeToast, 500);
+    }, [addToast, removeToast]);
 
     const onDrop = useCallback(
         (acceptedFiles) => {
-            props.setNetworkPolicyModificationState('REQUEST');
+            setNetworkPolicyModificationState('REQUEST');
             acceptedFiles.forEach((file) => {
                 // check file type.
                 if (file && !file.name.includes('.yaml')) {
@@ -26,22 +44,29 @@ const DragAndDrop = (props) => {
                     return;
                 }
 
-                props.setNetworkPolicyModificationName(file.name);
+                setNetworkPolicyModificationName(file.name);
                 const reader = new FileReader();
                 reader.onload = () => {
                     const fileAsBinaryString = reader.result;
-                    props.setNetworkPolicyModification({ applyYaml: fileAsBinaryString });
-                    props.setNetworkPolicyModificationState('SUCCESS');
+                    setNetworkPolicyModification({ applyYaml: fileAsBinaryString });
+                    setNetworkPolicyModificationState('SUCCESS');
                 };
                 reader.onerror = () => {
-                    props.setNetworkPolicyModificationState('ERROR');
+                    setNetworkPolicyModificationState('ERROR');
                 };
                 reader.readAsBinaryString(file);
-                props.setNetworkPolicyModificationSource('UPLOAD');
-                props.setWizardStage(wizardStages.simulator);
+                setNetworkPolicyModificationSource('UPLOAD');
+                setSidePanelStage(sidepanelStages.simulator);
             });
         },
-        [props, showToast]
+        [
+            setNetworkPolicyModification,
+            setNetworkPolicyModificationName,
+            setNetworkPolicyModificationSource,
+            setNetworkPolicyModificationState,
+            setSidePanelStage,
+            showToast,
+        ]
     );
 
     const { getRootProps, getInputProps } = useDropzone({ onDrop });
@@ -80,18 +105,7 @@ const DragAndDrop = (props) => {
             </div>
         </div>
     );
-};
-
-DragAndDrop.propTypes = {
-    setNetworkPolicyModification: PropTypes.func.isRequired,
-    setNetworkPolicyModificationState: PropTypes.func.isRequired,
-    setNetworkPolicyModificationSource: PropTypes.func.isRequired,
-    setNetworkPolicyModificationName: PropTypes.func.isRequired,
-    setWizardStage: PropTypes.func.isRequired,
-
-    addToast: PropTypes.func.isRequired,
-    removeToast: PropTypes.func.isRequired,
-};
+}
 
 const mapDispatchToProps = {
     setNetworkPolicyModification: sidepanelActions.setNetworkPolicyModification,
@@ -99,10 +113,10 @@ const mapDispatchToProps = {
     setNetworkPolicyModificationSource: sidepanelActions.setNetworkPolicyModificationSource,
     setNetworkPolicyModificationName: sidepanelActions.setNetworkPolicyModificationName,
 
-    setWizardStage: sidepanelActions.setNetworkWizardStage,
+    setSidePanelStage: sidepanelActions.setSidePanelStage,
 
     addToast: notificationActions.addNotification,
     removeToast: notificationActions.removeOldestNotification,
 };
 
-export default connect(null, mapDispatchToProps)(DragAndDrop);
+export default connect(null, mapDispatchToProps)(UploadNetworkPolicySection);

@@ -7,24 +7,24 @@ import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
 import { actions as sidepanelActions } from 'reducers/network/sidepanel';
-import wizardStages from '../SidePanel/wizardStages';
+import sidepanelStages from '../SidePanel/sidepanelStages';
 
 const CIDRFormButton = ({
     sidePanelOpen,
-    currentWizardStage,
+    sidePanelStage,
     openSidePanel,
     closeSidePanel,
-    setWizardStage,
+    setSidePanelStage,
     isDisabled,
 }) => {
     function toggleForm() {
-        if (sidePanelOpen && currentWizardStage === wizardStages.cidrForm) {
+        if (sidePanelOpen && sidePanelStage === sidepanelStages.cidrForm) {
             closeSidePanel();
         } else {
             if (!sidePanelOpen) {
                 openSidePanel();
             }
-            setWizardStage(wizardStages.cidrForm);
+            setSidePanelStage(sidepanelStages.cidrForm);
         }
     }
 
@@ -46,14 +46,14 @@ const CIDRFormButton = ({
 };
 
 const mapStateToProps = createStructuredSelector({
-    sidePanelOpen: selectors.getNetworkSidePanelOpen,
-    currentWizardStage: selectors.getNetworkWizardStage,
+    sidePanelOpen: selectors.getSidePanelOpen,
+    sidePanelStage: selectors.getSidePanelStage,
 });
 
 const mapDispatchToProps = {
     openSidePanel: pageActions.openSidePanel,
     closeSidePanel: pageActions.closeSidePanel,
-    setWizardStage: sidepanelActions.setNetworkWizardStage,
+    setSidePanelStage: sidepanelActions.setSidePanelStage,
 };
 
 export default withRouter(connect(mapStateToProps, mapDispatchToProps)(CIDRFormButton));

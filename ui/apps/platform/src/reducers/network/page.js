@@ -47,11 +47,11 @@ const reducer = combineReducers({
 
 // Selectors
 
-const getNetworkSidePanelOpen = (state) => state.sidePanelOpen;
+const getSidePanelOpen = (state) => state.sidePanelOpen;
 const getNetworkActivityTimeWindow = (state) => state.networkActivityTimeWindow;
 
 export const selectors = {
-    getNetworkSidePanelOpen,
+    getSidePanelOpen,
     getNetworkActivityTimeWindow,
 };
 

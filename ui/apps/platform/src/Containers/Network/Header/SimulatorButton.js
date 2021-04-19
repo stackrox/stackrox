@@ -9,13 +9,13 @@ import * as Icon from 'react-feather';
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
 import { actions as sidepanelActions } from 'reducers/network/sidepanel';
-import wizardStages from '../SidePanel/wizardStages';
+import sidepanelStages from '../SidePanel/sidepanelStages';
 
 class SimulatorButton extends Component {
     static propTypes = {
         creatingOrSimulating: PropTypes.bool.isRequired,
         openSidePanel: PropTypes.func.isRequired,
-        setWizardStage: PropTypes.func.isRequired,
+        setSidePanelStage: PropTypes.func.isRequired,
         closeSidePanel: PropTypes.func.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
         isDisabled: PropTypes.bool,
@@ -32,7 +32,7 @@ class SimulatorButton extends Component {
             this.props.closeSidePanel();
         } else {
             this.props.openSidePanel();
-            this.props.setWizardStage(wizardStages.creator);
+            this.props.setSidePanelStage(sidepanelStages.creator);
         }
     };
 
@@ -57,10 +57,10 @@ class SimulatorButton extends Component {
 }
 
 const getCreatingOrSimulating = createSelector(
-    [selectors.getNetworkSidePanelOpen, selectors.getNetworkWizardStage],
-    (sidePanelOpen, wizardStage) =>
+    [selectors.getSidePanelOpen, selectors.getSidePanelStage],
+    (sidePanelOpen, sidePanelStage) =>
         sidePanelOpen &&
-        (wizardStage === wizardStages.simulator || wizardStage === wizardStages.creator)
+        (sidePanelStage === sidepanelStages.simulator || sidePanelStage === sidepanelStages.creator)
 );
 
 const mapStateToProps = createStructuredSelector({
@@ -70,7 +70,7 @@ const mapStateToProps = createStructuredSelector({
 const mapDispatchToProps = {
     openSidePanel: pageActions.openSidePanel,
     closeSidePanel: pageActions.closeSidePanel,
-    setWizardStage: sidepanelActions.setNetworkWizardStage,
+    setSidePanelStage: sidepanelActions.setSidePanelStage,
 };
 
 export default withRouter(connect(mapStateToProps, mapDispatchToProps)(SimulatorButton));

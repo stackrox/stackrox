@@ -1,22 +1,41 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, ReactElement } from 'react';
 import { connect } from 'react-redux';
-import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import { useDropzone } from 'react-dropzone';
 import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+
 import { actions as sidepanelActions } from 'reducers/network/sidepanel';
 import { actions as notificationActions } from 'reducers/notifications';
 
-const Upload = (props) => {
+type UploadProps = {
+    setNetworkPolicyModification: (policy) => void;
+    setNetworkPolicyModificationState: (state) => void;
+    setNetworkPolicyModificationSource: (source) => void;
+    setNetworkPolicyModificationName: (name) => void;
+
+    addToast: (message) => void;
+    removeToast: () => void;
+};
+
+function Upload({
+    setNetworkPolicyModification,
+    setNetworkPolicyModificationName,
+    setNetworkPolicyModificationSource,
+    setNetworkPolicyModificationState,
+    addToast,
+    removeToast,
+}: UploadProps): ReactElement {
+    // TODO: factor out upload logic into custom hook
+    //  nearly duplicate logic here and Network/SidePanel/Creator/Tiles/UploadNetworkPolicySection
     const showToast = useCallback(() => {
         const errorMessage = 'Invalid file type. Try again.';
-        props.addToast(errorMessage);
-        setTimeout(props.removeToast, 500);
-    }, [props]);
+        addToast(errorMessage);
+        setTimeout(removeToast, 500);
+    }, [addToast, removeToast]);
 
     const onDrop = useCallback(
         (acceptedFiles) => {
-            props.setNetworkPolicyModificationState('REQUEST');
+            setNetworkPolicyModificationState('REQUEST');
             acceptedFiles.forEach((file) => {
                 // check file type.
                 if (file && !file.name.includes('.yaml')) {
@@ -24,21 +43,27 @@ const Upload = (props) => {
                     return;
                 }
 
-                props.setNetworkPolicyModificationName(file.name);
+                setNetworkPolicyModificationName(file.name);
                 const reader = new FileReader();
                 reader.onload = () => {
                     const fileAsBinaryString = reader.result;
-                    props.setNetworkPolicyModification({ applyYaml: fileAsBinaryString });
-                    props.setNetworkPolicyModificationState('SUCCESS');
+                    setNetworkPolicyModification({ applyYaml: fileAsBinaryString });
+                    setNetworkPolicyModificationState('SUCCESS');
                 };
                 reader.onerror = () => {
-                    props.setNetworkPolicyModificationState('ERROR');
+                    setNetworkPolicyModificationState('ERROR');
                 };
                 reader.readAsBinaryString(file);
-                props.setNetworkPolicyModificationSource('UPLOAD');
+                setNetworkPolicyModificationSource('UPLOAD');
             });
         },
-        [props, showToast]
+        [
+            setNetworkPolicyModification,
+            setNetworkPolicyModificationName,
+            setNetworkPolicyModificationSource,
+            setNetworkPolicyModificationState,
+            showToast,
+        ]
     );
 
     const { getRootProps, getInputProps } = useDropzone({ onDrop });
@@ -54,17 +79,7 @@ const Upload = (props) => {
             </div>
         </Tooltip>
     );
-};
-
-Upload.propTypes = {
-    setNetworkPolicyModification: PropTypes.func.isRequired,
-    setNetworkPolicyModificationState: PropTypes.func.isRequired,
-    setNetworkPolicyModificationSource: PropTypes.func.isRequired,
-    setNetworkPolicyModificationName: PropTypes.func.isRequired,
-
-    addToast: PropTypes.func.isRequired,
-    removeToast: PropTypes.func.isRequired,
-};
+}
 
 const mapDispatchToProps = {
     setNetworkPolicyModification: sidepanelActions.setNetworkPolicyModification,

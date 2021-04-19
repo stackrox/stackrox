@@ -1,23 +1,29 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactElement } from 'react';
 import { createStructuredSelector } from 'reselect';
 import { connect } from 'react-redux';
 
 import { selectors } from 'reducers';
 import { actions as sidepanelActions } from 'reducers/network/sidepanel';
-import wizardStages from 'Containers/Network/SidePanel/wizardStages';
+import sidepanelStages from 'Containers/Network/SidePanel/sidepanelStages';
 
 import { CheckboxWithLabel } from '@stackrox/ui-components';
 
-const GenerateButton = ({
-    setWizardStage,
+type GenerateButtonProps = {
+    setSidePanelStage: (stage) => void;
+    requestNetworkPolicyModification: () => void;
+    excludePortsProtocols: boolean;
+    setExcludePortsProtocolsState: (state) => void;
+};
+
+function GenerateButton({
+    setSidePanelStage,
     requestNetworkPolicyModification,
     excludePortsProtocols,
     setExcludePortsProtocolsState,
-}) => {
+}: GenerateButtonProps): ReactElement {
     function onClick() {
         requestNetworkPolicyModification();
-        setWizardStage(wizardStages.simulator);
+        setSidePanelStage(sidepanelStages.simulator);
     }
 
     function onChangeHandler() {
@@ -45,21 +51,14 @@ const GenerateButton = ({
             </div>
         </>
     );
-};
-
-GenerateButton.propTypes = {
-    setWizardStage: PropTypes.func.isRequired,
-    requestNetworkPolicyModification: PropTypes.func.isRequired,
-    excludePortsProtocols: PropTypes.bool.isRequired,
-    setExcludePortsProtocolsState: PropTypes.func.isRequired,
-};
+}
 
 const mapStateToProps = createStructuredSelector({
     excludePortsProtocols: selectors.getNetworkPolicyExcludePortsProtocolsState,
 });
 
 const mapDispatchToProps = {
-    setWizardStage: sidepanelActions.setNetworkWizardStage,
+    setSidePanelStage: sidepanelActions.setSidePanelStage,
     requestNetworkPolicyModification: sidepanelActions.generateNetworkPolicyModification,
     setExcludePortsProtocolsState: sidepanelActions.setNetworkPolicyExcludePortsProtocolsState,
 };

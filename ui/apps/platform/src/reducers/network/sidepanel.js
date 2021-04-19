@@ -1,13 +1,13 @@
 import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
-import wizardStages from 'Containers/Network/SidePanel/wizardStages';
+import sidepanelStages from 'Containers/Network/SidePanel/sidepanelStages';
 import { types as deploymentTypes } from 'reducers/deployments';
 
 // Action types
 //-------------
 
 export const types = {
-    SET_WIZARD_STAGE: 'network/SET_WIZARD_STAGE',
+    SET_SIDE_PANEL_STAGE: 'network/SET_SIDE_PANEL_STAGE',
     SET_POLICY_MODIFICATION: 'network/SET_POLICY_MODIFICATION',
     SET_POLICY_MODIFICATION_NAME: 'network/SET_POLICY_MODIFICATION_NAME',
     SET_POLICY_MODIFICATION_SOURCE: 'network/SET_POLICY_MODIFICATION_SOURCE',
@@ -22,7 +22,7 @@ export const types = {
 //---------
 
 export const actions = {
-    setNetworkWizardStage: (stage) => ({ type: types.SET_WIZARD_STAGE, stage }),
+    setSidePanelStage: (stage) => ({ type: types.SET_SIDE_PANEL_STAGE, stage }),
     setNetworkPolicyModification: (modification) => ({
         type: types.SET_POLICY_MODIFICATION,
         modification,
@@ -58,8 +58,8 @@ export const actions = {
 // If adding a reducer, you'll need to wire it through reducers/network/reducer.js
 //---------------------------------------------------------------------------------
 
-const networkWizardStage = (state = wizardStages.details, action) => {
-    if (action.type === types.SET_WIZARD_STAGE) {
+const networkSidePanelStage = (state = sidepanelStages.details, action) => {
+    if (action.type === types.SET_SIDE_PANEL_STAGE) {
         return action.stage;
     }
     return state;
@@ -114,7 +114,7 @@ const selectedNodeDeployment = (state = {}, action) => {
 };
 
 const reducer = combineReducers({
-    networkWizardStage,
+    networkSidePanelStage,
     networkPolicyModification,
     networkPolicyModificationName,
     networkPolicyModificationSource,
@@ -129,7 +129,7 @@ export default reducer;
 // If adding a selector, you'll need to wire it through reducers/network/reducer.js
 //---------------------------------------------------------------------------------
 
-const getNetworkWizardStage = (state) => state.networkWizardStage;
+const getSidePanelStage = (state) => state.networkSidePanelStage;
 const getNetworkPolicyModification = (state) => state.networkPolicyModification;
 const getNetworkPolicyModificationName = (state) => state.networkPolicyModificationName;
 const getNetworkPolicyModificationSource = (state) => state.networkPolicyModificationSource;
@@ -139,7 +139,7 @@ const getNetworkPolicyExcludePortsProtocolsState = (state) =>
 const getNodeDeployment = (state) => state.selectedNodeDeployment;
 
 export const selectors = {
-    getNetworkWizardStage,
+    getSidePanelStage,
     getNetworkPolicyModification,
     getNetworkPolicyModificationName,
     getNetworkPolicyModificationSource,

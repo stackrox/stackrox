@@ -5,7 +5,7 @@ import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
-import wizardStages from './wizardStages';
+import sidepanelStages from './sidepanelStages';
 import NetworkDeploymentOverlay from './NetworkDeploymentOverlay';
 import Creator from './Creator/Creator';
 import Simulator from './Simulator/Simulator';
@@ -15,13 +15,14 @@ import ExternalDetailsOverlay from './ExternalDetails/ExternalDetailsOverlay';
 import NodesUpdateSection from '../Graph/Overlays/NodesUpdateSection';
 import ZoomButtons from '../Graph/Overlays/ZoomButtons';
 
-function SidePanel({ sidePanelOpen, wizardStage, onClose }) {
+function SidePanel({ sidePanelOpen, sidePanelStage, onClose }) {
     if (
         sidePanelOpen &&
-        (wizardStage === wizardStages.details || wizardStage === wizardStages.externalDetails)
+        (sidePanelStage === sidepanelStages.details ||
+            sidePanelStage === sidepanelStages.externalDetails)
     ) {
         const paletteComponent =
-            wizardStage === wizardStages.details ? (
+            sidePanelStage === sidepanelStages.details ? (
                 <NetworkDeploymentOverlay onClose={onClose} />
             ) : (
                 <ExternalDetailsOverlay onClose={onClose} />
@@ -43,21 +44,21 @@ function SidePanel({ sidePanelOpen, wizardStage, onClose }) {
     let panelContent = null;
 
     if (sidePanelOpen) {
-        switch (wizardStage) {
-            case wizardStages.details:
+        switch (sidePanelStage) {
+            case sidepanelStages.details:
                 return null; // supserseded by NetworkDeploymentOverlay
-            case wizardStages.simulator:
+            case sidepanelStages.simulator:
                 panelContent = <Simulator onClose={onClose} />;
                 break;
-            case wizardStages.creator:
+            case sidepanelStages.creator:
                 panelContent = <Creator onClose={onClose} />;
                 break;
-            case wizardStages.namespaceDetails:
+            case sidepanelStages.namespaceDetails:
                 panelContent = <NamespaceDetails onClose={onClose} />;
                 break;
-            case wizardStages.externalDetails:
+            case sidepanelStages.externalDetails:
                 return null; // superseded by ExternalDetailsOverlay
-            case wizardStages.cidrForm:
+            case sidepanelStages.cidrForm:
                 panelContent = <CIDRPanel onClose={onClose} />;
                 break;
             default:
@@ -78,12 +79,12 @@ function SidePanel({ sidePanelOpen, wizardStage, onClose }) {
 SidePanel.propTypes = {
     sidePanelOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
-    wizardStage: PropTypes.string.isRequired,
+    sidePanelStage: PropTypes.string.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
-    sidePanelOpen: selectors.getNetworkSidePanelOpen,
-    wizardStage: selectors.getNetworkWizardStage,
+    sidePanelOpen: selectors.getSidePanelOpen,
+    sidePanelStage: selectors.getSidePanelStage,
 });
 
 const mapDispatchToProps = {

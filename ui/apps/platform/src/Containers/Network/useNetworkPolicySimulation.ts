@@ -6,7 +6,7 @@ import { actions as dialogueActions } from 'reducers/network/dialogue';
 import { actions as sidepanelActions } from 'reducers/network/sidepanel';
 import { actions as pageActions } from 'reducers/network/page';
 import dialogueStages from 'Containers/Network/Dialogue/dialogueStages';
-import wizardStages from 'Containers/Network/SidePanel/wizardStages';
+import sidepanelStages from 'Containers/Network/SidePanel/sidepanelStages';
 
 type ModificationState = 'SUCCESS' | 'REQUEST' | 'ERROR';
 type NetworkPolicySimulationResult = {
@@ -26,13 +26,13 @@ const getModificationState = createSelector(
 );
 
 const structuredSelector = createStructuredSelector({
-    sidePanelOpen: selectors.getNetworkSidePanelOpen,
-    wizardStage: selectors.getNetworkWizardStage,
+    sidePanelOpen: selectors.getSidePanelOpen,
+    sidePanelStage: selectors.getSidePanelStage,
     modificationState: getModificationState,
 });
 
 const useNetworkPolicySimulation = (): NetworkPolicySimulationResult => {
-    const { sidePanelOpen, wizardStage, modificationState } = useSelector(structuredSelector);
+    const { sidePanelOpen, sidePanelStage, modificationState } = useSelector(structuredSelector);
     const dispatch = useDispatch();
     const stopNetworkSimulation = () => {
         dispatch(pageActions.closeSidePanel());
@@ -42,7 +42,8 @@ const useNetworkPolicySimulation = (): NetworkPolicySimulationResult => {
 
     const isNetworkSimulationOn =
         sidePanelOpen &&
-        (wizardStage === wizardStages.simulator || wizardStage === wizardStages.creator);
+        (sidePanelStage === sidepanelStages.simulator ||
+            sidePanelStage === sidepanelStages.creator);
 
     return {
         isNetworkSimulationOn,

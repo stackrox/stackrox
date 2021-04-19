@@ -105,7 +105,7 @@ Filters.defaultProps = {
 };
 
 const mapStateToProps = createStructuredSelector({
-    sidePanelOpen: selectors.getNetworkSidePanelOpen,
+    sidePanelOpen: selectors.getSidePanelOpen,
     filterMode: selectors.getNetworkGraphFilterMode,
 });
 

@@ -128,3 +128,11 @@ export type NetworkNode = {
     queryMatch: boolean;
     type: string;
 };
+
+export type Modification = {
+    applyYaml: string;
+    toDelete: {
+        namespace: string;
+        name: string;
+    }[];
+};

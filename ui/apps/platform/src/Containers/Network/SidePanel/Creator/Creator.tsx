@@ -1,14 +1,16 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactElement } from 'react';
 
 import CloseButton from 'Components/CloseButton';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
-
-import DragAndDrop from './Tiles/DragAndDrop';
-import Generate from './Tiles/Generate';
+import UploadNetworkPolicySection from './Tiles/UploadNetworkPolicySection';
+import GenerateNetworkPoliciesSection from './Tiles/GenerateNetworkPoliciesSection';
 import ViewActive from './Buttons/ViewActive';
 
-const Creator = ({ onClose }) => {
+type CreatorProps = {
+    onClose: () => void;
+};
+
+function Creator({ onClose }: CreatorProps): ReactElement {
     return (
         <div className="h-full w-full shadow-md bg-base-200">
             <PanelNew testid="network-creator-panel">
@@ -25,22 +27,18 @@ const Creator = ({ onClose }) => {
                 </PanelHead>
                 <PanelBody>
                     <div className="flex h-full w-full flex-col p-4 pb-0">
-                        <Generate />
+                        <GenerateNetworkPoliciesSection />
                         <div className="w-full my-5 text-center flex items-center flex-shrink-0">
                             <div className="h-px bg-base-400 w-full" />
                             <span className="relative px-2 font-700">OR</span>
                             <div className="h-px bg-base-400 w-full" />
                         </div>
-                        <DragAndDrop />
+                        <UploadNetworkPolicySection />
                     </div>
                 </PanelBody>
             </PanelNew>
         </div>
     );
-};
-
-Creator.propTypes = {
-    onClose: PropTypes.func.isRequired,
-};
+}
 
 export default Creator;

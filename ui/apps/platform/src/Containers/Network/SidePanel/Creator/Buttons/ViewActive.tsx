@@ -1,14 +1,21 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactElement } from 'react';
 import { connect } from 'react-redux';
 import { actions as sidepanelActions } from 'reducers/network/sidepanel';
 
-import wizardStages from '../../wizardStages';
+import sidepanelStages from '../../sidepanelStages';
 
-const GenerateButton = ({ setWizardStage, loadActivePolicies }) => {
+type GenerateButtonProps = {
+    loadActivePolicies: () => void;
+    setSidePanelStage: (stage) => void;
+};
+
+function GenerateButton({
+    setSidePanelStage,
+    loadActivePolicies,
+}: GenerateButtonProps): ReactElement {
     function onClick() {
         loadActivePolicies();
-        setWizardStage(wizardStages.simulator);
+        setSidePanelStage(sidepanelStages.simulator);
     }
 
     return (
@@ -23,16 +30,11 @@ const GenerateButton = ({ setWizardStage, loadActivePolicies }) => {
             </button>
         </div>
     );
-};
-
-GenerateButton.propTypes = {
-    loadActivePolicies: PropTypes.func.isRequired,
-    setWizardStage: PropTypes.func.isRequired,
-};
+}
 
 const mapDispatchToProps = {
     loadActivePolicies: sidepanelActions.loadActiveNetworkPolicyModification,
-    setWizardStage: sidepanelActions.setNetworkWizardStage,
+    setSidePanelStage: sidepanelActions.setSidePanelStage,
 };
 
 export default connect(null, mapDispatchToProps)(GenerateButton);

@@ -16,7 +16,7 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import { filterModes } from 'constants/networkFilterModes';
 import { nodeTypes } from 'constants/networkGraph';
 import entityTypes from 'constants/entityTypes';
-import wizardStages from '../SidePanel/wizardStages';
+import sidepanelStages from '../SidePanel/sidepanelStages';
 import Filters from './Overlays/Filters';
 import Legend from './Overlays/Legend';
 
@@ -25,7 +25,7 @@ class Graph extends Component {
         sidePanelOpen: PropTypes.bool.isRequired,
         openSidePanel: PropTypes.func.isRequired,
         closeSidePanel: PropTypes.func.isRequired,
-        setWizardStage: PropTypes.func.isRequired,
+        setSidePanelStage: PropTypes.func.isRequired,
 
         networkNodeMap: PropTypes.shape({}).isRequired,
         networkEdgeMap: PropTypes.shape({}),
@@ -90,13 +90,13 @@ class Graph extends Component {
 
     onNamespaceClick = (namespace) => {
         this.props.setSelectedNamespace(namespace);
-        this.props.setWizardStage(wizardStages.namespaceDetails);
+        this.props.setSidePanelStage(sidepanelStages.namespaceDetails);
         this.props.openSidePanel();
     };
 
     // eslint-disable-next-line no-unused-vars
     onExternalEntitiesClick = () => {
-        this.props.setWizardStage(wizardStages.externalDetails);
+        this.props.setSidePanelStage(sidepanelStages.externalDetails);
         this.props.openSidePanel();
     };
 
@@ -107,7 +107,7 @@ class Graph extends Component {
         this.props.setSelectedNode(node);
         this.props.fetchDeployment(node.deploymentId);
         this.props.fetchNetworkPolicies([...node.policyIds]);
-        this.props.setWizardStage(wizardStages.details);
+        this.props.setSidePanelStage(sidepanelStages.details);
         this.props.openSidePanel();
     };
 
@@ -187,7 +187,7 @@ class Graph extends Component {
 }
 
 const mapStateToProps = createStructuredSelector({
-    sidePanelOpen: selectors.getNetworkSidePanelOpen,
+    sidePanelOpen: selectors.getSidePanelOpen,
     filterState: selectors.getNetworkGraphFilterMode,
     networkNodeMap: selectors.getNetworkNodeMap,
     networkEdgeMap: selectors.getNetworkEdgeMap,
@@ -196,7 +196,7 @@ const mapStateToProps = createStructuredSelector({
     selectedClusterId: selectors.getSelectedNetworkClusterId,
     isLoading: selectors.getNetworkGraphLoading,
     featureFlags: selectors.getFeatureFlags,
-    networkWizardStage: selectors.getNetworkWizardStage,
+    sidePanelStage: selectors.getSidePanelStage,
     networkPolicyModification: selectors.getNetworkPolicyModification,
     lastUpdatedTimestamp: selectors.getLastUpdatedTimestamp,
     selectedNamespace: selectors.getSelectedNamespace,
@@ -208,7 +208,7 @@ const mapDispatchToProps = {
     fetchDeployment: deploymentActions.fetchDeployment.request,
     fetchNetworkPolicies: backendActions.fetchNetworkPolicies.request,
     openSidePanel: pageActions.openSidePanel,
-    setWizardStage: sidepanelActions.setNetworkWizardStage,
+    setSidePanelStage: sidepanelActions.setSidePanelStage,
     setNetworkGraphRef: graphActions.setNetworkGraphRef,
     setNetworkGraphLoading: graphActions.setNetworkGraphLoading,
     closeSidePanel: pageActions.closeSidePanel,
