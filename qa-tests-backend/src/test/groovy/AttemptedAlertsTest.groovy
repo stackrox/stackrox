@@ -98,6 +98,9 @@ class AttemptedAlertsTest extends BaseSpecification {
     @Unroll
     @Category([BAT, RUNTIME])
     def "Verify attempted alerts on deployment create: #desc"() {
+        Assume.assumeTrue("ROX-6916: Only run in reliable environments until fixed",
+                !Env.CI_JOBNAME || !Env.CI_JOBNAME.contains("openshift-rhel"))
+
         when:
         "Set 'Latest Tag' policy enforcement to #policyEnforcements"
         Services.updatePolicyEnforcement(LATEST_TAG_POLICY_NAME, policyEnforcements, true)
@@ -171,6 +174,9 @@ class AttemptedAlertsTest extends BaseSpecification {
     @Unroll
     @Category([BAT, RUNTIME])
     def "Verify attempted alerts on deployment updates: #desc"() {
+        Assume.assumeTrue("ROX-6916: Only run in reliable environments until fixed",
+                !Env.CI_JOBNAME || !Env.CI_JOBNAME.contains("openshift-rhel"))
+
         given:
         "Create deployment not violating 'Latest Tag' policy"
         assert orchestrator.createDeploymentNoWait(DEPLOYMENTS.get(DEP_NAMES[4]))
@@ -250,6 +256,9 @@ class AttemptedAlertsTest extends BaseSpecification {
         "Admission Controller exec/pf is enabled"
         // K8s event detection is currently not supported on OpenShift.
         Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
+        Assume.assumeTrue("ROX-6915: Only run in reliable environments until fixed",
+                (orchestrator.isGKE() && (!Env.CI_JOBNAME || !Env.CI_JOBNAME.contains("gke-rhel"))) ||
+                        ClusterService.isEKS())
 
         assert ClusterService.getCluster().getAdmissionControllerEvents()
 

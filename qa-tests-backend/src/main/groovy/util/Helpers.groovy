@@ -74,7 +74,8 @@ class Helpers {
             return
         }
 
-        if (exception && exception instanceof AssumptionViolatedException) {
+        if (exception && (exception instanceof AssumptionViolatedException ||
+                exception.getMessage().contains("org.junit.AssumptionViolatedException"))) {
             println "Won't collect logs for: ${exception.getMessage()}"
             return
         }
