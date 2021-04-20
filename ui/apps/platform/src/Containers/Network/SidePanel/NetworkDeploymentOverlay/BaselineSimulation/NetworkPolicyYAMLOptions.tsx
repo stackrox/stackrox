@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 
-function SimulatedNeworkBaselines(): ReactElement {
+function NetworkPolicyYAMLOptions(): ReactElement {
     return <div />;
 }
 
-export default SimulatedNeworkBaselines;
+export default NetworkPolicyYAMLOptions;

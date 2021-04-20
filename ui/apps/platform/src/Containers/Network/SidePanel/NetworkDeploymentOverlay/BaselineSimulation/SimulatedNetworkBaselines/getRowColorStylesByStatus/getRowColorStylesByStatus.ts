@@ -4,7 +4,6 @@ import { SimulatedBaselineStatus } from '../baselineSimulationTypes';
 const SIMULATED_BASELINE_STATES = {
     ADDED: 'ADDED',
     REMOVED: 'REMOVED',
-    MODIFIED: 'MODIFIED',
     UNMODIFIED: 'UNMODIFIED',
 };
 
@@ -16,10 +15,6 @@ const bgAlert = 'bg-alert-200';
 const borderAlert = 'border-alert-300';
 const textAlert = 'text-alert-800';
 
-const bgWarning = 'bg-warning-200';
-const borderWarning = 'border-warning-300';
-const textWarning = 'text-warning-800';
-
 const SIMULATED_ROW_COLORS: Record<string, TableColorStyles> = {
     [SIMULATED_BASELINE_STATES.ADDED]: {
         bgColor: bgSuccess,
@@ -30,11 +25,6 @@ const SIMULATED_ROW_COLORS: Record<string, TableColorStyles> = {
         bgColor: bgAlert,
         borderColor: borderAlert,
         textColor: textAlert,
-    },
-    [SIMULATED_BASELINE_STATES.MODIFIED]: {
-        bgColor: bgWarning,
-        borderColor: borderWarning,
-        textColor: textWarning,
     },
     [SIMULATED_BASELINE_STATES.UNMODIFIED]: {
         bgColor: 'bg-base-100',

@@ -17,14 +17,6 @@ describe('getRowColorStylesByStatus', () => {
         });
     });
 
-    it('should return the color styles for the modified baseline', () => {
-        expect(getRowColorStylesByStatus('MODIFIED')).toEqual({
-            bgColor: 'bg-warning-200',
-            borderColor: 'border-warning-300',
-            textColor: 'text-warning-800',
-        });
-    });
-
     it('should return the color styles for the unmodified baseline', () => {
         expect(getRowColorStylesByStatus('UNMODIFIED')).toEqual({
             bgColor: 'bg-base-100',

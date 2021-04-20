@@ -12,6 +12,21 @@ const networkBaselineBaseUrl = '/v1/networkbaseline';
 const NETWORK_GRAPH_REQUESTS_TIMEOUT = 0;
 
 /*
+ * Fetches the diff view of flows between the network policies currently applied to the
+ * specified deployment and the baseline of that deployment.
+ *
+ * @returns {Promise<Object, Error>}
+ *
+ */
+export function fetchBaselineComparison({ deploymentId }) {
+    return axios
+        .get(`${networkPoliciesBaseUrl}/baselinecomparison/${deploymentId}`)
+        .then((response) => {
+            return response.data;
+        });
+}
+
+/*
  * Fetches the baselines status of the network flow
  *
  * @returns {Promise<Object, Error>}

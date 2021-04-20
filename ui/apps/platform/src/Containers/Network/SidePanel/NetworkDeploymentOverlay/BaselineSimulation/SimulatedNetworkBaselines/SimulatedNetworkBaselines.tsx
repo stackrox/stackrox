@@ -18,22 +18,9 @@ import {
     getAggregateText,
     getDirectionalityLabel,
 } from 'Containers/Network/SidePanel/NetworkDeploymentOverlay/utils';
-import { getPropertiesByStatus, getRowColorStylesByStatus } from './utils';
-import { SimulatedBaseline, ModifiedBaseline } from './baselineSimulationTypes';
-
-type ModifiedValueProps = {
-    addedValue: string;
-    removedValue: string;
-};
-
-function ModifiedValue({ addedValue, removedValue }: ModifiedValueProps): ReactElement {
-    return (
-        <div>
-            <div>{addedValue}</div>
-            <s>{removedValue}</s>
-        </div>
-    );
-}
+import Loader from 'Components/Loader';
+import getRowColorStylesByStatus from './getRowColorStylesByStatus';
+import { SimulatedBaseline } from './baselineSimulationTypes';
 
 const columns = [
     {
@@ -56,19 +43,8 @@ const columns = [
     {
         Header: 'Traffic',
         id: 'traffic',
-        accessor: (datum: SimulatedBaseline): string | ReactElement => {
-            const { simulatedStatus } = datum;
-            if (simulatedStatus === 'MODIFIED') {
-                const modifiedBaseline = datum as ModifiedBaseline;
-                const addedValue = getDirectionalityLabel(
-                    modifiedBaseline.peer.modified.added.ingress
-                );
-                const removedValue = getDirectionalityLabel(
-                    modifiedBaseline.peer.modified.removed.ingress
-                );
-                return <ModifiedValue addedValue={addedValue} removedValue={removedValue} />;
-            }
-            const { ingress } = getPropertiesByStatus(datum);
+        accessor: (datum: SimulatedBaseline): string => {
+            const { ingress } = datum.peer;
             return getDirectionalityLabel(ingress);
         },
         aggregate: (leafValues: string[]): string => {
@@ -99,16 +75,8 @@ const columns = [
     {
         Header: 'Port',
         id: 'port',
-        accessor: (datum: SimulatedBaseline): string | ReactElement => {
-            const { simulatedStatus } = datum;
-            if (simulatedStatus === 'MODIFIED') {
-                const modifiedBaseline = datum as ModifiedBaseline;
-                const addedValue = modifiedBaseline.peer.modified.added.port;
-                const removedValue = modifiedBaseline.peer.modified.removed.port;
-                return <ModifiedValue addedValue={addedValue} removedValue={removedValue} />;
-            }
-            const { port } = getPropertiesByStatus(datum);
-            return port;
+        accessor: (datum: SimulatedBaseline): string => {
+            return datum.peer.port;
         },
         aggregate: (leafValues: string[]): string => {
             return getAggregateText(leafValues);
@@ -117,17 +85,8 @@ const columns = [
     {
         Header: 'Protocol',
         id: 'protocol',
-        accessor: (datum: SimulatedBaseline): string | ReactElement => {
-            const { simulatedStatus } = datum;
-            if (simulatedStatus === 'MODIFIED') {
-                const modifiedBaseline = datum as ModifiedBaseline;
-                const addedValue =
-                    networkProtocolLabels[modifiedBaseline.peer.modified.added.protocol];
-                const removedValue =
-                    networkProtocolLabels[modifiedBaseline.peer.modified.removed.protocol];
-                return <ModifiedValue addedValue={addedValue} removedValue={removedValue} />;
-            }
-            const { protocol } = getPropertiesByStatus(datum);
+        accessor: (datum: SimulatedBaseline): string => {
+            const { protocol } = datum.peer;
             return networkProtocolLabels[protocol];
         },
         aggregate: (leafValues: string[]): string => {
@@ -146,15 +105,15 @@ const columns = [
     },
 ];
 
-function SimulatedNeworkBaselines({ simulatedNetworkBaselines }): ReactElement {
+function SimulatedNeworkBaselines({ simulatedBaselines, isLoading }): ReactElement {
     const { headerGroups, rows, prepareRow } = useTable(
         {
             columns,
-            data: simulatedNetworkBaselines,
+            data: simulatedBaselines,
             initialState: {
                 sortBy: [
                     {
-                        id: 'status',
+                        id: 'simulatedStatus',
                         desc: false,
                     },
                 ],
@@ -167,6 +126,14 @@ function SimulatedNeworkBaselines({ simulatedNetworkBaselines }): ReactElement {
         useExpanded,
         expanderPlugin
     );
+
+    if (isLoading) {
+        return (
+            <div className="p-4 w-full">
+                <Loader message={null} />
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-1 flex-col overflow-y-auto">

@@ -1,98 +1,30 @@
 import React, { useState, ReactElement } from 'react';
 
-import useSearchFilteredData from 'hooks/useSearchFilteredData';
-
 import { PanelBody, PanelHead, PanelHeadEnd, PanelNew, PanelTitle } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
+import { FilterState } from 'Containers/Network/networkTypes';
+import useSearchFilteredData from 'hooks/useSearchFilteredData';
 import NetworkPolicyYAMLOptions from './NetworkPolicyYAMLOptions';
 import SimulatedNetworkBaselines from './SimulatedNetworkBaselines';
-import SimulatedBaselinesSearch, {
+import BaselineSimulationSearch, {
     getSimulatedBaselineValueByCategory,
-} from './SimulatedBaselinesSearch';
+} from './BaselineSimulationSearch';
+import useFetchBaselineComparison from './useFetchBaselineComparisons';
 
-const simulatedNetworkBaselines = [
-    {
-        peer: {
-            entity: {
-                id: '12345',
-                type: 'DEPLOYMENT',
-                name: 'sensor',
-                namespace: 'stackrox',
-            },
-            added: {
-                port: '8080',
-                protocol: 'L4_PROTOCOL_TCP',
-                ingress: false,
-            },
-            state: 'active',
-        },
-        simulatedStatus: 'ADDED',
-    },
-    {
-        peer: {
-            entity: {
-                id: '12345',
-                type: 'DEPLOYMENT',
-                name: 'kube-dns',
-                namespace: 'stackrox',
-            },
-            removed: {
-                port: '80',
-                protocol: 'L4_PROTOCOL_TCP',
-                ingress: true,
-            },
-            state: 'active',
-        },
-        simulatedStatus: 'REMOVED',
-    },
-    {
-        peer: {
-            entity: {
-                id: '45678',
-                type: 'DEPLOYMENT',
-                name: 'collector',
-                namespace: 'stackrox',
-            },
-            modified: {
-                added: {
-                    port: '80',
-                    protocol: 'L4_PROTOCOL_TCP',
-                    ingress: true,
-                },
-                removed: {
-                    port: '3000',
-                    protocol: 'L4_PROTOCOL_TCP',
-                    ingress: false,
-                },
-            },
-            state: 'active',
-        },
-        simulatedStatus: 'MODIFIED',
-    },
-    {
-        peer: {
-            entity: {
-                id: '24564',
-                type: 'DEPLOYMENT',
-                name: 'monitoring',
-                namespace: 'stackrox',
-            },
-            unmodified: {
-                port: '80',
-                protocol: 'L4_PROTOCOL_UDP',
-                ingress: true,
-            },
-            state: 'active',
-        },
-        simulatedStatus: 'UNMODIFIED',
-    },
-];
+export type BaselineSimulationProps = {
+    deploymentId: string;
+    filterState: FilterState;
+};
 
-function BaselineSimulation(): ReactElement {
+function BaselineSimulation({ deploymentId, filterState }: BaselineSimulationProps): ReactElement {
+    const { simulatedBaselines, isLoading } = useFetchBaselineComparison({
+        deploymentId,
+        filterState,
+    });
     const [page, setPage] = useState(0);
     const [searchOptions, setSearchOptions] = useState([]);
     const filteredBaselines = useSearchFilteredData(
-        simulatedNetworkBaselines,
+        simulatedBaselines,
         searchOptions,
         getSimulatedBaselineValueByCategory
     );
@@ -114,8 +46,8 @@ function BaselineSimulation(): ReactElement {
                 <PanelHead>
                     <PanelHeadEnd>
                         <div className="pr-3 w-full">
-                            <SimulatedBaselinesSearch
-                                networkBaselines={simulatedNetworkBaselines}
+                            <BaselineSimulationSearch
+                                networkBaselines={simulatedBaselines}
                                 searchOptions={searchOptions}
                                 setSearchOptions={setSearchOptions}
                             />
@@ -123,7 +55,10 @@ function BaselineSimulation(): ReactElement {
                     </PanelHeadEnd>
                 </PanelHead>
                 <PanelBody>
-                    <SimulatedNetworkBaselines simulatedNetworkBaselines={filteredBaselines} />
+                    <SimulatedNetworkBaselines
+                        simulatedBaselines={filteredBaselines}
+                        isLoading={isLoading}
+                    />
                 </PanelBody>
             </PanelNew>
         </div>

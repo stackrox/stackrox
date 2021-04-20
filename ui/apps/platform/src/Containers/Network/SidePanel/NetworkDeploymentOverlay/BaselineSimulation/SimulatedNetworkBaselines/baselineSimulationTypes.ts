@@ -1,6 +1,6 @@
 import { Entity, Protocol, ConnectionState } from 'Containers/Network/networkTypes';
 
-export type SimulatedBaselineStatus = 'ADDED' | 'REMOVED' | 'MODIFIED' | 'UNMODIFIED';
+export type SimulatedBaselineStatus = 'ADDED' | 'REMOVED' | 'UNMODIFIED';
 
 export type Properties = {
     port: string;
@@ -8,47 +8,13 @@ export type Properties = {
     ingress: boolean;
 };
 
-export type AddedBaseline = {
+export type SimulatedBaseline = {
     peer: {
         entity: Entity;
-        added: Properties;
+        port: string;
+        protocol: Protocol;
+        ingress: boolean;
         state: ConnectionState;
     };
-    simulatedStatus: 'ADDED';
+    simulatedStatus: 'ADDED' | 'REMOVED' | 'UNMODIFIED';
 };
-
-export type RemovedBaseline = {
-    peer: {
-        entity: Entity;
-        removed: Properties;
-        state: ConnectionState;
-    };
-    simulatedStatus: 'REMOVED';
-};
-
-export type ModifiedBaseline = {
-    peer: {
-        entity: Entity;
-        modified: {
-            added: Properties;
-            removed: Properties;
-        };
-        state: ConnectionState;
-    };
-    simulatedStatus: 'MODIFIED';
-};
-
-export type UnmodifiedBaseline = {
-    peer: {
-        entity: Entity;
-        unmodified: Properties;
-        state: ConnectionState;
-    };
-    simulatedStatus: 'UNMODIFIED';
-};
-
-export type SimulatedBaseline =
-    | AddedBaseline
-    | RemovedBaseline
-    | ModifiedBaseline
-    | UnmodifiedBaseline;

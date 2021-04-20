@@ -16,7 +16,7 @@ export function PageBody({ children }) {
  */
 export function PanelNew({ children, testid }) {
     return (
-        <div className="flex flex-col h-full w-full" data-testid={testid}>
+        <div className="flex flex-col flex-1 h-full w-full" data-testid={testid}>
             {children}
         </div>
     );
