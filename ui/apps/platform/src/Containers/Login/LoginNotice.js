@@ -11,7 +11,7 @@ const LoginNotice = ({ publicConfig }) => {
     }
     return (
         <div
-            className="flex w-full justify-center border-t border-base-300 bg-base-200 h-43 overflow-auto"
+            className="flex w-full justify-center border-t h-43 overflow-auto"
             data-testid="login-notice"
         >
             <div className="whitespace-pre-wrap leading-normal">

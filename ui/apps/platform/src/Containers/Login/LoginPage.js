@@ -5,9 +5,8 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { ClipLoader } from 'react-spinners';
 import { reduxForm, formValueSelector, propTypes as reduxFormPropTypes } from 'redux-form';
-import * as Icon from 'react-feather';
+import { Alert, Button, Title, TitleSizes } from '@patternfly/react-core';
 
-import logoPlatform from 'images/logo-platform.svg';
 import { AUTH_STATUS } from 'reducers/auth';
 import { selectors } from 'reducers';
 import { ThemeContext } from 'Containers/ThemeProvider';
@@ -16,9 +15,10 @@ import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
 import ReduxPasswordField from 'Components/forms/ReduxPasswordField';
 import UnreachableWarning from 'Containers/UnreachableWarning';
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import Labeled from 'Components/Labeled';
 import CollapsibleAnimatedDiv from 'Components/animations/CollapsibleAnimatedDiv';
+import rhacsLogo from 'images/RHACS-Logo.svg';
+
 import AppWrapper from '../AppWrapper';
 import LoginNotice from './LoginNotice';
 
@@ -104,46 +104,23 @@ class LoginPage extends Component {
     }
 
     renderAuthError = () => {
-        const fg = 'alert-800';
-        const bg = 'alert-200';
-        const color = `text-${fg} bg-${bg}`;
         const { authProviderResponse } = this.state;
-        const closeButton = (
-            <div>
-                <Tooltip content={<TooltipOverlay>Dismiss</TooltipOverlay>}>
-                    <button
-                        type="button"
-                        className={`flex p-1 text-center text-sm items-center p-2 ${color} hover:bg-${fg} hover:text-${bg} border-l border-${fg}`}
-                        onClick={this.dismissAuthError}
-                        data-testid="dismiss"
-                    >
-                        <Icon.X className="h-4" />
-                    </button>
-                </Tooltip>
-            </div>
-        );
+
         if (authProviderResponse && authProviderResponse.error) {
             const errorKey = authProviderResponse.error.replace('_', ' ');
             const errorMsg = authProviderResponse.error_description || '';
             const errorLink = ((url) =>
                 url ? (
                     <span>
-                        (
-                        <a className={`${color}`} href={url}>
-                            more info
-                        </a>
-                        )
+                        (<a href={url}>more info</a>)
                     </span>
                 ) : (
                     []
                 ))(authProviderResponse.error_uri);
             return (
-                <div className={`flex items-center font-sans w-full text-center h-full ${color}`}>
-                    <span className="w-full">
-                        <span className="capitalize">{errorKey}</span>. {errorMsg} {errorLink}
-                    </span>
-                    {closeButton}
-                </div>
+                <Alert variant="danger" isInline title={errorKey} className="pf-u-mb-md">
+                    {errorMsg} {errorLink}
+                </Alert>
             );
         }
         return null;
@@ -161,8 +138,11 @@ class LoginPage extends Component {
 
         const options = authProvidersToSelectOptions(authProviders);
         return (
-            <div className="py-8 items-center w-2/3">
-                <Labeled label={<p className="text-primary-700">Select an auth provider</p>}>
+            <div>
+                <Title headingLevel="h2" size={TitleSizes['3xl']} className="pb-12">
+                    Log in to your account
+                </Title>
+                <Labeled label="Select an auth provider">
                     <ReduxSelectField
                         name="authProvider"
                         disabled={authProviders.length === 1}
@@ -186,7 +166,7 @@ class LoginPage extends Component {
         const { authStatus } = this.props;
         if (authStatus === AUTH_STATUS.LOADING) {
             return (
-                <div className="border-t border-base-300 p-6 w-full text-center">
+                <div className="p-6 w-full text-center">
                     <button
                         type="button"
                         className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 uppercase text-center tracking-wide"
@@ -198,7 +178,7 @@ class LoginPage extends Component {
         }
         if (authStatus === AUTH_STATUS.LOGGED_IN || authStatus === AUTH_STATUS.ANONYMOUS_ACCESS) {
             return (
-                <div className="border-t border-base-300 p-8 w-full text-center">
+                <div className="p-8 w-full text-center">
                     <Link
                         className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 uppercase text-center tracking-wide no-underline"
                         to="/main/dashboard"
@@ -213,50 +193,45 @@ class LoginPage extends Component {
             formValues: { username, password },
         } = this.props;
         const { loggingIn } = this.state;
-        const disabled =
+        const isDisabled =
             loggingIn || (this.isBasicAuthProviderSelected() && (!username || !password));
 
         return (
-            <div className="border-t border-base-300 p-6 w-full text-center">
-                <button
-                    type="submit"
-                    disabled={disabled}
-                    className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 uppercase text-center tracking-wide"
-                    onClick={this.props.handleSubmit(this.login)}
-                >
-                    Login
-                </button>
-            </div>
+            <Button
+                type="submit"
+                isDisabled={isDisabled}
+                isBlock
+                onClick={this.props.handleSubmit(this.login)}
+            >
+                Log in
+            </Button>
         );
     };
 
     render() {
-        const { isDarkMode } = this.context;
-
         return (
             <AppWrapper>
-                <section
-                    className={`flex flex-col items-center justify-center h-full py-5 ${
-                        isDarkMode ? 'bg-base-0' : 'bg-primary-800'
-                    } `}
-                >
-                    <div className="flex flex-col items-center bg-base-100 w-2/5 md:w-3/5 xl:w-2/5 relative">
-                        {this.renderAuthError()}
+                <div className="flex h-full items-center justify-center">
+                    <div className="flex items-start">
+                        <form
+                            className="pf-u-background-color-100 w-128 theme-light"
+                            onSubmit={this.props.handleSubmit(this.login)}
+                        >
+                            <UnreachableWarning />
+                            <div className="flex flex-col p-12 w-full">
+                                {this.renderFields()}
+                                <LoginNotice />
+                                {this.renderAuthError()}
+                                {this.renderLoginButton()}
+                            </div>
+                        </form>
+                        <img
+                            src={rhacsLogo}
+                            alt="Red Hat Advanced Cluster Security"
+                            className="p-12"
+                        />
                     </div>
-                    <form
-                        className="flex flex-col shadow items-center justify-center bg-base-100 w-2/5 md:w-3/5 xl:w-2/5 relative login-bg"
-                        onSubmit={this.props.handleSubmit(this.login)}
-                    >
-                        <UnreachableWarning />
-                        <div className="login-border-t h-1 w-full" />
-                        <div className="flex flex-col items-center justify-center w-full">
-                            <img className="h-40 h-40 py-6" src={logoPlatform} alt="StackRox" />
-                            {this.renderFields()}
-                        </div>
-                        <LoginNotice />
-                        {this.renderLoginButton()}
-                    </form>
-                </section>
+                </div>
             </AppWrapper>
         );
     }

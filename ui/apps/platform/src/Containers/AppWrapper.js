@@ -4,12 +4,10 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import AppBanner from 'Components/AppBanner';
-import { useTheme } from 'Containers/ThemeProvider';
 
 const AppWrapper = ({ publicConfig, children }) => {
-    const { isDarkMode } = useTheme();
     return (
-        <div className={`flex flex-col h-full ${!isDarkMode ? 'bg-base-100' : 'bg-base-0'}`}>
+        <div className="flex flex-col h-full">
             <AppBanner {...publicConfig.header} type="header" />
             {children}
             <AppBanner {...publicConfig.footer} type="footer" />

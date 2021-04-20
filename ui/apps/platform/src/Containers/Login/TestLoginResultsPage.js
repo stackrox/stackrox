@@ -5,7 +5,6 @@ import { createStructuredSelector } from 'reselect';
 import upperFirst from 'lodash/upperFirst';
 import { Message } from '@stackrox/ui-components';
 
-import { useTheme } from 'Containers/ThemeProvider';
 import { selectors } from 'reducers';
 import AppWrapper from '../AppWrapper';
 
@@ -58,8 +57,6 @@ function getMessageBody(response) {
 }
 
 function TestLoginResultsPage({ authProviderTestResults }) {
-    const { isDarkMode } = useTheme();
-
     if (!authProviderTestResults) {
         closeThisWindow();
     }
@@ -69,12 +66,8 @@ function TestLoginResultsPage({ authProviderTestResults }) {
 
     return (
         <AppWrapper>
-            <section
-                className={`flex flex-col items-center justify-center h-full ${
-                    isDarkMode ? 'bg-base-0' : 'bg-primary-800'
-                } `}
-            >
-                <div className="flex flex-col items-center bg-base-100 w-4/5 relative">
+            <div className="flex flex-col items-center justify-center h-full theme-light">
+                <div className="flex flex-col items-center pf-u-background-color-100 w-4/5 relative">
                     <div className="p-4 w-full">
                         <Message type={messageType}>{messageBody}</Message>
                     </div>
@@ -93,7 +86,7 @@ function TestLoginResultsPage({ authProviderTestResults }) {
                         </button>
                     </div>
                 </div>
-            </section>
+            </div>
         </AppWrapper>
     );
 }
