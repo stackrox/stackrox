@@ -343,7 +343,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Number of Components in Image"   | 1.5f     | null |
                 "Image \"docker.io/stackrox/qa:struts-app\"" +
-                " contains 166 components" | []
+                " contains 167 components" | []
 
         "Image Freshness"                 | 1.5f     | null | null | []
 
