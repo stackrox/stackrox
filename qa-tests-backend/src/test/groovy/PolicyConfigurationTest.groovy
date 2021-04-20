@@ -47,6 +47,8 @@ class PolicyConfigurationTest extends BaseSpecification {
     static final private String NGINX_LATEST_NAME = "nginx-latest"
     private static final String CLUSTER_ROLE_NAME = "policy-config-role"
 
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = isRaceBuild() ? 450 : 90
+
     private static final K8sServiceAccount NEW_SA = new K8sServiceAccount(
             name: SERVICE_ACCOUNT_NAME,
             namespace: Constants.ORCHESTRATOR_NAMESPACE)
@@ -166,7 +168,7 @@ class PolicyConfigurationTest extends BaseSpecification {
 
         then:
         "Ensure that the latest tag violation shows up"
-        def hasViolation = waitForViolation(NGINX_LATEST_NAME, "Latest Tag")
+        def hasViolation = waitForViolation(NGINX_LATEST_NAME, "Latest Tag", WAIT_FOR_VIOLATION_TIMEOUT)
         println "Has violation ${hasViolation}"
         assert hasViolation
 
@@ -218,7 +220,7 @@ class PolicyConfigurationTest extends BaseSpecification {
 
         then:
         "Verify Violation #policyName is triggered"
-        assert waitForViolation(depname, policy.getName(), 90)
+        assert waitForViolation(depname, policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
 
         cleanup:
         "Remove Policy #policyName"
@@ -617,7 +619,7 @@ class PolicyConfigurationTest extends BaseSpecification {
         then:
         "Verify Violation #policyName is/is not triggered based on scope"
         violatedDeployments.each {
-            assert waitForViolation(it.name, policy.getName(), 90)
+            assert waitForViolation(it.name, policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
         }
         nonViolatedDeployments.each {
             // We can wait for a very short period of time here because if we have the violation deployments

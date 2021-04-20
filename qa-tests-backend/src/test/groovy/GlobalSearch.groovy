@@ -6,8 +6,6 @@ import spock.lang.Unroll
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import org.junit.experimental.categories.Category
 import groups.BAT
-import orchestratormanager.OrchestratorTypes
-import util.Env
 
 class GlobalSearch extends BaseSpecification {
 
@@ -18,11 +16,7 @@ class GlobalSearch extends BaseSpecification {
             .addLabel("app", "test")
             .setCommand(["sleep", "600"])
 
-    // https://stack-rox.atlassian.net/browse/ROX-5298 &
-    // https://stack-rox.atlassian.net/browse/ROX-5355 &
-    // https://stack-rox.atlassian.net/browse/ROX-5789
-    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
-            Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT ? 450 : 30
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 30
 
     def setupSpec() {
         orchestrator.createDeployment(DEPLOYMENT)

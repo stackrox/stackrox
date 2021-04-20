@@ -223,7 +223,7 @@ class PolicyFieldsTest extends BaseSpecification {
 
     // https://stack-rox.atlassian.net/browse/ROX-6891
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
-            (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT || isRHELRace()) ? 100 : 30
+                isRaceBuild() ? 450 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 30)
 
     static final private BASE_POLICY = Policy.newBuilder()
             .addLifecycleStages(LifecycleStage.DEPLOY)

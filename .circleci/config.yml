@@ -1833,6 +1833,14 @@ commands:
 
             deploy/<< parameters.orchestrator-flavor >>/sensor.sh
 
+            if [[ "<< parameters.orchestrator-flavor >>" == "openshift" ]]; then
+              # Sensor is CPU starved under OpenShift causing all manner of test failures:
+              # https://stack-rox.atlassian.net/browse/ROX-5334
+              # https://stack-rox.atlassian.net/browse/ROX-6891
+              # et al.
+              kubectl -n stackrox set resources deploy/sensor -c sensor --requests 'cpu=2' --limits 'cpu=4'
+            fi
+
       - when:
           condition: << parameters.validate-sensor-bundle >>
           steps:

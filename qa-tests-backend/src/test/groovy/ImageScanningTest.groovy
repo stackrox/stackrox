@@ -16,7 +16,6 @@ import objects.GoogleArtifactRegistry
 import objects.QuayImageIntegration
 import objects.Secret
 import objects.StackroxScannerIntegration
-import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ClusterService
@@ -45,11 +44,7 @@ class ImageScanningTest extends BaseSpecification {
             "Secure Shell (ssh) Port Exposed in Image",
     ]
 
-    // https://stack-rox.atlassian.net/browse/ROX-5298 &
-    // https://stack-rox.atlassian.net/browse/ROX-5355 &
-    // https://stack-rox.atlassian.net/browse/ROX-5789
-    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
-            Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT ? 450 : 30
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = isRaceBuild() ? 450 : 30
 
     static final private Map<String, Deployment> DEPLOYMENTS = [
             "quay": new Deployment()

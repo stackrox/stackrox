@@ -8,7 +8,6 @@ import objects.K8sServiceAccount
 import objects.Secret
 import orchestratormanager.OrchestratorMain
 import orchestratormanager.OrchestratorType
-import orchestratormanager.OrchestratorTypes
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
@@ -130,7 +129,7 @@ class BaseSpecification extends Specification {
 
     @Rule
     Timeout globalTimeout = new Timeout(
-            Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT ? 1000 : 500,
+            isRaceBuild() ? 2500 : 500,
             TimeUnit.SECONDS
     )
     @Rule
@@ -318,8 +317,7 @@ class BaseSpecification extends Specification {
         orchestrator.deleteSecret("gcr-image-pull-secret", Constants.ORCHESTRATOR_NAMESPACE)
     }
 
-    static Boolean isRHELRace() {
-        return Env.get("IS_RACE_BUILD", null) == "true" &&
-                (Env.CI_JOBNAME && Env.CI_JOBNAME.contains("-rhel"))
+    static Boolean isRaceBuild() {
+        return Env.get("IS_RACE_BUILD", null) == "true"
     }
 }
