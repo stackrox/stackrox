@@ -12,7 +12,7 @@ function ClusterEditForm({ centralEnv, centralVersion, selectedCluster, handleCh
     }
 
     return (
-        <div className="px-4 w-full">
+        <div className="bg-base-200 px-4 w-full">
             {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
             {selectedCluster.id && (
                 <ClusterSummary

@@ -6,7 +6,6 @@ import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import configMgmtPaginationContext from 'Containers/configMgmtPaginationContext';
-import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getConfigMgmtDefaultSort } from 'Containers/ConfigManagement/ConfigMgmt.utils';
 import queryService from 'utils/queryService';
@@ -38,8 +37,6 @@ const entityComponentMap = {
 };
 
 const Entity = ({ entityType, entityId, entityListType, ...rest }) => {
-    const { isDarkMode } = useTheme();
-
     const workflowState = useContext(workflowStateContext);
     const configMgmtPagination = useContext(configMgmtPaginationContext);
     const page = workflowState.paging[configMgmtPagination.pageParam];
@@ -54,14 +51,8 @@ const Entity = ({ entityType, entityId, entityListType, ...rest }) => {
     if (!Component) {
         return <PageNotFound resourceType={entityType} useCase={useCases.CONFIG_MANAGEMENT} />;
     }
-    let backgroundAndHeightClassName = 'h-full';
-    if (entityListType) {
-        backgroundAndHeightClassName = 'bg-base-100 h-full';
-    } else if (!isDarkMode) {
-        backgroundAndHeightClassName = 'bg-side-panel-wave min-h-full';
-    }
     return (
-        <div className={`w-full flex ${backgroundAndHeightClassName}`}>
+        <div className={`flex w-full h-full ${entityListType ? 'bg-base-100' : 'bg-base-200'}`}>
             <Component
                 id={entityId}
                 entityListType={entityListType}

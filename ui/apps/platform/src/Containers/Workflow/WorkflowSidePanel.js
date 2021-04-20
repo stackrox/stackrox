@@ -4,20 +4,12 @@ import { ExternalLink } from 'react-feather';
 import onClickOutside from 'react-onclickoutside';
 
 import CloseButton from 'Components/CloseButton';
-import {
-    getSidePanelHeadBorderColor,
-    PanelNew,
-    PanelBody,
-    PanelHead,
-    PanelHeadEnd,
-} from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import EntityBreadCrumbs from 'Containers/BreadCrumbs/EntityBreadCrumbs';
-import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
 import parseURL from 'utils/URLParser';
 
 const WorkflowSidePanel = ({ history, location, children }) => {
-    const { isDarkMode } = useTheme();
     const workflowState = parseURL(location);
     const pageStack = workflowState.getPageStack();
     const breadCrumbEntities = workflowState.stateStack.slice(pageStack.length);
@@ -35,13 +27,12 @@ const WorkflowSidePanel = ({ history, location, children }) => {
     };
 
     const url = workflowState.getSkimmedStack().toUrl();
-    const borderColor = getSidePanelHeadBorderColor(isDarkMode);
     const externalLink = (
         <div className="flex items-center h-full hover:bg-base-300">
             <Link
                 to={url}
                 data-testid="external-link"
-                className={`${borderColor} border-l h-full p-4`}
+                className="border-base-400 border-l h-full p-4"
             >
                 <ExternalLink className="h-6 w-6 text-base-600" />
             </Link>
@@ -51,11 +42,11 @@ const WorkflowSidePanel = ({ history, location, children }) => {
     return (
         <workflowStateContext.Provider value={workflowState}>
             <PanelNew testid="side-panel">
-                <PanelHead isDarkMode={isDarkMode} isSidePanel>
+                <PanelHead>
                     <EntityBreadCrumbs workflowEntities={breadCrumbEntities} />
                     <PanelHeadEnd>
                         {externalLink}
-                        <CloseButton onClose={onClose} className={`${borderColor} border-l`} />
+                        <CloseButton onClose={onClose} className="border-base-400 border-l" />
                     </PanelHeadEnd>
                 </PanelHead>
                 <PanelBody>{children}</PanelBody>

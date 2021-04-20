@@ -33,7 +33,7 @@ function SidePanelAnimatedArea({
     isDarkMode,
     isOpen,
 }: SidePanelAnimatedAreaProps): ReactElement {
-    const bgClassName = isDarkMode ? 'bg-base-0' : 'bg-side-panel-wave';
+    const bgClassName = isDarkMode ? 'bg-base-0' : 'bg-base-100';
 
     return (
         <AnimatePresence initial={false}>

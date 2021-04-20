@@ -30,7 +30,7 @@ const RelatedEntityListCount = ({ match, location, history, name, value, entityT
         <button
             type="button"
             disabled={value === 0}
-            className="h-full w-full no-underline text-primary-700 hover:bg-primary-100 bg-counts-widget"
+            className="h-full w-full no-underline text-primary-700 hover:bg-primary-100"
             onClick={onClick}
             data-testid="related-entity-list-count-value"
         >

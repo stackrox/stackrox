@@ -274,7 +274,7 @@ function ClusterInitBundlesModal({
                   )}`;
         return (
             <PanelNew testid="panel">
-                <PanelHead isDarkMode>
+                <PanelHead>
                     <PanelTitle isUpperCase testid="panel-header" text={headerText} />
                     <PanelHeadEnd>{renderPanelButtons()}</PanelHeadEnd>
                 </PanelHead>
@@ -305,7 +305,7 @@ function ClusterInitBundlesModal({
         return (
             <SidePanelAdjacentArea width="1/2">
                 <PanelNew testid="panel">
-                    <PanelHead isDarkMode>
+                    <PanelHead>
                         <PanelTitle
                             isUpperCase
                             testid="panel-header"
@@ -329,7 +329,7 @@ function ClusterInitBundlesModal({
             return (
                 <SidePanelAdjacentArea width="1/2">
                     <PanelNew testid="panel">
-                        <PanelHead isDarkMode>
+                        <PanelHead>
                             <PanelTitle
                                 isUpperCase
                                 testid="panel-header"
@@ -362,7 +362,7 @@ function ClusterInitBundlesModal({
                 return (
                     <SidePanelAdjacentArea width="1/2">
                         <PanelNew testid="panel">
-                            <PanelHead isDarkMode>
+                            <PanelHead>
                                 <PanelTitle
                                     isUpperCase
                                     testid="panel-header"

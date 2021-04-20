@@ -22,20 +22,13 @@ export function PanelNew({ children, testid }) {
     );
 }
 
-const defaultBorderColor = 'border-base-400';
-
-export function getSidePanelHeadBorderColor(isDarkMode) {
-    return isDarkMode ? defaultBorderColor : 'border-base-100';
-}
-
 /*
  * PanelHead is parent of the following:
  * PanelTitle or entity-specific component like EntityBreadCrumbs
  * PanelHeadEnd, which has flex end alignment
  */
-export function PanelHead({ children, isDarkMode = false, isSidePanel = false }) {
-    const borderColor = isSidePanel ? getSidePanelHeadBorderColor(isDarkMode) : defaultBorderColor;
-    return <div className={`${borderColor} border-b flex h-14 w-full`}>{children}</div>;
+export function PanelHead({ children }) {
+    return <div className="border-base-400 border-b flex h-14 w-full">{children}</div>;
 }
 
 export function PanelTitle({ isUpperCase = false, testid = null, text }) {

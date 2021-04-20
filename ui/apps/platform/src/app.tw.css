@@ -34,16 +34,6 @@
     filter: invert(1) brightness(2.5) hue-rotate(180deg) saturate(0.6);
 }
 
-.theme-dark #wave-bg,
-.theme-dark #wave-bg2 {
-    display: none;
-}
-
-.theme-dark .bg-gradient-horizontal,
-.theme-dark .bg-dashboard {
-    background-image: none !important;
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -568,14 +558,6 @@ h6 {
     position: absolute;
     right: 0;
     z-index: -1;
-}
-
-.bg-dashboard {
-    background-image: url('images/dashboard-bg.svg'),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%239C92AC' fill-opacity='0.3' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
-    background-position: right top, center center;
-    background-repeat: no-repeat, repeat;
-    background-size: 1650px 450px, 4px 4px;
 }
 
 .text-separator {
@@ -1200,21 +1182,6 @@ h6 {
 .pin-center {
     top: 50%;
     left: 50%;
-}
-
-.bg-side-panel-wave {
-    background: url('images/side-panel-icons/sidepanel-wave.svg') no-repeat, var(--base-200) !important;
-    background-size: 100% !important;
-}
-
-.bg-counts-widget {
-    background: url('images/counts-widget-blocks.svg');
-    background-repeat: repeat-x;
-    background-position: bottom right;
-}
-
-.theme-dark .bg-counts-widget {
-    background: none;
 }
 
 /* multi-line truncation:

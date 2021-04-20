@@ -147,7 +147,6 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                                 title="Details & Metadata"
                                 labels={labels}
                                 annotations={annotations}
-                                bgClass
                             />
                         </div>
                         <div className="s-1">

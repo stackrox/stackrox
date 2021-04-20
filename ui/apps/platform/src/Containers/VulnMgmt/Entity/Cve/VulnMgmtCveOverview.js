@@ -2,7 +2,6 @@ import React from 'react';
 import { ExternalLink } from 'react-feather';
 import { format } from 'date-fns';
 
-import { useTheme } from 'Containers/ThemeProvider';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import CveType from 'Components/CveType';
 import Metadata from 'Components/Metadata';
@@ -34,7 +33,6 @@ const emptyCve = {
 };
 
 const VulnMgmtCveOverview = ({ data, entityContext }) => {
-    const { isDarkMode } = useTheme();
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyCve, ...data };
 
@@ -121,11 +119,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                             headerComponents={linkToMoreInfo}
                             className="bg-base-100 min-h-48 lg:s-2 pdf-page pdf-stretch"
                         >
-                            <div
-                                className={`flex flex-col w-full ${
-                                    isDarkMode ? '' : 'bg-counts-widget'
-                                }`}
-                            >
+                            <div className="flex flex-col w-full">
                                 <div className="bg-tertiary-200 text-2xl text-base-500 flex flex-col md:flex-row items-start md:items-center justify-between">
                                     <div className="w-full flex-grow p-4">
                                         <span className="text-tertiary-800">{cve}</span>

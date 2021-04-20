@@ -106,11 +106,7 @@ const WorkflowEntityPage = ({
             setRefreshTrigger={setRefreshTrigger}
         />
     ) : (
-        <div
-            className={`w-full flex min-h-full ${
-                !isDarkMode && !entityListType ? 'bg-side-panel-wave' : 'bg-base-0'
-            }`}
-        >
+        <div className={`flex w-full min-h-full ${isDarkMode ? 'bg-base-0' : 'bg-base-200'}`}>
             <div className="w-full min-h-full" id="capture-widgets">
                 <OverviewComponent
                     data={result}

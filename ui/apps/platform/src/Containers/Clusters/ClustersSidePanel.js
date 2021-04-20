@@ -7,14 +7,7 @@ import set from 'lodash/set';
 import { Message } from '@stackrox/ui-components';
 
 import CloseButton from 'Components/CloseButton';
-import {
-    getSidePanelHeadBorderColor,
-    PanelNew,
-    PanelBody,
-    PanelHead,
-    PanelHeadEnd,
-    PanelTitle,
-} from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import { useTheme } from 'Containers/ThemeProvider';
@@ -271,7 +264,6 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     const isForm = wizardStep === wizardSteps.FORM;
     const iconClassName = 'h-4 w-4';
 
-    const borderColor = getSidePanelHeadBorderColor(isDarkMode);
     const panelButtons = isBlocked ? (
         <div />
     ) : (
@@ -295,7 +287,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     return (
         <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!selectedClusterId}>
             <PanelNew testid="clusters-side-panel">
-                <PanelHead isDarkMode={isDarkMode} isSidePanel>
+                <PanelHead>
                     <PanelTitle
                         isUpperCase={false}
                         testid="clusters-side-panel-header"
@@ -305,7 +297,7 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                         {panelButtons}
                         <CloseButton
                             onClose={unselectCluster}
-                            className={`${borderColor} border-l`}
+                            className="border-base-400 border-l"
                         />
                     </PanelHeadEnd>
                 </PanelHead>

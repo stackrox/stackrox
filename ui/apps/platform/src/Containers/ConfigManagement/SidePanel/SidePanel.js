@@ -6,16 +6,9 @@ import onClickOutside from 'react-onclickoutside';
 import { ExternalLink } from 'react-feather';
 
 import CloseButton from 'Components/CloseButton';
-import {
-    getSidePanelHeadBorderColor,
-    PanelNew,
-    PanelBody,
-    PanelHead,
-    PanelHeadEnd,
-} from 'Components/Panel';
+import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import searchContext from 'Containers/searchContext';
 import Entity from 'Containers/ConfigManagement/Entity';
-import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
 import parseURL from 'utils/URLParser';
 import URLService from 'utils/URLService';
@@ -35,7 +28,6 @@ const SidePanel = ({
     entityId2,
     query,
 }) => {
-    const { isDarkMode } = useTheme();
     const workflowState = parseURL(location);
     const searchParam = useContext(searchContext);
     const isList = !entityId1 || (entityListType2 && !entityId2);
@@ -82,13 +74,12 @@ const SidePanel = ({
         .query()
         .query(getSearchParams())
         .url();
-    const borderColor = getSidePanelHeadBorderColor(isDarkMode);
     const externalLink = (
         <div className="flex items-center h-full hover:bg-base-300">
             <Link
                 to={externalURL}
                 data-testid="external-link"
-                className={`${borderColor} border-l h-full p-4`}
+                className="border-base-400 border-l h-full p-4"
             >
                 <ExternalLink className="h-6 w-6 text-base-600" />
             </Link>
@@ -105,7 +96,7 @@ const SidePanel = ({
     return (
         <workflowStateContext.Provider value={workflowState}>
             <PanelNew testid="side-panel">
-                <PanelHead isDarkMode={isDarkMode} isSidePanel>
+                <PanelHead>
                     <BreadCrumbs
                         className="font-700 leading-normal text-base-600 tracking-wide truncate"
                         entityType1={entityType1 || entityListType1}
@@ -116,7 +107,7 @@ const SidePanel = ({
                     />
                     <PanelHeadEnd>
                         {externalLink}
-                        <CloseButton onClose={onClose} className={`${borderColor} border-l`} />
+                        <CloseButton onClose={onClose} className="border-base-400 border-l" />
                     </PanelHeadEnd>
                 </PanelHead>
                 <PanelBody>

@@ -38,9 +38,7 @@ const DashboardPage = (props) => {
                 </div>
                 <div className="overflow-auto z-0">
                     <div
-                        className={`flex flex-wrap bg-dashboard ${
-                            !isDarkMode ? 'bg-base-300' : 'bg-base-100'
-                        }`}
+                        className={`flex flex-wrap ${!isDarkMode ? 'bg-base-300' : 'bg-base-100'}`}
                     >
                         <div className="w-full lg:w-1/2 p-6 z-1">
                             <EnvironmentRisk />

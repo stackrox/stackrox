@@ -123,7 +123,6 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={imageStats}
                                 title="Details & Metadata"
-                                bgClass
                             />
                         </div>
                         <div className="s-1">

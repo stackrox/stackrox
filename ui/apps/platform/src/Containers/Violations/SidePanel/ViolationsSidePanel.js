@@ -55,8 +55,6 @@ const ViolationsSidePanel = ({ selectedAlertId, setSelectedAlertId }) => {
 
     /*
      * For border color compatible with background color of SidePanelAdjacentArea:
-     * Omit isDarkMode and isSidePanel props from PanelHead.
-     * Do not call getSidePanelHeadBorderColor for CloseButton.
      */
     return (
         <PanelNew testid="panel">
