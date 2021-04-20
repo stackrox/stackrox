@@ -248,7 +248,7 @@ service NetworkPolicyService {
     rpc ApplyNetworkPolicyYamlForDeployment (ApplyNetworkPolicyYamlForDeploymentRequest) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/networkpolicies/apply/deployment/{deployment_id}"
-            body: "modification"
+            body: "*"
         };
     }
 
