@@ -1,0 +1,338 @@
+= Splunk integration APIs
+:toc:
+:toclevels: 4
+
+== Violations endpoint technical design
+
+Endpoint url: `+/api/splunk/ta/violations+`
+
+=== Data structures
+
+Violations endpoint reads `+storage.Alert+` structures (link:../../proto/storage/alert.proto[alert.proto]) from StackRox database and writes `+integrations.SplunkViolation+` (link:../../proto/api/integrations/splunk_service.proto[splunk_service.proto]) structures in response.
+
+Process and non-process violations contained in `+storage.Alert+` are transformed to `+integrations.SplunkViolation+`. Resulting collection of `+integrations.SplunkViolation+` is put in wrapping struct `+integrations.SplunkViolationsResponse+` and serialized as JSON.
+
+=== Checkpointing
+
+https://docs.splunk.com/Documentation/AddonBuilder/3.0.1/UserGuide/ConfigureDataCollection#Use_checkpoints_for_incremental_data_collection[Splunk Checkpointing] is a mechanism to request (new) data starting from a specific timestamp.
+
+As our experiments shown, checkpointing is a must for log-like data such as violations. When checkpointing is not enabled, violations API returns all violations from the database and Splunk appends them all to its store without discarding violations that it has previously seen and that were unchanged. Data volume gets large and even larger if Splunk data collection interval is decreased. It is possible to de-duplicate events by certain attributes e.g. `+violationId+` in Splunk at query time but not having duplication is better for decreasing data volume and avoiding confusion.
+
+Violations endpoint has two parameters related to checkpointing:
+
+Query parameter `+from_checkpoint+`::
+When present in the query string, e.g. `+?from_checkpoint=2000-01-01T00:00:00.000Z+`, it sets the timestamp (RFC3339 format) for filtering violations. Violations before the timestamp (inclusive) are filtered out. Violations after the timestamp (strictly after) are returned in response, if available in StackRox database.
+If `+from_checkpoint+` is not provided in query string, a default value of year 2000 is used.
+
+Response attribute `+newCheckpoint+`::
+If any violations were returned in response, `+newCheckpoint+` gets the maximum timestamp (RFC3339 format) among all returned violations. If no violations were returned, `+newCheckpoint+` gets the same value as `+from_checkpoint+`.
+
+Our Splunk TA is configured to use a value returned in `+newCheckpoint+` attribute as `+from_checkpoint+` query value for the next request.
+
+`+newCheckpoint+` is the last attribute in the response JSON
+[source,json]
+----
+{
+    "violations": [ {"...":  "..."}, {"...": "..."} ],
+    "newCheckpoint": "2000-01-01T00:00:00.000Z"
+}
+----
+Therefore, if http handler errors out or panics during processing, `+newCheckpoint+` will not be written and Splunk will re-request from the previously known checkpoint value.
+
+Our experiments shown that sorting response violations by a timestamp isn't necessary for the checkpointing to work correctly as long as `+newCheckpoint+` holds maximum of all returned timestamps.
+
+The endpoint implementation is using date field query for `Violation Time` attribute of `ListAlert` therefore only Alerts that were updated after provided checkpoint are read from the database. That should make the common scenario when Splunk polls for new data after its last request efficient.
+
+=== Pagination
+
+We can do two types of pagination.
+
+Paginate StackRox database requests::
+Limit the amount `+Alert+` structs read from StackRox database layer per call. It is known that Central can run out of memory for large deployments that have many (30k) alerts if the code tries to load them all at once from the database. Paginating database requests is a must for service stability.
+
+Paginate API response::
+Limit the amount of violations written to the response by certain fixed number.
+
+Paginating database requests is a must. To decide how we deal with response, let's look at how Alerts and Violations are stored in StackRox database.
+
+Here's time when nothing happens:
+....
+                                                               time
+──────────────────────────────────────────────────────────────────>
+....
+Suddenly StackRox detects a policy violation, let's call it `+v1+`. StackRox creates a new `+Alert+` struct with the first `+Violation+` struct for `+v1+` in it and stores that in the database.
+....
+                                                               time
+─────A────────────────────────────────────────────────────────────>
+     │
+    v1
+....
+Time goes by, and the same policy is violated again for the same deployment. StackRox adds `+Violation+` `+v2+` to the same existing alert.
+....
+                                                               time
+───────────────A──────────────────────────────────────────────────>
+               │
+    v1────────v2
+....
+This can, of course, repeat.
+....
+                                                               time
+──────────────────────────────────A───────────────────────────────>
+                                  │
+    v1────────v2───v3────────────v4
+....
+Other alerts are there as well, with their own violations.
+....
+                                                               time
+────────────A1───────────────────A2────────A3─────────────────────>
+             │                    │         │
+           v11                    │         │
+                                  │         │
+    v21───────v22──v23──────────v24         │
+                                            │
+            v31────────────v32────────────v33
+....
+
+When our Splunk TA uses checkpointing, i.e. provides `+from_checkpoint+` query parameter with a timestamp, this acts as a filter making API return all violations that happened _after_ that timestamp.
+....
+                  :                                            time
+xxxxxxxxxxx─A1xxxx:──────────────A2────────A3─────────────────────>
+             x    :               │         │
+           v11    :               │         │
+                  :               │         │
+    v21xxxxxx─v22x:v23──────────v24         │
+                  :                         │
+            v31xxx:────────v32────────────v33
+                  :
+                  : from_checkpoint
+....
+
+If our API implementation would always read *only one page* of `+Alert+`-s from the database and return violations for `+Alert+`-s only in that page, it would be a problem. Let's say `+from_checkpoint+` is given as above, and the page size is 1. Alert `+A2+` will be read from the database, `+A3+` won't be. API will return violations from `+A2+`: `+v23+` and `+v24+`, and will set `newCheckpoint` to the timestamp of `+v24+`. Next time Splunk TA comes with that value in the `+from_checkpoint+` parameter, StackRox will load alert `+A3+` but *will filter out* its `+v32+` violation because it *happened before the checkpoint*. This way Splunk will never know about violation `+v32+`.
+....
+                  :                :                           time
+xxxxxxxxxxx─A1xxxx:──────────────A2:───────A3─────────────────────>
+             x    :               │:        │
+           v11    :               │:        │
+                  :               │:        │
+    v21xxxxxx─v22x:v23──────────v24:        │
+                  :                :        │
+            v31xxx:xxxxxxx─v32xxxxx:──────v33
+                  :                :
+                  : response 1     : response 2
+....
+
+Therefore, the API implementation *must read all* Alerts in the database that were updated after the `+from_checkpoint+` value to be able to not miss violations. Alerts should be read iteratively with pagination.
+
+Further, we have couple options what to do with violations from these Alerts.
+
+==== Option 1. Stream Violations to response
+
+As each Alert is read, the code can filter and transform violations and then immediately write them to HTTP response.
+The process does not stop until it reads the last (most recently updated) alert in the database. Violations, once written to HTTP response, can be garbage-collected. Therefore, the required memory is bound by the multiplier of the configured page size.footnote:[Strictly speaking, reading `+Alert+`-s with pagination limits the number of, well, `+Alert+`-s. It does not put any limit on the number of `+Violations+` that are read for each single Alert (or all together) because a collection of Violations is stored as part of each Alert. In the worst case, one Alert may have so many Violations that attempt to load it will lead to OOM. The other parts of StackRox will suffer from this problem too, therefore solving this isn't in scope for Splunk API. Runtime Alerts have a hard limit of 40 violations: old ones are dropped to let add new violations. Non-runtime violations don't have any limit on the number of violations.]
+
+Pros/cons:
+
+. [+] Each time Splunk requests violations data, it receives the complete state beginning from snapshot timestamp and until now.
+. [+] This option is more efficient compared to Option 2. Serving `N` alerts will require `O(N)` operations.
+. [~] It is a bit more difficult to clearly communicate error that happened after the service started sending response body. If an error happens, service should abort the response (with `+panic()+`). Since `newCheckpoint` comes last, it will not be provided and Splunk will have to re-request from the previous checkpoint.
+. [-] OS, runtime or any layer below our code may attempt to buffer or cache arbitrary portion of the response. This way OOM/high memory use is not avoided, only moved to the other layer.
+. [-] Similarly, on Splunk side, the logic might attempt to buffer the response until it arrives completely and get in trouble due to the large response size.
+. [-] Large response with many violations can hit various Splunk limits and block processing or suffer data loss.
+. [-] Large and long-running request-response may hit size limits or timeouts in network libraries.
+. [-] The approach can suffer from data loss in case of eventual consistency (see below).
+
+==== Option 2. Read twice. Find cut-off timestamp and limit number of Violations in the response
+
+The processing happens as follows in this alternative.
+
+. StackRox API receives a request and determines effective `+from_checkpoint+` value.
+. The implementation iteratively paginates through all Alerts after the checkpoint value and collects only timestamps of Violations in these Alerts. Hopefully, a slice with only timestamps can fit in the memory, if not, we can maintain an ordered structure of size `K+1` where `K` is a _response page size_.
+. Once the implementation has seen all Alerts in the database, it can determine _cut-off timestamp_ that makes for the first `K` timestamps (chronologically).
+. The implementation again iterates through all Alerts after the checkpoint value and only picks Violations that are _after the checkpoint timestamp_ and _before the cut-off timestamp_.
+. Selected and transformed violations are written to HTTP response. This can be done either in streaming or by first accumulating violations in Go slice and then serializing the slice, i.e. streaming is optional.
+
+This way responses to Splunk are paginated and database reads are paginated too. Page sizes don't need to be equal.
+
+If response page is full and more violations are available in StackRox data, the response is still limited by the page size. Splunk periodically polls our API for the new data anyway and what was not returned before will be picked up later.
+
+In rare occasions it might happen that the rate of incoming violations is higher than the rate of events read by Splunk. In this case Splunk admins should decrease polling interval for StackRox violations API.
+
+Pros/cons:
+
+. [+] No issues due to unbounded response size.
+. [-] Less efficient. Serving all violations from `N` alerts will require `N*(r/K)` requests where `K` is the response page size, `r` is average number of violations per alert. As all remaining alerts need to be read on each request, the overall time will be proportional to `N*N*(r/K)`. That is `O(N^2)` if `N>>K`. Hopefully, we can choose large enough response page size `K` and real-world maximum number of Alerts `N` isn't much higher than seen 30k.
+. [-] In an edge case when there are more than `K` violations with exactly the same timestamp (e.g. all detected at the same instant) either the page size has to be extended to fit them all, which in the worst case could become as big as all violations making that equivalent of the Option 1, or the page size remains fixed but then resulting checkpoint value filters out remaining violations with the equivalent timestamp, i.e. makes data loss. +
+Note that it is possible to address this issue by employing the technique similar to Option 3: inlcude violation timestamp and alert ID in sorting.
+. [-] The approach can suffer from data loss in case of eventual consistency (see below).
+
+In both Option 1 and Option 2 a retry on failure is expensive in "cold start" scenario (or when there are many violations to serve). In case of Option 1 time is spent transmitting violations, in case of Option 2 the time is spent when first iterating Alerts in the database. A chance of failure in the Option 1 seems more likely. In either option we might need to implement request throttling to protect the service from clients that retry too often.
+
+==== Option 3. Index violations and use that for querying
+
+Instead of reading Alerts first and figuring out eligible violations from them as in the above two options, we can create Bleve index for the data of specific violations.
+
+. The index must contain *violation timestamp* so that we can query it after the checkpoint timestamp. When query results are sorted by violation timestamp we can easily take first `K` of them.
+. The index must contain *Alert ID* so that the code can go and retrieve actual Alerts with actual Violations from the database (reminder: Alerts are stored keyed by their IDs in the database; collection of Violations is part of each Alert structure). +
+When querying, Alert ID should be the secondary sorting attribute. This makes it possible to limit the response size if multiple alerts have multiple violations all with the same timestamp (more on that below).
+. This index does *not* need Violation ID. We don't have Violation IDs for any violations except of Process Violations therefore a code for assigning IDs to Violations first needs to be added. If we had ViolationIDs, those aren't very useful because Violations are actually stored as part of Alerts and Alert IDs are present in the index. +
+The only aspect where Violation IDs might help is when index query result is sorted by all three attributes: violation timestamp, alert ID, violation ID. This way page size `K` can be strictly enforced in the edge case of many violations having identical timestamp.
+
+This index is essentially a persisted version of what Option 2 creates on the fly when the implementation makes the first pass through Alerts and accumulates violation timestamps during request handling. The difference is that the index is persisted (and so occupies some disk space and needs to be kept up-to-date) and does not need to be re-created each time API receives the request (see Option 4 as another variation of this).
+
+Process and non-process violations are stored in different protobuf sub-messages within the `+Alert+` message (`+ProcessViolation+` and `+Violation+` respectively). Both need to be indexed by the same index. +
+In addition to that, not all non-process violations have timestamp. Timestamp isn't set for deploy- and build-time violations. We will have to adjust the code creating these violations to also assign the timestamp upon creation. The implementation can assume timestamp is equal to Alert timestamp for the existing persisted violations that don't have it.
+
+Upon receiving a request Violations API will query this index to find Alert IDs of the first (chronologically ordered) `K` violations. From there the implementation will read these Alerts from the database using pagination, transform and write violations to the response.
+
+In order to address the problem of limiting response size in case more than `K` violations have equal timestamp the implementation should do the following.
+
+* First, as mentioned above, results from the index query should be sorted by violation timestamp and alert id as primary and secondary sorting fields.
+* The implementation should return `+newCheckpoint+` as concatenation of the maximum timestamp and alert id returned from the index. E.g. `+"newCheckpoint": "2000-01-01T00:00:00.000Z__123e4567-e89b-12d3-a456-426614174000"+`
+* The implementation should accept `+from_checkpoint+` in the same format, split it and query index after the given timestamp+alert id pair.
+
+This would allow limiting response size to `K` plus maximum number of violations in the last alert. +
+In order to limit response size strictly to the page size `K` we will have to additionally introduce violation IDs for non-process violations and uniformly treat process and non-process violations during indexing and transforming.
+
+Alternatively, if Bleve index supports pointers that can be reused and don't get invalidated when the index is updated, `+newCheckpoint+` and `+from_checkpoint+` can simply get the value of the pointer. *TODO:* check if this is possible.
+
+For this index to be consistent with the database:
+
+* Violations must be indexed every time `+Alert+` is added to the database.
+* Violations must be indexed every time `+Alert+` is updated in the database because Alerts are updated when new Violations are added to them. +
+Each time Alert is updated, its Violations from the index should be loaded and compared with its actual Violations, only missing ones added. If such comparison is not done, index will be bloated by many duplicates.
+* Violations may be deleted from the index when Alert is deleted or updated in the database. +
+If violations are not deleted from the index, it will contain "phantom" data that does not exist. This might not be a big deal if the handling code is prepared for this situation and walks through the index iteratively, i.e. not just loads first `K` items.
+
+Pros/cons:
+
+. [+] No issues with efficient querying.
+. [+] Supports response pagination.
+. [-] More state to maintain and more state coherency issues to take care about.
+. [-] Not possible without adding timestamp to non-runtime violations.
+. [-] The index is not very useful for other use-cases unless we find these other use-cases and make sure the index addresses them.
+. [-] The approach can suffer from data loss in case of eventual consistency (see below).
+
+==== Option 4. Self-managed index
+
+As variation of the Option 3 the index can be created by the violations API, i.e. not in the data layer, and held in RAM, not on disk.
+
+Timestamp `+time.Time+` is represented by a pair int64 and int32. Alert ID is UUID, that is 128 bits when parsed. Together that makes 64+32+128=224 bits or 28 bytes per an element in the index. +
+Index for 30,000 alerts each with 100 violations will occupy approximately 80Mb of ram.
+
+The index can be created when the first request hits API by scanning all available Alerts (similar to Option 2). After the index is built, the alerts are queried from it, and the processing continues similar to Option 2.
+
+Two things happen on the successive requests.
+
+. First, the index is updated by querying for Alerts created or updated after the maximum timestamp in the index. These Alerts are iterated, and their new violations are appended to the index. +
+This step can be skipped if the response size `K` can be served entirely by using already indexed violations, i.e. a number of elements in the index after the checkpoint position is greater than `K`.
+. Second, the index is queried, and the processing continues as usual.
+
+Index updates should be handled exclusively under mutex because the index should be shared for all clients and all requests in order to reduce memory usage.
+
+Pros/cons:
+
+. [+] No issues with efficient querying.
+. [+] Supports response pagination.
+. [+] Indexing logic is isolated from the rest of the application. This is good because indexing seems rather specific for this problem and there's a risk it might not be applicable for other problems.
+. [~] Cold-start request timeout is possible when there's a lot of data to index. However, even if the client receives an error, the handler can continue and complete building the index. Next time the client's request will be processed quickly because the index will be ready.
+. [-] Index could get large and cause OOM itself. *TODO* find actual numbers for violation counts. To avoid OOM, the index can be stored in a file instead of RAM.
+. [-] Violations deleted from Alerts will remain in the index. This problem should be solved otherwise the index will be ever-growing.
+. [-] Violations that get delayed in the system and arrive not in chronological order will not allow having linear append-only structure such as simple Go slice or a file. That would require more sophisticated data structure which permits efficient insertions at arbitrary position (mostly near the end).
+. [-] The approach can suffer from data loss in case of eventual consistency (see below).
+
+==== Option 5. "Smart iterator"
+
+In this approach the checkpoint value should contain:
+
+. `+FromTimestamp+` - instant from which to begin returning violations (strictly after).
+. `+ToTimestamp+` - instant which limits maximum timestamp of returned violations (inclusive).
+. `+FromAlertID+` - identifier of the Alert that was processed last. The implementation must sort Alerts by ID. Returned violations will be read from Alerts that have IDs greater than `+FromAlertID+`.
+
+Given that `+FromTimestamp+` and `+ToTimestamp+` are strings with known formats, one of possibilities is to compose checkpoint value like this (`__` serves as a delimiter)
+
+....
+FromTimestamp__ToTimestamp__FromAlertID
+....
+
+e.g.
+
+....
+from_checkpoint=2000-01-01T00:00:00.000Z__2021-03-18T09:59:59.000Z__123e4567-e89b-12d3-a456-426614174000
+
+"newCheckpoint": "2000-01-01T00:00:00.000Z__2021-03-18T09:59:59.000Z__123e4567-e89b-12d3-a456-426614174000"
+....
+
+Alternatively we can encode these three fields as we like, e.g. with protobuf, and use base64 representation as a value.
+
+The API implementation should do the following for each request.
+
+. Parse `+from_checkpoint+` query parameter. +
+If `+from_checkpoint+` isn't provided, assume `+FromTimestamp=(zero, e.g. 2000-01-01T00:00:00Z)+`, `+ToTimestamp=now()+`, `+FromAlertID=(zero, e.g. "" or "00000000-0000-0000-0000-000000000000")+`.
+. Query Alerts that have a timestamp strictly after `+FromTimestamp+` and have ID strictly greater than `+FromAlertID+`. Instruct index query to return Alerts sorted by ID in non-decreasing order and paginated.
+. Iterate through returned Alerts with pagination.
+.. Upon encountering an `+Alert+` assign `+FromAlertID=Alert.ID+`.
+.. If the `+Alert+` has any violations with the timestamp between `+FromTimestamp+` (not including) and `+ToTimestamp+` (including), transform and write these violations to HTTP response.
+.. If the amount of violations written to HTTP response for this request is greater or equal to the response page size `+K+`, stop iteration.
+. If iteration has completed and there are no more `+Alert+`-s available in the database (for the given query), assign `+FromTimestamp=ToTimestamp+`, `+FromAlertID=(zero)+`, `+ToTimestamp=now()+`. This advances the checkpoint to a "new round" of reading.
+. Append `+"newCheckpoint": "${FromTimestamp}__${ToTimestamp}__${FromAlertID}"+` to the response and complete the response.
+
+This implementation is guaranteed to iterate over each Alert *at most once* for each given `+FromTimestamp+`, `+ToTimestamp+` pair, i.e. "reading round". Which makes it linear time from the number of Alerts `+N+`: `+O(N)+`. +
+The implementation advances `+ToTimestamp+` to the next value only after it iterated through all Alerts that were created/modified after `+FromTimestamp+`. It could be that all the same alerts which were iterated for a pair `+FromTimestamp1,ToTimestamp1+` got new violations, and so they will be iterated again on the new round `+FromTimestamp2==ToTimestamp1,ToTimestamp2+`. That makes time/complexity for a new round again `+O(N)+`.
+
+It is important that the page size `K` for the functioning system to be greater than the product of Splunk poll interval `p` and rate of incoming violations `R`: `K > p*R`. Otherwise, a backlog of violations will build up and grow with the speed `R - K/p` items per second. Violations in the backlog (i.e. the ones having timestamp greater than `+ToTimestamp+`) will have to be skipped which will be more and more as the backlog builds up. In this situation every request will spend increasing time skipping violations thus requests will slow down over time.
+
+In addition to limiting the response size the implementation can also limit the response processing time by checking if the time spent iterating Alerts is greater than some predefined threshold.
+
+Pros/Cons:
+
+. [+] Allows efficient querying.
+. [+] Supports response pagination.
+. [+] Does not require additional indexing.
+. [-] More sensitive to the situation when the rate of incoming violations is higher than the rate of serving them.
+. [-] The approach can suffer from data loss in case of eventual consistency (see below).
+
+==== Eventual consistency issues
+
+All alternative options described above may suffer from the common problem - data loss due to eventual consistency. There we focus on querying Alerts and filtering Violations *by their timestamps*. However, it takes some time after the violation occurred and before it becomes visible in the database.
+
+We assign the current timestamp to a violation when it first gets created so that users can see accurate time when the event happened. After being created, the violation must reach Central and get saved in the database and that takes some time. Let's suppose the violation occurred at 8:09:01 (p.m.) but was saved in the database at 8:09:06, i.e. with 5 seconds delay. If Splunk called API endpoint at 8:09:04, this violation will not be visible in the database yet and will not be returned to Splunk even though it happened earlier. However, the checkpoint could already be advanced to 8:09:04, and the next Splunk request will not include the violation either because its timestamp is before the checkpoint value.
+
+We don't have numbers to quantify the scale of the problem. The probability of losing violations gets higher as rate of violations increases or Splunk polling interval decreases. I.e. highly loaded environments will suffer more.
+
+We suggest filtering out violations in the most recent `X` seconds and advancing the checkpoint to `+now()-X+` instead of `+now()+` as one possible mitigation for the problem. This `X` becomes a safety margin that is allocated for eventual consistency to happen.
+
+If we had data on how much time it takes between Violation is created and Violation and its Alert are persisted, we could make an educated choice for safe value of `X`. Without such data we picked `X=10` seconds to begin with.
+
+==== Option 6. Append log for Violations
+
+As a variation of Option 4 with self-managed index we can have a log where newly appearing Violation IDs get appended, each paired with corresponding Alert ID. +
+Since violation ID does not change, this can simply be a file that gets appended with new items. +
+Alert ID and Violation ID allow locating corresponding record in key-value store without even having to use Bleve index. +
+A position in the log/file should be used as a checkpoint value instead of the timestamp. Therefore, this approach does not have issues related to the eventual consistency: violations are served in the same order as they are recorded.
+
+A checkpoint can be composite containing a timestamp and the position. The timestamp configured in Splunk UI would allow users to set filter for discarding earlier violations. This filter timestamp will remain constant in the checkpoint after advancement, but the position will be updated. Violation's timestamp will be simply compared to the filter timestamp, and the violation will be skipped if its timestamp is earlier. +
+If the position part is absent, reading should start from the beginning of the log.
+
+Pros/cons:
+
+. [+] Allows efficient querying.
+. [+] Supports response pagination with strict limits for violations count in response.
+. [+] No issues with eventual consistency.
+. [~] Checkpoint value isn't transparent for users when the position is present.
+. [~] The implementation will have to re-read the log from the beginning when the user changes the filter timestamp is Splunk UI because data isn't ordered by the timestamp.
+. [-] Requires "indexing" already existing alerts and violations.
+. [-] Requires assigning IDs to all violations including historical ones.
+. [-] Requires some measures to avoid unbounded file growth, i.e. when old alerts/violations get removed from the system. This may also complicate the checkpoint presentation.
+
+==== The plan
+
+Option 5 seemed the most promising from the first five and so the plan was to try build that. Option 6 while simpler and subjectively more elegant came in the middle of implementing #5 and required adding violation IDs which seemed like a big effort. Due to this I continued with #5.
+
+Here are few unknowns for the Option 5:
+
+* [x] Check if checkpoints in Splunk can be opaque strings and not only a single timestamp. -- Yes, they can be.
+* [x] Check if query for Alert.ID > `+FromAlertID+` is possible. -- Yes, possible.
+* [x] Check if sorting by Alert.ID is possible and allows pagination. -- Yes.
+* [x] Choose page size for database reads. -- Done.
+* [x] Choose page size for response. -- Done.
+* [x] Check if Splunk has an internal mechanism for decreasing poll interval in case of "cold start" or large backlog of items. -- Yes, it does retry up to 100 times or until it sees response returned no data.
