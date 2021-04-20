@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPublicIPsManager(t *testing.T) {
+func TestExternalSrcsHandler(t *testing.T) {
 	handler := newHandler()
 
 	_, cancel := context.WithCancel(context.Background())
@@ -26,7 +26,6 @@ func TestPublicIPsManager(t *testing.T) {
 
 	assert.Nil(t, vs.Value())
 	assert.Nil(t, vs.TryNext())
-	assert.False(t, handler.updateSig.IsDone())
 
 	// First message
 	req := &central.MsgToSensor{
@@ -58,7 +57,6 @@ func TestPublicIPsManager(t *testing.T) {
 
 	assert.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	assert.Nil(t, vs.TryNext())
-	assert.False(t, handler.updateSig.IsDone())
 
 	// New message with 2 entities
 	req = &central.MsgToSensor{
@@ -101,7 +99,6 @@ func TestPublicIPsManager(t *testing.T) {
 
 	assert.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	assert.Nil(t, vs.TryNext())
-	assert.False(t, handler.updateSig.IsDone())
 
 	// New message with new entities whose CIDR evaluate to same as previous push; entities saved however CIDRs not pushed downstream.
 	req = &central.MsgToSensor{
@@ -139,7 +136,6 @@ func TestPublicIPsManager(t *testing.T) {
 
 	require.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	require.Nil(t, vs.TryNext())
-	assert.False(t, handler.updateSig.IsDone())
 
 	// New request with one ipv4 and one ipv6 network.
 	req = &central.MsgToSensor{
@@ -181,8 +177,8 @@ func TestPublicIPsManager(t *testing.T) {
 	assert.Len(t, vs.Value().(*sensor.IPNetworkList).GetIpv4Networks(), 5)
 	assert.Len(t, vs.Value().(*sensor.IPNetworkList).GetIpv6Networks(), 17)
 
+	assert.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	assert.Nil(t, vs.TryNext())
-	assert.False(t, handler.updateSig.IsDone())
 
 	// New request with outdated sequence ID; must be discarded.
 	req = &central.MsgToSensor{
@@ -196,7 +192,6 @@ func TestPublicIPsManager(t *testing.T) {
 
 	assert.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	assert.Nil(t, vs.TryNext())
-	assert.False(t, handler.updateSig.IsDone())
 }
 
 func TestExternalSourcesLookup(t *testing.T) {
@@ -211,7 +206,6 @@ func TestExternalSourcesLookup(t *testing.T) {
 
 	assert.Nil(t, vs.Value())
 	assert.Nil(t, vs.TryNext())
-	assert.False(t, handler.updateSig.IsDone())
 
 	// First message
 	req := &central.MsgToSensor{
