@@ -4,6 +4,10 @@
    We should have a goal of eventually being able to delete this file.
  */
 
+body {
+    font-family: var(--pf-global--FontFamily--sans-serif) !important;
+}
+
 .pf-c-page__main {
     --pf-c-page__main--ZIndex: auto;
 }
@@ -15,4 +19,8 @@
 
 [data-testid='top-nav-btns'] {
     height: 4.75rem !important;
+}
+
+.pf-c-nav__link {
+    align-items: center !important;
 }

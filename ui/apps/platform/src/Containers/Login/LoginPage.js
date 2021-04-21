@@ -211,7 +211,7 @@ class LoginPage extends Component {
     render() {
         return (
             <AppWrapper>
-                <div className="flex h-full items-center justify-center">
+                <main className="flex h-full items-center justify-center">
                     <div className="flex items-start">
                         <form
                             className="pf-u-background-color-100 w-128 theme-light"
@@ -231,7 +231,7 @@ class LoginPage extends Component {
                             className="p-12"
                         />
                     </div>
-                </div>
+                </main>
             </AppWrapper>
         );
     }

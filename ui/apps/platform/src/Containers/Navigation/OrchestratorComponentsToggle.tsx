@@ -50,14 +50,17 @@ const OrchestratorComponentsToggle = ({
 
     // TODO: update wrapper classes to PatternFly, like  `pf-u-background-color-100
     return (
-        <div className="flex justify-center items-center p-3">
+        <div
+            className="flex justify-center items-center pr-3 font-600 relative"
+            style={{ top: '2px' }}
+        >
             <Switch
                 id="orchestrator-components-toggle"
                 aria-label="Toggle Showing Orchestrator Components"
                 isChecked={showOrchestratorComponents === 'true'}
                 onChange={handleToggle}
             />
-            <span className="p-2 text-base-900" aria-hidden="true">
+            <span className="p-2 text-base-600" aria-hidden="true">
                 Show Orchestrator Components
             </span>
         </div>
