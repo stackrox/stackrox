@@ -43,9 +43,7 @@ func Command() *cobra.Command {
 		PreRun: func(c *cobra.Command, args []string) {
 			jsonFlag := c.Flag(jsonFlagName)
 			jsonFailFlag := c.Flag(jsonFailFlagName)
-			if jsonFlag.Changed && !jsonFailFlag.Changed {
-				fmt.Fprintf(os.Stderr, "Warning: the default value for --%s will change in a future release, you might want to specify it explicitly now.\n", jsonFailFlag.Name)
-			} else if !jsonFlag.Changed && jsonFailFlag.Changed {
+			if !jsonFlag.Changed && jsonFailFlag.Changed {
 				fmt.Fprintf(os.Stderr, "Note: --%s has no effect when --%s is not specified.\n", jsonFailFlag.Name, jsonFlag.Name)
 			}
 		},
@@ -55,11 +53,9 @@ func Command() *cobra.Command {
 	pkgUtils.Must(c.MarkFlagRequired("image"))
 
 	c.Flags().BoolVar(&json, jsonFlagName, false, "Output policy results as JSON")
-	// TODO(ROX-6573): when changing the default in a future release, also remove the warning in PreRun.
-	c.Flags().BoolVar(&failViolationsWithJSON, jsonFailFlagName, false,
+	c.Flags().BoolVar(&failViolationsWithJSON, jsonFailFlagName, true,
 		"Whether policy violations should cause the command to exit non-zero in JSON output mode too. "+
-			"This flag only has effect when --json is also specified. "+
-			"The default for this flag will change in a future release")
+			"This flag only has effect when --json is also specified.")
 	c.Flags().IntVarP(&retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds.")
 	c.Flags().IntVarP(&retryCount, "retries", "r", 0, "number of retries before exiting as error.")
 	c.Flags().BoolVar(&sendNotifications, "send-notifications", false,

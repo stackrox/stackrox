@@ -8,6 +8,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 - Added `GET /v1/centralhealth/upgradestatus` endpoint to support upgrade rollback.
 - Scanner no longer supports RHEL/CentOS 5.
+- Default value for `--json-fail-on-policy-violations` flag of `roxctl image check` changed
+  from `false` to `true`.
 
 ## [58.1]
 
