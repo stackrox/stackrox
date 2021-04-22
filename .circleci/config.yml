@@ -3028,11 +3028,13 @@ jobs:
             - AKS_AUTOMATION_VERSION: 0.1.7
             - AZURE_RESOURCE_GROUP: stackrox-ci
             - CREATION_SOURCE: ci
+            # Pin to 1.18 to ensure that docker runtime is used (ROX-6993 ROX-6994)
+            - K8S_VERSION: 1.18.17
           command: |
             mkdir $PWD/aks
             docker run --name aks-automation -t \
               -v $PWD/aks:/data \
-              -e AZURE_SP_USERNAME -e AZURE_SP_PASSWORD -e AZURE_SP_TENANT -e CREATION_SOURCE \
+              -e AZURE_SP_USERNAME -e AZURE_SP_PASSWORD -e AZURE_SP_TENANT -e CREATION_SOURCE -e K8S_VERSION \
               gcr.io/stackrox-infra/automation-flavors/aks:$AKS_AUTOMATION_VERSION create "${CIRCLE_WORKFLOW_ID:0:7}" "${AZURE_RESOURCE_GROUP}"
             docker cp aks-automation:/data $PWD/aks
 
