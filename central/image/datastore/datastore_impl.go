@@ -267,7 +267,7 @@ func (ds *datastoreImpl) initializeRankers() {
 	}
 
 	for _, id := range pkgSearch.ResultsToIDs(results) {
-		image, found, err := ds.storage.GetImage(id)
+		image, found, err := ds.storage.GetImageMetadata(id)
 		if err != nil {
 			log.Error(err)
 			continue

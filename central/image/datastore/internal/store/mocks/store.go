@@ -95,6 +95,22 @@ func (mr *MockStoreMockRecorder) GetImage(sha interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImage", reflect.TypeOf((*MockStore)(nil).GetImage), sha)
 }
 
+// GetImageMetadata mocks base method
+func (m *MockStore) GetImageMetadata(sha string) (*storage.Image, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImageMetadata", sha)
+	ret0, _ := ret[0].(*storage.Image)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetImageMetadata indicates an expected call of GetImageMetadata
+func (mr *MockStoreMockRecorder) GetImageMetadata(sha interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageMetadata", reflect.TypeOf((*MockStore)(nil).GetImageMetadata), sha)
+}
+
 // GetImagesBatch mocks base method
 func (m *MockStore) GetImagesBatch(shas []string) ([]*storage.Image, []int, error) {
 	m.ctrl.T.Helper()

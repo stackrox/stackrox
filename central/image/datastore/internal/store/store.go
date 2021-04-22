@@ -12,6 +12,8 @@ type Store interface {
 	GetImages() ([]*storage.Image, error)
 	CountImages() (int, error)
 	GetImage(sha string) (*storage.Image, bool, error)
+	// GetImageMetadata gets the image without scan/component data.
+	GetImageMetadata(sha string) (*storage.Image, bool, error)
 	GetImagesBatch(shas []string) ([]*storage.Image, []int, error)
 
 	Exists(id string) (bool, error)

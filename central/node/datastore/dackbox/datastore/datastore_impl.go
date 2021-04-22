@@ -244,7 +244,7 @@ func (ds *datastoreImpl) initializeRankers() {
 	}
 
 	for _, id := range pkgSearch.ResultsToIDs(results) {
-		node, found, err := ds.storage.GetNode(id)
+		node, found, err := ds.storage.GetNodeMetadata(id)
 		if err != nil {
 			log.Errorf("retrieving node for ranker initialization: %v", err)
 			continue

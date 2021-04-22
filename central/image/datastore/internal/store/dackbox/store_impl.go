@@ -139,6 +139,23 @@ func (b *storeImpl) GetImage(id string) (image *storage.Image, exists bool, err 
 	return image, image != nil, err
 }
 
+// GetImageMetadata returns an image with given id without component/CVE data.
+func (b *storeImpl) GetImageMetadata(id string) (image *storage.Image, exists bool, err error) {
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ImageMetadata")
+
+	branch, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, false, err
+	}
+	defer branch.Discard()
+
+	image, err = b.readImageMetadata(branch, id)
+	if err != nil {
+		return nil, false, err
+	}
+	return image, image != nil, err
+}
+
 // GetImagesBatch returns images with given ids.
 func (b *storeImpl) GetImagesBatch(digests []string) ([]*storage.Image, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Image")
@@ -239,7 +256,7 @@ func (b *storeImpl) isUpdated(image *storage.Image) (bool, bool, error) {
 	return metadataUpdated, scanUpdated, nil
 }
 
-// DeleteImage deletes an image and all it's data.
+// Delete deletes an image and all its data.
 func (b *storeImpl) Delete(id string) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Remove, "Image")
 
@@ -448,6 +465,19 @@ func (b *storeImpl) deleteImageKeys(keys *imageKeySet) error {
 // Reading an image from the DB.
 ////////////////////////////////
 
+// readImageMetadata reads the image without all its components/CVEs from the data store.
+func (b *storeImpl) readImageMetadata(txn *dackbox.Transaction, id string) (*storage.Image, error) {
+	msg, err := imageDackBox.Reader.ReadIn(imageDackBox.BucketHandler.GetKey(id), txn)
+	if err != nil {
+		return nil, err
+	}
+	if msg == nil {
+		return nil, nil
+	}
+	return msg.(*storage.Image), nil
+}
+
+// readImage reads the image and all its components/CVEs from the data store.
 func (b *storeImpl) readImage(txn *dackbox.Transaction, id string) (*storage.Image, error) {
 	// Gather the keys for the image we want to read.
 	keys, err := gatherKeysForImage(txn, id)

@@ -24,7 +24,8 @@ import (
 )
 
 const (
-	typ = "Node"
+	typ          = "Node"
+	metadataType = "NodeMetadata"
 )
 
 type storeImpl struct {
@@ -105,7 +106,7 @@ func (b *storeImpl) CountNodes() (int, error) {
 	return count, nil
 }
 
-// GetNode returns node with given id.
+// GetNode returns the node with given id.
 func (b *storeImpl) GetNode(id string) (*storage.Node, bool, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, typ)
 
@@ -116,6 +117,23 @@ func (b *storeImpl) GetNode(id string) (*storage.Node, bool, error) {
 	defer branch.Discard()
 
 	node, err := b.readNode(branch, id)
+	if err != nil {
+		return nil, false, err
+	}
+	return node, node != nil, err
+}
+
+// GetNodeMetadata returns the node with the given id without component/CVE data.
+func (b *storeImpl) GetNodeMetadata(id string) (*storage.Node, bool, error) {
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, metadataType)
+
+	branch, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, false, err
+	}
+	defer branch.Discard()
+
+	node, err := b.readNodeMetadata(branch, id)
 	if err != nil {
 		return nil, false, err
 	}
@@ -243,7 +261,7 @@ func (b *storeImpl) toUpsert(node *storage.Node) (*storage.Node, bool, bool, err
 	return nodeToUpsert, nodeUpdated, scanUpdated, nil
 }
 
-// DeleteNode deletes an node and all its data.
+// Delete deletes a node and all its data.
 func (b *storeImpl) Delete(id string) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Remove, typ)
 
@@ -460,6 +478,19 @@ func (b *storeImpl) deleteNodeKeys(keys *nodeKeySet) error {
 // Reading a node from the DB.
 //////////////////////////////
 
+// readNodeMetadata reads the node without all its components/CVEs from the data store.
+func (b *storeImpl) readNodeMetadata(txn *dackbox.Transaction, id string) (*storage.Node, error) {
+	msg, err := nodeDackBox.Reader.ReadIn(nodeDackBox.BucketHandler.GetKey(id), txn)
+	if err != nil {
+		return nil, err
+	}
+	if msg == nil {
+		return nil, nil
+	}
+	return msg.(*storage.Node), nil
+}
+
+// readNode reads the node and all its components/CVEs from the data store.
 func (b *storeImpl) readNode(txn *dackbox.Transaction, id string) (*storage.Node, error) {
 	// Gather the keys for the node we want to read.
 	keys, err := gatherKeysForNode(txn, id)
