@@ -7,6 +7,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [NEXT RELEASE]
 
 - Added `GET /v1/centralhealth/upgradestatus` endpoint to support upgrade rollback.
+- Scanner no longer supports RHEL/CentOS 5.
 
 ## [58.1]
 
