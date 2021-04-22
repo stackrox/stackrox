@@ -5,11 +5,29 @@ option java_package = "io.stackrox.proto.storage";
 
 package storage;
 
+// A role specifies which actions are allowed for which subset of cluster
+// objects. Permissions be can either specified directly via setting
+// resource_to_access together with global_access or by referencing a
+// permission set by its id in permission_set_name.
 message Role {
-    string name = 1;
-    Access global_access = 2;
+    // `id` is generated and cannot be changed.
+    string id            = 4;
 
-    map<string, Access> resource_to_access = 3;
+    // `name` and `description` are provided by the user and can be changed.
+    string name          = 1;
+    string description   = 5;
+
+    // The associated PermissionSet and AccessScope for this Role.
+    string permission_set_id = 6;
+    string access_scope_id = 7;
+
+    // Minimum (not default!) access level for every resource. Can be extended
+    // below by explicit permissions but not shrunk.
+    // Deprecated 2021-04-20 in favor of `permission_set_id`.
+    Access global_access = 2 [deprecated = true];
+
+    // Deprecated 2021-04-20 in favor of `permission_set_id`.
+    map<string, Access> resource_to_access = 3 [deprecated = true];
 }
 
 enum Access {

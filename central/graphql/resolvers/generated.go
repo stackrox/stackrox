@@ -1048,8 +1048,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"url: String!",
 	}))
 	utils.Must(builder.AddType("Role", []string{
+		"accessScopeId: String!",
+		"description: String!",
 		"globalAccess: Access!",
+		"id: ID!",
 		"name: String!",
+		"permissionSetId: String!",
 	}))
 	utils.Must(builder.AddType("Scope", []string{
 		"cluster: String!",
@@ -9041,13 +9045,33 @@ func (resolver *Resolver) wrapRoles(values []*storage.Role, err error) ([]*roleR
 	return output, nil
 }
 
+func (resolver *roleResolver) AccessScopeId(ctx context.Context) string {
+	value := resolver.data.GetAccessScopeId()
+	return value
+}
+
+func (resolver *roleResolver) Description(ctx context.Context) string {
+	value := resolver.data.GetDescription()
+	return value
+}
+
 func (resolver *roleResolver) GlobalAccess(ctx context.Context) string {
 	value := resolver.data.GetGlobalAccess()
 	return value.String()
 }
 
+func (resolver *roleResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
 func (resolver *roleResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *roleResolver) PermissionSetId(ctx context.Context) string {
+	value := resolver.data.GetPermissionSetId()
 	return value
 }
 
