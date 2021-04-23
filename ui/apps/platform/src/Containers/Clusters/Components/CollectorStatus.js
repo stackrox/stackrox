@@ -95,9 +95,7 @@ const CollectorStatus = ({ healthStatus, currentDatetime, isList }) => {
                                 Collector pods expected:
                             </th>
                             <td className={tdClassName} data-testid="totalDesiredPods">
-                                <span className={`${bgColor} ${fgColor}`}>
-                                    {totalDesiredPods == null ? notAvailable : totalDesiredPods}
-                                </span>
+                                {totalDesiredPods == null ? notAvailable : totalDesiredPods}
                             </td>
                         </tr>
                         <tr className={trClassName} key="totalRegisteredNodes">

@@ -52,6 +52,8 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	conn := connection.FromContext(ctx)
 	clusterHealthStatus := &storage.ClusterHealthStatus{
+		CollectorHealthInfo:          cInfo,
+		AdmissionControlHealthInfo:   aInfo,
 		SensorHealthStatus:           storage.ClusterHealthStatus_HEALTHY,
 		CollectorHealthStatus:        clusterhealth.PopulateCollectorStatus(cInfo),
 		AdmissionControlHealthStatus: clusterhealth.PopulateAdmissionControlStatus(aInfo),

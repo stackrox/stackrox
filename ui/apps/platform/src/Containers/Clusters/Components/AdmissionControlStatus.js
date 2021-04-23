@@ -81,9 +81,7 @@ const AdmissionControlStatus = ({ healthStatus, currentDatetime, isList }) => {
                                 Admission Control pods expected:
                             </th>
                             <td className={tdClassName} data-testid="totalDesiredPods">
-                                <span className={`${bgColor} ${fgColor}`}>
-                                    {totalDesiredPods == null ? notAvailable : totalDesiredPods}
-                                </span>
+                                {totalDesiredPods == null ? notAvailable : totalDesiredPods}
                             </td>
                         </tr>
                         {statusErrors && statusErrors.length > 0 && (
