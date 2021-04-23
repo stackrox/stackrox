@@ -13,7 +13,7 @@ import NavigationSideBar from 'Containers/Navigation/NavigationSideBar';
 import SearchModal from 'Containers/Search/SearchModal';
 import CLIModal from 'Containers/CLI/CLIModal';
 import UnreachableWarning from 'Containers/UnreachableWarning';
-import AppWrapper from 'Containers/AppWrapper';
+import AppWrapper, { PublicConfig } from 'Containers/AppWrapper';
 import CredentialExpiryBanners from 'Containers/CredentialExpiry/CredentialExpiryBanners';
 import VersionOutOfDate from 'Containers/VersionOutOfDate';
 import Body from 'Containers/MainPage/Body';
@@ -35,6 +35,7 @@ export type MainPageProps = {
     metadata: {
         stale?: boolean;
     };
+    publicConfig: PublicConfig;
 };
 
 function MainPage({
@@ -46,6 +47,7 @@ function MainPage({
     metadata = {
         stale: false,
     },
+    publicConfig,
 }: MainPageProps): ReactElement {
     const [isNavOpen, setNavOpen] = useState(true);
     function onNavToggle() {
@@ -55,7 +57,7 @@ function MainPage({
     const Header = <Masthead isNavOpen={isNavOpen} onNavToggle={onNavToggle} />;
 
     return (
-        <AppWrapper>
+        <AppWrapper publicConfig={publicConfig}>
             <div className="flex flex-1 flex-col h-full relative">
                 <UnreachableWarning />
                 <Notifications />
@@ -84,6 +86,7 @@ const mapStateToProps = createStructuredSelector({
     isCliDownloadView: selectors.getCLIDownloadView,
     metadata: selectors.getMetadata,
     featureFlags: selectors.getFeatureFlags,
+    publicConfig: selectors.getPublicConfig,
 });
 
 const mapDispatchToProps = {
