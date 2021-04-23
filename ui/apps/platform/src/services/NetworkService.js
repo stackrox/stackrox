@@ -12,6 +12,42 @@ const networkBaselineBaseUrl = '/v1/networkbaseline';
 const NETWORK_GRAPH_REQUESTS_TIMEOUT = 0;
 
 /*
+ * Applies the given network policy to the specified deployment
+ *
+ * @returns {Promise<Object, Error>}
+ *
+ */
+export function applyBaselineNetworkPolicy({ deploymentId, modification }) {
+    return axios
+        .post(`${networkPoliciesBaseUrl}/apply/deployment/${deploymentId}`, {
+            modification,
+        })
+        .then((response) => {
+            return response.data;
+        })
+        .catch((error) => {
+            return error.response.data;
+        });
+}
+
+/*
+ * Fetches the generated network policy modification for the specified deployment
+ * from its network baseline
+ *
+ * @returns {Promise<Object, Error>}
+ *
+ */
+export function fetchBaselineGeneratedNetworkPolicy({ deploymentId, includePorts }) {
+    return axios
+        .post(`${networkPoliciesBaseUrl}/generate/baseline/${deploymentId}`, {
+            includePorts,
+        })
+        .then((response) => {
+            return response.data;
+        });
+}
+
+/*
  * Fetches the diff view of flows between the network policies currently applied to the
  * specified deployment and the baseline of that deployment.
  *

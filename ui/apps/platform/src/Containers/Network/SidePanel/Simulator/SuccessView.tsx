@@ -4,7 +4,7 @@ import { createStructuredSelector } from 'reselect';
 import { Message } from '@stackrox/ui-components';
 
 import { selectors } from 'reducers';
-import { Modification } from 'Containers/Network/networkTypes';
+import { NetworkPolicyModification } from 'Containers/Network/networkTypes';
 import SuccessViewTabs from './SuccessViewTabs';
 import Download from './Icons/Download';
 import Generate from './Icons/Generate';
@@ -16,7 +16,7 @@ import Notify from './Buttons/Notify';
 type SuccessViewProps = {
     modificationName?: string;
     modificationSource?: string;
-    modification?: Modification;
+    modification?: NetworkPolicyModification;
     timeWindow: string;
 };
 

@@ -4,12 +4,15 @@ import { PanelBody, PanelHead, PanelHeadEnd, PanelNew, PanelTitle } from 'Compon
 import TablePagination from 'Components/TablePagination';
 import { FilterState } from 'Containers/Network/networkTypes';
 import useSearchFilteredData from 'hooks/useSearchFilteredData';
+import { useNetworkBaselineSimulation } from 'Containers/Network/baselineSimulationContext';
 import NetworkPolicyYAMLOptions from './NetworkPolicyYAMLOptions';
 import SimulatedNetworkBaselines from './SimulatedNetworkBaselines';
+import ApplyBaselineNetworkPolicy from './ApplyBaselineNetworkPolicy';
 import BaselineSimulationSearch, {
     getSimulatedBaselineValueByCategory,
 } from './BaselineSimulationSearch';
 import useFetchBaselineComparison from './useFetchBaselineComparisons';
+import useFetchBaselineGeneratedNetworkPolicy from './useFetchBaselineGeneratedNetworkPolicy';
 
 export type BaselineSimulationProps = {
     deploymentId: string;
@@ -17,9 +20,20 @@ export type BaselineSimulationProps = {
 };
 
 function BaselineSimulation({ deploymentId, filterState }: BaselineSimulationProps): ReactElement {
+    const {
+        baselineSimulationOptions: { excludePortsAndProtocols },
+        stopBaselineSimulation,
+    } = useNetworkBaselineSimulation();
     const { simulatedBaselines, isLoading } = useFetchBaselineComparison({
         deploymentId,
         filterState,
+    });
+    const {
+        data: networkPolicy,
+        isGeneratingNetworkPolicy,
+    } = useFetchBaselineGeneratedNetworkPolicy({
+        deploymentId,
+        includePorts: !excludePortsAndProtocols,
     });
     const [page, setPage] = useState(0);
     const [searchOptions, setSearchOptions] = useState([]);
@@ -30,7 +44,7 @@ function BaselineSimulation({ deploymentId, filterState }: BaselineSimulationPro
     );
 
     return (
-        <div className="bg-primary-100 rounded-b rounded-tr-lg shadow flex flex-1">
+        <div className="bg-primary-100 rounded-b rounded-tr-lg shadow flex flex-1 flex-col">
             <PanelNew testid="baseline-simulation">
                 <PanelHead>
                     <PanelTitle text="Baseline Simulation" />
@@ -57,10 +71,19 @@ function BaselineSimulation({ deploymentId, filterState }: BaselineSimulationPro
                 <PanelBody>
                     <SimulatedNetworkBaselines
                         simulatedBaselines={filteredBaselines}
-                        isLoading={isLoading}
+                        isLoading={isLoading || isGeneratingNetworkPolicy}
                     />
                 </PanelBody>
             </PanelNew>
+            {networkPolicy && (
+                <div className="flex justify-center items-center py-4 border-t border-primary-300 bg-primary-100">
+                    <ApplyBaselineNetworkPolicy
+                        deploymentId={deploymentId}
+                        networkPolicy={networkPolicy}
+                        stopBaselineSimulation={stopBaselineSimulation}
+                    />
+                </div>
+            )}
         </div>
     );
 }

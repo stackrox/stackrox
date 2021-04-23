@@ -129,7 +129,7 @@ export type NetworkNode = {
     type: string;
 };
 
-export type Modification = {
+export type NetworkPolicyModification = {
     applyYaml: string;
     toDelete: {
         namespace: string;

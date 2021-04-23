@@ -2,11 +2,11 @@ import React, { ReactElement } from 'react';
 
 import Tabs from 'Components/Tabs';
 import Tab from 'Components/Tab';
-import { Modification } from 'Containers/Network/networkTypes';
+import { NetworkPolicyModification } from 'Containers/Network/networkTypes';
 
 type SuccessViewTabsProps = {
     modificationName?: string;
-    modification?: Modification;
+    modification?: NetworkPolicyModification;
 };
 
 function SuccessViewTabs({

@@ -6,11 +6,11 @@ import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 import { selectors } from 'reducers';
 import download from 'utils/download';
-import { Modification } from 'Containers/Network/networkTypes';
+import { NetworkPolicyModification } from 'Containers/Network/networkTypes';
 
 type DownloadProps = {
     modificationName: string;
-    modification: Modification;
+    modification: NetworkPolicyModification;
 };
 
 function Download({ modification, modificationName }: DownloadProps): ReactElement {

@@ -4,11 +4,11 @@ import { createStructuredSelector } from 'reselect';
 import { Message } from '@stackrox/ui-components';
 
 import { selectors } from 'reducers';
-import { Modification } from 'Containers/Network/networkTypes';
+import { NetworkPolicyModification } from 'Containers/Network/networkTypes';
 
 type ErrorViewProps = {
     modificationName?: string;
-    modification?: Modification;
+    modification?: NetworkPolicyModification;
     modificationState: string;
 };
 

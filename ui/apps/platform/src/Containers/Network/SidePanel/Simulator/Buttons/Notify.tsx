@@ -6,11 +6,11 @@ import * as Icon from 'react-feather';
 import { selectors } from 'reducers';
 import { actions as dialogueActions } from 'reducers/network/dialogue';
 import dialogueStages from 'Containers/Network/Dialogue/dialogueStages';
-import { Modification } from 'Containers/Network/networkTypes';
+import { NetworkPolicyModification } from 'Containers/Network/networkTypes';
 import Button from './Button';
 
 type NotifyProps = {
-    modification: Modification;
+    modification: NetworkPolicyModification;
     notifiers?: Record<string, unknown>[];
     setDialogueStage: (stage) => void;
 };
