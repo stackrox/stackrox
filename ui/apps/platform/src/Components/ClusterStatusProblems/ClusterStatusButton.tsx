@@ -1,21 +1,13 @@
 /* eslint-disable react/jsx-no-bind */
-import React, { ReactElement } from 'react';
+import React, { CSSProperties, ReactElement } from 'react';
 import { Activity } from 'react-feather';
 import { useHistory } from 'react-router-dom';
-import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
+import { Tooltip } from '@patternfly/react-core';
 
 import { clustersBasePath } from 'routePaths';
 
-const fgColorDefault = 'text-base-600';
-
-const fgColorUnhealthy = 'text-alert-700';
-const bothColorsUnhealthy = `bg-alert-200 ${fgColorUnhealthy}`;
-
-const fgColorDegraded = 'text-warning-700';
-
-const trClassName = 'align-top leading-normal';
-const thClassName = 'font-600 pl-0 pr-2 py-0 text-left';
-const tdClassName = 'p-0 text-right';
+const thClassName = 'font-400 pf-u-pr-md pf-u-text-align-left';
+const tdClassName = 'pf-u-text-align-right';
 
 type ClusterStatusButtonProps = {
     degraded?: number;
@@ -25,9 +17,8 @@ type ClusterStatusButtonProps = {
 /*
  * Visual indicator in top navigation whether any clusters have health problems.
  *
- * The right corners of the button display non-zero counts.
  * The tooltip body displays query results, including zero counts.
- * A button click opens the Clusters list with a search query.
+ * A button click opens the Clusters list.
  */
 const ClusterStatusButton = ({
     degraded = 0,
@@ -36,34 +27,20 @@ const ClusterStatusButton = ({
     const history = useHistory();
     const hasDegradedClusters = degraded > 0;
     const hasUnhealthyClusters = unhealthy > 0;
+    const hasProblems = hasDegradedClusters || hasUnhealthyClusters;
 
-    // Use table instead of TooltipFieldValue to align numbers.
-    // Because of flex-col, tooltip body has full width of tooltip,
-    // therefore a div wrapper in needed so that its child table
-    // can have automatic width as little as its content needs.
-    const resultsElement = (
+    const contentElement = (
         <div>
+            <div>Cluster status problems</div>
             <table>
                 <tbody>
-                    <tr
-                        className={
-                            hasUnhealthyClusters
-                                ? `${trClassName} ${bothColorsUnhealthy}`
-                                : trClassName
-                        }
-                        key="unhealthy"
-                    >
+                    <tr key="unhealthy">
                         <th className={thClassName} scope="row">
                             Unhealthy
                         </th>
                         <td className={tdClassName}>{unhealthy}</td>
                     </tr>
-                    <tr
-                        className={
-                            hasDegradedClusters ? `${trClassName} ${fgColorDegraded}` : trClassName
-                        }
-                        key="degraded"
-                    >
+                    <tr key="degraded">
                         <th className={thClassName} scope="row">
                             Degraded
                         </th>
@@ -74,32 +51,24 @@ const ClusterStatusButton = ({
         </div>
     );
 
-    // Unhealthy at upper right to suggest higher severity.
-    const unhealthyElement = hasUnhealthyClusters ? (
-        <span
-            aria-label="Number of clusters with Unhealthy status"
-            className={`absolute top-0 right-0 p-1 rounded-bl ${bothColorsUnhealthy}`}
-        >
-            {unhealthy}
-        </span>
-    ) : null;
+    // Border radius for background circle to emphasize icon color.
+    const classNameProblems = hasProblems ? 'rounded-lg' : '';
 
-    // Degraded at lower right to suggest lower severity.
-    const degradedElement = hasDegradedClusters ? (
-        <span
-            aria-label="Number of clusters with Degraded status"
-            className={`absolute bottom-0 right-0 p-1 ${fgColorDegraded}`}
-        >
-            {degraded}
-        </span>
-    ) : null;
-
-    let iconColor = fgColorDefault;
-    // The color indicates the more severe health problem.
+    let styleProblems: CSSProperties | undefined;
+    /*
+     * Explicit white background because the following did not work:
+     * `backgroundColor: var(--pf-global--BackgroundColor--100)`
+     */
     if (hasUnhealthyClusters) {
-        iconColor = fgColorUnhealthy;
+        styleProblems = {
+            backgroundColor: '#ffffff',
+            color: 'var(--pf-global--danger-color--100)',
+        };
     } else if (hasDegradedClusters) {
-        iconColor = fgColorDegraded;
+        styleProblems = {
+            backgroundColor: '#ffffff',
+            color: 'var(--pf-global--warning-color--100)',
+        };
     }
 
     const onClick = () => {
@@ -112,30 +81,29 @@ const ClusterStatusButton = ({
         });
     };
 
+    // On masthead, black text on white background like a dropdown menu.
+    const styleTooltip = {
+        '--pf-c-tooltip__content--Color': 'var(--pf-global--Color--100)',
+        '--pf-c-tooltip__content--BackgroundColor': 'var(--pf-global--BackgroundColor--100)',
+    } as CSSProperties;
+
     // Using aria-label for accessibility instead of title to avoid two tooltips.
-    // The tooltip has title and subtitle partly to limit its width to the minimum,
-    // because the button is near the right edge of the top navigation bar.
     return (
         <Tooltip
-            content={
-                <DetailedTooltipOverlay
-                    title="Cluster Status"
-                    subtitle="Problems"
-                    body={resultsElement}
-                />
-            }
+            content={contentElement}
+            isContentLeftAligned
+            position="bottom"
+            style={styleTooltip}
         >
             <button
-                aria-label="Cluster Status Problems"
+                aria-label="Cluster status problems"
                 type="button"
                 onClick={onClick}
-                className="relative flex font-600 h-full items-center pt-1 px-4"
+                className="flex h-full items-center pt-2 pb-2 px-4"
             >
-                {unhealthyElement}
-                {degradedElement}
-                <span className={iconColor}>
+                <div className={classNameProblems} style={styleProblems}>
                     <Activity className="h-4 w-4" />
-                </span>
+                </div>
             </button>
         </Tooltip>
     );
