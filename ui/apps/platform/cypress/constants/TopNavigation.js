@@ -6,10 +6,10 @@ export const selectors = {
         hideButton: 'button:contains("Hide")',
         showButton: 'button:contains("Show")',
     }),
-    menuButton: '[data-testid="menu-button"]',
+    menuButton: '[aria-label="User menu"]',
 
-    menuList: scopeSelectors('[data-testid="menu-list"]', {
-        logoutButton: 'button:contains("Logout")',
+    menuList: scopeSelectors('[aria-label="User menu"] + ul', {
+        logoutButton: 'button:contains("Log out")',
         userEmail: '[data-testid="menu-user-email"]',
         userName: '[data-testid="menu-user-name"]',
         userRoles: '[data-testid="menu-user-roles"]',
