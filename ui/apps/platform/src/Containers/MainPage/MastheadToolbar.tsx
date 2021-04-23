@@ -19,7 +19,7 @@ import GlobalSearchButton from 'Components/GlobalSearchButton';
 import ThemeToggleButton from 'Components/ThemeToggleButton';
 import useCases from 'constants/useCaseTypes';
 import OrchestratorComponentsToggle from 'Containers/Navigation/OrchestratorComponentsToggle';
-import TopNavBarMenu from 'Containers/Navigation/TopNavBarMenu';
+import UserMenu from 'Containers/Navigation/UserMenu';
 import useMetadata from 'hooks/useMetadata';
 import parseURL from 'utils/URLParser';
 
@@ -110,7 +110,7 @@ function MastheadToolbar(): ReactElement {
                     />
                 </PageHeaderToolsItem>
                 <PageHeaderToolsItem>
-                    <TopNavBarMenu />
+                    <UserMenu />
                 </PageHeaderToolsItem>
             </PageHeaderToolsGroup>
         </PageHeaderTools>
