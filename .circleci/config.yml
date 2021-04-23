@@ -4832,18 +4832,10 @@ jobs:
             gcloud auth list
             MAIN_TAG=$(make --quiet tag)
 
-            cd bin
-            for release in "${MAIN_TAG}" latest; do
-              for platform in Linux Darwin Windows; do
-                platform_lower="$(echo "$platform" | tr A-Z a-z)"
-                roxctl_bin="roxctl"
-                if [[ "${platform}" == "Windows" ]]; then
-                  roxctl_bin="roxctl.exe"
-                fi
-                gsutil cp "${platform_lower}/${roxctl_bin}" "gs://sr-roxc/${release}/bin/${platform}/${roxctl_bin}"
-                gsutil cp "${platform_lower}/${roxctl_bin}" "gs://sr-roxc/${release}/bin/${platform_lower}/${roxctl_bin}"
-              done
-            done
+            local_dir="$(mktemp -d)"
+            ./scripts/roxctl-publish/prepare.sh . "${local_dir}"
+            ./scripts/roxctl-publish/publish.sh "${local_dir}" "${MAIN_TAG}" "gs://sr-roxc"
+            ./scripts/roxctl-publish/publish.sh "${local_dir}" "${MAIN_TAG}" "gs://rhacs-openshift-mirror-src/assets"
 
       - run:
           name: Push offline image bundles to stackrox.io
