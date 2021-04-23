@@ -371,6 +371,11 @@ func (b *graphBuilder) ToProto(includePorts bool) []*v1.NetworkNode {
 	for src, srcIdx := range nodeMap {
 		srcQueried := b.deploymentPredicate(src.deployment.GetId())
 		for tgt := range src.adjacentNodes {
+			if tgt == nil {
+				utils.Should(errors.New("network policy graph peer node is nil"))
+				continue
+			}
+
 			// Add an edge between nodes iff one endpoint was queried.
 			if !srcQueried && !b.deploymentPredicate(tgt.deployment.GetId()) {
 				continue
@@ -486,8 +491,8 @@ func (b *graphBuilder) getRelevantNodeIDs() set.StringSet {
 		}
 
 		for adjNode := range currNode.adjacentNodes {
-			if adjNode.deployment == nil && adjNode.extSrc == nil {
-				utils.Should(errors.New("network policy graph node is nil"))
+			if adjNode == nil || (adjNode.deployment == nil && adjNode.extSrc == nil) {
+				utils.Should(errors.New("network policy graph peer node is nil"))
 				continue
 			}
 
@@ -544,6 +549,11 @@ func (b *graphBuilder) getRelevantNodeIDs() set.StringSet {
 	// Now determine relevant external entities. An external node should exists iff its peer was queried.
 	for _, node := range b.extSrcs {
 		for adjNode := range node.adjacentNodes {
+			if adjNode == nil {
+				utils.Should(errors.New("network policy graph peer node is nil"))
+				continue
+			}
+
 			if b.deploymentPredicate(adjNode.deployment.GetId()) {
 				filteredNodeIDs.Add(node.extSrc.GetId())
 				break
